@@ -1,0 +1,17 @@
+/.vscode
+**/__pycache__/
+/test_w
+/test_grt
+/test_disp
+/*.egg-info
+/.vscode
+/build
+/dist
+
+
+/for_paper
+/docs
+
+/pygrt/C_extension/build/
+/pygrt/C_extension/lib/
+/pygrt/C_extension/bin/
