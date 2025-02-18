@@ -1,5 +1,5 @@
 /**
- * @file   syn_main.c
+ * @file   grt_syn.c
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2024-12-2
  * 
