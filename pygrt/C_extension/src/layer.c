@@ -162,7 +162,7 @@ void calc_RT_2x2(
     
 
 
-    // REFRACTION mu1kb1_k2
+    // REFRACTION
     if(computeRayl){
         tmp = mu1kb1_k2*xa1*(dmu*(xb2-xb1) - RHALF*mu1kb1_k2*(rho21*xb1+xb2))*Delta_inv_exa;
         TD[0][0] = tmp;     TU[0][0] = (rho21*xa2/xa1) * tmp;
