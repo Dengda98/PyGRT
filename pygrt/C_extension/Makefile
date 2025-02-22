@@ -8,7 +8,7 @@ LNAME := grt
 LIBS_NAME := lib$(LNAME).a
 LIBD_NAME := lib$(LNAME).so
 
-VERSION := $(shell cat version )
+VERSION := v$(shell cat version )
 CURRENT_DIR := $(shell pwd)
 
 # use static library, make life easier...

@@ -21,7 +21,7 @@ def read_version():
     version_file = os.path.join('pygrt', '_version.py')
     with open(version_file) as f:
         exec(f.read())
-    return locals()['__version__']
+    return 'v'+locals()['__version__']
 
 def read_readme():
     with open("README.md", encoding="utf-8") as f:
