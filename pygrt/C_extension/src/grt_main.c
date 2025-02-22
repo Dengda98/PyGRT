@@ -257,7 +257,7 @@ printf("\n"
 "                         (Yao and Harkrider, 1983) for details.\n"
 "                         Default %.1f not use.\n", keps); printf(
 "\n"
-"    -P<n>        Number of threads.\n"
+"    -P<n>        Number of threads. Default use all cores.\n"
 "\n"
 "    -G<b1>[/<b2>/<b3>/<b4>]\n"
 "                 Designed to choose which kind of source's Green's \n"
