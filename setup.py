@@ -1,33 +1,20 @@
-from importlib.metadata import entry_points
 from setuptools import setup, find_packages
-from setuptools.command.build import build as build_orig
-from setuptools.command.develop import develop as develop_orig
-from setuptools.command.install import install as install_orig
-import subprocess
-import sys, os
+from setuptools.command.bdist_wheel import bdist_wheel as _bdist_wheel
+import os
 
-class BuildMake(build_orig):
-    def run(self):
-        # 执行 make 命令
-        make_cmd = 'cd pygrt/C_extension && make clean && make'
-        process = subprocess.Popen(make_cmd, stdout=sys.stdout, stderr=sys.stderr, shell=True)
-        process.wait()
-        if process.returncode != 0:
-            raise subprocess.CalledProcessError(process.returncode, 'make')
-        
-        super().run()
+class bdist_wheel(_bdist_wheel):
+    def finalize_options(self):
+        '''强制设置程序包和平台相关'''
+        _bdist_wheel.finalize_options(self)
+        self.root_is_pure = False
 
-# 强制install执行build_ext
-class Install(install_orig):
-    def run(self):
-        self.run_command('build')
-        super().run()
+    def get_tag(self):
+        '''强制设置tag，否则默认程序包和python版本相关'''
+        impl, abi_tag, plat_name = _bdist_wheel.get_tag(self)
+        impl = 'py3'
+        abi_tag = 'none'
+        return impl, abi_tag, plat_name
 
-# 强制develop执行build_ext
-class Develop(develop_orig):
-    def run(self):
-        self.run_command('build')
-        super().run()
 
 # 读取版本号
 def read_version():
@@ -53,14 +40,13 @@ setup(
         "Documentation": "https://pygrt.readthedocs.io/zh-cn/latest/",
         "Source Code": "https://github.com/Dengda98/PyGRT",
     },
+    license='GPL-3.0',
 
     packages=find_packages(),
     package_data={'pygrt': ['./C_extension/*']},
     include_package_data=True,
     cmdclass={
-        'build': BuildMake,
-        'install': Install,
-        'develop': Develop,  # 添加 Develop 类到 cmdclass 中
+        'bdist_wheel': bdist_wheel
     },
     install_requires=[
         'numpy>=1.20, <2.0',
@@ -69,6 +55,6 @@ setup(
         'obspy>=1.4',
         'jupyter',
     ],
-    python_requires='>=3.9',
-
+    python_requires='>=3.6',
+    zip_safe=False,  # not compress the binary file
 )
