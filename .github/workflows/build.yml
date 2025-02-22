@@ -124,6 +124,12 @@ jobs:
           pip install --upgrade setuptools wheel build
           pip install -v .
 
+      - name: Clean up build and egg-info directories
+        run: |
+          # 清理临时文件
+          rm -rf build/
+          rm -rf pygrt_kit.egg-info/
+
       - name: Test the project
         run: |
           export PATH=$(pwd)/pygrt/C_extension/bin:${PATH}
@@ -161,8 +167,7 @@ jobs:
       # --------------------------- 制作wheels ---------------------
       - name: Build the Python Wheel
         run: |
-          # wheel文件输出在dist/目录下，还有其它辅助文件，还需检查如何删除
-          python setup.py bdist_wheel  # 只制作wheel，这里不打包源码 
+          python -m build --wheel  # 只制作wheel，这里不打包源码 
 
       # -------------------- upload artifacts -----------------------
       - name: Upload artifact (*.tar.gz)
@@ -203,7 +208,7 @@ jobs:
           
   release: # 创建Release
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, publish_pypi]
     permissions:
       contents: write
       
