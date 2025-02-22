@@ -175,12 +175,11 @@ def gen_trap_wave(nlen, t1, t2, t3, dt):
     )
     return t, wave
 
-def gen_ricker_wave(nlen, t0:float, f0:float, dt:float):
+def gen_ricker_wave(nlen, f0:float, dt:float):
     ''' 
         生成Ricker子波   
 
         :param    nlen:    总时长(s)   
-        :param    t0:      偏移时间(s)  
         :param    f0:      中心频率(Hz)  
         :param    dt:      采样间隔(s)   
 
@@ -190,7 +189,7 @@ def gen_ricker_wave(nlen, t0:float, f0:float, dt:float):
     '''
 
     t = np.arange(0, nlen+dt, dt)
-    
+    t0 = 1.0/f0
     a = np.pi**2 * f0**2 * (t-t0)**2
     wave = (1 - 2*a ) * np.exp(-a)
 

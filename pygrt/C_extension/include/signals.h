@@ -14,6 +14,7 @@
 
 #define GRT_SIG_PARABOLA 'p'   ///< 抛物波代号
 #define GRT_SIG_TRAPEZOID 't'  ///< 梯形波代号
+#define GRT_SIG_RICKER   'r'   ///< 雷克子波信号
 #define GRT_SIG_CUSTOM   '0'   ///< 自定义时间函数代码
 
 
@@ -144,6 +145,18 @@ float * get_trap_wave(float dt, float *T1, float *T2, float *T3, int *Nt);
 
 
 
+/**
+ * 生成雷克子波
+ * 
+ * \f[ f(t)=(1-2 \pi^2 \f_0^2 (t-t_0)^2 ) \exp{ - \pi^2 \f_0^2 (t-t_0)^2} \f]
+ * 
+ * @param    dt       (in)采样间隔
+ * @param    f0       (in)主频
+ * @param    Nt       (out)返回的点数
+ * 
+ * @return   float指针
+ */
+float * get_ricker_wave(float dt, float f0, int *Nt);
 
 
 /**
