@@ -48,7 +48,7 @@ OBJS_NOMAIN := $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(SRCS_NOMAIN))
 OBJS := $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(SRCS))
 
 
-.PHONY: all clean
+.PHONY: all clean cleanbuild
 
 # library and several programs
 TARGET = libgrt grt grt.syn  grt.travt
@@ -114,3 +114,7 @@ clean:
 	rm -rf $(BIN_DIR)
 	rm -rf $(BUILD_DIR)
 	rm -rf $(LIB_DIR) 
+
+# remove object files
+cleanbuild:
+	rm -rf $(BUILD_DIR)
