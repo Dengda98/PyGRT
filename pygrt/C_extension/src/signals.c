@@ -21,6 +21,7 @@
 #include <complex.h>
 #include <fftw3.h>
 
+#include "const.h"
 #include "signals.h"
 #include "colorstr.h"
 
@@ -46,6 +47,15 @@ bool check_tftype_tfparams(const char tftype, const char *tfparams){
         }
         if(! (t1 <= t2 && t2 < t3)){
             fprintf(stderr, BOLD_RED "Error! It should be t1<=t2<t3 (%s).\n" DEFAULT_RESTORE, tfparams);
+            return false;
+        }
+    }
+    // 雷克子波
+    else if(GRT_SIG_RICKER == tftype){
+        float f0;
+        if(1 != sscanf(tfparams, "%f", &f0))  return false;
+        if(f0 <= 0){
+            fprintf(stderr, BOLD_RED "Error! f0(%s) should be larger than 0.\n" DEFAULT_RESTORE, tfparams);
             return false;
         }
     }
@@ -83,6 +93,12 @@ float * get_time_function(int *TFnt, float dt, const char tftype, const char *tf
         float t1=0.0, t2=0.0, t3=0.0;
         sscanf(tfparams, "%f/%f/%f", &t1, &t2, &t3);
         tfarr = get_trap_wave(dt, &t1, &t2, &t3, &tfnt);
+    }
+    // 雷克子波
+    else if(GRT_SIG_RICKER == tftype){
+        float f0=0.0;
+        sscanf(tfparams, "%f", &f0);
+        tfarr = get_ricker_wave(dt, f0, &tfnt);
     }
     // 自定义时间函数
     else if(GRT_SIG_CUSTOM == tftype){
@@ -270,6 +286,31 @@ float * get_trap_wave(float dt, float *T1, float *T2, float *T3, int *Nt){
     *T1 = t1;
     *T2 = t2;
     *T3 = t3;
+    *Nt = nt;
+    return arr;
+}
+
+
+float * get_ricker_wave(float dt, float f0, int *Nt){
+    if(1.0/dt <= 2.0*f0) { // 在当前采样率下，主频f0过高
+        fprintf(stderr, BOLD_RED "Error! Compare to sampling freq (%.3f), dominant freq (%.3f) is too high.\n" DEFAULT_RESTORE,
+                1.0/dt, f0);
+        return NULL;
+    }
+
+    float t0 = 1.0/f0;
+    int nt = (floorf(t0/dt) + 1) * 2; // 估计2倍长度够包含
+    float *arr = (float*)calloc(nt, sizeof(float));
+
+    float PPI = PI*PI;
+    float ff0 = f0*f0;
+    float a, t=0.0;
+    for(int i=0; i<nt; ++i){
+        a = PPI*ff0*(t-t0)*(t-t0);
+        arr[i] = (1.0 - 2.0*a)*expf(-a);
+        t += dt;
+    }
+
     *Nt = nt;
     return arr;
 }

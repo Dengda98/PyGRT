@@ -157,26 +157,37 @@ printf("\n"
 "\n"
 "    -D<tftype>/<tfparams>\n"
 "                  Convolve a Time Function with a maximum value of 1.0.\n"
-"                  There are two options:\n"
+"                  There are several options:\n"
 "                  + Parabolic wave (y = a*x^2 + b*x)\n"
-"                    set -Dp/<t0>, <t0> (secs) is the duration of wave.\n"
+"                    set -D%c/<t0>, <t0> (secs) is the duration of wave.\n", GRT_SIG_PARABOLA); printf(
 "                    e.g. \n"
-"                         -Dp/1.3\n"
+"                         -D%c/1.3\n", GRT_SIG_PARABOLA); printf(
 "                  + Trapezoidal wave\n"
-"                    set -Dt/<t1>/<t2>/<t3>, <t1> is the end time of\n"
+"                    set -D%c/<t1>/<t2>/<t3>, <t1> is the end time of\n", GRT_SIG_TRAPEZOID); printf(
 "                    Rising, <t2> is the end time of Platform, and\n"
 "                    <t3> is the end time of Falling.\n"
 "                    e.g. \n"
-"                         -Dt/0.1/0.2/0.4\n"
-"                         -Dt/0.4/0.4/0.6 (become a triangle)\n"
+"                         -D%c/0.1/0.2/0.4\n", GRT_SIG_TRAPEZOID); printf(
+"                         -D%c/0.4/0.4/0.6 (become a triangle)\n", GRT_SIG_TRAPEZOID); printf(
+"                  + Ricker wavelet\n"
+"                    set -D%c/<f0>, <f0> (Hz) is the dominant frequency.\n", GRT_SIG_RICKER); printf(
+"                    e.g. \n"
+"                         -D%c/0.5 \n", GRT_SIG_RICKER); printf(
+"                  + Custom wave\n"
+"                    set -D%c/<path>, <path> is the filepath to a custom\n", GRT_SIG_CUSTOM); printf(
+"                    Time Function ASCII file. The file has just one column\n"
+"                    of the amplitude. File header can write unlimited lines\n"
+"                    of comments with prefix \"#\".\n"
+"                    e.g. \n"
+"                         -D%c/tfunc.txt \n", GRT_SIG_CUSTOM); printf(
 "                  To match the time interval in Green's Functions, \n"
 "                  parameters of Time Function will be slightly modified.\n"
 "                  The corresponding Time Function will be saved\n"
 "                  as a SAC file under <outdir>.\n"
 "\n"
-"    -I<odr>       Order of integration.\n"
+"    -I<odr>       Order of integration. Default not use\n"
 "\n"
-"    -J<odr>       Order of differentiation.\n"
+"    -J<odr>       Order of differentiation. Default not use\n"
 "\n"
 "    -s            Silence all outputs.\n"
 "\n"
