@@ -1084,7 +1084,7 @@ int main(int argc, char **argv) {
     hd.o = 0.0; 
     hd.iztype = IO; 
     // 记录震源和台站深度
-    hd.evdp = depsrc*1e3; // km
+    hd.evdp = depsrc; // km
     hd.stel = (-1.0)*deprcv*1e3; // m
 
     

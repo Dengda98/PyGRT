@@ -77,8 +77,8 @@ class PyGreenFunction:
         # 提前建立Trace时间序列  
         self.SACTrace = SACTrace(npts=nt, delta=dt, iztype='io') 
         sac = self.SACTrace
-        sac.evdp = depsrc*1e3
-        sac.stel = (-1)*deprcv*1e3
+        sac.evdp = depsrc
+        sac.stel = (-1)*deprcv
         sac.dist = dist
         sac.user0 = wI  # 记录虚频率
         sac.kstnm = 'SYN'
