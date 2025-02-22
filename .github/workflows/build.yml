@@ -200,10 +200,15 @@ jobs:
       - name: Display structure of downloaded files
         run: ls -R artifacts
 
+      - name: Move wheel files to dist/
+        run: |
+          mkdir -p dist
+          mv artifacts/*/*.whl dist/
+
       - name: Pypi Publish
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          packages-dir: artifacts/*/
+          packages-dir: dist/
   
           
   release: # 创建Release
