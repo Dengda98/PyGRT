@@ -734,11 +734,11 @@ static void print_parameters(){
             while(sizeof(tmp) - strlen(tmp) == 1){ // 允许换行
                 printf("%-*s |\n", nlen2-3, tmp);
                 snprintf(tmp, sizeof(tmp), "%s,", s_rs[ir]+(strlen(tmp)-len));
-                if(strcmp(tmp, ",") == 0)  break;
+                if(strcmp(tmp, ",") == 0 && ir==nr-1)  break;
                 printf("| %-*s | ", nlen1-3, "");
                 len -= strlen(tmp);
             }
-            if(strcmp(tmp, ",") == 0)  break;
+            if(strcmp(tmp, ",") == 0 && ir==nr-1)  break;
         }
 
         if(strlen(tmp) > 0 && strcmp(tmp, ",") != 0){
@@ -757,11 +757,11 @@ static void print_parameters(){
             while(sizeof(tmp) - strlen(tmp) == 1){ // 允许换行
                 printf("%-*s |\n", nlen2-3, tmp);
                 snprintf(tmp, sizeof(tmp), "%s,", s_statsidxs[i]+(strlen(tmp)-len));
-                if(strcmp(tmp, ",") == 0)  break;
+                if(strcmp(tmp, ",") == 0 && i==nstatsidxs-1)  break;
                 printf("| %-*s | ", nlen1-3, "");
                 len -= strlen(tmp);
             }
-            if(strcmp(tmp, ",") == 0)  break;
+            if(strcmp(tmp, ",") == 0 && i==nstatsidxs-1)  break;
         }
 
         if(strlen(tmp) > 0 && strcmp(tmp, ",") != 0){
