@@ -5,23 +5,41 @@ BUILD_DIR := build
 BIN_DIR := bin
 LIB_DIR := lib
 LNAME := grt
-LIB_NAME := lib$(LNAME).so
+LIBS_NAME := lib$(LNAME).a
+LIBD_NAME := lib$(LNAME).so
 
 VERSION := $(shell cat version )
 CURRENT_DIR := $(shell pwd)
 
+# use static library, make life easier...
+# RPATH_FLAGS :=  -L$(LIB_DIR) -l:$(LIBS_NAME)  # ':libXYZ.a' not worked on MacOS
+RPATH_FLAGS := $(LIB_DIR)/$(LIBS_NAME)
+
+# link options for FFTW
+# NEED EXPLICITY SET LIBRARY PATH on MacOS
+LFFT_FLAGS := -l:libfftw3.a  -l:libfftw3f.a
+
 CC := gcc
 FOMPFLAGS := -fopenmp 
-#  -fdump-tree-all  -g -ffast-math -O3 -fno-associative-math  -march=native -mtune=native 
-CFLAGS :=  -O3 -g \
+
+CFLAGS := $(LFFT_FLAGS) -O3 -g \
           -fPIC -Wall -Wextra -I$(INC_DIR) \
-		  -lm -lfftw3  -lfftw3f -DGRT_VERSION="\"$(VERSION)\""
+		  -lm -DGRT_VERSION="\"$(VERSION)\""
+#  -fdump-tree-all  -g -ffast-math -O3 -fno-associative-math  -march=native -mtune=native 
+
+# change architecture for macOS
+ifdef ARCH
+  CFLAGS += -arch $(ARCH)
+endif
+
+# options for dynamic library
 LDFLAGS := -shared -lm
-RPATH_FLAGS :=  -L$(LIB_DIR) -l$(LNAME)
+
 
 INCS := $(wildcard $(INC_DIR)/*.h)
 SRCS := $(wildcard $(SRC_DIR)/*.c)
 SRCS_NOMAIN := $(SRCS)
+
 # remove main functions
 SRCS_NOMAIN := $(filter-out $(SRC_DIR)/grt_main.c, $(SRCS_NOMAIN))
 SRCS_NOMAIN := $(filter-out $(SRC_DIR)/grt_syn.c, $(SRCS_NOMAIN))
@@ -33,12 +51,12 @@ OBJS := $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(SRCS))
 .PHONY: all clean
 
 # library and several programs
-TARGET = libgrt grt grt.syn grt.travt
+TARGET = libgrt grt grt.syn  grt.travt
 
 all: $(TARGET) 
 
 
-libgrt:      $(LIB_DIR)/$(LIB_NAME)
+libgrt:      $(LIB_DIR)/$(LIBS_NAME)  $(LIB_DIR)/$(LIBD_NAME)
 grt:         $(BIN_DIR)/grt 
 grt.syn:     $(BIN_DIR)/grt.syn 
 grt.travt:	 $(BIN_DIR)/grt.travt
@@ -46,24 +64,33 @@ grt.travt:	 $(BIN_DIR)/grt.travt
 
 # generate executable files
 $(BIN_DIR)/grt: $(BUILD_DIR)/grt_main.o  libgrt
+	@echo $(shell ls $(LIB_DIR)/*)
 	@mkdir -p $(BIN_DIR)
-	$(CC) -o $@ $<  $(CFLAGS) $(FOMPFLAGS) $(RPATH_FLAGS)
+	$(CC) -o $@ $<  $(RPATH_FLAGS) $(CFLAGS) $(FOMPFLAGS)
 
 $(BIN_DIR)/grt.syn: $(BUILD_DIR)/grt_syn.o  libgrt
+	@echo $(shell ls $(LIB_DIR)/*)
 	@mkdir -p $(BIN_DIR)
-	$(CC) -o $@ $<  $(CFLAGS) $(FOMPFLAGS) $(RPATH_FLAGS)
+	$(CC) -o $@ $<  $(RPATH_FLAGS) $(CFLAGS) $(FOMPFLAGS)
 
 $(BIN_DIR)/grt.travt: $(BUILD_DIR)/grt_travt.o  libgrt
+	@echo $(shell ls $(LIB_DIR)/*)
 	@mkdir -p $(BIN_DIR)
-	$(CC) -o $@ $<  $(CFLAGS) $(FOMPFLAGS) $(RPATH_FLAGS)
+	$(CC) -o $@ $<  $(RPATH_FLAGS) $(CFLAGS) $(FOMPFLAGS)
 
 
-# Link dynamic library
+# build dynamic library
 # The order in the compiled statement is critical, otherwise the library will not be linked
-$(LIB_DIR)/$(LIB_NAME): $(OBJS_NOMAIN)
+$(LIB_DIR)/$(LIBD_NAME): $(OBJS_NOMAIN)
 	@mkdir -p $(BUILD_DIR)
 	@mkdir -p $(LIB_DIR)
 	$(CC) -o $@ $^ $(LDFLAGS)  $(FOMPFLAGS) 
+
+# build static library
+$(LIB_DIR)/$(LIBS_NAME): $(OBJS_NOMAIN)
+	@mkdir -p $(BUILD_DIR)
+	@mkdir -p $(LIB_DIR)
+	ar rcs $@ $^ 
 	
 
 # Compile object file
