@@ -111,6 +111,11 @@ jobs:
           make 
           cd -
 
+      - name: Remove object files
+        run: |
+          cd pygrt/C_extension 
+          make cleanbuild
+          cd -
 
       # --------------------搭建python环境，开始测试，并制作wheel文件 ------------------------------
       - name: Set up Python
