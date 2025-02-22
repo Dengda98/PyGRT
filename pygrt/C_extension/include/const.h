@@ -12,6 +12,10 @@
 #include <math.h>
 // #include <tgmath.h>
 
+// CMPLX macro not exist on MacOS
+#ifndef CMPLX
+#define CMPLX(real, imag) ((double)(real) + (double)(imag) * I)
+#endif
 
 // #define GRT_USE_FLOAT  ///< 是否使用单精度浮点数
 
