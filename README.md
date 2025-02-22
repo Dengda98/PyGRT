@@ -51,7 +51,7 @@ PyGRT is still evolving, and more features will be released in the future.
     
 <br>
 
-+ For Command Line Style
++ For Command Line Style  
   the output waveforms are binary files in SAC format, you need [**Seismic Analysis Code (SAC)**](http://www.iris.edu/ds/nodes/dmc/forms/sac/) to view and process.
     
 <br>
