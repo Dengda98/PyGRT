@@ -14,7 +14,9 @@
 # Overview
 **PyGRT**: An Efficient and Integrated Python Package for Computing Synthetic Seismograms in a Layered Half-Space Model. 
 
-At present, **PyGRT** can run on Ubuntu and MacOS. PyGRT is still evolving, and more features will be released in the future.
+At present, **PyGRT** can run on Ubuntu and MacOS.  
+
+PyGRT is still evolving, and more features will be released in the future.
 
 # Features
 
@@ -40,10 +42,14 @@ At present, **PyGRT** can run on Ubuntu and MacOS. PyGRT is still evolving, and 
 
 + For Thread-Level Parallel Computing
   - [**OpenMP**](https://www.openmp.org/)
+    
 <br>
+
 + For Python Script Style  
-  - [**Anaconda**](https://anaconda.org) (*recommend*), to build your virtual environment.   
+  - [**Anaconda**](https://anaconda.org) (*recommend*), to build your virtual environment.
+    
 <br>
+
 + For Command Line Style
   - **None** (*almost*)
     In PyGRT, C programs and libraries can **exist independently** of Python (Not CPython or Cython, just C). Therefore, If you're not familiar with Python and just want to give a quick-run,  ~~you can simply download the C source codes in `pygrt/C_extension/`.~~ 
@@ -89,7 +95,7 @@ PyGRT executable file directory: </path/to/installation/bin>
 PyGRT library directory: </path/to/installation/lib>
 ```
 and you can 
-+ add "executable file directory" it to `PATH` variable.
++ add "executable file directory" to `PATH` environment variable.
 
 Then you can run the command like `grt` in terminal. For each command, use `-h` to see the help message.
 
