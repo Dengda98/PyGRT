@@ -14,7 +14,7 @@
 # Overview
 **PyGRT**: An Efficient and Integrated Python Package for Computing Synthetic Seismograms in a Layered Half-Space Model. 
 
-At present, **PyGRT** can run on Ubuntu and MacOS.  
+At present, **PyGRT** can run on **Ubuntu** and **MacOS**.  
 
 PyGRT is still evolving, and more features will be released in the future.
 
@@ -47,14 +47,18 @@ PyGRT is still evolving, and more features will be released in the future.
 
 + For Python Script Style  
   - [**Anaconda**](https://anaconda.org) (*recommend*), to build your virtual environment.
+  - Other dependencies are declared in `setup.py`, automatically handled by `pip install`.
     
 <br>
 
 + For Command Line Style
-  - **None** (*almost*)
-    In PyGRT, C programs and libraries can **exist independently** of Python (Not CPython or Cython, just C). Therefore, If you're not familiar with Python and just want to give a quick-run,  ~~you can simply download the C source codes in `pygrt/C_extension/`.~~ 
+  the output waveforms are binary files in SAC format, you need [**Seismic Analysis Code (SAC)**](http://www.iris.edu/ds/nodes/dmc/forms/sac/) to view and process.
+    
+<br>
 
-    **[New Update]: Compiled binary programs and libraries have distributed, you can use directly, no need to compile on your local machine.** Mathematical library [FFT](https://fftw.org) are **linked statically**, You don't have to bother configuring some environment variables.
+  In PyGRT, C programs and libraries **exist independently** of Python (Not CPython or Cython, just C). Therefore, If you're not familiar with Python and just want to give a quick-run,  ~~you can simply download the C source codes in `pygrt/C_extension/`.~~ 
+
+  **[New Update]: Compiled binary programs and libraries have distributed, you can use directly, no need to compile on your local machine.** Mathematical library [FFT](https://fftw.org) are **linked statically**, You don't have to bother configuring some environment variables.
 <br>
 
 
@@ -79,7 +83,7 @@ Two ways, choose one:
       pip install -v .
       ```
 
-3. Build from Source Code. 
+3. Build from Source Code.   
    *Not recommend.*
 
 # Setting
