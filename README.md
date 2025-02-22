@@ -4,15 +4,17 @@
 
 <p align="center">
   <img alt="GitHub code size in bytes" src="https://img.shields.io/github/languages/code-size/Dengda98/PyGRT">
+  <img alt="GitHub Actions Workflow Status" src="https://img.shields.io/github/actions/workflow/status/Dengda98/PyGRT/build.yml">
+  <img alt="Github Tag" src="https://img.shields.io/github/v/tag/Dengda98/PyGRT">
   <img alt="GitHub License" src="https://img.shields.io/github/license/Dengda98/PyGRT">
 </p>
-
-
 
 (Detailed documentation is coming soon...)
 
 # Overview
 **PyGRT**: An Efficient and Integrated Python Package for Computing Synthetic Seismograms in a Layered Half-Space Model. 
+
+At present, **PyGRT** can run on Ubuntu and MacOS. PyGRT is still evolving, and more features will be released in the future.
 
 # Features
 
@@ -34,10 +36,21 @@
 </p>
 
 
-# pre-requisite
+# Pre-Requisite
 
-1. [Anaconda](https://anaconda.org) for python script style in virtual environment.
-2. [FFTW](https://fftw.org/) for command line style.
++ For Thread-Level Parallel Computing
+  - [**OpenMP**](https://www.openmp.org/)
+<br>
++ For Python Script Style  
+  - [**Anaconda**](https://anaconda.org) (*recommend*), to build your virtual environment.   
+<br>
++ For Command Line Style
+  - **None** (*almost*)
+    In PyGRT, C programs and libraries can **exist independently** of Python (Not CPython or Cython, just C). Therefore, If you're not familiar with Python and just want to give a quick-run,  ~~you can simply download the C source codes in `pygrt/C_extension/`.~~ 
+
+    **[New Update]: Compiled binary programs and libraries have distributed, you can use directly, no need to compile on your local machine.** Mathematical library [FFT](https://fftw.org) are **linked statically**, You don't have to bother configuring some environment variables.
+<br>
+
 
 # Installation
 
@@ -45,14 +58,14 @@ Two ways, choose one:
  
 1. **PYPI** (recommend)  
   Run the following command in your virtual environment:
-   ```Bash
-   pip install -v pygrt-kit
-   ```
+    ```Bash
+    pip install -v pygrt-kit
+    ```
 
 
-2. Github 
+2. [Github release](https://github.com/Dengda98/PyGRT/releases)
 
-   - Download the latest [release](https://github.com/Dengda98/PyGRT/releases), uncompress, and change the diretory.
+   - Download the latest [release](https://github.com/Dengda98/PyGRT/releases) for your machine, uncompress, and change the directory.
 
    - Run the following command in your virtual environment:
 
@@ -60,19 +73,23 @@ Two ways, choose one:
       pip install -v .
       ```
 
-If you're more comfortable with the command line style, run
+3. Build from Source Code. 
+   *Not recommend.*
+
+# Setting
+
+For Command Line Style, run
 ```bash
 python -m pygrt.print
 ```
 the outputs are
 ```
-PyGRT installation directory: ...
-PyGRT executable file directory: ...
-PyGRT dynamic library directory: ...
+PyGRT installation directory: </path/to/installation>
+PyGRT executable file directory: </path/to/installation/bin>
+PyGRT library directory: </path/to/installation/lib>
 ```
 and you can 
 + add "executable file directory" it to `PATH` variable.
-+ add "dynamic library directory" it to `LD_LIBRARY_PATH` variable.
 
 Then you can run the command like `grt` in terminal. For each command, use `-h` to see the help message.
 
@@ -80,6 +97,12 @@ Then you can run the command like `grt` in terminal. For each command, use `-h` 
 # Usage Example
 
 `example/` folder shows some examples in paper. **More examples are coming soon.**
+
+<p align='center'>
+  <img alt="multi traces" src="example/multi_traces/multi_traces.png" width="300">
+  <img alt="lamb problem" src="example/lamb_problem/stream.png" width="300">
+  <img alt="far-field record" src="example/far_field/test.png" width="600">
+</p>
 
 
 # Contact
