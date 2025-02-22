@@ -3,7 +3,7 @@ name: Build C programs and libraries, and Upload artifacts
 on:
   push:
     tags:
-      - "*"  
+      - "v*.*.*"  
 
 jobs:
   build: # 编译C程序和C库
