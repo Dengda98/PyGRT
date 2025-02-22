@@ -152,11 +152,29 @@ jobs:
           cd -
 
           rm -rf test_tmp  
+
+      # ------------------------ 定义接下来打包程序命名时的系统名后缀 ---------------
+      - name: Define the package OS suffix
+        run: |
+          # 符合pypi命名规范，否则上传失败
+          if [[ "${{ matrix.os }}" == *"ubuntu"* ]]; then
+            SUFFIX_PLAT_NAME="manylinux2014_x86_64"
+          elif [[ "${{ matrix.os }}" == *"macos"* && "${{ matrix.arch }}" == *"x86_64"* ]]; then
+            SUFFIX_PLAT_NAME="macosx_10_9_x86_64"
+          elif [[ "${{ matrix.os }}" == *"macos"* && "${{ matrix.arch }}" == *"arm64"* ]]; then
+            SUFFIX_PLAT_NAME="macosx_11_0_arm64"
+          else 
+            echo " Unsupported OS: ${{ matrix.os }} (${{ matrix.arch }})"
+            exit 1
+          fi
+
+          echo "SUFFIX_PLAT_NAME=$SUFFIX_PLAT_NAME" >> $GITHUB_ENV
+
       
       # --------------------------- 打包整个程序 ---------------------
       - name: Package the binary
         run: |
-          PACK_NAME=pygrt_kit-${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.arch }}
+          PACK_NAME=pygrt_kit-${{ github.ref_name }}-${{ env.SUFFIX_PLAT_NAME }}
           echo "PACK_NAME=$PACK_NAME" >> $GITHUB_ENV
           FILE_CONTENT=$(ls)
           mkdir -p $PACK_NAME
@@ -167,7 +185,7 @@ jobs:
       # --------------------------- 制作wheels ---------------------
       - name: Build the Python Wheel
         run: |
-          python -m build --wheel  # 只制作wheel，这里不打包源码 
+          python setup.py bdist_wheel --plat-name=${{ env.SUFFIX_PLAT_NAME }}  # 只制作wheel，这里不打包源码 
 
       # -------------------- upload artifacts -----------------------
       - name: Upload artifact (*.tar.gz)
