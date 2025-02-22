@@ -176,29 +176,7 @@ jobs:
         with:
           name: ${{ env.PACK_NAME }}_whl
           path: dist/*.whl
-
   
-  release: # 创建Release
-    runs-on: ubuntu-latest
-    needs: build
-    permissions:
-      contents: write
-      
-    steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-          pattern: "*_tar"
-
-      - name: Display structure of downloaded files
-        run: ls -R artifacts
-
-      - name: Create Release
-        id: create_release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: artifacts/*/*.tar.gz
 
   publish_pypi: # 上传pypi
     runs-on: ubuntu-latest
@@ -221,6 +199,31 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: artifacts/*/
+  
+          
+  release: # 创建Release
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: write
+      
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: "*_tar"
+
+      - name: Display structure of downloaded files
+        run: ls -R artifacts
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: artifacts/*/*.tar.gz
+
+  
 
 
           
