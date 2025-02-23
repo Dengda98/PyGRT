@@ -1,0 +1,109 @@
+name: test windows
+
+on: push
+
+
+jobs:
+  build:
+    runs-on: windows-2022
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Set MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          install: >-
+            git
+            mingw-w64-ucrt-x86_64-gcc 
+            make 
+            mingw-w64-ucrt-x86_64-fftw 
+
+      - name: git config
+        run: git config --global core.autocrlf input
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1  
+
+      - name: Check Version 
+        run: |
+          # skip
+
+      - name: Build the project 
+        shell: msys2 {0}
+        working-directory: ./pygrt/C_extension
+        run: |
+          make 
+          make cleanbuild
+
+      # --------------------搭建python环境，开始测试，并制作wheel文件 ------------------------------
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9' 
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install --upgrade setuptools wheel build
+          pip install -v .
+
+      - name: Clean up build and egg-info directories
+        run: |
+          # 清理临时文件
+          rm -rf build/
+          rm -rf pygrt_kit.egg-info/
+
+      - name: Test the project
+        run: |
+          export PATH=$(pwd)/pygrt/C_extension/bin:${PATH}
+         
+          cp -r example test_tmp
+
+          # test1 
+          cd test_tmp/compare_results 
+          chmod +x *.sh
+          ./run_milrow_grt.sh
+          python plot_cps_grt.py
+          python plot_cps_pygrt.py
+          cd -
+
+          # test2
+          cd test_tmp/site_effect
+          chmod +x *.sh 
+          ./run1.sh
+          python run2.py
+          cd -
+
+          rm -rf test_tmp  
+
+      # ------------------------ 定义接下来打包程序命名时的系统名后缀 ---------------
+      - name: Define the package OS suffix
+        run: |
+          SUFFIX_PLAT_NAME="win_amd64"
+          echo "SUFFIX_PLAT_NAME=$SUFFIX_PLAT_NAME" >> $GITHUB_ENV
+
+      
+      # --------------------------- 打包整个程序 ---------------------
+      - name: Package the binary
+        run: |
+          PACK_NAME=pygrt_kit-${{ github.ref_name }}-${{ env.SUFFIX_PLAT_NAME }}
+          echo "PACK_NAME=$PACK_NAME" >> $GITHUB_ENV
+          FILE_CONTENT=$(ls)
+          mkdir -p $PACK_NAME
+          cp -r ${FILE_CONTENT} $PACK_NAME/
+          tar -czvf $PACK_NAME.tar.gz $PACK_NAME
+          rm -rf $PACK_NAME
+      
+      # -------------------- upload artifacts -----------------------
+      - name: Upload artifact (*.tar.gz)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PACK_NAME }}_tar
+          path: ${{ env.PACK_NAME }}.tar.gz
+            
