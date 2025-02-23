@@ -20,13 +20,17 @@ RPATH_FLAGS := $(LIB_DIR)/$(LIBS_NAME)
 LFFT_FLAGS := -l:libfftw3.a  -l:libfftw3f.a
 
 CC := gcc
-FOMPFLAGS := -fopenmp 
-
 
 
 # add -static to enforce gcc link the static library, no matter standard-lib or custom-lib,
-# and there's no need to set -l like "-l:libXYZ.a", while so far I'll keep that.
+# -l like "-l:libXYZ.a" should be saved for conditional compile.
 LINK_STATIC := -static
+FOMPFLAGS := -fopenmp 
+# if windows
+ifeq ($(OS),Windows_NT)
+	FOMPFLAGS := $(LINK_STATIC) $(FOMPFLAGS)
+endif
+
 # However, Maybe -static is not working for standard-lib on MacOS, 
 # at least for now, it's not a big problem.
 CFLAGS :=  $(LINK_STATIC) $(LFFT_FLAGS) -O3 -g \
@@ -91,7 +95,7 @@ $(BIN_DIR)/grt.travt: $(BUILD_DIR)/grt_travt.o  libgrt
 $(LIB_DIR)/$(LIBD_NAME): $(OBJS_NOMAIN)
 	@mkdir -p $(BUILD_DIR)
 	@mkdir -p $(LIB_DIR)
-	$(CC) -shared -o $@ $^ $(LINK_STATIC) $(LDFLAGS) $(FOMPFLAGS) 
+	$(CC) -shared -o $@ $^ $(FOMPFLAGS) 
 
 # build static library
 $(LIB_DIR)/$(LIBS_NAME): $(OBJS_NOMAIN)
