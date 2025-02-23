@@ -22,9 +22,14 @@ LFFT_FLAGS := -l:libfftw3.a  -l:libfftw3f.a
 CC := gcc
 FOMPFLAGS := -fopenmp 
 
+# add -static to enforce gcc link the static library, no matter standard-lib or custom-lib,
+# and there's no need to set -l like "-l:libXYZ.a", while so far I'll keep that.
+# 
+# However, Maybe -static is not working for standard-lib on MacOS, 
+# at least for now, it's not a big problem.
 CFLAGS := $(LFFT_FLAGS) -O3 -g \
           -fPIC -Wall -Wextra -I$(INC_DIR) \
-		  -lm -DGRT_VERSION="\"$(VERSION)\""
+		  -lm -DGRT_VERSION="\"$(VERSION)\"" -static
 #  -fdump-tree-all  -g -ffast-math -O3 -fno-associative-math  -march=native -mtune=native 
 
 # change architecture for macOS
@@ -51,7 +56,10 @@ OBJS := $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(SRCS))
 .PHONY: all clean cleanbuild
 
 # library and several programs
-TARGET = libgrt grt grt.syn  grt.travt
+TARGET = libgrt \
+         grt \
+		 grt.syn \
+		 grt.travt
 
 all: $(TARGET) 
 
