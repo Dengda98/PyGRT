@@ -22,23 +22,22 @@ LFFT_FLAGS := -l:libfftw3.a  -l:libfftw3f.a
 CC := gcc
 FOMPFLAGS := -fopenmp 
 
+
+
 # add -static to enforce gcc link the static library, no matter standard-lib or custom-lib,
 # and there's no need to set -l like "-l:libXYZ.a", while so far I'll keep that.
-# 
+LINK_STATIC := -static
 # However, Maybe -static is not working for standard-lib on MacOS, 
 # at least for now, it's not a big problem.
-CFLAGS := $(LFFT_FLAGS) -O3 -g \
+CFLAGS :=  $(LINK_STATIC) $(LFFT_FLAGS) -O3 -g \
           -fPIC -Wall -Wextra -I$(INC_DIR) \
-		  -lm -DGRT_VERSION="\"$(VERSION)\"" -static
+		  -lm -DGRT_VERSION="\"$(VERSION)\""
 #  -fdump-tree-all  -g -ffast-math -O3 -fno-associative-math  -march=native -mtune=native 
 
 # change architecture for macOS
 ifdef ARCH
   CFLAGS += -arch $(ARCH)
 endif
-
-# options for dynamic library
-LDFLAGS := -shared -lm
 
 
 INCS := $(wildcard $(INC_DIR)/*.h)
@@ -92,7 +91,7 @@ $(BIN_DIR)/grt.travt: $(BUILD_DIR)/grt_travt.o  libgrt
 $(LIB_DIR)/$(LIBD_NAME): $(OBJS_NOMAIN)
 	@mkdir -p $(BUILD_DIR)
 	@mkdir -p $(LIB_DIR)
-	$(CC) -o $@ $^ $(LDFLAGS)  $(FOMPFLAGS) 
+	$(CC) -shared -o $@ $^ $(LINK_STATIC) $(LDFLAGS) $(FOMPFLAGS) 
 
 # build static library
 $(LIB_DIR)/$(LIBS_NAME): $(OBJS_NOMAIN)
