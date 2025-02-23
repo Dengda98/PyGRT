@@ -14,8 +14,22 @@
 
 // CMPLX macro not exist on MacOS
 #ifndef CMPLX
-#define CMPLX(real, imag) ((double)(real) + (double)(imag) * I)
+#define CMPLX(real, imag) ((double)(real) + (double)(imag) * I)  ///< 复数扩展宏，添加此指令以适配MacOS
 #endif
+
+
+#if defined(_WIN32) || defined(__WIN32__)
+#define _TEST_WHETHER_WIN32_ 1
+#else
+#define _TEST_WHETHER_WIN32_ 0  ///< 测试是否是windows系统
+#endif
+
+#if _TEST_WHETHER_WIN32_
+#include <direct.h> /* _mkdir */
+#define mkdir(x, y) _mkdir(x)  ///< 为windows系统修改mkdir函数
+#endif
+
+
 
 // #define GRT_USE_FLOAT  ///< 是否使用单精度浮点数
 
