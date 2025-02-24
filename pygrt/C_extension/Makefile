@@ -26,9 +26,10 @@ CC := gcc
 # -l like "-l:libXYZ.a" should be saved for conditional compile.
 LINK_STATIC := -static
 FOMPFLAGS := -fopenmp 
-# if windows
-ifeq ($(OS),Windows_NT)
-	FOMPFLAGS := $(LINK_STATIC) $(FOMPFLAGS)
+
+LDFLAGS := $(FOMPFLAGS)
+ifeq ($(OS),Windows_NT)  # link static oenpmp on windows
+	LDFLAGS := $(LINK_STATIC) $(FOMPFLAGS)
 endif
 
 # However, Maybe -static is not working for standard-lib on MacOS, 
@@ -95,7 +96,7 @@ $(BIN_DIR)/grt.travt: $(BUILD_DIR)/grt_travt.o  libgrt
 $(LIB_DIR)/$(LIBD_NAME): $(OBJS_NOMAIN)
 	@mkdir -p $(BUILD_DIR)
 	@mkdir -p $(LIB_DIR)
-	$(CC) -shared -o $@ $^ $(FOMPFLAGS) 
+	$(CC) -shared -o $@ $^ $(LDFLAGS) 
 
 # build static library
 $(LIB_DIR)/$(LIBS_NAME): $(OBJS_NOMAIN)
