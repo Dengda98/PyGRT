@@ -1,9 +1,11 @@
 name: Build C programs and libraries, publish to PyPI and create a release
 
-on:
-  push:
-    tags:
-      - "v*.*.*"  
+# on:
+#   push:
+#     tags:
+#       - "v*.*.*"  
+
+on: push
 
 jobs:
   build: # 编译C程序和C库
@@ -50,7 +52,7 @@ jobs:
       # --------------------- 检查文件中的版本名是否和tag名相符 --------------------
       - name: Check version
         run: |
-          TAG_NAME=${{ github.ref_name }}
+          TAG_NAME=v0.1.4  # ${{ github.ref_name }}
           PYVERSION_FILE="pygrt/_version.py"
           CVERSION_FILE="pygrt/C_extension/version"
 
@@ -123,6 +125,8 @@ jobs:
                 CC=gcc-14 \
                 LFFT_FLAGS="$FFT_LIB_PATH/libfftw3.a $FFT_LIB_PATH/libfftw3f.a"
           make cleanbuild
+          otool -L lib/libgrt.so
+          otool -L bin/*
 
       - name: Build the project (Ubuntu)
         if: contains(matrix.os, 'ubuntu')
@@ -130,6 +134,8 @@ jobs:
         run: |
           make 
           make cleanbuild
+          ldd lib/libgrt.so
+          ldd bin/*
 
       - name: Build the project (Windows)
         if: contains(matrix.os, 'windows')
@@ -138,6 +144,109 @@ jobs:
         run: |
           make 
           make cleanbuild
+          ldd lib/libgrt.so
+          ldd bin/*
+
+
+      # ------------------------ 定义接下来打包程序命名时的系统名后缀 ---------------
+      - name: Define the package OS suffix
+        run: |
+          # 符合pypi命名规范，否则上传失败
+          if [[ "${{ matrix.os }}" == *"ubuntu"* ]]; then
+            SUFFIX_PLAT_NAME="manylinux2014_x86_64"
+          elif [[ "${{ matrix.os }}" == *"macos"* && "${{ matrix.arch }}" == *"x86_64"* ]]; then
+            SUFFIX_PLAT_NAME="macosx_10_9_x86_64"
+          elif [[ "${{ matrix.os }}" == *"macos"* && "${{ matrix.arch }}" == *"arm64"* ]]; then
+            SUFFIX_PLAT_NAME="macosx_11_0_arm64"
+          elif [[ "${{ matrix.os }}" == *"windows"* ]]; then
+            SUFFIX_PLAT_NAME="win_amd64"
+          else 
+            echo " Unsupported OS: ${{ matrix.os }} (${{ matrix.arch }})"
+            exit 1
+          fi
+
+          echo "SUFFIX_PLAT_NAME=$SUFFIX_PLAT_NAME" >> $GITHUB_ENV
+
+      # --------------------------- 打包整个程序 ---------------------
+      - name: Package the binary
+        run: |
+          PACK_NAME=pygrt_kit-${{ github.ref_name }}-${{ env.SUFFIX_PLAT_NAME }}
+          echo "PACK_NAME=$PACK_NAME" >> $GITHUB_ENV
+          FILE_CONTENT=$(ls)
+          mkdir -p $PACK_NAME
+          cp -r ${FILE_CONTENT} $PACK_NAME/
+          tar -czvf $PACK_NAME.tar.gz $PACK_NAME
+          rm -rf $PACK_NAME
+
+      # -------------------- upload artifacts -----------------------
+      - name: Upload artifact (*.tar.gz)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}-${{ matrix.arch }}_tar
+          path: ${{ env.PACK_NAME }}.tar.gz
+            
+
+
+  # =======================================================================================
+  test_project: # 在全新系统上测试程序，不安装其它依赖，看能否运行
+    runs-on: ${{ matrix.os }}
+    needs: build
+    strategy:
+      matrix:
+        include:
+          - os: windows-2022
+            arch: x86_64                  # windows x86_6
+          - os: ubuntu-22.04
+            arch: x86_64                  # Ubuntu x86_64
+          - os: macos-13
+            arch: x86_64                  # macOS Intel
+          - os: macos-14
+            arch: arm64                   # macOS Apple Silicon
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          name: ${{ matrix.os }}-${{ matrix.arch }}_tar
+
+      - name: Display structure of downloaded files, and Uncompress
+        run: |
+          ls -R artifacts
+          tar -xzvf artifacts/*.tar.gz
+
+          # 获得压缩包解压出来的文件夹名
+          PACK_NAME=$(ls | grep pygrt_kit)
+          echo "PACK_NAME=$PACK_NAME" >> $GITHUB_ENV
+
+          # 从解压出的文件夹命名来推断${{ env.SUFFIX_PLAT_NAME }}
+          SUFFIX_PLAT_NAME=$(echo $PACK_NAME | sed 's/.*-\(.*\)/\1/')
+          echo "SUFFIX_PLAT_NAME=$SUFFIX_PLAT_NAME" >> $GITHUB_ENV
+          
+          echo $PACK_NAME
+          echo $SUFFIX_PLAT_NAME
+
+      # --------------------------- 安装依赖 ------------------------------------------
+      # 实际使用时可能需要安装libomp
+      # - name: Install libomp (Ubuntu)
+      #   if: contains(matrix.os, 'ubuntu')    
+      #   run: |
+      #     sudo apt install -y libomp-dev
+
+      # - name: Install libomp (macOS)
+      #   # 匹配包含 "macos" 的操作系统
+      #   if: contains(matrix.os, 'macos')    
+      #   run: |
+      #     brew install libomp
+      #     brew install fftw
+
+      #     FFTW_PREFIX=$(brew --prefix fftw)
+      #     echo "FFT_INC_PATH=$FFTW_PREFIX/include" >> $GITHUB_ENV
+      #     echo "FFT_LIB_PATH=$FFTW_PREFIX/lib" >> $GITHUB_ENV
 
       # --------------------搭建python环境，开始测试，并制作wheel文件 ------------------------------
       - name: Set up Python
@@ -146,19 +255,23 @@ jobs:
           python-version: '3.9' 
 
       - name: Install dependencies
+        working-directory: $PACK_NAME
         run: |
           python -m pip install --upgrade pip
           pip install --upgrade setuptools wheel build
           pip install -v .
 
       - name: Clean up build and egg-info directories
+        working-directory: $PACK_NAME
         run: |
           # 清理临时文件
           rm -rf build/
           rm -rf pygrt_kit.egg-info/
 
       - name: Test the project
+        working-directory: $PACK_NAME
         run: |
+
           export PATH=$(pwd)/pygrt/C_extension/bin:${PATH}
          
           cp -r example test_tmp
@@ -180,49 +293,12 @@ jobs:
 
           rm -rf test_tmp  
 
-      # ------------------------ 定义接下来打包程序命名时的系统名后缀 ---------------
-      - name: Define the package OS suffix
-        run: |
-          # 符合pypi命名规范，否则上传失败
-          if [[ "${{ matrix.os }}" == *"ubuntu"* ]]; then
-            SUFFIX_PLAT_NAME="manylinux2014_x86_64"
-          elif [[ "${{ matrix.os }}" == *"macos"* && "${{ matrix.arch }}" == *"x86_64"* ]]; then
-            SUFFIX_PLAT_NAME="macosx_10_9_x86_64"
-          elif [[ "${{ matrix.os }}" == *"macos"* && "${{ matrix.arch }}" == *"arm64"* ]]; then
-            SUFFIX_PLAT_NAME="macosx_11_0_arm64"
-          elif [[ "${{ matrix.os }}" == *"windows"* ]]; then
-            SUFFIX_PLAT_NAME="win_amd64"
-          else 
-            echo " Unsupported OS: ${{ matrix.os }} (${{ matrix.arch }})"
-            exit 1
-          fi
-
-          echo "SUFFIX_PLAT_NAME=$SUFFIX_PLAT_NAME" >> $GITHUB_ENV
-
-      
-      # --------------------------- 打包整个程序 ---------------------
-      - name: Package the binary
-        run: |
-          PACK_NAME=pygrt_kit-${{ github.ref_name }}-${{ env.SUFFIX_PLAT_NAME }}
-          echo "PACK_NAME=$PACK_NAME" >> $GITHUB_ENV
-          FILE_CONTENT=$(ls)
-          mkdir -p $PACK_NAME
-          cp -r ${FILE_CONTENT} $PACK_NAME/
-          tar -czvf $PACK_NAME.tar.gz $PACK_NAME
-          rm -rf $PACK_NAME
-      
       # --------------------------- 制作wheels ---------------------
       - name: Build the Python Wheel
+        working-directory: $PACK_NAME
         run: |
           python setup.py bdist_wheel --plat-name=${{ env.SUFFIX_PLAT_NAME }}  # 只制作wheel，这里不打包源码 
 
-      # -------------------- upload artifacts -----------------------
-      - name: Upload artifact (*.tar.gz)
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.PACK_NAME }}_tar
-          path: ${{ env.PACK_NAME }}.tar.gz
-            
       - name: Upload artifact (*.whl)
         uses: actions/upload-artifact@v4
         with:
@@ -230,9 +306,10 @@ jobs:
           path: dist/*.whl
   
 
+  # ===============================================================================
   publish_pypi: # 上传pypi
     runs-on: ubuntu-latest
-    needs: build
+    needs: test_project
     permissions:
       id-token: write
       contents: read
@@ -252,15 +329,15 @@ jobs:
           mkdir -p dist
           mv artifacts/*/*.whl dist/
 
-      - name: Pypi Publish
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          packages-dir: dist/
+      # - name: Pypi Publish
+      #   uses: pypa/gh-action-pypi-publish@release/v1
+      #   with:
+      #     packages-dir: dist/
   
           
   release: # 创建Release
     runs-on: ubuntu-latest
-    needs: [build, publish_pypi]
+    needs: test_project
     permissions:
       contents: write
       
@@ -274,12 +351,21 @@ jobs:
       - name: Display structure of downloaded files
         run: ls -R artifacts
 
-      - name: Create Release
-        id: create_release
-        uses: softprops/action-gh-release@v1
-        with:
-          draft: true
-          files: "artifacts/*/*.tar.gz"
+      # 对artifacts中的每个tar.gz文件，根据其内部的文件夹名重新命名压缩包
+      - name: Rename tar.gz files
+        run: |
+          mkdir -p release
+          for file in artifacts/*/*.tar.gz; do
+            PACK_NAME=$(tar -tzf $file | head -n 1 | cut -f 1 -d '/')
+            mv $file release/${PACK_NAME}.tar.gz
+          done
+
+      # - name: Create Release
+      #   id: create_release
+      #   uses: softprops/action-gh-release@v1
+      #   with:
+      #     draft: true
+      #     files: "release/*/*.tar.gz"
 
   
 
