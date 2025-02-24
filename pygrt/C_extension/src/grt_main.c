@@ -621,6 +621,46 @@ static void getopt_from_command(int argc, char **argv){
     free(dummy);
 }
 
+/**
+ * 将长数组以换行的方式打印
+ * 
+ * @param   nlen1     第一列字符宽度
+ * @param   nlen2     第二列字符宽度
+ * @param   rowname   行名
+ * @param   s_arr     字符串数组
+ * @param   arrsize   数组长度
+ */
+static void print_long_array_in_tabel(
+    const int nlen1, const int nlen2, const char *rowname,
+    const char **s_arr, const int arrsize)
+{
+    char tmp[nlen2-2];
+    printf("| %-*s | ", nlen1-3, rowname);
+    {
+        tmp[0] = '\0';
+        int len = 0;
+        for(int m=0; m<arrsize; ++m){
+            len = strlen(tmp);
+            char s2[strlen(s_arr[m])+2]; // 加上'\0'和逗号的长度
+            snprintf(s2, sizeof(s2), "%s,", s_arr[m]);
+
+            snprintf(tmp+len, sizeof(tmp)-len, "%s", s2);
+            while(sizeof(tmp) - strlen(tmp) == 1){ // 允许换行
+                printf("%-*s |\n", nlen2-3, tmp);
+                snprintf(tmp, sizeof(tmp), "%s", s2+(strlen(tmp)-len));
+                if(strcmp(tmp, ",") == 0 && m==arrsize-1)  break;
+                printf("| %-*s | ", nlen1-3, "");
+                len -= strlen(tmp);
+            }
+            if(strcmp(tmp, ",") == 0 && m==arrsize-1)  break;
+        }
+
+        if(strlen(tmp) > 0 && strcmp(tmp, ",") != 0){
+            printf("%-*s |\n", nlen2-3, tmp);
+        }
+    }
+}
+
 
 /**
  * 将某一道做ifft，做时间域处理，保存到sac文件
@@ -724,49 +764,11 @@ static void print_parameters(){
     printf("| %-*s | %-*f |\n", nlen1-3, "f1(Hz)", nlen2-3, freqs[nf1]);
     printf("| %-*s | %-*f |\n", nlen1-3, "f2(Hz)", nlen2-3, freqs[nf2]);
     // 特殊处理震中距的输出
-    printf("| %-*s | ", nlen1-3, "distances(km)");
-    {
-        tmp[0] = '\0';
-        int len = 0;
-        for(int ir=0; ir<nr; ++ir){
-            len = strlen(tmp);
-            snprintf(tmp+len, sizeof(tmp)-len, "%s,", s_rs[ir]);
-            while(sizeof(tmp) - strlen(tmp) == 1){ // 允许换行
-                printf("%-*s |\n", nlen2-3, tmp);
-                snprintf(tmp, sizeof(tmp), "%s,", s_rs[ir]+(strlen(tmp)-len));
-                if(strcmp(tmp, ",") == 0 && ir==nr-1)  break;
-                printf("| %-*s | ", nlen1-3, "");
-                len -= strlen(tmp);
-            }
-            if(strcmp(tmp, ",") == 0 && ir==nr-1)  break;
-        }
-
-        if(strlen(tmp) > 0 && strcmp(tmp, ",") != 0){
-            printf("%-*s |\n", nlen2-3, tmp);
-        }
-    }
+    print_long_array_in_tabel(nlen1, nlen2, "distances(km)", (const char **)s_rs, nr);
     
     // 特殊处理statsfile index的输出
     if(nstatsidxs > 0){
-        printf("| %-*s | ", nlen1-3, "statsfile_index");
-        tmp[0] = '\0';
-        int len = 0;
-        for(int i=0; i<nstatsidxs; ++i){
-            len = strlen(tmp);
-            snprintf(tmp+len, sizeof(tmp)-len, "%s,", s_statsidxs[i]);
-            while(sizeof(tmp) - strlen(tmp) == 1){ // 允许换行
-                printf("%-*s |\n", nlen2-3, tmp);
-                snprintf(tmp, sizeof(tmp), "%s,", s_statsidxs[i]+(strlen(tmp)-len));
-                if(strcmp(tmp, ",") == 0 && i==nstatsidxs-1)  break;
-                printf("| %-*s | ", nlen1-3, "");
-                len -= strlen(tmp);
-            }
-            if(strcmp(tmp, ",") == 0 && i==nstatsidxs-1)  break;
-        }
-
-        if(strlen(tmp) > 0 && strcmp(tmp, ",") != 0){
-            printf("%-*s |\n", nlen2-3, tmp);
-        }
+        print_long_array_in_tabel(nlen1, nlen2, "statsfile_index", (const char **)s_statsidxs, nstatsidxs);
     }
         
     printf("| %-*s | ", nlen1-3, "sources");
