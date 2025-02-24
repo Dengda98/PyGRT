@@ -1002,54 +1002,25 @@ int main(int argc, char **argv) {
     
 
     // 建立格林函数的complex数组
-    MYCOMPLEX *EXPcplx[nr][2];
-    MYCOMPLEX *VFcplx[nr][2];
-    MYCOMPLEX *HFcplx[nr][3];
-    MYCOMPLEX *DDcplx[nr][2];
-    MYCOMPLEX *DScplx[nr][3];
-    MYCOMPLEX *SScplx[nr][3];
-    MYCOMPLEX *((*pEXPcplx)[2]) = (doEXP)? EXPcplx : NULL;
-    MYCOMPLEX *((*pVFcplx)[2])  = (doVF) ?  VFcplx : NULL;
-    MYCOMPLEX *((*pHFcplx)[3])  = (doHF) ?  HFcplx : NULL;
-    MYCOMPLEX *((*pDDcplx)[2])  = (doDC) ?  DDcplx : NULL;
-    MYCOMPLEX *((*pDScplx)[3])  = (doDC) ?  DScplx : NULL;
-    MYCOMPLEX *((*pSScplx)[3])  = (doDC) ?  SScplx : NULL;
+    MYCOMPLEX *(*EXPcplx)[2] = (doEXP) ? (MYCOMPLEX*(*)[2])calloc(nr, sizeof(*EXPcplx)) : NULL;
+    MYCOMPLEX *(*VFcplx)[2]  = (doVF)  ? (MYCOMPLEX*(*)[2])calloc(nr, sizeof(*VFcplx))  : NULL;
+    MYCOMPLEX *(*HFcplx)[3]  = (doHF)  ? (MYCOMPLEX*(*)[3])calloc(nr, sizeof(*HFcplx))  : NULL;
+    MYCOMPLEX *(*DDcplx)[2]  = (doDC)  ? (MYCOMPLEX*(*)[2])calloc(nr, sizeof(*DDcplx))  : NULL;
+    MYCOMPLEX *(*DScplx)[3]  = (doDC)  ? (MYCOMPLEX*(*)[3])calloc(nr, sizeof(*DScplx))  : NULL;
+    MYCOMPLEX *(*SScplx)[3]  = (doDC)  ? (MYCOMPLEX*(*)[3])calloc(nr, sizeof(*SScplx))  : NULL;
+
     for(int ir=0; ir<nr; ++ir){
         for(int i=0; i<3; ++i){
             if(i<2){
-                if(doEXP){
-                    EXPcplx[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
-                } else {
-                    EXPcplx[ir][i] = NULL;
-                }
-
-                if(doVF){
-                    VFcplx[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
-                } else {
-                    VFcplx[ir][i] = NULL;
-                }
-
-                if(doDC){
-                    DDcplx[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
-                } else {
-                    DDcplx[ir][i] = NULL;
-                }
+                if(EXPcplx) EXPcplx[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
+                if(VFcplx)  VFcplx[ir][i]  = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
+                if(DDcplx)  DDcplx[ir][i]  = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
             }
-
-            if(doHF){
-                HFcplx[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
-            } else {
-                HFcplx[ir][i] = NULL;
-            }
-
-            if(doDC){
-                DScplx[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
-                SScplx[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
-            } else {
-                DScplx[ir][i] = SScplx[ir][i] = NULL;
-            }
+            if(HFcplx) HFcplx[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
+            if(DScplx) DScplx[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
+            if(SScplx) SScplx[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
         }
-    } 
+    }
 
     
 
@@ -1064,7 +1035,7 @@ int main(int argc, char **argv) {
     integ_grn_spec_in_C(
         pymod, nf1, nf2, nf, freqs, nr, rs, wI,
         vmin_ref, keps, ampk, iwk0, k0, Length, !silenceInput,
-        pEXPcplx, pVFcplx, pHFcplx, pDDcplx, pDScplx, pSScplx, 
+        EXPcplx, VFcplx, HFcplx, DDcplx, DScplx, SScplx, 
         s_statsdir, nstatsidxs, statsidxs
     );
     //==============================================================================
@@ -1211,8 +1182,14 @@ int main(int argc, char **argv) {
                 free(SScplx[ir][i]);
             }
         }
-
     }
+    if(EXPcplx) free(EXPcplx);
+    if(VFcplx) free(VFcplx);
+    if(HFcplx) free(HFcplx);
+    if(DDcplx) free(DDcplx);
+    if(DScplx) free(DScplx);
+    if(SScplx) free(SScplx);
+
     free(s_rs);
     free(rs);
     free(s_statsdir);

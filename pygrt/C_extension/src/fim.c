@@ -12,6 +12,7 @@
 
 #include <stdio.h> 
 #include <complex.h>
+#include <stdlib.h>
 
 #include "fim.h"
 #include "iostats.h"
@@ -91,7 +92,7 @@ MYREAL linear_filon_integ(
     bool iendk, iendk0;
 
     // 每个震中距的k循环是否结束
-    bool iendkrs[nr];
+    bool *iendkrs = (bool *)malloc(nr * sizeof(bool));
     for(MYINT ir=0; ir<nr; ++ir) iendkrs[ir] = false;
 
     // k循环 
@@ -194,6 +195,8 @@ MYREAL linear_filon_integ(
         }
         
     }
+
+    free(iendkrs);
 
     return k;
 }

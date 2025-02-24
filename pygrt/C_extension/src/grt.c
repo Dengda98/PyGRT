@@ -61,77 +61,47 @@ void integ_grn_spec_in_C(
     MYINT *statsidxs
 ){
     // 定义接收结果的GRN结构体
-    GRN *EXPgrn[nr][2];
-    GRN *VFgrn[nr][2];
-    GRN *HFgrn[nr][3];
-    GRN *DDgrn[nr][2];
-    GRN *DSgrn[nr][3];
-    GRN *SSgrn[nr][3];
-    GRN *((*pEXPgrn)[2]) = (EXPcplx!=NULL)? EXPgrn : NULL;
-    GRN *((*pVFgrn)[2])  = (VFcplx!=NULL) ?  VFgrn : NULL;
-    GRN *((*pHFgrn)[3])  = (HFcplx!=NULL) ?  HFgrn : NULL;
-    GRN *((*pDDgrn)[2])  = (DDcplx!=NULL) ?  DDgrn : NULL;
-    GRN *((*pDSgrn)[3])  = (DScplx!=NULL) ?  DSgrn : NULL;
-    GRN *((*pSSgrn)[3])  = (SScplx!=NULL) ?  SSgrn : NULL;
+    GRN *(*EXPgrn)[2] = (EXPcplx != NULL) ? (GRN*(*)[2])calloc(nr, sizeof(*EXPgrn)) : NULL;
+    GRN *(*VFgrn)[2]  = (VFcplx != NULL) ? (GRN*(*)[2])calloc(nr, sizeof(*VFgrn)) : NULL;
+    GRN *(*HFgrn)[3]  = (HFcplx != NULL) ? (GRN*(*)[3])calloc(nr, sizeof(*HFgrn)) : NULL;
+    GRN *(*DDgrn)[2]  = (DDcplx != NULL) ? (GRN*(*)[2])calloc(nr, sizeof(*DDgrn)) : NULL;
+    GRN *(*DSgrn)[3]  = (DScplx != NULL) ? (GRN*(*)[3])calloc(nr, sizeof(*DSgrn)) : NULL;
+    GRN *(*SSgrn)[3]  = (SScplx != NULL) ? (GRN*(*)[3])calloc(nr, sizeof(*SSgrn)) : NULL;
+    
     for(int ir=0; ir<nr; ++ir){
         for(int i=0; i<3; ++i){
             if(i<2){
-                if(EXPcplx!=NULL){
-                    EXPgrn[ir][i] = (GRN*)malloc(sizeof(GRN));
-                    EXPgrn[ir][i]->nf = nf;
+                if(EXPcplx) {
+                    EXPgrn[ir][i] = (GRN*)calloc(1, sizeof(GRN));
                     EXPgrn[ir][i]->Re = (MYREAL*)calloc(nf, sizeof(MYREAL));
                     EXPgrn[ir][i]->Im = (MYREAL*)calloc(nf, sizeof(MYREAL));
-                } else {
-                    EXPgrn[ir][i] = NULL;
                 }
-                
-                if(VFcplx!=NULL){
-                    VFgrn[ir][i] = (GRN*)malloc(sizeof(GRN));
-                    VFgrn[ir][i]->nf = nf;
+                if(VFcplx) {
+                    VFgrn[ir][i] = (GRN*)calloc(1, sizeof(GRN));
                     VFgrn[ir][i]->Re = (MYREAL*)calloc(nf, sizeof(MYREAL));
                     VFgrn[ir][i]->Im = (MYREAL*)calloc(nf, sizeof(MYREAL));
-                } else {
-                    VFgrn[ir][i] = NULL;
                 }
-                
-                if(DDcplx!=NULL){
-                    DDgrn[ir][i] = (GRN*)malloc(sizeof(GRN));
-                    DDgrn[ir][i]->nf = nf;
+                if(DDcplx) {
+                    DDgrn[ir][i] = (GRN*)calloc(1, sizeof(GRN));
                     DDgrn[ir][i]->Re = (MYREAL*)calloc(nf, sizeof(MYREAL));
                     DDgrn[ir][i]->Im = (MYREAL*)calloc(nf, sizeof(MYREAL));
-                } else {
-                    DDgrn[ir][i] = NULL;
                 }
-                
             }
-            
-            if(HFcplx!=NULL){
-                HFgrn[ir][i] = (GRN*)malloc(sizeof(GRN));
-                HFgrn[ir][i]->nf = nf;
+            if(HFcplx) {
+                HFgrn[ir][i] = (GRN*)calloc(1, sizeof(GRN));
                 HFgrn[ir][i]->Re = (MYREAL*)calloc(nf, sizeof(MYREAL));
                 HFgrn[ir][i]->Im = (MYREAL*)calloc(nf, sizeof(MYREAL));
-            } else {
-                HFgrn[ir][i] = NULL;
             }
-            
-            if(DScplx!=NULL){
-                DSgrn[ir][i] = (GRN*)malloc(sizeof(GRN));
-                DSgrn[ir][i]->nf = nf;
+            if(DScplx) {
+                DSgrn[ir][i] = (GRN*)calloc(1, sizeof(GRN));
                 DSgrn[ir][i]->Re = (MYREAL*)calloc(nf, sizeof(MYREAL));
                 DSgrn[ir][i]->Im = (MYREAL*)calloc(nf, sizeof(MYREAL));
-            } else {
-                DSgrn[ir][i] = NULL;
             }
-            
-            if(SScplx!=NULL){
-                SSgrn[ir][i] = (GRN*)malloc(sizeof(GRN));
-                SSgrn[ir][i]->nf = nf;
+            if(SScplx) {
+                SSgrn[ir][i] = (GRN*)calloc(1, sizeof(GRN));
                 SSgrn[ir][i]->Re = (MYREAL*)calloc(nf, sizeof(MYREAL));
                 SSgrn[ir][i]->Im = (MYREAL*)calloc(nf, sizeof(MYREAL));
-            } else {
-                SSgrn[ir][i] = NULL;
             }
-            
         }
     }
 
@@ -141,7 +111,7 @@ void integ_grn_spec_in_C(
     integ_grn_spec(
         pymod1d, nf1, nf2, nf, freqs, nr, rs, wI,
         vmin_ref, keps, ampk, iwk0, k0, Length, print_progressbar,
-        pEXPgrn, pVFgrn, pHFgrn, pDDgrn, pDSgrn, pSSgrn, 
+        EXPgrn, VFgrn, HFgrn, DDgrn, DSgrn, SSgrn, 
         statsstr, nstatsidxs, statsidxs
     );
     //==============================================================================
@@ -152,33 +122,61 @@ void integ_grn_spec_in_C(
         for(int i=0; i<3; ++i){
             for(int n=nf1; n<=nf2; ++n){
                 if(i<2){
-                    if(EXPcplx!=NULL){
-                        EXPcplx[ir][i][n] = CMPLX(EXPgrn[ir][i]->Re[n], EXPgrn[ir][i]->Im[n]);
-                    } 
-                    
-                    if(VFcplx!=NULL){
-                        VFcplx[ir][i][n] = CMPLX(VFgrn[ir][i]->Re[n], VFgrn[ir][i]->Im[n]);
-                    } 
-                    
-                    if(DDcplx!=NULL){
-                        DDcplx[ir][i][n] = CMPLX(DDgrn[ir][i]->Re[n], DDgrn[ir][i]->Im[n]);
-                    } 
+                    if(EXPcplx) EXPcplx[ir][i][n] = CMPLX(EXPgrn[ir][i]->Re[n], EXPgrn[ir][i]->Im[n]);
+                    if(VFcplx) VFcplx[ir][i][n] = CMPLX(VFgrn[ir][i]->Re[n], VFgrn[ir][i]->Im[n]);
+                    if(DDcplx) DDcplx[ir][i][n] = CMPLX(DDgrn[ir][i]->Re[n], DDgrn[ir][i]->Im[n]);
                 }
-                
-                if(HFcplx!=NULL){
-                    HFcplx[ir][i][n] = CMPLX(HFgrn[ir][i]->Re[n], HFgrn[ir][i]->Im[n]);
-                } 
-                
-                if(DScplx!=NULL){
-                    DScplx[ir][i][n] = CMPLX(DSgrn[ir][i]->Re[n], DSgrn[ir][i]->Im[n]);
-                } 
-                
-                if(SScplx!=NULL){
-                    SScplx[ir][i][n] = CMPLX(SSgrn[ir][i]->Re[n], SSgrn[ir][i]->Im[n]);
-                } 
+                if(HFcplx) HFcplx[ir][i][n] = CMPLX(HFgrn[ir][i]->Re[n], HFgrn[ir][i]->Im[n]);
+                if(DScplx) DScplx[ir][i][n] = CMPLX(DSgrn[ir][i]->Re[n], DSgrn[ir][i]->Im[n]);
+                if(SScplx) SScplx[ir][i][n] = CMPLX(SSgrn[ir][i]->Re[n], SSgrn[ir][i]->Im[n]);
             }
         }
     }
+
+
+    // Free allocated memory
+    for(int ir=0; ir<nr; ++ir){
+        for(int i=0; i<3; ++i){
+            if(i<2){
+                if(EXPgrn) {
+                    free(EXPgrn[ir][i]->Re);
+                    free(EXPgrn[ir][i]->Im);
+                    free(EXPgrn[ir][i]);
+                }
+                if(VFgrn) {
+                    free(VFgrn[ir][i]->Re);
+                    free(VFgrn[ir][i]->Im);
+                    free(VFgrn[ir][i]);
+                }
+                if(DDgrn) {
+                    free(DDgrn[ir][i]->Re);
+                    free(DDgrn[ir][i]->Im);
+                    free(DDgrn[ir][i]);
+                }
+            }
+            if(HFcplx) {
+                free(HFgrn[ir][i]->Re);
+                free(HFgrn[ir][i]->Im);
+                free(HFgrn[ir][i]);
+            }
+            if(DScplx) {
+                free(DSgrn[ir][i]->Re);
+                free(DSgrn[ir][i]->Im);
+                free(DSgrn[ir][i]);
+            }
+            if(SScplx) {
+                free(SSgrn[ir][i]->Re);
+                free(SSgrn[ir][i]->Im);
+                free(SSgrn[ir][i]);
+            }
+        }
+    }
+    if(EXPgrn) free(EXPgrn);
+    if(VFgrn) free(VFgrn);
+    if(HFgrn) free(HFgrn);
+    if(DDgrn) free(DDgrn);
+    if(DSgrn) free(DSgrn);
+    if(SSgrn) free(SSgrn);
 }
 
 
@@ -263,16 +261,20 @@ void integ_grn_spec(
         omega2_inv = omega2_inv*omega2_inv; 
 
         // 局部变量，将某个频点的格林函数谱临时存放
-        MYCOMPLEX tmp_EXP[nr][2], tmp_VF[nr][2], tmp_HF[nr][3];
-        MYCOMPLEX tmp_DD[nr][2], tmp_DS[nr][3], tmp_SS[nr][3];
+        MYCOMPLEX (*tmp_EXP)[2] = (MYCOMPLEX(*)[2])calloc(nr, sizeof(*tmp_EXP));
+        MYCOMPLEX (*tmp_VF)[2] = (MYCOMPLEX(*)[2])calloc(nr, sizeof(*tmp_VF));
+        MYCOMPLEX (*tmp_HF)[3] = (MYCOMPLEX(*)[3])calloc(nr, sizeof(*tmp_HF));
+        MYCOMPLEX (*tmp_DD)[2] = (MYCOMPLEX(*)[2])calloc(nr, sizeof(*tmp_DD));
+        MYCOMPLEX (*tmp_DS)[3] = (MYCOMPLEX(*)[3])calloc(nr, sizeof(*tmp_DS));
+        MYCOMPLEX (*tmp_SS)[3] = (MYCOMPLEX(*)[3])calloc(nr, sizeof(*tmp_SS));
 
         // 局部变量，用于求和 sum F(ki,w)Jm(ki*r)ki 
         // 维度3代表阶数m=0,1,2，维度4代表4种类型的F(k,w)Jm(kr)k的类型，详见int_Pk()函数内的注释
-        MYCOMPLEX sum_EXP_J[nr][3][4], sum_VF_J[nr][3][4], sum_HF_J[nr][3][4], sum_DC_J[nr][3][4];
-        MYCOMPLEX (*psum_EXP_J)[3][4] = (EXPgrn!=NULL)? sum_EXP_J : NULL;
-        MYCOMPLEX (*psum_VF_J)[3][4]  = (VFgrn!=NULL)?  sum_VF_J  : NULL;
-        MYCOMPLEX (*psum_HF_J)[3][4]  = (HFgrn!=NULL)?  sum_HF_J  : NULL;
-        MYCOMPLEX (*psum_DC_J)[3][4]  = (DDgrn!=NULL || DSgrn!=NULL || SSgrn!=NULL )?  sum_DC_J  : NULL;
+        MYCOMPLEX (*sum_EXP_J)[3][4] = (EXPgrn != NULL) ? (MYCOMPLEX(*)[3][4])calloc(nr, sizeof(*sum_EXP_J)) : NULL;
+        MYCOMPLEX (*sum_VF_J)[3][4] = (VFgrn != NULL) ? (MYCOMPLEX(*)[3][4])calloc(nr, sizeof(*sum_VF_J)) : NULL;
+        MYCOMPLEX (*sum_HF_J)[3][4] = (HFgrn != NULL) ? (MYCOMPLEX(*)[3][4])calloc(nr, sizeof(*sum_HF_J)) : NULL;
+        MYCOMPLEX (*sum_DC_J)[3][4] = (DDgrn != NULL || DSgrn != NULL || SSgrn != NULL) ? (MYCOMPLEX(*)[3][4])calloc(nr, sizeof(*sum_DC_J)) : NULL;
+        
 
         MODEL1D *local_mod1d = NULL;
     #ifdef _OPENMP 
@@ -287,8 +289,8 @@ void integ_grn_spec(
 
 
         // 给每个频率创建波数积分记录文件
-        FILE *(fstats[nr]);
-        FILE *(ptam_fstats[nr]);
+        FILE **fstats = (FILE **)malloc(nr * sizeof(FILE *));
+        FILE **ptam_fstats = (FILE **)malloc(nr * sizeof(FILE *));
 
         for(MYINT ir=0; ir<nr; ++ir){
             for(MYINT ii=0; ii<3; ++ii){
@@ -304,8 +306,10 @@ void integ_grn_spec(
 
             for(MYINT m=0; m<3; ++m){
                 for(MYINT v=0; v<4; ++v){
-                    sum_EXP_J[ir][m][v] = sum_VF_J[ir][m][v] = 
-                    sum_HF_J[ir][m][v]  = sum_DC_J[ir][m][v] = RZERO;
+                    if(sum_EXP_J) sum_EXP_J[ir][m][v] = RZERO;
+                    if(sum_VF_J) sum_VF_J[ir][m][v] = RZERO;
+                    if(sum_HF_J) sum_HF_J[ir][m][v] = RZERO;
+                    if(sum_DC_J) sum_DC_J[ir][m][v] = RZERO;
                 }
             }
 
@@ -346,20 +350,20 @@ void integ_grn_spec(
             // 常规的波数积分
             k = discrete_integ(
                 local_mod1d, dk, kmax, keps, omega, nr, rs, 
-                psum_EXP_J, psum_VF_J, psum_HF_J, psum_DC_J, fstats);
+                sum_EXP_J, sum_VF_J, sum_HF_J, sum_DC_J, fstats);
         } 
         else {
             // 基于线性插值的Filon积分
             k = linear_filon_integ(
                 local_mod1d, dk, kmax, keps, omega, nr, rs, 
-                psum_EXP_J, psum_VF_J, psum_HF_J, psum_DC_J, fstats);
+                sum_EXP_J, sum_VF_J, sum_HF_J, sum_DC_J, fstats);
         }
 
         // k之后的部分使用峰谷平均法进行显式收敛，建议在浅源地震的时候使用   
         if(vmin_ref < RZERO){
             PTA_method(
                 local_mod1d, k, dk, rmin, rmax, omega, nr, rs, 
-                psum_EXP_J, psum_VF_J, psum_HF_J, psum_DC_J, fstats, ptam_fstats);
+                sum_EXP_J, sum_VF_J, sum_HF_J, sum_DC_J, fstats, ptam_fstats);
         }
 
         // printf("iw=%d, w=%.5e, k=%.5e, dk=%.5e, nk=%d\n", iw, w, k, dk, (int)(k/dk));
@@ -369,10 +373,10 @@ void integ_grn_spec(
         // 记录到格林函数结构体内
         for(MYINT ir=0; ir<nr; ++ir){
             merge_Pk(
-                (psum_EXP_J!=NULL)? psum_EXP_J[ir] : NULL, 
-                (psum_VF_J!=NULL)?  psum_VF_J[ir]  : NULL, 
-                (psum_HF_J!=NULL)?  psum_HF_J[ir]  : NULL, 
-                (psum_DC_J!=NULL)?  psum_DC_J[ir]  : NULL, 
+                (sum_EXP_J)? sum_EXP_J[ir] : NULL, 
+                (sum_VF_J)?  sum_VF_J[ir]  : NULL, 
+                (sum_HF_J)?  sum_HF_J[ir]  : NULL, 
+                (sum_DC_J)?  sum_DC_J[ir]  : NULL, 
                 tmp_EXP[ir], tmp_VF[ir],  tmp_HF[ir], 
                 tmp_DD[ir], tmp_DS[ir], tmp_SS[ir]);
 
@@ -434,7 +438,25 @@ void integ_grn_spec(
             progress++;
             if(print_progressbar) printprogressBar("Computing Green Functions: ", progress*100/(nf2-nf1+1));
         } 
+        
 
+
+
+        // Free allocated memory for temporary variables
+        free(tmp_EXP);
+        free(tmp_VF);
+        free(tmp_HF);
+        free(tmp_DD);
+        free(tmp_DS);
+        free(tmp_SS);
+
+        if (sum_EXP_J) free(sum_EXP_J);
+        if (sum_VF_J) free(sum_VF_J);
+        if (sum_HF_J) free(sum_HF_J);
+        if (sum_DC_J) free(sum_DC_J);
+
+        free(fstats);
+        free(ptam_fstats);
 
     } // END omega loop
 
