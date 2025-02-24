@@ -24,19 +24,20 @@ CC := gcc
 
 # add -static to enforce gcc link the static library, no matter standard-lib or custom-lib,
 # -l like "-l:libXYZ.a" should be saved for conditional compile.
-LINK_STATIC := -static
 FOMPFLAGS := -fopenmp 
 
+LINK_STATIC := 
 LDFLAGS := $(FOMPFLAGS)
 ifeq ($(OS),Windows_NT)  # link static oenpmp on windows
+    LINK_STATIC := -static
 	LDFLAGS := $(LINK_STATIC) $(FOMPFLAGS)
 endif
 
 # However, Maybe -static is not working for standard-lib on MacOS, 
 # at least for now, it's not a big problem.
-CFLAGS :=  $(LINK_STATIC) $(LFFT_FLAGS) -O3 -g \
+CFLAGS :=  $(LINK_STATIC) $(LFFT_FLAGS) -lm -O3 -g \
           -fPIC -Wall -Wextra -I$(INC_DIR) \
-		  -lm -DGRT_VERSION="\"$(VERSION)\""
+		  -DGRT_VERSION="\"$(VERSION)\""
 #  -fdump-tree-all  -g -ffast-math -O3 -fno-associative-math  -march=native -mtune=native 
 
 # change architecture for macOS
