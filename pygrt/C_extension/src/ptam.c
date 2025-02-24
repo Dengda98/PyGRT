@@ -16,6 +16,7 @@
 
 #include <stdio.h> 
 #include <complex.h>
+#include <stdlib.h>
 
 #include "ptam.h"
 #include "iostats.h"
@@ -25,8 +26,41 @@
 #include "quadratic.h"
 
 
-
-
+/**
+ * 处理并确定波峰或波谷                                    
+ * 
+ * @param ir        震中距索引                          
+ * @param m         Bessel函数阶                          
+ * @param v         积分形式索引                          
+ * @param maxNpt    最大峰谷数                                
+ * @param maxnwait  最大等待次数                        
+ * @param k         波数                             
+ * @param dk        波数步长                              
+ * @param J3        存储的采样幅值数组                  
+ * @param kpt       存储的采样值对应的波数数组             
+ * @param pt        用于存储波峰/波谷点的幅值数组      
+ * @param ipt       用于存储波峰/波谷点的个数数组         
+ * @param gpt       用于存储等待迭次数的数组      
+ * @param iendk0    一个布尔指针，用于指示是否满足结束条件 
+ */
+static void process_peak_or_trough(
+    MYINT ir, MYINT m, MYINT v, MYINT maxNpt, MYINT maxnwait, 
+    MYREAL k, MYREAL dk, MYCOMPLEX (*J3)[3][3][4], MYREAL (*kpt)[3][4][maxNpt], 
+    MYCOMPLEX (*pt)[3][4][maxNpt], MYINT (*ipt)[3][4], MYINT (*gpt)[3][4], bool *iendk0)
+{
+    MYCOMPLEX tmp0;
+    if (gpt[ir][m][v] >= 2 && ipt[ir][m][v] < maxNpt) {
+        if (cplx_peak_or_trough(m, v, J3[ir], k, dk, &kpt[ir][m][v][ipt[ir][m][v]], &tmp0) != 0) {
+            pt[ir][m][v][ipt[ir][m][v]++] = tmp0;
+            gpt[ir][m][v] = 0;
+        } else if (gpt[ir][m][v] >= maxnwait) {
+            kpt[ir][m][v][ipt[ir][m][v]] = k - dk;
+            pt[ir][m][v][ipt[ir][m][v]++] = J3[ir][1][m][v];
+            gpt[ir][m][v] = 0;
+        }
+    }
+    *iendk0 = *iendk0 && (ipt[ir][m][v] == maxNpt);
+}
 
 
 void PTA_method(
@@ -58,27 +92,43 @@ void PTA_method(
     const MYREAL kmax = k0 + (maxNpt+5)*PI/rmin;
 
     // 每个震中距是否已找齐慢收敛序列
-    bool iendkrs[nr], iendk=true, iendk0=false;
+    bool iendk = true, iendk0 = false;
+    bool *iendkrs = (bool *)calloc(nr, sizeof(bool));
     for(MYINT ir=0; ir<nr; ++ir) iendkrs[ir] = false;
 
     // 用于接收F(ki,w)Jm(ki*r)ki
     // 存储采样的值，维度3表示通过连续3个点来判断波峰或波谷
     // 既用于存储被积函数，也最后用于存储求和的结果
-    MYCOMPLEX EXP_J3[nr][3][3][4], VF_J3[nr][3][3][4], HF_J3[nr][3][3][4],  DC_J3[nr][3][3][4];
+    MYCOMPLEX (*EXP_J3)[3][3][4] = (MYCOMPLEX (*)[3][3][4])calloc(nr, sizeof(*EXP_J3));
+    MYCOMPLEX (*VF_J3)[3][3][4] = (MYCOMPLEX (*)[3][3][4])calloc(nr, sizeof(*VF_J3));
+    MYCOMPLEX (*HF_J3)[3][3][4] = (MYCOMPLEX (*)[3][3][4])calloc(nr, sizeof(*HF_J3));
+    MYCOMPLEX (*DC_J3)[3][3][4] = (MYCOMPLEX (*)[3][3][4])calloc(nr, sizeof(*DC_J3));
 
     // 之前求和的值
-    MYCOMPLEX sum_EXP_J[nr][3][4], sum_VF_J[nr][3][4];
-    MYCOMPLEX sum_HF_J[nr][3][4],  sum_DC_J[nr][3][4];
+    MYCOMPLEX (*sum_EXP_J)[3][4] = (MYCOMPLEX (*)[3][4])calloc(nr, sizeof(*sum_EXP_J));
+    MYCOMPLEX (*sum_VF_J)[3][4] = (MYCOMPLEX (*)[3][4])calloc(nr, sizeof(*sum_VF_J));
+    MYCOMPLEX (*sum_HF_J)[3][4] = (MYCOMPLEX (*)[3][4])calloc(nr, sizeof(*sum_HF_J));
+    MYCOMPLEX (*sum_DC_J)[3][4] = (MYCOMPLEX (*)[3][4])calloc(nr, sizeof(*sum_DC_J));
 
     // 存储波峰波谷的位置和值
-    MYREAL kEXPpt[nr][3][4][maxNpt], kVFpt[nr][3][4][maxNpt];
-    MYREAL kHFpt[nr][3][4][maxNpt],  kDCpt[nr][3][4][maxNpt];
-    MYCOMPLEX EXPpt[nr][3][4][maxNpt], VFpt[nr][3][4][maxNpt];
-    MYCOMPLEX HFpt[nr][3][4][maxNpt],  DCpt[nr][3][4][maxNpt];
-    MYINT iEXPpt[nr][3][4], iVFpt[nr][3][4], iHFpt[nr][3][4], iDCpt[nr][3][4];
+    MYREAL (*kEXPpt)[3][4][maxNpt] = (MYREAL (*)[3][4][maxNpt])calloc(nr, sizeof(*kEXPpt));
+    MYREAL (*kVFpt)[3][4][maxNpt] = (MYREAL (*)[3][4][maxNpt])calloc(nr, sizeof(*kVFpt));
+    MYREAL (*kHFpt)[3][4][maxNpt] = (MYREAL (*)[3][4][maxNpt])calloc(nr, sizeof(*kHFpt));
+    MYREAL (*kDCpt)[3][4][maxNpt] = (MYREAL (*)[3][4][maxNpt])calloc(nr, sizeof(*kDCpt));
+    MYCOMPLEX (*EXPpt)[3][4][maxNpt] = (MYCOMPLEX (*)[3][4][maxNpt])calloc(nr, sizeof(*EXPpt));
+    MYCOMPLEX (*VFpt)[3][4][maxNpt] = (MYCOMPLEX (*)[3][4][maxNpt])calloc(nr, sizeof(*VFpt));
+    MYCOMPLEX (*HFpt)[3][4][maxNpt] = (MYCOMPLEX (*)[3][4][maxNpt])calloc(nr, sizeof(*HFpt));
+    MYCOMPLEX (*DCpt)[3][4][maxNpt] = (MYCOMPLEX (*)[3][4][maxNpt])calloc(nr, sizeof(*DCpt));
+    MYINT (*iEXPpt)[3][4] = (MYINT (*)[3][4])calloc(nr, sizeof(*iEXPpt));
+    MYINT (*iVFpt)[3][4] = (MYINT (*)[3][4])calloc(nr, sizeof(*iVFpt));
+    MYINT (*iHFpt)[3][4] = (MYINT (*)[3][4])calloc(nr, sizeof(*iHFpt));
+    MYINT (*iDCpt)[3][4] = (MYINT (*)[3][4])calloc(nr, sizeof(*iDCpt));
 
     // 记录点数，当峰谷找到后，清零
-    MYINT gEXPpt[nr][3][4], gVFpt[nr][3][4], gHFpt[nr][3][4], gDCpt[nr][3][4];
+    MYINT (*gEXPpt)[3][4] = (MYINT (*)[3][4])calloc(nr, sizeof(*gEXPpt));
+    MYINT (*gVFpt)[3][4] = (MYINT (*)[3][4])calloc(nr, sizeof(*gVFpt));
+    MYINT (*gHFpt)[3][4] = (MYINT (*)[3][4])calloc(nr, sizeof(*gHFpt));
+    MYINT (*gDCpt)[3][4] = (MYINT (*)[3][4])calloc(nr, sizeof(*gDCpt));
     
     
     for(MYINT ir=0; ir<nr; ++ir){
@@ -152,69 +202,21 @@ void PTA_method(
 
 
             // 3点以上，判断波峰波谷 
-            MYCOMPLEX tmp0;
             iendk0 = true;
-            for(MYINT m=0; m<3; ++m){
-                for(MYINT v=0; v<4; ++v){
-                    if(sum_EXP_J0!=NULL && m==0 && (v==0||v==2)){
-                        if(gEXPpt[ir][m][v] >= 2 && iEXPpt[ir][m][v] < maxNpt){
-                            if(cplx_peak_or_trough(m, v, EXP_J3[ir], k, dk, &kEXPpt[ir][m][v][iEXPpt[ir][m][v]], &tmp0) != 0){
-                                // 成功找到峰谷
-                                EXPpt[ir][m][v][iEXPpt[ir][m][v]++] = tmp0;
-                                gEXPpt[ir][m][v] = 0;
-                            }
-                            else if(gEXPpt[ir][m][v] >= maxnwait){
-                                // 等待过多，直接取中间值
-                                kEXPpt[ir][m][v][iEXPpt[ir][m][v]] = k-dk;
-                                EXPpt[ir][m][v][iEXPpt[ir][m][v]++] = EXP_J3[ir][1][m][v];
-                                gEXPpt[ir][m][v] = 0;
-                            }
-                        }
-                        iendk0 = iendk0 && (iEXPpt[ir][m][v]==maxNpt);
+            for (MYINT m = 0; m < 3; ++m) {
+                for (MYINT v = 0; v < 4; ++v) {
+                    if (sum_EXP_J0 != NULL && m == 0 && (v == 0 || v == 2)) {
+                        process_peak_or_trough(ir, m, v, maxNpt, maxnwait, k, dk, EXP_J3, kEXPpt, EXPpt, iEXPpt, gEXPpt, &iendk0);
                     }
-                    if(sum_VF_J0!=NULL && m==0 && (v==0||v==2) ){
-                        if(gVFpt[ir][m][v] >= 2 && iVFpt[ir][m][v] < maxNpt){ 
-                            if(cplx_peak_or_trough(m, v, VF_J3[ir], k, dk, &kVFpt[ir][m][v][iVFpt[ir][m][v]], &tmp0) != 0){
-                                VFpt[ir][m][v][iVFpt[ir][m][v]++] = tmp0;
-                                gVFpt[ir][m][v] = 0;
-                            }
-                            else if(gVFpt[ir][m][v] >= maxnwait){
-                                kVFpt[ir][m][v][iVFpt[ir][m][v]] = k-dk;
-                                VFpt[ir][m][v][iVFpt[ir][m][v]++] = VF_J3[ir][1][m][v];
-                                gVFpt[ir][m][v] = 0;
-                            }
-                        }
-                        iendk0 = iendk0 && (iVFpt[ir][m][v]==maxNpt);
+                    if (sum_VF_J0 != NULL && m == 0 && (v == 0 || v == 2)) {
+                        process_peak_or_trough(ir, m, v, maxNpt, maxnwait, k, dk, VF_J3, kVFpt, VFpt, iVFpt, gVFpt, &iendk0);
                     }
-                    if(sum_HF_J0!=NULL && m==1){
-                        if(gHFpt[ir][m][v] >= 2 && iHFpt[ir][m][v] < maxNpt){ 
-                            if(cplx_peak_or_trough(m, v, HF_J3[ir], k, dk, &kHFpt[ir][m][v][iHFpt[ir][m][v]], &tmp0) != 0){
-                                HFpt[ir][m][v][iHFpt[ir][m][v]++] = tmp0;
-                                gHFpt[ir][m][v] = 0;
-                            }
-                            else if(gHFpt[ir][m][v] >= maxnwait){
-                                kHFpt[ir][m][v][iHFpt[ir][m][v]] = k-dk;
-                                HFpt[ir][m][v][iHFpt[ir][m][v]++] = HF_J3[ir][1][m][v];
-                                gHFpt[ir][m][v] = 0;
-                            }
-                        }
-                        iendk0 = iendk0 && (iHFpt[ir][m][v]==maxNpt);
+                    if (sum_HF_J0 != NULL && m == 1) {
+                        process_peak_or_trough(ir, m, v, maxNpt, maxnwait, k, dk, HF_J3, kHFpt, HFpt, iHFpt, gHFpt, &iendk0);
                     }
-                    if(sum_DC_J0!=NULL && ((m==0 && (v==0||v==2)) || m!=0)){
-                        if(gDCpt[ir][m][v] >= 2 && iDCpt[ir][m][v] < maxNpt){ 
-                            if(cplx_peak_or_trough(m, v, DC_J3[ir], k, dk, &kDCpt[ir][m][v][iDCpt[ir][m][v]], &tmp0) != 0){
-                                DCpt[ir][m][v][iDCpt[ir][m][v]++] = tmp0;
-                                gDCpt[ir][m][v] = 0;
-                            }
-                            else if(gDCpt[ir][m][v] >= maxnwait){
-                                kDCpt[ir][m][v][iDCpt[ir][m][v]] = k-dk;
-                                DCpt[ir][m][v][iDCpt[ir][m][v]++] = DC_J3[ir][1][m][v];
-                                gDCpt[ir][m][v] = 0;
-                            }
-                        }
-                        iendk0 = iendk0 && (iDCpt[ir][m][v]==maxNpt);
+                    if (sum_DC_J0 != NULL && ((m == 0 && (v == 0 || v == 2)) || m != 0)) {
+                        process_peak_or_trough(ir, m, v, maxNpt, maxnwait, k, dk, DC_J3, kDCpt, DCpt, iDCpt, gDCpt, &iendk0);
                     }
-
                 }
             }
             iendkrs[ir] = iendk0;
@@ -270,6 +272,15 @@ void PTA_method(
             }
         }
     }
+
+
+    free(iendkrs);
+    free(EXP_J3); free(VF_J3); free(HF_J3); free(DC_J3);
+    free(sum_EXP_J); free(sum_VF_J); free(sum_HF_J); free(sum_DC_J);
+    free(kEXPpt); free(kVFpt); free(kHFpt); free(kDCpt);
+    free(EXPpt); free(VFpt); free(HFpt); free(DCpt);
+    free(iEXPpt); free(iVFpt); free(iHFpt); free(iDCpt);
+    free(gEXPpt); free(gVFpt); free(gHFpt); free(gDCpt);
 
 }
 

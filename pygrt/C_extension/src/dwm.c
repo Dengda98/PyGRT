@@ -13,6 +13,7 @@
 
 
 #include <stdio.h> 
+#include <stdlib.h>
 
 #include "dwm.h"
 #include "const.h"
@@ -47,7 +48,8 @@ MYREAL discrete_integ(
     bool iendk = true;
 
     // 每个震中距的k循环是否结束
-    bool iendkrs[nr], iendk0=false;
+    bool *iendkrs = (bool *)malloc(nr * sizeof(bool));
+    bool iendk0 = false;
     for(MYINT ir=0; ir<nr; ++ir) iendkrs[ir] = false;
     
 
@@ -124,6 +126,8 @@ MYREAL discrete_integ(
     } // END k loop
 
     // printf("w=%15.5e, ik=%d\n", CREAL(omega), ik);
+
+    free(iendkrs);
 
     return k;
 
