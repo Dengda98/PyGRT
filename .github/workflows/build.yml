@@ -1,11 +1,9 @@
 name: Build C programs and libraries, publish to PyPI and create a release
 
-# on:
-#   push:
-#     tags:
-#       - "v*.*.*"  
-
-on: push
+on:
+  push:
+    tags:
+      - "v*.*.*"  
 
 jobs:
   build: # 编译C程序和C库
@@ -357,10 +355,10 @@ jobs:
           mkdir -p dist
           mv artifacts/*/*.whl dist/
 
-      # - name: Pypi Publish
-      #   uses: pypa/gh-action-pypi-publish@release/v1
-      #   with:
-      #     packages-dir: dist/
+      - name: Pypi Publish
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
   
           
   # ===============================================================================
@@ -389,12 +387,12 @@ jobs:
             mv $file release/${PACK_NAME}.tar.gz
           done
 
-      # - name: Create Release
-      #   id: create_release
-      #   uses: softprops/action-gh-release@v1
-      #   with:
-      #     draft: true
-      #     files: "release/*/*.tar.gz"
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          draft: true
+          files: "release/*/*.tar.gz"
 
   
 
