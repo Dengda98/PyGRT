@@ -33,17 +33,15 @@ ifeq ($(OS),Windows_NT)  # link static oenpmp on windows
 	LDFLAGS := $(LINK_STATIC) $(FOMPFLAGS)
 endif
 
+# change architecture for macOS, from make command
+ARCH = 
+
 # However, Maybe -static is not working for standard-lib on MacOS, 
 # at least for now, it's not a big problem.
 CFLAGS :=  $(LINK_STATIC) $(LFFT_FLAGS) -lm -O3 -g \
           -fPIC -Wall -Wextra -I$(INC_DIR) \
-		  -DGRT_VERSION="\"$(VERSION)\""
+		  -DGRT_VERSION="\"$(VERSION)\""  $(ARCH)  $(FOMPFLAGS)
 #  -fdump-tree-all  -g -ffast-math -O3 -fno-associative-math  -march=native -mtune=native 
-
-# change architecture for macOS
-ifdef ARCH
-  CFLAGS += -arch $(ARCH)
-endif
 
 
 INCS := $(wildcard $(INC_DIR)/*.h)
@@ -79,17 +77,17 @@ grt.travt:	 $(BIN_DIR)/grt.travt
 $(BIN_DIR)/grt: $(BUILD_DIR)/grt_main.o  libgrt
 	@echo $(shell ls $(LIB_DIR)/*)
 	@mkdir -p $(BIN_DIR)
-	$(CC) -o $@ $<  $(RPATH_FLAGS) $(CFLAGS) $(FOMPFLAGS)
+	$(CC) -o $@ $<  $(RPATH_FLAGS) $(CFLAGS)
 
 $(BIN_DIR)/grt.syn: $(BUILD_DIR)/grt_syn.o  libgrt
 	@echo $(shell ls $(LIB_DIR)/*)
 	@mkdir -p $(BIN_DIR)
-	$(CC) -o $@ $<  $(RPATH_FLAGS) $(CFLAGS) $(FOMPFLAGS)
+	$(CC) -o $@ $<  $(RPATH_FLAGS) $(CFLAGS)
 
 $(BIN_DIR)/grt.travt: $(BUILD_DIR)/grt_travt.o  libgrt
 	@echo $(shell ls $(LIB_DIR)/*)
 	@mkdir -p $(BIN_DIR)
-	$(CC) -o $@ $<  $(RPATH_FLAGS) $(CFLAGS) $(FOMPFLAGS)
+	$(CC) -o $@ $<  $(RPATH_FLAGS) $(CFLAGS)
 
 
 # build dynamic library
@@ -109,7 +107,7 @@ $(LIB_DIR)/$(LIBS_NAME): $(OBJS_NOMAIN)
 # Compile object file
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(BUILD_DIR)
-	$(CC)  -o $@ -c $< $(CFLAGS) $(FOMPFLAGS)
+	$(CC)  -o $@ -c $< $(CFLAGS)
 
 
 # Automatically generate dependencies
