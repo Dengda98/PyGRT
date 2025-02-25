@@ -50,7 +50,7 @@ jobs:
       # --------------------- 检查文件中的版本名是否和tag名相符 --------------------
       - name: Check version
         run: |
-          TAG_NAME=${{ github.ref_name }}
+          TAG_NAME=v0.1.4  # ${{ github.ref_name }}
           PYVERSION_FILE="pygrt/_version.py"
           CVERSION_FILE="pygrt/C_extension/version"
 
@@ -119,10 +119,12 @@ jobs:
           export LD_LIBRARY_PATH=$FFT_LIB_PATH:${LD_LIBRARY_PATH}  
           export DYLD_LIBRARY_PATH=$FFT_LIB_PATH:${DYLD_LIBRARY_PATH}  
 
-          make ARCH=${{ matrix.arch }} \
+          make ARCH="-arch ${{ matrix.arch }}" \
                 CC=gcc-14 \
                 LFFT_FLAGS="$FFT_LIB_PATH/libfftw3.a $FFT_LIB_PATH/libfftw3f.a"
           make cleanbuild
+          otool -L lib/libgrt.so
+          otool -L bin/*
 
       - name: Build the project (Ubuntu)
         if: contains(matrix.os, 'ubuntu')
@@ -130,6 +132,8 @@ jobs:
         run: |
           make 
           make cleanbuild
+          ldd lib/libgrt.so
+          ldd bin/*
 
       - name: Build the project (Windows)
         if: contains(matrix.os, 'windows')
@@ -138,47 +142,9 @@ jobs:
         run: |
           make 
           make cleanbuild
+          ldd lib/libgrt.so
+          ldd bin/*
 
-      # --------------------搭建python环境，开始测试，并制作wheel文件 ------------------------------
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9' 
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install --upgrade setuptools wheel build
-          pip install -v .
-
-      - name: Clean up build and egg-info directories
-        run: |
-          # 清理临时文件
-          rm -rf build/
-          rm -rf pygrt_kit.egg-info/
-
-      - name: Test the project
-        run: |
-          export PATH=$(pwd)/pygrt/C_extension/bin:${PATH}
-         
-          cp -r example test_tmp
-
-          # test1 
-          cd test_tmp/compare_results 
-          chmod +x *.sh
-          ./run_milrow_grt.sh
-          python plot_cps_grt.py
-          python plot_cps_pygrt.py
-          cd -
-
-          # test2
-          cd test_tmp/site_effect
-          chmod +x *.sh 
-          ./run1.sh
-          python run2.py
-          cd -
-
-          rm -rf test_tmp  
 
       # ------------------------ 定义接下来打包程序命名时的系统名后缀 ---------------
       - name: Define the package OS suffix
@@ -199,7 +165,6 @@ jobs:
 
           echo "SUFFIX_PLAT_NAME=$SUFFIX_PLAT_NAME" >> $GITHUB_ENV
 
-      
       # --------------------------- 打包整个程序 ---------------------
       - name: Package the binary
         run: |
@@ -210,29 +175,167 @@ jobs:
           cp -r ${FILE_CONTENT} $PACK_NAME/
           tar -czvf $PACK_NAME.tar.gz $PACK_NAME
           rm -rf $PACK_NAME
-      
-      # --------------------------- 制作wheels ---------------------
-      - name: Build the Python Wheel
-        run: |
-          python setup.py bdist_wheel --plat-name=${{ env.SUFFIX_PLAT_NAME }}  # 只制作wheel，这里不打包源码 
 
       # -------------------- upload artifacts -----------------------
       - name: Upload artifact (*.tar.gz)
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.PACK_NAME }}_tar
+          name: ${{ matrix.os }}-${{ matrix.arch }}_tar
           path: ${{ env.PACK_NAME }}.tar.gz
             
+
+
+  # =======================================================================================
+  test_project: # 在全新系统上测试程序，不安装其它依赖，看能否运行
+    runs-on: ${{ matrix.os }}
+    needs: build
+    strategy:
+      matrix:
+        include:
+          - os: windows-2022
+            arch: x86_64                  # windows x86_6
+          - os: ubuntu-22.04
+            arch: x86_64                  # Ubuntu x86_64
+          - os: macos-13
+            arch: x86_64                  # macOS Intel
+          - os: macos-14
+            arch: arm64                   # macOS Apple Silicon
+
+      fail-fast: true
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.os }}-${{ matrix.arch }}_tar
+          path: artifacts
+
+      - name: Display structure of downloaded files, and Uncompress
+        run: |
+          ls -R artifacts
+          echo "------------------- tar output -----------------------------"
+          tar -xzvf artifacts/*.tar.gz
+          echo "------------------------------------------------------------"
+
+          # 获得压缩包解压出来的文件夹名
+          PACK_NAME=$(ls | grep pygrt_kit)
+          echo "PACK_NAME=$PACK_NAME" >> $GITHUB_ENV
+
+          # 从解压出的文件夹命名来推断${{ env.SUFFIX_PLAT_NAME }}
+          SUFFIX_PLAT_NAME=$(echo $PACK_NAME | sed 's/.*-\(.*\)/\1/')
+          echo "SUFFIX_PLAT_NAME=$SUFFIX_PLAT_NAME" >> $GITHUB_ENV
+          
+          echo $PACK_NAME
+          echo $SUFFIX_PLAT_NAME
+
+      # --------------------------- 安装依赖 ------------------------------------------
+      # 实际使用时可能需要安装libomp
+      # - name: Install libomp (Ubuntu)
+      #   if: contains(matrix.os, 'ubuntu')    
+      #   run: |
+      #     sudo apt install -y libomp-dev
+
+      - name: Set alias (MacOS)
+        if: contains(matrix.os, 'macos')    
+        run: |
+          brew install coreutils
+          echo "alias timeout=gtimeout" >> ~/.bashrc
+
+      # --------------------搭建python环境，开始测试，并制作wheel文件 ------------------------------
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9' 
+
+      - name: Install dependencies
+        working-directory: ${{ env.PACK_NAME }}
+        run: |
+          python -m pip install --upgrade pip
+          pip install --upgrade setuptools wheel build
+          pip install -v .
+
+      - name: Clean up build and egg-info directories
+        working-directory: ${{ env.PACK_NAME }}
+        run: |
+          # 清理临时文件
+          rm -rf build/
+          rm -rf pygrt_kit.egg-info/
+
+      - name: Add the C library path to the environment
+        working-directory: ${{ env.PACK_NAME }}
+        run: |
+          echo "$(pwd)/pygrt/C_extension/bin" >> "$GITHUB_PATH"
+
+      - name: Copy the test files
+        working-directory: ${{ env.PACK_NAME }}
+        run: |
+          cp -r example test_tmp
+          # don't use $(pwd) to get abspath, not valid on Windows
+          echo "EXAMPLE_COPY_PATH=${{ env.PACK_NAME }}/test_tmp" >> $GITHUB_ENV
+
+      - name: Test 1 compare_results
+        working-directory: ${{ env.EXAMPLE_COPY_PATH }}/compare_results
+        run: |
+          chmod +x *.sh
+          ./run_milrow_grt.sh
+          python plot_cps_pygrt.py
+
+      - name: Test 2 site_effect
+        working-directory: ${{ env.EXAMPLE_COPY_PATH }}/site_effect
+        run: |
+          chmod +x *.sh 
+          ./run1.sh
+          python run2.py
+
+      - name: Test 3 multi_traces
+        working-directory: ${{ env.EXAMPLE_COPY_PATH }}/multi_traces
+        timeout-minutes: 1
+        run: |
+          chmod +x *.sh
+          ./run1.sh
+        continue-on-error: true  # 即使失败，仍然标记为成功
+
+      - name: Test 4 lamb_problem
+        working-directory: ${{ env.EXAMPLE_COPY_PATH }}/lamb_problem
+        run: |
+          chmod +x *.sh
+          ./run1.sh
+          python run2.py
+
+      - name: Test 5 far_field
+        working-directory: ${{ env.EXAMPLE_COPY_PATH }}/far_field
+        timeout-minutes: 1
+        run: |
+          chmod +x *.sh
+          ./run_milrow_grt.sh
+          python plot_compare_pygrt.py
+        continue-on-error: true  # 即使失败，仍然标记为成功
+
+      - name: Remove the test files
+        run: |
+          rm -rf ${{ env.EXAMPLE_COPY_PATH }}
+
+      # --------------------------- 制作wheels ---------------------
+      - name: Build the Python Wheel
+        working-directory: ${{ env.PACK_NAME }}
+        run: |
+          python setup.py bdist_wheel --plat-name=${{ env.SUFFIX_PLAT_NAME }}  # 只制作wheel，这里不打包源码 
+
       - name: Upload artifact (*.whl)
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.PACK_NAME }}_whl
-          path: dist/*.whl
+          path: ${{ env.PACK_NAME }}/dist/*.whl
   
 
+  # ===============================================================================
   publish_pypi: # 上传pypi
     runs-on: ubuntu-latest
-    needs: build
+    needs: test_project
     permissions:
       id-token: write
       contents: read
@@ -241,8 +344,8 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          path: artifacts
           pattern: "*_whl" 
+          path: artifacts
 
       - name: Display structure of downloaded files
         run: ls -R artifacts
@@ -258,9 +361,10 @@ jobs:
           packages-dir: dist/
   
           
+  # ===============================================================================
   release: # 创建Release
     runs-on: ubuntu-latest
-    needs: [build, publish_pypi]
+    needs: test_project
     permissions:
       contents: write
       
@@ -274,12 +378,21 @@ jobs:
       - name: Display structure of downloaded files
         run: ls -R artifacts
 
+      # 对artifacts中的每个tar.gz文件，根据其内部的文件夹名重新命名压缩包
+      - name: Rename tar.gz files
+        run: |
+          mkdir -p release
+          for file in artifacts/*/*.tar.gz; do
+            PACK_NAME=$(tar -tzf $file | head -n 1 | cut -f 1 -d '/')
+            mv $file release/${PACK_NAME}.tar.gz
+          done
+
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
           draft: true
-          files: "artifacts/*/*.tar.gz"
+          files: "release/*/*.tar.gz"
 
   
 
