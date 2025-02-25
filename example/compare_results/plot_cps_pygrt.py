@@ -27,8 +27,10 @@ st_grt = pymod.gen_gf_spectra(
 )[0]
 
 
-st_cps = read("milrow_sdep2_rdep0/GRN/*")
+try:
+    st_cps = read("milrow_sdep2_rdep0/GRN/*")
 
-from plot_cps_grt import plot
-plot(st_grt, st_cps, "compare_cps_pygrt.pdf")
-
+    from plot_cps_grt import plot
+    plot(st_grt, st_cps, "compare_cps_pygrt.pdf")
+except Exception as e:
+    print(str(e))
