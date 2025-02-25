@@ -50,7 +50,7 @@ jobs:
       # --------------------- 检查文件中的版本名是否和tag名相符 --------------------
       - name: Check version
         run: |
-          TAG_NAME=v0.1.4  # ${{ github.ref_name }}
+          TAG_NAME=${{ github.ref_name }}
           PYVERSION_FILE="pygrt/_version.py"
           CVERSION_FILE="pygrt/C_extension/version"
 
