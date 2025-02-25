@@ -26,9 +26,15 @@ CC := gcc
 # -l like "-l:libXYZ.a" should be saved for conditional compile.
 FOMPFLAGS := -fopenmp 
 
+# link static library on Windows
 LINK_STATIC := 
 LDFLAGS := $(FOMPFLAGS)
+
+# expand stack memory for Windows
+STACK_MEM := 
+
 ifeq ($(OS),Windows_NT)  # link static oenpmp on windows
+	STACK_MEM := -Wl,-stack_size,0x1000000
     LINK_STATIC := -static
 	LDFLAGS := $(LINK_STATIC) $(FOMPFLAGS)
 endif
@@ -39,7 +45,7 @@ ARCH =
 # However, Maybe -static is not working for standard-lib on MacOS, 
 # at least for now, it's not a big problem.
 CFLAGS :=  $(LINK_STATIC) $(LFFT_FLAGS) -lm -O3 -g \
-          -fPIC -Wall -Wextra -I$(INC_DIR) \
+		-fPIC -Wall -Wextra $(STACK_MEM) -I$(INC_DIR) \
 		  -DGRT_VERSION="\"$(VERSION)\""  $(ARCH)  $(FOMPFLAGS)
 #  -fdump-tree-all  -g -ffast-math -O3 -fno-associative-math  -march=native -mtune=native 
 
