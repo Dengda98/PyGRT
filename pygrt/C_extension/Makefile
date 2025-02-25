@@ -34,7 +34,7 @@ LDFLAGS := $(FOMPFLAGS)
 STACK_MEM := 
 
 ifeq ($(OS),Windows_NT)  # link static oenpmp on windows
-	STACK_MEM := -Wl,-stack_size,0x1000000
+	STACK_MEM := -Wl,-stack,0x1000000
     LINK_STATIC := -static
 	LDFLAGS := $(LINK_STATIC) $(FOMPFLAGS)
 endif
