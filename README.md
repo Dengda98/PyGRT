@@ -12,9 +12,12 @@
 (Detailed documentation is coming soon...)
 
 # Overview
-**PyGRT**: An Efficient and Integrated Python Package for Computing Synthetic Seismograms in a Layered Half-Space Model. 
+[**PyGRT**](https://github.com/Dengda98/PyGRT): An Efficient and Integrated Python Package for Computing Synthetic Seismograms in a Layered Half-Space Model. 
 
-At present, **PyGRT** can run on **Ubuntu** and **MacOS**.  
+At present, **PyGRT** can run on
+  - [x] Linux
+  - [x] macOS
+  - [x] Windows
 
 PyGRT is still evolving, and more features will be released in the future.
 
@@ -32,6 +35,8 @@ PyGRT is still evolving, and more features will be released in the future.
 - **Modular Design**:   
   Clean and organized code structure, making it easy to extend and maintain.
 
+- **Compatibility**:  
+  **PyGRT provides pre-compiled static files**, ensuring ease of installation, usage, and portability across different systems.
 
 <p align="center">
   <img src="./figs/diagram_cut.png" alt="Image 2" width="100%" />
@@ -42,6 +47,10 @@ PyGRT is still evolving, and more features will be released in the future.
 
 + For Thread-Level Parallel Computing
   - [**OpenMP**](https://www.openmp.org/)
+    - For Linux and macOS users: If the GNU compiler is installed on your system, the `OpenMP` library is usually included.  
+    - For Windows users: `OpenMP` has been statically linked.  
+
+    **In general, you don't have to worry about it**. However, if the program complains that "`libgomp.so` not found" or "needs more dependencies", you should install `OpenMP`.
     
 <br>
 
@@ -54,15 +63,13 @@ PyGRT is still evolving, and more features will be released in the future.
 + For Command Line Style  
   the output waveforms are binary files in SAC format, you need [**Seismic Analysis Code (SAC)**](http://www.iris.edu/ds/nodes/dmc/forms/sac/) to view and process.
     
-<br>
 
-  In PyGRT, C programs and libraries **exist independently** of Python (Not CPython or Cython, just C). Therefore, If you're not familiar with Python and just want to give a quick-run,  ~~you can simply download the C source codes in `pygrt/C_extension/`.~~ 
-
-  **[New Update]: Compiled binary programs and libraries have distributed, you can use directly, no need to compile on your local machine.** Mathematical library [FFT](https://fftw.org) are **linked statically**, You don't have to bother configuring some environment variables.
-<br>
 
 
 # Installation
+In **PyGRT**, the C programs and libraries operate independently of Python (not CPython or Cython). If you are not familiar with Python and pip, and prefer the Command Line Style, you can quickly run the program by downloading the latest [**GitHub release**](https://github.com/Dengda98/PyGRT/releases) for your machine. The necessary files are located in the `pygrt/C_extension/bin` and `pygrt/C_extension/lib` folders.
+
+------
 
 Two ways, choose one:
  
@@ -73,7 +80,7 @@ Two ways, choose one:
     ```
 
 
-2. [Github release](https://github.com/Dengda98/PyGRT/releases)
+2. [**Github release**](https://github.com/Dengda98/PyGRT/releases)
 
    - Download the latest [release](https://github.com/Dengda98/PyGRT/releases) for your machine, uncompress, and change the directory.
 
