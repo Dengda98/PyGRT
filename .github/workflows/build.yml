@@ -339,7 +339,11 @@ jobs:
     permissions:
       id-token: write
       contents: read
-
+    defaults:
+        run:
+          shell: bash
+        
+  
     steps: 
       - name: Download artifacts
         uses: actions/download-artifact@v4
@@ -364,9 +368,13 @@ jobs:
   # ===============================================================================
   release: # 创建Release
     runs-on: ubuntu-latest
-    needs: test_project
+    needs: build # test_project
     permissions:
       contents: write
+
+    defaults:
+      run:
+        shell: bash
       
     steps:
       - name: Download artifacts
@@ -383,16 +391,22 @@ jobs:
         run: |
           mkdir -p release
           for file in artifacts/*/*.tar.gz; do
-            PACK_NAME=$(tar -tzf $file | head -n 1 | cut -f 1 -d '/')
+            TEMP_FILE=tmp
+            # 这里不能把tar合并到下方的管道中，在github actions中会报错
+            tar -tzf $file > $TEMP_FILE
+            PACK_NAME=$(head -n 1 $TEMP_FILE | cut -f 1 -d '/')
             mv $file release/${PACK_NAME}.tar.gz
+            rm $TEMP_FILE
           done
+
+          ls -R release
 
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
           draft: true
-          files: "release/*/*.tar.gz"
+          files: "release/*.tar.gz"
 
   
 
