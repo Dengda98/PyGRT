@@ -49,6 +49,8 @@ $(BUILD_DIR)/%.d: %.c
 
 # ---------------------------------------------------------------------
 
-clean:
+cleanbuild:
 	rm -rf $(BUILD_DIR)
+
+clean: cleanbuild
 	rm -f $(PROGS)
