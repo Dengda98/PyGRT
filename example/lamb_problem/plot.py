@@ -28,4 +28,6 @@ for (_, spine) in ax.spines.items():
 
 ax.spines['bottom'].set_visible(True)
 
-fig.savefig("stream.png", bbox_inches='tight', dpi=600)
+ax.set_title("Lamb Problem")
+
+fig.savefig("stream.png", bbox_inches='tight', dpi=200)

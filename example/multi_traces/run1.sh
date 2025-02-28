@@ -1,7 +1,5 @@
 #!/bin/bash 
 
-set -eu
-
 # 震中距数组
 distarr=($(seq -f "%.2f" 0.5 0.01 1.5  | tr '\n' ','))
 distarr=${distarr%,}  # 删除最后的逗号
