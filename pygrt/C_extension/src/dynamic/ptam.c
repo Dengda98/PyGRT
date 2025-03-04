@@ -172,7 +172,7 @@ void PTA_method(
             if(fstats[ir]!=NULL){
                 write_stats(
                     fstats[ir], k, 
-                    pEXP_qwv, pVF_qwv, pHF_qwv, pDC_qwv,
+                    EXP_qwv, VF_qwv, HF_qwv, DC_qwv,
                     EXP_J3[ir][2], VF_J3[ir][2], HF_J3[ir][2], DC_J3[ir][2]);
             }
 
