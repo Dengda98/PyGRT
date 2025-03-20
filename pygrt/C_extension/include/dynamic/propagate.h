@@ -92,7 +92,9 @@
  */
 void kernel(
     const MODEL1D *mod1d, MYCOMPLEX omega, MYREAL k,
-    MYCOMPLEX EXP_qwv[3][3], MYCOMPLEX VF_qwv[3][3], MYCOMPLEX HF_qwv[3][3], MYCOMPLEX DC_qwv[3][3]);
+    MYCOMPLEX EXP_qwv[3][3], MYCOMPLEX VF_qwv[3][3], MYCOMPLEX HF_qwv[3][3], MYCOMPLEX DC_qwv[3][3],
+    bool calc_uiz,
+    MYCOMPLEX EXP_uiz_qwv[3][3], MYCOMPLEX VF_uiz_qwv[3][3], MYCOMPLEX HF_uiz_qwv[3][3], MYCOMPLEX DC_uiz_qwv[3][3]);
 
 
 
