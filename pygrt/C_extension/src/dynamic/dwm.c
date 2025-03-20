@@ -27,6 +27,9 @@ MYREAL discrete_integ(
     MYINT nr, MYREAL *rs,
     MYCOMPLEX sum_EXP_J[nr][3][4], MYCOMPLEX sum_VF_J[nr][3][4],  
     MYCOMPLEX sum_HF_J[nr][3][4],  MYCOMPLEX sum_DC_J[nr][3][4],  
+    bool calc_uiz,
+    MYCOMPLEX sum_EXP_uiz_J[nr][3][4], MYCOMPLEX sum_VF_uiz_J[nr][3][4],  
+    MYCOMPLEX sum_HF_uiz_J[nr][3][4],  MYCOMPLEX sum_DC_uiz_J[nr][3][4],  
     FILE *(fstats[nr]))
 {
     MYCOMPLEX EXP_J[3][4], VF_J[3][4], HF_J[3][4],  DC_J[3][4];
@@ -40,6 +43,12 @@ MYREAL discrete_integ(
     MYCOMPLEX (*pVF_qwv)[3]  = (sum_VF_J!=NULL)?  VF_qwv  : NULL;
     MYCOMPLEX (*pHF_qwv)[3]  = (sum_HF_J!=NULL)?  HF_qwv  : NULL;
     MYCOMPLEX (*pDC_qwv)[3]  = (sum_DC_J!=NULL)?  DC_qwv  : NULL;
+
+    MYCOMPLEX EXP_uiz_qwv[3][3], VF_uiz_qwv[3][3], HF_uiz_qwv[3][3], DC_uiz_qwv[3][3]; 
+    MYCOMPLEX (*pEXP_uiz_qwv)[3] = (sum_EXP_uiz_J!=NULL)? EXP_uiz_qwv : NULL;
+    MYCOMPLEX (*pVF_uiz_qwv)[3]  = (sum_VF_uiz_J!=NULL)?  VF_uiz_qwv  : NULL;
+    MYCOMPLEX (*pHF_uiz_qwv)[3]  = (sum_HF_uiz_J!=NULL)?  HF_uiz_qwv  : NULL;
+    MYCOMPLEX (*pDC_uiz_qwv)[3]  = (sum_DC_uiz_J!=NULL)?  DC_uiz_qwv  : NULL;
     
     MYREAL k = 0.0;
     MYINT ik = 0;
@@ -61,7 +70,8 @@ MYREAL discrete_integ(
 
         // printf("w=%15.5e, ik=%d\n", CREAL(omega), ik);
         // 计算核函数 F(k, w)
-        kernel(mod1d, omega, k, pEXP_qwv, pVF_qwv, pHF_qwv, pDC_qwv); 
+        kernel(mod1d, omega, k, pEXP_qwv, pVF_qwv, pHF_qwv, pDC_qwv, 
+                calc_uiz, pEXP_uiz_qwv, pVF_uiz_qwv, pHF_uiz_qwv, pDC_uiz_qwv); 
 
 
         // 震中距rs循环
@@ -114,7 +124,22 @@ MYREAL discrete_integ(
                 iendk = iendkrs[ir] = false;
             }
             
+            // ---------------- 位移空间导数，EXP_J, VF_J, HF_J, DC_J数组重复利用 --------------------------
+            // 计算被积函数一项 F(k,w)Jm(kr)k
+            int_Pk(k, rs[ir], 
+                pEXP_uiz_qwv, pVF_uiz_qwv, pHF_uiz_qwv, pDC_uiz_qwv,
+                EXP_J, VF_J, HF_J, DC_J);
             
+            // keps不参与计算位移空间导数的积分，背后逻辑认为u收敛，则uiz也收敛
+            for(MYINT m=0; m<3; ++m){
+                for(MYINT v=0; v<4; ++v){
+                    if(sum_EXP_uiz_J!=NULL) sum_EXP_uiz_J[ir][m][v] += EXP_J[m][v];
+                    if(sum_VF_uiz_J!=NULL)  sum_VF_uiz_J[ir][m][v]  += VF_J[m][v];
+                    if(sum_HF_uiz_J!=NULL)  sum_HF_uiz_J[ir][m][v]  += HF_J[m][v];
+                    if(sum_DC_uiz_J!=NULL)  sum_DC_uiz_J[ir][m][v]  += DC_J[m][v];
+                }
+            }
+
 
         } // END rs loop
 
