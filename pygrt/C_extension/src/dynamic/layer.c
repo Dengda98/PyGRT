@@ -75,10 +75,10 @@ void calc_uiz_R_EV(
     // 新推导的公式
     MYCOMPLEX ak = k*k*xa_rcv;
     MYCOMPLEX bk = k*k*xb_rcv;
-    MYCOMPLEX bb = k*bk;
-    MYCOMPLEX aa = k*ak;
-    MYCOMPLEX D11[2][2] = {{ak, bb}, {-ak, bb}};
-    MYCOMPLEX D12[2][2] = {{aa, bk}, {aa, -bk}};
+    MYCOMPLEX bb = xb_rcv*bk;
+    MYCOMPLEX aa = xa_rcv*ak;
+    MYCOMPLEX D11[2][2] = {{ak, bb}, {aa, bk}};
+    MYCOMPLEX D12[2][2] = {{-ak, bb}, {aa, -bk}};
 
     // 公式(5.7.7,25)
     if(ircvup){// 震源更深
@@ -91,7 +91,7 @@ void calc_uiz_R_EV(
         *R_EVL = (RL - RONE)*bk;
     }
     
-}
+}    
     
 
 
