@@ -460,7 +460,7 @@ void int_Pk(
     if(HF_qwv!=NULL){
     // m=1 水平力源
     HF_J[1][0]  =   HF_qwv[1][0]*bj0k;         // q1*J0*k
-    HF_J[1][1]  = - (HF_qwv[1][0] + HF_qwv[1][2])*bj1k/(kr);    // - (q1+v1)*J1*k/kr
+    HF_J[1][1]  = ( - HF_qwv[1][0] + I*HF_qwv[1][2])*bj1k/(kr);    // (-q1+I*v1)*J1*k/kr
     HF_J[1][2]  =   HF_qwv[1][1]*bj1k;         // w1*J1*k
     HF_J[1][3]  = - HF_qwv[1][2]*bj0k;         // -v1*J0*k
     }
@@ -472,13 +472,13 @@ void int_Pk(
 
     // m=1 双力偶源
     DC_J[1][0]  =   DC_qwv[1][0]*bj0k;         // q1*J0*k
-    DC_J[1][1]  = - (DC_qwv[1][0] + DC_qwv[1][2])*bj1k/(kr);    // - (q1+v1)*J1*k/kr
+    DC_J[1][1]  = ( - DC_qwv[1][0] + I*DC_qwv[1][2])*bj1k/(kr);    // (-q1+I*v1)*J1*k/kr
     DC_J[1][2]  =   DC_qwv[1][1]*bj1k;         // w1*J1*k
     DC_J[1][3]  = - DC_qwv[1][2]*bj0k;         // -v1*J0*k
 
     // m=2 双力偶源
     DC_J[2][0]  =   DC_qwv[2][0]*bj1k;         // q2*J1*k
-    DC_J[2][1]  = - RTWO*(DC_qwv[2][0] + DC_qwv[2][2])*bj2k/(kr);    // - (q2+v2)*J2*k/kr
+    DC_J[2][1]  = RTWO*( - DC_qwv[2][0] + I*DC_qwv[2][2])*bj2k/(kr);    // 2*(-q2+I*v2)*J2*k/kr
     DC_J[2][2]  =   DC_qwv[2][1]*bj2k;         // w2*J2*k
     DC_J[2][3]  = - DC_qwv[2][2]*bj1k;         // -v2*J1*k
     }
@@ -507,7 +507,7 @@ void merge_Pk(
     if(sum_HF_J!=NULL){
     tol_HF[0] = sum_HF_J[1][2];
     tol_HF[1] = sum_HF_J[1][0] + sum_HF_J[1][1];
-    tol_HF[2] = - sum_HF_J[1][1] + sum_HF_J[1][3];
+    tol_HF[2] = - I*sum_HF_J[1][1] + sum_HF_J[1][3];
     }
 
     if(sum_DC_J!=NULL){
@@ -516,11 +516,11 @@ void merge_Pk(
     
     tol_DS[0] = sum_DC_J[1][2];
     tol_DS[1] = sum_DC_J[1][0] + sum_DC_J[1][1];
-    tol_DS[2] = - sum_DC_J[1][1] + sum_DC_J[1][3];
+    tol_DS[2] = - I*sum_DC_J[1][1] + sum_DC_J[1][3];
 
     tol_SS[0] = sum_DC_J[2][2];
     tol_SS[1] = sum_DC_J[2][0] + sum_DC_J[2][1];
-    tol_SS[2] = - sum_DC_J[2][1] + sum_DC_J[2][3];
+    tol_SS[2] = - I*sum_DC_J[2][1] + sum_DC_J[2][3];
     }
 }
 
