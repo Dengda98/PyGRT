@@ -27,9 +27,11 @@ MYREAL discrete_integ(
     MYINT nr, MYREAL *rs,
     MYCOMPLEX sum_EXP_J[nr][3][4], MYCOMPLEX sum_VF_J[nr][3][4],  
     MYCOMPLEX sum_HF_J[nr][3][4],  MYCOMPLEX sum_DC_J[nr][3][4],  
-    bool calc_uiz,
+    bool calc_upar,
     MYCOMPLEX sum_EXP_uiz_J[nr][3][4], MYCOMPLEX sum_VF_uiz_J[nr][3][4],  
     MYCOMPLEX sum_HF_uiz_J[nr][3][4],  MYCOMPLEX sum_DC_uiz_J[nr][3][4],  
+    MYCOMPLEX sum_EXP_uir_J[nr][3][4], MYCOMPLEX sum_VF_uir_J[nr][3][4],  
+    MYCOMPLEX sum_HF_uir_J[nr][3][4],  MYCOMPLEX sum_DC_uir_J[nr][3][4],  
     FILE *(fstats[nr]))
 {
     MYCOMPLEX EXP_J[3][4], VF_J[3][4], HF_J[3][4],  DC_J[3][4];
@@ -71,7 +73,7 @@ MYREAL discrete_integ(
         // printf("w=%15.5e, ik=%d\n", CREAL(omega), ik);
         // 计算核函数 F(k, w)
         kernel(mod1d, omega, k, pEXP_qwv, pVF_qwv, pHF_qwv, pDC_qwv, 
-                calc_uiz, pEXP_uiz_qwv, pVF_uiz_qwv, pHF_uiz_qwv, pDC_uiz_qwv); 
+            calc_upar, pEXP_uiz_qwv, pVF_uiz_qwv, pHF_uiz_qwv, pDC_uiz_qwv); 
 
 
         // 震中距rs循环
@@ -87,8 +89,8 @@ MYREAL discrete_integ(
             
             // 计算被积函数一项 F(k,w)Jm(kr)k
             int_Pk(k, rs[ir], 
-                    pEXP_qwv, pVF_qwv, pHF_qwv, pDC_qwv,
-                    EXP_J, VF_J, HF_J, DC_J);
+                   pEXP_qwv, pVF_qwv, pHF_qwv, pDC_qwv, false,
+                   EXP_J, VF_J, HF_J, DC_J);
 
             // 记录积分结果
             if(fstats[ir]!=NULL){
@@ -124,22 +126,42 @@ MYREAL discrete_integ(
                 iendk = iendkrs[ir] = false;
             }
             
-            // ---------------- 位移空间导数，EXP_J, VF_J, HF_J, DC_J数组重复利用 --------------------------
-            // 计算被积函数一项 F(k,w)Jm(kr)k
-            int_Pk(k, rs[ir], 
-                pEXP_uiz_qwv, pVF_uiz_qwv, pHF_uiz_qwv, pDC_uiz_qwv,
-                EXP_J, VF_J, HF_J, DC_J);
-            
-            // keps不参与计算位移空间导数的积分，背后逻辑认为u收敛，则uiz也收敛
-            for(MYINT m=0; m<3; ++m){
-                for(MYINT v=0; v<4; ++v){
-                    if(sum_EXP_uiz_J!=NULL) sum_EXP_uiz_J[ir][m][v] += EXP_J[m][v];
-                    if(sum_VF_uiz_J!=NULL)  sum_VF_uiz_J[ir][m][v]  += VF_J[m][v];
-                    if(sum_HF_uiz_J!=NULL)  sum_HF_uiz_J[ir][m][v]  += HF_J[m][v];
-                    if(sum_DC_uiz_J!=NULL)  sum_DC_uiz_J[ir][m][v]  += DC_J[m][v];
-                }
-            }
 
+            // ---------------- 位移空间导数，EXP_J, VF_J, HF_J, DC_J数组重复利用 --------------------------
+            if(calc_upar){
+                // ------------------------------- ui_z -----------------------------------
+                // 计算被积函数一项 F(k,w)Jm(kr)k
+                int_Pk(k, rs[ir], 
+                       pEXP_uiz_qwv, pVF_uiz_qwv, pHF_uiz_qwv, pDC_uiz_qwv, false,
+                       EXP_J, VF_J, HF_J, DC_J);
+                
+                // keps不参与计算位移空间导数的积分，背后逻辑认为u收敛，则uiz也收敛
+                for(MYINT m=0; m<3; ++m){
+                    for(MYINT v=0; v<4; ++v){
+                        if(sum_EXP_uiz_J!=NULL) sum_EXP_uiz_J[ir][m][v] += EXP_J[m][v];
+                        if(sum_VF_uiz_J!=NULL)  sum_VF_uiz_J[ir][m][v]  += VF_J[m][v];
+                        if(sum_HF_uiz_J!=NULL)  sum_HF_uiz_J[ir][m][v]  += HF_J[m][v];
+                        if(sum_DC_uiz_J!=NULL)  sum_DC_uiz_J[ir][m][v]  += DC_J[m][v];
+                    }
+                }
+
+
+                // ------------------------------- ui_r -----------------------------------
+                // 计算被积函数一项 F(k,w)Jm(kr)k
+                int_Pk(k, rs[ir], 
+                       pEXP_qwv, pVF_qwv, pHF_qwv, pDC_qwv, true,
+                       EXP_J, VF_J, HF_J, DC_J);
+                
+                // keps不参与计算位移空间导数的积分，背后逻辑认为u收敛，则uir也收敛
+                for(MYINT m=0; m<3; ++m){
+                    for(MYINT v=0; v<4; ++v){
+                        if(sum_EXP_uir_J!=NULL) sum_EXP_uir_J[ir][m][v] += EXP_J[m][v];
+                        if(sum_VF_uir_J!=NULL)  sum_VF_uir_J[ir][m][v]  += VF_J[m][v];
+                        if(sum_HF_uir_J!=NULL)  sum_HF_uir_J[ir][m][v]  += HF_J[m][v];
+                        if(sum_DC_uir_J!=NULL)  sum_DC_uir_J[ir][m][v]  += DC_J[m][v];
+                    }
+                }
+            } // END if calc_upar
 
         } // END rs loop
 
