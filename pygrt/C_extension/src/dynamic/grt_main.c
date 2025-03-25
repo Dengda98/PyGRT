@@ -953,6 +953,9 @@ static void write_one_to_sac(
 {
     char kcmpnm[9];
     snprintf(kcmpnm, sizeof(kcmpnm), "%s%c", srcname, ch);
+    if(s_suffix!=NULL && strlen(s_suffix) > 0){
+        snprintf(kcmpnm, sizeof(kcmpnm), "%s%s", s_suffix+1, srcname); // 将除去首字符的后缀添加到分量名中
+    }
     strcpy(hd->kcmpnm, kcmpnm);
     sprintf(s_outpath, "%s/%s%c%s.sac", s_output_subdir, srcname, ch, s_suffix);
     ifft_one_trace(delayT, sgn, grncplx, fftw_grn, out, float_arr, plan, hd, s_outpath);
