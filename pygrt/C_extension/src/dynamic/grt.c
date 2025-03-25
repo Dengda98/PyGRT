@@ -669,14 +669,22 @@ void integ_grn_spec(
             // 基于线性插值的Filon积分
             k = linear_filon_integ(
                 local_mod1d, dk, kmax, keps, omega, nr, rs, 
-                sum_EXP_J, sum_VF_J, sum_HF_J, sum_DC_J, fstats);
+                sum_EXP_J, sum_VF_J, sum_HF_J, sum_DC_J, 
+                calc_upar,
+                sum_EXP_uiz_J, sum_VF_uiz_J, sum_HF_uiz_J, sum_DC_uiz_J,
+                sum_EXP_uir_J, sum_VF_uir_J, sum_HF_uir_J, sum_DC_uir_J,
+                fstats);
         }
 
         // k之后的部分使用峰谷平均法进行显式收敛，建议在浅源地震的时候使用   
         if(vmin_ref < RZERO){
             PTA_method(
                 local_mod1d, k, dk, rmin, rmax, omega, nr, rs, 
-                sum_EXP_J, sum_VF_J, sum_HF_J, sum_DC_J, fstats, ptam_fstats);
+                sum_EXP_J, sum_VF_J, sum_HF_J, sum_DC_J, 
+                calc_upar,
+                sum_EXP_uiz_J, sum_VF_uiz_J, sum_HF_uiz_J, sum_DC_uiz_J,
+                sum_EXP_uir_J, sum_VF_uir_J, sum_HF_uir_J, sum_DC_uir_J,
+                fstats, ptam_fstats);
         }
 
         // printf("iw=%d, w=%.5e, k=%.5e, dk=%.5e, nk=%d\n", iw, w, k, dk, (int)(k/dk));
