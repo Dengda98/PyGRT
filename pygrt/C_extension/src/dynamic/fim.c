@@ -30,6 +30,11 @@ MYREAL linear_filon_integ(
     MYINT nr, MYREAL *rs,
     MYCOMPLEX sum_EXP_J[nr][3][4], MYCOMPLEX sum_VF_J[nr][3][4],  
     MYCOMPLEX sum_HF_J[nr][3][4],  MYCOMPLEX sum_DC_J[nr][3][4],  
+    bool calc_upar,
+    MYCOMPLEX sum_EXP_uiz_J[nr][3][4], MYCOMPLEX sum_VF_uiz_J[nr][3][4],  
+    MYCOMPLEX sum_HF_uiz_J[nr][3][4],  MYCOMPLEX sum_DC_uiz_J[nr][3][4],  
+    MYCOMPLEX sum_EXP_uir_J[nr][3][4], MYCOMPLEX sum_VF_uir_J[nr][3][4],  
+    MYCOMPLEX sum_HF_uir_J[nr][3][4],  MYCOMPLEX sum_DC_uir_J[nr][3][4],  
     FILE *(fstats[nr]))
 {   
     for(MYINT ir=0; ir<nr; ++ir){
@@ -59,33 +64,35 @@ MYREAL linear_filon_integ(
     MYCOMPLEX (*pHF_qwv)[3]  = (sum_HF_J!=NULL)?  HF_qwv  : NULL;
     MYCOMPLEX (*pDC_qwv)[3]  = (sum_DC_J!=NULL)?  DC_qwv  : NULL;
 
+    MYCOMPLEX EXP_uiz_qwv[3][3], VF_uiz_qwv[3][3], HF_uiz_qwv[3][3], DC_uiz_qwv[3][3]; 
+    MYCOMPLEX (*pEXP_uiz_qwv)[3] = (sum_EXP_uiz_J!=NULL)? EXP_uiz_qwv : NULL;
+    MYCOMPLEX (*pVF_uiz_qwv)[3]  = (sum_VF_uiz_J!=NULL)?  VF_uiz_qwv  : NULL;
+    MYCOMPLEX (*pHF_uiz_qwv)[3]  = (sum_HF_uiz_J!=NULL)?  HF_uiz_qwv  : NULL;
+    MYCOMPLEX (*pDC_uiz_qwv)[3]  = (sum_DC_uiz_J!=NULL)?  DC_uiz_qwv  : NULL;
+
     MYREAL k=0.0, r; 
     MYINT ik=0;
 
-    // exp( i * (2*m+1)*pi / 4 )
-    MYCOMPLEX ecoef[3];
-    ecoef[0] =   INV_SQRT_TWO +  INV_SQRT_TWO*I;
-    ecoef[1] = - INV_SQRT_TWO +  INV_SQRT_TWO*I;
-    ecoef[2] = - INV_SQRT_TWO -  INV_SQRT_TWO*I;
-
-    MYCOMPLEX coef[nr][3];
+    MYCOMPLEX coef[nr];
     for(MYINT ir=0; ir<nr; ++ir){
         r = rs[ir];
         for(MYINT m=0; m<3; ++m){
             // NOTICE: 这里对参数进行了设计（基于我个人理解，需进一步讨论）
             // 
             // 在(5.9.11)式中以及纪晨等(1995)的文章中是 2* (1 - cos(dk*r))， 
-            // 推导过程是基于向外传播的Hankel函数Hm(x) = Jm(x) - i*Ym(x)，
+            // 推导过程是基于向外传播的Hankel函数Hm(x) = Jm(x) + i*Ym(x)，
             // 但由于推导中只保留(kr)的零阶项，导致Hm(x)只剩下实部Jm(x), 引入了误差，
             // 
             // 第一类Bessel函数的近似公式为 
             //             Jm(x) = sqrt(2/(pi*x)) * cos(x - m*pi/2 - pi/4)
             // 对cos函数运用欧拉公式:
             //             cos(x) = 0.5 * ( exp(j*x) + exp(-j*x) )
-            // 此时带入待求积分式中，发现和(5.9.11)式相比多了0.5的系数，故这里系数2被"抵消"了
+            // 此时带入待求积分式中，发现和(5.9.11)式相比多了0.5的系数，故这里系数2被"抵消"了,
+            // 本质原因其实是bessel函数被替换为复数形式的exp(-j*x)，如果使用欧拉公式进一步调整
+            // 则bessel函数替换为余弦函数，系数2可以保留。
             // 
             // 另外提出了dk系数，故分母dk为二次
-            coef[ir][m] = SQRT(RTWO/(PI*r)) * (RONE - COS(dk*r)) / (r*r*dk*dk) * ecoef[m];
+            coef[ir] = SQRT(RTWO/(PI*r)) * (RONE - COS(dk*r)) / (r*r*dk*dk);
         }
     }
     
@@ -103,7 +110,8 @@ MYREAL linear_filon_integ(
         if(k > kmax) break;
 
         // 计算核函数 F(k, w)
-        kernel(mod1d, omega, k, pEXP_qwv, pVF_qwv, pHF_qwv, pDC_qwv); 
+        kernel(mod1d, omega, k, pEXP_qwv, pVF_qwv, pHF_qwv, pDC_qwv,
+               calc_upar, pEXP_uiz_qwv, pVF_uiz_qwv, pHF_uiz_qwv, pDC_uiz_qwv); 
 
         // 震中距rs循环
         iendk = true;
@@ -113,7 +121,7 @@ MYREAL linear_filon_integ(
             // F(k, w)*Jm(kr)k 的近似公式
             int_Pk_filon(
                 k, rs[ir], 
-                pEXP_qwv, pVF_qwv, pHF_qwv, pDC_qwv,
+                pEXP_qwv, pVF_qwv, pHF_qwv, pDC_qwv, false,
                 EXP_J, VF_J, HF_J, DC_J);
 
             // 记录积分结果
@@ -151,6 +159,42 @@ MYREAL linear_filon_integ(
             }
             
 
+            // ---------------- 位移空间导数，EXP_J, VF_J, HF_J, DC_J数组重复利用 --------------------------
+            if(calc_upar){
+                // ------------------------------- ui_z -----------------------------------
+                // 计算被积函数一项 F(k,w)Jm(kr)k
+                int_Pk_filon(k, rs[ir], 
+                       pEXP_uiz_qwv, pVF_uiz_qwv, pHF_uiz_qwv, pDC_uiz_qwv, false,
+                       EXP_J, VF_J, HF_J, DC_J);
+                
+                // keps不参与计算位移空间导数的积分，背后逻辑认为u收敛，则uiz也收敛
+                for(MYINT m=0; m<3; ++m){
+                    for(MYINT v=0; v<4; ++v){
+                        if(sum_EXP_uiz_J!=NULL) sum_EXP_uiz_J[ir][m][v] += EXP_J[m][v];
+                        if(sum_VF_uiz_J!=NULL)  sum_VF_uiz_J[ir][m][v]  += VF_J[m][v];
+                        if(sum_HF_uiz_J!=NULL)  sum_HF_uiz_J[ir][m][v]  += HF_J[m][v];
+                        if(sum_DC_uiz_J!=NULL)  sum_DC_uiz_J[ir][m][v]  += DC_J[m][v];
+                    }
+                }
+
+
+                // ------------------------------- ui_r -----------------------------------
+                // 计算被积函数一项 F(k,w)Jm(kr)k
+                int_Pk_filon(k, rs[ir], 
+                       pEXP_qwv, pVF_qwv, pHF_qwv, pDC_qwv, true,
+                       EXP_J, VF_J, HF_J, DC_J);
+                
+                // keps不参与计算位移空间导数的积分，背后逻辑认为u收敛，则uir也收敛
+                for(MYINT m=0; m<3; ++m){
+                    for(MYINT v=0; v<4; ++v){
+                        if(sum_EXP_uir_J!=NULL) sum_EXP_uir_J[ir][m][v] += EXP_J[m][v];
+                        if(sum_VF_uir_J!=NULL)  sum_VF_uir_J[ir][m][v]  += VF_J[m][v];
+                        if(sum_HF_uir_J!=NULL)  sum_HF_uir_J[ir][m][v]  += HF_J[m][v];
+                        if(sum_DC_uir_J!=NULL)  sum_DC_uir_J[ir][m][v]  += DC_J[m][v];
+                    }
+                }
+            } // END if calc_upar
+
             
         }  // end rs loop 
         
@@ -162,39 +206,28 @@ MYREAL linear_filon_integ(
 
     // 乘上系数
     for(MYINT ir=0; ir<nr; ++ir){
-        if(sum_EXP_J!=NULL){
-            sum_EXP_J[ir][0][0] *= coef[ir][1];
-            sum_EXP_J[ir][0][2] *= coef[ir][0];
-        }
-        
-        if(sum_VF_J!=NULL){
-            sum_VF_J[ir][0][0] *= coef[ir][1];
-            sum_VF_J[ir][0][2] *= coef[ir][0];
-        }
-        
-        if(sum_HF_J!=NULL){
-            sum_HF_J[ir][1][0] *= coef[ir][0];
-            sum_HF_J[ir][1][1] *= coef[ir][1];
-            sum_HF_J[ir][1][2] *= coef[ir][1];
-            sum_HF_J[ir][1][3] *= coef[ir][0];
-        }
+        for(MYINT m=0; m<3; ++m){
+            for(MYINT v=0; v<4; ++v){
+                if(sum_EXP_J!=NULL) sum_EXP_J[ir][m][v] *= coef[ir];
+                if(sum_VF_J!=NULL)  sum_VF_J[ir][m][v]  *= coef[ir];
+                if(sum_HF_J!=NULL)  sum_HF_J[ir][m][v]  *= coef[ir];
+                if(sum_DC_J!=NULL)  sum_DC_J[ir][m][v]  *= coef[ir];
 
-        if(sum_DC_J!=NULL){
-            sum_DC_J[ir][0][0] *= coef[ir][1];
-            sum_DC_J[ir][0][2] *= coef[ir][0];
+                if(calc_upar){
+                    if(sum_EXP_uiz_J!=NULL) sum_EXP_uiz_J[ir][m][v] *= coef[ir];
+                    if(sum_VF_uiz_J!=NULL)  sum_VF_uiz_J[ir][m][v]  *= coef[ir];
+                    if(sum_HF_uiz_J!=NULL)  sum_HF_uiz_J[ir][m][v]  *= coef[ir];
+                    if(sum_DC_uiz_J!=NULL)  sum_DC_uiz_J[ir][m][v]  *= coef[ir];
 
-            sum_DC_J[ir][1][0] *= coef[ir][0];
-            sum_DC_J[ir][1][1] *= coef[ir][1];
-            sum_DC_J[ir][1][2] *= coef[ir][1];
-            sum_DC_J[ir][1][3] *= coef[ir][0];
-
-            sum_DC_J[ir][2][0] *= coef[ir][1];
-            sum_DC_J[ir][2][1] *= coef[ir][2];
-            sum_DC_J[ir][2][2] *= coef[ir][2];
-            sum_DC_J[ir][2][3] *= coef[ir][1];
+                    if(sum_EXP_uir_J!=NULL) sum_EXP_uir_J[ir][m][v] *= coef[ir];
+                    if(sum_VF_uir_J!=NULL)  sum_VF_uir_J[ir][m][v]  *= coef[ir];
+                    if(sum_HF_uir_J!=NULL)  sum_HF_uir_J[ir][m][v]  *= coef[ir];
+                    if(sum_DC_uir_J!=NULL)  sum_DC_uir_J[ir][m][v]  *= coef[ir];
+                }
+            }
         }
-        
     }
+    
 
     free(iendkrs);
 
@@ -207,48 +240,75 @@ void int_Pk_filon(
     MYREAL k, MYREAL r, 
     const MYCOMPLEX EXP_qwv[3][3], const MYCOMPLEX VF_qwv[3][3], 
     const MYCOMPLEX HF_qwv[3][3],  const MYCOMPLEX DC_qwv[3][3], 
+    bool calc_uir,
     MYCOMPLEX EXP_J[3][4], MYCOMPLEX VF_J[3][4], 
     MYCOMPLEX HF_J[3][4],  MYCOMPLEX DC_J[3][4] )
 {
     MYREAL kr = k*r;
-    MYCOMPLEX ekr = CEXP(- I*kr) * SQRT(k);
+    MYREAL kr_inv = RONE/kr;
+    MYREAL kcoef = SQRT(k);
+    MYCOMPLEX bj0k, bj1k, bj2k;
+
+    MYCOMPLEX J1coef, J2coef;
+
+    if(calc_uir){
+        kcoef *= k;
+
+        bj0k = - CEXP(-I*(kr - THREEQUARTERPI));
+        bj1k = - CEXP(-I*(kr - FIVEQUARTERPI));
+        bj2k = - CEXP(-I*(kr - SEVENQUARTERPI));
+    } else {
+        bj0k = CEXP(-I*(kr - QUARTERPI));
+        bj1k = CEXP(-I*(kr - THREEQUARTERPI));
+        bj2k = CEXP(-I*(kr - FIVEQUARTERPI));
+    }
+    J1coef = bj1k*kr_inv;
+    J2coef = bj2k*kr_inv;
+
+    J1coef *= kcoef;
+    J2coef *= kcoef;
+
+    bj0k *= kcoef;
+    bj1k *= kcoef;
+    bj2k *= kcoef;
+
     
     if(EXP_qwv!=NULL){
     // 公式(5.6.22), 将公式分解为F(k,w)Jm(kr)k的形式
     // m=0 爆炸源
-    EXP_J[0][0] = - EXP_qwv[0][0]*ekr;
-    EXP_J[0][2] =   EXP_qwv[0][1]*ekr;
+    EXP_J[0][0] = - EXP_qwv[0][0]*bj1k;
+    EXP_J[0][2] =   EXP_qwv[0][1]*bj0k;
     }
 
     if(VF_qwv!=NULL){
     // m=0 垂直力源
-    VF_J[0][0] = - VF_qwv[0][0]*ekr;
-    VF_J[0][2] =   VF_qwv[0][1]*ekr;
+    VF_J[0][0] = - VF_qwv[0][0]*bj1k;
+    VF_J[0][2] =   VF_qwv[0][1]*bj0k;
     }
 
     if(HF_qwv!=NULL){
     // m=1 水平力源
-    HF_J[1][0]  =   HF_qwv[1][0]*ekr;         // q1*J0
-    HF_J[1][1]  = - (HF_qwv[1][0] + HF_qwv[1][2])*ekr/(kr);    // - (q1+v1)*J1/kr
-    HF_J[1][2]  =   HF_qwv[1][1]*ekr;         // w1*J1
-    HF_J[1][3]  = - HF_qwv[1][2]*ekr;         // -v1*J0
+    HF_J[1][0]  =   HF_qwv[1][0]*bj0k;         // q1*J0*k
+    HF_J[1][1]  = - (HF_qwv[1][0] + HF_qwv[1][2])*J1coef;    // - (q1+v1)*J1*k/kr
+    HF_J[1][2]  =   HF_qwv[1][1]*bj1k;         // w1*J1*k
+    HF_J[1][3]  = - HF_qwv[1][2]*bj0k;         // -v1*J0*k
     }
 
     if(DC_qwv!=NULL){
     // m=0 双力偶源
-    DC_J[0][0] = - DC_qwv[0][0]*ekr;
-    DC_J[0][2] =   DC_qwv[0][1]*ekr;
+    DC_J[0][0] = - DC_qwv[0][0]*bj1k;
+    DC_J[0][2] =   DC_qwv[0][1]*bj0k;
 
     // m=1 双力偶源
-    DC_J[1][0]  =   DC_qwv[1][0]*ekr;         // q1*J0
-    DC_J[1][1]  = - (DC_qwv[1][0] + DC_qwv[1][2])*ekr/(kr);    // - (q1+v1)*J1/kr
-    DC_J[1][2]  =   DC_qwv[1][1]*ekr;         // w1*J1
-    DC_J[1][3]  = - DC_qwv[1][2]*ekr;         // -v1*J0
+    DC_J[1][0]  =   DC_qwv[1][0]*bj0k;         // q1*J0*k
+    DC_J[1][1]  = - (DC_qwv[1][0] + DC_qwv[1][2])*J1coef;    // - (q1+v1)*J1*k/kr
+    DC_J[1][2]  =   DC_qwv[1][1]*bj1k;         // w1*J1*k
+    DC_J[1][3]  = - DC_qwv[1][2]*bj0k;         // -v1*J0*k
 
     // m=2 双力偶源
-    DC_J[2][0]  =   DC_qwv[2][0]*ekr;         // q2*J1
-    DC_J[2][1]  = - RTWO*(DC_qwv[2][0] + DC_qwv[2][2])*ekr/(kr);    // - (q2+v2)*J2/kr
-    DC_J[2][2]  =   DC_qwv[2][1]*ekr;         // w2*J2
-    DC_J[2][3]  = - DC_qwv[2][2]*ekr;         // -v2*J1
+    DC_J[2][0]  =   DC_qwv[2][0]*bj1k;         // q2*J1*k
+    DC_J[2][1]  = - RTWO*(DC_qwv[2][0] + DC_qwv[2][2])*J2coef;    // - (q2+v2)*J2*k/kr
+    DC_J[2][2]  =   DC_qwv[2][1]*bj2k;         // w2*J2*k
+    DC_J[2][3]  = - DC_qwv[2][2]*bj1k;         // -v2*J1*k
     }
 }
