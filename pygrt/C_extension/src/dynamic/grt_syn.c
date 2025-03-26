@@ -48,7 +48,7 @@ static char *s_output_dir = NULL;
 static char *s_prefix = NULL;
 static const char *s_prefix_default = "out";
 // 方位角，以及对应弧度制
-static double azimuth = 0.0, azrad = 0.0;
+static double azimuth = 0.0, azrad = 0.0, backazimuth=0.0;
 static double caz = 0.0, saz = 0.0;
 static double caz2 = 0.0, saz2 = 0.0;
 // 放大系数，对于位错源、爆炸源、张量震源，M0是标量地震矩；对于单力源，M0是放大系数
@@ -71,14 +71,25 @@ static int int_times = 0;
 // 求导次数
 static int dif_times = 0;
 
+// 是否计算位移空间导数
+static bool calc_upar=false;
+
 // 各选项的标志变量，初始化为0，定义了则为1
 static int G_flag=0, O_flag=0, A_flag=0,
            S_flag=0, M_flag=0, F_flag=0,
            T_flag=0, P_flag=0, s_flag=0,
-           D_flag=0, I_flag=0, J_flag=0;
+           D_flag=0, I_flag=0, J_flag=0, 
+           e_flag=0;
 
 // 三分量代号
-const char chs[3] = {'Z', 'R', 'T'};
+static const char chs[3] = {'Z', 'R', 'T'};
+
+// 计算和位移相关量的种类（1-位移，2-ui_z，3-ui_r，4-ui_t）
+static int calcUTypes=1;
+
+// 文件名前缀，分别用于合成，1-位移，2-ui_z，3-ui_r，4-ui_t。顺序不能更改
+static const char sacin_prefixes[4][2] = {"", "z", "r", ""};  // 输入文件
+static const char sacout_prefixes[4][2] = {"", "z", "r", "t"}; // 输出文件
 
 // 震源名称数组，以及方向因子数组
 static const int srcnum = 6;
@@ -121,7 +132,7 @@ printf("\n"
 "            [-T<Mxx>/<Mxy>/<Mxz>/<Myy>/<Myz>/<Mzz>]\n"
 "            [-F<fn>/<fe>/<fz>] [-O<outdir>] \n"
 "            [-D<tftype>/<tfparams>] [-I<odr>] [-J<odr>]\n" 
-"            [-P<prefix>] [-s]\n"
+"            [-P<prefix>] [-e] [-s]\n"
 "\n"
 "\n\n"
 "Options:\n"
@@ -189,14 +200,17 @@ printf("\n"
 "\n"
 "    -J<odr>       Order of differentiation. Default not use\n"
 "\n"
+"    -e            Compute the spatial derivatives, ui_z and ui_r,\n"
+"                  of displacement u. In filenames, prefix \"r\" means \n"
+"                  ui_r and \"z\" means ui_z. \n"
+"\n"
 "    -s            Silence all outputs.\n"
 "\n"
 "    -h            Display this help message.\n"
 "\n\n"
 "Examples:\n"
 "----------------------------------------------------------------\n"
-"    Say you have computed computed Green's functions with following \n"
-"    command:\n"
+"    Say you have computed Green's functions with following command:\n"
 "        grt -Mmilrow -N1000/0.01 -D2/0 -Ores -R2,4,6,8,10\n"
 "\n"
 "    Then you can get synthetic seismograms of Explosion at epicentral\n"
@@ -240,7 +254,7 @@ static void check_grn_exist(const char *name){
  */
 static void getopt_from_command(int argc, char **argv){
     int opt;
-    while ((opt = getopt(argc, argv, ":G:A:S:M:F:T:O:P:D:I:J:hs")) != -1) {
+    while ((opt = getopt(argc, argv, ":G:A:S:M:F:T:O:P:D:I:J:ehs")) != -1) {
         switch (opt) {
             // 格林函数路径
             case 'G':
@@ -267,6 +281,8 @@ static void getopt_from_command(int argc, char **argv){
                     fprintf(stderr, "[%s] " BOLD_RED "Error! Azimuth in -A must be in [0, 360].\n" DEFAULT_RESTORE, command);
                     exit(EXIT_FAILURE);
                 }
+                backazimuth = 180.0 + azimuth;
+                if(backazimuth >= 360.0) backazimuth -= 360.0;
                 azrad = azimuth * DEG1;
                 saz = sin(azrad);
                 caz = cos(azrad);
@@ -380,6 +396,13 @@ static void getopt_from_command(int argc, char **argv){
                 }
                 break;
 
+            // 是否计算位移空间导数
+            case 'e':
+                e_flag = 1;
+                calc_upar = true;
+                calcUTypes = 4;
+                break;
+
             // 不打印在终端
             case 's':
                 s_flag = 1;
@@ -436,6 +459,10 @@ static void getopt_from_command(int argc, char **argv){
     if( (M_flag==0&&F_flag==0&&T_flag==0) || T_flag == 1){
         check_grn_exist("EXR.sac");
         check_grn_exist("EXZ.sac");
+        if(calc_upar) {
+            check_grn_exist("zEXR.sac");  check_grn_exist("rEXR.sac");
+            check_grn_exist("zEXZ.sac");  check_grn_exist("rEXZ.sac");
+        }
     }
     if(M_flag == 1){
         check_grn_exist("DDR.sac");
@@ -446,6 +473,16 @@ static void getopt_from_command(int argc, char **argv){
         check_grn_exist("SSR.sac");
         check_grn_exist("SST.sac");
         check_grn_exist("SSZ.sac");
+        if(calc_upar){
+            check_grn_exist("zDDR.sac");  check_grn_exist("rDDR.sac");
+            check_grn_exist("zDDZ.sac");  check_grn_exist("rDDZ.sac");  
+            check_grn_exist("zDSR.sac");  check_grn_exist("rDSR.sac");
+            check_grn_exist("zDST.sac");  check_grn_exist("rDST.sac");
+            check_grn_exist("zDSZ.sac");  check_grn_exist("rDSZ.sac");  
+            check_grn_exist("zSSR.sac");  check_grn_exist("rSSR.sac");  
+            check_grn_exist("zSST.sac");  check_grn_exist("rSST.sac");  
+            check_grn_exist("zSSZ.sac");  check_grn_exist("rSSZ.sac");  
+        }
     }
     if(F_flag == 1){
         check_grn_exist("VFR.sac");
@@ -453,8 +490,15 @@ static void getopt_from_command(int argc, char **argv){
         check_grn_exist("HFR.sac");
         check_grn_exist("HFT.sac");
         check_grn_exist("HFZ.sac");
+        if(calc_upar){
+            check_grn_exist("zVFR.sac");  check_grn_exist("rVFR.sac");  
+            check_grn_exist("zVFZ.sac");  check_grn_exist("rVFZ.sac");  
+            check_grn_exist("zHFR.sac");  check_grn_exist("rHFR.sac");  
+            check_grn_exist("zHFT.sac");  check_grn_exist("rHFT.sac");  
+            check_grn_exist("zHFZ.sac");  check_grn_exist("rHFZ.sac");  
+        }
     }
-
+    
 
     if(O_flag == 1){
         // 建立保存目录
@@ -481,14 +525,16 @@ static void getopt_from_command(int argc, char **argv){
  * 将某一道合成地震图保存到sac文件
  * 
  * @param      buffer      输出文件夹字符串(重复使用)
+ * @param      s_prefix2   SAC文件名和通道名前缀
  * @param      ch          分量名， Z/R/T
  * @param      arr         数据指针
  * @param      hd          SAC头段变量
  */
-static void save_to_sac(char *buffer, const char ch, float *arr, SACHEAD hd){
+static void save_to_sac(char *buffer, const char *s_prefix2, const char ch, float *arr, SACHEAD hd){
     hd.az = azimuth;
-    sprintf(hd.kcmpnm, "HH%c", ch);
-    sprintf(buffer, "%s/%s%c.sac", s_output_dir, s_prefix, ch);
+    hd.baz = backazimuth;
+    snprintf(hd.kcmpnm, sizeof(hd.kcmpnm), "%sHH%c", s_prefix2, ch);
+    sprintf(buffer, "%s/%s%s%c.sac", s_output_dir, s_prefix2, s_prefix, ch);
     write_sac(buffer, hd, arr);
 }
 
@@ -508,25 +554,33 @@ static void save_tf_to_sac(char *buffer, float *tfarr, int tfnt, float dt){
 
 /**
  * 设置每个震源的方向因子
+ * 
+ * @param      par_theta       方向因子中是否对theta(az)求导
+ * @param      coef            缩放系数，用于位移空间导数的计算
  */
-static void set_source_coef(){
+static void set_source_coef(const bool par_theta, const double coef){
     double mult;
     if(computeType == COMPUTE_SF){
-        mult = 1e-15*M0;
+        mult = 1e-15*M0*coef;
     } else {
-        mult = 1e-20*M0;
+        mult = 1e-20*M0*coef;
     }
 
     if(computeType == COMPUTE_EXP){
-        srcCoef[0][0] = srcCoef[1][0] = mult; // Z/R
+        srcCoef[0][0] = srcCoef[1][0] = (par_theta)? 0.0 : mult; // Z/R
         srcCoef[2][0] = 0.0; // T
     }  
     else if(computeType == COMPUTE_SF){
+        double A0, A1, A4;
+        A0 = fz*mult;
+        A1 = (fn*caz + fe*saz)*mult;
+        A4 = (- fn*saz + fe*caz)*mult;
+
         // 公式(4.6.20)
-        srcCoef[0][1] = srcCoef[1][1] = fz*mult; // VF, Z/R
-        srcCoef[0][2] = srcCoef[1][2] = (fn*caz + fe*saz)*mult; // HF, Z/R
+        srcCoef[0][1] = srcCoef[1][1] = (par_theta)? 0.0 : A0; // VF, Z/R
+        srcCoef[0][2] = srcCoef[1][2] = (par_theta)? A4 : A1; // HF, Z/R
         srcCoef[2][1] = 0.0; // VF, T
-        srcCoef[2][2] = (- fn*saz + fe*caz)*mult; // HF, T
+        srcCoef[2][2] = (par_theta)? -A1 : A4; // HF, T
     }
     else if(computeType == COMPUTE_DC){
         // 公式(4.8.35)
@@ -548,12 +602,12 @@ static void set_source_coef(){
         A4 = mult * (- cdip2*srak*cthe - cdip*crak*sthe);
         A5 = mult * (sdip*crak*cthe2 - 0.5*sdip2*srak*sthe2);
 
-        srcCoef[0][3] = srcCoef[1][3] = A0; // DD, Z/R
-        srcCoef[0][4] = srcCoef[1][4] = A1; // DS, Z/R
-        srcCoef[0][5] = srcCoef[1][5] = A2; // SS, Z/R
+        srcCoef[0][3] = srcCoef[1][3] = (par_theta)? 0.0 : A0; // DD, Z/R
+        srcCoef[0][4] = srcCoef[1][4] = (par_theta)? A4 : A1; // DS, Z/R
+        srcCoef[0][5] = srcCoef[1][5] = (par_theta)? 2.0*A5 : A2; // SS, Z/R
         srcCoef[2][3] = 0.0; // DD, T
-        srcCoef[2][4] = A4;  // DS, T
-        srcCoef[2][5] = A5;  // DS, T
+        srcCoef[2][4] = (par_theta)? -A1 : A4;  // DS, T
+        srcCoef[2][5] = (par_theta)? -2.0*A2 : A5;  // DS, T
     }
     else if(computeType == COMPUTE_MT){
         // 公式(4.9.7)但修改了各向同性的量
@@ -573,24 +627,26 @@ static void set_source_coef(){
         A4 = mult * (M13*saz - M23*caz);
         A5 = mult * (-0.5*(M11 - M22)*saz2 + M12*caz2);
 
-        srcCoef[0][0] = srcCoef[1][0] = mult*Mexp; // EX, Z/R
-        srcCoef[0][3] = srcCoef[1][3] = A0; // DD, Z/R
-        srcCoef[0][4] = srcCoef[1][4] = A1; // DS, Z/R
-        srcCoef[0][5] = srcCoef[1][5] = A2; // SS, Z/R
+        srcCoef[0][0] = srcCoef[1][0] = (par_theta)? 0.0 : mult*Mexp; // EX, Z/R
+        srcCoef[0][3] = srcCoef[1][3] = (par_theta)? 0.0 : A0; // DD, Z/R
+        srcCoef[0][4] = srcCoef[1][4] = (par_theta)? A4 : A1; // DS, Z/R
+        srcCoef[0][5] = srcCoef[1][5] = (par_theta)? 2.0*A5 : A2; // SS, Z/R
         srcCoef[2][0] = 0.0; // EX, T
         srcCoef[2][3] = 0.0; // DD, T
-        srcCoef[2][4] = A4;  // DS, T
-        srcCoef[2][5] = A5;  // DS, T
+        srcCoef[2][4] = (par_theta)? -A1 : A4;  // DS, T
+        srcCoef[2][5] = (par_theta)? -2.0*A2 : A5;  // DS, T
     }
 }
 
 
 
+//====================================================================================
+//====================================================================================
+//====================================================================================
 int main(int argc, char **argv){
     command = argv[0];
     getopt_from_command(argc, argv);
 
-    set_source_coef();
 
     char *buffer = (char*)malloc(sizeof(char)*(strlen(s_grnpath)+strlen(s_output_dir)+strlen(s_prefix)+100));
     float *arr, *arrout=NULL, *convarr=NULL;
@@ -602,85 +658,121 @@ int main(int argc, char **argv){
     float wI=0.0; // 虚频率
     int nt=0;
     float dt=0.0;
+    float dist=-12345.0; // 震中距
 
+    double upar_scale=1.0;
 
-    for(int c=0; c<3; ++c){
-        ch = chs[c];
-        for(int k=0; k<srcnum; ++k){
-            coef = srcCoef[c][k];
-            if(coef == 0.0) continue;
+    for(int ityp=0; ityp<calcUTypes; ++ityp){
+        // 求位移空间导数时，需调整比例系数
+        switch (ityp){
+            // 合成位移
+            case 0:
+                upar_scale=1.0;
+                break;
 
-            sprintf(buffer, "%s/%s%c.sac", s_grnpath, srcName[k], ch);
-            arr = read_sac(buffer, &hd);
-            nt = hd.npts;
-            dt = hd.delta;
-            // dw = PI2/(nt*dt);
-            if(arrout==NULL){
-                arrout = (float*)calloc(nt, sizeof(float));
-            }    
+            // 合成ui_z
+            case 1:
+            // 合成ui_r
+            case 2:
+                upar_scale=1e-5;
+                break;
 
-            // 使用虚频率将序列压制，卷积才会稳定
-            // 读入虚频率 
-            wI = hd.user0;
+            // 合成ui_t，其中dist会在ityp<3之前从sac文件中读出
+            case 3:
+                upar_scale=1e-5 / dist;
+                break;
+                
+            default:
+                break;
+        }
+        
+        // 重新计算方向因子
+        set_source_coef((ityp==3), upar_scale);
+
+        for(int c=0; c<3; ++c){
+            ch = chs[c];
+            for(int k=0; k<srcnum; ++k){
+                coef = srcCoef[c][k];
+                if(coef == 0.0) continue;
+    
+                sprintf(buffer, "%s/%s%s%c.sac", s_grnpath, sacin_prefixes[ityp], srcName[k], ch);
+                if((arr = read_sac(buffer, &hd)) == NULL){
+                    fprintf(stderr, "[%s] " BOLD_RED "read %s failed.\n" DEFAULT_RESTORE, command, buffer);
+                    exit(EXIT_FAILURE);
+                }
+                
+                nt = hd.npts;
+                dt = hd.delta;
+                dist = hd.dist;
+                // dw = PI2/(nt*dt);
+                if(arrout==NULL){
+                    arrout = (float*)calloc(nt, sizeof(float));
+                }    
+    
+                // 使用虚频率将序列压制，卷积才会稳定
+                // 读入虚频率 
+                wI = hd.user0;
+                fac = 1.0;
+                dfac = expf(-wI*dt);
+                for(int n=0; n<nt; ++n){
+                    arrout[n] += arr[n]*coef * fac;
+                    fac *= dfac;
+                }
+    
+                free(arr);
+            } // ENDFOR 不同震源
+    
+            if(D_flag == 1 && tfarr==NULL){
+                // 获得时间函数 
+                tfarr = get_time_function(&tfnt, dt, tftype, tfparams);
+                if(tfarr==NULL){
+                    fprintf(stderr, "[%s] " BOLD_RED "get time function error.\n" DEFAULT_RESTORE, command);
+                    exit(EXIT_FAILURE);
+                }
+                fac = 1.0;
+                dfac = expf(-wI*dt);
+                for(int i=0; i<tfnt; ++i){
+                    tfarr[i] = tfarr[i]*fac;
+                    fac *= dfac;
+                }
+            } 
+    
+            // 时域循环卷积
+            if(tfarr!=NULL){
+                convarr = (float*)calloc(nt, sizeof(float));
+                oaconvolve(arrout, nt, tfarr, tfnt, convarr, nt, true);
+                for(int i=0; i<nt; ++i){
+                    arrout[i] = convarr[i] * dt; // dt是连续卷积的系数
+                }
+                free(convarr);
+            }
+    
+            // 处理虚频率
             fac = 1.0;
-            dfac = expf(-wI*dt);
-            for(int n=0; n<nt; ++n){
-                arrout[n] += arr[n]*coef * fac;
-                fac *= dfac;
-            }
-
-            free(arr);
-        } // ENDFOR 不同震源
-
-        if(D_flag == 1 && tfarr==NULL){
-            // 获得时间函数 
-            tfarr = get_time_function(&tfnt, dt, tftype, tfparams);
-            if(tfarr==NULL){
-                fprintf(stderr, "[%s] " BOLD_RED "get time function error.\n" DEFAULT_RESTORE, command);
-                exit(EXIT_FAILURE);
-            }
-            fac = 1.0;
-            dfac = expf(-wI*dt);
-            for(int i=0; i<tfnt; ++i){
-                tfarr[i] = tfarr[i]*fac;
-                fac *= dfac;
-            }
-        } 
-
-        // 时域循环卷积
-        if(tfarr!=NULL){
-            convarr = (float*)calloc(nt, sizeof(float));
-            oaconvolve(arrout, nt, tfarr, tfnt, convarr, nt, true);
+            dfac = expf(wI*dt);
             for(int i=0; i<nt; ++i){
-                arrout[i] = convarr[i] * dt; // dt是连续卷积的系数
+                arrout[i] *= fac;
+                fac *= dfac;
             }
-            free(convarr);
-        }
-
-        // 处理虚频率
-        fac = 1.0;
-        dfac = expf(wI*dt);
-        for(int i=0; i<nt; ++i){
-            arrout[i] *= fac;
-            fac *= dfac;
-        }
-
-        // 时域积分或求导
-        for(int i=0; i<int_times; ++i){
-            trap_integral(arrout, nt, dt);
-        }
-        for(int i=0; i<dif_times; ++i){
-            differential(arrout, nt, dt);
-        }
-
-        // 保存成SAC文件
-        save_to_sac(buffer, ch, arrout, hd);
-
-        // 置零
-        for(int n=0; n<nt; ++n){
-            arrout[n] = 0.0f;
-        }
-    } // ENDFOR 三分量
+    
+            // 时域积分或求导
+            for(int i=0; i<int_times; ++i){
+                trap_integral(arrout, nt, dt);
+            }
+            for(int i=0; i<dif_times; ++i){
+                differential(arrout, nt, dt);
+            }
+    
+            // 保存成SAC文件
+            save_to_sac(buffer, sacout_prefixes[ityp], ch, arrout, hd);
+    
+            // 置零
+            for(int n=0; n<nt; ++n){
+                arrout[n] = 0.0f;
+            }
+        } // ENDFOR 三分量
+    }
+    
 
 
     // 保存时间函数
