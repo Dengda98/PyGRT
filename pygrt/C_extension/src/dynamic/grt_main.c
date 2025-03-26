@@ -280,8 +280,8 @@ printf("\n"
 "                 the trend of kernel and integrand with wavenumber.\n"
 "\n"
 "    -e           Compute the spatial derivatives, ui_z and ui_r,\n"
-"                 of displacement u. In filenames, \".r\" means \n"
-"                 ui_r and \".z\" means ui_z. The units of derivatives\n"
+"                 of displacement u. In filenames, prefix \"r\" means \n"
+"                 ui_r and \"z\" means ui_z. The units of derivatives\n"
 "                 for different sources are: \n"
 "                 + Explosion:     1e-25 /(dyne-cm)\n"
 "                 + Single Force:  1e-20 /(dyne)\n"
@@ -937,7 +937,7 @@ static void print_outdir_travt(const char *s_output_subdir, const char *s_R, dou
  * @param     hd            SAC头段变量结构体指针
  * @param     s_outpath     用于接收保存路径字符串
  * @param     s_output_subdir    保存路径所在文件夹
- * @param     s_suffix           sac文件名名称后缀
+ * @param     s_prefix           sac文件名以及通道名名称前缀
  * @param     sgn                数据待乘符号(-1/1)
  * @param     grncplx   复数形式的格林函数频谱
  * @param     fftw_grn  将频谱写到FFTW_COMPLEX类型中
@@ -948,16 +948,13 @@ static void print_outdir_travt(const char *s_output_subdir, const char *s_R, dou
  */
 static void write_one_to_sac(
     const char *srcname, const char ch, 
-    SACHEAD *hd, char *s_outpath, const char *s_output_subdir, const char *s_suffix,
+    SACHEAD *hd, char *s_outpath, const char *s_output_subdir, const char *s_prefix,
     const int sgn, MYCOMPLEX *grncplx, fftw_complex *fftw_grn, MYREAL *out, float *float_arr, fftw_plan plan)
 {
     char kcmpnm[9];
-    snprintf(kcmpnm, sizeof(kcmpnm), "%s%c", srcname, ch);
-    if(s_suffix!=NULL && strlen(s_suffix) > 0){
-        snprintf(kcmpnm, sizeof(kcmpnm), "%s%s", s_suffix+1, srcname); // 将除去首字符的后缀添加到分量名中
-    }
+    snprintf(kcmpnm, sizeof(kcmpnm), "%s%s%c", s_prefix, srcname, ch);
     strcpy(hd->kcmpnm, kcmpnm);
-    sprintf(s_outpath, "%s/%s%c%s.sac", s_output_subdir, srcname, ch, s_suffix);
+    sprintf(s_outpath, "%s/%s.sac", s_output_subdir, kcmpnm);
     ifft_one_trace(delayT, sgn, grncplx, fftw_grn, out, float_arr, plan, hd, s_outpath);
 }
 
@@ -1184,52 +1181,52 @@ int main(int argc, char **argv) {
             char *s_outpath = (char*)malloc(sizeof(char)*(strlen(s_output_subdir)+100));
             // char *s_suffix = (char*)malloc(sizeof(char)*(strlen(s_depsrc)+strlen(s_deprcv)+strlen(s_rs[ir])+100));
             // sprintf(s_suffix, "%s_%s_%s", s_depsrc, s_deprcv, s_rs[ir]);
-            char s_suffix[] = "";
+            char s_prefix[] = "";
 
             // Z分量反转
             sgn = (i==0) ? -1 : 1;
             if(i<2){
                 if(doEXP){
-                    write_one_to_sac("EX", chs[i], &hd, s_outpath, s_output_subdir, s_suffix, sgn, EXPcplx[ir][i], fftw_grn, out, float_arr, plan);
+                    write_one_to_sac("EX", chs[i], &hd, s_outpath, s_output_subdir, s_prefix, sgn, EXPcplx[ir][i], fftw_grn, out, float_arr, plan);
                     if(calc_upar){
-                        write_one_to_sac("EX", chs[i], &hd, s_outpath, s_output_subdir, ".z", sgn, EXPcplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
-                        write_one_to_sac("EX", chs[i], &hd, s_outpath, s_output_subdir, ".r", sgn, EXPcplx_uir[ir][i], fftw_grn, out, float_arr, plan);
+                        write_one_to_sac("EX", chs[i], &hd, s_outpath, s_output_subdir, "z", sgn, EXPcplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
+                        write_one_to_sac("EX", chs[i], &hd, s_outpath, s_output_subdir, "r", sgn, EXPcplx_uir[ir][i], fftw_grn, out, float_arr, plan);
                     }
                 }
                 if(doVF){
-                    write_one_to_sac("VF", chs[i], &hd, s_outpath, s_output_subdir, s_suffix, sgn, VFcplx[ir][i], fftw_grn, out, float_arr, plan);
+                    write_one_to_sac("VF", chs[i], &hd, s_outpath, s_output_subdir, s_prefix, sgn, VFcplx[ir][i], fftw_grn, out, float_arr, plan);
                     if(calc_upar){
-                        write_one_to_sac("VF", chs[i], &hd, s_outpath, s_output_subdir, ".z", sgn, VFcplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
-                        write_one_to_sac("VF", chs[i], &hd, s_outpath, s_output_subdir, ".r", sgn, VFcplx_uir[ir][i], fftw_grn, out, float_arr, plan);
+                        write_one_to_sac("VF", chs[i], &hd, s_outpath, s_output_subdir, "z", sgn, VFcplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
+                        write_one_to_sac("VF", chs[i], &hd, s_outpath, s_output_subdir, "r", sgn, VFcplx_uir[ir][i], fftw_grn, out, float_arr, plan);
                     }
                 }
                 if(doDC){
-                    write_one_to_sac("DD", chs[i], &hd, s_outpath, s_output_subdir, s_suffix, sgn, DDcplx[ir][i], fftw_grn, out, float_arr, plan);
+                    write_one_to_sac("DD", chs[i], &hd, s_outpath, s_output_subdir, s_prefix, sgn, DDcplx[ir][i], fftw_grn, out, float_arr, plan);
                     if(calc_upar){
-                        write_one_to_sac("DD", chs[i], &hd, s_outpath, s_output_subdir, ".z", sgn, DDcplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
-                        write_one_to_sac("DD", chs[i], &hd, s_outpath, s_output_subdir, ".r", sgn, DDcplx_uir[ir][i], fftw_grn, out, float_arr, plan);
+                        write_one_to_sac("DD", chs[i], &hd, s_outpath, s_output_subdir, "z", sgn, DDcplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
+                        write_one_to_sac("DD", chs[i], &hd, s_outpath, s_output_subdir, "r", sgn, DDcplx_uir[ir][i], fftw_grn, out, float_arr, plan);
                     }
                 }
             }
 
             if(doHF){
-                write_one_to_sac("HF", chs[i], &hd, s_outpath, s_output_subdir, s_suffix, sgn, HFcplx[ir][i], fftw_grn, out, float_arr, plan);
+                write_one_to_sac("HF", chs[i], &hd, s_outpath, s_output_subdir, s_prefix, sgn, HFcplx[ir][i], fftw_grn, out, float_arr, plan);
                 if(calc_upar){
-                    write_one_to_sac("HF", chs[i], &hd, s_outpath, s_output_subdir, ".z", sgn, HFcplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
-                    write_one_to_sac("HF", chs[i], &hd, s_outpath, s_output_subdir, ".r", sgn, HFcplx_uir[ir][i], fftw_grn, out, float_arr, plan);
+                    write_one_to_sac("HF", chs[i], &hd, s_outpath, s_output_subdir, "z", sgn, HFcplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
+                    write_one_to_sac("HF", chs[i], &hd, s_outpath, s_output_subdir, "r", sgn, HFcplx_uir[ir][i], fftw_grn, out, float_arr, plan);
                 }
             }
 
             if(doDC){
-                write_one_to_sac("DS", chs[i], &hd, s_outpath, s_output_subdir, s_suffix, sgn, DScplx[ir][i], fftw_grn, out, float_arr, plan);
+                write_one_to_sac("DS", chs[i], &hd, s_outpath, s_output_subdir, s_prefix, sgn, DScplx[ir][i], fftw_grn, out, float_arr, plan);
                 if(calc_upar){
-                    write_one_to_sac("DS", chs[i], &hd, s_outpath, s_output_subdir, ".z", sgn, DScplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
-                    write_one_to_sac("DS", chs[i], &hd, s_outpath, s_output_subdir, ".r", sgn, DScplx_uir[ir][i], fftw_grn, out, float_arr, plan);
+                    write_one_to_sac("DS", chs[i], &hd, s_outpath, s_output_subdir, "z", sgn, DScplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
+                    write_one_to_sac("DS", chs[i], &hd, s_outpath, s_output_subdir, "r", sgn, DScplx_uir[ir][i], fftw_grn, out, float_arr, plan);
                 }
-                write_one_to_sac("SS", chs[i], &hd, s_outpath, s_output_subdir, s_suffix, sgn, SScplx[ir][i], fftw_grn, out, float_arr, plan);
+                write_one_to_sac("SS", chs[i], &hd, s_outpath, s_output_subdir, s_prefix, sgn, SScplx[ir][i], fftw_grn, out, float_arr, plan);
                 if(calc_upar){
-                    write_one_to_sac("SS", chs[i], &hd, s_outpath, s_output_subdir, ".z", sgn, SScplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
-                    write_one_to_sac("SS", chs[i], &hd, s_outpath, s_output_subdir, ".r", sgn, SScplx_uir[ir][i], fftw_grn, out, float_arr, plan);
+                    write_one_to_sac("SS", chs[i], &hd, s_outpath, s_output_subdir, "z", sgn, SScplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
+                    write_one_to_sac("SS", chs[i], &hd, s_outpath, s_output_subdir, "r", sgn, SScplx_uir[ir][i], fftw_grn, out, float_arr, plan);
                 }
             }
 
