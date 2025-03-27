@@ -24,6 +24,8 @@ from scipy.fft import rfft, irfft
 import math 
 import os
 
+from numpy.typing import ArrayLike
+
 from .c_structures import *
 
 
@@ -284,7 +286,7 @@ def gen_syn_from_gf_EXP(st:Stream, M0:float, az:float, calc_upar:bool=False):
     return gen_syn_from_gf(st, calc_upar, "COMPUTE_EXP", M0, az)
 
 
-def gen_syn_from_gf_MT(st:Stream, M0:float, MT:np.ndarray, az:float, calc_upar:bool=False):
+def gen_syn_from_gf_MT(st:Stream, M0:float, MT:ArrayLike, az:float, calc_upar:bool=False):
     ''' 
         矩张量源，单位为dyne*cm
 
@@ -452,7 +454,9 @@ def stream_write_sac(st:Stream, path:str):
         将一系列Trace以SAC形式保存到本地，以发震时刻作为参考0时刻
 
         :param    st:         记录多个Trace的 :class:`obspy.Stream` 类型
-        :param    path:       保存文件名，不要加后缀  
+        :param    path:       保存文件名，不要加后缀
+                              例如path="GRN/res"表明sac文件将保存在GRN文件中，
+                              文件名分别为resR.sac, resT.sac, resZ.sac  
 
     '''
     # 新建对应文件夹
@@ -462,7 +466,7 @@ def stream_write_sac(st:Stream, path:str):
 
     # 每一道的保存路径为path+{channel}
     for tr in st:
-        tr.write(".".join([path, tr.stats.channel]) + '.sac', format='SAC')
+        tr.write(path+tr.stats.channel[-1] + '.sac', format='SAC')
 
 
 
