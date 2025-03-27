@@ -364,22 +364,41 @@ def __check_trace_attr_sac(tr:Trace, **kwargs):
 #     return st
 
 
-def stream_convolve(st0:Stream, signal:np.ndarray, inplace=True):
+def stream_convolve(st0:Stream, signal0:np.ndarray, inplace=True):
     '''
         对stream中每一道信号做线性卷积  
 
         :param    st0:        记录多个Trace的 :class:`obspy.Stream` 类型
-        :param    signal:     卷积信号
+        :param    signal0:    卷积信号
         :param    inplace:    是否做原地更改  
 
         :return:
             - **stream** -    处理后的结果, :class:`obspy.Stream` 类型
     '''
     st = st0 if inplace else deepcopy(st0)
+    signal = deepcopy(signal0)
     
     for tr in st:
         data = tr.data 
-        data[:] = oaconvolve(data, signal, mode='full')[:data.shape[0]]
+        dt = tr.stats.delta
+        
+        fac = None
+        user_wI = hasattr(tr.stats, "sac") and "user0" in tr.stats.sac
+        # 使用虚频率先压制
+        if user_wI:
+            npts = tr.stats.npts
+            wI = tr.stats.sac['user0']
+            fac = np.exp(np.arange(0, npts)*dt*wI)
+            signal = deepcopy(signal0)
+
+            signal[:] /= fac[:len(signal)]
+            data[:] /= fac
+
+        data1 = np.pad(data, (len(signal)-1, 0), mode='wrap') # 强制循环卷
+        data[:] = oaconvolve(data1, signal, mode='valid')[:data.shape[0]] * dt  # dt是连续卷积的系数
+
+        if user_wI:
+            data[:] *= fac
 
     return st
 
