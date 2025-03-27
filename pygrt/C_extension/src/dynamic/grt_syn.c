@@ -61,6 +61,7 @@ static double fn=0.0, fe=0.0, fz=0.0;
 static double Mxx=0.0, Mxy=0.0, Mxz=0.0, Myy=0.0, Myz=0.0, Mzz=0.0;
 // 最终要计算的震源类型
 static int computeType=COMPUTE_EXP;
+static char s_computeType[3] = "EX";
 // 和宏命令对应的震源类型全称
 static const char *sourceTypeFullName[] = {"Explosion", "Single Force", "Double Couple", "Moment Tensor"};
 // 不打印输出
@@ -303,6 +304,7 @@ static void getopt_from_command(int argc, char **argv){
             case 'M':
                 M_flag = 1; 
                 computeType = COMPUTE_DC;
+                sprintf(s_computeType, "%s", "DC");
                 if(3 != sscanf(optarg, "%lf/%lf/%lf", &strike, &dip, &rake)){
                     fprintf(stderr, "[%s] " BOLD_RED "Error in -M.\n" DEFAULT_RESTORE, command);
                     exit(EXIT_FAILURE);
@@ -325,6 +327,7 @@ static void getopt_from_command(int argc, char **argv){
             case 'F':
                 F_flag = 1;
                 computeType = COMPUTE_SF;
+                sprintf(s_computeType, "%s", "SF");
                 if(3 != sscanf(optarg, "%lf/%lf/%lf", &fn, &fe, &fz)){
                     fprintf(stderr, "[%s] " BOLD_RED "Error in -F.\n" DEFAULT_RESTORE, command);
                     exit(EXIT_FAILURE);
@@ -335,6 +338,7 @@ static void getopt_from_command(int argc, char **argv){
             case 'T':
                 T_flag = 1;
                 computeType = COMPUTE_MT;
+                sprintf(s_computeType, "%s", "MT");
                 if(6 != sscanf(optarg, "%lf/%lf/%lf/%lf/%lf/%lf", &Mxx, &Mxy, &Mxz, &Myy, &Myz, &Mzz)){
                     fprintf(stderr, "[%s] " BOLD_RED "Error in -T.\n" DEFAULT_RESTORE, command);
                     exit(EXIT_FAILURE);
@@ -533,7 +537,7 @@ static void getopt_from_command(int argc, char **argv){
 static void save_to_sac(char *buffer, const char *s_prefix2, const char ch, float *arr, SACHEAD hd){
     hd.az = azimuth;
     hd.baz = backazimuth;
-    snprintf(hd.kcmpnm, sizeof(hd.kcmpnm), "%sHH%c", s_prefix2, ch);
+    snprintf(hd.kcmpnm, sizeof(hd.kcmpnm), "%s%s%c", s_prefix2, s_computeType, ch);
     sprintf(buffer, "%s/%s%s%c.sac", s_output_dir, s_prefix2, s_prefix, ch);
     write_sac(buffer, hd, arr);
 }
