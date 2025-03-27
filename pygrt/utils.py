@@ -45,7 +45,194 @@ __all__ = [
 ]
 
 
-def gen_syn_from_gf_DC(st:Stream, M0:float, strike:float, dip:float, rake:float, az:float):
+def gen_syn_from_gf(st:Stream, calc_upar:bool, compute_type:str, M0:float, az:float, **kwargs):
+    r"""
+        一个发起函数，根据不同震源参数，从格林函数中合成理论地震图
+
+        :param    st:              计算好的时域格林函数, :class:`obspy.Stream` 类型
+        :param    calc_upar:       是否计算位移u的空间导数
+        :param    M0:              标量地震矩, 单位dyne*cm
+        :param    compute_type:    计算类型，应为以下之一: 
+            'COMPUTE_EXP'(爆炸源), 'COMPUTE_SF'(单力源),
+            'COMPUTE_DC'(双力偶源), 'COMPUTE_MT'(矩张量源)
+    """
+    chs = ['Z', 'R', 'T']
+    sacin_prefixes = ["", "z", "r", ""]   # 输入通道名
+    sacout_prefixes = ["", "z", "r", "t"]   # 输入通道名
+    srcName = ["EX", "VF", "HF", "DD", "DS", "SS"]
+    allchs = [tr.stats.channel for tr in st]
+
+    s_compute_type = compute_type.split("_")[1][:2]
+
+    baz = 180 + az
+    if baz > 360:
+        baz -= 360
+
+    calcUTypes = 4 if calc_upar else 1
+
+    stall = Stream()
+
+    dist = st[0].stats.sac['dist']
+    upar_scale:float = 1.0
+    for ityp in range(calcUTypes):
+        if ityp > 1:
+            upar_scale = 1e-5
+        if ityp == 3:
+            upar_scale /= dist
+
+        srcCoef = set_source_coef(ityp==3, upar_scale, compute_type, M0, az, **kwargs)
+
+        inpref = sacin_prefixes[ityp]
+        outpref = sacout_prefixes[ityp]
+
+        for c in range(3):
+            ch = chs[c]
+            tr:Trace = st[0].copy()
+            tr.data[:] = 0.0
+            tr.stats.channel = kcmpnm = f'{outpref}{s_compute_type}{ch}'
+            __check_trace_attr_sac(tr, az=az, baz=baz, kcmpnm=kcmpnm)
+            for k in range(6):
+                coef = srcCoef[c, k]
+                if coef==0.0:
+                    continue
+
+                # 读入数据
+                channel = f'{inpref}{srcName[k]}{ch}'
+                if channel not in allchs:
+                    raise ValueError(f"Failed, channel=\"{channel}\" not exists.")
+                    
+                tr0 = st.select(channel=channel)[0].copy()
+                
+                tr.data += coef*tr0.data
+
+            stall.append(tr)
+            
+    return stall
+
+
+def set_source_coef(
+    par_theta:bool, coef:float, compute_type:str, M0:float, az:float,
+    fZ=None, fN=None, fE=None, 
+    strike=None, dip=None, rake=None, 
+    MT=None, **kwargs):
+    r"""
+        设置不同震源的方向因子矩阵
+
+        :param    par_theta:       是否求对theta的偏导
+        :param    coef:            比例系数
+        :param    compute_type:    计算类型，应为以下之一: 
+            'COMPUTE_EXP'(爆炸源), 'COMPUTE_SF'(单力源),
+            'COMPUTE_DC'(双力偶源), 'COMPUTE_MT'(矩张量源)
+        :param    M0:              地震矩
+        :param    az:              方位角(度)
+
+        - 其他参数根据计算类型可选:
+            - 单力源需要: fZ, fN, fE, 
+            - 双力偶源需要: strike, dip, rake
+            - 矩张量源需要: MT=(Mxx, Mxy, Mxz, Myy, Myz, Mzz)
+    """
+    
+    # 定义常数: 1度对应的弧度值
+    DEG1 = np.pi / 180.0
+
+    azrad = az*DEG1
+    caz = np.cos(azrad)
+    saz = np.sin(azrad)
+
+    src_coef = np.zeros((3, 6), dtype='f8')
+    
+    # 计算乘法因子
+    if compute_type == 'COMPUTE_SF':
+        mult = 1e-15 * M0 * coef 
+    else:
+        mult = 1e-20 * M0 * coef 
+
+    # 根据不同计算类型处理
+    if compute_type == 'COMPUTE_EXP':
+        # 爆炸源情况
+        src_coef[0, 0] = src_coef[1, 0] = 0.0 if par_theta else mult  # Z/R分量
+        src_coef[2, 0] = 0.0  # T分量
+    
+    elif compute_type == 'COMPUTE_SF':
+        # 单力源情况
+        # 计算各向异性系数
+        A0 = fZ * mult
+        A1 = (fN * caz + fE * saz) * mult
+        A4 = (-fN * saz + fE * caz) * mult
+
+        # 设置震源系数矩阵 (公式4.6.20)
+        src_coef[0, 1] = src_coef[1, 1] = 0.0 if par_theta else A0  # VF, Z/R
+        src_coef[0, 2] = src_coef[1, 2] = A4 if par_theta else A1  # HF, Z/R
+        src_coef[2, 1] = 0.0  # VF, T
+        src_coef[2, 2] = -A1 if par_theta else A4  # HF, T
+    
+    elif compute_type == 'COMPUTE_DC':
+        # 双力偶源情况 (公式4.8.35)
+        # 计算各种角度值(转为弧度)
+        stkrad = strike * DEG1  # 走向角
+        diprad = dip * DEG1    # 倾角
+        rakrad = rake * DEG1   # 滑动角
+        therad = azrad - stkrad  # 方位角与走向角差
+        
+        # 计算各种三角函数值
+        srak = np.sin(rakrad);      crak = np.cos(rakrad)
+        sdip = np.sin(diprad);      cdip = np.cos(diprad)
+        sdip2 = 2.0 * sdip * cdip;  cdip2 = 2.0 * cdip**2 - 1.0
+        sthe = np.sin(therad);      cthe = np.cos(therad)
+        sthe2 = 2.0 * sthe * cthe;  cthe2 = 2.0 * cthe**2 - 1.0
+
+        # 计算各向异性系数
+        A0 = mult * (0.5 * sdip2 * srak)
+        A1 = mult * (cdip * crak * cthe - cdip2 * srak * sthe)
+        A2 = mult * (0.5 * sdip2 * srak * cthe2 + sdip * crak * sthe2)
+        A4 = mult * (-cdip2 * srak * cthe - cdip * crak * sthe)
+        A5 = mult * (sdip * crak * cthe2 - 0.5 * sdip2 * srak * sthe2)
+
+        # 设置震源系数矩阵
+        src_coef[0, 3] = src_coef[1, 3] = 0.0 if par_theta else A0  # DD, Z/R
+        src_coef[0, 4] = src_coef[1, 4] = A4 if par_theta else A1  # DS, Z/R
+        src_coef[0, 5] = src_coef[1, 5] = 2.0 * A5 if par_theta else A2  # SS, Z/R
+        src_coef[2, 3] = 0.0  # DD, T
+        src_coef[2, 4] = -A1 if par_theta else A4  # DS, T
+        src_coef[2, 5] = -2.0 * A2 if par_theta else A5  # DS, T
+    
+    elif compute_type == 'COMPUTE_MT':
+        # 矩张量源情况 (公式4.9.7，修改了各向同性项)
+        # 初始化矩张量分量
+        M11, M12, M13, M22, M23, M33 = MT
+        
+        # 计算各向同性部分并减去
+        Mexp = (M11 + M22 + M33) / 3.0
+        M11 -= Mexp
+        M22 -= Mexp
+        M33 -= Mexp
+        
+        # 计算方位角的2倍角三角函数
+        caz2 = np.cos(2 * azrad)
+        saz2 = np.sin(2 * azrad)
+        
+        # 计算各向异性系数
+        A0 = mult * ((2.0 * M33 - M11 - M22) / 6.0)
+        A1 = mult * (- (M13 * caz + M23 * saz))
+        A2 = mult * (0.5 * (M11 - M22) * caz2 + M12 * saz2)
+        A4 = mult * (M13 * saz - M23 * caz)
+        A5 = mult * (-0.5 * (M11 - M22) * saz2 + M12 * caz2)
+
+        # 设置震源系数矩阵
+        src_coef[0, 0] = src_coef[1, 0] = 0.0 if par_theta else mult * Mexp  # EX, Z/R
+        src_coef[0, 3] = src_coef[1, 3] = 0.0 if par_theta else A0  # DD, Z/R
+        src_coef[0, 4] = src_coef[1, 4] = A4 if par_theta else A1  # DS, Z/R
+        src_coef[0, 5] = src_coef[1, 5] = 2.0 * A5 if par_theta else A2  # SS, Z/R
+        src_coef[2, 0] = 0.0  # EX, T
+        src_coef[2, 3] = 0.0  # DD, T
+        src_coef[2, 4] = -A1 if par_theta else A4  # DS, T
+        src_coef[2, 5] = -2.0 * A2 if par_theta else A5  # DS, T
+
+
+    return src_coef
+
+
+def gen_syn_from_gf_DC(st:Stream, M0:float, strike:float, dip:float, rake:float, az:float, calc_upar:bool=False):
     '''
         双力偶源，角度单位均为度   
 
@@ -55,66 +242,16 @@ def gen_syn_from_gf_DC(st:Stream, M0:float, strike:float, dip:float, rake:float,
         :param    dip:      倾角，以水平面往下为正，0<=dip<=90
         :param    rake:     滑动角，在断层面相对于走向方向逆时针为正，-180<=rake<=180
         :param    az:       台站方位角，以北顺时针为正，0<=az<=360
+        :param    calc_upar:     是否计算位移u的空间导数
 
         :return:
             - **stream** -  三分量ZRT地震图, :class:`obspy.Stream` 类型
     '''
-    # 检查通道 
-    all_sets = {'DDZ', 'DDR', 'DSZ', 'DSR', 'DST', 'SSZ', 'SSR', 'SST'}
-    chs = [tr.stats.channel for tr in st]
-    if not all_sets.issubset(chs):
-        raise ValueError("Failed, No green functions of Double Couple source.")
+
+    return gen_syn_from_gf(st, calc_upar, "COMPUTE_DC", M0, az, strike=strike, dip=dip, rake=rake)
 
 
-    az_deg = az
-    baz_deg = 180 + az
-    if baz_deg > 360:
-        baz_deg -= 360
-
-    strike = math.radians(strike)
-    dip    = math.radians(dip)
-    rake   = math.radians(rake)
-    az     = math.radians(az)
-    theta = az - strike
-    srak = math.sin(rake);   crak = math.cos(rake)
-    sdip = math.sin(dip);    cdip = math.cos(dip)
-    sdip2 = 2*sdip*cdip;     cdip2 = 2*cdip*cdip - 1
-    sthe = math.sin(theta);  cthe = math.cos(theta)
-    sthe2 = 2*sthe*cthe;     cthe2 = 2*cthe*cthe - 1
-
-    M0 *= 1e-20
-
-    # 公式(4.8.35)
-    A0 = M0 * (0.5*sdip2*srak)
-    A1 = M0 * (cdip*crak*cthe - cdip2*srak*sthe)
-    A2 = M0 * (0.5*sdip2*srak*cthe2 + sdip*crak*sthe2)
-    A4 = M0 * (- cdip2*srak*cthe - cdip*crak*sthe)
-    A5 = M0 * (sdip*crak*cthe2 - 0.5*sdip2*srak*sthe2)
-
-    trZ = st.select(channel='DDZ')[0].copy()
-    trZ.stats.channel = 'DCZ'
-    __check_trace_attr_sac(trZ, az=az_deg, baz=baz_deg)
-    trZ.data = A0*st.select(channel='DDZ')[0].data + \
-               A1*st.select(channel='DSZ')[0].data + \
-               A2*st.select(channel='SSZ')[0].data
-    
-    trR = st.select(channel='DDR')[0].copy()
-    trR.stats.channel = 'DCR'
-    __check_trace_attr_sac(trR, az=az_deg, baz=baz_deg)
-    trR.data = A0*st.select(channel='DDR')[0].data + \
-               A1*st.select(channel='DSR')[0].data + \
-               A2*st.select(channel='SSR')[0].data
-    
-    trT = st.select(channel='DST')[0].copy()
-    trT.stats.channel = 'DCT'
-    __check_trace_attr_sac(trT, az=az_deg, baz=baz_deg)
-    trT.data = A4*st.select(channel='DST')[0].data + \
-               A5*st.select(channel='SST')[0].data
-    
-    return Stream([trR, trT, trZ])
-
-
-def gen_syn_from_gf_SF(st:Stream, S:float, fN:float, fE:float, fZ:float, az:float):
+def gen_syn_from_gf_SF(st:Stream, S:float, fN:float, fE:float, fZ:float, az:float, calc_upar:bool=False):
     '''
         单力源，力分量单位均为dyne   
 
@@ -124,86 +261,30 @@ def gen_syn_from_gf_SF(st:Stream, S:float, fN:float, fE:float, fZ:float, az:floa
         :param    fE:    东向力，向东为正  
         :param    fZ:    垂向力，向下为正  
         :param    az:    台站方位角，以北顺时针为正，0<=az<=360   
+        :param    calc_upar:     是否计算位移u的空间导数
 
         :return:
             - **stream** - 三分量ZRT地震图, :class:`obspy.Stream` 类型
     '''
-    # 检查通道 
-    all_sets = {'VFZ', 'VFR', 'HFZ', 'HFR', 'HFT'}
-    chs = [tr.stats.channel for tr in st]
-    if not all_sets.issubset(chs):
-        raise ValueError("Failed, No green functions of Single Force source.")
-    
-    az_deg = az
-    baz_deg = 180 + az
-    if baz_deg > 360:
-        baz_deg -= 360
-
-    az  = math.radians(az)
-    saz = math.sin(az); caz = math.cos(az)
-
-    S *= 1e-15
-    fN *= S
-    fE *= S
-    fZ *= S
-
-    # 公式(4.6.20)
-    trZ = st.select(channel='VFZ')[0].copy()
-    trZ.stats.channel = 'SFZ'
-    __check_trace_attr_sac(trZ, az=az_deg, baz=baz_deg)
-    trZ.data = (fN*caz + fE*saz)*st.select(channel='HFZ')[0].data + fZ*st.select(channel='VFZ')[0].data
-
-    trR = st.select(channel='VFR')[0].copy()
-    trR.stats.channel = 'SFR'
-    __check_trace_attr_sac(trR, az=az_deg, baz=baz_deg)
-    trR.data = (fN*caz + fE*saz)*st.select(channel='HFR')[0].data + fZ*st.select(channel='VFR')[0].data
-
-    trT = st.select(channel='HFT')[0].copy()
-    trT.stats.channel = 'SFT'
-    __check_trace_attr_sac(trT, az=az_deg, baz=baz_deg)
-    trT.data = (- fN*saz + fE*caz)*st.select(channel='HFT')[0].data
-
-    return Stream([trR, trT, trZ])
+    return gen_syn_from_gf(st, calc_upar, "COMPUTE_SF", S, az, fN=fN, fE=fE, fZ=fZ)
 
 
-def gen_syn_from_gf_EXP(st:Stream, M0:float, az:float):
+def gen_syn_from_gf_EXP(st:Stream, M0:float, az:float, calc_upar:bool=False):
     '''
         爆炸源
 
         :param    st:          计算好的时域格林函数, :class:`obspy.Stream` 类型
         :param    M0:          标量地震矩, 单位dyne*cm  
         :param    az:          台站方位角，以北顺时针为正，0<=az<=360 [不用于计算]  
+        :param    calc_upar:     是否计算位移u的空间导数
 
         :return:
             - **stream** -       三分量ZRT地震图, :class:`obspy.Stream` 类型
     '''
-    # 检查通道 
-    all_sets = {'EXZ', 'EXR'}
-    chs = [tr.stats.channel for tr in st]
-    if not all_sets.issubset(chs):
-        raise ValueError("Failed, No green functions of Explosion source.")
-
-    az_deg = az
-    baz_deg = 180 + az
-    if baz_deg > 360:
-        baz_deg -= 360
-
-    M0 *= 1e-20
-
-    trZ = st.select(channel='EXZ')[0].copy()
-    trZ.stats.channel = 'EXZ'
-    __check_trace_attr_sac(trZ, az=az_deg, baz=baz_deg)
-    trZ.data = M0 * st.select(channel='EXZ')[0].data
-
-    trR = st.select(channel='EXR')[0].copy()
-    trR.stats.channel = 'EXR'
-    __check_trace_attr_sac(trR, az=az_deg, baz=baz_deg)
-    trR.data = M0 * st.select(channel='EXR')[0].data
-
-    return Stream([trR, trZ])
+    return gen_syn_from_gf(st, calc_upar, "COMPUTE_EXP", M0, az)
 
 
-def gen_syn_from_gf_MT(st:Stream, M0:float, MT:np.ndarray, az:float):
+def gen_syn_from_gf_MT(st:Stream, M0:float, MT:np.ndarray, az:float, calc_upar:bool=False):
     ''' 
         矩张量源，单位为dyne*cm
 
@@ -211,68 +292,12 @@ def gen_syn_from_gf_MT(st:Stream, M0:float, MT:np.ndarray, az:float):
         :param    M0:          标量地震矩
         :param    MT:          矩张量 (M11, M12, M13, M22, M23, M33),下标1,2,3分别代表北向，东向，垂直向上  
         :param    az:          台站方位角，以北顺时针为正，0<=az<=360   
+        :param    calc_upar:     是否计算位移u的空间导数
 
         :return:
             - **stream** -       三分量ZRT地震图, :class:`obspy.Stream` 类型
     '''
-    # 检查通道 
-    all_sets = {'EXZ', 'EXR', 'DDZ', 'DDR', 'DSZ', 'DSR', 'DST', 'SSZ', 'SSR', 'SST'}
-    chs = [tr.stats.channel for tr in st]
-    if not all_sets.issubset(chs):
-        raise ValueError("Failed, No green functions of Explosion or Double Couple source.")
-
-    az_deg = az
-    baz_deg = 180 + az
-    if baz_deg > 360:
-        baz_deg -= 360
-
-    MT = np.array(MT)
-
-    # 不使用*=，否则会原地修改MT
-    MT = MT*M0
-
-    # 去除各向同性分量，作为爆炸源
-    Mexp = (MT[0] + MT[3] + MT[5])/3
-    trR, trZ = gen_syn_from_gf_EXP(st, Mexp, az) # Mexp在函数内部会乘1e-20
-    trT = trR.copy()
-    trT.data[:] = 0.0
-
-    Mexp *= 1e-20
-    MT = MT*1e-20
-    M11, M12, M13, M22, M23, M33 = MT
-    M11 -= Mexp
-    M22 -= Mexp
-    M33 -= Mexp
-
-    az  = math.radians(az)
-    saz = math.sin(az); caz  = math.cos(az)
-    saz2 = 2*saz*caz;   caz2 = 2*caz*caz - 1
-
-    # 公式(4.9.7)，但去除了各向同性的量
-    A0 = ((2*M33 - M11 - M22)/6 )
-    A1 = (- (M13*caz + M23*saz))
-    A2 = (0.5*(M11 - M22)*caz2+ M12*saz2)
-    A4 = (M13*saz - M23*caz)
-    A5 = (-0.5*(M11 - M22)*saz2 + M12*caz2)
-
-    trZ.stats.channel = 'MTZ'
-    __check_trace_attr_sac(trZ, az=az_deg, baz=baz_deg)
-    trZ.data += A0*st.select(channel='DDZ')[0].data + \
-                A1*st.select(channel='DSZ')[0].data + \
-                A2*st.select(channel='SSZ')[0].data
-    
-    trR.stats.channel = 'MTR'
-    __check_trace_attr_sac(trR, az=az_deg, baz=baz_deg)
-    trR.data += A0*st.select(channel='DDR')[0].data + \
-                A1*st.select(channel='DSR')[0].data + \
-                A2*st.select(channel='SSR')[0].data
-    
-    trT.stats.channel = 'MTT'
-    __check_trace_attr_sac(trT, az=az_deg, baz=baz_deg)
-    trT.data += A4*st.select(channel='DST')[0].data + \
-                A5*st.select(channel='SST')[0].data  
-    
-    return Stream([trR, trT, trZ]) 
+    return gen_syn_from_gf(st, calc_upar, "COMPUTE_MT", M0, az, MT=MT)
     
 
 def __check_trace_attr_sac(tr:Trace, **kwargs):
