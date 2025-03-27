@@ -91,7 +91,7 @@ C_compute_travt1d.argtypes = [
 # -------------------------------------------------------------------
 #                      C函数定义的时间函数
 # -------------------------------------------------------------------
-C_free = libgrt.free 
+C_free = libgrt.free1d
 """释放在C中申请的内存"""
 C_free.restype = None
 C_free.argtypes = [c_void_p]
