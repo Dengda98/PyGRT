@@ -16,3 +16,11 @@ void bessel012(MYREAL x, MYREAL *bj0, MYREAL *bj1, MYREAL *bj2){
     *bj2 = JN(2, x);
 }
 
+void besselp012(MYREAL x, MYREAL *bj0, MYREAL *bj1, MYREAL *bj2){
+    MYREAL j0=*bj0;
+    MYREAL j1=*bj1;
+    MYREAL j2=*bj2;
+    *bj0 = -j1;
+    *bj1 = j0 - RONE/x * j1;
+    *bj2 = j1 - RTWO/x * j2;
+}

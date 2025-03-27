@@ -21,9 +21,12 @@ from time import time
 from copy import deepcopy
 
 from ctypes import *
+from ctypes import _Pointer
 from .c_interfaces import *
 from .c_structures import *
 from .pygrn import PyGreenFunction
+
+PC_GRN2D = Array[Array[c_PGRN]]
 
 
 __all__ = [
@@ -138,6 +141,69 @@ class PyModel1D:
         return travtP, travtS
 
 
+    def _init_grn(
+        self,
+        distarr:np.ndarray,
+        calc_EXP:bool, calc_VF:bool, calc_HF:bool, calc_DC:bool,
+        C_EXPgrn:PC_GRN2D, C_VFgrn:PC_GRN2D, C_HFgrn:PC_GRN2D, 
+        C_DDgrn:PC_GRN2D, C_DSgrn:PC_GRN2D, C_SSgrn:PC_GRN2D, 
+        nt:int, dt:float, freqs:np.ndarray, wI:float, prefix:str=''):
+
+        '''
+            建立各个震源对应的格林函数类
+        '''
+
+        depsrc = self.depsrc
+        deprcv = self.deprcv
+
+        EXPgrn:List[List[PyGreenFunction]] = []
+        VFgrn:List[List[PyGreenFunction]] = []
+        DDgrn:List[List[PyGreenFunction]] = []
+        HFgrn:List[List[PyGreenFunction]] = []
+        DSgrn:List[List[PyGreenFunction]] = []
+        SSgrn:List[List[PyGreenFunction]] = []
+        
+        for ir in range(len(distarr)):
+            dist = distarr[ir]
+            EXPgrn.append([])
+            VFgrn .append([])
+            DDgrn .append([])
+            HFgrn .append([])
+            DSgrn .append([])
+            SSgrn .append([])
+            for i, comp in enumerate(['Z', 'R', 'T']):
+                if i<2:
+                    if calc_EXP:
+                        grn = PyGreenFunction(f'{prefix}EX{comp}', nt, dt, freqs, wI, dist, depsrc, deprcv)
+                        EXPgrn[ir].append(grn)
+                        C_EXPgrn[ir][i] = pointer(grn.c_grn)
+
+                    if calc_VF:
+                        grn = PyGreenFunction(f'{prefix}VF{comp}', nt, dt, freqs, wI, dist, depsrc, deprcv)
+                        VFgrn[ir].append(grn)
+                        C_VFgrn[ir][i] = pointer(grn.c_grn)
+                    
+                    if calc_DC:
+                        grn = PyGreenFunction(f'{prefix}DD{comp}', nt, dt, freqs, wI, dist, depsrc, deprcv)
+                        DDgrn[ir].append(grn)
+                        C_DDgrn[ir][i] = pointer(grn.c_grn)
+                
+                if calc_HF:
+                    grn = PyGreenFunction(f'{prefix}HF{comp}', nt, dt, freqs, wI, dist, depsrc, deprcv)
+                    HFgrn[ir].append(grn)
+                    C_HFgrn[ir][i] = pointer(grn.c_grn)
+
+                if calc_DC:
+                    grn = PyGreenFunction(f'{prefix}DS{comp}', nt, dt, freqs, wI, dist, depsrc, deprcv)
+                    DSgrn[ir].append(grn)
+                    C_DSgrn[ir][i] = pointer(grn.c_grn)
+                    grn = PyGreenFunction(f'{prefix}SS{comp}', nt, dt, freqs, wI, dist, depsrc, deprcv)
+                    SSgrn[ir].append(grn)
+                    C_SSgrn[ir][i] = pointer(grn.c_grn) 
+
+        return EXPgrn, VFgrn, HFgrn, DDgrn, DSgrn, SSgrn
+
+
     def gen_gf_spectra(
         self, 
         distarr:np.ndarray|list[float]|float, 
@@ -153,6 +219,7 @@ class PyModel1D:
         Length:float=0.0, 
         delayT0:float=0.0,
         delayV0:float=0.0,
+        calc_upar:bool=False,
         gf_source=['EXP', 'VF', 'HF', 'DC'],
         statsfile:str|None=None, 
         statsidxs:np.ndarray|list|None=None, 
@@ -179,6 +246,7 @@ class PyModel1D:
             :param    k0:            波数k积分的上限 :math:`\tilde{k_{max}}=\sqrt{(k_{0}*\pi/hs)^2 + (ampk*w/vmin_{ref})^2} ` , 波数k积分循环必须退出, hs=max(震源和台站深度差,1.0)
             :param    Length:        定义波数k积分的间隔 `dk=2\pi / (L*rmax)`, 选取要求见 :ref:`(Bouchon, 1981) <bouchon_1981>` 
                                      :ref:`(张海明, 2021) <zhang_book_2021>`，默认自动选择
+            :param    calc_upar:     是否计算位移u的空间导数
             :param    gf_source:     待计算的震源类型
             :param    statsfile:     波数k积分（包括Filon积分和峰谷平均法）的过程记录文件，常用于debug或者观察积分过程中 :math:`F(k,\omega)` 和  :math:`F(k,\omega)J_m(kr)k` 的变化    
             :param    statsidxs:     仅输出特定频点的过程记录文件，建议给定频点，否则默认所有频率点的记录文件都输出，很占空间
@@ -289,53 +357,41 @@ class PyModel1D:
         C_DSgrn = ((c_PGRN*3)*nrs)() if calc_DC else None
         C_SSgrn = ((c_PGRN*3)*nrs)() if calc_DC else None
 
+        # 位移u的空间导数
+        C_EXPgrn_uiz = C_VFgrn_uiz = C_HFgrn_uiz = C_DDgrn_uiz = C_DSgrn_uiz = C_SSgrn_uiz = None
+        C_EXPgrn_uir = C_VFgrn_uir = C_HFgrn_uir = C_DDgrn_uir = C_DSgrn_uir = C_SSgrn_uir = None
+        if calc_upar:
+            C_EXPgrn_uiz = ((c_PGRN*2)*nrs)() if calc_EXP else None
+            C_VFgrn_uiz = ((c_PGRN*2)*nrs)() if calc_VF else None
+            C_HFgrn_uiz = ((c_PGRN*3)*nrs)() if calc_HF else None
+            C_DDgrn_uiz = ((c_PGRN*2)*nrs)() if calc_DC else None
+            C_DSgrn_uiz = ((c_PGRN*3)*nrs)() if calc_DC else None
+            C_SSgrn_uiz = ((c_PGRN*3)*nrs)() if calc_DC else None
+            #
+            C_EXPgrn_uir = ((c_PGRN*2)*nrs)() if calc_EXP else None
+            C_VFgrn_uir = ((c_PGRN*2)*nrs)() if calc_VF else None
+            C_HFgrn_uir = ((c_PGRN*3)*nrs)() if calc_HF else None
+            C_DDgrn_uir = ((c_PGRN*2)*nrs)() if calc_DC else None
+            C_DSgrn_uir = ((c_PGRN*3)*nrs)() if calc_DC else None
+            C_SSgrn_uir = ((c_PGRN*3)*nrs)() if calc_DC else None
 
-        EXPgrn:List[List[PyGreenFunction]] = []
-        VFgrn:List[List[PyGreenFunction]] = []
-        DDgrn:List[List[PyGreenFunction]] = []
-        HFgrn:List[List[PyGreenFunction]] = []
-        DSgrn:List[List[PyGreenFunction]] = []
-        SSgrn:List[List[PyGreenFunction]] = []
 
+        EXPgrn, VFgrn, HFgrn, DDgrn, DSgrn, SSgrn = self._init_grn(
+            distarr, calc_EXP, calc_VF, calc_HF, calc_DC, 
+            C_EXPgrn, C_VFgrn, C_HFgrn, C_DDgrn, C_DSgrn, C_SSgrn, 
+            nt, dt, freqs, wI)
         
-        for ir in range(nrs):
-            dist = distarr[ir]
-            EXPgrn.append([])
-            VFgrn .append([])
-            DDgrn .append([])
-            HFgrn .append([])
-            DSgrn .append([])
-            SSgrn .append([])
-            for i, comp in enumerate(['Z', 'R', 'T']):
-                if i<2:
-                    if calc_EXP:
-                        grn = PyGreenFunction(f'EX{comp}', nt, dt, freqs, wI, dist, depsrc, deprcv)
-                        EXPgrn[ir].append(grn)
-                        C_EXPgrn[ir][i] = pointer(grn.c_grn)
-
-                    if calc_VF:
-                        grn = PyGreenFunction(f'VF{comp}', nt, dt, freqs, wI, dist, depsrc, deprcv)
-                        VFgrn[ir].append(grn)
-                        C_VFgrn[ir][i] = pointer(grn.c_grn)
-                    
-                    if calc_DC:
-                        grn = PyGreenFunction(f'DD{comp}', nt, dt, freqs, wI, dist, depsrc, deprcv)
-                        DDgrn[ir].append(grn)
-                        C_DDgrn[ir][i] = pointer(grn.c_grn)
-                
-                if calc_HF:
-                    grn = PyGreenFunction(f'HF{comp}', nt, dt, freqs, wI, dist, depsrc, deprcv)
-                    HFgrn[ir].append(grn)
-                    C_HFgrn[ir][i] = pointer(grn.c_grn)
-
-                if calc_DC:
-                    grn = PyGreenFunction(f'DS{comp}', nt, dt, freqs, wI, dist, depsrc, deprcv)
-                    DSgrn[ir].append(grn)
-                    C_DSgrn[ir][i] = pointer(grn.c_grn)
-                    grn = PyGreenFunction(f'SS{comp}', nt, dt, freqs, wI, dist, depsrc, deprcv)
-                    SSgrn[ir].append(grn)
-                    C_SSgrn[ir][i] = pointer(grn.c_grn) 
-                
+        EXPgrn_uiz, VFgrn_uiz, HFgrn_uiz, DDgrn_uiz, DSgrn_uiz, SSgrn_uiz = ([] for _ in range(6))
+        EXPgrn_uir, VFgrn_uir, HFgrn_uir, DDgrn_uir, DSgrn_uir, SSgrn_uir = ([] for _ in range(6))
+        if calc_upar:
+            EXPgrn_uiz, VFgrn_uiz, HFgrn_uiz, DDgrn_uiz, DSgrn_uiz, SSgrn_uiz = self._init_grn(
+            distarr, calc_EXP, calc_VF, calc_HF, calc_DC, 
+            C_EXPgrn_uiz, C_VFgrn_uiz, C_HFgrn_uiz, C_DDgrn_uiz, C_DSgrn_uiz, C_SSgrn_uiz, 
+            nt, dt, freqs, wI, 'z')
+            EXPgrn_uir, VFgrn_uir, HFgrn_uir, DDgrn_uir, DSgrn_uir, SSgrn_uir = self._init_grn(
+            distarr, calc_EXP, calc_VF, calc_HF, calc_DC, 
+            C_EXPgrn_uir, C_VFgrn_uir, C_HFgrn_uir, C_DDgrn_uir, C_DSgrn_uir, C_SSgrn_uir, 
+            nt, dt, freqs, wI, 'r')
 
 
         c_statsfile = None 
@@ -396,6 +452,9 @@ class PyModel1D:
             self.c_pymod1d, nf1, nf2, nf, c_freqs, nrs, c_rs, wI, 
             vmin_ref, keps, ampk, iwk0, k0, Length, print_runtime,
             C_EXPgrn, C_VFgrn, C_HFgrn, C_DDgrn, C_DSgrn, C_SSgrn, 
+            calc_upar, 
+            C_EXPgrn_uiz, C_VFgrn_uiz, C_HFgrn_uiz, C_DDgrn_uiz, C_DSgrn_uiz, C_SSgrn_uiz, 
+            C_EXPgrn_uir, C_VFgrn_uir, C_HFgrn_uir, C_DDgrn_uir, C_DSgrn_uir, C_SSgrn_uir, 
             c_statsfile, nstatsidxs, c_statsidxs
         )
         #=================================================================================
@@ -433,6 +492,29 @@ class PyModel1D:
                 if calc_DC:
                     stream.append(DSgrn [ir][i].freq2time(delayT, travtP, travtS, sgn ))
                     stream.append(SSgrn [ir][i].freq2time(delayT, travtP, travtS, sgn ))
+
+                if calc_upar:
+                    if i<2:
+                        if calc_EXP:
+                            stream.append(EXPgrn_uiz[ir][i].freq2time(delayT, travtP, travtS, sgn ))
+                            stream.append(EXPgrn_uir[ir][i].freq2time(delayT, travtP, travtS, sgn ))
+                        if calc_VF:
+                            stream.append(VFgrn_uiz [ir][i].freq2time(delayT, travtP, travtS, sgn ))
+                            stream.append(VFgrn_uir [ir][i].freq2time(delayT, travtP, travtS, sgn ))
+                        if calc_DC:
+                            stream.append(DDgrn_uiz [ir][i].freq2time(delayT, travtP, travtS, sgn ))
+                            stream.append(DDgrn_uir [ir][i].freq2time(delayT, travtP, travtS, sgn ))
+                    
+                    if calc_HF:
+                        stream.append(HFgrn_uiz [ir][i].freq2time(delayT, travtP, travtS, sgn ))
+                        stream.append(HFgrn_uir [ir][i].freq2time(delayT, travtP, travtS, sgn ))
+
+                    if calc_DC:
+                        stream.append(DSgrn_uiz [ir][i].freq2time(delayT, travtP, travtS, sgn ))
+                        stream.append(DSgrn_uir [ir][i].freq2time(delayT, travtP, travtS, sgn ))
+                        stream.append(SSgrn_uiz [ir][i].freq2time(delayT, travtP, travtS, sgn ))
+                        stream.append(SSgrn_uir [ir][i].freq2time(delayT, travtP, travtS, sgn ))
+
 
             dataLst.append(stream)
 

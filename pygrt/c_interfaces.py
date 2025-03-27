@@ -38,6 +38,22 @@ C_integ_grn_spec.argtypes = [
     POINTER(c_PGRN*3),
     POINTER(c_PGRN*3),
 
+    c_bool,
+    # uiz
+    POINTER(c_PGRN*2),
+    POINTER(c_PGRN*2),
+    POINTER(c_PGRN*3),
+    POINTER(c_PGRN*2),
+    POINTER(c_PGRN*3),
+    POINTER(c_PGRN*3),
+    # uir
+    POINTER(c_PGRN*2),
+    POINTER(c_PGRN*2),
+    POINTER(c_PGRN*3),
+    POINTER(c_PGRN*2),
+    POINTER(c_PGRN*3),
+    POINTER(c_PGRN*3),
+
     c_char_p,
     c_int, 
     POINTER(c_int)

@@ -48,7 +48,6 @@ void calc_R_EV(
     const MYCOMPLEX R[2][2], MYCOMPLEX RL, 
     MYCOMPLEX R_EV[2][2], MYCOMPLEX *R_EVL)
 {
-
     // 公式(5.2.19)
     MYCOMPLEX D11[2][2] = {{k, k*xb_rcv}, {k*xa_rcv, k}};
     MYCOMPLEX D12[2][2] = {{k, -k*xb_rcv}, {-k*xa_rcv, k}};
@@ -66,6 +65,33 @@ void calc_R_EV(
 }
 
 
+void calc_uiz_R_EV(
+    MYCOMPLEX xa_rcv, MYCOMPLEX xb_rcv, bool ircvup,
+    MYREAL k, 
+    const MYCOMPLEX R[2][2], MYCOMPLEX RL, 
+    MYCOMPLEX R_EV[2][2], MYCOMPLEX *R_EVL)
+{
+    // 将势函数转为ui,z在(B_m, P_m, C_m)系下的分量
+    // 新推导的公式
+    MYCOMPLEX ak = k*k*xa_rcv;
+    MYCOMPLEX bk = k*k*xb_rcv;
+    MYCOMPLEX bb = xb_rcv*bk;
+    MYCOMPLEX aa = xa_rcv*ak;
+    MYCOMPLEX D11[2][2] = {{ak, bb}, {aa, bk}};
+    MYCOMPLEX D12[2][2] = {{-ak, bb}, {aa, -bk}};
+
+    // 公式(5.7.7,25)
+    if(ircvup){// 震源更深
+        cmat2x2_mul(D12, R, R_EV);
+        cmat2x2_add(D11, R_EV, R_EV);
+        *R_EVL = (RONE - (RL))*bk;
+    } else { // 接收点更深
+        cmat2x2_mul(D11, R, R_EV);
+        cmat2x2_add(D12, R_EV, R_EV);
+        *R_EVL = (RL - RONE)*bk;
+    }
+    
+}    
     
 
 

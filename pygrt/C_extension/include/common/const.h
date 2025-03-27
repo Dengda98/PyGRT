@@ -68,6 +68,9 @@ typedef int MYINT;  ///< 整数
     #define PI2 6.2831853f        ///< \f$ 2\pi \f$
     #define HALFPI 1.5707963f   ///< \f$ \frac{\pi}{2} \f$
     #define QUARTERPI 0.78539816f   ///< \f$ \frac{\pi}{4} \f$
+    #define THREEQUARTERPI 2.35619450f  ///< \f$ \frac{3\pi}{4} \f$
+    #define FIVEQUARTERPI  3.92699082f  ///< \f$ \frac{5\pi}{4} \f$
+    #define SEVENQUARTERPI  5.49778714f   ///< \f$ \frac{7\pi}{4} \f$
     #define INV_SQRT_TWO 0.70710678f   ///< \f$ \frac{1}{\sqrt{2}} \f$ 
 
 #else 
@@ -102,6 +105,9 @@ typedef int MYINT;  ///< 整数
     #define PI2 6.283185307179586        ///< \f$ 2\pi \f$
     #define HALFPI 1.5707963267948966   ///< \f$ \frac{\pi}{2} \f$
     #define QUARTERPI 0.7853981633974483   ///< \f$ \frac{\pi}{4} \f$
+    #define THREEQUARTERPI 2.356194490192345  ///< \f$ \frac{3\pi}{4} \f$
+    #define FIVEQUARTERPI  3.9269908169872414  ///< \f$ \frac{5\pi}{4} \f$
+    #define SEVENQUARTERPI  5.497787143782138   ///< \f$ \frac{7\pi}{4} \f$
     #define INV_SQRT_TWO 0.7071067811865475   ///< \f$ \frac{1}{\sqrt{2}} \f$ 
 
 #endif

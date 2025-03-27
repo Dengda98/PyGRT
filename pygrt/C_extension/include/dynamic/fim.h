@@ -38,6 +38,17 @@
  * @param  sum_VF_J[nr][3][4]   (out)垂直力源
  * @param  sum_HF_J[nr][3][4]   (out)水平力源
  * @param  sum_DC_J[nr][3][4]   (out)双力偶源
+ * 
+ * @param  calc_upar       (in)是否计算位移u的空间导数
+ * @param  sum_EXP_uiz_J[nr][3][4]  (out)爆炸源产生的ui_z(位移u对坐标z的偏导)，下同
+ * @param  sum_VF_uiz_J[nr][3][4]   (out)垂直力源
+ * @param  sum_HF_uiz_J[nr][3][4]   (out)水平力源
+ * @param  sum_DC_uiz_J[nr][3][4]   (out)双力偶源
+ * @param  sum_EXP_uir_J[nr][3][4]  (out)爆炸源产生的ui_r(位移u对坐标r的偏导)，下同
+ * @param  sum_VF_uir_J[nr][3][4]   (out)垂直力源
+ * @param  sum_HF_uir_J[nr][3][4]   (out)水平力源
+ * @param  sum_DC_uir_J[nr][3][4]   (out)双力偶源
+ * 
  * @param  fstats[nr]           (out)不同震中距的格林函数积分过程文件
  * 
  * @return  k        积分截至时的波数
@@ -47,6 +58,11 @@ MYREAL linear_filon_integ(
     MYINT nr, MYREAL *rs,
     MYCOMPLEX sum_EXP_J[nr][3][4], MYCOMPLEX sum_VF_J[nr][3][4],  
     MYCOMPLEX sum_HF_J[nr][3][4],  MYCOMPLEX sum_DC_J[nr][3][4],  
+    bool calc_upar,
+    MYCOMPLEX sum_EXP_uiz_J[nr][3][4], MYCOMPLEX sum_VF_uiz_J[nr][3][4],  
+    MYCOMPLEX sum_HF_uiz_J[nr][3][4],  MYCOMPLEX sum_DC_uiz_J[nr][3][4],  
+    MYCOMPLEX sum_EXP_uir_J[nr][3][4], MYCOMPLEX sum_VF_uir_J[nr][3][4],  
+    MYCOMPLEX sum_HF_uir_J[nr][3][4],  MYCOMPLEX sum_DC_uir_J[nr][3][4],  
     FILE *(fstats[nr]));
 
 
@@ -63,6 +79,7 @@ MYREAL linear_filon_integ(
  * @param    VF_qwv[3][3]     (in)垂直力源核函数
  * @param    HF_qwv[3][3]     (in)水平力源核函数
  * @param    DC_qwv[3][3]     (in)双力偶源核函数 
+ * @param    calc_uir         (in)是否计算ui_r（位移u对坐标r的偏导）
  * @param    EXP_J[3][4]      (out)爆炸源，该dk区间内的积分值，下同
  * @param    VF_J[3][4]       (out)垂直力源
  * @param    HF_J[3][4]       (out)水平力源
@@ -73,6 +90,7 @@ void int_Pk_filon(
     MYREAL k, MYREAL r, 
     const MYCOMPLEX EXP_qwv[3][3], const MYCOMPLEX VF_qwv[3][3], 
     const MYCOMPLEX HF_qwv[3][3],  const MYCOMPLEX DC_qwv[3][3], 
+    bool calc_uir, 
     MYCOMPLEX EXP_J[3][4], MYCOMPLEX VF_J[3][4], 
     MYCOMPLEX HF_J[3][4],  MYCOMPLEX DC_J[3][4] );
 
