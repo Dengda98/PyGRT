@@ -15,10 +15,12 @@ DEPS := $(OBJS:.o=.d)  # include main functions here
 OBJS := $(filter-out \
 	$(BUILD_DIR)/grt_main.o \
 	$(BUILD_DIR)/grt_syn.o \
+	$(BUILD_DIR)/grt_b2a.o \
 	, $(OBJS))
 
 PROGS := $(BIN_DIR)/grt \
-         $(BIN_DIR)/grt.syn
+         $(BIN_DIR)/grt.syn \
+		 $(BIN_DIR)/grt.b2a
 
 all: objs progs
 
@@ -43,6 +45,9 @@ $(BIN_DIR)/grt: grt_main.c $(OBJS)
 
 $(BIN_DIR)/grt.syn: grt_syn.c $(OBJS)
 	$(CC) -o $@ $^  $(COMMON_OBJS) $(TRAVT_OBJS)  $(CFLAGS)
+
+$(BIN_DIR)/grt.b2a: grt_b2a.c
+	$(CC) -o $@ $^  $(COMMON_OBJS) $(CFLAGS)
 
 # ----------------------- Dependency generation -----------------------
 -include $(DEPS)
