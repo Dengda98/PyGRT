@@ -50,6 +50,13 @@ void calc_R_EV(
     MYCOMPLEX R_EV[2][2], MYCOMPLEX *R_EVL);
 
 
+void calc_uiz_R_EV(
+    MYCOMPLEX xa_rcv, MYCOMPLEX xb_rcv, bool ircvup,
+    MYREAL k, 
+    const MYCOMPLEX R[2][2], MYCOMPLEX RL, 
+    MYCOMPLEX R_EV[2][2], MYCOMPLEX *R_EVL);
+
+
 /**
  * 计算界面的反射系数RD/RDL/RU/RUL, 透射系数TD/TDL/TU/TUL, 包括时间延迟因子，
  * 后缀L表示SH波的系数, 其余表示P-SV波的系数, 根据公式(5.4.14)和(5.4.31)计算系数   
