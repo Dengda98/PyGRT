@@ -168,3 +168,10 @@ float * get_ricker_wave(float dt, float f0, int *Nt);
  * @return   float指针
  */
 float * get_custom_wave(int *Nt, const char *tfparams);
+
+/**
+ * 专用于在Python端释放C中申请的内存
+ * 
+ * @param     pt    指针
+ */
+void free1d(void *pt);
