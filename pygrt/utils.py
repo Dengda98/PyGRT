@@ -24,6 +24,8 @@ from scipy.fft import rfft, irfft
 import math 
 import os
 
+from numpy.typing import ArrayLike
+
 from .c_structures import *
 
 
@@ -284,7 +286,7 @@ def gen_syn_from_gf_EXP(st:Stream, M0:float, az:float, calc_upar:bool=False):
     return gen_syn_from_gf(st, calc_upar, "COMPUTE_EXP", M0, az)
 
 
-def gen_syn_from_gf_MT(st:Stream, M0:float, MT:np.ndarray, az:float, calc_upar:bool=False):
+def gen_syn_from_gf_MT(st:Stream, M0:float, MT:ArrayLike, az:float, calc_upar:bool=False):
     ''' 
         矩张量源，单位为dyne*cm
 
@@ -364,22 +366,41 @@ def __check_trace_attr_sac(tr:Trace, **kwargs):
 #     return st
 
 
-def stream_convolve(st0:Stream, signal:np.ndarray, inplace=True):
+def stream_convolve(st0:Stream, signal0:np.ndarray, inplace=True):
     '''
         对stream中每一道信号做线性卷积  
 
         :param    st0:        记录多个Trace的 :class:`obspy.Stream` 类型
-        :param    signal:     卷积信号
+        :param    signal0:    卷积信号
         :param    inplace:    是否做原地更改  
 
         :return:
             - **stream** -    处理后的结果, :class:`obspy.Stream` 类型
     '''
     st = st0 if inplace else deepcopy(st0)
+    signal = deepcopy(signal0)
     
     for tr in st:
         data = tr.data 
-        data[:] = oaconvolve(data, signal, mode='full')[:data.shape[0]]
+        dt = tr.stats.delta
+        
+        fac = None
+        user_wI = hasattr(tr.stats, "sac") and "user0" in tr.stats.sac
+        # 使用虚频率先压制
+        if user_wI:
+            npts = tr.stats.npts
+            wI = tr.stats.sac['user0']
+            fac = np.exp(np.arange(0, npts)*dt*wI)
+            signal = deepcopy(signal0)
+
+            signal[:] /= fac[:len(signal)]
+            data[:] /= fac
+
+        data1 = np.pad(data, (len(signal)-1, 0), mode='wrap') # 强制循环卷
+        data[:] = oaconvolve(data1, signal, mode='valid')[:data.shape[0]] * dt  # dt是连续卷积的系数
+
+        if user_wI:
+            data[:] *= fac
 
     return st
 
@@ -433,7 +454,9 @@ def stream_write_sac(st:Stream, path:str):
         将一系列Trace以SAC形式保存到本地，以发震时刻作为参考0时刻
 
         :param    st:         记录多个Trace的 :class:`obspy.Stream` 类型
-        :param    path:       保存文件名，不要加后缀  
+        :param    path:       保存文件名，不要加后缀
+                              例如path="GRN/res"表明sac文件将保存在GRN文件中，
+                              文件名分别为resR.sac, resT.sac, resZ.sac  
 
     '''
     # 新建对应文件夹
@@ -443,7 +466,7 @@ def stream_write_sac(st:Stream, path:str):
 
     # 每一道的保存路径为path+{channel}
     for tr in st:
-        tr.write(".".join([path, tr.stats.channel]) + '.sac', format='SAC')
+        tr.write(path+tr.stats.channel[-1] + '.sac', format='SAC')
 
 
 

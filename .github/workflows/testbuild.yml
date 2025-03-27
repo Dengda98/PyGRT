@@ -274,6 +274,13 @@ jobs:
       #     python plot_compare_pygrt.py
       #   continue-on-error: true  # 即使失败，仍然标记为成功
 
+      - name: Test signal convolution
+        working-directory: ${{ env.EXAMPLE_COPY_PATH }}/convolve_signals
+        run: |
+          chmod +x *.sh
+          ./run_grt.sh
+          python run_pygrt.py
+
       - name: Remove the test files
         run: |
           rm -rf ${{ env.EXAMPLE_COPY_PATH }}
