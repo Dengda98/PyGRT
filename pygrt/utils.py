@@ -454,9 +454,11 @@ def stream_write_sac(st:Stream, path:str):
         将一系列Trace以SAC形式保存到本地，以发震时刻作为参考0时刻
 
         :param    st:         记录多个Trace的 :class:`obspy.Stream` 类型
-        :param    path:       保存文件名，不要加后缀
-                              例如path="GRN/res"表明sac文件将保存在GRN文件中，
-                              文件名分别为resR.sac, resT.sac, resZ.sac  
+        :param    path:       保存文件名，不要加后缀，
+                              例如path="GRN/out"表明sac文件将保存在GRN文件中，
+                              文件名分别为outR.sac, outT.sac, outZ.sac，
+                              若通道名前缀有"r","z"或"t"（表示位移空间导数），则该前缀
+                              也会加到SAC文件名中，例如GRN/routR.sac
 
     '''
     # 新建对应文件夹
@@ -464,9 +466,14 @@ def stream_write_sac(st:Stream, path:str):
     if(len(parent_dir)>0):
         os.makedirs(parent_dir, exist_ok=True)
 
+    filesub = os.path.basename(path)
     # 每一道的保存路径为path+{channel}
     for tr in st:
-        tr.write(path+tr.stats.channel[-1] + '.sac', format='SAC')
+        prefix = ""
+        if tr.stats.channel[0] in ['r', 't', 'z']:
+            prefix = tr.stats.channel[0]
+        filepath = os.path.join(parent_dir, f"{prefix}{filesub}{tr.stats.channel[-1]}.sac")
+        tr.write(filepath, format='SAC')
 
 
 
