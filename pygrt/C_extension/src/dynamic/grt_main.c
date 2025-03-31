@@ -726,9 +726,6 @@ static void ifft_one_trace(
         float_arr[i] = out[i];
     }
 
-    // 写入虚频率
-    hd->user0 = wI;
-
     write_sac(outpath, *hd, float_arr);
     // FILE *fp = fopen(outpath, "wb");
     // fwrite(out, sizeof(float), nt, fp);
@@ -1143,6 +1140,14 @@ int main(int argc, char **argv) {
     // 记录震源和台站深度
     hd.evdp = depsrc; // km
     hd.stel = (-1.0)*deprcv*1e3; // m
+    // 写入虚频率
+    hd.user0 = wI;
+    // 写入接受点的Vp,Vs,rho
+    hd.user1 = pymod->Va[pymod->ircv];
+    hd.user2 = pymod->Vb[pymod->ircv];
+    hd.user3 = pymod->Rho[pymod->ircv];
+    hd.user4 = RONE/pymod->Qa[pymod->ircv];
+    hd.user5 = RONE/pymod->Qb[pymod->ircv];
 
     
     // 做反傅里叶变换，保存SAC文件
