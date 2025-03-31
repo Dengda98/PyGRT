@@ -35,8 +35,8 @@ $(BUILD_DIR)/%.o: %.c
 $(BIN_DIR):
 	@mkdir -p $(BIN_DIR)
 
-$(BIN_DIR)/grt.travt: grt_travt.c $(OBJS)
-	$(CC) -o $@ $^  $(COMMON_OBJS)  $(CFLAGS)
+$(BIN_DIR)/grt.travt: grt_travt.c $(OBJS) $(COMMON_OBJS) 
+	$(CC) -o $@ $^  $(CFLAGS)
 
 # ----------------------- Dependency generation -----------------------
 -include $(DEPS)
