@@ -21,7 +21,7 @@
 #include <dirent.h>
 
 #include "dynamic/signals.h"
-#include "common/sacio.h"
+#include "common/sacio2.h"
 #include "common/const.h"
 #include "common/logo.h"
 #include "common/colorstr.h"
@@ -698,11 +698,8 @@ int main(int argc, char **argv){
                 if(coef == 0.0) continue;
     
                 sprintf(buffer, "%s/%s%s%c.sac", s_grnpath, sacin_prefixes[ityp], srcName[k], ch);
-                if((arr = read_sac(buffer, &hd)) == NULL){
-                    fprintf(stderr, "[%s] " BOLD_RED "read %s failed.\n" DEFAULT_RESTORE, command, buffer);
-                    exit(EXIT_FAILURE);
-                }
-                
+                arr = read_SAC(command, buffer, &hd, NULL);
+
                 nt = hd.npts;
                 dt = hd.delta;
                 dist = hd.dist;
