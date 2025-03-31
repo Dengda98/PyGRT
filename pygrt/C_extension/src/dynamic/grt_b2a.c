@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "common/sacio.h"
+#include "common/sacio2.h"
 #include "common/logo.h"
 #include "common/colorstr.h"
 
@@ -71,11 +71,7 @@ int main(int argc, char **argv){
 
     // 读入SAC文件
     SACHEAD hd;
-    float *arr=NULL;
-    if((arr = read_sac(filepath, &hd)) == NULL){
-        fprintf(stderr, "[%s] " BOLD_RED "read %s failed.\n" DEFAULT_RESTORE, command, filepath);
-        exit(EXIT_FAILURE);
-    }
+    float *arr = read_SAC(command, filepath, &hd, NULL);
 
     // 将波形写入标准输出，第一列时间，第二列振幅
     float begt = hd.b;
