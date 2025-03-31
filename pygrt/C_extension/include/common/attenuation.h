@@ -16,6 +16,7 @@
  * \f[
  *  c(\omega) = c(2\pi)\times (1 + \frac{1}{\pi Q} \log(\frac{\omega}{2\pi}) + \frac{i}{2Q}) 
  * \f] 
+ * 其中虚数部分的正负号和书中不同，是因为书中使用的傅里叶变换的e指数符号和我们通常使用的相反。
  * 
  * @param Qinv     (in) 1/Q
  * @param omega    (in)复数频率\f$ \tilde{\omega} =\omega - i\zeta \f$ 
