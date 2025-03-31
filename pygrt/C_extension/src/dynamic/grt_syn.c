@@ -21,7 +21,7 @@
 #include <dirent.h>
 
 #include "dynamic/signals.h"
-#include "common/sacio.h"
+#include "common/sacio2.h"
 #include "common/const.h"
 #include "common/logo.h"
 #include "common/colorstr.h"
@@ -128,10 +128,10 @@ printf("\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
-"    grt.syn -G<grn_path> -A<azimuth> -S<scale> \n"
+"    grt.syn -G<grn_path> -A<azimuth> -S<scale> -O<outdir> \n"
 "            [-M<strike>/<dip>/<rake>]\n"
 "            [-T<Mxx>/<Mxy>/<Mxz>/<Myy>/<Myz>/<Mzz>]\n"
-"            [-F<fn>/<fe>/<fz>] [-O<outdir>] \n"
+"            [-F<fn>/<fe>/<fz>] \n"
 "            [-D<tftype>/<tfparams>] [-I<odr>] [-J<odr>]\n" 
 "            [-P<prefix>] [-e] [-s]\n"
 "\n"
@@ -452,6 +452,10 @@ static void getopt_from_command(int argc, char **argv){
         fprintf(stderr, "[%s] " BOLD_RED "Error! Need set -S. Use '-h' for help.\n" DEFAULT_RESTORE, command);
         exit(EXIT_FAILURE);
     }
+    if(O_flag == 0){
+        fprintf(stderr, "[%s] " BOLD_RED "Error! Need set -O. Use '-h' for help.\n" DEFAULT_RESTORE, command);
+        exit(EXIT_FAILURE);
+    }
 
     // 只能使用一种震源
     if(M_flag + F_flag + T_flag > 1){
@@ -504,18 +508,12 @@ static void getopt_from_command(int argc, char **argv){
     }
     
 
-    if(O_flag == 1){
-        // 建立保存目录
-        if(mkdir(s_output_dir, 0777) != 0){
-            if(errno != EEXIST){
-                fprintf(stderr, "[%s] " BOLD_RED "Error! Unable to create folder %s. Error code: %d\n" DEFAULT_RESTORE, command, s_output_dir, errno);
-                exit(EXIT_FAILURE);
-            }
+    // 建立保存目录
+    if(mkdir(s_output_dir, 0777) != 0){
+        if(errno != EEXIST){
+            fprintf(stderr, "[%s] " BOLD_RED "Error! Unable to create folder %s. Error code: %d\n" DEFAULT_RESTORE, command, s_output_dir, errno);
+            exit(EXIT_FAILURE);
         }
-    } else {
-        // 使用当前目录
-        s_output_dir = (char*)malloc(sizeof(char)*100);
-        strcpy(s_output_dir, ".");
     }
 
     if(P_flag == 0){
@@ -700,11 +698,8 @@ int main(int argc, char **argv){
                 if(coef == 0.0) continue;
     
                 sprintf(buffer, "%s/%s%s%c.sac", s_grnpath, sacin_prefixes[ityp], srcName[k], ch);
-                if((arr = read_sac(buffer, &hd)) == NULL){
-                    fprintf(stderr, "[%s] " BOLD_RED "read %s failed.\n" DEFAULT_RESTORE, command, buffer);
-                    exit(EXIT_FAILURE);
-                }
-                
+                arr = read_SAC(command, buffer, &hd, NULL);
+
                 nt = hd.npts;
                 dt = hd.delta;
                 dist = hd.dist;
