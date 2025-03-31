@@ -1146,6 +1146,8 @@ int main(int argc, char **argv) {
     hd.user1 = pymod->Va[pymod->ircv];
     hd.user2 = pymod->Vb[pymod->ircv];
     hd.user3 = pymod->Rho[pymod->ircv];
+    hd.user4 = RONE/pymod->Qa[pymod->ircv];
+    hd.user5 = RONE/pymod->Qb[pymod->ircv];
 
     
     // 做反傅里叶变换，保存SAC文件
