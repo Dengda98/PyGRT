@@ -13,6 +13,9 @@ from ctypes import *
 
 from .c_structures import * 
 
+FPOINTER = POINTER(c_float)
+IPOINTER = POINTER(c_int)
+
 
 c_PGRN = POINTER(c_GRN)
 
@@ -31,6 +34,22 @@ C_integ_grn_spec.argtypes = [
     REAL, REAL, REAL, c_bool, REAL, REAL,
     c_bool,
 
+    POINTER(c_PGRN*2),
+    POINTER(c_PGRN*2),
+    POINTER(c_PGRN*3),
+    POINTER(c_PGRN*2),
+    POINTER(c_PGRN*3),
+    POINTER(c_PGRN*3),
+
+    c_bool,
+    # uiz
+    POINTER(c_PGRN*2),
+    POINTER(c_PGRN*2),
+    POINTER(c_PGRN*3),
+    POINTER(c_PGRN*2),
+    POINTER(c_PGRN*3),
+    POINTER(c_PGRN*3),
+    # uir
     POINTER(c_PGRN*2),
     POINTER(c_PGRN*2),
     POINTER(c_PGRN*3),
@@ -66,3 +85,28 @@ C_compute_travt1d.argtypes = [
     PREAL, PREAL, c_int, 
     c_int, c_int, REAL
 ]
+
+
+
+# -------------------------------------------------------------------
+#                      C函数定义的时间函数
+# -------------------------------------------------------------------
+C_free = libgrt.free1d
+"""释放在C中申请的内存"""
+C_free.restype = None
+C_free.argtypes = [c_void_p]
+
+C_get_trap_wave = libgrt.get_trap_wave
+"""梯形波"""
+C_get_trap_wave.restype = FPOINTER
+C_get_trap_wave.argtypes = [c_float, FPOINTER, FPOINTER, FPOINTER, IPOINTER]
+
+C_get_parabola_wave = libgrt.get_parabola_wave
+"""抛物波"""
+C_get_parabola_wave.restype = FPOINTER
+C_get_parabola_wave.argtypes = [c_float, FPOINTER, IPOINTER]
+
+C_get_ricker_wave = libgrt.get_ricker_wave
+"""雷克子波"""
+C_get_ricker_wave.restype = FPOINTER
+C_get_ricker_wave.argtypes = [c_float, c_float, IPOINTER]

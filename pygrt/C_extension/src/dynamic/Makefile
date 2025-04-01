@@ -15,10 +15,16 @@ DEPS := $(OBJS:.o=.d)  # include main functions here
 OBJS := $(filter-out \
 	$(BUILD_DIR)/grt_main.o \
 	$(BUILD_DIR)/grt_syn.o \
+	$(BUILD_DIR)/grt_b2a.o \
+	$(BUILD_DIR)/grt_strain.o \
+	$(BUILD_DIR)/grt_stress.o \
 	, $(OBJS))
 
 PROGS := $(BIN_DIR)/grt \
-         $(BIN_DIR)/grt.syn
+         $(BIN_DIR)/grt.syn \
+		 $(BIN_DIR)/grt.b2a \
+		 $(BIN_DIR)/grt.strain \
+		 $(BIN_DIR)/grt.stress
 
 all: objs progs
 
@@ -38,11 +44,20 @@ $(BUILD_DIR)/%.o: %.c
 $(BIN_DIR):
 	@mkdir -p $(BIN_DIR)
 
-$(BIN_DIR)/grt: grt_main.c $(OBJS)
-	$(CC) -o $@ $^  $(COMMON_OBJS) $(TRAVT_OBJS)  $(CFLAGS)
+$(BIN_DIR)/grt: grt_main.c $(OBJS) $(COMMON_OBJS) $(TRAVT_OBJS)
+	$(CC) -o $@ $^ $(CFLAGS)
 
-$(BIN_DIR)/grt.syn: grt_syn.c $(OBJS)
-	$(CC) -o $@ $^  $(COMMON_OBJS) $(TRAVT_OBJS)  $(CFLAGS)
+$(BIN_DIR)/grt.syn: grt_syn.c $(OBJS) $(COMMON_OBJS) $(TRAVT_OBJS)
+	$(CC) -o $@ $^  $(CFLAGS)
+
+$(BIN_DIR)/grt.b2a: grt_b2a.c $(COMMON_OBJS)
+	$(CC) -o $@ $^  $(CFLAGS)
+
+$(BIN_DIR)/grt.strain: grt_strain.c $(COMMON_OBJS)
+	$(CC) -o $@ $^  $(CFLAGS)
+
+$(BIN_DIR)/grt.stress: grt_stress.c $(COMMON_OBJS)
+	$(CC) -o $@ $^  $(CFLAGS)
 
 # ----------------------- Dependency generation -----------------------
 -include $(DEPS)
