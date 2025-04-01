@@ -56,6 +56,20 @@ void integ_grn_spec_in_C(
     MYCOMPLEX *DScplx[nr][3],  // DSZ, DSR, DST 的实部和虚部 [DS: 90-dip slip]
     MYCOMPLEX *SScplx[nr][3],  // SSZ, SSR, SST 的实部和虚部 [SS: strike slip]
 
+    bool calc_upar,
+    MYCOMPLEX *EXPcplx_uiz[nr][2], // EXZ, EXR 的实部和虚部
+    MYCOMPLEX *VFcplx_uiz[nr][2],  // VFZ, VFR 的实部和虚部
+    MYCOMPLEX *HFcplx_uiz[nr][3],  // HFZ, HFR, HFT 的实部和虚部
+    MYCOMPLEX *DDcplx_uiz[nr][2],  // DDZ, DDR 的实部和虚部      [DD: 45-dip slip]
+    MYCOMPLEX *DScplx_uiz[nr][3],  // DSZ, DSR, DST 的实部和虚部 [DS: 90-dip slip]
+    MYCOMPLEX *SScplx_uiz[nr][3],  // SSZ, SSR, SST 的实部和虚部 [SS: strike slip]
+    MYCOMPLEX *EXPcplx_uir[nr][2], // EXZ, EXR 的实部和虚部
+    MYCOMPLEX *VFcplx_uir[nr][2],  // VFZ, VFR 的实部和虚部
+    MYCOMPLEX *HFcplx_uir[nr][3],  // HFZ, HFR, HFT 的实部和虚部
+    MYCOMPLEX *DDcplx_uir[nr][2],  // DDZ, DDR 的实部和虚部      [DD: 45-dip slip]
+    MYCOMPLEX *DScplx_uir[nr][3],  // DSZ, DSR, DST 的实部和虚部 [DS: 90-dip slip]
+    MYCOMPLEX *SScplx_uir[nr][3],  // SSZ, SSR, SST 的实部和虚部 [SS: strike slip]
+
     const char *statsstr, // 积分结果输出
     MYINT  nstatsidxs, // 仅输出特定频点
     MYINT *statsidxs
@@ -67,40 +81,120 @@ void integ_grn_spec_in_C(
     GRN *(*DDgrn)[2]  = (DDcplx != NULL) ? (GRN*(*)[2])calloc(nr, sizeof(*DDgrn)) : NULL;
     GRN *(*DSgrn)[3]  = (DScplx != NULL) ? (GRN*(*)[3])calloc(nr, sizeof(*DSgrn)) : NULL;
     GRN *(*SSgrn)[3]  = (SScplx != NULL) ? (GRN*(*)[3])calloc(nr, sizeof(*SSgrn)) : NULL;
+
+    GRN *(*EXPgrn_uiz)[2] = (EXPcplx_uiz != NULL) ? (GRN*(*)[2])calloc(nr, sizeof(*EXPgrn_uiz)) : NULL;
+    GRN *(*VFgrn_uiz)[2]  = (VFcplx_uiz != NULL) ? (GRN*(*)[2])calloc(nr, sizeof(*VFgrn_uiz)) : NULL;
+    GRN *(*HFgrn_uiz)[3]  = (HFcplx_uiz != NULL) ? (GRN*(*)[3])calloc(nr, sizeof(*HFgrn_uiz)) : NULL;
+    GRN *(*DDgrn_uiz)[2]  = (DDcplx_uiz != NULL) ? (GRN*(*)[2])calloc(nr, sizeof(*DDgrn_uiz)) : NULL;
+    GRN *(*DSgrn_uiz)[3]  = (DScplx_uiz != NULL) ? (GRN*(*)[3])calloc(nr, sizeof(*DSgrn_uiz)) : NULL;
+    GRN *(*SSgrn_uiz)[3]  = (SScplx_uiz != NULL) ? (GRN*(*)[3])calloc(nr, sizeof(*SSgrn_uiz)) : NULL;
+
+    GRN *(*EXPgrn_uir)[2] = (EXPcplx_uir != NULL) ? (GRN*(*)[2])calloc(nr, sizeof(*EXPgrn_uir)) : NULL;
+    GRN *(*VFgrn_uir)[2]  = (VFcplx_uir != NULL) ? (GRN*(*)[2])calloc(nr, sizeof(*VFgrn_uir)) : NULL;
+    GRN *(*HFgrn_uir)[3]  = (HFcplx_uir != NULL) ? (GRN*(*)[3])calloc(nr, sizeof(*HFgrn_uir)) : NULL;
+    GRN *(*DDgrn_uir)[2]  = (DDcplx_uir != NULL) ? (GRN*(*)[2])calloc(nr, sizeof(*DDgrn_uir)) : NULL;
+    GRN *(*DSgrn_uir)[3]  = (DScplx_uir != NULL) ? (GRN*(*)[3])calloc(nr, sizeof(*DSgrn_uir)) : NULL;
+    GRN *(*SSgrn_uir)[3]  = (SScplx_uir != NULL) ? (GRN*(*)[3])calloc(nr, sizeof(*SSgrn_uir)) : NULL;
     
     for(int ir=0; ir<nr; ++ir){
         for(int i=0; i<3; ++i){
             if(i<2){
+                //
                 if(EXPcplx) {
                     EXPgrn[ir][i] = (GRN*)calloc(1, sizeof(GRN));
                     EXPgrn[ir][i]->Re = (MYREAL*)calloc(nf, sizeof(MYREAL));
                     EXPgrn[ir][i]->Im = (MYREAL*)calloc(nf, sizeof(MYREAL));
                 }
+                if(EXPcplx_uiz) {
+                    EXPgrn_uiz[ir][i] = (GRN*)calloc(1, sizeof(GRN));
+                    EXPgrn_uiz[ir][i]->Re = (MYREAL*)calloc(nf, sizeof(MYREAL));
+                    EXPgrn_uiz[ir][i]->Im = (MYREAL*)calloc(nf, sizeof(MYREAL));
+                }
+                if(EXPcplx_uir) {
+                    EXPgrn_uir[ir][i] = (GRN*)calloc(1, sizeof(GRN));
+                    EXPgrn_uir[ir][i]->Re = (MYREAL*)calloc(nf, sizeof(MYREAL));
+                    EXPgrn_uir[ir][i]->Im = (MYREAL*)calloc(nf, sizeof(MYREAL));
+                }
+                //
                 if(VFcplx) {
                     VFgrn[ir][i] = (GRN*)calloc(1, sizeof(GRN));
                     VFgrn[ir][i]->Re = (MYREAL*)calloc(nf, sizeof(MYREAL));
                     VFgrn[ir][i]->Im = (MYREAL*)calloc(nf, sizeof(MYREAL));
                 }
+                if(VFcplx_uiz) {
+                    VFgrn_uiz[ir][i] = (GRN*)calloc(1, sizeof(GRN));
+                    VFgrn_uiz[ir][i]->Re = (MYREAL*)calloc(nf, sizeof(MYREAL));
+                    VFgrn_uiz[ir][i]->Im = (MYREAL*)calloc(nf, sizeof(MYREAL));
+                }
+                if(VFcplx_uir) {
+                    VFgrn_uir[ir][i] = (GRN*)calloc(1, sizeof(GRN));
+                    VFgrn_uir[ir][i]->Re = (MYREAL*)calloc(nf, sizeof(MYREAL));
+                    VFgrn_uir[ir][i]->Im = (MYREAL*)calloc(nf, sizeof(MYREAL));
+                }
+                //
                 if(DDcplx) {
                     DDgrn[ir][i] = (GRN*)calloc(1, sizeof(GRN));
                     DDgrn[ir][i]->Re = (MYREAL*)calloc(nf, sizeof(MYREAL));
                     DDgrn[ir][i]->Im = (MYREAL*)calloc(nf, sizeof(MYREAL));
                 }
+                if(DDcplx_uiz) {
+                    DDgrn_uiz[ir][i] = (GRN*)calloc(1, sizeof(GRN));
+                    DDgrn_uiz[ir][i]->Re = (MYREAL*)calloc(nf, sizeof(MYREAL));
+                    DDgrn_uiz[ir][i]->Im = (MYREAL*)calloc(nf, sizeof(MYREAL));
+                }
+                if(DDcplx_uir) {
+                    DDgrn_uir[ir][i] = (GRN*)calloc(1, sizeof(GRN));
+                    DDgrn_uir[ir][i]->Re = (MYREAL*)calloc(nf, sizeof(MYREAL));
+                    DDgrn_uir[ir][i]->Im = (MYREAL*)calloc(nf, sizeof(MYREAL));
+                }
             }
+            //
             if(HFcplx) {
                 HFgrn[ir][i] = (GRN*)calloc(1, sizeof(GRN));
                 HFgrn[ir][i]->Re = (MYREAL*)calloc(nf, sizeof(MYREAL));
                 HFgrn[ir][i]->Im = (MYREAL*)calloc(nf, sizeof(MYREAL));
             }
+            if(HFcplx_uiz) {
+                HFgrn_uiz[ir][i] = (GRN*)calloc(1, sizeof(GRN));
+                HFgrn_uiz[ir][i]->Re = (MYREAL*)calloc(nf, sizeof(MYREAL));
+                HFgrn_uiz[ir][i]->Im = (MYREAL*)calloc(nf, sizeof(MYREAL));
+            }
+            if(HFcplx_uir) {
+                HFgrn_uir[ir][i] = (GRN*)calloc(1, sizeof(GRN));
+                HFgrn_uir[ir][i]->Re = (MYREAL*)calloc(nf, sizeof(MYREAL));
+                HFgrn_uir[ir][i]->Im = (MYREAL*)calloc(nf, sizeof(MYREAL));
+            }
+            //
             if(DScplx) {
                 DSgrn[ir][i] = (GRN*)calloc(1, sizeof(GRN));
                 DSgrn[ir][i]->Re = (MYREAL*)calloc(nf, sizeof(MYREAL));
                 DSgrn[ir][i]->Im = (MYREAL*)calloc(nf, sizeof(MYREAL));
             }
+            if(DScplx_uiz) {
+                DSgrn_uiz[ir][i] = (GRN*)calloc(1, sizeof(GRN));
+                DSgrn_uiz[ir][i]->Re = (MYREAL*)calloc(nf, sizeof(MYREAL));
+                DSgrn_uiz[ir][i]->Im = (MYREAL*)calloc(nf, sizeof(MYREAL));
+            }
+            if(DScplx_uir) {
+                DSgrn_uir[ir][i] = (GRN*)calloc(1, sizeof(GRN));
+                DSgrn_uir[ir][i]->Re = (MYREAL*)calloc(nf, sizeof(MYREAL));
+                DSgrn_uir[ir][i]->Im = (MYREAL*)calloc(nf, sizeof(MYREAL));
+            }
+            //
             if(SScplx) {
                 SSgrn[ir][i] = (GRN*)calloc(1, sizeof(GRN));
                 SSgrn[ir][i]->Re = (MYREAL*)calloc(nf, sizeof(MYREAL));
                 SSgrn[ir][i]->Im = (MYREAL*)calloc(nf, sizeof(MYREAL));
+            }
+            if(SScplx_uiz) {
+                SSgrn_uiz[ir][i] = (GRN*)calloc(1, sizeof(GRN));
+                SSgrn_uiz[ir][i]->Re = (MYREAL*)calloc(nf, sizeof(MYREAL));
+                SSgrn_uiz[ir][i]->Im = (MYREAL*)calloc(nf, sizeof(MYREAL));
+            }
+            if(SScplx_uir) {
+                SSgrn_uir[ir][i] = (GRN*)calloc(1, sizeof(GRN));
+                SSgrn_uir[ir][i]->Re = (MYREAL*)calloc(nf, sizeof(MYREAL));
+                SSgrn_uir[ir][i]->Im = (MYREAL*)calloc(nf, sizeof(MYREAL));
             }
         }
     }
@@ -112,6 +206,9 @@ void integ_grn_spec_in_C(
         pymod1d, nf1, nf2, nf, freqs, nr, rs, wI,
         vmin_ref, keps, ampk, iwk0, k0, Length, print_progressbar,
         EXPgrn, VFgrn, HFgrn, DDgrn, DSgrn, SSgrn, 
+        calc_upar,
+        EXPgrn_uiz, VFgrn_uiz, HFgrn_uiz, DDgrn_uiz, DSgrn_uiz, SSgrn_uiz, 
+        EXPgrn_uir, VFgrn_uir, HFgrn_uir, DDgrn_uir, DSgrn_uir, SSgrn_uir, 
         statsstr, nstatsidxs, statsidxs
     );
     //==============================================================================
@@ -122,13 +219,31 @@ void integ_grn_spec_in_C(
         for(int i=0; i<3; ++i){
             for(int n=nf1; n<=nf2; ++n){
                 if(i<2){
+                    //
                     if(EXPcplx) EXPcplx[ir][i][n] = CMPLX(EXPgrn[ir][i]->Re[n], EXPgrn[ir][i]->Im[n]);
+                    if(EXPcplx_uiz) EXPcplx_uiz[ir][i][n] = CMPLX(EXPgrn_uiz[ir][i]->Re[n], EXPgrn_uiz[ir][i]->Im[n]);
+                    if(EXPcplx_uir) EXPcplx_uir[ir][i][n] = CMPLX(EXPgrn_uir[ir][i]->Re[n], EXPgrn_uir[ir][i]->Im[n]);
+                    //
                     if(VFcplx) VFcplx[ir][i][n] = CMPLX(VFgrn[ir][i]->Re[n], VFgrn[ir][i]->Im[n]);
+                    if(VFcplx_uiz) VFcplx_uiz[ir][i][n] = CMPLX(VFgrn_uiz[ir][i]->Re[n], VFgrn_uiz[ir][i]->Im[n]);
+                    if(VFcplx_uir) VFcplx_uir[ir][i][n] = CMPLX(VFgrn_uir[ir][i]->Re[n], VFgrn_uir[ir][i]->Im[n]);
                     if(DDcplx) DDcplx[ir][i][n] = CMPLX(DDgrn[ir][i]->Re[n], DDgrn[ir][i]->Im[n]);
+                    //
+                    if(DDcplx_uiz) DDcplx_uiz[ir][i][n] = CMPLX(DDgrn_uiz[ir][i]->Re[n], DDgrn_uiz[ir][i]->Im[n]);
+                    if(DDcplx_uir) DDcplx_uir[ir][i][n] = CMPLX(DDgrn_uir[ir][i]->Re[n], DDgrn_uir[ir][i]->Im[n]);
                 }
+                //
                 if(HFcplx) HFcplx[ir][i][n] = CMPLX(HFgrn[ir][i]->Re[n], HFgrn[ir][i]->Im[n]);
+                if(HFcplx_uiz) HFcplx_uiz[ir][i][n] = CMPLX(HFgrn_uiz[ir][i]->Re[n], HFgrn_uiz[ir][i]->Im[n]);
+                if(HFcplx_uir) HFcplx_uir[ir][i][n] = CMPLX(HFgrn_uir[ir][i]->Re[n], HFgrn_uir[ir][i]->Im[n]);
+                //
                 if(DScplx) DScplx[ir][i][n] = CMPLX(DSgrn[ir][i]->Re[n], DSgrn[ir][i]->Im[n]);
+                if(DScplx_uiz) DScplx_uiz[ir][i][n] = CMPLX(DSgrn_uiz[ir][i]->Re[n], DSgrn_uiz[ir][i]->Im[n]);
+                if(DScplx_uir) DScplx_uir[ir][i][n] = CMPLX(DSgrn_uir[ir][i]->Re[n], DSgrn_uir[ir][i]->Im[n]);
+                //
                 if(SScplx) SScplx[ir][i][n] = CMPLX(SSgrn[ir][i]->Re[n], SSgrn[ir][i]->Im[n]);
+                if(SScplx_uiz) SScplx_uiz[ir][i][n] = CMPLX(SSgrn_uiz[ir][i]->Re[n], SSgrn_uiz[ir][i]->Im[n]);
+                if(SScplx_uir) SScplx_uir[ir][i][n] = CMPLX(SSgrn_uir[ir][i]->Re[n], SSgrn_uir[ir][i]->Im[n]);
             }
         }
     }
@@ -138,46 +253,224 @@ void integ_grn_spec_in_C(
     for(int ir=0; ir<nr; ++ir){
         for(int i=0; i<3; ++i){
             if(i<2){
+                //
                 if(EXPgrn) {
                     free(EXPgrn[ir][i]->Re);
                     free(EXPgrn[ir][i]->Im);
                     free(EXPgrn[ir][i]);
                 }
+                if(EXPgrn_uiz) {
+                    free(EXPgrn_uiz[ir][i]->Re);
+                    free(EXPgrn_uiz[ir][i]->Im);
+                    free(EXPgrn_uiz[ir][i]);
+                }
+                if(EXPgrn_uir) {
+                    free(EXPgrn_uir[ir][i]->Re);
+                    free(EXPgrn_uir[ir][i]->Im);
+                    free(EXPgrn_uir[ir][i]);
+                }
+                //
                 if(VFgrn) {
                     free(VFgrn[ir][i]->Re);
                     free(VFgrn[ir][i]->Im);
                     free(VFgrn[ir][i]);
                 }
+                if(VFgrn_uiz) {
+                    free(VFgrn_uiz[ir][i]->Re);
+                    free(VFgrn_uiz[ir][i]->Im);
+                    free(VFgrn_uiz[ir][i]);
+                }
+                if(VFgrn_uir) {
+                    free(VFgrn_uir[ir][i]->Re);
+                    free(VFgrn_uir[ir][i]->Im);
+                    free(VFgrn_uir[ir][i]);
+                }
+                //
                 if(DDgrn) {
                     free(DDgrn[ir][i]->Re);
                     free(DDgrn[ir][i]->Im);
                     free(DDgrn[ir][i]);
                 }
+                if(DDgrn_uiz) {
+                    free(DDgrn_uiz[ir][i]->Re);
+                    free(DDgrn_uiz[ir][i]->Im);
+                    free(DDgrn_uiz[ir][i]);
+                }
+                if(DDgrn_uir) {
+                    free(DDgrn_uir[ir][i]->Re);
+                    free(DDgrn_uir[ir][i]->Im);
+                    free(DDgrn_uir[ir][i]);
+                }
             }
+            //
             if(HFcplx) {
                 free(HFgrn[ir][i]->Re);
                 free(HFgrn[ir][i]->Im);
                 free(HFgrn[ir][i]);
             }
+            if(HFcplx_uiz) {
+                free(HFgrn_uiz[ir][i]->Re);
+                free(HFgrn_uiz[ir][i]->Im);
+                free(HFgrn_uiz[ir][i]);
+            }
+            if(HFcplx_uir) {
+                free(HFgrn_uir[ir][i]->Re);
+                free(HFgrn_uir[ir][i]->Im);
+                free(HFgrn_uir[ir][i]);
+            }
+            //
             if(DScplx) {
                 free(DSgrn[ir][i]->Re);
                 free(DSgrn[ir][i]->Im);
                 free(DSgrn[ir][i]);
             }
+            if(DScplx_uiz) {
+                free(DSgrn_uiz[ir][i]->Re);
+                free(DSgrn_uiz[ir][i]->Im);
+                free(DSgrn_uiz[ir][i]);
+            }
+            if(DScplx_uir) {
+                free(DSgrn_uir[ir][i]->Re);
+                free(DSgrn_uir[ir][i]->Im);
+                free(DSgrn_uir[ir][i]);
+            }
+            //
             if(SScplx) {
                 free(SSgrn[ir][i]->Re);
                 free(SSgrn[ir][i]->Im);
                 free(SSgrn[ir][i]);
             }
+            if(SScplx_uiz) {
+                free(SSgrn_uiz[ir][i]->Re);
+                free(SSgrn_uiz[ir][i]->Im);
+                free(SSgrn_uiz[ir][i]);
+            }
+            if(SScplx_uir) {
+                free(SSgrn_uir[ir][i]->Re);
+                free(SSgrn_uir[ir][i]->Im);
+                free(SSgrn_uir[ir][i]);
+            }
         }
     }
     if(EXPgrn) free(EXPgrn);
+    if(EXPgrn_uiz) free(EXPgrn_uiz);
+    if(EXPgrn_uir) free(EXPgrn_uir);
     if(VFgrn) free(VFgrn);
+    if(VFgrn_uiz) free(VFgrn_uiz);
+    if(VFgrn_uir) free(VFgrn_uir);
     if(HFgrn) free(HFgrn);
+    if(HFgrn_uiz) free(HFgrn_uiz);
+    if(HFgrn_uir) free(HFgrn_uir);
     if(DDgrn) free(DDgrn);
+    if(DDgrn_uiz) free(DDgrn_uiz);
+    if(DDgrn_uir) free(DDgrn_uir);
     if(DSgrn) free(DSgrn);
+    if(DSgrn_uiz) free(DSgrn_uiz);
+    if(DSgrn_uir) free(DSgrn_uir);
     if(SSgrn) free(SSgrn);
+    if(SSgrn_uiz) free(SSgrn_uiz);
+    if(SSgrn_uir) free(SSgrn_uir);
 }
+
+
+/**
+ * 将计算好的复数形式的积分结果记录到GRN结构体中
+ * 
+ * @param    iw      (in)当前频率索引值
+ * @param    nr      (in)震中距个数
+ * @param    coef    (in)统一系数
+ * @param  sum_EXP_J[nr][3][4]  (in)爆炸源
+ * @param  sum_VF_J[nr][3][4]   (in)垂直力源
+ * @param  sum_HF_J[nr][3][4]   (in)水平力源
+ * @param  sum_DC_J[nr][3][4]   (in)双力偶源
+ * @param      EXPgrn[nr][2]      (out)`GRN` 结构体指针，爆炸源的Z、R分量频谱结果
+ * @param      VFgrn[nr][2]       (out)`GRN` 结构体指针，垂直力源的Z、R分量频谱结果
+ * @param      HFgrn[nr][3]       (out)`GRN` 结构体指针，水平力源的Z、R、T分量频谱结果
+ * @param      DDgrn[nr][2]       (out)`GRN` 结构体指针，45度倾滑的Z、R分量频谱结果
+ * @param      DSgrn[nr][3]       (out)`GRN` 结构体指针，90度倾滑的Z、R、T分量频谱结果
+ * @param      SSgrn[nr][3]       (out)`GRN` 结构体指针，90度走滑的Z、R、T分量频谱结果
+ */
+static void recordin_GRN(
+    MYINT iw, MYINT nr, MYCOMPLEX coef, 
+    MYCOMPLEX sum_EXP_J[nr][3][4], MYCOMPLEX sum_VF_J[nr][3][4],  
+    MYCOMPLEX sum_HF_J[nr][3][4],  MYCOMPLEX sum_DC_J[nr][3][4],  
+    GRN *EXPgrn[nr][2], GRN *VFgrn[nr][2], GRN *HFgrn[nr][3],
+    GRN *DDgrn[nr][2], GRN *DSgrn[nr][3], GRN *SSgrn[nr][3]
+)
+{
+    // 局部变量，将某个频点的格林函数谱临时存放
+    MYCOMPLEX (*tmp_EXP)[2] = (MYCOMPLEX(*)[2])calloc(nr, sizeof(*tmp_EXP));
+    MYCOMPLEX (*tmp_VF)[2] = (MYCOMPLEX(*)[2])calloc(nr, sizeof(*tmp_VF));
+    MYCOMPLEX (*tmp_HF)[3] = (MYCOMPLEX(*)[3])calloc(nr, sizeof(*tmp_HF));
+    MYCOMPLEX (*tmp_DD)[2] = (MYCOMPLEX(*)[2])calloc(nr, sizeof(*tmp_DD));
+    MYCOMPLEX (*tmp_DS)[3] = (MYCOMPLEX(*)[3])calloc(nr, sizeof(*tmp_DS));
+    MYCOMPLEX (*tmp_SS)[3] = (MYCOMPLEX(*)[3])calloc(nr, sizeof(*tmp_SS));
+
+    for(MYINT ir=0; ir<nr; ++ir){
+        for(MYINT ii=0; ii<3; ++ii){
+            if(ii<2){
+                tmp_EXP[ir][ii] = RZERO;
+                tmp_VF[ir][ii] = RZERO; 
+                tmp_DD[ir][ii] = RZERO;
+            }
+            tmp_HF[ir][ii] = RZERO;
+            tmp_DS[ir][ii] = RZERO;
+            tmp_SS[ir][ii] = RZERO;
+        }
+        merge_Pk(
+            (sum_EXP_J)? sum_EXP_J[ir] : NULL, 
+            (sum_VF_J)?  sum_VF_J[ir]  : NULL, 
+            (sum_HF_J)?  sum_HF_J[ir]  : NULL, 
+            (sum_DC_J)?  sum_DC_J[ir]  : NULL, 
+            tmp_EXP[ir], tmp_VF[ir],  tmp_HF[ir], 
+            tmp_DD[ir], tmp_DS[ir], tmp_SS[ir]);
+
+        MYCOMPLEX mtmp;
+        for(MYINT ii=0; ii<3; ++ii) {
+            if(ii<2){
+                if(EXPgrn!=NULL){
+                    mtmp = coef*tmp_EXP[ir][ii]; // m=0 爆炸源
+                    EXPgrn[ir][ii]->Re[iw] = CREAL(mtmp);
+                    EXPgrn[ir][ii]->Im[iw] = CIMAG(mtmp);
+                }
+                if(VFgrn!=NULL){
+                    mtmp = coef*tmp_VF[ir][ii]; // m=0 垂直力源
+                    VFgrn[ir][ii]->Re[iw] = CREAL(mtmp);
+                    VFgrn[ir][ii]->Im[iw] = CIMAG(mtmp);
+                }
+                if(DDgrn!=NULL){
+                    mtmp = coef*tmp_DD[ir][ii]; // m=0 45-倾滑
+                    DDgrn[ir][ii]->Re[iw] = CREAL(mtmp);
+                    DDgrn[ir][ii]->Im[iw] = CIMAG(mtmp);
+                }
+            }
+            if(HFgrn!=NULL){
+                mtmp = coef*tmp_HF[ir][ii]; // m=1 水平力源
+                HFgrn[ir][ii]->Re[iw] = CREAL(mtmp);
+                HFgrn[ir][ii]->Im[iw] = CIMAG(mtmp);
+            }
+            if(DSgrn!=NULL){
+                mtmp = coef*tmp_DS[ir][ii]; // m=1 90-倾滑
+                DSgrn[ir][ii]->Re[iw] = CREAL(mtmp);
+                DSgrn[ir][ii]->Im[iw] = CIMAG(mtmp);
+            }
+            if(SSgrn!=NULL){
+                mtmp = coef*tmp_SS[ir][ii]; // m=2 走滑 
+                SSgrn[ir][ii]->Re[iw] = CREAL(mtmp);
+                SSgrn[ir][ii]->Im[iw] = CIMAG(mtmp);
+            }
+
+        }
+    }
+
+    free(tmp_EXP);
+    free(tmp_VF);
+    free(tmp_HF);
+    free(tmp_DD);
+    free(tmp_DS);
+    free(tmp_SS);
+}
+
 
 
 void integ_grn_spec(
@@ -193,6 +486,20 @@ void integ_grn_spec(
     GRN *DDgrn[nr][2],  // DDZ, DDR 的实部和虚部      [DD: 45-dip slip]
     GRN *DSgrn[nr][3],  // DSZ, DSR, DST 的实部和虚部 [DS: 90-dip slip]
     GRN *SSgrn[nr][3],  // SSZ, SSR, SST 的实部和虚部 [SS: strike slip]
+
+    bool calc_upar,
+    GRN *EXPgrn_uiz[nr][2], // EXZ, EXR 的实部和虚部
+    GRN *VFgrn_uiz[nr][2],  // VFZ, VFR 的实部和虚部
+    GRN *HFgrn_uiz[nr][3],  // HFZ, HFR, HFT 的实部和虚部
+    GRN *DDgrn_uiz[nr][2],  // DDZ, DDR 的实部和虚部      [DD: 45-dip slip]
+    GRN *DSgrn_uiz[nr][3],  // DSZ, DSR, DST 的实部和虚部 [DS: 90-dip slip]
+    GRN *SSgrn_uiz[nr][3],  // SSZ, SSR, SST 的实部和虚部 [SS: strike slip]
+    GRN *EXPgrn_uir[nr][2], // EXZ, EXR 的实部和虚部
+    GRN *VFgrn_uir[nr][2],  // VFZ, VFR 的实部和虚部
+    GRN *HFgrn_uir[nr][3],  // HFZ, HFR, HFT 的实部和虚部
+    GRN *DDgrn_uir[nr][2],  // DDZ, DDR 的实部和虚部      [DD: 45-dip slip]
+    GRN *DSgrn_uir[nr][3],  // DSZ, DSR, DST 的实部和虚部 [DS: 90-dip slip]
+    GRN *SSgrn_uir[nr][3],  // SSZ, SSR, SST 的实部和虚部 [SS: strike slip]
 
     const char *statsstr, // 积分结果输出
     MYINT  nstatsidxs, // 仅输出特定频点
@@ -259,14 +566,7 @@ void integ_grn_spec(
         MYCOMPLEX omega = w - wI*I; // 复数频率 omega = w - i*wI
         MYCOMPLEX omega2_inv = RONE/omega; // 1/omega^2
         omega2_inv = omega2_inv*omega2_inv; 
-
-        // 局部变量，将某个频点的格林函数谱临时存放
-        MYCOMPLEX (*tmp_EXP)[2] = (MYCOMPLEX(*)[2])calloc(nr, sizeof(*tmp_EXP));
-        MYCOMPLEX (*tmp_VF)[2] = (MYCOMPLEX(*)[2])calloc(nr, sizeof(*tmp_VF));
-        MYCOMPLEX (*tmp_HF)[3] = (MYCOMPLEX(*)[3])calloc(nr, sizeof(*tmp_HF));
-        MYCOMPLEX (*tmp_DD)[2] = (MYCOMPLEX(*)[2])calloc(nr, sizeof(*tmp_DD));
-        MYCOMPLEX (*tmp_DS)[3] = (MYCOMPLEX(*)[3])calloc(nr, sizeof(*tmp_DS));
-        MYCOMPLEX (*tmp_SS)[3] = (MYCOMPLEX(*)[3])calloc(nr, sizeof(*tmp_SS));
+        MYCOMPLEX coef = -dk*fac*omega2_inv; // 最终要乘上的系数
 
         // 局部变量，用于求和 sum F(ki,w)Jm(ki*r)ki 
         // 维度3代表阶数m=0,1,2，维度4代表4种类型的F(k,w)Jm(kr)k的类型，详见int_Pk()函数内的注释
@@ -274,6 +574,17 @@ void integ_grn_spec(
         MYCOMPLEX (*sum_VF_J)[3][4] = (VFgrn != NULL) ? (MYCOMPLEX(*)[3][4])calloc(nr, sizeof(*sum_VF_J)) : NULL;
         MYCOMPLEX (*sum_HF_J)[3][4] = (HFgrn != NULL) ? (MYCOMPLEX(*)[3][4])calloc(nr, sizeof(*sum_HF_J)) : NULL;
         MYCOMPLEX (*sum_DC_J)[3][4] = (DDgrn != NULL || DSgrn != NULL || SSgrn != NULL) ? (MYCOMPLEX(*)[3][4])calloc(nr, sizeof(*sum_DC_J)) : NULL;
+
+        MYCOMPLEX (*sum_EXP_uiz_J)[3][4] = (EXPgrn_uiz != NULL) ? (MYCOMPLEX(*)[3][4])calloc(nr, sizeof(*sum_EXP_uiz_J)) : NULL;
+        MYCOMPLEX (*sum_VF_uiz_J)[3][4] = (VFgrn_uiz != NULL) ? (MYCOMPLEX(*)[3][4])calloc(nr, sizeof(*sum_VF_uiz_J)) : NULL;
+        MYCOMPLEX (*sum_HF_uiz_J)[3][4] = (HFgrn_uiz != NULL) ? (MYCOMPLEX(*)[3][4])calloc(nr, sizeof(*sum_HF_uiz_J)) : NULL;
+        MYCOMPLEX (*sum_DC_uiz_J)[3][4] = (DDgrn_uiz != NULL || DSgrn_uiz != NULL || SSgrn_uiz != NULL) ? (MYCOMPLEX(*)[3][4])calloc(nr, sizeof(*sum_DC_uiz_J)) : NULL;
+
+        MYCOMPLEX (*sum_EXP_uir_J)[3][4] = (EXPgrn_uir != NULL) ? (MYCOMPLEX(*)[3][4])calloc(nr, sizeof(*sum_EXP_uir_J)) : NULL;
+        MYCOMPLEX (*sum_VF_uir_J)[3][4] = (VFgrn_uir != NULL) ? (MYCOMPLEX(*)[3][4])calloc(nr, sizeof(*sum_VF_uir_J)) : NULL;
+        MYCOMPLEX (*sum_HF_uir_J)[3][4] = (HFgrn_uir != NULL) ? (MYCOMPLEX(*)[3][4])calloc(nr, sizeof(*sum_HF_uir_J)) : NULL;
+        MYCOMPLEX (*sum_DC_uir_J)[3][4] = (DDgrn_uir != NULL || DSgrn_uir != NULL || SSgrn_uir != NULL) ? (MYCOMPLEX(*)[3][4])calloc(nr, sizeof(*sum_DC_uir_J)) : NULL;
+
         
 
         MODEL1D *local_mod1d = NULL;
@@ -293,26 +604,24 @@ void integ_grn_spec(
         FILE **ptam_fstats = (FILE **)malloc(nr * sizeof(FILE *));
 
         for(MYINT ir=0; ir<nr; ++ir){
-            for(MYINT ii=0; ii<3; ++ii){
-                if(ii<2){
-                    tmp_EXP[ir][ii] = RZERO;
-                    tmp_VF[ir][ii] = RZERO; 
-                    tmp_DD[ir][ii] = RZERO;
-                }
-                tmp_HF[ir][ii] = RZERO;
-                tmp_DS[ir][ii] = RZERO;
-                tmp_SS[ir][ii] = RZERO;
-            }
-
             for(MYINT m=0; m<3; ++m){
                 for(MYINT v=0; v<4; ++v){
                     if(sum_EXP_J) sum_EXP_J[ir][m][v] = RZERO;
                     if(sum_VF_J) sum_VF_J[ir][m][v] = RZERO;
                     if(sum_HF_J) sum_HF_J[ir][m][v] = RZERO;
                     if(sum_DC_J) sum_DC_J[ir][m][v] = RZERO;
+
+                    if(sum_EXP_uiz_J) sum_EXP_uiz_J[ir][m][v] = RZERO;
+                    if(sum_VF_uiz_J) sum_VF_uiz_J[ir][m][v] = RZERO;
+                    if(sum_HF_uiz_J) sum_HF_uiz_J[ir][m][v] = RZERO;
+                    if(sum_DC_uiz_J) sum_DC_uiz_J[ir][m][v] = RZERO;
+
+                    if(sum_EXP_uir_J) sum_EXP_uir_J[ir][m][v] = RZERO;
+                    if(sum_VF_uir_J) sum_VF_uir_J[ir][m][v] = RZERO;
+                    if(sum_HF_uir_J) sum_HF_uir_J[ir][m][v] = RZERO;
+                    if(sum_DC_uir_J) sum_DC_uir_J[ir][m][v] = RZERO;
                 }
             }
-
 
             fstats[ir] = NULL;
             ptam_fstats[ir] = NULL;
@@ -350,20 +659,32 @@ void integ_grn_spec(
             // 常规的波数积分
             k = discrete_integ(
                 local_mod1d, dk, kmax, keps, omega, nr, rs, 
-                sum_EXP_J, sum_VF_J, sum_HF_J, sum_DC_J, fstats);
+                sum_EXP_J, sum_VF_J, sum_HF_J, sum_DC_J, 
+                calc_upar,
+                sum_EXP_uiz_J, sum_VF_uiz_J, sum_HF_uiz_J, sum_DC_uiz_J,
+                sum_EXP_uir_J, sum_VF_uir_J, sum_HF_uir_J, sum_DC_uir_J,
+                fstats);
         } 
         else {
             // 基于线性插值的Filon积分
             k = linear_filon_integ(
                 local_mod1d, dk, kmax, keps, omega, nr, rs, 
-                sum_EXP_J, sum_VF_J, sum_HF_J, sum_DC_J, fstats);
+                sum_EXP_J, sum_VF_J, sum_HF_J, sum_DC_J, 
+                calc_upar,
+                sum_EXP_uiz_J, sum_VF_uiz_J, sum_HF_uiz_J, sum_DC_uiz_J,
+                sum_EXP_uir_J, sum_VF_uir_J, sum_HF_uir_J, sum_DC_uir_J,
+                fstats);
         }
 
         // k之后的部分使用峰谷平均法进行显式收敛，建议在浅源地震的时候使用   
         if(vmin_ref < RZERO){
             PTA_method(
                 local_mod1d, k, dk, rmin, rmax, omega, nr, rs, 
-                sum_EXP_J, sum_VF_J, sum_HF_J, sum_DC_J, fstats, ptam_fstats);
+                sum_EXP_J, sum_VF_J, sum_HF_J, sum_DC_J, 
+                calc_upar,
+                sum_EXP_uiz_J, sum_VF_uiz_J, sum_HF_uiz_J, sum_DC_uiz_J,
+                sum_EXP_uir_J, sum_VF_uir_J, sum_HF_uir_J, sum_DC_uir_J,
+                fstats, ptam_fstats);
         }
 
         // printf("iw=%d, w=%.5e, k=%.5e, dk=%.5e, nk=%d\n", iw, w, k, dk, (int)(k/dk));
@@ -371,53 +692,21 @@ void integ_grn_spec(
 
 
         // 记录到格林函数结构体内
-        for(MYINT ir=0; ir<nr; ++ir){
-            merge_Pk(
-                (sum_EXP_J)? sum_EXP_J[ir] : NULL, 
-                (sum_VF_J)?  sum_VF_J[ir]  : NULL, 
-                (sum_HF_J)?  sum_HF_J[ir]  : NULL, 
-                (sum_DC_J)?  sum_DC_J[ir]  : NULL, 
-                tmp_EXP[ir], tmp_VF[ir],  tmp_HF[ir], 
-                tmp_DD[ir], tmp_DS[ir], tmp_SS[ir]);
-
-            MYCOMPLEX mtmp0 = dk * fac * omega2_inv * (-RONE); // 
-            MYCOMPLEX mtmp;
-            for(MYINT ii=0; ii<3; ++ii) {
-                if(ii<2){
-                    if(EXPgrn!=NULL){
-                        mtmp = mtmp0*tmp_EXP[ir][ii]; // m=0 爆炸源
-                        EXPgrn[ir][ii]->Re[iw] = CREAL(mtmp);
-                        EXPgrn[ir][ii]->Im[iw] = CIMAG(mtmp);
-                    }
-                    if(VFgrn!=NULL){
-                        mtmp = mtmp0*tmp_VF[ir][ii]; // m=0 垂直力源
-                        VFgrn[ir][ii]->Re[iw] = CREAL(mtmp);
-                        VFgrn[ir][ii]->Im[iw] = CIMAG(mtmp);
-                    }
-                    if(DDgrn!=NULL){
-                        mtmp = mtmp0*tmp_DD[ir][ii]; // m=0 45-倾滑
-                        DDgrn[ir][ii]->Re[iw] = CREAL(mtmp);
-                        DDgrn[ir][ii]->Im[iw] = CIMAG(mtmp);
-                    }
-                }
-                if(HFgrn!=NULL){
-                    mtmp = mtmp0*tmp_HF[ir][ii]; // m=1 水平力源
-                    HFgrn[ir][ii]->Re[iw] = CREAL(mtmp);
-                    HFgrn[ir][ii]->Im[iw] = CIMAG(mtmp);
-                }
-                if(DSgrn!=NULL){
-                    mtmp = mtmp0*tmp_DS[ir][ii]; // m=1 90-倾滑
-                    DSgrn[ir][ii]->Re[iw] = CREAL(mtmp);
-                    DSgrn[ir][ii]->Im[iw] = CIMAG(mtmp);
-                }
-                if(SSgrn!=NULL){
-                    mtmp = mtmp0*tmp_SS[ir][ii]; // m=2 走滑 
-                    SSgrn[ir][ii]->Re[iw] = CREAL(mtmp);
-                    SSgrn[ir][ii]->Im[iw] = CIMAG(mtmp);
-                }
-
-            }
+        recordin_GRN(
+            iw, nr, coef, 
+            sum_EXP_J, sum_VF_J, sum_HF_J, sum_DC_J,
+            EXPgrn, VFgrn, HFgrn, DDgrn, DSgrn, SSgrn);
+        if(calc_upar){
+            recordin_GRN(
+                iw, nr, coef, 
+                sum_EXP_uiz_J, sum_VF_uiz_J, sum_HF_uiz_J, sum_DC_uiz_J,
+                EXPgrn_uiz, VFgrn_uiz, HFgrn_uiz, DDgrn_uiz, DSgrn_uiz, SSgrn_uiz);
+            recordin_GRN(
+                iw, nr, coef, 
+                sum_EXP_uir_J, sum_VF_uir_J, sum_HF_uir_J, sum_DC_uir_J,
+                EXPgrn_uir, VFgrn_uir, HFgrn_uir, DDgrn_uir, DSgrn_uir, SSgrn_uir);
         }
+        
 
         for(MYINT ir=0; ir<nr; ++ir){
             if(fstats[ir]!=NULL){
@@ -443,17 +732,20 @@ void integ_grn_spec(
 
 
         // Free allocated memory for temporary variables
-        free(tmp_EXP);
-        free(tmp_VF);
-        free(tmp_HF);
-        free(tmp_DD);
-        free(tmp_DS);
-        free(tmp_SS);
-
         if (sum_EXP_J) free(sum_EXP_J);
         if (sum_VF_J) free(sum_VF_J);
         if (sum_HF_J) free(sum_HF_J);
         if (sum_DC_J) free(sum_DC_J);
+
+        if (sum_EXP_uiz_J) free(sum_EXP_uiz_J);
+        if (sum_VF_uiz_J) free(sum_VF_uiz_J);
+        if (sum_HF_uiz_J) free(sum_HF_uiz_J);
+        if (sum_DC_uiz_J) free(sum_DC_uiz_J);
+
+        if (sum_EXP_uir_J) free(sum_EXP_uir_J);
+        if (sum_VF_uir_J) free(sum_VF_uir_J);
+        if (sum_HF_uir_J) free(sum_HF_uir_J);
+        if (sum_DC_uir_J) free(sum_DC_uir_J);
 
         free(fstats);
         free(ptam_fstats);

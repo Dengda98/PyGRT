@@ -348,3 +348,8 @@ float * get_custom_wave(int *Nt, const char *tfparams){
     *Nt = nt;
     return tfarr;
 }
+
+
+void free1d(void *pt){
+    free(pt);
+}

@@ -49,6 +49,21 @@ void set_num_threads(int num_threads);
  * @param      DSgrn[nr][3]       (out)复数数组，90度倾滑的Z、R、T分量频谱结果
  * @param      SSgrn[nr][3]       (out)复数数组，90度走滑的Z、R、T分量频谱结果
  * 
+ * @param      calc_upar              (in)是否计算位移u的空间导数
+ * @param      EXPgrn_uiz[nr][2]      (out)复数数组，爆炸源产生的ui_z(位移u对坐标z的偏导)的Z、R分量频谱结果，下同
+ * @param      VFgrn_uiz[nr][2]       (out)复数数组，垂直力源的Z、R分量频谱结果
+ * @param      HFgrn_uiz[nr][3]       (out)复数数组，水平力源的Z、R、T分量频谱结果
+ * @param      DDgrn_uiz[nr][2]       (out)复数数组，45度倾滑的Z、R分量频谱结果
+ * @param      DSgrn_uiz[nr][3]       (out)复数数组，90度倾滑的Z、R、T分量频谱结果
+ * @param      SSgrn_uiz[nr][3]       (out)复数数组，90度走滑的Z、R、T分量频谱结果
+ * @param      EXPgrn_uir[nr][2]      (out)复数数组，爆炸源产生的ui_r(位移u对坐标r的偏导)的Z、R分量频谱结果，下同
+ * @param      VFgrn_uir[nr][2]       (out)复数数组，垂直力源的Z、R分量频谱结果
+ * @param      HFgrn_uir[nr][3]       (out)复数数组，水平力源的Z、R、T分量频谱结果
+ * @param      DDgrn_uir[nr][2]       (out)复数数组，45度倾滑的Z、R分量频谱结果
+ * @param      DSgrn_uir[nr][3]       (out)复数数组，90度倾滑的Z、R、T分量频谱结果
+ * @param      SSgrn_uir[nr][3]       (out)复数数组，90度走滑的Z、R、T分量频谱结果
+ * 
+ * 
  * @param      statsstr          (in) 积分结果输出目录
  * @param      nstatsidxs        (in) 输出积分结果的特定频点的个数
  * @param      statsidxs         (in) 特定频点的索引值
@@ -67,6 +82,20 @@ void integ_grn_spec_in_C(
     MYCOMPLEX *DDcplx[nr][2],  // DDZ, DDR 的实部和虚部      [DD: 45-dip slip]
     MYCOMPLEX *DScplx[nr][3],  // DSZ, DSR, DST 的实部和虚部 [DS: 90-dip slip]
     MYCOMPLEX *SScplx[nr][3],  // SSZ, SSR, SST 的实部和虚部 [SS: strike slip]
+
+    bool calc_upar,
+    MYCOMPLEX *EXPcplx_uiz[nr][2], // EXZ, EXR 的实部和虚部
+    MYCOMPLEX *VFcplx_uiz[nr][2],  // VFZ, VFR 的实部和虚部
+    MYCOMPLEX *HFcplx_uiz[nr][3],  // HFZ, HFR, HFT 的实部和虚部
+    MYCOMPLEX *DDcplx_uiz[nr][2],  // DDZ, DDR 的实部和虚部      [DD: 45-dip slip]
+    MYCOMPLEX *DScplx_uiz[nr][3],  // DSZ, DSR, DST 的实部和虚部 [DS: 90-dip slip]
+    MYCOMPLEX *SScplx_uiz[nr][3],  // SSZ, SSR, SST 的实部和虚部 [SS: strike slip]
+    MYCOMPLEX *EXPcplx_uir[nr][2], // EXZ, EXR 的实部和虚部
+    MYCOMPLEX *VFcplx_uir[nr][2],  // VFZ, VFR 的实部和虚部
+    MYCOMPLEX *HFcplx_uir[nr][3],  // HFZ, HFR, HFT 的实部和虚部
+    MYCOMPLEX *DDcplx_uir[nr][2],  // DDZ, DDR 的实部和虚部      [DD: 45-dip slip]
+    MYCOMPLEX *DScplx_uir[nr][3],  // DSZ, DSR, DST 的实部和虚部 [DS: 90-dip slip]
+    MYCOMPLEX *SScplx_uir[nr][3],  // SSZ, SSR, SST 的实部和虚部 [SS: strike slip]
 
     const char *statsstr, // 积分结果输出
     MYINT  nstatsidxs, // 仅输出特定频点
@@ -99,6 +128,20 @@ void integ_grn_spec_in_C(
  * @param      DSgrn[nr][3]       (out)`GRN` 结构体指针，90度倾滑的Z、R、T分量频谱结果
  * @param      SSgrn[nr][3]       (out)`GRN` 结构体指针，90度走滑的Z、R、T分量频谱结果
  * 
+ * @param      calc_upar              (in)是否计算位移u的空间导数
+ * @param      EXPgrn_uiz[nr][2]      (out)`GRN` 结构体指针，爆炸源产生的ui_z(位移u对坐标z的偏导)的Z、R分量频谱结果，下同
+ * @param      VFgrn_uiz[nr][2]       (out)`GRN` 结构体指针，垂直力源的Z、R分量频谱结果
+ * @param      HFgrn_uiz[nr][3]       (out)`GRN` 结构体指针，水平力源的Z、R、T分量频谱结果
+ * @param      DDgrn_uiz[nr][2]       (out)`GRN` 结构体指针，45度倾滑的Z、R分量频谱结果
+ * @param      DSgrn_uiz[nr][3]       (out)`GRN` 结构体指针，90度倾滑的Z、R、T分量频谱结果
+ * @param      SSgrn_uiz[nr][3]       (out)`GRN` 结构体指针，90度走滑的Z、R、T分量频谱结果
+ * @param      EXPgrn_uir[nr][2]      (out)`GRN` 结构体指针，爆炸源产生的ui_r(位移u对坐标r的偏导)的Z、R分量频谱结果，下同
+ * @param      VFgrn_uir[nr][2]       (out)`GRN` 结构体指针，垂直力源的Z、R分量频谱结果
+ * @param      HFgrn_uir[nr][3]       (out)`GRN` 结构体指针，水平力源的Z、R、T分量频谱结果
+ * @param      DDgrn_uir[nr][2]       (out)`GRN` 结构体指针，45度倾滑的Z、R分量频谱结果
+ * @param      DSgrn_uir[nr][3]       (out)`GRN` 结构体指针，90度倾滑的Z、R、T分量频谱结果
+ * @param      SSgrn_uir[nr][3]       (out)`GRN` 结构体指针，90度走滑的Z、R、T分量频谱结果
+ * 
  * @param      statsstr          (in) 积分结果输出目录
  * @param      nstatsidxs        (in) 输出积分结果的特定频点的个数
  * @param      statsidxs         (in) 特定频点的索引值
@@ -117,6 +160,20 @@ void integ_grn_spec(
     GRN *DDgrn[nr][2],  // DDZ, DDR 的实部和虚部      [DD: 45-dip slip]
     GRN *DSgrn[nr][3],  // DSZ, DSR, DST 的实部和虚部 [DS: 90-dip slip]
     GRN *SSgrn[nr][3],  // SSZ, SSR, SST 的实部和虚部 [SS: strike slip]
+
+    bool calc_upar,
+    GRN *EXPgrn_uiz[nr][2], // EXZ, EXR 的实部和虚部
+    GRN *VFgrn_uiz[nr][2],  // VFZ, VFR 的实部和虚部
+    GRN *HFgrn_uiz[nr][3],  // HFZ, HFR, HFT 的实部和虚部
+    GRN *DDgrn_uiz[nr][2],  // DDZ, DDR 的实部和虚部      [DD: 45-dip slip]
+    GRN *DSgrn_uiz[nr][3],  // DSZ, DSR, DST 的实部和虚部 [DS: 90-dip slip]
+    GRN *SSgrn_uiz[nr][3],  // SSZ, SSR, SST 的实部和虚部 [SS: strike slip]
+    GRN *EXPgrn_uir[nr][2], // EXZ, EXR 的实部和虚部
+    GRN *VFgrn_uir[nr][2],  // VFZ, VFR 的实部和虚部
+    GRN *HFgrn_uir[nr][3],  // HFZ, HFR, HFT 的实部和虚部
+    GRN *DDgrn_uir[nr][2],  // DDZ, DDR 的实部和虚部      [DD: 45-dip slip]
+    GRN *DSgrn_uir[nr][3],  // DSZ, DSR, DST 的实部和虚部 [DS: 90-dip slip]
+    GRN *SSgrn_uir[nr][3],  // SSZ, SSR, SST 的实部和虚部 [SS: strike slip]
 
     const char *statsstr, // 积分结果输出
     MYINT  nstatsidxs, // 仅输出特定频点
