@@ -105,13 +105,16 @@ static MYINT *statsidxs = NULL;
 // 计算哪些格林函数，确定震源类型, 默认计算全部
 static bool doEXP=true, doVF=true, doHF=true, doDC=true;
 
+// 是否计算位移空间导数
+static bool calc_upar=false;
+
 // 各选项的标志变量，初始化为0，定义了则为1
 static int M_flag=0, D_flag=0, N_flag=0, 
             O_flag=0, H_flag=0,
             L_flag=0, V_flag=0, E_flag=0, 
             K_flag=0, s_flag=0, 
             S_flag=0, R_flag=0, P_flag=0,
-            G_flag=0;
+            G_flag=0, e_flag=0;
 
 // 三分量代号
 const char chs[3] = {'Z', 'R', 'T'};
@@ -165,7 +168,8 @@ printf("\n"
 "        -R<r1>,<r2>[,...]    [-O<outdir>]    [-H<f1>/<f2>] \n"
 "        [-L<length>]    [-V<vmin_ref>]     [-E<t0>[/<v0>]] \n" 
 "        [-K<k0>[/<iwk0>/<ampk>/<keps>]]     [-P<nthreads>]\n"
-"        [-G<b1>[/<b2>/<b3>/<b4>]] [-S<i1>,<i2>[,...]] [-s]\n"
+"        [-G<b1>[/<b2>/<b3>/<b4>]] [-S<i1>,<i2>[,...]] [-e]\n"
+"        [-s]\n"
 "\n\n"
 "Options:\n"
 "----------------------------------------------------------------\n"
@@ -274,7 +278,16 @@ printf("\n"
 "                 integration to be output, require 0 <= i <= nf-1,\n"
 "                 where nf=nt/2+1. These option is designed to check\n"
 "                 the trend of kernel and integrand with wavenumber.\n"
-"                 \n"
+"\n"
+"    -e           Compute the spatial derivatives, ui_z and ui_r,\n"
+"                 of displacement u. In filenames, prefix \"r\" means \n"
+"                 ui_r and \"z\" means ui_z. The units of derivatives\n"
+"                 for different sources are: \n"
+"                 + Explosion:     1e-25 /(dyne-cm)\n"
+"                 + Single Force:  1e-20 /(dyne)\n"
+"                 + Double Couple: 1e-25 /(dyne-cm)\n"
+"                 + Moment Tensor: 1e-25 /(dyne-cm)\n" 
+"\n"
 "    -s           Silence all outputs.\n"
 "\n"
 "    -h           Display this help message.\n"
@@ -321,7 +334,7 @@ static char* get_basename(char* path) {
  */
 static void getopt_from_command(int argc, char **argv){
     int opt;
-    while ((opt = getopt(argc, argv, ":M:D:N:O:H:L:V:E:K:shR:S:P:G:")) != -1) {
+    while ((opt = getopt(argc, argv, ":M:D:N:O:H:L:V:E:K:shR:S:P:G:e")) != -1) {
         switch (opt) {
             // 模型路径，其中每行分别为 
             //      厚度(km)  Vp(km/s)  Vs(km/s)  Rho(g/cm^3)  Qp   Qs
@@ -550,6 +563,12 @@ static void getopt_from_command(int argc, char **argv){
                     free(str_copy);
                 }
                 break;
+
+            // 是否计算位移空间导数
+            case 'e':
+                e_flag = 1;
+                calc_upar = true;
+                break;
             
             // 帮助
             case 'h':
@@ -668,8 +687,8 @@ static void print_long_array_in_tabel(
  * 
  * @param     delay     时间延迟
  * @param     mult      幅值放大系数
- * @param     grn       某一道格林函数频谱，GRN结构体指针
- * @param     fftw_grn  将GRN结构体的频谱写到FFTW_COMPLEX类型中
+ * @param     grncplx   复数形式的格林函数频谱
+ * @param     fftw_grn  将频谱写到FFTW_COMPLEX类型中
  * @param     out       ifft后的时域数据
  * @param     float_arr 将时域数据写到float类型的数组中
  * @param     plan      FFTW_PLAN
@@ -679,7 +698,7 @@ static void print_long_array_in_tabel(
 static void ifft_one_trace(
     MYREAL delay, MYREAL mult,
     MYCOMPLEX *grncplx, _FFTW_COMPLEX *fftw_grn, MYREAL *out, float *float_arr,
-    _FFTW_PLAN plan, SACHEAD hd, const char *outpath)
+    _FFTW_PLAN plan, SACHEAD *hd, const char *outpath)
 {
     // 赋值复数，包括时移
     MYCOMPLEX cfac, ccoef;
@@ -707,10 +726,7 @@ static void ifft_one_trace(
         float_arr[i] = out[i];
     }
 
-    // 写入虚频率
-    hd.user0 = wI;
-
-    write_sac(outpath, hd, float_arr);
+    write_sac(outpath, *hd, float_arr);
     // FILE *fp = fopen(outpath, "wb");
     // fwrite(out, sizeof(float), nt, fp);
     // fclose(fp);
@@ -910,6 +926,36 @@ static void print_outdir_travt(const char *s_output_subdir, const char *s_R, dou
 }
 
 
+/**
+ * 将一条数据反变换回时间域再进行处理，保存到SAC文件
+ * 
+ * @param     srcname       震源类型
+ * @param     ch            三分量类型（Z,R,T）
+ * @param     hd            SAC头段变量结构体指针
+ * @param     s_outpath     用于接收保存路径字符串
+ * @param     s_output_subdir    保存路径所在文件夹
+ * @param     s_prefix           sac文件名以及通道名名称前缀
+ * @param     sgn                数据待乘符号(-1/1)
+ * @param     grncplx   复数形式的格林函数频谱
+ * @param     fftw_grn  将频谱写到FFTW_COMPLEX类型中
+ * @param     out       ifft后的时域数据
+ * @param     float_arr 将时域数据写到float类型的数组中
+ * @param     plan      FFTW_PLAN
+ * 
+ */
+static void write_one_to_sac(
+    const char *srcname, const char ch, 
+    SACHEAD *hd, char *s_outpath, const char *s_output_subdir, const char *s_prefix,
+    const int sgn, MYCOMPLEX *grncplx, fftw_complex *fftw_grn, MYREAL *out, float *float_arr, fftw_plan plan)
+{
+    char kcmpnm[9];
+    snprintf(kcmpnm, sizeof(kcmpnm), "%s%s%c", s_prefix, srcname, ch);
+    strcpy(hd->kcmpnm, kcmpnm);
+    sprintf(s_outpath, "%s/%s.sac", s_output_subdir, kcmpnm);
+    ifft_one_trace(delayT, sgn, grncplx, fftw_grn, out, float_arr, plan, hd, s_outpath);
+}
+
+
 
 //====================================================================================
 //====================================================================================
@@ -1010,16 +1056,48 @@ int main(int argc, char **argv) {
     MYCOMPLEX *(*DScplx)[3]  = (doDC)  ? (MYCOMPLEX*(*)[3])calloc(nr, sizeof(*DScplx))  : NULL;
     MYCOMPLEX *(*SScplx)[3]  = (doDC)  ? (MYCOMPLEX*(*)[3])calloc(nr, sizeof(*SScplx))  : NULL;
 
+    MYCOMPLEX *(*EXPcplx_uiz)[2] = (calc_upar && doEXP) ? (MYCOMPLEX*(*)[2])calloc(nr, sizeof(*EXPcplx_uiz)) : NULL;
+    MYCOMPLEX *(*VFcplx_uiz)[2]  = (calc_upar && doVF)  ? (MYCOMPLEX*(*)[2])calloc(nr, sizeof(*VFcplx_uiz))  : NULL;
+    MYCOMPLEX *(*HFcplx_uiz)[3]  = (calc_upar && doHF)  ? (MYCOMPLEX*(*)[3])calloc(nr, sizeof(*HFcplx_uiz))  : NULL;
+    MYCOMPLEX *(*DDcplx_uiz)[2]  = (calc_upar && doDC)  ? (MYCOMPLEX*(*)[2])calloc(nr, sizeof(*DDcplx_uiz))  : NULL;
+    MYCOMPLEX *(*DScplx_uiz)[3]  = (calc_upar && doDC)  ? (MYCOMPLEX*(*)[3])calloc(nr, sizeof(*DScplx_uiz))  : NULL;
+    MYCOMPLEX *(*SScplx_uiz)[3]  = (calc_upar && doDC)  ? (MYCOMPLEX*(*)[3])calloc(nr, sizeof(*SScplx_uiz))  : NULL;
+
+    MYCOMPLEX *(*EXPcplx_uir)[2] = (calc_upar && doEXP) ? (MYCOMPLEX*(*)[2])calloc(nr, sizeof(*EXPcplx_uir)) : NULL;
+    MYCOMPLEX *(*VFcplx_uir)[2]  = (calc_upar && doVF)  ? (MYCOMPLEX*(*)[2])calloc(nr, sizeof(*VFcplx_uir))  : NULL;
+    MYCOMPLEX *(*HFcplx_uir)[3]  = (calc_upar && doHF)  ? (MYCOMPLEX*(*)[3])calloc(nr, sizeof(*HFcplx_uir))  : NULL;
+    MYCOMPLEX *(*DDcplx_uir)[2]  = (calc_upar && doDC)  ? (MYCOMPLEX*(*)[2])calloc(nr, sizeof(*DDcplx_uir))  : NULL;
+    MYCOMPLEX *(*DScplx_uir)[3]  = (calc_upar && doDC)  ? (MYCOMPLEX*(*)[3])calloc(nr, sizeof(*DScplx_uir))  : NULL;
+    MYCOMPLEX *(*SScplx_uir)[3]  = (calc_upar && doDC)  ? (MYCOMPLEX*(*)[3])calloc(nr, sizeof(*SScplx_uir))  : NULL;
+
     for(int ir=0; ir<nr; ++ir){
         for(int i=0; i<3; ++i){
             if(i<2){
+                //
                 if(EXPcplx) EXPcplx[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
+                if(EXPcplx_uiz) EXPcplx_uiz[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
+                if(EXPcplx_uir) EXPcplx_uir[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
+                //
                 if(VFcplx)  VFcplx[ir][i]  = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
+                if(VFcplx_uiz) VFcplx_uiz[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
+                if(VFcplx_uir) VFcplx_uir[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
+                //
                 if(DDcplx)  DDcplx[ir][i]  = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
+                if(DDcplx_uiz) DDcplx_uiz[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
+                if(DDcplx_uir) DDcplx_uir[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
             }
+            //
             if(HFcplx) HFcplx[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
+            if(HFcplx_uiz) HFcplx_uiz[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
+            if(HFcplx_uir) HFcplx_uir[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
+            //
             if(DScplx) DScplx[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
+            if(DScplx_uiz) DScplx_uiz[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
+            if(DScplx_uir) DScplx_uir[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
+            //
             if(SScplx) SScplx[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
+            if(SScplx_uiz) SScplx_uiz[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
+            if(SScplx_uir) SScplx_uir[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
         }
     }
 
@@ -1037,6 +1115,9 @@ int main(int argc, char **argv) {
         pymod, nf1, nf2, nf, freqs, nr, rs, wI,
         vmin_ref, keps, ampk, iwk0, k0, Length, !silenceInput,
         EXPcplx, VFcplx, HFcplx, DDcplx, DScplx, SScplx, 
+        calc_upar, 
+        EXPcplx_uiz, VFcplx_uiz, HFcplx_uiz, DDcplx_uiz, DScplx_uiz, SScplx_uiz, 
+        EXPcplx_uir, VFcplx_uir, HFcplx_uir, DDcplx_uir, DScplx_uir, SScplx_uir, 
         s_statsdir, nstatsidxs, statsidxs
     );
     //==============================================================================
@@ -1053,13 +1134,20 @@ int main(int argc, char **argv) {
     
     // 建立SAC头文件，包含必要的头变量
     SACHEAD hd = new_sac_head(dt, nt, delayT0);
-    char kcmpnm[9];
     // 发震时刻作为参考时刻
     hd.o = 0.0; 
     hd.iztype = IO; 
     // 记录震源和台站深度
     hd.evdp = depsrc; // km
     hd.stel = (-1.0)*deprcv*1e3; // m
+    // 写入虚频率
+    hd.user0 = wI;
+    // 写入接受点的Vp,Vs,rho
+    hd.user1 = pymod->Va[pymod->ircv];
+    hd.user2 = pymod->Vb[pymod->ircv];
+    hd.user3 = pymod->Rho[pymod->ircv];
+    hd.user4 = RONE/pymod->Qa[pymod->ircv];
+    hd.user5 = RONE/pymod->Qb[pymod->ircv];
 
     
     // 做反傅里叶变换，保存SAC文件
@@ -1098,47 +1186,53 @@ int main(int argc, char **argv) {
             char *s_outpath = (char*)malloc(sizeof(char)*(strlen(s_output_subdir)+100));
             // char *s_suffix = (char*)malloc(sizeof(char)*(strlen(s_depsrc)+strlen(s_deprcv)+strlen(s_rs[ir])+100));
             // sprintf(s_suffix, "%s_%s_%s", s_depsrc, s_deprcv, s_rs[ir]);
-            char s_suffix[] = "";
+            char s_prefix[] = "";
 
             // Z分量反转
             sgn = (i==0) ? -1 : 1;
             if(i<2){
                 if(doEXP){
-                    sprintf(kcmpnm, "EX%c", chs[i]);
-                    strcpy(hd.kcmpnm, kcmpnm);
-                    sprintf(s_outpath, "%s/%s%c%s.sac", s_output_subdir, "EX", chs[i], s_suffix);
-                    ifft_one_trace(delayT, sgn, EXPcplx[ir][i], fftw_grn, out, float_arr, plan, hd, s_outpath);
+                    write_one_to_sac("EX", chs[i], &hd, s_outpath, s_output_subdir, s_prefix, sgn, EXPcplx[ir][i], fftw_grn, out, float_arr, plan);
+                    if(calc_upar){
+                        write_one_to_sac("EX", chs[i], &hd, s_outpath, s_output_subdir, "z", sgn, EXPcplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
+                        write_one_to_sac("EX", chs[i], &hd, s_outpath, s_output_subdir, "r", sgn, EXPcplx_uir[ir][i], fftw_grn, out, float_arr, plan);
+                    }
                 }
                 if(doVF){
-                    sprintf(kcmpnm, "VF%c", chs[i]);
-                    strcpy(hd.kcmpnm, kcmpnm);
-                    sprintf(s_outpath, "%s/%s%c%s.sac", s_output_subdir, "VF", chs[i], s_suffix);
-                    ifft_one_trace(delayT, sgn, VFcplx[ir][i], fftw_grn, out, float_arr, plan, hd, s_outpath);
+                    write_one_to_sac("VF", chs[i], &hd, s_outpath, s_output_subdir, s_prefix, sgn, VFcplx[ir][i], fftw_grn, out, float_arr, plan);
+                    if(calc_upar){
+                        write_one_to_sac("VF", chs[i], &hd, s_outpath, s_output_subdir, "z", sgn, VFcplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
+                        write_one_to_sac("VF", chs[i], &hd, s_outpath, s_output_subdir, "r", sgn, VFcplx_uir[ir][i], fftw_grn, out, float_arr, plan);
+                    }
                 }
                 if(doDC){
-                    sprintf(kcmpnm, "DD%c", chs[i]);
-                    strcpy(hd.kcmpnm, kcmpnm);
-                    sprintf(s_outpath, "%s/%s%c%s.sac", s_output_subdir, "DD", chs[i], s_suffix);
-                    ifft_one_trace(delayT, sgn, DDcplx[ir][i], fftw_grn, out, float_arr, plan, hd, s_outpath);
+                    write_one_to_sac("DD", chs[i], &hd, s_outpath, s_output_subdir, s_prefix, sgn, DDcplx[ir][i], fftw_grn, out, float_arr, plan);
+                    if(calc_upar){
+                        write_one_to_sac("DD", chs[i], &hd, s_outpath, s_output_subdir, "z", sgn, DDcplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
+                        write_one_to_sac("DD", chs[i], &hd, s_outpath, s_output_subdir, "r", sgn, DDcplx_uir[ir][i], fftw_grn, out, float_arr, plan);
+                    }
                 }
             }
 
             if(doHF){
-                sprintf(kcmpnm, "HF%c", chs[i]);
-                strcpy(hd.kcmpnm, kcmpnm);
-                sprintf(s_outpath, "%s/%s%c%s.sac", s_output_subdir, "HF", chs[i], s_suffix);
-                ifft_one_trace(delayT, sgn, HFcplx[ir][i], fftw_grn, out, float_arr, plan, hd, s_outpath);
+                write_one_to_sac("HF", chs[i], &hd, s_outpath, s_output_subdir, s_prefix, sgn, HFcplx[ir][i], fftw_grn, out, float_arr, plan);
+                if(calc_upar){
+                    write_one_to_sac("HF", chs[i], &hd, s_outpath, s_output_subdir, "z", sgn, HFcplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
+                    write_one_to_sac("HF", chs[i], &hd, s_outpath, s_output_subdir, "r", sgn, HFcplx_uir[ir][i], fftw_grn, out, float_arr, plan);
+                }
             }
 
             if(doDC){
-                sprintf(kcmpnm, "DS%c", chs[i]);
-                strcpy(hd.kcmpnm, kcmpnm);
-                sprintf(s_outpath, "%s/%s%c%s.sac", s_output_subdir, "DS", chs[i], s_suffix);
-                ifft_one_trace(delayT, sgn, DScplx[ir][i], fftw_grn, out, float_arr, plan, hd, s_outpath);
-                sprintf(kcmpnm, "SS%c", chs[i]);
-                strcpy(hd.kcmpnm, kcmpnm);
-                sprintf(s_outpath, "%s/%s%c%s.sac", s_output_subdir, "SS", chs[i], s_suffix);
-                ifft_one_trace(delayT, sgn, SScplx[ir][i], fftw_grn, out, float_arr, plan, hd, s_outpath);
+                write_one_to_sac("DS", chs[i], &hd, s_outpath, s_output_subdir, s_prefix, sgn, DScplx[ir][i], fftw_grn, out, float_arr, plan);
+                if(calc_upar){
+                    write_one_to_sac("DS", chs[i], &hd, s_outpath, s_output_subdir, "z", sgn, DScplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
+                    write_one_to_sac("DS", chs[i], &hd, s_outpath, s_output_subdir, "r", sgn, DScplx_uir[ir][i], fftw_grn, out, float_arr, plan);
+                }
+                write_one_to_sac("SS", chs[i], &hd, s_outpath, s_output_subdir, s_prefix, sgn, SScplx[ir][i], fftw_grn, out, float_arr, plan);
+                if(calc_upar){
+                    write_one_to_sac("SS", chs[i], &hd, s_outpath, s_output_subdir, "z", sgn, SScplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
+                    write_one_to_sac("SS", chs[i], &hd, s_outpath, s_output_subdir, "r", sgn, SScplx_uir[ir][i], fftw_grn, out, float_arr, plan);
+                }
             }
 
             free(s_outpath);
@@ -1167,29 +1261,65 @@ int main(int argc, char **argv) {
             if(i<2){
                 if(doEXP){
                     free(EXPcplx[ir][i]);
-                }  
+                    if(calc_upar){
+                        free(EXPcplx_uiz[ir][i]);
+                        free(EXPcplx_uir[ir][i]);
+                    }
+                }
                 if(doVF){
                     free(VFcplx[ir][i]);
-                }   
+                    if(calc_upar){
+                        free(VFcplx_uiz[ir][i]);
+                        free(VFcplx_uir[ir][i]);
+                    }
+                }
                 if(doDC){
                     free(DDcplx[ir][i]);
-                }   
+                    if(calc_upar){
+                        free(DDcplx_uiz[ir][i]);
+                        free(DDcplx_uir[ir][i]);
+                    }
+                }
             }
             if(doHF){
                 free(HFcplx[ir][i]);
-            }   
+                if(calc_upar){
+                    free(HFcplx_uiz[ir][i]);
+                    free(HFcplx_uir[ir][i]);
+                }
+            }
             if(doDC){
                 free(DScplx[ir][i]);
+                if(calc_upar){
+                    free(DScplx_uiz[ir][i]);
+                    free(DScplx_uir[ir][i]);
+                }
                 free(SScplx[ir][i]);
+                if(calc_upar){
+                    free(SScplx_uiz[ir][i]);
+                    free(SScplx_uir[ir][i]);
+                }
             }
         }
     }
     if(EXPcplx) free(EXPcplx);
+    if(EXPcplx_uiz) free(EXPcplx_uiz);
+    if(EXPcplx_uir) free(EXPcplx_uir);
     if(VFcplx) free(VFcplx);
+    if(VFcplx_uiz) free(VFcplx_uiz);
+    if(VFcplx_uir) free(VFcplx_uir);
     if(HFcplx) free(HFcplx);
+    if(HFcplx_uiz) free(HFcplx_uiz);
+    if(HFcplx_uir) free(HFcplx_uir);
     if(DDcplx) free(DDcplx);
+    if(DDcplx_uiz) free(DDcplx_uiz);
+    if(DDcplx_uir) free(DDcplx_uir);
     if(DScplx) free(DScplx);
+    if(DScplx_uiz) free(DScplx_uiz);
+    if(DScplx_uir) free(DScplx_uir);
     if(SScplx) free(SScplx);
+    if(SScplx_uiz) free(SScplx_uiz);
+    if(SScplx_uir) free(SScplx_uir);
 
     free(s_rs);
     free(rs);

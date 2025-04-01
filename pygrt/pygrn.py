@@ -153,7 +153,7 @@ class PyGreenFunction:
         sac = self.SACTrace
         nt = sac.npts
         dt = sac.delta
-        wI = self.wI
+        wI = sac.user0
 
         T = nt*dt
         if not np.isclose(T*df, 1.0):
