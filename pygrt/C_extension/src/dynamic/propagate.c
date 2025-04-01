@@ -30,7 +30,9 @@
 
 void kernel(
     const MODEL1D *mod1d, MYCOMPLEX omega, MYREAL k,
-    MYCOMPLEX EXP_qwv[3][3], MYCOMPLEX VF_qwv[3][3], MYCOMPLEX HF_qwv[3][3], MYCOMPLEX DC_qwv[3][3])
+    MYCOMPLEX EXP_qwv[3][3], MYCOMPLEX VF_qwv[3][3], MYCOMPLEX HF_qwv[3][3], MYCOMPLEX DC_qwv[3][3],
+    bool calc_uiz,
+    MYCOMPLEX EXP_uiz_qwv[3][3], MYCOMPLEX VF_uiz_qwv[3][3], MYCOMPLEX HF_uiz_qwv[3][3], MYCOMPLEX DC_uiz_qwv[3][3])
 {
     // 初始化qwv为0
     for(MYINT i=0; i<3; ++i){
@@ -39,6 +41,18 @@ void kernel(
             if(VF_qwv!=NULL)  VF_qwv[i][j] = RZERO;
             if(HF_qwv!=NULL)  HF_qwv[i][j] = RZERO;
             if(DC_qwv!=NULL)  DC_qwv[i][j] = RZERO;
+        }
+    }
+
+    if(calc_uiz){
+        // 初始化qwv为0
+        for(MYINT i=0; i<3; ++i){
+            for(MYINT j=0; j<3; ++j){
+                if(EXP_uiz_qwv!=NULL) EXP_uiz_qwv[i][j] = RZERO;
+                if(VF_uiz_qwv!=NULL)  VF_uiz_qwv[i][j] = RZERO;
+                if(HF_uiz_qwv!=NULL)  HF_uiz_qwv[i][j] = RZERO;
+                if(DC_uiz_qwv!=NULL)  DC_uiz_qwv[i][j] = RZERO;
+            }
         }
     }
 
@@ -119,9 +133,13 @@ void kernel(
     // 自由表面的反射系数
     MYCOMPLEX R_tilt[2][2] = INIT_C_ZERO_2x2_MATRIX; // SH波在自由表面的反射系数为1，不必定义变量
 
-    // 接收点处的接收矩阵
+    // 接收点处的接收矩阵(转为位移u的(B_m, C_m, P_m)系分量)
     MYCOMPLEX R_EV[2][2], R_EVL;
     MYCOMPLEX *const pR_EVL = &R_EVL;
+
+    // 接收点处的接收矩阵(转为位移导数ui_z的(B_m, C_m, P_m)系分量)
+    MYCOMPLEX uiz_R_EV[2][2], uiz_R_EVL;
+    MYCOMPLEX *const puiz_R_EVL = &uiz_R_EVL;
     
 
     // 模型参数
@@ -331,7 +349,7 @@ void kernel(
     source_coef(src_xa, src_xb, src_kaka, src_kbkb, omega, k, pEXP, pVF, pHF, pDC);
 
     // 临时中转矩阵 (temperary)
-    MYCOMPLEX tmpR1[2][2], tmpR2[2][2], tmp2x2[2][2], tmpRL;
+    MYCOMPLEX tmpR1[2][2], tmpR2[2][2], tmp2x2[2][2], tmpRL, tmp2x2_uiz[2][2], tmpRL_uiz;
     MYCOMPLEX inv_2x2T[2][2], invT;
 
     // 递推RU_FA
@@ -360,12 +378,15 @@ void kernel(
             RU_FB, pRUL_FB, inv_2x2T, &invT);
         
         // 公式(5.7.12-14)
-        cmat2x2_mul(R_EV, inv_2x2T, tmpR1);
+        // cmat2x2_mul(R_EV, inv_2x2T, tmpR1);
         cmat2x2_mul(RD_BL, RU_FB, tmpR2);
         cmat2x2_one_sub(tmpR2);
         cmat2x2_inv(tmpR2, tmpR2);// (I - xx)^-1
-        cmat2x2_mul(tmpR1, tmpR2, tmp2x2);
-        
+        cmat2x2_mul(inv_2x2T, tmpR2, tmp2x2);
+
+        if(calc_uiz) cmat2x2_assign(tmp2x2, tmp2x2_uiz); // 为后续计算空间导数备份
+
+        cmat2x2_mul(R_EV, tmp2x2, tmp2x2);
         tmpRL = R_EVL * invT  / (RONE - RDL_BL * RUL_FB);
         for(MYINT m=0; m<3; ++m){
             if(0==m){
@@ -380,6 +401,27 @@ void kernel(
 
             // 剪切位错
             if(DC_qwv!=NULL)  get_qwv(ircvup, tmp2x2, tmpRL, RD_BL, RDL_BL, DC[m], DC_qwv[m]);
+        }
+        
+
+        if(calc_uiz){
+            calc_uiz_R_EV(rcv_xa, rcv_xb, ircvup, k, RU_FA, RUL_FA, uiz_R_EV, puiz_R_EVL);
+            cmat2x2_mul(uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
+            tmpRL_uiz = tmpRL / R_EVL * uiz_R_EVL;
+            for(MYINT m=0; m<3; ++m){
+                if(0==m){
+                    // 爆炸源
+                    if(EXP_uiz_qwv!=NULL) get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RD_BL, RDL_BL, EXP[m], EXP_uiz_qwv[m]);
+                    // 垂直力源
+                    if(VF_uiz_qwv!=NULL)  get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RD_BL, RDL_BL, VF[m], VF_uiz_qwv[m]);
+                }
+                
+                // 水平力源
+                if(1==m && HF_uiz_qwv!=NULL) get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RD_BL, RDL_BL, HF[m], HF_uiz_qwv[m]);
+
+                // 剪切位错
+                if(DC_uiz_qwv!=NULL)  get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RD_BL, RDL_BL, DC[m], DC_uiz_qwv[m]);
+            }    
         }
     } 
     else { // A震源  B接收
@@ -397,11 +439,15 @@ void kernel(
             RD_AL, pRDL_AL, inv_2x2T, &invT);
         
         // 公式(5.7.26-27)
-        cmat2x2_mul(R_EV, inv_2x2T, tmpR1);
+        // cmat2x2_mul(R_EV, inv_2x2T, tmpR1);
         cmat2x2_mul(RU_FA, RD_AL, tmpR2);
         cmat2x2_one_sub(tmpR2);
         cmat2x2_inv(tmpR2, tmpR2);// (I - xx)^-1
-        cmat2x2_mul(tmpR1, tmpR2, tmp2x2);
+        cmat2x2_mul(inv_2x2T, tmpR2, tmp2x2);
+
+        if(calc_uiz) cmat2x2_assign(tmp2x2, tmp2x2_uiz); // 为后续计算空间导数备份
+
+        cmat2x2_mul(R_EV, tmp2x2, tmp2x2);
         tmpRL = R_EVL * invT / (RONE - RUL_FA * RDL_AL);
         for(MYINT m=0; m<3; ++m){
             if(0==m){
@@ -418,6 +464,30 @@ void kernel(
             if(DC_qwv!=NULL)  get_qwv(ircvup, tmp2x2, tmpRL, RU_FA, RUL_FA, DC[m], DC_qwv[m]);
 
         }
+
+
+        if(calc_uiz){
+            calc_uiz_R_EV(rcv_xa, rcv_xb, ircvup, k, RD_BL, RDL_BL, uiz_R_EV, puiz_R_EVL);    
+            cmat2x2_mul(uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
+            tmpRL_uiz = tmpRL / R_EVL * uiz_R_EVL;
+            for(MYINT m=0; m<3; ++m){
+                if(0==m){
+                    // 爆炸源
+                    if(EXP_uiz_qwv!=NULL) get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RU_FA, RUL_FA, EXP[m], EXP_uiz_qwv[m]);
+                    // 垂直力源
+                    if(VF_uiz_qwv!=NULL)  get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RU_FA, RUL_FA, VF[m], VF_uiz_qwv[m]);
+                }
+                
+                // 水平力源
+                if(1==m && HF_uiz_qwv!=NULL) get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RU_FA, RUL_FA, HF[m], HF_uiz_qwv[m]);
+    
+                // 剪切位错
+                if(DC_uiz_qwv!=NULL)  get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RU_FA, RUL_FA, DC[m], DC_uiz_qwv[m]);
+    
+            }
+        }
+
+
     } // END if
 
 
@@ -431,17 +501,38 @@ void int_Pk(
     const MYCOMPLEX EXP_qwv[3][3], const MYCOMPLEX VF_qwv[3][3], 
     const MYCOMPLEX HF_qwv[3][3],  const MYCOMPLEX DC_qwv[3][3], 
     // F(ki,w)Jm(ki*r)ki，维度3代表阶数m=0,1,2，维度4代表4种类型的F(k,w)Jm(kr)k的类型
+    bool calc_uir,
     MYCOMPLEX EXP_J[3][4], MYCOMPLEX VF_J[3][4], 
-    MYCOMPLEX HF_J[3][4],  MYCOMPLEX DC_J[3][4] )
+    MYCOMPLEX HF_J[3][4],  MYCOMPLEX DC_J[3][4])
 {
     MYREAL bj0k, bj1k, bj2k;
     MYREAL kr = k*r;
+    MYREAL kr_inv = RONE/kr;
+    MYREAL kcoef = k;
+
+    MYREAL J1coef, J2coef;
 
     bessel012(kr, &bj0k, &bj1k, &bj2k); 
+    if(calc_uir){
+        MYREAL j1, j2;
+        j1 = bj1k;
+        j2 = bj2k;
+        besselp012(kr, &bj0k, &bj1k, &bj2k); 
+        kcoef = k*k;
 
-    bj0k = bj0k*k;
-    bj1k = bj1k*k;
-    bj2k = bj2k*k;
+        J1coef = kr_inv * (-kr_inv * j1 + bj1k);
+        J2coef = kr_inv * (-kr_inv * j2 + bj2k);
+    } else {
+        J1coef = bj1k*kr_inv;
+        J2coef = bj2k*kr_inv;
+    }
+
+    J1coef *= kcoef;
+    J2coef *= kcoef;
+
+    bj0k *= kcoef;
+    bj1k *= kcoef;
+    bj2k *= kcoef;
 
     
     if(EXP_qwv!=NULL){
@@ -460,7 +551,7 @@ void int_Pk(
     if(HF_qwv!=NULL){
     // m=1 水平力源
     HF_J[1][0]  =   HF_qwv[1][0]*bj0k;         // q1*J0*k
-    HF_J[1][1]  = - (HF_qwv[1][0] + HF_qwv[1][2])*bj1k/(kr);    // - (q1+v1)*J1*k/kr
+    HF_J[1][1]  = - (HF_qwv[1][0] + HF_qwv[1][2])*J1coef;    // - (q1+v1)*J1*k/kr
     HF_J[1][2]  =   HF_qwv[1][1]*bj1k;         // w1*J1*k
     HF_J[1][3]  = - HF_qwv[1][2]*bj0k;         // -v1*J0*k
     }
@@ -472,13 +563,13 @@ void int_Pk(
 
     // m=1 双力偶源
     DC_J[1][0]  =   DC_qwv[1][0]*bj0k;         // q1*J0*k
-    DC_J[1][1]  = - (DC_qwv[1][0] + DC_qwv[1][2])*bj1k/(kr);    // - (q1+v1)*J1*k/kr
+    DC_J[1][1]  = - (DC_qwv[1][0] + DC_qwv[1][2])*J1coef;    // - (q1+v1)*J1*k/kr
     DC_J[1][2]  =   DC_qwv[1][1]*bj1k;         // w1*J1*k
     DC_J[1][3]  = - DC_qwv[1][2]*bj0k;         // -v1*J0*k
 
     // m=2 双力偶源
     DC_J[2][0]  =   DC_qwv[2][0]*bj1k;         // q2*J1*k
-    DC_J[2][1]  = - RTWO*(DC_qwv[2][0] + DC_qwv[2][2])*bj2k/(kr);    // - (q2+v2)*J2*k/kr
+    DC_J[2][1]  = - RTWO*(DC_qwv[2][0] + DC_qwv[2][2])*J2coef;    // - (q2+v2)*J2*k/kr
     DC_J[2][2]  =   DC_qwv[2][1]*bj2k;         // w2*J2*k
     DC_J[2][3]  = - DC_qwv[2][2]*bj1k;         // -v2*J1*k
     }
