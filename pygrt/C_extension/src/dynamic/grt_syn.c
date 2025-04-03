@@ -26,7 +26,6 @@
 #include "common/logo.h"
 #include "common/colorstr.h"
 
-#define DEG1 0.017453292519943295
 #define COMPUTE_EXP 0
 #define COMPUTE_SF 1
 #define COMPUTE_DC 2
