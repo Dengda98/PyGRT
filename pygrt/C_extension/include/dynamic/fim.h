@@ -66,31 +66,3 @@ MYREAL linear_filon_integ(
     FILE *(fstats[nr]));
 
 
-
-/**
- *  和int_Pk函数类似，不过是计算核函数和渐近Bessel函数的乘积，其中涉及两种数组形状：
- *    + [3][3]. 存储的是核函数，第一个维度3代表阶数m=0,1,2，第二个维度3代表三类系数qm,wm,vm  
- *    + [3][4]. 存储的是该dk区间内的积分值，维度3代表阶数m=0,1,2，维度4代表4种类型的F(k,w)Jm(kr)k的类型
- * 
- * 
- * @param     k     (in)波数  
- * @param     r     (in)震中距 
- * @param    EXP_qwv[3][3]    (in)爆炸源核函数
- * @param    VF_qwv[3][3]     (in)垂直力源核函数
- * @param    HF_qwv[3][3]     (in)水平力源核函数
- * @param    DC_qwv[3][3]     (in)双力偶源核函数 
- * @param    calc_uir         (in)是否计算ui_r（位移u对坐标r的偏导）
- * @param    EXP_J[3][4]      (out)爆炸源，该dk区间内的积分值，下同
- * @param    VF_J[3][4]       (out)垂直力源
- * @param    HF_J[3][4]       (out)水平力源
- * @param    DC_J[3][4]       (out)双力偶源
- *  
- */
-void int_Pk_filon(
-    MYREAL k, MYREAL r, 
-    const MYCOMPLEX EXP_qwv[3][3], const MYCOMPLEX VF_qwv[3][3], 
-    const MYCOMPLEX HF_qwv[3][3],  const MYCOMPLEX DC_qwv[3][3], 
-    bool calc_uir, 
-    MYCOMPLEX EXP_J[3][4], MYCOMPLEX VF_J[3][4], 
-    MYCOMPLEX HF_J[3][4],  MYCOMPLEX DC_J[3][4] );
-

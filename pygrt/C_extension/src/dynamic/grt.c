@@ -22,10 +22,10 @@
 
 #include "dynamic/grt.h"
 #include "dynamic/dwm.h"
-#include "dynamic/propagate.h"
 #include "dynamic/fim.h"
 #include "dynamic/ptam.h"
-#include "dynamic/iostats.h"
+#include "common/integral.h"
+#include "common/iostats.h"
 #include "common/const.h"
 #include "common/model.h"
 #include "common/prtdbg.h"
