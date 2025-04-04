@@ -612,20 +612,18 @@ static void getopt_from_command(int argc, char **argv){
         fprintf(stderr, "[%s] " BOLD_RED "Error! Need set -R. Use '-h' for help.\n" DEFAULT_RESTORE, command);
         exit(EXIT_FAILURE);
     }
+    if(O_flag == 0){
+        fprintf(stderr, "[%s] " BOLD_RED "Error! Need set -O. Use '-h' for help.\n" DEFAULT_RESTORE, command);
+        exit(EXIT_FAILURE);
+    }
 
 
-    if(O_flag == 1){
-        // 建立保存目录
-        if(mkdir(s_output_dir, 0777) != 0){
-            if(errno != EEXIST){
-                fprintf(stderr, "[%s] " BOLD_RED "Error! Unable to create folder %s. Error code: %d\n" DEFAULT_RESTORE, command, s_output_dir, errno);
-                exit(EXIT_FAILURE);
-            }
+    // 建立保存目录
+    if(mkdir(s_output_dir, 0777) != 0){
+        if(errno != EEXIST){
+            fprintf(stderr, "[%s] " BOLD_RED "Error! Unable to create folder %s. Error code: %d\n" DEFAULT_RESTORE, command, s_output_dir, errno);
+            exit(EXIT_FAILURE);
         }
-    } else {
-        // 使用当前目录
-        s_output_dir = (char*)malloc(sizeof(char)*100);
-        strcpy(s_output_dir, ".");
     }
     
 
