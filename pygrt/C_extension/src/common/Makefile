@@ -7,6 +7,9 @@ SRCS := $(wildcard *.c)
 OBJS := $(patsubst %.c, $(BUILD_DIR)/%.o, $(SRCS))
 DEPS := $(OBJS:.o=.d)
 
+progs: 
+	@echo "No rule to make target 'progs'"
+
 all: objs
 
 objs: $(BUILD_DIR) $(OBJS)

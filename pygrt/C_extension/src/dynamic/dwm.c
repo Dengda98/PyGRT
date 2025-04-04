@@ -17,7 +17,8 @@
 
 #include "dynamic/dwm.h"
 #include "dynamic/propagate.h"
-#include "dynamic/iostats.h"
+#include "common/integral.h"
+#include "common/iostats.h"
 #include "common/model.h"
 #include "common/const.h"
 
