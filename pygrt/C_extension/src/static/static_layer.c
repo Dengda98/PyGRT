@@ -15,9 +15,9 @@
 #include <complex.h>
 #include <stdbool.h>
 
-#include "static_layer.h"
-#include "model.h"
-#include "matrix.h"
+#include "static/static_layer.h"
+#include "common/model.h"
+#include "common/matrix.h"
 
 void calc_static_R_tilt(MYCOMPLEX delta1, MYCOMPLEX R_tilt[2][2]){
     // 公式(6.3.12)
