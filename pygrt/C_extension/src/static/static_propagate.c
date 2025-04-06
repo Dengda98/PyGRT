@@ -15,12 +15,13 @@
 #include <stdio.h>
 #include <complex.h>
 
-#include "static_propagate.h"
-#include "static_layer.h"
-#include "static_source.h"
-#include "model.h"
-#include "propagate.h"
-#include "matrix.h"
+#include "static/static_propagate.h"
+#include "static/static_layer.h"
+#include "static/static_source.h"
+#include "common/recursion.h"
+#include "common/model.h"
+#include "common/const.h"
+#include "common/matrix.h"
 
 #define CMAT_ASSIGN_SPLIT 0  // 2x2的小矩阵赋值合并为1个循环，程序速度提升微小
 
@@ -311,10 +312,6 @@ void static_kernel(
     if(ircvup){ // A接收  B震源
         // 计算R_EV
         calc_static_R_EV(ircvup, RU_FA, RUL_FA, R_EV, pR_EVL);
-        // printf("------ R_EV -----------------\n");
-        // cmatmxn_print(2, 2, R_EV);
-        // printf("------ R_tilt -----------------\n");
-        // cmatmxn_print(2, 2, R_tilt);
 
         // 递推RU_FS
         recursion_RU(
