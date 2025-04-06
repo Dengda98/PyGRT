@@ -301,6 +301,10 @@ static void getopt_from_command(int argc, char **argv){
         fprintf(stderr, "[%s] " BOLD_RED "Error! Need set -R. Use '-h' for help.\n" DEFAULT_RESTORE, command);
         exit(EXIT_FAILURE);
     }
+    if(O_flag == 0){
+        fprintf(stderr, "[%s] " BOLD_RED "Error! Need set -O. Use '-h' for help.\n" DEFAULT_RESTORE, command);
+        exit(EXIT_FAILURE);
+    }
 
     // 建立保存目录
     if(mkdir(s_output_dir, 0777) != 0){
