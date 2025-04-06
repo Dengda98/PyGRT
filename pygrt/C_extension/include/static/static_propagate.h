@@ -13,8 +13,8 @@
 
 #pragma once 
 
-#include "const.h"
-#include "model.h"
+#include "common/const.h"
+#include "common/model.h"
 
 void static_kernel(
     const MODEL1D *mod1d, MYREAL k,
