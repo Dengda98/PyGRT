@@ -85,7 +85,7 @@ int main(int argc, char **argv){
     float *arrin = NULL;
     char c1, c2;
     char *s_filepath = (char*)malloc(sizeof(char) * (strlen(s_synpath)+strlen(s_prefix)+100));
-    const char chs[3] = {'R', 'T', 'Z'};
+    const char chs[3] = {'Z', 'R', 'T'};
 
     // 读取一个头段变量，获得基本参数，分配数组内存
     SACHEAD hd;
@@ -116,18 +116,18 @@ int main(int argc, char **argv){
             // 累加
             for(int i=0; i<npts; ++i)  arrout[i] = (arrout[i] + arrin[i]) * 0.5f;
 
-            // 特殊情况需加上协变导数
+            // 特殊情况需加上协变导数，1e-5是因为km->cm
             if(c1=='R' && c2=='T'){
                 // 读取数据 u_T
                 sprintf(s_filepath, "%s/%sT.sac", s_synpath, s_prefix);
                 arrin = read_SAC(command, s_filepath, &hd, arrin);
-                for(int i=0; i<npts; ++i)  arrout[i] -= 0.5f * arrin[i] / dist;
+                for(int i=0; i<npts; ++i)  arrout[i] -= 0.5f * arrin[i] / dist * 1e-5;
             }
             else if(c1=='T' && c2=='T'){
                 // 读取数据 u_R
                 sprintf(s_filepath, "%s/%sR.sac", s_synpath, s_prefix);
                 arrin = read_SAC(command, s_filepath, &hd, arrin);
-                for(int i=0; i<npts; ++i)  arrout[i] += arrin[i] / dist;
+                for(int i=0; i<npts; ++i)  arrout[i] += arrin[i] / dist * 1e-5;
             }
 
             // 保存到SAC
