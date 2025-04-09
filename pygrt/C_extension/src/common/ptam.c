@@ -18,9 +18,8 @@
 #include <complex.h>
 #include <stdlib.h>
 
-#include "dynamic/ptam.h"
-#include "dynamic/propagate.h"
-#include "dynamic/quadratic.h"
+#include "common/ptam.h"
+#include "common/quadratic.h"
 #include "common/integral.h"
 #include "common/iostats.h"
 #include "common/const.h"
@@ -189,7 +188,7 @@ void PTA_method(
     MYCOMPLEX sum_HF_uiz_J0[nr][3][4],  MYCOMPLEX sum_DC_uiz_J0[nr][3][4],  
     MYCOMPLEX sum_EXP_uir_J0[nr][3][4], MYCOMPLEX sum_VF_uir_J0[nr][3][4],  
     MYCOMPLEX sum_HF_uir_J0[nr][3][4],  MYCOMPLEX sum_DC_uir_J0[nr][3][4],  
-    FILE *(fstats[nr]), FILE *(ptam_fstats[nr]))
+    FILE *(fstats[nr]), FILE *(ptam_fstats[nr]), KernelFunc kerfunc)
 {   
     // 需要兼容对正常收敛而不具有规律波峰波谷的序列
     // 有时序列收敛比较好，不表现为规律的波峰波谷，
@@ -360,8 +359,8 @@ void PTA_method(
             if(k > kmax) break;
 
             // 计算核函数 F(k, w)
-            kernel(mod1d, omega, k, pEXP_qwv, pVF_qwv, pHF_qwv, pDC_qwv,
-                   calc_upar, pEXP_uiz_qwv, pVF_uiz_qwv, pHF_uiz_qwv, pDC_uiz_qwv); 
+            kerfunc(mod1d, omega, k, pEXP_qwv, pVF_qwv, pHF_qwv, pDC_qwv,
+                    calc_upar, pEXP_uiz_qwv, pVF_uiz_qwv, pHF_uiz_qwv, pDC_uiz_qwv); 
 
             // 计算被积函数一项 F(k,w)Jm(kr)k
             int_Pk(k, rs[ir],
