@@ -84,7 +84,7 @@ int main(int argc, char **argv){
     // 开始读取计算，输出6个量
     char c1, c2;
     char *s_filepath = (char*)malloc(sizeof(char) * (strlen(s_synpath)+strlen(s_prefix)+100));
-    const char chs[3] = {'R', 'T', 'Z'};
+    const char chs[3] = {'Z', 'R', 'T'};
 
     // 读取一个头段变量，获得基本参数，分配数组内存
     SACHEAD hd;
@@ -132,8 +132,9 @@ int main(int argc, char **argv){
         fftwf_complex atta, attb;
         atta = attenuation_law(Qainv, w);
         attb = attenuation_law(Qbinv, w);
-        mus[i] = vb*vb*attb*attb*rho;
-        lams[i] = va*va*atta*atta*rho - 2.0*mus[i];
+        // 乘上1e10，转为dyne/(cm^2)
+        mus[i] = vb*vb*attb*attb*rho*1e10;
+        lams[i] = va*va*atta*atta*rho*1e10 - 2.0*mus[i];
     }
 
     // ----------------------------------------------------------------------------------
@@ -194,20 +195,20 @@ int main(int argc, char **argv){
                 for(int i=0; i<nf; ++i)  carrout[i] += lam_ukk[i];
             }
 
-            // 特殊情况需加上协变导数
+            // 特殊情况需加上协变导数，1e-5是因为km->cm
             if(c1=='R' && c2=='T'){
                 // 读取数据 u_T
                 sprintf(s_filepath, "%s/%sT.sac", s_synpath, s_prefix);
                 arrin = read_SAC(command, s_filepath, &hd, arrin);
                 fftwf_execute(plan);
-                for(int i=0; i<nf; ++i)  carrout[i] -= mus[i] * carrin[i] / dist;
+                for(int i=0; i<nf; ++i)  carrout[i] -= mus[i] * carrin[i] / dist * 1e-5;
             }
             else if(c1=='T' && c2=='T'){
                 // 读取数据 u_R
                 sprintf(s_filepath, "%s/%sR.sac", s_synpath, s_prefix);
                 arrin = read_SAC(command, s_filepath, &hd, arrin);
                 fftwf_execute(plan);
-                for(int i=0; i<nf; ++i)  carrout[i] += 2.0f * mus[i] * carrin[i] / dist;
+                for(int i=0; i<nf; ++i)  carrout[i] += 2.0f * mus[i] * carrin[i] / dist * 1e-5;
             }
             
             // 保存到SAC
