@@ -12,7 +12,7 @@
 
 #include <stdio.h>
 
-#include "dynamic/quadratic.h"
+#include "common/quadratic.h"
 #include "common/const.h"
 
 
