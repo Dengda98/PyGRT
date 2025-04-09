@@ -86,8 +86,8 @@ bool iwk0=false;
 // 参考最小速度，小于0表示使用峰谷平均法;
 static double vmin_ref=0.0;
 static const double min_vmin_ref=0.1;
-// 自动使用峰谷平均法的最小厚度差 1km
-static const double hs_ptam = 0.5;
+// 自动使用峰谷平均法的最小厚度差
+static const double hs_ptam = MIN_DEPTH_GAP_SRC_RCV;
 // 时间延迟量，延迟参考速度。总延迟=T0 + dist/V0;
 static double delayT=0.0, delayT0=0.0, delayV0=0.0;
 static double tmax; // 时窗最大截止时刻
@@ -1192,21 +1192,21 @@ int main(int argc, char **argv) {
                 if(doEXP){
                     write_one_to_sac("EX", chs[i], &hd, s_outpath, s_output_subdir, s_prefix, sgn, EXPcplx[ir][i], fftw_grn, out, float_arr, plan);
                     if(calc_upar){
-                        write_one_to_sac("EX", chs[i], &hd, s_outpath, s_output_subdir, "z", sgn, EXPcplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
+                        write_one_to_sac("EX", chs[i], &hd, s_outpath, s_output_subdir, "z", sgn*(-1), EXPcplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
                         write_one_to_sac("EX", chs[i], &hd, s_outpath, s_output_subdir, "r", sgn, EXPcplx_uir[ir][i], fftw_grn, out, float_arr, plan);
                     }
                 }
                 if(doVF){
                     write_one_to_sac("VF", chs[i], &hd, s_outpath, s_output_subdir, s_prefix, sgn, VFcplx[ir][i], fftw_grn, out, float_arr, plan);
                     if(calc_upar){
-                        write_one_to_sac("VF", chs[i], &hd, s_outpath, s_output_subdir, "z", sgn, VFcplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
+                        write_one_to_sac("VF", chs[i], &hd, s_outpath, s_output_subdir, "z", sgn*(-1), VFcplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
                         write_one_to_sac("VF", chs[i], &hd, s_outpath, s_output_subdir, "r", sgn, VFcplx_uir[ir][i], fftw_grn, out, float_arr, plan);
                     }
                 }
                 if(doDC){
                     write_one_to_sac("DD", chs[i], &hd, s_outpath, s_output_subdir, s_prefix, sgn, DDcplx[ir][i], fftw_grn, out, float_arr, plan);
                     if(calc_upar){
-                        write_one_to_sac("DD", chs[i], &hd, s_outpath, s_output_subdir, "z", sgn, DDcplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
+                        write_one_to_sac("DD", chs[i], &hd, s_outpath, s_output_subdir, "z", sgn*(-1), DDcplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
                         write_one_to_sac("DD", chs[i], &hd, s_outpath, s_output_subdir, "r", sgn, DDcplx_uir[ir][i], fftw_grn, out, float_arr, plan);
                     }
                 }
@@ -1215,7 +1215,7 @@ int main(int argc, char **argv) {
             if(doHF){
                 write_one_to_sac("HF", chs[i], &hd, s_outpath, s_output_subdir, s_prefix, sgn, HFcplx[ir][i], fftw_grn, out, float_arr, plan);
                 if(calc_upar){
-                    write_one_to_sac("HF", chs[i], &hd, s_outpath, s_output_subdir, "z", sgn, HFcplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
+                    write_one_to_sac("HF", chs[i], &hd, s_outpath, s_output_subdir, "z", sgn*(-1), HFcplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
                     write_one_to_sac("HF", chs[i], &hd, s_outpath, s_output_subdir, "r", sgn, HFcplx_uir[ir][i], fftw_grn, out, float_arr, plan);
                 }
             }
@@ -1223,12 +1223,12 @@ int main(int argc, char **argv) {
             if(doDC){
                 write_one_to_sac("DS", chs[i], &hd, s_outpath, s_output_subdir, s_prefix, sgn, DScplx[ir][i], fftw_grn, out, float_arr, plan);
                 if(calc_upar){
-                    write_one_to_sac("DS", chs[i], &hd, s_outpath, s_output_subdir, "z", sgn, DScplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
+                    write_one_to_sac("DS", chs[i], &hd, s_outpath, s_output_subdir, "z", sgn*(-1), DScplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
                     write_one_to_sac("DS", chs[i], &hd, s_outpath, s_output_subdir, "r", sgn, DScplx_uir[ir][i], fftw_grn, out, float_arr, plan);
                 }
                 write_one_to_sac("SS", chs[i], &hd, s_outpath, s_output_subdir, s_prefix, sgn, SScplx[ir][i], fftw_grn, out, float_arr, plan);
                 if(calc_upar){
-                    write_one_to_sac("SS", chs[i], &hd, s_outpath, s_output_subdir, "z", sgn, SScplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
+                    write_one_to_sac("SS", chs[i], &hd, s_outpath, s_output_subdir, "z", sgn*(-1), SScplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
                     write_one_to_sac("SS", chs[i], &hd, s_outpath, s_output_subdir, "r", sgn, SScplx_uir[ir][i], fftw_grn, out, float_arr, plan);
                 }
             }
