@@ -16,7 +16,10 @@
 
 #pragma once 
 
+#include <stdio.h>
+
 #include "common/model.h"
+#include "common/kernel.h"
 
 
 #define PTAM_MAX_PEAK_TROUGH 36  ///< 最后统计波峰波谷的目标数量
@@ -53,6 +56,7 @@
  * 
  * @param    fstats[nr]          (out)波数积分过程文件指针
  * @param    ptam_fstats[nr]     (out)峰谷平均法过程文件指针
+ * @param    kerfunc              (in)计算核函数的函数指针
  * 
  * 
  */
@@ -66,7 +70,7 @@ void PTA_method(
     MYCOMPLEX sum_HF_uiz_J0[nr][3][4],  MYCOMPLEX sum_DC_uiz_J0[nr][3][4],  
     MYCOMPLEX sum_EXP_uir_J0[nr][3][4], MYCOMPLEX sum_VF_uir_J0[nr][3][4],  
     MYCOMPLEX sum_HF_uir_J0[nr][3][4],  MYCOMPLEX sum_DC_uir_J0[nr][3][4], 
-    FILE *(fstats[nr]), FILE *(ptam_fstats[nr]));
+    FILE *(fstats[nr]), FILE *(ptam_fstats[nr]), KernelFunc kerfunc);
 
 
 

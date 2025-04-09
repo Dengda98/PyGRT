@@ -12,8 +12,11 @@
 
 #pragma once 
 
+#include <stdio.h>
+
 #include "common/const.h"
 #include "common/model.h"
+#include "common/kernel.h"
 
 
 
@@ -50,6 +53,7 @@
  * @param  sum_DC_uir_J[nr][3][4]   (out)双力偶源
  * 
  * @param  fstats[nr]           (out)不同震中距的格林函数积分过程文件
+ * @param  kerfunc              (in)计算核函数的函数指针
  * 
  * @return  k        积分截至时的波数
  */
@@ -63,6 +67,6 @@ MYREAL linear_filon_integ(
     MYCOMPLEX sum_HF_uiz_J[nr][3][4],  MYCOMPLEX sum_DC_uiz_J[nr][3][4],  
     MYCOMPLEX sum_EXP_uir_J[nr][3][4], MYCOMPLEX sum_VF_uir_J[nr][3][4],  
     MYCOMPLEX sum_HF_uir_J[nr][3][4],  MYCOMPLEX sum_DC_uir_J[nr][3][4],  
-    FILE *(fstats[nr]));
+    FILE *(fstats[nr]), KernelFunc kerfunc);
 
 
