@@ -25,11 +25,9 @@
 #include "common/const.h"
 #include "common/logo.h"
 #include "common/colorstr.h"
+#include "common/radiation.h"
 
-#define COMPUTE_EXP 0
-#define COMPUTE_SF 1
-#define COMPUTE_DC 2
-#define COMPUTE_MT 3
+
 
 extern char *optarg;
 extern int optind;
@@ -48,18 +46,12 @@ static char *s_prefix = NULL;
 static const char *s_prefix_default = "out";
 // 方位角，以及对应弧度制
 static double azimuth = 0.0, azrad = 0.0, backazimuth=0.0;
-static double caz = 0.0, saz = 0.0;
-static double caz2 = 0.0, saz2 = 0.0;
 // 放大系数，对于位错源、爆炸源、张量震源，M0是标量地震矩；对于单力源，M0是放大系数
 static double M0 = 0.0;
-// 位错震源机制
-static double strike=0.0, dip=0.0, rake=0.0;
-// 单力源
-static double fn=0.0, fe=0.0, fz=0.0;
-// 张量震源 
-static double Mxx=0.0, Mxy=0.0, Mxz=0.0, Myy=0.0, Myz=0.0, Mzz=0.0;
+// 存储不同震源的震源机制相关参数的数组
+static double mchn[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 // 最终要计算的震源类型
-static int computeType=COMPUTE_EXP;
+static int computeType=GRT_SYN_COMPUTE_EX;
 static char s_computeType[3] = "EX";
 // 和宏命令对应的震源类型全称
 static const char *sourceTypeFullName[] = {"Explosion", "Single Force", "Double Couple", "Moment Tensor"};
@@ -284,10 +276,6 @@ static void getopt_from_command(int argc, char **argv){
                 backazimuth = 180.0 + azimuth;
                 if(backazimuth >= 360.0) backazimuth -= 360.0;
                 azrad = azimuth * DEG1;
-                saz = sin(azrad);
-                caz = cos(azrad);
-                saz2 = 2.0*saz*caz;
-                caz2 = 2.0*caz*caz - 1.0;
                 break;
 
             // 放大系数
@@ -302,7 +290,8 @@ static void getopt_from_command(int argc, char **argv){
             // 位错震源
             case 'M':
                 M_flag = 1; 
-                computeType = COMPUTE_DC;
+                computeType = GRT_SYN_COMPUTE_DC;
+                double strike, dip, rake;
                 sprintf(s_computeType, "%s", "DC");
                 if(3 != sscanf(optarg, "%lf/%lf/%lf", &strike, &dip, &rake)){
                     fprintf(stderr, "[%s] " BOLD_RED "Error in -M.\n" DEFAULT_RESTORE, command);
@@ -320,28 +309,42 @@ static void getopt_from_command(int argc, char **argv){
                     fprintf(stderr, "[%s] " BOLD_RED "Error! Rake in -M must be in [-180, 180].\n" DEFAULT_RESTORE, command);
                     exit(EXIT_FAILURE);
                 }
+                mchn[0] = strike;
+                mchn[1] = dip;
+                mchn[2] = rake;
                 break;
 
             // 单力源
             case 'F':
                 F_flag = 1;
-                computeType = COMPUTE_SF;
+                computeType = GRT_SYN_COMPUTE_SF;
+                double fn, fe, fz;
                 sprintf(s_computeType, "%s", "SF");
                 if(3 != sscanf(optarg, "%lf/%lf/%lf", &fn, &fe, &fz)){
                     fprintf(stderr, "[%s] " BOLD_RED "Error in -F.\n" DEFAULT_RESTORE, command);
                     exit(EXIT_FAILURE);
                 };
+                mchn[0] = fn;
+                mchn[1] = fe;
+                mchn[2] = fz;
                 break;
 
             // 张量震源
             case 'T':
                 T_flag = 1;
-                computeType = COMPUTE_MT;
+                computeType = GRT_SYN_COMPUTE_MT;
+                double Mxx, Mxy, Mxz, Myy, Myz, Mzz;
                 sprintf(s_computeType, "%s", "MT");
                 if(6 != sscanf(optarg, "%lf/%lf/%lf/%lf/%lf/%lf", &Mxx, &Mxy, &Mxz, &Myy, &Myz, &Mzz)){
                     fprintf(stderr, "[%s] " BOLD_RED "Error in -T.\n" DEFAULT_RESTORE, command);
                     exit(EXIT_FAILURE);
                 };
+                mchn[0] = Mxx;
+                mchn[1] = Mxy;
+                mchn[2] = Mxz;
+                mchn[3] = Myy;
+                mchn[4] = Myz;
+                mchn[5] = Mzz;
                 break;
 
             // 输出路径
@@ -553,91 +556,6 @@ static void save_tf_to_sac(char *buffer, float *tfarr, int tfnt, float dt){
     write_sac(buffer, hd, tfarr);
 }
 
-/**
- * 设置每个震源的方向因子
- * 
- * @param      par_theta       方向因子中是否对theta(az)求导
- * @param      coef            缩放系数，用于位移空间导数的计算
- */
-static void set_source_coef(const bool par_theta, const double coef){
-    double mult;
-    if(computeType == COMPUTE_SF){
-        mult = 1e-15*M0*coef;
-    } else {
-        mult = 1e-20*M0*coef;
-    }
-
-    if(computeType == COMPUTE_EXP){
-        srcCoef[0][0] = srcCoef[1][0] = (par_theta)? 0.0 : mult; // Z/R
-        srcCoef[2][0] = 0.0; // T
-    }  
-    else if(computeType == COMPUTE_SF){
-        double A0, A1, A4;
-        A0 = fz*mult;
-        A1 = (fn*caz + fe*saz)*mult;
-        A4 = (- fn*saz + fe*caz)*mult;
-
-        // 公式(4.6.20)
-        srcCoef[0][1] = srcCoef[1][1] = (par_theta)? 0.0 : A0; // VF, Z/R
-        srcCoef[0][2] = srcCoef[1][2] = (par_theta)? A4 : A1; // HF, Z/R
-        srcCoef[2][1] = 0.0; // VF, T
-        srcCoef[2][2] = (par_theta)? -A1 : A4; // HF, T
-    }
-    else if(computeType == COMPUTE_DC){
-        // 公式(4.8.35)
-        double stkrad = strike*DEG1;
-        double diprad = dip*DEG1;
-        double rakrad = rake*DEG1;
-        double therad = azrad - stkrad;
-        double srak, crak, sdip, cdip, sdip2, cdip2, sthe, cthe, sthe2, cthe2;
-        srak = sin(rakrad);     crak = cos(rakrad);
-        sdip = sin(diprad);     cdip = cos(diprad);
-        sdip2 = 2.0*sdip*cdip;  cdip2 = 2.0*cdip*cdip - 1.0;
-        sthe = sin(therad);     cthe = cos(therad);
-        sthe2 = 2.0*sthe*cthe;  cthe2 = 2.0*cthe*cthe - 1.0;
-
-        double A0, A1, A2, A4, A5;
-        A0 = mult * (0.5*sdip2*srak);
-        A1 = mult * (cdip*crak*cthe - cdip2*srak*sthe);
-        A2 = mult * (0.5*sdip2*srak*cthe2 + sdip*crak*sthe2);
-        A4 = mult * (- cdip2*srak*cthe - cdip*crak*sthe);
-        A5 = mult * (sdip*crak*cthe2 - 0.5*sdip2*srak*sthe2);
-
-        srcCoef[0][3] = srcCoef[1][3] = (par_theta)? 0.0 : A0; // DD, Z/R
-        srcCoef[0][4] = srcCoef[1][4] = (par_theta)? A4 : A1; // DS, Z/R
-        srcCoef[0][5] = srcCoef[1][5] = (par_theta)? 2.0*A5 : A2; // SS, Z/R
-        srcCoef[2][3] = 0.0; // DD, T
-        srcCoef[2][4] = (par_theta)? -A1 : A4;  // DS, T
-        srcCoef[2][5] = (par_theta)? -2.0*A2 : A5;  // DS, T
-    }
-    else if(computeType == COMPUTE_MT){
-        // 公式(4.9.7)但修改了各向同性的量
-        double M11, M12, M13, M22, M23, M33;
-        M11 = Mxx;   M12 = Mxy;   M13 = Mxz;
-                     M22 = Myy;   M23 = Myz;
-                                  M33 = Mzz;
-        double Mexp = (M11 + M22 + M33)/3.0;
-        M11 -= Mexp;
-        M22 -= Mexp;
-        M33 -= Mexp;
-
-        double A0, A1, A2, A4, A5;
-        A0 = mult * ((2.0*M33 - M11 - M22)/6.0 );
-        A1 = mult * (- (M13*caz + M23*saz));
-        A2 = mult * (0.5*(M11 - M22)*caz2+ M12*saz2);
-        A4 = mult * (M13*saz - M23*caz);
-        A5 = mult * (-0.5*(M11 - M22)*saz2 + M12*caz2);
-
-        srcCoef[0][0] = srcCoef[1][0] = (par_theta)? 0.0 : mult*Mexp; // EX, Z/R
-        srcCoef[0][3] = srcCoef[1][3] = (par_theta)? 0.0 : A0; // DD, Z/R
-        srcCoef[0][4] = srcCoef[1][4] = (par_theta)? A4 : A1; // DS, Z/R
-        srcCoef[0][5] = srcCoef[1][5] = (par_theta)? 2.0*A5 : A2; // SS, Z/R
-        srcCoef[2][0] = 0.0; // EX, T
-        srcCoef[2][3] = 0.0; // DD, T
-        srcCoef[2][4] = (par_theta)? -A1 : A4;  // DS, T
-        srcCoef[2][5] = (par_theta)? -2.0*A2 : A5;  // DS, T
-    }
-}
 
 
 
@@ -688,7 +606,7 @@ int main(int argc, char **argv){
         }
         
         // 重新计算方向因子
-        set_source_coef((ityp==3), upar_scale);
+        set_source_radiation(srcCoef, computeType, (ityp==3), M0, upar_scale, azrad, mchn);
 
         for(int c=0; c<3; ++c){
             ch = chs[c];
