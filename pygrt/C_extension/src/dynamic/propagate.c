@@ -15,6 +15,7 @@
 #include <complex.h>
 #include <string.h>
 
+#include "dynamic/propagate.h"
 #include "dynamic/layer.h"
 #include "dynamic/source.h"
 #include "common/recursion.h"
