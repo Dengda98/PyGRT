@@ -72,7 +72,8 @@ typedef int MYINT;  ///< 整数
     #define FIVEQUARTERPI  3.92699082f  ///< \f$ \frac{5\pi}{4} \f$
     #define SEVENQUARTERPI  5.49778714f   ///< \f$ \frac{7\pi}{4} \f$
     #define INV_SQRT_TWO 0.70710678f   ///< \f$ \frac{1}{\sqrt{2}} \f$ 
-
+    #define DEG1 0.017453293f  ///< \f$ \frac{\pi}{180} \f$ 
+    
 #else 
     typedef double _Complex MYCOMPLEX;
     typedef double MYREAL;
@@ -109,7 +110,8 @@ typedef int MYINT;  ///< 整数
     #define FIVEQUARTERPI  3.9269908169872414  ///< \f$ \frac{5\pi}{4} \f$
     #define SEVENQUARTERPI  5.497787143782138   ///< \f$ \frac{7\pi}{4} \f$
     #define INV_SQRT_TWO 0.7071067811865475   ///< \f$ \frac{1}{\sqrt{2}} \f$ 
-
+    #define DEG1 0.017453292519943295  ///< \f$ \frac{\pi}{180} \f$ 
+    
 #endif
 
 #define CZERO CMPLX(RZERO, RZERO)  ///< 0.0 + j0.0

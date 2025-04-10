@@ -1,34 +1,32 @@
 /**
- * @file   propagate.c
+ * @file   static_propagate.c
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
- * @date   2024-07-24
+ * @date   2025-02-18
  * 
- * 以下代码通过递推公式实现 广义反射透射系数矩阵 ，参考：
+ * 以下代码实现的是 静态广义反射透射系数矩阵 ，参考：
  * 
  *         1. 姚振兴, 谢小碧. 2022/03. 理论地震图及其应用（初稿）.  
- *         2. Yao Z. X. and D. G. Harkrider. 1983. A generalized refelection-transmission coefficient 
- *               matrix and discrete wavenumber method for synthetic seismograms. BSSA. 73(6). 1685-1699
- * 
+ *         2. 谢小碧, 姚振兴, 1989. 计算分层介质中位错点源静态位移场的广义反射、
+ *              透射系数矩阵和离散波数方法[J]. 地球物理学报(3): 270-280.
+ *
  */
+
 
 #include <stdio.h>
 #include <complex.h>
-#include <string.h>
 
-#include "dynamic/propagate.h"
-#include "dynamic/layer.h"
-#include "dynamic/source.h"
+#include "static/static_propagate.h"
+#include "static/static_layer.h"
+#include "static/static_source.h"
 #include "common/recursion.h"
 #include "common/model.h"
+#include "common/const.h"
 #include "common/matrix.h"
-#include "common/prtdbg.h"
 
 #define CMAT_ASSIGN_SPLIT 0  // 2x2的小矩阵赋值合并为1个循环，程序速度提升微小
 
 
-
-
-void kernel(
+void static_kernel(
     const MODEL1D *mod1d, MYCOMPLEX omega, MYREAL k,
     MYCOMPLEX EXP_qwv[3][3], MYCOMPLEX VF_qwv[3][3], MYCOMPLEX HF_qwv[3][3], MYCOMPLEX DC_qwv[3][3],
     bool calc_uiz,
@@ -43,7 +41,7 @@ void kernel(
             if(DC_qwv!=NULL)  DC_qwv[i][j] = RZERO;
         }
     }
-
+    
     if(calc_uiz){
         // 初始化qwv为0
         for(MYINT i=0; i<3; ++i){
@@ -62,7 +60,6 @@ void kernel(
     MYINT imin, imax; // 相对浅层深层层位
     imin = mod1d->imin;
     imax = mod1d->imax;
-    
 
     // 初始化广义反射透射系数矩阵
     // BL
@@ -120,7 +117,7 @@ void kernel(
     // FB 
     MYCOMPLEX *const pRUL_FB = &RUL_FB;
 
-    
+
     // 定义物理层内的反射透射系数矩阵，相对于界面上的系数矩阵增加了时间延迟因子
     MYCOMPLEX RD[2][2], RDL, TD[2][2], TDL;
     MYCOMPLEX RU[2][2], RUL, TU[2][2], TUL;
@@ -133,26 +130,25 @@ void kernel(
     // 自由表面的反射系数
     MYCOMPLEX R_tilt[2][2] = INIT_C_ZERO_2x2_MATRIX; // SH波在自由表面的反射系数为1，不必定义变量
 
-    // 接收点处的接收矩阵(转为位移u的(B_m, C_m, P_m)系分量)
+    // 接收点处的接收矩阵
     MYCOMPLEX R_EV[2][2], R_EVL;
     MYCOMPLEX *const pR_EVL = &R_EVL;
-
+    
     // 接收点处的接收矩阵(转为位移导数ui_z的(B_m, C_m, P_m)系分量)
     MYCOMPLEX uiz_R_EV[2][2], uiz_R_EVL;
     MYCOMPLEX *const puiz_R_EVL = &uiz_R_EVL;
-    
+
 
     // 模型参数
     // 后缀0，1分别代表上层和下层
     LAYER *lay = NULL;
-    MYREAL mod1d_thk0, mod1d_thk1, mod1d_Rho0, mod1d_Rho1;
+    MYREAL mod1d_thk0, mod1d_thk1;
     MYCOMPLEX mod1d_mu0, mod1d_mu1;
-    MYCOMPLEX mod1d_kaka1, mod1d_kbkb0, mod1d_kbkb1;
-    MYCOMPLEX mod1d_xa0, mod1d_xb0, mod1d_xa1, mod1d_xb1;
-    MYCOMPLEX top_xa=RZERO, top_xb=RZERO, top_kbkb=RZERO;
-    MYCOMPLEX rcv_xa=RZERO, rcv_xb=RZERO;
-    MYCOMPLEX src_xa=RZERO, src_xb=RZERO, src_kaka=RZERO, src_kbkb=RZERO;
-
+    MYCOMPLEX mod1d_delta0, mod1d_delta1;
+    MYCOMPLEX top_delta = CZERO;
+    MYCOMPLEX src_delta = CZERO;
+    MYCOMPLEX rcv_delta = CZERO;
+    
 
     // 从顶到底进行矩阵递推, 公式(5.5.3)
     for(MYINT iy=0; iy<mod1d->n; ++iy){ // 因为n>=3, 故一定会进入该循环
@@ -160,50 +156,36 @@ void kernel(
 
         // 赋值上层 
         mod1d_thk0 = mod1d_thk1;
-        mod1d_Rho0 = mod1d_Rho1;
         mod1d_mu0 = mod1d_mu1;
-        mod1d_kbkb0 = mod1d_kbkb1;
-        mod1d_xa0 = mod1d_xa1;
-        mod1d_xb0 = mod1d_xb1;
+        mod1d_delta0 = mod1d_delta1;
 
         // 更新模型参数
         mod1d_thk1 = lay->thk;
-        mod1d_Rho1 = lay->Rho;
         mod1d_mu1 = lay->mu;
-        mod1d_kaka1 = lay->kaka;
-        mod1d_kbkb1 = lay->kbkb;
-        mod1d_xa1 = CSQRT(RONE - mod1d_kaka1/(k*k));
-        mod1d_xb1 = CSQRT(RONE - mod1d_kbkb1/(k*k));
+        mod1d_delta1 = lay->delta;
 
         if(0==iy){
-            top_xa = mod1d_xa1;
-            top_xb = mod1d_xb1;
-            top_kbkb = mod1d_kbkb1;
+            top_delta = mod1d_delta1;
             continue;
         }
 
         // 确定上下层的物性参数
         if(ircv==iy){
-            rcv_xa = mod1d_xa1;
-            rcv_xb = mod1d_xb1;
+            rcv_delta = mod1d_delta1;
         } else if(isrc==iy){
-            src_xa = mod1d_xa1;
-            src_xb = mod1d_xb1;
-            src_kaka = mod1d_kaka1;
-            src_kbkb = mod1d_kbkb1;
-        } else {
-            // 对第iy层的系数矩阵赋值，加入时间延迟因子(第iy-1界面与第iy界面之间)
-            calc_RT_2x2(
-                mod1d_Rho0, mod1d_xa0, mod1d_xb0, mod1d_kbkb0, mod1d_mu0, 
-                mod1d_Rho1, mod1d_xa1, mod1d_xb1, mod1d_kbkb1, mod1d_mu1, 
-                mod1d_thk0, // 使用iy-1层的厚度
-                omega, k, 
-                RD, pRDL, RU, pRUL, 
-                TD, pTDL, TU, pTUL);
+            src_delta = mod1d_delta1;
         }
 
+        // 对第iy层的系数矩阵赋值，加入时间延迟因子(第iy-1界面与第iy界面之间)
+        calc_static_RT_2x2(
+            mod1d_delta0, mod1d_mu0,
+            mod1d_delta1, mod1d_mu1,
+            mod1d_thk0, k, // 使用iy-1层的厚度
+            RD, pRDL, RU, pRUL, 
+            TD, pTDL, TU, pTUL);
+
         // FA
-        if(iy < imin){ 
+        if(iy <= imin){
             if(iy == 1){ // 初始化FA
 #if CMAT_ASSIGN_SPLIT == 1
                 cmat2x2_assign(RD, RD_FA);  RDL_FA = RDL;
@@ -234,15 +216,10 @@ void kernel(
                     RD_FA, pRDL_FA, RU_FA, pRUL_FA, 
                     TD_FA, pTDL_FA, TU_FA, pTUL_FA);  
             }
-        } 
-        else if(iy==imin){ // 虚拟层位，可对递推公式简化
-            recursion_RT_2x2_imaginary(
-                mod1d_xa0, mod1d_xb0, mod1d_thk0, k,
-                RU_FA, pRUL_FA, 
-                TD_FA, pTDL_FA, TU_FA, pTUL_FA);
+
         }
         // RS
-        else if(iy < imax){
+        else if(iy <= imax){
             if(iy == imin+1){// 初始化RS
 #if CMAT_ASSIGN_SPLIT == 1
                 cmat2x2_assign(RD, RD_RS);  RDL_RS = RDL;
@@ -273,12 +250,6 @@ void kernel(
                     TD_RS, pTDL_RS, TU_RS, pTUL_RS);  // 写入原地址
             }
         } 
-        else if(iy==imax){ // 虚拟层位，可对递推公式简化
-            recursion_RT_2x2_imaginary(
-                mod1d_xa0, mod1d_xb0, mod1d_thk0, k,
-                RU_RS, pRUL_RS, 
-                TD_RS, pTDL_RS, TU_RS, pTUL_RS);
-        }
         // BL
         else {
             if(iy == imax+1){// 初始化BL
@@ -324,13 +295,11 @@ void kernel(
                 }
                 
             }
+
         } // END if
 
-
-    } // END for loop 
+    } // END for loop
     //===================================================================================
-
-    // return;
 
 
     // 计算震源系数
@@ -346,14 +315,14 @@ void kernel(
             }
         }
     }
-    source_coef(src_xa, src_xb, src_kaka, src_kbkb, omega, k, pEXP, pVF, pHF, pDC);
+    static_source_coef(src_delta, k, pEXP, pVF, pHF, pDC);
 
     // 临时中转矩阵 (temperary)
     MYCOMPLEX tmpR1[2][2], tmpR2[2][2], tmp2x2[2][2], tmpRL, tmp2x2_uiz[2][2], tmpRL_uiz;
     MYCOMPLEX inv_2x2T[2][2], invT;
 
     // 递推RU_FA
-    calc_R_tilt(top_xa, top_xb, top_kbkb, k, R_tilt);
+    calc_static_R_tilt(top_delta, R_tilt);
     recursion_RU(
         R_tilt, RONE, 
         RD_FA, RDL_FA,
@@ -364,9 +333,8 @@ void kernel(
 
     // 根据震源和台站相对位置，计算最终的系数
     if(ircvup){ // A接收  B震源
-
         // 计算R_EV
-        calc_R_EV(rcv_xa, rcv_xb, ircvup, k, RU_FA, RUL_FA, R_EV, pR_EVL);
+        calc_static_R_EV(ircvup, RU_FA, RUL_FA, R_EV, pR_EVL);
 
         // 递推RU_FS
         recursion_RU(
@@ -405,7 +373,7 @@ void kernel(
         
 
         if(calc_uiz){
-            calc_uiz_R_EV(rcv_xa, rcv_xb, ircvup, k, RU_FA, RUL_FA, uiz_R_EV, puiz_R_EVL);
+            calc_static_uiz_R_EV(rcv_delta, ircvup, k, RU_FA, RUL_FA, uiz_R_EV, puiz_R_EVL);
             cmat2x2_mul(uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
             tmpRL_uiz = tmpRL / R_EVL * uiz_R_EVL;
             for(MYINT m=0; m<3; ++m){
@@ -423,11 +391,11 @@ void kernel(
                 if(DC_uiz_qwv!=NULL)  get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RD_BL, RDL_BL, DC[m], DC_uiz_qwv[m]);
             }    
         }
-    } 
+    }
     else { // A震源  B接收
 
         // 计算R_EV
-        calc_R_EV(rcv_xa, rcv_xb, ircvup, k, RD_BL, RDL_BL, R_EV, pR_EVL);    
+        calc_static_R_EV(ircvup, RD_BL, RDL_BL, R_EV, pR_EVL);    
 
         // 递推RD_SL
         recursion_RD(
@@ -444,7 +412,7 @@ void kernel(
         cmat2x2_one_sub(tmpR2);
         cmat2x2_inv(tmpR2, tmpR2);// (I - xx)^-1
         cmat2x2_mul(inv_2x2T, tmpR2, tmp2x2);
-
+        
         if(calc_uiz) cmat2x2_assign(tmp2x2, tmp2x2_uiz); // 为后续计算空间导数备份
 
         cmat2x2_mul(R_EV, tmp2x2, tmp2x2);
@@ -465,9 +433,8 @@ void kernel(
 
         }
 
-
         if(calc_uiz){
-            calc_uiz_R_EV(rcv_xa, rcv_xb, ircvup, k, RD_BL, RDL_BL, uiz_R_EV, puiz_R_EVL);    
+            calc_static_uiz_R_EV(rcv_delta, ircvup, k, RD_BL, RDL_BL, uiz_R_EV, puiz_R_EVL);    
             cmat2x2_mul(uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
             tmpRL_uiz = tmpRL / R_EVL * uiz_R_EVL;
             for(MYINT m=0; m<3; ++m){
@@ -486,10 +453,5 @@ void kernel(
     
             }
         }
-
-
     } // END if
-
-
 }
-

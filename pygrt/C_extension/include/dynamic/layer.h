@@ -50,6 +50,20 @@ void calc_R_EV(
     MYCOMPLEX R_EV[2][2], MYCOMPLEX *R_EVL);
 
 
+/**
+ * 计算接收点位置的ui_z的接收矩阵，即将波场转为ui_z。
+ * 公式本质是推导ui_z关于q_m, w_m, v_m的连接矩阵（就是应力推导过程的一部分）
+ * 
+ * @param     xa_rcv      (in)接受层的P波归一化垂直波数 \f$ \sqrt{1 - (k_a/k)^2} \f$
+ * @param     xb_rcv      (in)接受层的S波归一化垂直波数 \f$ \sqrt{1 - (k_b/k)^2} \f$
+ * @param     ircvup      (in)接收点是否浅于震源层
+ * @param     k           (in)波数
+ * @param     R[2][2]     (in)P-SV波场
+ * @param     RL          (in)SH波场
+ * @param     R_EV[2][2]  (out)P-SV接收函数矩阵
+ * @param     R_EVL       (out)SH接收函数值
+ * 
+ */
 void calc_uiz_R_EV(
     MYCOMPLEX xa_rcv, MYCOMPLEX xb_rcv, bool ircvup,
     MYREAL k, 

@@ -14,14 +14,11 @@
 #include <complex.h>
 #include <stdlib.h>
 
-#include "dynamic/fim.h"
-#include "dynamic/iostats.h"
-#include "dynamic/propagate.h"
+#include "common/fim.h"
+#include "common/integral.h"
+#include "common/iostats.h"
 #include "common/const.h"
 #include "common/model.h"
-
-
-
 
 
 
@@ -35,7 +32,7 @@ MYREAL linear_filon_integ(
     MYCOMPLEX sum_HF_uiz_J[nr][3][4],  MYCOMPLEX sum_DC_uiz_J[nr][3][4],  
     MYCOMPLEX sum_EXP_uir_J[nr][3][4], MYCOMPLEX sum_VF_uir_J[nr][3][4],  
     MYCOMPLEX sum_HF_uir_J[nr][3][4],  MYCOMPLEX sum_DC_uir_J[nr][3][4],  
-    FILE *(fstats[nr]))
+    FILE *(fstats[nr]), KernelFunc kerfunc)
 {   
     for(MYINT ir=0; ir<nr; ++ir){
         for(MYINT m=0; m<3; ++m){
@@ -110,8 +107,8 @@ MYREAL linear_filon_integ(
         if(k > kmax) break;
 
         // 计算核函数 F(k, w)
-        kernel(mod1d, omega, k, pEXP_qwv, pVF_qwv, pHF_qwv, pDC_qwv,
-               calc_upar, pEXP_uiz_qwv, pVF_uiz_qwv, pHF_uiz_qwv, pDC_uiz_qwv); 
+        kerfunc(mod1d, omega, k, pEXP_qwv, pVF_qwv, pHF_qwv, pDC_qwv,
+                calc_upar, pEXP_uiz_qwv, pVF_uiz_qwv, pHF_uiz_qwv, pDC_uiz_qwv); 
 
         // 震中距rs循环
         iendk = true;

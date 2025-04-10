@@ -23,6 +23,8 @@ typedef struct _LAYER {
     MYREAL Qainv; ///<   1/Q_p
     MYREAL Qbinv; ///<   1/Q_s
     MYCOMPLEX mu;   ///< \f$ V_b^2 * \rho \f$
+    MYCOMPLEX lambda;   ///< \f$ V_a^2 * \rho - 2*\mu \f$
+    MYCOMPLEX delta;   ///< \f$ (\lambda+\mu)/(\lambda+3*\mu) \f$
     MYCOMPLEX kaka;  ///<  \f$ (\omega/V_a)^2 \f$
     MYCOMPLEX kbkb;  ///<  \f$ (\omega/V_b)^2 \f$
 } LAYER;
