@@ -430,8 +430,8 @@ jobs:
         with:
           draft: true
           files: |
-            "release/*.tar.gz"
-            "dist/*.whl"
+            release/*.tar.gz
+            dist/*.whl
 
   
 
