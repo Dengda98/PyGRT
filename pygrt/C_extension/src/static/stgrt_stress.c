@@ -186,7 +186,7 @@ int main(int argc, char **argv){
 
         // 先计算体积应变u_kk = u_11 + u22 + u33 和 lamda的乘积，ZRT分量需包括协变导数
         lam_ukk = syn_upar[0][0] + syn_upar[1][1] + syn_upar[2][2];
-        if(rot2ZNE)  lam_ukk += syn[1]/dist*1e-5;
+        if(!rot2ZNE)  lam_ukk += syn[1]/dist*1e-5;
         lam_ukk *= rcv_lam;
 
         // 先输出列名
