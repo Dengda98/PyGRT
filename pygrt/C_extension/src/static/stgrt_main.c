@@ -1,5 +1,5 @@
 /**
- * @file   grt_static.c
+ * @file   stgrt_main.c
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2025-02-18
  * 
@@ -38,31 +38,33 @@ static double vmax, vmin;
 // 震源和场点深度
 static double depsrc, deprcv;
 static char *s_depsrc = NULL, *s_deprcv = NULL;
-// 输出目录
-static char *s_output_dir = NULL;
 // 波数积分间隔
-static double Length=0.0;
+static double Length=0.0, Length0=15.0; // 默认Length
 // 波数积分相关变量
 static double keps=-1.0, k0=5.0;
-// 震中距数组以及保存对应初至波走时的数组
-static char **s_rs = NULL;
+// 参考最小速度，小于0表示使用峰谷平均法;
+static double vmin_ref=0.0;
+static const double min_vmin_ref=0.1;
+// 自动使用峰谷平均法的最小厚度差
+static const double hs_ptam = MIN_DEPTH_GAP_SRC_RCV;
+// 接收点位置数组
 static MYREAL *rs = NULL;
-static int nr=0;
-// 是否silence整个输出
-static bool silenceInput=false;
-// 计算哪些格林函数，确定震源类型, 默认计算全部
-static bool doEXP=true, doVF=true, doHF=true, doDC=true;
+static MYREAL *xs = NULL;
+static MYREAL *ys = NULL;
+static int nr=0, nx=0, ny=0;
+
+// 输出波数积分过程文件
+static char *s_statsdir = NULL;
 
 // 是否计算位移空间导数
 static bool calc_upar=false;
 
 // 各选项的标志变量，初始化为0，定义了则为1
 static int M_flag=0, D_flag=0, 
-            O_flag=0, 
-            L_flag=0, 
-            K_flag=0, s_flag=0, 
-            R_flag=0, 
-            G_flag=0, e_flag=0;
+            L_flag=0, V_flag=0,
+            K_flag=0, S_flag=0,
+            X_flag=0, Y_flag=0, 
+            e_flag=0;
 
 // 三分量代号
 const char chs[3] = {'Z', 'R', 'T'};
@@ -73,23 +75,96 @@ const char chs[3] = {'Z', 'R', 'T'};
 static void print_help(){
 print_logo();
 printf("\n"
-"[grt.syn]\n\n"
-"    Compute static Green's Functions.\n"
+"[stgrt]\n\n"
+"    Compute static Green's Functions, output to stdout. \n"
+"    The units and components are consistent with the dynamics, \n"
+"    check \"grt -h\" for details.\n"
 "\n"
-"The units of output Green's Functions for different sources are: \n"
-"    + Explosion:     1e-20 cm/(dyne-cm)\n"
-"    + Single Force:  1e-15 cm/(dyne)\n"
-"    + Double Couple: 1e-20 cm/(dyne-cm)\n"
-"    + Moment Tensor: 1e-20 cm/(dyne-cm)\n" 
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
-"    grt.static -M<model> -D<depsrc>/<deprcv> \n"
-"        -R<r1>,<r2>[,...]    [-O<outdir>] \n"
-"        [-L<length>]  \n" 
-"        [-K<k0>[/<iwk0>/<ampk>/<keps>]]  \n"
-"        [-G<b1>[/<b2>/<b3>/<b4>]] [-S<i1>,<i2>[,...]] [-e]\n"
-"        [-s]\n"
+"    stgrt -M<model> -D<depsrc>/<deprcv> -X<x1>/<x2>/<nx> \n"
+"          -Y<y1>/<y2>/<ny>  [-L<length>] [-V<vmin_ref>] \n" 
+"          [-K<k0>[/<keps>]] [-S]  [-e]\n"
+"\n\n"
+"Options:\n"
+"----------------------------------------------------------------\n"
+"    -M<model>    Filepath to 1D horizontally layered halfspace \n"
+"                 model. The model file has 6 columns: \n"
+"\n"
+"         +-------+----------+----------+-------------+----+----+\n"
+"         | H(km) | Vp(km/s) | Vs(km/s) | Rho(g/cm^3) | Qp | Qa |\n"
+"         +-------+----------+----------+-------------+----+----+\n"
+"\n"
+"                 and the number of layers are unlimited.\n"
+"\n"
+"    -D<depsrc>/<deprcv>\n"
+"                 <depsrc>: source depth (km).\n"
+"                 <deprcv>: receiver depth (km).\n"
+"\n"
+"    -X<x1>/<x2>/<nx>\n"
+"                 Set the equidistant points in the north direction.\n"
+"                 <x1>: start coordinate (km).\n"
+"                 <x2>: end coordinate (km).\n"
+"                 <nx>: number of points.\n"
+"\n"
+"    -Y<y1>/<y2>/<ny>\n"
+"                 Set the equidistant points in the east direction.\n"
+"                 <y1>: start coordinate (km).\n"
+"                 <y2>: end coordinate (km).\n"
+"                 <ny>: number of points.\n"
+"\n"
+"    -L<length>   Define the wavenumber integration interval\n"
+"                 dk=(2*PI)/(<length>*rmax). rmax is the maximum \n"
+"                 epicentral distance. \n"
+"                 There are 3 cases:\n"
+"                 + (default) not set or set %.1f.\n", Length); printf(
+"                   <length> will be %.1f.\n", Length0); printf(
+"                 + manually set POSITIVE value.\n"
+"                 + manually set NEGATIVE value, \n"
+"                   and FIM will be used.\n"
+"\n"
+"    -V<vmin_ref> \n"
+"                 (Inherited from the dynamic case, and the numerical\n"
+"                 value will not be used in here, except its sign.)\n"
+"                 + (default) not set or set %.1f.\n", vmin_ref); printf(
+"                   <vmin_ref> will be the minimum velocity\n"
+"                   of model, but limited to %.1f. and if the \n", min_vmin_ref); printf(
+"                   depth gap between source and receiver is \n"
+"                   thinner than %.1f km, PTAM will be appled\n", hs_ptam); printf(
+"                   automatically.\n"
+"                 + manually set POSITIVE value. \n"
+"                 + manually set NEGATIVE value, \n"
+"                   and PTAM will be appled.\n"
+"\n"
+"    -K<k0>[/<keps>]\n"
+"                 Several parameters designed to define the\n"
+"                 behavior in wavenumber integration. The upper\n"
+"                 bound is k0,\n"
+"                 <k0>:   default is %.1f, and \n", k0); printf(
+"                         multiply PI/hs in program, \n"
+"                         where hs = max(fabs(depsrc-deprcv), %.1f).\n", MIN_DEPTH_GAP_SRC_RCV); printf(
+"                 <keps>: a threshold for break wavenumber \n"
+"                         integration in advance. See \n"
+"                         (Yao and Harkrider, 1983) for details.\n"
+"                         Default %.1f not use.\n", keps); printf(
+"\n"
+"    -S           Output statsfile in wavenumber integration.\n"
+"\n"
+"    -e           Compute the spatial derivatives, ui_z and ui_r,\n"
+"                 of displacement u. In columns, prefix \"r\" means \n"
+"                 ui_r and \"z\" means ui_z. The units of derivatives\n"
+"                 for different sources are: \n"
+"                 + Explosion:     1e-25 /(dyne-cm)\n"
+"                 + Single Force:  1e-20 /(dyne)\n"
+"                 + Double Couple: 1e-25 /(dyne-cm)\n"
+"                 + Moment Tensor: 1e-25 /(dyne-cm)\n"
+"\n"
+"    -h           Display this help message.\n"
+"\n\n"
+"Examples:\n"
+"----------------------------------------------------------------\n"
+"    stgrt -Mmilrow -D2/0 -X-10/10/20 -Y-10/10/20 > grn\n"
 "\n\n\n"
 );
 }
@@ -129,7 +204,7 @@ static char* get_basename(char* path) {
  */
 static void getopt_from_command(int argc, char **argv){
     int opt;
-    while ((opt = getopt(argc, argv, ":M:D:O:L:E:K:shR:G:e")) != -1) {
+    while ((opt = getopt(argc, argv, ":M:D:L:K:X:Y:V:Seh")) != -1) {
         switch (opt) {
             // 模型路径，其中每行分别为 
             //      厚度(km)  Vp(km/s)  Vs(km/s)  Rho(g/cm^3)  Qp   Qs
@@ -169,18 +244,20 @@ static void getopt_from_command(int argc, char **argv){
                 }
                 break;
 
-            // 输出路径 -Ooutput_dir
-            case 'O':
-                O_flag = 1;
-                s_output_dir = (char*)malloc(sizeof(char)*(strlen(optarg)+1));
-                strcpy(s_output_dir, optarg);
-                break;
-
             // 波数积分间隔 -LLength
             case 'L':
                 L_flag = 1;
                 if(0 == sscanf(optarg, "%lf", &Length)){
                     fprintf(stderr, "[%s] " BOLD_RED "Error in -L.\n" DEFAULT_RESTORE, command);
+                    exit(EXIT_FAILURE);
+                };
+                break;
+
+            // 参考最小速度 -Vvmin_ref
+            case 'V':
+                V_flag = 1;
+                if(0 == sscanf(optarg, "%lf", &vmin_ref)){
+                    fprintf(stderr, "[%s] " BOLD_RED "Error in -V.\n" DEFAULT_RESTORE, command);
                     exit(EXIT_FAILURE);
                 };
                 break;
@@ -199,63 +276,78 @@ static void getopt_from_command(int argc, char **argv){
                 }
                 break;
 
-            // 震中距数组，-Rr1,r2,r3,r4 ...
-            case 'R':
-                R_flag = 1;
+            // X坐标数组，-Xx1/x2/nx
+            case 'X':
+                X_flag = 1;
                 {
-                    char *token;
-                    char *str_copy = strdup(optarg);  // 创建字符串副本，以免修改原始字符串
-                    token = strtok(str_copy, ",");
-
-                    while(token != NULL){
-                        s_rs = (char**)realloc(s_rs, sizeof(char*)*(nr+1));
-                        s_rs[nr] = NULL;
-                        s_rs[nr] = (char*)realloc(s_rs[nr], sizeof(char)*(strlen(token)+1));
-                        rs = (MYREAL*)realloc(rs, sizeof(MYREAL)*(nr+1));
-                        strcpy(s_rs[nr], token);
-                        rs[nr] = atof(token);
-                        if(rs[nr] == 0.0){
-                            fprintf(stderr, "[%s] " BOLD_RED "Warning! Add 1e-5 to Zero epicentral distance in -R.\n" DEFAULT_RESTORE, command);
-                            rs[nr] += 1e-5;
-                        }
-                        if(rs[nr] < 0.0){
-                            fprintf(stderr, "[%s] " BOLD_RED "Error! Can't set negative epicentral distance(%f) in -R.\n" DEFAULT_RESTORE, command, rs[nr]);
-                            exit(EXIT_FAILURE);
-                        }
-
-
-                        token = strtok(NULL, ",");
-                        nr++;
-                    }
-                    free(str_copy);
-                }
-                break;
-
-            // 选择要计算的格林函数 -G1/1/1/1
-            case 'G': 
-                G_flag = 1;
-                doEXP = doVF = doHF = doDC = false;
-                {
-                    int i1, i2, i3, i4;
-                    i1 = i2 = i3 = i4 = 0;
-                    if(0 == sscanf(optarg, "%d/%d/%d/%d", &i1, &i2, &i3, &i4)){
-                        fprintf(stderr, "[%s] " BOLD_RED "Error in -G.\n" DEFAULT_RESTORE, command);
+                    MYREAL a1, a2;
+                    if(3 != sscanf(optarg, "%lf/%lf/%d", &a1, &a2, &nx)){
+                        fprintf(stderr, "[%s] " BOLD_RED "Error in -X.\n" DEFAULT_RESTORE, command);
                         exit(EXIT_FAILURE);
                     };
-                    doEXP = (i1!=0);
-                    doVF  = (i2!=0);
-                    doHF  = (i3!=0);
-                    doDC  = (i4!=0);
-                }
-                
-                // 至少要有一个真
-                if(!(doEXP || doVF || doHF || doDC)){
-                    fprintf(stderr, "[%s] " BOLD_RED "Error! At least set one true value in -G.\n" DEFAULT_RESTORE, command);
-                    exit(EXIT_FAILURE);
-                }
+                    if(nx <= 0){
+                        fprintf(stderr, "[%s] " BOLD_RED "Error! Can't set nonpositive nx(%d) in -X.\n" DEFAULT_RESTORE, command, nx);
+                        exit(EXIT_FAILURE);
+                    }
+                    if(a1 > a2){
+                        fprintf(stderr, "[%s] " BOLD_RED "Error! x1(%f) > x2(%f) in -X.\n" DEFAULT_RESTORE, command, a1, a2);
+                        exit(EXIT_FAILURE);
+                    }
 
+                    xs = (MYREAL*)calloc(nx, sizeof(MYREAL));
+                    MYREAL delta = (a2 - a1)/((nx>1)? nx-1 : 1);
+                    for(int i=0; i<nx; ++i){
+                        xs[i] = a1 + delta*i;
+                    }
+                }
                 break;
 
+            // Y坐标数组，-Yy1/y2/ny
+            case 'Y':
+                Y_flag = 1;
+                {
+                    MYREAL a1, a2;
+                    if(3 != sscanf(optarg, "%lf/%lf/%d", &a1, &a2, &ny)){
+                        fprintf(stderr, "[%s] " BOLD_RED "Error in -Y.\n" DEFAULT_RESTORE, command);
+                        exit(EXIT_FAILURE);
+                    };
+                    if(ny <= 0){
+                        fprintf(stderr, "[%s] " BOLD_RED "Error! Can't set nonpositive ny(%d) in -Y.\n" DEFAULT_RESTORE, command, ny);
+                        exit(EXIT_FAILURE);
+                    }
+                    if(a1 > a2){
+                        fprintf(stderr, "[%s] " BOLD_RED "Error! y1(%f) > y2(%f) in -Y.\n" DEFAULT_RESTORE, command, a1, a2);
+                        exit(EXIT_FAILURE);
+                    }
+
+                    ys = (MYREAL*)calloc(ny, sizeof(MYREAL));
+                    MYREAL delta = (a2 - a1)/((ny>1)? ny-1 : 1);
+                    for(int i=0; i<ny; ++i){
+                        ys[i] = a1 + delta*i;
+                    }
+                }
+                break;
+
+            // 输出波数积分中间文件
+            case 'S':
+                S_flag = 1;
+                s_statsdir = (char*)malloc(sizeof(char)*100);
+                sprintf(s_statsdir, "stgrtstats");
+                // 建立保存目录
+                if(mkdir(s_statsdir, 0777) != 0){
+                    if(errno != EEXIST){
+                        fprintf(stderr, "[%s] " BOLD_RED "Error! Unable to create folder %s. Error code: %d\n" DEFAULT_RESTORE, command, s_statsdir, errno);
+                        exit(EXIT_FAILURE);
+                    }
+                }
+                sprintf(s_statsdir, "%s/%s_stats_%.5f_%.5f", s_statsdir, s_modelname, depsrc, deprcv);
+                if(mkdir(s_statsdir, 0777) != 0){
+                    if(errno != EEXIST){
+                        fprintf(stderr, "[%s] " BOLD_RED "Error! Unable to create folder %s. Error code: %d\n" DEFAULT_RESTORE, command, s_statsdir, errno);
+                        exit(EXIT_FAILURE);
+                    }
+                }
+                break;
 
             // 是否计算位移空间导数
             case 'e':
@@ -297,33 +389,26 @@ static void getopt_from_command(int argc, char **argv){
         fprintf(stderr, "[%s] " BOLD_RED "Error! Need set -D. Use '-h' for help.\n" DEFAULT_RESTORE, command);
         exit(EXIT_FAILURE);
     }
-    if(R_flag == 0){
-        fprintf(stderr, "[%s] " BOLD_RED "Error! Need set -R. Use '-h' for help.\n" DEFAULT_RESTORE, command);
+    if(X_flag == 0){
+        fprintf(stderr, "[%s] " BOLD_RED "Error! Need set -X. Use '-h' for help.\n" DEFAULT_RESTORE, command);
         exit(EXIT_FAILURE);
     }
-    if(O_flag == 0){
-        fprintf(stderr, "[%s] " BOLD_RED "Error! Need set -O. Use '-h' for help.\n" DEFAULT_RESTORE, command);
+    if(Y_flag == 0){
+        fprintf(stderr, "[%s] " BOLD_RED "Error! Need set -Y. Use '-h' for help.\n" DEFAULT_RESTORE, command);
         exit(EXIT_FAILURE);
     }
 
-    // 建立保存目录
-    if(mkdir(s_output_dir, 0777) != 0){
-        if(errno != EEXIST){
-            fprintf(stderr, "[%s] " BOLD_RED "Error! Unable to create folder %s. Error code: %d\n" DEFAULT_RESTORE, command, s_output_dir, errno);
-            exit(EXIT_FAILURE);
+    // 设置震中距数组
+    nr = nx*ny;
+    rs = (MYREAL*)calloc(nr, sizeof(MYREAL));
+    for(int iy=0; iy<ny; ++iy){
+        for(int ix=0; ix<nx; ++ix){
+            rs[ix + iy*nx] = SQRT(xs[ix]*xs[ix] + ys[iy]*ys[iy]);
+            if(rs[ix + iy*nx] < 1e-5)  rs[ix + iy*nx] = 1e-5;  // 避免0震中距
         }
     }
 
-    // 在目录中保留命令
-    char *dummy = (char*)malloc(sizeof(char)*(strlen(s_output_dir)+100));
-    sprintf(dummy, "%s/command", s_output_dir);
-    FILE *fp = fopen(dummy, "a");
-    for(int i=0; i<argc; ++i){
-        fprintf(fp, "%s ", argv[i]);
-    }
-    fprintf(fp, "\n");
-    fclose(fp);
-    free(dummy);
+
 }
 
 
@@ -340,55 +425,123 @@ int main(int argc, char **argv){
     if((pymod = read_pymod_from_file(command, s_modelpath, depsrc, deprcv)) ==NULL){
         exit(EXIT_FAILURE);
     }
+
+    // 最大最小速度
+    vmax = pymod->Va[findMinMax_MYREAL(pymod->Va, pymod->n, true)];
+    vmin = pymod->Vb[findMinMax_MYREAL(pymod->Vb, pymod->n, false)];
+    if(vmin > vmax) {
+        double tmp;
+        tmp = vmin; vmin = vmax; vmax = tmp;
+    }
+
+    // 参考最小速度
+    if(vmin_ref == 0.0){
+        vmin_ref = vmin;
+        if(vmin_ref < min_vmin_ref) vmin_ref = min_vmin_ref;
+    } 
+
+    // 如果没有主动设置vmin_ref，则判断是否要自动使用PTAM
+    if(V_flag == 0 && fabs(deprcv - depsrc) <= hs_ptam) {
+        vmin_ref = - fabs(vmin_ref);
+    }
     
     // 设置积分间隔默认值
-    if(Length == 0.0)  Length = 15.0;
+    if(Length == 0.0)  Length = Length0;
 
     // 建立格林函数的complex数组
-    MYREAL (*EXPgrn)[2] = (doEXP) ? (MYREAL(*)[2])calloc(nr, sizeof(*EXPgrn)) : NULL;
-    MYREAL (*VFgrn)[2]  = (doVF)  ? (MYREAL(*)[2])calloc(nr, sizeof(*VFgrn))  : NULL;
-    MYREAL (*HFgrn)[3]  = (doHF)  ? (MYREAL(*)[3])calloc(nr, sizeof(*HFgrn))  : NULL;
-    MYREAL (*DDgrn)[2]  = (doDC)  ? (MYREAL(*)[2])calloc(nr, sizeof(*DDgrn))  : NULL;
-    MYREAL (*DSgrn)[3]  = (doDC)  ? (MYREAL(*)[3])calloc(nr, sizeof(*DSgrn))  : NULL;
-    MYREAL (*SSgrn)[3]  = (doDC)  ? (MYREAL(*)[3])calloc(nr, sizeof(*SSgrn))  : NULL;
+    MYREAL (*EXPgrn)[2] = (MYREAL(*)[2])calloc(nr, sizeof(*EXPgrn));
+    MYREAL (*VFgrn)[2]  = (MYREAL(*)[2])calloc(nr, sizeof(*VFgrn));
+    MYREAL (*HFgrn)[3]  = (MYREAL(*)[3])calloc(nr, sizeof(*HFgrn));
+    MYREAL (*DDgrn)[2]  = (MYREAL(*)[2])calloc(nr, sizeof(*DDgrn));
+    MYREAL (*DSgrn)[3]  = (MYREAL(*)[3])calloc(nr, sizeof(*DSgrn));
+    MYREAL (*SSgrn)[3]  = (MYREAL(*)[3])calloc(nr, sizeof(*SSgrn));
 
+    MYREAL (*EXPgrn_uiz)[2] = (calc_upar)? (MYREAL(*)[2])calloc(nr, sizeof(*EXPgrn)) : NULL;
+    MYREAL (*VFgrn_uiz)[2]  = (calc_upar)? (MYREAL(*)[2])calloc(nr, sizeof(*VFgrn)) : NULL;
+    MYREAL (*HFgrn_uiz)[3]  = (calc_upar)? (MYREAL(*)[3])calloc(nr, sizeof(*HFgrn)) : NULL;
+    MYREAL (*DDgrn_uiz)[2]  = (calc_upar)? (MYREAL(*)[2])calloc(nr, sizeof(*DDgrn)) : NULL;
+    MYREAL (*DSgrn_uiz)[3]  = (calc_upar)? (MYREAL(*)[3])calloc(nr, sizeof(*DSgrn)) : NULL;
+    MYREAL (*SSgrn_uiz)[3]  = (calc_upar)? (MYREAL(*)[3])calloc(nr, sizeof(*SSgrn)) : NULL;
+
+    MYREAL (*EXPgrn_uir)[2] = (calc_upar)? (MYREAL(*)[2])calloc(nr, sizeof(*EXPgrn)) : NULL;
+    MYREAL (*VFgrn_uir)[2]  = (calc_upar)? (MYREAL(*)[2])calloc(nr, sizeof(*VFgrn)) : NULL;
+    MYREAL (*HFgrn_uir)[3]  = (calc_upar)? (MYREAL(*)[3])calloc(nr, sizeof(*HFgrn)) : NULL;
+    MYREAL (*DDgrn_uir)[2]  = (calc_upar)? (MYREAL(*)[2])calloc(nr, sizeof(*DDgrn)) : NULL;
+    MYREAL (*DSgrn_uir)[3]  = (calc_upar)? (MYREAL(*)[3])calloc(nr, sizeof(*DSgrn)) : NULL;
+    MYREAL (*SSgrn_uir)[3]  = (calc_upar)? (MYREAL(*)[3])calloc(nr, sizeof(*SSgrn)) : NULL;
 
     //==============================================================================
     // 计算静态格林函数
     integ_static_grn(
-        pymod, nr, rs, keps, k0, Length, 
-        EXPgrn, VFgrn, HFgrn, DDgrn, DSgrn, SSgrn
+        pymod, nr, rs, vmin_ref, keps, k0, Length, 
+        EXPgrn, VFgrn, HFgrn, DDgrn, DSgrn, SSgrn,
+        calc_upar, 
+        EXPgrn_uiz, VFgrn_uiz, HFgrn_uiz, DDgrn_uiz, DSgrn_uiz, SSgrn_uiz, 
+        EXPgrn_uir, VFgrn_uir, HFgrn_uir, DDgrn_uir, DSgrn_uir, SSgrn_uir, 
+        s_statsdir
     );
     //==============================================================================
 
+    MYREAL src_va = pymod->Va[pymod->isrc];
+    MYREAL src_vb = pymod->Vb[pymod->isrc];
+    MYREAL src_rho = pymod->Rho[pymod->isrc];
+    MYREAL rcv_va = pymod->Va[pymod->ircv];
+    MYREAL rcv_vb = pymod->Vb[pymod->ircv];
+    MYREAL rcv_rho = pymod->Rho[pymod->ircv];
 
-    // 输出
-    for(int ir=0; ir<nr; ++ir){
-        if(doEXP){
-            fprintf(stdout, "%15.7e", EXPgrn[ir][0]);
-            fprintf(stdout, "%15.7e", EXPgrn[ir][1]);
-        }
-        if(doVF){
-            fprintf(stdout, "%15.7e", VFgrn[ir][0]);
-            fprintf(stdout, "%15.7e", VFgrn[ir][1]);
-        }
-        if(doHF){
-            fprintf(stdout, "%15.7e", HFgrn[ir][0]);
-            fprintf(stdout, "%15.7e", HFgrn[ir][1]);
-            fprintf(stdout, "%15.7e", HFgrn[ir][2]);
-        }
-        if(doDC){
-            fprintf(stdout, "%15.7e", DDgrn[ir][0]);
-            fprintf(stdout, "%15.7e", DDgrn[ir][1]);
-            fprintf(stdout, "%15.7e", DSgrn[ir][0]);
-            fprintf(stdout, "%15.7e", DSgrn[ir][1]);
-            fprintf(stdout, "%15.7e", DSgrn[ir][2]);
-            fprintf(stdout, "%15.7e", SSgrn[ir][0]);
-            fprintf(stdout, "%15.7e", SSgrn[ir][1]);
-            fprintf(stdout, "%15.7e", SSgrn[ir][2]);
-        }
+    // 输出物性参数
+    fprintf(stdout, "# %15.5e %15.5e %15.5e\n", src_va, src_vb, src_rho);
+    fprintf(stdout, "# %15.5e %15.5e %15.5e\n", rcv_va, rcv_vb, rcv_rho);
 
-        fprintf(stdout, "\n");
+    // 定义标题数组
+    const char *titles[15] = {
+        "EXZ", "EXR", "VFZ", "VFR", "HFZ", "HFR", "HFT",
+        "DDZ", "DDR", "DSZ", "DSR", "DST", "SSZ", "SSR", "SST"
+    };
+    const char *upar_titles[30] = {
+        "zEXZ", "zEXR", "zVFZ", "zVFR", "zHFZ", "zHFR", "zHFT",
+        "zDDZ", "zDDR", "zDSZ", "zDSR", "zDST", "zSSZ", "zSSR", "zSST",
+        "rEXZ", "rEXR", "rVFZ", "rVFR", "rHFZ", "rHFR", "rHFT",
+        "rDDZ", "rDDR", "rDSZ", "rDSR", "rDST", "rSSZ", "rSSR", "rSST"
+    };
+
+    // 输出标题
+    fprintf(stdout, "#%14s", "X(km)");
+    fprintf(stdout, "%15s", "Y(km)");
+    for(int i=0; i<15; ++i) fprintf(stdout, "%15s", titles[i]);
+    if(calc_upar) {
+        for(int i=0; i<30; ++i)  fprintf(stdout, "%15s", upar_titles[i]);
     }
+    fprintf(stdout, "\n");
+
+    // 写结果
+    for(int iy=0; iy<ny; ++iy) {
+        for(int ix=0; ix<nx; ++ix) {
+            int ir = ix + iy * nx;
+            fprintf(stdout, "%15.5e%15.5e", xs[ix], ys[iy]);
+            MYREAL *grns[] = {
+                EXPgrn[ir], VFgrn[ir], HFgrn[ir], DDgrn[ir], DSgrn[ir], SSgrn[ir]
+            };
+            int grn_sizes[] = {2, 2, 3, 2, 3, 3};
+            // 对Z分量反向
+            for(int i=0; i<6; ++i) {
+                for (int j=0; j<grn_sizes[i]; ++j)
+                    fprintf(stdout, "%15.5e", (j == 0 ? -1.0 : 1.0) * grns[i][j]);
+            }
+            if(calc_upar) {
+                // 前6个是对z的偏导，注意后续对z符号的判断
+                MYREAL *upar_grns[] = {
+                    EXPgrn_uiz[ir], VFgrn_uiz[ir], HFgrn_uiz[ir], DDgrn_uiz[ir], DSgrn_uiz[ir], SSgrn_uiz[ir],
+                    EXPgrn_uir[ir], VFgrn_uir[ir], HFgrn_uir[ir], DDgrn_uir[ir], DSgrn_uir[ir], SSgrn_uir[ir]
+                };
+                for(int i=0; i<12; ++i) {
+                    for(int j=0; j<grn_sizes[i % 6]; ++j)
+                        fprintf(stdout, "%15.5e", (j == 0 ? -1.0 : 1.0) * (i < 6 ? -1.0 : 1.0) * upar_grns[i][j]);
+                }
+            }
+            fprintf(stdout, "\n");
+        }
+    }
+
 }
 

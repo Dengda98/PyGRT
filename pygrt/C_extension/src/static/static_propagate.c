@@ -27,8 +27,10 @@
 
 
 void static_kernel(
-    const MODEL1D *mod1d, MYREAL k,
-    MYCOMPLEX EXP_qwv[3][3], MYCOMPLEX VF_qwv[3][3], MYCOMPLEX HF_qwv[3][3], MYCOMPLEX DC_qwv[3][3])
+    const MODEL1D *mod1d, MYCOMPLEX omega, MYREAL k,
+    MYCOMPLEX EXP_qwv[3][3], MYCOMPLEX VF_qwv[3][3], MYCOMPLEX HF_qwv[3][3], MYCOMPLEX DC_qwv[3][3],
+    bool calc_uiz,
+    MYCOMPLEX EXP_uiz_qwv[3][3], MYCOMPLEX VF_uiz_qwv[3][3], MYCOMPLEX HF_uiz_qwv[3][3], MYCOMPLEX DC_uiz_qwv[3][3])
 {
     // 初始化qwv为0
     for(MYINT i=0; i<3; ++i){
@@ -39,9 +41,22 @@ void static_kernel(
             if(DC_qwv!=NULL)  DC_qwv[i][j] = RZERO;
         }
     }
+    
+    if(calc_uiz){
+        // 初始化qwv为0
+        for(MYINT i=0; i<3; ++i){
+            for(MYINT j=0; j<3; ++j){
+                if(EXP_uiz_qwv!=NULL) EXP_uiz_qwv[i][j] = RZERO;
+                if(VF_uiz_qwv!=NULL)  VF_uiz_qwv[i][j] = RZERO;
+                if(HF_uiz_qwv!=NULL)  HF_uiz_qwv[i][j] = RZERO;
+                if(DC_uiz_qwv!=NULL)  DC_uiz_qwv[i][j] = RZERO;
+            }
+        }
+    }
 
     bool ircvup = mod1d->ircvup;
     MYINT isrc = mod1d->isrc; // 震源所在虚拟层位, isrc>=1
+    MYINT ircv = mod1d->ircv; // 接收点所在虚拟层位, ircv>=1, ircv != isrc
     MYINT imin, imax; // 相对浅层深层层位
     imin = mod1d->imin;
     imax = mod1d->imax;
@@ -118,6 +133,11 @@ void static_kernel(
     // 接收点处的接收矩阵
     MYCOMPLEX R_EV[2][2], R_EVL;
     MYCOMPLEX *const pR_EVL = &R_EVL;
+    
+    // 接收点处的接收矩阵(转为位移导数ui_z的(B_m, C_m, P_m)系分量)
+    MYCOMPLEX uiz_R_EV[2][2], uiz_R_EVL;
+    MYCOMPLEX *const puiz_R_EVL = &uiz_R_EVL;
+
 
     // 模型参数
     // 后缀0，1分别代表上层和下层
@@ -127,6 +147,7 @@ void static_kernel(
     MYCOMPLEX mod1d_delta0, mod1d_delta1;
     MYCOMPLEX top_delta = CZERO;
     MYCOMPLEX src_delta = CZERO;
+    MYCOMPLEX rcv_delta = CZERO;
     
 
     // 从顶到底进行矩阵递推, 公式(5.5.3)
@@ -149,9 +170,11 @@ void static_kernel(
         }
 
         // 确定上下层的物性参数
-        if(isrc==iy){
+        if(ircv==iy){
+            rcv_delta = mod1d_delta1;
+        } else if(isrc==iy){
             src_delta = mod1d_delta1;
-        } 
+        }
 
         // 对第iy层的系数矩阵赋值，加入时间延迟因子(第iy-1界面与第iy界面之间)
         calc_static_RT_2x2(
@@ -292,10 +315,10 @@ void static_kernel(
             }
         }
     }
-    static_source_coef(src_delta, pEXP, pVF, pHF, pDC);
+    static_source_coef(src_delta, k, pEXP, pVF, pHF, pDC);
 
     // 临时中转矩阵 (temperary)
-    MYCOMPLEX tmpR1[2][2], tmpR2[2][2], tmp2x2[2][2], tmpRL;
+    MYCOMPLEX tmpR1[2][2], tmpR2[2][2], tmp2x2[2][2], tmpRL, tmp2x2_uiz[2][2], tmpRL_uiz;
     MYCOMPLEX inv_2x2T[2][2], invT;
 
     // 递推RU_FA
@@ -323,12 +346,15 @@ void static_kernel(
             RU_FB, pRUL_FB, inv_2x2T, &invT);
         
         // 公式(5.7.12-14)
-        cmat2x2_mul(R_EV, inv_2x2T, tmpR1);
+        // cmat2x2_mul(R_EV, inv_2x2T, tmpR1);
         cmat2x2_mul(RD_BL, RU_FB, tmpR2);
         cmat2x2_one_sub(tmpR2);
         cmat2x2_inv(tmpR2, tmpR2);// (I - xx)^-1
-        cmat2x2_mul(tmpR1, tmpR2, tmp2x2);
-        
+        cmat2x2_mul(inv_2x2T, tmpR2, tmp2x2);
+
+        if(calc_uiz) cmat2x2_assign(tmp2x2, tmp2x2_uiz); // 为后续计算空间导数备份
+
+        cmat2x2_mul(R_EV, tmp2x2, tmp2x2);
         tmpRL = R_EVL * invT  / (RONE - RDL_BL * RUL_FB);
         for(MYINT m=0; m<3; ++m){
             if(0==m){
@@ -343,6 +369,27 @@ void static_kernel(
 
             // 剪切位错
             if(DC_qwv!=NULL)  get_qwv(ircvup, tmp2x2, tmpRL, RD_BL, RDL_BL, DC[m], DC_qwv[m]);
+        }
+        
+
+        if(calc_uiz){
+            calc_static_uiz_R_EV(rcv_delta, ircvup, k, RU_FA, RUL_FA, uiz_R_EV, puiz_R_EVL);
+            cmat2x2_mul(uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
+            tmpRL_uiz = tmpRL / R_EVL * uiz_R_EVL;
+            for(MYINT m=0; m<3; ++m){
+                if(0==m){
+                    // 爆炸源
+                    if(EXP_uiz_qwv!=NULL) get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RD_BL, RDL_BL, EXP[m], EXP_uiz_qwv[m]);
+                    // 垂直力源
+                    if(VF_uiz_qwv!=NULL)  get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RD_BL, RDL_BL, VF[m], VF_uiz_qwv[m]);
+                }
+                
+                // 水平力源
+                if(1==m && HF_uiz_qwv!=NULL) get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RD_BL, RDL_BL, HF[m], HF_uiz_qwv[m]);
+
+                // 剪切位错
+                if(DC_uiz_qwv!=NULL)  get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RD_BL, RDL_BL, DC[m], DC_uiz_qwv[m]);
+            }    
         }
     }
     else { // A震源  B接收
@@ -360,11 +407,15 @@ void static_kernel(
             RD_AL, pRDL_AL, inv_2x2T, &invT);
         
         // 公式(5.7.26-27)
-        cmat2x2_mul(R_EV, inv_2x2T, tmpR1);
+        // cmat2x2_mul(R_EV, inv_2x2T, tmpR1);
         cmat2x2_mul(RU_FA, RD_AL, tmpR2);
         cmat2x2_one_sub(tmpR2);
         cmat2x2_inv(tmpR2, tmpR2);// (I - xx)^-1
-        cmat2x2_mul(tmpR1, tmpR2, tmp2x2);
+        cmat2x2_mul(inv_2x2T, tmpR2, tmp2x2);
+        
+        if(calc_uiz) cmat2x2_assign(tmp2x2, tmp2x2_uiz); // 为后续计算空间导数备份
+
+        cmat2x2_mul(R_EV, tmp2x2, tmp2x2);
         tmpRL = R_EVL * invT / (RONE - RUL_FA * RDL_AL);
         for(MYINT m=0; m<3; ++m){
             if(0==m){
@@ -380,6 +431,27 @@ void static_kernel(
             // 剪切位错
             if(DC_qwv!=NULL)  get_qwv(ircvup, tmp2x2, tmpRL, RU_FA, RUL_FA, DC[m], DC_qwv[m]);
 
+        }
+
+        if(calc_uiz){
+            calc_static_uiz_R_EV(rcv_delta, ircvup, k, RD_BL, RDL_BL, uiz_R_EV, puiz_R_EVL);    
+            cmat2x2_mul(uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
+            tmpRL_uiz = tmpRL / R_EVL * uiz_R_EVL;
+            for(MYINT m=0; m<3; ++m){
+                if(0==m){
+                    // 爆炸源
+                    if(EXP_uiz_qwv!=NULL) get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RU_FA, RUL_FA, EXP[m], EXP_uiz_qwv[m]);
+                    // 垂直力源
+                    if(VF_uiz_qwv!=NULL)  get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RU_FA, RUL_FA, VF[m], VF_uiz_qwv[m]);
+                }
+                
+                // 水平力源
+                if(1==m && HF_uiz_qwv!=NULL) get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RU_FA, RUL_FA, HF[m], HF_uiz_qwv[m]);
+    
+                // 剪切位错
+                if(DC_uiz_qwv!=NULL)  get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RU_FA, RUL_FA, DC[m], DC_uiz_qwv[m]);
+    
+            }
         }
     } // END if
 }
