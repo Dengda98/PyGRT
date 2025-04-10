@@ -15,9 +15,10 @@
 #include <stdio.h> 
 #include <stdlib.h>
 
-#include "dynamic/dwm.h"
-#include "dynamic/propagate.h"
-#include "dynamic/iostats.h"
+#include "common/dwm.h"
+#include "common/kernel.h"
+#include "common/integral.h"
+#include "common/iostats.h"
 #include "common/model.h"
 #include "common/const.h"
 
@@ -32,7 +33,7 @@ MYREAL discrete_integ(
     MYCOMPLEX sum_HF_uiz_J[nr][3][4],  MYCOMPLEX sum_DC_uiz_J[nr][3][4],  
     MYCOMPLEX sum_EXP_uir_J[nr][3][4], MYCOMPLEX sum_VF_uir_J[nr][3][4],  
     MYCOMPLEX sum_HF_uir_J[nr][3][4],  MYCOMPLEX sum_DC_uir_J[nr][3][4],  
-    FILE *(fstats[nr]))
+    FILE *(fstats[nr]), KernelFunc kerfunc)
 {
     MYCOMPLEX EXP_J[3][4], VF_J[3][4], HF_J[3][4],  DC_J[3][4];
 
@@ -72,8 +73,8 @@ MYREAL discrete_integ(
 
         // printf("w=%15.5e, ik=%d\n", CREAL(omega), ik);
         // 计算核函数 F(k, w)
-        kernel(mod1d, omega, k, pEXP_qwv, pVF_qwv, pHF_qwv, pDC_qwv, 
-            calc_upar, pEXP_uiz_qwv, pVF_uiz_qwv, pHF_uiz_qwv, pDC_uiz_qwv); 
+        kerfunc(mod1d, omega, k, pEXP_qwv, pVF_qwv, pHF_qwv, pDC_qwv, 
+                calc_upar, pEXP_uiz_qwv, pVF_uiz_qwv, pHF_uiz_qwv, pDC_uiz_qwv); 
 
 
         // 震中距rs循环

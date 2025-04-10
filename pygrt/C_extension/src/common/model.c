@@ -25,6 +25,8 @@ void print_mod1d(const MODEL1D *mod1d){
         printf("     Va=%6.2f, Vb=%6.2f, thk=%6.2f, Rho=%6.2f, 1/Qa=%6.2e, 1/Qb=%6.2e\n",
                      lay->Va, lay->Vb, lay->thk, lay->Rho, lay->Qainv, lay->Qbinv);
         printf("     mu=(%e %+e I)\n", CREAL(lay->mu), CIMAG(lay->mu));
+        printf("     lambda=(%e %+e I)\n", CREAL(lay->lambda), CIMAG(lay->lambda));
+        printf("     delta=(%e %+e I)\n", CREAL(lay->delta), CIMAG(lay->delta));
         printf("     ka^2=%e%+eJ\n", CREAL(lay->kaka), CIMAG(lay->kaka));
         printf("     kb^2=%e%+eJ\n", CREAL(lay->kbkb), CIMAG(lay->kbkb));
         for(MYINT u=0; u<50; ++u){printf("---"); } printf("\n");
@@ -146,6 +148,8 @@ void get_mod1d(const PYMODEL1D *pymod1d, MODEL1D *mod1d){
         lay->Qbinv  = RONE/pymod1d->Qb[i];
 
         lay->mu = (lay->Vb)*(lay->Vb)*(lay->Rho);
+        lay->lambda = (lay->Va)*(lay->Va)*(lay->Rho) - RTWO*lay->mu;
+        lay->delta = (lay->lambda + lay->mu) / (lay->lambda + RTHREE*lay->mu);
     }
 
 }
@@ -176,6 +180,9 @@ void copy_mod1d(const MODEL1D *mod1d1, MODEL1D *mod1d2){
         lay2->mu = lay1->mu;
         lay2->kaka = lay1->kaka;
         lay2->kbkb = lay1->kbkb;
+
+        lay2->lambda = lay1->lambda;
+        lay2->delta = lay1->delta;
     }
     
 }
@@ -207,6 +214,8 @@ void update_mod1d_omega(MODEL1D *mod1d, MYCOMPLEX omega){
         lay->kbkb = kb0*kb0;
         
         lay->mu = (Vb0*atnb)*(Vb0*atnb)*(lay->Rho);
+        lay->lambda = (Va0*atnb)*(Va0*atnb)*(lay->Rho) - 2*lay->mu;
+        lay->delta = (lay->lambda + lay->mu) / (lay->lambda + 3*lay->mu);
     }
 
 #if Print_GRTCOEF == 1
