@@ -21,7 +21,7 @@ rak=0
 stgrt.syn -S$S -M$stk/$dip/$rak -N < grn > syn 
 
 gmt set FONT_TITLE 9p
-gmt begin disp_dc pdf
+gmt begin disp_dc png E300
     gmt xyz2grd syn -GsynZ.nc -R$y1/$y2/$x1/$x2 -I$ny+n/$nx+n -i0,1,2 -:
     gmt xyz2grd syn -GsynN.nc -R$y1/$y2/$x1/$x2 -I$ny+n/$nx+n -i0,1,3 -:
     gmt xyz2grd syn -GsynE.nc -R$y1/$y2/$x1/$x2 -I$ny+n/$nx+n -i0,1,4 -:
@@ -44,7 +44,7 @@ fn=1
 fe=1
 fz=0
 stgrt.syn -S$S -F$fn/$fe/$fz -N < grn > syn 
-gmt begin disp_sf pdf
+gmt begin disp_sf  png E300
     gmt xyz2grd syn -GsynZ.nc -R$y1/$y2/$x1/$x2 -I$ny+n/$nx+n -i0,1,2 -:
     gmt xyz2grd syn -GsynN.nc -R$y1/$y2/$x1/$x2 -I$ny+n/$nx+n -i0,1,3 -:
     gmt xyz2grd syn -GsynE.nc -R$y1/$y2/$x1/$x2 -I$ny+n/$nx+n -i0,1,4 -:
@@ -59,7 +59,7 @@ gmt end
 # Explosion
 S="1e23"
 stgrt.syn -S$S -N < grn > syn 
-gmt begin disp_exp pdf
+gmt begin disp_exp  png E300
     gmt xyz2grd syn -GsynZ.nc -R$y1/$y2/$x1/$x2 -I$ny+n/$nx+n -i0,1,2 -:
     gmt xyz2grd syn -GsynN.nc -R$y1/$y2/$x1/$x2 -I$ny+n/$nx+n -i0,1,3 -:
     gmt xyz2grd syn -GsynE.nc -R$y1/$y2/$x1/$x2 -I$ny+n/$nx+n -i0,1,4 -:
