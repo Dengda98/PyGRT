@@ -12,7 +12,13 @@
 (Detailed documentation is coming soon...)
 
 # Overview
-[**PyGRT**](https://github.com/Dengda98/PyGRT): An Efficient and Integrated Python Package for Computing Synthetic Seismograms in a Layered Half-Space Model. 
+[**PyGRT**](https://github.com/Dengda98/PyGRT): An Efficient and Integrated Python Package for Computing Synthetic Seismograms in a Layered Half-Space Model.   
+
+**PyGRT** now can compute following properties in **both dynamic and static case.**
+ - [x] **Displacements and its spatial derivatives**
+ - [x] **Strain**
+ - [x] **Stress**
+
 
 At present, **PyGRT** can run on
   - [x] Linux
@@ -121,6 +127,11 @@ Then you can run the command like `grt` in terminal. For each command, use `-h` 
   <img alt="far-field record" src="example/far_field/test.png" width="600">
 </p>
 
+<p align='center'>
+  <img alt="static_dc" src="example/static_disp/disp_dc.png" width="200">
+  <img alt="static_sf" src="example/static_disp/disp_sf.png" width="200">
+  <img alt="static_exp" src="example/static_disp/disp_exp.png" width="200">
+</p>
 
 # Contact
 If you have any questions or suggestions, feel free to reach out:
