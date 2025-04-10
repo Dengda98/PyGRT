@@ -114,7 +114,8 @@ PyGRT library directory: </path/to/installation/lib>
 and you can 
 + add "executable file directory" to `PATH` environment variable.
 
-Then you can run the command like `grt` in terminal. For each command, use `-h` to see the help message.
+Then you can run the command like `grt` in terminal.   
+**For each command, use `-h` to see the help message.**
 
 
 # Usage Example
