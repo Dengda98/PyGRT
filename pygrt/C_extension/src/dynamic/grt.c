@@ -21,11 +21,12 @@
 #include <omp.h>
 
 #include "dynamic/grt.h"
-#include "dynamic/dwm.h"
 #include "dynamic/propagate.h"
-#include "dynamic/fim.h"
-#include "dynamic/ptam.h"
-#include "dynamic/iostats.h"
+#include "common/ptam.h"
+#include "common/fim.h"
+#include "common/dwm.h"
+#include "common/integral.h"
+#include "common/iostats.h"
 #include "common/const.h"
 #include "common/model.h"
 #include "common/prtdbg.h"
@@ -627,7 +628,7 @@ void integ_grn_spec(
             ptam_fstats[ir] = NULL;
             if(statsstr!=NULL && ((findElement_MYINT(statsidxs, nstatsidxs, iw) >= 0) || (findElement_MYINT(statsidxs, nstatsidxs, -1) >= 0))){
                 char *fname = (char *)malloc((strlen(fstatsdir[ir])+200)*sizeof(char));
-                if(Length > 0){
+                if(Length > RZERO){
                     // 常规的波数积分
                     sprintf(fname, "%s/K_%d_%.3e", fstatsdir[ir], iw, freqs[iw]);
                 } else {
@@ -637,7 +638,7 @@ void integ_grn_spec(
                 
                 fstats[ir] = fopen(fname, "wb");
 
-                if(vmin_ref < 0){
+                if(vmin_ref < RZERO){
                     // 峰谷平均法
                     sprintf(fname, "%s/PTAM_%d_%.3e", fstatsdir[ir], iw, freqs[iw]);
                     ptam_fstats[ir] = fopen(fname, "wb");
@@ -663,7 +664,7 @@ void integ_grn_spec(
                 calc_upar,
                 sum_EXP_uiz_J, sum_VF_uiz_J, sum_HF_uiz_J, sum_DC_uiz_J,
                 sum_EXP_uir_J, sum_VF_uir_J, sum_HF_uir_J, sum_DC_uir_J,
-                fstats);
+                fstats, kernel);
         } 
         else {
             // 基于线性插值的Filon积分
@@ -673,7 +674,7 @@ void integ_grn_spec(
                 calc_upar,
                 sum_EXP_uiz_J, sum_VF_uiz_J, sum_HF_uiz_J, sum_DC_uiz_J,
                 sum_EXP_uir_J, sum_VF_uir_J, sum_HF_uir_J, sum_DC_uir_J,
-                fstats);
+                fstats, kernel);
         }
 
         // k之后的部分使用峰谷平均法进行显式收敛，建议在浅源地震的时候使用   
@@ -684,7 +685,7 @@ void integ_grn_spec(
                 calc_upar,
                 sum_EXP_uiz_J, sum_VF_uiz_J, sum_HF_uiz_J, sum_DC_uiz_J,
                 sum_EXP_uir_J, sum_VF_uir_J, sum_HF_uir_J, sum_DC_uir_J,
-                fstats, ptam_fstats);
+                fstats, ptam_fstats, kernel);
         }
 
         // printf("iw=%d, w=%.5e, k=%.5e, dk=%.5e, nk=%d\n", iw, w, k, dk, (int)(k/dk));

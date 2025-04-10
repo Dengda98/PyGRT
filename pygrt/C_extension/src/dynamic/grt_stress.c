@@ -13,6 +13,7 @@
 #include <dirent.h>
 #include <ctype.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include <complex.h>
 #include <fftw3.h>
@@ -23,6 +24,20 @@
 #include "common/logo.h"
 #include "common/colorstr.h"
 
+
+//****************** 在该文件以内的全局变量 ***********************//
+// 命令名称
+static char *command = NULL;
+
+// 输出分量格式，即是否需要旋转到ZNE
+static bool rot2ZNE = false;
+
+// 三分量
+const char zrtchs[3] = {'Z', 'R', 'T'};
+const char znechs[3] = {'Z', 'N', 'E'};
+const char *chs = NULL;
+
+
 /**
  * 打印使用说明
  */
@@ -31,6 +46,7 @@ print_logo();
 printf("\n"
 "[grt.stress]\n\n"
 "    Conbine spatial derivatives of displacements into stress.\n"
+"    (unit: dyne/cm^2 = 0.1 Pa)\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
@@ -40,27 +56,51 @@ printf("\n"
 }
 
 
+/**
+ * 从命令行中读取选项，处理后记录到全局变量中
+ * 
+ * @param     argc      命令行的参数个数
+ * @param     argv      多个参数字符串指针
+ */
+static void getopt_from_command(int argc, char **argv){
+    int opt;
+    while ((opt = getopt(argc, argv, ":h")) != -1) {
+        switch (opt) {
+
+            // 帮助
+            case 'h':
+                print_help();
+                exit(EXIT_SUCCESS);
+                break;
+
+            // 参数缺失
+            case ':':
+                fprintf(stderr, "[%s] " BOLD_RED "Error! Option '-%c' requires an argument. Use '-h' for help.\n" DEFAULT_RESTORE, command, optopt);
+                exit(EXIT_FAILURE);
+                break;
+
+            // 非法选项
+            case '?':
+            default:
+                fprintf(stderr, "[%s] " BOLD_RED "Error! Option '-%c' is invalid. Use '-h' for help.\n" DEFAULT_RESTORE, command, optopt);
+                exit(EXIT_FAILURE);
+                break;
+        }
+    }
+
+    // 检查必选项有没有设置
+    if(argc != 2){
+        fprintf(stderr, "[%s] " BOLD_RED "Error! Need set options. Use '-h' for help.\n" DEFAULT_RESTORE, command);
+        exit(EXIT_FAILURE);
+    }
+}
+
+
 
 int main(int argc, char **argv){
-    const char *command = argv[0];
+    command = argv[0];
 
-    // 输入不够
-    if(argc < 2){
-        fprintf(stderr, "[%s] " BOLD_RED "Error! Need set an input. Use '-h' for help.\n" DEFAULT_RESTORE, command);
-        exit(EXIT_FAILURE);
-    }
-
-    // 输入过多
-    if(argc > 2){
-        fprintf(stderr, "[%s] " BOLD_RED "Error! You should set only one input. Use '-h' for help.\n" DEFAULT_RESTORE, command);
-        exit(EXIT_FAILURE);
-    }
-
-    // 使用-h查看帮助
-    if(strcmp(argv[1], "-h") == 0){
-        print_help();
-        exit(EXIT_SUCCESS);
-    }
+    getopt_from_command(argc, argv);
 
     
     // 合成地震图目录路径
@@ -84,11 +124,18 @@ int main(int argc, char **argv){
     // 开始读取计算，输出6个量
     char c1, c2;
     char *s_filepath = (char*)malloc(sizeof(char) * (strlen(s_synpath)+strlen(s_prefix)+100));
-    const char chs[3] = {'R', 'T', 'Z'};
+
+    // 判断标志性文件是否存在，来判断输出使用ZNE还是ZRT
+    sprintf(s_filepath, "%s/n%sN.sac", s_synpath, s_prefix);
+    rot2ZNE = (access(s_filepath, F_OK) == 0);
+
+    // 指示特定的通道名
+    chs = (rot2ZNE)? znechs : zrtchs;
+
 
     // 读取一个头段变量，获得基本参数，分配数组内存
     SACHEAD hd;
-    sprintf(s_filepath, "%s/r%sR.sac", s_synpath, s_prefix);
+    sprintf(s_filepath, "%s/%c%s%c.sac", s_synpath, tolower(chs[0]), s_prefix, chs[0]);
     read_SAC_HEAD(command, s_filepath, &hd);
     int npts=hd.npts;
     float dt=hd.delta;
@@ -100,7 +147,7 @@ int main(int argc, char **argv){
     float rho=hd.user3;
     float Qainv=hd.user4;
     float Qbinv=hd.user5;
-    if(va < 0.0 || vb < 0.0 || rho < 0.0){
+    if(va <= 0.0 || vb <= 0.0 || rho <= 0.0){
         fprintf(stderr, "[%s] " BOLD_RED "Error! read necessary header value from \"%s\" error.\n" DEFAULT_RESTORE, command, s_filepath);
         exit(EXIT_FAILURE);
     }
@@ -132,8 +179,9 @@ int main(int argc, char **argv){
         fftwf_complex atta, attb;
         atta = attenuation_law(Qainv, w);
         attb = attenuation_law(Qbinv, w);
-        mus[i] = vb*vb*attb*attb*rho;
-        lams[i] = va*va*atta*atta*rho - 2.0*mus[i];
+        // 乘上1e10，转为dyne/(cm^2)
+        mus[i] = vb*vb*attb*attb*rho*1e10;
+        lams[i] = va*va*atta*atta*rho*1e10 - 2.0*mus[i];
     }
 
     // ----------------------------------------------------------------------------------
@@ -150,10 +198,12 @@ int main(int argc, char **argv){
         for(int i=0; i<nf; ++i)  lam_ukk[i] += carrin[i];
     }
     // 加上协变导数
-    sprintf(s_filepath, "%s/%sR.sac", s_synpath, s_prefix);
-    arrin = read_SAC(command, s_filepath, &hd, arrin);
-    fftwf_execute(plan);
-    for(int i=0; i<nf; ++i)  lam_ukk[i] += carrin[i]/dist;
+    if(!rot2ZNE){
+        sprintf(s_filepath, "%s/%sR.sac", s_synpath, s_prefix);
+        arrin = read_SAC(command, s_filepath, &hd, arrin);
+        fftwf_execute(plan);
+        for(int i=0; i<nf; ++i)  lam_ukk[i] += carrin[i]/dist*1e-5;
+    }
 
     // 乘上lambda系数
     for(int i=0; i<nf; ++i)  lam_ukk[i] *= lams[i];
@@ -194,20 +244,20 @@ int main(int argc, char **argv){
                 for(int i=0; i<nf; ++i)  carrout[i] += lam_ukk[i];
             }
 
-            // 特殊情况需加上协变导数
+            // 特殊情况需加上协变导数，1e-5是因为km->cm
             if(c1=='R' && c2=='T'){
                 // 读取数据 u_T
                 sprintf(s_filepath, "%s/%sT.sac", s_synpath, s_prefix);
                 arrin = read_SAC(command, s_filepath, &hd, arrin);
                 fftwf_execute(plan);
-                for(int i=0; i<nf; ++i)  carrout[i] -= mus[i] * carrin[i] / dist;
+                for(int i=0; i<nf; ++i)  carrout[i] -= mus[i] * carrin[i] / dist * 1e-5;
             }
             else if(c1=='T' && c2=='T'){
                 // 读取数据 u_R
                 sprintf(s_filepath, "%s/%sR.sac", s_synpath, s_prefix);
                 arrin = read_SAC(command, s_filepath, &hd, arrin);
                 fftwf_execute(plan);
-                for(int i=0; i<nf; ++i)  carrout[i] += 2.0f * mus[i] * carrin[i] / dist;
+                for(int i=0; i<nf; ++i)  carrout[i] += 2.0f * mus[i] * carrin[i] / dist * 1e-5;
             }
             
             // 保存到SAC
