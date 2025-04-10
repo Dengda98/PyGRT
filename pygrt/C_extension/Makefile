@@ -48,6 +48,7 @@ CFLAGS :=  $(LINK_STATIC) $(LFFT_FLAGS) -lm -O3 \
 SUBDIRS = \
     src/common \
 	src/dynamic \
+	src/static \
 	src/travt
 
 
@@ -56,12 +57,12 @@ all: objs progs libs
 
 objs:
 	for dir in $(SUBDIRS); do \
-		$(MAKE) -C $$dir CC="$(CC)" CFLAGS="$(CFLAGS)" objs; \
+		$(MAKE) -C $$dir CC="$(CC)" CFLAGS="$(CFLAGS)" objs || exit 1; \
 	done
 
 progs: objs 
 	for dir in $(SUBDIRS); do \
-		$(MAKE) -C $$dir CC="$(CC)" CFLAGS="$(CFLAGS)" progs; \
+		$(MAKE) -C $$dir CC="$(CC)" CFLAGS="$(CFLAGS)" progs || exit 1; \
 	done
 
 

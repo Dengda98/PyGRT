@@ -18,10 +18,10 @@
 #include <complex.h>
 #include <stdlib.h>
 
-#include "dynamic/ptam.h"
-#include "dynamic/iostats.h"
-#include "dynamic/propagate.h"
-#include "dynamic/quadratic.h"
+#include "common/ptam.h"
+#include "common/quadratic.h"
+#include "common/integral.h"
+#include "common/iostats.h"
 #include "common/const.h"
 #include "common/model.h"
 
@@ -188,17 +188,14 @@ void PTA_method(
     MYCOMPLEX sum_HF_uiz_J0[nr][3][4],  MYCOMPLEX sum_DC_uiz_J0[nr][3][4],  
     MYCOMPLEX sum_EXP_uir_J0[nr][3][4], MYCOMPLEX sum_VF_uir_J0[nr][3][4],  
     MYCOMPLEX sum_HF_uir_J0[nr][3][4],  MYCOMPLEX sum_DC_uir_J0[nr][3][4],  
-    FILE *(fstats[nr]), FILE *(ptam_fstats[nr]))
+    FILE *(fstats[nr]), FILE *(ptam_fstats[nr]), KernelFunc kerfunc)
 {   
     // 需要兼容对正常收敛而不具有规律波峰波谷的序列
     // 有时序列收敛比较好，不表现为规律的波峰波谷，
     // 此时设置最大等待次数，超过直接设置为中间值
 
-    MYINT ik=0;
     const MYINT maxnwait = 9;     // 最大等待次数，不能太小
-    const MYREAL dk=PI/((maxnwait-1)*rmax); 
     MYREAL k=0.0;
-    const MYREAL precoef = dk/predk; // 提前乘dk系数，以抵消格林函数主函数计算时最后乘dk
 
     MYCOMPLEX EXP_qwv[3][3], VF_qwv[3][3], HF_qwv[3][3], DC_qwv[3][3]; // 不同震源的核函数
     MYCOMPLEX (*pEXP_qwv)[3] = (sum_EXP_J0!=NULL)? EXP_qwv : NULL;
@@ -215,13 +212,6 @@ void PTA_method(
 
     static const MYINT maxNpt=PTAM_MAX_PEAK_TROUGH; // 波峰波谷的目标
 
-    // 根据波峰波谷的目标也给出一个kmax，+5以防万一 
-    const MYREAL kmax = k0 + (maxNpt+5)*PI/rmin;
-
-    // 每个震中距是否已找齐慢收敛序列
-    bool iendk = true, iendk0 = false;
-    bool *iendkrs = (bool *)calloc(nr, sizeof(bool));
-    for(MYINT ir=0; ir<nr; ++ir) iendkrs[ir] = false;
 
     // 用于接收F(ki,w)Jm(ki*r)ki
     // 存储采样的值，维度3表示通过连续3个点来判断波峰或波谷
@@ -351,22 +341,26 @@ void PTA_method(
 
             }
         }
-        iendkrs[ir] = false;
     }
 
 
-    k = k0 - dk;
-    while(true){
-        k += dk;
-        if(k > kmax) break;
+    // 对于PTAM，不同震中距使用不同dk
+    for(MYINT ir=0; ir<nr; ++ir){
+        MYREAL dk = PI/((maxnwait-1)*rs[ir]); 
+        MYREAL precoef = dk/predk; // 提前乘dk系数，以抵消格林函数主函数计算时最后乘dk
+        // 根据波峰波谷的目标也给出一个kmax，+5以防万一 
+        MYREAL kmax = k0 + (maxNpt+5)*PI/rs[ir];
 
-        // 计算核函数 F(k, w)
-        kernel(mod1d, omega, k, pEXP_qwv, pVF_qwv, pHF_qwv, pDC_qwv,
-               calc_upar, pEXP_uiz_qwv, pVF_uiz_qwv, pHF_uiz_qwv, pDC_uiz_qwv); 
+        bool iendk0=false;
 
-        iendk=true;
-        for(MYINT ir=0; ir<nr; ++ir){
-            if(iendkrs[ir]) continue;        // 该震中距下的慢收敛序列已找齐
+        k = k0 - dk;
+        while(true){
+            k += dk;
+            if(k > kmax) break;
+
+            // 计算核函数 F(k, w)
+            kerfunc(mod1d, omega, k, pEXP_qwv, pVF_qwv, pHF_qwv, pDC_qwv,
+                    calc_upar, pEXP_uiz_qwv, pVF_uiz_qwv, pHF_uiz_qwv, pDC_uiz_qwv); 
 
             // 计算被积函数一项 F(k,w)Jm(kr)k
             int_Pk(k, rs[ir],
@@ -428,19 +422,11 @@ void PTA_method(
                     &iendk0);
             
             } // END if calc_upar
-            
 
-            iendkrs[ir] = iendk0;
-            iendk = iendk && iendkrs[ir];
 
-        } // end rs loop
-
-        ++ik;
-
-        // 所有震中距的慢收敛序列都已找到
-        if(iendk) break;
-
-    } // end k loop
+            if(iendk0) break;
+        }// end k loop
+    }
 
     // printf("w=%f, ik=%d\n", CREAL(omega), ik);
 
@@ -479,7 +465,6 @@ void PTA_method(
     }
 
 
-    free(iendkrs);
     free(EXP_J3); free(VF_J3); free(HF_J3); free(DC_J3);
     free(EXP_uiz_J3); free(VF_uiz_J3); free(HF_uiz_J3); free(DC_uiz_J3);
     free(EXP_uir_J3); free(VF_uir_J3); free(HF_uir_J3); free(DC_uir_J3);
