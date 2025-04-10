@@ -380,7 +380,7 @@ jobs:
   # ===============================================================================
   release: # 创建Release
     runs-on: ubuntu-latest
-    needs: build # test_project
+    needs: [build, test_project]
     permissions:
       contents: write
 
