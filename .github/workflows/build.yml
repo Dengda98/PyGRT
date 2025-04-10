@@ -395,6 +395,12 @@ jobs:
           path: artifacts
           pattern: "*_tar"
 
+      - name: Download artifacts (*.whl)
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: "*_whl" 
+
       - name: Display structure of downloaded files
         run: ls -R artifacts
 
@@ -413,12 +419,19 @@ jobs:
 
           ls -R release
 
+      - name: Move wheel files to dist/
+        run: |
+          mkdir -p dist
+          mv artifacts/*/*.whl dist/
+
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
           draft: true
-          files: "release/*.tar.gz"
+          files: |
+            "release/*.tar.gz"
+            "dist/*.whl"
 
   
 
