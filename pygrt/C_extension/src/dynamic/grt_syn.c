@@ -19,6 +19,7 @@
 #include <math.h>
 #include <stdbool.h>
 #include <dirent.h>
+#include <ctype.h>
 
 #include "dynamic/signals.h"
 #include "common/sacio2.h"
@@ -26,6 +27,7 @@
 #include "common/logo.h"
 #include "common/colorstr.h"
 #include "common/radiation.h"
+#include "common/coord.h"
 
 
 
@@ -48,6 +50,8 @@ static const char *s_prefix_default = "out";
 static double azimuth = 0.0, azrad = 0.0, backazimuth=0.0;
 // 放大系数，对于位错源、爆炸源、张量震源，M0是标量地震矩；对于单力源，M0是放大系数
 static double M0 = 0.0;
+// 在放大系数上是否需要乘上震源处的剪切模量
+static bool mult_src_mu = false;
 // 存储不同震源的震源机制相关参数的数组
 static double mchn[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 // 最终要计算的震源类型
@@ -66,22 +70,26 @@ static int dif_times = 0;
 // 是否计算位移空间导数
 static bool calc_upar=false;
 
+// 输出分量格式，即是否需要旋转到ZNE
+static bool rot2ZNE = false;
+
 // 各选项的标志变量，初始化为0，定义了则为1
 static int G_flag=0, O_flag=0, A_flag=0,
            S_flag=0, M_flag=0, F_flag=0,
            T_flag=0, P_flag=0, s_flag=0,
            D_flag=0, I_flag=0, J_flag=0, 
-           e_flag=0;
+           e_flag=0, N_flag=0;
 
 // 三分量代号
-static const char chs[3] = {'Z', 'R', 'T'};
+static const char zrtchs[3] = {'Z', 'R', 'T'};
+static const char znechs[3] = {'Z', 'N', 'E'};
 
 // 计算和位移相关量的种类（1-位移，2-ui_z，3-ui_r，4-ui_t）
 static int calcUTypes=1;
 
 // 文件名前缀，分别用于合成，1-位移，2-ui_z，3-ui_r，4-ui_t。顺序不能更改
 static const char sacin_prefixes[4][2] = {"", "z", "r", ""};  // 输入文件
-static const char sacout_prefixes[4][2] = {"", "z", "r", "t"}; // 输出文件
+static char sacout_prefixes[4][2] = {"", "z", "r", "t"}; // 输出文件
 
 // 震源名称数组，以及方向因子数组
 static const int srcnum = 6;
@@ -96,6 +104,9 @@ static double srcCoef[3][6] = { // 三分量和chs数组对应
 static char tftype = GRT_SIG_CUSTOM;
 static char *tfparams = NULL;
 
+// 震源处的剪切模量
+static double src_mu = 0.0;
+
 
 
 
@@ -107,12 +118,12 @@ print_logo();
 printf("\n"
 "[grt.syn]\n\n"
 "    A Supplementary Tool of GRT to Compute Three-Component \n"
-"    Displacement with the Green's Functions from command `grt`.\n"
+"    Displacement with the outputs of command `grt`.\n"
 "    Three components are:\n"
 "       + Up (Z),\n"
 "       + Radial Outward (R),\n"
 "       + Transverse Clockwise (T),\n"
-"    and the units are cm.\n"
+"    and the units are cm. You can add -N to rotate ZRT to ZNE.\n"
 "\n"
 "    + Default outputs (without -I and -J) are impulse-like displacements.\n"
 "    + -D, -I and -J are applied in the frequency domain.\n"
@@ -124,7 +135,7 @@ printf("\n"
 "            [-T<Mxx>/<Mxy>/<Mxz>/<Myy>/<Myz>/<Mzz>]\n"
 "            [-F<fn>/<fe>/<fz>] \n"
 "            [-D<tftype>/<tfparams>] [-I<odr>] [-J<odr>]\n" 
-"            [-P<prefix>] [-e] [-s]\n"
+"            [-P<prefix>] [-N] [-e] [-s]\n"
 "\n"
 "\n\n"
 "Options:\n"
@@ -192,6 +203,8 @@ printf("\n"
 "\n"
 "    -J<odr>       Order of differentiation. Default not use\n"
 "\n"
+"    -N            Components of results will be Z, N, E.\n"
+"\n"
 "    -e            Compute the spatial derivatives, ui_z and ui_r,\n"
 "                  of displacement u. In filenames, prefix \"r\" means \n"
 "                  ui_r and \"z\" means ui_z. \n"
@@ -234,6 +247,19 @@ static void check_grn_exist(const char *name){
         fprintf(stderr, "[%s] " BOLD_RED "Error! %s not exists.\n" DEFAULT_RESTORE, command, buffer);
         exit(EXIT_FAILURE);
     }
+    // 检查文件的同时将src_mu计算出来
+    if(src_mu == 0.0){
+        SACHEAD hd;
+        read_SAC_HEAD(command, buffer, &hd);
+        double vb, rho;
+        vb = hd.user7;
+        rho = hd.user8;
+        if(vb <= 0.0 || rho <= 0.0){
+            fprintf(stderr, "[%s] " BOLD_RED "Error! read necessary header value from \"%s\" error.\n" DEFAULT_RESTORE, command, buffer);
+            exit(EXIT_FAILURE);
+        }
+        src_mu = vb*vb*rho*1e10;
+    }
     free(buffer);
 }
 
@@ -246,7 +272,7 @@ static void check_grn_exist(const char *name){
  */
 static void getopt_from_command(int argc, char **argv){
     int opt;
-    while ((opt = getopt(argc, argv, ":G:A:S:M:F:T:O:P:D:I:J:ehs")) != -1) {
+    while ((opt = getopt(argc, argv, ":G:A:S:M:F:T:O:P:D:I:J:Nehs")) != -1) {
         switch (opt) {
             // 格林函数路径
             case 'G':
@@ -281,6 +307,15 @@ static void getopt_from_command(int argc, char **argv){
             // 放大系数
             case 'S':
                 S_flag = 1;
+                {   
+                    // 检查是否存在字符u，若存在表明需要乘上震源处的剪切模量
+                    char *upos=NULL;
+                    if((upos=strchr(optarg, 'u')) != NULL){
+                        mult_src_mu = true;
+                        *upos = ' ';
+                    }
+                }
+                
                 if(0 == sscanf(optarg, "%lf", &M0)){
                     fprintf(stderr, "[%s] " BOLD_RED "Error in -S.\n" DEFAULT_RESTORE, command);
                     exit(EXIT_FAILURE);
@@ -409,6 +444,12 @@ static void getopt_from_command(int argc, char **argv){
                 calcUTypes = 4;
                 break;
 
+            // 是否旋转到ZNE
+            case 'N':
+                N_flag = 1;
+                rot2ZNE = true;
+                break;
+
             // 不打印在终端
             case 's':
                 s_flag = 1;
@@ -522,6 +563,8 @@ static void getopt_from_command(int argc, char **argv){
         s_prefix = (char*)malloc(sizeof(char)*100);
         strcpy(s_prefix, s_prefix_default);
     }
+
+    if(mult_src_mu)  M0 *= src_mu;
 }
 
 
@@ -557,6 +600,48 @@ static void save_tf_to_sac(char *buffer, float *tfarr, int tfnt, float dt){
 }
 
 
+/**
+ * 将不同ZRT分量的位移以及位移空间导数旋转到ZNE分量
+ * 
+ * @param    syn       位移
+ * @param    syn_upar  位移空间导数
+ * @param    nt        时间点数
+ * @param    azrad     方位角弧度
+ * @param    dist      震中距(km)
+ */
+static void data_zrt2zne(float *syn[3], float *syn_upar[3][3], int nt, double azrad, double dist){
+    double dblsyn[3];
+    double dblupar[3][3];
+
+    bool doupar = (syn_upar[0][0]!=NULL);
+
+    // 对每一个时间点
+    for(int n=0; n<nt; ++n){
+        // 复制数据，以调用函数
+        for(int i1=0; i1<3; ++i1){
+            dblsyn[i1] = syn[i1][n];
+            for(int i2=0; i2<3; ++i2){
+                if(doupar) dblupar[i1][i2] = syn_upar[i1][i2][n];
+            }
+        }
+
+        if(doupar) {
+            rot_zrt2zxy_upar(azrad, dblsyn, dblupar, dist*1e5);
+        } else {
+            rot_zxy2zrt_vec(-azrad, dblsyn);
+        }
+        
+
+        // 将结果写入原数组
+        for(int i1=0; i1<3; ++i1){
+            syn[i1][n] = dblsyn[i1];
+            for(int i2=0; i2<3; ++i2){
+                if(doupar)  syn_upar[i1][i2][n] = dblupar[i1][i2];
+            }
+        }
+    }
+}
+
 
 
 //====================================================================================
@@ -566,10 +651,18 @@ int main(int argc, char **argv){
     command = argv[0];
     getopt_from_command(argc, argv);
 
+    // 根据参数设置，选择分量名
+    const char *chs = (rot2ZNE)? znechs : zrtchs;
+    for(int i=1; i<4; ++i){
+        sacout_prefixes[i][0] = tolower(chs[i-1]);
+    }
 
     char *buffer = (char*)malloc(sizeof(char)*(strlen(s_grnpath)+strlen(s_output_dir)+strlen(s_prefix)+100));
-    float *arr, *arrout=NULL, *convarr=NULL;
-    SACHEAD hd;
+    float **ptarrout=NULL, *arrout=NULL;
+    float *arrsyn[3] = {NULL, NULL, NULL};
+    float *arrsyn_upar[3][3] = {NULL};
+    SACHEAD hdsyn[3], hdsyn_upar[3][3], hd0;
+    SACHEAD *pthd=NULL;
     float *tfarr = NULL;
     int tfnt = 0;
     char ch;
@@ -609,25 +702,39 @@ int main(int argc, char **argv){
         set_source_radiation(srcCoef, computeType, (ityp==3), M0, upar_scale, azrad, mchn);
 
         for(int c=0; c<3; ++c){
-            ch = chs[c];
+            ch = zrtchs[c];
+            
+            // 定义SACHEAD指针
+            if(ityp==0){
+                pthd = &hdsyn[c];
+                ptarrout = &arrsyn[c];
+            } else {
+                pthd = &hdsyn_upar[ityp-1][c];
+                ptarrout = &arrsyn_upar[ityp-1][c];
+            }
+            arrout = *ptarrout;
+
             for(int k=0; k<srcnum; ++k){
                 coef = srcCoef[c][k];
                 if(coef == 0.0) continue;
     
                 sprintf(buffer, "%s/%s%s%c.sac", s_grnpath, sacin_prefixes[ityp], srcName[k], ch);
-                arr = read_SAC(command, buffer, &hd, NULL);
+                float *arr = read_SAC(command, buffer, pthd, NULL);
+                hd0 = *pthd; // 备份一份
 
-                nt = hd.npts;
-                dt = hd.delta;
-                dist = hd.dist;
+                nt = pthd->npts;
+                dt = pthd->delta;
+                dist = pthd->dist;
                 // dw = PI2/(nt*dt);
+
+                // 第一次读入元信息，申请数组内存
                 if(arrout==NULL){
-                    arrout = (float*)calloc(nt, sizeof(float));
+                    arrout = *ptarrout = (float*)calloc(nt, sizeof(float));
                 }    
     
                 // 使用虚频率将序列压制，卷积才会稳定
                 // 读入虚频率 
-                wI = hd.user0;
+                wI = pthd->user0;
                 fac = 1.0;
                 dfac = expf(-wI*dt);
                 for(int n=0; n<nt; ++n){
@@ -637,6 +744,13 @@ int main(int argc, char **argv){
     
                 free(arr);
             } // ENDFOR 不同震源
+            
+            // 再次检查内存，例如爆炸源的T分量，不会进入上述for循环，导致arrout没有分配内存
+            if(arrout==NULL){
+                arrout = *ptarrout = (float*)calloc(nt, sizeof(float));
+                *pthd = hd0;
+                continue;  // 直接跳过，认为这一分量全为0
+            }
     
             if(D_flag == 1 && tfarr==NULL){
                 // 获得时间函数 
@@ -652,10 +766,11 @@ int main(int argc, char **argv){
                     fac *= dfac;
                 }
             } 
+
     
             // 时域循环卷积
             if(tfarr!=NULL){
-                convarr = (float*)calloc(nt, sizeof(float));
+                float *convarr = (float*)calloc(nt, sizeof(float));
                 oaconvolve(arrout, nt, tfarr, tfnt, convarr, nt, true);
                 for(int i=0; i<nt; ++i){
                     arrout[i] = convarr[i] * dt; // dt是连续卷积的系数
@@ -679,16 +794,24 @@ int main(int argc, char **argv){
                 differential(arrout, nt, dt);
             }
     
-            // 保存成SAC文件
-            save_to_sac(buffer, sacout_prefixes[ityp], ch, arrout, hd);
-    
-            // 置零
-            for(int n=0; n<nt; ++n){
-                arrout[n] = 0.0f;
-            }
         } // ENDFOR 三分量
     }
     
+
+    // 是否需要旋转
+    if(rot2ZNE){
+        data_zrt2zne(arrsyn, arrsyn_upar, nt, azrad, dist);
+    }
+
+    // 保存到SAC文件
+    for(int i1=0; i1<3; ++i1){
+        save_to_sac(buffer, sacout_prefixes[0], chs[i1], arrsyn[i1], hdsyn[i1]);
+        if(calc_upar){
+            for(int i2=0; i2<3; ++i2){
+                save_to_sac(buffer, sacout_prefixes[i1+1], chs[i2], arrsyn_upar[i1][i2], hdsyn_upar[i1][i2]);
+            }
+        }
+    }
 
 
     // 保存时间函数
@@ -701,10 +824,9 @@ int main(int argc, char **argv){
             tfarr[i] *= fac;
             fac *= dfac;
         }
-        save_tf_to_sac(buffer, tfarr, tfnt, hd.delta);
+        save_tf_to_sac(buffer, tfarr, tfnt, dt);
     }  
 
-    free(arrout);
     free(buffer);
 
 
