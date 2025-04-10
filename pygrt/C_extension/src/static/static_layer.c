@@ -45,6 +45,26 @@ void calc_static_R_EV(
     *R_EVL = (RONE + (RL));
 }
 
+void calc_static_uiz_R_EV(
+    MYCOMPLEX delta1, bool ircvup, MYREAL k, 
+    const MYCOMPLEX R[2][2], MYCOMPLEX RL, 
+    MYCOMPLEX R_EV[2][2], MYCOMPLEX *R_EVL)
+{
+    // 新推导公式
+    MYCOMPLEX kd2 = RTWO*k*delta1;
+    MYCOMPLEX D11[2][2] = {{k, -k-kd2}, {k, k-kd2}};
+    MYCOMPLEX D12[2][2] = {{-k, k+kd2}, {k, k-kd2}};
+    if(ircvup){// 震源更深
+        cmat2x2_mul(D12, R, R_EV);
+        cmat2x2_add(D11, R_EV, R_EV);
+        *R_EVL = (RONE - (RL))*k;
+    } else { // 接收点更深
+        cmat2x2_mul(D11, R, R_EV);
+        cmat2x2_add(D12, R_EV, R_EV);
+        *R_EVL = (RL - RONE)*k;
+    }
+}
+
 
 void calc_static_RT_2x2(
     MYCOMPLEX delta1, MYCOMPLEX mu1, 

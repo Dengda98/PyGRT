@@ -13,9 +13,15 @@ DEPS := $(OBJS:.o=.d)  # include main functions here
 
 OBJS := $(filter-out \
 	$(BUILD_DIR)/stgrt_main.o \
+	$(BUILD_DIR)/stgrt_syn.o \
+	$(BUILD_DIR)/stgrt_strain.o \
+	$(BUILD_DIR)/stgrt_stress.o \
 	, $(OBJS))
 
-PROGS := $(BIN_DIR)/stgrt
+PROGS := $(BIN_DIR)/stgrt \
+		 $(BIN_DIR)/stgrt.syn \
+		 $(BIN_DIR)/stgrt.strain \
+		 $(BIN_DIR)/stgrt.stress
 
 all: objs progs
 
@@ -35,7 +41,16 @@ $(BUILD_DIR)/%.o: %.c
 $(BIN_DIR):
 	@mkdir -p $(BIN_DIR)
 
-$(BIN_DIR)/stgrt: stgrt_main.c $(OBJS) $(COMMON_OBJS) $(TRAVT_OBJS)
+$(BIN_DIR)/stgrt: stgrt_main.c $(OBJS) $(COMMON_OBJS)
+	$(CC) -o $@ $^ $(CFLAGS)
+
+$(BIN_DIR)/stgrt.syn: stgrt_syn.c $(OBJS) $(COMMON_OBJS)
+	$(CC) -o $@ $^ $(CFLAGS)
+
+$(BIN_DIR)/stgrt.strain: stgrt_strain.c $(COMMON_OBJS) 
+	$(CC) -o $@ $^ $(CFLAGS)
+
+$(BIN_DIR)/stgrt.stress: stgrt_stress.c $(COMMON_OBJS) 
 	$(CC) -o $@ $^ $(CFLAGS)
 
 # ----------------------- Dependency generation -----------------------
