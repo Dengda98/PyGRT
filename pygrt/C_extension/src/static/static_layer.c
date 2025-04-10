@@ -86,7 +86,6 @@ void calc_static_RT_2x2(
     MYCOMPLEX A221 = mu2*delta2 + mu1;
     MYCOMPLEX B = mu1*delta1 - mu2*delta2;
     MYCOMPLEX del11 = delta1*delta1;
-    MYCOMPLEX del22 = delta2*delta2;
     MYREAL k2 = k*k;
     MYREAL thk2 = thk*thk;
 
