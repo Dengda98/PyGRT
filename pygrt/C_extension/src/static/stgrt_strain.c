@@ -89,7 +89,6 @@ int main(int argc, char **argv){
 
     // 从标准输入中读取合成的静态位移及其空间导数
     double x0, y0, syn[3], syn_upar[3][3];  // [3][3]表示u_{i,j}
-    double syn2d[6];
 
     // 建立一个指针数组，方便读取多列数据
     double *pt_grn[14];
@@ -112,12 +111,9 @@ int main(int argc, char **argv){
     // 输入列数
     int ncols = 0;
 
-    // 方位角
-    double azrad = 0.0;
-
     // 物性参数
-    double src_va=0.0, src_vb=0.0, src_rho=0.0, src_mu=0.0;
-    double rcv_va=0.0, rcv_vb=0.0, rcv_rho=0.0, rcv_mu=0.0;
+    double src_va=0.0, src_vb=0.0, src_rho=0.0;
+    double rcv_va=0.0, rcv_vb=0.0, rcv_rho=0.0;
 
     // 震中距
     double dist = 0.0;
@@ -177,9 +173,6 @@ int main(int argc, char **argv){
         }
         free(copyline);
 
-        // 计算方位角
-        azrad = atan2(y0, x0);
-
         // 计算震中距
         dist = sqrt(x0*x0 + y0*y0);
         if(dist < 1e-5)  dist=1e-5;
@@ -207,7 +200,6 @@ int main(int argc, char **argv){
 
         // 循环6个分量
         char c1, c2;
-        int num=0;
         for(int i1=0; i1<3; ++i1){
             c1 = chs[i1];
             for(int i2=i1; i2<3; ++i2){
