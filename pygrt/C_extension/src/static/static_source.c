@@ -13,11 +13,12 @@
 #include <stdio.h>
 #include <complex.h>
 
+#include "static/static_source.h"
 #include "common/const.h"
 
 
 void static_source_coef(
-    MYCOMPLEX delta, 
+    MYCOMPLEX delta, MYREAL k,
     MYCOMPLEX EXP[3][3][2], MYCOMPLEX VF[3][3][2], MYCOMPLEX HF[3][3][2], MYCOMPLEX DC[3][3][2])
 {
     // 先全部赋0 
@@ -34,6 +35,22 @@ void static_source_coef(
 
     MYCOMPLEX tmp;
     MYCOMPLEX A = RONE+delta;
+
+    if(EXP!=NULL){
+    EXP[0][0][0] = tmp = (delta-RONE)/A;         EXP[0][0][1] = tmp;    
+    }
+
+    if(VF!=NULL){
+    VF[0][0][0] = tmp = -RONE/(RTWO*A*k);        VF[0][0][1] = - tmp;   
+    VF[0][1][0] = tmp;                           VF[0][1][1] = - tmp;
+    }
+
+    if(HF!=NULL){
+    HF[1][0][0] = tmp = RONE/(RTWO*A*k);        HF[1][0][1] = tmp;   
+    HF[1][1][0] = - tmp;                        HF[1][1][1] = - tmp;
+    HF[1][2][0] = tmp = -RONE/k;                HF[1][2][1] = tmp;
+    }
+
 
     if(DC!=NULL){
     // m=0
