@@ -1146,6 +1146,10 @@ int main(int argc, char **argv) {
     hd.user3 = pymod->Rho[pymod->ircv];
     hd.user4 = RONE/pymod->Qa[pymod->ircv];
     hd.user5 = RONE/pymod->Qb[pymod->ircv];
+    // 写入震源点的Vp,Vs,rho
+    hd.user6 = pymod->Va[pymod->isrc];
+    hd.user7 = pymod->Vb[pymod->isrc];
+    hd.user8 = pymod->Rho[pymod->isrc];
 
     
     // 做反傅里叶变换，保存SAC文件
