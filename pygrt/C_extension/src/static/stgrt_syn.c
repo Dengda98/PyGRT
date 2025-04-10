@@ -343,7 +343,7 @@ int main(int argc, char **argv){
 
     // 物性参数
     double src_va=0.0, src_vb=0.0, src_rho=0.0, src_mu=0.0;
-    double rcv_va=0.0, rcv_vb=0.0, rcv_rho=0.0, rcv_mu=0.0;
+    double rcv_va=0.0, rcv_vb=0.0, rcv_rho=0.0;
 
     // 用于计算位移空间导数的比例系数
     double upar_scale=1.0; 
