@@ -203,8 +203,11 @@ class PyModel1D:
 
         return EXPgrn, VFgrn, HFgrn, DDgrn, DSgrn, SSgrn
 
+    def gen_gf_spectra(self, *args, **kwargs):
+        r"Bad function name, has already been removed. Use 'compute_grn' instead."
+        raise NameError("Function 'gen_gf_spectra()' has been removed, use 'compute_grn' instead.")
 
-    def gen_gf_spectra(
+    def compute_grn(
         self, 
         distarr:np.ndarray|list[float]|float, 
         nt:int, 
