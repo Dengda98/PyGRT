@@ -114,6 +114,9 @@ class PyModel1D:
         self.modarr = modarr
         self.c_pymod1d = c_pymod1d
 
+        self.isrc = isrc
+        self.ircv = ircv
+
         self.vmax = np.max(self.modarr[:, 1:3])
         self.vmin = np.min(self.modarr[:, 1:3])
         if self.vmin <= 0.0:
@@ -463,7 +466,15 @@ class PyModel1D:
         #=================================================================================
         #/////////////////////////////////////////////////////////////////////////////////
 
-    
+        # 震源和场点层的物性，写入sac头段变量
+        rcv_va = self.modarr[self.ircv, 1]
+        rcv_vb = self.modarr[self.ircv, 2]
+        rcv_rho = self.modarr[self.ircv, 3]
+        rcv_qainv = 1.0/self.modarr[self.ircv, 4]
+        rcv_qbinv = 1.0/self.modarr[self.ircv, 5]
+        src_va = self.modarr[self.isrc, 1]
+        src_vb = self.modarr[self.isrc, 2]
+        src_rho = self.modarr[self.isrc, 3]
         
         # 对应实际采集的地震信号，取向上为正(和理论推导使用的方向相反)
         dataLst = []
@@ -499,25 +510,36 @@ class PyModel1D:
                 if calc_upar:
                     if i<2:
                         if calc_EXP:
-                            stream.append(EXPgrn_uiz[ir][i].freq2time(delayT, travtP, travtS, sgn ))
+                            stream.append(EXPgrn_uiz[ir][i].freq2time(delayT, travtP, travtS, sgn*(-1) ))
                             stream.append(EXPgrn_uir[ir][i].freq2time(delayT, travtP, travtS, sgn ))
                         if calc_VF:
-                            stream.append(VFgrn_uiz [ir][i].freq2time(delayT, travtP, travtS, sgn ))
+                            stream.append(VFgrn_uiz [ir][i].freq2time(delayT, travtP, travtS, sgn*(-1) ))
                             stream.append(VFgrn_uir [ir][i].freq2time(delayT, travtP, travtS, sgn ))
                         if calc_DC:
-                            stream.append(DDgrn_uiz [ir][i].freq2time(delayT, travtP, travtS, sgn ))
+                            stream.append(DDgrn_uiz [ir][i].freq2time(delayT, travtP, travtS, sgn*(-1) ))
                             stream.append(DDgrn_uir [ir][i].freq2time(delayT, travtP, travtS, sgn ))
                     
                     if calc_HF:
-                        stream.append(HFgrn_uiz [ir][i].freq2time(delayT, travtP, travtS, sgn ))
+                        stream.append(HFgrn_uiz [ir][i].freq2time(delayT, travtP, travtS, sgn*(-1) ))
                         stream.append(HFgrn_uir [ir][i].freq2time(delayT, travtP, travtS, sgn ))
 
                     if calc_DC:
-                        stream.append(DSgrn_uiz [ir][i].freq2time(delayT, travtP, travtS, sgn ))
+                        stream.append(DSgrn_uiz [ir][i].freq2time(delayT, travtP, travtS, sgn*(-1) ))
                         stream.append(DSgrn_uir [ir][i].freq2time(delayT, travtP, travtS, sgn ))
-                        stream.append(SSgrn_uiz [ir][i].freq2time(delayT, travtP, travtS, sgn ))
+                        stream.append(SSgrn_uiz [ir][i].freq2time(delayT, travtP, travtS, sgn*(-1) ))
                         stream.append(SSgrn_uir [ir][i].freq2time(delayT, travtP, travtS, sgn ))
 
+            # 在sac头段变量部分
+            for tr in stream:
+                SAC = tr.stats.sac
+                SAC['user1'] = rcv_va
+                SAC['user2'] = rcv_vb
+                SAC['user3'] = rcv_rho
+                SAC['user4'] = rcv_qainv
+                SAC['user5'] = rcv_qbinv
+                SAC['user6'] = src_va
+                SAC['user7'] = src_vb
+                SAC['user8'] = src_rho
 
             dataLst.append(stream)
 
