@@ -13,6 +13,17 @@
 from ctypes import *
 from ctypes.wintypes import PFLOAT
 
+__all__ = [
+    "USE_FLOAT",
+    "NPCT_REAL_TYPE",
+    "NPCT_CMPLX_TYPE",
+
+    "REAL",
+    "PREAL",
+
+    "c_PyModel1D",
+    "c_GRN",
+]
 
 
 USE_FLOAT = False
