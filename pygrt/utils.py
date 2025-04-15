@@ -65,11 +65,12 @@ def _gen_syn_from_gf(st:Stream, calc_upar:bool, compute_type:str, M0:float, az:f
         :param    st:              计算好的时域格林函数, :class:`obspy.Stream` 类型
         :param    calc_upar:       是否计算位移u的空间导数
         :param    compute_type:    计算类型，应为以下之一: 
+                                    'COMPUTE_EXP'(爆炸源), 'COMPUTE_SF'(单力源),
+                                    'COMPUTE_DC'(双力偶源), 'COMPUTE_MT'(矩张量源)
         :param    M0:              标量地震矩, 单位dyne*cm
         :param    az:              方位角(度)
         :param    ZNE:             是否以ZNE分量输出?
-            'COMPUTE_EXP'(爆炸源), 'COMPUTE_SF'(单力源),
-            'COMPUTE_DC'(双力偶源), 'COMPUTE_MT'(矩张量源)
+            
     """
     chs = ['Z', 'R', 'T']
     sacin_prefixes = ["", "z", "r", ""]   # 输入通道名
@@ -137,10 +138,11 @@ def _gen_syn_from_static_gf(grn:dict, calc_upar:bool, compute_type:str, M0:float
         :param    grn:             计算好的静态格林函数, 字典类型
         :param    calc_upar:       是否计算位移u的空间导数
         :param    compute_type:    计算类型，应为以下之一: 
+                                    'COMPUTE_EXP'(爆炸源), 'COMPUTE_SF'(单力源),
+                                    'COMPUTE_DC'(双力偶源), 'COMPUTE_MT'(矩张量源)
         :param    M0:              标量地震矩, 单位dyne*cm
         :param    ZNE:             是否以ZNE分量输出?
-            'COMPUTE_EXP'(爆炸源), 'COMPUTE_SF'(单力源),
-            'COMPUTE_DC'(双力偶源), 'COMPUTE_MT'(矩张量源)
+            
     """
     chs = ['Z', 'R', 'T']
     sacin_prefixes = ["", "z", "r", ""]   # 输入通道名
@@ -225,7 +227,7 @@ def _gen_syn_from_static_gf(grn:dict, calc_upar:bool, compute_type:str, M0:float
     for ityp in range(calcUTypes):
         c1 = '' if ityp==0 else chs[ityp-1].lower()
         for c in range(3):
-            resDct[f"{c1}{s_compute_type}{chs[c]}"] = XX[ityp, c]
+            resDct[f"{c1}{s_compute_type}{chs[c]}"] = XX[ityp, c].copy()
                 
     return resDct
 
@@ -325,8 +327,8 @@ def _set_source_coef(
         :param    par_theta:       是否求对theta的偏导
         :param    coef:            比例系数
         :param    compute_type:    计算类型，应为以下之一: 
-            'COMPUTE_EXP'(爆炸源), 'COMPUTE_SF'(单力源),
-            'COMPUTE_DC'(双力偶源), 'COMPUTE_MT'(矩张量源)
+                                    'COMPUTE_EXP'(爆炸源), 'COMPUTE_SF'(单力源),
+                                    'COMPUTE_DC'(双力偶源), 'COMPUTE_MT'(矩张量源)
         :param    M0:              地震矩
         :param    azrad:           方位角(弧度)
 
