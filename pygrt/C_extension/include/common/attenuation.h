@@ -23,3 +23,8 @@
  * @return atncoef 系数因子，作用在 \f$ k=\omega / c(\omega)\f$的计算
  */
 MYCOMPLEX attenuation_law(MYREAL Qinv, MYCOMPLEX omega);
+
+/**
+ * attenuation_law函数在python中被调用的版本，长度2的数组分别表示复数的实部和虚部
+ */
+void py_attenuation_law(MYREAL Qinv, MYREAL omg[2], MYREAL atte[2]);

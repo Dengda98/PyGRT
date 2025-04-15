@@ -407,21 +407,24 @@ int main(int argc, char **argv){
         // 先输出列名
         if(!printHead){
             // 打印物性参数
-            fprintf(stdout, "# %15.5e %15.5e %15.5e\n", src_va, src_vb, src_rho);
-            fprintf(stdout, "# %15.5e %15.5e %15.5e\n", rcv_va, rcv_vb, rcv_rho);
-
-            fprintf(stdout, "#%14s%15s", "X(km)", "Y(km)");
+            fprintf(stdout, "# "GRT_STATIC_REAL_FMT" "GRT_STATIC_REAL_FMT" "GRT_STATIC_REAL_FMT"\n", src_va, src_vb, src_rho);
+            fprintf(stdout, "# "GRT_STATIC_REAL_FMT" "GRT_STATIC_REAL_FMT" "GRT_STATIC_REAL_FMT"\n", rcv_va, rcv_vb, rcv_rho);
+            
+            char XX[20];
+            sprintf(XX, GRT_STATIC_STRING_FMT, "X(km)"); XX[0]='#';
+            fprintf(stdout, "%s", XX);
+            fprintf(stdout, GRT_STATIC_STRING_FMT, "Y(km)");
             char s_channel[5];
             for(int i=0; i<3; ++i){
                 sprintf(s_channel, "%s%c", s_computeType, toupper(chs[i])); 
-                fprintf(stdout, "%15s", s_channel);
+                fprintf(stdout, GRT_STATIC_STRING_FMT, s_channel);
             }
 
             if(calc_upar){
                 for(int k=0; k<3; ++k){
                     for(int i=0; i<3; ++i){
                         sprintf(s_channel, "%c%s%c", tolower(chs[k]), s_computeType, toupper(chs[i])); 
-                        fprintf(stdout, "%15s", s_channel);
+                        fprintf(stdout, GRT_STATIC_STRING_FMT, s_channel);
                     }
                 }
             }
@@ -474,9 +477,6 @@ int main(int argc, char **argv){
                 }
             }
 
-            // if(ityp == 0)  fprintf(stdout, "%15.5e%15.5e", x0, y0);
-            // fprintf(stdout, "%15.5e%15.5e%15.5e", syn[0], syn[1], syn[2]);
-
             // 保存数据
             for(int i=0; i<3; ++i){
                 if(ityp == 0){
@@ -497,14 +497,14 @@ int main(int argc, char **argv){
         }
 
         // 输出数据
-        fprintf(stdout, "%15.5e%15.5e", x0, y0);
+        fprintf(stdout, GRT_STATIC_REAL_FMT GRT_STATIC_REAL_FMT, x0, y0);
         for(int i=0; i<3; ++i){
-            fprintf(stdout, "%15.5e", syn[i]);
+            fprintf(stdout, GRT_STATIC_REAL_FMT, syn[i]);
         }
         if(calc_upar){
             for(int i=0; i<3; ++i){
                 for(int k=0; k<3; ++k){
-                    fprintf(stdout, "%15.5e", syn_upar[i][k]);
+                    fprintf(stdout, GRT_STATIC_REAL_FMT, syn_upar[i][k]);
                 }
             }
         }
