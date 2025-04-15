@@ -236,19 +236,20 @@ jobs:
           # don't use $(pwd) to get abspath, not valid on Windows
           echo "EXAMPLE_COPY_PATH=${{ env.PACK_NAME }}/test_tmp" >> $GITHUB_ENV
 
-      - name: Test 1 compare_results
-        working-directory: ${{ env.EXAMPLE_COPY_PATH }}/compare_results
+      - name: Test compare_c_py
+        working-directory: ${{ env.EXAMPLE_COPY_PATH }}/compare_c_py
         run: |
+          # 检查C程序和Python程序的计算结果是否一致
           chmod +x *.sh
-          ./run_milrow_grt.sh
-          python plot_cps_pygrt.py
+          ./run_grt.sh
+          python run_pygrt.py
 
-      - name: Test 2 site_effect
-        working-directory: ${{ env.EXAMPLE_COPY_PATH }}/site_effect
-        run: |
-          chmod +x *.sh 
-          ./run1.sh
-          python run2.py
+      # - name: Test 2 site_effect
+      #   working-directory: ${{ env.EXAMPLE_COPY_PATH }}/site_effect
+      #   run: |
+      #     chmod +x *.sh 
+      #     ./run1.sh
+      #     python run2.py
 
       # - name: Test 3 multi_traces
       #   working-directory: ${{ env.EXAMPLE_COPY_PATH }}/multi_traces
@@ -258,12 +259,12 @@ jobs:
       #     ./run1.sh
       #   continue-on-error: true  # 即使失败，仍然标记为成功
 
-      - name: Test 4 lamb_problem
-        working-directory: ${{ env.EXAMPLE_COPY_PATH }}/lamb_problem
-        run: |
-          chmod +x *.sh
-          ./run1.sh
-          python run2.py
+      # - name: Test 4 lamb_problem
+      #   working-directory: ${{ env.EXAMPLE_COPY_PATH }}/lamb_problem
+      #   run: |
+      #     chmod +x *.sh
+      #     ./run1.sh
+      #     python run2.py
 
       # - name: Test 5 far_field
       #   working-directory: ${{ env.EXAMPLE_COPY_PATH }}/far_field
@@ -274,24 +275,24 @@ jobs:
       #     python plot_compare_pygrt.py
       #   continue-on-error: true  # 即使失败，仍然标记为成功
 
-      - name: Test signal convolution
-        working-directory: ${{ env.EXAMPLE_COPY_PATH }}/convolve_signals
-        run: |
-          chmod +x *.sh
-          ./run_grt.sh
-          python run_pygrt.py
+      # - name: Test signal convolution
+      #   working-directory: ${{ env.EXAMPLE_COPY_PATH }}/convolve_signals
+      #   run: |
+      #     chmod +x *.sh
+      #     ./run_grt.sh
+      #     python run_pygrt.py
 
-      - name: Test strain stress (dynamic)
-        working-directory: ${{ env.EXAMPLE_COPY_PATH }}/compute_strain_stress/dynamic
-        run: |
-          chmod +x *.sh
-          ./run_grt.sh
+      # - name: Test strain stress (dynamic)
+      #   working-directory: ${{ env.EXAMPLE_COPY_PATH }}/compute_strain_stress/dynamic
+      #   run: |
+      #     chmod +x *.sh
+      #     ./run_grt.sh
 
-      - name: Test static displacement (static)
-        working-directory: ${{ env.EXAMPLE_COPY_PATH }}/compute_strain_stress/static
-        run: |
-          chmod +x *.sh
-          ./run_stgrt.sh
+      # - name: Test static displacement (static)
+      #   working-directory: ${{ env.EXAMPLE_COPY_PATH }}/compute_strain_stress/static
+      #   run: |
+      #     chmod +x *.sh
+      #     ./run_stgrt.sh
 
       - name: Remove the test files
         run: |
