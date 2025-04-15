@@ -12,6 +12,6 @@ import os
 MAIN_DIR = os.path.dirname(__file__)
 
 if __name__=='__main__':
-    print("PyGRT installation directory: ", MAIN_DIR)
-    print("PyGRT executable file directory: ", os.path.join(MAIN_DIR, 'C_extension/bin'))
-    print("PyGRT library directory: ", os.path.join(MAIN_DIR, 'C_extension/lib'))
+    print("PyGRT installation directory: ", os.path.abspath(MAIN_DIR))
+    print("PyGRT executable file directory: ", os.path.join(os.path.abspath(MAIN_DIR), 'C_extension', 'bin'))
+    print("PyGRT library directory: ", os.path.join(os.path.abspath(MAIN_DIR), 'C_extension', 'lib'))

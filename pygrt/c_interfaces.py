@@ -9,12 +9,15 @@
 
 
 import os
-from ctypes import *
+from ctypes import \
+    c_double, c_float, c_int, c_bool, c_char_p, c_void_p,\
+    POINTER, cdll
 
 from .c_structures import * 
 
 FPOINTER = POINTER(c_float)
 IPOINTER = POINTER(c_int)
+DPOINTER = POINTER(c_double)
 
 
 c_PGRN = POINTER(c_GRN)
@@ -60,6 +63,19 @@ C_integ_grn_spec.argtypes = [
     c_char_p,
     c_int, 
     POINTER(c_int)
+]
+
+
+C_integ_static_grn = libgrt.integ_static_grn
+"""计算静态格林函数"""
+C_integ_static_grn.restype = None
+C_integ_static_grn.argtypes = [
+    POINTER(c_PyModel1D), c_int, PREAL, REAL, REAL, REAL, REAL, 
+    PREAL, PREAL, PREAL, PREAL, PREAL, PREAL, 
+    c_bool,
+    PREAL, PREAL, PREAL, PREAL, PREAL, PREAL, 
+    PREAL, PREAL, PREAL, PREAL, PREAL, PREAL, 
+    c_char_p
 ]
 
 
@@ -110,3 +126,32 @@ C_get_ricker_wave = libgrt.get_ricker_wave
 """雷克子波"""
 C_get_ricker_wave.restype = FPOINTER
 C_get_ricker_wave.argtypes = [c_float, c_float, IPOINTER]
+
+
+# -------------------------------------------------------------------
+#                      C函数定义的旋转函数
+# -------------------------------------------------------------------
+C_rot_zxy2zrt_vec = libgrt.rot_zxy2zrt_vec
+"""直角坐标zxy到柱坐标zrt的矢量旋转"""
+C_rot_zxy2zrt_vec.restype = None
+C_rot_zxy2zrt_vec.argtypes = [c_double, DPOINTER]  # double, double[3]
+
+C_rot_zxy2zrt_symtensor2odr = libgrt.rot_zxy2zrt_symtensor2odr
+"""直角坐标zxy到柱坐标zrt的二阶对称张量旋转"""
+C_rot_zxy2zrt_symtensor2odr.restype = None
+C_rot_zxy2zrt_symtensor2odr.argtypes = [c_double, DPOINTER]  # double, double[6]
+
+C_rot_zrt2zxy_upar = libgrt.rot_zrt2zxy_upar
+"""柱坐标下的位移偏导 ∂u(z,r,t)/∂(z,r,t) 转到 直角坐标 ∂u(z,x,y)/∂(z,x,y)"""
+C_rot_zrt2zxy_upar.restype = None
+C_rot_zrt2zxy_upar.argtypes = [c_double, DPOINTER, DPOINTER, c_double]  # double, double[3], double[3][3], double
+
+
+# -------------------------------------------------------------------
+#                      C函数定义的衰减函数
+# -------------------------------------------------------------------
+C_py_attenuation_law = libgrt.py_attenuation_law
+"""品质因子Q 对 波速的影响"""
+C_py_attenuation_law.restype = None
+C_py_attenuation_law.argtypes = [REAL, DPOINTER, DPOINTER]  # double, double[2], double[2]
+
