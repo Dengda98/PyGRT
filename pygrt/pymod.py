@@ -15,12 +15,12 @@ import numpy.ctypeslib as npct
 from obspy import read, Stream, Trace, UTCDateTime
 from scipy.fft import irfft, ifft
 from obspy.core import AttribDict
-from typing import List, Dict
+from typing import List, Dict, Union
 
 from time import time
 from copy import deepcopy
 
-from ctypes import *
+from ctypes import Array, pointer
 from ctypes import _Pointer
 from .c_interfaces import *
 from .c_structures import *
@@ -212,10 +212,10 @@ class PyModel1D:
 
     def compute_grn(
         self, 
-        distarr:np.ndarray|list[float]|float, 
+        distarr:Union[np.ndarray,List[float],float], 
         nt:int, 
         dt:float, 
-        freqband:np.ndarray|list[float]=[-1,-1],
+        freqband:Union[np.ndarray,List[float]]=[-1,-1],
         zeta:float=0.8, 
         vmin_ref:float=0.0,
         keps:float=-1.0,  
@@ -227,8 +227,8 @@ class PyModel1D:
         delayV0:float=0.0,
         calc_upar:bool=False,
         gf_source=['EXP', 'VF', 'HF', 'DC'],
-        statsfile:str|None=None, 
-        statsidxs:np.ndarray|list|None=None, 
+        statsfile:Union[str,None]=None, 
+        statsidxs:Union[np.ndarray,List[int],None]=None, 
         print_runtime:bool=True):
         
         r'''
@@ -550,14 +550,14 @@ class PyModel1D:
 
     def compute_static_grn(
         self,
-        xarr:np.ndarray|list[float]|float, 
-        yarr:np.ndarray|list[float]|float, 
+        xarr:Union[np.ndarray,List[float],float], 
+        yarr:Union[np.ndarray,List[float],float], 
         vmin_ref:float=0.0,
         keps:float=-1.0,  
         k0:float=5.0, 
         Length:float=15.0, 
         calc_upar:bool=False,
-        statsfile:str|None=None):
+        statsfile:Union[str,None]=None):
 
         r"""
             调用C库计算静态格林函数，以字典的形式返回

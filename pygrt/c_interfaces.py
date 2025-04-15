@@ -9,7 +9,9 @@
 
 
 import os
-from ctypes import *
+from ctypes import \
+    c_double, c_float, c_int, c_bool, c_char_p, c_void_p,\
+    POINTER, cdll
 
 from .c_structures import * 
 
