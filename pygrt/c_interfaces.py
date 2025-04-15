@@ -64,6 +64,19 @@ C_integ_grn_spec.argtypes = [
 ]
 
 
+C_integ_static_grn = libgrt.integ_static_grn
+"""计算静态格林函数"""
+C_integ_static_grn.restype = None
+C_integ_static_grn.argtypes = [
+    POINTER(c_PyModel1D), c_int, PREAL, REAL, REAL, REAL, REAL, 
+    PREAL, PREAL, PREAL, PREAL, PREAL, PREAL, 
+    c_bool,
+    PREAL, PREAL, PREAL, PREAL, PREAL, PREAL, 
+    PREAL, PREAL, PREAL, PREAL, PREAL, PREAL, 
+    c_char_p
+]
+
+
 C_set_num_threads = libgrt.set_num_threads
 """设置多线程数"""
 C_set_num_threads.restype = None 
