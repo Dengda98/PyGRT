@@ -191,16 +191,18 @@ int main(int argc, char **argv){
 
         // 先输出列名
         if(!printHead){
-            // 打印物性参数
-            fprintf(stdout, "# %15.5e %15.5e %15.5e\n", src_va, src_vb, src_rho);
-            fprintf(stdout, "# %15.5e %15.5e %15.5e\n", rcv_va, rcv_vb, rcv_rho);
+            fprintf(stdout, "# "GRT_STATIC_REAL_FMT" "GRT_STATIC_REAL_FMT" "GRT_STATIC_REAL_FMT"\n", src_va, src_vb, src_rho);
+            fprintf(stdout, "# "GRT_STATIC_REAL_FMT" "GRT_STATIC_REAL_FMT" "GRT_STATIC_REAL_FMT"\n", rcv_va, rcv_vb, rcv_rho);
             
-            fprintf(stdout, "#%14s%15s", "X(km)", "Y(km)");
+            char XX[20];
+            sprintf(XX, GRT_STATIC_STRING_FMT, "X(km)"); XX[0]='#';
+            fprintf(stdout, "%s", XX);
+            fprintf(stdout, GRT_STATIC_STRING_FMT, "Y(km)");
             char s_channel[15];
             for(int k=0; k<3; ++k){
                 for(int i=k; i<3; ++i){
                     sprintf(s_channel, "%c%c", toupper(chs[k]), toupper(chs[i])); 
-                    fprintf(stdout, "%15s", s_channel);
+                    fprintf(stdout, GRT_STATIC_STRING_FMT, s_channel);
                 }
             }
             fprintf(stdout, "\n");
@@ -208,7 +210,7 @@ int main(int argc, char **argv){
         }
 
         // 打印xy位置
-        fprintf(stdout, "%15.5e%15.5e", x0, y0);
+        fprintf(stdout, GRT_STATIC_REAL_FMT GRT_STATIC_REAL_FMT, x0, y0);
 
         // 循环6个分量
         char c1, c2;
@@ -232,7 +234,7 @@ int main(int argc, char **argv){
                 }
 
                 // 打印结果
-                fprintf(stdout, "%15.5e", val);
+                fprintf(stdout, GRT_STATIC_REAL_FMT, val);
             }
         }
 

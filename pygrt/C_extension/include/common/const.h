@@ -121,3 +121,6 @@ typedef int MYINT;  ///< 整数
 
 #define MIN_DEPTH_GAP_SRC_RCV  1.0  ///< 震源和台站的最小深度差（不做绝对限制，仅用于参考波数积分上限）
 #define GCC_ALWAYS_INLINE __attribute__((always_inline))  ///< gcc编译器不改动内联函数
+
+#define GRT_STATIC_STRING_FMT "%18s"  ///< stgrt系列程序字符串输出格式
+#define GRT_STATIC_REAL_FMT "%18.8e"  ///< stgrt系列程序浮点数输出格式
