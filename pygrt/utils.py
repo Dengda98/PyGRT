@@ -23,8 +23,7 @@ from scipy.signal import oaconvolve
 from scipy.fft import rfft, irfft
 import math 
 import os
-from ctypes import *
-from typing import List
+from typing import List, Union
 from copy import deepcopy
 
 from numpy.typing import ArrayLike
@@ -433,7 +432,7 @@ def _set_source_coef(
     return src_coef
 
 
-def gen_syn_from_gf_DC(st:Stream|dict, M0:float, strike:float, dip:float, rake:float, az:float=-999, ZNE=False, calc_upar:bool=False):
+def gen_syn_from_gf_DC(st:Union[Stream,dict], M0:float, strike:float, dip:float, rake:float, az:float=-999, ZNE=False, calc_upar:bool=False):
     '''
         双力偶源，角度单位均为度   
 
@@ -459,7 +458,7 @@ def gen_syn_from_gf_DC(st:Stream|dict, M0:float, strike:float, dip:float, rake:f
         raise NotImplementedError
 
 
-def gen_syn_from_gf_SF(st:Stream|dict, S:float, fN:float, fE:float, fZ:float, az:float=-999, ZNE=False, calc_upar:bool=False):
+def gen_syn_from_gf_SF(st:Union[Stream,dict], S:float, fN:float, fE:float, fZ:float, az:float=-999, ZNE=False, calc_upar:bool=False):
     '''
         单力源，力分量单位均为dyne   
 
@@ -485,7 +484,7 @@ def gen_syn_from_gf_SF(st:Stream|dict, S:float, fN:float, fE:float, fZ:float, az
         raise NotImplementedError
 
 
-def gen_syn_from_gf_EXP(st:Stream|dict, M0:float, az:float=-999, ZNE=False, calc_upar:bool=False):
+def gen_syn_from_gf_EXP(st:Union[Stream,dict], M0:float, az:float=-999, ZNE=False, calc_upar:bool=False):
     '''
         爆炸源
 
@@ -508,7 +507,7 @@ def gen_syn_from_gf_EXP(st:Stream|dict, M0:float, az:float=-999, ZNE=False, calc
         raise NotImplementedError
     
 
-def gen_syn_from_gf_MT(st:Stream|dict, M0:float, MT:ArrayLike, az:float=-999, ZNE=False, calc_upar:bool=False):
+def gen_syn_from_gf_MT(st:Union[Stream,dict], M0:float, MT:ArrayLike, az:float=-999, ZNE=False, calc_upar:bool=False):
     ''' 
         矩张量源，单位为dyne*cm
 
@@ -546,7 +545,7 @@ def _compute_strain(st_syn:Stream):
         :param     st_syn:      synthetic spatial derivatives.
 
         :return:
-            - **stream** -  dynamic strain (unit: dyne/cm^2 = 0.1 Pa), in :class:`obspy.Stream` class.
+            - **stream** -  dynamic strain, in :class:`obspy.Stream` class.
     """
 
     midname = st_syn[0].stats.channel[-3:-1]
@@ -696,7 +695,16 @@ def _compute_static_strain(syn:dict):
     return resDct
 
 
-def compute_strain(st:Stream|dict):
+def compute_strain(st:Union[Stream,dict]):
+    r"""
+        Compute dynamic/static strain from synthetic spatial derivatives.
+
+        :param     st:      synthetic spatial derivatives
+                            :class:`obspy.Stream` class for dynamic case, dict class for static case.
+
+        :return:
+            - **stres** -  dynamic/static strain, in :class:`obspy.Stream` class or dict class.
+    """
     if isinstance(st, Stream):
         return _compute_strain(st)
     elif isinstance(st, dict):
@@ -712,7 +720,7 @@ def _compute_stress(st_syn:Stream):
         :param     st_syn:      synthetic spatial derivatives.
 
         :return:
-            - **stream** -  dynamic stress, in :class:`obspy.Stream` class.
+            - **stream** -  dynamic stress (unit: dyne/cm^2 = 0.1 Pa), in :class:`obspy.Stream` class.
     """
 
     # 由于有Q值的存在，lambda和mu变成了复数，需在频域进行
@@ -947,7 +955,16 @@ def _compute_static_stress(syn:dict):
     return resDct
 
 
-def compute_stress(st:Stream|dict):
+def compute_stress(st:Union[Stream,dict]):
+    r"""
+        Compute dynamic/static stress from synthetic spatial derivatives.
+
+        :param     st:      synthetic spatial derivatives
+                            :class:`obspy.Stream` class for dynamic case, dict class for static case.
+
+        :return:
+            - **stres** -  dynamic/static stress (unit: dyne/cm^2 = 0.1 Pa), in :class:`obspy.Stream` class or dict class.
+    """
     if isinstance(st, Stream):
         return _compute_stress(st)
     elif isinstance(st, dict):

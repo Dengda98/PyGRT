@@ -11,6 +11,7 @@
 
 import numpy as np  
 import numpy.ctypeslib as npct
+from ctypes import byref, cast
 
 from .c_interfaces import *
 
