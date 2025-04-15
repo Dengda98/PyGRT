@@ -123,7 +123,6 @@ for ZNE in [False, True]:
     ststress = pygrt.utils.compute_stress(st)
     AVGRERR.append(compare3(ststrain, "syn_exp/cout.strain.", ZNE=ZNE, dim2=True))
     AVGRERR.append(compare3(ststress, "syn_exp/cout.stress.", ZNE=ZNE, dim2=True))
-    print(st, ststrain, ststress)
     
 
     st = pygrt.utils.gen_syn_from_gf_SF(st_grn, S, fn, fe, fz, az, ZNE=ZNE, calc_upar=True)
@@ -134,7 +133,6 @@ for ZNE in [False, True]:
     ststress = pygrt.utils.compute_stress(st)
     AVGRERR.append(compare3(ststrain, "syn_sf/cout.strain.", ZNE=ZNE, dim2=True))
     AVGRERR.append(compare3(ststress, "syn_sf/cout.stress.", ZNE=ZNE, dim2=True))
-    print(st, ststrain, ststress)
 
     st = pygrt.utils.gen_syn_from_gf_DC(st_grn, S, stk, dip, rak, az, ZNE=ZNE, calc_upar=True)
     sigs = pygrt.sigs.gen_parabola_wave(0.6, dt)
@@ -144,7 +142,6 @@ for ZNE in [False, True]:
     ststress = pygrt.utils.compute_stress(st)
     AVGRERR.append(compare3(ststrain, "syn_dc/cout.strain.", ZNE=ZNE, dim2=True))
     AVGRERR.append(compare3(ststress, "syn_dc/cout.stress.", ZNE=ZNE, dim2=True))
-    print(st, ststrain, ststress)
 
     st = pygrt.utils.gen_syn_from_gf_MT(st_grn, S, [M11,M12,M13,M22,M23,M33], az, ZNE=ZNE, calc_upar=True)
     sigs = pygrt.sigs.gen_ricker_wave(3, dt)
@@ -154,7 +151,6 @@ for ZNE in [False, True]:
     ststress = pygrt.utils.compute_stress(st)
     AVGRERR.append(compare3(ststrain, "syn_mt/cout.strain.", ZNE=ZNE, dim2=True))
     AVGRERR.append(compare3(ststress, "syn_mt/cout.stress.", ZNE=ZNE, dim2=True))
-    print(st, ststrain, ststress)
 
 
 #-------------------------- Static -----------------------------------------
@@ -170,6 +166,7 @@ for ZNE in [False, True]:
     ststress = pygrt.utils.compute_stress(static_syn)
     AVGRERR.append(static_compare3(ststrain, f"static/strain_exp{suffix}", ZNE=ZNE, dim2=True))
     AVGRERR.append(static_compare3(ststress, f"static/stress_exp{suffix}", ZNE=ZNE, dim2=True))
+    print(static_syn, ststrain, ststress)
 
     static_syn = pygrt.utils.gen_syn_from_gf_SF(static_grn, S, fn, fe, fz, ZNE=ZNE, calc_upar=True)
     AVGRERR.append(static_compare3(static_syn, f"static/stsyn_sf{suffix}", ZNE=ZNE))
@@ -177,6 +174,7 @@ for ZNE in [False, True]:
     ststress = pygrt.utils.compute_stress(static_syn)
     AVGRERR.append(static_compare3(ststrain, f"static/strain_sf{suffix}", ZNE=ZNE, dim2=True))
     AVGRERR.append(static_compare3(ststress, f"static/stress_sf{suffix}", ZNE=ZNE, dim2=True))
+    print(static_syn, ststrain, ststress)
 
     static_syn = pygrt.utils.gen_syn_from_gf_DC(static_grn, S, stk, dip, rak, ZNE=ZNE, calc_upar=True)
     AVGRERR.append(static_compare3(static_syn, f"static/stsyn_dc{suffix}", ZNE=ZNE))
@@ -184,6 +182,7 @@ for ZNE in [False, True]:
     ststress = pygrt.utils.compute_stress(static_syn)
     AVGRERR.append(static_compare3(ststrain, f"static/strain_dc{suffix}", ZNE=ZNE, dim2=True))
     AVGRERR.append(static_compare3(ststress, f"static/stress_dc{suffix}", ZNE=ZNE, dim2=True))
+    print(static_syn, ststrain, ststress)
 
     static_syn = pygrt.utils.gen_syn_from_gf_MT(static_grn, S, [M11,M12,M13,M22,M23,M33], ZNE=ZNE, calc_upar=True)
     AVGRERR.append(static_compare3(static_syn, f"static/stsyn_mt{suffix}", ZNE=ZNE))
@@ -191,6 +190,7 @@ for ZNE in [False, True]:
     ststress = pygrt.utils.compute_stress(static_syn)
     AVGRERR.append(static_compare3(ststrain, f"static/strain_mt{suffix}", ZNE=ZNE, dim2=True))
     AVGRERR.append(static_compare3(ststress, f"static/stress_mt{suffix}", ZNE=ZNE, dim2=True))
+    print(static_syn, ststrain, ststress)
 
 
 AVGRERR = np.array(AVGRERR)
