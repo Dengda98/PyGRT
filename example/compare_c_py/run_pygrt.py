@@ -21,7 +21,7 @@ def compare3(st_py:Stream, c_prefix:str, ZNE:bool=False, dim2:bool=False):
     for tr_c in st_c:
         tr_py = st_py.select(channel=tr_c.stats.channel)[0]
         rerr = np.mean(np.abs(tr_c.data - tr_py.data) / np.abs(tr_c.data))
-        if np.isnan(rerr):
+        if np.isnan(rerr) or np.isinf(rerr):
             rerr = 0.0
         error += rerr
         nerr += 1 
@@ -65,8 +65,8 @@ def static_compare3(resDct:dict, c_prefix:str, ZNE:bool=False, dim2:bool=False):
     for k in c_resDct.keys():
         val1 = resDct[k]
         val2 = c_resDct[k]
-        rerr = np.mean(np.abs(val1 - val2) / np.abs(val1))
-        if np.isnan(rerr):
+        rerr = np.mean(np.abs(val1 - val2) / np.abs(val2))
+        if np.isnan(rerr) or np.isinf(rerr):
             rerr = 0.0
         error += rerr
         nerr += 1 
@@ -155,7 +155,7 @@ for ZNE in [False, True]:
 
 #-------------------------- Static -----------------------------------------
 xarr = np.linspace(-3, 3, 11)
-yarr = np.linspace(-3, 3, 11)
+yarr = np.linspace(-4, 4, 16)
 static_grn = pymod.compute_static_grn(xarr, yarr, calc_upar=True)
 
 for ZNE in [False, True]:

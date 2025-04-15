@@ -56,9 +56,9 @@ x1=-3
 x2=3
 nx=11
 
-y1=-3
-y2=3
-ny=11
+y1=-4
+y2=4
+ny=16
 
 mkdir -p static
 cd static
