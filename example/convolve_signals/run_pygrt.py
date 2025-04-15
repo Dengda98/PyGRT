@@ -15,7 +15,7 @@ modarr = np.loadtxt(modname)
 pymod = pygrt.PyModel1D(modarr, depsrc, deprcv)
 
 # compute green functions
-st_grn = pymod.gen_gf_spectra(dist, nt, dt)[0]
+st_grn = pymod.compute_grn(dist, nt, dt)[0]
 
 # synthetic
 S=1e24
