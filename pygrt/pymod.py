@@ -233,7 +233,7 @@ class PyModel1D:
         
         r'''
             
-            调用C库计算格林函数的主函数，以列表的形式返回，其中每个元素为对应震中距的格林函数频谱字典。
+            调用C库计算格林函数的主函数，以列表的形式返回，其中每个元素为对应震中距的格林函数 :class:`obspy.Stream` 类型。
             
 
             :param    distarr:       多个震中距(km) 的数组, 或单个震中距的浮点数
@@ -244,14 +244,14 @@ class PyModel1D:
                                      使用离散波数积分时为了避开附加源以及奇点的影响， :ref:`(Bouchon, 1981) <bouchon_1981>`  在频率上添加微小虚部，
                                      更多测试见 :ref:`(张海明, 2021) <zhang_book_2021>`
             :param    vmin_ref:      最小参考速度，默认vmin=max(minimum velocity, 0.1)，用于定义波数积分上限，小于0则在达到积分上限后使用峰谷平均法
-                                    （默认当震源和场点深度差<=0.5km时自动使用峰谷平均法）
+                                    （默认当震源和场点深度差<=1km时自动使用峰谷平均法）
             :param    keps:          波数k积分收敛条件，见 :ref:`(Yao and Harkrider, 1983) <yao&harkrider_1983>`  :ref:`(初稿) <yao_init_manuscripts>`，
                                      为负数代表不提前判断收敛，按照波数积分上限进行积分
             :param    ampk:          影响波数k积分上限的系数，见下方
             :param    iwk0:          k0是否取随频率变化的线性关系，即 :math:` k_{0} = k_{0} * f/f_{max}` 
             :param    k0:            波数k积分的上限 :math:`\tilde{k_{max}}=\sqrt{(k_{0}*\pi/hs)^2 + (ampk*w/vmin_{ref})^2} ` , 波数k积分循环必须退出, hs=max(震源和台站深度差,1.0)
             :param    Length:        定义波数k积分的间隔 `dk=2\pi / (L*rmax)`, 选取要求见 :ref:`(Bouchon, 1981) <bouchon_1981>` 
-                                     :ref:`(张海明, 2021) <zhang_book_2021>`，默认自动选择
+                                     :ref:`(张海明, 2021) <zhang_book_2021>`，默认自动选择；负数表示使用Filon积分
             :param    calc_upar:     是否计算位移u的空间导数
             :param    gf_source:     待计算的震源类型
             :param    statsfile:     波数k积分（包括Filon积分和峰谷平均法）的过程记录文件，常用于debug或者观察积分过程中 :math:`F(k,\omega)` 和  :math:`F(k,\omega)J_m(kr)k` 的变化    
@@ -259,7 +259,7 @@ class PyModel1D:
             :param    print_runtime: 是否打印运行时间
 
             :return:
-                - **gfspecList** -   列表，每个元素以字典的形式存有每个震中距的格林函数频谱(:class:`pygrt.pygrn.PyGreenFunction` ) 实例)
+                - **dataLst** -   列表，每个元素为 :class:`obspy.Stream` 类型 )
                 
         '''
 
@@ -331,7 +331,7 @@ class PyModel1D:
         # 参考最小速度
         if vmin_ref == 0.0:
             vmin_ref = max(self.vmin, 0.1)
-            if abs(depsrc - deprcv) <= 0.5:
+            if abs(depsrc - deprcv) <= 1.0:
                 vmin_ref = - abs(vmin_ref)  # 自动使用PTAM
 
 
@@ -547,3 +547,164 @@ class PyModel1D:
         return dataLst  
 
     
+
+    def compute_static_grn(
+        self,
+        xarr:np.ndarray|list[float]|float, 
+        yarr:np.ndarray|list[float]|float, 
+        vmin_ref:float=0.0,
+        keps:float=-1.0,  
+        k0:float=5.0, 
+        Length:float=15.0, 
+        calc_upar:bool=False,
+        statsfile:str|None=None):
+
+        r"""
+            调用C库计算静态格林函数，以字典的形式返回
+
+            :param       xarr:          北向坐标数组，或单个浮点数
+            :param       yarr:          东向坐标数组，或单个浮点数
+            :param       vmin_ref:      最小参考速度（具体数值不使用），小于0则在达到积分上限后使用峰谷平均法
+                                       （默认当震源和场点深度差<=0.5km时自动使用峰谷平均法）
+            :param       keps:          波数k积分收敛条件，见 :ref:`(Yao and Harkrider, 1983) <yao&harkrider_1983>`  :ref:`(初稿) <yao_init_manuscripts>`，
+                                        为负数代表不提前判断收敛，按照波数积分上限进行积分
+            :param       k0:            波数k积分的上限 :math:`\tilde{k_{max}}=(k_{0}*\pi/hs)^2` , 波数k积分循环必须退出, hs=max(震源和台站深度差,1.0)
+            :param       Length:        定义波数k积分的间隔 `dk=2\pi / (L*rmax)`, 默认15；负数表示使用Filon积分
+            :param       calc_upar:     是否计算位移u的空间导数
+            :param       statsfile:     波数k积分（包括Filon积分和峰谷平均法）的过程记录文件，常用于debug或者观察积分过程中 :math:`F(k,\omega)` 和  :math:`F(k,\omega)J_m(kr)k` 的变化    
+
+            :return:
+                - **dataDct* -   字典形式的格林函数
+        """
+
+        depsrc = self.depsrc
+        deprcv = self.deprcv
+
+        if isinstance(xarr, list):
+            xarr = np.array(xarr)
+        elif isinstance(xarr, float) or isinstance(xarr, int):
+            xarr = np.array([xarr*1.0]) 
+
+        if isinstance(yarr, list):
+            yarr = np.array(yarr)
+        elif isinstance(yarr, float) or isinstance(yarr, int):
+            yarr = np.array([yarr*1.0]) 
+
+        nx = len(xarr)
+        ny = len(yarr)
+        nr = nx*ny
+        rs = np.zeros((nr,), dtype=NPCT_REAL_TYPE)
+        for iy in range(ny):
+            for ix in range(nx):
+                rs[ix + iy*nx] = max(np.sqrt(xarr[ix]**2 + yarr[iy]**2), 1e-5)
+        c_rs = npct.as_ctypes(rs)
+
+        # 参考最小速度
+        if vmin_ref == 0.0:
+            vmin_ref = max(self.vmin, 0.1)
+            if abs(depsrc - deprcv) <= 1.0:
+                vmin_ref = - abs(vmin_ref)  # 自动使用PTAM
+        
+        # 设置波数积分间隔
+        if Length == 0.0:
+            Length = 15.0
+
+        # 积分状态文件
+        c_statsfile = None 
+        if statsfile is not None:
+            c_statsfile = c_char_p(statsfile.encode('utf-8'))
+
+        # 初始化格林函数
+        EXPgrn = np.zeros((nr,2), dtype=NPCT_REAL_TYPE); C_EXPgrn = npct.as_ctypes(EXPgrn.reshape(-1))
+        VFgrn = np.zeros((nr,2), dtype=NPCT_REAL_TYPE); C_VFgrn = npct.as_ctypes(VFgrn.reshape(-1))
+        HFgrn = np.zeros((nr,3), dtype=NPCT_REAL_TYPE); C_HFgrn = npct.as_ctypes(HFgrn.reshape(-1))
+        DDgrn = np.zeros((nr,2), dtype=NPCT_REAL_TYPE); C_DDgrn = npct.as_ctypes(DDgrn.reshape(-1))
+        DSgrn = np.zeros((nr,3), dtype=NPCT_REAL_TYPE); C_DSgrn = npct.as_ctypes(DSgrn.reshape(-1))
+        SSgrn = np.zeros((nr,3), dtype=NPCT_REAL_TYPE); C_SSgrn = npct.as_ctypes(SSgrn.reshape(-1))
+
+        # 位移u的空间导数
+        EXPgrn_uiz = np.zeros((nr,2), dtype=NPCT_REAL_TYPE); C_EXPgrn_uiz = npct.as_ctypes(EXPgrn_uiz.reshape(-1))
+        VFgrn_uiz = np.zeros((nr,2), dtype=NPCT_REAL_TYPE); C_VFgrn_uiz = npct.as_ctypes(VFgrn_uiz.reshape(-1))
+        HFgrn_uiz = np.zeros((nr,3), dtype=NPCT_REAL_TYPE); C_HFgrn_uiz = npct.as_ctypes(HFgrn_uiz.reshape(-1))
+        DDgrn_uiz = np.zeros((nr,2), dtype=NPCT_REAL_TYPE); C_DDgrn_uiz = npct.as_ctypes(DDgrn_uiz.reshape(-1))
+        DSgrn_uiz = np.zeros((nr,3), dtype=NPCT_REAL_TYPE); C_DSgrn_uiz = npct.as_ctypes(DSgrn_uiz.reshape(-1))
+        SSgrn_uiz = np.zeros((nr,3), dtype=NPCT_REAL_TYPE); C_SSgrn_uiz = npct.as_ctypes(SSgrn_uiz.reshape(-1))
+
+        EXPgrn_uir = np.zeros((nr,2), dtype=NPCT_REAL_TYPE); C_EXPgrn_uir = npct.as_ctypes(EXPgrn_uir.reshape(-1))
+        VFgrn_uir = np.zeros((nr,2), dtype=NPCT_REAL_TYPE); C_VFgrn_uir = npct.as_ctypes(VFgrn_uir.reshape(-1))
+        HFgrn_uir = np.zeros((nr,3), dtype=NPCT_REAL_TYPE); C_HFgrn_uir = npct.as_ctypes(HFgrn_uir.reshape(-1))
+        DDgrn_uir = np.zeros((nr,2), dtype=NPCT_REAL_TYPE); C_DDgrn_uir = npct.as_ctypes(DDgrn_uir.reshape(-1))
+        DSgrn_uir = np.zeros((nr,3), dtype=NPCT_REAL_TYPE); C_DSgrn_uir = npct.as_ctypes(DSgrn_uir.reshape(-1))
+        SSgrn_uir = np.zeros((nr,3), dtype=NPCT_REAL_TYPE); C_SSgrn_uir = npct.as_ctypes(SSgrn_uir.reshape(-1))
+        
+        if not calc_upar:
+            C_EXPgrn_uiz = C_VFgrn_uiz = C_HFgrn_uiz = C_DDgrn_uiz = C_DSgrn_uiz = C_SSgrn_uiz = None
+            C_EXPgrn_uir = C_VFgrn_uir = C_HFgrn_uir = C_DDgrn_uir = C_DSgrn_uir = C_SSgrn_uir = None
+
+
+        # 运行C库函数
+        #/////////////////////////////////////////////////////////////////////////////////
+        # 计算得到的格林函数的单位：
+        #     单力源 HF[ZRT],VF[ZR]                  1e-15 cm/dyne
+        #     爆炸源 EX[ZR]                          1e-20 cm/(dyne*cm)
+        #     剪切源 DD[ZR],DS[ZRT],SS[ZRT]          1e-20 cm/(dyne*cm)
+        #=================================================================================
+        C_integ_static_grn(
+            self.c_pymod1d, nr, c_rs, vmin_ref, keps, k0, Length,
+            C_EXPgrn, C_VFgrn, C_HFgrn, C_DDgrn, C_DSgrn, C_SSgrn, 
+            calc_upar, 
+            C_EXPgrn_uiz, C_VFgrn_uiz, C_HFgrn_uiz, C_DDgrn_uiz, C_DSgrn_uiz, C_SSgrn_uiz, 
+            C_EXPgrn_uir, C_VFgrn_uir, C_HFgrn_uir, C_DDgrn_uir, C_DSgrn_uir, C_SSgrn_uir, 
+            c_statsfile
+        )
+        #=================================================================================
+        #/////////////////////////////////////////////////////////////////////////////////
+
+        # 震源和场点层的物性
+        rcv_va = self.modarr[self.ircv, 1]
+        rcv_vb = self.modarr[self.ircv, 2]
+        rcv_rho = self.modarr[self.ircv, 3]
+        src_va = self.modarr[self.isrc, 1]
+        src_vb = self.modarr[self.isrc, 2]
+        src_rho = self.modarr[self.isrc, 3]
+
+        # 结果字典
+        dataDct = {}
+        dataDct['_xarr'] = xarr.copy()
+        dataDct['_yarr'] = yarr.copy()
+        dataDct['_src_va'] = src_va
+        dataDct['_src_vb'] = src_vb
+        dataDct['_src_rho'] = src_rho
+        dataDct['_rcv_va'] = rcv_va
+        dataDct['_rcv_vb'] = rcv_vb
+        dataDct['_rcv_rho'] = rcv_rho
+
+        # 整理结果，将每个格林函数以2d矩阵的形式存储，shape=(nx, ny)
+        for i, ch in enumerate(['Z', 'R', 'T']):
+            sgn = -1 if ch=='Z' else 1
+            if i<2:
+                dataDct[f'EX{ch}'] = sgn * EXPgrn[:,i].reshape((nx, ny), order='F')
+                dataDct[f'VF{ch}'] = sgn * VFgrn[:,i].reshape((nx, ny), order='F')
+                dataDct[f'DD{ch}'] = sgn * DDgrn[:,i].reshape((nx, ny), order='F')
+            
+            dataDct[f'HF{ch}'] = sgn * HFgrn[:,i].reshape((nx, ny), order='F')
+            dataDct[f'DS{ch}'] = sgn * DSgrn[:,i].reshape((nx, ny), order='F')
+            dataDct[f'SS{ch}'] = sgn * SSgrn[:,i].reshape((nx, ny), order='F')
+
+            if calc_upar:
+                if i<2:
+                    dataDct[f'zEX{ch}'] = sgn * EXPgrn_uiz[:,i].reshape((nx, ny), order='F') * (-1)
+                    dataDct[f'rEX{ch}'] = sgn * EXPgrn_uir[:,i].reshape((nx, ny), order='F')
+                    dataDct[f'zVF{ch}'] = sgn * VFgrn_uiz[:,i].reshape((nx, ny), order='F') * (-1)
+                    dataDct[f'rVF{ch}'] = sgn * VFgrn_uir[:,i].reshape((nx, ny), order='F')
+                    dataDct[f'zDD{ch}'] = sgn * DDgrn_uiz[:,i].reshape((nx, ny), order='F') * (-1)
+                    dataDct[f'rDD{ch}'] = sgn * DDgrn_uir[:,i].reshape((nx, ny), order='F')
+                
+                dataDct[f'zHF{ch}'] = sgn * HFgrn_uiz[:,i].reshape((nx, ny), order='F') * (-1)
+                dataDct[f'rHF{ch}'] = sgn * HFgrn_uir[:,i].reshape((nx, ny), order='F')
+                dataDct[f'zDS{ch}'] = sgn * DSgrn_uiz[:,i].reshape((nx, ny), order='F') * (-1)
+                dataDct[f'rDS{ch}'] = sgn * DSgrn_uir[:,i].reshape((nx, ny), order='F')
+                dataDct[f'zSS{ch}'] = sgn * SSgrn_uiz[:,i].reshape((nx, ny), order='F') * (-1)
+                dataDct[f'rSS{ch}'] = sgn * SSgrn_uir[:,i].reshape((nx, ny), order='F')
+
+        return dataDct

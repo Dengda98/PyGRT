@@ -25,6 +25,7 @@ import math
 import os
 from ctypes import *
 from typing import List
+from copy import deepcopy
 
 from numpy.typing import ArrayLike
 
@@ -52,6 +53,12 @@ __all__ = [
 ]
 
 
+#=================================================================================================================
+#
+#                                           根据辐射因子合成地震图
+#
+#=================================================================================================================
+
 def _gen_syn_from_gf(st:Stream, calc_upar:bool, compute_type:str, M0:float, az:float, ZNE=False, **kwargs):
     r"""
         一个发起函数，根据不同震源参数，从格林函数中合成理论地震图
@@ -67,7 +74,7 @@ def _gen_syn_from_gf(st:Stream, calc_upar:bool, compute_type:str, M0:float, az:f
     """
     chs = ['Z', 'R', 'T']
     sacin_prefixes = ["", "z", "r", ""]   # 输入通道名
-    sacout_prefixes = ["", "z", "r", "t"]   # 输入通道名
+    sacout_prefixes = ["", "z", "r", "t"]   # 输出通道名
     srcName = ["EX", "VF", "HF", "DD", "DS", "SS"]
     allchs = [tr.stats.channel for tr in st]
 
@@ -76,6 +83,8 @@ def _gen_syn_from_gf(st:Stream, calc_upar:bool, compute_type:str, M0:float, az:f
     baz = 180 + az
     if baz > 360:
         baz -= 360
+
+    azrad = np.deg2rad(az)
 
     calcUTypes = 4 if calc_upar else 1
 
@@ -89,8 +98,7 @@ def _gen_syn_from_gf(st:Stream, calc_upar:bool, compute_type:str, M0:float, az:f
         if ityp == 3:
             upar_scale /= dist
 
-        srcCoef = _set_source_coef(ityp==3, upar_scale, compute_type, M0, az, **kwargs)
-        print(srcCoef)
+        srcCoef = _set_source_coef(ityp==3, upar_scale, compute_type, M0, azrad, **kwargs)
 
         inpref = sacin_prefixes[ityp]
         outpref = sacout_prefixes[ityp]
@@ -121,6 +129,106 @@ def _gen_syn_from_gf(st:Stream, calc_upar:bool, compute_type:str, M0:float, az:f
         stall = _data_zrt2zne(stall)
             
     return stall
+
+
+def _gen_syn_from_static_gf(grn:dict, calc_upar:bool, compute_type:str, M0:float, ZNE=False, **kwargs):
+    r"""
+        一个发起函数，根据不同震源参数，从静态格林函数中合成理论静态场
+
+        :param    grn:             计算好的静态格林函数, 字典类型
+        :param    calc_upar:       是否计算位移u的空间导数
+        :param    compute_type:    计算类型，应为以下之一: 
+        :param    M0:              标量地震矩, 单位dyne*cm
+        :param    ZNE:             是否以ZNE分量输出?
+            'COMPUTE_EXP'(爆炸源), 'COMPUTE_SF'(单力源),
+            'COMPUTE_DC'(双力偶源), 'COMPUTE_MT'(矩张量源)
+    """
+    chs = ['Z', 'R', 'T']
+    sacin_prefixes = ["", "z", "r", ""]   # 输入通道名
+    srcName = ["EX", "VF", "HF", "DD", "DS", "SS"]
+    allchs = list(grn.keys())
+
+    s_compute_type = compute_type.split("_")[1][:2]
+
+    calcUTypes = 4 if calc_upar else 1
+
+    xarr:np.ndarray = grn['_xarr']
+    yarr:np.ndarray = grn['_yarr']
+
+    # 结果字典
+    resDct = {}
+
+    # 基本数据拷贝
+    for k in grn.keys():
+        if k[0] != '_':
+            continue 
+        resDct[k] = deepcopy(grn[k])
+
+    XX = np.zeros((calcUTypes, 3, len(xarr), len(yarr)), dtype='f8')
+    dblsyn = (c_double*3)()
+    dblupar = (c_double*9)()
+
+    for iy in range(len(yarr)):
+        for ix in range(len(xarr)):
+            # 震中距
+            dist = max(np.sqrt(xarr[ix]**2 + yarr[iy]**2), 1e-5)
+
+            # 方位角
+            azrad = np.arctan2(yarr[iy], xarr[ix])
+
+            upar_scale:float = 1.0
+            for ityp in range(calcUTypes):
+                if ityp > 0:
+                    upar_scale = 1e-5
+                if ityp == 3:
+                    upar_scale /= dist
+
+                srcCoef = _set_source_coef(ityp==3, upar_scale, compute_type, M0, azrad, **kwargs)
+
+                inpref = sacin_prefixes[ityp]
+
+                for c in range(3):
+                    ch = chs[c]
+                    for k in range(6):
+                        coef = srcCoef[c, k]
+                        if coef==0.0:
+                            continue
+
+                        # 读入数据
+                        channel = f'{inpref}{srcName[k]}{ch}'
+                        if channel not in allchs:
+                            raise ValueError(f"Failed, channel=\"{channel}\" not exists.")
+                            
+                        XX[ityp, c, ix, iy] += coef*grn[channel][ix, iy]
+
+            if ZNE:
+                for i in range(3):
+                    dblsyn[i] = XX[0, i, ix, iy]
+                    if calc_upar:
+                        for k in range(3):
+                            dblupar[k + i*3] = XX[i+1, k, ix, iy]
+                if calc_upar:
+                    C_rot_zrt2zxy_upar(azrad, dblsyn, dblupar, dist*1e5)
+                else:
+                    C_rot_zxy2zrt_vec(-azrad, dblsyn)
+
+                for i in range(3):
+                    XX[0, i, ix, iy] = dblsyn[i]
+                    if calc_upar:
+                        for k in range(3):
+                            XX[i+1, k, ix, iy] = dblupar[k + i*3]
+
+
+    # 将XX数组分到字典中
+    if ZNE:
+        chs = ['Z', 'N', 'E']
+
+    for ityp in range(calcUTypes):
+        c1 = '' if ityp==0 else chs[ityp-1].lower()
+        for c in range(3):
+            resDct[f"{c1}{s_compute_type}{chs[c]}"] = XX[ityp, c]
+                
+    return resDct
 
 
 def _data_zrt2zne(stall:Stream):
@@ -208,7 +316,7 @@ def _data_zrt2zne(stall:Stream):
 
 
 def _set_source_coef(
-    par_theta:bool, coef:float, compute_type:str, M0:float, az:float,
+    par_theta:bool, coef:float, compute_type:str, M0:float, azrad:float,
     fZ=None, fN=None, fE=None, 
     strike=None, dip=None, rake=None, 
     MT=None, **kwargs):
@@ -221,7 +329,7 @@ def _set_source_coef(
             'COMPUTE_EXP'(爆炸源), 'COMPUTE_SF'(单力源),
             'COMPUTE_DC'(双力偶源), 'COMPUTE_MT'(矩张量源)
         :param    M0:              地震矩
-        :param    az:              方位角(度)
+        :param    azrad:           方位角(弧度)
 
         - 其他参数根据计算类型可选:
             - 单力源需要: fZ, fN, fE, 
@@ -229,10 +337,6 @@ def _set_source_coef(
             - 矩张量源需要: MT=(Mxx, Mxy, Mxz, Myy, Myz, Mzz)
     """
     
-    # 定义常数: 1度对应的弧度值
-    DEG1 = np.pi / 180.0
-
-    azrad = az*DEG1
     caz = np.cos(azrad)
     saz = np.sin(azrad)
 
@@ -266,9 +370,9 @@ def _set_source_coef(
     elif compute_type == 'COMPUTE_DC':
         # 双力偶源情况 (公式4.8.35)
         # 计算各种角度值(转为弧度)
-        stkrad = strike * DEG1  # 走向角
-        diprad = dip * DEG1    # 倾角
-        rakrad = rake * DEG1   # 滑动角
+        stkrad = np.deg2rad(strike)  # 走向角
+        diprad = np.deg2rad(dip)    # 倾角
+        rakrad = np.deg2rad(rake)   # 滑动角
         therad = azrad - stkrad  # 方位角与走向角差
         
         # 计算各种三角函数值
@@ -329,79 +433,113 @@ def _set_source_coef(
     return src_coef
 
 
-def gen_syn_from_gf_DC(st:Stream, M0:float, strike:float, dip:float, rake:float, az:float, ZNE=False, calc_upar:bool=False):
+def gen_syn_from_gf_DC(st:Stream|dict, M0:float, strike:float, dip:float, rake:float, az:float=-999, ZNE=False, calc_upar:bool=False):
     '''
         双力偶源，角度单位均为度   
 
-        :param    st:       计算好的时域格林函数, :class:`obspy.Stream` 类型
+        :param    st:       计算好的时域格林函数, :class:`obspy.Stream` 类型，或者静态格林函数（字典类型）
         :param    M0:       标量地震矩, 单位dyne*cm
         :param    strike:   走向，以北顺时针为正，0<=strike<=360
         :param    dip:      倾角，以水平面往下为正，0<=dip<=90
         :param    rake:     滑动角，在断层面相对于走向方向逆时针为正，-180<=rake<=180
-        :param    az:       台站方位角，以北顺时针为正，0<=az<=360
+        :param    az:       台站方位角，以北顺时针为正，0<=az<=360（静态情况不需要）
         :param    ZNE:             是否以ZNE分量输出?
         :param    calc_upar:     是否计算位移u的空间导数
 
         :return:
             - **stream** -  三分量地震图, :class:`obspy.Stream` 类型
     '''
+    if isinstance(st, Stream):
+        if az > 360 or az < -360:
+            raise ValueError(f"WRONG azimuth ({az})")
+        return _gen_syn_from_gf(st, calc_upar, "COMPUTE_DC", M0, az, ZNE, strike=strike, dip=dip, rake=rake)
+    elif isinstance(st, dict):
+        return _gen_syn_from_static_gf(st, calc_upar, "COMPUTE_DC", M0, ZNE, strike=strike, dip=dip, rake=rake)
+    else:
+        raise NotImplementedError
 
-    return _gen_syn_from_gf(st, calc_upar, "COMPUTE_DC", M0, az, ZNE, strike=strike, dip=dip, rake=rake)
 
-
-def gen_syn_from_gf_SF(st:Stream, S:float, fN:float, fE:float, fZ:float, az:float, ZNE=False, calc_upar:bool=False):
+def gen_syn_from_gf_SF(st:Stream|dict, S:float, fN:float, fE:float, fZ:float, az:float=-999, ZNE=False, calc_upar:bool=False):
     '''
         单力源，力分量单位均为dyne   
 
-        :param    st:    计算好的时域格林函数, :class:`obspy.Stream` 类型
+        :param    st:    计算好的时域格林函数, :class:`obspy.Stream` 类型，或者静态格林函数（字典类型）
         :param     S:    力的放大系数
         :param    fN:    北向力，向北为正  
         :param    fE:    东向力，向东为正  
         :param    fZ:    垂向力，向下为正  
-        :param    az:    台站方位角，以北顺时针为正，0<=az<=360   
+        :param    az:    台站方位角，以北顺时针为正，0<=az<=360 （静态情况不需要）  
         :param    ZNE:             是否以ZNE分量输出?
         :param    calc_upar:     是否计算位移u的空间导数
 
         :return:
             - **stream** - 三分量地震图, :class:`obspy.Stream` 类型
     '''
-    return _gen_syn_from_gf(st, calc_upar, "COMPUTE_SF", S, az, ZNE, fN=fN, fE=fE, fZ=fZ)
+    if isinstance(st, Stream):
+        if az > 360 or az < -360:
+            raise ValueError(f"WRONG azimuth ({az})")
+        return _gen_syn_from_gf(st, calc_upar, "COMPUTE_SF", S, az, ZNE, fN=fN, fE=fE, fZ=fZ)
+    elif isinstance(st, dict):
+        return _gen_syn_from_static_gf(st, calc_upar, "COMPUTE_SF", S, ZNE, fN=fN, fE=fE, fZ=fZ)
+    else:
+        raise NotImplementedError
 
 
-def gen_syn_from_gf_EXP(st:Stream, M0:float, az:float, ZNE=False, calc_upar:bool=False):
+def gen_syn_from_gf_EXP(st:Stream|dict, M0:float, az:float=-999, ZNE=False, calc_upar:bool=False):
     '''
         爆炸源
 
-        :param    st:          计算好的时域格林函数, :class:`obspy.Stream` 类型
+        :param    st:          计算好的时域格林函数, :class:`obspy.Stream` 类型，或者静态格林函数（字典类型）
         :param    M0:          标量地震矩, 单位dyne*cm  
-        :param    az:          台站方位角，以北顺时针为正，0<=az<=360 [不用于计算]  
+        :param    az:          台站方位角，以北顺时针为正，0<=az<=360 [不用于计算] （静态情况不需要） 
         :param    ZNE:             是否以ZNE分量输出?
         :param    calc_upar:     是否计算位移u的空间导数
 
         :return:
             - **stream** -       三分量地震图, :class:`obspy.Stream` 类型
     '''
-    return _gen_syn_from_gf(st, calc_upar, "COMPUTE_EXP", M0, az, ZNE)
+    if isinstance(st, Stream):
+        if az > 360 or az < -360:
+            raise ValueError(f"WRONG azimuth ({az})")
+        return _gen_syn_from_gf(st, calc_upar, "COMPUTE_EXP", M0, az, ZNE)
+    elif isinstance(st, dict):
+        return _gen_syn_from_static_gf(st, calc_upar, "COMPUTE_EXP", M0, ZNE)
+    else:
+        raise NotImplementedError
+    
 
-
-def gen_syn_from_gf_MT(st:Stream, M0:float, MT:ArrayLike, az:float, ZNE=False, calc_upar:bool=False):
+def gen_syn_from_gf_MT(st:Stream|dict, M0:float, MT:ArrayLike, az:float=-999, ZNE=False, calc_upar:bool=False):
     ''' 
         矩张量源，单位为dyne*cm
 
-        :param    st:          计算好的时域格林函数, :class:`obspy.Stream` 类型
+        :param    st:          计算好的时域格林函数, :class:`obspy.Stream` 类型，或者静态格林函数（字典类型）
         :param    M0:          标量地震矩
         :param    MT:          矩张量 (M11, M12, M13, M22, M23, M33),下标1,2,3分别代表北向，东向，垂直向上  
-        :param    az:          台站方位角，以北顺时针为正，0<=az<=360   
+        :param    az:          台站方位角，以北顺时针为正，0<=az<=360 （静态情况不需要）  
         :param    ZNE:             是否以ZNE分量输出?
         :param    calc_upar:     是否计算位移u的空间导数
 
         :return:
             - **stream** -       三分量地震图, :class:`obspy.Stream` 类型
     '''
-    return _gen_syn_from_gf(st, calc_upar, "COMPUTE_MT", M0, az, ZNE, MT=MT)
+    if isinstance(st, Stream):
+        if az > 360 or az < -360:
+            raise ValueError(f"WRONG azimuth ({az})")
+        return _gen_syn_from_gf(st, calc_upar, "COMPUTE_MT", M0, az, ZNE, MT=MT)
+    elif isinstance(st, dict):
+        return _gen_syn_from_static_gf(st, calc_upar, "COMPUTE_MT", M0, ZNE, MT=MT)
+    else:
+        raise NotImplementedError
 
 
-def compute_strain(st_syn:Stream):
+#=================================================================================================================
+#
+#                                           根据几何方程和本构方程合成应力和应变
+#
+#=================================================================================================================
+
+
+def _compute_strain(st_syn:Stream):
     r"""
         Compute dynamic strain from synthetic spatial derivatives.
 
@@ -461,7 +599,7 @@ def compute_strain(st_syn:Stream):
                 st = st_syn.select(channel=channel)
                 if len(st) == 0:
                     raise NameError(f"{channel} not exists.")
-                tr.data += 0.5*st[0].data / dist * 1e-5
+                tr.data += st[0].data / dist * 1e-5
 
             # 修改通道名
             tr.stats.channel = tr.stats.sac['kcmpnm'] = f"{c1}{c2}"
@@ -471,7 +609,103 @@ def compute_strain(st_syn:Stream):
     return stres
 
 
-def compute_stress(st_syn:Stream):
+def _compute_static_strain(syn:dict):
+    r"""
+        Compute static strain from synthetic spatial derivatives.
+
+        :param     syn:      synthetic spatial derivatives.
+
+        :return:
+            - **res** -  static strain, in dict class.
+    """
+
+    midname = ""
+    # 检查是否每个分量是否具有相同midname
+    for k in syn.keys():
+        if k[0] == '_':
+            continue
+        if len(midname)==0:
+            midname = k[-3:-1]
+
+        if k[-3:-1] != midname:
+            raise ValueError("WRONG INPUT! inconsistent component names.")
+        
+    zrtchs = ['Z', 'R', 'T']
+    znechs = ['Z', 'N', 'E']
+    chs = zrtchs
+
+    # 判断是否有标志性的分量名
+    if f"n{midname}N" in syn.keys():
+        chs = znechs
+
+    xarr:np.ndarray = syn['_xarr']
+    yarr:np.ndarray = syn['_yarr']
+
+    # 结果字典
+    resDct = {}
+
+    # 基本数据拷贝
+    for k in syn.keys():
+        if k[0] != '_':
+            continue 
+        resDct[k] = deepcopy(syn[k])
+
+    # 6个分量建立数组
+    for i1 in range(3):
+        c1 = chs[i1]
+        for i2 in range(i1, 3):
+            c2 = chs[i2]
+            channel = f"{c1}{c2}"
+            resDct[channel] = np.zeros((len(xarr), len(yarr)), dtype='f8')
+
+
+    for iy in range(len(yarr)):
+        for ix in range(len(xarr)):
+            # 震中距
+            dist = max(np.sqrt(xarr[ix]**2 + yarr[iy]**2), 1e-5)
+
+            # ----------------------------------------------------------------------------------
+            # 循环6个分量
+            for i1 in range(3):
+                c1 = chs[i1]
+                for i2 in range(i1, 3):
+                    c2 = chs[i2]
+
+                    channel = f"{c1.lower()}{midname}{c2}"
+                    v12 = syn[channel][ix, iy]
+
+                    channel = f"{c2.lower()}{midname}{c1}"
+                    v21 = syn[channel][ix, iy]
+
+                    val = 0.5*(v12 + v21)
+
+                    # 特殊情况加上协变导数
+                    if c1=='R' and c2=='T':
+                        channel = f"{midname}T"
+                        v0 = syn[channel][ix, iy]
+                        val -= 0.5*v0 / dist * 1e-5
+
+                    elif c1=='T' and c2=='T':
+                        channel = f"{midname}R"
+                        v0 = syn[channel][ix, iy]
+                        val += v0 / dist * 1e-5
+
+                    channel = f"{c1}{c2}"
+                    resDct[channel][ix, iy] = val
+
+    return resDct
+
+
+def compute_strain(st:Stream|dict):
+    if isinstance(st, Stream):
+        return _compute_strain(st)
+    elif isinstance(st, dict):
+        return _compute_static_strain(st)
+    else:
+        raise NotImplementedError
+
+
+def _compute_stress(st_syn:Stream):
     r"""
         Compute dynamic stress from synthetic spatial derivatives.
 
@@ -600,6 +834,128 @@ def compute_stress(st_syn:Stream):
     return stres
 
 
+def _compute_static_stress(syn:dict):
+    r"""
+        Compute static stress from synthetic spatial derivatives.
+
+        :param     syn:      synthetic spatial derivatives.
+
+        :return:
+            - **res** -  static stress (unit: dyne/cm^2 = 0.1 Pa), in dict class.
+    """
+
+    midname = ""
+    # 检查是否每个分量是否具有相同midname
+    for k in syn.keys():
+        if k[0] == '_':
+            continue
+        if len(midname)==0:
+            midname = k[-3:-1]
+
+        if k[-3:-1] != midname:
+            raise ValueError("WRONG INPUT! inconsistent component names.")
+        
+    zrtchs = ['Z', 'R', 'T']
+    znechs = ['Z', 'N', 'E']
+    chs = zrtchs
+    rot2ZNE:bool = False
+
+    # 判断是否有标志性的分量名
+    if f"n{midname}N" in syn.keys():
+        chs = znechs
+        rot2ZNE = True
+
+    xarr:np.ndarray = syn['_xarr']
+    yarr:np.ndarray = syn['_yarr']
+    va = syn['_rcv_va']
+    vb = syn['_rcv_vb']
+    rho = syn['_rcv_rho']
+    mu = vb*vb*rho*1e10
+    lam = va*va*rho*1e10 - 2.0*mu
+
+    # 结果字典
+    resDct = {}
+
+    # 基本数据拷贝
+    for k in syn.keys():
+        if k[0] != '_':
+            continue 
+        resDct[k] = deepcopy(syn[k])
+
+    # 6个分量建立数组
+    for i1 in range(3):
+        c1 = chs[i1]
+        for i2 in range(i1, 3):
+            c2 = chs[i2]
+            channel = f"{c1}{c2}"
+            resDct[channel] = np.zeros((len(xarr), len(yarr)), dtype='f8')
+
+
+    for iy in range(len(yarr)):
+        for ix in range(len(xarr)):
+            # 震中距
+            dist = max(np.sqrt(xarr[ix]**2 + yarr[iy]**2), 1e-5)
+
+            # ----------------------------------------------------------------------------------
+            # 先计算体积应变u_kk = u_11 + u22 + u33 和 lamda的乘积
+            lam_ukk = 0.0
+            for i in range(3):
+                c = chs[i]
+                channel = f"{c.lower()}{midname}{c}"
+                lam_ukk += syn[channel][ix, iy]
+            
+            # 加上协变导数
+            if not rot2ZNE:
+                channel = f"{midname}R"
+                lam_ukk += syn[channel][ix, iy] / dist * 1e-5
+            
+            lam_ukk *= lam
+
+            # ----------------------------------------------------------------------------------
+            # 循环6个分量
+            for i1 in range(3):
+                c1 = chs[i1]
+                for i2 in range(i1, 3):
+                    c2 = chs[i2]
+
+                    channel = f"{c1.lower()}{midname}{c2}"
+                    v12 = syn[channel][ix, iy]
+
+                    channel = f"{c2.lower()}{midname}{c1}"
+                    v21 = syn[channel][ix, iy]
+
+                    val = mu*(v12 + v21)
+
+                    # 对于对角线分量，需加上lambda * u_kk
+                    if c1==c2:
+                        val += lam_ukk
+
+                    # 特殊情况加上协变导数
+                    if c1=='R' and c2=='T':
+                        channel = f"{midname}T"
+                        v0 = syn[channel][ix, iy]
+                        val -= mu*v0 / dist * 1e-5
+
+                    elif c1=='T' and c2=='T':
+                        channel = f"{midname}R"
+                        v0 = syn[channel][ix, iy]
+                        val += 2.0*mu*v0 / dist * 1e-5
+
+                    channel = f"{c1}{c2}"
+                    resDct[channel][ix, iy] = val
+
+    return resDct
+
+
+def compute_stress(st:Stream|dict):
+    if isinstance(st, Stream):
+        return _compute_stress(st)
+    elif isinstance(st, dict):
+        return _compute_static_stress(st)
+    else:
+        raise NotImplementedError
+
+
 def __check_trace_attr_sac(tr:Trace, **kwargs):
     '''
         临时函数，检查trace中是否有sac字典，并将kwargs内容填入  
@@ -609,6 +965,14 @@ def __check_trace_attr_sac(tr:Trace, **kwargs):
             tr.stats.sac[k] = v 
     else: 
         tr.stats.sac = AttribDict(**kwargs)
+
+
+#=================================================================================================================
+#
+#                                           卷积、微分、积分、保存SAC
+#
+#=================================================================================================================
+
 
 
 # def stream_convolve(st0:Stream, timearr:np.ndarray, inplace=True):
@@ -777,6 +1141,11 @@ def stream_write_sac(st:Stream, path:str):
 
 
 
+#=================================================================================================================
+#
+#                                           积分过程文件读取及绘制
+#
+#=================================================================================================================
 
 
 def read_statsfile(statsfile:str):
