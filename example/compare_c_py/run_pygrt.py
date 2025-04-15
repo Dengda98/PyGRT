@@ -123,6 +123,7 @@ for ZNE in [False, True]:
     ststress = pygrt.utils.compute_stress(st)
     AVGRERR.append(compare3(ststrain, "syn_exp/cout.strain.", ZNE=ZNE, dim2=True))
     AVGRERR.append(compare3(ststress, "syn_exp/cout.stress.", ZNE=ZNE, dim2=True))
+    
 
     st = pygrt.utils.gen_syn_from_gf_SF(st_grn, S, fn, fe, fz, az, ZNE=ZNE, calc_upar=True)
     sigs = pygrt.sigs.gen_trap_wave(0.1, 0.3, 0.6, dt)
@@ -188,7 +189,9 @@ for ZNE in [False, True]:
     AVGRERR.append(static_compare3(ststress, f"static/stress_mt{suffix}", ZNE=ZNE, dim2=True))
 
 
+AVGRERR = np.array(AVGRERR)
 print(AVGRERR)
 print(np.mean(AVGRERR), np.min(AVGRERR), np.max(AVGRERR))
 if np.mean(AVGRERR) > 0.001:
     raise ValueError
+
