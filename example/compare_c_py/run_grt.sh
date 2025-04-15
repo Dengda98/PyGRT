@@ -81,3 +81,10 @@ stgrt.syn -S$S -T$M11/$M12/$M13/$M22/$M23/$M33 -e $N < grn > stsyn_mt$N
 stgrt.strain < stsyn_mt$N > strain_mt$N
 stgrt.stress < stsyn_mt$N > stress_mt$N
 done
+
+cd -
+
+for p in $(ls static/*); do
+    echo "----------------------------- $p -------------------------"
+    cat $p
+done
