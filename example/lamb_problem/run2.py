@@ -26,7 +26,7 @@ t = np.arange(0, nt)*dt * Vs/r
 pymod = pygrt.PyModel1D(modarr, depsrc, deprcv)
 
 # compute Green's Functions
-st_grn = pymod.gen_gf_spectra(
+st_grn = pymod.compute_grn(
     distarr=rs, 
     nt=nt, 
     dt=dt, 
