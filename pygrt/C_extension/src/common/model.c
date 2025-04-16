@@ -288,6 +288,9 @@ PYMODEL1D * read_pymod_from_file(const char *command, const char *modelpath, dou
 
     while(fgets(line, sizeof(line), fp)) {
         iline++;
+        
+        // 注释行
+        if(line[0]=='#')  continue;
 
         h = va = vb = rho = qa = qb = -9.0;
         if(ncols != sscanf(line, "%lf %lf %lf %lf %lf %lf\n", &h, &va, &vb, &rho, &qa, &qb)){
