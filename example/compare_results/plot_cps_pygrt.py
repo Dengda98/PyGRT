@@ -18,7 +18,7 @@ dt = 0.01
 zeta = 0.8  
 
 # compute Green's Functions
-st_grt = pymod.gen_gf_spectra(
+st_grt = pymod.compute_grn(
     distarr=rs, 
     nt=nt, 
     dt=dt, 

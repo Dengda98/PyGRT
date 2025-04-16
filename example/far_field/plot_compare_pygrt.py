@@ -20,7 +20,7 @@ L1 = 20
 L2 = -5  
 T0 = 190     
 
-st_grn1 = pymod.gen_gf_spectra(
+st_grn1 = pymod.compute_grn(
     distarr=rs, 
     nt=nt, 
     dt=dt, 
@@ -29,7 +29,7 @@ st_grn1 = pymod.gen_gf_spectra(
     delayT0=T0
 )[0]
 
-st_grn2 = pymod.gen_gf_spectra(
+st_grn2 = pymod.compute_grn(
     distarr=rs, 
     nt=nt, 
     dt=dt, 
