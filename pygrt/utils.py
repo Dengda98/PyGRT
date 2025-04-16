@@ -515,7 +515,7 @@ def gen_syn_from_gf_MT(st:Union[Stream,dict], M0:float, MT:ArrayLike, az:float=-
 
         :param    st:          计算好的时域格林函数, :class:`obspy.Stream` 类型，或者静态格林函数（字典类型）
         :param    M0:          标量地震矩
-        :param    MT:          矩张量 (M11, M12, M13, M22, M23, M33),下标1,2,3分别代表北向，东向，垂直向上  
+        :param    MT:          矩张量 (M11, M12, M13, M22, M23, M33),下标1,2,3分别代表北向，东向，垂直向下  
         :param    az:          台站方位角，以北顺时针为正，0<=az<=360 （静态情况不需要）  
         :param    ZNE:             是否以ZNE分量输出?
         :param    calc_upar:     是否计算位移u的空间导数
