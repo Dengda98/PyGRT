@@ -31,7 +31,7 @@ gmt begin disp_dc png E300
     gmt grdvector synE.nc synN.nc -Q0.1c+e+jc+h1+gblack -Si0.3c
 
     gmt meca -Sa0.5c <<EOF
-0 0 $deprcv $stk $dip $rak 5
+0 0 $depsrc $stk $dip $rak 5
 EOF
 
     gmt colorbar -Bx+l"Z (cm)"
