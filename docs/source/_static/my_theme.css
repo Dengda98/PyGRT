@@ -1,0 +1,30 @@
+/* .wy-nav-content {
+    max-width: 800px;
+} */
+
+/* 设置代码块的淡黄色背景 */
+.highlight {
+    background: #edfecb; /* 经典的淡黄色 */
+    border-radius: 3px;   /* 可选：添加圆角 */
+    padding: 0.5em;       /* 可选：添加内边距 */
+}
+
+/* 更改左上角标题背景色 */
+.wy-side-nav-search {
+    background-color: #F8EF9E !important;
+}
+
+/* 如果需要，同时修改顶部标题栏颜色 */
+/* .wy-nav-top {
+    background-color: #FF5722 !important;
+} */
+
+/* 改变左上角房子图标的颜色 */
+.wy-side-nav-search a.icon-home {
+    color: #000000 !important;
+}
+
+/* 改变左上角项目名的颜色 */
+.wy-side-nav-search .project {
+    color: #000000 !important;
+}
