@@ -46,6 +46,10 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 1  
+
+      - name: Remove docs  # 删除docs文件夹，程序打包不需要
+        run: |
+          rm -rf docs/
       
       # --------------------- 检查文件中的版本名是否和tag名相符 --------------------
       - name: Check version
