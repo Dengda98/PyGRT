@@ -22,7 +22,7 @@ pymod = pygrt.PyModel1D(modarr, depsrc, deprcv)
 pymod2 = pygrt.PyModel1D(modarr2, depsrc, deprcv)
 
 # compute Green's Functions
-st_grn = pymod.gen_gf_spectra(
+st_grn = pymod.compute_grn(
     distarr=rs, 
     nt=nt, 
     dt=dt, 
@@ -31,7 +31,7 @@ st_grn = pymod.gen_gf_spectra(
     Length=20, 
     gf_source=['DC']
 )[0]
-st_grn2 = pymod2.gen_gf_spectra(
+st_grn2 = pymod2.compute_grn(
     distarr=rs, 
     nt=nt, 
     dt=dt, 
