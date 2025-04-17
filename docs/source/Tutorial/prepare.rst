@@ -1,0 +1,50 @@
+准备工作
+=============
+
+:Author: Zhu Dengda
+:Email:  zhudengda@mail.iggcas.ac.cn
+
+-----------------------------------------------------------
+
+
+安装 **PyGRT**
+--------------------
+
+详见 :ref:`install_section` 。
+
+
+建立模型文件
+--------------------
+
+这里的选项卡 **C** 不代表内部是C语言代码，而是 **使用C语言编译出的可执行程序** （与之相关）。后续的选项卡沿用此设定，不再解释。
+
+.. tabs:: 
+
+    .. tab:: C
+
+        **PyGRT** 以如下自由格式定义模型中每层的物性参数，每列之间以空格隔开
+
+        .. code-block:: text
+
+            [厚度(km)]    [P波速度(km/s)]    [S波速度(km/s)]   [密度(g/cm^3)]   [P波品质因子]   [S波品质因子]
+
+        
+        例如 :file:`milrow` 模型（假设文本文件名为 `milrow` ）
+
+        .. literalinclude:: dynamic/run/milrow
+            :language: text
+        
+
+    .. tab:: Python
+
+        模型格式与C一致，在Python中可以使用 :code:`np.loadtxt()` 导入文本文件，或者手动定义数组
+
+        .. literalinclude:: dynamic/run/run.py
+            :language: python
+            :start-after: START BUILD MODEL
+            :end-before: END BUILD MODEL
+
+
+.. note::
+
+    最后一行表示半空间，对应厚度值不会被使用。

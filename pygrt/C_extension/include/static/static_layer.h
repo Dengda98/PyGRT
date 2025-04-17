@@ -20,7 +20,7 @@
 /**
  * 计算自由表面的静态反射系数，公式(6.3.12)
  * 
- * @param     delta1           (in)表层的 \f$ \Delta \f$
+ * @param     delta1           (in)表层的 \f$ \Delta = \frac{\lambda + \mu}{\lambda + 3\mu} \f$
  * @param     R_tilt[2][2]     (out)P-SV系数矩阵，SH系数为1
  * 
  */
