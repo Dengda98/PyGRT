@@ -14,7 +14,7 @@ build:
     # rust: "1.70"
     # golang: "1.20"
 
-  apt_packages: ["doxygen", "build-essential", "fftw3"]
+  apt_packages: ["doxygen", "build-essential", "libfftw3-dev"]
 
   jobs:
     pre_build:
