@@ -39,3 +39,10 @@ grt.syn -GGRN/milrow_2_0_10 -S1e24 -A30 -M33/50/120 -Osyn_dc_zne -N
 grt.syn -GGRN/milrow_2_0_10 -S1e16 -A30 -F1/-0.5/2 -Osyn_sf_trig -Dt/0.3/0.3/0.6
 # END TIME FUNC
 
+
+# BEGIN INT DIF
+# 积分，1表示积分1次
+grt.syn -GGRN/milrow_2_0_10 -S1e24 -A30 -T0.1/-0.2/1.0/0.3/-0.5/-2.0 -I1 -Osyn_mt_int1
+# 微分，1表示微分1次
+grt.syn -GGRN/milrow_2_0_10 -S1e24 -A30 -T0.1/-0.2/1.0/0.3/-0.5/-2.0 -J1 -Osyn_mt_dif1
+# END INT DIF

@@ -140,7 +140,7 @@
 
 
 
-时间函数
+卷积时间函数
 ---------------------
 **PyGRT** 内置了一些震源时间函数，例如抛物波、梯形波、雷克子波或自定义，这里以单力源为例。
 
@@ -165,4 +165,37 @@
         其它时间函数以及具体参数用法可在 :py:mod:`pygrt.signals` 模块中查看函数参数。
 
 .. image:: run/syn_sf_trig.png
+   :align: center
+
+
+
+位移对时间积分、微分
+--------------------------------
+这里以矩张量源为例。
+
+.. tabs::  
+
+    .. tab:: C 
+
+        .. literalinclude:: run/run.sh
+            :language: bash
+            :start-after: BEGIN INT DIF
+            :end-before: END INT DIF
+
+
+    .. tab:: Python 
+
+        .. literalinclude:: run/run.py
+            :language: python
+            :start-after: BEGIN INT DIF
+            :end-before: END INT DIF
+
+
+.. image:: run/syn_mt_intdif_Z.png
+   :align: center
+
+.. image:: run/syn_mt_intdif_R.png
+   :align: center
+
+.. image:: run/syn_mt_intdif_T.png
    :align: center
