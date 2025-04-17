@@ -114,14 +114,14 @@ Python中计算动态格林函数的主函数为 :func:`compute_grn() <pygrt.pym
 
 公式来自 :ref:`初稿 <yao_init_manuscripts>` (5.6.22)式，其中阶数 :math:`m=0,1,2`。核函数 :math:`q_m,w_m,v_m` 根据广义反射透射系数矩阵法求得。为了方便程序实现，根据积分形式，我们对待求积分进行如下分类，其中每一阶都分为4类( :math:`p=0,1,2,3` )，除了0阶只需两类，此时 :math:`v_0=0` :
 
-+ :math:`m=0` 
++ :math:`m=0`  [#]_
 
 .. math:: 
 
    \left\{
    \begin{aligned}
-   p=0 & \rightarrow - \int q_0(k, \omega) J_0(kr)kdk \\
-   p=2 & \rightarrow   \int w_0(k, \omega) J_1(kr)kdk
+   p=0 & \rightarrow - \int q_0(k, \omega) J_1(kr)kdk \\
+   p=2 & \rightarrow   \int w_0(k, \omega) J_0(kr)kdk
    \end{aligned}
    \right.
 
@@ -141,6 +141,8 @@ Python中计算动态格林函数的主函数为 :func:`compute_grn() <pygrt.pym
 
 
 以上每个积分都形成 :math:`\int_0^\infty F(k, \omega)J_m(kr)kdk` 的形式，便可逐个使用离散波数积分（或Filon积分、峰谷平均法等）求解每个积分。
+
+.. [#] 感谢席超强博士 `@xichaoqiang <https://github.com/xichaoqiang>`_ 的订正。
 
 
 .. _grn_types:

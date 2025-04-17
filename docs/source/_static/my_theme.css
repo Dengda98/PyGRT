@@ -28,3 +28,11 @@
 .wy-side-nav-search .project {
     color: #000000 !important;
 }
+
+/* 脚标增加中括号 */
+.footnote-reference::before {
+    content: "[";
+}
+.footnote-reference::after {
+    content: "]";
+}
