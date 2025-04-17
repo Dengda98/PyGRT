@@ -29,7 +29,7 @@
  * @param  EXP[3][3][2]    (out)爆炸源的震源系数，下同
  * @param  VF[3][3][2]     (out)垂直力源
  * @param  HF[3][3][2]     (out)水平力源
- * @param  DC[3][3][2]     (out)双力偶源
+ * @param  DC[3][3][2]     (out)剪切源
  * 
  */
 void source_coef(

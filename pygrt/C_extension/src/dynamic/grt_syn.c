@@ -58,7 +58,7 @@ static double mchn[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 static int computeType=GRT_SYN_COMPUTE_EX;
 static char s_computeType[3] = "EX";
 // 和宏命令对应的震源类型全称
-static const char *sourceTypeFullName[] = {"Explosion", "Single Force", "Double Couple", "Moment Tensor"};
+static const char *sourceTypeFullName[] = {"Explosion", "Single Force", "Shear", "Moment Tensor"};
 // 不打印输出
 static bool silenceInput=false;
 
@@ -145,7 +145,7 @@ printf("\n"
 "    -A<azimuth>   Azimuth in degree, from source to station.\n"
 "\n"
 "    -S[u]<scale>  Scale factor to all kinds of source. \n"
-"                  + For Explosion, Double Couple and Moment Tensor,\n"
+"                  + For Explosion, Shear and Moment Tensor,\n"
 "                    unit of <scale> is dyne-cm.\n"
 "                  + For Single Force, unit of <scale> is dyne.\n"
 "                  + Since \"\\mu\" exists in scalar seismic moment\n"
@@ -227,7 +227,7 @@ printf("\n"
 "    distance of 10 km and an azimuth of 30° by running:\n"
 "        grt.syn -Gres/milrow_2_0_10 -Osyn_ex -A30 -S1e24\n"
 "\n"
-"    or Double Couple\n"
+"    or Shear\n"
 "        grt.syn -Gres/milrow_2_0_10 -Osyn_dc -A30 -S1e24 -M100/20/80\n"
 "\n"
 "    or Single Force\n"

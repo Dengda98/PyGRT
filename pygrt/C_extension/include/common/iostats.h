@@ -25,11 +25,11 @@
  * @param    EXP_qwv[3][3]    (in)爆炸源核函数
  * @param    VF_qwv[3][3]     (in)垂直力源核函数
  * @param    HF_qwv[3][3]     (in)水平力源核函数
- * @param    DC_qwv[3][3]     (in)双力偶源核函数
+ * @param    DC_qwv[3][3]     (in)剪切源核函数
  * @param    EXP_J[3][4]      (in)爆炸源，该dk区间内的积分值，下同
  * @param    VF_J[3][4]       (in)垂直力源
  * @param    HF_J[3][4]       (in)水平力源
- * @param    DC_J[3][4]       (in)双力偶源
+ * @param    DC_J[3][4]       (in)剪切源
  * 
  * 
  * @note     文件记录的值均为波数积分的中间结果，与最终的结果还差一系列的系数，
@@ -54,11 +54,11 @@ void write_stats(
  * @param    EXPpt[3][4][maxNpt]    (in)爆炸源，最终收敛积分值使用的波峰波谷值，下同
  * @param    VFpt[3][4][maxNpt]     (in)垂直力源
  * @param    HFpt[3][4][maxNpt]     (in)水平力源
- * @param    DCpt[3][4][maxNpt]     (in)双力偶源
+ * @param    DCpt[3][4][maxNpt]     (in)剪切源
  * @param    kEXPpt[3][4][maxNpt]    (in)爆炸源，最终收敛积分值使用的波峰波谷值对应的波数k值，下同
  * @param    kVFpt[3][4][maxNpt]     (in)垂直力源
  * @param    kHFpt[3][4][maxNpt]     (in)水平力源
- * @param    kDCpt[3][4][maxNpt]     (in)双力偶源
+ * @param    kDCpt[3][4][maxNpt]     (in)剪切源
  * 
  * @note     文件记录的积分值与最终的结果还差一系列的系数，
  *           记录其值主要用于参考其变化趋势。

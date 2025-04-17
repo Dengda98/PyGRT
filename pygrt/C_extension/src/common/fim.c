@@ -292,17 +292,17 @@ void int_Pk_filon(
     }
 
     if(DC_qwv!=NULL){
-    // m=0 双力偶源
+    // m=0 剪切源
     DC_J[0][0] = - DC_qwv[0][0]*bj1k;
     DC_J[0][2] =   DC_qwv[0][1]*bj0k;
 
-    // m=1 双力偶源
+    // m=1 剪切源
     DC_J[1][0]  =   DC_qwv[1][0]*bj0k;         // q1*J0*k
     DC_J[1][1]  = - (DC_qwv[1][0] + DC_qwv[1][2])*J1coef;    // - (q1+v1)*J1*k/kr
     DC_J[1][2]  =   DC_qwv[1][1]*bj1k;         // w1*J1*k
     DC_J[1][3]  = - DC_qwv[1][2]*bj0k;         // -v1*J0*k
 
-    // m=2 双力偶源
+    // m=2 剪切源
     DC_J[2][0]  =   DC_qwv[2][0]*bj1k;         // q2*J1*k
     DC_J[2][1]  = - RTWO*(DC_qwv[2][0] + DC_qwv[2][2])*J2coef;    // - (q2+v2)*J2*k/kr
     DC_J[2][2]  =   DC_qwv[2][1]*bj2k;         // w2*J2*k

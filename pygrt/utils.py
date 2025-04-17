@@ -4,7 +4,7 @@
     :date:     2024-07-24  
 
     该文件包含一些数据处理操作上的补充:   
-        1、双力偶源、单力源、爆炸源、矩张量源 通过格林函数合成理论地震图的函数\n
+        1、剪切源、单力源、爆炸源、矩张量源 通过格林函数合成理论地震图的函数\n
         2、Stream类型的时域卷积、微分、积分 (基于numpy和scipy)    \n
         3、Stream类型写到本地sac文件，自定义名称    \n
         4、读取波数积分和峰谷平均法过程文件  \n
@@ -66,7 +66,7 @@ def _gen_syn_from_gf(st:Stream, calc_upar:bool, compute_type:str, M0:float, az:f
         :param    calc_upar:       是否计算位移u的空间导数
         :param    compute_type:    计算类型，应为以下之一: 
                                     'COMPUTE_EXP'(爆炸源), 'COMPUTE_SF'(单力源),
-                                    'COMPUTE_DC'(双力偶源), 'COMPUTE_MT'(矩张量源)
+                                    'COMPUTE_DC'(剪切源), 'COMPUTE_MT'(矩张量源)
         :param    M0:              标量地震矩, 单位dyne*cm
         :param    az:              方位角(度)
         :param    ZNE:             是否以ZNE分量输出?
@@ -139,7 +139,7 @@ def _gen_syn_from_static_gf(grn:dict, calc_upar:bool, compute_type:str, M0:float
         :param    calc_upar:       是否计算位移u的空间导数
         :param    compute_type:    计算类型，应为以下之一: 
                                     'COMPUTE_EXP'(爆炸源), 'COMPUTE_SF'(单力源),
-                                    'COMPUTE_DC'(双力偶源), 'COMPUTE_MT'(矩张量源)
+                                    'COMPUTE_DC'(剪切源), 'COMPUTE_MT'(矩张量源)
         :param    M0:              标量地震矩, 单位dyne*cm
         :param    ZNE:             是否以ZNE分量输出?
             
@@ -328,13 +328,13 @@ def _set_source_coef(
         :param    coef:            比例系数
         :param    compute_type:    计算类型，应为以下之一: 
                                     'COMPUTE_EXP'(爆炸源), 'COMPUTE_SF'(单力源),
-                                    'COMPUTE_DC'(双力偶源), 'COMPUTE_MT'(矩张量源)
+                                    'COMPUTE_DC'(剪切源), 'COMPUTE_MT'(矩张量源)
         :param    M0:              地震矩
         :param    azrad:           方位角(弧度)
 
         - 其他参数根据计算类型可选:
             - 单力源需要: fZ, fN, fE, 
-            - 双力偶源需要: strike, dip, rake
+            - 剪切源需要: strike, dip, rake
             - 矩张量源需要: MT=(Mxx, Mxy, Mxz, Myy, Myz, Mzz)
     """
     
@@ -369,7 +369,7 @@ def _set_source_coef(
         src_coef[2, 2] = -A1 if par_theta else A4  # HF, T
     
     elif compute_type == 'COMPUTE_DC':
-        # 双力偶源情况 (公式4.8.35)
+        # 剪切源情况 (公式4.8.35)
         # 计算各种角度值(转为弧度)
         stkrad = np.deg2rad(strike)  # 走向角
         diprad = np.deg2rad(dip)    # 倾角
@@ -436,7 +436,7 @@ def _set_source_coef(
 
 def gen_syn_from_gf_DC(st:Union[Stream,dict], M0:float, strike:float, dip:float, rake:float, az:float=-999, ZNE=False, calc_upar:bool=False):
     '''
-        双力偶源，角度单位均为度   
+        剪切源，角度单位均为度   
 
         :param    st:       计算好的时域格林函数, :class:`obspy.Stream` 类型，或者静态格林函数（字典类型）
         :param    M0:       标量地震矩, 单位dyne*cm

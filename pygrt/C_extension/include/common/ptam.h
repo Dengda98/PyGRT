@@ -42,17 +42,17 @@
  * @param    sum_EXP_J0[nr][3][4]   (out)爆炸源
  * @param    sum_VF_J0[nr][3][4]    (out)垂直力源
  * @param    sum_HF_J0[nr][3][4]    (out)水平力源
- * @param    sum_DC_J0[nr][3][4]    (out)双力偶源
+ * @param    sum_DC_J0[nr][3][4]    (out)剪切源
  * 
  * @param  calc_upar       (in)是否计算位移u的空间导数
  * @param  sum_EXP_uiz_J0[nr][3][4]  (out)爆炸源产生的ui_z(位移u对坐标z的偏导)，下同
  * @param  sum_VF_uiz_J0[nr][3][4]   (out)垂直力源
  * @param  sum_HF_uiz_J0[nr][3][4]   (out)水平力源
- * @param  sum_DC_uiz_J0[nr][3][4]   (out)双力偶源
+ * @param  sum_DC_uiz_J0[nr][3][4]   (out)剪切源
  * @param  sum_EXP_uir_J0[nr][3][4]  (out)爆炸源产生的ui_r(位移u对坐标r的偏导)，下同
  * @param  sum_VF_uir_J0[nr][3][4]   (out)垂直力源
  * @param  sum_HF_uir_J0[nr][3][4]   (out)水平力源
- * @param  sum_DC_uir_J0[nr][3][4]   (out)双力偶源
+ * @param  sum_DC_uir_J0[nr][3][4]   (out)剪切源
  * 
  * @param    fstats[nr]          (out)波数积分过程文件指针
  * @param    ptam_fstats[nr]     (out)峰谷平均法过程文件指针
