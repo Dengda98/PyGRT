@@ -166,3 +166,48 @@ trig = pygrt.sigs.gen_triangle_wave(0.6, 0.02)
 pygrt.utils.stream_convolve(stsyn, trig)
 # END TIME FUNC
 plot_syn(stsyn, "syn_sf_trig.png", trig)
+
+
+
+# BEGIN INT DIF
+idx = 2
+stgrn = stgrnLst[idx]   # 选择格林函数
+
+stsyn = pygrt.utils.gen_syn_from_gf_MT(stgrn, M0=1e24, MT=[0.1,-0.2,1.0,0.3,-0.5,-2.0], az=30)
+
+# 使用inplace=False，防止原地修改
+stsyn_int = pygrt.utils.stream_integral(stsyn, inplace=False)
+stsyn_dif = pygrt.utils.stream_diff(stsyn, inplace=False)
+# END INT DIF
+
+def plot_int_dif(stsyn:Stream, stsyn_int:Stream, stsyn_dif:Stream, comp:str, out:str|None=None):
+    nt = stsyn[0].stats.npts
+    dt = stsyn[0].stats.delta
+    t = np.arange(nt)*dt
+
+    travtP = stsyn[0].stats.sac['t0']
+    travtS = stsyn[0].stats.sac['t1']
+
+    fig, axs = plt.subplots(3, 1, figsize=(10, 4), gridspec_kw=dict(hspace=0.0), sharex=True)
+    for i, (st, suffix) in enumerate(zip([stsyn, stsyn_int, stsyn_dif], ["", "_int", "_dif"])):
+        tr = st.select(component=comp)[0]
+
+        ax = axs[i]
+        ax.plot(t, tr.data, c='k', lw=0.5, label=f"{tr.stats.channel}{suffix}")
+        ax.legend(loc='upper left')
+
+        ylims = ax.get_ylim()
+        # 绘制到时
+        ax.vlines(travtP, *ylims, colors='b')
+        ax.text(travtP, ylims[1], "P", ha='left', va='top', color='b')
+        ax.vlines(travtS, *ylims, colors='r')
+        ax.text(travtS, ylims[1], "S", ha='left', va='top', color='r')
+
+        ax.set_xlim([t[0], t[-1]])
+        ax.set_ylim(np.array(ylims)*1.2)
+
+        if out is not None:
+            fig.savefig(out, dpi=100)
+
+for ch in ['Z', 'R', 'T']:
+    plot_int_dif(stsyn, stsyn_int, stsyn_dif, ch, f"syn_mt_intdif_{ch}.png")
