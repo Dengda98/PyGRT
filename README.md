@@ -9,6 +9,8 @@
   <img alt="GitHub License" src="https://img.shields.io/github/license/Dengda98/PyGRT">
 </p>
 
+> ⭐ **Like this project? Give it a Star!** ⭐
+
 [**中文文档**](https://pygrt.readthedocs.io/zh-cn/)
 
 # Overview
