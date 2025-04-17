@@ -28,3 +28,13 @@
 .wy-side-nav-search .project {
     color: #000000 !important;
 }
+
+/* 修改版本切换器的文本颜色 */
+.rst-versions .rst-current-version {
+    color: #000000 !important;  
+}
+
+/* 修改下拉菜单中的文本颜色 */
+.rst-versions a {
+    color: #000000 !important;  
+}
