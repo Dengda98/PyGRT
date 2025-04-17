@@ -89,7 +89,7 @@ html_theme = 'sphinx_rtd_theme'
 html_theme_options = {
     'analytics_anonymize_ip': False,
     'logo_only': False,  # True
-    'display_version': True,
+    'version_selector': True,
     'prev_next_buttons_location': 'bottom',
     'style_external_links': False,
     'collapse_navigation': True,
