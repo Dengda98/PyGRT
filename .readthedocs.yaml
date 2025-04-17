@@ -16,8 +16,9 @@ build:
 
   apt_packages: ["doxygen"]
 
-  commands:
-    - cd docs && chmod +x *.sh && ./compile.sh
+  jobs:
+    pre_build:
+      - cd docs && chmod +x *.sh && ./compile.sh
 
 
 # Build documentation in the "docs/" directory with Sphinx

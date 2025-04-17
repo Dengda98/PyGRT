@@ -12,5 +12,7 @@ make clean
 doxygen doxyfile_h
 
 # 构建
+if [[ $1 == '1' ]]; then
 make html
+fi
 # sphinx-autobuild --port 8000 source build
