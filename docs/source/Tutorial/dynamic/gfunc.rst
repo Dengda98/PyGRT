@@ -50,6 +50,15 @@ Python中计算动态格林函数的主函数为 :func:`compute_grn() <pygrt.pym
         多个震中距的格林函数以列表形式返回，其中每个元素为 |Stream| 类。:class:`Trace.stats.sac` 中保存了SAC头段变量，与C程序输出保持一致。
 
 
+.. note:: 
+   
+   格林函数计算结果的单位：  
+
+   + 爆炸源：  :math:`10^{-20} \, \frac{\text{cm}}{\text{dyne} \cdot \text{cm}}`  
+   + 单力源：  :math:`10^{-15} \, \frac{\text{cm}}{\text{dyne}}`
+   + 剪切源：  :math:`10^{-20} \, \frac{\text{cm}}{\text{dyne} \cdot \text{cm}}`
+   + 矩张量源： :math:`10^{-20} \, \frac{\text{cm}}{\text{dyne} \cdot \text{cm}}`
+
 
 
 离散波数积分
