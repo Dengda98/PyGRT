@@ -42,7 +42,7 @@ MYCOMPLEX quad_eval(MYREAL x, MYCOMPLEX a, MYCOMPLEX b, MYCOMPLEX c);
 
 
 /**
- * 给定x，根据a,b,c值，估计 \f$ \MYINT_{x_1}^{x_2} f(s)ds \f$
+ * 给定x，根据a,b,c值，估计 \f$ \int_{x_1}^{x_2} f(s)ds \f$
  * 
  * @param     x1   (in)积分下限
  * @param     x2   (in)积分上限

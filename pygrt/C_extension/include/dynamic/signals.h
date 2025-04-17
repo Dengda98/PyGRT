@@ -119,6 +119,7 @@ float * get_parabola_wave(float dt, float *Tlen, int *Nt);
 /**
  * 生成梯形波或三角波
  * 
+ * @verbatim
  *   ^
  *   |
  *   |
@@ -131,6 +132,8 @@ float * get_parabola_wave(float dt, float *Tlen, int *Nt);
  *   | /                             \
  *   |------+------------------+------+---------------->
  *  O       T1                 T2     T3                T
+ * 
+ * @endverbatim
  * 
  * 
  * @param    dt       (in)采样间隔
@@ -148,7 +151,7 @@ float * get_trap_wave(float dt, float *T1, float *T2, float *T3, int *Nt);
 /**
  * 生成雷克子波
  * 
- * \f[ f(t)=(1-2 \pi^2 \f_0^2 (t-t_0)^2 ) \exp{ - \pi^2 \f_0^2 (t-t_0)^2} \f]
+ * \f[ f(t)=(1-2 \pi^2 f_0^2 (t-t_0)^2 ) e^{ - \pi^2 f_0^2 (t-t_0)^2} \f]
  * 
  * @param    dt       (in)采样间隔
  * @param    f0       (in)主频
