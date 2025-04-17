@@ -1,0 +1,32 @@
+# 头文件配置文档 
+
+# The INPUT tag is used to specify the files and/or directories that contain
+# documented source files. You may enter file names like "myfile.cpp" or
+# directories like "/usr/src/myproject". Separate the files or directories
+# with spaces.
+
+INPUT = ../pygrt/C_extension/include 
+
+RECURSIVE = YES
+
+# If the value of the INPUT tag contains directories, you can use the
+# FILE_PATTERNS tag to specify one or more wildcard patterns (like *.cpp
+# and *.h) to filter out the source-files in the directories. If left
+# blank, Doxygen will consider all files in the directories.
+
+FILE_PATTERNS = *.h
+
+# The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute)
+# base path where the generated documentation will be put.
+
+OUTPUT_DIRECTORY = ./doxygen_h
+
+# If the GENERATE_XML tag is set to YES Doxygen will generate an XML file
+# that captures the structure of the code including all documentation.
+
+GENERATE_XML = YES
+
+# Doxyfile Configuration
+USE_MATHJAX = YES
+
+MARKDOWN_SUPPORT = YES
