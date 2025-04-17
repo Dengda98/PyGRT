@@ -9,7 +9,7 @@
   <img alt="GitHub License" src="https://img.shields.io/github/license/Dengda98/PyGRT">
 </p>
 
-(Detailed documentation is coming soon...)
+[**中文文档**](https://pygrt.readthedocs.io/zh-cn/)
 
 # Overview
 [**PyGRT**](https://github.com/Dengda98/PyGRT): An Efficient and Integrated Python Package for Computing Synthetic Seismograms in a Layered Half-Space Model.   
