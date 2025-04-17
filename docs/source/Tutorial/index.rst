@@ -69,7 +69,7 @@
 计算 **静态解** 的过程相同，只是函数名称和程序名称有变化。
 
 
-以下是一些简易教程，可快速上手。
+以下是一些简易教程，可快速上手。Github主页的 :rst:dir:`example/` 文件夹中有更多示例，可在 `Github Releases <https://github.com/Dengda98/PyGRT/releases>`_ 中下载。
 
 
 .. toctree::
