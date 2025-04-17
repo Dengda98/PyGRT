@@ -11,7 +11,7 @@
 
 /* 更改左上角标题背景色 */
 .wy-side-nav-search {
-    background-color: #F8EF9E !important;
+    background-color: #00bd88 !important;
 }
 
 /* 如果需要，同时修改顶部标题栏颜色 */
@@ -27,14 +27,4 @@
 /* 改变左上角项目名的颜色 */
 .wy-side-nav-search .project {
     color: #000000 !important;
-}
-
-/* 修改版本切换器的文本颜色 */
-.rst-versions .rst-current-version {
-    color: #000000 !important;  
-}
-
-/* 修改下拉菜单中的文本颜色 */
-.rst-versions a {
-    color: #000000 !important;  
 }
