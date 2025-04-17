@@ -48,7 +48,7 @@ static char *s_prefix = NULL;
 static const char *s_prefix_default = "out";
 // 方位角，以及对应弧度制
 static double azimuth = 0.0, azrad = 0.0, backazimuth=0.0;
-// 放大系数，对于位错源、爆炸源、张量震源，M0是标量地震矩；对于单力源，M0是放大系数
+// 放大系数，对于剪切源、爆炸源、张量震源，M0是标量地震矩；对于单力源，M0是放大系数
 static double M0 = 0.0;
 // 在放大系数上是否需要乘上震源处的剪切模量
 static bool mult_src_mu = false;
@@ -327,7 +327,7 @@ static void getopt_from_command(int argc, char **argv){
                 };
                 break;
             
-            // 位错震源
+            // 剪切震源
             case 'M':
                 M_flag = 1; 
                 computeType = GRT_SYN_COMPUTE_DC;
