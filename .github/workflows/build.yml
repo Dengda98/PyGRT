@@ -277,6 +277,14 @@ jobs:
           # don't use $(pwd) to get abspath, not valid on Windows
           echo "EXAMPLE_COPY_PATH=${{ env.PACK_NAME }}/test_tmp" >> $GITHUB_ENV
 
+      - name: Test compare_c_py
+        working-directory: ${{ env.EXAMPLE_COPY_PATH }}/compare_c_py
+        run: |
+          # 检查C程序和Python程序的计算结果是否一致
+          chmod +x *.sh
+          ./run_grt.sh
+          python run_pygrt.py
+
       - name: Test 1 compare_results
         working-directory: ${{ env.EXAMPLE_COPY_PATH }}/compare_results
         run: |
