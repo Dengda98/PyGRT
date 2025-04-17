@@ -22,12 +22,12 @@
  * @param    EXP_qwv[3][3]    (in)爆炸源核函数
  * @param    VF_qwv[3][3]     (in)垂直力源核函数
  * @param    HF_qwv[3][3]     (in)水平力源核函数
- * @param    DC_qwv[3][3]     (in)双力偶源核函数
+ * @param    DC_qwv[3][3]     (in)剪切源核函数
  * @param    calc_uir         (in)是否计算ui_r（位移u对坐标r的偏导）
  * @param    EXP_J[3][4]      (out)爆炸源，该dk区间内的积分值，下同
  * @param    VF_J[3][4]       (out)垂直力源
  * @param    HF_J[3][4]       (out)水平力源
- * @param    DC_J[3][4]       (out)双力偶源
+ * @param    DC_J[3][4]       (out)剪切源
  * 
  */
 void int_Pk(
@@ -48,7 +48,7 @@ void int_Pk(
  * @param    sum_EXP_J[3][4]      (in)爆炸源，最终的积分值，下同
  * @param    sum_VF_J[3][4]       (in)垂直力源
  * @param    sum_HF_J[3][4]       (in)水平力源
- * @param    sum_DC_J[3][4]       (in)双力偶源
+ * @param    sum_DC_J[3][4]       (in)剪切源
  * @param    tol_EXP[2]           (out)爆炸源的Z、R分量频谱结果
  * @param    tol_VF[2]            (out)垂直力源的Z、R分量频谱结果
  * @param    tol_HF[3]            (out)水平力源的Z、R、T分量频谱结果
@@ -75,12 +75,12 @@ void merge_Pk(
  * @param    EXP_qwv[3][3]    (in)爆炸源核函数
  * @param    VF_qwv[3][3]     (in)垂直力源核函数
  * @param    HF_qwv[3][3]     (in)水平力源核函数
- * @param    DC_qwv[3][3]     (in)双力偶源核函数 
+ * @param    DC_qwv[3][3]     (in)剪切源核函数 
  * @param    calc_uir         (in)是否计算ui_r（位移u对坐标r的偏导）
  * @param    EXP_J[3][4]      (out)爆炸源，该dk区间内的积分值，下同
  * @param    VF_J[3][4]       (out)垂直力源
  * @param    HF_J[3][4]       (out)水平力源
- * @param    DC_J[3][4]       (out)双力偶源
+ * @param    DC_J[3][4]       (out)剪切源
  *  
  */
 void int_Pk_filon(

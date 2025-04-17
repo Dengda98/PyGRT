@@ -85,12 +85,12 @@
  *  @param    EXP_qwv[3][3]    (out)爆炸源核函数
  *  @param    VF_qwv[3][3]     (out)垂直力源核函数
  *  @param    HF_qwv[3][3]     (out)水平力源核函数
- *  @param    DC_qwv[3][3]     (out)双力偶源核函数 
+ *  @param    DC_qwv[3][3]     (out)剪切源核函数 
  *  @param    calc_uiz       (in)是否计算ui_z（位移u对坐标z的偏导）
  *  @param    EXP_uiz_qwv[3][3]    (out)爆炸源产生的ui_z的核函数，下同
  *  @param    VF_uiz_qwv[3][3]     (out)垂直力源核函数
  *  @param    HF_uiz_qwv[3][3]     (out)水平力源核函数
- *  @param    DC_uiz_qwv[3][3]     (out)双力偶源核函数 
+ *  @param    DC_uiz_qwv[3][3]     (out)剪切源核函数 
  * 
  */
 void kernel(
