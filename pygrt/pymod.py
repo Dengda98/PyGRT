@@ -124,6 +124,15 @@ class PyModel1D:
         
     
     def compute_travt1d(self, dist:float):
+        r"""
+            调用C程序，计算初至P波和S波的走时
+
+            :param       dist:    震中距
+
+            :return:
+              - **travtP**  -  初至P波走时(s)
+              - **travtS**  -  初至S波走时(s)
+        """
         travtP = C_compute_travt1d(
             self.c_pymod1d.Thk,
             self.c_pymod1d.Va,
