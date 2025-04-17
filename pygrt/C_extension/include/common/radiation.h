@@ -12,7 +12,7 @@
 
 #define GRT_SYN_COMPUTE_EX 0   ///< 计算爆炸源
 #define GRT_SYN_COMPUTE_SF 1   ///< 计算单力源
-#define GRT_SYN_COMPUTE_DC 2   ///< 计算双力偶源
+#define GRT_SYN_COMPUTE_DC 2   ///< 计算剪切源
 #define GRT_SYN_COMPUTE_MT 3   ///< 计算矩张量源
 
 

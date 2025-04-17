@@ -38,7 +38,7 @@
  * @param  sum_EXP_J[nr][3][4]  (in)爆炸源
  * @param  sum_VF_J[nr][3][4]   (in)垂直力源
  * @param  sum_HF_J[nr][3][4]   (in)水平力源
- * @param  sum_DC_J[nr][3][4]   (in)双力偶源
+ * @param  sum_DC_J[nr][3][4]   (in)剪切源
  * @param      EXPgrn[nr][2]      (out)浮点数数组，爆炸源的Z、R分量频谱结果
  * @param      VFgrn[nr][2]       (out)浮点数数组，垂直力源的Z、R分量频谱结果
  * @param      HFgrn[nr][3]       (out)浮点数数组，水平力源的Z、R、T分量频谱结果
