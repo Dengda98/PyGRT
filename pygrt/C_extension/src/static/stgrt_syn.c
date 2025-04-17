@@ -29,7 +29,7 @@ extern int optopt;
 //****************** 在该文件以内的全局变量 ***********************//
 // 命令名称
 static char *command = NULL;
-// 放大系数，对于位错源、爆炸源、张量震源，M0是标量地震矩；对于单力源，M0是放大系数
+// 放大系数，对于剪切源、爆炸源、张量震源，M0是标量地震矩；对于单力源，M0是放大系数
 static double M0 = 0.0;
 // 在放大系数上是否需要乘上震源处的剪切模量
 static bool mult_src_mu = false;
@@ -168,7 +168,7 @@ static void getopt_from_command(int argc, char **argv){
                 };
                 break;
 
-            // 位错震源
+            // 剪切震源
             case 'M':
                 M_flag = 1; 
                 computeType = GRT_SYN_COMPUTE_DC;

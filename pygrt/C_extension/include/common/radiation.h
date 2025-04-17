@@ -22,12 +22,12 @@
  * @param      srcCoef         (out)方向因子，[3]表示ZRT三分量，[6]表示6个震源(EX,VF,HF,DD,DS,SS)
  * @param      computeType     (in)要计算的震源类型，使用宏定义
  * @param      par_theta       (in)方向因子中是否对theta(az)求导
- * @param      M0              (in)放大系数，对于位错源、爆炸源、张量震源，M0是标量地震矩；对于单力源，M0是放大系数
+ * @param      M0              (in)放大系数，对于剪切源、爆炸源、张量震源，M0是标量地震矩；对于单力源，M0是放大系数
  * @param      coef            (in)放大系数，用于位移空间导数的计算
  * @param      azrad           (in)弧度制的方位角
  * @param      mchn            (in)震源机制参数，
  *                                 对于单力源，mchn={fn, fe, fz}，
- *                                 对于位错源，mchn={strike, dip, rake}，
+ *                                 对于剪切源，mchn={strike, dip, rake}，
  *                                 对于张量源，mchn={Mxx, Mxy, Mxz, Myy, Myz, Mzz}
  */
 void set_source_radiation(
