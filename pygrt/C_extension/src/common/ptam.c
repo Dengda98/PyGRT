@@ -76,11 +76,11 @@ static void process_peak_or_trough(
  * @param       EXP_J3              爆炸源对应的被积函数的幅值数组，下同
  * @param       VF_J3               垂直力源
  * @param       HF_J3               水平力源
- * @param       DC_J3               双力偶源
+ * @param       DC_J3               剪切源
  * @param       sum_EXP_J           爆炸源对应的积分值数组，下同
  * @param       sum_VF_J            垂直力源
  * @param       sum_HF_J            水平力源
- * @param       sum_DC_J            双力偶源
+ * @param       sum_DC_J            剪切源
  * 
  * @param       kEXPpt              爆炸源对应的积分值峰谷的波数数组，下同             
  * @param       EXPpt               爆炸源对应的用于存储波峰/波谷点的幅值数组，下同      
@@ -94,10 +94,10 @@ static void process_peak_or_trough(
  * @param       HFpt                水平力源
  * @param       iHFpt               水平力源
  * @param       gHFpt               水平力源
- * @param       kDCpt               双力偶源
- * @param       DCpt                双力偶源
- * @param       iDCpt               双力偶源
- * @param       gDCpt               双力偶源
+ * @param       kDCpt               剪切源
+ * @param       DCpt                剪切源
+ * @param       iDCpt               剪切源
+ * @param       gDCpt               剪切源
  * 
  * 
  */
