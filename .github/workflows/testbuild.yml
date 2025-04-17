@@ -49,6 +49,10 @@ jobs:
         with:
           fetch-depth: 1  
 
+      - name: Remove docs  # 删除docs文件夹，程序打包不需要
+        run: |
+          rm -rf docs/
+
       # --------------------------- 安装依赖 ------------------------------------------
       - name: Install dependencies (Ubuntu)
         if: contains(matrix.os, 'ubuntu')    
