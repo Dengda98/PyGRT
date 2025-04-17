@@ -124,6 +124,15 @@ class PyModel1D:
         
     
     def compute_travt1d(self, dist:float):
+        r"""
+            调用C程序，计算初至P波和S波的走时
+
+            :param       dist:    震中距
+
+            :return:
+              - **travtP**  -  初至P波走时(s)
+              - **travtS**  -  初至S波走时(s)
+        """
         travtP = C_compute_travt1d(
             self.c_pymod1d.Thk,
             self.c_pymod1d.Va,
@@ -240,7 +249,7 @@ class PyModel1D:
             :param    nt:            时间点数，借助于 `SciPy`，nt不再要求是2的幂次
             :param    dt:            采样间隔(s)  
             :param    freqband:      频率范围(Hz)，以此确定待计算的离散频率点
-            :param    zeta:          定义虚频率的系数 :math:`\zeta`， 虚频率 :math:`\tilde{\omega} = \omega - j*w_I, w_I = \zeta*\pi/T, T=nt*dt` , T为时窗长度。
+            :param    zeta:          定义虚频率的系数 :math:`\zeta` ， 虚频率 :math:`\tilde{\omega} = \omega - j*w_I, w_I = \zeta*\pi/T, T=nt*dt` , T为时窗长度。
                                      使用离散波数积分时为了避开附加源以及奇点的影响， :ref:`(Bouchon, 1981) <bouchon_1981>`  在频率上添加微小虚部，
                                      更多测试见 :ref:`(张海明, 2021) <zhang_book_2021>`
             :param    vmin_ref:      最小参考速度，默认vmin=max(minimum velocity, 0.1)，用于定义波数积分上限，小于0则在达到积分上限后使用峰谷平均法
@@ -248,8 +257,8 @@ class PyModel1D:
             :param    keps:          波数k积分收敛条件，见 :ref:`(Yao and Harkrider, 1983) <yao&harkrider_1983>`  :ref:`(初稿) <yao_init_manuscripts>`，
                                      为负数代表不提前判断收敛，按照波数积分上限进行积分
             :param    ampk:          影响波数k积分上限的系数，见下方
-            :param    iwk0:          k0是否取随频率变化的线性关系，即 :math:` k_{0} = k_{0} * f/f_{max}` 
-            :param    k0:            波数k积分的上限 :math:`\tilde{k_{max}}=\sqrt{(k_{0}*\pi/hs)^2 + (ampk*w/vmin_{ref})^2} ` , 波数k积分循环必须退出, hs=max(震源和台站深度差,1.0)
+            :param    iwk0:          k0是否取随频率变化的线性关系，即 :math:`k_{0} = k_{0} * f/f_{max}`
+            :param    k0:            波数k积分的上限 :math:`\tilde{k_{max}}=\sqrt{(k_{0}*\pi/hs)^2 + (ampk*w/vmin_{ref})^2}` , 波数k积分循环必须退出, hs=max(震源和台站深度差,1.0)
             :param    Length:        定义波数k积分的间隔 `dk=2\pi / (L*rmax)`, 选取要求见 :ref:`(Bouchon, 1981) <bouchon_1981>` 
                                      :ref:`(张海明, 2021) <zhang_book_2021>`，默认自动选择；负数表示使用Filon积分
             :param    calc_upar:     是否计算位移u的空间导数
@@ -574,7 +583,7 @@ class PyModel1D:
             :param       statsfile:     波数k积分（包括Filon积分和峰谷平均法）的过程记录文件，常用于debug或者观察积分过程中 :math:`F(k,\omega)` 和  :math:`F(k,\omega)J_m(kr)k` 的变化    
 
             :return:
-                - **dataDct* -   字典形式的格林函数
+                - **dataDct** -   字典形式的格林函数
         """
 
         depsrc = self.depsrc
