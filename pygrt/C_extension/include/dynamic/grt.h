@@ -34,7 +34,7 @@ void set_num_threads(int num_threads);
  * @param      freqs        (in)所有频点的频率值（包括未计算的）
  * @param      nr           (in)震中距数量
  * @param      rs           (in)震中距数组 
- * @param      wI           (in)虚频率, \f$ \tilde{\omega} =\omega - i\wI \f$ 
+ * @param      wI           (in)虚频率, \f$ \tilde{\omega} =\omega - i \omega_I \f$ 
  * @param      vmin_ref     (in)参考最小速度，用于定义波数积分的上限
  * @param      keps         (in)波数积分的收敛条件，要求在某震中距下所有格林函数都收敛，为负数代表不提前判断收敛，按照波数积分上限进行积分 
  * @param      ampk         (in)影响波数k积分上限的系数，见下方
@@ -113,7 +113,7 @@ void integ_grn_spec_in_C(
  * @param      freqs        (in)所有频点的频率值（包括未计算的）
  * @param      nr           (in)震中距数量
  * @param      rs           (in)震中距数组 
- * @param      wI           (in)虚频率, \f$ \tilde{\omega} =\omega - i\wI \f$ 
+ * @param      wI           (in)虚频率, \f$ \tilde{\omega} =\omega - i \omega_I  \f$ 
  * @param      vmin_ref     (in)参考最小速度，用于定义波数积分的上限
  * @param      keps         (in)波数积分的收敛条件，要求在某震中距下所有格林函数都收敛，为负数代表不提前判断收敛，按照波数积分上限进行积分 
  * @param      ampk         (in)影响波数k积分上限的系数，见下方

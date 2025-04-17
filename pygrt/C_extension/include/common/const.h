@@ -124,3 +124,4 @@ typedef int MYINT;  ///< 整数
 
 #define GRT_STATIC_STRING_FMT "%18s"  ///< stgrt系列程序字符串输出格式
 #define GRT_STATIC_REAL_FMT "%18.8e"  ///< stgrt系列程序浮点数输出格式
+
