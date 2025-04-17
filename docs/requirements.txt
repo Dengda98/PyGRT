@@ -12,4 +12,4 @@ nbsphinx
 graphviz
 sphinx-tabs
 setuptools-scm  # 自动从git tag中构建版本
-# git+https://github.com/Dengda98/PyGRT.git  # 包本身
+-e .  # 包本身
