@@ -9,6 +9,7 @@
 import sys, os, pathlib
 import subprocess 
 import setuptools_scm
+sys.path.insert(0, os.path.abspath('../../'))  # 指向pygrt模块的根目录
 
 html_last_updated_fmt = '%b %d, %Y'
 
