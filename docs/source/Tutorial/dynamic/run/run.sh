@@ -6,6 +6,12 @@
 grt -Mmilrow -D2/0 -N500/0.02 -OGRN -R5,8,10
 # END GRN
 
+# BEGIN grt.b2a
+grt.b2a GRN/milrow_2_0_10/HFZ.sac > HFZ
+# END grt.b2a
+head -n 10 HFZ > HFZ_head
+echo "..." >> HFZ_head
+
 # BEGIN SYN EXP
 # 合成结果在 syn_exp/ 目录下，以SAC格式保存。
 grt.syn -GGRN/milrow_2_0_10 -S1e24 -A30 -Osyn_exp
