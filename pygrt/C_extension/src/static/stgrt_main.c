@@ -490,8 +490,8 @@ int main(int argc, char **argv){
     MYREAL rcv_rho = pymod->Rho[pymod->ircv];
 
     // 输出物性参数
-    fprintf(stdout, "# "GRT_STATIC_REAL_FMT" "GRT_STATIC_REAL_FMT" "GRT_STATIC_REAL_FMT"\n", src_va, src_vb, src_rho);
-    fprintf(stdout, "# "GRT_STATIC_REAL_FMT" "GRT_STATIC_REAL_FMT" "GRT_STATIC_REAL_FMT"\n", rcv_va, rcv_vb, rcv_rho);
+    fprintf(stdout, "# "GRT_REAL_FMT" "GRT_REAL_FMT" "GRT_REAL_FMT"\n", src_va, src_vb, src_rho);
+    fprintf(stdout, "# "GRT_REAL_FMT" "GRT_REAL_FMT" "GRT_REAL_FMT"\n", rcv_va, rcv_vb, rcv_rho);
 
     // 定义标题数组
     const char *titles[15] = {
@@ -507,12 +507,12 @@ int main(int argc, char **argv){
 
     // 输出标题
     char XX[20];
-    sprintf(XX, GRT_STATIC_STRING_FMT, "X(km)"); XX[0]='#';
+    sprintf(XX, GRT_STRING_FMT, "X(km)"); XX[0]='#';
     fprintf(stdout, "%s", XX);
-    fprintf(stdout, GRT_STATIC_STRING_FMT, "Y(km)");
-    for(int i=0; i<15; ++i) fprintf(stdout, GRT_STATIC_STRING_FMT, titles[i]);
+    fprintf(stdout, GRT_STRING_FMT, "Y(km)");
+    for(int i=0; i<15; ++i) fprintf(stdout, GRT_STRING_FMT, titles[i]);
     if(calc_upar) {
-        for(int i=0; i<30; ++i)  fprintf(stdout, GRT_STATIC_STRING_FMT, upar_titles[i]);
+        for(int i=0; i<30; ++i)  fprintf(stdout, GRT_STRING_FMT, upar_titles[i]);
     }
     fprintf(stdout, "\n");
 
@@ -520,7 +520,7 @@ int main(int argc, char **argv){
     for(int iy=0; iy<ny; ++iy) {
         for(int ix=0; ix<nx; ++ix) {
             int ir = ix + iy * nx;
-            fprintf(stdout, GRT_STATIC_REAL_FMT GRT_STATIC_REAL_FMT, xs[ix], ys[iy]);
+            fprintf(stdout, GRT_REAL_FMT GRT_REAL_FMT, xs[ix], ys[iy]);
             MYREAL *grns[] = {
                 EXPgrn[ir], VFgrn[ir], HFgrn[ir], DDgrn[ir], DSgrn[ir], SSgrn[ir]
             };
@@ -528,7 +528,7 @@ int main(int argc, char **argv){
             // 对Z分量反向
             for(int i=0; i<6; ++i) {
                 for (int j=0; j<grn_sizes[i]; ++j)
-                    fprintf(stdout, GRT_STATIC_REAL_FMT, (j == 0 ? -1.0 : 1.0) * grns[i][j]);
+                    fprintf(stdout, GRT_REAL_FMT, (j == 0 ? -1.0 : 1.0) * grns[i][j]);
             }
             if(calc_upar) {
                 // 前6个是对z的偏导，注意后续对z符号的判断
@@ -538,7 +538,7 @@ int main(int argc, char **argv){
                 };
                 for(int i=0; i<12; ++i) {
                     for(int j=0; j<grn_sizes[i % 6]; ++j)
-                        fprintf(stdout, GRT_STATIC_REAL_FMT, (j == 0 ? -1.0 : 1.0) * (i < 6 ? -1.0 : 1.0) * upar_grns[i][j]);
+                        fprintf(stdout, GRT_REAL_FMT, (j == 0 ? -1.0 : 1.0) * (i < 6 ? -1.0 : 1.0) * upar_grns[i][j]);
                 }
             }
             fprintf(stdout, "\n");
