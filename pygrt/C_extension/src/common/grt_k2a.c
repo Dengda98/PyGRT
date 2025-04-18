@@ -111,7 +111,11 @@ static void getopt_from_command(int argc, char **argv){
 }
 
 
-
+/**
+ * 处理传统离散波数积分以及Filon积分的过程文件
+ * 
+ * @param     fp       文件指针
+ */
 static void print_K(FILE *fp){
     MYREAL k;
     MYCOMPLEX res[4];
@@ -164,7 +168,11 @@ static void print_K(FILE *fp){
 
 }
 
-
+/**
+ * 处理峰谷平均法的过程文件
+ * 
+ * @param     fp       文件指针
+ */
 static void print_PTAM(FILE *fp){
     MYREAL k;
     MYCOMPLEX res;
