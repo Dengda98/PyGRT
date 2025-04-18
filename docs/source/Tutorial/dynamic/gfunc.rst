@@ -36,7 +36,7 @@ Python中计算动态格林函数的主函数为 :func:`compute_grn() <pygrt.pym
             :start-after: BEGIN GRN
             :end-before: END GRN
 
-        不同震源深度、接收点深度和震中距的格林函数会在 :rst:dir:`GRN/milrow_{depsrc}_{deprcv}_{dist}/`` 路径下，使用SAC格式保存。 
+        不同震源深度、接收点深度和震中距的格林函数会在 :rst:dir:`GRN/milrow_{depsrc}_{deprcv}_{dist}/` 路径下，使用SAC格式保存。 
 
         一些基本信息（包括源点和场点的物性参数）保存在SAC头段变量中，其中 :c:var:`t0` 和 :c:var:`t1` 分别代表初至P波和初至S波的到时，由于程序中使用0作为参考时间，故其等价于走时。
 
