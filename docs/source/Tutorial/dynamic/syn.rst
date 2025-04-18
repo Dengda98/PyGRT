@@ -1,3 +1,5 @@
+.. _syn_rst:
+
 合成动态位移
 =================
 
@@ -10,19 +12,19 @@ Python中合成动态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.uti
 
 使用上节计算的格林函数，合成动态位移（理论地震图）。方便起见，这里统一使用milrow模型，震源深度2km，场点位于地表，震中距10km的格林函数，方位角30°。
 
-在已知三分量格林函数 :math:`W_m(t), Q_m(t), V_m(t)` 后，合成三分量位移 :math:`U_Z(t), U_R(t), U_T(t)` 的公式为
+在已知三分量格林函数 :math:`W_m(t), Q_m(t), V_m(t)` 后，合成三分量位移 :math:`u_z(t), u_r(t), u_\theta (t)` 的公式为
 
 .. math:: 
 
    \left\{
    \begin{aligned}
-    U_Z(t) &= D(t) * \left[ \sum_{m=0}^{m=2} A_m W_m(t) \right] \\
-    U_R(t) &= D(t) * \left[ \sum_{m=0}^{m=2} A_m Q_m(t) \right] \\
-    U_T(t) &= D(t) * \left[ \sum_{m=1}^{m=2} A_{m+3} V_m(t) \right]
+    u_z(t) &= D(t) * \left[ \sum_{m=0}^{m=2} A_m W_m(t) \right] \\
+    u_r(t) &= D(t) * \left[ \sum_{m=0}^{m=2} A_m Q_m(t) \right] \\
+    u_\theta (t) &= D(t) * \left[ \sum_{m=1}^{m=2} A_{m+3} V_m(t) \right]
     \end{aligned}
    \right.
 
-其中 :math:`D(t)` 为震源时间函数，:math:`*` 表示卷积，:math:`A_m` 为与方位角和震源机制相关的方向因子，其中 :math:`U_Z, U_R` 的方向因子相同，而 :math:`U_T` 的方向因子满足 
+其中 :math:`D(t)` 为震源时间函数，:math:`*` 表示卷积，:math:`A_m` 为与方位角和震源机制相关的方向因子，其中 :math:`u_z, u_r` 的方向因子相同，而 :math:`u_\theta` 的方向因子满足 
 
 .. math:: 
 
