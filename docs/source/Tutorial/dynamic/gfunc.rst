@@ -36,9 +36,21 @@ Python中计算动态格林函数的主函数为 :func:`compute_grn() <pygrt.pym
             :start-after: BEGIN GRN
             :end-before: END GRN
 
-        不同震源深度、接收点深度和震中距的格林函数会在 :rst:dir:`GRN/milrow_{depsrc}_{deprcv}_{dist}/`` 路径下，使用SAC格式保存。 
+        不同震源深度、接收点深度和震中距的格林函数会在 :rst:dir:`GRN/milrow_{depsrc}_{deprcv}_{dist}/` 路径下，使用SAC格式保存。 
 
         一些基本信息（包括源点和场点的物性参数）保存在SAC头段变量中，其中 :c:var:`t0` 和 :c:var:`t1` 分别代表初至P波和初至S波的到时，由于程序中使用0作为参考时间，故其等价于走时。
+
+        如果你没有安装SAC软件，可以使用Python的ObsPy库读取数据，或者使用 :command:`grt.b2a` 工具临时将SAC格式文件转为如下的文本文件：
+
+        .. literalinclude:: run/run.sh
+            :language: bash
+            :start-after: BEGIN grt.b2a
+            :end-before: END grt.b2a
+
+        输出的文本文件如下，两列分别为时间点和幅值。这种输出仅保留波形信息，缺失SAC文件中的头段变量。
+
+        .. literalinclude:: run/HFZ_head
+            :language: text
 
     .. tab:: Python
 
@@ -95,7 +107,7 @@ Python中计算动态格林函数的主函数为 :func:`compute_grn() <pygrt.pym
 积分形式分类
 --------------
 
-通过在面谐矢量坐标系中建立波函数进行公式推导，最终理论地震图的三分量频谱 :math:`W_m(\omega), Q_m(\omega), V_m(\omega)` (分别为垂向，径向，切向)可以表达为:
+通过在面谐矢量坐标系中建立波函数进行公式推导，最终格林函数的三分量频谱 :math:`W_m(\omega), Q_m(\omega), V_m(\omega)` (分别为垂向，径向，切向)可以表达为:
 
 .. math:: 
 
