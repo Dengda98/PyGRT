@@ -408,24 +408,24 @@ int main(int argc, char **argv){
         // 先输出列名
         if(!printHead){
             // 打印物性参数
-            fprintf(stdout, "# "GRT_STATIC_REAL_FMT" "GRT_STATIC_REAL_FMT" "GRT_STATIC_REAL_FMT"\n", src_va, src_vb, src_rho);
-            fprintf(stdout, "# "GRT_STATIC_REAL_FMT" "GRT_STATIC_REAL_FMT" "GRT_STATIC_REAL_FMT"\n", rcv_va, rcv_vb, rcv_rho);
+            fprintf(stdout, "# "GRT_REAL_FMT" "GRT_REAL_FMT" "GRT_REAL_FMT"\n", src_va, src_vb, src_rho);
+            fprintf(stdout, "# "GRT_REAL_FMT" "GRT_REAL_FMT" "GRT_REAL_FMT"\n", rcv_va, rcv_vb, rcv_rho);
             
             char XX[20];
-            sprintf(XX, GRT_STATIC_STRING_FMT, "X(km)"); XX[0]='#';
+            sprintf(XX, GRT_STRING_FMT, "X(km)"); XX[0]='#';
             fprintf(stdout, "%s", XX);
-            fprintf(stdout, GRT_STATIC_STRING_FMT, "Y(km)");
+            fprintf(stdout, GRT_STRING_FMT, "Y(km)");
             char s_channel[5];
             for(int i=0; i<3; ++i){
                 sprintf(s_channel, "%s%c", s_computeType, toupper(chs[i])); 
-                fprintf(stdout, GRT_STATIC_STRING_FMT, s_channel);
+                fprintf(stdout, GRT_STRING_FMT, s_channel);
             }
 
             if(calc_upar){
                 for(int k=0; k<3; ++k){
                     for(int i=0; i<3; ++i){
                         sprintf(s_channel, "%c%s%c", tolower(chs[k]), s_computeType, toupper(chs[i])); 
-                        fprintf(stdout, GRT_STATIC_STRING_FMT, s_channel);
+                        fprintf(stdout, GRT_STRING_FMT, s_channel);
                     }
                 }
             }
@@ -498,14 +498,14 @@ int main(int argc, char **argv){
         }
 
         // 输出数据
-        fprintf(stdout, GRT_STATIC_REAL_FMT GRT_STATIC_REAL_FMT, x0, y0);
+        fprintf(stdout, GRT_REAL_FMT GRT_REAL_FMT, x0, y0);
         for(int i=0; i<3; ++i){
-            fprintf(stdout, GRT_STATIC_REAL_FMT, syn[i]);
+            fprintf(stdout, GRT_REAL_FMT, syn[i]);
         }
         if(calc_upar){
             for(int i=0; i<3; ++i){
                 for(int k=0; k<3; ++k){
-                    fprintf(stdout, GRT_STATIC_REAL_FMT, syn_upar[i][k]);
+                    fprintf(stdout, GRT_REAL_FMT, syn_upar[i][k]);
                 }
             }
         }
