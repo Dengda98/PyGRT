@@ -16,13 +16,16 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 from obspy import Stream, Trace 
 from obspy.core import AttribDict
 from copy import deepcopy
 from scipy.signal import oaconvolve
 from scipy.fft import rfft, irfft
+from scipy.special import jv
 import math 
 import os
+import glob
 from typing import List, Union
 from copy import deepcopy
 
@@ -1171,11 +1174,16 @@ def read_statsfile(statsfile:str):
     '''
         读取单个频率下波数积分(或Filon积分)的记录文件  
 
-        :param    statsfile:       文件路径  
+        :param    statsfile:       文件路径(可使用通配符简化输入)
 
         :return:
             - **data** -     `numpy.ndarray <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_ 自定义类型数组 
     '''
+    Lst = glob.glob(statsfile)
+    if len(Lst) != 1:
+        raise OSError(f"{statsfile} should only match one file, but {len(Lst)} matched.")
+    statsfile = Lst[0]
+
     data = np.fromfile(statsfile, 
         dtype=[
             ('k', NPCT_REAL_TYPE), 
@@ -1216,26 +1224,26 @@ def read_statsfile(statsfile:str):
             #           if p==2:    wm * Jm(kr) * k 
             #           if p==3:  - vm * Jm-1(kr) * k
             #               
-            ('EXP_00', NPCT_CMPLX_TYPE),
-            ('EXP_02', NPCT_CMPLX_TYPE),
+            # ('EXP_00', NPCT_CMPLX_TYPE),
+            # ('EXP_02', NPCT_CMPLX_TYPE),
 
-            ('VF_00', NPCT_CMPLX_TYPE),
-            ('VF_02', NPCT_CMPLX_TYPE),
+            # ('VF_00', NPCT_CMPLX_TYPE),
+            # ('VF_02', NPCT_CMPLX_TYPE),
 
-            ('HF_10', NPCT_CMPLX_TYPE),
-            ('HF_11', NPCT_CMPLX_TYPE),
-            ('HF_12', NPCT_CMPLX_TYPE),
-            ('HF_13', NPCT_CMPLX_TYPE),
-            ('DC_00', NPCT_CMPLX_TYPE),
-            ('DC_02', NPCT_CMPLX_TYPE),
-            ('DC_10', NPCT_CMPLX_TYPE),
-            ('DC_11', NPCT_CMPLX_TYPE),
-            ('DC_12', NPCT_CMPLX_TYPE),
-            ('DC_13', NPCT_CMPLX_TYPE),
-            ('DC_20', NPCT_CMPLX_TYPE),
-            ('DC_21', NPCT_CMPLX_TYPE),
-            ('DC_22', NPCT_CMPLX_TYPE),
-            ('DC_23', NPCT_CMPLX_TYPE),
+            # ('HF_10', NPCT_CMPLX_TYPE),
+            # ('HF_11', NPCT_CMPLX_TYPE),
+            # ('HF_12', NPCT_CMPLX_TYPE),
+            # ('HF_13', NPCT_CMPLX_TYPE),
+            # ('DC_00', NPCT_CMPLX_TYPE),
+            # ('DC_02', NPCT_CMPLX_TYPE),
+            # ('DC_10', NPCT_CMPLX_TYPE),
+            # ('DC_11', NPCT_CMPLX_TYPE),
+            # ('DC_12', NPCT_CMPLX_TYPE),
+            # ('DC_13', NPCT_CMPLX_TYPE),
+            # ('DC_20', NPCT_CMPLX_TYPE),
+            # ('DC_21', NPCT_CMPLX_TYPE),
+            # ('DC_22', NPCT_CMPLX_TYPE),
+            # ('DC_23', NPCT_CMPLX_TYPE),
         ]
     )
 
@@ -1246,12 +1254,31 @@ def read_statsfile_ptam(statsfile:str):
     '''
         读取单个频率下峰谷平均法的记录文件  
 
-        :param    statsfile:       文件路径  
+        :param    statsfile:       PTAM文件路径(可使用通配符简化输入)
 
         :return:
-            - **data** -     `numpy.ndarray <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_ 自定义类型数组 
+            - **data1** -     `numpy.ndarray <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_ 自定义类型数组，DWM或FIM过程中的积分过程数据 
+            - **data2** -     `numpy.ndarray <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_ 自定义类型数组，PTAM过程中的积分过程数据
+            - **ptam_data** -     `numpy.ndarray <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_ 自定义类型数组，PTAM的峰谷位置及幅值
     '''
-    data = np.fromfile(statsfile, 
+    Lst = glob.glob(statsfile)
+    if len(Lst) != 1:
+        raise OSError(f"{statsfile} should only match one file, but {len(Lst)} matched.")
+    statsfile = Lst[0]
+
+    # 从文件路径命名中，获得对应的K文件路径
+    PTAMname = os.path.basename(statsfile)
+    if "_" in PTAMname:  # 动态解
+        splits = PTAMname.split("_")
+        splits[-3] = "K"
+        K_basename= "_".join(splits)
+    else:
+        K_basename = "K" # 静态解
+        
+    data1 = read_statsfile(os.path.join(os.path.dirname(os.path.dirname(statsfile)), K_basename))
+    data2 = read_statsfile(os.path.join(os.path.dirname(statsfile), K_basename))
+
+    ptam_data = np.fromfile(statsfile, 
         dtype=[
             # 各格林函数数值积分的值(k上限位于不同的波峰波谷)
             # 名称中的两位数字的解释和`read_statsfile`函数中的解释相同，
@@ -1301,10 +1328,64 @@ def read_statsfile_ptam(statsfile:str):
         ]
     )
 
-    return data
+    return data1, data2, ptam_data
 
 
-def plot_statsdata(statsdata:np.ndarray, srctype:str, mtype:str, qwvtype:str, ptype:str, RorI:bool=True):
+
+def _get_stats_Fname(statsdata:np.ndarray, karr:np.ndarray, dist:float, srctype:str, mtype:str, ptype:str):
+    # 根据ptype获得对应的核函数
+    int_sgn = 1
+    krarr = karr*dist
+    if mtype=='0':
+        if ptype=='0':
+            Fname = r"$F(k,\omega)=q_0(k, \omega)$"
+            Farr = statsdata[f'{srctype}_q0']
+            FJname = rf"$F(k,\omega)J_1(kr)k$"
+            FJarr = jv(1, krarr) * Farr * karr
+            int_sgn = -1
+        elif ptype=='2':
+            Fname = r"$F(k,\omega)=w_0(k, \omega)$"
+            FJname = rf"$F(k,\omega)J_0(kr)k$"
+            Farr = statsdata[f'{srctype}_w0']
+            FJarr = jv(0, krarr) * Farr * karr
+        else:
+            raise ValueError(f"source {srctype}, m={mtype}, p={ptype} is not supported.")
+        
+    elif mtype in ['1', '2']:
+        m = int(mtype)
+        if ptype=='0':
+            Fname = rf"$F(k,\omega)=q_{mtype}(k, \omega)$"
+            Farr = statsdata[f'{srctype}_q{mtype}']
+            FJname = rf"$F(k,\omega)J_{m-1}(kr)k$"
+            FJarr = jv(m-1, krarr) * Farr * karr
+        elif ptype=='1':
+            Fname = rf"$F(k,\omega)=q_{mtype}(k, \omega) + v_{mtype}(k, \omega)$"
+            Farr = (statsdata[f'{srctype}_q{mtype}'] + statsdata[f'{srctype}_v{mtype}'])
+            FJname = rf"$F(k,\omega) \dfrac{{{m}}}{{kr}} J_{m}(kr)k$"
+            FJarr = jv(m, krarr) * Farr * m/dist
+            int_sgn = -1
+        elif ptype=='2':
+            Fname = rf"$F(k,\omega)=w_{mtype}(k, \omega)$"
+            Farr = statsdata[f'{srctype}_w{mtype}']
+            FJname = rf"$F(k,\omega)J_{m}(kr)k$"
+            FJarr = jv(m, krarr) * Farr * karr
+        elif ptype=='3':
+            Fname = rf"$F(k,\omega)=v_{mtype}(k, \omega)$"
+            Farr = statsdata[f'{srctype}_v{mtype}']
+            FJname = rf"$F(k,\omega)J_{m-1}(kr)k$"
+            FJarr = jv(m-1, krarr) * Farr * karr
+            int_sgn = -1
+        else:
+            raise ValueError(f"source {srctype}, m={mtype}, p={ptype} is not supported.")
+        
+    else:
+        raise ValueError(f"source {srctype}, m={mtype}, p={ptype} is not supported.")
+    
+    return Fname, Farr, FJname, FJarr, int_sgn
+
+
+def plot_statsdata(statsdata:np.ndarray, dist:float, srctype:str, mtype:str, ptype:str, RorI:Union[bool,int]=True,
+                   fig:Union[Figure,None]=None, axs:Union[Axes,None]=None):
     r'''
         根据 :func:`read_statsfile <pygrt.utils.read_statsfile>` 函数函数读取的数据，
         绘制核函数 :math:`F(k,\omega)`、被积函数 :math:`F(k,\omega)J_m(kr)k`，以及简单计算累积积分 :math:`\sum F(k,\omega)J_m(kr)k` 并绘制。
@@ -1312,58 +1393,77 @@ def plot_statsdata(statsdata:np.ndarray, srctype:str, mtype:str, qwvtype:str, pt
         .. note:: 并不是每个震源类型对应的每一阶每种积分类型都存在，详见 :ref:`grn_types`。
 
         :param    statsdata:         :func:`read_statsfile <pygrt.utils.read_statsfile>` 函数返回值 
+        :param    dist:              震中距(km)
         :param    srctype:           震源类型的缩写，包括EXP、VF、HF、DC  
-        :param    qwvtype:           
         :param    mtype:             阶数(0,1,2)，不完全对应公式中Bessel函数的阶数，因为存在Bessel函数的导数，需要使用递推公式
         :param    ptype:             积分类型(0,1,2,3) 
-        :param    RorI:              绘制实部还是虚部，默认实部
+        :param    RorI:              绘制实部还是虚部，默认实部，传入2表示实部虚部都绘制
+        :param    fig:               传入自定义的matplotlib.Figure对象，默认为None
+        :param    axs:               传入自定义的matplotlib.Axes对象数组（三个），默认为None
 
         :return:  
                 - **fig** -                        matplotlib.Figure对象   
-                - **(ax1, ax2, ax3)**  -           3个matplotlib.Axes对象的元组
+                - **(ax1,ax2,ax3)** -              matplotlib.Axes对象数组
     '''
 
     mtype = str(mtype)
     ptype = str(ptype)
 
     karr = statsdata['k'] 
-    Fname = f'{srctype}_{qwvtype}{mtype}'
-    Farr = statsdata[Fname]   # 核函数 F(k, w)
-    FJname = f'{srctype}_{mtype}{ptype}'
-    FJarr = statsdata[FJname]  # 被积函数 F(k, w) * Jm(kr) * k
+    dk = (karr[1] - karr[0])   # 假设均匀dk
+    if 0.5*np.pi/dk < dist:  # 对于bessel函数这种震荡函数，假设一个周期内至少取4个点
+        print(f"WARNING! dist ({dist}) > PI/(2*dk) ({0.5*np.pi/dk:.5e}.)")
 
-    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(8, 9), gridspec_kw=dict(hspace=0.7))
-    if RorI:
-        ax1.plot(karr, np.real(Farr), 'k', lw=0.8, label='Real') 
+    Fname, Farr, FJname, FJarr, int_sgn = _get_stats_Fname(statsdata, karr, dist, srctype, mtype, ptype)
+    
+    if fig is None or axs is None:
+        fig, axs = plt.subplots(3, 1, figsize=(8, 9), gridspec_kw=dict(hspace=0.7))
+    
+    # axs长度必须为三个
+    if len(axs) != 3:
+        raise ValueError("axs should have 3 elements.")
+
+    ax1, ax2, ax3 = axs
+
+    if isinstance(RorI, int) and RorI==2:
+        ax1.plot(karr, np.real(Farr), lw=0.8, label='Real') 
+        ax1.plot(karr, np.imag(Farr), lw=0.8, label='Imag') 
     else:
-        ax1.plot(karr, np.imag(Farr), 'k', lw=0.8, label='Imag') 
+        if RorI:
+            ax1.plot(karr, np.real(Farr), lw=0.8, label='Real') 
+        else:
+            ax1.plot(karr, np.imag(Farr), lw=0.8, label='Imag') 
 
     ax1.set_xlabel('k /$km^{-1}$')
-    ax1.set_title(f'F(k, w)   [{Fname}]')
+    ax1.set_title(Fname)
     ax1.grid()
     ax1.legend(loc='lower left')
 
-
-    if RorI:
-        ax2.plot(karr, np.real(FJarr), 'k', lw=0.8, label='Real') 
+    if isinstance(RorI, int) and RorI==2:
+        ax2.plot(karr, np.real(FJarr), lw=0.8, label='Real') 
+        ax2.plot(karr, np.imag(FJarr), lw=0.8, label='Imag') 
     else:
-        ax2.plot(karr, np.imag(FJarr), 'k', lw=0.8, label='Imag') 
-    ax2.set_title(f'F(k, w)*Jm(kr)*k   [{FJname}]')
+        if RorI:
+            ax2.plot(karr, np.real(FJarr), lw=0.8, label='Real') 
+        else:
+            ax2.plot(karr, np.imag(FJarr), lw=0.8, label='Imag') 
+    ax2.set_title(FJname)
     ax2.set_xlabel('k /$km^{-1}$')
     ax2.grid()
     ax2.legend(loc='lower left')
 
     # 数值积分，不乘系数dk 
-    # 以下的特殊处理是使用峰谷平均法时计算的中间积分值也会记录到该文件中，
-    # 记录波峰波谷值的由另一个文件负责
-    # 而常规积分阶段和峰谷平均法阶段使用的dk不一致，故先乘再除
-    Parr = np.cumsum(FJarr[:-1] * np.diff(karr)) / (karr[1] - karr[0]) 
+    Parr = np.cumsum(FJarr) * int_sgn
 
-    if RorI:
-        ax3.plot(karr[:-1], np.real(Parr), 'k', lw=0.8, label='Real') 
+    if isinstance(RorI, int) and RorI==2:
+        ax3.plot(karr, np.real(Parr), lw=0.8, label='Real') 
+        ax3.plot(karr, np.imag(Parr), lw=0.8, label='Imag') 
     else:
-        ax3.plot(karr[:-1], np.imag(Parr), 'k', lw=0.8, label='Imag') 
-    ax3.set_title('$\sum_k$ F(k, w)*Jm(kr)*k')
+        if RorI:
+            ax3.plot(karr, np.real(Parr), lw=0.8, label='Real') 
+        else:
+            ax3.plot(karr, np.imag(Parr), lw=0.8, label='Imag') 
+    ax3.set_title(f'$\sum_k$ {FJname}')
     ax3.set_xlabel("k /$km^{-1}$")
     ax3.grid()
     ax3.legend(loc='lower left')
@@ -1371,56 +1471,108 @@ def plot_statsdata(statsdata:np.ndarray, srctype:str, mtype:str, qwvtype:str, pt
     return fig, (ax1, ax2, ax3)
 
 
-def plot_statsdata_ptam(statsdata:np.ndarray, statsdata_ptam:np.ndarray, srctype:str, mtype:str, ptype:str, RorI:bool=True):
+def plot_statsdata_ptam(statsdata1:np.ndarray, statsdata2:np.ndarray, statsdata_ptam:np.ndarray, 
+                        dist:float, srctype:str, mtype:str, ptype:str, RorI:Union[bool,int]=True,
+                        fig:Union[Figure,None]=None, axs:Union[Axes,None]=None):
     r'''
-        根据 :func:`read_statsfile <pygrt.utils.read_statsfile>` 函数以及 
-        :func:`read_statsfile_ptam <pygrt.utils.read_statsfile_ptam>` 函数读取的数据，
+        根据 :func:`read_statsfile_ptam <pygrt.utils.read_statsfile_ptam>` 函数读取的数据，
         简单计算并绘制累积积分以及峰谷平均法使用的波峰波谷的位置。
 
         .. note:: 并不是每个震源类型对应的每一阶每种积分类型都存在，详见 :ref:`grn_types`。
 
-        :param    statsdata:         :func:`read_statsfile <pygrt.utils.read_statsfile>` 函数返回值 
-        :param    statsdata_ptam:    :func:`read_statsfile <pygrt.utils.read_statsfile_ptam>` 函数返回值 
+        :param    statsdata1:        DWM或FIM过程中的积分过程数据
+        :param    statsdata2:        PTAM过程中的积分过程数据
+        :param    statsdata_ptam:    PTAM的峰谷位置及幅值
         :param    srctype:           震源类型的缩写，包括EXP、VF、HF、DC  
         :param    mtype:             阶数(0,1,2)，不完全对应公式中Bessel函数的阶数，因为存在Bessel函数的导数，需要使用递推公式
         :param    ptype:             积分类型(0,1,2,3) 
-        :param    RorI:              绘制实部还是虚部，默认实部
+        :param    RorI:              绘制实部还是虚部，默认实部，传入2表示实部虚部都绘制
+        :param    fig:               传入自定义的matplotlib.Figure对象，默认为None
+        :param    axs:               传入自定义的matplotlib.Axes对象数组（三个），默认为None
 
         :return:  
-                - **fig** -           matplotlib.Figure对象   
-                - **ax**  -           matplotlib.Axes对象  
+                - **fig** -                        matplotlib.Figure对象   
+                - **(ax1,ax2,ax3)** -              matplotlib.Axes对象数组
     '''
-
-    fig, ax = plt.subplots(1,1, figsize=(8, 5))
 
     mtype = str(mtype)
     ptype = str(ptype)
 
-    karr = statsdata['k'] 
-    FJname = f'{srctype}_{mtype}{ptype}'
-    FJarr = statsdata[FJname]  # 被积函数 F(k, w) * Jm(kr) * k
+    karr1 = statsdata1['k'] 
+    dk1 = karr1[1] - karr1[0]
+    Fname, Farr1, FJname, FJarr1, int_sgn = _get_stats_Fname(statsdata1, karr1, dist, srctype, mtype, ptype)
+    karr2 = statsdata2['k'] 
+    dk2 = karr2[1] - karr2[0]
+    Fname, Farr2, FJname, FJarr2, int_sgn = _get_stats_Fname(statsdata2, karr2, dist, srctype, mtype, ptype)
+
+    # 将两个过程的结果拼起来
+    Farr = np.hstack((Farr1, Farr2))
+    karr = np.hstack((karr1, karr2))
+    FJarr = np.hstack((FJarr1, FJarr2))
+
+    if fig is None or axs is None:
+        fig, axs = plt.subplots(3, 1, figsize=(8, 9), gridspec_kw=dict(hspace=0.7))
+    
+    # axs长度必须为三个
+    if len(axs) != 3:
+        raise ValueError("axs should have 3 elements.")
+
+    ax1, ax2, ax3 = axs
+
+    if isinstance(RorI, int) and RorI==2:
+        ax1.plot(karr, np.real(Farr), lw=0.8, label='Real') 
+        ax1.plot(karr, np.imag(Farr), lw=0.8, label='Imag') 
+    else:
+        if RorI:
+            ax1.plot(karr, np.real(Farr), lw=0.8, label='Real') 
+        else:
+            ax1.plot(karr, np.imag(Farr), lw=0.8, label='Imag') 
+
+    ax1.set_xlabel('k /$km^{-1}$')
+    ax1.set_title(Fname)
+    ax1.grid()
+    ax1.legend(loc='lower left')
+
+    if isinstance(RorI, int) and RorI==2:
+        ax2.plot(karr, np.real(FJarr), lw=0.8, label='Real') 
+        ax2.plot(karr, np.imag(FJarr), lw=0.8, label='Imag') 
+    else:
+        if RorI:
+            ax2.plot(karr, np.real(FJarr), lw=0.8, label='Real') 
+        else:
+            ax2.plot(karr, np.imag(FJarr), lw=0.8, label='Imag') 
+    ax2.set_title(FJname)
+    ax2.set_xlabel('k /$km^{-1}$')
+    ax2.grid()
+    ax2.legend(loc='lower left')
+
     # 波峰波谷位置，用红十字标记
     ptKarr = statsdata_ptam[f'sum_{srctype}_{mtype}{ptype}_k']
     ptFJarr = statsdata_ptam[f'sum_{srctype}_{mtype}{ptype}']
 
     # 数值积分，不乘系数dk 
-    # 以下的特殊处理是使用峰谷平均法时计算的中间积分值也会记录到该文件中，
-    # 记录波峰波谷值的由另一个文件负责
-    # 而常规积分阶段和峰谷平均法阶段使用的dk不一致，故先乘再除
-    Parr = np.cumsum(FJarr[:-1] * np.diff(karr)) / (karr[1] - karr[0]) 
+    Parr1 = np.cumsum(FJarr1) * int_sgn
+    Parr2 = np.cumsum(FJarr2) * int_sgn
+    Parr = np.hstack([Parr1, Parr2*dk2/dk1+Parr1[-1]])
 
-
-    if RorI:
-        ax.plot(karr[:-1], np.real(Parr), 'k', lw=0.8, label='Real') 
-        ax.plot(ptKarr, np.real(ptFJarr), 'r+', markersize=6)
+    if isinstance(RorI, int) and RorI==2:
+        ax3.plot(karr, np.real(Parr), lw=0.8, label='Real') 
+        ax3.plot(ptKarr, np.real(ptFJarr), 'r+', markersize=6)
+        ax3.plot(karr, np.imag(Parr), lw=0.8, label='Imag') 
+        ax3.plot(ptKarr, np.imag(ptFJarr), 'r+', markersize=6)
     else:
-        ax.plot(karr[:-1], np.imag(Parr), 'k', lw=0.8, label='Imag') 
-        ax.plot(ptKarr, np.imag(ptFJarr), 'r+', markersize=6)
+        if RorI:
+            ax3.plot(karr, np.real(Parr), lw=0.8, label='Real') 
+            ax3.plot(ptKarr, np.real(ptFJarr), 'r+', markersize=6)
+        else:
+            ax3.plot(karr, np.imag(Parr), lw=0.8, label='Imag') 
+            ax3.plot(ptKarr, np.imag(ptFJarr), 'r+', markersize=6)
+    
 
-    ax.set_title('$\sum_k$ F(k, w)*Jm(kr)*k')
-    ax.set_xlabel("k /$km^{-1}$")
-    ax.grid()
-    ax.legend(loc='lower left')
+    ax3.set_title(f'$\sum_k$ {FJname}')
+    ax3.set_xlabel("k /$km^{-1}$")
+    ax3.grid()
+    ax3.legend(loc='lower left')
 
 
-    return fig, ax
+    return fig, (ax1, ax2, ax3)
