@@ -328,6 +328,8 @@ void integ_static_grn(
         } 
     }
 
+
+    if(fstats!=NULL) fclose(fstats);
     for(MYINT ir=0; ir<nr; ++ir){
         if(ptam_fstatsnr[ir][0]!=NULL){
             fclose(ptam_fstatsnr[ir][0]);
@@ -337,6 +339,5 @@ void integ_static_grn(
         }
     }
 
-    free(fstats);
     free(ptam_fstatsnr);
 }

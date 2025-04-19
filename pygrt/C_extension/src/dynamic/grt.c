@@ -607,7 +607,8 @@ void integ_grn_spec(
         // PTAM为每个震中距都创建波数积分记录文件
         FILE *(*ptam_fstatsnr)[2] = (FILE *(*)[2])malloc(nr * sizeof(*ptam_fstatsnr));
         {
-            char *fname = (char *)malloc((strlen(statsstr)+200)*sizeof(char));
+            MYINT len0 = (statsstr!=NULL) ? strlen(statsstr) : 0;
+            char *fname = (char *)malloc((len0+200)*sizeof(char));
             if(needfstats){
                 sprintf(fname, "%s/K_%04d_%.5e", statsstr, iw, freqs[iw]);
                 fstats = fopen(fname, "wb");
@@ -707,6 +708,7 @@ void integ_grn_spec(
         }
         
 
+        if(fstats!=NULL) fclose(fstats);
         for(MYINT ir=0; ir<nr; ++ir){
             if(ptam_fstatsnr[ir][0]!=NULL){
                 fclose(ptam_fstatsnr[ir][0]);
@@ -715,6 +717,7 @@ void integ_grn_spec(
                 fclose(ptam_fstatsnr[ir][1]);
             }
         }
+        free(ptam_fstatsnr);
 
     #ifdef _OPENMP
         free_mod1d(local_mod1d);
@@ -745,9 +748,6 @@ void integ_grn_spec(
         if (sum_VF_uir_J) free(sum_VF_uir_J);
         if (sum_HF_uir_J) free(sum_HF_uir_J);
         if (sum_DC_uir_J) free(sum_DC_uir_J);
-
-        free(fstats);
-        free(ptam_fstatsnr);
 
     } // END omega loop
 
