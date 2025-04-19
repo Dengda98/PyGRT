@@ -552,10 +552,6 @@ static void getopt_from_command(int argc, char **argv){
                         strcpy(s_statsidxs[nstatsidxs], token);
                         statsidxs = (MYINT*)realloc(statsidxs, sizeof(MYINT)*(nstatsidxs+1));
                         statsidxs[nstatsidxs] = atoi(token);
-                        if(statsidxs[nstatsidxs] < 0){
-                            fprintf(stderr, "[%s] " BOLD_RED "Error! Can't set negative index(%d) in -S.\n" DEFAULT_RESTORE, command, statsidxs[nstatsidxs]);
-                            exit(EXIT_FAILURE);
-                        }
 
                         token = strtok(NULL, ",");
                         nstatsidxs++;
