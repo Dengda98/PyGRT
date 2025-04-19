@@ -1260,11 +1260,15 @@ def read_statsfile_ptam(statsfile:str):
             - **data1** -     `numpy.ndarray <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_ 自定义类型数组，DWM或FIM过程中的积分过程数据 
             - **data2** -     `numpy.ndarray <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_ 自定义类型数组，PTAM过程中的积分过程数据
             - **ptam_data** -     `numpy.ndarray <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_ 自定义类型数组，PTAM的峰谷位置及幅值
+            - **dist** -      文件对应的震中距(km)
     '''
     Lst = glob.glob(statsfile)
     if len(Lst) != 1:
         raise OSError(f"{statsfile} should only match one file, but {len(Lst)} matched.")
     statsfile = Lst[0]
+
+    # 获得震中距
+    dist = float(os.path.dirname(statsfile).split("_")[-1])
 
     # 从文件路径命名中，获得对应的K文件路径
     PTAMname = os.path.basename(statsfile)
@@ -1328,7 +1332,7 @@ def read_statsfile_ptam(statsfile:str):
         ]
     )
 
-    return data1, data2, ptam_data
+    return data1, data2, ptam_data, dist
 
 
 
