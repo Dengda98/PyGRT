@@ -280,11 +280,10 @@ class PyModel1D:
         calc_HF:bool = 'HF' in gf_source
         calc_DC:bool = 'DC' in gf_source
 
-        if isinstance(distarr, list):
-            distarr = np.array(distarr)
-        elif isinstance(distarr, float) or isinstance(distarr, int):
+        if isinstance(distarr, float) or isinstance(distarr, int):
             distarr = np.array([distarr*1.0]) 
 
+        distarr = np.array(distarr)
         distarr = distarr.copy().astype(NPCT_REAL_TYPE)
 
         if np.any(distarr < 0):
@@ -414,11 +413,12 @@ class PyModel1D:
             c_statsfile = c_char_p(statsfile.encode('utf-8'))
 
         nstatsidxs = 0 
-        if statsidxs is not None:
-            c_statsidxs = npct.as_ctypes(np.array(statsidxs).astype('i'))
-            nstatsidxs = len(statsidxs)
-        else:
-            c_statsidxs = None
+        if statsidxs is None:
+            statsidxs = np.array([-1])
+
+        statsidxs = np.array(statsidxs)
+        c_statsidxs = npct.as_ctypes(np.array(statsidxs).astype('i'))
+        nstatsidxs = len(statsidxs)
 
 
         # ===========================================
@@ -589,15 +589,13 @@ class PyModel1D:
         depsrc = self.depsrc
         deprcv = self.deprcv
 
-        if isinstance(xarr, list):
-            xarr = np.array(xarr)
-        elif isinstance(xarr, float) or isinstance(xarr, int):
+        if isinstance(xarr, float) or isinstance(xarr, int):
             xarr = np.array([xarr*1.0]) 
+        xarr = np.array(xarr)
 
-        if isinstance(yarr, list):
-            yarr = np.array(yarr)
-        elif isinstance(yarr, float) or isinstance(yarr, int):
+        if isinstance(yarr, float) or isinstance(yarr, int):
             yarr = np.array([yarr*1.0]) 
+        yarr = np.array(yarr)
 
         nx = len(xarr)
         ny = len(yarr)
