@@ -1258,9 +1258,13 @@ def read_statsfile_ptam(statsfile:str):
 
     # 从文件路径命名中，获得对应的K文件路径
     PTAMname = os.path.basename(statsfile)
-    splits = PTAMname.split("_")
-    splits[-3] = "K"
-    K_basename= "_".join(splits)
+    if "_" in PTAMname:  # 动态解
+        splits = PTAMname.split("_")
+        splits[-3] = "K"
+        K_basename= "_".join(splits)
+    else:
+        K_basename = "K" # 静态解
+        
     data1 = read_statsfile(os.path.join(os.path.dirname(os.path.dirname(statsfile)), K_basename))
     data2 = read_statsfile(os.path.join(os.path.dirname(statsfile), K_basename))
 
@@ -1458,7 +1462,7 @@ def plot_statsdata(statsdata:np.ndarray, dist:float, srctype:str, mtype:str, pty
 
 
 def plot_statsdata_ptam(statsdata1:np.ndarray, statsdata2:np.ndarray, statsdata_ptam:np.ndarray, 
-                        dist:float, srctype:str, mtype:str, ptype:str, RorI:bool=True,
+                        dist:float, srctype:str, mtype:str, ptype:str, RorI:Union[bool,int]=True,
                         fig:Union[Figure,None]=None, axs:Union[Axes,None]=None):
     r'''
         根据 :func:`read_statsfile_ptam <pygrt.utils.read_statsfile_ptam>` 函数读取的数据，
@@ -1472,7 +1476,7 @@ def plot_statsdata_ptam(statsdata1:np.ndarray, statsdata2:np.ndarray, statsdata_
         :param    srctype:           震源类型的缩写，包括EXP、VF、HF、DC  
         :param    mtype:             阶数(0,1,2)，不完全对应公式中Bessel函数的阶数，因为存在Bessel函数的导数，需要使用递推公式
         :param    ptype:             积分类型(0,1,2,3) 
-        :param    RorI:              绘制实部还是虚部，默认实部
+        :param    RorI:              绘制实部还是虚部，默认实部，传入2表示实部虚部都绘制
         :param    fig:               传入自定义的matplotlib.Figure对象，默认为None
         :param    axs:               传入自定义的matplotlib.Axes对象数组（三个），默认为None
 
@@ -1541,14 +1545,21 @@ def plot_statsdata_ptam(statsdata1:np.ndarray, statsdata2:np.ndarray, statsdata_
     Parr2 = np.cumsum(FJarr2) * int_sgn
     Parr = np.hstack([Parr1, Parr2*dk2/dk1+Parr1[-1]])
 
-    if RorI:
-        ax3.plot(karr, np.real(Parr), 'k', lw=0.8, label='Real') 
+    if isinstance(RorI, int) and RorI==2:
+        ax3.plot(karr, np.real(Parr), lw=0.8, label='Real') 
         ax3.plot(ptKarr, np.real(ptFJarr), 'r+', markersize=6)
-    else:
-        ax3.plot(karr, np.imag(Parr), 'k', lw=0.8, label='Imag') 
+        ax3.plot(karr, np.imag(Parr), lw=0.8, label='Imag') 
         ax3.plot(ptKarr, np.imag(ptFJarr), 'r+', markersize=6)
+    else:
+        if RorI:
+            ax3.plot(karr, np.real(Parr), lw=0.8, label='Real') 
+            ax3.plot(ptKarr, np.real(ptFJarr), 'r+', markersize=6)
+        else:
+            ax3.plot(karr, np.imag(Parr), lw=0.8, label='Imag') 
+            ax3.plot(ptKarr, np.imag(ptFJarr), 'r+', markersize=6)
+    
 
-    ax3.set_title('$\sum_k$ F(k, w)*Jm(kr)*k')
+    ax3.set_title(f'$\sum_k$ {FJname}')
     ax3.set_xlabel("k /$km^{-1}$")
     ax3.grid()
     ax3.legend(loc='lower left')
