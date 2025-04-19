@@ -22,6 +22,10 @@ extern char *optarg;
 extern int optind;
 extern int optopt;
 
+//****************** 在该文件以内的全局变量 ***********************//
+// 命令名称
+static char *command = NULL;
+
 /**
  * 打印使用说明
  */
@@ -40,26 +44,50 @@ printf("\n"
 }
 
 
+
+/**
+ * 从命令行中读取选项，处理后记录到全局变量中
+ * 
+ * @param     argc      命令行的参数个数
+ * @param     argv      多个参数字符串指针
+ */
+static void getopt_from_command(int argc, char **argv){
+    int opt;
+    while ((opt = getopt(argc, argv, ":h")) != -1) {
+        switch (opt) {
+
+            // 帮助
+            case 'h':
+                print_help();
+                exit(EXIT_SUCCESS);
+                break;
+
+            // 参数缺失
+            case ':':
+                fprintf(stderr, "[%s] " BOLD_RED "Error! Option '-%c' requires an argument. Use '-h' for help.\n" DEFAULT_RESTORE, command, optopt);
+                exit(EXIT_FAILURE);
+                break;
+
+            // 非法选项
+            case '?':
+            default:
+                fprintf(stderr, "[%s] " BOLD_RED "Error! Option '-%c' is invalid. Use '-h' for help.\n" DEFAULT_RESTORE, command, optopt);
+                exit(EXIT_FAILURE);
+                break;
+        }
+    }
+
+    // 检查必选项有没有设置
+    if(argc != 2){
+        fprintf(stderr, "[%s] " BOLD_RED "Error! Need set options. Use '-h' for help.\n" DEFAULT_RESTORE, command);
+        exit(EXIT_FAILURE);
+    }
+}
+
 int main(int argc, char **argv){
-    const char *command = argv[0];
+    command = argv[0];
 
-    // 输入不够
-    if(argc < 2){
-        fprintf(stderr, "[%s] " BOLD_RED "Error! Need set a SAC file. Use '-h' for help.\n" DEFAULT_RESTORE, command);
-        exit(EXIT_FAILURE);
-    }
-
-    // 输入过多
-    if(argc > 2){
-        fprintf(stderr, "[%s] " BOLD_RED "Error! You should set only one SAC file. Use '-h' for help.\n" DEFAULT_RESTORE, command);
-        exit(EXIT_FAILURE);
-    }
-
-    // 使用-h查看帮助
-    if(strcmp(argv[1], "-h") == 0){
-        print_help();
-        exit(EXIT_SUCCESS);
-    }
+    getopt_from_command(argc, argv);
 
     const char *filepath = argv[1];
     // 检查文件名是否存在
