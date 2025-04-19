@@ -73,12 +73,12 @@ fig.savefig(f"{srctype}_{mtype}{ptype}_{depsrc}_RI.png", dpi=100)
 
 # BEGIN plot ptam
 ir = 2
-statsdata1, statsdata2, ptamdata = pygrt.utils.read_statsfile_ptam(f"pygrtstats_{depsrc}_{deprcv}/PTAM_{ir:04d}_*/PTAM_0050_*")
+statsdata1, statsdata2, ptamdata, dist = pygrt.utils.read_statsfile_ptam(f"pygrtstats_{depsrc}_{deprcv}/PTAM_{ir:04d}_*/PTAM_0050_*")
 
 srctype="DC"
 mtype="2"
 ptype="0"
-fig, ax = pygrt.utils.plot_statsdata_ptam(statsdata1, statsdata2, ptamdata, dist=distarr[ir], srctype=srctype, mtype=mtype, ptype=ptype, RorI=2)
+fig, ax = pygrt.utils.plot_statsdata_ptam(statsdata1, statsdata2, ptamdata, dist=dist, srctype=srctype, mtype=mtype, ptype=ptype, RorI=2)
 fig.savefig(f"{srctype}_{mtype}{ptype}_{depsrc}_ptam_RI.png", dpi=100)
 # END plot ptam
 
@@ -99,18 +99,17 @@ yarr = np.array([2.0])
 static_grn = pymod.compute_static_grn(xarr, yarr, statsfile=f"static_pygrtstats_{depsrc}_{deprcv}")
 
 ir = 0
-distarr = np.sqrt(xarr**2 + yarr**2)
-statsdata1, statsdata2, ptamdata = pygrt.utils.read_statsfile_ptam(f"static_pygrtstats_{depsrc}_{deprcv}/PTAM_{ir:04d}_*/PTAM")
+statsdata1, statsdata2, ptamdata, dist = pygrt.utils.read_statsfile_ptam(f"static_pygrtstats_{depsrc}_{deprcv}/PTAM_{ir:04d}_*/PTAM")
 
 srctype="DC"
 mtype="2"
 ptype="0"
 # 只使用离散波数积分的积分变化
-fig, ax = pygrt.utils.plot_statsdata(statsdata1, dist=distarr[ir], srctype=srctype, mtype=mtype, ptype=ptype, RorI=True)
+fig, ax = pygrt.utils.plot_statsdata(statsdata1, dist=dist, srctype=srctype, mtype=mtype, ptype=ptype, RorI=True)
 fig.savefig(f"{srctype}_{mtype}{ptype}_{depsrc}_static.png", dpi=100)
 
 # 使用了峰谷平均法的积分变化
-fig, ax = pygrt.utils.plot_statsdata_ptam(statsdata1, statsdata2, ptamdata, dist=distarr[ir], srctype=srctype, mtype=mtype, ptype=ptype, RorI=True)
+fig, ax = pygrt.utils.plot_statsdata_ptam(statsdata1, statsdata2, ptamdata, dist=dist, srctype=srctype, mtype=mtype, ptype=ptype, RorI=True)
 fig.savefig(f"{srctype}_{mtype}{ptype}_{depsrc}_ptam_static.png", dpi=100)
 
 # END SGRN
