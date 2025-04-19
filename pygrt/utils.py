@@ -25,6 +25,7 @@ from scipy.fft import rfft, irfft
 from scipy.special import jv
 import math 
 import os
+import glob
 from typing import List, Union
 from copy import deepcopy
 
@@ -1173,11 +1174,16 @@ def read_statsfile(statsfile:str):
     '''
         读取单个频率下波数积分(或Filon积分)的记录文件  
 
-        :param    statsfile:       文件路径  
+        :param    statsfile:       文件路径(可使用通配符简化输入)
 
         :return:
             - **data** -     `numpy.ndarray <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_ 自定义类型数组 
     '''
+    Lst = glob.glob(statsfile)
+    if len(Lst) != 1:
+        raise OSError(f"{statsfile} should only match one file, but {len(Lst)} matched.")
+    statsfile = Lst[0]
+
     data = np.fromfile(statsfile, 
         dtype=[
             ('k', NPCT_REAL_TYPE), 
@@ -1248,13 +1254,17 @@ def read_statsfile_ptam(statsfile:str):
     '''
         读取单个频率下峰谷平均法的记录文件  
 
-        :param    statsfile:       PTAM文件路径  
+        :param    statsfile:       PTAM文件路径(可使用通配符简化输入)
 
         :return:
             - **data1** -     `numpy.ndarray <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_ 自定义类型数组，DWM或FIM过程中的积分过程数据 
             - **data2** -     `numpy.ndarray <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_ 自定义类型数组，PTAM过程中的积分过程数据
             - **ptam_data** -     `numpy.ndarray <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_ 自定义类型数组，PTAM的峰谷位置及幅值
     '''
+    Lst = glob.glob(statsfile)
+    if len(Lst) != 1:
+        raise OSError(f"{statsfile} should only match one file, but {len(Lst)} matched.")
+    statsfile = Lst[0]
 
     # 从文件路径命名中，获得对应的K文件路径
     PTAMname = os.path.basename(statsfile)
