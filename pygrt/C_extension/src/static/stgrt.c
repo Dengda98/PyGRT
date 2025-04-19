@@ -16,6 +16,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <errno.h>
 
 #include "static/stgrt.h"
 #include "static/static_propagate.h"
@@ -149,7 +151,6 @@ void integ_static_grn(
 
     const char *statsstr // 积分结果输出
 ){
-    MYREAL rmin=rs[findMinMax_MYREAL(rs, nr, false)];  // 最小震中距
     MYREAL rmax=rs[findMinMax_MYREAL(rs, nr, true)];   // 最大震中距
 
     // pymod1d -> mod1d
@@ -183,58 +184,68 @@ void integ_static_grn(
     MYCOMPLEX (*sum_HF_uir_J)[3][4] = (HFgrn_uir != NULL) ? (MYCOMPLEX(*)[3][4])calloc(nr, sizeof(*sum_HF_uir_J)) : NULL;
     MYCOMPLEX (*sum_DC_uir_J)[3][4] = (DDgrn_uir != NULL || DSgrn_uir != NULL || SSgrn_uir != NULL) ? (MYCOMPLEX(*)[3][4])calloc(nr, sizeof(*sum_DC_uir_J)) : NULL;
 
-    
-    
-    FILE **fstats = (FILE **)malloc(nr * sizeof(FILE *));
-    FILE **ptam_fstats = (FILE **)malloc(nr * sizeof(FILE *));
+    // 是否要输出积分过程文件
+    bool needfstats = (statsstr!=NULL);
 
-    for(int ir=0; ir<nr; ++ir){
-        fstats[ir] = NULL;
-        ptam_fstats[ir] = NULL;
-        if(statsstr!=NULL){
-            char *fname = (char*)malloc((strlen(statsstr)+200)*sizeof(char));
-            if(Length > 0.0){
-                // 常规的波数积分
-                sprintf(fname, "%s/K_%.5f", statsstr, rs[ir]);
-            } else {
-                // Filon积分
-                sprintf(fname, "%s/Filon_%.5f", statsstr, rs[ir]);
+    // PTAM的积分中间结果, 每个震中距两个文件，因为PTAM对不同震中距使用不同的dk
+    // 在文件名后加后缀，区分不同震中距
+    char *ptam_fstatsdir[nr];
+    for(MYINT ir=0; ir<nr; ++ir) {ptam_fstatsdir[ir] = NULL;}
+    if(needfstats && vmin_ref < RZERO){
+        for(MYINT ir=0; ir<nr; ++ir){
+            ptam_fstatsdir[ir] = (char*)malloc((strlen(statsstr)+200)*sizeof(char));
+            ptam_fstatsdir[ir][0] = '\0';
+            // 新建文件夹目录 
+            sprintf(ptam_fstatsdir[ir], "%s/PTAM_%.5e", statsstr, rs[ir]);
+            if(mkdir(ptam_fstatsdir[ir], 0777) != 0){
+                if(errno != EEXIST){
+                    printf("Unable to create folder %s. Error code: %d\n", ptam_fstatsdir[ir], errno);
+                    exit(EXIT_FAILURE);
+                }
             }
-            
-            fstats[ir] = fopen(fname, "wb");
-
-            if(vmin_ref < 0.0){
+        }
+    }
+    
+    // 创建波数积分记录文件
+    FILE *fstats = NULL;
+    // PTAM为每个震中距都创建波数积分记录文件
+    FILE *(*ptam_fstatsnr)[2] = (FILE *(*)[2])malloc(nr * sizeof(*ptam_fstatsnr));
+    {   
+        char *fname = (char *)malloc((strlen(statsstr)+200)*sizeof(char));
+        if(needfstats){
+            sprintf(fname, "%s/K", statsstr);
+            fstats = fopen(fname, "wb");
+        }
+        for(MYINT ir=0; ir<nr; ++ir){
+            for(MYINT m=0; m<3; ++m){
+                for(MYINT v=0; v<4; ++v){
+                    if(sum_EXP_J) sum_EXP_J[ir][m][v] = RZERO;
+                    if(sum_VF_J) sum_VF_J[ir][m][v] = RZERO;
+                    if(sum_HF_J) sum_HF_J[ir][m][v] = RZERO;
+                    if(sum_DC_J) sum_DC_J[ir][m][v] = RZERO;
+    
+                    if(sum_EXP_uiz_J) sum_EXP_uiz_J[ir][m][v] = RZERO;
+                    if(sum_VF_uiz_J) sum_VF_uiz_J[ir][m][v] = RZERO;
+                    if(sum_HF_uiz_J) sum_HF_uiz_J[ir][m][v] = RZERO;
+                    if(sum_DC_uiz_J) sum_DC_uiz_J[ir][m][v] = RZERO;
+    
+                    if(sum_EXP_uir_J) sum_EXP_uir_J[ir][m][v] = RZERO;
+                    if(sum_VF_uir_J) sum_VF_uir_J[ir][m][v] = RZERO;
+                    if(sum_HF_uir_J) sum_HF_uir_J[ir][m][v] = RZERO;
+                    if(sum_DC_uir_J) sum_DC_uir_J[ir][m][v] = RZERO;
+                }
+            }
+    
+            ptam_fstatsnr[ir][0] = ptam_fstatsnr[ir][1] = NULL;
+            if(needfstats && vmin_ref < RZERO){
                 // 峰谷平均法
-                sprintf(fname, "%s/PTAM_%.5f", statsstr, rs[ir]);
-                ptam_fstats[ir] = fopen(fname, "wb");
+                sprintf(fname, "%s/K", ptam_fstatsdir[ir]);
+                ptam_fstatsnr[ir][0] = fopen(fname, "wb");
+                sprintf(fname, "%s/PTAM", ptam_fstatsdir[ir]);
+                ptam_fstatsnr[ir][1] = fopen(fname, "wb");
             }
-            free(fname);
-        }
-    }  
-
-    
-    
-
-    // 初始化
-    for(MYINT ir=0; ir<nr; ++ir){
-        for(MYINT m=0; m<3; ++m){
-            for(MYINT v=0; v<4; ++v){
-                if(sum_EXP_J) sum_EXP_J[ir][m][v] = RZERO;
-                if(sum_VF_J) sum_VF_J[ir][m][v] = RZERO;
-                if(sum_HF_J) sum_HF_J[ir][m][v] = RZERO;
-                if(sum_DC_J) sum_DC_J[ir][m][v] = RZERO;
-
-                if(sum_EXP_uiz_J) sum_EXP_uiz_J[ir][m][v] = RZERO;
-                if(sum_VF_uiz_J) sum_VF_uiz_J[ir][m][v] = RZERO;
-                if(sum_HF_uiz_J) sum_HF_uiz_J[ir][m][v] = RZERO;
-                if(sum_DC_uiz_J) sum_DC_uiz_J[ir][m][v] = RZERO;
-
-                if(sum_EXP_uir_J) sum_EXP_uir_J[ir][m][v] = RZERO;
-                if(sum_VF_uir_J) sum_VF_uir_J[ir][m][v] = RZERO;
-                if(sum_HF_uir_J) sum_HF_uir_J[ir][m][v] = RZERO;
-                if(sum_DC_uir_J) sum_DC_uir_J[ir][m][v] = RZERO;
-            }
-        }
+        }  
+        free(fname);
     }
 
 
@@ -263,12 +274,12 @@ void integ_static_grn(
     // k之后的部分使用峰谷平均法进行显式收敛，建议在浅源地震的时候使用   
     if(vmin_ref < RZERO){
         PTA_method(
-            mod1d, k, dk, rmin, rmax, 0.0, nr, rs, 
+            mod1d, k, dk, 0.0, nr, rs, 
             sum_EXP_J, sum_VF_J, sum_HF_J, sum_DC_J, 
             calc_upar,
             sum_EXP_uiz_J, sum_VF_uiz_J, sum_HF_uiz_J, sum_DC_uiz_J,
             sum_EXP_uir_J, sum_VF_uir_J, sum_HF_uir_J, sum_DC_uir_J,
-            fstats, ptam_fstats, static_kernel);
+            ptam_fstatsnr, static_kernel);
     }
 
 
@@ -312,14 +323,20 @@ void integ_static_grn(
     free_mod1d(mod1d);
 
     for(MYINT ir=0; ir<nr; ++ir){
-        if(fstats[ir]!=NULL){
-            fclose(fstats[ir]);
+        if(ptam_fstatsdir[ir]!=NULL){
+            free(ptam_fstatsdir[ir]);
+        } 
+    }
+
+    for(MYINT ir=0; ir<nr; ++ir){
+        if(ptam_fstatsnr[ir][0]!=NULL){
+            fclose(ptam_fstatsnr[ir][0]);
         }
-        if(ptam_fstats[ir]!=NULL){
-            fclose(ptam_fstats[ir]);
+        if(ptam_fstatsnr[ir][1]!=NULL){
+            fclose(ptam_fstatsnr[ir][1]);
         }
     }
 
     free(fstats);
-    free(ptam_fstats);
+    free(ptam_fstatsnr);
 }
