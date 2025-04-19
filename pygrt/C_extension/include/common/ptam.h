@@ -34,8 +34,6 @@
  * @param    k0        (in)先前的积分已经进行到了波数k0
  * @param    predk     (in)先前的积分使用的积分间隔dk，因为峰谷平均法使用的
  *                     积分间隔会和之前的不一致，这里传入该系数以做预先调整
- * @param    rmin      (in)最小震中距 
- * @param    rmax      (in)最大震中距 
  * @param    omega     (in)复数频率 
  * @param    nr        (in)震中距数量
  * @param    rs        (in)震中距数组  
@@ -54,15 +52,14 @@
  * @param  sum_HF_uir_J0[nr][3][4]   (out)水平力源
  * @param  sum_DC_uir_J0[nr][3][4]   (out)剪切源
  * 
- * @param    fstats[nr]          (out)波数积分过程文件指针
- * @param    ptam_fstats[nr]     (out)峰谷平均法过程文件指针
+ * @param    ptam_fstatsnr        (out)峰谷平均法过程文件指针数组
  * @param    kerfunc              (in)计算核函数的函数指针
  * 
  * 
  */
 void PTA_method(
-    const MODEL1D *mod1d, MYREAL k0, MYREAL predk, MYREAL rmin, MYREAL rmax, MYCOMPLEX omega, 
-    MYINT nr, MYREAL *rs, 
+    const MODEL1D *mod1d, MYREAL k0, MYREAL predk, MYCOMPLEX omega, 
+    MYINT nr, MYREAL *rs,
     MYCOMPLEX sum_EXP_J0[nr][3][4], MYCOMPLEX sum_VF_J0[nr][3][4],  
     MYCOMPLEX sum_HF_J0[nr][3][4],  MYCOMPLEX sum_DC_J0[nr][3][4],  
     bool calc_upar,
@@ -70,7 +67,7 @@ void PTA_method(
     MYCOMPLEX sum_HF_uiz_J0[nr][3][4],  MYCOMPLEX sum_DC_uiz_J0[nr][3][4],  
     MYCOMPLEX sum_EXP_uir_J0[nr][3][4], MYCOMPLEX sum_VF_uir_J0[nr][3][4],  
     MYCOMPLEX sum_HF_uir_J0[nr][3][4],  MYCOMPLEX sum_DC_uir_J0[nr][3][4], 
-    FILE *(fstats[nr]), FILE *(ptam_fstats[nr]), KernelFunc kerfunc);
+    FILE *ptam_fstatsnr[nr][2], KernelFunc kerfunc);
 
 
 

@@ -179,8 +179,8 @@ static void ptam_once(
 
 
 void PTA_method(
-    const MODEL1D *mod1d, MYREAL k0, MYREAL predk, MYREAL rmin, MYREAL rmax, MYCOMPLEX omega, 
-    MYINT nr, MYREAL *rs, 
+    const MODEL1D *mod1d, MYREAL k0, MYREAL predk, MYCOMPLEX omega, 
+    MYINT nr, MYREAL *rs,
     MYCOMPLEX sum_EXP_J0[nr][3][4], MYCOMPLEX sum_VF_J0[nr][3][4],  
     MYCOMPLEX sum_HF_J0[nr][3][4],  MYCOMPLEX sum_DC_J0[nr][3][4],  
     bool calc_upar,
@@ -188,7 +188,7 @@ void PTA_method(
     MYCOMPLEX sum_HF_uiz_J0[nr][3][4],  MYCOMPLEX sum_DC_uiz_J0[nr][3][4],  
     MYCOMPLEX sum_EXP_uir_J0[nr][3][4], MYCOMPLEX sum_VF_uir_J0[nr][3][4],  
     MYCOMPLEX sum_HF_uir_J0[nr][3][4],  MYCOMPLEX sum_DC_uir_J0[nr][3][4],  
-    FILE *(fstats[nr]), FILE *(ptam_fstats[nr]), KernelFunc kerfunc)
+    FILE *ptam_fstatsnr[nr][2], KernelFunc kerfunc)
 {   
     // 需要兼容对正常收敛而不具有规律波峰波谷的序列
     // 有时序列收敛比较好，不表现为规律的波峰波谷，
@@ -353,6 +353,9 @@ void PTA_method(
 
         bool iendk0=false;
 
+        // 积分过程文件
+        FILE *fstatsK = ptam_fstatsnr[ir][0];
+
         k = k0 - dk;
         while(true){
             k += dk;
@@ -362,19 +365,17 @@ void PTA_method(
             kerfunc(mod1d, omega, k, pEXP_qwv, pVF_qwv, pHF_qwv, pDC_qwv,
                     calc_upar, pEXP_uiz_qwv, pVF_uiz_qwv, pHF_uiz_qwv, pDC_uiz_qwv); 
 
+            // 记录核函数
+            if(fstatsK!=NULL){
+                write_stats(
+                    fstatsK, k, 
+                    EXP_qwv, VF_qwv, HF_qwv, DC_qwv);
+            }
+
             // 计算被积函数一项 F(k,w)Jm(kr)k
             int_Pk(k, rs[ir],
                    pEXP_qwv, pVF_qwv, pHF_qwv, pDC_qwv, false,
                    EXP_J3[ir][2], VF_J3[ir][2], HF_J3[ir][2], DC_J3[ir][2]);  // [2]表示把新点值放在最后
-        
-
-            // 记录积分结果
-            if(fstats[ir]!=NULL){
-                write_stats(
-                    fstats[ir], k, 
-                    EXP_qwv, VF_qwv, HF_qwv, DC_qwv,
-                    EXP_J3[ir][2], VF_J3[ir][2], HF_J3[ir][2], DC_J3[ir][2]);
-            }
 
             // 
             ptam_once(
@@ -433,10 +434,11 @@ void PTA_method(
 
     // 做缩减序列，赋值最终解
     for(MYINT ir=0; ir<nr; ++ir){
+        FILE *fstatsP = ptam_fstatsnr[ir][1];
         // 记录到文件
-        if(ptam_fstats[ir]!=NULL){
+        if(fstatsP!=NULL){
             write_stats_ptam(
-                ptam_fstats[ir], k, maxNpt, 
+                fstatsP, k, maxNpt, 
                 EXPpt[ir], VFpt[ir], HFpt[ir], DCpt[ir],
                 // iEXPpt[ir], iVFpt[ir], iHFpt[ir], iDCpt[ir],
                 kEXPpt[ir], kVFpt[ir], kHFpt[ir], kDCpt[ir]);

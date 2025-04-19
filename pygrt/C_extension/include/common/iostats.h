@@ -26,10 +26,6 @@
  * @param    VF_qwv[3][3]     (in)垂直力源核函数
  * @param    HF_qwv[3][3]     (in)水平力源核函数
  * @param    DC_qwv[3][3]     (in)剪切源核函数
- * @param    EXP_J[3][4]      (in)爆炸源，该dk区间内的积分值，下同
- * @param    VF_J[3][4]       (in)垂直力源
- * @param    HF_J[3][4]       (in)水平力源
- * @param    DC_J[3][4]       (in)剪切源
  * 
  * 
  * @note     文件记录的值均为波数积分的中间结果，与最终的结果还差一系列的系数，
@@ -38,9 +34,10 @@
 void write_stats(
     FILE *f0, MYREAL k, 
     const MYCOMPLEX EXP_qwv[3][3], const MYCOMPLEX VF_qwv[3][3], 
-    const MYCOMPLEX HF_qwv[3][3],  const MYCOMPLEX DC_qwv[3][3], 
-    const MYCOMPLEX EXP_J[3][4], const MYCOMPLEX VF_J[3][4], 
-    const MYCOMPLEX HF_J[3][4],  const MYCOMPLEX DC_J[3][4]);
+    const MYCOMPLEX HF_qwv[3][3],  const MYCOMPLEX DC_qwv[3][3]
+    // const MYCOMPLEX EXP_J[3][4], const MYCOMPLEX VF_J[3][4], 
+    // const MYCOMPLEX HF_J[3][4],  const MYCOMPLEX DC_J[3][4]
+);
 
 
 
