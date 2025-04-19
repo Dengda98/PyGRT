@@ -82,7 +82,7 @@
    static/static_syn
    dynamic/strain_stress
    static/static_strain_stress
-   dynamic/integ_converg
+   integ_converg/integ_converg
 
 
 
