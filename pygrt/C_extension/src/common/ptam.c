@@ -356,10 +356,10 @@ void PTA_method(
         // 积分过程文件
         FILE *fstatsK = ptam_fstatsnr[ir][0];
 
-        k = k0 - dk;
+        k = k0;
         while(true){
-            k += dk;
             if(k > kmax) break;
+            k += dk;
 
             // 计算核函数 F(k, w)
             kerfunc(mod1d, omega, k, pEXP_qwv, pVF_qwv, pHF_qwv, pDC_qwv,
