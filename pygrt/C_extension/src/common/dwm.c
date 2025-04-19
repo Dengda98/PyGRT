@@ -67,9 +67,9 @@ MYREAL discrete_integ(
 
     // 波数k循环 (5.9.2)
     while(true){
-        k += dk; 
-
+        
         if(k > kmax)  break;
+        k += dk; 
 
         // printf("w=%15.5e, ik=%d\n", CREAL(omega), ik);
         // 计算核函数 F(k, w)
