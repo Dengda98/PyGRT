@@ -545,7 +545,7 @@ void integ_grn_spec(
             ptam_fstatsdir[ir] = (char*)malloc((strlen(statsstr)+200)*sizeof(char));
             ptam_fstatsdir[ir][0] = '\0';
             // 新建文件夹目录 
-            sprintf(ptam_fstatsdir[ir], "%s/PTAM_%.5e", statsstr, rs[ir]);
+            sprintf(ptam_fstatsdir[ir], "%s/PTAM_%04d_%.5e", statsstr, ir, rs[ir]);
             if(mkdir(ptam_fstatsdir[ir], 0777) != 0){
                 if(errno != EEXIST){
                     printf("Unable to create folder %s. Error code: %d\n", ptam_fstatsdir[ir], errno);
