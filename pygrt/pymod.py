@@ -410,6 +410,7 @@ class PyModel1D:
 
         c_statsfile = None 
         if statsfile is not None:
+            os.makedirs(statsfile, exist_ok=True)
             c_statsfile = c_char_p(statsfile.encode('utf-8'))
 
         nstatsidxs = 0 
@@ -619,6 +620,7 @@ class PyModel1D:
         # 积分状态文件
         c_statsfile = None 
         if statsfile is not None:
+            os.makedirs(statsfile, exist_ok=True)
             c_statsfile = c_char_p(statsfile.encode('utf-8'))
 
         # 初始化格林函数
