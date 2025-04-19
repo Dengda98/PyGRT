@@ -19,10 +19,10 @@
 void write_stats(
     FILE *f0, MYREAL k, 
     const MYCOMPLEX EXP_qwv[3][3], const MYCOMPLEX VF_qwv[3][3], 
-    const MYCOMPLEX HF_qwv[3][3],  const MYCOMPLEX DC_qwv[3][3], 
-    const MYCOMPLEX EXP_J[3][4], const MYCOMPLEX VF_J[3][4], 
-    const MYCOMPLEX HF_J[3][4],  const MYCOMPLEX DC_J[3][4])
-{
+    const MYCOMPLEX HF_qwv[3][3],  const MYCOMPLEX DC_qwv[3][3]
+    // const MYCOMPLEX EXP_J[3][4], const MYCOMPLEX VF_J[3][4], 
+    // const MYCOMPLEX HF_J[3][4],  const MYCOMPLEX DC_J[3][4]
+){
     fwrite(&k, sizeof(MYREAL), 1, f0);
 
     fwrite(&EXP_qwv[0][0], sizeof(MYCOMPLEX), 2, f0);
@@ -37,19 +37,19 @@ void write_stats(
 
     fwrite(&DC_qwv[2][0], sizeof(MYCOMPLEX), 3, f0);
 
-    fwrite(&EXP_J[0][0], sizeof(MYCOMPLEX), 1, f0);
-    fwrite(&EXP_J[0][2], sizeof(MYCOMPLEX), 1, f0);
+    // fwrite(&EXP_J[0][0], sizeof(MYCOMPLEX), 1, f0);
+    // fwrite(&EXP_J[0][2], sizeof(MYCOMPLEX), 1, f0);
 
-    fwrite(&VF_J[0][0], sizeof(MYCOMPLEX), 1, f0);
-    fwrite(&VF_J[0][2], sizeof(MYCOMPLEX), 1, f0);
+    // fwrite(&VF_J[0][0], sizeof(MYCOMPLEX), 1, f0);
+    // fwrite(&VF_J[0][2], sizeof(MYCOMPLEX), 1, f0);
 
-    fwrite(&HF_J[1], sizeof(MYCOMPLEX), 4, f0);
+    // fwrite(&HF_J[1], sizeof(MYCOMPLEX), 4, f0);
 
-    fwrite(&DC_J[0][0], sizeof(MYCOMPLEX), 1, f0);
-    fwrite(&DC_J[0][2], sizeof(MYCOMPLEX), 1, f0);
+    // fwrite(&DC_J[0][0], sizeof(MYCOMPLEX), 1, f0);
+    // fwrite(&DC_J[0][2], sizeof(MYCOMPLEX), 1, f0);
 
-    fwrite(&DC_J[1], sizeof(MYCOMPLEX), 4, f0);
-    fwrite(&DC_J[2], sizeof(MYCOMPLEX), 4, f0);
+    // fwrite(&DC_J[1], sizeof(MYCOMPLEX), 4, f0);
+    // fwrite(&DC_J[2], sizeof(MYCOMPLEX), 4, f0);
 
 }
 
