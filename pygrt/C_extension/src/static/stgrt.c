@@ -211,7 +211,8 @@ void integ_static_grn(
     // PTAM为每个震中距都创建波数积分记录文件
     FILE *(*ptam_fstatsnr)[2] = (FILE *(*)[2])malloc(nr * sizeof(*ptam_fstatsnr));
     {   
-        char *fname = (char *)malloc((strlen(statsstr)+200)*sizeof(char));
+        MYINT len0 = (statsstr!=NULL) ? strlen(statsstr) : 0;
+        char *fname = (char *)malloc((len0+200)*sizeof(char));
         if(needfstats){
             sprintf(fname, "%s/K", statsstr);
             fstats = fopen(fname, "wb");
