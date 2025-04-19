@@ -102,9 +102,9 @@ MYREAL linear_filon_integ(
     // k循环 
     ik = 0;
     while(true){
-        k += dk; 
-
+        
         if(k > kmax) break;
+        k += dk; 
 
         // 计算核函数 F(k, w)
         kerfunc(mod1d, omega, k, pEXP_qwv, pVF_qwv, pHF_qwv, pDC_qwv,
