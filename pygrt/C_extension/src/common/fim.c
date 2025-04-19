@@ -32,7 +32,7 @@ MYREAL linear_filon_integ(
     MYCOMPLEX sum_HF_uiz_J[nr][3][4],  MYCOMPLEX sum_DC_uiz_J[nr][3][4],  
     MYCOMPLEX sum_EXP_uir_J[nr][3][4], MYCOMPLEX sum_VF_uir_J[nr][3][4],  
     MYCOMPLEX sum_HF_uir_J[nr][3][4],  MYCOMPLEX sum_DC_uir_J[nr][3][4],  
-    FILE *(fstats[nr]), KernelFunc kerfunc)
+    FILE *fstats, KernelFunc kerfunc)
 {   
     for(MYINT ir=0; ir<nr; ++ir){
         for(MYINT m=0; m<3; ++m){
@@ -102,13 +102,20 @@ MYREAL linear_filon_integ(
     // k循环 
     ik = 0;
     while(true){
-        k += dk; 
-
+        
         if(k > kmax) break;
+        k += dk; 
 
         // 计算核函数 F(k, w)
         kerfunc(mod1d, omega, k, pEXP_qwv, pVF_qwv, pHF_qwv, pDC_qwv,
                 calc_upar, pEXP_uiz_qwv, pVF_uiz_qwv, pHF_uiz_qwv, pDC_uiz_qwv); 
+
+        // 记录积分结果
+        if(fstats!=NULL){
+            write_stats(
+                fstats, k, 
+                pEXP_qwv, pVF_qwv, pHF_qwv, pDC_qwv);
+        }
 
         // 震中距rs循环
         iendk = true;
@@ -120,14 +127,6 @@ MYREAL linear_filon_integ(
                 k, rs[ir], 
                 pEXP_qwv, pVF_qwv, pHF_qwv, pDC_qwv, false,
                 EXP_J, VF_J, HF_J, DC_J);
-
-            // 记录积分结果
-            if(fstats[ir]!=NULL){
-                write_stats(
-                    fstats[ir], k, 
-                    pEXP_qwv, pVF_qwv, pHF_qwv, pDC_qwv,
-                    EXP_J, VF_J, HF_J, DC_J);
-            }
 
 
             iendk0 = true;
