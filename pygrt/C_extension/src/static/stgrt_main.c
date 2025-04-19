@@ -331,22 +331,6 @@ static void getopt_from_command(int argc, char **argv){
             // 输出波数积分中间文件
             case 'S':
                 S_flag = 1;
-                s_statsdir = (char*)malloc(sizeof(char)*100);
-                sprintf(s_statsdir, "stgrtstats");
-                // 建立保存目录
-                if(mkdir(s_statsdir, 0777) != 0){
-                    if(errno != EEXIST){
-                        fprintf(stderr, "[%s] " BOLD_RED "Error! Unable to create folder %s. Error code: %d\n" DEFAULT_RESTORE, command, s_statsdir, errno);
-                        exit(EXIT_FAILURE);
-                    }
-                }
-                sprintf(s_statsdir, "%s/%s_stats_%.5f_%.5f", s_statsdir, s_modelname, depsrc, deprcv);
-                if(mkdir(s_statsdir, 0777) != 0){
-                    if(errno != EEXIST){
-                        fprintf(stderr, "[%s] " BOLD_RED "Error! Unable to create folder %s. Error code: %d\n" DEFAULT_RESTORE, command, s_statsdir, errno);
-                        exit(EXIT_FAILURE);
-                    }
-                }
                 break;
 
             // 是否计算位移空间导数
@@ -447,6 +431,27 @@ int main(int argc, char **argv){
     
     // 设置积分间隔默认值
     if(Length == 0.0)  Length = Length0;
+
+    // 波数积分输出目录
+    if(S_flag==1){
+        s_statsdir = (char*)malloc(sizeof(char)*(strlen(s_modelpath)+strlen(s_depsrc)+strlen(s_deprcv)+100));
+        sprintf(s_statsdir, "stgrtstats");
+        // 建立保存目录
+        if(mkdir(s_statsdir, 0777) != 0){
+            if(errno != EEXIST){
+                fprintf(stderr, "[%s] " BOLD_RED "Error! Unable to create folder %s. Error code: %d\n" DEFAULT_RESTORE, command, s_statsdir, errno);
+                exit(EXIT_FAILURE);
+            }
+        }
+        sprintf(s_statsdir, "%s/%s_%s_%s", s_statsdir, s_modelname, s_depsrc, s_deprcv);
+        if(mkdir(s_statsdir, 0777) != 0){
+            if(errno != EEXIST){
+                fprintf(stderr, "[%s] " BOLD_RED "Error! Unable to create folder %s. Error code: %d\n" DEFAULT_RESTORE, command, s_statsdir, errno);
+                exit(EXIT_FAILURE);
+            }
+        }
+    }
+
 
     // 建立格林函数的complex数组
     MYREAL (*EXPgrn)[2] = (MYREAL(*)[2])calloc(nr, sizeof(*EXPgrn));
