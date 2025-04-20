@@ -10,13 +10,13 @@
 
 .. tabs:: 
 
-    .. tab:: C 
+    .. group-tab:: C 
 
         .. literalinclude:: run_upar/run.sh
             :language: bash
 
 
-    .. tab:: Python
+    .. group-tab:: Python
 
         .. literalinclude:: run_upar/run.py
             :language: python

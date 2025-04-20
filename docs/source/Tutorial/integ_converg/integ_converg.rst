@@ -14,7 +14,7 @@
 
 .. tabs::  
 
-    .. tab:: C 
+    .. group-tab:: C 
 
         .. literalinclude:: run/run.sh
             :language: bash
@@ -23,7 +23,7 @@
 
         输出的核函数文件路径会在  :rst:dir:`GRN_grtstats/milrow_{depsrc}_{deprcv}/` 路径下。
 
-    .. tab:: Python
+    .. group-tab:: Python
 
         .. literalinclude:: run/run.py
             :language: python
@@ -37,7 +37,7 @@ C和Python导出的核函数文件是一致的，底层调用的是相同的函�
 
 .. tabs::  
 
-    .. tab:: C 
+    .. group-tab:: C 
 
         :command:`grt.k2a` 程序可将单个核函数文件转为文本格式。
 
@@ -53,7 +53,7 @@ C和Python导出的核函数文件是一致的，底层调用的是相同的函�
 
         后续你可以选择习惯的方式读取和处理。
 
-    .. tab:: Python
+    .. group-tab:: Python
 
         .. literalinclude:: run/run.py
             :language: python
@@ -62,6 +62,9 @@ C和Python导出的核函数文件是一致的，底层调用的是相同的函�
 
 其中除了波数 ``k`` 外，每条结果的命名格式均为 ``{srcType}_{q/w/v}{m}``，与 :ref:`gfunc_rst` 部分介绍的积分公式中的核函数 :math:`q_m, w_m, v_m` 保持一致。
 
+.. note:: 
+
+    核函数文件中记录的值非最终核函数值。对于动态解，还需乘 :math:`\left(-\dfrac{\Delta k}{4\pi\rho\omega^2}\right)`。
 
 可视化
 -------------
@@ -98,14 +101,14 @@ C和Python导出的核函数文件是一致的，底层调用的是相同的函�
 
 .. tabs::  
 
-    .. tab:: C 
+    .. group-tab:: C 
 
         .. literalinclude:: run/run.sh
             :language: bash
             :start-after: BEGIN DEPSRC 0.0 DGRN
             :end-before: END DEPSRC 0.0 DGRN
 
-    .. tab:: Python
+    .. group-tab:: Python
 
         .. literalinclude:: run/run.py
             :language: python
@@ -149,8 +152,8 @@ C和Python导出的核函数文件是一致的，底层调用的是相同的函�
 
     输出的文件如下，
 
-        .. literalinclude:: run/ptam_stats_head
-            :language: text
+    .. literalinclude:: run/ptam_stats_head
+        :language: text
 
     记录了不同震源、不同积分类型的峰谷位置。
 
@@ -174,18 +177,22 @@ C和Python导出的核函数文件是一致的，底层调用的是相同的函�
 -------------------------
 以上部分是以动态解为例，静态解从积分类型、收敛特征、文件格式、绘图完全类似，只是不再有频率索引值。
 
+.. note:: 
+
+    核函数文件中记录的值非最终核函数值。对于静态解，还需乘 :math:`\left(\dfrac{\Delta k}{4\pi\mu}\right)`。
+
 假设震源深度0.1km，场点位于地表，场点仅定义一个点(2,2)做示例，这里直接给出脚本。
 
 .. tabs::  
 
-    .. tab:: C 
+    .. group-tab:: C 
 
         .. literalinclude:: run/run.sh
             :language: bash
             :start-after: BEGIN SGRN
             :end-before: END SGRN
 
-    .. tab:: Python
+    .. group-tab:: Python
 
         .. literalinclude:: run/run.py
             :language: python
