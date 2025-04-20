@@ -47,6 +47,8 @@ extensions = [
     'sphinx.ext.imgconverter',
 ] 
 
+sphinx_tabs_valid_builders = ['linkcheck']
+sphinx_tabs_disable_tab_closing = True   # 选项卡不关闭
 
 nbsphinx_allow_errors = True  # 在构建文档时允许 Notebook 中的错误
 nbsphinx_execute = 'never'   # 不执行 Notebook，只是展示内容
