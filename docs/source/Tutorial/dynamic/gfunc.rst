@@ -43,16 +43,28 @@ Python中计算动态格林函数的主函数为 :func:`compute_grn() <pygrt.pym
 
         一些基本信息（包括源点和场点的物性参数）保存在SAC头段变量中，其中 :c:var:`t0` 和 :c:var:`t1` 分别代表初至P波和初至S波的到时，由于程序中使用0作为参考时间，故其等价于走时。
 
-        如果你没有安装SAC软件，可以使用Python的ObsPy库读取数据，或者使用 :command:`grt.b2a` 工具临时将SAC格式文件转为如下的文本文件：
+        + :command:`grt.travt` 命令可以显式地再计算初至波走时，
 
-        .. literalinclude:: run/run.sh
+         .. literalinclude:: run/run.sh
+            :language: bash
+            :start-after: BEGIN grt.travt
+            :end-before: END grt.travt
+
+         走时结果会输出到终端，
+
+         .. literalinclude:: run/travt
+            :language: text 
+
+        + 如果你没有安装SAC软件，可以使用Python的ObsPy库读取生成的SAC数据，或者使用 :command:`grt.b2a` 工具临时将SAC格式文件转为如下的文本文件：
+
+         .. literalinclude:: run/run.sh
             :language: bash
             :start-after: BEGIN grt.b2a
             :end-before: END grt.b2a
 
-        输出的文本文件如下，两列分别为时间点和幅值。这种输出仅保留波形信息，缺失SAC文件中的头段变量。
+         输出的文本文件如下，两列分别为时间点和幅值。这种输出仅保留波形信息，缺失SAC文件中的头段变量。
 
-        .. literalinclude:: run/HFZ_head
+         .. literalinclude:: run/HFZ_head
             :language: text
 
     .. group-tab:: Python
