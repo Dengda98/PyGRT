@@ -23,6 +23,7 @@ from copy import deepcopy
 from scipy.signal import oaconvolve
 from scipy.fft import rfft, irfft
 from scipy.special import jv
+from scipy.interpolate import interpn
 import math 
 import os
 import glob
@@ -48,6 +49,7 @@ __all__ = [
     "stream_diff",
     "stream_write_sac",
 
+    "read_kernels_freqs",
     "read_statsfile",
     "read_statsfile_ptam",
     "plot_statsdata",
@@ -1248,6 +1250,75 @@ def read_statsfile(statsfile:str):
     )
 
     return data
+
+
+def read_kernels_freqs(statsdir:str, vels:np.ndarray, ktypes:Union[List[str],None]=None):
+    r"""
+        读取statsdir目录下所有频率（除了零频）的积分过程文件（K_开头），再将核函数线性插值到指定的速度数组vels
+
+        :param        statsdir:     存储积分过程文件的目录
+        :param        vels:         待插值的速度数组(km/s)，必须正序
+        :param        ktype:        指定返回一系列的核函数名称，如EXP_q0，DC_w2等，默认返回全部
+
+        :return:
+            - **kerDct**  -   字典格式的核函数插值结果
+    """
+
+    if not np.all(np.diff(vels) > 0):
+        raise ValueError("vels must be in ascending order.")
+
+    KLst = np.array(glob.glob(os.path.join(statsdir, "K_*")))
+    freqs = np.array([float(s.split("_")[-1]) for s in KLst])
+    # 根据freqs排序
+    _idx = np.argsort(freqs)
+    freqs[:] = freqs[_idx]
+    KLst[:] = KLst[_idx]
+    del _idx 
+
+    # 去除零频
+    if freqs[0] == 0.0:
+        freqs = freqs[1:]
+        KLst = KLst[1:]
+
+    kerDct = {}
+    kerDct['_vels'] = vels.copy()
+    kerDct['_freqs'] = freqs.copy()
+
+    for i in range(len(freqs)):
+        Kpath = KLst[i]
+        freq = freqs[i]
+        w = 2*np.pi*freq
+
+        data = read_statsfile(Kpath)
+        v = w/data['k']
+
+        # 检查v范围
+        v1 = np.min(v)
+        v2 = np.max(v)
+        if v1 > vels[0] or v2 < vels[-1]:
+            raise ValueError(f"In freq={freq:.5e}, minV={v1:.5e}, maxV={v2:.5e}, insufficient wavenumber samples"
+                              " to interpolate on vels.")
+
+        for key in data.dtype.names:
+            if key == 'k':
+                continue 
+            if (ktypes is not None) and (key not in ktypes):
+                continue 
+
+            if key not in kerDct.keys():
+                kerDct[key] = []
+
+            # 如果越界会报错
+            F = interpn((v,), data[key], vels)
+            kerDct[key].append(F)
+
+    # 将每个核函数结果拼成2D数组
+    for key in kerDct.keys():
+        if key[0] == '_':
+            continue
+        kerDct[key] = np.vstack(kerDct[key])
+
+    return kerDct
 
 
 def read_statsfile_ptam(statsfile:str):
