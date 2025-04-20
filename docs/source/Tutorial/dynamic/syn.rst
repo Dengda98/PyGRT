@@ -8,6 +8,11 @@
 
 -----------------------------------------------------------
 
+.. warning:: 
+
+    **震源机制参数中（如单力源、矩张量源）Z轴取向下为正。**
+
+
 Python中合成动态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.utils.gen_syn_from_gf_DC>` （\*表示对不同震源）  ，C程序为 :command:`grt.syn`。
 
 使用上节计算的格林函数，合成动态位移（理论地震图）。方便起见，这里统一使用milrow模型，震源深度2km，场点位于地表，震中距10km的格林函数，方位角30°。
@@ -41,20 +46,28 @@ Python中合成动态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.uti
 不同震源
 --------------
 
+以下绘图使用Python绘制，绘图函数如下：
+
+.. literalinclude:: run/run.py
+    :language: python
+    :start-after: BEGIN plot func
+    :end-before: END plot func
+
+
 爆炸源
 ~~~~~~~~~~~~~~~~~
 标量矩 1e24 dyne·cm。
 
 .. tabs::  
 
-    .. tab:: C 
+    .. group-tab:: C 
 
         .. literalinclude:: run/run.sh
             :language: bash
             :start-after: BEGIN SYN EXP
             :end-before: END SYN EXP
 
-    .. tab:: Python 
+    .. group-tab:: Python 
 
         .. literalinclude:: run/run.py
             :language: python
@@ -73,14 +86,14 @@ Python中合成动态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.uti
 
 .. tabs::  
 
-    .. tab:: C 
+    .. group-tab:: C 
 
         .. literalinclude:: run/run.sh
             :language: bash
             :start-after: BEGIN SYN SF
             :end-before: END SYN SF
 
-    .. tab:: Python 
+    .. group-tab:: Python 
 
         .. literalinclude:: run/run.py
             :language: python
@@ -98,14 +111,14 @@ Python中合成动态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.uti
 
 .. tabs::  
 
-    .. tab:: C 
+    .. group-tab:: C 
 
         .. literalinclude:: run/run.sh
             :language: bash
             :start-after: BEGIN SYN DC
             :end-before: END SYN DC
 
-    .. tab:: Python 
+    .. group-tab:: Python 
 
         .. literalinclude:: run/run.py
             :language: python
@@ -123,14 +136,14 @@ Python中合成动态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.uti
 
 .. tabs::  
 
-    .. tab:: C 
+    .. group-tab:: C 
 
         .. literalinclude:: run/run.sh
             :language: bash
             :start-after: BEGIN SYN MT
             :end-before: END SYN MT
 
-    .. tab:: Python 
+    .. group-tab:: Python 
 
         .. literalinclude:: run/run.py
             :language: python
@@ -149,14 +162,14 @@ Python中合成动态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.uti
 
 .. tabs::  
 
-    .. tab:: C 
+    .. group-tab:: C 
 
         .. literalinclude:: run/run.sh
             :language: bash
             :start-after: BEGIN ZNE
             :end-before: END ZNE
 
-    .. tab:: Python 
+    .. group-tab:: Python 
 
         .. literalinclude:: run/run.py
             :language: python
@@ -175,7 +188,7 @@ Python中合成动态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.uti
 
 .. tabs::  
 
-    .. tab:: C 
+    .. group-tab:: C 
 
         .. literalinclude:: run/run.sh
             :language: bash
@@ -184,7 +197,7 @@ Python中合成动态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.uti
 
         生成的时间函数会以SAC格式保存在对应路径中，文件名为 :file:`sig.sac`。 其它时间函数以及具体参数用法可使用 :command:`grt.syn -h` 查看说明。
 
-    .. tab:: Python 
+    .. group-tab:: Python 
 
         .. literalinclude:: run/run.py
             :language: python
@@ -204,7 +217,7 @@ Python中合成动态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.uti
 
 .. tabs::  
 
-    .. tab:: C 
+    .. group-tab:: C 
 
         .. literalinclude:: run/run.sh
             :language: bash
@@ -212,7 +225,7 @@ Python中合成动态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.uti
             :end-before: END INT DIF
 
 
-    .. tab:: Python 
+    .. group-tab:: Python 
 
         .. literalinclude:: run/run.py
             :language: python

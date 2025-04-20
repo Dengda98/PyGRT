@@ -12,6 +12,24 @@
 
 不同震源
 -------------
+以下绘图使用Python绘制，绘图函数如下。这里也提供 `GMT <https://www.generic-mapping-tools.org/>`_ 绘图脚本（需根据实际数据调整参数，仅作参考）。
+
+.. tabs:: 
+
+    .. tab:: Python
+
+        .. literalinclude:: run/run.py
+            :language: python
+            :start-after: BEGIN plot func
+            :end-before: END plot func
+
+    .. tab:: GMT 
+
+        .. literalinclude:: run/run.sh
+            :language: bash
+            :start-after: BEGIN gmt
+            :end-before: END gmt
+
 
 爆炸源
 ~~~~~~~~~~~~~~~~~
@@ -19,14 +37,14 @@
 
 .. tabs::  
 
-    .. tab:: C 
+    .. group-tab:: C 
 
         .. literalinclude:: run/run.sh
             :language: bash
             :start-after: BEGIN SYN EXP
             :end-before: END SYN EXP
 
-    .. tab:: Python 
+    .. group-tab:: Python 
 
         .. literalinclude:: run/run.py
             :language: python
@@ -35,7 +53,7 @@
 
 
 .. image:: run/syn_exp.png
-    :width: 300px
+    :width: 500px
     :align: center
 
 
@@ -45,14 +63,14 @@
 
 .. tabs::  
 
-    .. tab:: C 
+    .. group-tab:: C 
 
         .. literalinclude:: run/run.sh
             :language: bash
             :start-after: BEGIN SYN SF
             :end-before: END SYN SF
 
-    .. tab:: Python 
+    .. group-tab:: Python 
 
         .. literalinclude:: run/run.py
             :language: python
@@ -61,7 +79,7 @@
 
 
 .. image:: run/syn_sf.png
-    :width: 300px
+    :width: 500px
     :align: center
 
 
@@ -71,14 +89,14 @@
 
 .. tabs::  
 
-    .. tab:: C 
+    .. group-tab:: C 
 
         .. literalinclude:: run/run.sh
             :language: bash
             :start-after: BEGIN SYN DC
             :end-before: END SYN DC
 
-    .. tab:: Python 
+    .. group-tab:: Python 
 
         .. literalinclude:: run/run.py
             :language: python
@@ -87,8 +105,33 @@
 
 
 .. image:: run/syn_dc.png
-    :width: 300px
+    :width: 500px
     :align: center
+
+这里如果改变倾角为90°，滑动角0°，就可以看到清晰的蝴蝶状辐射花样。
+
+.. tabs::  
+
+    .. group-tab:: C 
+
+        .. literalinclude:: run/run.sh
+            :language: bash
+            :start-after: BEGIN SYN DC2
+            :end-before: END SYN DC2
+
+    .. group-tab:: Python 
+
+        .. literalinclude:: run/run.py
+            :language: python
+            :start-after: BEGIN SYN DC2
+            :end-before: END SYN DC2
+
+
+.. image:: run/syn_dc2.png
+    :width: 500px
+    :align: center
+
+
 
 
 矩张量源
@@ -98,14 +141,14 @@
 
 .. tabs::  
 
-    .. tab:: C 
+    .. group-tab:: C 
 
         .. literalinclude:: run/run.sh
             :language: bash
             :start-after: BEGIN SYN MT
             :end-before: END SYN MT
 
-    .. tab:: Python 
+    .. group-tab:: Python 
 
         .. literalinclude:: run/run.py
             :language: python
@@ -114,5 +157,29 @@
 
 
 .. image:: run/syn_mt.png
-    :width: 300px
+    :width: 500px
+    :align: center
+
+
+若指定 :math:`M_{xy}=-0.2`，其它均为零，则为纯剪切。
+
+.. tabs::  
+
+    .. group-tab:: C 
+
+        .. literalinclude:: run/run.sh
+            :language: bash
+            :start-after: BEGIN SYN MT2
+            :end-before: END SYN MT2
+
+    .. group-tab:: Python 
+
+        .. literalinclude:: run/run.py
+            :language: python
+            :start-after: BEGIN SYN MT2
+            :end-before: END SYN MT2
+
+
+.. image:: run/syn_mt2.png
+    :width: 500px
     :align: center

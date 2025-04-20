@@ -20,7 +20,7 @@
 
 .. tabs:: 
 
-    .. tab:: C 
+    .. group-tab:: C 
 
         .. literalinclude:: run_upar/run.sh
             :language: bash
@@ -29,7 +29,7 @@
 
         在 :rst:dir:`GRN/milrow_{depsrc}_{deprcv}_{dist}/` 路径下，文件名开头有"r"和"z"就代表 :math:`\partial r` 和 :math:`\partial z`。
 
-    .. tab:: Python
+    .. group-tab:: Python
 
         .. literalinclude:: run_upar/run.py
             :language: python
@@ -57,7 +57,7 @@
 
 .. tabs:: 
 
-    .. tab:: C 
+    .. group-tab:: C 
 
         .. literalinclude:: run_upar/run.sh
             :language: bash
@@ -66,7 +66,7 @@
 
         在 :rst:dir:`syn_dc/` 路径下，文件名开头有"r"，"z"，"t"分别代表 :math:`\partial r`， :math:`\partial z`，:math:`\partial \theta / r`。
 
-    .. tab:: Python
+    .. group-tab:: Python
 
         .. literalinclude:: run_upar/run.py
             :language: python
@@ -80,7 +80,7 @@
 
 .. tabs:: 
 
-    .. tab:: C 
+    .. group-tab:: C 
 
         .. literalinclude:: run_upar/run.sh
             :language: bash
@@ -89,7 +89,7 @@
 
         在 :rst:dir:`syn_dc_zne/` 路径下，文件名开头有"z"，"n"，"e"分别代表 :math:`\partial z`， :math:`\partial x`，:math:`\partial y`。
 
-    .. tab:: Python
+    .. group-tab:: Python
 
         .. literalinclude:: run_upar/run.py
             :language: python
@@ -112,6 +112,14 @@
 -----------------------
 应变和应力均为二阶对称张量，故将输出6个独立分量。程序选择应变应力的坐标系的依据是——根据文件名/通道名判断是否存在 :math:`\dfrac{\partial u_x}{\partial x}`，如果有则使用ZNE坐标系，否则使用ZRT坐标系。 **所以建议保存结果的文件夹中只使用同种坐标系**，就像上面分为 :rst:dir:`syn_dc/` 和 :rst:dir:`syn_dc_zne/` 两个文件夹保存。
 
+以下绘图使用Python绘制，绘图函数如下：
+
+.. literalinclude:: run_upar/run.py
+    :language: python
+    :start-after: BEGIN plot func
+    :end-before: END plot func
+
+
 应变张量
 ~~~~~~~~~~~~~~
 根据几何方程 [#]_ 
@@ -125,7 +133,7 @@
 
 .. tabs:: 
 
-    .. tab:: C 
+    .. group-tab:: C 
 
         .. literalinclude:: run_upar/run.sh
             :language: bash
@@ -134,7 +142,7 @@
 
         在 :rst:dir:`syn_dc_zne/` 原路径下，生成 :file:`*.strain.??.sac`，文件名中包括分量名，如ZZ、ZN等。
 
-    .. tab:: Python
+    .. group-tab:: Python
 
         .. literalinclude:: run_upar/run.py
             :language: python
@@ -160,7 +168,7 @@
 
 .. tabs:: 
 
-    .. tab:: C 
+    .. group-tab:: C 
 
         .. literalinclude:: run_upar/run.sh
             :language: bash
@@ -169,7 +177,7 @@
 
         在 :rst:dir:`syn_dc_zne/` 原路径下，生成 :file:`*.stress.??.sac`，文件名中包括分量名，如ZZ、ZN等。
 
-    .. tab:: Python
+    .. group-tab:: Python
 
         .. literalinclude:: run_upar/run.py
             :language: python
