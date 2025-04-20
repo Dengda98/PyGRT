@@ -43,3 +43,11 @@ if [[ $1 == '5' || $1 == '' ]]; then
     python run.py
     cd -
 fi
+
+if [[ $1 == '6' || $1 == '' ]]; then
+    cd kernel/run
+    chmod +x *.sh
+    ./run.sh
+    python run.py
+    cd -
+fi
