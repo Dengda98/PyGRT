@@ -2,7 +2,18 @@
 
 chmod +x *.sh
 
-# 清空
+# 先在线编译PyGRT
+cd ../pygrt/C_extension 
+make
+cd -
+
+# 添加到环境变量
+export PATH=`realpath ../pygrt/C_extension/bin`:$PATH
+grt -h
+# 使用PyGRT运行文档需要的示例结果
+cd source/Tutorial && chmod +x *.sh && ./run_all.sh && cd -
+
+# 清空构建的旧文档
 make clean
 
 # 生成api对应的.rst文件
