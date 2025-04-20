@@ -20,6 +20,8 @@ build:
     pre_build:
       # make编译库
       - cd pygrt/C_extension && make && cd -
+      # 添加环境变量
+      - export PATH="$(python -m pygrt.print | grep "PyGRT executable file directory" | awk '{print $NF}'):$PATH"
       # 进入docs/source/Tutorial，运行文档中的测试脚本，生成文档需要的文件和图
       - cd docs/source/Tutorial && chmod +x *.sh && ./run_all.sh && cd -
       # 初始化C和Python需要的.rst文件，使用doxygen编译C文档
