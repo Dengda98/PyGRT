@@ -11,7 +11,10 @@
 
 Python中计算动态格林函数的主函数为 :func:`compute_grn() <pygrt.pymod.PyModel1D.compute_grn>` ，C程序为 :command:`grt`。
 
-核心计算逻辑来自  :ref:`初稿 <yao_init_manuscripts>` ，具体代码可见与C API中对应同名 :file:`*.c` 文件，其中计算格林函数频谱的主函数为 :file:`grt.c` 里的 :c:func:`integ_grn_spec`。  在公式推导过程中选取的柱坐标系三分量Z（垂向）、R（径向）、T（切向）的正方向分别为垂直向下、震源指向台站向外的方向、相对R方向顺时针旋转90度。 
+核心计算逻辑来自  :ref:`初稿 <yao_init_manuscripts>` ，具体代码可见与C API中对应同名 :file:`*.c` 文件，其中计算格林函数频谱的主函数为 :file:`grt.c` 里的 :c:func:`integ_grn_spec`。输出结果的坐标系见下图。
+
+.. image:: ../coord.svg
+   :align: center
 
 .. _warning_C_python_Z_direction:
 .. warning::
@@ -29,7 +32,7 @@ Python中计算动态格林函数的主函数为 :func:`compute_grn() <pygrt.pym
 
 .. tabs::  
 
-    .. tab:: C 
+    .. group-tab:: C 
 
         .. literalinclude:: run/run.sh
             :language: bash
@@ -52,7 +55,7 @@ Python中计算动态格林函数的主函数为 :func:`compute_grn() <pygrt.pym
         .. literalinclude:: run/HFZ_head
             :language: text
 
-    .. tab:: Python
+    .. group-tab:: Python
 
         .. literalinclude:: run/run.py
             :language: python
