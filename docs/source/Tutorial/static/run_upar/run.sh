@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eu
 
 depsrc=2
 deprcv=0
