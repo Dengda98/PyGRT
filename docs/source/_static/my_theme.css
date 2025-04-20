@@ -7,6 +7,8 @@
     background: #edfecb; /* 经典的淡黄色 */
     border-radius: 3px;   /* 可选：添加圆角 */
     padding: 0.5em;       /* 可选：添加内边距 */
+    max-height: 400px;  /* 代码块最大高度 */
+    overflow-y: auto;   /* 添加垂直滚动条 */
 }
 
 /* 更改左上角标题背景色 */

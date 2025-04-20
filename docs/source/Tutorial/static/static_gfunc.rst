@@ -18,7 +18,7 @@ Python中计算静态格林函数的主函数为 :func:`compute_static_grn() <py
 
 .. tabs::  
 
-    .. tab:: C 
+    .. group-tab:: C 
 
         .. literalinclude:: run/run.sh
             :language: bash
@@ -31,7 +31,7 @@ Python中计算静态格林函数的主函数为 :func:`compute_static_grn() <py
             :language: text
 
 
-    .. tab:: Python 
+    .. group-tab:: Python 
 
         .. literalinclude:: run/run.py
             :language: python
