@@ -1,3 +1,4 @@
+# -------------------------------------------------------------------
 # BEGIN DGRN
 import numpy as np
 import pygrt 
@@ -16,9 +17,10 @@ stgrnLst = pymod.compute_grn(
     statsfile=f"pygrtstats_{depsrc}_{deprcv}", statsidxs=[50,100]
 )
 # END DGRN
+# -------------------------------------------------------------------
 
 
-
+# -------------------------------------------------------------------
 # BEGIN read statsfile
 # 可使用通配符简化输入，因为对应索引值下只会有一个文件
 # 返回的是自定义类型的numpy数组
@@ -26,8 +28,10 @@ statsdata = pygrt.utils.read_statsfile(f"pygrtstats_{depsrc}_{deprcv}/K_0050_*")
 print(statsdata.dtype)
 # [('k', '<f8'), ('EXP_q0', '<c16'), ('EXP_w0', '<c16'), ('VF_q0', '<c16'), ('VF_w0', '<c16'), ('HF_q1', '<c16'), ('HF_w1', '<c16'), ('HF_v1', '<c16'), ('DC_q0', '<c16'), ('DC_w0', '<c16'), ('DC_q1', '<c16'), ('DC_w1', '<c16'), ('DC_v1', '<c16'), ('DC_q2', '<c16'), ('DC_w2', '<c16'), ('DC_v2', '<c16')]
 # END read statsfile
+# -------------------------------------------------------------------
 
 
+# -------------------------------------------------------------------
 # BEGIN plot stats
 ir = 2
 dist=distarr[ir]
@@ -37,7 +41,9 @@ ptype="0"
 fig, ax = pygrt.utils.plot_statsdata(statsdata, dist=dist, srctype=srctype, mtype=mtype, ptype=ptype)
 fig.savefig(f"{srctype}_{mtype}{ptype}.png", dpi=100)
 # END plot stats
+# -------------------------------------------------------------------
 
+# -------------------------------------------------------------------
 # BEGIN plot stats RI
 ir = 2
 dist=distarr[ir]
@@ -47,9 +53,11 @@ ptype="0"
 fig, ax = pygrt.utils.plot_statsdata(statsdata, dist=dist, srctype=srctype, mtype=mtype, ptype=ptype, RorI=2)
 fig.savefig(f"{srctype}_{mtype}{ptype}_RI.png", dpi=100)
 # END plot stats RI
+# -------------------------------------------------------------------
 
 
 
+# -------------------------------------------------------------------
 # BEGIN DEPSRC 0.0 DGRN
 depsrc = 0.0
 deprcv = 0.0
@@ -69,8 +77,10 @@ ptype="0"
 fig, ax = pygrt.utils.plot_statsdata(statsdata, dist=dist, srctype=srctype, mtype=mtype, ptype=ptype, RorI=2)
 fig.savefig(f"{srctype}_{mtype}{ptype}_{depsrc}_RI.png", dpi=100)
 # END DEPSRC 0.0 DGRN
+# -------------------------------------------------------------------
 
 
+# -------------------------------------------------------------------
 # BEGIN plot ptam
 ir = 2
 statsdata1, statsdata2, ptamdata, dist = pygrt.utils.read_statsfile_ptam(f"pygrtstats_{depsrc}_{deprcv}/PTAM_{ir:04d}_*/PTAM_0050_*")
@@ -81,9 +91,11 @@ ptype="0"
 fig, ax = pygrt.utils.plot_statsdata_ptam(statsdata1, statsdata2, ptamdata, dist=dist, srctype=srctype, mtype=mtype, ptype=ptype, RorI=2)
 fig.savefig(f"{srctype}_{mtype}{ptype}_{depsrc}_ptam_RI.png", dpi=100)
 # END plot ptam
+# -------------------------------------------------------------------
 
 
 
+# -------------------------------------------------------------------
 # BEGIN SGRN
 import numpy as np
 import pygrt 
@@ -113,3 +125,4 @@ fig, ax = pygrt.utils.plot_statsdata_ptam(statsdata1, statsdata2, ptamdata, dist
 fig.savefig(f"{srctype}_{mtype}{ptype}_{depsrc}_ptam_static.png", dpi=100)
 
 # END SGRN
+# -------------------------------------------------------------------
