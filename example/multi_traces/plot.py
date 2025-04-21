@@ -23,4 +23,4 @@ ax.set_xlim([0.5, 1.5])
 ax.set_ylim([0, 15])
 ax.yaxis.set_inverted(True)
 
-fig.savefig("multi_traces.png", bbox_inches='tight', dpi=200)
+fig.savefig("multi_traces.png", bbox_inches='tight', dpi=100)
