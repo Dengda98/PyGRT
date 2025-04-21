@@ -3,7 +3,7 @@
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2025-03-28
  * 
- *    根据预先合成的位移空间导数，组合成应变
+ *    根据预先合成的位移空间导数，组合成应变张量
  * 
  */
 

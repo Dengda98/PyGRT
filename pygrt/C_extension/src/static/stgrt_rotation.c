@@ -1,12 +1,11 @@
 /**
- * @file   stgrt_stress.c
+ * @file   stgrt_rotation.c
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2025-04-08
  * 
- *    根据预先合成的静态位移空间导数，组合成静态应力张量
+ *    根据预先合成的静态位移空间导数，组合成静态旋转张量
  * 
  */
-
 
 
 #include <stdio.h>
@@ -37,13 +36,14 @@ static bool rot2ZNE = false;
 static void print_help(){
 print_logo();
 printf("\n"
-"[stgrt.stress]\n\n"
+"[stgrt.rotation]\n\n"
 "    Conbine spatial derivatives of static displacements (read from stdin)\n"
-"    into stress tensor (unit: dyne/cm^2 = 0.1 Pa).\n"
+"    into rotation tensor. For example, \"ZR\" in filename means\n"
+"    0.5*(u_{z,r} - u_{r,z}).\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
-"    stgrt.stress < <file>\n"
+"    stgrt.rotation < <file>\n"
 "\n\n\n"
 );
 }
@@ -114,7 +114,7 @@ int main(int argc, char **argv){
 
     // 物性参数
     double src_va=0.0, src_vb=0.0, src_rho=0.0;
-    double rcv_va=0.0, rcv_vb=0.0, rcv_rho=0.0, rcv_mu=0.0, rcv_lam=0.0;
+    double rcv_va=0.0, rcv_vb=0.0, rcv_rho=0.0;
 
     // 震中距
     double dist = 0.0;
@@ -123,9 +123,6 @@ int main(int argc, char **argv){
     const char zrtchs[3] = {'Z', 'R', 'T'};
     const char znechs[3] = {'Z', 'N', 'E'};
     const char *chs = NULL;
-
-    // 体积应变和lambda的乘积
-    double lam_ukk=0.0;
 
     // 逐行读入
     char line[1024];
@@ -145,9 +142,6 @@ int main(int argc, char **argv){
                 fprintf(stderr, "[%s] " BOLD_RED "Error! Unable to read rcv property from \"%s\". \n" DEFAULT_RESTORE, command, line);
                 exit(EXIT_FAILURE);
             }
-
-            rcv_mu = rcv_vb*rcv_vb*rcv_rho*1e10;
-            rcv_lam = rcv_va*rcv_va*rcv_rho*1e10 - 2.0*rcv_mu;
         }
         else if(iline == 3){
             // 根据列长度判断是否有位移空间导数
@@ -184,13 +178,9 @@ int main(int argc, char **argv){
         dist = sqrt(x0*x0 + y0*y0);
         if(dist < 1e-5)  dist=1e-5;
 
-        // 先计算体积应变u_kk = u_11 + u22 + u33 和 lamda的乘积，ZRT分量需包括协变导数
-        lam_ukk = syn_upar[0][0] + syn_upar[1][1] + syn_upar[2][2];
-        if(!rot2ZNE)  lam_ukk += syn[1]/dist*1e-5;
-        lam_ukk *= rcv_lam;
-
         // 先输出列名
         if(!printHead){
+            // 打印物性参数
             fprintf(stdout, "# "GRT_REAL_FMT" "GRT_REAL_FMT" "GRT_REAL_FMT"\n", src_va, src_vb, src_rho);
             fprintf(stdout, "# "GRT_REAL_FMT" "GRT_REAL_FMT" "GRT_REAL_FMT"\n", rcv_va, rcv_vb, rcv_rho);
             
@@ -199,8 +189,8 @@ int main(int argc, char **argv){
             fprintf(stdout, "%s", XX);
             fprintf(stdout, GRT_STRING_FMT, "Y(km)");
             char s_channel[15];
-            for(int k=0; k<3; ++k){
-                for(int i=k; i<3; ++i){
+            for(int k=0; k<2; ++k){
+                for(int i=k+1; i<3; ++i){
                     sprintf(s_channel, "%c%c", toupper(chs[k]), toupper(chs[i])); 
                     fprintf(stdout, GRT_STRING_FMT, s_channel);
                 }
@@ -212,25 +202,20 @@ int main(int argc, char **argv){
         // 打印xy位置
         fprintf(stdout, GRT_REAL_FMT GRT_REAL_FMT, x0, y0);
 
-        // 循环6个分量
+        // 循环3个分量
         char c1, c2;
-        for(int i1=0; i1<3; ++i1){
+        for(int i1=0; i1<2; ++i1){
             c1 = chs[i1];
-            for(int i2=i1; i2<3; ++i2){
+            for(int i2=i1+1; i2<3; ++i2){
                 c2 = chs[i2];
 
                 double val = 0.0;
 
-                val = rcv_mu * (syn_upar[i1][i2] + syn_upar[i2][i1]);
-
-                // 对角线分量
-                if(c1 == c2)  val += lam_ukk;
+                val = 0.5 * (syn_upar[i1][i2] - syn_upar[i2][i1]);
 
                 // 特殊情况需加上协变导数，1e-5是因为km->cm
                 if(c1=='R' && c2=='T'){
-                    val -= rcv_mu * syn[2] / dist * 1e-5;
-                } else if(c1=='T' && c2=='T'){
-                    val += 2.0 * rcv_mu * syn[1] / dist * 1e-5;
+                    val -= 0.5 * syn[2] / dist * 1e-5;
                 }
 
                 // 打印结果
@@ -245,5 +230,4 @@ int main(int argc, char **argv){
         fprintf(stderr, "[%s] " BOLD_RED "Error! Empty input. \n" DEFAULT_RESTORE, command);
         exit(EXIT_FAILURE);
     }
-
 }

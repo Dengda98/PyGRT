@@ -42,6 +42,7 @@ __all__ = [
     "gen_syn_from_gf_MT",
 
     "compute_strain",
+    "compute_rotation",
     "compute_stress",
 
     "stream_convolve",
@@ -540,20 +541,32 @@ def gen_syn_from_gf_MT(st:Union[Stream,dict], M0:float, MT:ArrayLike, az:float=-
 
 #=================================================================================================================
 #
-#                                           根据几何方程和本构方程合成应力和应变
+#                                           根据几何方程和本构方程合成应力、应变、旋转张量
 #
 #=================================================================================================================
 
 
-def _compute_strain(st_syn:Stream):
+def _compute_strain_rotation(st_syn:Stream, Type:str):
     r"""
-        Compute dynamic strain tensor from synthetic spatial derivatives.
+        Compute dynamic strain/rotation tensor from synthetic spatial derivatives.
 
         :param     st_syn:      synthetic spatial derivatives.
+        :param     Type:        "strain" or "rotation"
 
         :return:
-            - **stream** -  dynamic strain tensor, in :class:`obspy.Stream` class.
+            - **stream** -  dynamic strain/rotation tensor, in :class:`obspy.Stream` class.
     """
+
+    if Type == 'strain':
+        sgn = 1
+        i1_end = 3
+        i2_offset = 0
+    elif Type == 'rotation':
+        sgn = -1
+        i1_end = 2
+        i2_offset = 1
+    else:
+        raise ValueError(f"{Type} not supported.")
 
     midname = st_syn[0].stats.channel[-3:-1]
 
@@ -573,11 +586,11 @@ def _compute_strain(st_syn:Stream):
     dist = st_syn[0].stats.sac['dist']
 
     # ----------------------------------------------------------------------------------
-    # 循环6个分量
+    # 循环6/3个分量
     stres = Stream()
-    for i1 in range(3):
+    for i1 in range(i1_end):
         c1 = chs[i1]
-        for i2 in range(i1, 3):
+        for i2 in range(i1+i2_offset, 3):
             c2 = chs[i2]
 
             channel = f"{c2.lower()}{midname}{c1}"
@@ -590,7 +603,7 @@ def _compute_strain(st_syn:Stream):
             st = st_syn.select(channel=channel)
             if len(st) == 0:
                 raise NameError(f"{channel} not exists.")
-            tr.data = (tr.data + st[0].data) * 0.5
+            tr.data = (tr.data + sgn*st[0].data) * 0.5
 
             # 特殊情况加上协变导数
             if c1=='R' and c2=='T':
@@ -615,15 +628,27 @@ def _compute_strain(st_syn:Stream):
     return stres
 
 
-def _compute_static_strain(syn:dict):
+def _compute_static_strain_rotation(syn:dict, Type:str):
     r"""
-        Compute static strain tensor from synthetic spatial derivatives.
+        Compute static strain/rotation tensor from synthetic spatial derivatives.
 
         :param     syn:      synthetic spatial derivatives.
+        :param     Type:        "strain" or "rotation"
 
         :return:
-            - **res** -  static strain tensor, in dict class.
+            - **res** -  static strain/rotation tensor, in dict class.
     """
+
+    if Type == 'strain':
+        sgn = 1
+        i1_end = 3
+        i2_offset = 0
+    elif Type == 'rotation':
+        sgn = -1
+        i1_end = 2
+        i2_offset = 1
+    else:
+        raise ValueError(f"{Type} not supported.")
 
     midname = ""
     # 检查是否每个分量是否具有相同midname
@@ -656,10 +681,10 @@ def _compute_static_strain(syn:dict):
             continue 
         resDct[k] = deepcopy(syn[k])
 
-    # 6个分量建立数组
-    for i1 in range(3):
+    # 6/3个分量建立数组
+    for i1 in range(i1_end):
         c1 = chs[i1]
-        for i2 in range(i1, 3):
+        for i2 in range(i1+i2_offset, 3):
             c2 = chs[i2]
             channel = f"{c1}{c2}"
             resDct[channel] = np.zeros((len(xarr), len(yarr)), dtype='f8')
@@ -671,10 +696,10 @@ def _compute_static_strain(syn:dict):
             dist = max(np.sqrt(xarr[ix]**2 + yarr[iy]**2), 1e-5)
 
             # ----------------------------------------------------------------------------------
-            # 循环6个分量
-            for i1 in range(3):
+            # 循环6/3个分量
+            for i1 in range(i1_end):
                 c1 = chs[i1]
-                for i2 in range(i1, 3):
+                for i2 in range(i1+i2_offset, 3):
                     c2 = chs[i2]
 
                     channel = f"{c2.lower()}{midname}{c1}"
@@ -683,7 +708,7 @@ def _compute_static_strain(syn:dict):
                     channel = f"{c1.lower()}{midname}{c2}"
                     v21 = syn[channel][ix, iy]
 
-                    val = 0.5*(v12 + v21)
+                    val = 0.5*(v12 + sgn*v21)
 
                     # 特殊情况加上协变导数
                     if c1=='R' and c2=='T':
@@ -713,9 +738,26 @@ def compute_strain(st:Union[Stream,dict]):
             - **stres** -  dynamic/static strain tensor, in :class:`obspy.Stream` class or dict class.
     """
     if isinstance(st, Stream):
-        return _compute_strain(st)
+        return _compute_strain_rotation(st, "strain")
     elif isinstance(st, dict):
-        return _compute_static_strain(st)
+        return _compute_static_strain_rotation(st, "strain")
+    else:
+        raise NotImplementedError
+    
+def compute_rotation(st:Union[Stream,dict]):
+    r"""
+        Compute dynamic/static rotation tensor from synthetic spatial derivatives.
+
+        :param     st:      synthetic spatial derivatives
+                            :class:`obspy.Stream` class for dynamic case, dict class for static case.
+
+        :return:
+            - **stres** -  dynamic/static rotation tensor, in :class:`obspy.Stream` class or dict class.
+    """
+    if isinstance(st, Stream):
+        return _compute_strain_rotation(st, "rotation")
+    elif isinstance(st, dict):
+        return _compute_static_strain_rotation(st, "rotation")
     else:
         raise NotImplementedError
 

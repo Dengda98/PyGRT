@@ -20,5 +20,8 @@ stgrt.syn -S1e24 -M33/50/120 -e -N < grn > syn_dc_zne
 # 计算应变
 stgrt.strain < syn_dc_zne > strain
 
+# 计算旋转
+stgrt.rotation < syn_dc_zne > rotation
+
 # 计算应力
 stgrt.stress < syn_dc_zne > stress

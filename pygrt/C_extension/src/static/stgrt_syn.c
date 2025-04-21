@@ -515,4 +515,8 @@ int main(int argc, char **argv){
         
     }
 
+    if(iline==0){
+        fprintf(stderr, "[%s] " BOLD_RED "Error! Empty input. \n" DEFAULT_RESTORE, command);
+        exit(EXIT_FAILURE);
+    }
 }
