@@ -39,7 +39,7 @@ print_logo();
 printf("\n"
 "[stgrt.stress]\n\n"
 "    Conbine spatial derivatives of static displacements (read from stdin)\n"
-"    into stress (unit: dyne/cm^2 = 0.1 Pa).\n"
+"    into stress tensor (unit: dyne/cm^2 = 0.1 Pa).\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"

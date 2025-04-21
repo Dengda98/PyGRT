@@ -45,7 +45,7 @@ static void print_help(){
 print_logo();
 printf("\n"
 "[grt.stress]\n\n"
-"    Conbine spatial derivatives of displacements into stress.\n"
+"    Conbine spatial derivatives of displacements into stress tensor.\n"
 "    (unit: dyne/cm^2 = 0.1 Pa)\n"
 "\n\n"
 "Usage:\n"
@@ -224,7 +224,7 @@ int main(int argc, char **argv){
             c2 = chs[i2];
 
             // 读取数据 u_{i,j}
-            sprintf(s_filepath, "%s/%c%s%c.sac", s_synpath, tolower(c1), s_prefix, c2);
+            sprintf(s_filepath, "%s/%c%s%c.sac", s_synpath, tolower(c2), s_prefix, c1);
             arrin = read_SAC(command, s_filepath, &hd, arrin);
 
             // 累加
@@ -232,7 +232,7 @@ int main(int argc, char **argv){
             for(int i=0; i<nf; ++i)  carrout[i] += carrin[i];
 
             // 读取数据 u_{j,i}
-            sprintf(s_filepath, "%s/%c%s%c.sac", s_synpath, tolower(c2), s_prefix, c1);
+            sprintf(s_filepath, "%s/%c%s%c.sac", s_synpath, tolower(c1), s_prefix, c2);
             arrin = read_SAC(command, s_filepath, &hd, arrin);
             
             // 累加

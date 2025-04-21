@@ -547,12 +547,12 @@ def gen_syn_from_gf_MT(st:Union[Stream,dict], M0:float, MT:ArrayLike, az:float=-
 
 def _compute_strain(st_syn:Stream):
     r"""
-        Compute dynamic strain from synthetic spatial derivatives.
+        Compute dynamic strain tensor from synthetic spatial derivatives.
 
         :param     st_syn:      synthetic spatial derivatives.
 
         :return:
-            - **stream** -  dynamic strain, in :class:`obspy.Stream` class.
+            - **stream** -  dynamic strain tensor, in :class:`obspy.Stream` class.
     """
 
     midname = st_syn[0].stats.channel[-3:-1]
@@ -580,13 +580,13 @@ def _compute_strain(st_syn:Stream):
         for i2 in range(i1, 3):
             c2 = chs[i2]
 
-            channel = f"{c1.lower()}{midname}{c2}"
+            channel = f"{c2.lower()}{midname}{c1}"
             st = st_syn.select(channel=channel)
             if len(st) == 0:
                 raise NameError(f"{channel} not exists.")
             tr = st[0].copy()
 
-            channel = f"{c2.lower()}{midname}{c1}"
+            channel = f"{c1.lower()}{midname}{c2}"
             st = st_syn.select(channel=channel)
             if len(st) == 0:
                 raise NameError(f"{channel} not exists.")
@@ -617,12 +617,12 @@ def _compute_strain(st_syn:Stream):
 
 def _compute_static_strain(syn:dict):
     r"""
-        Compute static strain from synthetic spatial derivatives.
+        Compute static strain tensor from synthetic spatial derivatives.
 
         :param     syn:      synthetic spatial derivatives.
 
         :return:
-            - **res** -  static strain, in dict class.
+            - **res** -  static strain tensor, in dict class.
     """
 
     midname = ""
@@ -677,10 +677,10 @@ def _compute_static_strain(syn:dict):
                 for i2 in range(i1, 3):
                     c2 = chs[i2]
 
-                    channel = f"{c1.lower()}{midname}{c2}"
+                    channel = f"{c2.lower()}{midname}{c1}"
                     v12 = syn[channel][ix, iy]
 
-                    channel = f"{c2.lower()}{midname}{c1}"
+                    channel = f"{c1.lower()}{midname}{c2}"
                     v21 = syn[channel][ix, iy]
 
                     val = 0.5*(v12 + v21)
@@ -704,13 +704,13 @@ def _compute_static_strain(syn:dict):
 
 def compute_strain(st:Union[Stream,dict]):
     r"""
-        Compute dynamic/static strain from synthetic spatial derivatives.
+        Compute dynamic/static strain tensor from synthetic spatial derivatives.
 
         :param     st:      synthetic spatial derivatives
                             :class:`obspy.Stream` class for dynamic case, dict class for static case.
 
         :return:
-            - **stres** -  dynamic/static strain, in :class:`obspy.Stream` class or dict class.
+            - **stres** -  dynamic/static strain tensor, in :class:`obspy.Stream` class or dict class.
     """
     if isinstance(st, Stream):
         return _compute_strain(st)
@@ -722,12 +722,12 @@ def compute_strain(st:Union[Stream,dict]):
 
 def _compute_stress(st_syn:Stream):
     r"""
-        Compute dynamic stress from synthetic spatial derivatives.
+        Compute dynamic stress tensor from synthetic spatial derivatives.
 
         :param     st_syn:      synthetic spatial derivatives.
 
         :return:
-            - **stream** -  dynamic stress (unit: dyne/cm^2 = 0.1 Pa), in :class:`obspy.Stream` class.
+            - **stream** -  dynamic stress tensor (unit: dyne/cm^2 = 0.1 Pa), in :class:`obspy.Stream` class.
     """
 
     # 由于有Q值的存在，lambda和mu变成了复数，需在频域进行
@@ -807,14 +807,14 @@ def _compute_stress(st_syn:Stream):
         for i2 in range(i1, 3):
             c2 = chs[i2]
 
-            channel = f"{c1.lower()}{midname}{c2}"
+            channel = f"{c2.lower()}{midname}{c1}"
             st = st_syn.select(channel=channel)
             if len(st) == 0:
                 raise NameError(f"{channel} not exists.")
             tr = st[0].copy()
             fftarr = np.zeros((nf,), dtype='c16')
 
-            channel = f"{c2.lower()}{midname}{c1}"
+            channel = f"{c1.lower()}{midname}{c2}"
             st = st_syn.select(channel=channel)
             if len(st) == 0:
                 raise NameError(f"{channel} not exists.")
@@ -851,12 +851,12 @@ def _compute_stress(st_syn:Stream):
 
 def _compute_static_stress(syn:dict):
     r"""
-        Compute static stress from synthetic spatial derivatives.
+        Compute static stress tensor from synthetic spatial derivatives.
 
         :param     syn:      synthetic spatial derivatives.
 
         :return:
-            - **res** -  static stress (unit: dyne/cm^2 = 0.1 Pa), in dict class.
+            - **res** -  static stress tensor (unit: dyne/cm^2 = 0.1 Pa), in dict class.
     """
 
     midname = ""
@@ -933,10 +933,10 @@ def _compute_static_stress(syn:dict):
                 for i2 in range(i1, 3):
                     c2 = chs[i2]
 
-                    channel = f"{c1.lower()}{midname}{c2}"
+                    channel = f"{c2.lower()}{midname}{c1}"
                     v12 = syn[channel][ix, iy]
 
-                    channel = f"{c2.lower()}{midname}{c1}"
+                    channel = f"{c1.lower()}{midname}{c2}"
                     v21 = syn[channel][ix, iy]
 
                     val = mu*(v12 + v21)
@@ -964,13 +964,13 @@ def _compute_static_stress(syn:dict):
 
 def compute_stress(st:Union[Stream,dict]):
     r"""
-        Compute dynamic/static stress from synthetic spatial derivatives.
+        Compute dynamic/static stress tensor from synthetic spatial derivatives.
 
         :param     st:      synthetic spatial derivatives
                             :class:`obspy.Stream` class for dynamic case, dict class for static case.
 
         :return:
-            - **stres** -  dynamic/static stress (unit: dyne/cm^2 = 0.1 Pa), in :class:`obspy.Stream` class or dict class.
+            - **stres** -  dynamic/static stress tensor (unit: dyne/cm^2 = 0.1 Pa), in :class:`obspy.Stream` class or dict class.
     """
     if isinstance(st, Stream):
         return _compute_stress(st)
