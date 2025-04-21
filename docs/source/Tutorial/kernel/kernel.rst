@@ -45,7 +45,7 @@
 
 读取，采样，获得核函数频谱
 ----------------------------------
-Python端提供了 :py:func:`pygrt.utils.read_kernels_freqs` 函数来完成所有频率的核函数读取以及从波数 ``k`` 插值到特定速度点 ``v`` 的工作 ( :math:`k=\omega/v` )，最后获得保存有核函数频谱的字典。
+Python端提供了 :py:func:`pygrt.utils.read_kernels_freqs` 函数来完成所有频率的核函数读取以及从波数 ``k`` 插值到特定速度点 ``v`` 的工作 ( :math:`v=\omega/k` )，最后获得保存有核函数频谱的字典。
 
 .. literalinclude:: run/run.py
     :language: python
@@ -80,3 +80,5 @@ Python端提供了 :py:func:`pygrt.utils.read_kernels_freqs` 函数来完成所�
 
 
 从图上可看到， **核函数频谱的虚部峰值正是频散曲线的位置** ，其中 :math:`q_m，w_m` 呈现的频散特征一致，只是不同震源的核函数幅值不同，这对应的是 **Rayleigh波频散** ，而 :math:`v_m` 对应的是 **Love波频散**。
+
+计算传入参数时，不同的震源场点深度、不同的虚频率都会导致幅值变化，积分间隔则会影响插值效果。
