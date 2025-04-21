@@ -22,22 +22,25 @@
         GG(["compute_grn()"])
         SS(["gen_syn_from_gf_*()"])
         EE(["compute_strain()"])
+        RR(["compute_rotation()"])
         TT(["compute_stress()"])
 
         G["计算格林函数
         (及其空间导数)"]
         S["根据震源机制计算位移
         (及其空间导数)"]
-        E["计算应变"]
-        T["计算应力"]
+        E["计算应变张量"]
+        R["计算旋转张量"]
+        T["计算应力张量"]
 
         GG --> G
         G --> SS --> S
         S --> EE --> E
+        S --> RR --> R
         S --> TT --> T
         
         classDef cmdcls fill:#f9f2d9,stroke:#e8d174,stroke-width:2px,color:#333;
-        class GG,SS,EE,TT cmdcls
+        class GG,SS,EE,RR,TT cmdcls
 
 + C
 
@@ -49,22 +52,25 @@
         GG(["grt"])
         SS(["grt.syn"])
         EE(["grt.strain"])
+        RR(["grt.rotation"])
         TT(["grt.stress"])
 
         G["计算格林函数
         (及其空间导数)"]
         S["根据震源机制计算位移
         (及其空间导数)"]
-        E["计算应变"]
-        T["计算应力"]
+        E["计算应变张量"]
+        R["计算旋转张量"]
+        T["计算应力张量"]
 
         GG --> G
         G --> SS --> S
         S --> EE --> E
+        S --> RR --> R
         S --> TT --> T
         
         classDef cmdcls fill:#f9f2d9,stroke:#e8d174,stroke-width:2px,color:#333;
-        class GG,SS,EE,TT cmdcls
+        class GG,SS,EE,RR,TT cmdcls
 
 计算 **静态解** 的过程相同，只是函数名称和程序名称有变化。
 
