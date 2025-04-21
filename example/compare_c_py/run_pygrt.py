@@ -29,35 +29,25 @@ def compare3(st_py:Stream, c_prefix:str, ZNE:bool=False, dim2:bool=False):
     return error/nerr
 
 
-def static_compare3(resDct:dict, c_prefix:str, ZNE:bool=False, dim2:bool=False):
+def static_compare3(resDct:dict, c_prefix:str):
     """return average relative error"""
-    midname = c_prefix.split("_")[-1][:2].upper()
-
-    if ZNE:
-        chs2 = ['Z', 'N', 'E']
-    else:
-        chs2 = ['Z', 'R', 'T']
-
-    chs1 = chs2.copy()
 
     nx = len(resDct['_xarr'])
     ny = len(resDct['_yarr'])
 
-    c_res = np.loadtxt(c_prefix)
-    c_resDct = {}
-    if not dim2:
-        for i, c in enumerate(chs2):
-            c_resDct[f"{midname}{c}"] = c_res[:,i+2].reshape((nx, ny), order='F')
-    else:
-        chs1 = []
-        for i1, c1 in enumerate(chs2):
-            for i2, c2 in enumerate(chs2):
-                if i2 < i1:
-                    continue
-                chs1.append(f"{c1}{c2}")
+    def _get_c_resDct(c_prefix:str):
+        with open(c_prefix, 'r') as f:
+            lines = [line.strip() for line in f if line.startswith('#')]
+        chs = lines[-1].split()[1:]
 
-        for i, cc in enumerate(chs1):
-            c_resDct[cc] = c_res[:,i+2].reshape((nx, ny), order='F')
+        c_res = np.loadtxt(c_prefix)
+        c_resDct = {}
+        for i in range(2, c_res.shape[1]):
+            c_resDct[chs[i]] = c_res[:,i].reshape((nx, ny), order='F')
+
+        return c_resDct
+    
+    c_resDct = _get_c_resDct(c_prefix)
 
     error = 0.0
     nerr = 0
@@ -120,8 +110,10 @@ for ZNE in [False, True]:
     pygrt.utils.stream_convolve(st, sigs)
     AVGRERR.append(compare3(st, "syn_exp/cout", ZNE=ZNE))
     ststrain = pygrt.utils.compute_strain(st)
+    strotation = pygrt.utils.compute_rotation(st)
     ststress = pygrt.utils.compute_stress(st)
     AVGRERR.append(compare3(ststrain, "syn_exp/cout.strain.", ZNE=ZNE, dim2=True))
+    AVGRERR.append(compare3(strotation, "syn_exp/cout.rotation.", ZNE=ZNE, dim2=True))
     AVGRERR.append(compare3(ststress, "syn_exp/cout.stress.", ZNE=ZNE, dim2=True))
     
 
@@ -130,8 +122,10 @@ for ZNE in [False, True]:
     pygrt.utils.stream_convolve(st, sigs)
     AVGRERR.append(compare3(st, "syn_sf/cout", ZNE=ZNE))
     ststrain = pygrt.utils.compute_strain(st)
+    strotation = pygrt.utils.compute_rotation(st)
     ststress = pygrt.utils.compute_stress(st)
     AVGRERR.append(compare3(ststrain, "syn_sf/cout.strain.", ZNE=ZNE, dim2=True))
+    AVGRERR.append(compare3(strotation, "syn_sf/cout.rotation.", ZNE=ZNE, dim2=True))
     AVGRERR.append(compare3(ststress, "syn_sf/cout.stress.", ZNE=ZNE, dim2=True))
 
     st = pygrt.utils.gen_syn_from_gf_DC(st_grn, S, stk, dip, rak, az, ZNE=ZNE, calc_upar=True)
@@ -139,8 +133,10 @@ for ZNE in [False, True]:
     pygrt.utils.stream_convolve(st, sigs)
     AVGRERR.append(compare3(st, "syn_dc/cout", ZNE=ZNE))
     ststrain = pygrt.utils.compute_strain(st)
+    strotation = pygrt.utils.compute_rotation(st)
     ststress = pygrt.utils.compute_stress(st)
     AVGRERR.append(compare3(ststrain, "syn_dc/cout.strain.", ZNE=ZNE, dim2=True))
+    AVGRERR.append(compare3(strotation, "syn_dc/cout.rotation.", ZNE=ZNE, dim2=True))
     AVGRERR.append(compare3(ststress, "syn_dc/cout.stress.", ZNE=ZNE, dim2=True))
 
     st = pygrt.utils.gen_syn_from_gf_MT(st_grn, S, [M11,M12,M13,M22,M23,M33], az, ZNE=ZNE, calc_upar=True)
@@ -148,8 +144,10 @@ for ZNE in [False, True]:
     pygrt.utils.stream_convolve(st, sigs)
     AVGRERR.append(compare3(st, "syn_mt/cout", ZNE=ZNE))
     ststrain = pygrt.utils.compute_strain(st)
+    strotation = pygrt.utils.compute_rotation(st)
     ststress = pygrt.utils.compute_stress(st)
     AVGRERR.append(compare3(ststrain, "syn_mt/cout.strain.", ZNE=ZNE, dim2=True))
+    AVGRERR.append(compare3(strotation, "syn_mt/cout.rotation.", ZNE=ZNE, dim2=True))
     AVGRERR.append(compare3(ststress, "syn_mt/cout.stress.", ZNE=ZNE, dim2=True))
 
 
@@ -161,36 +159,44 @@ static_grn = pymod.compute_static_grn(xarr, yarr, calc_upar=True)
 for ZNE in [False, True]:
     suffix = "-N" if ZNE else ""
     static_syn = pygrt.utils.gen_syn_from_gf_EXP(static_grn, S, ZNE=ZNE, calc_upar=True)
-    AVGRERR.append(static_compare3(static_syn, f"static/stsyn_exp{suffix}", ZNE=ZNE))
+    AVGRERR.append(static_compare3(static_syn, f"static/stsyn_exp{suffix}"))
     ststrain = pygrt.utils.compute_strain(static_syn)
+    strotation = pygrt.utils.compute_rotation(static_syn)
     ststress = pygrt.utils.compute_stress(static_syn)
-    AVGRERR.append(static_compare3(ststrain, f"static/strain_exp{suffix}", ZNE=ZNE, dim2=True))
-    AVGRERR.append(static_compare3(ststress, f"static/stress_exp{suffix}", ZNE=ZNE, dim2=True))
-    print(static_syn, ststrain, ststress)
+    AVGRERR.append(static_compare3(ststrain, f"static/strain_exp{suffix}"))
+    AVGRERR.append(static_compare3(strotation, f"static/rotation_exp{suffix}"))
+    AVGRERR.append(static_compare3(ststress, f"static/stress_exp{suffix}"))
+    print(static_syn, ststrain, strotation, ststress)
 
     static_syn = pygrt.utils.gen_syn_from_gf_SF(static_grn, S, fn, fe, fz, ZNE=ZNE, calc_upar=True)
-    AVGRERR.append(static_compare3(static_syn, f"static/stsyn_sf{suffix}", ZNE=ZNE))
+    AVGRERR.append(static_compare3(static_syn, f"static/stsyn_sf{suffix}"))
     ststrain = pygrt.utils.compute_strain(static_syn)
+    strotation = pygrt.utils.compute_rotation(static_syn)
     ststress = pygrt.utils.compute_stress(static_syn)
-    AVGRERR.append(static_compare3(ststrain, f"static/strain_sf{suffix}", ZNE=ZNE, dim2=True))
-    AVGRERR.append(static_compare3(ststress, f"static/stress_sf{suffix}", ZNE=ZNE, dim2=True))
-    print(static_syn, ststrain, ststress)
+    AVGRERR.append(static_compare3(ststrain, f"static/strain_sf{suffix}"))
+    AVGRERR.append(static_compare3(strotation, f"static/rotation_sf{suffix}"))
+    AVGRERR.append(static_compare3(ststress, f"static/stress_sf{suffix}"))
+    print(static_syn, ststrain, strotation, ststress)
 
     static_syn = pygrt.utils.gen_syn_from_gf_DC(static_grn, S, stk, dip, rak, ZNE=ZNE, calc_upar=True)
-    AVGRERR.append(static_compare3(static_syn, f"static/stsyn_dc{suffix}", ZNE=ZNE))
+    AVGRERR.append(static_compare3(static_syn, f"static/stsyn_dc{suffix}"))
     ststrain = pygrt.utils.compute_strain(static_syn)
+    strotation = pygrt.utils.compute_rotation(static_syn)
     ststress = pygrt.utils.compute_stress(static_syn)
-    AVGRERR.append(static_compare3(ststrain, f"static/strain_dc{suffix}", ZNE=ZNE, dim2=True))
-    AVGRERR.append(static_compare3(ststress, f"static/stress_dc{suffix}", ZNE=ZNE, dim2=True))
-    print(static_syn, ststrain, ststress)
+    AVGRERR.append(static_compare3(ststrain, f"static/strain_dc{suffix}"))
+    AVGRERR.append(static_compare3(strotation, f"static/rotation_dc{suffix}"))
+    AVGRERR.append(static_compare3(ststress, f"static/stress_dc{suffix}"))
+    print(static_syn, ststrain, strotation, ststress)
 
     static_syn = pygrt.utils.gen_syn_from_gf_MT(static_grn, S, [M11,M12,M13,M22,M23,M33], ZNE=ZNE, calc_upar=True)
-    AVGRERR.append(static_compare3(static_syn, f"static/stsyn_mt{suffix}", ZNE=ZNE))
+    AVGRERR.append(static_compare3(static_syn, f"static/stsyn_mt{suffix}"))
     ststrain = pygrt.utils.compute_strain(static_syn)
+    strotation = pygrt.utils.compute_rotation(static_syn)
     ststress = pygrt.utils.compute_stress(static_syn)
-    AVGRERR.append(static_compare3(ststrain, f"static/strain_mt{suffix}", ZNE=ZNE, dim2=True))
-    AVGRERR.append(static_compare3(ststress, f"static/stress_mt{suffix}", ZNE=ZNE, dim2=True))
-    print(static_syn, ststrain, ststress)
+    AVGRERR.append(static_compare3(ststrain, f"static/strain_mt{suffix}"))
+    AVGRERR.append(static_compare3(strotation, f"static/rotation_mt{suffix}"))
+    AVGRERR.append(static_compare3(ststress, f"static/stress_mt{suffix}"))
+    print(static_syn, ststrain, strotation, ststress)
 
 
 AVGRERR = np.array(AVGRERR)
