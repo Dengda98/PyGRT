@@ -86,6 +86,7 @@ def plot_syn(stsyn:Stream, out:Union[str,None]=None, sigs:Union[np.ndarray,None]
         ax.set_ylim(np.array(ylims)*1.2)
 
     if out is not None:
+        fig.tight_layout()
         fig.savefig(out, dpi=100)
 
 def plot_int_dif(stsyn:Stream, stsyn_int:Stream, stsyn_dif:Stream, comp:str, out:Union[str,None]=None):
@@ -115,6 +116,7 @@ def plot_int_dif(stsyn:Stream, stsyn_int:Stream, stsyn_dif:Stream, comp:str, out
         ax.set_ylim(np.array(ylims)*1.2)
 
         if out is not None:
+            fig.tight_layout()
             fig.savefig(out, dpi=100)
 
 # END plot func
