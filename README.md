@@ -14,12 +14,13 @@
 [**中文文档**](https://pygrt.readthedocs.io/zh-cn/)
 
 # Overview
-**[PyGRT](https://github.com/Dengda98/PyGRT): An Efficient and Integrated C/Python Package for Computing Synthetic Seismograms, Strain and Stress in a Layered Half-Space Model (Dynamic & Static Cases)**
+**[PyGRT](https://github.com/Dengda98/PyGRT): An Efficient and Integrated C/Python Package for Computing Synthetic Seismograms, Strain, Rotation and Stress Tensor in a Layered Half-Space Model (Dynamic & Static Cases)**
 
  + **PyGRT** now can compute following properties in **both dynamic and static case.**
     - [x] **Displacements and its spatial derivatives**
-    - [x] **Strain**
-    - [x] **Stress**
+    - [x] **Strain Tensor**
+    - [x] **Rotation Tensor**
+    - [x] **Stress Tensor**
 
 
  + **At present, PyGRT can run on**
@@ -137,6 +138,16 @@ Then you can run the command like `grt` in terminal.
   <img alt="static_sf" src="example/static_disp/disp_sf.png" width="200">
   <img alt="static_exp" src="example/static_disp/disp_exp.png" width="200">
 </p>
+
+<p align='center'>
+  <img alt="imag_G" src="example/view_integ_stats/view_stats.png" width="600">
+</p>
+
+<p align='center'>
+  <img alt="imag_G" src="example/kernel_freq_response/imag_G.png" width="500">
+</p>
+
+
 
 # Contact
 If you have any questions or suggestions, feel free to reach out:
