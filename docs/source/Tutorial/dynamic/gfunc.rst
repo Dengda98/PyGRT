@@ -139,7 +139,23 @@ Python中计算动态格林函数的主函数为 :func:`compute_grn() <pygrt.pym
     初次推导该公式可能会对虚数 :math:`i` 及公式中的正负号感到疑惑，但其实这里的设计是将虚数 :math:`i` 和方向因子 :math:`e^{im\theta}` 合并，所以在后续合成理论地震图时你会发现，:math:`m=0,1,2` 阶的 :math:`W_m, Q_m` 的方向因子对 :math:`(m\theta)` 的偏导就是 :math:`V_m` 的方向因子。
 
 
-公式来自 :ref:`初稿 <yao_init_manuscripts>` (5.6.22)式，其中阶数 :math:`m=0,1,2`。核函数 :math:`q_m,w_m,v_m` 根据广义反射透射系数矩阵法求得。为了方便程序实现，根据积分形式，我们对待求积分进行如下分类，其中每一阶都分为4类( :math:`p=0,1,2,3` )，除了0阶只需两类，此时 :math:`v_0=0` :
+公式来自 :ref:`初稿 <yao_init_manuscripts>` (5.6.22)式，其中阶数 :math:`m=0,1,2`。核函数 :math:`q_m,w_m,v_m` 根据广义反射透射系数矩阵法(**GRTM**)求得，当震源比场点深时，有如下公式（震源浅于场点时有类似公式，这里不再展示）。
+
+.. math:: 
+   \begin{aligned}
+   \begin{bmatrix} q_m \\ w_m \end{bmatrix} &= 
+   \mathbf{R}_{EV}(z_R) \left(\mathbf{I} - \mathbf{R}_D^{RS}\mathbf{R}_U^{FR}\right)^{-1} \mathbf{T}_U^{RS} 
+   \left(\mathbf{I} - \mathbf{R}_D^{SL}\mathbf{R}_U^{FS}\right)^{-1}
+   \left[
+      \mathbf{R}_D^{SL} \begin{pmatrix} P_m^+ \\ SV_m^+ \end{pmatrix} + \begin{pmatrix} P_m^- \\ SV_m^- \end{pmatrix}
+   \right] \\
+   v_m &= R_{EV,L}(z_R) \left(I - R_{D,L}^{RS}R_{U,L}^{FR}\right)^{-1} T_{U,L}^{RS} 
+   \left(I - R_{D,L}^{SL}R_{U,L}^{FS}\right)^{-1}
+   \left[ R_{D,L}^{SL} SH_m^+ + SH_m^- \right]
+   \end{aligned}
+
+
+为了方便程序实现，根据积分形式，我们对待求积分进行如下分类，其中每一阶都分为4类( :math:`p=0,1,2,3` )，除了0阶只需两类，此时 :math:`v_0=0` :
 
 + :math:`m=0`  [#]_
 
