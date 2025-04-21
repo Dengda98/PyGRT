@@ -345,6 +345,11 @@ float * get_custom_wave(int *Nt, const char *tfparams){
         nt++;
     }
 
+    if(nt == 0){
+        fprintf(stderr, BOLD_RED "custom time function file read error. Empty?\n" DEFAULT_RESTORE);
+        return NULL;
+    }
+
     *Nt = nt;
     return tfarr;
 }

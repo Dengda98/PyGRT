@@ -3,7 +3,7 @@
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2025-04-08
  * 
- *    根据预先合成的静态位移空间导数，组合成静态应力
+ *    根据预先合成的静态位移空间导数，组合成静态应力张量
  * 
  */
 
@@ -239,6 +239,11 @@ int main(int argc, char **argv){
         }
 
         fprintf(stdout, "\n");
+    }
+
+    if(iline==0){
+        fprintf(stderr, "[%s] " BOLD_RED "Error! Empty input. \n" DEFAULT_RESTORE, command);
+        exit(EXIT_FAILURE);
     }
 
 }
