@@ -13,4 +13,4 @@ data1, data2, ptamdata, dist = pygrt.utils.read_statsfile_ptam("stgrtstats/halfs
 fig, ax = pygrt.utils.plot_statsdata_ptam(data1, data2, ptamdata, dist, "DC", "2", "2")
 # fig.tight_layout()
 # fig.savefig("view_stats.png", dpi=100, bbox_inches='tight')
-plt.show()
+# plt.show()
