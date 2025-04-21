@@ -1,7 +1,7 @@
 .. _strain_stress_rst:
 
-计算动态应变和应力
-===================
+计算动态应变、旋转、应力张量
+=======================================
 
 :Author: Zhu Dengda
 :Email:  zhudengda@mail.iggcas.ac.cn
@@ -9,7 +9,7 @@
 -----------------------------------------------------------
 
 
-计算应变张量与应力张量需要计算位移的空间导数 :math:`\partial z,\partial r,\partial \theta` [#]_ 。 从前文关于格林函数的计算 （ :ref:`gfunc_rst` ） 和位移合成的公式 （ :ref:`syn_rst` ） 出发，位移空间导数分两个步骤计算，再根据几何方程和本构方程合成应变和应力。
+计算这些张量需要计算位移的空间导数 :math:`\partial z,\partial r,\partial \theta` [#]_ 。 从前文关于格林函数的计算 （ :ref:`gfunc_rst` ） 和位移合成的公式 （ :ref:`syn_rst` ） 出发，位移空间导数分两个步骤计算，再根据几何方程和本构方程合成应变、旋转和应力张量。
 
 .. [#] :math:`\partial z,\partial r,\partial \theta` 为 :math:`\dfrac{\partial}{\partial z},\dfrac{\partial}{\partial r},\dfrac{\partial}{\partial \theta}` 的简写。
 
@@ -108,9 +108,11 @@
     合成的位移空间导数单位为1。
 
 
-合成应变和应力
------------------------
-应变和应力均为二阶对称张量，故将输出6个独立分量。程序选择应变应力的坐标系的依据是——根据文件名/通道名判断是否存在 :math:`\dfrac{\partial u_x}{\partial x}`，如果有则使用ZNE坐标系，否则使用ZRT坐标系。 **所以建议保存结果的文件夹中只使用同种坐标系**，就像上面分为 :rst:dir:`syn_dc/` 和 :rst:dir:`syn_dc_zne/` 两个文件夹保存。
+合成应变、旋转、应力张量
+-----------------------------
+应变和应力均为二阶对称张量，故将输出6个独立分量；而旋转张量为二阶反对称张量，将输出3个独立分量。
+
+程序选择张量输出结果的坐标系的依据是——根据文件名/通道名判断是否存在 :math:`\dfrac{\partial u_x}{\partial x}`，如果有则使用ZNE坐标系，否则使用ZRT坐标系。 **所以建议保存结果的文件夹中只使用同种坐标系**，就像上面分为 :rst:dir:`syn_dc/` 和 :rst:dir:`syn_dc_zne/` 两个文件夹保存。
 
 以下绘图使用Python绘制，绘图函数如下：
 
@@ -122,14 +124,12 @@
 
 应变张量
 ~~~~~~~~~~~~~~
-根据几何方程 [#]_ 
+根据几何方程（应变-位移关系） [1]_ 
 
 .. math:: 
 
     e_{ij} = \dfrac{1}{2} \left( u_{i,j} + u_{j,i} \right) = \dfrac{1}{2} \left( \dfrac{\partial u_i}{\partial x_j} + \dfrac{\partial u_j}{\partial x_i}  \right)
 
-
-.. [#] 这只适用于ZNE坐标系，对于ZRT坐标系需考虑协变导数。程序中已考虑，这里不再做公式介绍。
 
 .. tabs:: 
 
@@ -155,16 +155,47 @@
     :align: center
 
 
+旋转张量
+~~~~~~~~~~~~~~~~~~~~~
+根据旋转-位移关系 [1]_  
+
+.. math:: 
+
+    w_{ij} = \dfrac{1}{2} \left( u_{i,j} - u_{j,i} \right) = \dfrac{1}{2} \left( \dfrac{\partial u_i}{\partial x_j} - \dfrac{\partial u_j}{\partial x_i}  \right)
+
+.. tabs:: 
+
+    .. group-tab:: C 
+
+        .. literalinclude:: run_upar/run.sh
+            :language: bash
+            :start-after: BEGIN ROTATION
+            :end-before: END ROTATION
+
+        在 :rst:dir:`syn_dc_zne/` 原路径下，生成 :file:`*.rotation.??.sac`，文件名中包括分量名，如ZN，ZE，NE。
+
+    .. group-tab:: Python
+
+        .. literalinclude:: run_upar/run.py
+            :language: python
+            :start-after: BEGIN ROTATION
+            :end-before: END ROTATION
+
+        返回的 |Stream| 通道名即为分量名，如ZN，ZE，NE。
+
+.. image:: run_upar/rotation.png
+    :align: center
+
+
 应力张量
 ~~~~~~~~~~~~~~
-根据各向同性介质的本构方程 [#]_ 
+根据各向同性介质的本构方程 [1]_ 
 
 .. math:: 
 
     \sigma_{ij} = \lambda \delta_{ij} e_{kk} + 2 \mu e_{ij} = \lambda \delta_{ij} u_{kk} + \mu \left( u_{i,j} + u_{j,i} \right)
 
 
-.. [#] 这只适用于ZNE坐标系，对于ZRT坐标系需考虑协变导数。程序中已考虑，这里不再做公式介绍。
 
 .. tabs:: 
 
@@ -196,3 +227,8 @@
 
 
 由于场点位于地表（自由表面），过Z平面的应力均为0（由于浮点数计算误差，呈极小非零数），结果和理论保持一致。
+
+
+
+.. [1] 这只适用于ZNE坐标系，对于ZRT坐标系需考虑协变导数。程序中已考虑，这里不再做公式介绍。
+

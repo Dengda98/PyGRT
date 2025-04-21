@@ -1,5 +1,5 @@
-计算静态应变和应力
-===================
+计算静态应变、旋转、应力张量
+=================================
 
 :Author: Zhu Dengda
 :Email:  zhudengda@mail.iggcas.ac.cn
@@ -26,6 +26,10 @@
 .. image:: run_upar/static_strain.png
     :align: center 
 
+-------------
+
+.. image:: run_upar/static_rotation.png
+    :align: center 
 
 -------------
 
