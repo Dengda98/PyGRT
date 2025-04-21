@@ -9,9 +9,9 @@
 -----------------------------------------------------------
 
 
-计算这些张量需要计算位移的空间导数 :math:`\partial z,\partial r,\partial \theta` [#]_ 。 从前文关于格林函数的计算 （ :ref:`gfunc_rst` ） 和位移合成的公式 （ :ref:`syn_rst` ） 出发，位移空间导数分两个步骤计算，再根据几何方程和本构方程合成应变、旋转和应力张量。
+计算这些张量需要计算位移的空间导数 :math:`\partial z,\partial r,\partial \theta` [#partial]_ 。 从前文关于格林函数的计算 （ :ref:`gfunc_rst` ） 和位移合成的公式 （ :ref:`syn_rst` ） 出发，位移空间导数分两个步骤计算，再根据几何方程和本构方程合成应变、旋转和应力张量。
 
-.. [#] :math:`\partial z,\partial r,\partial \theta` 为 :math:`\dfrac{\partial}{\partial z},\dfrac{\partial}{\partial r},\dfrac{\partial}{\partial \theta}` 的简写。
+.. [#partial] :math:`\partial z,\partial r,\partial \theta` 为 :math:`\dfrac{\partial}{\partial z},\dfrac{\partial}{\partial r},\dfrac{\partial}{\partial \theta}` 的简写。
 
 计算格林函数阶段，求出 :math:`\partial z,\partial r`
 -----------------------------------------------------------------------------------------------
@@ -124,7 +124,7 @@
 
 应变张量
 ~~~~~~~~~~~~~~
-根据几何方程（应变-位移关系） [1]_ 
+根据几何方程（应变-位移关系） [#covariant]_ 
 
 .. math:: 
 
@@ -157,7 +157,7 @@
 
 旋转张量
 ~~~~~~~~~~~~~~~~~~~~~
-根据旋转-位移关系 [1]_  
+根据旋转-位移关系 [#covariant]_  
 
 .. math:: 
 
@@ -189,7 +189,7 @@
 
 应力张量
 ~~~~~~~~~~~~~~
-根据各向同性介质的本构方程 [1]_ 
+根据各向同性介质的本构方程 [#covariant]_ 
 
 .. math:: 
 
@@ -230,5 +230,5 @@
 
 
 
-.. [1] 这只适用于ZNE坐标系，对于ZRT坐标系需考虑协变导数。程序中已考虑，这里不再做公式介绍。
+.. [#covariant] 这只适用于ZNE坐标系，对于ZRT坐标系需考虑协变导数。程序中已考虑，这里不再做公式介绍。
 
