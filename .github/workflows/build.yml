@@ -339,6 +339,15 @@ jobs:
           chmod +x *.sh
           ./run_stgrt.sh
 
+      - name: Test stats files 
+        working-directory: ${{ env.EXAMPLE_COPY_PATH }}/view_integ_stats
+        run: |
+          chmod +x *.sh
+          ./run_stgrt.sh
+          python view.py
+          ./run_grt.sh
+          python view_dynamic.py
+
       - name: Remove the test files
         run: |
           rm -rf ${{ env.EXAMPLE_COPY_PATH }}
