@@ -16,12 +16,14 @@ OBJS := $(filter-out \
 	$(BUILD_DIR)/stgrt_syn.o \
 	$(BUILD_DIR)/stgrt_strain.o \
 	$(BUILD_DIR)/stgrt_stress.o \
+	$(BUILD_DIR)/stgrt_rotation.o \
 	, $(OBJS))
 
 PROGS := $(BIN_DIR)/stgrt \
 		 $(BIN_DIR)/stgrt.syn \
 		 $(BIN_DIR)/stgrt.strain \
-		 $(BIN_DIR)/stgrt.stress
+		 $(BIN_DIR)/stgrt.stress \
+		 $(BIN_DIR)/stgrt.rotation
 
 all: objs progs
 
@@ -51,6 +53,9 @@ $(BIN_DIR)/stgrt.strain: stgrt_strain.c $(COMMON_OBJS)
 	$(CC) -o $@ $^ $(CFLAGS)
 
 $(BIN_DIR)/stgrt.stress: stgrt_stress.c $(COMMON_OBJS) 
+	$(CC) -o $@ $^ $(CFLAGS)
+
+$(BIN_DIR)/stgrt.rotation: stgrt_rotation.c $(COMMON_OBJS) 
 	$(CC) -o $@ $^ $(CFLAGS)
 
 # ----------------------- Dependency generation -----------------------
