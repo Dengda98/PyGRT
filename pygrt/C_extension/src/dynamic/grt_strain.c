@@ -42,7 +42,7 @@ static void print_help(){
 print_logo();
 printf("\n"
 "[grt.strain]\n\n"
-"    Conbine spatial derivatives of displacements into strain.\n"
+"    Conbine spatial derivatives of displacements into strain tensor.\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
@@ -146,14 +146,14 @@ int main(int argc, char **argv){
             c2 = chs[i2];
 
             // 读取数据 u_{i,j}
-            sprintf(s_filepath, "%s/%c%s%c.sac", s_synpath, tolower(c1), s_prefix, c2);
+            sprintf(s_filepath, "%s/%c%s%c.sac", s_synpath, tolower(c2), s_prefix, c1);
             arrin = read_SAC(command, s_filepath, &hd, arrin);
 
             // 累加
             for(int i=0; i<npts; ++i)  arrout[i] += arrin[i];
 
             // 读取数据 u_{j,i}
-            sprintf(s_filepath, "%s/%c%s%c.sac", s_synpath, tolower(c2), s_prefix, c1);
+            sprintf(s_filepath, "%s/%c%s%c.sac", s_synpath, tolower(c1), s_prefix, c2);
             arrin = read_SAC(command, s_filepath, &hd, arrin);
 
             // 累加

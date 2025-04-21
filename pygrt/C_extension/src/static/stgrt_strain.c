@@ -38,7 +38,7 @@ print_logo();
 printf("\n"
 "[stgrt.strain]\n\n"
 "    Conbine spatial derivatives of static displacements (read from stdin)\n"
-"    into strain.\n"
+"    into strain tensor.\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
