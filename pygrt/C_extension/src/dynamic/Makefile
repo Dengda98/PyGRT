@@ -18,13 +18,15 @@ OBJS := $(filter-out \
 	$(BUILD_DIR)/grt_b2a.o \
 	$(BUILD_DIR)/grt_strain.o \
 	$(BUILD_DIR)/grt_stress.o \
+	$(BUILD_DIR)/grt_rotation.o \
 	, $(OBJS))
 
 PROGS := $(BIN_DIR)/grt \
          $(BIN_DIR)/grt.syn \
 		 $(BIN_DIR)/grt.b2a \
 		 $(BIN_DIR)/grt.strain \
-		 $(BIN_DIR)/grt.stress
+		 $(BIN_DIR)/grt.stress \
+		 $(BIN_DIR)/grt.rotation
 
 all: objs progs
 
@@ -57,6 +59,9 @@ $(BIN_DIR)/grt.strain: grt_strain.c $(COMMON_OBJS)
 	$(CC) -o $@ $^  $(CFLAGS)
 
 $(BIN_DIR)/grt.stress: grt_stress.c $(COMMON_OBJS)
+	$(CC) -o $@ $^  $(CFLAGS)
+
+$(BIN_DIR)/grt.rotation: grt_rotation.c $(COMMON_OBJS)
 	$(CC) -o $@ $^  $(CFLAGS)
 
 # ----------------------- Dependency generation -----------------------
