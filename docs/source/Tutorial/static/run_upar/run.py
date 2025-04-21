@@ -3,20 +3,21 @@ import numpy as np
 import pygrt 
 
 def plot6(data:dict, title:str, out:str|None=None):
-    chs = ['ZZ', 'ZN', 'ZE', 'NN', 'NE', 'EE']
+    chs = [k for k in data.keys() if k[0]!='_']
+    chs.sort(reverse=True)
     xarr = data['_xarr']
     yarr = data['_yarr']
-    fig, axs = plt.subplots(2, 3, figsize=(10, 6))
+    fig, axs = plt.subplots(len(chs)//3, 3, figsize=(10, len(chs)))
     axs = axs.ravel()
 
     MAX = 0
-    for i in range(6):
+    for i in range(len(chs)):
         ch = chs[i]
         m = np.max(np.abs(data[ch]))
         if m > MAX:
             MAX = m
 
-    for i in range(6):
+    for i in range(len(chs)):
         ax = axs[i]
         ch = chs[i]
         vmin = vmax = None
@@ -54,8 +55,12 @@ static_syn = pygrt.utils.gen_syn_from_gf_DC(static_grn, M0=1e24, strike=33, dip=
 # 计算应变
 static_strain = pygrt.utils.compute_strain(static_syn)
 
+# 计算旋转
+static_rotation = pygrt.utils.compute_rotation(static_syn)
+
 # 计算应力
 static_stress = pygrt.utils.compute_stress(static_syn)
 
 plot6(static_strain, "Strain", 'static_strain.png')
+plot6(static_rotation, "Rotation", 'static_rotation.png')
 plot6(static_stress, "Stress", 'static_stress.png')

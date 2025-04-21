@@ -125,8 +125,8 @@ def plot6(st6:Stream, title:str, out:str|None=None):
     travtP = stsyn[0].stats.sac['t0']
     travtS = stsyn[0].stats.sac['t1']
 
-    fig, axs = plt.subplots(6, 1, figsize=(10, 7), gridspec_kw=dict(hspace=0.0), sharex=True)
-    for i in range(6):
+    fig, axs = plt.subplots(len(st6), 1, figsize=(10, 1.2*len(st6)), gridspec_kw=dict(hspace=0.0), sharex=True)
+    for i in range(len(st6)):
         tr = st6[i]
         ax = axs[i]
 
@@ -147,9 +147,10 @@ def plot6(st6:Stream, title:str, out:str|None=None):
         ax.set_xlim([t[0], t[-1]])
         ax.set_ylim(np.array(ylims)*1.2)
 
-    axs[0].set_title(title)
+    fig.suptitle(title)
 
     if out is not None:
+        fig.tight_layout()
         fig.savefig(out, dpi=100)
 # END plot func
 # --------------------------------------------------------------------------------------
@@ -170,6 +171,20 @@ print(st_strain)
 plot6(st_strain, "Strain", "strain.png")
 # END STRAIN
 # --------------------------------------------------------------------------------------
+
+# --------------------------------------------------------------------------------------
+# BEGIN ROTATION
+st_rotation = pygrt.utils.compute_rotation(stsyn)
+print(st_rotation)
+# 6 Trace(s) in Stream:
+# .SYN..ZN | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
+# .SYN..ZE | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
+# .SYN..NE | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
+plot6(st_rotation, "Rotation", "rotation.png")
+# END ROTATION
+# --------------------------------------------------------------------------------------
+
+
 
 # BEGIN STRESS
 st_stress = pygrt.utils.compute_stress(stsyn)
