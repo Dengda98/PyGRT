@@ -1,5 +1,5 @@
-API
-==================
+Application Programming Interface
+=============================================
 
 :Author: Zhu Dengda
 :Email:  zhudengda@mail.iggcas.ac.cn

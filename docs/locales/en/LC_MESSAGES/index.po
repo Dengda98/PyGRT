@@ -1,0 +1,201 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2025, Zhu Dengda
+# This file is distributed under the same license as the PyGRT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.16.0\n"
+
+#: ../../source/index.rst:65
+msgid "文档首页"
+msgstr ""
+
+#: ../../source/index.rst:65
+msgid "目录"
+msgstr ""
+
+#: ../../source/index.rst:2 f4848c2a93124956808de83f80c8680f
+msgid "**PyGRT** 文档"
+msgstr ""
+
+#: ../../source/index.rst b559b6af5d734114b6748b42d62a9a63
+msgid "Author"
+msgstr ""
+
+#: ../../source/index.rst:4 199cf64e44454e21bfb6b47ac5f9cec4
+msgid "Zhu Dengda"
+msgstr ""
+
+#: ../../source/index.rst bd0f43ca0562407bba862145fa56d6c9
+msgid "Email"
+msgstr ""
+
+#: ../../source/index.rst:5 fb94d911a2fc4888a13c3ea35f12edb7
+msgid "zhudengda@mail.iggcas.ac.cn"
+msgstr ""
+
+#: ../../source/index.rst:20 646d08afdfed40109fc6137002001765
+msgid ""
+"**PyGRT** : 一个用于计算在半无限水平分层均匀介质模型中的理论地震图的 "
+"**Python**\\程序包，使用广义反射透射系数矩阵法(**G**\\eneralized "
+"**R**\\eflection-**T**\\ransmission coefficient matrix) 以及离散波数法等方法计算。"
+msgstr ""
+
+#: ../../source/index.rst:23 1871f0c2ad36435fb99c9cec41c1a023
+msgid "**PyGRT** 能算什么？"
+msgstr ""
+
+#: ../../source/index.rst:24 777f80f55833448db260a3eb561ddd6d
+msgid "目前，**PyGRT** 可计算区域尺度内半无限水平分层均匀介质中的 **动态与静态的位移，以及应力、应变、旋转张量。**"
+msgstr ""
+
+#: ../../source/index.rst:28 03e9f5f79fe444bda47c67d7bbeb7f6f
+msgid "运行平台"
+msgstr ""
+
+#: ../../source/index.rst:29 07f0d1fdf053418b9e9b616abe4ce5f9
+msgid "**Windows, Linux, MacOS**"
+msgstr ""
+
+#: ../../source/index.rst:33 89274bc9424b409b979b570bd81d8182
+msgid "程序特点"
+msgstr ""
+
+#: ../../source/index.rst:35 e9af1482a5cb41d8b53970dd9fc50ca2
+msgid ""
+"**格林函数频谱由C程序并行计算**。由于不同频率间的计算相互独立，在计算过程中基于 `OpenMP "
+"<https://www.openmp.org/>`_ 进行了 **并行优化**，极大提升了计算效率；"
+msgstr ""
+
+#: ../../source/index.rst:36 ../../source/index.rst:39
+#: ../../source/index.rst:42 ../../source/index.rst:45
+#: ../../source/index.rst:48 ../../source/index.rst:51
+#: 1e7271e61c9a4ccc803825b668707ac2 44d09527b2bf45ad9a668c6fa84ec1b1
+#: 64bbae586f8e4115a61dfcd0209feae3 8c991d94a6ff43a78ad968ff7709349a
+#: cc83ac674ef8474da8a180d32e152fb9 e08b5efaa87045f5a8aa9efdcfc59767
+msgid "\\"
+msgstr ""
+
+#: ../../source/index.rst:38 cea453322d5d4fdbbf2e78cda8a7547c
+msgid ""
+"**将Python语言的便携、可扩展性与C语言的计算高效特点结合**。C程序被编译链接成动态库 *libgrt.so* ， **PyGRT** "
+"再基于Python的 `ctypes <https://docs.python.org/3/library/ctypes.html>`_ "
+"标准库实现对C库函数的调用。再基于第三方库 `NumPy <https://numpy.org/>`_ 、 `SciPy "
+"<https://scipy.org/>`_ 和 `ObsPy <https://docs.obspy.org/>`_ "
+"可很方便地完成对C程序结果的数据整合、Fourier变换、卷积、滤波、保存到sac文件等操作（例如FFT点数不再强制要求2次幂依然能保证高效 "
+"`scipy.fft.fft "
+"<https://docs.scipy.org/doc/scipy/reference/generated/scipy.fft.fft.html#scipy.fft.fft>`_）。借用Python语言的特点以及丰富成熟的第三方库，可灵活地实现后续的各种数据处理。"
+msgstr ""
+
+#: ../../source/index.rst:41 e3a75b1e89b2431cb05b0717f853acc8
+msgid ""
+"**明确的中文注释**。我在代码中对计算过程给出了明确的中文注释以及相关的公式索引， **所有公式索引（除非特别指明）均来自**  "
+":ref:`该初稿 "
+"<yao_init_manuscripts>`，在代码中基本按照公式推导的计算逻辑，在不过多损失计算效率的前提下进行适当优化，保证了代码的可读性，希望能给学习过程中的你提供一些参考，解答一些疑惑。仅是我浅薄的理解，仅作参考，欢迎指正。"
+msgstr ""
+
+#: ../../source/index.rst:44 331ada4b060f4aa29a943afa89783224
+msgid "**特殊情况下的计算优化**。目前包括两个部分："
+msgstr ""
+
+#: ../../source/index.rst:47 0e13f9acb3f54c1cb8eed35e77f99e78
+msgid ""
+"**当震中距** :math:`r` **很大时**。由于结果中Bessel函数的形式为 "
+":math:`J_m(kr)`，当震中距变大时，积分要求波数 :math:`k` 的积分间隔就越小，导致计算变慢。目前 **PyGRT** 实现了"
+" **基于线性插值的Filon积分** 以缓解此问题 :ref:`(纪晨, 姚振兴, 1995) <jichen_1995>` "
+":ref:`(初稿) <yao_init_manuscripts>` "
+"，将每个积分小区间内的Bessel函数取渐近公式，使每个区间内的积分近似值可获得解析解，这样可加大波数 :math:`k` "
+"的积分间隔，提高计算速度。"
+msgstr ""
+
+#: ../../source/index.rst:50 7c4cb739158c42bcb7dad5e80259796d
+msgid ""
+"**当震源深度和台站深度很接近时（如第一类Lamb问题，台站和震源均位于地表）**。此时核函数随着波数 :math:`k` "
+"的增加收敛非常慢，会在收敛值上下波动，导致很难到达到指定的收敛条件，需要耗费更多时间以达到更高的积分上限（不过使用多线程并行优化后，这个问题不再那么刺眼）。目前"
+" **PyGRT** 实现了 **峰谷平均法** 以缓解此问题 :ref:`(Zhang et al., 2003) <zhang_2003>` "
+":ref:`(张海明, 2021) <zhang_book_2021>`，当波数 :math:`k` "
+"达到一定上限时，可以统计波动的波峰波谷值，再递归取缩减序列 :math:`M_i \\leftarrow 0.5\\times(M_i + "
+"M_{i+1})` 得到收敛值。"
+msgstr ""
+
+#: ../../source/index.rst:53 76b33cf3ba1a496986508b44b3afcfc2
+msgid ""
+"**积分过程可输出记录文件**。通过函数参数设置，在计算格林函数频谱时可输出不同频率的积分过程文件，记录了核函数和被积函数随波数 "
+":math:`k` 的变化，且 **PyGRT** 包含了读取该文件的函数，可以简易地观察到相关量的变化，方便各种测试以及学习过程中的理解。"
+msgstr ""
+
+#: ../../source/index.rst:59 5d8a95028c854e11a97453d42bbabb91
+msgid ""
+"以下包括 **Python** 和 **C** 两部分的API介绍。如果只关心程序的使用，可以只查看 **Python** "
+"部分；若对具体实现过程感兴趣，尤其是在学习 **广义反射透射系数矩阵、离散波数法、线性Filon积分法、峰谷平均法** "
+"等内容感到迷惑难解时，可以在运行程序的同时结合阅读相关 **C代码**，我在C代码中给出了 **明确的中文注释以及相关公式索引** "
+"，希望能帮助你在学习相关内容时解答一些疑惑。"
+msgstr ""
+
+#: ../../source/index.rst:61 537a78327af04a6e9fa0e6052fb07f65
+msgid ""
+"本文档页面源码位于 Github主页的 `docs/ "
+"<https://github.com/Dengda98/PyGRT/tree/main/docs/source>`_，可查看示例代码和画图脚本。"
+msgstr ""
+
+#: ../../source/index.rst:81 b96ad6d96b64480aa83f969c95b9edf2
+msgid "主要参考"
+msgstr ""
+
+#: ../../source/index.rst:85 a8a5388b51224cea8be6bfe54c18e3b1
+msgid ""
+"Michel Bouchon. 1981. A simple method to calculate Green's functions for "
+"elastic layered media. Bulletin of the Seismological Society of America. "
+"71(4). 959–971. doi: `10.1785/BSSA0710040959 "
+"<https://doi.org/10.1785/BSSA0710040959>`_"
+msgstr ""
+
+#: ../../source/index.rst:89 9f8258a6519c4929ad22bc324000dc30
+msgid "纪晨, 姚振兴, 1995. 区域地震范围的宽频带理论地震图算法研究[J]. 地球物理学报(4): 460-468."
+msgstr ""
+
+#: ../../source/index.rst:93 25aff531ab87469fb1a06c482c566665
+msgid ""
+"谢小碧, 姚振兴, 1989. 计算分层介质中位错点源静态位移场的广义反射、透射系数矩阵和离散波数方法[J]. 地球物理学报(3): "
+"270-280."
+msgstr ""
+
+#: ../../source/index.rst:97 ab3a21a1852e436198dc1d62c32a50bf
+msgid "姚振兴, 谢小碧. 2022/03. 理论地震图及其应用（初稿）."
+msgstr ""
+
+#: ../../source/index.rst:101 87d0319e0f794cdbaa9b4beb48675329
+msgid ""
+"Yao Z. X. and D. G. Harkrider. 1983. A generalized refelection-"
+"transmission coefficient matrix and discrete wavenumber method for "
+"synthetic seismograms. BSSA. 73(6). 1685-1699. doi: "
+"`10.1785/BSSA07306A1685 <https://doi.org/10.1785/BSSA07306A1685>`_"
+msgstr ""
+
+#: ../../source/index.rst:105 c63257cf5e5e49ffae34d15649de49de
+msgid "张海明. 2021. 地震学中的Lamb问题（上）. 科学出版社."
+msgstr ""
+
+#: ../../source/index.rst:109 5d418f2f8e48443cb74b7ea3b19ea2d5
+msgid ""
+"Zhang, H. M., Chen, X. F., and Chang, S. 2003. An efficient numerical "
+"method for computing synthetic seismograms for a layered half-space with "
+"sources and receivers at close or same depths. Seismic motion, "
+"lithospheric structures, earthquake and volcanic sources: The Keiiti Aki "
+"volume, 467-486. doi: `10.1007/978-3-0348-8010-7_3 "
+"<https://doi.org/10.1007/978-3-0348-8010-7_3>`_"
+msgstr ""
+

@@ -1,0 +1,54 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2025, Zhu Dengda
+# This file is distributed under the same license as the PyGRT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.16.0\n"
+
+#: ../../source/API/C_extension/dynamic/signals.rst:2
+#: 42b45528df244c0f9934a860ce7de834
+msgid "signals.h"
+msgstr ""
+
+#: ../../source/API/C_extension/dynamic/signals.rst
+#: 4dcb6efcf9fb417fa0f6bfcd5cbeb404
+msgid "Defines"
+msgstr ""
+
+#: ../../source/API/C_extension/dynamic/signals.rst
+#: f189e9f1dbf74ac49729e5cffbe9aaa5
+msgid "Functions"
+msgstr ""
+
+#: ../../source/API/C_extension/dynamic/signals.rst
+#: 01e335c8960b408dbca88f326ba0c659 139760cee5ef40f6b3038d0dde5a4d42
+#: 2474707145c645d7a75d719b2ea14b1f 2a1dd1f71ad04d3ab18bd0450a34fde8
+#: 37404d4055ce47edb9b2552114775f81 5d2afddeeccb46ebaa6e29b6aebee8d0
+#: 672fee9a3fc447cf9e3d347fa313a274 8c5a9782fec24633b8df2626afc96a74
+#: 95378626a99a40fa821e3a631b448a86 b9007a9f3b0d40edbd1346bc9cff343f
+#: c6f8a1dba70c42849ffff2166273737d f1c829bd7f4e4bbb9b1f24aec1551dd0
+msgid "参数"
+msgstr ""
+
+#: ../../source/API/C_extension/dynamic/signals.rst
+#: 07db9503c9e747da81ad86639cb1ca5d 1a562b1162414eeeb901a7132572d47a
+#: 617c79a5877b49c7a77a870ac1422777 7b4af30c65144895b602f19eb82d9da4
+#: bb8176727e2b40f1a29029eeb0f59b36 e6668e1311684d61a9796921119ec228
+#: f23c6f075f8c40f28b3c5162f0029de8
+msgid "返回"
+msgstr ""
+

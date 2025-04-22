@@ -1,0 +1,68 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2025, Zhu Dengda
+# This file is distributed under the same license as the PyGRT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.16.0\n"
+
+#: ../../source/Tutorial/static/static_strain_stress.rst:2
+#: 2b101978700f428991b756a6b0d5ee6d
+msgid "计算静态应变、旋转、应力张量"
+msgstr ""
+
+#: ../../source/Tutorial/static/static_strain_stress.rst
+#: f4563cd182e84f5e8c0477f0c9392f01
+msgid "Author"
+msgstr ""
+
+#: ../../source/Tutorial/static/static_strain_stress.rst:4
+#: bb8d9e5695e34c0b8e5963561fa74d39
+msgid "Zhu Dengda"
+msgstr ""
+
+#: ../../source/Tutorial/static/static_strain_stress.rst
+#: 58bf9addafbe48a58105715ad0cc2ae8
+msgid "Email"
+msgstr ""
+
+#: ../../source/Tutorial/static/static_strain_stress.rst:5
+#: a6d8ad8c7f624315b722fd7f26516527
+msgid "zhudengda@mail.iggcas.ac.cn"
+msgstr ""
+
+#: ../../source/Tutorial/static/static_strain_stress.rst:9
+#: 576a0708ed834d5489e0cfa9b6bbe2f7
+msgid ""
+"除了使用不同的函数名/程序名，输出文件不同之外，流程基本和 :ref:`strain_stress_rst` "
+"类似。这里直接给出脚本。运行后注意观察和 :ref:`static_syn_rst` 的输出有了什么变化。"
+msgstr ""
+
+#: ../../source/Tutorial/static/static_strain_stress.rst:13
+#: 2f8c968b542b4e2f8408df910416126c
+msgid "C"
+msgstr ""
+
+#: ../../source/Tutorial/static/static_strain_stress.rst:19
+#: 7e514705d7214776a72aa19ffc25a246
+msgid "Python"
+msgstr ""
+
+#: ../../source/Tutorial/static/static_strain_stress.rst:40
+#: 298684e4d4154b95af016d688b859d3f
+msgid "由于场点位于地表（自由表面），过Z平面的应力均为0（由于浮点数计算误差，呈极小非零数），结果和理论保持一致。"
+msgstr ""
+

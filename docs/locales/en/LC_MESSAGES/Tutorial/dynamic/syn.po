@@ -1,0 +1,193 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2025, Zhu Dengda
+# This file is distributed under the same license as the PyGRT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.16.0\n"
+
+#: ../../source/Tutorial/dynamic/syn.rst:4 d9b74a0ce00245938766b7984fd2a27b
+msgid "合成动态位移"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/syn.rst c4e9310dfa404802979a02b21e557da5
+msgid "Author"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/syn.rst:6 ed7c8acec9fd4417a406541437b5d5f3
+msgid "Zhu Dengda"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/syn.rst 0ab7f6c7ffac46dd8fa5e2c0e79493c8
+msgid "Email"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/syn.rst:7 ebc7b0f719984ae8a5f09e202ba9bd55
+msgid "zhudengda@mail.iggcas.ac.cn"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/syn.rst:13 e78bd5eee1264f33901d4bc110adfeaf
+msgid "**震源机制参数中（如单力源、矩张量源）Z轴取向下为正。**"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/syn.rst:16 05a5447921ff4e05920899c10fffd70a
+msgid ""
+"Python中合成动态位移的主函数为 :func:`gen_syn_from_gf_*() "
+"<pygrt.utils.gen_syn_from_gf_DC>` （\\*表示对不同震源）  ，C程序为 :command:`grt.syn`。"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/syn.rst:18 2973aec2c57544cd9ddcb6802e73d606
+msgid "使用上节计算的格林函数，合成动态位移（理论地震图）。方便起见，这里统一使用milrow模型，震源深度2km，场点位于地表，震中距10km的格林函数，方位角30°。"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/syn.rst:20 8362ccef7128450d9338e090b4ea3a23
+msgid ""
+"在已知三分量格林函数 :math:`W_m(t), Q_m(t), V_m(t)` 后，合成三分量位移 :math:`u_z(t), "
+"u_r(t), u_\\theta (t)` 的公式为"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/syn.rst:22 fd1aec44299e421f94bdf32f8e8b65a2
+msgid ""
+"\\left\\{\n"
+"\\begin{aligned}\n"
+" u_z(t) &= D(t) * \\left[ \\sum_{m=0}^{m=2} A_m W_m(t) \\right] \\\\\n"
+" u_r(t) &= D(t) * \\left[ \\sum_{m=0}^{m=2} A_m Q_m(t) \\right] \\\\\n"
+" u_\\theta (t) &= D(t) * \\left[ \\sum_{m=1}^{m=2} A_{m+3} V_m(t) "
+"\\right]\n"
+" \\end{aligned}\n"
+"\\right."
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/syn.rst:32 73b4478c7790490eb3dbfab70cd6129f
+msgid ""
+"其中 :math:`D(t)` 为震源时间函数，:math:`*` 表示卷积，:math:`A_m` 为与方位角和震源机制相关的方向因子，其中 "
+":math:`u_z, u_r` 的方向因子相同，而 :math:`u_\\theta` 的方向因子满足"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/syn.rst:34 7f3473b566ff4a9cb670e3acf0f14dae
+msgid "A_{m+3} = \\frac{d A_m}{d (m\\theta)}, m=1,2"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/syn.rst:38 d689038f3bb345889abef2908e69caf2
+msgid "其中 :math:`m` 为阶数，:math:`\\theta` 为方位角。"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/syn.rst:43 9f2e5b6cf4334535b7f601b60d9d20c6
+msgid "合成位移的结果单位为 :math:`\\text{cm}`。"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/syn.rst:47 706e2d2476274e79920f6a080a49e3ad
+msgid "不同震源"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/syn.rst:49 a403a763f80a4304909d9b779ac7d479
+msgid "以下绘图使用Python绘制，绘图函数如下："
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/syn.rst:58 ab2ad394ecce4e39a777c535afff7e7f
+msgid "爆炸源"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/syn.rst:59 c039d1408bf34da68c11354bae96414d
+msgid "标量矩 1e24 dyne·cm。"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/syn.rst:63
+#: ../../source/Tutorial/dynamic/syn.rst:89
+#: ../../source/Tutorial/dynamic/syn.rst:114
+#: ../../source/Tutorial/dynamic/syn.rst:139
+#: ../../source/Tutorial/dynamic/syn.rst:165
+#: ../../source/Tutorial/dynamic/syn.rst:191
+#: ../../source/Tutorial/dynamic/syn.rst:220 184d2754582143fba2fe45278bf7987b
+#: 388f8a329e7547428220a460db3dff74 408d7027cf464856ba3dd115afa192fa
+#: 41d9437e85be4da599f648a6e80c4c1d bb85542e955e44a98f607eb99aa9f65f
+#: be533f2957e1478e8931ce9598504230 f82c160e3ad54dcda73efacc8bf28f0a
+msgid "C"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/syn.rst:70
+#: ../../source/Tutorial/dynamic/syn.rst:96
+#: ../../source/Tutorial/dynamic/syn.rst:121
+#: ../../source/Tutorial/dynamic/syn.rst:146
+#: ../../source/Tutorial/dynamic/syn.rst:172
+#: ../../source/Tutorial/dynamic/syn.rst:200
+#: ../../source/Tutorial/dynamic/syn.rst:228 6673845059b74869acfecbf5b8e1573b
+#: 6ab88d78127f415a803f3fb47c5ff317 6c9b2b1f893a496d8862100a211b9553
+#: 7a3e690f430c44e2ac400fdb7eb14fbc 8e0a4e3f36a24644925a040ee0ca7c7b
+#: bd580994ffba4737a3639dda1c14c197 dc4e845b2d404ac6af2a8f18fc9fbfb0
+msgid "Python"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/syn.rst:84 261addb8d54244518252b358b608aea8
+msgid "单力源"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/syn.rst:85 388955907e704574bb3f26253adc7b28
+msgid "北向力 :math:`f_N=1`，东向力 :math:`f_E=-0.5`，垂直向下的力 :math:`f_Z=2`，单位 1e16 dyne。"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/syn.rst:109 b9052296562c4a9e9e838141fb307127
+msgid "剪切源"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/syn.rst:110 56949e6e4eea4741956727e71248a5bd
+msgid "断层走向33°，倾角50°，滑动角120°，标量矩 1e24 dyne·cm。"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/syn.rst:134 21a264badc6943b8bd9a1e7f8ac888eb
+msgid "矩张量源"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/syn.rst:135 ded301cd49904672860fb6dad42f274b
+msgid ""
+":math:`M_{xx}=0.1, M_{xy}=-0.2, M_{xz}=1.0, M_{yy}=0.3, M_{yz}=-0.5, "
+"M_{zz}=-2.0`，单位 1e24 dyne·cm， **其中X为北向，Y为东向，Z为垂直向下**。"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/syn.rst:160 265780a2cdda4cc899840d04f79cf716
+msgid "分量旋转"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/syn.rst:161 f9ba6af70d3741e2bca6b63f242f5f4b
+msgid "**PyGRT** 计算默认输出为ZRT分量（柱坐标系），可以设置参数以输出ZNE分量，这里以剪切源为例，"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/syn.rst:186 abf75aadb7fc4cd7a1800e698c726418
+msgid "卷积时间函数"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/syn.rst:187 3ef299e27a534d8398e77cd09f0c8a5d
+msgid "**PyGRT** 内置了一些震源时间函数，例如抛物波、梯形波、雷克子波或自定义，这里以单力源为例。"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/syn.rst:198 fb3debabac4545e78b9b06de2b195506
+msgid ""
+"生成的时间函数会以SAC格式保存在对应路径中，文件名为 :file:`sig.sac`。 其它时间函数以及具体参数用法可使用 "
+":command:`grt.syn -h` 查看说明。"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/syn.rst:207 809c27c13bfd499c8dffdc7547e0d2eb
+msgid "其它时间函数以及具体参数用法可在 :py:mod:`pygrt.signals` 模块中查看函数参数。"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/syn.rst:215 d6a8c936c9834b93b7ecd888e5ad422c
+msgid "位移对时间积分、微分"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/syn.rst:216 67e4d1496d574112ad00213b4f38fe70
+msgid "这里以矩张量源为例。"
+msgstr ""
+

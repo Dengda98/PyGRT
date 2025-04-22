@@ -1,0 +1,92 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2025, Zhu Dengda
+# This file is distributed under the same license as the PyGRT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.16.0\n"
+
+#: ../../source/Tutorial/static/static_gfunc.rst:2
+#: 23f2a5d175754514a37be833ac64528b
+msgid "计算静态格林函数"
+msgstr ""
+
+#: ../../source/Tutorial/static/static_gfunc.rst
+#: 795b02b0229c41f4a8e72809873875b3
+msgid "Author"
+msgstr ""
+
+#: ../../source/Tutorial/static/static_gfunc.rst:4
+#: 439db6c1445440938fece394b30e060d
+msgid "Zhu Dengda"
+msgstr ""
+
+#: ../../source/Tutorial/static/static_gfunc.rst
+#: 3fd3d2c18db0457497cb241a99c959af
+msgid "Email"
+msgstr ""
+
+#: ../../source/Tutorial/static/static_gfunc.rst:5
+#: 302fffe760ce4de3b82394e73e635bf9
+msgid "zhudengda@mail.iggcas.ac.cn"
+msgstr ""
+
+#: ../../source/Tutorial/static/static_gfunc.rst:9
+#: f5a8ed5811c943eeb93f1e9decb47101
+msgid ""
+"Python中计算静态格林函数的主函数为 :func:`compute_static_grn() "
+"<pygrt.pymod.PyModel1D.compute_static_grn>` ，C程序为 :command:`stgrt`。"
+msgstr ""
+
+#: ../../source/Tutorial/static/static_gfunc.rst:11
+#: 04526115ca9d4f53a35f5615e87ea52a
+msgid ""
+"建议先阅读完动态格林函数的计算过程（ :ref:`gfunc_rst` ）。静态情况与动态情况采取的计算方法一致，只是推导细节会有不同，详见 "
+":ref:`初稿 <yao_init_manuscripts>` 。"
+msgstr ""
+
+#: ../../source/Tutorial/static/static_gfunc.rst:15
+#: 147bd7f0829446ecb0f279ec8720328c
+msgid "示例程序"
+msgstr ""
+
+#: ../../source/Tutorial/static/static_gfunc.rst:17
+#: f99be5faebb548fe9f39e0f2b023e5de
+msgid ""
+"假设在 :file:`milrow` "
+"模型中，震源深度2km，接收点位于地表。北向(X/km)在[-3,3]范围内等距采样41个点，东向(Y/km)在[-2.5,2.5]范围内等距采样33个点，计算这些点上的静态格林函数。"
+msgstr ""
+
+#: ../../source/Tutorial/static/static_gfunc.rst:21
+#: 12ef70c2e1f04eafb81b1bdede5a1867
+msgid "C"
+msgstr ""
+
+#: ../../source/Tutorial/static/static_gfunc.rst:28
+#: 5115ab2ea6ac4ec2b570548c77cd2159
+msgid "输出的 :file:`grn` 文件内部如下，开头的 ``#`` 用于保存源点和场点所在介质层的物性参数。"
+msgstr ""
+
+#: ../../source/Tutorial/static/static_gfunc.rst:34
+#: baaa1c9edae24b2594f8a86e8133531b
+msgid "Python"
+msgstr ""
+
+#: ../../source/Tutorial/static/static_gfunc.rst:41
+#: 11c496d1da55438bbf9762b1251d347e
+msgid "函数返回字典类型，包括一些基本参数以及格林函数（2D矩阵）。"
+msgstr ""
+

@@ -1,0 +1,81 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2025, Zhu Dengda
+# This file is distributed under the same license as the PyGRT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.16.0\n"
+
+#: ../../source/Tutorial/prepare.rst:2 bcf4767a33194ef49ee42011cb904851
+msgid "准备工作"
+msgstr ""
+
+#: ../../source/Tutorial/prepare.rst b667b98b7b8c49959f27ecc51e998acf
+msgid "Author"
+msgstr ""
+
+#: ../../source/Tutorial/prepare.rst:4 8c24197880974f80959e9dc28b021f3e
+msgid "Zhu Dengda"
+msgstr ""
+
+#: ../../source/Tutorial/prepare.rst 037347520ab0454f9d34156cb5c638b7
+msgid "Email"
+msgstr ""
+
+#: ../../source/Tutorial/prepare.rst:5 acd877ca730d47fd956aa8fd1283fa62
+msgid "zhudengda@mail.iggcas.ac.cn"
+msgstr ""
+
+#: ../../source/Tutorial/prepare.rst:11 145dbd59212442de90ae6979668a1740
+msgid "安装 **PyGRT**"
+msgstr ""
+
+#: ../../source/Tutorial/prepare.rst:13 8a833b5387284edba0c9bfbdb4f0fba5
+msgid "详见 :ref:`install_section` 。"
+msgstr ""
+
+#: ../../source/Tutorial/prepare.rst:17 5a46268d090c4b41944f69f8895457b0
+msgid "建立模型文件"
+msgstr ""
+
+#: ../../source/Tutorial/prepare.rst:22 b4f6002f1a88408fb378b69c8876c341
+msgid "这里的选项卡 **C** 不代表内部是C语言代码，而是 **使用C语言编译出的可执行程序** （与之相关）。后续的选项卡沿用此设定，不再解释。"
+msgstr ""
+
+#: ../../source/Tutorial/prepare.rst:26 b7d95291455a4175b34848bff36224c0
+msgid "C"
+msgstr ""
+
+#: ../../source/Tutorial/prepare.rst:28 34639b39bbe64b578262a7739a79e69c
+msgid "**PyGRT** 以如下自由格式定义模型中每层的物性参数，每列之间以空格隔开"
+msgstr ""
+
+#: ../../source/Tutorial/prepare.rst:35 51452a1644cf4055bb10f22e351c21c6
+msgid "例如 :file:`milrow` 模型（假设文本文件名为 `milrow` ）"
+msgstr ""
+
+#: ../../source/Tutorial/prepare.rst:41 f2c47f15bfe44229a2dbe6c0bfce5f5d
+msgid "Python"
+msgstr ""
+
+#: ../../source/Tutorial/prepare.rst:43 42d9deb60b8d44ef8387ed1ab6bebeb2
+msgid "模型格式与C一致，在Python中可以使用 :code:`np.loadtxt()` 导入文本文件，或者手动定义数组"
+msgstr ""
+
+#: ../../source/Tutorial/prepare.rst:53 aeab016da4da48f1be3a89da56933fe5
+msgid "最后一行表示半空间，对应厚度值不会被使用。"
+msgstr ""
+

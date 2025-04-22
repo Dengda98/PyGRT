@@ -1,0 +1,37 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2025, Zhu Dengda
+# This file is distributed under the same license as the PyGRT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.16.0\n"
+
+#: ../../source/API/C_extension/common/integral.rst:2
+#: 6abb4c7e6aed4a6289bd62fdf292aee8
+msgid "integral.h"
+msgstr ""
+
+#: ../../source/API/C_extension/common/integral.rst
+#: 51503e516b144c04bd8d0e7b34f5ec2c
+msgid "Functions"
+msgstr ""
+
+#: ../../source/API/C_extension/common/integral.rst
+#: 07edee11f98f48a0b7512b6107204aec 9af82f7b94484cbbac2cd245cb4d31ad
+#: f04cc646e9414e0ba935b8d1e31d89cf
+msgid "参数"
+msgstr ""
+

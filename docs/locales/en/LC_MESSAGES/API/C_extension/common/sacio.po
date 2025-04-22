@@ -1,0 +1,46 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2025, Zhu Dengda
+# This file is distributed under the same license as the PyGRT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.16.0\n"
+
+#: ../../source/API/C_extension/common/sacio.rst:2
+#: 6da4b0d7ad674f878e8ff70d32a1b800
+msgid "sacio.h"
+msgstr ""
+
+#: ../../source/API/C_extension/common/sacio.rst
+#: 7fd9710ce00e42efa4c1fe0e96ef651c
+msgid "Defines"
+msgstr ""
+
+#: ../../source/API/C_extension/common/sacio.rst
+#: e3562ab288204e35ba80e176f8364a36
+msgid "Typedefs"
+msgstr ""
+
+#: ../../source/API/C_extension/common/sacio.rst
+#: ec46016ca4244ec186333c6f7765df43
+msgid "Functions"
+msgstr ""
+
+#: ../../source/API/C_extension/common/sacio.rst
+#: 62d9d7be941d4cb08211749777656ca3
+msgid "Public Members"
+msgstr ""
+

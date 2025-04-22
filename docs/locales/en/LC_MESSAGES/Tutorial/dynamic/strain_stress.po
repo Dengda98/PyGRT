@@ -1,0 +1,318 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2025, Zhu Dengda
+# This file is distributed under the same license as the PyGRT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.16.0\n"
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:4
+#: d93da5013590490ba4ff0c4844fc45ae
+msgid "计算动态应变、旋转、应力张量"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst
+#: eb5462a879a143e0bf6ac4ecca8e8966
+msgid "Author"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:6
+#: 5e4a9212881f40378346e2057949d897
+msgid "Zhu Dengda"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst
+#: cc50f3e8bdc74180b4e26b6ecf6e7173
+msgid "Email"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:7
+#: 10953a6e0bb44fe59f51ccf223a98399
+msgid "zhudengda@mail.iggcas.ac.cn"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:12
+#: 6429b528630d46d5837d3cd2523ef2ea
+msgid ""
+"计算这些张量需要计算位移的空间导数 :math:`\\partial z,\\partial r,\\partial \\theta` "
+"[#partial]_ 。 从前文关于格林函数的计算 （ :ref:`gfunc_rst` ） 和位移合成的公式 （ :ref:`syn_rst`"
+" ） 出发，位移空间导数分两个步骤计算，再根据几何方程和本构方程合成应变、旋转和应力张量。"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:14
+#: 76fa63d03bde459bbc7f0830a83d0a4d
+msgid ""
+":math:`\\partial z,\\partial r,\\partial \\theta` 为 "
+":math:`\\dfrac{\\partial}{\\partial z},\\dfrac{\\partial}{\\partial "
+"r},\\dfrac{\\partial}{\\partial \\theta}` 的简写。"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:17
+#: ecfe79aff64c4b5983f87a75bdc249d9
+msgid "计算格林函数阶段，求出 :math:`\\partial z,\\partial r`"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:19
+#: 25bc6d6661d74075ad72b4f050102cf4
+msgid ""
+"假设在 :file:`milrow` "
+"模型中，震源深度2km，接收点位于地表，震中距为10km，计算格林函数及其空间导数，要求采样点数500个点，采样间隔0.02s。"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:23
+#: ../../source/Tutorial/dynamic/strain_stress.rst:60
+#: ../../source/Tutorial/dynamic/strain_stress.rst:83
+#: ../../source/Tutorial/dynamic/strain_stress.rst:136
+#: ../../source/Tutorial/dynamic/strain_stress.rst:168
+#: ../../source/Tutorial/dynamic/strain_stress.rst:202
+#: 2a4ca14945a948d6a4ecb1897c2ade14 33b9432913a848d4b3be30325d539f1b
+#: 53b793963c2348649b6f50bad6b17ac1 91a4e5f3fada4a078e35c0457c738767
+#: d945474ea1d048c08dbea37d471aac31 fc17e5f58a754b5c8ad725d53ae930fc
+msgid "C"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:30
+#: 8657a04be89744c5860c76054434f2a7
+msgid ""
+"在 :rst:dir:`GRN/milrow_{depsrc}_{deprcv}_{dist}/` "
+"路径下，文件名开头有\"r\"和\"z\"就代表 :math:`\\partial r` 和 :math:`\\partial z`。"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:32
+#: ../../source/Tutorial/dynamic/strain_stress.rst:69
+#: ../../source/Tutorial/dynamic/strain_stress.rst:92
+#: ../../source/Tutorial/dynamic/strain_stress.rst:145
+#: ../../source/Tutorial/dynamic/strain_stress.rst:177
+#: ../../source/Tutorial/dynamic/strain_stress.rst:211
+#: 01476087fe4343a2bc8ed6dd86a4cb9e 3b14097e577b4013afc3af9f077ae7f0
+#: 422eed83fd7b4513a9ffef18a8f03019 47818307c3054e48a331f297b80a5596
+#: 496c5d6e4f6845e19d8b7d1cee56b1db 7cd5e233549a4e939945e33296dc049f
+msgid "Python"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:39
+#: 537f32d9f0df48b0bdfc46acc253c056
+msgid "通道名开头有\"r\"和\"z\"就代表 :math:`\\partial r` 和 :math:`\\partial z`。"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:44
+#: 4b1febc4c8e14148aebc222bfb4169b9
+msgid "计算格林函数阶段求出的空间导数的单位："
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:46
+#: 0e600e0ec3134cdca5d50bc0459f4eb8
+msgid "爆炸源：  :math:`10^{-25} \\, /\\text{dyne} \\cdot \\text{cm}`"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:47
+#: f66850d2ebcf45309518dba7580488ff
+msgid "单力源：  :math:`10^{-20} \\, /\\text{dyne}`"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:48
+#: 51a1e0224b1442f087f0d8540a5656b2
+msgid "剪切源：  :math:`10^{-25} \\, /\\text{dyne} \\cdot \\text{cm}`"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:49
+#: c5368593fb824989b33a79362f3e05ee
+msgid "矩张量源： :math:`10^{-25} \\, /\\text{dyne} \\cdot \\text{cm}`"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:54
+#: f795c22b755443af865aedac6854eac0
+msgid "合成位移阶段，求出 :math:`\\partial \\theta / r` 并合成位移空间导数"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:56
+#: 17220d19db4f4ecf83c06b61491ab749
+msgid ""
+"假设震源为剪切源，断层走向33°，倾角50°，滑动角120°，标量矩 1e24 dyne·cm，方位角30°。待求项中有 :math:`r` "
+"是为了保证量纲统一。"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:67
+#: cb0d4a8cf87c4e22861ead54d6b7a2ed
+msgid ""
+"在 :rst:dir:`syn_dc/` 路径下，文件名开头有\"r\"，\"z\"，\"t\"分别代表 :math:`\\partial r`，"
+" :math:`\\partial z`，:math:`\\partial \\theta / r`。"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:76
+#: a5a2a538675649ceaf51de154189a5da
+msgid ""
+"通道名开头有\"r\"，\"z\"，\"t\"分别代表 :math:`\\partial r`， :math:`\\partial "
+"z`，:math:`\\partial \\theta / r`。"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:79
+#: 31beefea774642da86d33aa9a58e6dd7
+msgid ""
+"以上计算的空间导数在柱坐标系下，即 :math:`\\dfrac{\\partial "
+"u(z,r,\\theta)}{\\partial(z,r,\\theta)}`。如果需要 :math:`\\dfrac{\\partial "
+"u(z,x,y)}{\\partial(z,x,y)}` （ :math:`x` 表示北向， :math:`y` "
+"表示东向），传入适当参数即可，则输出结果开头的标识符从\"z/r/t\"变为\"z/x/y\"。"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:90
+#: e6c8d59a27d945fca2f8a8672b18b549
+msgid ""
+"在 :rst:dir:`syn_dc_zne/` 路径下，文件名开头有\"z\"，\"n\"，\"e\"分别代表 :math:`\\partial"
+" z`， :math:`\\partial x`，:math:`\\partial y`。"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:99
+#: eca27f30b57346209d93180a65e3d112
+msgid ""
+"通道名开头有\"z\"，\"n\"，\"e\"分别代表 :math:`\\partial z`， :math:`\\partial "
+"x`，:math:`\\partial y`。"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:103
+#: a03c06bcc68d409b950c55b807305e27
+msgid "不可以使用ObsPy库中提供的Stream.rotate()函数进行位移空间导数的旋转。"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:108
+#: 3f73c877a519465f8243c0b079e7584d
+msgid "合成的位移空间导数单位为1。"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:112
+#: fedecbb468c547329b661f323a5b5fb9
+msgid "合成应变、旋转、应力张量"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:113
+#: b722111d167546159c76f872b5e6e5fd
+msgid "应变和应力均为二阶对称张量，故将输出6个独立分量；而旋转张量为二阶反对称张量，将输出3个独立分量。"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:115
+#: 63c2510951364eaba61eed860261cb2f
+msgid ""
+"程序选择张量输出结果的坐标系的依据是——根据文件名/通道名判断是否存在 :math:`\\dfrac{\\partial "
+"u_x}{\\partial x}`，如果有则使用ZNE坐标系，否则使用ZRT坐标系。 "
+"**所以建议保存结果的文件夹中只使用同种坐标系**，就像上面分为 :rst:dir:`syn_dc/` 和 "
+":rst:dir:`syn_dc_zne/` 两个文件夹保存。"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:117
+#: 19cc1ed9ad4446ebbbb7e98df6b01159
+msgid "以下绘图使用Python绘制，绘图函数如下："
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:126
+#: 18280103da3e471c96b1bb396d0966c2
+msgid "应变张量"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:127
+#: 5c99582b1dc748bdb94b5de62688a607
+msgid "根据几何方程（应变-位移关系） [#covariant]_"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:129
+#: 4f1581249fa04422be745161410e7e1d
+msgid ""
+"e_{ij} = \\dfrac{1}{2} \\left( u_{i,j} + u_{j,i} \\right) = \\dfrac{1}{2}"
+" \\left( \\dfrac{\\partial u_i}{\\partial x_j} + \\dfrac{\\partial "
+"u_j}{\\partial x_i}  \\right)"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:143
+#: 3244ff49890447d688ed817eb7e2f916
+msgid ""
+"在 :rst:dir:`syn_dc_zne/` 原路径下，生成 "
+":file:`*.strain.??.sac`，文件名中包括分量名，如ZZ、ZN等。"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:152
+#: ../../source/Tutorial/dynamic/strain_stress.rst:218
+#: 9c84fba4ca084a1f8d1ab4c98cf3d610 d83f5bfa1f814dec96aeba77fab4f0ae
+msgid "返回的 |Stream| 通道名即为分量名，如ZZ、ZN等。"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:159
+#: 8615ff237d124d26a1c98a95b21a4057
+msgid "旋转张量"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:160
+#: 8dc622d76f814e72b2af325a0e6807a3
+msgid "根据旋转-位移关系 [#covariant]_"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:162
+#: c1dae8e9e9d0460db2db22e885500649
+msgid ""
+"w_{ij} = \\dfrac{1}{2} \\left( u_{i,j} - u_{j,i} \\right) = \\dfrac{1}{2}"
+" \\left( \\dfrac{\\partial u_i}{\\partial x_j} - \\dfrac{\\partial "
+"u_j}{\\partial x_i}  \\right)"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:175
+#: 64d854b75d464bbfa84ed17be70ba060
+msgid ""
+"在 :rst:dir:`syn_dc_zne/` 原路径下，生成 "
+":file:`*.rotation.??.sac`，文件名中包括分量名，如ZN，ZE，NE。"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:184
+#: d89ffc7da15b4ad5919bbed579a5a337
+msgid "返回的 |Stream| 通道名即为分量名，如ZN，ZE，NE。"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:191
+#: fd79f0c4047c4793be87c0761536ea77
+msgid "应力张量"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:192
+#: ab09e2fdb76447cfa87fc3d124b2c9d9
+msgid "根据各向同性介质的本构方程 [#covariant]_"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:194
+#: 29a4812e93ad4d69849ccb0bbeaeb387
+msgid ""
+"\\sigma_{ij} = \\lambda \\delta_{ij} e_{kk} + 2 \\mu e_{ij} = \\lambda "
+"\\delta_{ij} u_{kk} + \\mu \\left( u_{i,j} + u_{j,i} \\right)"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:209
+#: cd57cfe68edc43e4b821f2ff76fab771
+msgid ""
+"在 :rst:dir:`syn_dc_zne/` 原路径下，生成 "
+":file:`*.stress.??.sac`，文件名中包括分量名，如ZZ、ZN等。"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:226
+#: c06c7bdead344a56bb96b5cdfa899f66
+msgid "计算得到的应力的单位为 :math:`\\frac{\\text{dyne}}{\\text{cm}^2} = 0.1 \\text{Pa}`。"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:229
+#: 47781896eafc48a39fdf6a3cbb33975c
+msgid "由于场点位于地表（自由表面），过Z平面的应力均为0（由于浮点数计算误差，呈极小非零数），结果和理论保持一致。"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:233
+#: 1da62cff0bde425aa2c914d9708bebda
+msgid "这只适用于ZNE坐标系，对于ZRT坐标系需考虑协变导数。程序中已考虑，这里不再做公式介绍。"
+msgstr ""
+

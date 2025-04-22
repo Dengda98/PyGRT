@@ -1,0 +1,41 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2025, Zhu Dengda
+# This file is distributed under the same license as the PyGRT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.16.0\n"
+
+#: ../../source/API/C_extension/common/matrix.rst:2
+#: 2ae830bb56444baf9184e19ae0a066e6
+msgid "matrix.h"
+msgstr ""
+
+#: ../../source/API/C_extension/common/matrix.rst
+#: 89717d215f8e46c091f148677f5d210e
+msgid "Functions"
+msgstr ""
+
+#: ../../source/API/C_extension/common/matrix.rst
+#: 00b9d2d8ad4444daabc1147e137c4c7f 4709575009054192983c6891190404f0
+#: 4725f2a9aabb47e898afb50939995468 4f564625073e4458ba8ea9edebed4dca
+#: 95566b7a64e345aea80a725e6fb3c1b2 9a28af2f73d04b4e8df968b10fcb0e4f
+#: b84ee6a06d5442aa9130692298f2a5f4 c9e66e4430ab4f898b595aae21d78aaa
+#: dc72ac49fe1a4d54b10747cd58e4877e e04955e63e6e4301b582df6f490cc288
+#: e8f85992964a4d6aaca224251e27c073
+msgid "参数"
+msgstr ""
+

@@ -1,0 +1,36 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2025, Zhu Dengda
+# This file is distributed under the same license as the PyGRT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.16.0\n"
+
+#: ../../source/API/C_extension/common/bessel.rst:2
+#: 9401f023fdd3450f8aaac956587666c2
+msgid "bessel.h"
+msgstr ""
+
+#: ../../source/API/C_extension/common/bessel.rst
+#: 341c415d95e94b0ba50f272590430d55
+msgid "Functions"
+msgstr ""
+
+#: ../../source/API/C_extension/common/bessel.rst
+#: 60950234710749688b0043a633eccad0 c2c3e2ced4d24434bf61d8dcd47972a6
+msgid "参数"
+msgstr ""
+
