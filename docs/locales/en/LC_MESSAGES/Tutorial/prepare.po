@@ -21,7 +21,7 @@ msgstr ""
 
 #: ../../source/Tutorial/prepare.rst:2 bcf4767a33194ef49ee42011cb904851
 msgid "准备工作"
-msgstr ""
+msgstr "Preparation"
 
 #: ../../source/Tutorial/prepare.rst b667b98b7b8c49959f27ecc51e998acf
 msgid "Author"
@@ -41,19 +41,19 @@ msgstr ""
 
 #: ../../source/Tutorial/prepare.rst:11 145dbd59212442de90ae6979668a1740
 msgid "安装 **PyGRT**"
-msgstr ""
+msgstr "Install **PyGRT**"
 
 #: ../../source/Tutorial/prepare.rst:13 8a833b5387284edba0c9bfbdb4f0fba5
 msgid "详见 :ref:`install_section` 。"
-msgstr ""
+msgstr "See :ref:`install_section` ."
 
 #: ../../source/Tutorial/prepare.rst:17 5a46268d090c4b41944f69f8895457b0
 msgid "建立模型文件"
-msgstr ""
+msgstr "Create model file"
 
 #: ../../source/Tutorial/prepare.rst:22 b4f6002f1a88408fb378b69c8876c341
 msgid "这里的选项卡 **C** 不代表内部是C语言代码，而是 **使用C语言编译出的可执行程序** （与之相关）。后续的选项卡沿用此设定，不再解释。"
-msgstr ""
+msgstr "The tab **C** here does not represent C language code inside, but rather **an executable program compiled using the C language** (related to it). Subsequent tabs follow this convention and will not be explained further."
 
 #: ../../source/Tutorial/prepare.rst:26 b7d95291455a4175b34848bff36224c0
 msgid "C"
@@ -61,11 +61,11 @@ msgstr ""
 
 #: ../../source/Tutorial/prepare.rst:28 34639b39bbe64b578262a7739a79e69c
 msgid "**PyGRT** 以如下自由格式定义模型中每层的物性参数，每列之间以空格隔开"
-msgstr ""
+msgstr "**PyGRT** defines the physical parameters of each layer in the model using the following free format, with columns separated by spaces."
 
 #: ../../source/Tutorial/prepare.rst:35 51452a1644cf4055bb10f22e351c21c6
 msgid "例如 :file:`milrow` 模型（假设文本文件名为 `milrow` ）"
-msgstr ""
+msgstr "For example, the :file:`milrow` model (assuming the text file is named `milrow`)."
 
 #: ../../source/Tutorial/prepare.rst:41 f2c47f15bfe44229a2dbe6c0bfce5f5d
 msgid "Python"
@@ -73,9 +73,9 @@ msgstr ""
 
 #: ../../source/Tutorial/prepare.rst:43 42d9deb60b8d44ef8387ed1ab6bebeb2
 msgid "模型格式与C一致，在Python中可以使用 :code:`np.loadtxt()` 导入文本文件，或者手动定义数组"
-msgstr ""
+msgstr "The model format is consistent with C, and in Python, you can use :code:`np.loadtxt()` to import the text file or manually define the array."
 
 #: ../../source/Tutorial/prepare.rst:53 aeab016da4da48f1be3a89da56933fe5
 msgid "最后一行表示半空间，对应厚度值不会被使用。"
-msgstr ""
+msgstr "The last line represents the half-space, and the corresponding thickness value will not be used."
 

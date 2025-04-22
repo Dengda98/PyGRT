@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"POT-Creation-Date: 2025-04-22 17:22+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -21,15 +21,15 @@ msgstr ""
 
 #: ../../source/index.rst:65
 msgid "文档首页"
-msgstr ""
+msgstr "Document Homepage"
 
 #: ../../source/index.rst:65
 msgid "目录"
-msgstr ""
+msgstr "Table of Contents"
 
 #: ../../source/index.rst:2 f4848c2a93124956808de83f80c8680f
 msgid "**PyGRT** 文档"
-msgstr ""
+msgstr "**PyGRT** Document"
 
 #: ../../source/index.rst b559b6af5d734114b6748b42d62a9a63
 msgid "Author"
@@ -53,18 +53,25 @@ msgid ""
 "**Python**\\程序包，使用广义反射透射系数矩阵法(**G**\\eneralized "
 "**R**\\eflection-**T**\\ransmission coefficient matrix) 以及离散波数法等方法计算。"
 msgstr ""
+"**PyGRT** : An Efficient and Integrated **Python** Package for Computing "
+"Synthetic Seismograms in Horizontally Layered Halfspace Model, using "
+"**G**\\eneralized **R**\\eflection-**T**\\ransmission coefficient matrix "
+"and Discrete Wavenumber Method. "
 
 #: ../../source/index.rst:23 1871f0c2ad36435fb99c9cec41c1a023
-msgid "**PyGRT** 能算什么？"
-msgstr ""
+msgid "**PyGRT** 能计算什么？"
+msgstr "What can **PyGRT** calculate?"
 
 #: ../../source/index.rst:24 777f80f55833448db260a3eb561ddd6d
 msgid "目前，**PyGRT** 可计算区域尺度内半无限水平分层均匀介质中的 **动态与静态的位移，以及应力、应变、旋转张量。**"
 msgstr ""
+"At present, **PyGRT** can calculate **the dynamic and static "
+"displacements, as well as stress, strain and rotational tensors in semi-"
+"infinite horizontally layered media within the regional scale.**"
 
 #: ../../source/index.rst:28 03e9f5f79fe444bda47c67d7bbeb7f6f
 msgid "运行平台"
-msgstr ""
+msgstr "Operation Platform"
 
 #: ../../source/index.rst:29 07f0d1fdf053418b9e9b616abe4ce5f9
 msgid "**Windows, Linux, MacOS**"
@@ -72,13 +79,18 @@ msgstr ""
 
 #: ../../source/index.rst:33 89274bc9424b409b979b570bd81d8182
 msgid "程序特点"
-msgstr ""
+msgstr "Features"
 
 #: ../../source/index.rst:35 e9af1482a5cb41d8b53970dd9fc50ca2
 msgid ""
 "**格林函数频谱由C程序并行计算**。由于不同频率间的计算相互独立，在计算过程中基于 `OpenMP "
 "<https://www.openmp.org/>`_ 进行了 **并行优化**，极大提升了计算效率；"
 msgstr ""
+"**The spectra of the Green's functions are calculated in parallel by the C"
+" program.** Since the calculations among different frequencies are "
+"independent of each other, the **parallel optimization** is based on "
+"`OpenMP <https://www.openmp.org/>`_ , which greatly improved the "
+"computational efficiency;"
 
 #: ../../source/index.rst:36 ../../source/index.rst:39
 #: ../../source/index.rst:42 ../../source/index.rst:45
@@ -91,25 +103,37 @@ msgstr ""
 
 #: ../../source/index.rst:38 cea453322d5d4fdbbf2e78cda8a7547c
 msgid ""
-"**将Python语言的便携、可扩展性与C语言的计算高效特点结合**。C程序被编译链接成动态库 *libgrt.so* ， **PyGRT** "
-"再基于Python的 `ctypes <https://docs.python.org/3/library/ctypes.html>`_ "
+"**将Python语言的便携、可扩展性与C语言的计算高效特点结合**。C代码被编译链接成动态库 ``libgrt.so`` ， **PyGRT**"
+" 再基于Python的 `ctypes <https://docs.python.org/3/library/ctypes.html>`_ "
 "标准库实现对C库函数的调用。再基于第三方库 `NumPy <https://numpy.org/>`_ 、 `SciPy "
 "<https://scipy.org/>`_ 和 `ObsPy <https://docs.obspy.org/>`_ "
-"可很方便地完成对C程序结果的数据整合、Fourier变换、卷积、滤波、保存到sac文件等操作（例如FFT点数不再强制要求2次幂依然能保证高效 "
-"`scipy.fft.fft "
-"<https://docs.scipy.org/doc/scipy/reference/generated/scipy.fft.fft.html#scipy.fft.fft>`_）。借用Python语言的特点以及丰富成熟的第三方库，可灵活地实现后续的各种数据处理。"
+"，用户可很方便地完成对C程序结果的数据整合、Fourier变换、卷积、滤波、保存到sac文件等操作（例如FFT点数不再强制要求2次幂）。借用Python语言的特点以及丰富成熟的第三方库，可灵活地实现后续的各种数据处理。"
 msgstr ""
+"**Combining the portability and extensibility of Python with the "
+"computational efficiency of C**. The C codes are compiled and linked into"
+" a dynamic library ``libgrt.so`` , and PyGRT uses Python's `ctypes "
+"<https://docs.python.org/3/library/ctypes.html>`_ standard library to "
+"call the C library functions. Based on the third-party libraries `NumPy "
+"<https://numpy.org/>`_ 、 `SciPy <https://scipy.org/>`_ 和 `ObsPy "
+"<https://docs.obspy.org/>`_, users can easily perform data integration, "
+"Fourier transform, convolution, filter, and save to sac files (for "
+"example, the number of FFT points is no longer required to be a power of "
+"two). Borrowing the characteristics of Python language and rich and "
+"mature third-party libraries, it can flexibly realize various subsequent "
+"data processing."
 
 #: ../../source/index.rst:41 e3a75b1e89b2431cb05b0717f853acc8
 msgid ""
 "**明确的中文注释**。我在代码中对计算过程给出了明确的中文注释以及相关的公式索引， **所有公式索引（除非特别指明）均来自**  "
 ":ref:`该初稿 "
 "<yao_init_manuscripts>`，在代码中基本按照公式推导的计算逻辑，在不过多损失计算效率的前提下进行适当优化，保证了代码的可读性，希望能给学习过程中的你提供一些参考，解答一些疑惑。仅是我浅薄的理解，仅作参考，欢迎指正。"
-msgstr ""
+msgstr "Rich comments in the code."
 
 #: ../../source/index.rst:44 331ada4b060f4aa29a943afa89783224
 msgid "**特殊情况下的计算优化**。目前包括两个部分："
 msgstr ""
+"**Computational Optimization under Special Circumstances.** At present, "
+"it includes two parts:"
 
 #: ../../source/index.rst:47 0e13f9acb3f54c1cb8eed35e77f99e78
 msgid ""
@@ -120,22 +144,51 @@ msgid ""
 "，将每个积分小区间内的Bessel函数取渐近公式，使每个区间内的积分近似值可获得解析解，这样可加大波数 :math:`k` "
 "的积分间隔，提高计算速度。"
 msgstr ""
+"**When epicentral distance** :math:`r` **is large.** Since the Bessel "
+"function :math:`J_m(kr)` in the integrand, when the epicentral distance "
+"increases, integrand oscillates more rapidly, requiring smaller "
+"integration steps , which significantly reduces computational efficiency."
+" At present, **PyGRT** implements **Filon's Integration based on linear "
+"interpolation** to alleviate this problem :ref:`(纪晨, 姚振兴, 1995) "
+"<jichen_1995>` :ref:`(初稿) <yao_init_manuscripts>` . The Bessel function "
+"in each integral cell is asymptotical formula, so that the analytical "
+"solution can be obtained by the approximation of the integral in each "
+"interval, which can increase the integration interval of the wavenumber "
+"and improve the calculation speed."
 
 #: ../../source/index.rst:50 7c4cb739158c42bcb7dad5e80259796d
 msgid ""
 "**当震源深度和台站深度很接近时（如第一类Lamb问题，台站和震源均位于地表）**。此时核函数随着波数 :math:`k` "
-"的增加收敛非常慢，会在收敛值上下波动，导致很难到达到指定的收敛条件，需要耗费更多时间以达到更高的积分上限（不过使用多线程并行优化后，这个问题不再那么刺眼）。目前"
-" **PyGRT** 实现了 **峰谷平均法** 以缓解此问题 :ref:`(Zhang et al., 2003) <zhang_2003>` "
-":ref:`(张海明, 2021) <zhang_book_2021>`，当波数 :math:`k` "
-"达到一定上限时，可以统计波动的波峰波谷值，再递归取缩减序列 :math:`M_i \\leftarrow 0.5\\times(M_i + "
-"M_{i+1})` 得到收敛值。"
+"的增加收敛非常慢，会在收敛值上下波动，导致很难到达到指定的收敛条件，需要耗费更多时间以达到更高的积分上限。目前 **PyGRT** 实现了 "
+"**峰谷平均法** 以缓解此问题 :ref:`(Zhang et al., 2003) <zhang_2003>` :ref:`(张海明, "
+"2021) <zhang_book_2021>`，当波数 :math:`k` 达到一定上限时，可以统计波动的波峰波谷值，再递归取缩减序列 "
+":math:`M_i \\leftarrow 0.5\\times(M_i + M_{i+1})` 得到收敛值。"
 msgstr ""
+"**When the source depth and the station depth are very close (as in the "
+"Lamb problem of Type I, where both the station and the source are at the "
+"surface).** In this case, the kernel converges very slowly as the "
+"wavenumber increases, and it will fluctuate around the convergence value,"
+" making it harder to reach the specified convergence condition and taking"
+" more time to reach the higher integral upper bound . At present, "
+"**PyGRT** implements the **Peak-Trough Averaging Method** to alleviate "
+"this problem :ref:`(Zhang et al., 2003) <zhang_2003>` :ref:`(张海明, 2021) "
+"<zhang_book_2021>` . When the wavenumber reaches a certain upper limit, "
+"the peak and trough value of the fluctuation can be calculated, and then "
+"the reduced sequence :math:`M_i \\leftarrow 0.5\\times(M_i + M_{i+1})` is"
+" recursively taken to obtain the convergence value."
 
 #: ../../source/index.rst:53 76b33cf3ba1a496986508b44b3afcfc2
 msgid ""
-"**积分过程可输出记录文件**。通过函数参数设置，在计算格林函数频谱时可输出不同频率的积分过程文件，记录了核函数和被积函数随波数 "
-":math:`k` 的变化，且 **PyGRT** 包含了读取该文件的函数，可以简易地观察到相关量的变化，方便各种测试以及学习过程中的理解。"
+"**积分过程可输出记录文件**。通过函数参数设置，在计算格林函数频谱时可输出不同频率的积分过程文件，记录了核函数随波数 :math:`k` "
+"的变化，且 **PyGRT** 包含了读取该文件的Python函数，可以简易地观察到相关量的变化，方便各种测试以及学习过程中的理解。"
 msgstr ""
+"**The integration process can output states files.** By setting the "
+"parameters, the integration process files of different frequencies can be"
+" output when calculating the spectra of Green's function, and the "
+"changes of the kernel function with the wavenumber are recorded. "
+"**PyGRT** includes Python functions to read the file, so that the changes"
+" of relevant quantities can be easily observed, which is convenient for "
+"various tests and understanding in the learning process."
 
 #: ../../source/index.rst:59 5d8a95028c854e11a97453d42bbabb91
 msgid ""
@@ -143,17 +196,20 @@ msgid ""
 "部分；若对具体实现过程感兴趣，尤其是在学习 **广义反射透射系数矩阵、离散波数法、线性Filon积分法、峰谷平均法** "
 "等内容感到迷惑难解时，可以在运行程序的同时结合阅读相关 **C代码**，我在C代码中给出了 **明确的中文注释以及相关公式索引** "
 "，希望能帮助你在学习相关内容时解答一些疑惑。"
-msgstr ""
+msgstr "\\"
 
 #: ../../source/index.rst:61 537a78327af04a6e9fa0e6052fb07f65
 msgid ""
 "本文档页面源码位于 Github主页的 `docs/ "
 "<https://github.com/Dengda98/PyGRT/tree/main/docs/source>`_，可查看示例代码和画图脚本。"
 msgstr ""
+"The source code for this documentation is on the Github homepage at  "
+"`docs/ <https://github.com/Dengda98/PyGRT/tree/main/docs/source>`_, where"
+" you can view the example code and drawing scripts."
 
 #: ../../source/index.rst:81 b96ad6d96b64480aa83f969c95b9edf2
 msgid "主要参考"
-msgstr ""
+msgstr "Main References"
 
 #: ../../source/index.rst:85 a8a5388b51224cea8be6bfe54c18e3b1
 msgid ""
@@ -164,14 +220,20 @@ msgid ""
 msgstr ""
 
 #: ../../source/index.rst:89 9f8258a6519c4929ad22bc324000dc30
-msgid "纪晨, 姚振兴, 1995. 区域地震范围的宽频带理论地震图算法研究[J]. 地球物理学报(4): 460-468."
+msgid "纪晨, 姚振兴, 1995. 区域地震范围的宽频带理论地震图算法研究[J]. 地球物理学报, 38(4): 460-468."
 msgstr ""
+"Ji C, Yao Z, 1995. THE STUDY OF THE METHOD FOR BROADBAND REGIONAL "
+"SYNTHETIC SEISMOGRAM[J]. Chinese Journal of Geophysics. 38(4): 460-468."
 
 #: ../../source/index.rst:93 25aff531ab87469fb1a06c482c566665
 msgid ""
-"谢小碧, 姚振兴, 1989. 计算分层介质中位错点源静态位移场的广义反射、透射系数矩阵和离散波数方法[J]. 地球物理学报(3): "
+"谢小碧, 姚振兴, 1989. 计算分层介质中位错点源静态位移场的广义反射、透射系数矩阵和离散波数方法[J]. 地球物理学报, 32(3): "
 "270-280."
 msgstr ""
+"Xie X, Yao Z, 1989. A Generalized Reflection-Transmition Coefficient "
+"Matrix Method to Calculate Static Displacement Field of a Stratified "
+"Half-Space by DisLocation Source[J]. Acta Geophysics Sinica, 32(3): "
+"270-280."
 
 #: ../../source/index.rst:97 ab3a21a1852e436198dc1d62c32a50bf
 msgid "姚振兴, 谢小碧. 2022/03. 理论地震图及其应用（初稿）."

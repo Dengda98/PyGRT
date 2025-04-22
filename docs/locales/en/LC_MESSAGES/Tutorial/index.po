@@ -21,7 +21,7 @@ msgstr ""
 
 #: ../../source/Tutorial/index.rst:2 053f43536cdd431d8549574dadb9cb61
 msgid "简易教程"
-msgstr ""
+msgstr "Simple Tutorial"
 
 #: ../../source/Tutorial/index.rst 2c24e5dc56c74701989143be5b5718b4
 msgid "Author"
@@ -45,16 +45,21 @@ msgid ""
 "``libgrt.so`` 供Python调用。Python通过 ``ctypes`` "
 "库导入动态库以使用外部函数，以此兼并了C语言的高效和Python语言的便捷。"
 msgstr ""
+"**PyGRT** package consists of code written in both C and Python, aiming to combine efficiency and convenience. Underlying complex computations are implemented in C, compiled and linked into a dynamic library "
+"``libgrt.so`` for Python to call. Python uses the ``ctypes`` "
+"library to import the dynamic library and utilize external functions, thus combining the efficiency of C with the convenience of Python."
 
 #: ../../source/Tutorial/index.rst:11 1b91bbca71bc45e1902aaefd89ba106f
 msgid ""
 "除了Python脚本式运行， **PyGRT** 保留传统命令行式运行C程序，即在建立动态库过程中也编译了一些可执行文件。 "
 "**C程序的运行独立于Python，不需要Python环境，以满足更多计算场景。** 每个C程序可使用 ``-h`` 查看帮助。"
 msgstr ""
+"In addition to running Python scripts, **PyGRT** retains the traditional command-line style for running C programs, where some executable files are also compiled during the creation of the dynamic library. "
+"**The execution of C programs is independent of Python and does not require a Python environment, catering to more computational scenarios.** Each C program can use ``-h`` to view help."
 
 #: ../../source/Tutorial/index.rst:13 a33ae3c27380436d92e4023910066fd3
 msgid "计算 **动态解** 的主要计算流程如下："
-msgstr ""
+msgstr "The main computational process for calculating **dynamic solutions** is as follows:"
 
 #: ../../source/Tutorial/index.rst:15 d2bc453653514906830f19024a76985a
 msgid "Python"
@@ -66,11 +71,12 @@ msgstr ""
 
 #: ../../source/Tutorial/index.rst:75 dbf4a539e7a148d7a5ff4542e5fffe4b
 msgid "计算 **静态解** 的过程相同，只是函数名称和程序名称有变化。"
-msgstr ""
+msgstr "The process for calculating **static solutions** is the same, only the function names and program names differ."
 
 #: ../../source/Tutorial/index.rst:78 aae783d5f56e4d4894e556cacd04142f
 msgid ""
 "以下是一些简易教程，可快速上手。Github主页的 :rst:dir:`example/` 文件夹中有更多示例，可在 `Github "
 "Releases <https://github.com/Dengda98/PyGRT/releases>`_ 中下载。"
 msgstr ""
+"The following are some simple tutorials to help you get started quickly. More examples can be found in the :rst:dir:`example/` folder on the Github homepage, which can be downloaded from `Github Releases <https://github.com/Dengda98/PyGRT/releases>`_."
 

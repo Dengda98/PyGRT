@@ -22,7 +22,7 @@ msgstr ""
 #: ../../source/Tutorial/static/static_strain_stress.rst:2
 #: 2b101978700f428991b756a6b0d5ee6d
 msgid "计算静态应变、旋转、应力张量"
-msgstr ""
+msgstr "Compute Static Strain, Rotation, and Stress Tensors"
 
 #: ../../source/Tutorial/static/static_strain_stress.rst
 #: f4563cd182e84f5e8c0477f0c9392f01
@@ -50,6 +50,7 @@ msgid ""
 "除了使用不同的函数名/程序名，输出文件不同之外，流程基本和 :ref:`strain_stress_rst` "
 "类似。这里直接给出脚本。运行后注意观察和 :ref:`static_syn_rst` 的输出有了什么变化。"
 msgstr ""
+"Apart from using different function names/program names and different output files, the process is basically similar to :ref:`strain_stress_rst`. Here, the script is provided directly. After running, pay attention to what changes have occurred compared to the output of :ref:`static_syn_rst`."
 
 #: ../../source/Tutorial/static/static_strain_stress.rst:13
 #: 2f8c968b542b4e2f8408df910416126c
@@ -64,5 +65,5 @@ msgstr ""
 #: ../../source/Tutorial/static/static_strain_stress.rst:40
 #: 298684e4d4154b95af016d688b859d3f
 msgid "由于场点位于地表（自由表面），过Z平面的应力均为0（由于浮点数计算误差，呈极小非零数），结果和理论保持一致。"
-msgstr ""
+msgstr "Since the field point is located on the surface (free surface), the stress across the Z-plane is zero (appearing as a very small non-zero value due to floating-point calculation errors), consistent with the theoretical results."
 

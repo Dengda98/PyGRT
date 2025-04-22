@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"POT-Creation-Date: 2025-04-22 21:15+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -22,7 +22,7 @@ msgstr ""
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:4
 #: fd9f01d970324524b689e6a87b760452
 msgid "积分收敛性"
-msgstr ""
+msgstr "Convergency of Integral"
 
 #: ../../source/Tutorial/integ_converg/integ_converg.rst
 #: 8273dbbfde3c4791a04cd95e5a26f17a
@@ -50,16 +50,23 @@ msgid ""
 "通过输出核函数文件，观察源点和场点深度接近时，积分收敛性的变化，以及峰谷平均法的作用。 **具体积分表达式以及分类详见** "
 ":ref:`gfunc_rst`。"
 msgstr ""
+"By outputting the kernel function files, observe the changes in integral "
+"convergence when the source and field point depths are close, as well as "
+"the role of the peak-trough averaging method. **For specific integral "
+"expressions and types, see** :ref:`gfunc_rst`."
 
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:14
 #: a3db70a667d0406caab36a01473d5072
 msgid "核函数文件"
-msgstr ""
+msgstr "Kernel function file"
 
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:15
 #: 6e42f101df754a879606c4fcb84d0828
 msgid "该文件记录了波数积分过程中不同波数对应的核函数值。以下用法展示了如何输出该文件。"
 msgstr ""
+"This file records the kernel function values corresponding to different "
+"wavenumbers during the wavenumber integration process. The following "
+"usage demonstrates how to output this file."
 
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:19
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:42
@@ -72,8 +79,10 @@ msgstr ""
 
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:26
 #: 95418d4aa13444e58f8b73de3ae72858
-msgid "输出的核函数文件路径会在  :rst:dir:`GRN_grtstats/milrow_{depsrc}_{deprcv}/` 路径下。"
+msgid "输出的核函数文件会在  :rst:dir:`GRN_grtstats/milrow_{depsrc}_{deprcv}/` 路径下。"
 msgstr ""
+"The output kernel function files will be under the "
+":rst:dir:`GRN_grtstats/milrow_{depsrc}_{deprcv}/` directory."
 
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:28
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:58
@@ -86,8 +95,8 @@ msgstr ""
 
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:35
 #: 0d690cefbd2c4dca99a7148395a0d6b2
-msgid "输出的核函数文件路径会在自定义路径下。"
-msgstr ""
+msgid "输出的核函数文件会在自定义路径下。"
+msgstr "The output kernel function files will be in a custom path."
 
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:38
 #: 70b4bad47b8d49208815b5ad8915b86e
@@ -96,22 +105,27 @@ msgid ""
 "表示频率索引值， ``{freq}`` 表示对应频率(Hz)。文件为自定义的二进制文件， "
 "**强烈建议使用Python进行读取及后续处理**。这里还是给出两种读取方法。"
 msgstr ""
+"The kernel function files exported by C and Python are identical, as they "
+"call the same underlying functions. The file naming format is ``K_{iw}_{freq}``, "
+"where ``{iw}`` represents the frequency index and ``{freq}`` represents the corresponding "
+"frequency (Hz). The files are custom binary files, and **it is strongly recommended to use Python "
+"for reading and subsequent processing**. Here, two reading methods are still provided."
 
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:44
 #: 73da8884767b43f4b096c5699c6ad6e1
 msgid ":command:`grt.k2a` 程序可将单个核函数文件转为文本格式。"
-msgstr ""
+msgstr "The :command:`grt.k2a` program can convert a single kernel function file into text format."
 
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:51
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:155
 #: 2d4c8e73dc8848ebabce5f216dce8fe9 302a0758167541f7a83926368623f1e7
 msgid "输出的文件如下，"
-msgstr ""
+msgstr "The output files are as follows,"
 
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:56
 #: 56c959f30eee4dd3b695460f22278398
 msgid "后续你可以选择习惯的方式读取和处理。"
-msgstr ""
+msgstr "Subsequently, you can choose your preferred method for reading and processing."
 
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:65
 #: 774a3323a6994ab78bfd3cf8188fbe4a
@@ -119,6 +133,10 @@ msgid ""
 "其中除了波数 ``k`` 外，每条结果的命名格式均为 ``{srcType}_{q/w/v}{m}``，与 :ref:`gfunc_rst` "
 "部分介绍的积分公式中的核函数 :math:`q_m, w_m, v_m` 保持一致。"
 msgstr ""
+"Except for the wavenumber ``k``, the naming format of each result is "
+"``{srcType}_{q/w/v}{m}``, consistent with the kernel functions "
+":math:`q_m, w_m, v_m` introduced in the integral formulas in the "
+":ref:`gfunc_rst` section."
 
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:69
 #: 134f85e366ef42448e0cedc161180e2b
@@ -126,11 +144,14 @@ msgid ""
 "核函数文件中记录的值非最终核函数值。对于动态解，还需乘 :math:`\\left(-\\dfrac{\\Delta "
 "k}{4\\pi\\rho\\omega^2}\\right)`。"
 msgstr ""
+"The values recorded in the kernel function file are not the final kernel "
+"function values. For dynamic solutions, they need to be multiplied by "
+":math:`\\left(-\\dfrac{\\Delta k}{4\\pi\\rho\\omega^2}\\right)`."
 
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:72
 #: 78a6f44e73804f62bacbce9070b03d61
 msgid "可视化"
-msgstr ""
+msgstr "Visualization"
 
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:73
 #: 879f345141fa4e418690962b1d156920
@@ -139,31 +160,35 @@ msgid ""
 "**在Python函数中指定震源类型、阶数、积分类型，可自动绘制核函数、被积函数和积分值随波数的变化**，其中积分类型对应 "
 ":ref:`gfunc_rst` 部分介绍的4种类型。"
 msgstr ""
+"The following will use Python for plotting. "
+"**By specifying the source type, order, and integral type in the Python function, "
+"it can automatically plot the kernel function, integrand, and the variation of integral values with wavenumber**, "
+"where the integral types correspond to the four types introduced in the :ref:`gfunc_rst` section."
 
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:84
 #: 430d7921aec646d298c3bb4cd564ccee
 msgid "可以通过指定 ``RorI=False`` 参数来指定绘制虚部，传入 ``RorI=2`` 表示实虚部都绘制。"
-msgstr ""
+msgstr "You can specify the ``RorI=False`` parameter to plot the imaginary part, or pass ``RorI=2`` to plot both the real and imaginary parts."
 
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:95
 #: cec891a8167c441d93e1f0f01a63f656
 msgid "从图中可以看到，当波数增加到一定范围以上，积分收敛良好，无振荡现象。"
-msgstr ""
+msgstr "From the figure, it can be seen that when the wavenumber increases beyond a certain range, the integral converges well without oscillation."
 
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:100
 #: 42d772f37db4433a9a100efd503e0e0f
 msgid "当震源和场点深度接近/相等时，积分收敛速度变慢"
-msgstr ""
+msgstr "Integral converge slowly when source and receiver depths are close or equal."
 
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:102
 #: b01e57de2fb343a983ffb56c1ad02833
 msgid "假设其它参数不变，我们调整 **震源深度为0.1km**，再计算格林函数，读取核函数文件，绘制图像。"
-msgstr ""
+msgstr "Assuming other parameters remain unchanged, we adjust the **source depth to 0.1km**, then calculate the Green's function, read the kernel function file, and plot the image."
 
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:124
 #: 0f69ac05eeff4af58dfbcf43e4c6e8f5
 msgid "从图中可以清晰地看到，相比震源深度2km时，积分收敛速度明显变慢，积分值振荡，这要求增加波数积分上限，但这必然降低计算效率。"
-msgstr ""
+msgstr "From the figure, it can be clearly seen that compared to a source depth of 2km, the integral convergence speed is significantly slower, and the integral values oscillate. This requires increasing the upper limit of wavenumber integration, but it inevitably reduces computational efficiency."
 
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:126
 #: 0797b69836bf4180ba5689780d1d18be
@@ -171,11 +196,13 @@ msgid ""
 "你可以尝试 "
 "**当震源和场点位于同一深度**，收敛振荡现象也很明显。要注意的是这和是否在地表无关，即使震源和场点都在地下，深度接近时积分收敛也会变慢。"
 msgstr ""
+"You can try "
+"**when the source and field points are at the same depth**, the convergence oscillation phenomenon is also obvious. Note that this is unrelated to whether they are on the surface; even if the source and field points are underground, the integral convergence slows down when their depths are close."
 
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:130
 #: 656d8935d8f54f2bb65e064a3fe821b9
 msgid "峰谷平均法"
-msgstr ""
+msgstr "Peak-Trough averaging method"
 
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:131
 #: 5677d0310b4348e893106d88dfc1e5f9
@@ -183,6 +210,8 @@ msgid ""
 "具体原理很简洁易懂，从以下图像中你也能了解大概。详见 :ref:`(Zhang et al., 2003) <zhang_2003>` "
 ":ref:`(张海明, 2021) <zhang_book_2021>`。"
 msgstr ""
+"The principle is very simple and easy to understand, and you can get a general idea from the following image. See :ref:`(Zhang et al., 2003) <zhang_2003>` "
+":ref:`(Zhang Haiming, 2021) <zhang_book_2021>` for details."
 
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:133
 #: 05fae7d21a684afebd4b575465f0291f
@@ -192,6 +221,10 @@ msgid ""
 " :math:`M_i \\leftarrow 0.5\\times(M_i + M_{i+1})` "
 "，得到估计的积分收敛值。取缩减序列的C代码如下，"
 msgstr ""
+"In the above example, when the source and field point depths are close, you will notice an increase in the output kernel function files. This is because the program is internally configured to "
+"**automatically use the Peak-Trough Averaging Method (PTAM) when the depth difference between the source and field point is less than 1km**. The specific process is as follows: after completing the discrete wavenumber integration, the program continues to increase k (using different dk for different epicentral distances), uses PTAM to find a sufficient number of peaks and troughs (internally set to 36), and then applies a reduction sequence to these peaks and troughs "
+" :math:`M_i \\leftarrow 0.5\\times(M_i + M_{i+1})` "
+"to obtain the estimated integral convergence value. The C code for the reduction sequence is as follows,"
 
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:144
 #: a9104a95bcd44ae48fa4421260e69dc3
@@ -201,16 +234,20 @@ msgid ""
 "``PTAM_{ir}_{dist}/K_{iw}_{freq}`` 为核函数文件（格式不变）， "
 "``PTAM_{ir}_{dist}/PTAM_{iw}_{freq}`` 为峰谷文件，其中记录积分值的峰谷。"
 msgstr ""
+"In the same directory as the ``K_{iw}_{freq}`` file, the program saves **the kernel functions and integral peak-trough positions during the PTAM process into two separate files** in the "
+"``PTAM_{ir}_{dist}/`` directory (where ``{ir}`` is the epicentral distance index and ``{dist}`` is the epicentral distance). "
+"Among them, ``PTAM_{ir}_{dist}/K_{iw}_{freq}`` is the kernel function file (format unchanged), and "
+"``PTAM_{ir}_{dist}/PTAM_{iw}_{freq}`` is the peak-trough file, which records the peaks and troughs of the integral values."
 
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:148
 #: 5492d0e7cc6742c19d122eca4ffeb0eb
 msgid ":command:`grt.k2a` 程序也支持将 ``PTAM_{ir}_{dist}/PTAM_{iw}_{freq}`` 文件转为文本格式，"
-msgstr ""
+msgstr "The :command:`grt.k2a` program also supports converting the ``PTAM_{ir}_{dist}/PTAM_{iw}_{freq}`` file into text format."
 
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:160
 #: 39f146fa19884f95a644c505469f975a
 msgid "记录了不同震源、不同积分类型的峰谷位置。"
-msgstr ""
+msgstr "Records the peak-trough positions for different sources and integral types."
 
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:163
 #: ef88f125266842a699b6da48bdd72bbb
@@ -218,21 +255,23 @@ msgid ""
 "故为了绘制完整的波数积分+PTAM过程，涉及三个文件。不过Python函数已经做了优化，由于程序输出的目录结构固定，文件命名格式固定，只需传入 "
 "``PTAM_{ir}_{dist}/PTAM_{iw}_{freq}`` 文件，Python函数会自动读取对应的三个文件。"
 msgstr ""
+"Therefore, to plot the complete wavenumber integration + PTAM process, three files are involved. However, the Python function has been optimized. Since the program's output directory structure and file naming format are fixed, you only need to pass the "
+"``PTAM_{ir}_{dist}/PTAM_{iw}_{freq}`` file, and the Python function will automatically read the corresponding three files."
 
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:174
 #: 62b141b242c84d908b59551b27845c5c
 msgid "红十字为选取的波峰波谷，再取缩减序列即可得到估计的积分收敛值。"
-msgstr ""
+msgstr "The red crosses represent the selected peaks and troughs, and the estimated integral convergence value can be obtained by applying the reduction sequence."
 
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:179
 #: cbf9055018924262a938cfb9df1ccd9f
 msgid "静态解的积分收敛性"
-msgstr ""
+msgstr "Integral convergence of static solutions"
 
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:180
 #: 6b0ebcaf238146679e660dddfac38780
 msgid "以上部分是以动态解为例，静态解从积分类型、收敛特征、文件格式、绘图完全类似，只是不再有频率索引值。"
-msgstr ""
+msgstr "The above section uses dynamic solutions as an example. Static solutions are completely similar in terms of integral types, convergence characteristics, file formats, and plotting, except that there is no frequency index."
 
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:184
 #: e4be907168844ed68dd5f653f9b49abc
@@ -240,19 +279,22 @@ msgid ""
 "核函数文件中记录的值非最终核函数值。对于静态解，还需乘 :math:`\\left(\\dfrac{\\Delta "
 "k}{4\\pi\\mu}\\right)`。"
 msgstr ""
+"The values recorded in the kernel function file are not the final kernel "
+"function values. For static solutions, they need to be multiplied by "
+":math:`\\left(\\dfrac{\\Delta k}{4\\pi\\mu}\\right)`."
 
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:186
 #: 7ec3917ab3e640ff96070518c10a4660
 msgid "假设震源深度0.1km，场点位于地表，场点仅定义一个点(2,2)做示例，这里直接给出脚本。"
-msgstr ""
+msgstr "Assume the source depth is 0.1km, the field point is on the surface, and only one point (2,2) is defined as an example. The script is provided directly here."
 
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:207
 #: 2abd9848504845acb4869b98d24174ee
 msgid "**只使用离散波数积分**"
-msgstr ""
+msgstr "**Only use discrete wavenumber integration**"
 
 #: ../../source/Tutorial/integ_converg/integ_converg.rst:215
 #: 263486be70b74606bcbb010d7d96a4fc
 msgid "**使用峰谷平均法**"
-msgstr ""
+msgstr "**Use Peak-Trough averaging method**"
 
