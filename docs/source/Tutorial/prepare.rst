@@ -29,7 +29,7 @@
 
         .. code-block:: text
 
-            [厚度(km)]    [P波速度(km/s)]    [S波速度(km/s)]   [密度(g/cm^3)]   [P波品质因子]   [S波品质因子]
+            [Thickness(km)]    [Vp(km/s)]    [Vs(km/s)]   [Rho(g/cm^3)]   [Qp]   [Qs]
 
         
         例如 :file:`milrow` 模型（假设文本文件名为 `milrow` ）
