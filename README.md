@@ -11,7 +11,7 @@
 
 > ⭐ **Like this project? Give it a Star!** ⭐
 
-[**中文文档**](https://pygrt.readthedocs.io/zh-cn/)
+[**中文文档**](https://pygrt.readthedocs.io/zh-cn/)  |  [**English Document**](https://pygrt.readthedocs.io/en/)  
 
 # Overview
 **[PyGRT](https://github.com/Dengda98/PyGRT): An Efficient and Integrated C/Python Package for Computing Synthetic Seismograms, Strain, Rotation and Stress Tensor in a Layered Half-Space Model (Dynamic & Static Cases)**
