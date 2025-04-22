@@ -17,7 +17,7 @@
 .. mermaid::
     :zoom:
 
-    flowchart LR 
+    flowchart TB 
 
         GG(["compute_grn()"])
         SS(["gen_syn_from_gf_*()"])
@@ -25,13 +25,13 @@
         RR(["compute_rotation()"])
         TT(["compute_stress()"])
 
-        G["计算格林函数
-        (及其空间导数)"]
-        S["根据震源机制计算位移
-        (及其空间导数)"]
-        E["计算应变张量"]
-        R["计算旋转张量"]
-        T["计算应力张量"]
+        G["Compute Green's Functions
+        (and its Spatial Derivatives)"]
+        S["Compute displacements with focal mechanism
+        (and its Spatial Derivatives)"]
+        E["Compute Strain Tensor"]
+        R["Compute Rotation Tensor"]
+        T["Compute Stress Tensor"]
 
         GG --> G
         G --> SS --> S
@@ -47,7 +47,7 @@
 .. mermaid::
     :zoom:
 
-    flowchart LR 
+    flowchart TB 
 
         GG(["grt"])
         SS(["grt.syn"])
@@ -55,13 +55,13 @@
         RR(["grt.rotation"])
         TT(["grt.stress"])
 
-        G["计算格林函数
-        (及其空间导数)"]
-        S["根据震源机制计算位移
-        (及其空间导数)"]
-        E["计算应变张量"]
-        R["计算旋转张量"]
-        T["计算应力张量"]
+        G["Compute Green's Functions
+        (and its Spatial Derivatives)"]
+        S["Compute displacements with focal mechanism
+        (and its Spatial Derivatives)"]
+        E["Compute Strain Tensor"]
+        R["Compute Rotation Tensor"]
+        T["Compute Stress Tensor"]
 
         GG --> G
         G --> SS --> S
