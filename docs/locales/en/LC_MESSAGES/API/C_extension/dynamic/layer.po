@@ -1,0 +1,38 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2025, Zhu Dengda
+# This file is distributed under the same license as the PyGRT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.16.0\n"
+
+#: ../../source/API/C_extension/dynamic/layer.rst:2
+#: 8b5e4b1ab1c74a1c9c9f3dc809ad73ee
+msgid "layer.h"
+msgstr ""
+
+#: ../../source/API/C_extension/dynamic/layer.rst
+#: 5f929b25a3124c84a1bcb6dc40a14350
+msgid "Functions"
+msgstr ""
+
+#: ../../source/API/C_extension/dynamic/layer.rst
+#: 11dd34b03e9b406296a85e92fb5fc337 35d502a7e7b04210ae2392de4136af52
+#: 448d7960db5e4a71ac02ac99b178cbe1 52c54f8c3ea842388adefba4adae16b5
+#: e79933dce6f144c4810c0e0e63180581
+msgid "参数"
+msgstr ""
+

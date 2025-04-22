@@ -1,0 +1,130 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2025, Zhu Dengda
+# This file is distributed under the same license as the PyGRT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.16.0\n"
+
+#: ../../source/API/pygrt/c_interfaces.rst:2 c392e8f1eba74dc492760c0320c62bfd
+msgid "pygrt.c_interfaces"
+msgstr ""
+
+#: a4cf2b596478429ebe2b7d625ef889a4 of pygrt.c_interfaces
+msgid "file"
+msgstr ""
+
+#: 33ebf2a2cead447c8344ffe3dba111da of pygrt.c_interfaces:1
+msgid "c_interfaces.py"
+msgstr ""
+
+#: 414ef6de14834748bb00501639a42618 of pygrt.c_interfaces
+msgid "author"
+msgstr ""
+
+#: 7c29551586584112848664dbd9a5a1a3 of pygrt.c_interfaces:2
+msgid "Zhu Dengda (zhudengda@mail.iggcas.ac.cn)"
+msgstr ""
+
+#: 71f96ccdf4f3414497186d2134f8ac9c of pygrt.c_interfaces
+msgid "date"
+msgstr ""
+
+#: 089947839a5d4cd49cf197ee96e1e3aa of pygrt.c_interfaces:3
+msgid "2024-07-24"
+msgstr ""
+
+#: bae85e44a35448b9b06370676f8c1706 of pygrt.c_interfaces:5
+msgid "该文件包括 C库的调用接口"
+msgstr ""
+
+#: ../../docstring 4966d725b96a46f6bf165e593ea66368 of
+#: pygrt.c_interfaces.libgrt:1
+msgid "libgrt库"
+msgstr ""
+
+#: ../../docstring 61b75a54e8c84df7be938091f0c5e460 of
+#: pygrt.c_interfaces.C_integ_grn_spec:1
+msgid "C库中计算格林函数的主函数 integ_grn_spec, 详见C API同名函数"
+msgstr ""
+
+#: ../../docstring db3d882ca7d349c0a1a597640cc95f49 of
+#: pygrt.c_interfaces.C_integ_static_grn:1
+msgid "计算静态格林函数"
+msgstr ""
+
+#: ../../docstring dec045f3e8ff45119ed3d4fb4ab96dc5 of
+#: pygrt.c_interfaces.C_set_num_threads:1
+msgid "设置多线程数"
+msgstr ""
+
+#: 242f92caba4840ba97013af03da1f81d of pygrt.c_interfaces.set_num_threads:1
+msgid "定义计算使用的多线程数"
+msgstr ""
+
+#: ../../source/API/pygrt/c_interfaces.rst ddd2351a2b9449728f62070c3a609d20
+msgid "参数"
+msgstr ""
+
+#: 011b5ac2e947425bb3d15f2d66170110 of pygrt.c_interfaces.set_num_threads:3
+msgid "线程数"
+msgstr ""
+
+#: ../../docstring 64efd0c792ae4db6bd3d6b2b444dc4db of
+#: pygrt.c_interfaces.C_compute_travt1d:1
+msgid "计算1D层状半空间的初至波走时"
+msgstr ""
+
+#: ../../docstring bd7063369bf04db3976545757262b086 of
+#: pygrt.c_interfaces.C_free:1
+msgid "释放在C中申请的内存"
+msgstr ""
+
+#: ../../docstring 84ae91e084364a6b90ec7aa9205905fd of
+#: pygrt.c_interfaces.C_get_trap_wave:1
+msgid "梯形波"
+msgstr ""
+
+#: ../../docstring ad801dfe029a4640b8c59a64cc12ab0f of
+#: pygrt.c_interfaces.C_get_parabola_wave:1
+msgid "抛物波"
+msgstr ""
+
+#: ../../docstring 3fe8311407c5467fb642ea75d11a7afe of
+#: pygrt.c_interfaces.C_get_ricker_wave:1
+msgid "雷克子波"
+msgstr ""
+
+#: ../../docstring 90efa74bfb5349619288f7a5d7615348 of
+#: pygrt.c_interfaces.C_rot_zxy2zrt_vec:1
+msgid "直角坐标zxy到柱坐标zrt的矢量旋转"
+msgstr ""
+
+#: ../../docstring 0f2c8f21e12d41fb8cec0089f541c076 of
+#: pygrt.c_interfaces.C_rot_zxy2zrt_symtensor2odr:1
+msgid "直角坐标zxy到柱坐标zrt的二阶对称张量旋转"
+msgstr ""
+
+#: ../../docstring 3a91987dfb06461084883ce48f054c83 of
+#: pygrt.c_interfaces.C_rot_zrt2zxy_upar:1
+msgid "柱坐标下的位移偏导 ∂u(z,r,t)/∂(z,r,t) 转到 直角坐标 ∂u(z,x,y)/∂(z,x,y)"
+msgstr ""
+
+#: ../../docstring e0efdbe9990e41629b836c0eb8bf9df1 of
+#: pygrt.c_interfaces.C_py_attenuation_law:1
+msgid "品质因子Q 对 波速的影响"
+msgstr ""
+

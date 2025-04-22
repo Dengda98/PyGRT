@@ -1,0 +1,130 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2025, Zhu Dengda
+# This file is distributed under the same license as the PyGRT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-04-22 21:44+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.16.0\n"
+
+#: ../../source/Tutorial/kernel/kernel.rst:2 1bbd0c5d354941aaae90ab64f795b71e
+msgid "核函数频谱图"
+msgstr "Kernel-frequency spectrum"
+
+#: ../../source/Tutorial/kernel/kernel.rst 0ef1c40515bb4bf19a2e2cfbda0cd2ae
+msgid "Author"
+msgstr ""
+
+#: ../../source/Tutorial/kernel/kernel.rst:4 b34b8a056c3444efa0aa42b5e1ecc12e
+msgid "Zhu Dengda"
+msgstr ""
+
+#: ../../source/Tutorial/kernel/kernel.rst 4bffe9a5364c4d14bf524734b462fef5
+msgid "Email"
+msgstr ""
+
+#: ../../source/Tutorial/kernel/kernel.rst:5 d581e3e57c864383ba69bc9a2c2a9e54
+msgid "zhudengda@mail.iggcas.ac.cn"
+msgstr ""
+
+#: ../../source/Tutorial/kernel/kernel.rst:10 80693e07f13e49b6978e8f647073f790
+msgid ""
+"在 :ref:`integ_converg_rst` 部分介绍了程序可以导出积分过程中不同频率的核函数值，这使得我们可以绘制核函数的频谱图 "
+"[#]_ ，以观察其中的频散特征 。"
+msgstr ""
+"In the :ref:`integ_converg_rst` section, the program is introduced to "
+"export kernel function values at different frequencies during the "
+"integration phase, allowing us to plot the kernel function spectrogram "
+"[#]_ to observe its dispersion characteristics."
+
+#: ../../source/Tutorial/kernel/kernel.rst:12 7dbd69c23ac644f49e3b9121fa46e7e0
+msgid "以薄层模型为例，"
+msgstr "Taking the thin-layer model as an example,"
+
+#: ../../source/Tutorial/kernel/kernel.rst:17 9f4c4b322bdc4ccca2f151d72412b413
+msgid "感谢席超强博士 `@xichaoqiang <https://github.com/xichaoqiang>`_ 的建议。"
+msgstr ""
+"Thanks to Dr. Chaoqiang Xi `@xichaoqiang "
+"<https://github.com/xichaoqiang>`_ for the suggestion."
+
+#: ../../source/Tutorial/kernel/kernel.rst:21 c8d3a23cb65f49f9b2b13dcdda2d8b50
+msgid "生成核函数文件"
+msgstr "Generate kernel function file"
+
+#: ../../source/Tutorial/kernel/kernel.rst:25 1a126addbc15412182775f4084409e8c
+msgid "与之前的示例相比，这里添加了控制波数积分的参数，以显式控制核函数的采样间隔和范围。但这并非是计算格林函数的最佳参数，故此时格林函数计算结果很可能是不收敛的。"
+msgstr ""
+"Compared to the previous example, parameters for controlling the "
+"wavenumber integration are added here to explicitly control the sampling "
+"interval and range of the kernel function. However, these are not the "
+"optimal parameters for calculating the Green's function, so the Green's "
+"function calculation results may not converge in this case."
+
+#: ../../source/Tutorial/kernel/kernel.rst:30 d523264c00764148820b31f60055ae96
+msgid "C"
+msgstr ""
+
+#: ../../source/Tutorial/kernel/kernel.rst:38 0236d5f9b47b49f99d710fd7b5dbe9d7
+msgid "Python"
+msgstr ""
+
+#: ../../source/Tutorial/kernel/kernel.rst:47 ad27563d2a1f40be914b44d6962c7540
+msgid "读取，采样，获得核函数频谱"
+msgstr "Read, interpolate, and obtain the kernel-frequency spectrum"
+
+#: ../../source/Tutorial/kernel/kernel.rst:48 c3fb8a65a73a49418e62c4b434f3a055
+msgid ""
+"Python端提供了 :py:func:`pygrt.utils.read_kernels_freqs` 函数来完成所有频率的核函数读取以及从波数"
+" ``k`` 插值到特定速度点 ``v`` 的工作 ( :math:`v=\\omega/k` )，最后获得保存有核函数频谱的字典。"
+msgstr ""
+"The Python side provides the :py:func:`pygrt.utils.read_kernels_freqs` "
+"function to handle reading kernel functions for all frequencies, "
+"interpolating from wavenumber ``k`` to specific velocity points ``v`` ( "
+":math:`v=\\omega/k` ), and finally obtaining a dictionary containing the "
+"kernel-frequency spectrum."
+
+#: ../../source/Tutorial/kernel/kernel.rst:56 0dc02b09ae3642afa8fae331b82c45b2
+msgid "绘制核函数频谱图"
+msgstr "Plot kernel-frequency spectrum"
+
+#: ../../source/Tutorial/kernel/kernel.rst:57 d3a3aa62d85549f6b9c70993970077d4
+msgid "以下将使用Python进行图件绘制。"
+msgstr "The following will use Python for plotting."
+
+#: ../../source/Tutorial/kernel/kernel.rst:66 b4c19bf3b5b54c00b558b6f03fd14bdc
+msgid "**虚部**"
+msgstr "Imaginary part"
+
+#: ../../source/Tutorial/kernel/kernel.rst:73 ccdf3032eb9e4753a794b45b49e63a43
+msgid "**实部**"
+msgstr "Real part"
+
+#: ../../source/Tutorial/kernel/kernel.rst:82 c9439a8d982848768ce358270a17c7ed
+msgid ""
+"从图上可看到， **核函数频谱的虚部峰值正是频散曲线的位置** ，尽管其中不同震源的核函数幅值不同，但 :math:`q_m，w_m` "
+"呈现的频散特征一致，这对应的是 **Rayleigh波频散** ，而 :math:`v_m` 对应的是 **Love波频散** 。"
+msgstr ""
+"From the figure, it can be seen that **the peak of the imaginary part of "
+"the kernel-frequency spectrum corresponds to the position of the dispersion "
+"curve**. Although the kernel function amplitudes of different sources vary, "
+"the dispersion characteristics presented by :math:`q_m, w_m` are consistent, "
+"which corresponds to **Rayleigh wave dispersion**, while :math:`v_m` "
+"corresponds to **Love wave dispersion**."
+
+
+#: ../../source/Tutorial/kernel/kernel.rst:84 4c096427ec784686a7855f4bc92885ae
+msgid "不同的震源场点深度、不同的虚频率都会导致幅值变化，积分间隔则会影响插值效果。"
+msgstr "Different source/receiver depths and different imaginary frequencies will cause amplitude variations, while the integration interval will affect the interpolation results."
+

@@ -1,0 +1,144 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2025, Zhu Dengda
+# This file is distributed under the same license as the PyGRT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.16.0\n"
+
+#: ../../source/API/pygrt/pygrn.rst:2 8ba56ba3398c44e885ac316875865e96
+msgid "pygrt.pygrn"
+msgstr ""
+
+#: f3b8c6e05736417ab689a218695f64ec of pygrt.pygrn
+msgid "file"
+msgstr ""
+
+#: 16985e4fd6f6497eb34fcfddc1c84098 of pygrt.pygrn:1
+msgid "pygrn.py"
+msgstr ""
+
+#: 9ab8b226c3ce4a958f1d5e6c42d7c7df of pygrt.pygrn
+msgid "author"
+msgstr ""
+
+#: 282565e5095147a1a73c149bae45c079 of pygrt.pygrn:2
+msgid "Zhu Dengda (zhudengda@mail.iggcas.ac.cn)"
+msgstr ""
+
+#: 4dfb82bc0026404f9a3b51a236b15474 of pygrt.pygrn
+msgid "date"
+msgstr ""
+
+#: 42efb523b2a2486a9d6ff63004d9377f of pygrt.pygrn:3
+msgid "2024-07-24"
+msgstr ""
+
+#: e5b81239c94c457a83d9c4cd6c592b9c of pygrt.pygrn:5
+msgid "该文件包括 Python端使用的格林函数 :class:`pygrt.pygrn.PyGreenFunction`"
+msgstr ""
+
+#: a8501fb127b149adab26e3330ea426fe of pygrt.pygrn.PyGreenFunction:1
+msgid "基类：:py:class:`object`"
+msgstr ""
+
+#: 51440fae77c8462099e4937e53b6f7fe of pygrt.pygrn.PyGreenFunction.__init__:1
+msgid "Python端使用的格林函数类，包括和C库计算得到的 :class:`c_GRN` 结构体数据作对接"
+msgstr ""
+
+#: ../../source/API/pygrt/pygrn.rst a6cc55e7d0fc4078b24ab3edafdaa6a1
+#: b59b19166a9c456e849282a9683498f1 d9cc4c43d45e45f5b342c664c959e1cc
+msgid "参数"
+msgstr ""
+
+#: 69e53c36433b490faf4b129096d13db7 of pygrt.pygrn.PyGreenFunction.__init__:3
+msgid "格林函数名称，震源类型(EX,VF,HF,DD,DS,SS)+三分量(Z,R,T)"
+msgstr ""
+
+#: 7b70cc91360d4915a7b92ee32dc514d1 of pygrt.pygrn.PyGreenFunction.__init__:4
+msgid "时间点数"
+msgstr ""
+
+#: 32c3f5844d4e481d9e935e769a332fd3 of pygrt.pygrn.PyGreenFunction.__init__:5
+msgid "采样间隔(s)"
+msgstr ""
+
+#: 2afe5e7a3e6f4dc3a4d710c8fccfe5d3 of pygrt.pygrn.PyGreenFunction.__init__:6
+msgid "频率数组(Hz)"
+msgstr ""
+
+#: fb922c2048aa43218a1db4c76e2ffe89 of pygrt.pygrn.PyGreenFunction.__init__:7
+msgid "定义虚频率，omega = w - j*wI, wI = wI"
+msgstr ""
+
+#: 432ebd6e61f14aaab4a6b4249d2cda4c of pygrt.pygrn.PyGreenFunction.__init__:8
+msgid "震中距(km)"
+msgstr ""
+
+#: 48fe244a230642a3878f0bcc11a22b28 of pygrt.pygrn.PyGreenFunction.__init__:9
+msgid "震源深度(km)"
+msgstr ""
+
+#: 42535685b05b468ba7af7f7d227fc841 of pygrt.pygrn.PyGreenFunction.__init__:10
+msgid "台站深度(km)"
+msgstr ""
+
+#: 0b86ab3ee061483a930ad40c7389d997 of
+#: pygrt.pygrn.PyGreenFunction.fill_grn_cmplx_numpy:1
+msgid "以numpy.ndarray的形式整理复数数组"
+msgstr ""
+
+#: 170d0a3c7740481fb1d0795253f659cb of
+#: pygrt.pygrn.PyGreenFunction.fill_grn_cmplx_numpy:3
+msgid "将最终结果乘上系数mult"
+msgstr ""
+
+#: ../../source/API/pygrt/pygrn.rst c8af659827284a45a68a5c5990d53c5f
+#: cb3be221678341fa88b4c65d56724fd9
+msgid "返回"
+msgstr ""
+
+#: 29197a9ce75a48b5b111cce6cfedb4df of
+#: pygrt.pygrn.PyGreenFunction.fill_grn_cmplx_numpy:5
+msgid "- **self** -       整理好数据的实例本身"
+msgstr ""
+
+#: e6bb6d77981549168f20c10fde9202f9 of
+#: pygrt.pygrn.PyGreenFunction.fill_grn_cmplx_numpy:6
+msgid "**self** -       整理好数据的实例本身"
+msgstr ""
+
+#: 8b6eacd6f4e342bfbbefff9dc32b08e2 of
+#: pygrt.pygrn.PyGreenFunction.plot_response:1
+msgid "绘制频率响应图，包括幅度响应和相位响应"
+msgstr ""
+
+#: 68095be71bcc4019b5dad609d2c38083 of pygrt.pygrn.PyGreenFunction.freq2time:1
+msgid "将格林函数从频域转为时域，以 :class:`obspy.Trace` 的形式返回"
+msgstr ""
+
+#: 70bc36616d074b189fbe5963e17cfdcb of pygrt.pygrn.PyGreenFunction.freq2time:3
+msgid "时域信号的起始时刻相对发震时刻的偏移量(s)，例如T0=5表示发震后5s开始记录波形"
+msgstr ""
+
+#: e5d75127e9ca4fe1be7c1942e391894b of pygrt.pygrn.PyGreenFunction.freq2time:5
+msgid "- **tr**:      :class:`obspy.Trace` 类型的格林函数时间序列"
+msgstr ""
+
+#: e7ab57fdd85942c7bf90470c2dd248f5 of pygrt.pygrn.PyGreenFunction.freq2time:6
+msgid "**tr**:      :class:`obspy.Trace` 类型的格林函数时间序列"
+msgstr ""
+

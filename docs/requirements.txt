@@ -2,6 +2,7 @@ breathe
 commonmark
 recommonmark
 sphinx
+sphinx-intl
 sphinx-rtd-theme
 sphinx-copybutton
 sphinx_markdown_tables

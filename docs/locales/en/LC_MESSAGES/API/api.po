@@ -1,0 +1,41 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2025, Zhu Dengda
+# This file is distributed under the same license as the PyGRT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.16.0\n"
+
+#: ../../source/API/api.rst:2 7abc91b4ae5d4cd0a51c3bd90d6e6521
+msgid "Application Programming Interface"
+msgstr ""
+
+#: ../../source/API/api.rst 670a8aa99daf42edb471cceaca2c7d68
+msgid "Author"
+msgstr ""
+
+#: ../../source/API/api.rst:4 62129516dcf44320b6545c63f5ce2e46
+msgid "Zhu Dengda"
+msgstr ""
+
+#: ../../source/API/api.rst b0a304df385e4fee892e3c4c58012020
+msgid "Email"
+msgstr ""
+
+#: ../../source/API/api.rst:5 4f2222f561274c01909b783b1259c8c2
+msgid "zhudengda@mail.iggcas.ac.cn"
+msgstr ""
+

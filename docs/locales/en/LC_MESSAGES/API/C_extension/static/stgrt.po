@@ -1,0 +1,36 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2025, Zhu Dengda
+# This file is distributed under the same license as the PyGRT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.16.0\n"
+
+#: ../../source/API/C_extension/static/stgrt.rst:2
+#: 2eb911ae24084926b04b5b66b8e4b4fd
+msgid "stgrt.h"
+msgstr ""
+
+#: ../../source/API/C_extension/static/stgrt.rst
+#: a6b1d6d90c5c4a0fa106e54b720a6795
+msgid "Functions"
+msgstr ""
+
+#: ../../source/API/C_extension/static/stgrt.rst
+#: 3e753bf44a11437bb7b6268e74bee09d
+msgid "参数"
+msgstr ""
+

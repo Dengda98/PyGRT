@@ -1,0 +1,246 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2025, Zhu Dengda
+# This file is distributed under the same license as the PyGRT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.16.0\n"
+
+#: ../../source/API/pygrt/pymod.rst:2 e7f536d1cdc5400aaeba9c86e466cff8
+msgid "pygrt.pymod"
+msgstr ""
+
+#: d2cf7b15f9e44dee8721a6af70e75483 of pygrt.pymod
+msgid "file"
+msgstr ""
+
+#: e48998aaa5cf47d7a101f9e458162c85 of pygrt.pymod:1
+msgid "pymod.py"
+msgstr ""
+
+#: 640745858728437fb6f5ab3aa3929182 of pygrt.pymod
+msgid "author"
+msgstr ""
+
+#: afc6df31e67140679fc5b67b58ae00bc of pygrt.pymod:2
+msgid "Zhu Dengda (zhudengda@mail.iggcas.ac.cn)"
+msgstr ""
+
+#: 11fb51b9ee0c4f078ca6a1b63701d222 of pygrt.pymod
+msgid "date"
+msgstr ""
+
+#: 4e39b8b5ad994f2dab023e149e0ba292 of pygrt.pymod:3
+msgid "2024-07-24"
+msgstr ""
+
+#: 3e7fbcc8549849f2b89fc86a90eab68a of pygrt.pymod:5
+msgid "该文件包括 Python端使用的模型 :class:`pygrt.c_structures.c_PyModel1D`"
+msgstr ""
+
+#: 331b0b16fe5d4d5f94f353f43082ff5a of pygrt.pymod.PyModel1D:1
+msgid "基类：:py:class:`object`"
+msgstr ""
+
+#: ae7e9088fb364b148dfebe026482b6e9 of pygrt.pymod.PyModel1D.__init__:1
+msgid "将震源和台站插入定义模型的数组，转为 :class:`PyModel1D <pygrt.pymod.PyModel1D>` 实例的形式"
+msgstr ""
+
+#: ../../source/API/pygrt/pymod.rst 0a98fdb3c16b497da0f687d3baf06aad
+#: 1da3649d15a7433c8e8b1744fc871cc2 5d93bd28ae8c43e4ba80c2548c1e0433
+#: cdb83ff2437f4321b89728007b838e7c
+msgid "参数"
+msgstr ""
+
+#: 77509f5037c340e194089af5761d060e of pygrt.pymod.PyModel1D.__init__:3
+msgid "模型数组，每行格式为[thickness(km), Vp(km/s), Vs(km/s), Rho(g/cm^3), Qp, Qs]"
+msgstr ""
+
+#: 40a38b18b20e4ec3a8133696c9c05002 of pygrt.pymod.PyModel1D.__init__:4
+msgid "震源深度(km)"
+msgstr ""
+
+#: 9351cc4b254d43a69695160514d4d1af of pygrt.pymod.PyModel1D.__init__:5
+msgid "台站深度(km)"
+msgstr ""
+
+#: 5c7e1f5e771640fcab40fe61edbef89a of pygrt.pymod.PyModel1D.compute_travt1d:1
+msgid "调用C程序，计算初至P波和S波的走时"
+msgstr ""
+
+#: 4a32b8c26a1e4c35a17f38e2daa15fc9 of pygrt.pymod.PyModel1D.compute_travt1d:3
+msgid "震中距"
+msgstr ""
+
+#: ../../source/API/pygrt/pymod.rst 149aa9295992445182ff1313d0acc72e
+#: 8b65feb514004a3c87d87fa3b21cc025 f8c57f6c9d264ea0a1ade018261c17b0
+msgid "返回"
+msgstr ""
+
+#: fa4b5d7a42f348479866be1bae7187e1 of pygrt.pymod.PyModel1D.compute_travt1d:5
+msgid "- **travtP**  -  初至P波走时(s) - **travtS**  -  初至S波走时(s)"
+msgstr ""
+
+#: aa81b56bab764ef0a7851771edcf6dca of pygrt.pymod.PyModel1D.compute_travt1d:6
+msgid "**travtP**  -  初至P波走时(s)"
+msgstr ""
+
+#: cbd346d45afc4d8b803a2dc87ac5d854 of pygrt.pymod.PyModel1D.compute_travt1d:7
+msgid "**travtS**  -  初至S波走时(s)"
+msgstr ""
+
+#: f5b4a2c40dfd491a9cebd69488771437 of pygrt.pymod.PyModel1D.gen_gf_spectra:1
+msgid "Bad function name, has already been removed. Use 'compute_grn' instead."
+msgstr ""
+
+#: 2b08516abb714e4d8065642466c2a924 of pygrt.pymod.PyModel1D.compute_grn:1
+msgid "调用C库计算格林函数的主函数，以列表的形式返回，其中每个元素为对应震中距的格林函数 :class:`obspy.Stream` 类型。"
+msgstr ""
+
+#: c8b04ff304dd422f86dde7bf6d075fcf of pygrt.pymod.PyModel1D.compute_grn:4
+msgid "多个震中距(km) 的数组, 或单个震中距的浮点数"
+msgstr ""
+
+#: fbe2f056d603491fa2c82fbf0cb77197 of pygrt.pymod.PyModel1D.compute_grn:5
+msgid "时间点数，借助于 `SciPy`，nt不再要求是2的幂次"
+msgstr ""
+
+#: a18435b35d274f7ba80b19279240e871 of pygrt.pymod.PyModel1D.compute_grn:6
+msgid "采样间隔(s)"
+msgstr ""
+
+#: 9ca52cf2b1414df2b871e5acb00d185f of pygrt.pymod.PyModel1D.compute_grn:7
+msgid "频率范围(Hz)，以此确定待计算的离散频率点"
+msgstr ""
+
+#: 1bfa1f6b33ec4d4a913474b43b8da539 of pygrt.pymod.PyModel1D.compute_grn:8
+msgid ""
+"定义虚频率的系数 :math:`\\zeta` ， 虚频率 :math:`\\tilde{\\omega} = \\omega - j*w_I, "
+"w_I = \\zeta*\\pi/T, T=nt*dt` , T为时窗长度。 使用离散波数积分时为了避开附加源以及奇点的影响， "
+":ref:`(Bouchon, 1981) <bouchon_1981>`  在频率上添加微小虚部， 更多测试见 :ref:`(张海明, "
+"2021) <zhang_book_2021>`"
+msgstr ""
+
+#: e5f11f8a05774f22b32a4899c93cfdb0 of pygrt.pymod.PyModel1D.compute_grn:11
+msgid ""
+"最小参考速度，默认vmin=max(minimum velocity, 0.1)，用于定义波数积分上限，小于0则在达到积分上限后使用峰谷平均法 "
+"（默认当震源和场点深度差<=1km时自动使用峰谷平均法）"
+msgstr ""
+
+#: 27a9589f54d7425eb318d1b46621c7cb 43abf89846b44514b42e8bb73dc9302c of
+#: pygrt.pymod.PyModel1D.compute_grn:13
+#: pygrt.pymod.PyModel1D.compute_static_grn:7
+msgid ""
+"波数k积分收敛条件，见 :ref:`(Yao and Harkrider, 1983) <yao&harkrider_1983>`  "
+":ref:`(初稿) <yao_init_manuscripts>`， 为负数代表不提前判断收敛，按照波数积分上限进行积分"
+msgstr ""
+
+#: 17e75148fc624d618fad8364d219de85 of pygrt.pymod.PyModel1D.compute_grn:15
+msgid "影响波数k积分上限的系数，见下方"
+msgstr ""
+
+#: 1350d07980ca4734b40e56d20da115c6 of pygrt.pymod.PyModel1D.compute_grn:16
+msgid "k0是否取随频率变化的线性关系，即 :math:`k_{0} = k_{0} * f/f_{max}`"
+msgstr ""
+
+#: 9e6874d747704651890c920d659f049f of pygrt.pymod.PyModel1D.compute_grn:17
+msgid ""
+"波数k积分的上限 :math:`\\tilde{k_{max}}=\\sqrt{(k_{0}*\\pi/hs)^2 + "
+"(ampk*w/vmin_{ref})^2}` , 波数k积分循环必须退出, hs=max(震源和台站深度差,1.0)"
+msgstr ""
+
+#: 7426d4a6c5af4eb4b8756204699566d6 of pygrt.pymod.PyModel1D.compute_grn:18
+msgid ""
+"定义波数k积分的间隔 `dk=2\\pi / (L*rmax)`, 选取要求见 :ref:`(Bouchon, 1981) "
+"<bouchon_1981>` :ref:`(张海明, 2021) <zhang_book_2021>`，默认自动选择；负数表示使用Filon积分"
+msgstr ""
+
+#: 045e634ca0a7423687535bc8b654523a e0018772dc744e699a1d7dbeae34efda of
+#: pygrt.pymod.PyModel1D.compute_grn:20
+#: pygrt.pymod.PyModel1D.compute_static_grn:11
+msgid "是否计算位移u的空间导数"
+msgstr ""
+
+#: 08949045de834c17acd4bb55cb1bd1fc of pygrt.pymod.PyModel1D.compute_grn:21
+msgid "待计算的震源类型"
+msgstr ""
+
+#: 32a62d7b90b94283a227a9c76ba47d3c bd875cbef392452e8a00798a4f52ec6d of
+#: pygrt.pymod.PyModel1D.compute_grn:22
+#: pygrt.pymod.PyModel1D.compute_static_grn:12
+msgid ""
+"波数k积分（包括Filon积分和峰谷平均法）的过程记录文件，常用于debug或者观察积分过程中 :math:`F(k,\\omega)` 和  "
+":math:`F(k,\\omega)J_m(kr)k` 的变化"
+msgstr ""
+
+#: 8ab5ecb838aa471da78fd27e5a42d7fe of pygrt.pymod.PyModel1D.compute_grn:23
+msgid "仅输出特定频点的过程记录文件，建议给定频点，否则默认所有频率点的记录文件都输出，很占空间"
+msgstr ""
+
+#: aac60757a20040e4b67b6aa5c0ed89a8 of pygrt.pymod.PyModel1D.compute_grn:24
+msgid "是否打印运行时间"
+msgstr ""
+
+#: 5fd8535c91be4135a824e6b314cbe26f of pygrt.pymod.PyModel1D.compute_grn:26
+msgid "- **dataLst** -   列表，每个元素为 :class:`obspy.Stream` 类型 )"
+msgstr ""
+
+#: de8834e0f4214c16a5f19eae3a59ff11 of pygrt.pymod.PyModel1D.compute_grn:27
+msgid "**dataLst** -   列表，每个元素为 :class:`obspy.Stream` 类型 )"
+msgstr ""
+
+#: c0c9b83e636e4fc384e5740ef78c6f7f of
+#: pygrt.pymod.PyModel1D.compute_static_grn:1
+msgid "调用C库计算静态格林函数，以字典的形式返回"
+msgstr ""
+
+#: b8e5bf8baa8a4df78c1ec794c42c17e4 of
+#: pygrt.pymod.PyModel1D.compute_static_grn:3
+msgid "北向坐标数组，或单个浮点数"
+msgstr ""
+
+#: d82953a85d714e7e8402b03d46638d16 of
+#: pygrt.pymod.PyModel1D.compute_static_grn:4
+msgid "东向坐标数组，或单个浮点数"
+msgstr ""
+
+#: 2ff74aa09f724018843974fce9903024 of
+#: pygrt.pymod.PyModel1D.compute_static_grn:5
+msgid "最小参考速度（具体数值不使用），小于0则在达到积分上限后使用峰谷平均法 （默认当震源和场点深度差<=0.5km时自动使用峰谷平均法）"
+msgstr ""
+
+#: 8cb8d8ff8bd6496396e8715ae1f5e3c8 of
+#: pygrt.pymod.PyModel1D.compute_static_grn:9
+msgid ""
+"波数k积分的上限 :math:`\\tilde{k_{max}}=(k_{0}*\\pi/hs)^2` , 波数k积分循环必须退出, "
+"hs=max(震源和台站深度差,1.0)"
+msgstr ""
+
+#: 31eab48150c94007839618d261e838c0 of
+#: pygrt.pymod.PyModel1D.compute_static_grn:10
+msgid "定义波数k积分的间隔 `dk=2\\pi / (L*rmax)`, 默认15；负数表示使用Filon积分"
+msgstr ""
+
+#: 1eb33958b8284ca9baa98bdf080778c8 of
+#: pygrt.pymod.PyModel1D.compute_static_grn:14
+msgid "- **dataDct** -   字典形式的格林函数"
+msgstr ""
+
+#: 3badb466d43d4ce6872226bf3d434822 of
+#: pygrt.pymod.PyModel1D.compute_static_grn:15
+msgid "**dataDct** -   字典形式的格林函数"
+msgstr ""
+

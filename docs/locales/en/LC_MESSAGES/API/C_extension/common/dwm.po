@@ -1,0 +1,38 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2025, Zhu Dengda
+# This file is distributed under the same license as the PyGRT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.16.0\n"
+
+#: ../../source/API/C_extension/common/dwm.rst:2
+#: 97ffb9698c354a498a81447cd9782d99
+msgid "dwm.h"
+msgstr ""
+
+#: ../../source/API/C_extension/common/dwm.rst 063a8d193c0642be808bc594ff188c25
+msgid "Functions"
+msgstr ""
+
+#: ../../source/API/C_extension/common/dwm.rst e830564cd48548dba988ec10e9c17eb9
+msgid "参数"
+msgstr ""
+
+#: ../../source/API/C_extension/common/dwm.rst f94f2a07d8ea47a48c159ea9d102533e
+msgid "返回"
+msgstr ""
+

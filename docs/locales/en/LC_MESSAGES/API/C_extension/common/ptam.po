@@ -1,0 +1,47 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2025, Zhu Dengda
+# This file is distributed under the same license as the PyGRT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.16.0\n"
+
+#: ../../source/API/C_extension/common/ptam.rst:2
+#: 8c2db2c3c7344a59ab4263002792a311
+msgid "ptam.h"
+msgstr ""
+
+#: ../../source/API/C_extension/common/ptam.rst
+#: 513ae3f0daee41ad810c5f0820b743f9
+msgid "Defines"
+msgstr ""
+
+#: ../../source/API/C_extension/common/ptam.rst
+#: 187269ad75ca440d9f321afaba582d36
+msgid "Functions"
+msgstr ""
+
+#: ../../source/API/C_extension/common/ptam.rst
+#: 7fc4f1fe41bc473f9f00507d6ae0798a a304cb6d2535418a8cc11efce4790553
+#: c0cf6f45fea54402913b32a579ead583
+msgid "参数"
+msgstr ""
+
+#: ../../source/API/C_extension/common/ptam.rst
+#: 1a1048cf8d0a4562bd9b36db3ea8fae0
+msgid "返回"
+msgstr ""
+

@@ -1,0 +1,210 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2025, Zhu Dengda
+# This file is distributed under the same license as the PyGRT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.16.0\n"
+
+#: ../../source/API/pygrt/c_structures.rst:2 0767e69a63ba449286e76b7a2181b88a
+msgid "pygrt.c_structures"
+msgstr ""
+
+#: f625debcf928481baefdd851b7e377be of pygrt.c_structures
+msgid "file"
+msgstr ""
+
+#: cb340b06f33e433483e4ed29e33e472a of pygrt.c_structures:1
+msgid "c_structures.py"
+msgstr ""
+
+#: 7b152176aed2440d928964b5d33e69b2 of pygrt.c_structures
+msgid "author"
+msgstr ""
+
+#: 699dfc3374bd4ca386f2b36f9173248d of pygrt.c_structures:2
+msgid "Zhu Dengda (zhudengda@mail.iggcas.ac.cn)"
+msgstr ""
+
+#: 23081209834d494ebeb2c4350a365ef5 of pygrt.c_structures
+msgid "date"
+msgstr ""
+
+#: 4d496799cb67414dbaa4028b1c8a6d37 of pygrt.c_structures:3
+msgid "2024-07-24"
+msgstr ""
+
+#: 5df5fdebd02e49f4892afdfc0dc9eb24 of pygrt.c_structures:6
+msgid "该文件包括"
+msgstr ""
+
+#: b4dc1551d9f34d55abcef293a6bb0f3e of pygrt.c_structures:6
+msgid "1、模型结构体的C接口 c_PyModel1D 2、格林函数结构体的C接口 c_GRN"
+msgstr ""
+
+#: 0cb833b971394b8fbce6f3f2a4ee3934 a3f995397a2e4972a2c3c974680c4924 of
+#: pygrt.c_structures.c_GRN:1 pygrt.c_structures.c_PyModel1D:1
+msgid "基类：:py:class:`~_ctypes.Structure`"
+msgstr ""
+
+#: a8b1d26a5b994e3c94d5ddea15a9dbda of pygrt.c_structures.c_PyModel1D:1
+msgid "和C结构体PYMODEL1D作匹配"
+msgstr ""
+
+#: 34ca3ff9b9d740268f13a7bebf391a3c of pygrt.c_structures.c_PyModel1D
+msgid "field n"
+msgstr ""
+
+#: e0e1939fdb2a40a088bb79bd4001c67e of pygrt.c_structures.c_PyModel1D:3
+msgid "层数"
+msgstr ""
+
+#: 6097f127304e470b8697ef1c5dbc54a6 of pygrt.c_structures.c_PyModel1D
+msgid "filed depsrc"
+msgstr ""
+
+#: 6af3b0e52e7b4f8ea9c1d8ea7cb56554 of pygrt.c_structures.c_PyModel1D:4
+msgid "震源深度 km"
+msgstr ""
+
+#: bd80a9b1ddda4c638806132bc96e24f0 of pygrt.c_structures.c_PyModel1D
+msgid "filed deprcv"
+msgstr ""
+
+#: dfaefbc85eb848309aeea9bd12f69e33 of pygrt.c_structures.c_PyModel1D:5
+msgid "接收点深度 km"
+msgstr ""
+
+#: c867def132894191b7599166e255ad58 of pygrt.c_structures.c_PyModel1D
+msgid "field isrc"
+msgstr ""
+
+#: d92352993dbf4a25b8c02f6c356daf8b of pygrt.c_structures.c_PyModel1D:6
+msgid "震源所在层位"
+msgstr ""
+
+#: b05fdc874a3541138ccd4e3d0ff64fbb of pygrt.c_structures.c_PyModel1D
+msgid "field ircv"
+msgstr ""
+
+#: 6f1116ff67ae46959875360b919cce47 of pygrt.c_structures.c_PyModel1D:7
+msgid "台站所在层位"
+msgstr ""
+
+#: a8159a07dd3440798520bf671495cbf3 of pygrt.c_structures.c_PyModel1D
+msgid "field ircvup"
+msgstr ""
+
+#: 6dc27f1f9d8b46518a80769ce187c633 of pygrt.c_structures.c_PyModel1D:8
+msgid "台站层位是否高于震源"
+msgstr ""
+
+#: 66dfa444313045578d5b2c230eb3c5b1 of pygrt.c_structures.c_PyModel1D
+msgid "field thk"
+msgstr ""
+
+#: de647f3fab044d0aaf3301dea8220144 of pygrt.c_structures.c_PyModel1D:9
+msgid "数组, 每层层厚(km)"
+msgstr ""
+
+#: 5b3d218a8bd84915a0d7bee237295ca7 of pygrt.c_structures.c_PyModel1D
+msgid "field Va"
+msgstr ""
+
+#: 657c864d5bcf48bc85046e437ff541a0 of pygrt.c_structures.c_PyModel1D:10
+msgid "数组, 每层P波速度(km/s)"
+msgstr ""
+
+#: 8b4c52e85ab44e338131b06ebcf728a0 of pygrt.c_structures.c_PyModel1D
+msgid "field Vb"
+msgstr ""
+
+#: 513dc1dd870d42dba313c0da77875c20 of pygrt.c_structures.c_PyModel1D:11
+msgid "数组, 每层S波速度(km/s)"
+msgstr ""
+
+#: 2aef02276b044897ae2cd00993327eb0 of pygrt.c_structures.c_PyModel1D
+msgid "field Rho"
+msgstr ""
+
+#: 6e9f4ce025204b36a7fda17359ef8534 of pygrt.c_structures.c_PyModel1D:12
+msgid "数组, 每层密度(g/cm^3)"
+msgstr ""
+
+#: 7124d49feb664c9882756be9435a37fa of pygrt.c_structures.c_PyModel1D
+msgid "field Qa"
+msgstr ""
+
+#: 96fcbadec96149d2a25e4358bcea6f18 of pygrt.c_structures.c_PyModel1D:13
+msgid "数组, 每层P波品质因子Q_P"
+msgstr ""
+
+#: 94bdb40e142f4bfe9f37bc30b582b7e4 of pygrt.c_structures.c_PyModel1D
+msgid "field Qb"
+msgstr ""
+
+#: f6902e6d8b764c2aa9b8dabc538f205e of pygrt.c_structures.c_PyModel1D:14
+msgid "数组, 每层S波品质因子Q_S"
+msgstr ""
+
+#: ../../docstring 0650583e9c37401498d0e3103e9cba2e
+#: 0da91f4c94604a219a70064c8175f886 2e17782f73024a4bb05be51121d76bbc
+#: 4814b967051b4465bd34f2801618a00f 6d24ac5928cf4df58c7dac80ed3d5fab
+#: 7382b49a5b974a2cb9e8b606da21bca9 857e1fe697334efd9b4362232152791c
+#: 8d3f87733e31481c8921343d7e6886c0 8ef68e1991c9406c8e4bbd6247088b18
+#: a20cbb295a624e25b856e71dba363e3b c159019efae449519057831aaec12fe1
+#: d29221a4ac254b37be6eb806e6d4bb9e e310b3d05aa04177bd0f3f2fac71f2d4
+#: f57503eb7166497a82a12944571d9087 fd8dac208e69414ea1c8591b2e43dd02 of
+#: pygrt.c_structures.c_GRN.Im:1 pygrt.c_structures.c_GRN.Re:1
+#: pygrt.c_structures.c_GRN.nf:1 pygrt.c_structures.c_PyModel1D.Qa:1
+#: pygrt.c_structures.c_PyModel1D.Qb:1 pygrt.c_structures.c_PyModel1D.Rho:1
+#: pygrt.c_structures.c_PyModel1D.Thk:1 pygrt.c_structures.c_PyModel1D.Va:1
+#: pygrt.c_structures.c_PyModel1D.Vb:1 pygrt.c_structures.c_PyModel1D.deprcv:1
+#: pygrt.c_structures.c_PyModel1D.depsrc:1
+#: pygrt.c_structures.c_PyModel1D.ircv:1
+#: pygrt.c_structures.c_PyModel1D.ircvup:1
+#: pygrt.c_structures.c_PyModel1D.isrc:1 pygrt.c_structures.c_PyModel1D.n:1
+msgid "Structure/Union member"
+msgstr ""
+
+#: b3185042c9634330bd9910e4f49bf05c of pygrt.c_structures.c_GRN:1
+msgid "和C结构体GRN作匹配"
+msgstr ""
+
+#: 844211e16ba1496996dd14c3c194c85b of pygrt.c_structures.c_GRN
+msgid "field nf"
+msgstr ""
+
+#: 36cbc079f337455c943301649960eed1 of pygrt.c_structures.c_GRN:3
+msgid "频率点数"
+msgstr ""
+
+#: ec86790f0e824564a7cc8d8727b68c95 of pygrt.c_structures.c_GRN
+msgid "field Re"
+msgstr ""
+
+#: 3bb5efd27dd240abafd9af29c9836b98 of pygrt.c_structures.c_GRN:4
+msgid "频谱实部"
+msgstr ""
+
+#: a268ad0b582749f880f8902fcd550993 of pygrt.c_structures.c_GRN
+msgid "field Im"
+msgstr ""
+
+#: 8c35a9197e734890b27cabbfd21a75f1 of pygrt.c_structures.c_GRN:5
+msgid "频谱虚部"
+msgstr ""
+

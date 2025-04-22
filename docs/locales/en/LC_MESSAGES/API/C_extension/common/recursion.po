@@ -1,0 +1,39 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2025, Zhu Dengda
+# This file is distributed under the same license as the PyGRT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.16.0\n"
+
+#: ../../source/API/C_extension/common/recursion.rst:2
+#: a88c6e433e6d49408a2853a204f82aed
+msgid "recursion.h"
+msgstr ""
+
+#: ../../source/API/C_extension/common/recursion.rst
+#: ddb8ffbf91ae482a941cdfe9ebec2937
+msgid "Functions"
+msgstr ""
+
+#: ../../source/API/C_extension/common/recursion.rst
+#: 9f3595a7eee640fc8b3946b06f5d2def a85f9438e3954e53b67f0d95eafdd9d2
+#: bed37774600e427aa047f9e6e52818bb dacdbbabe6e74212b4f9d28d251f5a98
+#: ebc66f8634654faea722142559cb1e05 f4625a2a5ee344e7bfeac958d99151d7
+#: fc22ed367a97485cbecbbe3c17629131
+msgid "参数"
+msgstr ""
+
