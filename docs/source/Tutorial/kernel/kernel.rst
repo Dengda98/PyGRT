@@ -1,5 +1,5 @@
-核函数频谱图 
-=============
+核函数 :math:`f-v` 谱图 
+=========================
 
 :Author: Zhu Dengda
 :Email:  zhudengda@mail.iggcas.ac.cn
@@ -7,7 +7,7 @@
 
 -----------------------------------------------------------
 
-在 :ref:`integ_converg_rst` 部分介绍了程序可以导出积分过程中不同频率的核函数值，这使得我们可以绘制核函数的频谱图 [#]_ ，以观察其中的频散特征 。
+在 :ref:`integ_converg_rst` 部分介绍了程序可以导出积分过程中不同频率的核函数值，这使得我们可以绘制核函数的 :math:`f-v` 谱图 [#]_ ，以观察其中的频散特征 。
 
 以薄层模型为例，
 
@@ -43,17 +43,17 @@
             :end-before: END GRN
 
 
-读取，采样，获得核函数频谱
+读取，插值，获得 :math:`f-v` 谱
 ----------------------------------
-Python端提供了 :py:func:`pygrt.utils.read_kernels_freqs` 函数来完成所有频率的核函数读取以及从波数 ``k`` 插值到特定速度点 ``v`` 的工作 ( :math:`v=\omega/k` )，最后获得保存有核函数频谱的字典。
+Python端提供了 :py:func:`pygrt.utils.read_kernels_freqs` 函数来完成所有频率的核函数读取以及从波数 ``k`` 插值到特定速度点 ``v`` 的工作 ( :math:`v=\omega/k` )，最后获得保存有核函数的 :math:`f-v` 谱的字典。
 
 .. literalinclude:: run/run.py
     :language: python
     :start-after: BEGIN read
     :end-before: END read
 
-绘制核函数频谱图
-------------------------
+绘制核函数 :math:`f-v` 谱图
+----------------------------------
 以下将使用Python进行图件绘制。
 
 .. literalinclude:: run/run.py
@@ -79,6 +79,6 @@ Python端提供了 :py:func:`pygrt.utils.read_kernels_freqs` 函数来完成所�
 ----------------------------------
 
 
-从图上可看到， **核函数频谱的虚部峰值正是频散曲线的位置** ，尽管其中不同震源的核函数幅值不同，但 :math:`q_m，w_m` 呈现的频散特征一致，这对应的是 **Rayleigh波频散** ，而 :math:`v_m` 对应的是 **Love波频散** 。
+从图上可看到， **核函数** :math:`f-v` **谱图的虚部峰值正是频散曲线的位置** ，尽管其中不同震源的核函数幅值不同，但 :math:`q_m，w_m` 呈现的频散特征一致，这对应的是 **Rayleigh波频散** ，而 :math:`v_m` 对应的是 **Love波频散** 。
 
 不同的震源场点深度、不同的虚频率都会导致幅值变化，积分间隔则会影响插值效果。
