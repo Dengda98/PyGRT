@@ -46,7 +46,7 @@ void set_num_threads(int num_threads){
 void integ_grn_spec_in_C(
     PYMODEL1D *pymod1d, MYINT nf1, MYINT nf2, MYINT nf, MYREAL *freqs,  
     MYINT nr, MYREAL *rs, MYREAL wI, 
-    MYREAL vmin_ref, MYREAL keps, MYREAL ampk, bool iwk0, MYREAL k0, MYREAL Length,       
+    MYREAL vmin_ref, MYREAL keps, MYREAL ampk, MYREAL k0, MYREAL Length,       
     bool print_progressbar, 
 
     // 返回值，维度2代表Z、R分量，维度3代表Z、R、T分量
@@ -205,7 +205,7 @@ void integ_grn_spec_in_C(
     // 计算格林函数
     integ_grn_spec(
         pymod1d, nf1, nf2, nf, freqs, nr, rs, wI,
-        vmin_ref, keps, ampk, iwk0, k0, Length, print_progressbar,
+        vmin_ref, keps, ampk, k0, Length, print_progressbar,
         EXPgrn, VFgrn, HFgrn, DDgrn, DSgrn, SSgrn, 
         calc_upar,
         EXPgrn_uiz, VFgrn_uiz, HFgrn_uiz, DDgrn_uiz, DSgrn_uiz, SSgrn_uiz, 
@@ -477,7 +477,7 @@ static void recordin_GRN(
 void integ_grn_spec(
     PYMODEL1D *pymod1d, MYINT nf1, MYINT nf2, MYINT nf, MYREAL *freqs,  
     MYINT nr, MYREAL *rs, MYREAL wI, 
-    MYREAL vmin_ref, MYREAL keps, MYREAL ampk, bool iwk0, MYREAL k0, MYREAL Length,       
+    MYREAL vmin_ref, MYREAL keps, MYREAL ampk, MYREAL k0, MYREAL Length,       
     bool print_progressbar, 
 
     // 返回值，维度2代表Z、R分量，维度3代表Z、R、T分量
@@ -649,10 +649,8 @@ void integ_grn_spec(
 
 
         MYREAL kmax;
-        MYREAL ampk02 = RONE;
-        if(iwk0)  ampk02 = (w/wmax)*(w/wmax);
         // vmin_ref的正负性在这里不影响
-        kmax = SQRT(k02*ampk02 + ampk2*(w/vmin_ref)*(w/vmin_ref));
+        kmax = SQRT(k02 + ampk2*(w/vmin_ref)*(w/vmin_ref));
 
 
         if(Length > RZERO){

@@ -82,7 +82,6 @@ static double zeta=0.8, wI=0.0;
 static double Length=0.0;
 // 波数积分相关变量
 static double keps=-1.0, ampk=1.15, k0=5.0;
-bool iwk0=false;
 // 参考最小速度，小于0表示使用峰谷平均法;
 static double vmin_ref=0.0;
 static const double min_vmin_ref=0.1;
@@ -167,7 +166,7 @@ printf("\n"
 "    grt -M<model> -D<depsrc>/<deprcv> -N<nt>/<dt>[/<zeta>] \n"
 "        -R<r1>,<r2>[,...]    [-O<outdir>]    [-H<f1>/<f2>] \n"
 "        [-L<length>]    [-V<vmin_ref>]     [-E<t0>[/<v0>]] \n" 
-"        [-K<k0>[/<iwk0>/<ampk>/<keps>]]     [-P<nthreads>]\n"
+"        [-K<k0>[/<ampk>/<keps>]]            [-P<nthreads>]\n"
 "        [-G<b1>[/<b2>/<b3>/<b4>]] [-S<i1>,<i2>[,...]] [-e]\n"
 "        [-s]\n"
 "\n\n"
@@ -241,7 +240,7 @@ printf("\n"
 "                 <v0>: reference velocity (km/s), \n"
 "                       default %.1f not use.\n", delayV0); printf(
 "\n"
-"    -K<k0>[/<iwk0>/<ampk>/<keps>]\n"
+"    -K<k0>[/<ampk>/<keps>]\n"
 "                 Several parameters designed to define the\n"
 "                 behavior in wavenumber integration. The upper\n"
 "                 bound is \n"
@@ -251,11 +250,6 @@ printf("\n"
 "                         0 frequency, default is %.1f, and \n", k0); printf(
 "                         multiply PI/hs in program, \n"
 "                         where hs = max(fabs(depsrc-deprcv), %.1f).\n", MIN_DEPTH_GAP_SRC_RCV); printf(
-"                 <iwk0>: 0 or 1, designed to give a k0 \n"
-"                         varies linearly with frequeny, \n"
-"                         default %d not use. If set, mult will be \n", (int)iwk0); printf(
-"                         mult=f/fmax, fmax is the maximum\n"
-"                         frequency.\n"
 "                 <ampk>: amplification factor, default is %.2f.\n", ampk); printf(
 "                 <keps>: a threshold for break wavenumber \n"
 "                         integration in advance. See \n"
@@ -439,16 +433,14 @@ static void getopt_from_command(int argc, char **argv){
                 }
                 break;
 
-            // 波数积分相关变量 -Kk0/iwk0/ampk/keps
+            // 波数积分相关变量 -Kk0/ampk/keps
             case 'K':
                 K_flag = 1;
                 {
-                    int i=0;
-                    if(0 == sscanf(optarg, "%lf/%d/%lf/%lf", &k0, &i, &ampk, &keps)){
+                    if(0 == sscanf(optarg, "%lf/%lf/%lf", &k0, &ampk, &keps)){
                         fprintf(stderr, "[%s] " BOLD_RED "Error in -K.\n" DEFAULT_RESTORE, command);
                         exit(EXIT_FAILURE);
                     };
-                    iwk0 = (i!=0);
                 }
                 
                 if(k0 < 0.0){
@@ -770,7 +762,6 @@ static void print_parameters(){
     printf("| %-*s | %-*f |\n", nlen1-3, "tmax", nlen2-3, tmax);
     printf("| %-*s | %-*f |\n", nlen1-3, "k0", nlen2-3, k0);
     printf("| %-*s | %-*f |\n", nlen1-3, "ampk", nlen2-3, ampk);
-    printf("| %-*s | %-*s |\n", nlen1-3, "iwk0", nlen2-3, (iwk0 ? "true" : "false"));
     printf("| %-*s | %-*f |\n", nlen1-3, "keps", nlen2-3, keps);
     printf("| %-*s | %-*f |\n", nlen1-3, "maxfreq(Hz)", nlen2-3, freqs[nf-1]);
     printf("| %-*s | %-*f |\n", nlen1-3, "f1(Hz)", nlen2-3, freqs[nf1]);
@@ -1114,7 +1105,7 @@ int main(int argc, char **argv) {
     // 计算格林函数
     integ_grn_spec_in_C(
         pymod, nf1, nf2, nf, freqs, nr, rs, wI,
-        vmin_ref, keps, ampk, iwk0, k0, Length, !silenceInput,
+        vmin_ref, keps, ampk, k0, Length, !silenceInput,
         EXPcplx, VFcplx, HFcplx, DDcplx, DScplx, SScplx, 
         calc_upar, 
         EXPcplx_uiz, VFcplx_uiz, HFcplx_uiz, DDcplx_uiz, DScplx_uiz, SScplx_uiz, 

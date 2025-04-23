@@ -229,7 +229,6 @@ class PyModel1D:
         vmin_ref:float=0.0,
         keps:float=-1.0,  
         ampk:float=1.15,
-        iwk0:bool=False,
         k0:float=5.0, 
         Length:float=0.0, 
         delayT0:float=0.0,
@@ -257,7 +256,6 @@ class PyModel1D:
             :param    keps:          波数k积分收敛条件，见 :ref:`(Yao and Harkrider, 1983) <yao&harkrider_1983>`  :ref:`(初稿) <yao_init_manuscripts>`，
                                      为负数代表不提前判断收敛，按照波数积分上限进行积分
             :param    ampk:          影响波数k积分上限的系数，见下方
-            :param    iwk0:          k0是否取随频率变化的线性关系，即 :math:`k_{0} = k_{0} * f/f_{max}`
             :param    k0:            波数k积分的上限 :math:`\tilde{k_{max}}=\sqrt{(k_{0}*\pi/hs)^2 + (ampk*w/vmin_{ref})^2}` , 波数k积分循环必须退出, hs=max(震源和台站深度差,1.0)
             :param    Length:        定义波数k积分的间隔 `dk=2\pi / (L*rmax)`, 选取要求见 :ref:`(Bouchon, 1981) <bouchon_1981>` 
                                      :ref:`(张海明, 2021) <zhang_book_2021>`，默认自动选择；负数表示使用Filon积分
@@ -446,7 +444,6 @@ class PyModel1D:
             print(f"tmax={tmax}")
             print(f"k0={k0}")
             print(f"ampk={ampk}")
-            print(f"iwk0={iwk0}")
             print(f"keps={keps}")
             print(f"maxfreq(Hz)={freqs[nf-1]}")
             print(f"f1(Hz)={freqs[nf1]}")
@@ -466,7 +463,7 @@ class PyModel1D:
         #=================================================================================
         C_integ_grn_spec(
             self.c_pymod1d, nf1, nf2, nf, c_freqs, nrs, c_rs, wI, 
-            vmin_ref, keps, ampk, iwk0, k0, Length, print_runtime,
+            vmin_ref, keps, ampk, k0, Length, print_runtime,
             C_EXPgrn, C_VFgrn, C_HFgrn, C_DDgrn, C_DSgrn, C_SSgrn, 
             calc_upar, 
             C_EXPgrn_uiz, C_VFgrn_uiz, C_HFgrn_uiz, C_DDgrn_uiz, C_DSgrn_uiz, C_SSgrn_uiz, 
