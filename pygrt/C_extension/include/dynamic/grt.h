@@ -38,7 +38,6 @@ void set_num_threads(int num_threads);
  * @param      vmin_ref     (in)参考最小速度，用于定义波数积分的上限
  * @param      keps         (in)波数积分的收敛条件，要求在某震中距下所有格林函数都收敛，为负数代表不提前判断收敛，按照波数积分上限进行积分 
  * @param      ampk         (in)影响波数k积分上限的系数，见下方
- * @param      iwk0         (in)k0是否取随频率变化的线性关系，即 \f$ k_{max} = k_{max} * f/f_{max} \f$ 
  * @param      k0           (in)波数积分的上限 \f$ \tilde{k_{max}}=\sqrt{(k_{0}*\pi/hs)^2 + (ampk*w/vmin_{ref})^2} \f$ ，k循环必须退出, hs=max(震源和台站深度差,1.0) 
  * @param      Length       (in)波数k积分间隔 \f$ dk=2\pi/(fabs(L)*r_{max}) \f$ , 如果为负数，则使用线性Filon积分
  * @param      print_progressbar    (in)是否打印进度条
@@ -72,7 +71,7 @@ void set_num_threads(int num_threads);
 void integ_grn_spec_in_C(
     PYMODEL1D *pymod1d, MYINT nf1, MYINT nf2, MYINT nf, MYREAL *freqs,  
     MYINT nr, MYREAL *rs, MYREAL wI, 
-    MYREAL vmin_ref, MYREAL keps, MYREAL ampk, bool iwk0, MYREAL k0, MYREAL Length,       
+    MYREAL vmin_ref, MYREAL keps, MYREAL ampk, MYREAL k0, MYREAL Length,       
     bool print_progressbar, 
 
     // 返回值，维度2代表Z、R分量，维度3代表Z、R、T分量
@@ -117,7 +116,6 @@ void integ_grn_spec_in_C(
  * @param      vmin_ref     (in)参考最小速度，用于定义波数积分的上限
  * @param      keps         (in)波数积分的收敛条件，要求在某震中距下所有格林函数都收敛，为负数代表不提前判断收敛，按照波数积分上限进行积分 
  * @param      ampk         (in)影响波数k积分上限的系数，见下方
- * @param      iwk0         (in)k0是否取随频率变化的线性关系，即 \f$ k_{max} = k_{max} * f/f_{max} \f$ 
  * @param      k0           (in)波数积分的上限 \f$ \tilde{k_{max}}=\sqrt{(k_{0}*\pi/hs)^2 + (ampk*w/vmin_{ref})^2} \f$ ，k循环必须退出, hs=max(震源和台站深度差,1.0) 
  * @param      Length       (in)波数k积分间隔 \f$ dk=2\pi/(fabs(L)*r_{max}) \f$ , 如果为负数，则使用线性Filon积分
  * @param      print_progressbar    (in)是否打印进度条
@@ -150,7 +148,7 @@ void integ_grn_spec_in_C(
 void integ_grn_spec(
     PYMODEL1D *pymod1d, MYINT nf1, MYINT nf2, MYINT nf, MYREAL *freqs,  
     MYINT nr, MYREAL *rs, MYREAL wI, 
-    MYREAL vmin_ref, MYREAL keps, MYREAL ampk, bool iwk0, MYREAL k0, MYREAL Length,       
+    MYREAL vmin_ref, MYREAL keps, MYREAL ampk, MYREAL k0, MYREAL Length,       
     bool print_progressbar, 
 
     // 返回值，维度2代表Z、R分量，维度3代表Z、R、T分量
