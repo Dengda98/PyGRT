@@ -83,7 +83,7 @@ jobs:
           fi
 
           # 检查 C 版本与 Python 版本是否匹配
-          if [ "$C_VERSION" != "${PYTHON_VERSION%.*}" ]; then
+          if [ "$C_VERSION" != "$PYTHON_VERSION" ]; then
             echo "Error: Version mismatch between ${PYVERSION_FILE} (${PYTHON_VERSION}) and ${CVERSION_FILE} (${C_VERSION})"
             exit 1
           fi
