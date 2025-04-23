@@ -122,8 +122,9 @@ msgstr ""
 "Some basic information (including physical parameters of the source and "
 "field points) is stored in the SAC header variables, where :c:var:`t0` "
 "and :c:var:`t1` represent the arrival times of the first P-wave and "
-"S-wave, respectively. Since the program uses 0 as the reference time, "
-"they are equivalent to travel times."
+"S-wave, respectively. When no other parameters are set, the program uses "
+"0 (the origin time) as the reference time, so they are equivalent to "
+"travel times."
 
 #: ../../source/Tutorial/dynamic/gfunc.rst:46 56024a2dfccb495ca114e8850c8cfcd9
 msgid ":command:`grt.travt` 命令可以显式地再计算初至波走时，"

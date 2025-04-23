@@ -21,7 +21,7 @@ msgstr ""
 
 #: ../../source/Advanced/index.rst:2 d1c66ef87384434696f244d8b6ef22ec
 msgid "进阶教程"
-msgstr ""
+msgstr "Advanced Tutorial"
 
 #: ../../source/Advanced/index.rst 2c15e09c24da41c0bbaf822ea0dc632d
 msgid "Author"
@@ -41,5 +41,5 @@ msgstr ""
 
 #: ../../source/Advanced/index.rst:9 ad9b71e9809440c8b072f7a0dbfb2ee9
 msgid "以下介绍更多的细节控制及用法。"
-msgstr ""
+msgstr "The following introduces more detailed controls and usage."
 
