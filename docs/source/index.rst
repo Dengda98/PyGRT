@@ -71,6 +71,7 @@
   文档首页 <self>
   install
   Tutorial/index 
+  Advanced/index 
   API/api
   copyright
 

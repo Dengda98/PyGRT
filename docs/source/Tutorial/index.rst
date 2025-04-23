@@ -88,8 +88,6 @@
    static/static_syn
    dynamic/strain_stress
    static/static_strain_stress
-   integ_converg/integ_converg
-   kernel/kernel
 
 
 
