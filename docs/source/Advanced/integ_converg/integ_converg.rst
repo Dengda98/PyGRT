@@ -1,7 +1,7 @@
 .. _integ_converg_rst:
 
-积分收敛性
-===================
+积分收敛性与峰谷平均法
+===============================
 
 :Author: Zhu Dengda
 :Email:  zhudengda@mail.iggcas.ac.cn

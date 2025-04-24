@@ -114,7 +114,6 @@ msgstr ""
 ":rst:dir:`GRN/milrow_{depsrc}_{deprcv}_{dist}/`."
 
 #: ../../source/Tutorial/dynamic/gfunc.rst:44 b597d6560c994c0bbe1aee78d1648581
-#, fuzzy
 msgid ""
 "一些基本信息（包括源点和场点的物性参数）保存在SAC头段变量中，其中 :c:var:`t0` 和 :c:var:`t1` "
 "分别代表初至P波和初至S波的到时。在不设定其它参数时，程序中使用0（发震时刻）作为参考时间，故其等价于走时。"
@@ -210,22 +209,22 @@ msgstr ""
 "into solving the following integrals:"
 
 #: ../../source/Tutorial/dynamic/gfunc.rst:96 7b26addcbf9e47b99eec0ba68d561dc1
-msgid "P_m(\\omega) = \\int_0^\\infty F(k, \\omega)J_m(kr)kdk"
+msgid "P_m(\\omega) = \\int_0^\\infty F_m(k, \\omega)J_m(kr)kdk"
 msgstr ""
 
 #: ../../source/Tutorial/dynamic/gfunc.rst:100 93a7e16857954427acff5c4229f3eee3
 msgid ""
-"其中 :math:`F(k,\\omega)` 称为核函数，它是和介质属性相关的量，与震中距无关。我们可以使用离散波数积分法 "
+"其中 :math:`F_m(k,\\omega)` 称为核函数，它是和介质属性相关的量，与震中距无关。我们可以使用离散波数积分法 "
 ":ref:`(Bouchon, 1981) <bouchon_1981>` 将上式积分转变为求和:"
 msgstr ""
-"Here, :math:`F(k,\\omega)` is called the kernel function, which is "
+"Here, :math:`F_m(k,\\omega)` is called the kernel function, which is "
 "related to the medium properties and independent of the epicentral "
 "distance. We can use the discrete wavenumber integration method "
 ":ref:`(Bouchon, 1981) <bouchon_1981>` to transform the above integral "
 "into a summation:"
 
 #: ../../source/Tutorial/dynamic/gfunc.rst:102 1df6a1eece5342fcb3462ff4ae6bdc80
-msgid "P_m(\\omega) = \\Delta k \\sum_{j=0}^{\\infty} F(k_j,\\omega)J_m(k_j r)k_j"
+msgid "P_m(\\omega) = \\Delta k \\sum_{j=0}^{\\infty} F_m(k_j,\\omega)J_m(k_j r)k_j"
 msgstr ""
 
 #: ../../source/Tutorial/dynamic/gfunc.rst:106 3675493efafa44dca67e40b40714875d
@@ -379,10 +378,10 @@ msgstr ""
 
 #: ../../source/Tutorial/dynamic/gfunc.rst:186 fde71aca360f42bdbb33c2fa1bf8cb0f
 msgid ""
-"以上每个积分都形成 :math:`\\int_0^\\infty F(k, \\omega)J_m(kr)kdk` "
+"以上每个积分都形成 :math:`\\int_0^\\infty F_m(k, \\omega)J_m(kr)kdk` "
 "的形式，便可逐个使用离散波数积分（或Filon积分、峰谷平均法等）求解每个积分。"
 msgstr ""
-"Each of the above integrals takes the form :math:`\\int_0^\\infty F(k, "
+"Each of the above integrals takes the form :math:`\\int_0^\\infty F_m(k, "
 "\\omega)J_m(kr)kdk`, and each integral can be solved individually using "
 "discrete wavenumber integration (or Filon integration, peak-trough "
 "averaging method, etc.)."

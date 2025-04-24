@@ -46,7 +46,7 @@ void set_num_threads(int num_threads){
 void integ_grn_spec_in_C(
     PYMODEL1D *pymod1d, MYINT nf1, MYINT nf2, MYINT nf, MYREAL *freqs,  
     MYINT nr, MYREAL *rs, MYREAL wI, 
-    MYREAL vmin_ref, MYREAL keps, MYREAL ampk, MYREAL k0, MYREAL Length,       
+    MYREAL vmin_ref, MYREAL keps, MYREAL ampk, MYREAL k0, MYREAL Length, MYREAL filonLength, MYREAL filonCut,       
     bool print_progressbar, 
 
     // 返回值，维度2代表Z、R分量，维度3代表Z、R、T分量
@@ -205,7 +205,7 @@ void integ_grn_spec_in_C(
     // 计算格林函数
     integ_grn_spec(
         pymod1d, nf1, nf2, nf, freqs, nr, rs, wI,
-        vmin_ref, keps, ampk, k0, Length, print_progressbar,
+        vmin_ref, keps, ampk, k0, Length, filonLength, filonCut, print_progressbar,
         EXPgrn, VFgrn, HFgrn, DDgrn, DSgrn, SSgrn, 
         calc_upar,
         EXPgrn_uiz, VFgrn_uiz, HFgrn_uiz, DDgrn_uiz, DSgrn_uiz, SSgrn_uiz, 
@@ -477,7 +477,7 @@ static void recordin_GRN(
 void integ_grn_spec(
     PYMODEL1D *pymod1d, MYINT nf1, MYINT nf2, MYINT nf, MYREAL *freqs,  
     MYINT nr, MYREAL *rs, MYREAL wI, 
-    MYREAL vmin_ref, MYREAL keps, MYREAL ampk, MYREAL k0, MYREAL Length,       
+    MYREAL vmin_ref, MYREAL keps, MYREAL ampk, MYREAL k0, MYREAL Length, MYREAL filonLength, MYREAL filonCut,      
     bool print_progressbar, 
 
     // 返回值，维度2代表Z、R分量，维度3代表Z、R、T分量
@@ -531,9 +531,9 @@ void integ_grn_spec(
 
     if(vmin_ref < RZERO)  keps = -RONE;  // 若使用峰谷平均法，则不使用keps进行收敛判断
 
-
-    const MYREAL wmax = freqs[nf-1]/PI2;  // 最大圆频率
-    const MYREAL dk=FABS(PI2/(Length*rmax));     // 波数积分间隔
+    const MYREAL dk=PI2/(Length*rmax);     // 波数积分间隔
+    const MYREAL filondk = (filonLength > RZERO) ? PI2/(filonLength*rmax) : RZERO;  // Filon积分间隔
+    const MYREAL filonK = filonCut/rmax;  // 波数积分和Filon积分的分割点
 
 
     // PTAM的积分中间结果, 每个震中距两个文件，因为PTAM对不同震中距使用不同的dk
@@ -653,20 +653,19 @@ void integ_grn_spec(
         kmax = SQRT(k02 + ampk2*(w/vmin_ref)*(w/vmin_ref));
 
 
-        if(Length > RZERO){
-            // 常规的波数积分
-            k = discrete_integ(
-                local_mod1d, dk, kmax, keps, omega, nr, rs, 
-                sum_EXP_J, sum_VF_J, sum_HF_J, sum_DC_J, 
-                calc_upar,
-                sum_EXP_uiz_J, sum_VF_uiz_J, sum_HF_uiz_J, sum_DC_uiz_J,
-                sum_EXP_uir_J, sum_VF_uir_J, sum_HF_uir_J, sum_DC_uir_J,
-                fstats, kernel);
-        } 
-        else {
-            // 基于线性插值的Filon积分
+        // 常规的波数积分
+        k = discrete_integ(
+            local_mod1d, dk, (filondk > RZERO)? filonK : kmax, keps, omega, nr, rs, 
+            sum_EXP_J, sum_VF_J, sum_HF_J, sum_DC_J, 
+            calc_upar,
+            sum_EXP_uiz_J, sum_VF_uiz_J, sum_HF_uiz_J, sum_DC_uiz_J,
+            sum_EXP_uir_J, sum_VF_uir_J, sum_HF_uir_J, sum_DC_uir_J,
+            fstats, kernel);
+            
+        // 基于线性插值的Filon积分
+        if(filondk > RZERO){
             k = linear_filon_integ(
-                local_mod1d, dk, kmax, keps, omega, nr, rs, 
+                local_mod1d, k, dk, filondk, kmax, keps, omega, nr, rs, 
                 sum_EXP_J, sum_VF_J, sum_HF_J, sum_DC_J, 
                 calc_upar,
                 sum_EXP_uiz_J, sum_VF_uiz_J, sum_HF_uiz_J, sum_DC_uiz_J,

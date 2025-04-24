@@ -78,8 +78,8 @@ static char *s_output_dir = NULL;
 static double freq1=-1.0, freq2=-1.0;
 // 虚频率系数和虚频率
 static double zeta=0.8, wI=0.0;
-// 波数积分间隔
-static double Length=0.0;
+// 波数积分间隔, Filon积分间隔，Filon积分起始点
+static double Length=0.0, filonLength=0.0, filonCut=0.0;
 // 波数积分相关变量
 static double keps=-1.0, ampk=1.15, k0=5.0;
 // 参考最小速度，小于0表示使用峰谷平均法;
@@ -204,16 +204,20 @@ printf("\n"
 "                 <f1>: lower frequency (Hz), %.1f means low pass.\n", freq1); printf(
 "                 <f2>: upper frequency (Hz), %.1f means high pass.\n", freq2); printf(
 "\n"
-"    -L<length>   Define the wavenumber integration interval\n"
+"    -L<length>[/<Flength>/<Fcut>]\n"
+"                 Define the wavenumber integration interval\n"
 "                 dk=(2*PI)/(<length>*rmax). rmax is the maximum \n"
 "                 epicentral distance. \n"
 "                 There are 3 cases:\n"
 "                 + (default) not set or set %.1f.\n", Length); printf(
 "                   <length> will be determined automatically\n"
 "                   in program with the criterion (Bouchon, 1980).\n"
-"                 + manually set POSITIVE value.\n"
-"                 + manually set NEGATIVE value, \n"
-"                   and FIM will be used.\n"
+"                 + manually set one POSITIVE value, e.g. -L20\n"
+"                 + manually set three POSITIVE values, \n"
+"                   e.g. -L20/5/10, means split the integration \n"
+"                   into two parts, [0, k*] and [k*, kmax], \n"
+"                   in which k*=<Fcut>/rmax, and use DWM with\n"
+"                   <length> and FIM with <Flength>, respectively.\n"
 "\n"
 "    -V<vmin_ref> \n"
 "                 Minimum velocity (km/s) for reference. This\n"
@@ -402,13 +406,25 @@ static void getopt_from_command(int argc, char **argv){
                 }
                 break;
 
-            // 波数积分间隔 -LLength
+            // 波数积分间隔 -L<length>[/<Flength>/<Fcut>]
             case 'L':
                 L_flag = 1;
-                if(0 == sscanf(optarg, "%lf", &Length)){
-                    fprintf(stderr, "[%s] " BOLD_RED "Error in -L.\n" DEFAULT_RESTORE, command);
-                    exit(EXIT_FAILURE);
-                };
+                {
+                    int n = sscanf(optarg, "%lf/%lf/%lf", &Length, &filonLength, &filonCut);
+                    if(n != 1 && n != 3){
+                        fprintf(stderr, "[%s] " BOLD_RED "Error in -L.\n" DEFAULT_RESTORE, command);
+                        exit(EXIT_FAILURE);
+                    };
+                    if(n == 1 && Length <= 0){
+                        fprintf(stderr, "[%s] " BOLD_RED "Error! In -L, length should be positive.\n" DEFAULT_RESTORE, command);
+                        exit(EXIT_FAILURE);
+                    }
+                    if(n == 3 && (filonLength <= 0 || filonCut < 0)){
+                        fprintf(stderr, "[%s] " BOLD_RED "Error! In -L, Flength should be positive, Fcut should be nonnegative.\n" DEFAULT_RESTORE, command);
+                        exit(EXIT_FAILURE);
+                    }
+                }
+                
                 break;
 
             // 参考最小速度 -Vvmin_ref
@@ -749,8 +765,11 @@ static void print_parameters(){
     if(vmin_ref < 0.0) strncat(tmp, ", using PTAM.", sizeof(tmp)-strlen(tmp)-1);
     printf("| %-*s | %-*s |\n", nlen1-3, "vmin_ref", nlen2-3, tmp);
     // 特殊处理length的输出
-    snprintf(tmp, sizeof(tmp), "%f", fabs(Length));
-    if(Length < 0.0) strncat(tmp, ", using FIM.", sizeof(tmp)-strlen(tmp)-1);
+    snprintf(tmp, sizeof(tmp), "%f", Length);
+    if(filonLength > 0.0){  
+        snprintf(tmp, sizeof(tmp), "%f,%f,%f", Length, filonLength, filonCut);
+        strncat(tmp, ", using FIM.", sizeof(tmp)-strlen(tmp)-1);
+    } 
     printf("| %-*s | %-*s |\n", nlen1-3, "length", nlen2-3, tmp);
     // 
     printf("| %-*s | %-*d |\n", nlen1-3, "nt", nlen2-3, nt);
@@ -1105,7 +1124,7 @@ int main(int argc, char **argv) {
     // 计算格林函数
     integ_grn_spec_in_C(
         pymod, nf1, nf2, nf, freqs, nr, rs, wI,
-        vmin_ref, keps, ampk, k0, Length, !silenceInput,
+        vmin_ref, keps, ampk, k0, Length, filonLength, filonCut, !silenceInput,
         EXPcplx, VFcplx, HFcplx, DDcplx, DScplx, SScplx, 
         calc_upar, 
         EXPcplx_uiz, VFcplx_uiz, HFcplx_uiz, DDcplx_uiz, DScplx_uiz, SScplx_uiz, 

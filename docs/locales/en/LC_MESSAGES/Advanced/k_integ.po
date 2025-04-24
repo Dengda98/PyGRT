@@ -1,0 +1,214 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2025, Zhu Dengda
+# This file is distributed under the same license as the PyGRT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PyGRT 0.6.1.dev17+g4521452.d20250424\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-04-24 18:17+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.16.0\n"
+
+#: ../../source/Advanced/k_integ.rst:4 87ff0fdc29dc4cd39864a536298db4af
+msgid "控制波数积分"
+msgstr "Control the Wavenumber Integral"
+
+#: ../../source/Advanced/k_integ.rst 1cc7529328c0437a9ee3779312e50261
+msgid "Author"
+msgstr ""
+
+#: ../../source/Advanced/k_integ.rst:6 ab49adb6873342a2addfb308b639b375
+msgid "Zhu Dengda"
+msgstr ""
+
+#: ../../source/Advanced/k_integ.rst bd299ca0a3a14a8abaf25fb8dbef4e44
+msgid "Email"
+msgstr ""
+
+#: ../../source/Advanced/k_integ.rst:7 d03c97fba0b540bdab1f7d73296e5b15
+msgid "zhudengda@mail.iggcas.ac.cn"
+msgstr ""
+
+#: ../../source/Advanced/k_integ.rst:11 0985b725ebd841acaa02977538ff4c37
+msgid "在 :ref:`gfunc_rst` 部分介绍了程序将按以下形式从数值上计算波数积分，"
+msgstr "In the :ref:`gfunc_rst` section, the program numerically computes the wavenumber integral in the following form,"
+
+#: ../../source/Advanced/k_integ.rst:13 fa7c8f44d77943a188ca9302a333bdde
+msgid ""
+"P_m(\\omega) = \\Delta k \\sum_{j=0}^{\\infty} F_m(k_j,\\omega)J_m(k_j "
+"r)k_j"
+msgstr ""
+
+#: ../../source/Advanced/k_integ.rst:17 a6406b12738a4648b50d639a7ee8d25c
+msgid ""
+"其中 :math:`\\Delta k = 2\\pi/L, k_j=j\\Delta k`，:math:`L` 为特征长度，即 "
+":math:`L` 控制波数积分的积分间隔，默认根据 :ref:`gfunc_rst` 部分介绍的约束条件自动确定。"
+msgstr ""
+"where :math:`\\Delta k = 2\\pi/L, k_j=j\\Delta k`, and :math:`L` is the "
+"characteristic length, which controls the interval of the wavenumber integral. "
+"By default, it is automatically determined based on the constraints introduced "
+"in the :ref:`gfunc_rst` section."
+
+#: ../../source/Advanced/k_integ.rst:19 adacd157fad2498f981ac3a08fcbc9b3
+msgid "程序会取一个较大值 :math:`k_{\\text{max}}` 作为波数积分的上限，经验公式为"
+msgstr "The program will take a relatively large value :math:`k_{\\text{max}}` as the upper limit of the wavenumber integral, with the empirical formula being"
+
+#: ../../source/Advanced/k_integ.rst:21 1064e89ab8af4d71a4f2a277acdd7a06
+msgid ""
+"k_{\\text{max}} = \\sqrt{k_0^2 + s \\cdot "
+"\\left(\\dfrac{\\omega}{v_{\\text{min}}}\\right)^2}"
+msgstr ""
+
+#: ../../source/Advanced/k_integ.rst:25 32b42b13b6514f99a373bda326af464d
+msgid "其中"
+msgstr "in which"
+
+#: ../../source/Advanced/k_integ.rst:27 77134b08c32f4ae587af3c890ca8d53f
+msgid ""
+":math:`k_0` 为零频的波数积分上限，默认为 :math:`\\dfrac{5\\pi}{h_s}`， :math:`h_s` "
+"为震源和场点的深度差（绝对值），限制最小为1km，若实际深度差小于该值，则自动使用峰谷平均法；"
+msgstr ""
+":math:`k_0` is the upper limit of the wavenumber integral at zero frequency, "
+"with a default value of :math:`\\dfrac{5\\pi}{h_s}`, where :math:`h_s` is the "
+"depth difference (absolute value) between the source and the field point, "
+"with a minimum limit of 1 km. If the actual depth difference is less than this "
+"value, the peak-trough averaging method is automatically used;"
+
+#: ../../source/Advanced/k_integ.rst:28 5b27979ba29f4cefa238c6ed9079a9ae
+msgid ":math:`\\omega` 为角频率；"
+msgstr ":math:`\\omega` is angular frequency; "
+
+#: ../../source/Advanced/k_integ.rst:29 c1bc940666894d15ab48ec781ae73ace
+msgid ""
+":math:`v_{\\text{min}}` "
+"为参考最小速度，默认取自模型中的最小速度，且限制在0.1km/s以上；若传入负值，表明使用峰谷平均法（负号不参与计算）。"
+msgstr ":math:`v_{\\text{min}}` is the reference minimum velocity, which defaults to the minimum velocity in the model and is constrained to be above 0.1 km/s. If a negative value is passed, it indicates the use of the peak-trough averaging method (the negative sign is not involved in the calculation)."
+
+#: ../../source/Advanced/k_integ.rst:30 9c96af014f994d7cbeed5af1f023bc90
+msgid ":math:`s` 为放大系数，默认为1.15；"
+msgstr ":math:`s` is the amplification factor, with a default value of 1.15."
+
+#: ../../source/Advanced/k_integ.rst:32 50bd4468c26d4ab3b0b56085e59e407c
+msgid ""
+"程序支持自动判断积分收敛 :ref:`(Yao and Harkrider, 1983) <yao&harkrider_1983>` "
+"。当所有积分满足如下表达式时，自动退出波数循环（若达到 :math:`k_{\\text{max}}` 则强制退出 ），"
+msgstr ""
+"The program supports automatic determination of integral convergence :ref:`(Yao and Harkrider, 1983) <yao&harkrider_1983>`. "
+"When all integrals satisfy the following expression, the wavenumber loop automatically exits (or forcibly exits if :math:`k_{\\text{max}}` is reached)."
+
+#: ../../source/Advanced/k_integ.rst:34 ec1e4ad7c431464887daf95ae76773c8
+msgid ""
+"\\left | \\dfrac{ k_j F_m(k_j,\\omega) J_m(k_j r) }\n"
+"{\\sum_{i=1}^j k_i F_m(k_i,\\omega) J_m(k_i r) } \\right | \\le \\epsilon"
+msgstr ""
+
+#: ../../source/Advanced/k_integ.rst:39 8a0fa6fedad54f259b35beb9cf5562f2
+msgid "其中 :math:`\\epsilon` 为预先指定的收敛精度。程序默认不使用该功能。"
+msgstr "where :math:`\\epsilon` is the pre-specified convergence precision. By default, the program does not use this feature."
+
+#: ../../source/Advanced/k_integ.rst:43 1fc743ca959d4603aa4ba69ca169546f
+msgid "通过以下可选参数，可直接控制波数积分， **也将直接影响程序计算结果和运行时长**。"
+msgstr "The wavenumber integral can be directly controlled through the following optional parameters, **which will also directly affect the program's calculation results and runtime duration**."
+
+#: ../../source/Advanced/k_integ.rst:47 5272f11a07444d5bacc7b53a12e75411
+msgid "C"
+msgstr ""
+
+#: ../../source/Advanced/k_integ.rst:49 d67f545bea54451aaca58040f8397be4
+msgid ":command:`grt` 程序支持以下可选参数来控制波数积分，具体说明详见 :command:`grt -h`。"
+msgstr "The :command:`grt` program supports the following optional parameters to control the wavenumber integral. For detailed explanations, see :command:`grt -h`."
+
+#: ../../source/Advanced/k_integ.rst:51 2e90e349a51d418d8e98d1d538881307
+msgid "``-K<k0>[/<ampk>/<keps>]``"
+msgstr ""
+
+#: ../../source/Advanced/k_integ.rst:53 05e7d4ce390e4e66ad3219f96c92266b
+msgid "``<k0>`` 对应公式中的 :math:`k_0` 的系数，默认为5"
+msgstr "``<k0>`` corresponds to the coefficient of :math:`k_0` in the formula, with a default value of 5."
+
+#: ../../source/Advanced/k_integ.rst:54 9e8a6ecaf1ea411e93e597bef12a79f4
+msgid "``<ampk>`` 对应公式中的 :math:`s` ，默认为1.15"
+msgstr "``<ampk>`` corresponds to :math:`s` in the formula, with a default value of 1.15."
+
+#: ../../source/Advanced/k_integ.rst:55 8c88510577cb43fb92e122ccd4930d5f
+msgid "``<keps>`` 对应公式中的 :math:`\\epsilon`，默认为-1（不使用）"
+msgstr "``<keps>`` corresponds to :math:`\\epsilon` in the formula, with a default value of -1 (not used)."
+
+#: ../../source/Advanced/k_integ.rst:57 8d2c65b110004904b2a1efbcb465a844
+msgid "``-V<vmin_ref>``， 对应公式中的 :math:`v_{\\text{min}}`"
+msgstr "``-V<vmin_ref>`` corresponds to :math:`v_{\\text{min}}` in the formula."
+
+#: ../../source/Advanced/k_integ.rst:59 eeac188d30b84bb49dcddf1ec821b68d
+msgid ""
+"``-L<length>``， 对应公式中的 :math:`L` 的系数, :math:`L=` ``<length>`` "
+":math:`\\cdot r_{\\text{max}}`"
+msgstr "``-L<length>`` corresponds to the coefficient of :math:`L` in the formula, where :math:`L=` ``<length>`` :math:`\\cdot r_{\\text{max}}`."
+
+#: ../../source/Advanced/k_integ.rst:61 f2cda0eaf3fe42929713f5c5eed8eb91
+msgid ":command:`stgrt` 程序支持以下可选参数来控制波数积分，参数与上面对应，具体说明详见 :command:`stgrt -h`。"
+msgstr "The :command:`stgrt` program supports the following optional parameters to control the wavenumber integral. The parameters correspond to the above, and detailed explanations can be found in :command:`stgrt -h`."
+
+#: ../../source/Advanced/k_integ.rst:63 de3b285eef554807913934c2148aea69
+msgid "``-K<k0>[/<keps>]``"
+msgstr ""
+
+#: ../../source/Advanced/k_integ.rst:64 797b5b41f6424f198a8fd9abc514a532
+msgid "``-L<length>``"
+msgstr ""
+
+#: ../../source/Advanced/k_integ.rst:66 1038c2e13ae345549f351ca0a46713e5
+msgid "Python"
+msgstr ""
+
+#: ../../source/Advanced/k_integ.rst:68 0699bee654af41ed8c4e53bc58d6973f
+msgid ""
+":func:`compute_grn() <pygrt.pymod.PyModel1D.compute_grn>` "
+"函数支持以下可选参数来控制波数积分，具体说明详见API。"
+msgstr "The :func:`compute_grn() <pygrt.pymod.PyModel1D.compute_grn>` function supports the following optional parameters to control the wavenumber integral. For detailed explanations, see the API."
+
+#: ../../source/Advanced/k_integ.rst:70 1802fc3c1789437090fadc966180c163
+msgid "``k0:float``, 对应公式中的 :math:`k_0` 的系数，默认为5"
+msgstr "``k0:float`` corresponds to the coefficient of :math:`k_0` in the formula, with a default value of 5."
+
+#: ../../source/Advanced/k_integ.rst:71 e240b6bd982e4c23902f69f4f81eabbf
+msgid "``ampk:float``, 对应公式中的 :math:`s` ，默认为1.15"
+msgstr "``ampk:float`` corresponds to :math:`s` in the formula, with a default value of 1.15."
+
+#: ../../source/Advanced/k_integ.rst:72 f4bce5d58e8346fca3393407ad64d939
+msgid "``keps:float`` 对应公式中的 :math:`\\epsilon`，默认为-1（不使用）"
+msgstr "``keps:float`` corresponds to :math:`\\epsilon` in the formula, with a default value of -1 (not used)."
+
+#: ../../source/Advanced/k_integ.rst:73 3776ee56a0a040eca108a14a217fd6e4
+msgid ""
+"``Length:float`` 对应公式中的 :math:`L` 的系数, :math:`L=` ``<length>`` "
+":math:`\\cdot r_{\\text{max}}`"
+msgstr "``Length:float`` corresponds to the coefficient of :math:`L` in the formula, where :math:`L=` ``<length>`` :math:`\\cdot r_{\\text{max}}`."
+
+#: ../../source/Advanced/k_integ.rst:75 aee1cf0b2baf4762aa0e46678d9298ae
+msgid ""
+":func:`compute_static_grn() <pygrt.pymod.PyModel1D.compute_static_grn>` "
+"函数支持以下可选参数来控制波数积分，参数与上面对应，具体说明详见API。"
+msgstr "The :func:`compute_static_grn() <pygrt.pymod.PyModel1D.compute_static_grn>` function supports the following optional parameters to control the wavenumber integral. The parameters correspond to the above, and detailed explanations can be found in the API."
+
+#: ../../source/Advanced/k_integ.rst:77 c35575180a9f4e6b8f6b4b8645d80207
+msgid "``k0:float``"
+msgstr ""
+
+#: ../../source/Advanced/k_integ.rst:78 adc2a5b37a084c83b18939c74f29dece
+msgid "``keps:float``"
+msgstr ""
+
+#: ../../source/Advanced/k_integ.rst:79 ad419c4908d14fbd883312c30f20a4e6
+msgid "``Length:float``"
+msgstr ""
+

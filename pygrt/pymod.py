@@ -231,6 +231,7 @@ class PyModel1D:
         ampk:float=1.15,
         k0:float=5.0, 
         Length:float=0.0, 
+        filonLC:Union[np.ndarray,List[float]]=[0.0,0.0],
         delayT0:float=0.0,
         delayV0:float=0.0,
         calc_upar:bool=False,
@@ -258,7 +259,8 @@ class PyModel1D:
             :param    ampk:          影响波数k积分上限的系数，见下方
             :param    k0:            波数k积分的上限 :math:`\tilde{k_{max}}=\sqrt{(k_{0}*\pi/hs)^2 + (ampk*w/vmin_{ref})^2}` , 波数k积分循环必须退出, hs=max(震源和台站深度差,1.0)
             :param    Length:        定义波数k积分的间隔 `dk=2\pi / (L*rmax)`, 选取要求见 :ref:`(Bouchon, 1981) <bouchon_1981>` 
-                                     :ref:`(张海明, 2021) <zhang_book_2021>`，默认自动选择；负数表示使用Filon积分
+                                     :ref:`(张海明, 2021) <zhang_book_2021>`，默认自动选择
+            :param    filonLC:       Filon积分的间隔 filonLength, 和波数积分和Filon积分的分割点filonCut, k*=<filonCut>/rmax
             :param    calc_upar:     是否计算位移u的空间导数
             :param    gf_source:     待计算的震源类型
             :param    statsfile:     波数k积分（包括Filon积分和峰谷平均法）的过程记录文件，常用于debug或者观察积分过程中 :math:`F(k,\omega)` 和  :math:`F(k,\omega)J_m(kr)k` 的变化    
@@ -294,6 +296,13 @@ class PyModel1D:
             raise ValueError(f"zeta ({zeta}) < 0")
         if k0 < 0:
             raise ValueError(f"k0 ({k0}) < 0")
+        
+        if Length < 0.0:
+            raise ValueError(f"Length ({Length}) < 0")
+        if np.any(filonLC) < 0.0:
+            raise ValueError(f"filonLC ({filonLC}) < 0") 
+        
+        filonLC = np.array(filonLC).astype(NPCT_REAL_TYPE)
 
         nf = nt//2+1 
         df = 1/(nt*dt)
@@ -360,6 +369,7 @@ class PyModel1D:
                     Length = 15.0
 
             print(f"Length={Length:.2f}")
+
 
         # 初始化格林函数C结构体
         C_EXPgrn = ((c_PGRN*2)*nrs)() if calc_EXP else None
@@ -431,8 +441,8 @@ class PyModel1D:
             else:
                 print("")
             print(f"Length={abs(Length)}", end="")
-            if Length < 0.0:
-                print(", using FIM.")
+            if filonLC[0] > 0.0:
+                print(f",{filonLC}, using FIM.")
             else:
                 print("")
             print(f"nt={nt}")
@@ -463,7 +473,7 @@ class PyModel1D:
         #=================================================================================
         C_integ_grn_spec(
             self.c_pymod1d, nf1, nf2, nf, c_freqs, nrs, c_rs, wI, 
-            vmin_ref, keps, ampk, k0, Length, print_runtime,
+            vmin_ref, keps, ampk, k0, Length, filonLC[0], filonLC[1], print_runtime,
             C_EXPgrn, C_VFgrn, C_HFgrn, C_DDgrn, C_DSgrn, C_SSgrn, 
             calc_upar, 
             C_EXPgrn_uiz, C_VFgrn_uiz, C_HFgrn_uiz, C_DDgrn_uiz, C_DSgrn_uiz, C_SSgrn_uiz, 
@@ -563,6 +573,7 @@ class PyModel1D:
         keps:float=-1.0,  
         k0:float=5.0, 
         Length:float=15.0, 
+        filonLC:Union[np.ndarray,List[float]]=[0.0,0.0],
         calc_upar:bool=False,
         statsfile:Union[str,None]=None):
 
@@ -577,12 +588,19 @@ class PyModel1D:
                                         为负数代表不提前判断收敛，按照波数积分上限进行积分
             :param       k0:            波数k积分的上限 :math:`\tilde{k_{max}}=(k_{0}*\pi/hs)^2` , 波数k积分循环必须退出, hs=max(震源和台站深度差,1.0)
             :param       Length:        定义波数k积分的间隔 `dk=2\pi / (L*rmax)`, 默认15；负数表示使用Filon积分
+            :param       filonLC:       Filon积分的间隔 filonLength, 和波数积分和Filon积分的分割点filonCut, k*=<filonCut>/rmax
             :param       calc_upar:     是否计算位移u的空间导数
             :param       statsfile:     波数k积分（包括Filon积分和峰谷平均法）的过程记录文件，常用于debug或者观察积分过程中 :math:`F(k,\omega)` 和  :math:`F(k,\omega)J_m(kr)k` 的变化    
 
             :return:
                 - **dataDct** -   字典形式的格林函数
         """
+
+        if Length < 0.0:
+            raise ValueError(f"Length ({Length}) < 0")
+        if np.any(filonLC) < 0.0:
+            raise ValueError(f"filonLC ({filonLC}) < 0") 
+        
 
         depsrc = self.depsrc
         deprcv = self.deprcv
@@ -656,7 +674,7 @@ class PyModel1D:
         #     剪切源 DD[ZR],DS[ZRT],SS[ZRT]          1e-20 cm/(dyne*cm)
         #=================================================================================
         C_integ_static_grn(
-            self.c_pymod1d, nr, c_rs, vmin_ref, keps, k0, Length,
+            self.c_pymod1d, nr, c_rs, vmin_ref, keps, k0, Length, filonLC[0], filonLC[1],
             C_EXPgrn, C_VFgrn, C_HFgrn, C_DDgrn, C_DSgrn, C_SSgrn, 
             calc_upar, 
             C_EXPgrn_uiz, C_VFgrn_uiz, C_HFgrn_uiz, C_DDgrn_uiz, C_DSgrn_uiz, C_SSgrn_uiz, 

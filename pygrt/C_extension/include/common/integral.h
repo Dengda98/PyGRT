@@ -65,13 +65,14 @@ void merge_Pk(
 
 
 /**
- *  和int_Pk函数类似，不过是计算核函数和渐近Bessel函数的乘积，其中涉及两种数组形状：
+ *  和int_Pk函数类似，不过是计算核函数和渐近Bessel函数的乘积 sqrt(k) * F(k,w) * cos ，其中涉及两种数组形状：
  *    + [3][3]. 存储的是核函数，第一个维度3代表阶数m=0,1,2，第二个维度3代表三类系数qm,wm,vm  
  *    + [3][4]. 存储的是该dk区间内的积分值，维度3代表阶数m=0,1,2，维度4代表4种类型的F(k,w)Jm(kr)k的类型
  * 
  * 
  * @param     k     (in)波数  
  * @param     r     (in)震中距 
+ * @param     iscos           (in)计算sin函数
  * @param    EXP_qwv[3][3]    (in)爆炸源核函数
  * @param    VF_qwv[3][3]     (in)垂直力源核函数
  * @param    HF_qwv[3][3]     (in)水平力源核函数
@@ -84,7 +85,7 @@ void merge_Pk(
  *  
  */
 void int_Pk_filon(
-    MYREAL k, MYREAL r, 
+    MYREAL k, MYREAL r, bool iscos,
     const MYCOMPLEX EXP_qwv[3][3], const MYCOMPLEX VF_qwv[3][3], 
     const MYCOMPLEX HF_qwv[3][3],  const MYCOMPLEX DC_qwv[3][3], 
     bool calc_uir, 

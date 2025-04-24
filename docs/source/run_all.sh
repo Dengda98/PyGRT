@@ -1,10 +1,11 @@
 #!/bin/bash
+set -e
 
 # 运行教程中所有示例的脚本，方便将成图过程放在readthedocs服务器上
 
 
 if [[ $1 == '1' || $1 == '' ]]; then
-    cd dynamic/run
+    cd Tutorial/dynamic/run
     chmod +x *.sh
     ./run.sh
     python run.py
@@ -13,7 +14,7 @@ fi
 
 
 if [[ $1 == '2' || $1 == '' ]]; then
-    cd static/run
+    cd Tutorial/static/run
     chmod +x *.sh
     ./run.sh
     python run.py
@@ -21,7 +22,7 @@ if [[ $1 == '2' || $1 == '' ]]; then
 fi
 
 if [[ $1 == '3' || $1 == '' ]]; then
-    cd dynamic/run_upar
+    cd Tutorial/dynamic/run_upar
     chmod +x *.sh
     ./run.sh
     python run.py
@@ -29,7 +30,7 @@ if [[ $1 == '3' || $1 == '' ]]; then
 fi
 
 if [[ $1 == '4' || $1 == '' ]]; then
-    cd static/run_upar
+    cd Tutorial/static/run_upar
     chmod +x *.sh
     ./run.sh
     python run.py
@@ -37,7 +38,7 @@ if [[ $1 == '4' || $1 == '' ]]; then
 fi
 
 if [[ $1 == '5' || $1 == '' ]]; then
-    cd integ_converg/run
+    cd Advanced/integ_converg/run
     chmod +x *.sh
     ./run.sh
     python run.py
@@ -45,7 +46,7 @@ if [[ $1 == '5' || $1 == '' ]]; then
 fi
 
 if [[ $1 == '6' || $1 == '' ]]; then
-    cd kernel/run
+    cd Advanced/kernel/run
     chmod +x *.sh
     ./run.sh
     python run.py
