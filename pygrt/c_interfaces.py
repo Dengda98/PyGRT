@@ -34,7 +34,7 @@ C_integ_grn_spec = libgrt.integ_grn_spec
 C_integ_grn_spec.argtypes = [
     POINTER(c_PyModel1D), c_int, c_int, c_int, PREAL,       
     c_int, PREAL, REAL,
-    REAL, REAL, REAL, REAL, REAL,
+    REAL, REAL, REAL, REAL, REAL, REAL, REAL,
     c_bool,
 
     POINTER(c_PGRN*2),
@@ -71,6 +71,7 @@ C_integ_static_grn = libgrt.integ_static_grn
 C_integ_static_grn.restype = None
 C_integ_static_grn.argtypes = [
     POINTER(c_PyModel1D), c_int, PREAL, REAL, REAL, REAL, REAL, 
+    REAL, REAL, 
     PREAL, PREAL, PREAL, PREAL, PREAL, PREAL, 
     c_bool,
     PREAL, PREAL, PREAL, PREAL, PREAL, PREAL, 

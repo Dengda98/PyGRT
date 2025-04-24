@@ -27,7 +27,9 @@
  * @param      rs           (in)震中距数组 
  * @param      keps         (in)波数积分的收敛条件，要求在某震中距下所有格林函数都收敛，为负数代表不提前判断收敛，按照波数积分上限进行积分 
  * @param      k0           (in)波数积分的上限
- * @param      Length       (in)波数k积分间隔 \f$ dk=2\pi/(fabs(L)*r_{max}) \f$ , 如果为负数，则使用线性Filon积分
+ * @param      Length       (in)波数k积分间隔 \f$ dk=2\pi/(fabs(L)*r_{max}) \f$ 
+ * @param      filonLength  (in)Filon积分间隔
+ * @param      filonCut     (in)波数积分和Filon积分的分割点
  * @param      EXPgrn[nr][2]      (out)浮点数数组，爆炸源的Z、R分量频谱结果
  * @param      VFgrn[nr][2]       (out)浮点数数组，垂直力源的Z、R分量频谱结果
  * @param      HFgrn[nr][3]       (out)浮点数数组，水平力源的Z、R、T分量频谱结果
@@ -52,6 +54,7 @@
  */
 void integ_static_grn(
     PYMODEL1D *pymod1d, MYINT nr, MYREAL *rs, MYREAL vmin_ref, MYREAL keps, MYREAL k0, MYREAL Length,
+    MYREAL filonLength, MYREAL filonCut, 
 
     // 返回值，维度2代表Z、R分量，维度3代表Z、R、T分量
     MYREAL EXPgrn[nr][2], // EXZ, EXR 的实部和虚部

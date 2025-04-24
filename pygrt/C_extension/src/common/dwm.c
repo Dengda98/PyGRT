@@ -68,7 +68,7 @@ MYREAL discrete_integ(
     // 波数k循环 (5.9.2)
     while(true){
         
-        if(k > kmax)  break;
+        if(k > kmax && ik > 2)  break;
         k += dk; 
 
         // printf("w=%15.5e, ik=%d\n", CREAL(omega), ik);

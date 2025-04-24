@@ -30,7 +30,9 @@
  * 
  * 
  * @param  mod1d     (in)`MODEL1D` 结构体指针
- * @param  dk        (in)波数积分间隔
+ * @param  k0        (in)前一部分的波数积分结束点k值
+ * @param  dk0       (in)前一部分的波数积分间隔
+ * @param  filondk   (in)filon积分间隔
  * @param  kmax      (in)波数积分的上限
  * @param  keps      (in)波数积分的收敛条件，要求在某震中距下所有格林函数都收敛
  * @param  omega     (in)复数频率
@@ -58,7 +60,7 @@
  * @return  k        积分截至时的波数
  */
 MYREAL linear_filon_integ(
-    const MODEL1D *mod1d, MYREAL dk, MYREAL kmax, MYREAL keps, MYCOMPLEX omega, 
+    const MODEL1D *mod1d, MYREAL k0, MYREAL dk0, MYREAL filondk, MYREAL kmax, MYREAL keps, MYCOMPLEX omega, 
     MYINT nr, MYREAL *rs,
     MYCOMPLEX sum_EXP_J[nr][3][4], MYCOMPLEX sum_VF_J[nr][3][4],  
     MYCOMPLEX sum_HF_J[nr][3][4],  MYCOMPLEX sum_DC_J[nr][3][4],  

@@ -126,6 +126,7 @@ static void recordin_GRN(
 
 void integ_static_grn(
     PYMODEL1D *pymod1d, MYINT nr, MYREAL *rs, MYREAL vmin_ref, MYREAL keps, MYREAL k0, MYREAL Length,
+    MYREAL filonLength, MYREAL filonCut, 
 
     // 返回值，维度2代表Z、R分量，维度3代表Z、R、T分量
     MYREAL EXPgrn[nr][2], // EXZ, EXR 的实部和虚部
@@ -166,6 +167,9 @@ void integ_static_grn(
 
     MYREAL k=0.0;
     const MYREAL dk=FABS(PI2/(Length*rmax));     // 波数积分间隔
+    const MYREAL filondk = (filonLength > RZERO) ? PI2/(filonLength*rmax) : RZERO;  // Filon积分间隔
+    const MYREAL filonK = filonCut/rmax;  // 波数积分和Filon积分的分割点
+
     const MYREAL kmax = k0;
     // 局部变量，用于求和 sum F(ki,w)Jm(ki*r)ki 
     // 维度3代表阶数m=0,1,2，维度4代表4种类型的F(k,w)Jm(kr)k的类型，详见int_Pk()函数内的注释
@@ -251,20 +255,19 @@ void integ_static_grn(
 
 
 
-    if(Length > RZERO){
-        // 常规的波数积分
-        k = discrete_integ(
-            mod1d, dk, kmax, keps, 0.0, nr, rs, 
-            sum_EXP_J, sum_VF_J, sum_HF_J, sum_DC_J, 
-            calc_upar,
-            sum_EXP_uiz_J, sum_VF_uiz_J, sum_HF_uiz_J, sum_DC_uiz_J,
-            sum_EXP_uir_J, sum_VF_uir_J, sum_HF_uir_J, sum_DC_uir_J,
-            fstats, static_kernel);
-    } 
-    else {
-        // 基于线性插值的Filon积分
+    // 常规的波数积分
+    k = discrete_integ(
+        mod1d, dk, (filondk > RZERO)? filonK : kmax, keps, 0.0, nr, rs, 
+        sum_EXP_J, sum_VF_J, sum_HF_J, sum_DC_J, 
+        calc_upar,
+        sum_EXP_uiz_J, sum_VF_uiz_J, sum_HF_uiz_J, sum_DC_uiz_J,
+        sum_EXP_uir_J, sum_VF_uir_J, sum_HF_uir_J, sum_DC_uir_J,
+        fstats, static_kernel);
+    
+    // 基于线性插值的Filon积分
+    if(filondk > RZERO){
         k = linear_filon_integ(
-            mod1d, dk, kmax, keps, 0.0, nr, rs, 
+            mod1d, k, dk, filondk, kmax, keps, 0.0, nr, rs, 
             sum_EXP_J, sum_VF_J, sum_HF_J, sum_DC_J, 
             calc_upar,
             sum_EXP_uiz_J, sum_VF_uiz_J, sum_HF_uiz_J, sum_DC_uiz_J,
