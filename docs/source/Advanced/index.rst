@@ -11,5 +11,7 @@
 .. toctree::
     :maxdepth: 1
 
+    k_integ
+    filon_linear
     integ_converg/integ_converg
     kernel/kernel

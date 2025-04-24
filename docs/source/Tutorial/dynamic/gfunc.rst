@@ -95,13 +95,13 @@ Python中计算动态格林函数的主函数为 :func:`compute_grn() <pygrt.pym
 
 .. math:: 
 
-   P_m(\omega) = \int_0^\infty F(k, \omega)J_m(kr)kdk 
+   P_m(\omega) = \int_0^\infty F_m(k, \omega)J_m(kr)kdk 
 
-其中 :math:`F(k,\omega)` 称为核函数，它是和介质属性相关的量，与震中距无关。我们可以使用离散波数积分法 :ref:`(Bouchon, 1981) <bouchon_1981>` 将上式积分转变为求和:
+其中 :math:`F_m(k,\omega)` 称为核函数，它是和介质属性相关的量，与震中距无关。我们可以使用离散波数积分法 :ref:`(Bouchon, 1981) <bouchon_1981>` 将上式积分转变为求和:
 
 .. math:: 
 
-   P_m(\omega) = \Delta k \sum_{j=0}^{\infty} F(k_j,\omega)J_m(k_j r)k_j
+   P_m(\omega) = \Delta k \sum_{j=0}^{\infty} F_m(k_j,\omega)J_m(k_j r)k_j
 
 其中 :math:`\Delta k = 2\pi/L, k_j=j\Delta k`，:math:`L` 为特征长度，要求满足:
 
@@ -183,7 +183,7 @@ Python中计算动态格林函数的主函数为 :func:`compute_grn() <pygrt.pym
    \right.
 
 
-以上每个积分都形成 :math:`\int_0^\infty F(k, \omega)J_m(kr)kdk` 的形式，便可逐个使用离散波数积分（或Filon积分、峰谷平均法等）求解每个积分。
+以上每个积分都形成 :math:`\int_0^\infty F_m(k, \omega)J_m(kr)kdk` 的形式，便可逐个使用离散波数积分（或Filon积分、峰谷平均法等）求解每个积分。
 
 .. [#] 感谢席超强博士 `@xichaoqiang <https://github.com/xichaoqiang>`_ 的订正。
 

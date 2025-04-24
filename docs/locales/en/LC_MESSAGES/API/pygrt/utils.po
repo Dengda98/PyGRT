@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"POT-Creation-Date: 2025-04-24 18:17+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -19,357 +19,357 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.16.0\n"
 
-#: ../../source/API/pygrt/utils.rst:2 0375762377f84022ae3a82e7e66361b9
+#: ../../source/API/pygrt/utils.rst:2 8324f60eb6e644b1bca00787f9769533
 msgid "pygrt.utils"
 msgstr ""
 
-#: 810524be3e8b407e94291385099eaf46 of pygrt.utils
+#: 9044f9ea6272402c90c13c25a501b5be of pygrt.utils
 msgid "file"
 msgstr ""
 
-#: 94dc7544ba184d63bf44a1ef7fc3f1e6 of pygrt.utils:1
+#: a8128809ee124d8c8c7accd5bfe6814a of pygrt.utils:1
 msgid "utils.py"
 msgstr ""
 
-#: 1ddc07e75b034cc198697c45bbe42767 of pygrt.utils
+#: 28188270f03b4651aa81358f1bd10665 of pygrt.utils
 msgid "author"
 msgstr ""
 
-#: 767629f5cba547fe9fd7aeff440bf372 of pygrt.utils:2
+#: 32d8e11a9f0347498a33e95c494f466b of pygrt.utils:2
 msgid "Zhu Dengda (zhudengda@mail.iggcas.ac.cn)"
 msgstr ""
 
-#: 8ce2d0ad1fb04ebbac9922cb92b6d043 of pygrt.utils
+#: 4ca09d813ce64ec0bf8b9c6ba7b834e6 of pygrt.utils
 msgid "date"
 msgstr ""
 
-#: 6509206572134afbb8a78c409fef38cf of pygrt.utils:3
+#: 4c9c3cb810f84f2a9613c1757b5125c6 of pygrt.utils:3
 msgid "2024-07-24"
 msgstr ""
 
-#: d2d9f57181a540ae8a1455e331e636c3 of pygrt.utils:11
+#: c1c6b4dffc9a4e0d8eb207f083e90bfa of pygrt.utils:11
 msgid "该文件包含一些数据处理操作上的补充:"
 msgstr ""
 
-#: 99b2103534eb4ab28d1dba95ce2a819e of pygrt.utils:6
+#: ae18e7fecc8d422f8b3dab9fd754480a of pygrt.utils:6
 msgid "1、剪切源、单力源、爆炸源、矩张量源 通过格林函数合成理论地震图的函数"
 msgstr ""
 
-#: 561b5cf142de4d6b85f517cc91cce15e of pygrt.utils:8
+#: 4698ff529395475d90340bba280e28c2 of pygrt.utils:8
 msgid "2、Stream类型的时域卷积、微分、积分 (基于numpy和scipy)"
 msgstr ""
 
-#: 9aa16e03baeb42ffae785ea48435a40a of pygrt.utils:10
+#: 45bb29a7a7c84bdeb7c90436cbf21bc1 of pygrt.utils:10
 msgid "3、Stream类型写到本地sac文件，自定义名称"
 msgstr ""
 
-#: d4c1ebcb9d5843f4a810754b881f231d of pygrt.utils:12
+#: 7a08521279334c24a62b0511cda313a6 of pygrt.utils:12
 msgid "4、读取波数积分和峰谷平均法过程文件"
 msgstr ""
 
-#: 0db8e62fb2624660b8c5ad125469b8cd of pygrt.utils.gen_syn_from_gf_DC:1
+#: 5961fb2684c64bc1b2fa782842897613 of pygrt.utils.gen_syn_from_gf_DC:1
 msgid "剪切源，角度单位均为度"
 msgstr ""
 
-#: ../../source/API/pygrt/utils.rst 02b162a388e742388ace47a53a52b6f2
-#: 1b2150f769a04cd8bf1c12810af5cb80 3134184ba6424f98bbf1cf9bc7ac47e4
-#: 4d9faca31e364fb1ba128316b6786841 7055b8c4441644168084982185d106f3
-#: 8141ac9061aa4cc489c186c028a1f1b2 83ad1b1fe4f842369b3ba5599771814c
-#: 83e48521ad8b4372acf6cba54a5bf4fb 96d78e7247514d548140c125e8a2e013
-#: b6249bb5176b4b37ac74c9a68feb8920 bcd9993793654ad8ae2766f9a99d4a2e
-#: cc16766fb2af4c9aa1a89582402a311f d080f4ded3b847fc9c9d0fb1eaec90fd
-#: d538f8420b5041a5b0351392505bdf87 ddfbd3870b374f338ad4269cfe427109
-#: f720caf1727e49e49f716576821d17e2
+#: ../../source/API/pygrt/utils.rst 130dfba759a242048b92911da0f5ac72
+#: 235d06b35e744a019d1d9cb3da596822 37902489063f4554b8c0aa8b897daa42
+#: 8a5275ea97624a8784edfb13d570a6b8 924070289a8a4d9c92141de48e01da3d
+#: a7b5275265424e54848c13bdb2efb6ad b99b1d94c94a404a8f2372e2b31bedc8
+#: ca5878ab51d846bda73d9ee625157133 ce3de2785e1442419aac296171a038ac
+#: d8adfd894baf48b1b52328f9251c72bc da289be8000148bbad569791f0d1db2f
+#: e6e296427e10432394882080eb719539 e6faa5cf5a234df6be36c18670fd224c
+#: f12bdf6c9c5c45eaafcd35cd56efbbfb f61160af862c40c5a2410b538e8f306b
+#: ffb1dd2846f64c13bfe39596aac3c81f
 msgid "参数"
 msgstr ""
 
-#: 1e03bd26ec6a408f828e1e2ad0859b3f 383ffdb3216c4cfb9e4b4ff48ae76963
-#: 3d7563e02f134c1cb093556626977ee0 66d2101dbdff45b5ab698b323fd07d6a of
+#: 04e35c918710487a89b6ef78ee971a75 5810e6004f8a445896048e3608897785
+#: adbc22ea9fb04f0c973b34b316b047c1 bfa634290e424d4492e470fe39dfcd5a of
 #: pygrt.utils.gen_syn_from_gf_DC:3 pygrt.utils.gen_syn_from_gf_EXP:3
 #: pygrt.utils.gen_syn_from_gf_MT:3 pygrt.utils.gen_syn_from_gf_SF:3
 msgid "计算好的时域格林函数, :class:`obspy.Stream` 类型，或者静态格林函数（字典类型）"
 msgstr ""
 
-#: 9284abebcebb4848a4c4d7b162297482 9651670eaba4413a8c724d7a4228859e of
+#: 9831d0377ce24ee88a7540df27980866 de51e577d60349819e3f4a4e33153a1c of
 #: pygrt.utils.gen_syn_from_gf_DC:4 pygrt.utils.gen_syn_from_gf_EXP:4
 msgid "标量地震矩, 单位dyne*cm"
 msgstr ""
 
-#: b50ae4cd4e66457a915f6a739e526fa8 of pygrt.utils.gen_syn_from_gf_DC:5
+#: e2ac648a9a13480b894d4342ed244e4e of pygrt.utils.gen_syn_from_gf_DC:5
 msgid "走向，以北顺时针为正，0<=strike<=360"
 msgstr ""
 
-#: 4e0aca37dc6e4789bddc3a4379183b19 of pygrt.utils.gen_syn_from_gf_DC:6
+#: 50e479a7c63f4d7882e80e1f3bfba399 of pygrt.utils.gen_syn_from_gf_DC:6
 msgid "倾角，以水平面往下为正，0<=dip<=90"
 msgstr ""
 
-#: 7175185dfdfb41978babb4c22b6e1c7c of pygrt.utils.gen_syn_from_gf_DC:7
+#: ee3b70751e0143a19fbbd2692965d144 of pygrt.utils.gen_syn_from_gf_DC:7
 msgid "滑动角，在断层面相对于走向方向逆时针为正，-180<=rake<=180"
 msgstr ""
 
-#: cde0b01d596c4d4a8038303dfe3101c3 of pygrt.utils.gen_syn_from_gf_DC:8
+#: d63052efb0bb4b26939e6246224aa115 of pygrt.utils.gen_syn_from_gf_DC:8
 msgid "台站方位角，以北顺时针为正，0<=az<=360（静态情况不需要）"
 msgstr ""
 
-#: 0d14c5c3bd594e12a6546ab9e293d795 18c76e9e36884fd29e5cd08597d12312
-#: cc615e0e10cc4cf5b6ae0684cad4cc62 e2c4ce5152204ed680b3a92a8d11d23b of
+#: 0331d96cfb33444196cba56811c4a720 1d50334dccb542b2abce8fc25d229e35
+#: a2a3a7b4094e4413b0dbb944ce852391 d78b386176cd46f785f91b36b3e6a49b of
 #: pygrt.utils.gen_syn_from_gf_DC:9 pygrt.utils.gen_syn_from_gf_EXP:6
 #: pygrt.utils.gen_syn_from_gf_MT:7 pygrt.utils.gen_syn_from_gf_SF:9
 msgid "是否以ZNE分量输出?"
 msgstr ""
 
-#: 5b68fe54847a4fd2abd9c3102a9cc854 688357cf70dc47b3b859dbf8890ff8df
-#: adefbc2650c840f086e744a78d7a3b64 d87cd35d14324129a378ca0da4f9d594 of
+#: 238b4e1f9510427a95835a26742525d3 2465d75c090944e98f18864172c1fbb5
+#: 2b46bed5f30f4a469c36478f5a852d8b 86e1833278854939a3dc047bb1abe201 of
 #: pygrt.utils.gen_syn_from_gf_DC:10 pygrt.utils.gen_syn_from_gf_EXP:7
 #: pygrt.utils.gen_syn_from_gf_MT:8 pygrt.utils.gen_syn_from_gf_SF:10
 msgid "是否计算位移u的空间导数"
 msgstr ""
 
-#: ../../source/API/pygrt/utils.rst 06097bc0a414402480db625cb1e7f495
-#: 12f1f1ef3e994859b9d7dae619e2bd1d 315651afb92d4306b032e7906c820eab
-#: 31e4e4196c6040dcb863b58690fb641f 3f38df175b6d4b6aa7418b240facd872
-#: 46d925e554494776afcb8963ce87d686 47b29b3124d545bca841afa47558c11d
-#: 499f6ee5a75948c88b12d9a022d3c6b9 5463b0d089f74a73b4f987be6fbe327b
-#: 5607837b24fe423c972cb6e81276bf6f 63376cc70db64ebd9303fc50748d2ca2
-#: 8da8fb64f68e435ebaf2c92fce7223a7 cf036ad751f546f2bc3f33c186acefcc
-#: e04186a6777d469fbf8ac8cd7af1915e fd0d2a0b836d47e1a4f8c3012dea56d7
+#: ../../source/API/pygrt/utils.rst 07f4c51c1e65475bae7e0ff456edb4d8
+#: 6c6de927e67849d9a1fdcfbd81fce07f 6d1546f968fa41639afa6aa1d272becb
+#: 6f7433213a224693b6f395ccac074b53 703a125055d7477291b13306b85b8e21
+#: 80ea0e9b43a241aeaabdc1d1efbfe05e 8ecc84cc59a0473f9e220db8adc4def7
+#: 9ee5c09b8ec840e09e95408a34c71b5c a2d300a4681c4d6682e0d6633a131652
+#: ad5be957f0804097981ee71707a967a4 b2c8bce6ce1a4edd8e0ff3fef29755ac
+#: b56b0b9ef4094215b86a839067f9e376 c1b3728e698c4470843428f82227d68d
+#: ca32944b23d94e30866d80adff3f8a7f d045eedd8c5242fdbc012a3990387b40
 msgid "返回"
 msgstr ""
 
-#: 42b1552666ed4a5f9594bc5a22ee96b9 of pygrt.utils.gen_syn_from_gf_DC:12
+#: 3787663dd868481bac8de31cd6b88d85 of pygrt.utils.gen_syn_from_gf_DC:12
 msgid "- **stream** -  三分量地震图, :class:`obspy.Stream` 类型"
 msgstr ""
 
-#: 337e88f478be436aa7a354e48a9ecfb3 of pygrt.utils.gen_syn_from_gf_DC:13
+#: a668a533128d437897a9cf9e328d7e88 of pygrt.utils.gen_syn_from_gf_DC:13
 msgid "**stream** -  三分量地震图, :class:`obspy.Stream` 类型"
 msgstr ""
 
-#: 49c57e2d576c4b7a8d144986de3413a6 of pygrt.utils.gen_syn_from_gf_SF:1
+#: 53a2951e955a43ce906aea1d1e155d10 of pygrt.utils.gen_syn_from_gf_SF:1
 msgid "单力源，力分量单位均为dyne"
 msgstr ""
 
-#: 325046b21a604d7fb884080e6e851c07 of pygrt.utils.gen_syn_from_gf_SF:4
+#: 55a7c70c56bb4e5abeb8b43faafabfad of pygrt.utils.gen_syn_from_gf_SF:4
 msgid "力的放大系数"
 msgstr ""
 
-#: 5f2e728b266c4f65aeed3aa73ae62dcf of pygrt.utils.gen_syn_from_gf_SF:5
+#: 0ee8b9463c3a4303a712eea5ae2104d0 of pygrt.utils.gen_syn_from_gf_SF:5
 msgid "北向力，向北为正"
 msgstr ""
 
-#: 7acf1421c23e473bb2b6d0eef58d3dda of pygrt.utils.gen_syn_from_gf_SF:6
+#: e6704b70e5224f2694a9b341e9f6d119 of pygrt.utils.gen_syn_from_gf_SF:6
 msgid "东向力，向东为正"
 msgstr ""
 
-#: 29a97bc18aea4e66ac8afb3d1184ef51 of pygrt.utils.gen_syn_from_gf_SF:7
+#: a585ba05a652433ca426ce82171fb252 of pygrt.utils.gen_syn_from_gf_SF:7
 msgid "垂向力，向下为正"
 msgstr ""
 
-#: a5fe5cc4ef334b8a96b1d26572411169 dfafde8bbe954a55b5c4e2143d13d0ed of
+#: 3ec53eee35b64dfb863c9ff5325049af f603fad51e9e4e6c832da3190921ee28 of
 #: pygrt.utils.gen_syn_from_gf_MT:6 pygrt.utils.gen_syn_from_gf_SF:8
 msgid "台站方位角，以北顺时针为正，0<=az<=360 （静态情况不需要）"
 msgstr ""
 
-#: 4ba0080e2c6e482e8013beb12e5cf114 of pygrt.utils.gen_syn_from_gf_SF:12
+#: c1735a008e5e46618527c26a49551ee7 of pygrt.utils.gen_syn_from_gf_SF:12
 msgid "- **stream** - 三分量地震图, :class:`obspy.Stream` 类型"
 msgstr ""
 
-#: 12a80356482d4b4f9c4e77e678114dc1 of pygrt.utils.gen_syn_from_gf_SF:13
+#: 7a312de71a1a40d3bb7fe12c386d0ffa of pygrt.utils.gen_syn_from_gf_SF:13
 msgid "**stream** - 三分量地震图, :class:`obspy.Stream` 类型"
 msgstr ""
 
-#: e6f5d73d338b4a189fab20a6286b7f2a of pygrt.utils.gen_syn_from_gf_EXP:1
+#: 86530da246a745c6a925f233f5cf0035 of pygrt.utils.gen_syn_from_gf_EXP:1
 msgid "爆炸源"
 msgstr ""
 
-#: a6d10ef1b072491e904f11750bb38413 of pygrt.utils.gen_syn_from_gf_EXP:5
+#: 81a0e16872c04b1eb8300e1e6a7abe73 of pygrt.utils.gen_syn_from_gf_EXP:5
 msgid "台站方位角，以北顺时针为正，0<=az<=360 [不用于计算] （静态情况不需要）"
 msgstr ""
 
-#: c2cfb08703b94a7684e9ac2133d28452 ea8f3f54f3724b289910292d8d212f52 of
+#: 346ac3233e26410aa705b6781debf751 43722c31cd6c4b0f940e3ee72b96a5dd of
 #: pygrt.utils.gen_syn_from_gf_EXP:9 pygrt.utils.gen_syn_from_gf_MT:10
 msgid "- **stream** -       三分量地震图, :class:`obspy.Stream` 类型"
 msgstr ""
 
-#: 91c0576a99a64ba3a2f4e48b8ef16bd8 f32f6f8ed9c94c66971b9e83da62e3e9 of
+#: 94f14593212245578766f2755024d3c4 9e4aeb68ff444335b5d120881f3fdaf6 of
 #: pygrt.utils.gen_syn_from_gf_EXP:10 pygrt.utils.gen_syn_from_gf_MT:11
 msgid "**stream** -       三分量地震图, :class:`obspy.Stream` 类型"
 msgstr ""
 
-#: 04bd2d2ea27d4b0b8a2388815d1d5203 of pygrt.utils.gen_syn_from_gf_MT:1
+#: e56995b67bb3493c98ffc46004f98e0e of pygrt.utils.gen_syn_from_gf_MT:1
 msgid "矩张量源，单位为dyne*cm"
 msgstr ""
 
-#: 793b8f5b164a4402a32f2d24e6dfa740 of pygrt.utils.gen_syn_from_gf_MT:4
+#: 792e44320526438fb858e6eda37dd9d8 of pygrt.utils.gen_syn_from_gf_MT:4
 msgid "标量地震矩"
 msgstr ""
 
-#: 09e58cc890434bc2952144c07cbc1ae5 of pygrt.utils.gen_syn_from_gf_MT:5
+#: 71935962329d4727a20e0f5a00a20add of pygrt.utils.gen_syn_from_gf_MT:5
 msgid "矩张量 (M11, M12, M13, M22, M23, M33),下标1,2,3分别代表北向，东向，垂直向下"
 msgstr ""
 
-#: 9960833758e945aa8ccf728930d550b4 of pygrt.utils.compute_strain:1
+#: 3c63f5db0756412594d115ab0c37921c of pygrt.utils.compute_strain:1
 msgid "Compute dynamic/static strain tensor from synthetic spatial derivatives."
 msgstr ""
 
-#: 2a14f177563f44a7a5b62a9115a50cb6 30e57278c5fb4e9a9112f178a187c6c5
-#: 70636fdd1d86440db7ea030486baff2d of pygrt.utils.compute_rotation:3
+#: 350c7482974a46d5b4de0aacb5b53b43 c4663baf3b50420abdc61374f86ad56c
+#: f1ded1ace57c487c8ae05719b6a74da1 of pygrt.utils.compute_rotation:3
 #: pygrt.utils.compute_strain:3 pygrt.utils.compute_stress:3
 msgid ""
 "synthetic spatial derivatives :class:`obspy.Stream` class for dynamic "
 "case, dict class for static case."
 msgstr ""
 
-#: d45a5ddf91f34bdb9940887d19bc62be of pygrt.utils.compute_strain:6
+#: 811a7ea5eb734d3198eee66b76cece2e of pygrt.utils.compute_strain:6
 msgid ""
 "- **stres** -  dynamic/static strain tensor, in :class:`obspy.Stream` "
 "class or dict class."
 msgstr ""
 
-#: b812447c52ec4ca4bc321ea2aae95f03 of pygrt.utils.compute_strain:7
+#: 43adb80ee0324bce8a17081d73d32575 of pygrt.utils.compute_strain:7
 msgid ""
 "**stres** -  dynamic/static strain tensor, in :class:`obspy.Stream` class"
 " or dict class."
 msgstr ""
 
-#: c337327f034f4218a695514af9b787e3 of pygrt.utils.compute_rotation:1
+#: f873a32ccc8d46089c1162bdff6ef07d of pygrt.utils.compute_rotation:1
 msgid "Compute dynamic/static rotation tensor from synthetic spatial derivatives."
 msgstr ""
 
-#: 6664cf7dd2d0473ca583adb0e29d8604 of pygrt.utils.compute_rotation:6
+#: d3fa58abd1864be9941682d2fb5fb670 of pygrt.utils.compute_rotation:6
 msgid ""
 "- **stres** -  dynamic/static rotation tensor, in :class:`obspy.Stream` "
 "class or dict class."
 msgstr ""
 
-#: 67e389b374654275b74b584810604c4f of pygrt.utils.compute_rotation:7
+#: 4d7f4168fa104561ace965966711ce61 of pygrt.utils.compute_rotation:7
 msgid ""
 "**stres** -  dynamic/static rotation tensor, in :class:`obspy.Stream` "
 "class or dict class."
 msgstr ""
 
-#: 2e4458882e86417380723f56eafe6b3f of pygrt.utils.compute_stress:1
+#: a716cf4cbf6545d485d3c9d940ceb3e8 of pygrt.utils.compute_stress:1
 msgid "Compute dynamic/static stress tensor from synthetic spatial derivatives."
 msgstr ""
 
-#: 89a544c4faa34ca8be44e480f9139307 of pygrt.utils.compute_stress:6
+#: 147453ad90a7448e97f168f7680e4478 of pygrt.utils.compute_stress:6
 msgid ""
 "- **stres** -  dynamic/static stress tensor (unit: dyne/cm^2 = 0.1 Pa), "
 "in :class:`obspy.Stream` class or dict class."
 msgstr ""
 
-#: f8c4f19fe6e24eb3a16ff9e4d65a2e8d of pygrt.utils.compute_stress:7
+#: a9209b291fc248a7bc8f97ffcaca9fd0 of pygrt.utils.compute_stress:7
 msgid ""
 "**stres** -  dynamic/static stress tensor (unit: dyne/cm^2 = 0.1 Pa), in "
 ":class:`obspy.Stream` class or dict class."
 msgstr ""
 
-#: 51bb8d0d2e594a99b6512cd035cfd188 of pygrt.utils.stream_convolve:1
+#: b85765de572b4864aed1f1065ff11f40 of pygrt.utils.stream_convolve:1
 msgid "对stream中每一道信号做线性卷积"
 msgstr ""
 
-#: 07d481e8d2c54955ada6f4e52a0becff 4191dbc398be419fa7933af9bd7046b7
-#: 56ff2fc90ce746b8ac885c781196ed38 9f1426ba0c544e34a3c81e97a2fed8c9 of
+#: 76c50a6e9574470db5076b2e348be384 a0d725be30464de1aa8fe63d31dcffde
+#: bc03c548c0644263b5c3605b6c4487e2 eb4252d74db4443da888f9b27536be1a of
 #: pygrt.utils.stream_convolve:3 pygrt.utils.stream_diff:3
 #: pygrt.utils.stream_integral:3 pygrt.utils.stream_write_sac:3
 msgid "记录多个Trace的 :class:`obspy.Stream` 类型"
 msgstr ""
 
-#: dd8dd70b78c44013888ccbb504c6ef68 of pygrt.utils.stream_convolve:4
+#: ed86a638405d48fba601a2a176d7220c of pygrt.utils.stream_convolve:4
 msgid "卷积信号"
 msgstr ""
 
-#: 26a7e29cab5341b0807d68d5c7358511 4a9bc42e5915427aa27731fc8a3d3e56
-#: 8a999e36fcc44ea394271fd1eba5ec24 of pygrt.utils.stream_convolve:5
+#: 320b05c954d84e83888942f2d318dfa6 35607b18659a45fd9907fec99c1984e6
+#: d2fb2c7a7d99491b86054381b0d40876 of pygrt.utils.stream_convolve:5
 #: pygrt.utils.stream_diff:4 pygrt.utils.stream_integral:4
 msgid "是否做原地更改"
 msgstr ""
 
-#: 458014b59a7149f1ae5927340967fef2 855f777a1a2e4ffe828630cc9021cdc9
-#: ce6e1a759c874ba0b56da0ba6dffdf59 of pygrt.utils.stream_convolve:7
+#: 6872304a1c9547ceb9ca215b57d1c4e8 9106afe9afca4c738c4ebc2ad56990b0
+#: 9a1d4120dce24f71b15023773aa2dbbc of pygrt.utils.stream_convolve:7
 #: pygrt.utils.stream_diff:6 pygrt.utils.stream_integral:6
 msgid "- **stream** -    处理后的结果, :class:`obspy.Stream` 类型"
 msgstr ""
 
-#: 1c4d19ece1d44a69bca156c763231730 27c99f3181684f979d95116d4c5f28f3
-#: d98a50e5ed42414ba5d5de5f030a98b9 of pygrt.utils.stream_convolve:8
+#: 42cd0aca85f346c4b6fd3949743c4081 a2d9ab98dc894bad91b0441b7f2ce32a
+#: b8efce350a7349ca8c6d924946215fca of pygrt.utils.stream_convolve:8
 #: pygrt.utils.stream_diff:7 pygrt.utils.stream_integral:7
 msgid "**stream** -    处理后的结果, :class:`obspy.Stream` 类型"
 msgstr ""
 
-#: 8f902aac6777450a9668d59f546f0bc1 of pygrt.utils.stream_integral:1
+#: e0dc97703b024566aa0fdc55799a59f0 of pygrt.utils.stream_integral:1
 msgid "对stream中每一道信号做梯形积分"
 msgstr ""
 
-#: 767b2b97b77944e484ab0d5e52158f9c of pygrt.utils.stream_diff:1
+#: 66dc60f2d30e477f8e1c9d883cf7b78d of pygrt.utils.stream_diff:1
 msgid "对stream中每一道信号做中心差分"
 msgstr ""
 
-#: d40974787afe4a53a9c15d416827d8bd of pygrt.utils.stream_write_sac:1
+#: fd786a4d502a4e45a308475d8c48a273 of pygrt.utils.stream_write_sac:1
 msgid "将一系列Trace以SAC形式保存到本地，以发震时刻作为参考0时刻"
 msgstr ""
 
-#: 0d29897c87c444b094dd0f9b192d3a6f of pygrt.utils.stream_write_sac:4
+#: 6041fe6868aa4161b766533eb2914bb7 of pygrt.utils.stream_write_sac:4
 msgid ""
 "保存文件名，不要加后缀， 例如path=\"GRN/out\"表明sac文件将保存在GRN文件中， 文件名分别为outR.sac, "
 "outT.sac, outZ.sac， 若通道名前缀有\"r\",\"z\"或\"t\"（表示位移空间导数），则该前缀 "
 "也会加到SAC文件名中，例如GRN/routR.sac"
 msgstr ""
 
-#: e19977c688894641819b1d37199ef152 of pygrt.utils.read_kernels_freqs:1
+#: 9b45759a1e7f4ab187eddb6e74e6c3cb of pygrt.utils.read_kernels_freqs:1
 msgid "读取statsdir目录下所有频率（除了零频）的积分过程文件（K_开头），再将核函数线性插值到指定的速度数组vels"
 msgstr ""
 
-#: e341db31cf1a4dffbfb6bdfaaf39bfdb of pygrt.utils.read_kernels_freqs:3
+#: e8538b307b0645a186a98587ef4a419f of pygrt.utils.read_kernels_freqs:3
 msgid "存储积分过程文件的目录"
 msgstr ""
 
-#: 6624466241634ef3a733d63f96d76d23 of pygrt.utils.read_kernels_freqs:4
+#: 1daa9dc1b9e04435a10fde35cd45e1c5 of pygrt.utils.read_kernels_freqs:4
 msgid "待插值的速度数组(km/s)，必须正序"
 msgstr ""
 
-#: 0532ffc3cf74436e8ccfca7d62a69c8f of pygrt.utils.read_kernels_freqs:5
+#: a9b07d9aad464058b95c4b8ad08095cc of pygrt.utils.read_kernels_freqs:5
 msgid "指定返回一系列的核函数名称，如EXP_q0，DC_w2等，默认返回全部"
 msgstr ""
 
-#: 035be2484bb249268e2e18213d2518ac of pygrt.utils.read_kernels_freqs:7
+#: d3baac93a06043fa8bde825b66a28a2d of pygrt.utils.read_kernels_freqs:7
 msgid "- **kerDct**  -   字典格式的核函数插值结果"
 msgstr ""
 
-#: 1ef4a00db4574f058d2433a412c9660c of pygrt.utils.read_kernels_freqs:8
+#: df74305a1c814bb7b3428d8b365eb1bb of pygrt.utils.read_kernels_freqs:8
 msgid "**kerDct**  -   字典格式的核函数插值结果"
 msgstr ""
 
-#: eaf7ff1f530c497c95e7b335d2d43463 of pygrt.utils.read_statsfile:1
+#: 5c2d9ea92fac4066a46a20c914ac92ab of pygrt.utils.read_statsfile:1
 msgid "读取单个频率下波数积分(或Filon积分)的记录文件"
 msgstr ""
 
-#: 1f389f5702ef46b0b792c5e605246f4d of pygrt.utils.read_statsfile:3
+#: 126a0d69f07449f2a4c2d67bd8dd229c of pygrt.utils.read_statsfile:3
 msgid "文件路径(可使用通配符简化输入)"
 msgstr ""
 
-#: b5bcc5ce20cb4973a9e0ddc4f281b5e2 of pygrt.utils.read_statsfile:5
+#: c5b279662f454133a4be4f4c1eb45347 of pygrt.utils.read_statsfile:5
 msgid ""
 "- **data** -     `numpy.ndarray "
 "<https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_ "
 "自定义类型数组"
 msgstr ""
 
-#: ec086405115a40ffb194d48417183c9a of pygrt.utils.read_statsfile:6
+#: 71100763e1414917ae9e8518ab74bd6b of pygrt.utils.read_statsfile:6
 msgid ""
 "**data** -     `numpy.ndarray "
 "<https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_ "
 "自定义类型数组"
 msgstr ""
 
-#: 95cb3754476c40d0899e7f272f520645 of pygrt.utils.read_statsfile_ptam:1
+#: bc724e8c92d041bea0ea682ec81c4f80 of pygrt.utils.read_statsfile_ptam:1
 msgid "读取单个频率下峰谷平均法的记录文件"
 msgstr ""
 
-#: b34187cb1327485b91cd522cdfb532ed of pygrt.utils.read_statsfile_ptam:3
+#: 0f4bf32518184b078de526429ab5cdc6 of pygrt.utils.read_statsfile_ptam:3
 msgid "PTAM文件路径(可使用通配符简化输入)"
 msgstr ""
 
-#: 706f6313e0bc4bbc9c841c602e701629 of pygrt.utils.read_statsfile_ptam:5
+#: ac444538b4d24a1fa7021ed39f6e8f23 of pygrt.utils.read_statsfile_ptam:5
 msgid ""
 "- **data1** -     `numpy.ndarray "
 "<https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_ "
@@ -380,113 +380,120 @@ msgid ""
 "自定义类型数组，PTAM的峰谷位置及幅值 - **dist** -      文件对应的震中距(km)"
 msgstr ""
 
-#: 7bd123f1b30e4638a37233fbbc9094ba of pygrt.utils.read_statsfile_ptam:6
+#: 3953d4787e8d4c06867d2e190f67b4a5 of pygrt.utils.read_statsfile_ptam:6
 msgid ""
 "**data1** -     `numpy.ndarray "
 "<https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_ "
 "自定义类型数组，DWM或FIM过程中的积分过程数据"
 msgstr ""
 
-#: 20ecc19e66f04cbe8137a0caa35f3703 of pygrt.utils.read_statsfile_ptam:7
+#: 9e4809344337451981a2f2f5ba6357a0 of pygrt.utils.read_statsfile_ptam:7
 msgid ""
 "**data2** -     `numpy.ndarray "
 "<https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_ "
 "自定义类型数组，PTAM过程中的积分过程数据"
 msgstr ""
 
-#: 7588c38a4a314f81bd78696f8e6fe7f0 of pygrt.utils.read_statsfile_ptam:8
+#: a17f9ada0f104cbc914c7b0569327072 of pygrt.utils.read_statsfile_ptam:8
 msgid ""
 "**ptam_data** -     `numpy.ndarray "
 "<https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_ "
 "自定义类型数组，PTAM的峰谷位置及幅值"
 msgstr ""
 
-#: 43a43060a1af4a168f4989f25013be75 of pygrt.utils.read_statsfile_ptam:9
+#: 6cb99861aff64d70804920b1749d6107 of pygrt.utils.read_statsfile_ptam:9
 msgid "**dist** -      文件对应的震中距(km)"
 msgstr ""
 
-#: 7cac17a44fe040e0ac534208a4b1a0f6 of pygrt.utils.plot_statsdata:1
+#: 862bad65279d4d0995eaa80d917a9dea of pygrt.utils.plot_statsdata:1
 msgid ""
 "根据 :func:`read_statsfile <pygrt.utils.read_statsfile>` 函数函数读取的数据， 绘制核函数 "
 ":math:`F(k,\\omega)`、被积函数 :math:`F(k,\\omega)J_m(kr)k`，以及简单计算累积积分 "
 ":math:`\\sum F(k,\\omega)J_m(kr)k` 并绘制。"
 msgstr ""
 
-#: 43ef615ed78e4465bfeee459b4bd32f8 b56f2815df8d49219aa99520191763da of
+#: be5c145f722347dbbd60a7f92ef4f23e d7e4d8eaf58b499da40e693abd5d801f of
 #: pygrt.utils.plot_statsdata:4 pygrt.utils.plot_statsdata_ptam:4
 msgid "并不是每个震源类型对应的每一阶每种积分类型都存在，详见 :ref:`grn_types`。"
 msgstr ""
 
-#: f75ea6a855c8475c9e51d77c9f37d2b1 of pygrt.utils.plot_statsdata:6
+#: 112d5a31bcf14f48adcc5340d6fe6437 of pygrt.utils.plot_statsdata:6
 msgid ":func:`read_statsfile <pygrt.utils.read_statsfile>` 函数返回值"
 msgstr ""
 
-#: 3c864f7801bc4430a568debaaa233b14 of pygrt.utils.plot_statsdata:7
+#: b693f21a0a1f4e95b484991340a2b18d of pygrt.utils.plot_statsdata:7
 msgid "震中距(km)"
 msgstr ""
 
-#: 92c517b63c5e4070a6010c0cb3414cad a05070c1b30e4f4b8ed1a4a910cf8574 of
+#: 3c29d7b233af4bd1b50daaf5b0218e84 ef5fc11dca98418a87a7183c26a0bc05 of
 #: pygrt.utils.plot_statsdata:8 pygrt.utils.plot_statsdata_ptam:9
 msgid "震源类型的缩写，包括EXP、VF、HF、DC"
 msgstr ""
 
-#: b10a7f8c7fca4d478af59266058b56d8 c4bd53e95c4542cc896394d35617b531 of
+#: 45fd38fa64c74ee48f2c4d39f86eb59f d3cd8000875546acbdeca3a22494a071 of
 #: pygrt.utils.plot_statsdata:9 pygrt.utils.plot_statsdata_ptam:10
 msgid "阶数(0,1,2)，不完全对应公式中Bessel函数的阶数，因为存在Bessel函数的导数，需要使用递推公式"
 msgstr ""
 
-#: 65f7fe758b884edea8a2e582e0715232 6750966f9a9d4e87a512b495c8a45be6 of
+#: 77525acd634f4936996bb20f640d914a 919603b9963e48de9c01594809a14b1e of
 #: pygrt.utils.plot_statsdata:10 pygrt.utils.plot_statsdata_ptam:11
 msgid "积分类型(0,1,2,3)"
 msgstr ""
 
-#: 94f45197e1324610b06cab0071fd0238 e4fed7038f654822beb257f34d1cad72 of
+#: 9172e6803b73465795e087a2ec0f3911 d4ffe2779bce42dd8a502c8aa36f7944 of
 #: pygrt.utils.plot_statsdata:11 pygrt.utils.plot_statsdata_ptam:12
 msgid "绘制实部还是虚部，默认实部，传入2表示实部虚部都绘制"
 msgstr ""
 
-#: 2668c5033ee04dbdbed45f2341f65aff 6441142ebc3c46a6831f320bc9471fda of
+#: 8fbc9924cad1471ea4e57a877e018b89 cd60dbe44ebc41b2801598e1cf855c28 of
 #: pygrt.utils.plot_statsdata:12 pygrt.utils.plot_statsdata_ptam:13
 msgid "传入自定义的matplotlib.Figure对象，默认为None"
 msgstr ""
 
-#: c9e483c21dad4545a6991ade86d18039 e71916c227cc430c98289409e5f5b4f7 of
+#: 6d61c391c9674cf18521628c1bb0b26b dbd55da8ea1f43c4b21027d5eb9edb32 of
 #: pygrt.utils.plot_statsdata:13 pygrt.utils.plot_statsdata_ptam:14
 msgid "传入自定义的matplotlib.Axes对象数组（三个），默认为None"
 msgstr ""
 
-#: 46a20b2a72f445c88509e46273f6a0ef 8fb10a1e668e42888c9d521626d8b6ac of
+#: 13259fac833a4fcda4e2d52a4f9bf215 1667c1d4841a40738cbf1b0a57638642 of
 #: pygrt.utils.plot_statsdata:15 pygrt.utils.plot_statsdata_ptam:16
 msgid ""
 "- **fig** -                        matplotlib.Figure对象 - "
 "**(ax1,ax2,ax3)** -              matplotlib.Axes对象数组"
 msgstr ""
 
-#: 3c9b6030830c4aeda05b8d35f9ef93d9 adaeef4648264fff9c3a17af2472d4ae of
+#: 123922c58cde48329e18a53999b5471c b36871dc55044263818de9de196cb8e6 of
 #: pygrt.utils.plot_statsdata:16 pygrt.utils.plot_statsdata_ptam:17
 msgid "**fig** -                        matplotlib.Figure对象"
 msgstr ""
 
-#: 521b6c6bf74d4e1d82bbac9758b59629 e4a9ed0406fa45038158b305fb096a6f of
+#: 09790fa351aa42d3ae1823fabf0fb16d e5ce3621d25041918524b47071bb42a4 of
 #: pygrt.utils.plot_statsdata:17 pygrt.utils.plot_statsdata_ptam:18
 msgid "**(ax1,ax2,ax3)** -              matplotlib.Axes对象数组"
 msgstr ""
 
-#: 44ccab427a7c4d67bc3c30b34580f1e7 of pygrt.utils.plot_statsdata_ptam:1
+#: 521bd32e7dab4e0fa476befd41ebea67 of pygrt.utils.plot_statsdata_ptam:1
 msgid ""
 "根据 :func:`read_statsfile_ptam <pygrt.utils.read_statsfile_ptam>` 函数读取的数据，"
 " 简单计算并绘制累积积分以及峰谷平均法使用的波峰波谷的位置。"
 msgstr ""
 
-#: 1fdcc3f6b07e406186db0be56eb7989a of pygrt.utils.plot_statsdata_ptam:6
+#: d42eefababa146fca20898bfcbfa412f of pygrt.utils.plot_statsdata_ptam:6
 msgid "DWM或FIM过程中的积分过程数据"
 msgstr ""
 
-#: 873251e144a94b16bda4d2804e406e74 of pygrt.utils.plot_statsdata_ptam:7
+#: c6ff97a76e8f4a6591437bac8e795207 of pygrt.utils.plot_statsdata_ptam:7
 msgid "PTAM过程中的积分过程数据"
 msgstr ""
 
-#: f957fb2cca1f424e83f281c2afad4eed of pygrt.utils.plot_statsdata_ptam:8
+#: 5b761f43302041d2936f23f04813dd57 of pygrt.utils.plot_statsdata_ptam:8
 msgid "PTAM的峰谷位置及幅值"
 msgstr ""
+
+#~ msgid ""
+#~ "根据 :func:`read_statsfile <pygrt.utils.read_statsfile>` "
+#~ "函数函数读取的数据， 绘制核函数 :math:`F_m(k,\\omega)`、被积函数 "
+#~ ":math:`F_m(k,\\omega)J_m(kr)k`，以及简单计算累积积分 :math:`\\sum "
+#~ "F_m(k,\\omega)J_m(kr)k` 并绘制。"
+#~ msgstr ""
 
