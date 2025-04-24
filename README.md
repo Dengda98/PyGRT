@@ -9,6 +9,11 @@
   <img alt="GitHub License" src="https://img.shields.io/github/license/Dengda98/PyGRT">
 </p>
 
+<p align="center">
+  <img src="./figs/example_ZRT.png" alt="Image 2" width="100%" />
+</p>
+
+
 > ⭐ **Like this project? Give it a Star!** ⭐
 
 [**中文文档**](https://pygrt.readthedocs.io/zh-cn/)  |  [**English Document**](https://pygrt.readthedocs.io/en/)  
@@ -130,7 +135,6 @@ Then you can run the command like `grt` in terminal.
 <p align='center'>
   <img alt="multi traces" src="example/multi_traces/multi_traces.png" width="300">
   <img alt="lamb problem" src="example/lamb_problem/stream.png" width="300">
-  <img alt="far-field record" src="example/far_field/test.png" width="600">
 </p>
 
 <p align='center'>
