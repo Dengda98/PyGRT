@@ -30,7 +30,7 @@
  * 处理并确定波峰或波谷                                    
  * 
  * @param ir        震中距索引                          
- * @param m         Bessel函数阶                          
+ * @param im        不同震源不同阶数的索引              
  * @param v         积分形式索引                          
  * @param maxNpt    最大峰谷数                                
  * @param maxnwait  最大等待次数                        
@@ -44,22 +44,22 @@
  * @param iendk0    一个布尔指针，用于指示是否满足结束条件 
  */
 static void process_peak_or_trough(
-    MYINT ir, MYINT m, MYINT v, MYINT maxNpt, MYINT maxnwait, 
-    MYREAL k, MYREAL dk, MYCOMPLEX (*J3)[3][3][4], MYREAL (*kpt)[3][4][maxNpt], 
-    MYCOMPLEX (*pt)[3][4][maxNpt], MYINT (*ipt)[3][4], MYINT (*gpt)[3][4], bool *iendk0)
+    MYINT ir, MYINT im, MYINT v, MYINT maxNpt, MYINT maxnwait, 
+    MYREAL k, MYREAL dk, MYCOMPLEX (*J3)[3][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS], MYREAL (*kpt)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt], 
+    MYCOMPLEX (*pt)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt], MYINT (*ipt)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS], MYINT (*gpt)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS], bool *iendk0)
 {
     MYCOMPLEX tmp0;
-    if (gpt[ir][m][v] >= 2 && ipt[ir][m][v] < maxNpt) {
-        if (cplx_peak_or_trough(m, v, J3[ir], k, dk, &kpt[ir][m][v][ipt[ir][m][v]], &tmp0) != 0) {
-            pt[ir][m][v][ipt[ir][m][v]++] = tmp0;
-            gpt[ir][m][v] = 0;
-        } else if (gpt[ir][m][v] >= maxnwait) {
-            kpt[ir][m][v][ipt[ir][m][v]] = k - dk;
-            pt[ir][m][v][ipt[ir][m][v]++] = J3[ir][1][m][v];
-            gpt[ir][m][v] = 0;
+    if (gpt[ir][im][v] >= 2 && ipt[ir][im][v] < maxNpt) {
+        if (cplx_peak_or_trough(im, v, J3[ir], k, dk, &kpt[ir][im][v][ipt[ir][im][v]], &tmp0) != 0) {
+            pt[ir][im][v][ipt[ir][im][v]++] = tmp0;
+            gpt[ir][im][v] = 0;
+        } else if (gpt[ir][im][v] >= maxnwait) {
+            kpt[ir][im][v][ipt[ir][im][v]] = k - dk;
+            pt[ir][im][v][ipt[ir][im][v]++] = J3[ir][1][im][v];
+            gpt[ir][im][v] = 0;
         }
     }
-    *iendk0 = *iendk0 && (ipt[ir][m][v] == maxNpt);
+    *iendk0 = *iendk0 && (ipt[ir][im][v] == maxNpt);
 }
 
 
@@ -73,121 +73,61 @@ static void process_peak_or_trough(
  * @param       maxnwait            最大等待次数      
  * @param       k                   波数                             
  * @param       dk                  波数步长       
- * @param       EXP_J3              爆炸源对应的被积函数的幅值数组，下同
- * @param       VF_J3               垂直力源
- * @param       HF_J3               水平力源
- * @param       DC_J3               剪切源
- * @param       sum_EXP_J           爆炸源对应的积分值数组，下同
- * @param       sum_VF_J            垂直力源
- * @param       sum_HF_J            水平力源
- * @param       sum_DC_J            剪切源
+ * @param       SUM3                被积函数的幅值数组 
+ * @param       sum_J               的积分值数组 
  * 
- * @param       kEXPpt              爆炸源对应的积分值峰谷的波数数组，下同             
- * @param       EXPpt               爆炸源对应的用于存储波峰/波谷点的幅值数组，下同      
- * @param       iEXPpt              爆炸源对应的用于存储波峰/波谷点的个数数组，下同         
- * @param       gEXPpt              爆炸源对应的用于存储等待迭次数的数组，下同
- * @param       kVFpt               垂直力源
- * @param       VFpt                垂直力源
- * @param       iVFpt               垂直力源
- * @param       gVFpt               垂直力源
- * @param       kHFpt               水平力源
- * @param       HFpt                水平力源
- * @param       iHFpt               水平力源
- * @param       gHFpt               水平力源
- * @param       kDCpt               剪切源
- * @param       DCpt                剪切源
- * @param       iDCpt               剪切源
- * @param       gDCpt               剪切源
+ * @param       Kpt                 积分值峰谷的波数数组     
+ * @param       Fpt                 用于存储波峰/波谷点的幅值数组 
+ * @param       Ipt                 用于存储波峰/波谷点的个数数组 
+ * @param       Gpt                 用于存储等待迭次数的数组 
  * 
+ * @param       iendk0              是否收集足够峰谷
  * 
  */
 static void ptam_once(
     const MYINT ir, const MYINT nr, const MYREAL precoef, 
     MYINT maxNpt, MYINT maxnwait, MYREAL k, MYREAL dk, 
-    MYCOMPLEX EXP_J3[nr][3][3][4], MYCOMPLEX VF_J3[nr][3][3][4], 
-    MYCOMPLEX HF_J3[nr][3][3][4], MYCOMPLEX DC_J3[nr][3][3][4], 
-    MYCOMPLEX sum_EXP_J[nr][3][4], MYCOMPLEX sum_VF_J[nr][3][4],  
-    MYCOMPLEX sum_HF_J[nr][3][4],  MYCOMPLEX sum_DC_J[nr][3][4],  
-    MYREAL kEXPpt[nr][3][4][maxNpt], MYCOMPLEX EXPpt[nr][3][4][maxNpt], MYINT iEXPpt[nr][3][4], MYINT gEXPpt[nr][3][4],
-    MYREAL kVFpt[nr][3][4][maxNpt], MYCOMPLEX VFpt[nr][3][4][maxNpt], MYINT iVFpt[nr][3][4], MYINT gVFpt[nr][3][4],
-    MYREAL kHFpt[nr][3][4][maxNpt], MYCOMPLEX HFpt[nr][3][4][maxNpt], MYINT iHFpt[nr][3][4], MYINT gHFpt[nr][3][4],
-    MYREAL kDCpt[nr][3][4][maxNpt], MYCOMPLEX DCpt[nr][3][4][maxNpt], MYINT iDCpt[nr][3][4], MYINT gDCpt[nr][3][4],
+    MYCOMPLEX SUM3[nr][3][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS],
+    MYCOMPLEX sum_J[nr][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS],
+    MYREAL Kpt[nr][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt],
+    MYCOMPLEX Fpt[nr][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt],
+    MYINT Ipt[nr][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS],
+    MYINT Gpt[nr][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS],
     bool *iendk0)
 {
-    // 赋更新量
-    for(MYINT m=0; m<3; ++m){
-        for(MYINT v=0; v<4; ++v){
-            // EXP_J3, VF_J3, HF_J3, DC_J3转为求和结果
-            if(sum_EXP_J!=NULL)  {
-                sum_EXP_J[ir][m][v] += EXP_J3[ir][2][m][v] * precoef;
-                EXP_J3[ir][2][m][v] = sum_EXP_J[ir][m][v];
-            }
-            if(sum_VF_J!=NULL){
-                sum_VF_J[ir][m][v]  += VF_J3[ir][2][m][v] * precoef;
-                VF_J3[ir][2][m][v]  = sum_VF_J[ir][m][v];
-            }
-            if(sum_HF_J!=NULL){
-                sum_HF_J[ir][m][v]  += HF_J3[ir][2][m][v] * precoef;
-                HF_J3[ir][2][m][v]  = sum_HF_J[ir][m][v];
-            }
-            if(sum_DC_J!=NULL){
-                sum_DC_J[ir][m][v]  += DC_J3[ir][2][m][v] * precoef;
-                DC_J3[ir][2][m][v]  = sum_DC_J[ir][m][v];
-            }
-            
-        }
-    } 
-
-    // 3点以上，判断波峰波谷 
     *iendk0 = true;
-    for (MYINT m = 0; m < 3; ++m) {
-        for (MYINT v = 0; v < 4; ++v) {
-            if (sum_EXP_J != NULL && m == 0 && (v == 0 || v == 2)) {
-                process_peak_or_trough(ir, m, v, maxNpt, maxnwait, k, dk, EXP_J3, kEXPpt, EXPpt, iEXPpt, gEXPpt, iendk0);
-            }
-            if (sum_VF_J != NULL && m == 0 && (v == 0 || v == 2)) {
-                process_peak_or_trough(ir, m, v, maxNpt, maxnwait, k, dk, VF_J3, kVFpt, VFpt, iVFpt, gVFpt, iendk0);
-            }
-            if (sum_HF_J != NULL && m == 1) {
-                process_peak_or_trough(ir, m, v, maxNpt, maxnwait, k, dk, HF_J3, kHFpt, HFpt, iHFpt, gHFpt, iendk0);
-            }
-            if (sum_DC_J != NULL && ((m == 0 && (v == 0 || v == 2)) || m != 0)) {
-                process_peak_or_trough(ir, m, v, maxNpt, maxnwait, k, dk, DC_J3, kDCpt, DCpt, iDCpt, gDCpt, iendk0);
-            }
-        }
-    }
-    
+    for(MYINT i=0; i<GRT_SRC_M_COUNTS; ++i){
+        MYINT modr = GRT_SRC_M_ORDERS[i];
+        for(MYINT v=0; v<GRT_SRC_P_COUNTS; ++v){
+            if(modr == 0 && v!=0 && v!= 2)  continue;
 
-    // 左移动点, 
-    for(MYINT m=0; m<3; ++m){
-        for(MYINT v=0; v<4; ++v){
+            // 赋更新量
+            // SUM3转为求和结果
+            sum_J[ir][i][v] += SUM3[ir][2][i][v] * precoef;
+            SUM3[ir][2][i][v] = sum_J[ir][i][v];         
+            
+            // 3点以上，判断波峰波谷 
+            process_peak_or_trough(ir, i, v, maxNpt, maxnwait, k, dk, SUM3, Kpt, Fpt, Ipt, Gpt, iendk0);
+
+            // 左移动点, 
             for(MYINT jj=0; jj<2; ++jj){
-                if(sum_EXP_J!=NULL) EXP_J3[ir][jj][m][v] = EXP_J3[ir][jj+1][m][v];
-                if(sum_VF_J!=NULL)  VF_J3[ir][jj][m][v]  = VF_J3[ir][jj+1][m][v];
-                if(sum_HF_J!=NULL)  HF_J3[ir][jj][m][v]  = HF_J3[ir][jj+1][m][v];
-                if(sum_DC_J!=NULL)  DC_J3[ir][jj][m][v]  = DC_J3[ir][jj+1][m][v];
+                SUM3[ir][jj][i][v] = SUM3[ir][jj+1][i][v];
             }
 
             // 点数+1
-            if(sum_EXP_J!=NULL) gEXPpt[ir][m][v]++;
-            if(sum_VF_J!=NULL)  gVFpt[ir][m][v]++;
-            if(sum_HF_J!=NULL)  gHFpt[ir][m][v]++;
-            if(sum_DC_J!=NULL)  gDCpt[ir][m][v]++;
+            Gpt[ir][i][v]++;
         }
-    }
+    } 
 }
 
 
 void PTA_method(
     const MODEL1D *mod1d, MYREAL k0, MYREAL predk, MYCOMPLEX omega, 
     MYINT nr, MYREAL *rs,
-    MYCOMPLEX sum_EXP_J0[nr][3][4], MYCOMPLEX sum_VF_J0[nr][3][4],  
-    MYCOMPLEX sum_HF_J0[nr][3][4],  MYCOMPLEX sum_DC_J0[nr][3][4],  
+    MYCOMPLEX sum_J0[nr][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS],
     bool calc_upar,
-    MYCOMPLEX sum_EXP_uiz_J0[nr][3][4], MYCOMPLEX sum_VF_uiz_J0[nr][3][4],  
-    MYCOMPLEX sum_HF_uiz_J0[nr][3][4],  MYCOMPLEX sum_DC_uiz_J0[nr][3][4],  
-    MYCOMPLEX sum_EXP_uir_J0[nr][3][4], MYCOMPLEX sum_VF_uir_J0[nr][3][4],  
-    MYCOMPLEX sum_HF_uir_J0[nr][3][4],  MYCOMPLEX sum_DC_uir_J0[nr][3][4],  
+    MYCOMPLEX sum_uiz_J0[nr][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS],
+    MYCOMPLEX sum_uir_J0[nr][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS],
     FILE *ptam_fstatsnr[nr][2], KernelFunc kerfunc)
 {   
     // 需要兼容对正常收敛而不具有规律波峰波谷的序列
@@ -197,18 +137,9 @@ void PTA_method(
     const MYINT maxnwait = 9;     // 最大等待次数，不能太小
     MYREAL k=0.0;
 
-    MYCOMPLEX EXP_qwv[3][3], VF_qwv[3][3], HF_qwv[3][3], DC_qwv[3][3]; // 不同震源的核函数
-    MYCOMPLEX (*pEXP_qwv)[3] = (sum_EXP_J0!=NULL)? EXP_qwv : NULL;
-    MYCOMPLEX (*pVF_qwv)[3]  = (sum_VF_J0!=NULL)?  VF_qwv  : NULL;
-    MYCOMPLEX (*pHF_qwv)[3]  = (sum_HF_J0!=NULL)?  HF_qwv  : NULL;
-    MYCOMPLEX (*pDC_qwv)[3]  = (sum_DC_J0!=NULL)?  DC_qwv  : NULL;
-
-    MYCOMPLEX EXP_uiz_qwv[3][3], VF_uiz_qwv[3][3], HF_uiz_qwv[3][3], DC_uiz_qwv[3][3]; 
-    MYCOMPLEX (*pEXP_uiz_qwv)[3] = (sum_EXP_uiz_J0!=NULL)? EXP_uiz_qwv : NULL;
-    MYCOMPLEX (*pVF_uiz_qwv)[3]  = (sum_VF_uiz_J0!=NULL)?  VF_uiz_qwv  : NULL;
-    MYCOMPLEX (*pHF_uiz_qwv)[3]  = (sum_HF_uiz_J0!=NULL)?  HF_uiz_qwv  : NULL;
-    MYCOMPLEX (*pDC_uiz_qwv)[3]  = (sum_DC_uiz_J0!=NULL)?  DC_uiz_qwv  : NULL;
-    
+    // 不同震源不同阶数的核函数 F(k, w) 
+    MYCOMPLEX QWV[GRT_SRC_M_COUNTS][GRT_SRC_QWV_COUNTS];
+    MYCOMPLEX QWV_uiz[GRT_SRC_M_COUNTS][GRT_SRC_QWV_COUNTS];
 
     static const MYINT maxNpt=PTAM_MAX_PEAK_TROUGH; // 波峰波谷的目标
 
@@ -216,129 +147,46 @@ void PTA_method(
     // 用于接收F(ki,w)Jm(ki*r)ki
     // 存储采样的值，维度3表示通过连续3个点来判断波峰或波谷
     // 既用于存储被积函数，也最后用于存储求和的结果
-    MYCOMPLEX (*EXP_J3)[3][3][4] = (MYCOMPLEX (*)[3][3][4])calloc(nr, sizeof(*EXP_J3));
-    MYCOMPLEX (*VF_J3)[3][3][4] = (MYCOMPLEX (*)[3][3][4])calloc(nr, sizeof(*VF_J3));
-    MYCOMPLEX (*HF_J3)[3][3][4] = (MYCOMPLEX (*)[3][3][4])calloc(nr, sizeof(*HF_J3));
-    MYCOMPLEX (*DC_J3)[3][3][4] = (MYCOMPLEX (*)[3][3][4])calloc(nr, sizeof(*DC_J3));
-
-    MYCOMPLEX (*EXP_uiz_J3)[3][3][4] = (MYCOMPLEX (*)[3][3][4])calloc(nr, sizeof(*EXP_uiz_J3));
-    MYCOMPLEX (*VF_uiz_J3)[3][3][4] = (MYCOMPLEX (*)[3][3][4])calloc(nr, sizeof(*VF_uiz_J3));
-    MYCOMPLEX (*HF_uiz_J3)[3][3][4] = (MYCOMPLEX (*)[3][3][4])calloc(nr, sizeof(*HF_uiz_J3));
-    MYCOMPLEX (*DC_uiz_J3)[3][3][4] = (MYCOMPLEX (*)[3][3][4])calloc(nr, sizeof(*DC_uiz_J3));
-
-    MYCOMPLEX (*EXP_uir_J3)[3][3][4] = (MYCOMPLEX (*)[3][3][4])calloc(nr, sizeof(*EXP_uir_J3));
-    MYCOMPLEX (*VF_uir_J3)[3][3][4] = (MYCOMPLEX (*)[3][3][4])calloc(nr, sizeof(*VF_uir_J3));
-    MYCOMPLEX (*HF_uir_J3)[3][3][4] = (MYCOMPLEX (*)[3][3][4])calloc(nr, sizeof(*HF_uir_J3));
-    MYCOMPLEX (*DC_uir_J3)[3][3][4] = (MYCOMPLEX (*)[3][3][4])calloc(nr, sizeof(*DC_uir_J3));
+    MYCOMPLEX (*SUM3)[3][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS] = (MYCOMPLEX (*)[3][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS])calloc(nr, sizeof(*SUM3));
+    MYCOMPLEX (*SUM3_uiz)[3][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS] = (MYCOMPLEX (*)[3][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS])calloc(nr, sizeof(*SUM3_uiz));
+    MYCOMPLEX (*SUM3_uir)[3][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS] = (MYCOMPLEX (*)[3][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS])calloc(nr, sizeof(*SUM3_uir));
 
     // 之前求和的值
-    MYCOMPLEX (*sum_EXP_J)[3][4] = (sum_EXP_J0!=NULL)? (MYCOMPLEX (*)[3][4])calloc(nr, sizeof(*sum_EXP_J)) : NULL;
-    MYCOMPLEX (*sum_VF_J)[3][4] =  (sum_VF_J0!=NULL)?  (MYCOMPLEX (*)[3][4])calloc(nr, sizeof(*sum_VF_J)) : NULL;
-    MYCOMPLEX (*sum_HF_J)[3][4] =  (sum_HF_J0!=NULL)?  (MYCOMPLEX (*)[3][4])calloc(nr, sizeof(*sum_HF_J)) : NULL;
-    MYCOMPLEX (*sum_DC_J)[3][4] =  (sum_DC_J0!=NULL)?  (MYCOMPLEX (*)[3][4])calloc(nr, sizeof(*sum_DC_J)) : NULL;
-
-    MYCOMPLEX (*sum_EXP_uiz_J)[3][4] = (sum_EXP_uiz_J0!=NULL)? (MYCOMPLEX (*)[3][4])calloc(nr, sizeof(*sum_EXP_uiz_J)) : NULL;
-    MYCOMPLEX (*sum_VF_uiz_J)[3][4] =  (sum_VF_uiz_J0!=NULL)?  (MYCOMPLEX (*)[3][4])calloc(nr, sizeof(*sum_VF_uiz_J)) : NULL;
-    MYCOMPLEX (*sum_HF_uiz_J)[3][4] =  (sum_HF_uiz_J0!=NULL)?  (MYCOMPLEX (*)[3][4])calloc(nr, sizeof(*sum_HF_uiz_J)) : NULL;
-    MYCOMPLEX (*sum_DC_uiz_J)[3][4] =  (sum_DC_uiz_J0!=NULL)?  (MYCOMPLEX (*)[3][4])calloc(nr, sizeof(*sum_DC_uiz_J)) : NULL;
-
-    MYCOMPLEX (*sum_EXP_uir_J)[3][4] = (sum_EXP_uir_J0!=NULL)? (MYCOMPLEX (*)[3][4])calloc(nr, sizeof(*sum_EXP_uir_J)) : NULL;
-    MYCOMPLEX (*sum_VF_uir_J)[3][4] =  (sum_VF_uir_J0!=NULL)?  (MYCOMPLEX (*)[3][4])calloc(nr, sizeof(*sum_VF_uir_J)) : NULL;
-    MYCOMPLEX (*sum_HF_uir_J)[3][4] =  (sum_HF_uir_J0!=NULL)?  (MYCOMPLEX (*)[3][4])calloc(nr, sizeof(*sum_HF_uir_J)) : NULL;
-    MYCOMPLEX (*sum_DC_uir_J)[3][4] =  (sum_DC_uir_J0!=NULL)?  (MYCOMPLEX (*)[3][4])calloc(nr, sizeof(*sum_DC_uir_J)) : NULL;
+    MYCOMPLEX (*sum_J)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS] = (MYCOMPLEX(*)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS])calloc(nr, sizeof(*sum_J));
+    MYCOMPLEX (*sum_uiz_J)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS] =  (MYCOMPLEX(*)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS])calloc(nr, sizeof(*sum_uiz_J));
+    MYCOMPLEX (*sum_uir_J)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS] =  (MYCOMPLEX(*)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS])calloc(nr, sizeof(*sum_uir_J));
 
     // 存储波峰波谷的位置和值
-    MYREAL (*kEXPpt)[3][4][maxNpt] = (MYREAL (*)[3][4][maxNpt])calloc(nr, sizeof(*kEXPpt));
-    MYREAL (*kVFpt)[3][4][maxNpt] = (MYREAL (*)[3][4][maxNpt])calloc(nr, sizeof(*kVFpt));
-    MYREAL (*kHFpt)[3][4][maxNpt] = (MYREAL (*)[3][4][maxNpt])calloc(nr, sizeof(*kHFpt));
-    MYREAL (*kDCpt)[3][4][maxNpt] = (MYREAL (*)[3][4][maxNpt])calloc(nr, sizeof(*kDCpt));
-    MYCOMPLEX (*EXPpt)[3][4][maxNpt] = (MYCOMPLEX (*)[3][4][maxNpt])calloc(nr, sizeof(*EXPpt));
-    MYCOMPLEX (*VFpt)[3][4][maxNpt] = (MYCOMPLEX (*)[3][4][maxNpt])calloc(nr, sizeof(*VFpt));
-    MYCOMPLEX (*HFpt)[3][4][maxNpt] = (MYCOMPLEX (*)[3][4][maxNpt])calloc(nr, sizeof(*HFpt));
-    MYCOMPLEX (*DCpt)[3][4][maxNpt] = (MYCOMPLEX (*)[3][4][maxNpt])calloc(nr, sizeof(*DCpt));
-    MYINT (*iEXPpt)[3][4] = (MYINT (*)[3][4])calloc(nr, sizeof(*iEXPpt));
-    MYINT (*iVFpt)[3][4] = (MYINT (*)[3][4])calloc(nr, sizeof(*iVFpt));
-    MYINT (*iHFpt)[3][4] = (MYINT (*)[3][4])calloc(nr, sizeof(*iHFpt));
-    MYINT (*iDCpt)[3][4] = (MYINT (*)[3][4])calloc(nr, sizeof(*iDCpt));
+    MYREAL (*Kpt)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt] = (MYREAL (*)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt])calloc(nr, sizeof(*Kpt));
+    MYCOMPLEX (*Fpt)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt] = (MYCOMPLEX (*)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt])calloc(nr, sizeof(*Fpt));
+    MYINT (*Ipt)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS] = (MYINT (*)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS])calloc(nr, sizeof(*Ipt));
 
-    MYREAL (*kEXPpt_uiz)[3][4][maxNpt] = (MYREAL (*)[3][4][maxNpt])calloc(nr, sizeof(*kEXPpt_uiz));
-    MYREAL (*kVFpt_uiz)[3][4][maxNpt] = (MYREAL (*)[3][4][maxNpt])calloc(nr, sizeof(*kVFpt_uiz));
-    MYREAL (*kHFpt_uiz)[3][4][maxNpt] = (MYREAL (*)[3][4][maxNpt])calloc(nr, sizeof(*kHFpt_uiz));
-    MYREAL (*kDCpt_uiz)[3][4][maxNpt] = (MYREAL (*)[3][4][maxNpt])calloc(nr, sizeof(*kDCpt_uiz));
-    MYCOMPLEX (*EXPpt_uiz)[3][4][maxNpt] = (MYCOMPLEX (*)[3][4][maxNpt])calloc(nr, sizeof(*EXPpt_uiz));
-    MYCOMPLEX (*VFpt_uiz)[3][4][maxNpt] = (MYCOMPLEX (*)[3][4][maxNpt])calloc(nr, sizeof(*VFpt_uiz));
-    MYCOMPLEX (*HFpt_uiz)[3][4][maxNpt] = (MYCOMPLEX (*)[3][4][maxNpt])calloc(nr, sizeof(*HFpt_uiz));
-    MYCOMPLEX (*DCpt_uiz)[3][4][maxNpt] = (MYCOMPLEX (*)[3][4][maxNpt])calloc(nr, sizeof(*DCpt_uiz));
-    MYINT (*iEXPpt_uiz)[3][4] = (MYINT (*)[3][4])calloc(nr, sizeof(*iEXPpt_uiz));
-    MYINT (*iVFpt_uiz)[3][4] = (MYINT (*)[3][4])calloc(nr, sizeof(*iVFpt_uiz));
-    MYINT (*iHFpt_uiz)[3][4] = (MYINT (*)[3][4])calloc(nr, sizeof(*iHFpt_uiz));
-    MYINT (*iDCpt_uiz)[3][4] = (MYINT (*)[3][4])calloc(nr, sizeof(*iDCpt_uiz));
+    MYREAL (*Kpt_uiz)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt] = (MYREAL (*)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt])calloc(nr, sizeof(*Kpt_uiz));
+    MYCOMPLEX (*Fpt_uiz)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt] = (MYCOMPLEX (*)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt])calloc(nr, sizeof(*Fpt_uiz));
+    MYINT (*Ipt_uiz)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS] = (MYINT (*)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS])calloc(nr, sizeof(*Ipt_uiz));
 
-    MYREAL (*kEXPpt_uir)[3][4][maxNpt] = (MYREAL (*)[3][4][maxNpt])calloc(nr, sizeof(*kEXPpt_uir));
-    MYREAL (*kVFpt_uir)[3][4][maxNpt] = (MYREAL (*)[3][4][maxNpt])calloc(nr, sizeof(*kVFpt_uir));
-    MYREAL (*kHFpt_uir)[3][4][maxNpt] = (MYREAL (*)[3][4][maxNpt])calloc(nr, sizeof(*kHFpt_uir));
-    MYREAL (*kDCpt_uir)[3][4][maxNpt] = (MYREAL (*)[3][4][maxNpt])calloc(nr, sizeof(*kDCpt_uir));
-    MYCOMPLEX (*EXPpt_uir)[3][4][maxNpt] = (MYCOMPLEX (*)[3][4][maxNpt])calloc(nr, sizeof(*EXPpt_uir));
-    MYCOMPLEX (*VFpt_uir)[3][4][maxNpt] = (MYCOMPLEX (*)[3][4][maxNpt])calloc(nr, sizeof(*VFpt_uir));
-    MYCOMPLEX (*HFpt_uir)[3][4][maxNpt] = (MYCOMPLEX (*)[3][4][maxNpt])calloc(nr, sizeof(*HFpt_uir));
-    MYCOMPLEX (*DCpt_uir)[3][4][maxNpt] = (MYCOMPLEX (*)[3][4][maxNpt])calloc(nr, sizeof(*DCpt_uir));
-    MYINT (*iEXPpt_uir)[3][4] = (MYINT (*)[3][4])calloc(nr, sizeof(*iEXPpt_uir));
-    MYINT (*iVFpt_uir)[3][4] = (MYINT (*)[3][4])calloc(nr, sizeof(*iVFpt_uir));
-    MYINT (*iHFpt_uir)[3][4] = (MYINT (*)[3][4])calloc(nr, sizeof(*iHFpt_uir));
-    MYINT (*iDCpt_uir)[3][4] = (MYINT (*)[3][4])calloc(nr, sizeof(*iDCpt_uir));
+    MYREAL (*Kpt_uir)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt] = (MYREAL (*)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt])calloc(nr, sizeof(*Kpt_uir));
+    MYCOMPLEX (*Fpt_uir)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt] = (MYCOMPLEX (*)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt])calloc(nr, sizeof(*Fpt_uir));
+    MYINT (*Ipt_uir)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS] = (MYINT (*)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS])calloc(nr, sizeof(*Ipt_uir));
 
     // 记录点数，当峰谷找到后，清零
-    MYINT (*gEXPpt)[3][4] = (MYINT (*)[3][4])calloc(nr, sizeof(*gEXPpt));
-    MYINT (*gVFpt)[3][4] = (MYINT (*)[3][4])calloc(nr, sizeof(*gVFpt));
-    MYINT (*gHFpt)[3][4] = (MYINT (*)[3][4])calloc(nr, sizeof(*gHFpt));
-    MYINT (*gDCpt)[3][4] = (MYINT (*)[3][4])calloc(nr, sizeof(*gDCpt));
+    MYINT (*Gpt)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS] = (MYINT (*)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS])calloc(nr, sizeof(*Gpt));
+    MYINT (*Gpt_uiz)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS] = (MYINT (*)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS])calloc(nr, sizeof(*Gpt_uiz));
+    MYINT (*Gpt_uir)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS] = (MYINT (*)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS])calloc(nr, sizeof(*Gpt_uir));
 
-    MYINT (*gEXPpt_uiz)[3][4] = (MYINT (*)[3][4])calloc(nr, sizeof(*gEXPpt_uiz));
-    MYINT (*gVFpt_uiz)[3][4] = (MYINT (*)[3][4])calloc(nr, sizeof(*gVFpt_uiz));
-    MYINT (*gHFpt_uiz)[3][4] = (MYINT (*)[3][4])calloc(nr, sizeof(*gHFpt_uiz));
-    MYINT (*gDCpt_uiz)[3][4] = (MYINT (*)[3][4])calloc(nr, sizeof(*gDCpt_uiz));
-
-    MYINT (*gEXPpt_uir)[3][4] = (MYINT (*)[3][4])calloc(nr, sizeof(*gEXPpt_uir));
-    MYINT (*gVFpt_uir)[3][4] = (MYINT (*)[3][4])calloc(nr, sizeof(*gVFpt_uir));
-    MYINT (*gHFpt_uir)[3][4] = (MYINT (*)[3][4])calloc(nr, sizeof(*gHFpt_uir));
-    MYINT (*gDCpt_uir)[3][4] = (MYINT (*)[3][4])calloc(nr, sizeof(*gDCpt_uir));
-    
-    
     for(MYINT ir=0; ir<nr; ++ir){
-        for(MYINT m=0; m<3; ++m){
-            for(MYINT v=0; v<4; ++v){
-                if(sum_EXP_J0!=NULL) sum_EXP_J[ir][m][v] = sum_EXP_J0[ir][m][v];
-                if(sum_VF_J0!=NULL)  sum_VF_J[ir][m][v]  = sum_VF_J0[ir][m][v];
-                if(sum_HF_J0!=NULL)  sum_HF_J[ir][m][v]  = sum_HF_J0[ir][m][v];
-                if(sum_DC_J0!=NULL)  sum_DC_J[ir][m][v]  = sum_DC_J0[ir][m][v];
+        for(MYINT i=0; i<GRT_SRC_M_COUNTS; ++i){
+            for(MYINT v=0; v<GRT_SRC_P_COUNTS; ++v){
+                sum_J[ir][i][v] = sum_J0[ir][i][v];
 
                 if(calc_upar){
-                    if(sum_EXP_uiz_J0!=NULL) sum_EXP_uiz_J[ir][m][v] = sum_EXP_uiz_J0[ir][m][v];
-                    if(sum_VF_uiz_J0!=NULL)  sum_VF_uiz_J[ir][m][v]  = sum_VF_uiz_J0[ir][m][v];
-                    if(sum_HF_uiz_J0!=NULL)  sum_HF_uiz_J[ir][m][v]  = sum_HF_uiz_J0[ir][m][v];
-                    if(sum_DC_uiz_J0!=NULL)  sum_DC_uiz_J[ir][m][v]  = sum_DC_uiz_J0[ir][m][v];
-
-                    if(sum_EXP_uir_J0!=NULL) sum_EXP_uir_J[ir][m][v] = sum_EXP_uir_J0[ir][m][v];
-                    if(sum_VF_uir_J0!=NULL)  sum_VF_uir_J[ir][m][v]  = sum_VF_uir_J0[ir][m][v];
-                    if(sum_HF_uir_J0!=NULL)  sum_HF_uir_J[ir][m][v]  = sum_HF_uir_J0[ir][m][v];
-                    if(sum_DC_uir_J0!=NULL)  sum_DC_uir_J[ir][m][v]  = sum_DC_uir_J0[ir][m][v];
+                    sum_uiz_J[ir][i][v] = sum_uiz_J0[ir][i][v];
+                    sum_uir_J[ir][i][v] = sum_uir_J0[ir][i][v];
                 }
 
-                iEXPpt[ir][m][v] = gEXPpt[ir][m][v] = 0;
-                iVFpt[ir][m][v]  = gVFpt[ir][m][v]  = 0;
-                iHFpt[ir][m][v]  = gHFpt[ir][m][v]  = 0;
-                iDCpt[ir][m][v]  = gDCpt[ir][m][v]  = 0;
-
-                iEXPpt_uiz[ir][m][v] = gEXPpt_uiz[ir][m][v] = 0;
-                iVFpt_uiz[ir][m][v]  = gVFpt_uiz[ir][m][v]  = 0;
-                iHFpt_uiz[ir][m][v]  = gHFpt_uiz[ir][m][v]  = 0;
-                iDCpt_uiz[ir][m][v]  = gDCpt_uiz[ir][m][v]  = 0;
-
-                iEXPpt_uir[ir][m][v] = gEXPpt_uir[ir][m][v] = 0;
-                iVFpt_uir[ir][m][v]  = gVFpt_uir[ir][m][v]  = 0;
-                iHFpt_uir[ir][m][v]  = gHFpt_uir[ir][m][v]  = 0;
-                iDCpt_uir[ir][m][v]  = gDCpt_uir[ir][m][v]  = 0;
-
+                Ipt[ir][i][v] = Gpt[ir][i][v] = 0;
+                Ipt_uiz[ir][i][v] = Gpt_uiz[ir][i][v] = 0;
+                Ipt_uir[ir][i][v] = Gpt_uir[ir][i][v] = 0;
             }
         }
     }
@@ -362,65 +210,39 @@ void PTA_method(
             k += dk;
 
             // 计算核函数 F(k, w)
-            kerfunc(mod1d, omega, k, pEXP_qwv, pVF_qwv, pHF_qwv, pDC_qwv,
-                    calc_upar, pEXP_uiz_qwv, pVF_uiz_qwv, pHF_uiz_qwv, pDC_uiz_qwv); 
+            kerfunc(mod1d, omega, k, QWV, calc_upar, QWV_uiz); 
 
             // 记录核函数
-            if(fstatsK!=NULL){
-                write_stats(
-                    fstatsK, k, 
-                    EXP_qwv, VF_qwv, HF_qwv, DC_qwv);
-            }
+            if(fstatsK!=NULL)  write_stats(fstatsK, k, QWV);
 
             // 计算被积函数一项 F(k,w)Jm(kr)k
-            int_Pk(k, rs[ir],
-                   pEXP_qwv, pVF_qwv, pHF_qwv, pDC_qwv, false,
-                   EXP_J3[ir][2], VF_J3[ir][2], HF_J3[ir][2], DC_J3[ir][2]);  // [2]表示把新点值放在最后
+            int_Pk(k, rs[ir], QWV, false, SUM3[ir][2]);  // [2]表示把新点值放在最后
 
             // 
             ptam_once(
                 ir, nr, precoef, maxNpt, maxnwait, k, dk, 
-                EXP_J3, VF_J3, HF_J3, DC_J3, 
-                sum_EXP_J, sum_VF_J, sum_HF_J, sum_DC_J, 
-                kEXPpt, EXPpt, iEXPpt, gEXPpt, 
-                kVFpt, VFpt, iVFpt, gVFpt, 
-                kHFpt, HFpt, iHFpt, gHFpt, 
-                kDCpt, DCpt, iDCpt, gDCpt, 
-                &iendk0);
+                SUM3, sum_J, Kpt, Fpt, Ipt, Gpt, &iendk0
+            );
             
             // -------------------------- 位移空间导数 ------------------------------------
             if(calc_upar){
                 // ------------------------------- ui_z -----------------------------------
                 // 计算被积函数一项 F(k,w)Jm(kr)k
-                int_Pk(k, rs[ir],
-                       pEXP_uiz_qwv, pVF_uiz_qwv, pHF_uiz_qwv, pDC_uiz_qwv, false,
-                       EXP_uiz_J3[ir][2], VF_uiz_J3[ir][2], HF_uiz_J3[ir][2], DC_uiz_J3[ir][2]);  // [2]表示把新点值放在最后
+                int_Pk(k, rs[ir], QWV_uiz, false, SUM3_uiz[ir][2]);  // [2]表示把新点值放在最后
                 
                 ptam_once(
                     ir, nr, precoef, maxNpt, maxnwait, k, dk, 
-                    EXP_uiz_J3, VF_uiz_J3, HF_uiz_J3, DC_uiz_J3, 
-                    sum_EXP_uiz_J, sum_VF_uiz_J, sum_HF_uiz_J, sum_DC_uiz_J, 
-                    kEXPpt_uiz, EXPpt_uiz, iEXPpt_uiz, gEXPpt_uiz, 
-                    kVFpt_uiz, VFpt_uiz, iVFpt_uiz, gVFpt_uiz, 
-                    kHFpt_uiz, HFpt_uiz, iHFpt_uiz, gHFpt_uiz, 
-                    kDCpt_uiz, DCpt_uiz, iDCpt_uiz, gDCpt_uiz, 
-                    &iendk0);
+                    SUM3_uiz, sum_uiz_J, Kpt_uiz, Fpt_uiz, Ipt_uiz, Gpt_uiz, &iendk0
+                );
 
                 // ------------------------------- ui_r -----------------------------------
                 // 计算被积函数一项 F(k,w)Jm(kr)k
-                int_Pk(k, rs[ir], 
-                       pEXP_qwv, pVF_qwv, pHF_qwv, pDC_qwv, true,
-                       EXP_uir_J3[ir][2], VF_uir_J3[ir][2], HF_uir_J3[ir][2], DC_uir_J3[ir][2]);  // [2]表示把新点值放在最后
+                int_Pk(k, rs[ir], QWV, true, SUM3_uir[ir][2]);  // [2]表示把新点值放在最后
                 
                 ptam_once(
                     ir, nr, precoef, maxNpt, maxnwait, k, dk, 
-                    EXP_uir_J3, VF_uir_J3, HF_uir_J3, DC_uir_J3, 
-                    sum_EXP_uir_J, sum_VF_uir_J, sum_HF_uir_J, sum_DC_uir_J, 
-                    kEXPpt_uir, EXPpt_uir, iEXPpt_uir, gEXPpt_uir, 
-                    kVFpt_uir, VFpt_uir, iVFpt_uir, gVFpt_uir, 
-                    kHFpt_uir, HFpt_uir, iHFpt_uir, gHFpt_uir, 
-                    kDCpt_uir, DCpt_uir, iDCpt_uir, gDCpt_uir, 
-                    &iendk0);
+                    SUM3_uir, sum_uir_J, Kpt_uir, Fpt_uir, Ipt_uir, Gpt_uir, &iendk0
+                );
             
             } // END if calc_upar
 
@@ -436,73 +258,38 @@ void PTA_method(
     for(MYINT ir=0; ir<nr; ++ir){
         FILE *fstatsP = ptam_fstatsnr[ir][1];
         // 记录到文件
-        if(fstatsP!=NULL){
-            write_stats_ptam(
-                fstatsP, k, maxNpt, 
-                EXPpt[ir], VFpt[ir], HFpt[ir], DCpt[ir],
-                // iEXPpt[ir], iVFpt[ir], iHFpt[ir], iDCpt[ir],
-                kEXPpt[ir], kVFpt[ir], kHFpt[ir], kDCpt[ir]);
-        }
+        if(fstatsP!=NULL)  write_stats_ptam(fstatsP, k, maxNpt, Kpt[ir], Fpt[ir]);
 
-        for(MYINT m=0; m<3; ++m){
-            for(MYINT v=0; v<4; ++v){
-                if(sum_EXP_J0!=NULL)  {cplx_shrink(iEXPpt[ir][m][v], EXPpt[ir][m][v]);  sum_EXP_J0[ir][m][v] = EXPpt[ir][m][v][0];}
-                if(sum_VF_J0!=NULL)   {cplx_shrink(iVFpt[ir][m][v],  VFpt[ir][m][v]);   sum_VF_J0[ir][m][v]  = VFpt[ir][m][v][0];}
-                if(sum_HF_J0!=NULL)   {cplx_shrink(iHFpt[ir][m][v],  HFpt[ir][m][v]);   sum_HF_J0[ir][m][v]  = HFpt[ir][m][v][0];}
-                if(sum_DC_J0!=NULL)   {cplx_shrink(iDCpt[ir][m][v],  DCpt[ir][m][v]);   sum_DC_J0[ir][m][v]  = DCpt[ir][m][v][0];}
-            
+        for(MYINT i=0; i<GRT_SRC_M_COUNTS; ++i){
+            for(MYINT v=0; v<GRT_SRC_P_COUNTS; ++v){
+                cplx_shrink(Ipt[ir][i][v], Fpt[ir][i][v]);  
+                sum_J0[ir][i][v] = Fpt[ir][i][v][0];
+
                 if(calc_upar){
-                    if(sum_EXP_uiz_J0!=NULL)  {cplx_shrink(iEXPpt_uiz[ir][m][v], EXPpt_uiz[ir][m][v]);  sum_EXP_uiz_J0[ir][m][v] = EXPpt_uiz[ir][m][v][0];}
-                    if(sum_VF_uiz_J0!=NULL)   {cplx_shrink(iVFpt_uiz[ir][m][v],  VFpt_uiz[ir][m][v]);   sum_VF_uiz_J0[ir][m][v]  = VFpt_uiz[ir][m][v][0];}
-                    if(sum_HF_uiz_J0!=NULL)   {cplx_shrink(iHFpt_uiz[ir][m][v],  HFpt_uiz[ir][m][v]);   sum_HF_uiz_J0[ir][m][v]  = HFpt_uiz[ir][m][v][0];}
-                    if(sum_DC_uiz_J0!=NULL)   {cplx_shrink(iDCpt_uiz[ir][m][v],  DCpt_uiz[ir][m][v]);   sum_DC_uiz_J0[ir][m][v]  = DCpt_uiz[ir][m][v][0];}
+                    cplx_shrink(Ipt_uiz[ir][i][v], Fpt_uiz[ir][i][v]);  
+                    sum_uiz_J0[ir][i][v] = Fpt_uiz[ir][i][v][0];
                 
-                    if(sum_EXP_uir_J0!=NULL)  {cplx_shrink(iEXPpt_uir[ir][m][v], EXPpt_uir[ir][m][v]);  sum_EXP_uir_J0[ir][m][v] = EXPpt_uir[ir][m][v][0];}
-                    if(sum_VF_uir_J0!=NULL)   {cplx_shrink(iVFpt_uir[ir][m][v],  VFpt_uir[ir][m][v]);   sum_VF_uir_J0[ir][m][v]  = VFpt_uir[ir][m][v][0];}
-                    if(sum_HF_uir_J0!=NULL)   {cplx_shrink(iHFpt_uir[ir][m][v],  HFpt_uir[ir][m][v]);   sum_HF_uir_J0[ir][m][v]  = HFpt_uir[ir][m][v][0];}
-                    if(sum_DC_uir_J0!=NULL)   {cplx_shrink(iDCpt_uir[ir][m][v],  DCpt_uir[ir][m][v]);   sum_DC_uir_J0[ir][m][v]  = DCpt_uir[ir][m][v][0];}
+                    cplx_shrink(Ipt_uir[ir][i][v], Fpt_uir[ir][i][v]);  
+                    sum_uir_J0[ir][i][v] = Fpt_uir[ir][i][v][0];
                 }
             }
         }
     }
 
 
-    free(EXP_J3); free(VF_J3); free(HF_J3); free(DC_J3);
-    free(EXP_uiz_J3); free(VF_uiz_J3); free(HF_uiz_J3); free(DC_uiz_J3);
-    free(EXP_uir_J3); free(VF_uir_J3); free(HF_uir_J3); free(DC_uir_J3);
-    if(sum_EXP_J) free(sum_EXP_J); 
-    if(sum_VF_J) free(sum_VF_J); 
-    if(sum_HF_J) free(sum_HF_J); 
-    if(sum_DC_J) free(sum_DC_J);
-    if(sum_EXP_uiz_J) free(sum_EXP_uiz_J); 
-    if(sum_VF_uiz_J) free(sum_VF_uiz_J); 
-    if(sum_HF_uiz_J) free(sum_HF_uiz_J); 
-    if(sum_DC_uiz_J) free(sum_DC_uiz_J);
-    if(sum_EXP_uir_J) free(sum_EXP_uir_J); 
-    if(sum_VF_uir_J) free(sum_VF_uir_J); 
-    if(sum_HF_uir_J) free(sum_HF_uir_J); 
-    if(sum_DC_uir_J) free(sum_DC_uir_J);
+    free(SUM3); free(SUM3_uiz); free(SUM3_uir);
+    free(sum_J); free(sum_uiz_J); free(sum_uir_J); 
 
-    free(kEXPpt); free(kVFpt); free(kHFpt); free(kDCpt);
-    free(EXPpt);  free(VFpt);  free(HFpt);  free(DCpt);
-    free(iEXPpt); free(iVFpt); free(iHFpt); free(iDCpt);
-    free(gEXPpt); free(gVFpt); free(gHFpt); free(gDCpt);
+    free(Kpt);  free(Fpt);  free(Ipt);  free(Gpt);
+    free(Kpt_uiz);  free(Fpt_uiz);  free(Ipt_uiz);  free(Gpt_uiz);
+    free(Kpt_uir);  free(Fpt_uir);  free(Ipt_uir);  free(Gpt_uir);
 
-    free(kEXPpt_uiz); free(kVFpt_uiz); free(kHFpt_uiz); free(kDCpt_uiz);
-    free(EXPpt_uiz);  free(VFpt_uiz);  free(HFpt_uiz);  free(DCpt_uiz);
-    free(iEXPpt_uiz); free(iVFpt_uiz); free(iHFpt_uiz); free(iDCpt_uiz);
-    free(gEXPpt_uiz); free(gVFpt_uiz); free(gHFpt_uiz); free(gDCpt_uiz);
-
-    free(kEXPpt_uir); free(kVFpt_uir); free(kHFpt_uir); free(kDCpt_uir);
-    free(EXPpt_uir);  free(VFpt_uir);  free(HFpt_uir);  free(DCpt_uir);
-    free(iEXPpt_uir); free(iVFpt_uir); free(iHFpt_uir); free(iDCpt_uir);
-    free(gEXPpt_uir); free(gVFpt_uir); free(gHFpt_uir); free(gDCpt_uir);
 }
 
 
 
 
-MYINT cplx_peak_or_trough(MYINT idx1, MYINT idx2, const MYCOMPLEX arr[3][3][4], MYREAL k, MYREAL dk, MYREAL *pk, MYCOMPLEX *value){
+MYINT cplx_peak_or_trough(MYINT idx1, MYINT idx2, const MYCOMPLEX arr[3][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS], MYREAL k, MYREAL dk, MYREAL *pk, MYCOMPLEX *value){
     MYCOMPLEX f1, f2, f3;
     MYREAL rf1, rf2, rf3;
     MYINT stat=0;

@@ -1404,33 +1404,34 @@ def read_statsfile_ptam(statsfile:str):
             # 
             ('sum_EXP_00_k', NPCT_REAL_TYPE),
             ('sum_EXP_00',  NPCT_CMPLX_TYPE),
-            ('sum_VF_00_k',  NPCT_REAL_TYPE),
-            ('sum_VF_00',   NPCT_CMPLX_TYPE),
-            ('sum_DC_00_k',  NPCT_REAL_TYPE),
-            ('sum_DC_00',   NPCT_CMPLX_TYPE),
-
             ('sum_EXP_02_k', NPCT_REAL_TYPE),
             ('sum_EXP_02',  NPCT_CMPLX_TYPE),
+
+            ('sum_VF_00_k',  NPCT_REAL_TYPE),
+            ('sum_VF_00',   NPCT_CMPLX_TYPE),
             ('sum_VF_02_k',  NPCT_REAL_TYPE),
             ('sum_VF_02',   NPCT_CMPLX_TYPE),
-            ('sum_DC_02_k',  NPCT_REAL_TYPE),
-            ('sum_DC_02',   NPCT_CMPLX_TYPE),
-            
 
             ('sum_HF_10_k',  NPCT_REAL_TYPE),
             ('sum_HF_10',   NPCT_CMPLX_TYPE),
-            ('sum_DC_10_k',  NPCT_REAL_TYPE),
-            ('sum_DC_10',   NPCT_CMPLX_TYPE),
             ('sum_HF_11_k',  NPCT_REAL_TYPE),
             ('sum_HF_11',   NPCT_CMPLX_TYPE),
-            ('sum_DC_11_k',  NPCT_REAL_TYPE),
-            ('sum_DC_11',   NPCT_CMPLX_TYPE),
             ('sum_HF_12_k',  NPCT_REAL_TYPE),
             ('sum_HF_12',   NPCT_CMPLX_TYPE),
+            ('sum_HF_13',   NPCT_CMPLX_TYPE),
+            ('sum_HF_13_k',  NPCT_REAL_TYPE),
+
+            ('sum_DC_00_k',  NPCT_REAL_TYPE),
+            ('sum_DC_00',   NPCT_CMPLX_TYPE),
+            ('sum_DC_02_k',  NPCT_REAL_TYPE),
+            ('sum_DC_02',   NPCT_CMPLX_TYPE),
+            
+            ('sum_DC_10_k',  NPCT_REAL_TYPE),
+            ('sum_DC_10',   NPCT_CMPLX_TYPE),
+            ('sum_DC_11_k',  NPCT_REAL_TYPE),
+            ('sum_DC_11',   NPCT_CMPLX_TYPE),
             ('sum_DC_12_k',  NPCT_REAL_TYPE),
             ('sum_DC_12',   NPCT_CMPLX_TYPE),
-            ('sum_HF_13_k',  NPCT_REAL_TYPE),
-            ('sum_HF_13',   NPCT_CMPLX_TYPE),
             ('sum_DC_13_k',  NPCT_REAL_TYPE),
             ('sum_DC_13',   NPCT_CMPLX_TYPE),
 

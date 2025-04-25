@@ -18,14 +18,10 @@
  * 数组形状[3][3][2]，代表在[i][j][p]时表示m=i阶时的
  * P(j=0),SV(j=1),SH(j=2)的震源系数(分别可记为q,w,v)，且分为下行波(p=0)和上行波(p=1). 
  * 
- * @param  delta           (in)震源层的\f$ \Delta \f$
- * @param  k               (in)波数
- * @param  EXP[3][3][2]    (out)爆炸源的震源系数，下同
- * @param  VF[3][3][2]     (out)垂直力源
- * @param  HF[3][3][2]     (out)水平力源
- * @param  DC[3][3][2]     (out)剪切源
+ * @param[in]     delta    震源层的\f$ \Delta \f$
+ * @param[in]     k        波数
+ * @param[out]    coef     震源系数 \f$ P_m, SV_m, SH_m \f$
  */
 void static_source_coef(
-    MYCOMPLEX delta, MYREAL k,
-    MYCOMPLEX EXP[3][3][2], MYCOMPLEX VF[3][3][2], MYCOMPLEX HF[3][3][2], MYCOMPLEX DC[3][3][2]);
+    MYCOMPLEX delta, MYREAL k, MYCOMPLEX coef[GRT_SRC_M_COUNTS][GRT_SRC_QWV_COUNTS][2]);
  

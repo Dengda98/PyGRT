@@ -127,3 +127,22 @@ typedef int MYINT;  ///< 整数
 #define GRT_CMPLX_FMT "%18.8e%-+14.8eJ"   ///< 复数输出格式
 #define GRT_STR_CMPLX_FMT "%34s"    ///< 与复数格式同长度的字符串输出格式
 
+
+// -----------------------------------------------------------------------------
+#define GRT_SRC_CHA_COUNTS    3     ///< 3, 代码中分量个数（ZRT，ZNE）
+#define GRT_SRC_QWV_COUNTS    3   ///< 3, 代码中核函数类型个数(q, w, v)
+#define GRT_SRC_P_COUNTS  4    ///< 4, 代码中积分类型个数
+#define GRT_SRC_M_MAX     2    ///< 代码中阶数m的最大值
+#define GRT_SRC_M_COUNTS  6   ///< 6, 代码中不同震源、不同阶数的个数
+
+/** 分别对应爆炸源(0阶)，垂直力源(0阶)，水平力源(1阶)，剪切源(0,1,2阶) */ 
+extern const MYINT GRT_SRC_M_ORDERS[GRT_SRC_M_COUNTS];
+
+/** 不同震源，不同阶数的名称简写，用于命名 */
+extern const char *GRT_SRC_M_NAME_ABBR[GRT_SRC_M_COUNTS];
+
+/** ZRT三分量代号 */
+extern const char GRT_ZRTchs[];
+
+/** ZNE三分量代号 */
+extern const char GRT_ZNEchs[];

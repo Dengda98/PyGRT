@@ -28,45 +28,33 @@
 
 /**
  * 峰谷平均法 Peak-Trough Averaging Method，最后收敛的积分结果以三维数组的形式返回，
- * 形状为[nr][3][4], 分别代表震中距、阶数(m=0,1,2) 和4种积分类型(p=0,1,2,3)  
  * 
- * @param    mod1d     (in)`MODEL1D` 结构体指针
- * @param    k0        (in)先前的积分已经进行到了波数k0
- * @param    predk     (in)先前的积分使用的积分间隔dk，因为峰谷平均法使用的
+ * @param[in]    mod1d     (in)`MODEL1D` 结构体指针
+ * @param[in]    k0        (in)先前的积分已经进行到了波数k0
+ * @param[in]    predk     (in)先前的积分使用的积分间隔dk，因为峰谷平均法使用的
  *                     积分间隔会和之前的不一致，这里传入该系数以做预先调整
- * @param    omega     (in)复数频率 
- * @param    nr        (in)震中距数量
- * @param    rs        (in)震中距数组  
- * @param    sum_EXP_J0[nr][3][4]   (out)爆炸源
- * @param    sum_VF_J0[nr][3][4]    (out)垂直力源
- * @param    sum_HF_J0[nr][3][4]    (out)水平力源
- * @param    sum_DC_J0[nr][3][4]    (out)剪切源
+ * @param[in]    omega     (in)复数频率 
+ * @param[in]    nr        (in)震中距数量
+ * @param[in]    rs        (in)震中距数组  
  * 
- * @param  calc_upar       (in)是否计算位移u的空间导数
- * @param  sum_EXP_uiz_J0[nr][3][4]  (out)爆炸源产生的ui_z(位移u对坐标z的偏导)，下同
- * @param  sum_VF_uiz_J0[nr][3][4]   (out)垂直力源
- * @param  sum_HF_uiz_J0[nr][3][4]   (out)水平力源
- * @param  sum_DC_uiz_J0[nr][3][4]   (out)剪切源
- * @param  sum_EXP_uir_J0[nr][3][4]  (out)爆炸源产生的ui_r(位移u对坐标r的偏导)，下同
- * @param  sum_VF_uir_J0[nr][3][4]   (out)垂直力源
- * @param  sum_HF_uir_J0[nr][3][4]   (out)水平力源
- * @param  sum_DC_uir_J0[nr][3][4]   (out)剪切源
+ * @param[out]    sum_J0          积分值
  * 
- * @param    ptam_fstatsnr        (out)峰谷平均法过程文件指针数组
- * @param    kerfunc              (in)计算核函数的函数指针
+ * @param[in]     calc_upar      是否计算位移u的空间导数
+ * @param[out]    sum_uiz_J0      uiz的积分值
+ * @param[out]    sum_uir_J0      uir的积分值
+ * 
+ * @param[out]    ptam_fstatsnr        (out)峰谷平均法过程文件指针数组
+ * @param[in]    kerfunc              (in)计算核函数的函数指针
  * 
  * 
  */
 void PTA_method(
     const MODEL1D *mod1d, MYREAL k0, MYREAL predk, MYCOMPLEX omega, 
     MYINT nr, MYREAL *rs,
-    MYCOMPLEX sum_EXP_J0[nr][3][4], MYCOMPLEX sum_VF_J0[nr][3][4],  
-    MYCOMPLEX sum_HF_J0[nr][3][4],  MYCOMPLEX sum_DC_J0[nr][3][4],  
+    MYCOMPLEX sum_J0[nr][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS],
     bool calc_upar,
-    MYCOMPLEX sum_EXP_uiz_J0[nr][3][4], MYCOMPLEX sum_VF_uiz_J0[nr][3][4],  
-    MYCOMPLEX sum_HF_uiz_J0[nr][3][4],  MYCOMPLEX sum_DC_uiz_J0[nr][3][4],  
-    MYCOMPLEX sum_EXP_uir_J0[nr][3][4], MYCOMPLEX sum_VF_uir_J0[nr][3][4],  
-    MYCOMPLEX sum_HF_uir_J0[nr][3][4],  MYCOMPLEX sum_DC_uir_J0[nr][3][4], 
+    MYCOMPLEX sum_uiz_J0[nr][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS],
+    MYCOMPLEX sum_uir_J0[nr][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS],
     FILE *ptam_fstatsnr[nr][2], KernelFunc kerfunc);
 
 
@@ -75,12 +63,10 @@ void PTA_method(
 
 /**
  * 观察连续3个点的函数值的实部变化，判断是波峰(1)还是波谷(-1), 并计算对应值。
- * 其中存储函数值的数组形状为[3][3][4], 分别代表
- * 连续3个点、阶数(m=0,1,2) 和4种积分类型(p=0,1,2,3)  
  * 
  * @param     idx1    (in)阶数索引
  * @param     idx2    (in)积分类型索引 
- * @param     arr[3][3][4]   (in)存有连续三个点的函数值的数组 
+ * @param     arr     (in)存有连续三个点的函数值的数组 
  * @param     k       (in)三个点的起始波数
  * @param     dk      (in)三个点的波数间隔，这样使用k和dk定义了三个点的位置
  * @param     pk      (out)估计的波峰或波谷处的波数
@@ -90,7 +76,7 @@ void PTA_method(
  *  
  */
 MYINT cplx_peak_or_trough(
-    MYINT idx1, MYINT idx2, const MYCOMPLEX arr[3][3][4], 
+    MYINT idx1, MYINT idx2, const MYCOMPLEX arr[3][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS], 
     MYREAL k, MYREAL dk, MYREAL *pk, MYCOMPLEX *value);
 
 

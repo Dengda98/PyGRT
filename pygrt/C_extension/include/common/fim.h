@@ -25,50 +25,37 @@
  * \f[
  * J_m(x) \approx \sqrt{\frac{2}{\pi x}} \cos(x - \frac{m \pi}{2} - \frac{\pi}{4})
  * \f]
- * 其中\f$x=kr\f$. 结果以三维数组的形式返回，形状为[nr][3][4], 分别代表震中距、阶数(m=0,1,2)
- * 和4种积分类型(p=0,1,2,3)
+ * 其中\f$x=kr\f$.
  * 
  * 
- * @param  mod1d     (in)`MODEL1D` 结构体指针
- * @param  k0        (in)前一部分的波数积分结束点k值
- * @param  dk0       (in)前一部分的波数积分间隔
- * @param  filondk   (in)filon积分间隔
- * @param  kmax      (in)波数积分的上限
- * @param  keps      (in)波数积分的收敛条件，要求在某震中距下所有格林函数都收敛
- * @param  omega     (in)复数频率
- * @param  nr        (in)震中距数量
- * @param  rs        (in)震中距数组
+ * @param[in]  mod1d     (in)`MODEL1D` 结构体指针
+ * @param[in]  k0        (in)前一部分的波数积分结束点k值
+ * @param[in]  dk0       (in)前一部分的波数积分间隔
+ * @param[in]  filondk   (in)filon积分间隔
+ * @param[in]  kmax      (in)波数积分的上限
+ * @param[in]  keps      (in)波数积分的收敛条件，要求在某震中距下所有格林函数都收敛
+ * @param[in]  omega     (in)复数频率
+ * @param[in]  nr        (in)震中距数量
+ * @param[in]  rs        (in)震中距数组
  *
- * @param  sum_EXP_J[nr][3][4]  (out)爆炸源
- * @param  sum_VF_J[nr][3][4]   (out)垂直力源
- * @param  sum_HF_J[nr][3][4]   (out)水平力源
- * @param  sum_DC_J[nr][3][4]   (out)剪切源
+ * @param[out]    sum_J          积分值
  * 
- * @param  calc_upar       (in)是否计算位移u的空间导数
- * @param  sum_EXP_uiz_J[nr][3][4]  (out)爆炸源产生的ui_z(位移u对坐标z的偏导)，下同
- * @param  sum_VF_uiz_J[nr][3][4]   (out)垂直力源
- * @param  sum_HF_uiz_J[nr][3][4]   (out)水平力源
- * @param  sum_DC_uiz_J[nr][3][4]   (out)剪切源
- * @param  sum_EXP_uir_J[nr][3][4]  (out)爆炸源产生的ui_r(位移u对坐标r的偏导)，下同
- * @param  sum_VF_uir_J[nr][3][4]   (out)垂直力源
- * @param  sum_HF_uir_J[nr][3][4]   (out)水平力源
- * @param  sum_DC_uir_J[nr][3][4]   (out)剪切源
+ * @param[in]     calc_upar      是否计算位移u的空间导数
+ * @param[out]    sum_uiz_J      uiz的积分值
+ * @param[out]    sum_uir_J      uir的积分值
  * 
- * @param  fstats               (out)文件指针，保存不同k值的格林函数积分核函数
- * @param  kerfunc              (in)计算核函数的函数指针
+ * @param[out]  fstats               (out)文件指针，保存不同k值的格林函数积分核函数
+ * @param[in]  kerfunc              (in)计算核函数的函数指针
  * 
  * @return  k        积分截至时的波数
  */
 MYREAL linear_filon_integ(
     const MODEL1D *mod1d, MYREAL k0, MYREAL dk0, MYREAL filondk, MYREAL kmax, MYREAL keps, MYCOMPLEX omega, 
     MYINT nr, MYREAL *rs,
-    MYCOMPLEX sum_EXP_J[nr][3][4], MYCOMPLEX sum_VF_J[nr][3][4],  
-    MYCOMPLEX sum_HF_J[nr][3][4],  MYCOMPLEX sum_DC_J[nr][3][4],  
+    MYCOMPLEX sum_J[nr][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS],
     bool calc_upar,
-    MYCOMPLEX sum_EXP_uiz_J[nr][3][4], MYCOMPLEX sum_VF_uiz_J[nr][3][4],  
-    MYCOMPLEX sum_HF_uiz_J[nr][3][4],  MYCOMPLEX sum_DC_uiz_J[nr][3][4],  
-    MYCOMPLEX sum_EXP_uir_J[nr][3][4], MYCOMPLEX sum_VF_uir_J[nr][3][4],  
-    MYCOMPLEX sum_HF_uir_J[nr][3][4],  MYCOMPLEX sum_DC_uir_J[nr][3][4],  
+    MYCOMPLEX sum_uiz_J[nr][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS],
+    MYCOMPLEX sum_uir_J[nr][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS],
     FILE *fstats, KernelFunc kerfunc);
 
 

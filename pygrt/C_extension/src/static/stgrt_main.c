@@ -67,8 +67,6 @@ static int M_flag=0, D_flag=0,
             X_flag=0, Y_flag=0, 
             e_flag=0;
 
-// 三分量代号
-const char chs[3] = {'Z', 'R', 'T'};
 
 /**
  * 打印使用说明
@@ -414,6 +412,43 @@ static void getopt_from_command(int argc, char **argv){
 
 
 
+/**
+ * 打印各分量的名称
+ * 
+ * @param[in]   prefix    前缀字符串
+ */
+static void print_grn_title(const char *prefix){
+    for(int i=0; i<GRT_SRC_M_COUNTS; ++i){
+        int modr = GRT_SRC_M_ORDERS[i];
+        char s_title[10+strlen(prefix)];
+        for(int c=0; c<GRT_SRC_CHA_COUNTS; ++c){
+            if(modr==0 && GRT_ZRTchs[c]=='T')  continue;
+
+            snprintf(s_title, sizeof(s_title), "%s%s%c", prefix, GRT_SRC_M_NAME_ABBR[i], GRT_ZRTchs[c]);
+            fprintf(stdout, GRT_STRING_FMT, s_title);
+        }
+    }
+}
+
+/**
+ * 打印各分量的值
+ * 
+ * @param      grn       静态格林函数结果
+ * @param      sgn0      全局符号
+ */
+static void print_grn_value(const MYREAL grn[GRT_SRC_M_COUNTS][GRT_SRC_CHA_COUNTS], const int sgn0){
+    for(int i=0; i<GRT_SRC_M_COUNTS; ++i){
+        int modr = GRT_SRC_M_ORDERS[i];
+        int sgn = 1;
+        for(int c=0; c<GRT_SRC_CHA_COUNTS; ++c){
+            if(modr==0 && GRT_ZRTchs[c]=='T')  continue;
+
+            sgn = (GRT_ZRTchs[c]=='Z') ? -sgn0 : sgn0;
+
+            fprintf(stdout, GRT_REAL_FMT, sgn * grn[i][c]);
+        }
+    }
+}
 
 
 int main(int argc, char **argv){
@@ -470,36 +505,17 @@ int main(int argc, char **argv){
     }
 
 
-    // 建立格林函数的complex数组
-    MYREAL (*EXPgrn)[2] = (MYREAL(*)[2])calloc(nr, sizeof(*EXPgrn));
-    MYREAL (*VFgrn)[2]  = (MYREAL(*)[2])calloc(nr, sizeof(*VFgrn));
-    MYREAL (*HFgrn)[3]  = (MYREAL(*)[3])calloc(nr, sizeof(*HFgrn));
-    MYREAL (*DDgrn)[2]  = (MYREAL(*)[2])calloc(nr, sizeof(*DDgrn));
-    MYREAL (*DSgrn)[3]  = (MYREAL(*)[3])calloc(nr, sizeof(*DSgrn));
-    MYREAL (*SSgrn)[3]  = (MYREAL(*)[3])calloc(nr, sizeof(*SSgrn));
+    // 建立格林函数的浮点数
+    MYREAL (*grn)[GRT_SRC_M_COUNTS][GRT_SRC_CHA_COUNTS] = (MYREAL (*)[GRT_SRC_M_COUNTS][GRT_SRC_CHA_COUNTS]) calloc(nr, sizeof(*grn));
+    MYREAL (*grn_uiz)[GRT_SRC_M_COUNTS][GRT_SRC_CHA_COUNTS] = (calc_upar)? (MYREAL (*)[GRT_SRC_M_COUNTS][GRT_SRC_CHA_COUNTS]) calloc(nr, sizeof(*grn_uiz)) : NULL;
+    MYREAL (*grn_uir)[GRT_SRC_M_COUNTS][GRT_SRC_CHA_COUNTS] = (calc_upar)? (MYREAL (*)[GRT_SRC_M_COUNTS][GRT_SRC_CHA_COUNTS]) calloc(nr, sizeof(*grn_uir)) : NULL;
 
-    MYREAL (*EXPgrn_uiz)[2] = (calc_upar)? (MYREAL(*)[2])calloc(nr, sizeof(*EXPgrn)) : NULL;
-    MYREAL (*VFgrn_uiz)[2]  = (calc_upar)? (MYREAL(*)[2])calloc(nr, sizeof(*VFgrn)) : NULL;
-    MYREAL (*HFgrn_uiz)[3]  = (calc_upar)? (MYREAL(*)[3])calloc(nr, sizeof(*HFgrn)) : NULL;
-    MYREAL (*DDgrn_uiz)[2]  = (calc_upar)? (MYREAL(*)[2])calloc(nr, sizeof(*DDgrn)) : NULL;
-    MYREAL (*DSgrn_uiz)[3]  = (calc_upar)? (MYREAL(*)[3])calloc(nr, sizeof(*DSgrn)) : NULL;
-    MYREAL (*SSgrn_uiz)[3]  = (calc_upar)? (MYREAL(*)[3])calloc(nr, sizeof(*SSgrn)) : NULL;
-
-    MYREAL (*EXPgrn_uir)[2] = (calc_upar)? (MYREAL(*)[2])calloc(nr, sizeof(*EXPgrn)) : NULL;
-    MYREAL (*VFgrn_uir)[2]  = (calc_upar)? (MYREAL(*)[2])calloc(nr, sizeof(*VFgrn)) : NULL;
-    MYREAL (*HFgrn_uir)[3]  = (calc_upar)? (MYREAL(*)[3])calloc(nr, sizeof(*HFgrn)) : NULL;
-    MYREAL (*DDgrn_uir)[2]  = (calc_upar)? (MYREAL(*)[2])calloc(nr, sizeof(*DDgrn)) : NULL;
-    MYREAL (*DSgrn_uir)[3]  = (calc_upar)? (MYREAL(*)[3])calloc(nr, sizeof(*DSgrn)) : NULL;
-    MYREAL (*SSgrn_uir)[3]  = (calc_upar)? (MYREAL(*)[3])calloc(nr, sizeof(*SSgrn)) : NULL;
 
     //==============================================================================
     // 计算静态格林函数
     integ_static_grn(
         pymod, nr, rs, vmin_ref, keps, k0, Length, filonLength, filonCut, 
-        EXPgrn, VFgrn, HFgrn, DDgrn, DSgrn, SSgrn,
-        calc_upar, 
-        EXPgrn_uiz, VFgrn_uiz, HFgrn_uiz, DDgrn_uiz, DSgrn_uiz, SSgrn_uiz, 
-        EXPgrn_uir, VFgrn_uir, HFgrn_uir, DDgrn_uir, DSgrn_uir, SSgrn_uir, 
+        grn, calc_upar, grn_uiz, grn_uir,
         s_statsdir
     );
     //==============================================================================
@@ -515,26 +531,17 @@ int main(int argc, char **argv){
     fprintf(stdout, "# "GRT_REAL_FMT" "GRT_REAL_FMT" "GRT_REAL_FMT"\n", src_va, src_vb, src_rho);
     fprintf(stdout, "# "GRT_REAL_FMT" "GRT_REAL_FMT" "GRT_REAL_FMT"\n", rcv_va, rcv_vb, rcv_rho);
 
-    // 定义标题数组
-    const char *titles[15] = {
-        "EXZ", "EXR", "VFZ", "VFR", "HFZ", "HFR", "HFT",
-        "DDZ", "DDR", "DSZ", "DSR", "DST", "SSZ", "SSR", "SST"
-    };
-    const char *upar_titles[30] = {
-        "zEXZ", "zEXR", "zVFZ", "zVFR", "zHFZ", "zHFR", "zHFT",
-        "zDDZ", "zDDR", "zDSZ", "zDSR", "zDST", "zSSZ", "zSSR", "zSST",
-        "rEXZ", "rEXR", "rVFZ", "rVFR", "rHFZ", "rHFR", "rHFT",
-        "rDDZ", "rDDR", "rDSZ", "rDSR", "rDST", "rSSZ", "rSSR", "rSST"
-    };
 
     // 输出标题
     char XX[20];
     sprintf(XX, GRT_STRING_FMT, "X(km)"); XX[0]='#';
     fprintf(stdout, "%s", XX);
     fprintf(stdout, GRT_STRING_FMT, "Y(km)");
-    for(int i=0; i<15; ++i) fprintf(stdout, GRT_STRING_FMT, titles[i]);
+    print_grn_title("");
+
     if(calc_upar) {
-        for(int i=0; i<30; ++i)  fprintf(stdout, GRT_STRING_FMT, upar_titles[i]);
+        print_grn_title("z");
+        print_grn_title("r");
     }
     fprintf(stdout, "\n");
 
@@ -543,25 +550,20 @@ int main(int argc, char **argv){
         for(int ix=0; ix<nx; ++ix) {
             int ir = ix + iy * nx;
             fprintf(stdout, GRT_REAL_FMT GRT_REAL_FMT, xs[ix], ys[iy]);
-            MYREAL *grns[] = {
-                EXPgrn[ir], VFgrn[ir], HFgrn[ir], DDgrn[ir], DSgrn[ir], SSgrn[ir]
-            };
-            int grn_sizes[] = {2, 2, 3, 2, 3, 3};
-            // 对Z分量反向
-            for(int i=0; i<6; ++i) {
-                for (int j=0; j<grn_sizes[i]; ++j)
-                    fprintf(stdout, GRT_REAL_FMT, (j == 0 ? -1.0 : 1.0) * grns[i][j]);
-            }
+
+            print_grn_value(grn[ir], 1);
+            // MYREAL *grns[] = {
+            //     EXPgrn[ir], VFgrn[ir], HFgrn[ir], DDgrn[ir], DSgrn[ir], SSgrn[ir]
+            // };
+            // int grn_sizes[] = {2, 2, 3, 2, 3, 3};
+            // // 对Z分量反向
+            // for(int i=0; i<6; ++i) {
+            //     for (int j=0; j<grn_sizes[i]; ++j)
+            //         fprintf(stdout, GRT_REAL_FMT, (j == 0 ? -1.0 : 1.0) * grns[i][j]);
+            // }
             if(calc_upar) {
-                // 前6个是对z的偏导，注意后续对z符号的判断
-                MYREAL *upar_grns[] = {
-                    EXPgrn_uiz[ir], VFgrn_uiz[ir], HFgrn_uiz[ir], DDgrn_uiz[ir], DSgrn_uiz[ir], SSgrn_uiz[ir],
-                    EXPgrn_uir[ir], VFgrn_uir[ir], HFgrn_uir[ir], DDgrn_uir[ir], DSgrn_uir[ir], SSgrn_uir[ir]
-                };
-                for(int i=0; i<12; ++i) {
-                    for(int j=0; j<grn_sizes[i % 6]; ++j)
-                        fprintf(stdout, GRT_REAL_FMT, (j == 0 ? -1.0 : 1.0) * (i < 6 ? -1.0 : 1.0) * upar_grns[i][j]);
-                }
+                print_grn_value(grn_uiz[ir], -1);
+                print_grn_value(grn_uir[ir], 1);
             }
             fprintf(stdout, "\n");
         }

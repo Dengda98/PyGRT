@@ -26,32 +26,17 @@
 MYREAL discrete_integ(
     const MODEL1D *mod1d, MYREAL dk, MYREAL kmax, MYREAL keps, MYCOMPLEX omega, 
     MYINT nr, MYREAL *rs,
-    MYCOMPLEX sum_EXP_J[nr][3][4], MYCOMPLEX sum_VF_J[nr][3][4],  
-    MYCOMPLEX sum_HF_J[nr][3][4],  MYCOMPLEX sum_DC_J[nr][3][4],  
+    MYCOMPLEX sum_J[nr][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS],
     bool calc_upar,
-    MYCOMPLEX sum_EXP_uiz_J[nr][3][4], MYCOMPLEX sum_VF_uiz_J[nr][3][4],  
-    MYCOMPLEX sum_HF_uiz_J[nr][3][4],  MYCOMPLEX sum_DC_uiz_J[nr][3][4],  
-    MYCOMPLEX sum_EXP_uir_J[nr][3][4], MYCOMPLEX sum_VF_uir_J[nr][3][4],  
-    MYCOMPLEX sum_HF_uir_J[nr][3][4],  MYCOMPLEX sum_DC_uir_J[nr][3][4],  
+    MYCOMPLEX sum_uiz_J[nr][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS],
+    MYCOMPLEX sum_uir_J[nr][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS],
     FILE *fstats, KernelFunc kerfunc)
 {
-    MYCOMPLEX EXP_J[3][4], VF_J[3][4], HF_J[3][4],  DC_J[3][4];
+    MYCOMPLEX SUM[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS];
 
-    // 不同震源的核函数 F(k, w) 
-    // 第一个维度3代表阶数m=0,1,2，第二个维度3代表三类系数qm,wm,vm 
-    // 实际上对于不同震源只有特定阶数/系数才有值，不需要建立3x3的小矩阵，
-    // 但这里还是为了方便可读性，牺牲了部分性能 
-    MYCOMPLEX EXP_qwv[3][3], VF_qwv[3][3], HF_qwv[3][3], DC_qwv[3][3]; 
-    MYCOMPLEX (*pEXP_qwv)[3] = (sum_EXP_J!=NULL)? EXP_qwv : NULL;
-    MYCOMPLEX (*pVF_qwv)[3]  = (sum_VF_J!=NULL)?  VF_qwv  : NULL;
-    MYCOMPLEX (*pHF_qwv)[3]  = (sum_HF_J!=NULL)?  HF_qwv  : NULL;
-    MYCOMPLEX (*pDC_qwv)[3]  = (sum_DC_J!=NULL)?  DC_qwv  : NULL;
-
-    MYCOMPLEX EXP_uiz_qwv[3][3], VF_uiz_qwv[3][3], HF_uiz_qwv[3][3], DC_uiz_qwv[3][3]; 
-    MYCOMPLEX (*pEXP_uiz_qwv)[3] = (sum_EXP_uiz_J!=NULL)? EXP_uiz_qwv : NULL;
-    MYCOMPLEX (*pVF_uiz_qwv)[3]  = (sum_VF_uiz_J!=NULL)?  VF_uiz_qwv  : NULL;
-    MYCOMPLEX (*pHF_uiz_qwv)[3]  = (sum_HF_uiz_J!=NULL)?  HF_uiz_qwv  : NULL;
-    MYCOMPLEX (*pDC_uiz_qwv)[3]  = (sum_DC_uiz_J!=NULL)?  DC_uiz_qwv  : NULL;
+    // 不同震源不同阶数的核函数 F(k, w) 
+    MYCOMPLEX QWV[GRT_SRC_M_COUNTS][GRT_SRC_QWV_COUNTS];
+    MYCOMPLEX QWV_uiz[GRT_SRC_M_COUNTS][GRT_SRC_QWV_COUNTS];
     
     MYREAL k = 0.0;
     MYINT ik = 0;
@@ -73,47 +58,36 @@ MYREAL discrete_integ(
 
         // printf("w=%15.5e, ik=%d\n", CREAL(omega), ik);
         // 计算核函数 F(k, w)
-        kerfunc(mod1d, omega, k, pEXP_qwv, pVF_qwv, pHF_qwv, pDC_qwv, 
-                calc_upar, pEXP_uiz_qwv, pVF_uiz_qwv, pHF_uiz_qwv, pDC_uiz_qwv); 
+        kerfunc(mod1d, omega, k, QWV, calc_upar, QWV_uiz); 
         
         // 记录积分核函数
-        if(fstats!=NULL){
-            write_stats(
-                fstats, k, 
-                EXP_qwv, VF_qwv, HF_qwv, DC_qwv);
-        }
+        if(fstats!=NULL)  write_stats(fstats, k, QWV);
 
         // 震中距rs循环
         iendk = true;
         for(MYINT ir=0; ir<nr; ++ir){
             if(iendkrs[ir]) continue; // 该震中距下的波数k积分已收敛
 
-            for(MYINT m=0; m<3; ++m){
-                for(MYINT v=0; v<4; ++v){
-                    EXP_J[m][v] = VF_J[m][v] = HF_J[m][v] = DC_J[m][v] = CZERO;
+            for(MYINT i=0; i<GRT_SRC_M_COUNTS; ++i){
+                for(MYINT v=0; v<GRT_SRC_P_COUNTS; ++v){
+                    SUM[i][v] = CZERO;
                 }
             }
             
             // 计算被积函数一项 F(k,w)Jm(kr)k
-            int_Pk(k, rs[ir], 
-                   pEXP_qwv, pVF_qwv, pHF_qwv, pDC_qwv, false,
-                   EXP_J, VF_J, HF_J, DC_J);
+            int_Pk(k, rs[ir], QWV, false, SUM);
             
             iendk0 = true;
-            for(MYINT m=0; m<3; ++m){
-                for(MYINT v=0; v<4; ++v){
-                    if(sum_EXP_J!=NULL) sum_EXP_J[ir][m][v] += EXP_J[m][v];
-                    if(sum_VF_J!=NULL)  sum_VF_J[ir][m][v]  += VF_J[m][v];
-                    if(sum_HF_J!=NULL)  sum_HF_J[ir][m][v]  += HF_J[m][v];
-                    if(sum_DC_J!=NULL)  sum_DC_J[ir][m][v]  += DC_J[m][v];
+            for(MYINT i=0; i<GRT_SRC_M_COUNTS; ++i){
+                MYINT modr = GRT_SRC_M_ORDERS[i];
 
-                    if(keps > RZERO){
-                        // 判断是否达到收敛条件
-                        if(sum_EXP_J!=NULL && m==0 && (v==0||v==2)) iendk0 = iendk0 && (CABS(EXP_J[m][v])/ CABS(sum_EXP_J[ir][m][v]) <= keps);
-                        if(sum_VF_J!=NULL  && m==0 && (v==0||v==2)) iendk0 = iendk0 && (CABS(VF_J[m][v]) / CABS(sum_VF_J[ir][m][v])  <= keps);
-                        if(sum_HF_J!=NULL && m==1)                  iendk0 = iendk0 && (CABS(HF_J[m][v]) / CABS(sum_HF_J[ir][m][v])  <= keps);
-                        if(sum_DC_J!=NULL && ((m==0 && (v==0||v==2)) || m!=0)) iendk0 = iendk0 && (CABS(DC_J[m][v]) / CABS(sum_DC_J[ir][m][v])  <= keps);
-                    } 
+                for(MYINT v=0; v<GRT_SRC_P_COUNTS; ++v){
+                    sum_J[ir][i][v] += SUM[i][v];
+                    
+                    // 是否提前判断达到收敛
+                    if(keps < RZERO || (modr==0 && v!=0 && v!=2))  continue;
+                    
+                    iendk0 = iendk0 && (CABS(SUM[i][v])/ CABS(sum_J[ir][i][v]) <= keps);
                 }
             }
             
@@ -125,38 +99,27 @@ MYREAL discrete_integ(
             }
             
 
-            // ---------------- 位移空间导数，EXP_J, VF_J, HF_J, DC_J数组重复利用 --------------------------
+            // ---------------- 位移空间导数，SUM数组重复利用 --------------------------
             if(calc_upar){
                 // ------------------------------- ui_z -----------------------------------
                 // 计算被积函数一项 F(k,w)Jm(kr)k
-                int_Pk(k, rs[ir], 
-                       pEXP_uiz_qwv, pVF_uiz_qwv, pHF_uiz_qwv, pDC_uiz_qwv, false,
-                       EXP_J, VF_J, HF_J, DC_J);
+                int_Pk(k, rs[ir], QWV_uiz, false, SUM);
                 
                 // keps不参与计算位移空间导数的积分，背后逻辑认为u收敛，则uiz也收敛
-                for(MYINT m=0; m<3; ++m){
-                    for(MYINT v=0; v<4; ++v){
-                        if(sum_EXP_uiz_J!=NULL) sum_EXP_uiz_J[ir][m][v] += EXP_J[m][v];
-                        if(sum_VF_uiz_J!=NULL)  sum_VF_uiz_J[ir][m][v]  += VF_J[m][v];
-                        if(sum_HF_uiz_J!=NULL)  sum_HF_uiz_J[ir][m][v]  += HF_J[m][v];
-                        if(sum_DC_uiz_J!=NULL)  sum_DC_uiz_J[ir][m][v]  += DC_J[m][v];
+                for(MYINT i=0; i<GRT_SRC_M_COUNTS; ++i){
+                    for(MYINT v=0; v<GRT_SRC_P_COUNTS; ++v){
+                        sum_uiz_J[ir][i][v] += SUM[i][v];
                     }
                 }
 
-
                 // ------------------------------- ui_r -----------------------------------
                 // 计算被积函数一项 F(k,w)Jm(kr)k
-                int_Pk(k, rs[ir], 
-                       pEXP_qwv, pVF_qwv, pHF_qwv, pDC_qwv, true,
-                       EXP_J, VF_J, HF_J, DC_J);
+                int_Pk(k, rs[ir], QWV, true, SUM);
                 
-                // keps不参与计算位移空间导数的积分，背后逻辑认为u收敛，则uir也收敛
-                for(MYINT m=0; m<3; ++m){
-                    for(MYINT v=0; v<4; ++v){
-                        if(sum_EXP_uir_J!=NULL) sum_EXP_uir_J[ir][m][v] += EXP_J[m][v];
-                        if(sum_VF_uir_J!=NULL)  sum_VF_uir_J[ir][m][v]  += VF_J[m][v];
-                        if(sum_HF_uir_J!=NULL)  sum_HF_uir_J[ir][m][v]  += HF_J[m][v];
-                        if(sum_DC_uir_J!=NULL)  sum_DC_uir_J[ir][m][v]  += DC_J[m][v];
+                // keps不参与计算位移空间导数的积分，背后逻辑认为u收敛，则uiz也收敛
+                for(MYINT i=0; i<GRT_SRC_M_COUNTS; ++i){
+                    for(MYINT v=0; v<GRT_SRC_P_COUNTS; ++v){
+                        sum_uir_J[ir][i][v] += SUM[i][v];
                     }
                 }
             } // END if calc_upar

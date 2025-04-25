@@ -63,18 +63,6 @@ typedef struct _PYMODEL1D {
     MYREAL *Qb; ///< Qb[n]     S波Q值
 } PYMODEL1D;
 
-/**
- * 格林函数的频谱，仅作为将结果返回至Python使用 
- */
-typedef struct _GRN {
-    MYINT nf; ///< 频点个数
-    MYREAL *Re; ///< Re[nf] 实部
-    MYREAL *Im; ///< Im[nf] 虚部
-    // float *Re;
-    // float *Im;
-} GRN;
-
-
 
 /**
  * 打印模型参数信息，主要用于调试程序 

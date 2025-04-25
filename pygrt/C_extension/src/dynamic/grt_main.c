@@ -115,9 +115,6 @@ static int M_flag=0, D_flag=0, N_flag=0,
             S_flag=0, R_flag=0, P_flag=0,
             G_flag=0, e_flag=0;
 
-// 三分量代号
-const char chs[3] = {'Z', 'R', 'T'};
-
 
 /**
  * 打印使用说明
@@ -1060,59 +1057,20 @@ int main(int argc, char **argv) {
     
 
     // 建立格林函数的complex数组
-    MYCOMPLEX *(*EXPcplx)[2] = (doEXP) ? (MYCOMPLEX*(*)[2])calloc(nr, sizeof(*EXPcplx)) : NULL;
-    MYCOMPLEX *(*VFcplx)[2]  = (doVF)  ? (MYCOMPLEX*(*)[2])calloc(nr, sizeof(*VFcplx))  : NULL;
-    MYCOMPLEX *(*HFcplx)[3]  = (doHF)  ? (MYCOMPLEX*(*)[3])calloc(nr, sizeof(*HFcplx))  : NULL;
-    MYCOMPLEX *(*DDcplx)[2]  = (doDC)  ? (MYCOMPLEX*(*)[2])calloc(nr, sizeof(*DDcplx))  : NULL;
-    MYCOMPLEX *(*DScplx)[3]  = (doDC)  ? (MYCOMPLEX*(*)[3])calloc(nr, sizeof(*DScplx))  : NULL;
-    MYCOMPLEX *(*SScplx)[3]  = (doDC)  ? (MYCOMPLEX*(*)[3])calloc(nr, sizeof(*SScplx))  : NULL;
-
-    MYCOMPLEX *(*EXPcplx_uiz)[2] = (calc_upar && doEXP) ? (MYCOMPLEX*(*)[2])calloc(nr, sizeof(*EXPcplx_uiz)) : NULL;
-    MYCOMPLEX *(*VFcplx_uiz)[2]  = (calc_upar && doVF)  ? (MYCOMPLEX*(*)[2])calloc(nr, sizeof(*VFcplx_uiz))  : NULL;
-    MYCOMPLEX *(*HFcplx_uiz)[3]  = (calc_upar && doHF)  ? (MYCOMPLEX*(*)[3])calloc(nr, sizeof(*HFcplx_uiz))  : NULL;
-    MYCOMPLEX *(*DDcplx_uiz)[2]  = (calc_upar && doDC)  ? (MYCOMPLEX*(*)[2])calloc(nr, sizeof(*DDcplx_uiz))  : NULL;
-    MYCOMPLEX *(*DScplx_uiz)[3]  = (calc_upar && doDC)  ? (MYCOMPLEX*(*)[3])calloc(nr, sizeof(*DScplx_uiz))  : NULL;
-    MYCOMPLEX *(*SScplx_uiz)[3]  = (calc_upar && doDC)  ? (MYCOMPLEX*(*)[3])calloc(nr, sizeof(*SScplx_uiz))  : NULL;
-
-    MYCOMPLEX *(*EXPcplx_uir)[2] = (calc_upar && doEXP) ? (MYCOMPLEX*(*)[2])calloc(nr, sizeof(*EXPcplx_uir)) : NULL;
-    MYCOMPLEX *(*VFcplx_uir)[2]  = (calc_upar && doVF)  ? (MYCOMPLEX*(*)[2])calloc(nr, sizeof(*VFcplx_uir))  : NULL;
-    MYCOMPLEX *(*HFcplx_uir)[3]  = (calc_upar && doHF)  ? (MYCOMPLEX*(*)[3])calloc(nr, sizeof(*HFcplx_uir))  : NULL;
-    MYCOMPLEX *(*DDcplx_uir)[2]  = (calc_upar && doDC)  ? (MYCOMPLEX*(*)[2])calloc(nr, sizeof(*DDcplx_uir))  : NULL;
-    MYCOMPLEX *(*DScplx_uir)[3]  = (calc_upar && doDC)  ? (MYCOMPLEX*(*)[3])calloc(nr, sizeof(*DScplx_uir))  : NULL;
-    MYCOMPLEX *(*SScplx_uir)[3]  = (calc_upar && doDC)  ? (MYCOMPLEX*(*)[3])calloc(nr, sizeof(*SScplx_uir))  : NULL;
+    MYCOMPLEX *(*grn)[GRT_SRC_M_COUNTS][GRT_SRC_CHA_COUNTS] = (MYCOMPLEX*(*)[GRT_SRC_M_COUNTS][GRT_SRC_CHA_COUNTS]) calloc(nr, sizeof(*grn));
+    MYCOMPLEX *(*grn_uiz)[GRT_SRC_M_COUNTS][GRT_SRC_CHA_COUNTS] = (calc_upar)? (MYCOMPLEX*(*)[GRT_SRC_M_COUNTS][GRT_SRC_CHA_COUNTS]) calloc(nr, sizeof(*grn_uiz)) : NULL;
+    MYCOMPLEX *(*grn_uir)[GRT_SRC_M_COUNTS][GRT_SRC_CHA_COUNTS] = (calc_upar)? (MYCOMPLEX*(*)[GRT_SRC_M_COUNTS][GRT_SRC_CHA_COUNTS]) calloc(nr, sizeof(*grn_uir)) : NULL;
 
     for(int ir=0; ir<nr; ++ir){
-        for(int i=0; i<3; ++i){
-            if(i<2){
-                //
-                if(EXPcplx) EXPcplx[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
-                if(EXPcplx_uiz) EXPcplx_uiz[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
-                if(EXPcplx_uir) EXPcplx_uir[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
-                //
-                if(VFcplx)  VFcplx[ir][i]  = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
-                if(VFcplx_uiz) VFcplx_uiz[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
-                if(VFcplx_uir) VFcplx_uir[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
-                //
-                if(DDcplx)  DDcplx[ir][i]  = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
-                if(DDcplx_uiz) DDcplx_uiz[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
-                if(DDcplx_uir) DDcplx_uir[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
+        for(int i=0; i<GRT_SRC_M_COUNTS; ++i){
+            for(int c=0; c<GRT_SRC_CHA_COUNTS; ++c){
+                grn[ir][i][c] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
+                if(grn_uiz)  grn_uiz[ir][i][c] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
+                if(grn_uir)  grn_uir[ir][i][c] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
             }
-            //
-            if(HFcplx) HFcplx[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
-            if(HFcplx_uiz) HFcplx_uiz[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
-            if(HFcplx_uir) HFcplx_uir[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
-            //
-            if(DScplx) DScplx[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
-            if(DScplx_uiz) DScplx_uiz[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
-            if(DScplx_uir) DScplx_uir[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
-            //
-            if(SScplx) SScplx[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
-            if(SScplx_uiz) SScplx_uiz[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
-            if(SScplx_uir) SScplx_uir[ir][i] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
         }
     }
 
-    
 
     // 在计算前打印所有参数
     if(! silenceInput){
@@ -1122,13 +1080,10 @@ int main(int argc, char **argv) {
 
     //==============================================================================
     // 计算格林函数
-    integ_grn_spec_in_C(
+    integ_grn_spec(
         pymod, nf1, nf2, nf, freqs, nr, rs, wI,
         vmin_ref, keps, ampk, k0, Length, filonLength, filonCut, !silenceInput,
-        EXPcplx, VFcplx, HFcplx, DDcplx, DScplx, SScplx, 
-        calc_upar, 
-        EXPcplx_uiz, VFcplx_uiz, HFcplx_uiz, DDcplx_uiz, DScplx_uiz, SScplx_uiz, 
-        EXPcplx_uir, VFcplx_uir, HFcplx_uir, DDcplx_uir, DScplx_uir, SScplx_uir, 
+        grn, calc_upar, grn_uiz, grn_uir,
         s_statsdir, nstatsidxs, statsidxs
     );
     //==============================================================================
@@ -1193,72 +1148,41 @@ int main(int argc, char **argv) {
         hd.t1 = compute_travt1d(pymod->Thk, pymod->Vb, pymod->n, pymod->isrc, pymod->ircv, rs[ir]);
         strcpy(hd.kt1, "S");
 
-        // 用于反转Z分量
-        int sgn=1; 
-        for(int i=0; i<3; ++i){
-            // 文件保存总路径
-            // char *s_outpath = (char*)malloc(sizeof(char)*(strlen(s_output_dir)+100));
-            char *s_outpath = (char*)malloc(sizeof(char)*(strlen(s_output_subdir)+100));
-            // char *s_suffix = (char*)malloc(sizeof(char)*(strlen(s_depsrc)+strlen(s_deprcv)+strlen(s_rs[ir])+100));
-            // sprintf(s_suffix, "%s_%s_%s", s_depsrc, s_deprcv, s_rs[ir]);
-            char s_prefix[] = "";
+        for(int im=0; im<GRT_SRC_M_COUNTS; ++im){
+            if(!doEXP && im==0)  continue;
+            if(!doVF  && im==1)  continue;
+            if(!doHF  && im==2)  continue;
+            if(!doDC  && im>=3)  continue;
 
-            // Z分量反转
-            sgn = (i==0) ? -1 : 1;
-            if(i<2){
-                if(doEXP){
-                    write_one_to_sac("EX", chs[i], &hd, s_outpath, s_output_subdir, s_prefix, sgn, EXPcplx[ir][i], fftw_grn, out, float_arr, plan);
-                    if(calc_upar){
-                        write_one_to_sac("EX", chs[i], &hd, s_outpath, s_output_subdir, "z", sgn*(-1), EXPcplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
-                        write_one_to_sac("EX", chs[i], &hd, s_outpath, s_output_subdir, "r", sgn, EXPcplx_uir[ir][i], fftw_grn, out, float_arr, plan);
-                    }
-                }
-                if(doVF){
-                    write_one_to_sac("VF", chs[i], &hd, s_outpath, s_output_subdir, s_prefix, sgn, VFcplx[ir][i], fftw_grn, out, float_arr, plan);
-                    if(calc_upar){
-                        write_one_to_sac("VF", chs[i], &hd, s_outpath, s_output_subdir, "z", sgn*(-1), VFcplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
-                        write_one_to_sac("VF", chs[i], &hd, s_outpath, s_output_subdir, "r", sgn, VFcplx_uir[ir][i], fftw_grn, out, float_arr, plan);
-                    }
-                }
-                if(doDC){
-                    write_one_to_sac("DD", chs[i], &hd, s_outpath, s_output_subdir, s_prefix, sgn, DDcplx[ir][i], fftw_grn, out, float_arr, plan);
-                    if(calc_upar){
-                        write_one_to_sac("DD", chs[i], &hd, s_outpath, s_output_subdir, "z", sgn*(-1), DDcplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
-                        write_one_to_sac("DD", chs[i], &hd, s_outpath, s_output_subdir, "r", sgn, DDcplx_uir[ir][i], fftw_grn, out, float_arr, plan);
-                    }
-                }
-            }
+            int modr = GRT_SRC_M_ORDERS[im];
+            int sgn=1;  // 用于反转Z分量
+            for(int c=0; c<GRT_SRC_CHA_COUNTS; ++c){
+                if(modr==0 && GRT_ZRTchs[c]=='T')  continue;  // 跳过输出0阶的T分量
 
-            if(doHF){
-                write_one_to_sac("HF", chs[i], &hd, s_outpath, s_output_subdir, s_prefix, sgn, HFcplx[ir][i], fftw_grn, out, float_arr, plan);
+                // 文件保存总路径
+                // char *s_outpath = (char*)malloc(sizeof(char)*(strlen(s_output_dir)+100));
+                char *s_outpath = (char*)malloc(sizeof(char)*(strlen(s_output_subdir)+100));
+                // char *s_suffix = (char*)malloc(sizeof(char)*(strlen(s_depsrc)+strlen(s_deprcv)+strlen(s_rs[ir])+100));
+                // sprintf(s_suffix, "%s_%s_%s", s_depsrc, s_deprcv, s_rs[ir]);
+                char s_prefix[] = "";
+
+                // Z分量反转
+                sgn = (GRT_ZRTchs[c]=='Z') ? -1 : 1;
+
+                write_one_to_sac(GRT_SRC_M_NAME_ABBR[im], GRT_ZRTchs[c], &hd, s_outpath, s_output_subdir, s_prefix, sgn, grn[ir][im][c], fftw_grn, out, float_arr, plan);
                 if(calc_upar){
-                    write_one_to_sac("HF", chs[i], &hd, s_outpath, s_output_subdir, "z", sgn*(-1), HFcplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
-                    write_one_to_sac("HF", chs[i], &hd, s_outpath, s_output_subdir, "r", sgn, HFcplx_uir[ir][i], fftw_grn, out, float_arr, plan);
+                    write_one_to_sac(GRT_SRC_M_NAME_ABBR[im], GRT_ZRTchs[c], &hd, s_outpath, s_output_subdir, "z", sgn*(-1), grn_uiz[ir][im][c], fftw_grn, out, float_arr, plan);
+                    write_one_to_sac(GRT_SRC_M_NAME_ABBR[im], GRT_ZRTchs[c], &hd, s_outpath, s_output_subdir, "r", sgn, grn_uir[ir][im][c], fftw_grn, out, float_arr, plan);
                 }
-            }
 
-            if(doDC){
-                write_one_to_sac("DS", chs[i], &hd, s_outpath, s_output_subdir, s_prefix, sgn, DScplx[ir][i], fftw_grn, out, float_arr, plan);
-                if(calc_upar){
-                    write_one_to_sac("DS", chs[i], &hd, s_outpath, s_output_subdir, "z", sgn*(-1), DScplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
-                    write_one_to_sac("DS", chs[i], &hd, s_outpath, s_output_subdir, "r", sgn, DScplx_uir[ir][i], fftw_grn, out, float_arr, plan);
-                }
-                write_one_to_sac("SS", chs[i], &hd, s_outpath, s_output_subdir, s_prefix, sgn, SScplx[ir][i], fftw_grn, out, float_arr, plan);
-                if(calc_upar){
-                    write_one_to_sac("SS", chs[i], &hd, s_outpath, s_output_subdir, "z", sgn*(-1), SScplx_uiz[ir][i], fftw_grn, out, float_arr, plan);
-                    write_one_to_sac("SS", chs[i], &hd, s_outpath, s_output_subdir, "r", sgn, SScplx_uir[ir][i], fftw_grn, out, float_arr, plan);
-                }
+                free(s_outpath);
             }
-
-            free(s_outpath);
-            // free(s_suffix);
         }
 
 
         if(!silenceInput){
             print_outdir_travt(s_output_subdir, s_rs[ir], hd.t0, hd.t1);
         }
-        
 
         free(s_output_subdir);
     }
@@ -1272,69 +1196,17 @@ int main(int argc, char **argv) {
 
     for(int ir=0; ir<nr; ++ir){
         free(s_rs[ir]);
-        for(int i=0; i<3; ++i){
-            if(i<2){
-                if(doEXP){
-                    free(EXPcplx[ir][i]);
-                    if(calc_upar){
-                        free(EXPcplx_uiz[ir][i]);
-                        free(EXPcplx_uir[ir][i]);
-                    }
-                }
-                if(doVF){
-                    free(VFcplx[ir][i]);
-                    if(calc_upar){
-                        free(VFcplx_uiz[ir][i]);
-                        free(VFcplx_uir[ir][i]);
-                    }
-                }
-                if(doDC){
-                    free(DDcplx[ir][i]);
-                    if(calc_upar){
-                        free(DDcplx_uiz[ir][i]);
-                        free(DDcplx_uir[ir][i]);
-                    }
-                }
-            }
-            if(doHF){
-                free(HFcplx[ir][i]);
-                if(calc_upar){
-                    free(HFcplx_uiz[ir][i]);
-                    free(HFcplx_uir[ir][i]);
-                }
-            }
-            if(doDC){
-                free(DScplx[ir][i]);
-                if(calc_upar){
-                    free(DScplx_uiz[ir][i]);
-                    free(DScplx_uir[ir][i]);
-                }
-                free(SScplx[ir][i]);
-                if(calc_upar){
-                    free(SScplx_uiz[ir][i]);
-                    free(SScplx_uir[ir][i]);
-                }
+        for(int i=0; i<GRT_SRC_M_COUNTS; ++i){
+            for(int c=0; c<GRT_SRC_CHA_COUNTS; ++c){
+                free(grn[ir][i][c]);
+                if(grn_uiz)  free(grn_uiz[ir][i][c]);
+                if(grn_uir)  free(grn_uir[ir][i][c]);
             }
         }
     }
-    if(EXPcplx) free(EXPcplx);
-    if(EXPcplx_uiz) free(EXPcplx_uiz);
-    if(EXPcplx_uir) free(EXPcplx_uir);
-    if(VFcplx) free(VFcplx);
-    if(VFcplx_uiz) free(VFcplx_uiz);
-    if(VFcplx_uir) free(VFcplx_uir);
-    if(HFcplx) free(HFcplx);
-    if(HFcplx_uiz) free(HFcplx_uiz);
-    if(HFcplx_uir) free(HFcplx_uir);
-    if(DDcplx) free(DDcplx);
-    if(DDcplx_uiz) free(DDcplx_uiz);
-    if(DDcplx_uir) free(DDcplx_uir);
-    if(DScplx) free(DScplx);
-    if(DScplx_uiz) free(DScplx_uiz);
-    if(DScplx_uir) free(DScplx_uir);
-    if(SScplx) free(SScplx);
-    if(SScplx_uiz) free(SScplx_uiz);
-    if(SScplx_uir) free(SScplx_uir);
+    free(grn);
+    if(grn_uiz)  free(grn_uiz);
+    if(grn_uir)  free(grn_uir);
 
     free(s_rs);
     free(rs);
@@ -1351,8 +1223,6 @@ int main(int argc, char **argv) {
     _FFTW_DESTROY_PLAN(plan);
 
     free_pymod(pymod);
-
-
 
 
     return 0;
