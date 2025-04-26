@@ -418,13 +418,13 @@ static void getopt_from_command(int argc, char **argv){
  * @param[in]   prefix    前缀字符串
  */
 static void print_grn_title(const char *prefix){
-    for(int i=0; i<GRT_SRC_M_COUNTS; ++i){
-        int modr = GRT_SRC_M_ORDERS[i];
+    for(int i=0; i<SRC_M_NUM; ++i){
+        int modr = SRC_M_ORDERS[i];
         char s_title[10+strlen(prefix)];
-        for(int c=0; c<GRT_SRC_CHA_COUNTS; ++c){
+        for(int c=0; c<CHANNEL_NUM; ++c){
             if(modr==0 && GRT_ZRTchs[c]=='T')  continue;
 
-            snprintf(s_title, sizeof(s_title), "%s%s%c", prefix, GRT_SRC_M_NAME_ABBR[i], GRT_ZRTchs[c]);
+            snprintf(s_title, sizeof(s_title), "%s%s%c", prefix, SRC_M_NAME_ABBR[i], GRT_ZRTchs[c]);
             fprintf(stdout, GRT_STRING_FMT, s_title);
         }
     }
@@ -436,11 +436,11 @@ static void print_grn_title(const char *prefix){
  * @param      grn       静态格林函数结果
  * @param      sgn0      全局符号
  */
-static void print_grn_value(const MYREAL grn[GRT_SRC_M_COUNTS][GRT_SRC_CHA_COUNTS], const int sgn0){
-    for(int i=0; i<GRT_SRC_M_COUNTS; ++i){
-        int modr = GRT_SRC_M_ORDERS[i];
+static void print_grn_value(const MYREAL grn[SRC_M_NUM][CHANNEL_NUM], const int sgn0){
+    for(int i=0; i<SRC_M_NUM; ++i){
+        int modr = SRC_M_ORDERS[i];
         int sgn = 1;
-        for(int c=0; c<GRT_SRC_CHA_COUNTS; ++c){
+        for(int c=0; c<CHANNEL_NUM; ++c){
             if(modr==0 && GRT_ZRTchs[c]=='T')  continue;
 
             sgn = (GRT_ZRTchs[c]=='Z') ? -sgn0 : sgn0;
@@ -506,9 +506,9 @@ int main(int argc, char **argv){
 
 
     // 建立格林函数的浮点数
-    MYREAL (*grn)[GRT_SRC_M_COUNTS][GRT_SRC_CHA_COUNTS] = (MYREAL (*)[GRT_SRC_M_COUNTS][GRT_SRC_CHA_COUNTS]) calloc(nr, sizeof(*grn));
-    MYREAL (*grn_uiz)[GRT_SRC_M_COUNTS][GRT_SRC_CHA_COUNTS] = (calc_upar)? (MYREAL (*)[GRT_SRC_M_COUNTS][GRT_SRC_CHA_COUNTS]) calloc(nr, sizeof(*grn_uiz)) : NULL;
-    MYREAL (*grn_uir)[GRT_SRC_M_COUNTS][GRT_SRC_CHA_COUNTS] = (calc_upar)? (MYREAL (*)[GRT_SRC_M_COUNTS][GRT_SRC_CHA_COUNTS]) calloc(nr, sizeof(*grn_uir)) : NULL;
+    MYREAL (*grn)[SRC_M_NUM][CHANNEL_NUM] = (MYREAL (*)[SRC_M_NUM][CHANNEL_NUM]) calloc(nr, sizeof(*grn));
+    MYREAL (*grn_uiz)[SRC_M_NUM][CHANNEL_NUM] = (calc_upar)? (MYREAL (*)[SRC_M_NUM][CHANNEL_NUM]) calloc(nr, sizeof(*grn_uiz)) : NULL;
+    MYREAL (*grn_uir)[SRC_M_NUM][CHANNEL_NUM] = (calc_upar)? (MYREAL (*)[SRC_M_NUM][CHANNEL_NUM]) calloc(nr, sizeof(*grn_uir)) : NULL;
 
 
     //==============================================================================

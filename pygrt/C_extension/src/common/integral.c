@@ -20,39 +20,39 @@
 void int_Pk(
     MYREAL k, MYREAL r, 
     // F(ki,w)， 第一个维度表示不同震源，不同阶数，第二个维度3代表三类系数qm,wm,vm 
-    const MYCOMPLEX QWV[GRT_SRC_M_COUNTS][GRT_SRC_QWV_COUNTS],
+    const MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
     // F(ki,w)Jm(ki*r)ki，第一个维度表示不同震源，不同阶数，第二个维度代表4种类型的F(k,w)Jm(kr)k的类型
     bool calc_uir,
-    MYCOMPLEX SUM[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS])
+    MYCOMPLEX SUM[SRC_M_NUM][INTEG_NUM])
 {
-    MYREAL bjmk[GRT_SRC_M_MAX+1] = {0};
+    MYREAL bjmk[MORDER_MAX+1] = {0};
     MYREAL kr = k*r;
     MYREAL kr_inv = RONE/kr;
     MYREAL kcoef = k;
 
-    MYREAL Jmcoef[GRT_SRC_M_MAX+1] = {0};
+    MYREAL Jmcoef[MORDER_MAX+1] = {0};
 
     bessel012(kr, &bjmk[0], &bjmk[1], &bjmk[2]); 
     if(calc_uir){
-        MYREAL bjmk0[GRT_SRC_M_MAX+1] = {0};
-        for(MYINT i=0; i<=GRT_SRC_M_MAX; ++i)  bjmk0[i] = bjmk[i];
+        MYREAL bjmk0[MORDER_MAX+1] = {0};
+        for(MYINT i=0; i<=MORDER_MAX; ++i)  bjmk0[i] = bjmk[i];
 
         besselp012(kr, &bjmk[0], &bjmk[1], &bjmk[2]); 
         kcoef = k*k;
 
-        for(MYINT i=1; i<=GRT_SRC_M_MAX; ++i)  Jmcoef[i] = kr_inv * (-kr_inv * bjmk0[i] + bjmk[i]);
+        for(MYINT i=1; i<=MORDER_MAX; ++i)  Jmcoef[i] = kr_inv * (-kr_inv * bjmk0[i] + bjmk[i]);
     } 
     else {
-        for(MYINT i=1; i<=GRT_SRC_M_MAX; ++i)  Jmcoef[i] = bjmk[i]*kr_inv;
+        for(MYINT i=1; i<=MORDER_MAX; ++i)  Jmcoef[i] = bjmk[i]*kr_inv;
     }
 
-    for(MYINT i=1; i<=GRT_SRC_M_MAX; ++i)  Jmcoef[i] *= kcoef;
-    for(MYINT i=0; i<=GRT_SRC_M_MAX; ++i)  bjmk[i] *= kcoef;
+    for(MYINT i=1; i<=MORDER_MAX; ++i)  Jmcoef[i] *= kcoef;
+    for(MYINT i=0; i<=MORDER_MAX; ++i)  bjmk[i] *= kcoef;
 
 
     // 公式(5.6.22), 将公式分解为F(k,w)Jm(kr)k的形式
-    for(MYINT i=0; i<GRT_SRC_M_COUNTS; ++i){
-        MYINT modr = GRT_SRC_M_ORDERS[i];  // 对应m阶数
+    for(MYINT i=0; i<SRC_M_NUM; ++i){
+        MYINT modr = SRC_M_ORDERS[i];  // 对应m阶数
         if(modr == 0){
             SUM[i][0] = - QWV[i][0] * bjmk[1];   // - q0*J1*k
             SUM[i][2] =   QWV[i][1] * bjmk[0];   //   w0*J0*k
@@ -71,10 +71,10 @@ void int_Pk(
 void int_Pk_filon(
     MYREAL k, MYREAL r, bool iscos,
     // F(ki,w)， 第一个维度表示不同震源，不同阶数，第二个维度3代表三类系数qm,wm,vm 
-    const MYCOMPLEX QWV[GRT_SRC_M_COUNTS][GRT_SRC_QWV_COUNTS],
+    const MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
     // F(ki,w)Jm(ki*r)ki，第一个维度表示不同震源，不同阶数，第二个维度代表4种类型的F(k,w)Jm(kr)k的类型
     bool calc_uir,
-    MYCOMPLEX SUM[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS])
+    MYCOMPLEX SUM[SRC_M_NUM][INTEG_NUM])
 {
     MYREAL phi0 = 0.0;
     if(! iscos)  phi0 = - HALFPI;  // 在cos函数中添加的相位差，用于计算sin函数
@@ -82,9 +82,9 @@ void int_Pk_filon(
     MYREAL kr = k*r;
     MYREAL kr_inv = RONE/kr;
     MYREAL kcoef = SQRT(k);
-    MYREAL bjmk[GRT_SRC_M_MAX+1] = {0};
+    MYREAL bjmk[MORDER_MAX+1] = {0};
 
-    MYREAL Jmcoef[GRT_SRC_M_MAX+1] = {0};
+    MYREAL Jmcoef[MORDER_MAX+1] = {0};
 
     if(calc_uir){
         kcoef *= k;
@@ -99,12 +99,12 @@ void int_Pk_filon(
         bjmk[2] = COS(kr - FIVEQUARTERPI - phi0);
     }
 
-    for(MYINT i=1; i<=GRT_SRC_M_MAX; ++i)  Jmcoef[i] = bjmk[i]*kr_inv*kcoef;
-    for(MYINT i=0; i<=GRT_SRC_M_MAX; ++i)  bjmk[i] *= kcoef;
+    for(MYINT i=1; i<=MORDER_MAX; ++i)  Jmcoef[i] = bjmk[i]*kr_inv*kcoef;
+    for(MYINT i=0; i<=MORDER_MAX; ++i)  bjmk[i] *= kcoef;
     
     // 公式(5.6.22), 将公式分解为F(k,w)Jm(kr)k的形式
-    for(MYINT i=0; i<GRT_SRC_M_COUNTS; ++i){
-        MYINT modr = GRT_SRC_M_ORDERS[i];  // 对应m阶数
+    for(MYINT i=0; i<SRC_M_NUM; ++i){
+        MYINT modr = SRC_M_ORDERS[i];  // 对应m阶数
         if(modr == 0){
             SUM[i][0] = - QWV[i][0] * bjmk[1];   // - q0*J1*k
             SUM[i][2] =   QWV[i][1] * bjmk[0];   //   w0*J0*k
@@ -124,12 +124,12 @@ void int_Pk_filon(
 
 void merge_Pk(
     // F(ki,w)Jm(ki*r)ki，
-    const MYCOMPLEX sum_J[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS], 
+    const MYCOMPLEX sum_J[SRC_M_NUM][INTEG_NUM], 
     // 累积求和，Z、R、T分量 
-    MYCOMPLEX tol[GRT_SRC_M_COUNTS][GRT_SRC_CHA_COUNTS])
+    MYCOMPLEX tol[SRC_M_NUM][CHANNEL_NUM])
 {   
-    for(MYINT i=0; i<GRT_SRC_M_COUNTS; ++i){
-        MYINT modr = GRT_SRC_M_ORDERS[i];
+    for(MYINT i=0; i<SRC_M_NUM; ++i){
+        MYINT modr = SRC_M_ORDERS[i];
         if(modr==0){
             tol[i][0] = sum_J[i][2];
             tol[i][1] = sum_J[i][0];

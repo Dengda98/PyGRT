@@ -26,9 +26,9 @@
  */
 void int_Pk(
     MYREAL k, MYREAL r, 
-    const MYCOMPLEX QWV[GRT_SRC_M_COUNTS][GRT_SRC_QWV_COUNTS],
+    const MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
     bool calc_uir,
-    MYCOMPLEX SUM[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS]);
+    MYCOMPLEX SUM[SRC_M_NUM][INTEG_NUM]);
 
 
 
@@ -37,10 +37,10 @@ void int_Pk(
  * 将最终计算好的多个积分值，按照公式(5.6.22)组装成3分量。
  * 
  * @param[in]     sum_J           积分结果
- * @param[out]    tol             Z、R、T分量频谱结果
+ * @param[out]    tol             Z、R、T分量结果
  */
 void merge_Pk(
-    const MYCOMPLEX sum_J[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS], MYCOMPLEX tol[GRT_SRC_M_COUNTS][GRT_SRC_CHA_COUNTS]);
+    const MYCOMPLEX sum_J[SRC_M_NUM][INTEG_NUM], MYCOMPLEX tol[SRC_M_NUM][CHANNEL_NUM]);
 
 
 
@@ -60,6 +60,6 @@ void merge_Pk(
  */
 void int_Pk_filon(
     MYREAL k, MYREAL r, bool iscos,
-    const MYCOMPLEX QWV[GRT_SRC_M_COUNTS][GRT_SRC_QWV_COUNTS],
+    const MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
     bool calc_uir,
-    MYCOMPLEX SUM[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS]);
+    MYCOMPLEX SUM[SRC_M_NUM][INTEG_NUM]);

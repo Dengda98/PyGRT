@@ -29,13 +29,13 @@
 
 
 void kernel(
-    const MODEL1D *mod1d, MYCOMPLEX omega, MYREAL k, MYCOMPLEX QWV[GRT_SRC_M_COUNTS][GRT_SRC_QWV_COUNTS],
+    const MODEL1D *mod1d, MYCOMPLEX omega, MYREAL k, MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
     bool calc_uiz,
-    MYCOMPLEX QWV_uiz[GRT_SRC_M_COUNTS][GRT_SRC_QWV_COUNTS])
+    MYCOMPLEX QWV_uiz[SRC_M_NUM][QWV_NUM])
 {
     // 初始化qwv为0
-    for(MYINT i=0; i<GRT_SRC_M_COUNTS; ++i){
-        for(MYINT j=0; j<GRT_SRC_QWV_COUNTS; ++j){
+    for(MYINT i=0; i<SRC_M_NUM; ++i){
+        for(MYINT j=0; j<QWV_NUM; ++j){
             QWV[i][j] = CZERO;
             if(calc_uiz)  QWV_uiz[i][j] = CZERO;
         }
@@ -319,7 +319,7 @@ void kernel(
 
 
     // 计算震源系数
-    MYCOMPLEX src_coef[GRT_SRC_M_COUNTS][GRT_SRC_QWV_COUNTS][2] = {0};
+    MYCOMPLEX src_coef[SRC_M_NUM][QWV_NUM][2] = {0};
     source_coef(src_xa, src_xb, src_kaka, src_kbkb, omega, k, src_coef);
 
     // 临时中转矩阵 (temperary)
@@ -363,7 +363,7 @@ void kernel(
         cmat2x2_mul(R_EV, tmp2x2, tmp2x2);
         tmpRL = R_EVL * invT  / (RONE - RDL_BL * RUL_FB);
 
-        for(MYINT i=0; i<GRT_SRC_M_COUNTS; ++i){
+        for(MYINT i=0; i<SRC_M_NUM; ++i){
             get_qwv(ircvup, tmp2x2, tmpRL, RD_BL, RDL_BL, src_coef[i], QWV[i]);
         }
         
@@ -373,7 +373,7 @@ void kernel(
             cmat2x2_mul(uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
             tmpRL_uiz = tmpRL / R_EVL * uiz_R_EVL;
 
-            for(MYINT i=0; i<GRT_SRC_M_COUNTS; ++i){
+            for(MYINT i=0; i<SRC_M_NUM; ++i){
                 get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RD_BL, RDL_BL, src_coef[i], QWV_uiz[i]);
             }    
         }
@@ -404,7 +404,7 @@ void kernel(
         cmat2x2_mul(R_EV, tmp2x2, tmp2x2);
         tmpRL = R_EVL * invT / (RONE - RUL_FA * RDL_AL);
 
-        for(MYINT i=0; i<GRT_SRC_M_COUNTS; ++i){
+        for(MYINT i=0; i<SRC_M_NUM; ++i){
             get_qwv(ircvup, tmp2x2, tmpRL, RU_FA, RUL_FA, src_coef[i], QWV[i]);
         }
 
@@ -414,7 +414,7 @@ void kernel(
             cmat2x2_mul(uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
             tmpRL_uiz = tmpRL / R_EVL * uiz_R_EVL;
             
-            for(MYINT i=0; i<GRT_SRC_M_COUNTS; ++i){
+            for(MYINT i=0; i<SRC_M_NUM; ++i){
                 get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RU_FA, RUL_FA, src_coef[i], QWV_uiz[i]);
             }
         }

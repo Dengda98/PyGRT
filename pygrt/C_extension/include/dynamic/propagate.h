@@ -21,10 +21,10 @@
 /**
  * kernel函数根据(5.5.3)式递推计算广义反射透射矩阵， 再根据公式得到
  * 
- *      1.EXP 爆炸源， (P0)   
- *      2.VF  垂直力源, (P0, SV0)  
- *      3.HF  水平力源, (P1, SV1, SH1)  
- *      4.DC  剪切源, (P0, SV0), (P1, SV1, SH1), (P2, SV2, SH2)  
+ *  1.EXP 爆炸源， (P0)   
+ *  2.VF  垂直力源, (P0, SV0)  
+ *  3.HF  水平力源, (P1, SV1, SH1)  
+ *  4.DC  剪切源, (P0, SV0), (P1, SV1, SH1), (P2, SV2, SH2)  
  *
  *  的 \f$ q_m, w_m, v_m \f$ 系数(\f$ m=0,1,2 \f$), 
  *
@@ -88,8 +88,8 @@
  * 
  */
 void kernel(
-    const MODEL1D *mod1d, MYCOMPLEX omega, MYREAL k, MYCOMPLEX QWV[GRT_SRC_M_COUNTS][GRT_SRC_QWV_COUNTS],
-    bool calc_uiz, MYCOMPLEX QWV_uiz[GRT_SRC_M_COUNTS][GRT_SRC_QWV_COUNTS]);
+    const MODEL1D *mod1d, MYCOMPLEX omega, MYREAL k, MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
+    bool calc_uiz, MYCOMPLEX QWV_uiz[SRC_M_NUM][QWV_NUM]);
 
 
 

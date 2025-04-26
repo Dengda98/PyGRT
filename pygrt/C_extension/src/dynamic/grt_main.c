@@ -1057,13 +1057,13 @@ int main(int argc, char **argv) {
     
 
     // 建立格林函数的complex数组
-    MYCOMPLEX *(*grn)[GRT_SRC_M_COUNTS][GRT_SRC_CHA_COUNTS] = (MYCOMPLEX*(*)[GRT_SRC_M_COUNTS][GRT_SRC_CHA_COUNTS]) calloc(nr, sizeof(*grn));
-    MYCOMPLEX *(*grn_uiz)[GRT_SRC_M_COUNTS][GRT_SRC_CHA_COUNTS] = (calc_upar)? (MYCOMPLEX*(*)[GRT_SRC_M_COUNTS][GRT_SRC_CHA_COUNTS]) calloc(nr, sizeof(*grn_uiz)) : NULL;
-    MYCOMPLEX *(*grn_uir)[GRT_SRC_M_COUNTS][GRT_SRC_CHA_COUNTS] = (calc_upar)? (MYCOMPLEX*(*)[GRT_SRC_M_COUNTS][GRT_SRC_CHA_COUNTS]) calloc(nr, sizeof(*grn_uir)) : NULL;
+    MYCOMPLEX *(*grn)[SRC_M_NUM][CHANNEL_NUM] = (MYCOMPLEX*(*)[SRC_M_NUM][CHANNEL_NUM]) calloc(nr, sizeof(*grn));
+    MYCOMPLEX *(*grn_uiz)[SRC_M_NUM][CHANNEL_NUM] = (calc_upar)? (MYCOMPLEX*(*)[SRC_M_NUM][CHANNEL_NUM]) calloc(nr, sizeof(*grn_uiz)) : NULL;
+    MYCOMPLEX *(*grn_uir)[SRC_M_NUM][CHANNEL_NUM] = (calc_upar)? (MYCOMPLEX*(*)[SRC_M_NUM][CHANNEL_NUM]) calloc(nr, sizeof(*grn_uir)) : NULL;
 
     for(int ir=0; ir<nr; ++ir){
-        for(int i=0; i<GRT_SRC_M_COUNTS; ++i){
-            for(int c=0; c<GRT_SRC_CHA_COUNTS; ++c){
+        for(int i=0; i<SRC_M_NUM; ++i){
+            for(int c=0; c<CHANNEL_NUM; ++c){
                 grn[ir][i][c] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
                 if(grn_uiz)  grn_uiz[ir][i][c] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
                 if(grn_uir)  grn_uir[ir][i][c] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
@@ -1148,15 +1148,15 @@ int main(int argc, char **argv) {
         hd.t1 = compute_travt1d(pymod->Thk, pymod->Vb, pymod->n, pymod->isrc, pymod->ircv, rs[ir]);
         strcpy(hd.kt1, "S");
 
-        for(int im=0; im<GRT_SRC_M_COUNTS; ++im){
+        for(int im=0; im<SRC_M_NUM; ++im){
             if(!doEXP && im==0)  continue;
             if(!doVF  && im==1)  continue;
             if(!doHF  && im==2)  continue;
             if(!doDC  && im>=3)  continue;
 
-            int modr = GRT_SRC_M_ORDERS[im];
+            int modr = SRC_M_ORDERS[im];
             int sgn=1;  // 用于反转Z分量
-            for(int c=0; c<GRT_SRC_CHA_COUNTS; ++c){
+            for(int c=0; c<CHANNEL_NUM; ++c){
                 if(modr==0 && GRT_ZRTchs[c]=='T')  continue;  // 跳过输出0阶的T分量
 
                 // 文件保存总路径
@@ -1169,10 +1169,10 @@ int main(int argc, char **argv) {
                 // Z分量反转
                 sgn = (GRT_ZRTchs[c]=='Z') ? -1 : 1;
 
-                write_one_to_sac(GRT_SRC_M_NAME_ABBR[im], GRT_ZRTchs[c], &hd, s_outpath, s_output_subdir, s_prefix, sgn, grn[ir][im][c], fftw_grn, out, float_arr, plan);
+                write_one_to_sac(SRC_M_NAME_ABBR[im], GRT_ZRTchs[c], &hd, s_outpath, s_output_subdir, s_prefix, sgn, grn[ir][im][c], fftw_grn, out, float_arr, plan);
                 if(calc_upar){
-                    write_one_to_sac(GRT_SRC_M_NAME_ABBR[im], GRT_ZRTchs[c], &hd, s_outpath, s_output_subdir, "z", sgn*(-1), grn_uiz[ir][im][c], fftw_grn, out, float_arr, plan);
-                    write_one_to_sac(GRT_SRC_M_NAME_ABBR[im], GRT_ZRTchs[c], &hd, s_outpath, s_output_subdir, "r", sgn, grn_uir[ir][im][c], fftw_grn, out, float_arr, plan);
+                    write_one_to_sac(SRC_M_NAME_ABBR[im], GRT_ZRTchs[c], &hd, s_outpath, s_output_subdir, "z", sgn*(-1), grn_uiz[ir][im][c], fftw_grn, out, float_arr, plan);
+                    write_one_to_sac(SRC_M_NAME_ABBR[im], GRT_ZRTchs[c], &hd, s_outpath, s_output_subdir, "r", sgn, grn_uir[ir][im][c], fftw_grn, out, float_arr, plan);
                 }
 
                 free(s_outpath);
@@ -1196,8 +1196,8 @@ int main(int argc, char **argv) {
 
     for(int ir=0; ir<nr; ++ir){
         free(s_rs[ir]);
-        for(int i=0; i<GRT_SRC_M_COUNTS; ++i){
-            for(int c=0; c<GRT_SRC_CHA_COUNTS; ++c){
+        for(int i=0; i<SRC_M_NUM; ++i){
+            for(int c=0; c<CHANNEL_NUM; ++c){
                 free(grn[ir][i][c]);
                 if(grn_uiz)  free(grn_uiz[ir][i][c]);
                 if(grn_uir)  free(grn_uir[ir][i][c]);

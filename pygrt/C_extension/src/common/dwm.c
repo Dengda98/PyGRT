@@ -26,17 +26,17 @@
 MYREAL discrete_integ(
     const MODEL1D *mod1d, MYREAL dk, MYREAL kmax, MYREAL keps, MYCOMPLEX omega, 
     MYINT nr, MYREAL *rs,
-    MYCOMPLEX sum_J[nr][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS],
+    MYCOMPLEX sum_J[nr][SRC_M_NUM][INTEG_NUM],
     bool calc_upar,
-    MYCOMPLEX sum_uiz_J[nr][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS],
-    MYCOMPLEX sum_uir_J[nr][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS],
+    MYCOMPLEX sum_uiz_J[nr][SRC_M_NUM][INTEG_NUM],
+    MYCOMPLEX sum_uir_J[nr][SRC_M_NUM][INTEG_NUM],
     FILE *fstats, KernelFunc kerfunc)
 {
-    MYCOMPLEX SUM[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS];
+    MYCOMPLEX SUM[SRC_M_NUM][INTEG_NUM];
 
     // 不同震源不同阶数的核函数 F(k, w) 
-    MYCOMPLEX QWV[GRT_SRC_M_COUNTS][GRT_SRC_QWV_COUNTS];
-    MYCOMPLEX QWV_uiz[GRT_SRC_M_COUNTS][GRT_SRC_QWV_COUNTS];
+    MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM];
+    MYCOMPLEX QWV_uiz[SRC_M_NUM][QWV_NUM];
     
     MYREAL k = 0.0;
     MYINT ik = 0;
@@ -68,8 +68,8 @@ MYREAL discrete_integ(
         for(MYINT ir=0; ir<nr; ++ir){
             if(iendkrs[ir]) continue; // 该震中距下的波数k积分已收敛
 
-            for(MYINT i=0; i<GRT_SRC_M_COUNTS; ++i){
-                for(MYINT v=0; v<GRT_SRC_P_COUNTS; ++v){
+            for(MYINT i=0; i<SRC_M_NUM; ++i){
+                for(MYINT v=0; v<INTEG_NUM; ++v){
                     SUM[i][v] = CZERO;
                 }
             }
@@ -78,10 +78,10 @@ MYREAL discrete_integ(
             int_Pk(k, rs[ir], QWV, false, SUM);
             
             iendk0 = true;
-            for(MYINT i=0; i<GRT_SRC_M_COUNTS; ++i){
-                MYINT modr = GRT_SRC_M_ORDERS[i];
+            for(MYINT i=0; i<SRC_M_NUM; ++i){
+                MYINT modr = SRC_M_ORDERS[i];
 
-                for(MYINT v=0; v<GRT_SRC_P_COUNTS; ++v){
+                for(MYINT v=0; v<INTEG_NUM; ++v){
                     sum_J[ir][i][v] += SUM[i][v];
                     
                     // 是否提前判断达到收敛
@@ -106,8 +106,8 @@ MYREAL discrete_integ(
                 int_Pk(k, rs[ir], QWV_uiz, false, SUM);
                 
                 // keps不参与计算位移空间导数的积分，背后逻辑认为u收敛，则uiz也收敛
-                for(MYINT i=0; i<GRT_SRC_M_COUNTS; ++i){
-                    for(MYINT v=0; v<GRT_SRC_P_COUNTS; ++v){
+                for(MYINT i=0; i<SRC_M_NUM; ++i){
+                    for(MYINT v=0; v<INTEG_NUM; ++v){
                         sum_uiz_J[ir][i][v] += SUM[i][v];
                     }
                 }
@@ -117,8 +117,8 @@ MYREAL discrete_integ(
                 int_Pk(k, rs[ir], QWV, true, SUM);
                 
                 // keps不参与计算位移空间导数的积分，背后逻辑认为u收敛，则uiz也收敛
-                for(MYINT i=0; i<GRT_SRC_M_COUNTS; ++i){
-                    for(MYINT v=0; v<GRT_SRC_P_COUNTS; ++v){
+                for(MYINT i=0; i<SRC_M_NUM; ++i){
+                    for(MYINT v=0; v<INTEG_NUM; ++v){
                         sum_uir_J[ir][i][v] += SUM[i][v];
                     }
                 }

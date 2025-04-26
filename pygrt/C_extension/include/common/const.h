@@ -15,6 +15,7 @@
 // CMPLX macro not exist on MacOS
 #ifndef CMPLX
 #define CMPLX(real, imag) ((double)(real) + (double)(imag) * I)  ///< 复数扩展宏，添加此指令以适配MacOS
+
 #endif
 
 
@@ -22,11 +23,13 @@
 #define _TEST_WHETHER_WIN32_ 1
 #else
 #define _TEST_WHETHER_WIN32_ 0  ///< 测试是否是windows系统
+
 #endif
 
 #if _TEST_WHETHER_WIN32_
 #include <direct.h> /* _mkdir */
 #define mkdir(x, y) _mkdir(x)  ///< 为windows系统修改mkdir函数
+
 #endif
 
 
@@ -129,17 +132,23 @@ typedef int MYINT;  ///< 整数
 
 
 // -----------------------------------------------------------------------------
-#define GRT_SRC_CHA_COUNTS    3     ///< 3, 代码中分量个数（ZRT，ZNE）
-#define GRT_SRC_QWV_COUNTS    3   ///< 3, 代码中核函数类型个数(q, w, v)
-#define GRT_SRC_P_COUNTS  4    ///< 4, 代码中积分类型个数
-#define GRT_SRC_M_MAX     2    ///< 代码中阶数m的最大值
-#define GRT_SRC_M_COUNTS  6   ///< 6, 代码中不同震源、不同阶数的个数
+#define CHANNEL_NUM    3     ///< 3, 代码中分量个数（ZRT，ZNE）
+
+#define QWV_NUM     3   ///< 3, 代码中核函数类型个数(q, w, v)
+#define INTEG_NUM   4    ///< 4, 代码中积分类型个数
+#define MORDER_MAX   2    ///< 2, 代码中阶数m的最大值
+#define SRC_M_NUM    6   ///< 6, 代码中不同震源、不同阶数的个数
+
+#define PTAM_MAX_PT   36         ///< 36， 最后统计波峰波谷的目标数量
+#define PTAM_WINDOW_SIZE  3      ///< 3，  使用连续点数判断是否为波峰或波谷
+#define PTAM_MAX_WAITS    9      ///< 9,   判断波峰或波谷的最大等待次数，不能太小
+
 
 /** 分别对应爆炸源(0阶)，垂直力源(0阶)，水平力源(1阶)，剪切源(0,1,2阶) */ 
-extern const MYINT GRT_SRC_M_ORDERS[GRT_SRC_M_COUNTS];
+extern const MYINT SRC_M_ORDERS[SRC_M_NUM];
 
 /** 不同震源，不同阶数的名称简写，用于命名 */
-extern const char *GRT_SRC_M_NAME_ABBR[GRT_SRC_M_COUNTS];
+extern const char *SRC_M_NAME_ABBR[SRC_M_NUM];
 
 /** ZRT三分量代号 */
 extern const char GRT_ZRTchs[];

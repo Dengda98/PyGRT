@@ -17,7 +17,7 @@
 
 
 void write_stats(
-    FILE *f0, MYREAL k, const MYCOMPLEX QWV[GRT_SRC_M_COUNTS][GRT_SRC_QWV_COUNTS])
+    FILE *f0, MYREAL k, const MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM])
 {
     fwrite(&k, sizeof(MYREAL), 1, f0);
 
@@ -39,15 +39,15 @@ void write_stats(
 
 
 void write_stats_ptam(
-    FILE *f0, MYREAL k, MYINT maxNpt, 
-    MYREAL Kpt[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt],
-    MYCOMPLEX Fpt[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt]
+    FILE *f0, MYREAL k, 
+    MYREAL Kpt[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT],
+    MYCOMPLEX Fpt[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT]
 ){
 
-    for(MYINT i=0; i<maxNpt; ++i){
-        for(MYINT im=0; im<GRT_SRC_M_COUNTS; ++im){
-            MYINT modr = GRT_SRC_M_ORDERS[im];
-            for(MYINT v=0; v<GRT_SRC_P_COUNTS; ++v){
+    for(MYINT i=0; i<PTAM_MAX_PT; ++i){
+        for(MYINT im=0; im<SRC_M_NUM; ++im){
+            MYINT modr = SRC_M_ORDERS[im];
+            for(MYINT v=0; v<INTEG_NUM; ++v){
                 if(modr == 0 && v!=0 && v!=2)  continue;
                 
                 fwrite(&Kpt[im][v][i], sizeof(MYREAL),  1, f0);

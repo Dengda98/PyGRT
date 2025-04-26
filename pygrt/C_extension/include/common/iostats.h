@@ -27,24 +27,23 @@
  *           记录其值主要用于参考其变化趋势。
  */
 void write_stats(
-    FILE *f0, MYREAL k, const MYCOMPLEX QWV[GRT_SRC_M_COUNTS][GRT_SRC_QWV_COUNTS]);
+    FILE *f0, MYREAL k, const MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM]);
 
 
 
 /**
  * 记录峰谷平均法的峰谷位置
  * 
- * @param[out]    f0     (out)二进制文件指针 
- * @param[in]    k       (in)波数 
- * @param[in]    maxNpt  (in)波峰+波谷的数量(本质是计算中提前预设的量，见ptam.c文件中PTA_method函数)
- * @param[in]    Kpt      (in)最终收敛积分值使用的波峰波谷位置
- * @param[in]    Fpt      (in)最终收敛积分值使用的波峰波谷幅值
+ * @param[out]    f0         二进制文件指针 
+ * @param[in]     k          波数 
+ * @param[in]     Kpt        最终收敛积分值使用的波峰波谷位置
+ * @param[in]     Fpt        最终收敛积分值使用的波峰波谷幅值
  * 
  * @note     文件记录的积分值与最终的结果还差一系列的系数，
  *           记录其值主要用于参考其变化趋势。
  * 
  */
 void write_stats_ptam(
-    FILE *f0, MYREAL k, MYINT maxNpt, 
-    MYREAL Kpt[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt],
-    MYCOMPLEX Fpt[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt]);
+    FILE *f0, MYREAL k, 
+    MYREAL Kpt[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT],
+    MYCOMPLEX Fpt[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT]);

@@ -243,7 +243,7 @@ void get_qwv(
     bool ircvup, 
     const MYCOMPLEX R1[2][2], MYCOMPLEX RL1, 
     const MYCOMPLEX R2[2][2], MYCOMPLEX RL2, 
-    const MYCOMPLEX coef[3][2], MYCOMPLEX qwv[3])
+    const MYCOMPLEX coef[QWV_NUM][2], MYCOMPLEX qwv[QWV_NUM])
 {
     MYCOMPLEX qw0[2], qw1[2], v0;
     MYCOMPLEX coefD[2] = {coef[0][0], coef[1][0]};

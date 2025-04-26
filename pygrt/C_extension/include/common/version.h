@@ -11,4 +11,5 @@
 
 #ifndef GRT_VERSION
 #define GRT_VERSION "none"  ///< 默认值，编译时会被替换
+
 #endif

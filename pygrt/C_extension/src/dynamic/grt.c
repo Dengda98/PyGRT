@@ -52,18 +52,18 @@ void set_num_threads(int num_threads){
  * @param[out]   grn            三分量频谱
  */
 static void recordin_GRN(
-    MYINT iw, MYINT nr, MYCOMPLEX coef, MYCOMPLEX sum_J[nr][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS],
-    MYCOMPLEX *grn[nr][GRT_SRC_M_COUNTS][GRT_SRC_CHA_COUNTS]
+    MYINT iw, MYINT nr, MYCOMPLEX coef, MYCOMPLEX sum_J[nr][SRC_M_NUM][INTEG_NUM],
+    MYCOMPLEX *grn[nr][SRC_M_NUM][CHANNEL_NUM]
 )
 {
     // 局部变量，将某个频点的格林函数谱临时存放
-    MYCOMPLEX (*tmp_grn)[GRT_SRC_M_COUNTS][GRT_SRC_CHA_COUNTS] = (MYCOMPLEX(*)[GRT_SRC_M_COUNTS][GRT_SRC_CHA_COUNTS])calloc(nr, sizeof(*tmp_grn));
+    MYCOMPLEX (*tmp_grn)[SRC_M_NUM][CHANNEL_NUM] = (MYCOMPLEX(*)[SRC_M_NUM][CHANNEL_NUM])calloc(nr, sizeof(*tmp_grn));
 
     for(MYINT ir=0; ir<nr; ++ir){
         merge_Pk(sum_J[ir], tmp_grn[ir]);
 
-        for(MYINT i=0; i<GRT_SRC_M_COUNTS; ++i) {
-            for(MYINT c=0; c<GRT_SRC_CHA_COUNTS; ++c){
+        for(MYINT i=0; i<SRC_M_NUM; ++i) {
+            for(MYINT c=0; c<CHANNEL_NUM; ++c){
                 grn[ir][i][c][iw] = coef * tmp_grn[ir][i][c];
             }
 
@@ -82,11 +82,11 @@ void integ_grn_spec(
     bool print_progressbar, 
 
     // 返回值，代表Z、R、T分量
-    MYCOMPLEX *grn[nr][GRT_SRC_M_COUNTS][GRT_SRC_CHA_COUNTS],
+    MYCOMPLEX *grn[nr][SRC_M_NUM][CHANNEL_NUM],
 
     bool calc_upar,
-    MYCOMPLEX *grn_uiz[nr][GRT_SRC_M_COUNTS][GRT_SRC_CHA_COUNTS],
-    MYCOMPLEX *grn_uir[nr][GRT_SRC_M_COUNTS][GRT_SRC_CHA_COUNTS],
+    MYCOMPLEX *grn_uiz[nr][SRC_M_NUM][CHANNEL_NUM],
+    MYCOMPLEX *grn_uir[nr][SRC_M_NUM][CHANNEL_NUM],
 
     const char *statsstr, // 积分结果输出
     MYINT  nstatsidxs, // 仅输出特定频点
@@ -158,9 +158,9 @@ void integ_grn_spec(
 
         // 局部变量，用于求和 sum F(ki,w)Jm(ki*r)ki 
         // 关于形状详见int_Pk()函数内的注释
-        MYCOMPLEX (*sum_J)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS] = (MYCOMPLEX(*)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS])calloc(nr, sizeof(*sum_J));
-        MYCOMPLEX (*sum_uiz_J)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS] = (calc_upar)? (MYCOMPLEX(*)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS])calloc(nr, sizeof(*sum_uiz_J)) : NULL;
-        MYCOMPLEX (*sum_uir_J)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS] = (calc_upar)? (MYCOMPLEX(*)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS])calloc(nr, sizeof(*sum_uir_J)) : NULL;
+        MYCOMPLEX (*sum_J)[SRC_M_NUM][INTEG_NUM] = (MYCOMPLEX(*)[SRC_M_NUM][INTEG_NUM])calloc(nr, sizeof(*sum_J));
+        MYCOMPLEX (*sum_uiz_J)[SRC_M_NUM][INTEG_NUM] = (calc_upar)? (MYCOMPLEX(*)[SRC_M_NUM][INTEG_NUM])calloc(nr, sizeof(*sum_uiz_J)) : NULL;
+        MYCOMPLEX (*sum_uir_J)[SRC_M_NUM][INTEG_NUM] = (calc_upar)? (MYCOMPLEX(*)[SRC_M_NUM][INTEG_NUM])calloc(nr, sizeof(*sum_uir_J)) : NULL;
 
         MODEL1D *local_mod1d = NULL;
     #ifdef _OPENMP 
@@ -187,8 +187,8 @@ void integ_grn_spec(
                 fstats = fopen(fname, "wb");
             }
             for(MYINT ir=0; ir<nr; ++ir){
-                for(MYINT i=0; i<GRT_SRC_M_COUNTS; ++i){
-                    for(MYINT v=0; v<GRT_SRC_P_COUNTS; ++v){
+                for(MYINT i=0; i<SRC_M_NUM; ++i){
+                    for(MYINT v=0; v<INTEG_NUM; ++v){
                         sum_J[ir][i][v] = CZERO;
                         if(calc_upar){
                             sum_uiz_J[ir][i][v] = CZERO;

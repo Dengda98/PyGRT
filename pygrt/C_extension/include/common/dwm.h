@@ -23,13 +23,13 @@
  * 传统的离散波数积分，结果以三维数组的形式返回，形状分别代表震中距、不同震源不同阶数
  * 和4种积分类型(p=0,1,2,3)
  * 
- * @param[in]     mod1d     (in)`MODEL1D` 结构体指针
- * @param[in]     dk        (in)波数积分间隔
- * @param[in]     kmax      (in)波数积分的上限
- * @param[in]     keps      (in)波数积分的收敛条件，要求在某震中距下所有格林函数都收敛，为负数代表不提前判断收敛，按照波数积分上限进行积分
- * @param[in]     omega     (in)复数频率
- * @param[in]     nr        (in)震中距数量
- * @param[in]     rs        (in)震中距数组
+ * @param[in]     mod1d         `MODEL1D` 结构体指针
+ * @param[in]     dk            波数积分间隔
+ * @param[in]     kmax          波数积分的上限
+ * @param[in]     keps          波数积分的收敛条件，要求在某震中距下所有格林函数都收敛，为负数代表不提前判断收敛，按照波数积分上限进行积分
+ * @param[in]     omega         复数频率
+ * @param[in]     nr            震中距数量
+ * @param[in]     rs            震中距数组
  * 
  * @param[out]    sum_J          积分值
  * 
@@ -45,8 +45,8 @@
 MYREAL discrete_integ(
     const MODEL1D *mod1d, MYREAL dk, MYREAL kmax, MYREAL keps, MYCOMPLEX omega, 
     MYINT nr, MYREAL *rs,
-    MYCOMPLEX sum_J[nr][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS],
+    MYCOMPLEX sum_J[nr][SRC_M_NUM][INTEG_NUM],
     bool calc_upar,
-    MYCOMPLEX sum_uiz_J[nr][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS],
-    MYCOMPLEX sum_uir_J[nr][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS],
+    MYCOMPLEX sum_uiz_J[nr][SRC_M_NUM][INTEG_NUM],
+    MYCOMPLEX sum_uir_J[nr][SRC_M_NUM][INTEG_NUM],
     FILE *fstats, KernelFunc kerfunc);

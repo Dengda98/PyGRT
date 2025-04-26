@@ -29,88 +29,83 @@
 /**
  * 处理并确定波峰或波谷                                    
  * 
- * @param ir        震中距索引                          
- * @param im        不同震源不同阶数的索引              
- * @param v         积分形式索引                          
- * @param maxNpt    最大峰谷数                                
- * @param maxnwait  最大等待次数                        
- * @param k         波数                             
- * @param dk        波数步长                              
- * @param J3        存储的采样幅值数组                  
- * @param kpt       存储的采样值对应的波数数组             
- * @param pt        用于存储波峰/波谷点的幅值数组      
- * @param ipt       用于存储波峰/波谷点的个数数组         
- * @param gpt       用于存储等待迭次数的数组      
- * @param iendk0    一个布尔指针，用于指示是否满足结束条件 
+ * @param[in]           ir        震中距索引                          
+ * @param[in]           im        不同震源不同阶数的索引              
+ * @param[in]           v         积分形式索引                          
+ * @param[in]           k         波数                             
+ * @param[in]           dk        波数步长                              
+ * @param[in]           J3        存储的积分采样幅值数组                  
+ * @param[in,out]       Kpt       积分值峰谷的波数数组     
+ * @param[in,out]       Fpt       用于存储波峰/波谷点的幅值数组 
+ * @param[in,out]       Ipt       用于存储波峰/波谷点的个数数组 
+ * @param[in,out]       Gpt       用于存储等待迭次数的数组    
+ * @param[in,out]       iendk0    一个布尔指针，用于指示是否满足结束条件 
  */
 static void process_peak_or_trough(
-    MYINT ir, MYINT im, MYINT v, MYINT maxNpt, MYINT maxnwait, 
-    MYREAL k, MYREAL dk, MYCOMPLEX (*J3)[3][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS], MYREAL (*kpt)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt], 
-    MYCOMPLEX (*pt)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt], MYINT (*ipt)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS], MYINT (*gpt)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS], bool *iendk0)
+    MYINT ir, MYINT im, MYINT v, MYREAL k, MYREAL dk, 
+    MYCOMPLEX (*J3)[PTAM_WINDOW_SIZE][SRC_M_NUM][INTEG_NUM], MYREAL (*Kpt)[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT], 
+    MYCOMPLEX (*Fpt)[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT], MYINT (*Ipt)[SRC_M_NUM][INTEG_NUM], MYINT (*Gpt)[SRC_M_NUM][INTEG_NUM], bool *iendk0)
 {
     MYCOMPLEX tmp0;
-    if (gpt[ir][im][v] >= 2 && ipt[ir][im][v] < maxNpt) {
-        if (cplx_peak_or_trough(im, v, J3[ir], k, dk, &kpt[ir][im][v][ipt[ir][im][v]], &tmp0) != 0) {
-            pt[ir][im][v][ipt[ir][im][v]++] = tmp0;
-            gpt[ir][im][v] = 0;
-        } else if (gpt[ir][im][v] >= maxnwait) {
-            kpt[ir][im][v][ipt[ir][im][v]] = k - dk;
-            pt[ir][im][v][ipt[ir][im][v]++] = J3[ir][1][im][v];
-            gpt[ir][im][v] = 0;
+    if (Gpt[ir][im][v] >= PTAM_WINDOW_SIZE-1 && Ipt[ir][im][v] < PTAM_MAX_PT) {
+        if (cplx_peak_or_trough(im, v, J3[ir], k, dk, &Kpt[ir][im][v][Ipt[ir][im][v]], &tmp0) != 0) {
+            Fpt[ir][im][v][Ipt[ir][im][v]++] = tmp0;
+            Gpt[ir][im][v] = 0;
+        } else if (Gpt[ir][im][v] >= PTAM_MAX_WAITS) {  // 不再等待，直接取中点作为波峰波谷
+            Kpt[ir][im][v][Ipt[ir][im][v]] = k - dk;
+            Fpt[ir][im][v][Ipt[ir][im][v]++] = J3[ir][1][im][v];
+            Gpt[ir][im][v] = 0;
         }
     }
-    *iendk0 = *iendk0 && (ipt[ir][im][v] == maxNpt);
+    *iendk0 = *iendk0 && (Ipt[ir][im][v] == PTAM_MAX_PT);
 }
 
 
 /**
  * 在输入被积函数的情况下，对不同震源使用峰谷平均法
  * 
- * @param       ir                  震中距索引
- * @param       nr                  震中距个数
- * @param       precoef             积分值系数
- * @param       maxNpt              最大峰谷数  
- * @param       maxnwait            最大等待次数      
- * @param       k                   波数                             
- * @param       dk                  波数步长       
- * @param       SUM3                被积函数的幅值数组 
- * @param       sum_J               的积分值数组 
+ * @param[in]           ir                  震中距索引
+ * @param[in]           nr                  震中距个数
+ * @param[in]           precoef             积分值系数
+ * @param[in]           k                   波数                             
+ * @param[in]           dk                  波数步长       
+ * @param[in,out]       SUM3                被积函数的幅值数组 
+ * @param[in,out]       sum_J               积分值数组 
  * 
- * @param       Kpt                 积分值峰谷的波数数组     
- * @param       Fpt                 用于存储波峰/波谷点的幅值数组 
- * @param       Ipt                 用于存储波峰/波谷点的个数数组 
- * @param       Gpt                 用于存储等待迭次数的数组 
+ * @param[in,out]       Kpt                 积分值峰谷的波数数组     
+ * @param[in,out]       Fpt                 用于存储波峰/波谷点的幅值数组 
+ * @param[in,out]       Ipt                 用于存储波峰/波谷点的个数数组 
+ * @param[in,out]       Gpt                 用于存储等待迭次数的数组 
  * 
- * @param       iendk0              是否收集足够峰谷
+ * @param[in,out]       iendk0              是否收集足够峰谷
  * 
  */
 static void ptam_once(
-    const MYINT ir, const MYINT nr, const MYREAL precoef, 
-    MYINT maxNpt, MYINT maxnwait, MYREAL k, MYREAL dk, 
-    MYCOMPLEX SUM3[nr][3][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS],
-    MYCOMPLEX sum_J[nr][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS],
-    MYREAL Kpt[nr][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt],
-    MYCOMPLEX Fpt[nr][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt],
-    MYINT Ipt[nr][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS],
-    MYINT Gpt[nr][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS],
+    const MYINT ir, const MYINT nr, const MYREAL precoef, MYREAL k, MYREAL dk, 
+    MYCOMPLEX SUM3[nr][PTAM_WINDOW_SIZE][SRC_M_NUM][INTEG_NUM],
+    MYCOMPLEX sum_J[nr][SRC_M_NUM][INTEG_NUM],
+    MYREAL Kpt[nr][SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT],
+    MYCOMPLEX Fpt[nr][SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT],
+    MYINT Ipt[nr][SRC_M_NUM][INTEG_NUM],
+    MYINT Gpt[nr][SRC_M_NUM][INTEG_NUM],
     bool *iendk0)
 {
     *iendk0 = true;
-    for(MYINT i=0; i<GRT_SRC_M_COUNTS; ++i){
-        MYINT modr = GRT_SRC_M_ORDERS[i];
-        for(MYINT v=0; v<GRT_SRC_P_COUNTS; ++v){
+    for(MYINT i=0; i<SRC_M_NUM; ++i){
+        MYINT modr = SRC_M_ORDERS[i];
+        for(MYINT v=0; v<INTEG_NUM; ++v){
             if(modr == 0 && v!=0 && v!= 2)  continue;
 
             // 赋更新量
             // SUM3转为求和结果
-            sum_J[ir][i][v] += SUM3[ir][2][i][v] * precoef;
-            SUM3[ir][2][i][v] = sum_J[ir][i][v];         
+            sum_J[ir][i][v] += SUM3[ir][PTAM_WINDOW_SIZE-1][i][v] * precoef;
+            SUM3[ir][PTAM_WINDOW_SIZE-1][i][v] = sum_J[ir][i][v];         
             
             // 3点以上，判断波峰波谷 
-            process_peak_or_trough(ir, i, v, maxNpt, maxnwait, k, dk, SUM3, Kpt, Fpt, Ipt, Gpt, iendk0);
+            process_peak_or_trough(ir, i, v, k, dk, SUM3, Kpt, Fpt, Ipt, Gpt, iendk0);
 
             // 左移动点, 
-            for(MYINT jj=0; jj<2; ++jj){
+            for(MYINT jj=0; jj<PTAM_WINDOW_SIZE-1; ++jj){
                 SUM3[ir][jj][i][v] = SUM3[ir][jj+1][i][v];
             }
 
@@ -124,59 +119,55 @@ static void ptam_once(
 void PTA_method(
     const MODEL1D *mod1d, MYREAL k0, MYREAL predk, MYCOMPLEX omega, 
     MYINT nr, MYREAL *rs,
-    MYCOMPLEX sum_J0[nr][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS],
+    MYCOMPLEX sum_J0[nr][SRC_M_NUM][INTEG_NUM],
     bool calc_upar,
-    MYCOMPLEX sum_uiz_J0[nr][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS],
-    MYCOMPLEX sum_uir_J0[nr][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS],
+    MYCOMPLEX sum_uiz_J0[nr][SRC_M_NUM][INTEG_NUM],
+    MYCOMPLEX sum_uir_J0[nr][SRC_M_NUM][INTEG_NUM],
     FILE *ptam_fstatsnr[nr][2], KernelFunc kerfunc)
 {   
     // 需要兼容对正常收敛而不具有规律波峰波谷的序列
     // 有时序列收敛比较好，不表现为规律的波峰波谷，
     // 此时设置最大等待次数，超过直接设置为中间值
 
-    const MYINT maxnwait = 9;     // 最大等待次数，不能太小
     MYREAL k=0.0;
 
     // 不同震源不同阶数的核函数 F(k, w) 
-    MYCOMPLEX QWV[GRT_SRC_M_COUNTS][GRT_SRC_QWV_COUNTS];
-    MYCOMPLEX QWV_uiz[GRT_SRC_M_COUNTS][GRT_SRC_QWV_COUNTS];
-
-    static const MYINT maxNpt=PTAM_MAX_PEAK_TROUGH; // 波峰波谷的目标
-
+    MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM];
+    MYCOMPLEX QWV_uiz[SRC_M_NUM][QWV_NUM];
 
     // 用于接收F(ki,w)Jm(ki*r)ki
     // 存储采样的值，维度3表示通过连续3个点来判断波峰或波谷
     // 既用于存储被积函数，也最后用于存储求和的结果
-    MYCOMPLEX (*SUM3)[3][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS] = (MYCOMPLEX (*)[3][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS])calloc(nr, sizeof(*SUM3));
-    MYCOMPLEX (*SUM3_uiz)[3][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS] = (MYCOMPLEX (*)[3][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS])calloc(nr, sizeof(*SUM3_uiz));
-    MYCOMPLEX (*SUM3_uir)[3][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS] = (MYCOMPLEX (*)[3][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS])calloc(nr, sizeof(*SUM3_uir));
+    MYCOMPLEX (*SUM3)[PTAM_WINDOW_SIZE][SRC_M_NUM][INTEG_NUM] = (MYCOMPLEX (*)[PTAM_WINDOW_SIZE][SRC_M_NUM][INTEG_NUM])calloc(nr, sizeof(*SUM3));
+    MYCOMPLEX (*SUM3_uiz)[PTAM_WINDOW_SIZE][SRC_M_NUM][INTEG_NUM] = (MYCOMPLEX (*)[PTAM_WINDOW_SIZE][SRC_M_NUM][INTEG_NUM])calloc(nr, sizeof(*SUM3_uiz));
+    MYCOMPLEX (*SUM3_uir)[PTAM_WINDOW_SIZE][SRC_M_NUM][INTEG_NUM] = (MYCOMPLEX (*)[PTAM_WINDOW_SIZE][SRC_M_NUM][INTEG_NUM])calloc(nr, sizeof(*SUM3_uir));
 
     // 之前求和的值
-    MYCOMPLEX (*sum_J)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS] = (MYCOMPLEX(*)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS])calloc(nr, sizeof(*sum_J));
-    MYCOMPLEX (*sum_uiz_J)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS] =  (MYCOMPLEX(*)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS])calloc(nr, sizeof(*sum_uiz_J));
-    MYCOMPLEX (*sum_uir_J)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS] =  (MYCOMPLEX(*)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS])calloc(nr, sizeof(*sum_uir_J));
+    MYCOMPLEX (*sum_J)[SRC_M_NUM][INTEG_NUM] = (MYCOMPLEX(*)[SRC_M_NUM][INTEG_NUM])calloc(nr, sizeof(*sum_J));
+    MYCOMPLEX (*sum_uiz_J)[SRC_M_NUM][INTEG_NUM] =  (MYCOMPLEX(*)[SRC_M_NUM][INTEG_NUM])calloc(nr, sizeof(*sum_uiz_J));
+    MYCOMPLEX (*sum_uir_J)[SRC_M_NUM][INTEG_NUM] =  (MYCOMPLEX(*)[SRC_M_NUM][INTEG_NUM])calloc(nr, sizeof(*sum_uir_J));
 
     // 存储波峰波谷的位置和值
-    MYREAL (*Kpt)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt] = (MYREAL (*)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt])calloc(nr, sizeof(*Kpt));
-    MYCOMPLEX (*Fpt)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt] = (MYCOMPLEX (*)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt])calloc(nr, sizeof(*Fpt));
-    MYINT (*Ipt)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS] = (MYINT (*)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS])calloc(nr, sizeof(*Ipt));
+    MYREAL (*Kpt)[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT] = (MYREAL (*)[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT])calloc(nr, sizeof(*Kpt));
+    MYCOMPLEX (*Fpt)[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT] = (MYCOMPLEX (*)[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT])calloc(nr, sizeof(*Fpt));
+    MYINT (*Ipt)[SRC_M_NUM][INTEG_NUM] = (MYINT (*)[SRC_M_NUM][INTEG_NUM])calloc(nr, sizeof(*Ipt));
 
-    MYREAL (*Kpt_uiz)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt] = (MYREAL (*)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt])calloc(nr, sizeof(*Kpt_uiz));
-    MYCOMPLEX (*Fpt_uiz)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt] = (MYCOMPLEX (*)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt])calloc(nr, sizeof(*Fpt_uiz));
-    MYINT (*Ipt_uiz)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS] = (MYINT (*)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS])calloc(nr, sizeof(*Ipt_uiz));
+    MYREAL (*Kpt_uiz)[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT] = (MYREAL (*)[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT])calloc(nr, sizeof(*Kpt_uiz));
+    MYCOMPLEX (*Fpt_uiz)[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT] = (MYCOMPLEX (*)[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT])calloc(nr, sizeof(*Fpt_uiz));
+    MYINT (*Ipt_uiz)[SRC_M_NUM][INTEG_NUM] = (MYINT (*)[SRC_M_NUM][INTEG_NUM])calloc(nr, sizeof(*Ipt_uiz));
 
-    MYREAL (*Kpt_uir)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt] = (MYREAL (*)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt])calloc(nr, sizeof(*Kpt_uir));
-    MYCOMPLEX (*Fpt_uir)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt] = (MYCOMPLEX (*)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS][maxNpt])calloc(nr, sizeof(*Fpt_uir));
-    MYINT (*Ipt_uir)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS] = (MYINT (*)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS])calloc(nr, sizeof(*Ipt_uir));
+    MYREAL (*Kpt_uir)[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT] = (MYREAL (*)[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT])calloc(nr, sizeof(*Kpt_uir));
+    MYCOMPLEX (*Fpt_uir)[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT] = (MYCOMPLEX (*)[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT])calloc(nr, sizeof(*Fpt_uir));
+    MYINT (*Ipt_uir)[SRC_M_NUM][INTEG_NUM] = (MYINT (*)[SRC_M_NUM][INTEG_NUM])calloc(nr, sizeof(*Ipt_uir));
 
     // 记录点数，当峰谷找到后，清零
-    MYINT (*Gpt)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS] = (MYINT (*)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS])calloc(nr, sizeof(*Gpt));
-    MYINT (*Gpt_uiz)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS] = (MYINT (*)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS])calloc(nr, sizeof(*Gpt_uiz));
-    MYINT (*Gpt_uir)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS] = (MYINT (*)[GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS])calloc(nr, sizeof(*Gpt_uir));
+    MYINT (*Gpt)[SRC_M_NUM][INTEG_NUM] = (MYINT (*)[SRC_M_NUM][INTEG_NUM])calloc(nr, sizeof(*Gpt));
+    MYINT (*Gpt_uiz)[SRC_M_NUM][INTEG_NUM] = (MYINT (*)[SRC_M_NUM][INTEG_NUM])calloc(nr, sizeof(*Gpt_uiz));
+    MYINT (*Gpt_uir)[SRC_M_NUM][INTEG_NUM] = (MYINT (*)[SRC_M_NUM][INTEG_NUM])calloc(nr, sizeof(*Gpt_uir));
 
     for(MYINT ir=0; ir<nr; ++ir){
-        for(MYINT i=0; i<GRT_SRC_M_COUNTS; ++i){
-            for(MYINT v=0; v<GRT_SRC_P_COUNTS; ++v){
+        for(MYINT i=0; i<SRC_M_NUM; ++i){
+            for(MYINT v=0; v<INTEG_NUM; ++v){
                 sum_J[ir][i][v] = sum_J0[ir][i][v];
 
                 if(calc_upar){
@@ -194,10 +185,10 @@ void PTA_method(
 
     // 对于PTAM，不同震中距使用不同dk
     for(MYINT ir=0; ir<nr; ++ir){
-        MYREAL dk = PI/((maxnwait-1)*rs[ir]); 
+        MYREAL dk = PI/((PTAM_MAX_WAITS-1)*rs[ir]); 
         MYREAL precoef = dk/predk; // 提前乘dk系数，以抵消格林函数主函数计算时最后乘dk
         // 根据波峰波谷的目标也给出一个kmax，+5以防万一 
-        MYREAL kmax = k0 + (maxNpt+5)*PI/rs[ir];
+        MYREAL kmax = k0 + (PTAM_MAX_PT+5)*PI/rs[ir];
 
         bool iendk0=false;
 
@@ -216,33 +207,23 @@ void PTA_method(
             if(fstatsK!=NULL)  write_stats(fstatsK, k, QWV);
 
             // 计算被积函数一项 F(k,w)Jm(kr)k
-            int_Pk(k, rs[ir], QWV, false, SUM3[ir][2]);  // [2]表示把新点值放在最后
-
-            // 
-            ptam_once(
-                ir, nr, precoef, maxNpt, maxnwait, k, dk, 
-                SUM3, sum_J, Kpt, Fpt, Ipt, Gpt, &iendk0
-            );
+            int_Pk(k, rs[ir], QWV, false, SUM3[ir][PTAM_WINDOW_SIZE-1]);  // [PTAM_WINDOW_SIZE-1]表示把新点值放在最后
+            // 判断和记录波峰波谷
+            ptam_once( ir, nr, precoef, k, dk,  SUM3, sum_J, Kpt, Fpt, Ipt, Gpt, &iendk0);
             
             // -------------------------- 位移空间导数 ------------------------------------
             if(calc_upar){
                 // ------------------------------- ui_z -----------------------------------
                 // 计算被积函数一项 F(k,w)Jm(kr)k
-                int_Pk(k, rs[ir], QWV_uiz, false, SUM3_uiz[ir][2]);  // [2]表示把新点值放在最后
-                
-                ptam_once(
-                    ir, nr, precoef, maxNpt, maxnwait, k, dk, 
-                    SUM3_uiz, sum_uiz_J, Kpt_uiz, Fpt_uiz, Ipt_uiz, Gpt_uiz, &iendk0
-                );
+                int_Pk(k, rs[ir], QWV_uiz, false, SUM3_uiz[ir][PTAM_WINDOW_SIZE-1]);  // [PTAM_WINDOW_SIZE-1]表示把新点值放在最后
+                // 判断和记录波峰波谷
+                ptam_once(ir, nr, precoef, k, dk, SUM3_uiz, sum_uiz_J, Kpt_uiz, Fpt_uiz, Ipt_uiz, Gpt_uiz, &iendk0);
 
                 // ------------------------------- ui_r -----------------------------------
                 // 计算被积函数一项 F(k,w)Jm(kr)k
-                int_Pk(k, rs[ir], QWV, true, SUM3_uir[ir][2]);  // [2]表示把新点值放在最后
-                
-                ptam_once(
-                    ir, nr, precoef, maxNpt, maxnwait, k, dk, 
-                    SUM3_uir, sum_uir_J, Kpt_uir, Fpt_uir, Ipt_uir, Gpt_uir, &iendk0
-                );
+                int_Pk(k, rs[ir], QWV, true, SUM3_uir[ir][PTAM_WINDOW_SIZE-1]);  // [PTAM_WINDOW_SIZE-1]表示把新点值放在最后
+                // 判断和记录波峰波谷
+                ptam_once(ir, nr, precoef, k, dk, SUM3_uir, sum_uir_J, Kpt_uir, Fpt_uir, Ipt_uir, Gpt_uir, &iendk0);
             
             } // END if calc_upar
 
@@ -258,10 +239,10 @@ void PTA_method(
     for(MYINT ir=0; ir<nr; ++ir){
         FILE *fstatsP = ptam_fstatsnr[ir][1];
         // 记录到文件
-        if(fstatsP!=NULL)  write_stats_ptam(fstatsP, k, maxNpt, Kpt[ir], Fpt[ir]);
+        if(fstatsP!=NULL)  write_stats_ptam(fstatsP, k, Kpt[ir], Fpt[ir]);
 
-        for(MYINT i=0; i<GRT_SRC_M_COUNTS; ++i){
-            for(MYINT v=0; v<GRT_SRC_P_COUNTS; ++v){
+        for(MYINT i=0; i<SRC_M_NUM; ++i){
+            for(MYINT v=0; v<INTEG_NUM; ++v){
                 cplx_shrink(Ipt[ir][i][v], Fpt[ir][i][v]);  
                 sum_J0[ir][i][v] = Fpt[ir][i][v][0];
 
@@ -289,7 +270,7 @@ void PTA_method(
 
 
 
-MYINT cplx_peak_or_trough(MYINT idx1, MYINT idx2, const MYCOMPLEX arr[3][GRT_SRC_M_COUNTS][GRT_SRC_P_COUNTS], MYREAL k, MYREAL dk, MYREAL *pk, MYCOMPLEX *value){
+MYINT cplx_peak_or_trough(MYINT idx1, MYINT idx2, const MYCOMPLEX arr[PTAM_WINDOW_SIZE][SRC_M_NUM][INTEG_NUM], MYREAL k, MYREAL dk, MYREAL *pk, MYCOMPLEX *value){
     MYCOMPLEX f1, f2, f3;
     MYREAL rf1, rf2, rf3;
     MYINT stat=0;

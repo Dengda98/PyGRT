@@ -18,11 +18,11 @@
 
 
 void static_source_coef(
-    MYCOMPLEX delta, MYREAL k, MYCOMPLEX coef[GRT_SRC_M_COUNTS][GRT_SRC_QWV_COUNTS][2])
+    MYCOMPLEX delta, MYREAL k, MYCOMPLEX coef[SRC_M_NUM][QWV_NUM][2])
 {
     // 先全部赋0 
-    for(MYINT i=0; i<GRT_SRC_M_COUNTS; ++i){
-        for(MYINT j=0; j<GRT_SRC_QWV_COUNTS; ++j){
+    for(MYINT i=0; i<SRC_M_NUM; ++i){
+        for(MYINT j=0; j<QWV_NUM; ++j){
             for(MYINT p=0; p<2; ++p){
                 coef[i][j][p] = CZERO;
             }
