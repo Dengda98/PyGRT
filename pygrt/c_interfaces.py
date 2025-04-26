@@ -20,8 +20,6 @@ IPOINTER = POINTER(c_int)
 DPOINTER = POINTER(c_double)
 
 
-c_PGRN = POINTER(c_GRN)
-
 libgrt = cdll.LoadLibrary(
     os.path.join(
         os.path.abspath(os.path.dirname(__file__)), 
@@ -37,28 +35,13 @@ C_integ_grn_spec.argtypes = [
     REAL, REAL, REAL, REAL, REAL, REAL, REAL,
     c_bool,
 
-    POINTER(c_PGRN*2),
-    POINTER(c_PGRN*2),
-    POINTER(c_PGRN*3),
-    POINTER(c_PGRN*2),
-    POINTER(c_PGRN*3),
-    POINTER(c_PGRN*3),
+    POINTER((PCPLX*CHANNEL_NUM)*SRC_M_NUM),
 
     c_bool,
     # uiz
-    POINTER(c_PGRN*2),
-    POINTER(c_PGRN*2),
-    POINTER(c_PGRN*3),
-    POINTER(c_PGRN*2),
-    POINTER(c_PGRN*3),
-    POINTER(c_PGRN*3),
+    POINTER((PCPLX*CHANNEL_NUM)*SRC_M_NUM),
     # uir
-    POINTER(c_PGRN*2),
-    POINTER(c_PGRN*2),
-    POINTER(c_PGRN*3),
-    POINTER(c_PGRN*2),
-    POINTER(c_PGRN*3),
-    POINTER(c_PGRN*3),
+    POINTER((PCPLX*CHANNEL_NUM)*SRC_M_NUM),
 
     c_char_p,
     c_int, 
@@ -72,10 +55,10 @@ C_integ_static_grn.restype = None
 C_integ_static_grn.argtypes = [
     POINTER(c_PyModel1D), c_int, PREAL, REAL, REAL, REAL, REAL, 
     REAL, REAL, 
-    PREAL, PREAL, PREAL, PREAL, PREAL, PREAL, 
+    POINTER((REAL*CHANNEL_NUM)*SRC_M_NUM),
     c_bool,
-    PREAL, PREAL, PREAL, PREAL, PREAL, PREAL, 
-    PREAL, PREAL, PREAL, PREAL, PREAL, PREAL, 
+    POINTER((REAL*CHANNEL_NUM)*SRC_M_NUM),
+    POINTER((REAL*CHANNEL_NUM)*SRC_M_NUM),
     c_char_p
 ]
 

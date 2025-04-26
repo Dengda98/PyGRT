@@ -422,9 +422,9 @@ static void print_grn_title(const char *prefix){
         int modr = SRC_M_ORDERS[i];
         char s_title[10+strlen(prefix)];
         for(int c=0; c<CHANNEL_NUM; ++c){
-            if(modr==0 && GRT_ZRTchs[c]=='T')  continue;
+            if(modr==0 && ZRTchs[c]=='T')  continue;
 
-            snprintf(s_title, sizeof(s_title), "%s%s%c", prefix, SRC_M_NAME_ABBR[i], GRT_ZRTchs[c]);
+            snprintf(s_title, sizeof(s_title), "%s%s%c", prefix, SRC_M_NAME_ABBR[i], ZRTchs[c]);
             fprintf(stdout, GRT_STRING_FMT, s_title);
         }
     }
@@ -441,9 +441,9 @@ static void print_grn_value(const MYREAL grn[SRC_M_NUM][CHANNEL_NUM], const int 
         int modr = SRC_M_ORDERS[i];
         int sgn = 1;
         for(int c=0; c<CHANNEL_NUM; ++c){
-            if(modr==0 && GRT_ZRTchs[c]=='T')  continue;
+            if(modr==0 && ZRTchs[c]=='T')  continue;
 
-            sgn = (GRT_ZRTchs[c]=='Z') ? -sgn0 : sgn0;
+            sgn = (ZRTchs[c]=='Z') ? -sgn0 : sgn0;
 
             fprintf(stdout, GRT_REAL_FMT, sgn * grn[i][c]);
         }
@@ -552,15 +552,7 @@ int main(int argc, char **argv){
             fprintf(stdout, GRT_REAL_FMT GRT_REAL_FMT, xs[ix], ys[iy]);
 
             print_grn_value(grn[ir], 1);
-            // MYREAL *grns[] = {
-            //     EXPgrn[ir], VFgrn[ir], HFgrn[ir], DDgrn[ir], DSgrn[ir], SSgrn[ir]
-            // };
-            // int grn_sizes[] = {2, 2, 3, 2, 3, 3};
-            // // 对Z分量反向
-            // for(int i=0; i<6; ++i) {
-            //     for (int j=0; j<grn_sizes[i]; ++j)
-            //         fprintf(stdout, GRT_REAL_FMT, (j == 0 ? -1.0 : 1.0) * grns[i][j]);
-            // }
+
             if(calc_upar) {
                 print_grn_value(grn_uiz[ir], -1);
                 print_grn_value(grn_uir[ir], 1);

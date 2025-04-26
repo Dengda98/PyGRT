@@ -11,22 +11,36 @@
 
 
 from ctypes import *
-from ctypes.wintypes import PFLOAT
 
 __all__ = [
     "USE_FLOAT",
+    "CHANNEL_NUM",
+    "SRC_M_NUM",
+    "SRC_M_ORDERS",
+    "SRC_M_NAME_ABBR",
+    "ZRTchs",
+    "ZNEchs",
+
     "NPCT_REAL_TYPE",
     "NPCT_CMPLX_TYPE",
 
     "REAL",
     "PREAL",
+    "PCPLX",
 
     "c_PyModel1D",
-    "c_GRN",
 ]
 
 
 USE_FLOAT = False
+CHANNEL_NUM = 3
+SRC_M_NUM = 6
+SRC_M_ORDERS = [0, 0, 1, 0, 1, 2]
+SRC_M_NAME_ABBR = ["EX", "VF", "HF", "DD", "DS", "SS"]
+ZRTchs = ['Z', 'R', 'T']
+ZNEchs = ['Z', 'N', 'E']
+
+
 NPCT_REAL_TYPE = 'f4' if USE_FLOAT else 'f8'
 NPCT_CMPLX_TYPE = f'c{int(NPCT_REAL_TYPE[1:])*2}'
 
@@ -34,6 +48,7 @@ NPCT_CMPLX_TYPE = f'c{int(NPCT_REAL_TYPE[1:])*2}'
 
 REAL = c_float if USE_FLOAT else c_double
 PREAL = POINTER(REAL)
+PCPLX = POINTER(REAL*2)
 
 class c_PyModel1D(Structure):
     """
@@ -68,21 +83,3 @@ class c_PyModel1D(Structure):
         ('Qa', PREAL),
         ('Qb', PREAL),
     ]
-
-
-class c_GRN(Structure):
-    """
-    和C结构体GRN作匹配
-
-    :field nf:       频率点数 
-    :field Re:       频谱实部
-    :field Im:       频谱虚部
-
-    """
-    _fields_ = [
-        ('nf', c_int),
-        ('Re', PREAL),
-        ('Im', PREAL),
-        # ('Re', PFLOAT),
-        # ('Im', PFLOAT),
-    ] 

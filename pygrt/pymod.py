@@ -26,9 +26,6 @@ from .c_interfaces import *
 from .c_structures import *
 from .pygrn import PyGreenFunction
 
-PC_GRN2D = Array[Array[c_PGRN]]
-
-
 __all__ = [
     "PyModel1D",
 ]
@@ -156,9 +153,6 @@ class PyModel1D:
     def _init_grn(
         self,
         distarr:np.ndarray,
-        calc_EXP:bool, calc_VF:bool, calc_HF:bool, calc_DC:bool,
-        C_EXPgrn:PC_GRN2D, C_VFgrn:PC_GRN2D, C_HFgrn:PC_GRN2D, 
-        C_DDgrn:PC_GRN2D, C_DSgrn:PC_GRN2D, C_SSgrn:PC_GRN2D, 
         nt:int, dt:float, freqs:np.ndarray, wI:float, prefix:str=''):
 
         '''
@@ -167,53 +161,27 @@ class PyModel1D:
 
         depsrc = self.depsrc
         deprcv = self.deprcv
+        nr = len(distarr)
 
-        EXPgrn:List[List[PyGreenFunction]] = []
-        VFgrn:List[List[PyGreenFunction]] = []
-        DDgrn:List[List[PyGreenFunction]] = []
-        HFgrn:List[List[PyGreenFunction]] = []
-        DSgrn:List[List[PyGreenFunction]] = []
-        SSgrn:List[List[PyGreenFunction]] = []
+        pygrnLst = []
+        c_grnArr = (((PCPLX*CHANNEL_NUM)*SRC_M_NUM)*nr)()
         
         for ir in range(len(distarr)):
             dist = distarr[ir]
-            EXPgrn.append([])
-            VFgrn .append([])
-            DDgrn .append([])
-            HFgrn .append([])
-            DSgrn .append([])
-            SSgrn .append([])
-            for i, comp in enumerate(['Z', 'R', 'T']):
-                if i<2:
-                    if calc_EXP:
-                        grn = PyGreenFunction(f'{prefix}EX{comp}', nt, dt, freqs, wI, dist, depsrc, deprcv)
-                        EXPgrn[ir].append(grn)
-                        C_EXPgrn[ir][i] = pointer(grn.c_grn)
+            for isrc in range(SRC_M_NUM):
+                modr = SRC_M_ORDERS[isrc]
+                for ic, comp in enumerate(ZRTchs):
 
-                    if calc_VF:
-                        grn = PyGreenFunction(f'{prefix}VF{comp}', nt, dt, freqs, wI, dist, depsrc, deprcv)
-                        VFgrn[ir].append(grn)
-                        C_VFgrn[ir][i] = pointer(grn.c_grn)
-                    
-                    if calc_DC:
-                        grn = PyGreenFunction(f'{prefix}DD{comp}', nt, dt, freqs, wI, dist, depsrc, deprcv)
-                        DDgrn[ir].append(grn)
-                        C_DDgrn[ir][i] = pointer(grn.c_grn)
-                
-                if calc_HF:
-                    grn = PyGreenFunction(f'{prefix}HF{comp}', nt, dt, freqs, wI, dist, depsrc, deprcv)
-                    HFgrn[ir].append(grn)
-                    C_HFgrn[ir][i] = pointer(grn.c_grn)
+                    if modr == 0 and comp == 'T':
+                        c_grnArr[ir][isrc][ic] = None
+                        continue
 
-                if calc_DC:
-                    grn = PyGreenFunction(f'{prefix}DS{comp}', nt, dt, freqs, wI, dist, depsrc, deprcv)
-                    DSgrn[ir].append(grn)
-                    C_DSgrn[ir][i] = pointer(grn.c_grn)
-                    grn = PyGreenFunction(f'{prefix}SS{comp}', nt, dt, freqs, wI, dist, depsrc, deprcv)
-                    SSgrn[ir].append(grn)
-                    C_SSgrn[ir][i] = pointer(grn.c_grn) 
+                    pygrn = PyGreenFunction(f'{prefix}{SRC_M_NAME_ABBR[isrc]}{comp}', nt, dt, freqs, wI, dist, depsrc, deprcv)
+                    pygrnLst.append(pygrn)
+                    c_grnArr[ir][isrc][ic] = pygrn.cmplx_grn.ctypes.data_as(PCPLX)
 
-        return EXPgrn, VFgrn, HFgrn, DDgrn, DSgrn, SSgrn
+        return pygrnLst, c_grnArr
+    
 
     def gen_gf_spectra(self, *args, **kwargs):
         r"Bad function name, has already been removed. Use 'compute_grn' instead."
@@ -371,49 +339,16 @@ class PyModel1D:
             print(f"Length={Length:.2f}")
 
 
-        # 初始化格林函数C结构体
-        C_EXPgrn = ((c_PGRN*2)*nrs)() if calc_EXP else None
-        C_VFgrn = ((c_PGRN*2)*nrs)() if calc_VF else None
-        C_HFgrn = ((c_PGRN*3)*nrs)() if calc_HF else None
-        C_DDgrn = ((c_PGRN*2)*nrs)() if calc_DC else None
-        C_DSgrn = ((c_PGRN*3)*nrs)() if calc_DC else None
-        C_SSgrn = ((c_PGRN*3)*nrs)() if calc_DC else None
-
-        # 位移u的空间导数
-        C_EXPgrn_uiz = C_VFgrn_uiz = C_HFgrn_uiz = C_DDgrn_uiz = C_DSgrn_uiz = C_SSgrn_uiz = None
-        C_EXPgrn_uir = C_VFgrn_uir = C_HFgrn_uir = C_DDgrn_uir = C_DSgrn_uir = C_SSgrn_uir = None
-        if calc_upar:
-            C_EXPgrn_uiz = ((c_PGRN*2)*nrs)() if calc_EXP else None
-            C_VFgrn_uiz = ((c_PGRN*2)*nrs)() if calc_VF else None
-            C_HFgrn_uiz = ((c_PGRN*3)*nrs)() if calc_HF else None
-            C_DDgrn_uiz = ((c_PGRN*2)*nrs)() if calc_DC else None
-            C_DSgrn_uiz = ((c_PGRN*3)*nrs)() if calc_DC else None
-            C_SSgrn_uiz = ((c_PGRN*3)*nrs)() if calc_DC else None
-            #
-            C_EXPgrn_uir = ((c_PGRN*2)*nrs)() if calc_EXP else None
-            C_VFgrn_uir = ((c_PGRN*2)*nrs)() if calc_VF else None
-            C_HFgrn_uir = ((c_PGRN*3)*nrs)() if calc_HF else None
-            C_DDgrn_uir = ((c_PGRN*2)*nrs)() if calc_DC else None
-            C_DSgrn_uir = ((c_PGRN*3)*nrs)() if calc_DC else None
-            C_SSgrn_uir = ((c_PGRN*3)*nrs)() if calc_DC else None
-
-
-        EXPgrn, VFgrn, HFgrn, DDgrn, DSgrn, SSgrn = self._init_grn(
-            distarr, calc_EXP, calc_VF, calc_HF, calc_DC, 
-            C_EXPgrn, C_VFgrn, C_HFgrn, C_DDgrn, C_DSgrn, C_SSgrn, 
-            nt, dt, freqs, wI)
+        # 初始化格林函数
+        pygrnLst, c_grnArr = self._init_grn(distarr, nt, dt, freqs, wI, '')
         
-        EXPgrn_uiz, VFgrn_uiz, HFgrn_uiz, DDgrn_uiz, DSgrn_uiz, SSgrn_uiz = ([] for _ in range(6))
-        EXPgrn_uir, VFgrn_uir, HFgrn_uir, DDgrn_uir, DSgrn_uir, SSgrn_uir = ([] for _ in range(6))
+        pygrnLst_uiz = []
+        c_grnArr_uiz = None
+        pygrnLst_uir = []
+        c_grnArr_uir = None
         if calc_upar:
-            EXPgrn_uiz, VFgrn_uiz, HFgrn_uiz, DDgrn_uiz, DSgrn_uiz, SSgrn_uiz = self._init_grn(
-            distarr, calc_EXP, calc_VF, calc_HF, calc_DC, 
-            C_EXPgrn_uiz, C_VFgrn_uiz, C_HFgrn_uiz, C_DDgrn_uiz, C_DSgrn_uiz, C_SSgrn_uiz, 
-            nt, dt, freqs, wI, 'z')
-            EXPgrn_uir, VFgrn_uir, HFgrn_uir, DDgrn_uir, DSgrn_uir, SSgrn_uir = self._init_grn(
-            distarr, calc_EXP, calc_VF, calc_HF, calc_DC, 
-            C_EXPgrn_uir, C_VFgrn_uir, C_HFgrn_uir, C_DDgrn_uir, C_DSgrn_uir, C_SSgrn_uir, 
-            nt, dt, freqs, wI, 'r')
+            pygrnLst_uiz, c_grnArr_uiz = self._init_grn(distarr, nt, dt, freqs, wI, 'z')
+            pygrnLst_uir, c_grnArr_uir = self._init_grn(distarr, nt, dt, freqs, wI, 'r')
 
 
         c_statsfile = None 
@@ -474,10 +409,7 @@ class PyModel1D:
         C_integ_grn_spec(
             self.c_pymod1d, nf1, nf2, nf, c_freqs, nrs, c_rs, wI, 
             vmin_ref, keps, ampk, k0, Length, filonLC[0], filonLC[1], print_runtime,
-            C_EXPgrn, C_VFgrn, C_HFgrn, C_DDgrn, C_DSgrn, C_SSgrn, 
-            calc_upar, 
-            C_EXPgrn_uiz, C_VFgrn_uiz, C_HFgrn_uiz, C_DDgrn_uiz, C_DSgrn_uiz, C_SSgrn_uiz, 
-            C_EXPgrn_uir, C_VFgrn_uir, C_HFgrn_uir, C_DDgrn_uir, C_DSgrn_uir, C_SSgrn_uir, 
+            c_grnArr, calc_upar, c_grnArr_uiz, c_grnArr_uir,
             c_statsfile, nstatsidxs, c_statsidxs
         )
         #=================================================================================
@@ -507,44 +439,19 @@ class PyModel1D:
             # 计算走时
             travtP, travtS = self.compute_travt1d(dist)
 
-            for i, comp in enumerate(['Z', 'R', 'T']):
-                sgn = -1 if comp=='Z' else 1
-                if i<2:
-                    if calc_EXP:
-                        stream.append(EXPgrn[ir][i].freq2time(delayT, travtP, travtS, sgn ))
-                    if calc_VF:
-                        stream.append(VFgrn [ir][i].freq2time(delayT, travtP, travtS, sgn ))
-                    if calc_DC:
-                        stream.append(DDgrn [ir][i].freq2time(delayT, travtP, travtS, sgn ))
-                
-                if calc_HF:
-                    stream.append(HFgrn [ir][i].freq2time(delayT, travtP, travtS, sgn ))
+            for pygrn in pygrnLst:
+                sgn = -1 if pygrn.name[-1]=='Z' else 1
+                stream.append(pygrn.freq2time(delayT, travtP, travtS, sgn ))
 
-                if calc_DC:
-                    stream.append(DSgrn [ir][i].freq2time(delayT, travtP, travtS, sgn ))
-                    stream.append(SSgrn [ir][i].freq2time(delayT, travtP, travtS, sgn ))
+            if calc_upar:
+                for pygrn in pygrnLst_uiz:
+                    sgn = -1 if pygrn.name[-1]=='Z' else 1
+                    stream.append(pygrn.freq2time(delayT, travtP, travtS, sgn*(-1) ))
 
-                if calc_upar:
-                    if i<2:
-                        if calc_EXP:
-                            stream.append(EXPgrn_uiz[ir][i].freq2time(delayT, travtP, travtS, sgn*(-1) ))
-                            stream.append(EXPgrn_uir[ir][i].freq2time(delayT, travtP, travtS, sgn ))
-                        if calc_VF:
-                            stream.append(VFgrn_uiz [ir][i].freq2time(delayT, travtP, travtS, sgn*(-1) ))
-                            stream.append(VFgrn_uir [ir][i].freq2time(delayT, travtP, travtS, sgn ))
-                        if calc_DC:
-                            stream.append(DDgrn_uiz [ir][i].freq2time(delayT, travtP, travtS, sgn*(-1) ))
-                            stream.append(DDgrn_uir [ir][i].freq2time(delayT, travtP, travtS, sgn ))
-                    
-                    if calc_HF:
-                        stream.append(HFgrn_uiz [ir][i].freq2time(delayT, travtP, travtS, sgn*(-1) ))
-                        stream.append(HFgrn_uir [ir][i].freq2time(delayT, travtP, travtS, sgn ))
+                for pygrn in pygrnLst_uir:
+                    sgn = -1 if pygrn.name[-1]=='Z' else 1
+                    stream.append(pygrn.freq2time(delayT, travtP, travtS, sgn ))
 
-                    if calc_DC:
-                        stream.append(DSgrn_uiz [ir][i].freq2time(delayT, travtP, travtS, sgn*(-1) ))
-                        stream.append(DSgrn_uir [ir][i].freq2time(delayT, travtP, travtS, sgn ))
-                        stream.append(SSgrn_uiz [ir][i].freq2time(delayT, travtP, travtS, sgn*(-1) ))
-                        stream.append(SSgrn_uir [ir][i].freq2time(delayT, travtP, travtS, sgn ))
 
             # 在sac头段变量部分
             for tr in stream:
@@ -639,31 +546,12 @@ class PyModel1D:
             c_statsfile = c_char_p(statsfile.encode('utf-8'))
 
         # 初始化格林函数
-        EXPgrn = np.zeros((nr,2), dtype=NPCT_REAL_TYPE); C_EXPgrn = npct.as_ctypes(EXPgrn.reshape(-1))
-        VFgrn = np.zeros((nr,2), dtype=NPCT_REAL_TYPE); C_VFgrn = npct.as_ctypes(VFgrn.reshape(-1))
-        HFgrn = np.zeros((nr,3), dtype=NPCT_REAL_TYPE); C_HFgrn = npct.as_ctypes(HFgrn.reshape(-1))
-        DDgrn = np.zeros((nr,2), dtype=NPCT_REAL_TYPE); C_DDgrn = npct.as_ctypes(DDgrn.reshape(-1))
-        DSgrn = np.zeros((nr,3), dtype=NPCT_REAL_TYPE); C_DSgrn = npct.as_ctypes(DSgrn.reshape(-1))
-        SSgrn = np.zeros((nr,3), dtype=NPCT_REAL_TYPE); C_SSgrn = npct.as_ctypes(SSgrn.reshape(-1))
+        pygrn = np.zeros((nr, SRC_M_NUM, CHANNEL_NUM), dtype=NPCT_REAL_TYPE, order='C');       c_pygrn = npct.as_ctypes(pygrn)
+        pygrn_uiz = np.zeros((nr, SRC_M_NUM, CHANNEL_NUM), dtype=NPCT_REAL_TYPE, order='C');   c_pygrn_uiz = npct.as_ctypes(pygrn_uiz)
+        pygrn_uir = np.zeros((nr, SRC_M_NUM, CHANNEL_NUM), dtype=NPCT_REAL_TYPE, order='C');   c_pygrn_uir = npct.as_ctypes(pygrn_uir)
 
-        # 位移u的空间导数
-        EXPgrn_uiz = np.zeros((nr,2), dtype=NPCT_REAL_TYPE); C_EXPgrn_uiz = npct.as_ctypes(EXPgrn_uiz.reshape(-1))
-        VFgrn_uiz = np.zeros((nr,2), dtype=NPCT_REAL_TYPE); C_VFgrn_uiz = npct.as_ctypes(VFgrn_uiz.reshape(-1))
-        HFgrn_uiz = np.zeros((nr,3), dtype=NPCT_REAL_TYPE); C_HFgrn_uiz = npct.as_ctypes(HFgrn_uiz.reshape(-1))
-        DDgrn_uiz = np.zeros((nr,2), dtype=NPCT_REAL_TYPE); C_DDgrn_uiz = npct.as_ctypes(DDgrn_uiz.reshape(-1))
-        DSgrn_uiz = np.zeros((nr,3), dtype=NPCT_REAL_TYPE); C_DSgrn_uiz = npct.as_ctypes(DSgrn_uiz.reshape(-1))
-        SSgrn_uiz = np.zeros((nr,3), dtype=NPCT_REAL_TYPE); C_SSgrn_uiz = npct.as_ctypes(SSgrn_uiz.reshape(-1))
-
-        EXPgrn_uir = np.zeros((nr,2), dtype=NPCT_REAL_TYPE); C_EXPgrn_uir = npct.as_ctypes(EXPgrn_uir.reshape(-1))
-        VFgrn_uir = np.zeros((nr,2), dtype=NPCT_REAL_TYPE); C_VFgrn_uir = npct.as_ctypes(VFgrn_uir.reshape(-1))
-        HFgrn_uir = np.zeros((nr,3), dtype=NPCT_REAL_TYPE); C_HFgrn_uir = npct.as_ctypes(HFgrn_uir.reshape(-1))
-        DDgrn_uir = np.zeros((nr,2), dtype=NPCT_REAL_TYPE); C_DDgrn_uir = npct.as_ctypes(DDgrn_uir.reshape(-1))
-        DSgrn_uir = np.zeros((nr,3), dtype=NPCT_REAL_TYPE); C_DSgrn_uir = npct.as_ctypes(DSgrn_uir.reshape(-1))
-        SSgrn_uir = np.zeros((nr,3), dtype=NPCT_REAL_TYPE); C_SSgrn_uir = npct.as_ctypes(SSgrn_uir.reshape(-1))
-        
         if not calc_upar:
-            C_EXPgrn_uiz = C_VFgrn_uiz = C_HFgrn_uiz = C_DDgrn_uiz = C_DSgrn_uiz = C_SSgrn_uiz = None
-            C_EXPgrn_uir = C_VFgrn_uir = C_HFgrn_uir = C_DDgrn_uir = C_DSgrn_uir = C_SSgrn_uir = None
+            c_pygrn_uiz = c_pygrn_uir = None
 
 
         # 运行C库函数
@@ -675,10 +563,7 @@ class PyModel1D:
         #=================================================================================
         C_integ_static_grn(
             self.c_pymod1d, nr, c_rs, vmin_ref, keps, k0, Length, filonLC[0], filonLC[1],
-            C_EXPgrn, C_VFgrn, C_HFgrn, C_DDgrn, C_DSgrn, C_SSgrn, 
-            calc_upar, 
-            C_EXPgrn_uiz, C_VFgrn_uiz, C_HFgrn_uiz, C_DDgrn_uiz, C_DSgrn_uiz, C_SSgrn_uiz, 
-            C_EXPgrn_uir, C_VFgrn_uir, C_HFgrn_uir, C_DDgrn_uir, C_DSgrn_uir, C_SSgrn_uir, 
+            c_pygrn, calc_upar, c_pygrn_uiz, c_pygrn_uir,
             c_statsfile
         )
         #=================================================================================
@@ -704,31 +589,13 @@ class PyModel1D:
         dataDct['_rcv_rho'] = rcv_rho
 
         # 整理结果，将每个格林函数以2d矩阵的形式存储，shape=(nx, ny)
-        for i, ch in enumerate(['Z', 'R', 'T']):
-            sgn = -1 if ch=='Z' else 1
-            if i<2:
-                dataDct[f'EX{ch}'] = sgn * EXPgrn[:,i].reshape((nx, ny), order='F')
-                dataDct[f'VF{ch}'] = sgn * VFgrn[:,i].reshape((nx, ny), order='F')
-                dataDct[f'DD{ch}'] = sgn * DDgrn[:,i].reshape((nx, ny), order='F')
-            
-            dataDct[f'HF{ch}'] = sgn * HFgrn[:,i].reshape((nx, ny), order='F')
-            dataDct[f'DS{ch}'] = sgn * DSgrn[:,i].reshape((nx, ny), order='F')
-            dataDct[f'SS{ch}'] = sgn * SSgrn[:,i].reshape((nx, ny), order='F')
-
-            if calc_upar:
-                if i<2:
-                    dataDct[f'zEX{ch}'] = sgn * EXPgrn_uiz[:,i].reshape((nx, ny), order='F') * (-1)
-                    dataDct[f'rEX{ch}'] = sgn * EXPgrn_uir[:,i].reshape((nx, ny), order='F')
-                    dataDct[f'zVF{ch}'] = sgn * VFgrn_uiz[:,i].reshape((nx, ny), order='F') * (-1)
-                    dataDct[f'rVF{ch}'] = sgn * VFgrn_uir[:,i].reshape((nx, ny), order='F')
-                    dataDct[f'zDD{ch}'] = sgn * DDgrn_uiz[:,i].reshape((nx, ny), order='F') * (-1)
-                    dataDct[f'rDD{ch}'] = sgn * DDgrn_uir[:,i].reshape((nx, ny), order='F')
-                
-                dataDct[f'zHF{ch}'] = sgn * HFgrn_uiz[:,i].reshape((nx, ny), order='F') * (-1)
-                dataDct[f'rHF{ch}'] = sgn * HFgrn_uir[:,i].reshape((nx, ny), order='F')
-                dataDct[f'zDS{ch}'] = sgn * DSgrn_uiz[:,i].reshape((nx, ny), order='F') * (-1)
-                dataDct[f'rDS{ch}'] = sgn * DSgrn_uir[:,i].reshape((nx, ny), order='F')
-                dataDct[f'zSS{ch}'] = sgn * SSgrn_uiz[:,i].reshape((nx, ny), order='F') * (-1)
-                dataDct[f'rSS{ch}'] = sgn * SSgrn_uir[:,i].reshape((nx, ny), order='F')
+        for isrc in range(SRC_M_NUM):
+            src_name = SRC_M_NAME_ABBR[isrc]
+            for ic, comp in enumerate(ZRTchs):
+                sgn = -1 if comp=='Z' else 1
+                dataDct[f'{src_name}{comp}'] = sgn * pygrn[:,isrc,ic].reshape((nx, ny), order='F')
+                if calc_upar:
+                    dataDct[f'z{src_name}{comp}'] = sgn * pygrn_uiz[:,isrc,ic].reshape((nx, ny), order='F') * (-1)
+                    dataDct[f'r{src_name}{comp}'] = sgn * pygrn_uir[:,isrc,ic].reshape((nx, ny), order='F')
 
         return dataDct

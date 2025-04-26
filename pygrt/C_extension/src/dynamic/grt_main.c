@@ -1157,7 +1157,7 @@ int main(int argc, char **argv) {
             int modr = SRC_M_ORDERS[im];
             int sgn=1;  // 用于反转Z分量
             for(int c=0; c<CHANNEL_NUM; ++c){
-                if(modr==0 && GRT_ZRTchs[c]=='T')  continue;  // 跳过输出0阶的T分量
+                if(modr==0 && ZRTchs[c]=='T')  continue;  // 跳过输出0阶的T分量
 
                 // 文件保存总路径
                 // char *s_outpath = (char*)malloc(sizeof(char)*(strlen(s_output_dir)+100));
@@ -1167,12 +1167,12 @@ int main(int argc, char **argv) {
                 char s_prefix[] = "";
 
                 // Z分量反转
-                sgn = (GRT_ZRTchs[c]=='Z') ? -1 : 1;
+                sgn = (ZRTchs[c]=='Z') ? -1 : 1;
 
-                write_one_to_sac(SRC_M_NAME_ABBR[im], GRT_ZRTchs[c], &hd, s_outpath, s_output_subdir, s_prefix, sgn, grn[ir][im][c], fftw_grn, out, float_arr, plan);
+                write_one_to_sac(SRC_M_NAME_ABBR[im], ZRTchs[c], &hd, s_outpath, s_output_subdir, s_prefix, sgn, grn[ir][im][c], fftw_grn, out, float_arr, plan);
                 if(calc_upar){
-                    write_one_to_sac(SRC_M_NAME_ABBR[im], GRT_ZRTchs[c], &hd, s_outpath, s_output_subdir, "z", sgn*(-1), grn_uiz[ir][im][c], fftw_grn, out, float_arr, plan);
-                    write_one_to_sac(SRC_M_NAME_ABBR[im], GRT_ZRTchs[c], &hd, s_outpath, s_output_subdir, "r", sgn, grn_uir[ir][im][c], fftw_grn, out, float_arr, plan);
+                    write_one_to_sac(SRC_M_NAME_ABBR[im], ZRTchs[c], &hd, s_outpath, s_output_subdir, "z", sgn*(-1), grn_uiz[ir][im][c], fftw_grn, out, float_arr, plan);
+                    write_one_to_sac(SRC_M_NAME_ABBR[im], ZRTchs[c], &hd, s_outpath, s_output_subdir, "r", sgn, grn_uir[ir][im][c], fftw_grn, out, float_arr, plan);
                 }
 
                 free(s_outpath);

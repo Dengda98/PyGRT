@@ -63,7 +63,10 @@ static void recordin_GRN(
         merge_Pk(sum_J[ir], tmp_grn[ir]);
 
         for(MYINT i=0; i<SRC_M_NUM; ++i) {
+            MYINT modr = SRC_M_ORDERS[i];
             for(MYINT c=0; c<CHANNEL_NUM; ++c){
+                if(modr == 0 && ZRTchs[c] == 'T')  continue;
+
                 grn[ir][i][c][iw] = coef * tmp_grn[ir][i][c];
             }
 

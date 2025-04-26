@@ -16,7 +16,7 @@ const MYINT SRC_M_ORDERS[SRC_M_NUM] = {0, 0, 1, 0, 1, 2};
 const char *SRC_M_NAME_ABBR[SRC_M_NUM] = {"EX", "VF", "HF", "DD", "DS", "SS"};
 
 /** ZRT三分量代号 */
-const char GRT_ZRTchs[] = {'Z', 'R', 'T'};
+const char ZRTchs[] = {'Z', 'R', 'T'};
 
 /** ZNE三分量代号 */
-const char GRT_ZNEchs[] = {'Z', 'N', 'E'};
+const char ZNEchs[] = {'Z', 'N', 'E'};

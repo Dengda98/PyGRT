@@ -151,7 +151,7 @@ extern const MYINT SRC_M_ORDERS[SRC_M_NUM];
 extern const char *SRC_M_NAME_ABBR[SRC_M_NUM];
 
 /** ZRT三分量代号 */
-extern const char GRT_ZRTchs[];
+extern const char ZRTchs[];
 
 /** ZNE三分量代号 */
-extern const char GRT_ZNEchs[];
+extern const char ZNEchs[];

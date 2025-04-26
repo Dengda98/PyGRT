@@ -40,7 +40,7 @@ class PyGreenFunction:
             depsrc:float, 
             deprcv:float):
         ''' 
-            Python端使用的格林函数类，包括和C库计算得到的 :class:`c_GRN` 结构体数据作对接  
+            Python端使用的格林函数类
 
             :param    name:          格林函数名称，震源类型(EX,VF,HF,DD,DS,SS)+三分量(Z,R,T)
             :param    nt:            时间点数  
@@ -56,20 +56,19 @@ class PyGreenFunction:
         # 频率点
         self.freqs = freqs  # 未copy，共享内存  
         self.freqs.flags.writeable = False  # 不允许修改内部值  
+
+        self.name = name
+        self.nt = nt
+        self.dt = dt 
+        self.wI = wI 
+        self.dist = dist 
+        self.depsrc = depsrc
+        self.deprcv = deprcv
         
         nf = len(self.freqs)
-        # C结构体
-        self.c_grn = c_GRN(
-            nf, 
-            npct.as_ctypes(np.zeros((nf,), dtype=NPCT_REAL_TYPE)),
-            npct.as_ctypes(np.zeros((nf,), dtype=NPCT_REAL_TYPE))
-            # npct.as_ctypes(np.zeros((nf,), dtype='f4')),
-            # npct.as_ctypes(np.zeros((nf,), dtype='f4'))
-        )
         
         # 频谱numpy数据 
         self.cmplx_grn = np.zeros((nf,), dtype=NPCT_CMPLX_TYPE)
-        # self.cmplx_grn = np.zeros((nf,), dtype='c8')
 
         # 虚频率 
         self.wI = wI
@@ -83,31 +82,6 @@ class PyGreenFunction:
         sac.user0 = wI  # 记录虚频率
         sac.kstnm = 'SYN'
         sac.kcmpnm = name
-
-
-
-    def fill_grn_cmplx_numpy(self, mult:float=1.0):
-        '''
-            以numpy.ndarray的形式整理复数数组   
-
-            :param    mult:        将最终结果乘上系数mult   
-
-            :return: 
-                - **self** -       整理好数据的实例本身  
-        '''
-        if self.c_grn is None:
-            raise ValueError(f"Failed, c_grn has been released.")          
-        
-        nf = len(self.freqs)
-        for i in range(nf):
-            self.cmplx_grn[i] = self.c_grn.Re[i] + 1j*self.c_grn.Im[i]
-
-        self.cmplx_grn *= mult
-
-        # 交给python释放内存
-        self.c_grn = c_GRN()
-
-        return self   
     
 
     def plot_response(self):
@@ -145,7 +119,7 @@ class PyGreenFunction:
                 - **tr**:      :class:`obspy.Trace` 类型的格林函数时间序列  
         '''
 
-        self.fill_grn_cmplx_numpy(mult)
+        self.cmplx_grn[:] *= mult
 
         freqs = self.freqs
 
