@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "common/const.h"
 
 #define GRT_SYN_COMPUTE_EX 0   ///< 计算爆炸源
 #define GRT_SYN_COMPUTE_SF 1   ///< 计算单力源
@@ -31,6 +32,6 @@
  *                                   对于张量源，mchn={Mxx, Mxy, Mxz, Myy, Myz, Mzz}
  */
 void set_source_radiation(
-    double srcRadi[3][6], const int computeType, const bool par_theta,
-    const double M0, const double coef, const double azrad, const double mchn[6]
+    double srcRadi[SRC_M_NUM][CHANNEL_NUM], const int computeType, const bool par_theta,
+    const double M0, const double coef, const double azrad, const double mchn[MECHANISM_NUM]
 );

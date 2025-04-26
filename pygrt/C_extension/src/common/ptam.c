@@ -201,7 +201,7 @@ void PTA_method(
             k += dk;
 
             // 计算核函数 F(k, w)
-            kerfunc(mod1d, omega, k, QWV, calc_upar, QWV_uiz); 
+            kerfunc(mod1d, k, QWV, calc_upar, QWV_uiz); 
 
             // 记录核函数
             if(fstatsK!=NULL)  write_stats(fstatsK, k, QWV);
@@ -239,7 +239,7 @@ void PTA_method(
     for(MYINT ir=0; ir<nr; ++ir){
         FILE *fstatsP = ptam_fstatsnr[ir][1];
         // 记录到文件
-        if(fstatsP!=NULL)  write_stats_ptam(fstatsP, k, Kpt[ir], Fpt[ir]);
+        if(fstatsP!=NULL)  write_stats_ptam(fstatsP, Kpt[ir], Fpt[ir]);
 
         for(MYINT i=0; i<SRC_M_NUM; ++i){
             for(MYINT v=0; v<INTEG_NUM; ++v){

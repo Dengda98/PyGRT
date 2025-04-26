@@ -30,12 +30,22 @@ void write_stats(
     FILE *f0, MYREAL k, const MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM]);
 
 
+/**
+ * 从二进制核函数文件读出一个数据块，写入到文本文件中
+ * 
+ * @param[in,out]     bf0    二进制文件指针，如果为NULL则打印标题
+ * @param[out]        af0    文本文件指针
+ * 
+ * @return   0表示读取成功，-1表示读取结果/失败
+ */
+MYINT extract_stats(FILE *bf0, FILE *af0);
+
+
 
 /**
  * 记录峰谷平均法的峰谷位置
  * 
  * @param[out]    f0         二进制文件指针 
- * @param[in]     k          波数 
  * @param[in]     Kpt        最终收敛积分值使用的波峰波谷位置
  * @param[in]     Fpt        最终收敛积分值使用的波峰波谷幅值
  * 
@@ -44,6 +54,18 @@ void write_stats(
  * 
  */
 void write_stats_ptam(
-    FILE *f0, MYREAL k, 
+    FILE *f0, 
     MYREAL Kpt[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT],
     MYCOMPLEX Fpt[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT]);
+
+
+/**
+ * 从二进制峰谷位置文件读出一个数据块，写入到文本文件中
+ * 
+ * @param[in,out]     bf0    二进制文件指针，如果为NULL则打印标题
+ * @param[out]        af0    文本文件指针
+ * 
+ * @return   0表示读取成功，-1表示读取结果/失败
+ */
+MYINT extract_stats_ptam(FILE *bf0, FILE *af0);
+

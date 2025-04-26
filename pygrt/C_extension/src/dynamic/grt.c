@@ -79,7 +79,7 @@ static void recordin_GRN(
 
 
 void integ_grn_spec(
-    PYMODEL1D *pymod1d, MYINT nf1, MYINT nf2, MYINT nf, MYREAL *freqs,  
+    PYMODEL1D *pymod1d, MYINT nf1, MYINT nf2, MYREAL *freqs,  
     MYINT nr, MYREAL *rs, MYREAL wI, 
     MYREAL vmin_ref, MYREAL keps, MYREAL ampk, MYREAL k0, MYREAL Length, MYREAL filonLength, MYREAL filonCut,      
     bool print_progressbar, 

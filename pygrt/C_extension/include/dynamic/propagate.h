@@ -80,7 +80,6 @@
  *  计算相应的矩阵。  
  *
  *  @param[in]     mod1d           `MODEL1D` 结构体指针
- *  @param[in]     omega           复数频率
  *  @param[in]     k               波数
  *  @param[out]    QWV             不同震源，不同阶数的核函数 \f$ q_m, w_m, v_m \f$
  *  @param[in]     calc_uiz        是否计算ui_z（位移u对坐标z的偏导）
@@ -88,7 +87,7 @@
  * 
  */
 void kernel(
-    const MODEL1D *mod1d, MYCOMPLEX omega, MYREAL k, MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
+    const MODEL1D *mod1d, MYREAL k, MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
     bool calc_uiz, MYCOMPLEX QWV_uiz[SRC_M_NUM][QWV_NUM]);
 
 

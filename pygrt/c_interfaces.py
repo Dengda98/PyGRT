@@ -30,7 +30,7 @@ libgrt = cdll.LoadLibrary(
 C_integ_grn_spec = libgrt.integ_grn_spec
 """C库中计算格林函数的主函数 integ_grn_spec, 详见C API同名函数"""
 C_integ_grn_spec.argtypes = [
-    POINTER(c_PyModel1D), c_int, c_int, c_int, PREAL,       
+    POINTER(c_PyModel1D), c_int, c_int, PREAL,       
     c_int, PREAL, REAL,
     REAL, REAL, REAL, REAL, REAL, REAL, REAL,
     c_bool,

@@ -138,6 +138,7 @@ typedef int MYINT;  ///< 整数
 #define INTEG_NUM   4    ///< 4, 代码中积分类型个数
 #define MORDER_MAX   2    ///< 2, 代码中阶数m的最大值
 #define SRC_M_NUM    6   ///< 6, 代码中不同震源、不同阶数的个数
+#define MECHANISM_NUM   6   ///<  6, 描述震源机制的最多参数
 
 #define PTAM_MAX_PT   36         ///< 36， 最后统计波峰波谷的目标数量
 #define PTAM_WINDOW_SIZE  3      ///< 3，  使用连续点数判断是否为波峰或波谷
@@ -149,6 +150,9 @@ extern const MYINT SRC_M_ORDERS[SRC_M_NUM];
 
 /** 不同震源，不同阶数的名称简写，用于命名 */
 extern const char *SRC_M_NAME_ABBR[SRC_M_NUM];
+
+/** q, w, v 名称代号 */
+extern const char qwvchs[];
 
 /** ZRT三分量代号 */
 extern const char ZRTchs[];

@@ -78,7 +78,7 @@ def _gen_syn_from_gf(st:Stream, calc_upar:bool, compute_type:str, M0:float, az:f
         :param    ZNE:             是否以ZNE分量输出?
             
     """
-    chs = ['Z', 'R', 'T']
+    chs = ZRTchs
     sacin_prefixes = ["", "z", "r", ""]   # 输入通道名
     sacout_prefixes = ["", "z", "r", "t"]   # 输出通道名
     srcName = ["EX", "VF", "HF", "DD", "DS", "SS"]
@@ -104,19 +104,19 @@ def _gen_syn_from_gf(st:Stream, calc_upar:bool, compute_type:str, M0:float, az:f
         if ityp == 3:
             upar_scale /= dist
 
-        srcCoef = _set_source_coef(ityp==3, upar_scale, compute_type, M0, azrad, **kwargs)
+        srcRadi = _set_source_radi(ityp==3, upar_scale, compute_type, M0, azrad, **kwargs)
 
         inpref = sacin_prefixes[ityp]
         outpref = sacout_prefixes[ityp]
 
-        for c in range(3):
+        for c in range(CHANNEL_NUM):
             ch = chs[c]
             tr:Trace = st[0].copy()
             tr.data[:] = 0.0
             tr.stats.channel = kcmpnm = f'{outpref}{s_compute_type}{ch}'
             __check_trace_attr_sac(tr, az=az, baz=baz, kcmpnm=kcmpnm)
-            for k in range(6):
-                coef = srcCoef[c, k]
+            for k in range(SRC_M_NUM):
+                coef = srcRadi[k, c]
                 if coef==0.0:
                     continue
 
@@ -150,7 +150,7 @@ def _gen_syn_from_static_gf(grn:dict, calc_upar:bool, compute_type:str, M0:float
         :param    ZNE:             是否以ZNE分量输出?
             
     """
-    chs = ['Z', 'R', 'T']
+    chs = ZRTchs
     sacin_prefixes = ["", "z", "r", ""]   # 输入通道名
     srcName = ["EX", "VF", "HF", "DD", "DS", "SS"]
     allchs = list(grn.keys())
@@ -190,14 +190,14 @@ def _gen_syn_from_static_gf(grn:dict, calc_upar:bool, compute_type:str, M0:float
                 if ityp == 3:
                     upar_scale /= dist
 
-                srcCoef = _set_source_coef(ityp==3, upar_scale, compute_type, M0, azrad, **kwargs)
+                srcRadi = _set_source_radi(ityp==3, upar_scale, compute_type, M0, azrad, **kwargs)
 
                 inpref = sacin_prefixes[ityp]
 
-                for c in range(3):
+                for c in range(CHANNEL_NUM):
                     ch = chs[c]
-                    for k in range(6):
-                        coef = srcCoef[c, k]
+                    for k in range(SRC_M_NUM):
+                        coef = srcRadi[k, c]
                         if coef==0.0:
                             continue
 
@@ -228,7 +228,7 @@ def _gen_syn_from_static_gf(grn:dict, calc_upar:bool, compute_type:str, M0:float
 
     # 将XX数组分到字典中
     if ZNE:
-        chs = ['Z', 'N', 'E']
+        chs = ZNEchs
 
     for ityp in range(calcUTypes):
         c1 = '' if ityp==0 else chs[ityp-1].lower()
@@ -248,7 +248,7 @@ def _data_zrt2zne(stall:Stream):
             - **stream** - :class:`obspy.Stream` 类型
     """
 
-    chs = ['Z', 'R', 'T']
+    chs = ZRTchs
 
     midname = stall[0].stats.channel[-3:-1]
 
@@ -302,15 +302,14 @@ def _data_zrt2zne(stall:Stream):
                 for i2 in range(3):
                     uparLst[i2 + i1*3].data[n] = dbleupar[i2 + i1*3]
 
-    znechs = ['Z', 'N', 'E']
     # 修改通道名
     for i1 in range(3):
-        ch1 = znechs[i1]
+        ch1 = ZNEchs[i1]
         tr = synLst[i1]
         tr.stats.channel = tr.stats.sac['kcmpnm'] = f'{midname}{ch1}'
         if doupar:
             for i2 in range(3):
-                ch2 = znechs[i2]
+                ch2 = ZNEchs[i2]
                 tr = uparLst[i2 + i1*3]
                 tr.stats.channel = tr.stats.sac['kcmpnm'] = f'{ch1.lower()}{midname}{ch2}'
 
@@ -322,7 +321,7 @@ def _data_zrt2zne(stall:Stream):
     return stres
 
 
-def _set_source_coef(
+def _set_source_radi(
     par_theta:bool, coef:float, compute_type:str, M0:float, azrad:float,
     fZ=None, fN=None, fE=None, 
     strike=None, dip=None, rake=None, 
@@ -347,7 +346,7 @@ def _set_source_coef(
     caz = np.cos(azrad)
     saz = np.sin(azrad)
 
-    src_coef = np.zeros((3, 6), dtype='f8')
+    src_coef = np.zeros((SRC_M_NUM, CHANNEL_NUM), dtype='f8')
     
     # 计算乘法因子
     if compute_type == 'COMPUTE_SF':
@@ -358,8 +357,8 @@ def _set_source_coef(
     # 根据不同计算类型处理
     if compute_type == 'COMPUTE_EXP':
         # 爆炸源情况
-        src_coef[0, 0] = src_coef[1, 0] = 0.0 if par_theta else mult  # Z/R分量
-        src_coef[2, 0] = 0.0  # T分量
+        src_coef[0, 0] = src_coef[0, 1] = 0.0 if par_theta else mult  # Z/R分量
+        src_coef[0, 2] = 0.0  # T分量
     
     elif compute_type == 'COMPUTE_SF':
         # 单力源情况
@@ -369,9 +368,9 @@ def _set_source_coef(
         A4 = (-fN * saz + fE * caz) * mult
 
         # 设置震源系数矩阵 (公式4.6.20)
-        src_coef[0, 1] = src_coef[1, 1] = 0.0 if par_theta else A0  # VF, Z/R
-        src_coef[0, 2] = src_coef[1, 2] = A4 if par_theta else A1  # HF, Z/R
-        src_coef[2, 1] = 0.0  # VF, T
+        src_coef[1, 0] = src_coef[1, 1] = 0.0 if par_theta else A0  # VF, Z/R
+        src_coef[2, 0] = src_coef[2, 1] = A4 if par_theta else A1  # HF, Z/R
+        src_coef[1, 2] = 0.0  # VF, T
         src_coef[2, 2] = -A1 if par_theta else A4  # HF, T
     
     elif compute_type == 'COMPUTE_DC':
@@ -397,12 +396,12 @@ def _set_source_coef(
         A5 = mult * (sdip * crak * cthe2 - 0.5 * sdip2 * srak * sthe2)
 
         # 设置震源系数矩阵
-        src_coef[0, 3] = src_coef[1, 3] = 0.0 if par_theta else A0  # DD, Z/R
-        src_coef[0, 4] = src_coef[1, 4] = A4 if par_theta else A1  # DS, Z/R
-        src_coef[0, 5] = src_coef[1, 5] = 2.0 * A5 if par_theta else A2  # SS, Z/R
-        src_coef[2, 3] = 0.0  # DD, T
-        src_coef[2, 4] = -A1 if par_theta else A4  # DS, T
-        src_coef[2, 5] = -2.0 * A2 if par_theta else A5  # DS, T
+        src_coef[3, 0] = src_coef[3, 1] = 0.0 if par_theta else A0  # DD, Z/R
+        src_coef[4, 0] = src_coef[4, 1] = A4 if par_theta else A1  # DS, Z/R
+        src_coef[5, 0] = src_coef[5, 1] = 2.0 * A5 if par_theta else A2  # SS, Z/R
+        src_coef[3, 2] = 0.0  # DD, T
+        src_coef[4, 2] = -A1 if par_theta else A4  # DS, T
+        src_coef[5, 2] = -2.0 * A2 if par_theta else A5  # DS, T
     
     elif compute_type == 'COMPUTE_MT':
         # 矩张量源情况 (公式4.9.7，修改了各向同性项)
@@ -427,14 +426,14 @@ def _set_source_coef(
         A5 = mult * (-0.5 * (M11 - M22) * saz2 + M12 * caz2)
 
         # 设置震源系数矩阵
-        src_coef[0, 0] = src_coef[1, 0] = 0.0 if par_theta else mult * Mexp  # EX, Z/R
-        src_coef[0, 3] = src_coef[1, 3] = 0.0 if par_theta else A0  # DD, Z/R
-        src_coef[0, 4] = src_coef[1, 4] = A4 if par_theta else A1  # DS, Z/R
-        src_coef[0, 5] = src_coef[1, 5] = 2.0 * A5 if par_theta else A2  # SS, Z/R
-        src_coef[2, 0] = 0.0  # EX, T
-        src_coef[2, 3] = 0.0  # DD, T
-        src_coef[2, 4] = -A1 if par_theta else A4  # DS, T
-        src_coef[2, 5] = -2.0 * A2 if par_theta else A5  # DS, T
+        src_coef[0, 0] = src_coef[0, 1] = 0.0 if par_theta else mult * Mexp  # EX, Z/R
+        src_coef[3, 0] = src_coef[3, 1] = 0.0 if par_theta else A0  # DD, Z/R
+        src_coef[4, 0] = src_coef[4, 1] = A4 if par_theta else A1  # DS, Z/R
+        src_coef[5, 0] = src_coef[5, 1] = 2.0 * A5 if par_theta else A2  # SS, Z/R
+        src_coef[0, 2] = 0.0  # EX, T
+        src_coef[3, 2] = 0.0  # DD, T
+        src_coef[4, 2] = -A1 if par_theta else A4  # DS, T
+        src_coef[5, 2] = -2.0 * A2 if par_theta else A5  # DS, T
 
 
     return src_coef
@@ -575,13 +574,11 @@ def _compute_strain_rotation(st_syn:Stream, Type:str):
         if tr.stats.channel[-3:-1] != midname:
             raise ValueError("WRONG INPUT! inconsistent component names.")
         
-    zrtchs = ['Z', 'R', 'T']
-    znechs = ['Z', 'N', 'E']
-    chs = zrtchs
+    chs = ZRTchs
 
     # 判断是否有标志性的trace
     if len(st_syn.select(channel=f"n{midname}N")) > 0:
-        chs = znechs
+        chs = ZNEchs
 
     dist = st_syn[0].stats.sac['dist']
 
@@ -661,13 +658,11 @@ def _compute_static_strain_rotation(syn:dict, Type:str):
         if k[-3:-1] != midname:
             raise ValueError("WRONG INPUT! inconsistent component names.")
         
-    zrtchs = ['Z', 'R', 'T']
-    znechs = ['Z', 'N', 'E']
-    chs = zrtchs
+    chs = ZRTchs
 
     # 判断是否有标志性的分量名
     if f"n{midname}N" in syn.keys():
-        chs = znechs
+        chs = ZNEchs
 
     xarr:np.ndarray = syn['_xarr']
     yarr:np.ndarray = syn['_yarr']
@@ -781,14 +776,12 @@ def _compute_stress(st_syn:Stream):
         if tr.stats.channel[-3:-1] != midname:
             raise ValueError("WRONG INPUT! inconsistent component names.")
         
-    zrtchs = ['Z', 'R', 'T']
-    znechs = ['Z', 'N', 'E']
-    chs = zrtchs
+    chs = ZRTchs
     rot2ZNE:bool = False
 
     # 判断是否有标志性的trace
     if len(st_syn.select(channel=f"n{midname}N")) > 0:
-        chs = znechs
+        chs = ZNEchs
         rot2ZNE = True
 
     nt = st_syn[0].stats.npts
@@ -912,14 +905,12 @@ def _compute_static_stress(syn:dict):
         if k[-3:-1] != midname:
             raise ValueError("WRONG INPUT! inconsistent component names.")
         
-    zrtchs = ['Z', 'R', 'T']
-    znechs = ['Z', 'N', 'E']
-    chs = zrtchs
+    chs = ZRTchs
     rot2ZNE:bool = False
 
     # 判断是否有标志性的分量名
     if f"n{midname}N" in syn.keys():
-        chs = znechs
+        chs = ZNEchs
         rot2ZNE = True
 
     xarr:np.ndarray = syn['_xarr']
@@ -1228,68 +1219,18 @@ def read_statsfile(statsfile:str):
         raise OSError(f"{statsfile} should only match one file, but {len(Lst)} matched.")
     statsfile = Lst[0]
 
-    data = np.fromfile(statsfile, 
-        dtype=[
-            ('k', NPCT_REAL_TYPE), 
+    # 确定自定义数据类型  EX_q, EX_w, VF_q, ...
+    dtype = [('k', NPCT_REAL_TYPE)]
+    for im in range(SRC_M_NUM):
+        modr = SRC_M_ORDERS[im]
+        for c in range(QWV_NUM):
+            if modr==0 and qwvchs[c] == 'v':
+                continue 
 
-            # 核函数 F(k, w)
-            ('EXP_q0', NPCT_CMPLX_TYPE),
-            ('EXP_w0', NPCT_CMPLX_TYPE),
+            dtype.append((f"{SRC_M_NAME_ABBR[im]}_{qwvchs[c]}", NPCT_CMPLX_TYPE))
 
-            ('VF_q0', NPCT_CMPLX_TYPE),
-            ('VF_w0', NPCT_CMPLX_TYPE),
 
-            ('HF_q1', NPCT_CMPLX_TYPE),
-            ('HF_w1', NPCT_CMPLX_TYPE),
-            ('HF_v1', NPCT_CMPLX_TYPE),
-
-            ('DC_q0', NPCT_CMPLX_TYPE),
-            ('DC_w0', NPCT_CMPLX_TYPE),
-
-            ('DC_q1', NPCT_CMPLX_TYPE),
-            ('DC_w1', NPCT_CMPLX_TYPE),
-            ('DC_v1', NPCT_CMPLX_TYPE),
-
-            ('DC_q2', NPCT_CMPLX_TYPE),
-            ('DC_w2', NPCT_CMPLX_TYPE),
-            ('DC_v2', NPCT_CMPLX_TYPE),
-
-            # ===============================
-            # 被积函数 F(k, w)*Jm(kr)*k
-            # 下划线后的两位数字，第一位m代表阶数，但不完全对应Bessel函数的阶数，
-            # 因为存在Bessel函数的导数的情况，需要使用递推公式，故存在不对应情况；
-            # 第二位p代表自定义的被积函数类型，基于式(5.6.22)，分别为  
-            #       if m==0:
-            #           if p==0:  - q0 * J1(kr) * k 
-            #           if p==2:    w0 * J0(kr) * k
-            #       else if m==1 or m==2:
-            #           if p==0:    qm * Jm-1(kr) * k 
-            #           if p==1:  - (qm + vm) * Jm(kr) * k / (kr)
-            #           if p==2:    wm * Jm(kr) * k 
-            #           if p==3:  - vm * Jm-1(kr) * k
-            #               
-            # ('EXP_00', NPCT_CMPLX_TYPE),
-            # ('EXP_02', NPCT_CMPLX_TYPE),
-
-            # ('VF_00', NPCT_CMPLX_TYPE),
-            # ('VF_02', NPCT_CMPLX_TYPE),
-
-            # ('HF_10', NPCT_CMPLX_TYPE),
-            # ('HF_11', NPCT_CMPLX_TYPE),
-            # ('HF_12', NPCT_CMPLX_TYPE),
-            # ('HF_13', NPCT_CMPLX_TYPE),
-            # ('DC_00', NPCT_CMPLX_TYPE),
-            # ('DC_02', NPCT_CMPLX_TYPE),
-            # ('DC_10', NPCT_CMPLX_TYPE),
-            # ('DC_11', NPCT_CMPLX_TYPE),
-            # ('DC_12', NPCT_CMPLX_TYPE),
-            # ('DC_13', NPCT_CMPLX_TYPE),
-            # ('DC_20', NPCT_CMPLX_TYPE),
-            # ('DC_21', NPCT_CMPLX_TYPE),
-            # ('DC_22', NPCT_CMPLX_TYPE),
-            # ('DC_23', NPCT_CMPLX_TYPE),
-        ]
-    )
+    data = np.fromfile(statsfile, dtype=dtype)
 
     return data
 
@@ -1395,76 +1336,48 @@ def read_statsfile_ptam(statsfile:str):
     data1 = read_statsfile(os.path.join(os.path.dirname(os.path.dirname(statsfile)), K_basename))
     data2 = read_statsfile(os.path.join(os.path.dirname(statsfile), K_basename))
 
-    ptam_data = np.fromfile(statsfile, 
-        dtype=[
-            # 各格林函数数值积分的值(k上限位于不同的波峰波谷)
-            # 名称中的两位数字的解释和`read_statsfile`函数中的解释相同，
-            # 开头的sum表示这是波峰波谷位置处的数值积分的值(不含dk)，
-            # 末尾的k表示对应积分值的波峰波谷位置的k值
-            # 
-            ('sum_EXP_00_k', NPCT_REAL_TYPE),
-            ('sum_EXP_00',  NPCT_CMPLX_TYPE),
-            ('sum_EXP_02_k', NPCT_REAL_TYPE),
-            ('sum_EXP_02',  NPCT_CMPLX_TYPE),
+    # 确定自定义数据类型  sum_EX_0_k, sum_EX_0, sum_VF_0_k, ...
+    # 各格林函数数值积分的值(k上限位于不同的波峰波谷)
+    # 开头的sum表示这是波峰波谷位置处的数值积分的值(不含dk)，
+    # 末尾的k表示对应积分值的波峰波谷位置的k值
+    dtype = []
+    for im in range(SRC_M_NUM):
+        modr = SRC_M_ORDERS[im]
+        for v in range(INTEG_NUM):
+            if modr==0 and v!=0 and v!=2:
+                continue 
 
-            ('sum_VF_00_k',  NPCT_REAL_TYPE),
-            ('sum_VF_00',   NPCT_CMPLX_TYPE),
-            ('sum_VF_02_k',  NPCT_REAL_TYPE),
-            ('sum_VF_02',   NPCT_CMPLX_TYPE),
+            dtype.append((f"sum_{SRC_M_NAME_ABBR[im]}_{v}_k", NPCT_REAL_TYPE))
+            dtype.append((f"sum_{SRC_M_NAME_ABBR[im]}_{v}", NPCT_CMPLX_TYPE))
 
-            ('sum_HF_10_k',  NPCT_REAL_TYPE),
-            ('sum_HF_10',   NPCT_CMPLX_TYPE),
-            ('sum_HF_11_k',  NPCT_REAL_TYPE),
-            ('sum_HF_11',   NPCT_CMPLX_TYPE),
-            ('sum_HF_12_k',  NPCT_REAL_TYPE),
-            ('sum_HF_12',   NPCT_CMPLX_TYPE),
-            ('sum_HF_13',   NPCT_CMPLX_TYPE),
-            ('sum_HF_13_k',  NPCT_REAL_TYPE),
 
-            ('sum_DC_00_k',  NPCT_REAL_TYPE),
-            ('sum_DC_00',   NPCT_CMPLX_TYPE),
-            ('sum_DC_02_k',  NPCT_REAL_TYPE),
-            ('sum_DC_02',   NPCT_CMPLX_TYPE),
-            
-            ('sum_DC_10_k',  NPCT_REAL_TYPE),
-            ('sum_DC_10',   NPCT_CMPLX_TYPE),
-            ('sum_DC_11_k',  NPCT_REAL_TYPE),
-            ('sum_DC_11',   NPCT_CMPLX_TYPE),
-            ('sum_DC_12_k',  NPCT_REAL_TYPE),
-            ('sum_DC_12',   NPCT_CMPLX_TYPE),
-            ('sum_DC_13_k',  NPCT_REAL_TYPE),
-            ('sum_DC_13',   NPCT_CMPLX_TYPE),
-
-            ('sum_DC_20_k',  NPCT_REAL_TYPE),
-            ('sum_DC_20',   NPCT_CMPLX_TYPE),
-            ('sum_DC_21_k',  NPCT_REAL_TYPE),
-            ('sum_DC_21',   NPCT_CMPLX_TYPE),
-            ('sum_DC_22_k',  NPCT_REAL_TYPE),
-            ('sum_DC_22',   NPCT_CMPLX_TYPE),
-            ('sum_DC_23_k',  NPCT_REAL_TYPE),
-            ('sum_DC_23',   NPCT_CMPLX_TYPE),
-        ]
-    )
+    ptam_data = np.fromfile(statsfile, dtype=dtype)
 
     return data1, data2, ptam_data, dist
 
 
 
-def _get_stats_Fname(statsdata:np.ndarray, karr:np.ndarray, dist:float, srctype:str, mtype:str, ptype:str):
+def _get_stats_Fname(statsdata:np.ndarray, karr:np.ndarray, dist:float, srctype:str, ptype:str):
     # 根据ptype获得对应的核函数
-    int_sgn = 1
     krarr = karr*dist
+
+    # 从数组中找到震源名称的索引
+    try:
+        _idx = SRC_M_NAME_ABBR.index(srctype)
+        mtype = str(SRC_M_ORDERS[_idx])
+    except:
+        raise ValueError(f"{srctype} is an invalid name.")
+
     if mtype=='0':
         if ptype=='0':
-            Fname = r"$F(k,\omega)=q_0(k, \omega)$"
-            Farr = statsdata[f'{srctype}_q0']
-            FJname = rf"$F(k,\omega)J_1(kr)k$"
-            FJarr = jv(1, krarr) * Farr * karr
-            int_sgn = -1
+            Fname = rf"$F(k,\omega)=q^{{({srctype})}}(k, \omega)$"
+            Farr = statsdata[f'{srctype}_q']
+            FJname = rf"$ - F(k,\omega)J_1(kr)k$"
+            FJarr =  - jv(1, krarr) * Farr * karr
         elif ptype=='2':
-            Fname = r"$F(k,\omega)=w_0(k, \omega)$"
+            Fname = rf"$F(k,\omega)=w^{{({srctype})}}(k, \omega)$"
             FJname = rf"$F(k,\omega)J_0(kr)k$"
-            Farr = statsdata[f'{srctype}_w0']
+            Farr = statsdata[f'{srctype}_w']
             FJarr = jv(0, krarr) * Farr * karr
         else:
             raise ValueError(f"source {srctype}, m={mtype}, p={ptype} is not supported.")
@@ -1472,37 +1385,35 @@ def _get_stats_Fname(statsdata:np.ndarray, karr:np.ndarray, dist:float, srctype:
     elif mtype in ['1', '2']:
         m = int(mtype)
         if ptype=='0':
-            Fname = rf"$F(k,\omega)=q_{mtype}(k, \omega)$"
-            Farr = statsdata[f'{srctype}_q{mtype}']
+            Fname = rf"$F(k,\omega)=q^{{({srctype})}}(k, \omega)$"
+            Farr = statsdata[f'{srctype}_q']
             FJname = rf"$F(k,\omega)J_{m-1}(kr)k$"
             FJarr = jv(m-1, krarr) * Farr * karr
         elif ptype=='1':
-            Fname = rf"$F(k,\omega)=q_{mtype}(k, \omega) + v_{mtype}(k, \omega)$"
-            Farr = (statsdata[f'{srctype}_q{mtype}'] + statsdata[f'{srctype}_v{mtype}'])
-            FJname = rf"$F(k,\omega) \dfrac{{{m}}}{{kr}} J_{m}(kr)k$"
-            FJarr = jv(m, krarr) * Farr * m/dist
-            int_sgn = -1
+            Fname = rf"$F(k,\omega)=q^{{({srctype})}}(k, \omega) + v^{{({srctype})}}(k, \omega)$"
+            Farr = (statsdata[f'{srctype}_q'] + statsdata[f'{srctype}_v'])
+            FJname = rf"$ - F(k,\omega) \dfrac{{{m}}}{{kr}} J_{m}(kr)k$"
+            FJarr =  - jv(m, krarr) * Farr * m/dist
         elif ptype=='2':
-            Fname = rf"$F(k,\omega)=w_{mtype}(k, \omega)$"
-            Farr = statsdata[f'{srctype}_w{mtype}']
+            Fname = rf"$F(k,\omega)=w^{{({srctype})}}(k, \omega)$"
+            Farr = statsdata[f'{srctype}_w']
             FJname = rf"$F(k,\omega)J_{m}(kr)k$"
             FJarr = jv(m, krarr) * Farr * karr
         elif ptype=='3':
-            Fname = rf"$F(k,\omega)=v_{mtype}(k, \omega)$"
-            Farr = statsdata[f'{srctype}_v{mtype}']
-            FJname = rf"$F(k,\omega)J_{m-1}(kr)k$"
-            FJarr = jv(m-1, krarr) * Farr * karr
-            int_sgn = -1
+            Fname = rf"$F(k,\omega)=v^{{({srctype})}}(k, \omega)$"
+            Farr = statsdata[f'{srctype}_v']
+            FJname = rf"$ - F(k,\omega)J_{m-1}(kr)k$"
+            FJarr =  - jv(m-1, krarr) * Farr * karr
         else:
             raise ValueError(f"source {srctype}, m={mtype}, p={ptype} is not supported.")
         
     else:
         raise ValueError(f"source {srctype}, m={mtype}, p={ptype} is not supported.")
     
-    return Fname, Farr, FJname, FJarr, int_sgn
+    return Fname, Farr, FJname, FJarr
 
 
-def plot_statsdata(statsdata:np.ndarray, dist:float, srctype:str, mtype:str, ptype:str, RorI:Union[bool,int]=True,
+def plot_statsdata(statsdata:np.ndarray, dist:float, srctype:str, ptype:str, RorI:Union[bool,int]=True,
                    fig:Union[Figure,None]=None, axs:Union[Axes,None]=None):
     r'''
         根据 :func:`read_statsfile <pygrt.utils.read_statsfile>` 函数函数读取的数据，
@@ -1512,8 +1423,7 @@ def plot_statsdata(statsdata:np.ndarray, dist:float, srctype:str, mtype:str, pty
 
         :param    statsdata:         :func:`read_statsfile <pygrt.utils.read_statsfile>` 函数返回值 
         :param    dist:              震中距(km)
-        :param    srctype:           震源类型的缩写，包括EXP、VF、HF、DC  
-        :param    mtype:             阶数(0,1,2)，不完全对应公式中Bessel函数的阶数，因为存在Bessel函数的导数，需要使用递推公式
+        :param    srctype:           震源类型的缩写，包括EX、VF、HF、DD、DS、SS  
         :param    ptype:             积分类型(0,1,2,3) 
         :param    RorI:              绘制实部还是虚部，默认实部，传入2表示实部虚部都绘制
         :param    fig:               传入自定义的matplotlib.Figure对象，默认为None
@@ -1524,7 +1434,6 @@ def plot_statsdata(statsdata:np.ndarray, dist:float, srctype:str, mtype:str, pty
                 - **(ax1,ax2,ax3)** -              matplotlib.Axes对象数组
     '''
 
-    mtype = str(mtype)
     ptype = str(ptype)
 
     karr = statsdata['k'] 
@@ -1532,7 +1441,7 @@ def plot_statsdata(statsdata:np.ndarray, dist:float, srctype:str, mtype:str, pty
     if 0.5*np.pi/dk < dist:  # 对于bessel函数这种震荡函数，假设一个周期内至少取4个点
         print(f"WARNING! dist ({dist}) > PI/(2*dk) ({0.5*np.pi/dk:.5e}.)")
 
-    Fname, Farr, FJname, FJarr, int_sgn = _get_stats_Fname(statsdata, karr, dist, srctype, mtype, ptype)
+    Fname, Farr, FJname, FJarr = _get_stats_Fname(statsdata, karr, dist, srctype, ptype)
     
     if fig is None or axs is None:
         fig, axs = plt.subplots(3, 1, figsize=(8, 9), gridspec_kw=dict(hspace=0.7))
@@ -1571,7 +1480,7 @@ def plot_statsdata(statsdata:np.ndarray, dist:float, srctype:str, mtype:str, pty
     ax2.legend(loc='lower left')
 
     # 数值积分，不乘系数dk 
-    Parr = np.cumsum(FJarr) * int_sgn
+    Parr = np.cumsum(FJarr)
 
     if isinstance(RorI, int) and RorI==2:
         ax3.plot(karr, np.real(Parr), lw=0.8, label='Real') 
@@ -1590,7 +1499,7 @@ def plot_statsdata(statsdata:np.ndarray, dist:float, srctype:str, mtype:str, pty
 
 
 def plot_statsdata_ptam(statsdata1:np.ndarray, statsdata2:np.ndarray, statsdata_ptam:np.ndarray, 
-                        dist:float, srctype:str, mtype:str, ptype:str, RorI:Union[bool,int]=True,
+                        dist:float, srctype:str, ptype:str, RorI:Union[bool,int]=True,
                         fig:Union[Figure,None]=None, axs:Union[Axes,None]=None):
     r'''
         根据 :func:`read_statsfile_ptam <pygrt.utils.read_statsfile_ptam>` 函数读取的数据，
@@ -1601,8 +1510,7 @@ def plot_statsdata_ptam(statsdata1:np.ndarray, statsdata2:np.ndarray, statsdata_
         :param    statsdata1:        DWM或FIM过程中的积分过程数据
         :param    statsdata2:        PTAM过程中的积分过程数据
         :param    statsdata_ptam:    PTAM的峰谷位置及幅值
-        :param    srctype:           震源类型的缩写，包括EXP、VF、HF、DC  
-        :param    mtype:             阶数(0,1,2)，不完全对应公式中Bessel函数的阶数，因为存在Bessel函数的导数，需要使用递推公式
+        :param    srctype:           震源类型的缩写，包括EX、VF、HF、DD、DS、SS  
         :param    ptype:             积分类型(0,1,2,3) 
         :param    RorI:              绘制实部还是虚部，默认实部，传入2表示实部虚部都绘制
         :param    fig:               传入自定义的matplotlib.Figure对象，默认为None
@@ -1613,15 +1521,14 @@ def plot_statsdata_ptam(statsdata1:np.ndarray, statsdata2:np.ndarray, statsdata_
                 - **(ax1,ax2,ax3)** -              matplotlib.Axes对象数组
     '''
 
-    mtype = str(mtype)
     ptype = str(ptype)
 
     karr1 = statsdata1['k'] 
     dk1 = karr1[1] - karr1[0]
-    Fname, Farr1, FJname, FJarr1, int_sgn = _get_stats_Fname(statsdata1, karr1, dist, srctype, mtype, ptype)
+    Fname, Farr1, FJname, FJarr1 = _get_stats_Fname(statsdata1, karr1, dist, srctype, ptype)
     karr2 = statsdata2['k'] 
     dk2 = karr2[1] - karr2[0]
-    Fname, Farr2, FJname, FJarr2, int_sgn = _get_stats_Fname(statsdata2, karr2, dist, srctype, mtype, ptype)
+    Fname, Farr2, FJname, FJarr2 = _get_stats_Fname(statsdata2, karr2, dist, srctype, ptype)
 
     # 将两个过程的结果拼起来
     Farr = np.hstack((Farr1, Farr2))
@@ -1665,12 +1572,12 @@ def plot_statsdata_ptam(statsdata1:np.ndarray, statsdata2:np.ndarray, statsdata_
     ax2.legend(loc='lower left')
 
     # 波峰波谷位置，用红十字标记
-    ptKarr = statsdata_ptam[f'sum_{srctype}_{mtype}{ptype}_k']
-    ptFJarr = statsdata_ptam[f'sum_{srctype}_{mtype}{ptype}']
+    ptKarr = statsdata_ptam[f'sum_{srctype}_{ptype}_k']
+    ptFJarr = statsdata_ptam[f'sum_{srctype}_{ptype}']
 
     # 数值积分，不乘系数dk 
-    Parr1 = np.cumsum(FJarr1) * int_sgn
-    Parr2 = np.cumsum(FJarr2) * int_sgn
+    Parr1 = np.cumsum(FJarr1) 
+    Parr2 = np.cumsum(FJarr2)  
     Parr = np.hstack([Parr1, Parr2*dk2/dk1+Parr1[-1]])
 
     if isinstance(RorI, int) and RorI==2:

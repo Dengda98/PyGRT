@@ -1081,7 +1081,7 @@ int main(int argc, char **argv) {
     //==============================================================================
     // 计算格林函数
     integ_grn_spec(
-        pymod, nf1, nf2, nf, freqs, nr, rs, wI,
+        pymod, nf1, nf2, freqs, nr, rs, wI,
         vmin_ref, keps, ampk, k0, Length, filonLength, filonCut, !silenceInput,
         grn, calc_upar, grn_uiz, grn_uir,
         s_statsdir, nstatsidxs, statsidxs

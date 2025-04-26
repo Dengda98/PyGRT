@@ -15,6 +15,9 @@ const MYINT SRC_M_ORDERS[SRC_M_NUM] = {0, 0, 1, 0, 1, 2};
 /** 不同震源，不同阶数的名称简写，用于命名 */
 const char *SRC_M_NAME_ABBR[SRC_M_NUM] = {"EX", "VF", "HF", "DD", "DS", "SS"};
 
+/** q, w, v 名称代号 */
+const char qwvchs[] = {'q', 'w', 'v'};
+
 /** ZRT三分量代号 */
 const char ZRTchs[] = {'Z', 'R', 'T'};
 

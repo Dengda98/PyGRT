@@ -24,5 +24,5 @@
  * 此处omega未使用，传入0即可
  */
 void static_kernel(
-    const MODEL1D *mod1d, MYCOMPLEX omega, MYREAL k, MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
+    const MODEL1D *mod1d, MYREAL k, MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
     bool calc_uiz, MYCOMPLEX QWV_uiz[SRC_M_NUM][QWV_NUM]);

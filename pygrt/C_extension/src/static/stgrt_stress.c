@@ -120,8 +120,6 @@ int main(int argc, char **argv){
     double dist = 0.0;
 
     // 三分量
-    const char zrtchs[3] = {'Z', 'R', 'T'};
-    const char znechs[3] = {'Z', 'N', 'E'};
     const char *chs = NULL;
 
     // 体积应变和lambda的乘积
@@ -162,7 +160,7 @@ int main(int argc, char **argv){
             free(copyline);
 
             // 指示特定的通道名
-            chs = (rot2ZNE)? znechs : zrtchs;
+            chs = (rot2ZNE)? ZNEchs : ZRTchs;
 
             // 想合成位移空间导数但输入的格林函数没有
             if(ncols < 14){

@@ -102,8 +102,7 @@ void calc_uiz_R_EV(
 void calc_RT_2x2(
     MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, 
     MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, 
-    MYREAL thk,
-    MYCOMPLEX omega, MYREAL k, 
+    MYREAL thk, MYREAL k, 
     MYCOMPLEX RD[2][2], MYCOMPLEX *RDL, MYCOMPLEX RU[2][2], MYCOMPLEX *RUL, 
     MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX TU[2][2], MYCOMPLEX *TUL);
 
@@ -118,7 +117,6 @@ void calc_RT_2x2(
  * @param[in]      xb            S波归一化垂直波数 \f$ \sqrt{1 - (k_b/k)^2} \f$
  * @param[in]      kbkb          S波水平波数的平方 \f$ k_b^2=(\frac{\omega}{V_b})^2 \f$
  * @param[in]      mu            剪切模量
- * @param[in]      omega          复数频率  \f$ \tilde{\omega} =\omega - i\omega_I \f$ 
  * @param[in]      k             波数
  * 
  * @param[out]      D                D矩阵(或其逆矩阵)
@@ -127,7 +125,7 @@ void calc_RT_2x2(
  */
 void get_layer_D(
     MYCOMPLEX xa, MYCOMPLEX xb, MYCOMPLEX kbkb, MYCOMPLEX mu, 
-    MYCOMPLEX omega, MYREAL k, MYCOMPLEX D[4][4], bool inverse);
+    MYREAL k, MYCOMPLEX D[4][4], bool inverse);
 
 
 
@@ -137,8 +135,8 @@ void get_layer_D(
  * 函数接口也和 calc_RT_2x2函数 类似
  */
 void calc_RT_2x2_from_4x4(
-    MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, 
-    MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, 
-    MYCOMPLEX omega, MYREAL k, 
+    MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, 
+    MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, 
+    MYREAL k, 
     MYCOMPLEX RD[2][2], MYCOMPLEX *RDL, MYCOMPLEX RU[2][2], MYCOMPLEX *RUL, 
     MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX TU[2][2], MYCOMPLEX *TUL);

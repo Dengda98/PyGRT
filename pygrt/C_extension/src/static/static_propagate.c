@@ -27,7 +27,7 @@
 
 
 void static_kernel(
-    const MODEL1D *mod1d, MYCOMPLEX omega, MYREAL k, MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
+    const MODEL1D *mod1d, MYREAL k, MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
     bool calc_uiz, MYCOMPLEX QWV_uiz[SRC_M_NUM][QWV_NUM])
 {
     // 初始化qwv为0
@@ -292,7 +292,7 @@ void static_kernel(
     static_source_coef(src_delta, k, src_coef);
 
     // 临时中转矩阵 (temperary)
-    MYCOMPLEX tmpR1[2][2], tmpR2[2][2], tmp2x2[2][2], tmpRL, tmp2x2_uiz[2][2], tmpRL_uiz;
+    MYCOMPLEX tmpR2[2][2], tmp2x2[2][2], tmpRL, tmp2x2_uiz[2][2], tmpRL_uiz;
     MYCOMPLEX inv_2x2T[2][2], invT;
 
     // 递推RU_FA
@@ -320,7 +320,6 @@ void static_kernel(
             RU_FB, pRUL_FB, inv_2x2T, &invT);
         
         // 公式(5.7.12-14)
-        // cmat2x2_mul(R_EV, inv_2x2T, tmpR1);
         cmat2x2_mul(RD_BL, RU_FB, tmpR2);
         cmat2x2_one_sub(tmpR2);
         cmat2x2_inv(tmpR2, tmpR2);// (I - xx)^-1
@@ -361,7 +360,6 @@ void static_kernel(
             RD_AL, pRDL_AL, inv_2x2T, &invT);
         
         // 公式(5.7.26-27)
-        // cmat2x2_mul(R_EV, inv_2x2T, tmpR1);
         cmat2x2_mul(RU_FA, RD_AL, tmpR2);
         cmat2x2_one_sub(tmpR2);
         cmat2x2_inv(tmpR2, tmpR2);// (I - xx)^-1

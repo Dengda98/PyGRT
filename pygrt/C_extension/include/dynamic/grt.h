@@ -31,7 +31,6 @@ void set_num_threads(int num_threads);
  * @param[in]      pymod1d          `PYMODEL1D` 结构体指针 
  * @param[in]      nf1              开始计算频谱的频率索引值, 总范围在[nf1, nf2]
  * @param[in]      nf2              结束计算频谱的频率索引值, 总范围在[nf1, nf2]
- * @param[in]      nf               所有频点个数
  * @param[in]      freqs            所有频点的频率值（包括未计算的）
  * @param[in]      nr               震中距数量
  * @param[in]      rs               震中距数组 
@@ -57,7 +56,7 @@ void set_num_threads(int num_threads);
  * 
  */ 
 void integ_grn_spec(
-    PYMODEL1D *pymod1d, MYINT nf1, MYINT nf2, MYINT nf, MYREAL *freqs,  
+    PYMODEL1D *pymod1d, MYINT nf1, MYINT nf2, MYREAL *freqs,  
     MYINT nr, MYREAL *rs, MYREAL wI, 
     MYREAL vmin_ref, MYREAL keps, MYREAL ampk, MYREAL k0, MYREAL Length, MYREAL filonLength, MYREAL filonCut,             
     bool print_progressbar, 

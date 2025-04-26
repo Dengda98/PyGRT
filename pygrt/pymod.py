@@ -407,7 +407,7 @@ class PyModel1D:
         #     剪切源 DD[ZR],DS[ZRT],SS[ZRT]          1e-20 cm/(dyne*cm)
         #=================================================================================
         C_integ_grn_spec(
-            self.c_pymod1d, nf1, nf2, nf, c_freqs, nrs, c_rs, wI, 
+            self.c_pymod1d, nf1, nf2, c_freqs, nrs, c_rs, wI, 
             vmin_ref, keps, ampk, k0, Length, filonLC[0], filonLC[1], print_runtime,
             c_grnArr, calc_upar, c_grnArr_uiz, c_grnArr_uir,
             c_statsfile, nstatsidxs, c_statsidxs

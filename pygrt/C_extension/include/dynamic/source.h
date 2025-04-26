@@ -24,12 +24,11 @@
  * @param[in]     src_xb       震源层的S波归一化垂直波数 \f$ \sqrt{1 - (k_b/k)^2} \f$
  * @param[in]     src_kaka     震源层的P波水平波数的平方 \f$ k_a^2=(\frac{\omega}{V_a})^2 \f$
  * @param[in]     src_kbkb     震源层的S波水平波数的平方 \f$ k_b^2=(\frac{\omega}{V_b})^2 \f$
- * @param[in]     omega        复数频率
  * @param[in]     k            波数
  * @param[out]    coef         震源系数 \f$ P_m, SV_m, SH_m \f$
  * 
  */
 void source_coef(
     MYCOMPLEX src_xa, MYCOMPLEX src_xb, MYCOMPLEX src_kaka, MYCOMPLEX src_kbkb, 
-    MYCOMPLEX omega, MYREAL k,
+    MYREAL k,
     MYCOMPLEX coef[SRC_M_NUM][QWV_NUM][2]);

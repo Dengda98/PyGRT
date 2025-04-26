@@ -15,11 +15,14 @@ from ctypes import *
 __all__ = [
     "USE_FLOAT",
     "CHANNEL_NUM",
+    "QWV_NUM",
+    "INTEG_NUM",
     "SRC_M_NUM",
     "SRC_M_ORDERS",
     "SRC_M_NAME_ABBR",
     "ZRTchs",
     "ZNEchs",
+    "qwvchs",
 
     "NPCT_REAL_TYPE",
     "NPCT_CMPLX_TYPE",
@@ -34,11 +37,14 @@ __all__ = [
 
 USE_FLOAT = False
 CHANNEL_NUM = 3
+QWV_NUM = 3
+INTEG_NUM = 4
 SRC_M_NUM = 6
 SRC_M_ORDERS = [0, 0, 1, 0, 1, 2]
 SRC_M_NAME_ABBR = ["EX", "VF", "HF", "DD", "DS", "SS"]
 ZRTchs = ['Z', 'R', 'T']
 ZNEchs = ['Z', 'N', 'E']
+qwvchs = ['q', 'w', 'v']
 
 
 NPCT_REAL_TYPE = 'f4' if USE_FLOAT else 'f8'

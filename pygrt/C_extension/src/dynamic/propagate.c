@@ -29,7 +29,7 @@
 
 
 void kernel(
-    const MODEL1D *mod1d, MYCOMPLEX omega, MYREAL k, MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
+    const MODEL1D *mod1d, MYREAL k, MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
     bool calc_uiz,
     MYCOMPLEX QWV_uiz[SRC_M_NUM][QWV_NUM])
 {
@@ -182,7 +182,7 @@ void kernel(
                 mod1d_Rho0, mod1d_xa0, mod1d_xb0, mod1d_kbkb0, mod1d_mu0, 
                 mod1d_Rho1, mod1d_xa1, mod1d_xb1, mod1d_kbkb1, mod1d_mu1, 
                 mod1d_thk0, // 使用iy-1层的厚度
-                omega, k, 
+                k, 
                 RD, pRDL, RU, pRUL, 
                 TD, pTDL, TU, pTUL);
         }
@@ -320,10 +320,10 @@ void kernel(
 
     // 计算震源系数
     MYCOMPLEX src_coef[SRC_M_NUM][QWV_NUM][2] = {0};
-    source_coef(src_xa, src_xb, src_kaka, src_kbkb, omega, k, src_coef);
+    source_coef(src_xa, src_xb, src_kaka, src_kbkb, k, src_coef);
 
     // 临时中转矩阵 (temperary)
-    MYCOMPLEX tmpR1[2][2], tmpR2[2][2], tmp2x2[2][2], tmpRL, tmp2x2_uiz[2][2], tmpRL_uiz;
+    MYCOMPLEX tmpR2[2][2], tmp2x2[2][2], tmpRL, tmp2x2_uiz[2][2], tmpRL_uiz;
     MYCOMPLEX inv_2x2T[2][2], invT;
 
     // 递推RU_FA
@@ -352,7 +352,6 @@ void kernel(
             RU_FB, pRUL_FB, inv_2x2T, &invT);
         
         // 公式(5.7.12-14)
-        // cmat2x2_mul(R_EV, inv_2x2T, tmpR1);
         cmat2x2_mul(RD_BL, RU_FB, tmpR2);
         cmat2x2_one_sub(tmpR2);
         cmat2x2_inv(tmpR2, tmpR2);// (I - xx)^-1
@@ -393,7 +392,6 @@ void kernel(
             RD_AL, pRDL_AL, inv_2x2T, &invT);
         
         // 公式(5.7.26-27)
-        // cmat2x2_mul(R_EV, inv_2x2T, tmpR1);
         cmat2x2_mul(RU_FA, RD_AL, tmpR2);
         cmat2x2_one_sub(tmpR2);
         cmat2x2_inv(tmpR2, tmpR2);// (I - xx)^-1

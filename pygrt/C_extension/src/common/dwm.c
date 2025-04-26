@@ -58,7 +58,7 @@ MYREAL discrete_integ(
 
         // printf("w=%15.5e, ik=%d\n", CREAL(omega), ik);
         // 计算核函数 F(k, w)
-        kerfunc(mod1d, omega, k, QWV, calc_upar, QWV_uiz); 
+        kerfunc(mod1d, k, QWV, calc_upar, QWV_uiz); 
         
         // 记录积分核函数
         if(fstats!=NULL)  write_stats(fstats, k, QWV);

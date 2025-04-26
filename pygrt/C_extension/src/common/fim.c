@@ -59,7 +59,7 @@ MYREAL linear_filon_integ(
         k += dk; 
 
         // 计算核函数 F(k, w)
-        kerfunc(mod1d, omega, k, QWV, calc_upar, QWV_uiz); 
+        kerfunc(mod1d, k, QWV, calc_upar, QWV_uiz); 
 
         // 记录积分结果
         if(fstats!=NULL)  write_stats(fstats, k, QWV);
@@ -172,7 +172,7 @@ MYREAL linear_filon_integ(
         }
 
         // 计算核函数 F(k, w)
-        kerfunc(mod1d, omega, k0N, QWV, calc_upar, QWV_uiz); 
+        kerfunc(mod1d, k0N, QWV, calc_upar, QWV_uiz); 
 
         for(MYINT ir=0; ir<nr; ++ir){
             // Gc

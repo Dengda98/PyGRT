@@ -22,7 +22,7 @@
 
 void source_coef(
     MYCOMPLEX src_xa, MYCOMPLEX src_xb, MYCOMPLEX src_kaka, MYCOMPLEX src_kbkb, 
-    MYCOMPLEX omega, MYREAL k,
+    MYREAL k,
     MYCOMPLEX coef[SRC_M_NUM][QWV_NUM][2])
 {
     // 先全部赋0 

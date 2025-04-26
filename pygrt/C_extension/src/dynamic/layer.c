@@ -99,7 +99,7 @@ void calc_RT_2x2(
     MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, 
     MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, 
     MYREAL thk, // 使用上层的厚度
-    MYCOMPLEX omega, MYREAL k, 
+    MYREAL k, 
     MYCOMPLEX RD[2][2], MYCOMPLEX *RDL, MYCOMPLEX RU[2][2], MYCOMPLEX *RUL, 
     MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX TU[2][2], MYCOMPLEX *TUL)
 {
@@ -211,7 +211,7 @@ void calc_RT_2x2(
 
 void get_layer_D(
     MYCOMPLEX xa, MYCOMPLEX xb, MYCOMPLEX kbkb, MYCOMPLEX mu,
-    MYCOMPLEX omega, MYREAL k, MYCOMPLEX D[4][4], bool inverse)
+    MYREAL k, MYCOMPLEX D[4][4], bool inverse)
 {
     // 第iy层物理量
     MYCOMPLEX Omg;
@@ -239,17 +239,17 @@ void get_layer_D(
 
 
 void calc_RT_2x2_from_4x4(
-    MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, 
-    MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, 
-    MYCOMPLEX omega, MYREAL k, 
+    MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, 
+    MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, 
+    MYREAL k, 
     MYCOMPLEX RD[2][2], MYCOMPLEX *RDL, MYCOMPLEX RU[2][2], MYCOMPLEX *RUL, 
     MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX TU[2][2], MYCOMPLEX *TUL)
 {
 
     MYCOMPLEX D1_inv[4][4], D2[4][4], Q[4][4];
 
-    get_layer_D(k*xa1, k*xb1, kbkb1, mu1, omega, k, D1_inv, true);
-    get_layer_D(k*xa2, k*xb2, kbkb2, mu2, omega, k, D2,    false);
+    get_layer_D(k*xa1, k*xb1, kbkb1, mu1, k, D1_inv, true);
+    get_layer_D(k*xa2, k*xb2, kbkb2, mu2, k, D2,    false);
 
     cmatmxn_mul(4, 4, 4, D1_inv, D2, Q);
 
