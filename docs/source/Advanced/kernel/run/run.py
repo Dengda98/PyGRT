@@ -42,7 +42,7 @@ def plot_kernel(kerDct:dict, RorI:bool, out:Union[str,None]=None):
             continue
         ktypes.append(key)
 
-    srctypes = ['EXP0', 'VF0', 'HF1', 'DC0', 'DC1', 'DC2']
+    srctypes = ['EX', 'VF', 'HF', 'DD', 'DS', 'SS']
 
     vels = kerDct['_vels']
     freqs = kerDct['_freqs']
@@ -51,7 +51,7 @@ def plot_kernel(kerDct:dict, RorI:bool, out:Union[str,None]=None):
     gs = fig.add_gridspec(len(srctypes), 3)
     qwvLst = ['q', 'w', 'v']
     for ik, key in enumerate(ktypes):
-        srctype = key.split("_")[0]+key.split("_")[1][1:]
+        srctype = key.split("_")[0]
         qwv = key.split("_")[1][0]
         
         ax = fig.add_subplot(gs[srctypes.index(srctype), qwvLst.index(qwv)])

@@ -1,6 +1,8 @@
 #!/bin/bash
 set -eu
 
+rm -rf grn* syn* *.png
+
 # ---------------------------------------------------------------------------------
 # BEGIN gmt
 function gmtplot_static(){
