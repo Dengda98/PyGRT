@@ -20,32 +20,26 @@ msgstr ""
 "Generated-By: Babel 2.16.0\n"
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:4
-#: 66608262db6341ea89878a796cb2a972
 msgid "积分收敛性与峰谷平均法"
 msgstr "Convergency of Integral and Peak-Trough Averaging Method"
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst
-#: e40552831abf413d8712ebb5e41b35a9
 msgid "Author"
 msgstr ""
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:6
-#: ce35f66a47ef4d13b8091562cdc996cc
 msgid "Zhu Dengda"
 msgstr ""
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst
-#: 57fdc95f71bb436f9cf551c24402774b
 msgid "Email"
 msgstr ""
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:7
-#: dae6643c67ef4f11b009f8b070f6d6e9
 msgid "zhudengda@mail.iggcas.ac.cn"
 msgstr ""
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:11
-#: def273595da2403fb880c24137ac26bf
 msgid ""
 "通过输出核函数文件，观察源点和场点深度接近时，积分收敛性的变化，以及峰谷平均法的作用。 **具体积分表达式以及分类详见** "
 ":ref:`gfunc_rst`。"
@@ -56,12 +50,10 @@ msgstr ""
 "expressions and types, see** :ref:`gfunc_rst`."
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:14
-#: 01dc414c3b654166ac5dea0c397c78da
 msgid "核函数文件"
 msgstr "Kernel function file"
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:15
-#: 29549dd647cf4373acdb3b6a1a3e07c4
 msgid "该文件记录了波数积分过程中不同波数对应的核函数值。以下用法展示了如何输出该文件。"
 msgstr ""
 "This file records the kernel function values corresponding to different "
@@ -72,13 +64,10 @@ msgstr ""
 #: ../../source/Advanced/integ_converg/integ_converg.rst:42
 #: ../../source/Advanced/integ_converg/integ_converg.rst:106
 #: ../../source/Advanced/integ_converg/integ_converg.rst:190
-#: 10a3128472cb45f18d0377c779a4c93f 5671de61dabb4e8783a929780d77b8f1
-#: 77f7e55f93804f95a488e99f2079028e 8bec1a9270a24f7a85bf9f8f331ce02f
 msgid "C"
 msgstr ""
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:26
-#: 4dc0c8440c924b4abe9fd50bc540ca00
 msgid "输出的核函数文件会在  :rst:dir:`GRN_grtstats/milrow_{depsrc}_{deprcv}/` 路径下。"
 msgstr ""
 "The output kernel function files will be under the "
@@ -88,18 +77,14 @@ msgstr ""
 #: ../../source/Advanced/integ_converg/integ_converg.rst:58
 #: ../../source/Advanced/integ_converg/integ_converg.rst:113
 #: ../../source/Advanced/integ_converg/integ_converg.rst:197
-#: 097f5a35e7374798acf2c10af4a4eb85 12add9cbdad74756be2d27b2e79fff21
-#: 65eb6eaf3f7b46fa86d92975943beae1 74bf3a9ee21a4be9b3dd162f397f89b5
 msgid "Python"
 msgstr ""
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:35
-#: a417303ad09742be9b7a35a0adcb9472
 msgid "输出的核函数文件会在自定义路径下。"
 msgstr "The output kernel function files will be in a custom path."
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:38
-#: b46c62c8209042e8b03e84b91286a557
 msgid ""
 "C和Python导出的核函数文件是一致的，底层调用的是相同的函数。文件名称格式为 ``K_{iw}_{freq}``，其中 ``{iw}`` "
 "表示频率索引值， ``{freq}`` 表示对应频率(Hz)。文件为自定义的二进制文件， "
@@ -114,7 +99,6 @@ msgstr ""
 "provided."
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:44
-#: 9bcd5c8d284f419fbba0502bf6d46b51
 msgid ":command:`grt.k2a` 程序可将单个核函数文件转为文本格式。"
 msgstr ""
 "The :command:`grt.k2a` program can convert a single kernel function file "
@@ -122,19 +106,16 @@ msgstr ""
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:51
 #: ../../source/Advanced/integ_converg/integ_converg.rst:155
-#: 65d25eb501324795bf332d359e54d881 c5ac1b35456c470a8209b3cb4941e815
 msgid "输出的文件如下，"
 msgstr "The output files are as follows,"
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:56
-#: 3a714d5065614082bf0b43d37db9b018
 msgid "后续你可以选择习惯的方式读取和处理。"
 msgstr ""
 "Subsequently, you can choose your preferred method for reading and "
 "processing."
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:65
-#: 2acdff4a78264692bd99ea6853a89bd0
 msgid ""
 "其中除了波数 ``k`` 外，每条结果的命名格式均为 ``{srcType}_{q/w/v}{m}``，与 :ref:`gfunc_rst` "
 "部分介绍的积分公式中的核函数 :math:`q_m, w_m, v_m` 保持一致。"
@@ -145,7 +126,6 @@ msgstr ""
 ":ref:`gfunc_rst` section."
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:69
-#: 949bdef2d51d467e83880c6ed89664d5
 msgid ""
 "核函数文件中记录的值非最终核函数值。对于动态解，还需乘 :math:`\\left(-\\dfrac{\\Delta "
 "k}{4\\pi\\rho\\omega^2}\\right)`。"
@@ -155,12 +135,10 @@ msgstr ""
 ":math:`\\left(-\\dfrac{\\Delta k}{4\\pi\\rho\\omega^2}\\right)`."
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:72
-#: 0fc77363663745769a22326b4825bcf4
 msgid "可视化"
 msgstr "Visualization"
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:73
-#: 82c13b0b4c6941e4952ab24f1fadb23b
 msgid ""
 "以下将使用Python进行图件绘制。 "
 "**在Python函数中指定震源类型、阶数、积分类型，可自动绘制核函数、被积函数和积分值随波数的变化**，其中积分类型对应 "
@@ -173,28 +151,24 @@ msgstr ""
 " the four types introduced in the :ref:`gfunc_rst` section."
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:84
-#: ec1355e099f34060ac349700cb0a65b8
 msgid "可以通过指定 ``RorI=False`` 参数来指定绘制虚部，传入 ``RorI=2`` 表示实虚部都绘制。"
 msgstr ""
 "You can specify the ``RorI=False`` parameter to plot the imaginary part, "
 "or pass ``RorI=2`` to plot both the real and imaginary parts."
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:95
-#: aef5685403794de0a6197ae4f586aa19
 msgid "从图中可以看到，当波数增加到一定范围以上，积分收敛良好，无振荡现象。"
 msgstr ""
 "From the figure, it can be seen that when the wavenumber increases beyond"
 " a certain range, the integral converges well without oscillation."
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:100
-#: a7eb8ce8b29946868e4955f6447f4ea0
 msgid "当震源和场点深度接近/相等时，积分收敛速度变慢"
 msgstr ""
 "Integral converge slowly when source and receiver depths are close or "
 "equal."
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:102
-#: e6a7ecf2a76343c5815cb684c4b2ff85
 msgid "假设其它参数不变，我们调整 **震源深度为0.1km**，再计算格林函数，读取核函数文件，绘制图像。"
 msgstr ""
 "Assuming other parameters remain unchanged, we adjust the **source depth "
@@ -202,7 +176,6 @@ msgstr ""
 " file, and plot the image."
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:124
-#: 337ceb25b3c04ee992d437c0eb18601f
 msgid "从图中可以清晰地看到，相比震源深度2km时，积分收敛速度明显变慢，积分值振荡，这要求增加波数积分上限，但这必然降低计算效率。"
 msgstr ""
 "From the figure, it can be clearly seen that compared to a source depth "
@@ -212,7 +185,6 @@ msgstr ""
 "efficiency."
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:126
-#: be23e106c00d4657992ed63ad0e89c6b
 msgid ""
 "你可以尝试 "
 "**当震源和场点位于同一深度**，收敛振荡现象也很明显。要注意的是这和是否在地表无关，即使震源和场点都在地下，深度接近时积分收敛也会变慢。"
@@ -224,12 +196,10 @@ msgstr ""
 "their depths are close."
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:130
-#: 278ac92d1aa44e0d837f6c6280002965
 msgid "峰谷平均法"
 msgstr "Peak-Trough averaging method"
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:131
-#: 6477c4c8047842398c94952e45f480c0
 msgid ""
 "具体原理很简洁易懂，从以下图像中你也能了解大概。详见 :ref:`(Zhang et al., 2003) <zhang_2003>` "
 ":ref:`(张海明, 2021) <zhang_book_2021>`。"
@@ -239,7 +209,6 @@ msgstr ""
 "<zhang_2003>` :ref:`(Zhang Haiming, 2021) <zhang_book_2021>` for details."
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:133
-#: d847dd7a10994a9797cc5fd5ed8f6ba6
 msgid ""
 "在以上示例中，当震源和场点深度接近时，你会注意到输出的核函数文件增加了，这是因为程序内部设定 "
 "**当震源和场点深度差小于1km时，自动使用峰谷平均法（PTAM）**。具体流程为，程序中在进行完离散波数积分后，继续增加k（不同震中距使用不同dk），使用PTAM寻找足够数量的波峰和波谷（内部设定为36个），再对这些波峰波谷取缩减序列"
@@ -260,7 +229,6 @@ msgstr ""
 "for the reduction sequence is as follows,"
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:144
-#: 415e097454b64cafbe18a04198b95d1d
 msgid ""
 "在 ``K_{iw}_{freq}`` 文件同级目录下，程序把 **PTAM过程中的核函数以及积分峰谷位置分为两个文件** 保存在 "
 "``PTAM_{ir}_{dist}/`` 目录下（ ``{ir}`` 为震中距索引， ``{dist}`` 为震中距），其中  "
@@ -277,21 +245,18 @@ msgstr ""
 "records the peaks and troughs of the integral values."
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:148
-#: 53bc22d888bd422fb5c766696abb5a9f
 msgid ":command:`grt.k2a` 程序也支持将 ``PTAM_{ir}_{dist}/PTAM_{iw}_{freq}`` 文件转为文本格式，"
 msgstr ""
 "The :command:`grt.k2a` program also supports converting the "
 "``PTAM_{ir}_{dist}/PTAM_{iw}_{freq}`` file into text format."
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:160
-#: cd259ed7968945958e3c1abf0b96f0a1
 msgid "记录了不同震源、不同积分类型的峰谷位置。"
 msgstr ""
 "Records the peak-trough positions for different sources and integral "
 "types."
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:163
-#: d977291e151a4f57b94d3c560dd09ff6
 msgid ""
 "故为了绘制完整的波数积分+PTAM过程，涉及三个文件。不过Python函数已经做了优化，由于程序输出的目录结构固定，文件命名格式固定，只需传入 "
 "``PTAM_{ir}_{dist}/PTAM_{iw}_{freq}`` 文件，Python函数会自动读取对应的三个文件。"
@@ -304,7 +269,6 @@ msgstr ""
 "automatically read the corresponding three files."
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:174
-#: 2ec69cfec0b64ac7bdb938156a47b148
 msgid "红十字为选取的波峰波谷，再取缩减序列即可得到估计的积分收敛值。"
 msgstr ""
 "The red crosses represent the selected peaks and troughs, and the "
@@ -312,12 +276,10 @@ msgstr ""
 "reduction sequence."
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:179
-#: 3f2ee24207844b0596f51150b875939e
 msgid "静态解的积分收敛性"
 msgstr "Integral convergence of static solutions"
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:180
-#: f6b1a03c70be4910bff29ae1664c9f66
 msgid "以上部分是以动态解为例，静态解从积分类型、收敛特征、文件格式、绘图完全类似，只是不再有频率索引值。"
 msgstr ""
 "The above section uses dynamic solutions as an example. Static solutions "
@@ -326,7 +288,6 @@ msgstr ""
 "frequency index."
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:184
-#: a4559764a2de45c2931d082fc377f79b
 msgid ""
 "核函数文件中记录的值非最终核函数值。对于静态解，还需乘 :math:`\\left(\\dfrac{\\Delta "
 "k}{4\\pi\\mu}\\right)`。"
@@ -336,7 +297,6 @@ msgstr ""
 ":math:`\\left(\\dfrac{\\Delta k}{4\\pi\\mu}\\right)`."
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:186
-#: 9b0645ba48404d1793eddb498cecb384
 msgid "假设震源深度0.1km，场点位于地表，场点仅定义一个点(2,2)做示例，这里直接给出脚本。"
 msgstr ""
 "Assume the source depth is 0.1km, the field point is on the surface, and "
@@ -344,12 +304,10 @@ msgstr ""
 "directly here."
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:207
-#: 2401fffa26974696a6de399dc3c96de5
 msgid "**只使用离散波数积分**"
 msgstr "**Only use discrete wavenumber integration**"
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:215
-#: f16724d784f6468fb1cacffe39c2fce8
 msgid "**使用峰谷平均法**"
 msgstr "**Use Peak-Trough averaging method**"
 

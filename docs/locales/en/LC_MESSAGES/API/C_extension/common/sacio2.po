@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
+"Project-Id-Version: PyGRT 0.7.1.dev5+g2230cdc.d20250427\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"POT-Creation-Date: 2025-04-27 12:43+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -20,22 +20,18 @@ msgstr ""
 "Generated-By: Babel 2.16.0\n"
 
 #: ../../source/API/C_extension/common/sacio2.rst:2
-#: d98e4e5ff1d44aabb066a0066cb89934
 msgid "sacio2.h"
 msgstr ""
 
 #: ../../source/API/C_extension/common/sacio2.rst
-#: f79d55115f184aef84a1d021e6707f6a
 msgid "Functions"
 msgstr ""
 
 #: ../../source/API/C_extension/common/sacio2.rst
-#: 458412aabe4d4b81aa04d5a1e840ecf3 71e47891304142668823c11ade6bf705
 msgid "参数"
 msgstr ""
 
 #: ../../source/API/C_extension/common/sacio2.rst
-#: e7afe3c9ab6f4a1fb72592db9d17b587
 msgid "返回"
 msgstr ""
 

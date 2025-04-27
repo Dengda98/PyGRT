@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
+"Project-Id-Version: PyGRT 0.7.1.dev5+g2230cdc.d20250427\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"POT-Creation-Date: 2025-04-27 12:43+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -20,38 +20,26 @@ msgstr ""
 "Generated-By: Babel 2.16.0\n"
 
 #: ../../source/API/C_extension/common/model.rst:2
-#: 146ff1af716e42c9bd73f991c9f858f5
 msgid "model.h"
 msgstr ""
 
 #: ../../source/API/C_extension/common/model.rst
-#: e5e50fa4065a4957810c7abf37fcbd08
 msgid "Typedefs"
 msgstr ""
 
 #: ../../source/API/C_extension/common/model.rst
-#: 4462b341925045f6990db9375e727bc9
 msgid "Functions"
 msgstr ""
 
 #: ../../source/API/C_extension/common/model.rst
-#: 13d7765d0b8b4497b85dff1a53ab8c35 1d21676c4f1f4aa7b47182e8808d465e
-#: 2bb39a37140645a1a5c4e569cf4db19d 612dfe1179a44fd0b74cbe678258bc14
-#: 73cc787b40374b34b1892a748ca40d3b 754a89f5c1264a468c2ebe8a0a351fcb
-#: 9cd6ce0c05b94294a229d939a1872bad a0dbb59ff77949489ca73de345331d1d
-#: bd6443bc36a04878be00174700703aca d75b08ead0104866b491cacab8374f09
 msgid "参数"
 msgstr ""
 
 #: ../../source/API/C_extension/common/model.rst
-#: 355f3746cdda4d49b4a1737d59cf3070 6f0cf1bb9a2942aa8f9af7e94ba44f93
-#: cbbfc9cab15c4f8b943d28fd2db3539d
 msgid "返回"
 msgstr ""
 
 #: ../../source/API/C_extension/common/model.rst
-#: 6c773f15b1834fdb933b4442c8ce29c6 b1efe8de57ec49dcaf64dabd0b6c02fb
-#: b92f0b97869f4b109c6c5c28d82e00a1 e1e701639e014dc5a7089f3e13fc13ee
 msgid "Public Members"
 msgstr ""
 

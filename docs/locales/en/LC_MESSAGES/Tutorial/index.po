@@ -19,27 +19,27 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.16.0\n"
 
-#: ../../source/Tutorial/index.rst:2 053f43536cdd431d8549574dadb9cb61
+#: ../../source/Tutorial/index.rst:2 
 msgid "简易教程"
 msgstr "Simple Tutorial"
 
-#: ../../source/Tutorial/index.rst 2c24e5dc56c74701989143be5b5718b4
+#: ../../source/Tutorial/index.rst 
 msgid "Author"
 msgstr ""
 
-#: ../../source/Tutorial/index.rst:4 9a32193861da4d05ba0749505f56274b
+#: ../../source/Tutorial/index.rst:4 
 msgid "Zhu Dengda"
 msgstr ""
 
-#: ../../source/Tutorial/index.rst cd21c797b3804ab59f6453aeb5f4d844
+#: ../../source/Tutorial/index.rst 
 msgid "Email"
 msgstr ""
 
-#: ../../source/Tutorial/index.rst:5 c0a442bba273453c9719e9f4eb881cdd
+#: ../../source/Tutorial/index.rst:5 
 msgid "zhudengda@mail.iggcas.ac.cn"
 msgstr ""
 
-#: ../../source/Tutorial/index.rst:9 cdcec9ee34c845b494e517d65b35c4ca
+#: ../../source/Tutorial/index.rst:9 
 msgid ""
 "**PyGRT** 程序包由C和Python两个编程语言的代码组成，目的是兼并高效性和便捷性。底层复杂运算由C语言编写，编译链接成动态库 "
 "``libgrt.so`` 供Python调用。Python通过 ``ctypes`` "
@@ -49,7 +49,7 @@ msgstr ""
 "``libgrt.so`` for Python to call. Python uses the ``ctypes`` "
 "library to import the dynamic library and utilize external functions, thus combining the efficiency of C with the convenience of Python."
 
-#: ../../source/Tutorial/index.rst:11 1b91bbca71bc45e1902aaefd89ba106f
+#: ../../source/Tutorial/index.rst:11 
 msgid ""
 "除了Python脚本式运行， **PyGRT** 保留传统命令行式运行C程序，即在建立动态库过程中也编译了一些可执行文件。 "
 "**C程序的运行独立于Python，不需要Python环境，以满足更多计算场景。** 每个C程序可使用 ``-h`` 查看帮助。"
@@ -57,23 +57,23 @@ msgstr ""
 "In addition to running Python scripts, **PyGRT** retains the traditional command-line style for running C programs, where some executable files are also compiled during the creation of the dynamic library. "
 "**The execution of C programs is independent of Python and does not require a Python environment, catering to more computational scenarios.** Each C program can use ``-h`` to view help."
 
-#: ../../source/Tutorial/index.rst:13 a33ae3c27380436d92e4023910066fd3
+#: ../../source/Tutorial/index.rst:13 
 msgid "计算 **动态解** 的主要计算流程如下："
 msgstr "The main computational process for calculating **dynamic solutions** is as follows:"
 
-#: ../../source/Tutorial/index.rst:15 d2bc453653514906830f19024a76985a
+#: ../../source/Tutorial/index.rst:15 
 msgid "Python"
 msgstr ""
 
-#: ../../source/Tutorial/index.rst:45 512f406640ed4bd28dfb3098c570ad7c
+#: ../../source/Tutorial/index.rst:45 
 msgid "C"
 msgstr ""
 
-#: ../../source/Tutorial/index.rst:75 dbf4a539e7a148d7a5ff4542e5fffe4b
+#: ../../source/Tutorial/index.rst:75 
 msgid "计算 **静态解** 的过程相同，只是函数名称和程序名称有变化。"
 msgstr "The process for calculating **static solutions** is the same, only the function names and program names differ."
 
-#: ../../source/Tutorial/index.rst:78 aae783d5f56e4d4894e556cacd04142f
+#: ../../source/Tutorial/index.rst:78 
 msgid ""
 "以下是一些简易教程，可快速上手。Github主页的 :rst:dir:`example/` 文件夹中有更多示例，可在 `Github "
 "Releases <https://github.com/Dengda98/PyGRT/releases>`_ 中下载。"

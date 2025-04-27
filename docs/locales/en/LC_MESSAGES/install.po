@@ -19,11 +19,11 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.16.0\n"
 
-#: ../../source/install.rst:5 4ba143b274a84ddabf96a1e4551d03ec
+#: ../../source/install.rst:5
 msgid "安装"
 msgstr "Installation"
 
-#: ../../source/install.rst ebf41afdaae944bf8a8287ca457b8149
+#: ../../source/install.rst
 msgid "Author"
 msgstr ""
 

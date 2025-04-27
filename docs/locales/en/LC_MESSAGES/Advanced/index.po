@@ -19,27 +19,27 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.16.0\n"
 
-#: ../../source/Advanced/index.rst:2 d1c66ef87384434696f244d8b6ef22ec
+#: ../../source/Advanced/index.rst:2 
 msgid "进阶教程"
 msgstr "Advanced Tutorial"
 
-#: ../../source/Advanced/index.rst 2c15e09c24da41c0bbaf822ea0dc632d
+#: ../../source/Advanced/index.rst 
 msgid "Author"
 msgstr ""
 
-#: ../../source/Advanced/index.rst:4 38b4e3d42a5c450d9c59c99a38c95196
+#: ../../source/Advanced/index.rst:4 
 msgid "Zhu Dengda"
 msgstr ""
 
-#: ../../source/Advanced/index.rst 4bc4c1eaa6ae41d48a6f182a4022a9dc
+#: ../../source/Advanced/index.rst 
 msgid "Email"
 msgstr ""
 
-#: ../../source/Advanced/index.rst:5 0b13dd0abd00491d8cc6fba892eaa751
+#: ../../source/Advanced/index.rst:5 
 msgid "zhudengda@mail.iggcas.ac.cn"
 msgstr ""
 
-#: ../../source/Advanced/index.rst:9 ad9b71e9809440c8b072f7a0dbfb2ee9
+#: ../../source/Advanced/index.rst:9 
 msgid "以下介绍更多的细节控制及用法。"
 msgstr "The following introduces more detailed controls and usage."
 

@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
+"Project-Id-Version: PyGRT 0.7.1.dev5+g2230cdc.d20250427\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"POT-Creation-Date: 2025-04-27 12:43+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -19,23 +19,23 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.16.0\n"
 
-#: ../../source/API/api.rst:2 7abc91b4ae5d4cd0a51c3bd90d6e6521
+#: ../../source/API/api.rst:2
 msgid "Application Programming Interface"
 msgstr ""
 
-#: ../../source/API/api.rst 670a8aa99daf42edb471cceaca2c7d68
+#: ../../source/API/api.rst
 msgid "Author"
 msgstr ""
 
-#: ../../source/API/api.rst:4 62129516dcf44320b6545c63f5ce2e46
+#: ../../source/API/api.rst:4
 msgid "Zhu Dengda"
 msgstr ""
 
-#: ../../source/API/api.rst b0a304df385e4fee892e3c4c58012020
+#: ../../source/API/api.rst
 msgid "Email"
 msgstr ""
 
-#: ../../source/API/api.rst:5 4f2222f561274c01909b783b1259c8c2
+#: ../../source/API/api.rst:5
 msgid "zhudengda@mail.iggcas.ac.cn"
 msgstr ""
 
