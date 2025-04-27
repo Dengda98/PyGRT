@@ -20,7 +20,7 @@ st_grn = pymod.compute_grn(dist, nt, dt)[0]
 # synthetic
 S=1e24
 az=39.2
-st = pygrt.utils.gen_syn_from_gf_EXP(st_grn, S, az)
+st = pygrt.utils.gen_syn_from_gf_EX(st_grn, S, az)
 sigs = pygrt.sigs.gen_triangle_wave(0.4, dt)
 pygrt.utils.stream_convolve(st, sigs)
 pygrt.utils.stream_write_sac(st, "syn_exp/pout")

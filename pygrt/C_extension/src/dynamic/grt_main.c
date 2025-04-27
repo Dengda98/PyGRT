@@ -102,7 +102,7 @@ static char **s_statsidxs = NULL;
 static MYINT nstatsidxs=0;
 static MYINT *statsidxs = NULL;
 // 计算哪些格林函数，确定震源类型, 默认计算全部
-static bool doEXP=true, doVF=true, doHF=true, doDC=true;
+static bool doEX=true, doVF=true, doHF=true, doDC=true;
 
 // 是否计算位移空间导数
 static bool calc_upar=false;
@@ -261,9 +261,9 @@ printf("\n"
 "\n"
 "    -G<b1>[/<b2>/<b3>/<b4>]\n"
 "                 Designed to choose which kind of source's Green's \n"
-"                 functions will be computed, default is all (%d/%d/%d/%d). \n", (int)doEXP, (int)doVF, (int)doHF, (int)doDC); printf(
+"                 functions will be computed, default is all (%d/%d/%d/%d). \n", (int)doEX, (int)doVF, (int)doHF, (int)doDC); printf(
 "                 Four bool type (0 or 1) options are\n"
-"                 <b1>: Explosion (EXP)\n"
+"                 <b1>: Explosion (EX)\n"
 "                 <b2>: Vertical Force (VF)\n"
 "                 <b3>: Horizontal Force (HF)\n"
 "                 <b4>: Shear (DC)\n"
@@ -521,7 +521,7 @@ static void getopt_from_command(int argc, char **argv){
             // 选择要计算的格林函数 -G1/1/1/1
             case 'G': 
                 G_flag = 1;
-                doEXP = doVF = doHF = doDC = false;
+                doEX = doVF = doHF = doDC = false;
                 {
                     int i1, i2, i3, i4;
                     i1 = i2 = i3 = i4 = 0;
@@ -529,14 +529,14 @@ static void getopt_from_command(int argc, char **argv){
                         fprintf(stderr, "[%s] " BOLD_RED "Error in -G.\n" DEFAULT_RESTORE, command);
                         exit(EXIT_FAILURE);
                     };
-                    doEXP = (i1!=0);
+                    doEX = (i1!=0);
                     doVF  = (i2!=0);
                     doHF  = (i3!=0);
                     doDC  = (i4!=0);
                 }
                 
                 // 至少要有一个真
-                if(!(doEXP || doVF || doHF || doDC)){
+                if(!(doEX || doVF || doHF || doDC)){
                     fprintf(stderr, "[%s] " BOLD_RED "Error! At least set one true value in -G.\n" DEFAULT_RESTORE, command);
                     exit(EXIT_FAILURE);
                 }
@@ -792,7 +792,7 @@ static void print_parameters(){
         
     printf("| %-*s | ", nlen1-3, "sources");
     tmp[0] = '\0';
-    if(doEXP) snprintf(tmp+strlen(tmp), sizeof(tmp)-strlen(tmp), "EX,");
+    if(doEX) snprintf(tmp+strlen(tmp), sizeof(tmp)-strlen(tmp), "EX,");
     if(doVF)  snprintf(tmp+strlen(tmp), sizeof(tmp)-strlen(tmp), "VF,");
     if(doHF)  snprintf(tmp+strlen(tmp), sizeof(tmp)-strlen(tmp), "HF,");
     if(doDC)  snprintf(tmp+strlen(tmp), sizeof(tmp)-strlen(tmp), "DC,");
@@ -1149,7 +1149,7 @@ int main(int argc, char **argv) {
         strcpy(hd.kt1, "S");
 
         for(int im=0; im<SRC_M_NUM; ++im){
-            if(!doEXP && im==0)  continue;
+            if(!doEX && im==0)  continue;
             if(!doVF  && im==1)  continue;
             if(!doHF  && im==2)  continue;
             if(!doDC  && im>=3)  continue;

@@ -203,7 +203,7 @@ class PyModel1D:
         delayT0:float=0.0,
         delayV0:float=0.0,
         calc_upar:bool=False,
-        gf_source=['EXP', 'VF', 'HF', 'DC'],
+        gf_source=['EX', 'VF', 'HF', 'DC'],
         statsfile:Union[str,None]=None, 
         statsidxs:Union[np.ndarray,List[int],None]=None, 
         print_runtime:bool=True):
@@ -243,7 +243,7 @@ class PyModel1D:
         depsrc = self.depsrc
         deprcv = self.deprcv
 
-        calc_EXP:bool = 'EXP' in gf_source
+        calc_EX:bool = 'EX' in gf_source
         calc_VF:bool = 'VF' in gf_source
         calc_HF:bool = 'HF' in gf_source
         calc_DC:bool = 'DC' in gf_source

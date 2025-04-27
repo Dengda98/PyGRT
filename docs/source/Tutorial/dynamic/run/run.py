@@ -124,19 +124,19 @@ def plot_int_dif(stsyn:Stream, stsyn_int:Stream, stsyn_dif:Stream, comp:str, out
 
 
 # -----------------------------------------------------------------------------------
-# BEGIN SYN EXP
+# BEGIN SYN EX
 # 接之前的代码
 idx = 2
 stgrn = stgrnLst[idx]   # 选择格林函数
 
-stsyn = pygrt.utils.gen_syn_from_gf_EXP(stgrn, M0=1e24, az=30)
+stsyn = pygrt.utils.gen_syn_from_gf_EX(stgrn, M0=1e24, az=30)
 print(stsyn)
 # 3 Trace(s) in Stream:
 # .SYN..EXZ | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
 # .SYN..EXR | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
 # .SYN..EXT | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
 plot_syn(stsyn, "syn_exp.png")
-# END SYN EXP
+# END SYN EX
 # -----------------------------------------------------------------------------------
 
 # -----------------------------------------------------------------------------------

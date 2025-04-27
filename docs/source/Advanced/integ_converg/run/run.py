@@ -26,7 +26,7 @@ stgrnLst = pymod.compute_grn(
 # 返回的是自定义类型的numpy数组
 statsdata = pygrt.utils.read_statsfile(f"pygrtstats_{depsrc}_{deprcv}/K_0050_*")
 print(statsdata.dtype)
-# [('k', '<f8'), ('EXP_q0', '<c16'), ('EXP_w0', '<c16'), ('VF_q0', '<c16'), ('VF_w0', '<c16'), ('HF_q1', '<c16'), ('HF_w1', '<c16'), ('HF_v1', '<c16'), ('DC_q0', '<c16'), ('DC_w0', '<c16'), ('DC_q1', '<c16'), ('DC_w1', '<c16'), ('DC_v1', '<c16'), ('DC_q2', '<c16'), ('DC_w2', '<c16'), ('DC_v2', '<c16')]
+# [('k', '<f8'), ('EX_q', '<c16'), ('EX_w', '<c16'), ('VF_q', '<c16'), ('VF_w', '<c16'), ('HF_q', '<c16'), ('HF_w', '<c16'), ('HF_v', '<c16'), ('DD_q', '<c16'), ('DD_w', '<c16'), ('DS_q', '<c16'), ('DS_w', '<c16'), ('DS_v', '<c16'), ('SS_q', '<c16'), ('SS_w', '<c16'), ('SS_v', '<c16')]
 # END read statsfile
 # -------------------------------------------------------------------
 

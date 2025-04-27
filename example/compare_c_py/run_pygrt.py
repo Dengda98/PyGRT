@@ -105,7 +105,7 @@ M33=1.2
 for ZNE in [False, True]:
     # synthetic
     
-    st = pygrt.utils.gen_syn_from_gf_EXP(st_grn, S, az, ZNE=ZNE, calc_upar=True)
+    st = pygrt.utils.gen_syn_from_gf_EX(st_grn, S, az, ZNE=ZNE, calc_upar=True)
     sigs = pygrt.sigs.gen_triangle_wave(0.4, dt)
     pygrt.utils.stream_convolve(st, sigs)
     AVGRERR.append(compare3(st, "syn_exp/cout", ZNE=ZNE))
@@ -158,7 +158,7 @@ static_grn = pymod.compute_static_grn(xarr, yarr, calc_upar=True)
 
 for ZNE in [False, True]:
     suffix = "-N" if ZNE else ""
-    static_syn = pygrt.utils.gen_syn_from_gf_EXP(static_grn, S, ZNE=ZNE, calc_upar=True)
+    static_syn = pygrt.utils.gen_syn_from_gf_EX(static_grn, S, ZNE=ZNE, calc_upar=True)
     AVGRERR.append(static_compare3(static_syn, f"static/stsyn_exp{suffix}"))
     ststrain = pygrt.utils.compute_strain(static_syn)
     strotation = pygrt.utils.compute_rotation(static_syn)

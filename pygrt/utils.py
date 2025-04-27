@@ -38,7 +38,7 @@ from .c_interfaces import *
 __all__ = [
     "gen_syn_from_gf_DC",
     "gen_syn_from_gf_SF",
-    "gen_syn_from_gf_EXP",
+    "gen_syn_from_gf_EX",
     "gen_syn_from_gf_MT",
 
     "compute_strain",
@@ -71,7 +71,7 @@ def _gen_syn_from_gf(st:Stream, calc_upar:bool, compute_type:str, M0:float, az:f
         :param    st:              计算好的时域格林函数, :class:`obspy.Stream` 类型
         :param    calc_upar:       是否计算位移u的空间导数
         :param    compute_type:    计算类型，应为以下之一: 
-                                    'COMPUTE_EXP'(爆炸源), 'COMPUTE_SF'(单力源),
+                                    'COMPUTE_EX'(爆炸源), 'COMPUTE_SF'(单力源),
                                     'COMPUTE_DC'(剪切源), 'COMPUTE_MT'(矩张量源)
         :param    M0:              标量地震矩, 单位dyne*cm
         :param    az:              方位角(度)
@@ -144,7 +144,7 @@ def _gen_syn_from_static_gf(grn:dict, calc_upar:bool, compute_type:str, M0:float
         :param    grn:             计算好的静态格林函数, 字典类型
         :param    calc_upar:       是否计算位移u的空间导数
         :param    compute_type:    计算类型，应为以下之一: 
-                                    'COMPUTE_EXP'(爆炸源), 'COMPUTE_SF'(单力源),
+                                    'COMPUTE_EX'(爆炸源), 'COMPUTE_SF'(单力源),
                                     'COMPUTE_DC'(剪切源), 'COMPUTE_MT'(矩张量源)
         :param    M0:              标量地震矩, 单位dyne*cm
         :param    ZNE:             是否以ZNE分量输出?
@@ -332,7 +332,7 @@ def _set_source_radi(
         :param    par_theta:       是否求对theta的偏导
         :param    coef:            比例系数
         :param    compute_type:    计算类型，应为以下之一: 
-                                    'COMPUTE_EXP'(爆炸源), 'COMPUTE_SF'(单力源),
+                                    'COMPUTE_EX'(爆炸源), 'COMPUTE_SF'(单力源),
                                     'COMPUTE_DC'(剪切源), 'COMPUTE_MT'(矩张量源)
         :param    M0:              地震矩
         :param    azrad:           方位角(弧度)
@@ -355,7 +355,7 @@ def _set_source_radi(
         mult = 1e-20 * M0 * coef 
 
     # 根据不同计算类型处理
-    if compute_type == 'COMPUTE_EXP':
+    if compute_type == 'COMPUTE_EX':
         # 爆炸源情况
         src_coef[0, 0] = src_coef[0, 1] = 0.0 if par_theta else mult  # Z/R分量
         src_coef[0, 2] = 0.0  # T分量
@@ -491,7 +491,7 @@ def gen_syn_from_gf_SF(st:Union[Stream,dict], S:float, fN:float, fE:float, fZ:fl
         raise NotImplementedError
 
 
-def gen_syn_from_gf_EXP(st:Union[Stream,dict], M0:float, az:float=-999, ZNE=False, calc_upar:bool=False):
+def gen_syn_from_gf_EX(st:Union[Stream,dict], M0:float, az:float=-999, ZNE=False, calc_upar:bool=False):
     '''
         爆炸源
 
@@ -507,9 +507,9 @@ def gen_syn_from_gf_EXP(st:Union[Stream,dict], M0:float, az:float=-999, ZNE=Fals
     if isinstance(st, Stream):
         if az > 360 or az < -360:
             raise ValueError(f"WRONG azimuth ({az})")
-        return _gen_syn_from_gf(st, calc_upar, "COMPUTE_EXP", M0, az, ZNE)
+        return _gen_syn_from_gf(st, calc_upar, "COMPUTE_EX", M0, az, ZNE)
     elif isinstance(st, dict):
-        return _gen_syn_from_static_gf(st, calc_upar, "COMPUTE_EXP", M0, ZNE)
+        return _gen_syn_from_static_gf(st, calc_upar, "COMPUTE_EX", M0, ZNE)
     else:
         raise NotImplementedError
     
@@ -1241,7 +1241,7 @@ def read_kernels_freqs(statsdir:str, vels:np.ndarray, ktypes:Union[List[str],Non
 
         :param        statsdir:     存储积分过程文件的目录
         :param        vels:         待插值的速度数组(km/s)，必须正序
-        :param        ktype:        指定返回一系列的核函数名称，如EXP_q0，DC_w2等，默认返回全部
+        :param        ktype:        指定返回一系列的核函数名称，如EX_q，DS_w等，默认返回全部
 
         :return:
             - **kerDct**  -   字典格式的核函数插值结果

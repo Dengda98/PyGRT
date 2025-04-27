@@ -21,7 +21,6 @@
  * 静态kernel函数根据(5.5.3)式递推计算静态广义反射透射矩阵。递推公式适用于动态和静态情况。
  * 函数参数与动态kernel函数保持一致，具体说明详见`dynamic/propagate.h`。
  * 
- * 此处omega未使用，传入0即可
  */
 void static_kernel(
     const MODEL1D *mod1d, MYREAL k, MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
