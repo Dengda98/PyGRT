@@ -54,7 +54,7 @@ Python中合成静态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.uti
             :end-before: END SYN EX
 
 
-.. image:: run/syn_exp.png
+.. image:: run/syn_ex.png
     :width: 500px
     :align: center
 

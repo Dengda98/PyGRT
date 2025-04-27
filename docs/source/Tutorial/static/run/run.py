@@ -45,7 +45,7 @@ def plot_static(static_syn:dict, srctype:str, out:Union[str,None]=None):
 static_syn = pygrt.utils.gen_syn_from_gf_EX(static_grn, M0=1e24, ZNE=True)
 print(static_syn.keys())
 # dict_keys(['_xarr', '_yarr', '_src_va', '_src_vb', '_src_rho', '_rcv_va', '_rcv_vb', '_rcv_rho', 'EXZ', 'EXN', 'EXE'])
-plot_static(static_syn, "EX", "syn_exp.png")
+plot_static(static_syn, "EX", "syn_ex.png")
 # END SYN EX
 # ---------------------------------------------------------------------------------
 

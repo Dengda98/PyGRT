@@ -18,7 +18,7 @@ G=$out/${modname}_${depsrc}_${deprcv}_${dist}
 P=cout
 S=1e24
 az=39.2
-grt.syn -G$G -Osyn_exp -P$P -A$az -S$S -Dt/0.2/0.2/0.4
+grt.syn -G$G -Osyn_ex -P$P -A$az -S$S -Dt/0.2/0.2/0.4
 
 fn=2
 fe=-1

@@ -47,12 +47,12 @@ echo "..." >> grn_head
 # ---------------------------------------------------------------------------------
 # BEGIN SYN EXP
 # 从标准输入中读取格林函数
-stgrt.syn -S1e24 -N < grn > syn_exp
+stgrt.syn -S1e24 -N < grn > syn_ex
 # END SYN EXP
 # ---------------------------------------------------------------------------------
 
-# gmt begin syn_exp png E300
-#     gmtplot_static syn_exp -Si0.03c
+# gmt begin syn_ex png E300
+#     gmtplot_static syn_ex -Si0.03c
 #     gmt colorbar -Bx+l"Z (cm)"
 # gmt end
 
