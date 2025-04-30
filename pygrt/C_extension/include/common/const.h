@@ -9,8 +9,8 @@
 #pragma once
 
 #include <complex.h> 
-#include <math.h>
-// #include <tgmath.h>
+#include <tgmath.h>
+// #include <math.h>
 
 // CMPLX macro not exist on MacOS
 #ifndef CMPLX
@@ -144,6 +144,8 @@ typedef int MYINT;  ///< 整数
 #define PTAM_WINDOW_SIZE  3      ///< 3，  使用连续点数判断是否为波峰或波谷
 #define PTAM_MAX_WAITS    9      ///< 9,   判断波峰或波谷的最大等待次数，不能太小
 
+#define INVERSE_SUCCESS   0      ///< 求逆或除法没有遇到除0错误
+#define INVERSE_FAILURE   -1     ///< 求逆或除法遇到除0错误
 
 /** 分别对应爆炸源(0阶)，垂直力源(0阶)，水平力源(1阶)，剪切源(0,1,2阶) */ 
 extern const MYINT SRC_M_ORDERS[SRC_M_NUM];
