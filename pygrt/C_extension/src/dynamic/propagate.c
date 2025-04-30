@@ -157,8 +157,10 @@ void kernel(
         mod1d_mu1 = lay->mu;
         mod1d_kaka1 = lay->kaka;
         mod1d_kbkb1 = lay->kbkb;
-        mod1d_xa1 = CSQRT(RONE - mod1d_kaka1/(k*k));
-        mod1d_xb1 = CSQRT(RONE - mod1d_kbkb1/(k*k));
+        // mod1d_xa1 = CSQRT(RONE - mod1d_kaka1/(k*k));
+        // mod1d_xb1 = CSQRT(RONE - mod1d_kbkb1/(k*k));
+        mod1d_xa1 = CSQRT(k*k - mod1d_kaka1)/k;
+        mod1d_xb1 = CSQRT(k*k - mod1d_kbkb1)/k;
 
         if(0==iy){
             top_xa = mod1d_xa1;

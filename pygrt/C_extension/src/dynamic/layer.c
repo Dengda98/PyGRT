@@ -26,21 +26,20 @@ void calc_R_tilt(
 {   
 
     // // 公式(5.3.10-14)
-    MYREAL k_inv = RONE/k;
-    MYCOMPLEX Delta_inv = RZERO;
-    MYREAL k2inv = k_inv*k_inv; 
-    MYCOMPLEX kbkb_k2inv = kbkb0*k2inv;
+    MYCOMPLEX Delta = RZERO;
+    MYREAL kk = k*k; 
+    MYCOMPLEX kbkb_k2inv = kbkb0/kk;
     MYCOMPLEX kbkb_k4inv = RQUART*kbkb_k2inv*kbkb_k2inv;
 
     // 对公式(5.3.10-14)进行重新整理，对浮点数友好一些
-    Delta_inv = RONE / (-RONE + xa0*xb0 + kbkb_k2inv - kbkb_k4inv);
-    if(Delta_inv == CZERO){
+    Delta = -RONE + xa0*xb0 + kbkb_k2inv - kbkb_k4inv;
+    if(Delta == CZERO){
         *stats = INVERSE_FAILURE;
         return;
     }
-    R_tilt[0][0] = (RONE + xa0*xb0 - kbkb_k2inv + kbkb_k4inv) * Delta_inv;
-    R_tilt[0][1] = RTWO * xb0 * (RONE - RHALF*kbkb_k2inv) * Delta_inv;
-    R_tilt[1][0] = RTWO * xa0 * (RONE - RHALF*kbkb_k2inv) * Delta_inv;
+    R_tilt[0][0] = (RONE + xa0*xb0 - kbkb_k2inv + kbkb_k4inv) / Delta;
+    R_tilt[0][1] = RTWO * xb0 * (RONE - RHALF*kbkb_k2inv) / Delta;
+    R_tilt[1][0] = RTWO * xa0 * (RONE - RHALF*kbkb_k2inv) / Delta;
     R_tilt[1][1] = R_tilt[0][0];
 }
 
@@ -126,13 +125,12 @@ void calc_RT_2x2(
     
 
     // 定义一些中间变量来简化运算和书写
-    MYREAL k_inv = RONE/k;
-    MYREAL k2_inv = k_inv*k_inv;
+    MYREAL kk = k*k;
     MYCOMPLEX dmu = mu1 - mu2;
     MYCOMPLEX dmu2 = dmu*dmu;
 
-    MYCOMPLEX kb1_k2 = kbkb1*k2_inv;
-    MYCOMPLEX kb2_k2 = kbkb2*k2_inv;
+    MYCOMPLEX kb1_k2 = kbkb1/kk;
+    MYCOMPLEX kb2_k2 = kbkb2/kk;
     MYCOMPLEX mu1kb1_k2 = mu1*kb1_k2;
     MYCOMPLEX mu2kb2_k2 = mu2*kb2_k2;
 
@@ -145,47 +143,42 @@ void calc_RT_2x2(
     // 故会发生严重精度损失的情况。目前只在实部上观察到这个现象，虚部基本都在相近量级(或许是相对不明显)
     // 
     // 以下对公式重新整理，提出k的高阶项，以避免上述问题
-    MYCOMPLEX Delta_inv;
-    Delta_inv =   dmu2*(RONE-xa1*xb1)*(RONE-xa2*xb2) + mu1kb1_k2*dmu*(rho21*(RONE-xa1*xb1) - (RONE-xa2*xb2)) 
-                + RQUART*mu1kb1_k2*mu2kb2_k2*(rho12*(RONE-xa2*xb2) + rho21*(RONE-xa1*xb1) - RTWO - (xa1*xb2+xa2*xb1));
+    MYCOMPLEX Delta;
+    Delta =   dmu2*(RONE-xa1*xb1)*(RONE-xa2*xb2) + mu1kb1_k2*dmu*(rho21*(RONE-xa1*xb1) - (RONE-xa2*xb2)) 
+            + RQUART*mu1kb1_k2*mu2kb2_k2*(rho12*(RONE-xa2*xb2) + rho21*(RONE-xa1*xb1) - RTWO - (xa1*xb2+xa2*xb1));
 
-    if( Delta_inv == CZERO ){
+    if( Delta == CZERO ){
         // printf("# zero Delta_inv=%e+%eJ\n", CREAL(Delta_inv), CIMAG(Delta_inv));
         *stats = INVERSE_FAILURE;
         return;
-    } else {
-        Delta_inv = RONE/(Delta_inv);
-    }
-
-    MYCOMPLEX Delta_inv_exa = Delta_inv * exa;
-    MYCOMPLEX Delta_inv_exb = Delta_inv * exb;
+    } 
 
     // REFELCTION
-    //------------------ RD -----------------------------------
-    // rpp+
     if(computeRayl){
+        //------------------ RD -----------------------------------
+        // rpp+
         RD[0][0] = ( - dmu2*(RONE+xa1*xb1)*(RONE-xa2*xb2) - mu1kb1_k2*dmu*(rho21*(RONE+xa1*xb1) - (RONE-xa2*xb2))
-                     - RQUART*mu1kb1_k2*mu2kb2_k2*(rho12*(RONE-xa2*xb2) + rho21*(RONE+xa1*xb1) - RTWO + (xa1*xb2-xa2*xb1))) * Delta_inv * ex2a;
+                     - RQUART*mu1kb1_k2*mu2kb2_k2*(rho12*(RONE-xa2*xb2) + rho21*(RONE+xa1*xb1) - RTWO + (xa1*xb2-xa2*xb1))) / Delta * ex2a;
         // rsp+
         RD[0][1] = ( - dmu2*(RONE-xa2*xb2) + RHALF*mu1kb1_k2*dmu*((RONE-xa2*xb2) - RTWO*rho21) 
-                     + RQUART*mu1kb1_k2*mu2kb2_k2*(RONE-rho21)) * Delta_inv * (-RTWO*xb1) * exab;
+                     + RQUART*mu1kb1_k2*mu2kb2_k2*(RONE-rho21)) / Delta * (-RTWO*xb1) * exab;
         // rps+
         RD[1][0] = RD[0][1]*(xa1/xb1);
         // rss+
         RD[1][1] = ( - dmu2*(RONE+xa1*xb1)*(RONE-xa2*xb2) - mu1kb1_k2*dmu*(rho21*(RONE+xa1*xb1) - (RONE-xa2*xb2))
-                     - RQUART*mu1kb1_k2*mu2kb2_k2*(rho12*(RONE-xa2*xb2) + rho21*(RONE+xa1*xb1) - RTWO - (xa1*xb2-xa2*xb1))) * Delta_inv * ex2b;
+                     - RQUART*mu1kb1_k2*mu2kb2_k2*(rho12*(RONE-xa2*xb2) + rho21*(RONE+xa1*xb1) - RTWO - (xa1*xb2-xa2*xb1))) / Delta * ex2b;
         //------------------ RU -----------------------------------
         // rpp-
         RU[0][0] = ( - dmu2*(RONE-xa1*xb1)*(RONE+xa2*xb2) - mu1kb1_k2*dmu*(rho21*(RONE-xa1*xb1) - (RONE+xa2*xb2))
-                     - RQUART*mu1kb1_k2*mu2kb2_k2*(rho12*(RONE+xa2*xb2) + rho21*(RONE-xa1*xb1) - RTWO - (xa1*xb2-xa2*xb1))) * Delta_inv;
+                     - RQUART*mu1kb1_k2*mu2kb2_k2*(rho12*(RONE+xa2*xb2) + rho21*(RONE-xa1*xb1) - RTWO - (xa1*xb2-xa2*xb1))) / Delta;
         // rsp-
         RU[0][1] = ( - dmu2*(RONE-xa1*xb1) - RHALF*mu1kb1_k2*dmu*(rho21*(RONE-xa1*xb1) - RTWO)
-                     + RQUART*mu1kb1_k2*mu2kb2_k2*(RONE-rho12)) * Delta_inv * (RTWO*xb2);
+                     + RQUART*mu1kb1_k2*mu2kb2_k2*(RONE-rho12)) / Delta * (RTWO*xb2);
         // rps-
         RU[1][0] = RU[0][1]*(xa2/xb2);
         // rss-
         RU[1][1] = ( - dmu2*(RONE-xa1*xb1)*(RONE+xa2*xb2) - mu1kb1_k2*dmu*(rho21*(RONE-xa1*xb1) - (RONE+xa2*xb2))
-                     - RQUART*mu1kb1_k2*mu2kb2_k2*(rho12*(RONE+xa2*xb2) + rho21*(RONE-xa1*xb1) - RTWO + (xa1*xb2-xa2*xb1))) * Delta_inv;
+                     - RQUART*mu1kb1_k2*mu2kb2_k2*(rho12*(RONE+xa2*xb2) + rho21*(RONE-xa1*xb1) - RTWO + (xa1*xb2-xa2*xb1))) / Delta;
     }
     if(computeLove){
         *RUL = (mu2*xb2 - mu1*xb1) / (mu2*xb2 + mu1*xb1) ;
@@ -196,13 +189,13 @@ void calc_RT_2x2(
 
     // REFRACTION
     if(computeRayl){
-        tmp = mu1kb1_k2*xa1*(dmu*(xb2-xb1) - RHALF*mu1kb1_k2*(rho21*xb1+xb2))*Delta_inv_exa;
+        tmp = mu1kb1_k2*xa1*(dmu*(xb2-xb1) - RHALF*mu1kb1_k2*(rho21*xb1+xb2)) / Delta * exa;
         TD[0][0] = tmp;     TU[0][0] = (rho21*xa2/xa1) * tmp;
-        tmp = mu1kb1_k2*xb1*(dmu*(RONE-xa1*xb2) - RHALF*mu1kb1_k2*(RONE-rho21))*Delta_inv_exb;
+        tmp = mu1kb1_k2*xb1*(dmu*(RONE-xa1*xb2) - RHALF*mu1kb1_k2*(RONE-rho21)) / Delta * exb;
         TD[0][1] = tmp;     TU[1][0] = (rho21*xa2/xb1) * tmp;
-        tmp = mu1kb1_k2*xa1*(dmu*(RONE-xa2*xb1) - RHALF*mu1kb1_k2*(RONE-rho21))*Delta_inv_exa;
+        tmp = mu1kb1_k2*xa1*(dmu*(RONE-xa2*xb1) - RHALF*mu1kb1_k2*(RONE-rho21)) / Delta * exa;
         TD[1][0] = tmp;     TU[0][1] = (rho21*xb2/xa1) * tmp;
-        tmp = mu1kb1_k2*xb1*(dmu*(xa2-xa1) - RHALF*mu1kb1_k2*(rho21*xa1+xa2))*Delta_inv_exb;
+        tmp = mu1kb1_k2*xb1*(dmu*(xa2-xa1) - RHALF*mu1kb1_k2*(rho21*xa1+xa2)) / Delta * exb;
         TD[1][1] = tmp;     TU[1][1] = (rho21*xb2/xb1) * tmp;
     }
     if(computeLove){

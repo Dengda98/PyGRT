@@ -28,14 +28,12 @@ inline GCC_ALWAYS_INLINE void cmat2x2_inv(const MYCOMPLEX M[2][2], MYCOMPLEX inv
         // det = RZERO;
         *stats = INVERSE_FAILURE;
         return;
-    } else {
-        det = RONE/det;
     }
 
-    invM[0][0] = M11 * det;
-    invM[0][1] = M[0][1] * (-det);
-    invM[1][0] = M[1][0] * (-det);
-    invM[1][1] = M00 * det;
+    invM[0][0] = M11 / det;
+    invM[0][1] = - M[0][1] / det;
+    invM[1][0] = - M[1][0] / det;
+    invM[1][1] = M00 / det;
     *stats = INVERSE_SUCCESS;
 }
 
