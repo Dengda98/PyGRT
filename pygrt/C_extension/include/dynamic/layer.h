@@ -24,10 +24,11 @@
  * @param[in]     kbkb0          表层的S波水平波数的平方 \f$ k_b^2=(\frac{\omega}{V_b})^2 \f$
  * @param[in]     k              波数
  * @param[out]    R_tilt         P-SV系数矩阵，SH系数为1
+ * @param[out]    stats          状态代码，是否有除零错误，非0为异常值
  * 
  */
 void calc_R_tilt(
-    MYCOMPLEX xa0, MYCOMPLEX xb0, MYCOMPLEX kbkb0, MYREAL k, MYCOMPLEX R_tilt[2][2]);
+    MYCOMPLEX xa0, MYCOMPLEX xb0, MYCOMPLEX kbkb0, MYREAL k, MYCOMPLEX R_tilt[2][2], MYINT *stats);
 
 
 /**
@@ -97,6 +98,7 @@ void calc_uiz_R_EV(
  * @param[out]     TDL           SH 下传透射系数
  * @param[out]     TU            P-SV 上传透射系数矩阵
  * @param[out]     TUL           SH 上传透射系数
+ * @param[out]     stats         状态代码，是否有除零错误，非0为异常值
  * 
  */
 void calc_RT_2x2(
@@ -104,12 +106,12 @@ void calc_RT_2x2(
     MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, 
     MYREAL thk, MYREAL k, 
     MYCOMPLEX RD[2][2], MYCOMPLEX *RDL, MYCOMPLEX RU[2][2], MYCOMPLEX *RUL, 
-    MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX TU[2][2], MYCOMPLEX *TUL);
+    MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX TU[2][2], MYCOMPLEX *TUL, MYINT *stats);
 
 
 
 /**
- * 【未使用】
+ * 【未使用，仅用于代码测试】
  * 被calc_RT_2x2_from_4x4函数调用，生成该层的连接P-SV应力位移矢量与垂直波函数的D矩阵(或其逆矩阵)，
  * 见公式(5.2.19-20)
  * 
@@ -125,18 +127,19 @@ void calc_RT_2x2(
  */
 void get_layer_D(
     MYCOMPLEX xa, MYCOMPLEX xb, MYCOMPLEX kbkb, MYCOMPLEX mu, 
-    MYREAL k, MYCOMPLEX D[4][4], bool inverse);
+    MYCOMPLEX omega, MYREAL k, MYCOMPLEX D[4][4], bool inverse);
 
 
 
 /**
- *  和calc_RT_2x2函数解决相同问题（但未包含时间延迟因子），但没有使用显式推导的公式，而是直接做矩阵运算，
- * 暂未加入相位延迟矩阵
- * 函数接口也和 calc_RT_2x2函数 类似
+ *  【未使用，仅用于代码测试】
+ *  和calc_RT_2x2函数解决相同问题，但没有使用显式推导的公式，而是直接做矩阵运算，
+ *  函数接口也和 calc_RT_2x2函数 类似
  */
 void calc_RT_2x2_from_4x4(
     MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, 
     MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, 
+    MYCOMPLEX omega, MYREAL thk,
     MYREAL k, 
     MYCOMPLEX RD[2][2], MYCOMPLEX *RDL, MYCOMPLEX RU[2][2], MYCOMPLEX *RUL, 
-    MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX TU[2][2], MYCOMPLEX *TUL);
+    MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX TU[2][2], MYCOMPLEX *TUL, MYINT *stats);

@@ -40,8 +40,9 @@
  * @param[out]    sum_uiz_J0      uiz的积分值
  * @param[out]    sum_uir_J0      uir的积分值
  * 
- * @param[out]    ptam_fstatsnr            峰谷平均法过程文件指针数组
- * @param[in]     kerfunc                  计算核函数的函数指针
+ * @param[out]    ptam_fstatsnr      峰谷平均法过程文件指针数组
+ * @param[in]     kerfunc            计算核函数的函数指针
+ * @param[out]    stats              状态代码，是否有除零错误，非0为异常值
  * 
  * 
  */
@@ -52,7 +53,7 @@ void PTA_method(
     bool calc_upar,
     MYCOMPLEX sum_uiz_J0[nr][SRC_M_NUM][INTEG_NUM],
     MYCOMPLEX sum_uir_J0[nr][SRC_M_NUM][INTEG_NUM],
-    FILE *ptam_fstatsnr[nr][2], KernelFunc kerfunc);
+    FILE *ptam_fstatsnr[nr][2], KernelFunc kerfunc, MYINT *stats);
 
 
 

@@ -22,7 +22,7 @@
 
 
 void calc_R_tilt(
-    MYCOMPLEX xa0, MYCOMPLEX xb0, MYCOMPLEX kbkb0, MYREAL k, MYCOMPLEX R_tilt[2][2])
+    MYCOMPLEX xa0, MYCOMPLEX xb0, MYCOMPLEX kbkb0, MYREAL k, MYCOMPLEX R_tilt[2][2], MYINT *stats)
 {   
 
     // // 公式(5.3.10-14)
@@ -34,6 +34,10 @@ void calc_R_tilt(
 
     // 对公式(5.3.10-14)进行重新整理，对浮点数友好一些
     Delta_inv = RONE / (-RONE + xa0*xb0 + kbkb_k2inv - kbkb_k4inv);
+    if(Delta_inv == CZERO){
+        *stats = INVERSE_FAILURE;
+        return;
+    }
     R_tilt[0][0] = (RONE + xa0*xb0 - kbkb_k2inv + kbkb_k4inv) * Delta_inv;
     R_tilt[0][1] = RTWO * xb0 * (RONE - RHALF*kbkb_k2inv) * Delta_inv;
     R_tilt[1][0] = RTWO * xa0 * (RONE - RHALF*kbkb_k2inv) * Delta_inv;
@@ -101,7 +105,7 @@ void calc_RT_2x2(
     MYREAL thk, // 使用上层的厚度
     MYREAL k, 
     MYCOMPLEX RD[2][2], MYCOMPLEX *RDL, MYCOMPLEX RU[2][2], MYCOMPLEX *RUL, 
-    MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX TU[2][2], MYCOMPLEX *TUL)
+    MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX TU[2][2], MYCOMPLEX *TUL, MYINT *stats)
 {
     
     MYCOMPLEX exa, exb, exab, ex2a, ex2b; 
@@ -145,8 +149,10 @@ void calc_RT_2x2(
     Delta_inv =   dmu2*(RONE-xa1*xb1)*(RONE-xa2*xb2) + mu1kb1_k2*dmu*(rho21*(RONE-xa1*xb1) - (RONE-xa2*xb2)) 
                 + RQUART*mu1kb1_k2*mu2kb2_k2*(rho12*(RONE-xa2*xb2) + rho21*(RONE-xa1*xb1) - RTWO - (xa1*xb2+xa2*xb1));
 
-    if( Delta_inv == RZERO ){
-        printf("# zero Delta_inv=%e+%eJ\n", CREAL(Delta_inv), CIMAG(Delta_inv));
+    if( Delta_inv == CZERO ){
+        // printf("# zero Delta_inv=%e+%eJ\n", CREAL(Delta_inv), CIMAG(Delta_inv));
+        *stats = INVERSE_FAILURE;
+        return;
     } else {
         Delta_inv = RONE/(Delta_inv);
     }
@@ -211,7 +217,7 @@ void calc_RT_2x2(
 
 void get_layer_D(
     MYCOMPLEX xa, MYCOMPLEX xb, MYCOMPLEX kbkb, MYCOMPLEX mu,
-    MYREAL k, MYCOMPLEX D[4][4], bool inverse)
+    MYCOMPLEX omega, MYREAL k, MYCOMPLEX D[4][4], bool inverse)
 {
     // 第iy层物理量
     MYCOMPLEX Omg;
@@ -241,18 +247,33 @@ void get_layer_D(
 void calc_RT_2x2_from_4x4(
     MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, 
     MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, 
+    MYCOMPLEX omega, MYREAL thk,
     MYREAL k, 
     MYCOMPLEX RD[2][2], MYCOMPLEX *RDL, MYCOMPLEX RU[2][2], MYCOMPLEX *RUL, 
-    MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX TU[2][2], MYCOMPLEX *TUL)
+    MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX TU[2][2], MYCOMPLEX *TUL, MYINT *stats)
 {
 
     MYCOMPLEX D1_inv[4][4], D2[4][4], Q[4][4];
 
-    get_layer_D(k*xa1, k*xb1, kbkb1, mu1, k, D1_inv, true);
-    get_layer_D(k*xa2, k*xb2, kbkb2, mu2, k, D2,    false);
+    get_layer_D(xa1, xb1, kbkb1, mu1, omega, k, D1_inv, true);
+    get_layer_D(xa2, xb2, kbkb2, mu2, omega, k, D2,    false);
 
     cmatmxn_mul(4, 4, 4, D1_inv, D2, Q);
 
+    MYCOMPLEX exa, exb; 
+
+    exa = CEXP(-k*thk*xa1);
+    exb = CEXP(-k*thk*xb1);
+
+    MYCOMPLEX E[4][4] = {0};
+    E[0][0] = exa;
+    E[1][1] = exb;
+    E[2][2] = 1/exa;
+    E[3][3] = 1/exb;
+    cmatmxn_mul(4, 4, 4, E, Q, Q);
+
+    // fprintf(stderr, "Q\n");
+    // cmatmxn_print(4, 4, Q);
 
     // 对Q矩阵划分子矩阵 
     MYCOMPLEX Q11[2][2], Q12[2][2], Q21[2][2], Q22[2][2];
@@ -263,7 +284,7 @@ void calc_RT_2x2_from_4x4(
 
     // 计算反射透射系数 
     // TD
-    cmat2x2_inv(Q22, TD);
+    cmat2x2_inv(Q22, TD, stats);
     // RD
     cmat2x2_mul(Q12, TD, RD); 
     // RU
@@ -273,8 +294,10 @@ void calc_RT_2x2_from_4x4(
     cmat2x2_mul(Q12, RU, TU);
     cmat2x2_add(Q11, TU, TU);
 
-    *RDL = (mu1*xb1 - mu2*xb2) / (mu1*xb1 + mu2*xb2);
+    *RDL = (mu1*xb1 - mu2*xb2) / (mu1*xb1 + mu2*xb2) * exa*exa;
     *RUL = - (*RDL);
-    *TDL = RTWO*mu1*xb1/(mu1*xb1 + mu2*xb2);
-    *TUL = RTWO*mu2*xb2/(mu1*xb1 + mu2*xb2);
+    *TDL = RTWO*mu1*xb1/(mu1*xb1 + mu2*xb2) * exb;
+    *TUL = RTWO*mu2*xb2/(mu1*xb1 + mu2*xb2) * exb;
+
+    
 }

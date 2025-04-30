@@ -15,8 +15,9 @@
  * 
  * @param[in]      M        原矩阵
  * @param[out]     invM     逆矩阵
+ * @param[out]     stats    状态代码，是否有除零错误，非0为异常值
  */ 
-inline GCC_ALWAYS_INLINE void cmat2x2_inv(const MYCOMPLEX M[2][2], MYCOMPLEX invM[2][2]) {
+inline GCC_ALWAYS_INLINE void cmat2x2_inv(const MYCOMPLEX M[2][2], MYCOMPLEX invM[2][2], MYINT *stats) {
     MYCOMPLEX M00 = M[0][0];
     MYCOMPLEX M11 = M[1][1];
     MYCOMPLEX det = M00*M11 - M[0][1]*M[1][0];
@@ -24,7 +25,9 @@ inline GCC_ALWAYS_INLINE void cmat2x2_inv(const MYCOMPLEX M[2][2], MYCOMPLEX inv
         // fprintf(stderr, "%.5e+%.5ej %.5e+%.5ej \n", CREAL(M[0][0]), CIMAG(M[0][0]), CREAL(M[0][1]), CIMAG(M[0][1]));
         // fprintf(stderr, "%.5e+%.5ej %.5e+%.5ej \n", CREAL(M[1][0]), CIMAG(M[1][0]), CREAL(M[1][1]), CIMAG(M[1][1]));
         // fprintf(stderr, "matrix2x2 det=0.0, set matrix inv = 0.0.\n");
-        det = RZERO;
+        // det = RZERO;
+        *stats = INVERSE_FAILURE;
+        return;
     } else {
         det = RONE/det;
     }
@@ -33,6 +36,7 @@ inline GCC_ALWAYS_INLINE void cmat2x2_inv(const MYCOMPLEX M[2][2], MYCOMPLEX inv
     invM[0][1] = M[0][1] * (-det);
     invM[1][0] = M[1][0] * (-det);
     invM[1][1] = M00 * det;
+    *stats = INVERSE_SUCCESS;
 }
 
 /**
@@ -198,8 +202,8 @@ inline GCC_ALWAYS_INLINE void cmatmxn_block(MYINT m1, MYINT n1, const MYCOMPLEX 
 inline GCC_ALWAYS_INLINE void cmatmxn_print(MYINT m1, MYINT n1, const MYCOMPLEX M1[m1][n1]){
     for(MYINT i=0; i<m1; ++i){
         for(MYINT j=0; j<n1; ++j){
-            printf(" %15.5e + J%-15.5e ", CREAL(M1[i][j]), CIMAG(M1[i][j]));
+            fprintf(stderr, " %15.5e + J%-15.5e ", CREAL(M1[i][j]), CIMAG(M1[i][j]));
         }
-        printf("\n");
+        fprintf(stderr, "\n");
     }
 }

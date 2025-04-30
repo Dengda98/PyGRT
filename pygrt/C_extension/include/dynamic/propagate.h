@@ -84,11 +84,12 @@
  *  @param[out]    QWV             不同震源，不同阶数的核函数 \f$ q_m, w_m, v_m \f$
  *  @param[in]     calc_uiz        是否计算ui_z（位移u对坐标z的偏导）
  *  @param[out]    QWV_uiz         不同震源，不同阶数的核函数对z的偏导 \f$ \frac{\partial q_m}{\partial z}, \frac{\partial w_m}{\partial z}, \frac{\partial v_m}{\partial z} \f$
+ *  @param[out]    stats           状态代码，是否有除零错误，非0为异常值
  * 
  */
 void kernel(
-    const MODEL1D *mod1d, MYREAL k, MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
-    bool calc_uiz, MYCOMPLEX QWV_uiz[SRC_M_NUM][QWV_NUM]);
+    const MODEL1D *mod1d, MYCOMPLEX omega, MYREAL k, MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
+    bool calc_uiz, MYCOMPLEX QWV_uiz[SRC_M_NUM][QWV_NUM], MYINT *stats);
 
 
 

@@ -123,7 +123,7 @@ void PTA_method(
     bool calc_upar,
     MYCOMPLEX sum_uiz_J0[nr][SRC_M_NUM][INTEG_NUM],
     MYCOMPLEX sum_uir_J0[nr][SRC_M_NUM][INTEG_NUM],
-    FILE *ptam_fstatsnr[nr][2], KernelFunc kerfunc)
+    FILE *ptam_fstatsnr[nr][2], KernelFunc kerfunc, MYINT *stats)
 {   
     // 需要兼容对正常收敛而不具有规律波峰波谷的序列
     // 有时序列收敛比较好，不表现为规律的波峰波谷，
@@ -201,7 +201,8 @@ void PTA_method(
             k += dk;
 
             // 计算核函数 F(k, w)
-            kerfunc(mod1d, k, QWV, calc_upar, QWV_uiz); 
+            kerfunc(mod1d, omega, k, QWV, calc_upar, QWV_uiz, stats); 
+            if(*stats==INVERSE_FAILURE)  goto BEFORE_RETURN;
 
             // 记录核函数
             if(fstatsK!=NULL)  write_stats(fstatsK, k, QWV);
@@ -257,7 +258,7 @@ void PTA_method(
         }
     }
 
-
+    BEFORE_RETURN:
     free(SUM3); free(SUM3_uiz); free(SUM3_uir);
     free(sum_J); free(sum_uiz_J); free(sum_uir_J); 
 

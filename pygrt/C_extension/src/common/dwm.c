@@ -30,7 +30,7 @@ MYREAL discrete_integ(
     bool calc_upar,
     MYCOMPLEX sum_uiz_J[nr][SRC_M_NUM][INTEG_NUM],
     MYCOMPLEX sum_uir_J[nr][SRC_M_NUM][INTEG_NUM],
-    FILE *fstats, KernelFunc kerfunc)
+    FILE *fstats, KernelFunc kerfunc, MYINT *stats)
 {
     MYCOMPLEX SUM[SRC_M_NUM][INTEG_NUM];
 
@@ -58,7 +58,8 @@ MYREAL discrete_integ(
 
         // printf("w=%15.5e, ik=%d\n", CREAL(omega), ik);
         // 计算核函数 F(k, w)
-        kerfunc(mod1d, k, QWV, calc_upar, QWV_uiz); 
+        kerfunc(mod1d, omega, k, QWV, calc_upar, QWV_uiz, stats); 
+        if(*stats==INVERSE_FAILURE)  goto BEFORE_RETURN;
         
         // 记录积分核函数
         if(fstats!=NULL)  write_stats(fstats, k, QWV);
@@ -135,6 +136,7 @@ MYREAL discrete_integ(
 
     // printf("w=%15.5e, ik=%d\n", CREAL(omega), ik);
 
+    BEFORE_RETURN:
     free(iendkrs);
 
     return k;

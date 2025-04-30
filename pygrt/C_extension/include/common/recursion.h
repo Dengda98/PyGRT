@@ -32,14 +32,15 @@
  * @param[out]     RD              1+2层 P-SV 下传反射系数矩阵
  * @param[out]     RDL             1+2层 SH 下传反射系数
  * @param[out]     inv_2x2T        非NULL时，返回公式中的 \f$ (\mathbf{I} - \mathbf{R}_U^1 \mathbf{R}_D^2)^{-1} \mathbf{T}_D^1 \f$ 一项   
- * @param[out]     invT            非NULL时，返回上面inv_2x2T的标量形式      
+ * @param[out]     invT            非NULL时，返回上面inv_2x2T的标量形式    
+ * @param[out]     stats           状态代码，是否有除零错误，非0为异常值
  * 
  */
 void recursion_RD(
     const MYCOMPLEX RD1[2][2], MYCOMPLEX RDL1, const MYCOMPLEX RU1[2][2], MYCOMPLEX RUL1,
     const MYCOMPLEX TD1[2][2], MYCOMPLEX TDL1, const MYCOMPLEX TU1[2][2], MYCOMPLEX TUL1,
     const MYCOMPLEX RD2[2][2], MYCOMPLEX RDL2, 
-    MYCOMPLEX RD[2][2], MYCOMPLEX *RDL, MYCOMPLEX inv_2x2T[2][2], MYCOMPLEX *invT);
+    MYCOMPLEX RD[2][2], MYCOMPLEX *RDL, MYCOMPLEX inv_2x2T[2][2], MYCOMPLEX *invT, MYINT *stats);
 
 
 /**
@@ -57,6 +58,7 @@ void recursion_RD(
  * @param[out]    TDL                 1+2层 SH 下传透射系数
  * @param[out]    inv_2x2T            非NULL时，返回公式中的 \f$ (\mathbf{I} - \mathbf{R}_U^1 \mathbf{R}_D^2)^{-1} \mathbf{T}_D^1 \f$ 一项   
  * @param[out]    invT                非NULL时，返回上面inv_2x2T的标量形式      
+ * @param[out]    stats               状态代码，是否有除零错误，非0为异常值
  * 
  */
 void recursion_TD(
@@ -64,7 +66,7 @@ void recursion_TD(
     const MYCOMPLEX TD1[2][2], MYCOMPLEX TDL1, 
     const MYCOMPLEX RD2[2][2], MYCOMPLEX RDL2, 
     const MYCOMPLEX TD2[2][2], MYCOMPLEX TDL2, 
-    MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX inv_2x2T[2][2], MYCOMPLEX *invT);
+    MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX inv_2x2T[2][2], MYCOMPLEX *invT, MYINT *stats);
 
 
 
@@ -86,13 +88,14 @@ void recursion_TD(
  * @param[out]    RUL                 1+2层 SH 上传反射系数
  * @param[out]    inv_2x2T            非NULL时，返回公式中的 \f$ (\mathbf{I} - \mathbf{R}_D^2 \mathbf{R}_U^1)^{-1} \mathbf{T}_U^2 \f$ 一项   
  * @param[out]    invT                非NULL时，返回上面inv_2x2T的标量形式      
+ * @param[out]    stats               状态代码，是否有除零错误，非0为异常值
  * 
  */
 void recursion_RU(
     const MYCOMPLEX RU1[2][2], MYCOMPLEX RUL1,
     const MYCOMPLEX RD2[2][2], MYCOMPLEX RDL2, const MYCOMPLEX RU2[2][2], MYCOMPLEX RUL2,
     const MYCOMPLEX TD2[2][2], MYCOMPLEX TDL2, const MYCOMPLEX TU2[2][2], MYCOMPLEX TUL2,
-    MYCOMPLEX RU[2][2], MYCOMPLEX *RUL, MYCOMPLEX inv_2x2T[2][2], MYCOMPLEX *invT);
+    MYCOMPLEX RU[2][2], MYCOMPLEX *RUL, MYCOMPLEX inv_2x2T[2][2], MYCOMPLEX *invT, MYINT *stats);
 
 /**
  * 根据公式(5.5.3(4))进行递推
@@ -109,6 +112,7 @@ void recursion_RU(
  * @param[out]    TUL                 1+2层 SH 上传透射系数
  * @param[out]    inv_2x2T            非NULL时，返回公式中的 \f$ (\mathbf{I} - \mathbf{R}_D^2 \mathbf{R}_U^1)^{-1} \mathbf{T}_U^2 \f$ 一项   
  * @param[out]    invT                非NULL时，返回上面inv_2x2T的标量形式      
+ * @param[out]    stats               状态代码，是否有除零错误，非0为异常值
  * 
  * 
  */
@@ -117,7 +121,7 @@ void recursion_TU(
     const MYCOMPLEX TU1[2][2], MYCOMPLEX TUL1,
     const MYCOMPLEX RD2[2][2], MYCOMPLEX RDL2,
     const MYCOMPLEX TU2[2][2], MYCOMPLEX TUL2,
-    MYCOMPLEX TU[2][2], MYCOMPLEX *TUL, MYCOMPLEX inv_2x2T[2][2], MYCOMPLEX *invT);
+    MYCOMPLEX TU[2][2], MYCOMPLEX *TUL, MYCOMPLEX inv_2x2T[2][2], MYCOMPLEX *invT, MYINT *stats);
 
 
 
@@ -148,6 +152,7 @@ void recursion_TU(
  * @param[out]    TDL                 1+2层 SH 下传透射系数
  * @param[out]    TU                  1+2层 P-SV 上传透射系数矩阵
  * @param[out]    TUL                 1+2层 SH 上传透射系数
+ * @param[out]    stats               状态代码，是否有除零错误，非0为异常值
  * 
  */
 void recursion_RT_2x2(
@@ -156,7 +161,7 @@ void recursion_RT_2x2(
     const MYCOMPLEX RD2[2][2], MYCOMPLEX RDL2, const MYCOMPLEX RU2[2][2], MYCOMPLEX RUL2,
     const MYCOMPLEX TD2[2][2], MYCOMPLEX TDL2, const MYCOMPLEX TU2[2][2], MYCOMPLEX TUL2,
     MYCOMPLEX RD[2][2], MYCOMPLEX *RDL, MYCOMPLEX RU[2][2], MYCOMPLEX *RUL,
-    MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX TU[2][2], MYCOMPLEX *TUL);
+    MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX TU[2][2], MYCOMPLEX *TUL, MYINT *stats);
 
 
 /**

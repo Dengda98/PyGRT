@@ -27,9 +27,9 @@
 
 
 void static_kernel(
-    const MODEL1D *mod1d, MYREAL k, MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
-    bool calc_uiz, MYCOMPLEX QWV_uiz[SRC_M_NUM][QWV_NUM])
-{
+    const MODEL1D *mod1d, MYCOMPLEX omega, MYREAL k, MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
+    bool calc_uiz, MYCOMPLEX QWV_uiz[SRC_M_NUM][QWV_NUM], MYINT *stats)
+{   
     // 初始化qwv为0
     for(MYINT i=0; i<SRC_M_NUM; ++i){
         for(MYINT j=0; j<QWV_NUM; ++j){
@@ -199,7 +199,7 @@ void static_kernel(
                     RD, RDL, RU, RUL, 
                     TD, TDL, TU, TUL,
                     RD_FA, pRDL_FA, RU_FA, pRUL_FA, 
-                    TD_FA, pTDL_FA, TU_FA, pTUL_FA);  
+                    TD_FA, pTDL_FA, TU_FA, pTUL_FA, stats);  
             }
 
         }
@@ -232,7 +232,7 @@ void static_kernel(
                     RD, RDL, RU, RUL, 
                     TD, TDL, TU, TUL,
                     RD_RS, pRDL_RS, RU_RS, pRUL_RS, 
-                    TD_RS, pTDL_RS, TU_RS, pTUL_RS);  // 写入原地址
+                    TD_RS, pTDL_RS, TU_RS, pTUL_RS, stats);  // 写入原地址
             }
         } 
         // BL
@@ -268,7 +268,7 @@ void static_kernel(
                         RD, RDL, RU, RUL, 
                         TD, TDL, TU, TUL,
                         RD_BL, pRDL_BL, RU_BL, pRUL_BL, 
-                        TD_BL, pTDL_BL, TU_BL, pTUL_BL);  // 写入原地址
+                        TD_BL, pTDL_BL, TU_BL, pTUL_BL, stats);  // 写入原地址
                 } else {
                     recursion_RT_2x2(
                         RD_BL, RDL_BL, RU_BL, RUL_BL, 
@@ -276,7 +276,7 @@ void static_kernel(
                         RD, RDL, RU, RUL, 
                         TD, TDL, TU, TUL,
                         RD_BL, pRDL_BL, NULL, NULL, 
-                        NULL, NULL, NULL, NULL);  // 写入原地址
+                        NULL, NULL, NULL, NULL, stats);  // 写入原地址
                 }
                 
             }
@@ -303,7 +303,7 @@ void static_kernel(
         RU_FA, RUL_FA, 
         TD_FA, TDL_FA,
         TU_FA, TUL_FA,
-        RU_FA, pRUL_FA, NULL, NULL);
+        RU_FA, pRUL_FA, NULL, NULL, stats);
 
     // 根据震源和台站相对位置，计算最终的系数
     if(ircvup){ // A接收  B震源
@@ -317,12 +317,12 @@ void static_kernel(
             RU_RS, RUL_RS, 
             TD_RS, TDL_RS,
             TU_RS, TUL_RS,
-            RU_FB, pRUL_FB, inv_2x2T, &invT);
+            RU_FB, pRUL_FB, inv_2x2T, &invT, stats);
         
         // 公式(5.7.12-14)
         cmat2x2_mul(RD_BL, RU_FB, tmpR2);
         cmat2x2_one_sub(tmpR2);
-        cmat2x2_inv(tmpR2, tmpR2);// (I - xx)^-1
+        cmat2x2_inv(tmpR2, tmpR2, stats);// (I - xx)^-1
         cmat2x2_mul(inv_2x2T, tmpR2, tmp2x2);
 
         if(calc_uiz) cmat2x2_assign(tmp2x2, tmp2x2_uiz); // 为后续计算空间导数备份
@@ -357,12 +357,12 @@ void static_kernel(
             TD_RS, TDL_RS,
             TU_RS, TUL_RS,
             RD_BL, RDL_BL,
-            RD_AL, pRDL_AL, inv_2x2T, &invT);
+            RD_AL, pRDL_AL, inv_2x2T, &invT, stats);
         
         // 公式(5.7.26-27)
         cmat2x2_mul(RU_FA, RD_AL, tmpR2);
         cmat2x2_one_sub(tmpR2);
-        cmat2x2_inv(tmpR2, tmpR2);// (I - xx)^-1
+        cmat2x2_inv(tmpR2, tmpR2, stats);// (I - xx)^-1
         cmat2x2_mul(inv_2x2T, tmpR2, tmp2x2);
         
         if(calc_uiz) cmat2x2_assign(tmp2x2, tmp2x2_uiz); // 为后续计算空间导数备份

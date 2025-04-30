@@ -29,7 +29,7 @@ MYREAL linear_filon_integ(
     bool calc_upar,
     MYCOMPLEX sum_uiz_J0[nr][SRC_M_NUM][INTEG_NUM],
     MYCOMPLEX sum_uir_J0[nr][SRC_M_NUM][INTEG_NUM],
-    FILE *fstats, KernelFunc kerfunc)
+    FILE *fstats, KernelFunc kerfunc, MYINT *stats)
 {   
     // 从0开始，存储第二部分Filon积分的结果
     MYCOMPLEX (*sum_J)[SRC_M_NUM][INTEG_NUM] = (MYCOMPLEX(*)[SRC_M_NUM][INTEG_NUM])calloc(nr, sizeof(*sum_J));
@@ -59,7 +59,8 @@ MYREAL linear_filon_integ(
         k += dk; 
 
         // 计算核函数 F(k, w)
-        kerfunc(mod1d, k, QWV, calc_upar, QWV_uiz); 
+        kerfunc(mod1d, omega, k, QWV, calc_upar, QWV_uiz, stats); 
+        if(*stats==INVERSE_FAILURE)  goto BEFORE_RETURN;
 
         // 记录积分结果
         if(fstats!=NULL)  write_stats(fstats, k, QWV);
@@ -172,7 +173,8 @@ MYREAL linear_filon_integ(
         }
 
         // 计算核函数 F(k, w)
-        kerfunc(mod1d, k0N, QWV, calc_upar, QWV_uiz); 
+        kerfunc(mod1d, omega, k0N, QWV, calc_upar, QWV_uiz, stats);
+        if(*stats==INVERSE_FAILURE)  goto BEFORE_RETURN; 
 
         for(MYINT ir=0; ir<nr; ++ir){
             // Gc
@@ -244,7 +246,7 @@ MYREAL linear_filon_integ(
     }
 
 
-    
+    BEFORE_RETURN:
     free(sum_J);
     if(sum_uiz_J) free(sum_uiz_J);
     if(sum_uir_J) free(sum_uir_J);

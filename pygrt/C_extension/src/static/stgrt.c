@@ -156,20 +156,22 @@ void integ_static_grn(
         free(fname);
     }
 
-
+    // 计算核函数过程中是否有遇到除零错误
+    //【静态解理论上不会有除零错误，这里是对应动态解的函数接口，作为一个占位符】
+    MYINT inv_stats=INVERSE_SUCCESS;
 
     // 常规的波数积分
     k = discrete_integ(
         mod1d, dk, (filondk > RZERO)? filonK : kmax, keps, 0.0, nr, rs, 
         sum_J, calc_upar, sum_uiz_J, sum_uir_J,
-        fstats, static_kernel);
+        fstats, static_kernel, &inv_stats);
     
     // 基于线性插值的Filon积分
     if(filondk > RZERO){
         k = linear_filon_integ(
             mod1d, k, dk, filondk, kmax, keps, 0.0, nr, rs, 
             sum_J, calc_upar, sum_uiz_J, sum_uir_J,
-            fstats, static_kernel);
+            fstats, static_kernel, &inv_stats);
     }
 
     // k之后的部分使用峰谷平均法进行显式收敛，建议在浅源地震的时候使用   
@@ -177,7 +179,7 @@ void integ_static_grn(
         PTA_method(
             mod1d, k, dk, 0.0, nr, rs, 
             sum_J, calc_upar, sum_uiz_J, sum_uir_J,
-            ptam_fstatsnr, static_kernel);
+            ptam_fstatsnr, static_kernel, &inv_stats);
     }
 
 
