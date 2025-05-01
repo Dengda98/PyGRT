@@ -127,7 +127,7 @@ typedef int MYINT;  ///< 整数
 
 #define GRT_STRING_FMT "%18s"  ///< 字符串输出格式
 #define GRT_REAL_FMT "%18.8e"  ///< 浮点数输出格式
-#define GRT_CMPLX_FMT "%18.8e%-+14.8eJ"   ///< 复数输出格式
+#define GRT_CMPLX_FMT "%18.8e%-+14.8ej"   ///< 复数输出格式
 #define GRT_STR_CMPLX_FMT "%34s"    ///< 与复数格式同长度的字符串输出格式
 
 
