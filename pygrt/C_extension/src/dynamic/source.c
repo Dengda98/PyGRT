@@ -35,12 +35,9 @@ void source_coef(
     }
 
 
-    // MYCOMPLEX src_a_inv = RONE / (k*src_xa);
-    // MYCOMPLEX src_b_inv = RONE / (k*src_xb);
     MYCOMPLEX a = k*src_xa;
     MYCOMPLEX b = k*src_xb;
     MYREAL kk = k*k;
-    // MYREAL k_inv = RONE / k;
     MYCOMPLEX tmp;
 
 
