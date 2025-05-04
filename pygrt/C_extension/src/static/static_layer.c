@@ -77,7 +77,7 @@ void calc_static_RT_2x2(
 
     MYCOMPLEX ex, ex2; 
 
-    ex = CEXP(-k*thk);
+    ex = exp(-k*thk);
     ex2 = ex*ex;
 
     MYCOMPLEX dmu = mu1 - mu2;
@@ -120,7 +120,7 @@ void calc_static_RT_2x2(
     *TUL = (*TDL)*mu2/mu1;
 
     // printf("delta1=%.5e%+.5ej, delta2=%.5e%+.5ej, mu1=%.5e%+.5ej, mu2=%.5e%+.5ej, thk=%e, k=%e\n", 
-    //         CREAL(delta1),CIMAG(delta1),CREAL(delta2),CIMAG(delta2),CREAL(mu1),CIMAG(mu1),CREAL(mu2),CIMAG(mu2),
+    //         creal(delta1),cimag(delta1),creal(delta2),cimag(delta2),creal(mu1),cimag(mu1),creal(mu2),cimag(mu2),
     //         thk, k);
     // cmatmxn_print(2, 2, RD);
     // cmatmxn_print(2, 2, RU);

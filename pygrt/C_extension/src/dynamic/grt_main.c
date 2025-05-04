@@ -702,7 +702,7 @@ static void ifft_one_trace(
 {
     // 赋值复数，包括时移
     MYCOMPLEX cfac, ccoef;
-    cfac = CEXP(I*dw*delay);
+    cfac = exp(I*dw*delay);
     ccoef = mult;
     for(int i=0; i<nf; ++i){
         fftw_grn[i] = grncplx[i] * ccoef;
@@ -714,8 +714,8 @@ static void ifft_one_trace(
 
     // 归一化，并处理虚频
     double fac, coef;
-    coef = df * EXP(delay*wI);
-    fac = EXP(wI*dt);
+    coef = df * exp(delay*wI);
+    fac = exp(wI*dt);
     for(int i=0; i<nt; ++i){
         out[i] *= coef;
         coef *= fac;

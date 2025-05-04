@@ -65,7 +65,7 @@ MYINT extract_stats(FILE *bf0, FILE *af0){
             if(modr == 0 && qwvchs[c] == 'v')   continue;
 
             if(1 != fread(&val, sizeof(MYCOMPLEX), 1, bf0))  return -1;
-            fprintf(af0, GRT_CMPLX_FMT, CREAL(val), CIMAG(val));
+            fprintf(af0, GRT_CMPLX_FMT, creal(val), cimag(val));
         }
     }
 
@@ -134,7 +134,7 @@ MYINT extract_stats_ptam(FILE *bf0, FILE *af0){
             if(1 != fread(&k, sizeof(MYREAL), 1, bf0))  return -1;
             fprintf(af0, GRT_REAL_FMT, k);
             if(1 != fread(&val, sizeof(MYCOMPLEX), 1, bf0))  return -1;
-            fprintf(af0, GRT_CMPLX_FMT, CREAL(val), CIMAG(val));
+            fprintf(af0, GRT_CMPLX_FMT, creal(val), cimag(val));
         }
     }
 

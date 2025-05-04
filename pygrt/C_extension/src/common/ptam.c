@@ -233,7 +233,7 @@ void PTA_method(
         }// end k loop
     }
 
-    // printf("w=%f, ik=%d\n", CREAL(omega), ik);
+    // printf("w=%f, ik=%d\n", creal(omega), ik);
 
 
     // 做缩减序列，赋值最终解
@@ -280,9 +280,9 @@ MYINT cplx_peak_or_trough(MYINT idx1, MYINT idx2, const MYCOMPLEX arr[PTAM_WINDO
     f2 = arr[1][idx1][idx2];
     f3 = arr[2][idx1][idx2];
 
-    rf1 = CREAL(f1);
-    rf2 = CREAL(f2);
-    rf3 = CREAL(f3);
+    rf1 = creal(f1);
+    rf2 = creal(f2);
+    rf3 = creal(f3);
     if     ( (rf1 <= rf2) && (rf2 >= rf3) )  stat = 1;
     else if( (rf1 >= rf2) && (rf2 <= rf3) )  stat = -1;
     else                                     stat =  0;
@@ -311,7 +311,7 @@ MYINT cplx_peak_or_trough(MYINT idx1, MYINT idx2, const MYCOMPLEX arr[PTAM_WINDO
         // 这里暂且使用范围来框定，如果在范围外，就直接使用x2的值
         if(k0 < x3 && k0 > x1){
             // printf("a=%f%+fI, b=%f%+fI, c=%f%+fI, xarr=(%f,%f,%f), yarr=(%f%+fI, %f%+fI, %f%+fI)\n", 
-            //         CREAL(a),CIMAG(a),CREAL(b),CIMAG(b),CREAL(c),CIMAG(c),x1,x2,x3,CREAL(f1),CIMAG(f1),CREAL(f2),CIMAG(f2),CREAL(f3),CIMAG(f3));
+            //         creal(a),cimag(a),creal(b),cimag(b),creal(c),cimag(c),x1,x2,x3,creal(f1),cimag(f1),creal(f2),cimag(f2),creal(f3),cimag(f3));
             *pk = k0;
             *value = a*k0*k0 + b*k0;
         }

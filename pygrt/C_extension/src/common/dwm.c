@@ -56,7 +56,7 @@ MYREAL discrete_integ(
         if(k > kmax && ik > 2)  break;
         k += dk; 
 
-        // printf("w=%15.5e, ik=%d\n", CREAL(omega), ik);
+        // printf("w=%15.5e, ik=%d\n", creal(omega), ik);
         // 计算核函数 F(k, w)
         kerfunc(mod1d, omega, k, QWV, calc_upar, QWV_uiz, stats); 
         if(*stats==INVERSE_FAILURE)  goto BEFORE_RETURN;
@@ -88,7 +88,7 @@ MYREAL discrete_integ(
                     // 是否提前判断达到收敛
                     if(keps < RZERO || (modr==0 && v!=0 && v!=2))  continue;
                     
-                    iendk0 = iendk0 && (CABS(SUM[i][v])/ CABS(sum_J[ir][i][v]) <= keps);
+                    iendk0 = iendk0 && (fabs(SUM[i][v])/ fabs(sum_J[ir][i][v]) <= keps);
                 }
             }
             
@@ -134,7 +134,7 @@ MYREAL discrete_integ(
 
     } // END k loop
 
-    // printf("w=%15.5e, ik=%d\n", CREAL(omega), ik);
+    // printf("w=%15.5e, ik=%d\n", creal(omega), ik);
 
     BEFORE_RETURN:
     free(iendkrs);

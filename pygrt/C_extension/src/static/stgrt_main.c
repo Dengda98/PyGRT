@@ -402,7 +402,7 @@ static void getopt_from_command(int argc, char **argv){
     rs = (MYREAL*)calloc(nr, sizeof(MYREAL));
     for(int iy=0; iy<ny; ++iy){
         for(int ix=0; ix<nx; ++ix){
-            rs[ix + iy*nx] = SQRT(xs[ix]*xs[ix] + ys[iy]*ys[iy]);
+            rs[ix + iy*nx] = sqrt(xs[ix]*xs[ix] + ys[iy]*ys[iy]);
             if(rs[ix + iy*nx] < 1e-5)  rs[ix + iy*nx] = 1e-5;  // 避免0震中距
         }
     }

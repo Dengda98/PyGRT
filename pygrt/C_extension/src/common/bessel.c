@@ -11,9 +11,9 @@
 #include "common/const.h"
 
 void bessel012(MYREAL x, MYREAL *bj0, MYREAL *bj1, MYREAL *bj2){
-    *bj0 = J0(x);
-    *bj1 = J1(x);
-    *bj2 = JN(2, x);
+    *bj0 = j0(x);
+    *bj1 = j1(x);
+    *bj2 = jn(2, x);
 }
 
 void besselp012(MYREAL x, MYREAL *bj0, MYREAL *bj1, MYREAL *bj2){

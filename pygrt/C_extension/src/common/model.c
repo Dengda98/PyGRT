@@ -24,11 +24,11 @@ void print_mod1d(const MODEL1D *mod1d){
         lay = mod1d->lays+i;
         printf("     Va=%6.2f, Vb=%6.2f, thk=%6.2f, Rho=%6.2f, 1/Qa=%6.2e, 1/Qb=%6.2e\n",
                      lay->Va, lay->Vb, lay->thk, lay->Rho, lay->Qainv, lay->Qbinv);
-        printf("     mu=(%e %+e I)\n", CREAL(lay->mu), CIMAG(lay->mu));
-        printf("     lambda=(%e %+e I)\n", CREAL(lay->lambda), CIMAG(lay->lambda));
-        printf("     delta=(%e %+e I)\n", CREAL(lay->delta), CIMAG(lay->delta));
-        printf("     ka^2=%e%+eJ\n", CREAL(lay->kaka), CIMAG(lay->kaka));
-        printf("     kb^2=%e%+eJ\n", CREAL(lay->kbkb), CIMAG(lay->kbkb));
+        printf("     mu=(%e %+e I)\n", creal(lay->mu), cimag(lay->mu));
+        printf("     lambda=(%e %+e I)\n", creal(lay->lambda), cimag(lay->lambda));
+        printf("     delta=(%e %+e I)\n", creal(lay->delta), cimag(lay->delta));
+        printf("     ka^2=%e%+eJ\n", creal(lay->kaka), cimag(lay->kaka));
+        printf("     kb^2=%e%+eJ\n", creal(lay->kbkb), cimag(lay->kbkb));
         for(MYINT u=0; u<50; ++u){printf("---"); } printf("\n");
     }
 }

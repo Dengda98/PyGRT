@@ -110,8 +110,8 @@ void calc_RT_2x2(
     MYCOMPLEX exa, exb, exab, ex2a, ex2b; 
     MYCOMPLEX tmp;
 
-    exa = CEXP(-k*thk*xa1);
-    exb = CEXP(-k*thk*xb1);
+    exa = exp(-k*thk*xa1);
+    exb = exp(-k*thk*xb1);
 
     exab = exa * exb;
     ex2a = exa * exa;
@@ -126,13 +126,11 @@ void calc_RT_2x2(
 
     // 定义一些中间变量来简化运算和书写
     MYREAL kk = k*k;
-    MYCOMPLEX dmu = mu1 - mu2;
+    MYCOMPLEX dmu = mu1/mu2 - RONE; // mu1 - mu2; 分子分母同除mu2
     MYCOMPLEX dmu2 = dmu*dmu;
 
-    MYCOMPLEX kb1_k2 = kbkb1/kk;
-    MYCOMPLEX kb2_k2 = kbkb2/kk;
-    MYCOMPLEX mu1kb1_k2 = mu1*kb1_k2;
-    MYCOMPLEX mu2kb2_k2 = mu2*kb2_k2;
+    MYCOMPLEX mu1kb1_k2 = mu1/mu2*kbkb1/kk;// mu1*kb1_k2;
+    MYCOMPLEX mu2kb2_k2 = kbkb2/kk; // mu2*kb2_k2;
 
     MYREAL rho12 = Rho1 / Rho2;
     MYREAL rho21 = Rho2 / Rho1;
@@ -148,7 +146,7 @@ void calc_RT_2x2(
             + RQUART*mu1kb1_k2*mu2kb2_k2*(rho12*(RONE-xa2*xb2) + rho21*(RONE-xa1*xb1) - RTWO - (xa1*xb2+xa2*xb1));
 
     if( Delta == CZERO ){
-        // printf("# zero Delta_inv=%e+%eJ\n", CREAL(Delta_inv), CIMAG(Delta_inv));
+        // printf("# zero Delta_inv=%e+%eJ\n", creal(Delta_inv), cimag(Delta_inv));
         *stats = INVERSE_FAILURE;
         return;
     } 
@@ -255,8 +253,8 @@ void calc_RT_2x2_from_4x4(
 
     MYCOMPLEX exa, exb; 
 
-    exa = CEXP(-k*thk*xa1);
-    exb = CEXP(-k*thk*xb1);
+    exa = exp(-k*thk*xa1);
+    exb = exp(-k*thk*xb1);
 
     MYCOMPLEX E[4][4] = {0};
     E[0][0] = exa;

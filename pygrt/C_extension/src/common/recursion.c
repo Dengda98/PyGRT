@@ -213,8 +213,8 @@ void recursion_RT_2x2_imaginary(
     MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX TU[2][2], MYCOMPLEX *TUL)
 {
     MYCOMPLEX exa, exb, exab, ex2a, ex2b; 
-    exa = CEXP(-k*thk*xa1);
-    exb = CEXP(-k*thk*xb1);
+    exa = exp(-k*thk*xa1);
+    exb = exp(-k*thk*xb1);
 
     exab = exa * exb;
     ex2a = exa * exa;

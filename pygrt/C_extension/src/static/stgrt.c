@@ -51,7 +51,7 @@ static void recordin_GRN(
 
         for(MYINT i=0; i<SRC_M_NUM; ++i) {
             for(MYINT c=0; c<CHANNEL_NUM; ++c){
-                grn[ir][i][c] = CREAL(coef * tmp_grn[ir][i][c]);
+                grn[ir][i][c] = creal(coef * tmp_grn[ir][i][c]);
             }
 
         }
@@ -81,15 +81,15 @@ void integ_static_grn(
     MODEL1D *mod1d = init_mod1d(pymod1d->n);
     get_mod1d(pymod1d, mod1d);
 
-    const MYREAL hs = (FABS(pymod1d->depsrc - pymod1d->deprcv) < MIN_DEPTH_GAP_SRC_RCV)? 
-                      MIN_DEPTH_GAP_SRC_RCV : FABS(pymod1d->depsrc - pymod1d->deprcv); // hs=max(震源和台站深度差,1.0)
+    const MYREAL hs = (fabs(pymod1d->depsrc - pymod1d->deprcv) < MIN_DEPTH_GAP_SRC_RCV)? 
+                      MIN_DEPTH_GAP_SRC_RCV : fabs(pymod1d->depsrc - pymod1d->deprcv); // hs=max(震源和台站深度差,1.0)
     // 乘相应系数
     k0 *= PI/hs;
 
     if(vmin_ref < RZERO)  keps = -RONE;  // 若使用峰谷平均法，则不使用keps进行收敛判断
 
     MYREAL k=0.0;
-    const MYREAL dk=FABS(PI2/(Length*rmax));     // 波数积分间隔
+    const MYREAL dk=fabs(PI2/(Length*rmax));     // 波数积分间隔
     const MYREAL filondk = (filonLength > RZERO) ? PI2/(filonLength*rmax) : RZERO;  // Filon积分间隔
     const MYREAL filonK = filonCut/rmax;  // 波数积分和Filon积分的分割点
 

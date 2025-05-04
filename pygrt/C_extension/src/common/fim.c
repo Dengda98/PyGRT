@@ -89,7 +89,7 @@ MYREAL linear_filon_integ(
                     // 是否提前判断达到收敛
                     if(keps < RZERO || (modr==0 && v!=0 && v!=2))  continue;
                     
-                    iendk0 = iendk0 && (CABS(SUM[i][v])/ CABS(sum_J[ir][i][v]) <= keps);
+                    iendk0 = iendk0 && (fabs(SUM[i][v])/ fabs(sum_J[ir][i][v]) <= keps);
                 }
             }
             
@@ -140,7 +140,7 @@ MYREAL linear_filon_integ(
     // ------------------------------------------------------------------------------
     // 为累计项乘系数
     for(MYINT ir=0; ir<nr; ++ir){
-        MYREAL tmp = RTWO*(RONE - COS(dk*rs[ir])) / (rs[ir]*rs[ir]*dk);
+        MYREAL tmp = RTWO*(RONE - cos(dk*rs[ir])) / (rs[ir]*rs[ir]*dk);
 
         for(MYINT i=0; i<SRC_M_NUM; ++i){
             for(MYINT v=0; v<INTEG_NUM; ++v){
@@ -185,8 +185,8 @@ MYREAL linear_filon_integ(
 
             
             MYREAL tmp = RONE / (rs[ir]*rs[ir]*dk);
-            MYREAL tmpc = tmp * (RONE - COS(dk*rs[ir]));
-            MYREAL tmps = sgn * tmp * SIN(dk*rs[ir]);
+            MYREAL tmpc = tmp * (RONE - cos(dk*rs[ir]));
+            MYREAL tmps = sgn * tmp * sin(dk*rs[ir]);
 
             for(MYINT i=0; i<SRC_M_NUM; ++i){
                 for(MYINT v=0; v<INTEG_NUM; ++v){
@@ -230,9 +230,9 @@ MYREAL linear_filon_integ(
     
     }  // END k 2-points loop
 
-    // 乘上总系数 SQRT(RTWO/(PI*r)) / dk0,  除dks0是在该函数外还会再乘dk0, 并将结果加到原数组中
+    // 乘上总系数 sqrt(RTWO/(PI*r)) / dk0,  除dks0是在该函数外还会再乘dk0, 并将结果加到原数组中
     for(MYINT ir=0; ir<nr; ++ir){
-        MYREAL tmp = SQRT(RTWO/(PI*rs[ir])) / dk0;
+        MYREAL tmp = sqrt(RTWO/(PI*rs[ir])) / dk0;
         for(MYINT i=0; i<SRC_M_NUM; ++i){
             for(MYINT v=0; v<INTEG_NUM; ++v){
                 sum_J0[ir][i][v] += sum_J[ir][i][v] * tmp;
