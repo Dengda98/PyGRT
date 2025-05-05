@@ -52,3 +52,11 @@ if [[ $1 == '6' || $1 == '' ]]; then
     python run.py
     cd -
 fi
+
+if [[ $1 == '7' || $1 == '' ]]; then
+    cd Advanced/filon/run
+    chmod +x *.sh
+    ./run.sh
+    python run.py
+    cd -
+fi

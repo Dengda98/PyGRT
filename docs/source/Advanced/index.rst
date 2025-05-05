@@ -12,6 +12,7 @@
     :maxdepth: 1
 
     k_integ
-    filon_linear
+    filon/linear_filon
+    filon/self_adaptive_filon
     integ_converg/integ_converg
     kernel/kernel

@@ -1,5 +1,7 @@
-Filon积分法
-===================
+.. _linear_filon:
+
+固定间隔的Filon积分法
+=========================
 
 :Author: Zhu Dengda
 :Email:  zhudengda@mail.iggcas.ac.cn
@@ -8,7 +10,7 @@ Filon积分法
 
 .. warning:: 
 
-    谨慎使用固定间隔的Filon积分法，除非你很清楚原理以及误差来源。后期会考虑加入 **自适应Filon积分法** :ref:`(张海明, 2021) <zhang_book_2021>` 以减少固定积分间隔的影响。 
+    谨慎使用固定间隔的Filon积分法，除非你很清楚原理以及误差来源。推荐使用 :ref:`self_adaptive_filon` 以减少固定积分间隔的影响。 
 
 
 以下介绍程序中使用的 **基于两点线性插值的Filon积分** :ref:`(纪晨, 姚振兴, 1995) <jichen_1995>`  :ref:`(初稿) <yao_init_manuscripts>` ，主要介绍思路，具体公式推导详见对应论文。
@@ -72,4 +74,5 @@ Filon积分法
 
         :func:`compute_grn() <pygrt.pymod.PyModel1D.compute_grn>` 函数和 :func:`compute_static_grn() <pygrt.pymod.PyModel1D.compute_static_grn>` 函数支持以下可选参数来使用Filon积分，具体说明详见API。
 
-        + ``filonLC:List[float]`` 需给定两个量，分别对应C选项卡中的 ``<Flength>`` 参数和 ``<Fcut>`` 参数。
+        + ``filonLength:float`` 对应C选项卡中的 ``<Flength>`` 参数
+        + ``filonCut:float`` 对应C选项卡中的 ``<Fcut>`` 参数

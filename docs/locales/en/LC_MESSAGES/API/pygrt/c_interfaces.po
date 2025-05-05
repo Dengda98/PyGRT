@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGRT 0.7.1.dev5+g2230cdc.d20250427\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-27 12:43+0800\n"
+"POT-Creation-Date: 2025-05-05 22:22+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -81,6 +81,14 @@ msgstr ""
 
 #: ../../docstring of pygrt.c_interfaces.C_compute_travt1d:1
 msgid "计算1D层状半空间的初至波走时"
+msgstr ""
+
+#: ../../docstring of pygrt.c_interfaces.C_read_pymod_from_file:1
+msgid "读取模型文件并进行预处理"
+msgstr ""
+
+#: ../../docstring of pygrt.c_interfaces.C_free_pymod:1
+msgid "释放C程序中申请的PYMODEL1D结构体内存"
 msgstr ""
 
 #: ../../docstring of pygrt.c_interfaces.C_free:1

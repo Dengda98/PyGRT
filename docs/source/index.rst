@@ -44,7 +44,7 @@
 + **特殊情况下的计算优化**。目前包括两个部分：  
 \
 
-  - **当震中距** :math:`r` **很大时**。由于结果中Bessel函数的形式为 :math:`J_m(kr)`，当震中距变大时，积分要求波数 :math:`k` 的积分间隔就越小，导致计算变慢。目前 **PyGRT** 实现了 **基于线性插值的Filon积分** 以缓解此问题 :ref:`(纪晨, 姚振兴, 1995) <jichen_1995>` :ref:`(初稿) <yao_init_manuscripts>` ，将每个积分小区间内的Bessel函数取渐近公式，使每个区间内的积分近似值可获得解析解，这样可加大波数 :math:`k` 的积分间隔，提高计算速度。
+  - **当震中距** :math:`r` **很大时**。由于结果中Bessel函数的形式为 :math:`J_m(kr)`，当震中距变大时，积分要求波数 :math:`k` 的积分间隔就越小，导致计算变慢。目前 **PyGRT** 实现了 **基于线性插值的Filon积分** :ref:`(纪晨, 姚振兴, 1995) <jichen_1995>` :ref:`(初稿) <yao_init_manuscripts>` 和 **自适应Filon积分** :ref:`(Chen and Zhang, 2001) <chen_2001>` :ref:`(张海明, 2021) <zhang_book_2021>` 以缓解此问题，可显著提高计算速度。
 \
 
   - **当震源深度和台站深度很接近时（如第一类Lamb问题，台站和震源均位于地表）**。此时核函数随着波数 :math:`k` 的增加收敛非常慢，会在收敛值上下波动，导致很难到达到指定的收敛条件，需要耗费更多时间以达到更高的积分上限。目前 **PyGRT** 实现了 **峰谷平均法** 以缓解此问题 :ref:`(Zhang et al., 2003) <zhang_2003>` :ref:`(张海明, 2021) <zhang_book_2021>`，当波数 :math:`k` 达到一定上限时，可以统计波动的波峰波谷值，再递归取缩减序列 :math:`M_i \leftarrow 0.5\times(M_i + M_{i+1})` 得到收敛值。
@@ -109,3 +109,6 @@
 
 .. [7] Zhang, H. M., Chen, X. F., and Chang, S. 2003. An efficient numerical method for computing synthetic seismograms for a layered half-space with sources and receivers at close or same depths. Seismic motion, lithospheric structures, earthquake and volcanic sources: The Keiiti Aki volume, 467-486. doi: `10.1007/978-3-0348-8010-7_3 <https://doi.org/10.1007/978-3-0348-8010-7_3>`_ 
 
+.. _chen_2001:
+
+.. [8] Chen, X., Zhang, H., 2001. An Efficient Method for Computing Green’s Functions for a Layered Half-Space at Large Epicentral Distances. Bulletin of the Seismological Society of America 91, 858–869. doi: `10.1785/0120000113  <https://doi.org/10.1785/0120000113>`_ 
