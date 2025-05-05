@@ -15,6 +15,7 @@
 /** 单个水平层的结构体 */
 typedef struct _LAYER {
     MYREAL thk;  ///< 层厚，最后一层厚度不使用(当作正无穷), km
+    MYREAL dep;  ///< 该层上界面的深度，km
     MYREAL Va;  ///<   P波速度  km/s
     MYREAL Vb;  ///<   S波速度  km/s
     MYREAL Rho; ///<   密度  g/cm^3

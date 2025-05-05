@@ -22,8 +22,8 @@ void print_mod1d(const MODEL1D *mod1d){
     for(MYINT u=0; u<50; ++u){printf("---"); } printf("\n");
     for(MYINT i=0; i<mod1d->n; ++i){
         lay = mod1d->lays+i;
-        printf("     Va=%6.2f, Vb=%6.2f, thk=%6.2f, Rho=%6.2f, 1/Qa=%6.2e, 1/Qb=%6.2e\n",
-                     lay->Va, lay->Vb, lay->thk, lay->Rho, lay->Qainv, lay->Qbinv);
+        printf("     Dep=%6.2f, Va=%6.2f, Vb=%6.2f, thk=%6.2f, Rho=%6.2f, 1/Qa=%6.2e, 1/Qb=%6.2e\n",
+                     lay->dep, lay->Va, lay->Vb, lay->thk, lay->Rho, lay->Qainv, lay->Qbinv);
         printf("     mu=(%e %+e I)\n", creal(lay->mu), cimag(lay->mu));
         printf("     lambda=(%e %+e I)\n", creal(lay->lambda), cimag(lay->lambda));
         printf("     delta=(%e %+e I)\n", creal(lay->delta), cimag(lay->delta));
@@ -138,9 +138,11 @@ void get_mod1d(const PYMODEL1D *pymod1d, MODEL1D *mod1d){
     // MYREAL Rho0;
     // MYREAL Vb0;
     LAYER *lay;
+    MYREAL dep=0.0;
     for(MYINT i=0; i<n; ++i){
         lay = mod1d->lays + i;
         lay->thk = pymod1d->Thk[i];
+        lay->dep = dep;
         lay->Va  = pymod1d->Va[i];
         lay->Vb  = pymod1d->Vb[i];
         lay->Rho = pymod1d->Rho[i];
@@ -150,6 +152,8 @@ void get_mod1d(const PYMODEL1D *pymod1d, MODEL1D *mod1d){
         lay->mu = (lay->Vb)*(lay->Vb)*(lay->Rho);
         lay->lambda = (lay->Va)*(lay->Va)*(lay->Rho) - RTWO*lay->mu;
         lay->delta = (lay->lambda + lay->mu) / (lay->lambda + RTHREE*lay->mu);
+
+        dep += pymod1d->Thk[i];
     }
 
 }
@@ -171,6 +175,7 @@ void copy_mod1d(const MODEL1D *mod1d1, MODEL1D *mod1d2){
         lay2 = mod1d2->lays + i;
 
         lay2->thk = lay1->thk;
+        lay2->dep = lay1->dep;
         lay2->Va = lay1->Va;
         lay2->Vb = lay1->Vb;
         lay2->Rho = lay1->Rho;
