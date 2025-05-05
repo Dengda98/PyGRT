@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGRT 0.7.1.dev5+g2230cdc.d20250427\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-27 12:43+0800\n"
+"POT-Creation-Date: 2025-05-05 22:22+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -162,38 +162,48 @@ msgstr ""
 
 #: of pygrt.pymod.PyModel1D.compute_grn:19
 #: pygrt.pymod.PyModel1D.compute_static_grn:11
-msgid "Filon积分的间隔 filonLength, 和波数积分和Filon积分的分割点filonCut, k*=<filonCut>/rmax"
+msgid "Filon积分的间隔"
 msgstr ""
 
 #: of pygrt.pymod.PyModel1D.compute_grn:20
 #: pygrt.pymod.PyModel1D.compute_static_grn:12
-msgid "是否计算位移u的空间导数"
+msgid "自适应Filon积分采样精度"
 msgstr ""
 
 #: of pygrt.pymod.PyModel1D.compute_grn:21
-msgid "待计算的震源类型"
+#: pygrt.pymod.PyModel1D.compute_static_grn:13
+msgid "波数积分和Filon积分的分割点filonCut, k*=<filonCut>/rmax"
 msgstr ""
 
 #: of pygrt.pymod.PyModel1D.compute_grn:22
-#: pygrt.pymod.PyModel1D.compute_static_grn:13
+#: pygrt.pymod.PyModel1D.compute_static_grn:14
+msgid "是否计算位移u的空间导数"
+msgstr ""
+
+#: of pygrt.pymod.PyModel1D.compute_grn:23
+msgid "待计算的震源类型"
+msgstr ""
+
+#: of pygrt.pymod.PyModel1D.compute_grn:24
+#: pygrt.pymod.PyModel1D.compute_static_grn:15
 msgid ""
 "波数k积分（包括Filon积分和峰谷平均法）的过程记录文件，常用于debug或者观察积分过程中 :math:`F(k,\\omega)` 和  "
 ":math:`F(k,\\omega)J_m(kr)k` 的变化"
 msgstr ""
 
-#: of pygrt.pymod.PyModel1D.compute_grn:23
+#: of pygrt.pymod.PyModel1D.compute_grn:25
 msgid "仅输出特定频点的过程记录文件，建议给定频点，否则默认所有频率点的记录文件都输出，很占空间"
 msgstr ""
 
-#: of pygrt.pymod.PyModel1D.compute_grn:24
+#: of pygrt.pymod.PyModel1D.compute_grn:26
 msgid "是否打印运行时间"
 msgstr ""
 
-#: of pygrt.pymod.PyModel1D.compute_grn:26
+#: of pygrt.pymod.PyModel1D.compute_grn:28
 msgid "- **dataLst** -   列表，每个元素为 :class:`obspy.Stream` 类型 )"
 msgstr ""
 
-#: of pygrt.pymod.PyModel1D.compute_grn:27
+#: of pygrt.pymod.PyModel1D.compute_grn:29
 msgid "**dataLst** -   列表，每个元素为 :class:`obspy.Stream` 类型 )"
 msgstr ""
 
@@ -223,11 +233,11 @@ msgstr ""
 msgid "定义波数k积分的间隔 `dk=2\\pi / (L*rmax)`, 默认15；负数表示使用Filon积分"
 msgstr ""
 
-#: of pygrt.pymod.PyModel1D.compute_static_grn:15
+#: of pygrt.pymod.PyModel1D.compute_static_grn:17
 msgid "- **dataDct** -   字典形式的格林函数"
 msgstr ""
 
-#: of pygrt.pymod.PyModel1D.compute_static_grn:16
+#: of pygrt.pymod.PyModel1D.compute_static_grn:18
 msgid "**dataDct** -   字典形式的格林函数"
 msgstr ""
 
