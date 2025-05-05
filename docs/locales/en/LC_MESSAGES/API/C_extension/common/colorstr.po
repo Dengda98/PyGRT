@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
+"Project-Id-Version: PyGRT 0.7.1.dev5+g2230cdc.d20250427\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"POT-Creation-Date: 2025-04-27 12:43+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -20,12 +20,10 @@ msgstr ""
 "Generated-By: Babel 2.16.0\n"
 
 #: ../../source/API/C_extension/common/colorstr.rst:2
-#: 40cbf7ce17ed4b7a96024947c64b970b
 msgid "colorstr.h"
 msgstr ""
 
 #: ../../source/API/C_extension/common/colorstr.rst
-#: 6580f266f2904b7180a6023d4ddebf66
 msgid "Defines"
 msgstr ""
 

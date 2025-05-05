@@ -16,7 +16,7 @@
 /**
  * 根据百分比打印进度条  
  * 
- * @param    prefix     (in)进度条前缀字符串
- * @param    percentage (in)百分比(整数)
+ * @param[in]    prefix         进度条前缀字符串
+ * @param[in]    percentage     百分比(整数)
  */
 void printprogressBar(const char *prefix, MYINT percentage);

@@ -27,32 +27,17 @@
 
 
 void static_kernel(
-    const MODEL1D *mod1d, MYCOMPLEX omega, MYREAL k,
-    MYCOMPLEX EXP_qwv[3][3], MYCOMPLEX VF_qwv[3][3], MYCOMPLEX HF_qwv[3][3], MYCOMPLEX DC_qwv[3][3],
-    bool calc_uiz,
-    MYCOMPLEX EXP_uiz_qwv[3][3], MYCOMPLEX VF_uiz_qwv[3][3], MYCOMPLEX HF_uiz_qwv[3][3], MYCOMPLEX DC_uiz_qwv[3][3])
-{
+    const MODEL1D *mod1d, MYCOMPLEX omega, MYREAL k, MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
+    bool calc_uiz, MYCOMPLEX QWV_uiz[SRC_M_NUM][QWV_NUM], MYINT *stats)
+{   
     // 初始化qwv为0
-    for(MYINT i=0; i<3; ++i){
-        for(MYINT j=0; j<3; ++j){
-            if(EXP_qwv!=NULL) EXP_qwv[i][j] = RZERO;
-            if(VF_qwv!=NULL)  VF_qwv[i][j] = RZERO;
-            if(HF_qwv!=NULL)  HF_qwv[i][j] = RZERO;
-            if(DC_qwv!=NULL)  DC_qwv[i][j] = RZERO;
+    for(MYINT i=0; i<SRC_M_NUM; ++i){
+        for(MYINT j=0; j<QWV_NUM; ++j){
+            QWV[i][j] = CZERO;
+            if(calc_uiz)  QWV_uiz[i][j] = CZERO;
         }
     }
-    
-    if(calc_uiz){
-        // 初始化qwv为0
-        for(MYINT i=0; i<3; ++i){
-            for(MYINT j=0; j<3; ++j){
-                if(EXP_uiz_qwv!=NULL) EXP_uiz_qwv[i][j] = RZERO;
-                if(VF_uiz_qwv!=NULL)  VF_uiz_qwv[i][j] = RZERO;
-                if(HF_uiz_qwv!=NULL)  HF_uiz_qwv[i][j] = RZERO;
-                if(DC_uiz_qwv!=NULL)  DC_uiz_qwv[i][j] = RZERO;
-            }
-        }
-    }
+
 
     bool ircvup = mod1d->ircvup;
     MYINT isrc = mod1d->isrc; // 震源所在虚拟层位, isrc>=1
@@ -214,7 +199,7 @@ void static_kernel(
                     RD, RDL, RU, RUL, 
                     TD, TDL, TU, TUL,
                     RD_FA, pRDL_FA, RU_FA, pRUL_FA, 
-                    TD_FA, pTDL_FA, TU_FA, pTUL_FA);  
+                    TD_FA, pTDL_FA, TU_FA, pTUL_FA, stats);  
             }
 
         }
@@ -247,7 +232,7 @@ void static_kernel(
                     RD, RDL, RU, RUL, 
                     TD, TDL, TU, TUL,
                     RD_RS, pRDL_RS, RU_RS, pRUL_RS, 
-                    TD_RS, pTDL_RS, TU_RS, pTUL_RS);  // 写入原地址
+                    TD_RS, pTDL_RS, TU_RS, pTUL_RS, stats);  // 写入原地址
             }
         } 
         // BL
@@ -283,7 +268,7 @@ void static_kernel(
                         RD, RDL, RU, RUL, 
                         TD, TDL, TU, TUL,
                         RD_BL, pRDL_BL, RU_BL, pRUL_BL, 
-                        TD_BL, pTDL_BL, TU_BL, pTUL_BL);  // 写入原地址
+                        TD_BL, pTDL_BL, TU_BL, pTUL_BL, stats);  // 写入原地址
                 } else {
                     recursion_RT_2x2(
                         RD_BL, RDL_BL, RU_BL, RUL_BL, 
@@ -291,7 +276,7 @@ void static_kernel(
                         RD, RDL, RU, RUL, 
                         TD, TDL, TU, TUL,
                         RD_BL, pRDL_BL, NULL, NULL, 
-                        NULL, NULL, NULL, NULL);  // 写入原地址
+                        NULL, NULL, NULL, NULL, stats);  // 写入原地址
                 }
                 
             }
@@ -303,22 +288,11 @@ void static_kernel(
 
 
     // 计算震源系数
-    MYCOMPLEX EXP[3][3][2], VF[3][3][2], HF[3][3][2], DC[3][3][2];
-    MYCOMPLEX (*pEXP)[3][2] = (EXP_qwv!=NULL)? EXP : NULL; 
-    MYCOMPLEX (*pVF)[3][2]  = (VF_qwv!=NULL)?  VF  : NULL; 
-    MYCOMPLEX (*pHF)[3][2]  = (HF_qwv!=NULL)?  HF  : NULL; 
-    MYCOMPLEX (*pDC)[3][2]  = (DC_qwv!=NULL)?  DC  : NULL; 
-    for(MYINT i=0; i<3; ++i){
-        for(MYINT j=0; j<3; ++j){
-            for(MYINT p=0; p<2; ++p){
-                EXP[i][j][p] = VF[i][j][p] = HF[i][j][p] = DC[i][j][p] = RZERO;
-            }
-        }
-    }
-    static_source_coef(src_delta, k, pEXP, pVF, pHF, pDC);
+    MYCOMPLEX src_coef[SRC_M_NUM][QWV_NUM][2] = {0};
+    static_source_coef(src_delta, k, src_coef);
 
     // 临时中转矩阵 (temperary)
-    MYCOMPLEX tmpR1[2][2], tmpR2[2][2], tmp2x2[2][2], tmpRL, tmp2x2_uiz[2][2], tmpRL_uiz;
+    MYCOMPLEX tmpR2[2][2], tmp2x2[2][2], tmpRL, tmp2x2_uiz[2][2], tmpRL_uiz;
     MYCOMPLEX inv_2x2T[2][2], invT;
 
     // 递推RU_FA
@@ -329,7 +303,7 @@ void static_kernel(
         RU_FA, RUL_FA, 
         TD_FA, TDL_FA,
         TU_FA, TUL_FA,
-        RU_FA, pRUL_FA, NULL, NULL);
+        RU_FA, pRUL_FA, NULL, NULL, stats);
 
     // 根据震源和台站相对位置，计算最终的系数
     if(ircvup){ // A接收  B震源
@@ -343,32 +317,21 @@ void static_kernel(
             RU_RS, RUL_RS, 
             TD_RS, TDL_RS,
             TU_RS, TUL_RS,
-            RU_FB, pRUL_FB, inv_2x2T, &invT);
+            RU_FB, pRUL_FB, inv_2x2T, &invT, stats);
         
         // 公式(5.7.12-14)
-        // cmat2x2_mul(R_EV, inv_2x2T, tmpR1);
         cmat2x2_mul(RD_BL, RU_FB, tmpR2);
         cmat2x2_one_sub(tmpR2);
-        cmat2x2_inv(tmpR2, tmpR2);// (I - xx)^-1
+        cmat2x2_inv(tmpR2, tmpR2, stats);// (I - xx)^-1
         cmat2x2_mul(inv_2x2T, tmpR2, tmp2x2);
 
         if(calc_uiz) cmat2x2_assign(tmp2x2, tmp2x2_uiz); // 为后续计算空间导数备份
 
         cmat2x2_mul(R_EV, tmp2x2, tmp2x2);
         tmpRL = R_EVL * invT  / (RONE - RDL_BL * RUL_FB);
-        for(MYINT m=0; m<3; ++m){
-            if(0==m){
-                // 爆炸源
-                if(EXP_qwv!=NULL) get_qwv(ircvup, tmp2x2, tmpRL, RD_BL, RDL_BL, EXP[m], EXP_qwv[m]);
-                // 垂直力源
-                if(VF_qwv!=NULL)  get_qwv(ircvup, tmp2x2, tmpRL, RD_BL, RDL_BL, VF[m], VF_qwv[m]);
-            }
-            
-            // 水平力源
-            if(1==m && HF_qwv!=NULL) get_qwv(ircvup, tmp2x2, tmpRL, RD_BL, RDL_BL, HF[m], HF_qwv[m]);
 
-            // 剪切位错
-            if(DC_qwv!=NULL)  get_qwv(ircvup, tmp2x2, tmpRL, RD_BL, RDL_BL, DC[m], DC_qwv[m]);
+        for(MYINT i=0; i<SRC_M_NUM; ++i){
+            get_qwv(ircvup, tmp2x2, tmpRL, RD_BL, RDL_BL, src_coef[i], QWV[i]);
         }
         
 
@@ -376,19 +339,9 @@ void static_kernel(
             calc_static_uiz_R_EV(rcv_delta, ircvup, k, RU_FA, RUL_FA, uiz_R_EV, puiz_R_EVL);
             cmat2x2_mul(uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
             tmpRL_uiz = tmpRL / R_EVL * uiz_R_EVL;
-            for(MYINT m=0; m<3; ++m){
-                if(0==m){
-                    // 爆炸源
-                    if(EXP_uiz_qwv!=NULL) get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RD_BL, RDL_BL, EXP[m], EXP_uiz_qwv[m]);
-                    // 垂直力源
-                    if(VF_uiz_qwv!=NULL)  get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RD_BL, RDL_BL, VF[m], VF_uiz_qwv[m]);
-                }
-                
-                // 水平力源
-                if(1==m && HF_uiz_qwv!=NULL) get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RD_BL, RDL_BL, HF[m], HF_uiz_qwv[m]);
-
-                // 剪切位错
-                if(DC_uiz_qwv!=NULL)  get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RD_BL, RDL_BL, DC[m], DC_uiz_qwv[m]);
+            
+            for(MYINT i=0; i<SRC_M_NUM; ++i){
+                get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RD_BL, RDL_BL, src_coef[i], QWV_uiz[i]);
             }    
         }
     }
@@ -404,53 +357,30 @@ void static_kernel(
             TD_RS, TDL_RS,
             TU_RS, TUL_RS,
             RD_BL, RDL_BL,
-            RD_AL, pRDL_AL, inv_2x2T, &invT);
+            RD_AL, pRDL_AL, inv_2x2T, &invT, stats);
         
         // 公式(5.7.26-27)
-        // cmat2x2_mul(R_EV, inv_2x2T, tmpR1);
         cmat2x2_mul(RU_FA, RD_AL, tmpR2);
         cmat2x2_one_sub(tmpR2);
-        cmat2x2_inv(tmpR2, tmpR2);// (I - xx)^-1
+        cmat2x2_inv(tmpR2, tmpR2, stats);// (I - xx)^-1
         cmat2x2_mul(inv_2x2T, tmpR2, tmp2x2);
         
         if(calc_uiz) cmat2x2_assign(tmp2x2, tmp2x2_uiz); // 为后续计算空间导数备份
 
         cmat2x2_mul(R_EV, tmp2x2, tmp2x2);
         tmpRL = R_EVL * invT / (RONE - RUL_FA * RDL_AL);
-        for(MYINT m=0; m<3; ++m){
-            if(0==m){
-                // 爆炸源
-                if(EXP_qwv!=NULL) get_qwv(ircvup, tmp2x2, tmpRL, RU_FA, RUL_FA, EXP[m], EXP_qwv[m]);
-                // 垂直力源
-                if(VF_qwv!=NULL)  get_qwv(ircvup, tmp2x2, tmpRL, RU_FA, RUL_FA, VF[m], VF_qwv[m]);
-            }
-            
-            // 水平力源
-            if(1==m && HF_qwv!=NULL) get_qwv(ircvup, tmp2x2, tmpRL, RU_FA, RUL_FA, HF[m], HF_qwv[m]);
-
-            // 剪切位错
-            if(DC_qwv!=NULL)  get_qwv(ircvup, tmp2x2, tmpRL, RU_FA, RUL_FA, DC[m], DC_qwv[m]);
-
+        
+        for(MYINT i=0; i<SRC_M_NUM; ++i){
+            get_qwv(ircvup, tmp2x2, tmpRL, RU_FA, RUL_FA, src_coef[i], QWV[i]);
         }
 
         if(calc_uiz){
             calc_static_uiz_R_EV(rcv_delta, ircvup, k, RD_BL, RDL_BL, uiz_R_EV, puiz_R_EVL);    
             cmat2x2_mul(uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
             tmpRL_uiz = tmpRL / R_EVL * uiz_R_EVL;
-            for(MYINT m=0; m<3; ++m){
-                if(0==m){
-                    // 爆炸源
-                    if(EXP_uiz_qwv!=NULL) get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RU_FA, RUL_FA, EXP[m], EXP_uiz_qwv[m]);
-                    // 垂直力源
-                    if(VF_uiz_qwv!=NULL)  get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RU_FA, RUL_FA, VF[m], VF_uiz_qwv[m]);
-                }
-                
-                // 水平力源
-                if(1==m && HF_uiz_qwv!=NULL) get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RU_FA, RUL_FA, HF[m], HF_uiz_qwv[m]);
-    
-                // 剪切位错
-                if(DC_uiz_qwv!=NULL)  get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RU_FA, RUL_FA, DC[m], DC_uiz_qwv[m]);
-    
+            
+            for(MYINT i=0; i<SRC_M_NUM; ++i){
+                get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RU_FA, RUL_FA, src_coef[i], QWV_uiz[i]);
             }
         }
     } // END if

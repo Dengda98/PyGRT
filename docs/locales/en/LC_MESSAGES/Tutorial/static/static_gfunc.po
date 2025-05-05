@@ -20,32 +20,26 @@ msgstr ""
 "Generated-By: Babel 2.16.0\n"
 
 #: ../../source/Tutorial/static/static_gfunc.rst:2
-#: 23f2a5d175754514a37be833ac64528b
 msgid "计算静态格林函数"
 msgstr "Compute Static Green's Functions"
 
 #: ../../source/Tutorial/static/static_gfunc.rst
-#: 795b02b0229c41f4a8e72809873875b3
 msgid "Author"
 msgstr ""
 
 #: ../../source/Tutorial/static/static_gfunc.rst:4
-#: 439db6c1445440938fece394b30e060d
 msgid "Zhu Dengda"
 msgstr ""
 
 #: ../../source/Tutorial/static/static_gfunc.rst
-#: 3fd3d2c18db0457497cb241a99c959af
 msgid "Email"
 msgstr ""
 
 #: ../../source/Tutorial/static/static_gfunc.rst:5
-#: 302fffe760ce4de3b82394e73e635bf9
 msgid "zhudengda@mail.iggcas.ac.cn"
 msgstr ""
 
 #: ../../source/Tutorial/static/static_gfunc.rst:9
-#: f5a8ed5811c943eeb93f1e9decb47101
 msgid ""
 "Python中计算静态格林函数的主函数为 :func:`compute_static_grn() "
 "<pygrt.pymod.PyModel1D.compute_static_grn>` ，C程序为 :command:`stgrt`。"
@@ -53,41 +47,34 @@ msgstr ""
 "The main function for computing static Green's functions in Python is :func:`compute_static_grn() <pygrt.pymod.PyModel1D.compute_static_grn>`, and the corresponding C program is :command:`stgrt`."
 
 #: ../../source/Tutorial/static/static_gfunc.rst:11
-#: 04526115ca9d4f53a35f5615e87ea52a
 msgid ""
 "建议先阅读完动态格林函数的计算过程（ :ref:`gfunc_rst` ）。静态情况与动态情况采取的计算方法一致，只是推导细节会有不同，详见 "
 ":ref:`初稿 <yao_init_manuscripts>` 。"
 msgstr "It is recommended to first read through the process of computing dynamic Green's functions (:ref:`gfunc_rst`). The computation methods for static and dynamic cases are the same, but the derivation details differ. See :ref:`初稿 <yao_init_manuscripts>` for more details."
 
 #: ../../source/Tutorial/static/static_gfunc.rst:15
-#: 147bd7f0829446ecb0f279ec8720328c
 msgid "示例程序"
 msgstr "Simple run"
 
 #: ../../source/Tutorial/static/static_gfunc.rst:17
-#: f99be5faebb548fe9f39e0f2b023e5de
 msgid ""
 "假设在 :file:`milrow` "
 "模型中，震源深度2km，接收点位于地表。北向(X/km)在[-3,3]范围内等距采样41个点，东向(Y/km)在[-2.5,2.5]范围内等距采样33个点，计算这些点上的静态格林函数。"
 msgstr "Assume in the :file:`milrow` model, the source depth is 2 km, and the receiver is located on the surface. The north direction (X/km) is sampled evenly at 41 points within the range [-3, 3], and the east direction (Y/km) is sampled evenly at 33 points within the range [-2.5, 2.5]. Compute the static Green's functions at these points."
 
 #: ../../source/Tutorial/static/static_gfunc.rst:21
-#: 12ef70c2e1f04eafb81b1bdede5a1867
 msgid "C"
 msgstr ""
 
 #: ../../source/Tutorial/static/static_gfunc.rst:28
-#: 5115ab2ea6ac4ec2b570548c77cd2159
 msgid "输出的 :file:`grn` 文件内部如下，开头的 ``#`` 用于保存源点和场点所在介质层的物性参数。"
 msgstr "The content of the output :file:`grn` file is as follows, with the leading ``#`` used to store the physical properties of the medium layers where the source and receiver points are located."
 
 #: ../../source/Tutorial/static/static_gfunc.rst:34
-#: baaa1c9edae24b2594f8a86e8133531b
 msgid "Python"
 msgstr ""
 
 #: ../../source/Tutorial/static/static_gfunc.rst:41
-#: 11c496d1da55438bbf9762b1251d347e
 msgid "函数返回字典类型，包括一些基本参数以及格林函数（2D矩阵）。"
 msgstr "The function returns a dictionary type, including some basic parameters and Green's functions (2D matrix)."
 

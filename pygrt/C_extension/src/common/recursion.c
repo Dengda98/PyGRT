@@ -24,14 +24,14 @@ void recursion_RD(
     const MYCOMPLEX RD1[2][2], MYCOMPLEX RDL1, const MYCOMPLEX RU1[2][2], MYCOMPLEX RUL1,
     const MYCOMPLEX TD1[2][2], MYCOMPLEX TDL1, const MYCOMPLEX TU1[2][2], MYCOMPLEX TUL1,
     const MYCOMPLEX RD2[2][2], MYCOMPLEX RDL2, 
-    MYCOMPLEX RD[2][2], MYCOMPLEX *RDL, MYCOMPLEX inv_2x2T[2][2], MYCOMPLEX *invT)
+    MYCOMPLEX RD[2][2], MYCOMPLEX *RDL, MYCOMPLEX inv_2x2T[2][2], MYCOMPLEX *invT, MYINT *stats)
 {
     MYCOMPLEX tmp1[2][2], tmp2[2][2], inv1;
 
     // RD, RDL
     cmat2x2_mul(RU1, RD2, tmp1);
     cmat2x2_one_sub(tmp1);
-    cmat2x2_inv(tmp1, tmp1);
+    cmat2x2_inv(tmp1, tmp1, stats);  if(*stats==INVERSE_FAILURE)  return;
     cmat2x2_mul(tmp1, TD1, tmp2);
     if(inv_2x2T!=NULL) cmat2x2_assign(tmp2, inv_2x2T);
 
@@ -49,14 +49,14 @@ void recursion_TD(
     const MYCOMPLEX TD1[2][2], MYCOMPLEX TDL1, 
     const MYCOMPLEX RD2[2][2], MYCOMPLEX RDL2, 
     const MYCOMPLEX TD2[2][2], MYCOMPLEX TDL2, 
-    MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX inv_2x2T[2][2], MYCOMPLEX *invT)
+    MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX inv_2x2T[2][2], MYCOMPLEX *invT, MYINT *stats)
 {
     MYCOMPLEX tmp1[2][2], tmp2[2][2], inv1;
 
     // TD, TDL
     cmat2x2_mul(RU1, RD2, tmp2);
     cmat2x2_one_sub(tmp2);
-    cmat2x2_inv(tmp2, tmp1);
+    cmat2x2_inv(tmp2, tmp1, stats);  if(*stats==INVERSE_FAILURE)  return;
     cmat2x2_mul(tmp1, TD1, tmp2);
     if(inv_2x2T!=NULL)  cmat2x2_assign(tmp2, inv_2x2T);
     cmat2x2_mul(TD2, tmp2, TD);
@@ -72,14 +72,14 @@ void recursion_RU(
     const MYCOMPLEX RU1[2][2], MYCOMPLEX RUL1,
     const MYCOMPLEX RD2[2][2], MYCOMPLEX RDL2, const MYCOMPLEX RU2[2][2], MYCOMPLEX RUL2,
     const MYCOMPLEX TD2[2][2], MYCOMPLEX TDL2, const MYCOMPLEX TU2[2][2], MYCOMPLEX TUL2,
-    MYCOMPLEX RU[2][2], MYCOMPLEX *RUL, MYCOMPLEX inv_2x2T[2][2], MYCOMPLEX *invT)
+    MYCOMPLEX RU[2][2], MYCOMPLEX *RUL, MYCOMPLEX inv_2x2T[2][2], MYCOMPLEX *invT, MYINT *stats)
 {
     MYCOMPLEX tmp1[2][2], tmp2[2][2], inv1;
 
     // RU, RUL
     cmat2x2_mul(RD2, RU1, tmp2);
     cmat2x2_one_sub(tmp2);
-    cmat2x2_inv(tmp2, tmp1);
+    cmat2x2_inv(tmp2, tmp1, stats);  if(*stats==INVERSE_FAILURE)  return;
     cmat2x2_mul(tmp1, TU2, tmp2);
     if(inv_2x2T!=NULL)  cmat2x2_assign(tmp2, inv_2x2T);
 
@@ -98,14 +98,14 @@ void recursion_TU(
     const MYCOMPLEX TU1[2][2], MYCOMPLEX TUL1,
     const MYCOMPLEX RD2[2][2], MYCOMPLEX RDL2,
     const MYCOMPLEX TU2[2][2], MYCOMPLEX TUL2,
-    MYCOMPLEX TU[2][2], MYCOMPLEX *TUL, MYCOMPLEX inv_2x2T[2][2], MYCOMPLEX *invT)
+    MYCOMPLEX TU[2][2], MYCOMPLEX *TUL, MYCOMPLEX inv_2x2T[2][2], MYCOMPLEX *invT, MYINT *stats)
 {
     MYCOMPLEX tmp1[2][2], tmp2[2][2], inv1;
 
     // TU, TUL
     cmat2x2_mul(RD2, RU1, tmp2);
     cmat2x2_one_sub(tmp2);
-    cmat2x2_inv(tmp2, tmp1);
+    cmat2x2_inv(tmp2, tmp1, stats);  if(*stats==INVERSE_FAILURE)  return;
     cmat2x2_mul(tmp1, TU2, tmp2);
     if(inv_2x2T!=NULL) cmat2x2_assign(tmp2, inv_2x2T);
     cmat2x2_mul(TU1, tmp2, TU);
@@ -126,7 +126,7 @@ void recursion_RT_2x2(
     const MYCOMPLEX RD2[2][2], MYCOMPLEX RDL2, const MYCOMPLEX RU2[2][2], MYCOMPLEX RUL2,
     const MYCOMPLEX TD2[2][2], MYCOMPLEX TDL2, const MYCOMPLEX TU2[2][2], MYCOMPLEX TUL2,
     MYCOMPLEX RD[2][2], MYCOMPLEX *RDL, MYCOMPLEX RU[2][2], MYCOMPLEX *RUL,
-    MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX TU[2][2], MYCOMPLEX *TUL)
+    MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX TU[2][2], MYCOMPLEX *TUL, MYINT *stats)
 {
 
     // 临时矩阵
@@ -140,7 +140,7 @@ void recursion_RT_2x2(
     if( RD!=NULL || TD!=NULL ){
         cmat2x2_mul(RU1, RD2, tmp1);
         cmat2x2_one_sub(tmp1);
-        cmat2x2_inv(tmp1, tmp1);
+        cmat2x2_inv(tmp1, tmp1, stats);  if(*stats==INVERSE_FAILURE)  return;
         cmat2x2_mul(tmp1, TD1, tmp2);
 
         // TD
@@ -160,7 +160,7 @@ void recursion_RT_2x2(
     if( RU!=NULL || TU!=NULL ){
         cmat2x2_mul(RD2, RU1, tmp1);
         cmat2x2_one_sub(tmp1);
-        cmat2x2_inv(tmp1, tmp1);
+        cmat2x2_inv(tmp1, tmp1, stats);  if(*stats==INVERSE_FAILURE)  return;
         cmat2x2_mul(tmp1, TU2, tmp2);
 
         // TU
@@ -213,8 +213,8 @@ void recursion_RT_2x2_imaginary(
     MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX TU[2][2], MYCOMPLEX *TUL)
 {
     MYCOMPLEX exa, exb, exab, ex2a, ex2b; 
-    exa = CEXP(-k*thk*xa1);
-    exb = CEXP(-k*thk*xb1);
+    exa = exp(-k*thk*xa1);
+    exb = exp(-k*thk*xb1);
 
     exab = exa * exb;
     ex2a = exa * exa;
@@ -243,7 +243,7 @@ void get_qwv(
     bool ircvup, 
     const MYCOMPLEX R1[2][2], MYCOMPLEX RL1, 
     const MYCOMPLEX R2[2][2], MYCOMPLEX RL2, 
-    const MYCOMPLEX coef[3][2], MYCOMPLEX qwv[3])
+    const MYCOMPLEX coef[QWV_NUM][2], MYCOMPLEX qwv[QWV_NUM])
 {
     MYCOMPLEX qw0[2], qw1[2], v0;
     MYCOMPLEX coefD[2] = {coef[0][0], coef[1][0]};

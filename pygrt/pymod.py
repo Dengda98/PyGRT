@@ -16,6 +16,7 @@ from obspy import read, Stream, Trace, UTCDateTime
 from scipy.fft import irfft, ifft
 from obspy.core import AttribDict
 from typing import List, Dict, Union
+import tempfile
 
 from time import time
 from copy import deepcopy
@@ -25,9 +26,6 @@ from ctypes import _Pointer
 from .c_interfaces import *
 from .c_structures import *
 from .pygrn import PyGreenFunction
-
-PC_GRN2D = Array[Array[c_PGRN]]
-
 
 __all__ = [
     "PyModel1D",
@@ -44,84 +42,31 @@ class PyModel1D:
             :param    deprcv:     台站深度(km)  
 
         '''
-        self.modarr:np.ndarray
-        self.depsrc = depsrc 
-        self.deprcv = deprcv 
+        self.depsrc:float = depsrc 
+        self.deprcv:float = deprcv 
         self.c_pymod1d:c_PyModel1D 
 
-        if depsrc < 0:
-            raise ValueError(f"depsrc ({depsrc}) < 0")
-        if deprcv < 0:
-            raise ValueError(f"deprcv ({deprcv}) < 0")
+        # 将modarr写入临时数组
+        with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmpfile:
+            np.savetxt(tmpfile, modarr0, "%.15e")
+            tmp_path = tmpfile.name  # 获取临时文件路径
+            print(tmp_path)
 
-
-        modarr = modarr0.copy()
-
-        # 最后一层，本质只为保证震源和台站能插入模型中
-        modarr[-1, 0] = np.max([modarr[-1, 0], 9e10, deprcv, depsrc]) + 1.0 
-
-        # 将震源和台站的虚拟层位插入模型
-        dep = 0.0
-        ircv = 0
-        for i in range(modarr.shape[0]):
-            dep += modarr[i,0]
-            if dep > deprcv:
-                ircv = i+1
-                lay = np.copy(modarr[i,:])
-                lay[0] = dep - deprcv
-                modarr[i,0] -= lay[0]
-                modarr = np.insert(modarr, ircv, lay, axis=0)
-                break   
-
-        dep = 0.0
-        isrc = 0 
-        for i in range(modarr.shape[0]):
-            dep += modarr[i,0]
-            if dep > depsrc:
-                isrc = i+1
-                lay = np.copy(modarr[i,:])
-                lay[0] = dep - depsrc
-                modarr[i,0] -= lay[0]
-                modarr = np.insert(modarr, isrc, lay, axis=0)
-                break 
-
-        # 如果台站位于震源深度以下，需要调整层索引; 因为先插入的台站，再插入的震源 
-        if depsrc < deprcv:
-            ircv += 1
-
-        # 调整层厚，拒绝0厚度层 
-        # for i in range(modarr.shape[0]):
-        #     if modarr[i, 0] == 0.0:
-        #         modarr[i, 0] = 1e-5
-
-            
-        c_pymod1d = c_PyModel1D(
-            modarr.shape[0],
-            depsrc,
-            deprcv,
-            isrc, 
-            ircv, 
-            (ircv<isrc),
-
-            npct.as_ctypes(modarr[:,0].astype(NPCT_REAL_TYPE)),
-            npct.as_ctypes(modarr[:,1].astype(NPCT_REAL_TYPE)),
-            npct.as_ctypes(modarr[:,2].astype(NPCT_REAL_TYPE)),
-            npct.as_ctypes(modarr[:,3].astype(NPCT_REAL_TYPE)),
-            npct.as_ctypes(modarr[:,4].astype(NPCT_REAL_TYPE)),
-            npct.as_ctypes(modarr[:,5].astype(NPCT_REAL_TYPE)),
-        )
-
-        self.modarr = modarr
-        self.c_pymod1d = c_pymod1d
-
-        self.isrc = isrc
-        self.ircv = ircv
-
-        self.vmax = np.max(self.modarr[:, 1:3])
-        self.vmin = np.min(self.modarr[:, 1:3])
-        if self.vmin <= 0.0:
-            raise ValueError("Zero Velocity ??")
+        try:
+            c_pymod_ptr = C_read_pymod_from_file("pygrt".encode("utf-8"), tmp_path.encode("utf-8"), depsrc, deprcv)
+            self.c_pymod1d = c_pymod_ptr.contents  # 这部分内存在C中申请，需由C函数释放。占用不多，这里跳过
+        finally:
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
         
+        self.isrc = self.c_pymod1d.isrc
+        self.ircv = self.c_pymod1d.ircv
+
+        va = npct.as_array(self.c_pymod1d.Va, (self.c_pymod1d.n,))
+        vb = npct.as_array(self.c_pymod1d.Vb, (self.c_pymod1d.n,))
+        self.vmin = min(np.min(va), np.min(vb))
+        self.vmax = max(np.max(va), np.max(vb))
+
     
     def compute_travt1d(self, dist:float):
         r"""
@@ -156,9 +101,6 @@ class PyModel1D:
     def _init_grn(
         self,
         distarr:np.ndarray,
-        calc_EXP:bool, calc_VF:bool, calc_HF:bool, calc_DC:bool,
-        C_EXPgrn:PC_GRN2D, C_VFgrn:PC_GRN2D, C_HFgrn:PC_GRN2D, 
-        C_DDgrn:PC_GRN2D, C_DSgrn:PC_GRN2D, C_SSgrn:PC_GRN2D, 
         nt:int, dt:float, freqs:np.ndarray, wI:float, prefix:str=''):
 
         '''
@@ -167,53 +109,24 @@ class PyModel1D:
 
         depsrc = self.depsrc
         deprcv = self.deprcv
+        nr = len(distarr)
 
-        EXPgrn:List[List[PyGreenFunction]] = []
-        VFgrn:List[List[PyGreenFunction]] = []
-        DDgrn:List[List[PyGreenFunction]] = []
-        HFgrn:List[List[PyGreenFunction]] = []
-        DSgrn:List[List[PyGreenFunction]] = []
-        SSgrn:List[List[PyGreenFunction]] = []
+        pygrnLst:List[List[List[PyGreenFunction]]] = []
+        c_grnArr = (((PCPLX*CHANNEL_NUM)*SRC_M_NUM)*nr)()
         
         for ir in range(len(distarr)):
             dist = distarr[ir]
-            EXPgrn.append([])
-            VFgrn .append([])
-            DDgrn .append([])
-            HFgrn .append([])
-            DSgrn .append([])
-            SSgrn .append([])
-            for i, comp in enumerate(['Z', 'R', 'T']):
-                if i<2:
-                    if calc_EXP:
-                        grn = PyGreenFunction(f'{prefix}EX{comp}', nt, dt, freqs, wI, dist, depsrc, deprcv)
-                        EXPgrn[ir].append(grn)
-                        C_EXPgrn[ir][i] = pointer(grn.c_grn)
+            pygrnLst.append([])
+            for isrc in range(SRC_M_NUM):
+                pygrnLst[ir].append([])
+                for ic, comp in enumerate(ZRTchs):
 
-                    if calc_VF:
-                        grn = PyGreenFunction(f'{prefix}VF{comp}', nt, dt, freqs, wI, dist, depsrc, deprcv)
-                        VFgrn[ir].append(grn)
-                        C_VFgrn[ir][i] = pointer(grn.c_grn)
-                    
-                    if calc_DC:
-                        grn = PyGreenFunction(f'{prefix}DD{comp}', nt, dt, freqs, wI, dist, depsrc, deprcv)
-                        DDgrn[ir].append(grn)
-                        C_DDgrn[ir][i] = pointer(grn.c_grn)
-                
-                if calc_HF:
-                    grn = PyGreenFunction(f'{prefix}HF{comp}', nt, dt, freqs, wI, dist, depsrc, deprcv)
-                    HFgrn[ir].append(grn)
-                    C_HFgrn[ir][i] = pointer(grn.c_grn)
+                    pygrn = PyGreenFunction(f'{prefix}{SRC_M_NAME_ABBR[isrc]}{comp}', nt, dt, freqs, wI, dist, depsrc, deprcv)
+                    pygrnLst[ir][isrc].append(pygrn)
+                    c_grnArr[ir][isrc][ic] = pygrn.cmplx_grn.ctypes.data_as(PCPLX)
 
-                if calc_DC:
-                    grn = PyGreenFunction(f'{prefix}DS{comp}', nt, dt, freqs, wI, dist, depsrc, deprcv)
-                    DSgrn[ir].append(grn)
-                    C_DSgrn[ir][i] = pointer(grn.c_grn)
-                    grn = PyGreenFunction(f'{prefix}SS{comp}', nt, dt, freqs, wI, dist, depsrc, deprcv)
-                    SSgrn[ir].append(grn)
-                    C_SSgrn[ir][i] = pointer(grn.c_grn) 
-
-        return EXPgrn, VFgrn, HFgrn, DDgrn, DSgrn, SSgrn
+        return pygrnLst, c_grnArr
+    
 
     def gen_gf_spectra(self, *args, **kwargs):
         r"Bad function name, has already been removed. Use 'compute_grn' instead."
@@ -231,11 +144,13 @@ class PyModel1D:
         ampk:float=1.15,
         k0:float=5.0, 
         Length:float=0.0, 
-        filonLC:Union[np.ndarray,List[float]]=[0.0,0.0],
+        filonLength:float=0.0,
+        safilonTol:float=0.0,
+        filonCut:float=0.0,
         delayT0:float=0.0,
         delayV0:float=0.0,
         calc_upar:bool=False,
-        gf_source=['EXP', 'VF', 'HF', 'DC'],
+        gf_source=['EX', 'VF', 'HF', 'DC'],
         statsfile:Union[str,None]=None, 
         statsidxs:Union[np.ndarray,List[int],None]=None, 
         print_runtime:bool=True):
@@ -260,7 +175,9 @@ class PyModel1D:
             :param    k0:            波数k积分的上限 :math:`\tilde{k_{max}}=\sqrt{(k_{0}*\pi/hs)^2 + (ampk*w/vmin_{ref})^2}` , 波数k积分循环必须退出, hs=max(震源和台站深度差,1.0)
             :param    Length:        定义波数k积分的间隔 `dk=2\pi / (L*rmax)`, 选取要求见 :ref:`(Bouchon, 1981) <bouchon_1981>` 
                                      :ref:`(张海明, 2021) <zhang_book_2021>`，默认自动选择
-            :param    filonLC:       Filon积分的间隔 filonLength, 和波数积分和Filon积分的分割点filonCut, k*=<filonCut>/rmax
+            :param    filonLength:   Filon积分的间隔
+            :param    safilonTol:    自适应Filon积分采样精度
+            :param    filonCut:      波数积分和Filon积分的分割点filonCut, k*=<filonCut>/rmax
             :param    calc_upar:     是否计算位移u的空间导数
             :param    gf_source:     待计算的震源类型
             :param    statsfile:     波数k积分（包括Filon积分和峰谷平均法）的过程记录文件，常用于debug或者观察积分过程中 :math:`F(k,\omega)` 和  :math:`F(k,\omega)J_m(kr)k` 的变化    
@@ -275,7 +192,7 @@ class PyModel1D:
         depsrc = self.depsrc
         deprcv = self.deprcv
 
-        calc_EXP:bool = 'EXP' in gf_source
+        calc_EX:bool = 'EX' in gf_source
         calc_VF:bool = 'VF' in gf_source
         calc_HF:bool = 'HF' in gf_source
         calc_DC:bool = 'DC' in gf_source
@@ -299,11 +216,17 @@ class PyModel1D:
         
         if Length < 0.0:
             raise ValueError(f"Length ({Length}) < 0")
-        if np.any(filonLC) < 0.0:
-            raise ValueError(f"filonLC ({filonLC}) < 0") 
+        if filonLength < 0.0:
+            raise ValueError(f"filonLength ({filonLength}) < 0") 
+        if filonCut < 0.0:
+            raise ValueError(f"filonCut ({filonCut}) < 0") 
+        if safilonTol < 0.0:
+            raise ValueError(f"filonCut ({safilonTol}) < 0") 
         
-        filonLC = np.array(filonLC).astype(NPCT_REAL_TYPE)
-
+        # 只能设置一种filon积分方法
+        if safilonTol > 0.0 and filonLength > 0.0:
+            raise ValueError(f"You should only set one of filonLength and safilonTol.")
+        
         nf = nt//2+1 
         df = 1/(nt*dt)
         fnyq = 1/(2*dt)
@@ -319,8 +242,10 @@ class PyModel1D:
             
         f1 = max(0, f1) 
         f2 = min(f2, fnyq + df)
-        nf1 = max(0, int(np.floor(f1/df)))
-        nf2 = min(int(np.ceil(f2/df)), nf-1) 
+        nf1 = min(int(np.ceil(f1/df)), nf-1)
+        nf2 = min(int(np.floor(f2/df)), nf-1)
+        if nf2 < nf1:
+            nf2 = nf1
 
         # 所有频点 
         freqs = (np.arange(0, nf)*df).astype(NPCT_REAL_TYPE) 
@@ -371,49 +296,16 @@ class PyModel1D:
             print(f"Length={Length:.2f}")
 
 
-        # 初始化格林函数C结构体
-        C_EXPgrn = ((c_PGRN*2)*nrs)() if calc_EXP else None
-        C_VFgrn = ((c_PGRN*2)*nrs)() if calc_VF else None
-        C_HFgrn = ((c_PGRN*3)*nrs)() if calc_HF else None
-        C_DDgrn = ((c_PGRN*2)*nrs)() if calc_DC else None
-        C_DSgrn = ((c_PGRN*3)*nrs)() if calc_DC else None
-        C_SSgrn = ((c_PGRN*3)*nrs)() if calc_DC else None
-
-        # 位移u的空间导数
-        C_EXPgrn_uiz = C_VFgrn_uiz = C_HFgrn_uiz = C_DDgrn_uiz = C_DSgrn_uiz = C_SSgrn_uiz = None
-        C_EXPgrn_uir = C_VFgrn_uir = C_HFgrn_uir = C_DDgrn_uir = C_DSgrn_uir = C_SSgrn_uir = None
-        if calc_upar:
-            C_EXPgrn_uiz = ((c_PGRN*2)*nrs)() if calc_EXP else None
-            C_VFgrn_uiz = ((c_PGRN*2)*nrs)() if calc_VF else None
-            C_HFgrn_uiz = ((c_PGRN*3)*nrs)() if calc_HF else None
-            C_DDgrn_uiz = ((c_PGRN*2)*nrs)() if calc_DC else None
-            C_DSgrn_uiz = ((c_PGRN*3)*nrs)() if calc_DC else None
-            C_SSgrn_uiz = ((c_PGRN*3)*nrs)() if calc_DC else None
-            #
-            C_EXPgrn_uir = ((c_PGRN*2)*nrs)() if calc_EXP else None
-            C_VFgrn_uir = ((c_PGRN*2)*nrs)() if calc_VF else None
-            C_HFgrn_uir = ((c_PGRN*3)*nrs)() if calc_HF else None
-            C_DDgrn_uir = ((c_PGRN*2)*nrs)() if calc_DC else None
-            C_DSgrn_uir = ((c_PGRN*3)*nrs)() if calc_DC else None
-            C_SSgrn_uir = ((c_PGRN*3)*nrs)() if calc_DC else None
-
-
-        EXPgrn, VFgrn, HFgrn, DDgrn, DSgrn, SSgrn = self._init_grn(
-            distarr, calc_EXP, calc_VF, calc_HF, calc_DC, 
-            C_EXPgrn, C_VFgrn, C_HFgrn, C_DDgrn, C_DSgrn, C_SSgrn, 
-            nt, dt, freqs, wI)
+        # 初始化格林函数
+        pygrnLst, c_grnArr = self._init_grn(distarr, nt, dt, freqs, wI, '')
         
-        EXPgrn_uiz, VFgrn_uiz, HFgrn_uiz, DDgrn_uiz, DSgrn_uiz, SSgrn_uiz = ([] for _ in range(6))
-        EXPgrn_uir, VFgrn_uir, HFgrn_uir, DDgrn_uir, DSgrn_uir, SSgrn_uir = ([] for _ in range(6))
+        pygrnLst_uiz = []
+        c_grnArr_uiz = None
+        pygrnLst_uir = []
+        c_grnArr_uir = None
         if calc_upar:
-            EXPgrn_uiz, VFgrn_uiz, HFgrn_uiz, DDgrn_uiz, DSgrn_uiz, SSgrn_uiz = self._init_grn(
-            distarr, calc_EXP, calc_VF, calc_HF, calc_DC, 
-            C_EXPgrn_uiz, C_VFgrn_uiz, C_HFgrn_uiz, C_DDgrn_uiz, C_DSgrn_uiz, C_SSgrn_uiz, 
-            nt, dt, freqs, wI, 'z')
-            EXPgrn_uir, VFgrn_uir, HFgrn_uir, DDgrn_uir, DSgrn_uir, SSgrn_uir = self._init_grn(
-            distarr, calc_EXP, calc_VF, calc_HF, calc_DC, 
-            C_EXPgrn_uir, C_VFgrn_uir, C_HFgrn_uir, C_DDgrn_uir, C_DSgrn_uir, C_SSgrn_uir, 
-            nt, dt, freqs, wI, 'r')
+            pygrnLst_uiz, c_grnArr_uiz = self._init_grn(distarr, nt, dt, freqs, wI, 'z')
+            pygrnLst_uir, c_grnArr_uir = self._init_grn(distarr, nt, dt, freqs, wI, 'r')
 
 
         c_statsfile = None 
@@ -441,8 +333,10 @@ class PyModel1D:
             else:
                 print("")
             print(f"Length={abs(Length)}", end="")
-            if filonLC[0] > 0.0:
-                print(f",{filonLC}, using FIM.")
+            if filonLength > 0.0:
+                print(f",{filonLength},{filonCut}, using FIM.")
+            elif safilonTol > 0.0:
+                print(f",{safilonTol},{filonCut}, using SAFIM.")
             else:
                 print("")
             print(f"nt={nt}")
@@ -472,26 +366,23 @@ class PyModel1D:
         #     剪切源 DD[ZR],DS[ZRT],SS[ZRT]          1e-20 cm/(dyne*cm)
         #=================================================================================
         C_integ_grn_spec(
-            self.c_pymod1d, nf1, nf2, nf, c_freqs, nrs, c_rs, wI, 
-            vmin_ref, keps, ampk, k0, Length, filonLC[0], filonLC[1], print_runtime,
-            C_EXPgrn, C_VFgrn, C_HFgrn, C_DDgrn, C_DSgrn, C_SSgrn, 
-            calc_upar, 
-            C_EXPgrn_uiz, C_VFgrn_uiz, C_HFgrn_uiz, C_DDgrn_uiz, C_DSgrn_uiz, C_SSgrn_uiz, 
-            C_EXPgrn_uir, C_VFgrn_uir, C_HFgrn_uir, C_DDgrn_uir, C_DSgrn_uir, C_SSgrn_uir, 
+            self.c_pymod1d, nf1, nf2, c_freqs, nrs, c_rs, wI, 
+            vmin_ref, keps, ampk, k0, Length, filonLength, safilonTol, filonCut, print_runtime,
+            c_grnArr, calc_upar, c_grnArr_uiz, c_grnArr_uir,
             c_statsfile, nstatsidxs, c_statsidxs
         )
         #=================================================================================
         #/////////////////////////////////////////////////////////////////////////////////
 
         # 震源和场点层的物性，写入sac头段变量
-        rcv_va = self.modarr[self.ircv, 1]
-        rcv_vb = self.modarr[self.ircv, 2]
-        rcv_rho = self.modarr[self.ircv, 3]
-        rcv_qainv = 1.0/self.modarr[self.ircv, 4]
-        rcv_qbinv = 1.0/self.modarr[self.ircv, 5]
-        src_va = self.modarr[self.isrc, 1]
-        src_vb = self.modarr[self.isrc, 2]
-        src_rho = self.modarr[self.isrc, 3]
+        rcv_va = self.c_pymod1d.Va[self.ircv]
+        rcv_vb = self.c_pymod1d.Vb[self.ircv]
+        rcv_rho = self.c_pymod1d.Rho[self.ircv]
+        rcv_qainv = 1.0/self.c_pymod1d.Qa[self.ircv]
+        rcv_qbinv = 1.0/self.c_pymod1d.Qb[self.ircv]
+        src_va = self.c_pymod1d.Va[self.isrc]
+        src_vb = self.c_pymod1d.Vb[self.isrc]
+        src_rho = self.c_pymod1d.Rho[self.isrc]
         
         # 对应实际采集的地震信号，取向上为正(和理论推导使用的方向相反)
         dataLst = []
@@ -507,44 +398,28 @@ class PyModel1D:
             # 计算走时
             travtP, travtS = self.compute_travt1d(dist)
 
-            for i, comp in enumerate(['Z', 'R', 'T']):
-                sgn = -1 if comp=='Z' else 1
-                if i<2:
-                    if calc_EXP:
-                        stream.append(EXPgrn[ir][i].freq2time(delayT, travtP, travtS, sgn ))
-                    if calc_VF:
-                        stream.append(VFgrn [ir][i].freq2time(delayT, travtP, travtS, sgn ))
-                    if calc_DC:
-                        stream.append(DDgrn [ir][i].freq2time(delayT, travtP, travtS, sgn ))
-                
-                if calc_HF:
-                    stream.append(HFgrn [ir][i].freq2time(delayT, travtP, travtS, sgn ))
+            for im in range(SRC_M_NUM):
+                if(not calc_EX and im==0):
+                    continue
+                if(not calc_VF and im==1):
+                    continue
+                if(not calc_HF and im==2):
+                    continue
+                if(not calc_DC and im>=3):
+                    continue
 
-                if calc_DC:
-                    stream.append(DSgrn [ir][i].freq2time(delayT, travtP, travtS, sgn ))
-                    stream.append(SSgrn [ir][i].freq2time(delayT, travtP, travtS, sgn ))
-
-                if calc_upar:
-                    if i<2:
-                        if calc_EXP:
-                            stream.append(EXPgrn_uiz[ir][i].freq2time(delayT, travtP, travtS, sgn*(-1) ))
-                            stream.append(EXPgrn_uir[ir][i].freq2time(delayT, travtP, travtS, sgn ))
-                        if calc_VF:
-                            stream.append(VFgrn_uiz [ir][i].freq2time(delayT, travtP, travtS, sgn*(-1) ))
-                            stream.append(VFgrn_uir [ir][i].freq2time(delayT, travtP, travtS, sgn ))
-                        if calc_DC:
-                            stream.append(DDgrn_uiz [ir][i].freq2time(delayT, travtP, travtS, sgn*(-1) ))
-                            stream.append(DDgrn_uir [ir][i].freq2time(delayT, travtP, travtS, sgn ))
+                modr = SRC_M_ORDERS[im]
+                sgn = 1
+                for c in range(CHANNEL_NUM):
+                    if(modr==0 and ZRTchs[c]=='T'):
+                        continue
                     
-                    if calc_HF:
-                        stream.append(HFgrn_uiz [ir][i].freq2time(delayT, travtP, travtS, sgn*(-1) ))
-                        stream.append(HFgrn_uir [ir][i].freq2time(delayT, travtP, travtS, sgn ))
+                    sgn = -1 if ZRTchs[c]=='Z'=='Z' else 1
+                    stream.append(pygrnLst[ir][im][c].freq2time(delayT, travtP, travtS, sgn ))
+                    if(calc_upar):
+                        stream.append(pygrnLst_uiz[ir][im][c].freq2time(delayT, travtP, travtS, sgn*(-1) ))
+                        stream.append(pygrnLst_uir[ir][im][c].freq2time(delayT, travtP, travtS, sgn  ))
 
-                    if calc_DC:
-                        stream.append(DSgrn_uiz [ir][i].freq2time(delayT, travtP, travtS, sgn*(-1) ))
-                        stream.append(DSgrn_uir [ir][i].freq2time(delayT, travtP, travtS, sgn ))
-                        stream.append(SSgrn_uiz [ir][i].freq2time(delayT, travtP, travtS, sgn*(-1) ))
-                        stream.append(SSgrn_uir [ir][i].freq2time(delayT, travtP, travtS, sgn ))
 
             # 在sac头段变量部分
             for tr in stream:
@@ -560,7 +435,6 @@ class PyModel1D:
 
             dataLst.append(stream)
 
-
         return dataLst  
 
     
@@ -573,7 +447,9 @@ class PyModel1D:
         keps:float=-1.0,  
         k0:float=5.0, 
         Length:float=15.0, 
-        filonLC:Union[np.ndarray,List[float]]=[0.0,0.0],
+        filonLength:float=0.0,
+        safilonTol:float=0.0,
+        filonCut:float=0.0,
         calc_upar:bool=False,
         statsfile:Union[str,None]=None):
 
@@ -588,7 +464,9 @@ class PyModel1D:
                                         为负数代表不提前判断收敛，按照波数积分上限进行积分
             :param       k0:            波数k积分的上限 :math:`\tilde{k_{max}}=(k_{0}*\pi/hs)^2` , 波数k积分循环必须退出, hs=max(震源和台站深度差,1.0)
             :param       Length:        定义波数k积分的间隔 `dk=2\pi / (L*rmax)`, 默认15；负数表示使用Filon积分
-            :param       filonLC:       Filon积分的间隔 filonLength, 和波数积分和Filon积分的分割点filonCut, k*=<filonCut>/rmax
+            :param       filonLength:   Filon积分的间隔
+            :param       safilonTol:    自适应Filon积分采样精度
+            :param       filonCut:      波数积分和Filon积分的分割点filonCut, k*=<filonCut>/rmax
             :param       calc_upar:     是否计算位移u的空间导数
             :param       statsfile:     波数k积分（包括Filon积分和峰谷平均法）的过程记录文件，常用于debug或者观察积分过程中 :math:`F(k,\omega)` 和  :math:`F(k,\omega)J_m(kr)k` 的变化    
 
@@ -598,8 +476,16 @@ class PyModel1D:
 
         if Length < 0.0:
             raise ValueError(f"Length ({Length}) < 0")
-        if np.any(filonLC) < 0.0:
-            raise ValueError(f"filonLC ({filonLC}) < 0") 
+        if filonLength < 0.0:
+            raise ValueError(f"filonLength ({filonLength}) < 0") 
+        if filonCut < 0.0:
+            raise ValueError(f"filonCut ({filonCut}) < 0") 
+        if safilonTol < 0.0:
+            raise ValueError(f"filonCut ({safilonTol}) < 0") 
+        
+        # 只能设置一种filon积分方法
+        if safilonTol > 0.0 and filonLength > 0.0:
+            raise ValueError(f"You should only set one of filonLength and safilonTol.")
         
 
         depsrc = self.depsrc
@@ -639,31 +525,12 @@ class PyModel1D:
             c_statsfile = c_char_p(statsfile.encode('utf-8'))
 
         # 初始化格林函数
-        EXPgrn = np.zeros((nr,2), dtype=NPCT_REAL_TYPE); C_EXPgrn = npct.as_ctypes(EXPgrn.reshape(-1))
-        VFgrn = np.zeros((nr,2), dtype=NPCT_REAL_TYPE); C_VFgrn = npct.as_ctypes(VFgrn.reshape(-1))
-        HFgrn = np.zeros((nr,3), dtype=NPCT_REAL_TYPE); C_HFgrn = npct.as_ctypes(HFgrn.reshape(-1))
-        DDgrn = np.zeros((nr,2), dtype=NPCT_REAL_TYPE); C_DDgrn = npct.as_ctypes(DDgrn.reshape(-1))
-        DSgrn = np.zeros((nr,3), dtype=NPCT_REAL_TYPE); C_DSgrn = npct.as_ctypes(DSgrn.reshape(-1))
-        SSgrn = np.zeros((nr,3), dtype=NPCT_REAL_TYPE); C_SSgrn = npct.as_ctypes(SSgrn.reshape(-1))
+        pygrn = np.zeros((nr, SRC_M_NUM, CHANNEL_NUM), dtype=NPCT_REAL_TYPE, order='C');       c_pygrn = npct.as_ctypes(pygrn)
+        pygrn_uiz = np.zeros((nr, SRC_M_NUM, CHANNEL_NUM), dtype=NPCT_REAL_TYPE, order='C');   c_pygrn_uiz = npct.as_ctypes(pygrn_uiz)
+        pygrn_uir = np.zeros((nr, SRC_M_NUM, CHANNEL_NUM), dtype=NPCT_REAL_TYPE, order='C');   c_pygrn_uir = npct.as_ctypes(pygrn_uir)
 
-        # 位移u的空间导数
-        EXPgrn_uiz = np.zeros((nr,2), dtype=NPCT_REAL_TYPE); C_EXPgrn_uiz = npct.as_ctypes(EXPgrn_uiz.reshape(-1))
-        VFgrn_uiz = np.zeros((nr,2), dtype=NPCT_REAL_TYPE); C_VFgrn_uiz = npct.as_ctypes(VFgrn_uiz.reshape(-1))
-        HFgrn_uiz = np.zeros((nr,3), dtype=NPCT_REAL_TYPE); C_HFgrn_uiz = npct.as_ctypes(HFgrn_uiz.reshape(-1))
-        DDgrn_uiz = np.zeros((nr,2), dtype=NPCT_REAL_TYPE); C_DDgrn_uiz = npct.as_ctypes(DDgrn_uiz.reshape(-1))
-        DSgrn_uiz = np.zeros((nr,3), dtype=NPCT_REAL_TYPE); C_DSgrn_uiz = npct.as_ctypes(DSgrn_uiz.reshape(-1))
-        SSgrn_uiz = np.zeros((nr,3), dtype=NPCT_REAL_TYPE); C_SSgrn_uiz = npct.as_ctypes(SSgrn_uiz.reshape(-1))
-
-        EXPgrn_uir = np.zeros((nr,2), dtype=NPCT_REAL_TYPE); C_EXPgrn_uir = npct.as_ctypes(EXPgrn_uir.reshape(-1))
-        VFgrn_uir = np.zeros((nr,2), dtype=NPCT_REAL_TYPE); C_VFgrn_uir = npct.as_ctypes(VFgrn_uir.reshape(-1))
-        HFgrn_uir = np.zeros((nr,3), dtype=NPCT_REAL_TYPE); C_HFgrn_uir = npct.as_ctypes(HFgrn_uir.reshape(-1))
-        DDgrn_uir = np.zeros((nr,2), dtype=NPCT_REAL_TYPE); C_DDgrn_uir = npct.as_ctypes(DDgrn_uir.reshape(-1))
-        DSgrn_uir = np.zeros((nr,3), dtype=NPCT_REAL_TYPE); C_DSgrn_uir = npct.as_ctypes(DSgrn_uir.reshape(-1))
-        SSgrn_uir = np.zeros((nr,3), dtype=NPCT_REAL_TYPE); C_SSgrn_uir = npct.as_ctypes(SSgrn_uir.reshape(-1))
-        
         if not calc_upar:
-            C_EXPgrn_uiz = C_VFgrn_uiz = C_HFgrn_uiz = C_DDgrn_uiz = C_DSgrn_uiz = C_SSgrn_uiz = None
-            C_EXPgrn_uir = C_VFgrn_uir = C_HFgrn_uir = C_DDgrn_uir = C_DSgrn_uir = C_SSgrn_uir = None
+            c_pygrn_uiz = c_pygrn_uir = None
 
 
         # 运行C库函数
@@ -674,23 +541,20 @@ class PyModel1D:
         #     剪切源 DD[ZR],DS[ZRT],SS[ZRT]          1e-20 cm/(dyne*cm)
         #=================================================================================
         C_integ_static_grn(
-            self.c_pymod1d, nr, c_rs, vmin_ref, keps, k0, Length, filonLC[0], filonLC[1],
-            C_EXPgrn, C_VFgrn, C_HFgrn, C_DDgrn, C_DSgrn, C_SSgrn, 
-            calc_upar, 
-            C_EXPgrn_uiz, C_VFgrn_uiz, C_HFgrn_uiz, C_DDgrn_uiz, C_DSgrn_uiz, C_SSgrn_uiz, 
-            C_EXPgrn_uir, C_VFgrn_uir, C_HFgrn_uir, C_DDgrn_uir, C_DSgrn_uir, C_SSgrn_uir, 
+            self.c_pymod1d, nr, c_rs, vmin_ref, keps, k0, Length, filonLength, safilonTol, filonCut, 
+            c_pygrn, calc_upar, c_pygrn_uiz, c_pygrn_uir,
             c_statsfile
         )
         #=================================================================================
         #/////////////////////////////////////////////////////////////////////////////////
 
         # 震源和场点层的物性
-        rcv_va = self.modarr[self.ircv, 1]
-        rcv_vb = self.modarr[self.ircv, 2]
-        rcv_rho = self.modarr[self.ircv, 3]
-        src_va = self.modarr[self.isrc, 1]
-        src_vb = self.modarr[self.isrc, 2]
-        src_rho = self.modarr[self.isrc, 3]
+        rcv_va = self.c_pymod1d.Va[self.ircv]
+        rcv_vb = self.c_pymod1d.Vb[self.ircv]
+        rcv_rho = self.c_pymod1d.Rho[self.ircv]
+        src_va = self.c_pymod1d.Va[self.isrc]
+        src_vb = self.c_pymod1d.Vb[self.isrc]
+        src_rho = self.c_pymod1d.Rho[self.isrc]
 
         # 结果字典
         dataDct = {}
@@ -704,31 +568,13 @@ class PyModel1D:
         dataDct['_rcv_rho'] = rcv_rho
 
         # 整理结果，将每个格林函数以2d矩阵的形式存储，shape=(nx, ny)
-        for i, ch in enumerate(['Z', 'R', 'T']):
-            sgn = -1 if ch=='Z' else 1
-            if i<2:
-                dataDct[f'EX{ch}'] = sgn * EXPgrn[:,i].reshape((nx, ny), order='F')
-                dataDct[f'VF{ch}'] = sgn * VFgrn[:,i].reshape((nx, ny), order='F')
-                dataDct[f'DD{ch}'] = sgn * DDgrn[:,i].reshape((nx, ny), order='F')
-            
-            dataDct[f'HF{ch}'] = sgn * HFgrn[:,i].reshape((nx, ny), order='F')
-            dataDct[f'DS{ch}'] = sgn * DSgrn[:,i].reshape((nx, ny), order='F')
-            dataDct[f'SS{ch}'] = sgn * SSgrn[:,i].reshape((nx, ny), order='F')
-
-            if calc_upar:
-                if i<2:
-                    dataDct[f'zEX{ch}'] = sgn * EXPgrn_uiz[:,i].reshape((nx, ny), order='F') * (-1)
-                    dataDct[f'rEX{ch}'] = sgn * EXPgrn_uir[:,i].reshape((nx, ny), order='F')
-                    dataDct[f'zVF{ch}'] = sgn * VFgrn_uiz[:,i].reshape((nx, ny), order='F') * (-1)
-                    dataDct[f'rVF{ch}'] = sgn * VFgrn_uir[:,i].reshape((nx, ny), order='F')
-                    dataDct[f'zDD{ch}'] = sgn * DDgrn_uiz[:,i].reshape((nx, ny), order='F') * (-1)
-                    dataDct[f'rDD{ch}'] = sgn * DDgrn_uir[:,i].reshape((nx, ny), order='F')
-                
-                dataDct[f'zHF{ch}'] = sgn * HFgrn_uiz[:,i].reshape((nx, ny), order='F') * (-1)
-                dataDct[f'rHF{ch}'] = sgn * HFgrn_uir[:,i].reshape((nx, ny), order='F')
-                dataDct[f'zDS{ch}'] = sgn * DSgrn_uiz[:,i].reshape((nx, ny), order='F') * (-1)
-                dataDct[f'rDS{ch}'] = sgn * DSgrn_uir[:,i].reshape((nx, ny), order='F')
-                dataDct[f'zSS{ch}'] = sgn * SSgrn_uiz[:,i].reshape((nx, ny), order='F') * (-1)
-                dataDct[f'rSS{ch}'] = sgn * SSgrn_uir[:,i].reshape((nx, ny), order='F')
+        for isrc in range(SRC_M_NUM):
+            src_name = SRC_M_NAME_ABBR[isrc]
+            for ic, comp in enumerate(ZRTchs):
+                sgn = -1 if comp=='Z' else 1
+                dataDct[f'{src_name}{comp}'] = sgn * pygrn[:,isrc,ic].reshape((nx, ny), order='F')
+                if calc_upar:
+                    dataDct[f'z{src_name}{comp}'] = sgn * pygrn_uiz[:,isrc,ic].reshape((nx, ny), order='F') * (-1)
+                    dataDct[f'r{src_name}{comp}'] = sgn * pygrn_uir[:,isrc,ic].reshape((nx, ny), order='F')
 
         return dataDct

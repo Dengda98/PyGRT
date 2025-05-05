@@ -1,6 +1,8 @@
 #!/bin/bash
 set -eu
 
+rm -rf GRN* syn* stats* ptam* pygrtstats* static* *.png
+
 # -------------------------------------------------------------------
 # BEGIN DGRN
 # -S<i1>,<i2>,...表示输出对应频率点索引值的核函数文件

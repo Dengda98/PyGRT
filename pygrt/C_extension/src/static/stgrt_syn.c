@@ -34,7 +34,7 @@ static double M0 = 0.0;
 // 在放大系数上是否需要乘上震源处的剪切模量
 static bool mult_src_mu = false;
 // 存储不同震源的震源机制相关参数的数组
-static double mchn[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+static double mchn[MECHANISM_NUM] = {0};
 // 最终要计算的震源类型
 static int computeType=GRT_SYN_COMPUTE_EX;
 static char s_computeType[3] = "EX";
@@ -49,11 +49,6 @@ static bool rot2ZNE = false;
 static int S_flag=0, M_flag=0, F_flag=0,
            T_flag=0, N_flag=0,
            e_flag=0;
-
-
-// 三分量代号
-static const char zrtchs[3] = {'Z', 'R', 'T'};
-static const char znechs[3] = {'Z', 'N', 'E'};
 
 // 计算和位移相关量的种类（1-位移，2-ui_z，3-ui_r，4-ui_t）
 static int calcUTypes=1;
@@ -124,7 +119,7 @@ printf("\n"
 "        stgrt -Mmilrow -D2/0 -X-5/5/10 -Y-5/5/10 > grn\n"
 "\n"
 "    Then you can get static displacement of Explosion\n"
-"        stgrt.syn -Su1e16 < grn > syn_exp\n"
+"        stgrt.syn -Su1e16 < grn > syn_ex\n"
 "\n"
 "    or Shear\n"
 "        stgrt.syn -Su1e16 -M100/20/80 < grn > syn_dc\n"
@@ -290,41 +285,35 @@ int main(int argc, char **argv){
     getopt_from_command(argc, argv);
 
     // 辐射因子
-    double srcCoef[3][6];
+    double srcRadi[SRC_M_NUM][CHANNEL_NUM]={0};
 
     // 从标准输入中读取静态格林函数表
-    double x0, y0, grn[3][6], syn[3], syn_upar[3][3];
-    double grn_uiz[3][6], grn_uir[3][6];
+    double x0, y0, grn[SRC_M_NUM][CHANNEL_NUM]={0}, syn[CHANNEL_NUM]={0}, syn_upar[CHANNEL_NUM][CHANNEL_NUM]={0};
+    double grn_uiz[SRC_M_NUM][CHANNEL_NUM]={0}, grn_uir[SRC_M_NUM][CHANNEL_NUM]={0};
 
     // 根据参数设置，选择分量名
-    const char *chs = (rot2ZNE)? znechs : zrtchs;
+    const char *chs = (rot2ZNE)? ZNEchs : ZRTchs;
 
-    for(int i=0; i<3; ++i){
-        for(int k=0; k<6; ++k){
-            srcCoef[i][k] = 0.0;
-            grn[i][k] = 0.0;
-            grn_uiz[i][k] = 0.0;
-            grn_uir[i][k] = 0.0;
-        }
-    }
 
     // 建立一个指针数组，方便读取多列数据
-    double *pt_grn[47];
-    int grn_sizes[6] = {2, 2, 3, 2, 3, 3};
+    const int max_ncol = 47;
+    double *pt_grn[max_ncol];
     // 按照特定顺序
     {
         double **pt = &pt_grn[0];
         *(pt++) = &x0;
         *(pt++) = &y0;
         for(int m=0; m<3; ++m){
-            for(int k=0; k<6; ++k){
-                for(int i=0; i<grn_sizes[k]; ++i){
+            for(int k=0; k<SRC_M_NUM; ++k){
+                for(int c=0; c<CHANNEL_NUM; ++c){
+                    if(SRC_M_ORDERS[k]==0 && ZRTchs[c] == 'T')  continue;
+
                     if(m==0){
-                        *pt = &grn[i][k];
+                        *pt = &grn[k][c];
                     } else if(m==1){
-                        *pt = &grn_uiz[i][k];
+                        *pt = &grn_uiz[k][c];
                     } else if(m==2){
-                        *pt = &grn_uir[i][k];
+                        *pt = &grn_uir[k][c];
                     }
                     pt++;
                 }
@@ -383,7 +372,7 @@ int main(int argc, char **argv){
             free(copyline);
 
             // 想合成位移空间导数但输入的格林函数没有
-            if(calc_upar && ncols < 47){
+            if(calc_upar && ncols < max_ncol){
                 fprintf(stderr, "[%s] " BOLD_RED "Error! The input has no spatial derivatives. \n" DEFAULT_RESTORE, command);
                 exit(EXIT_FAILURE);
             }
@@ -416,14 +405,14 @@ int main(int argc, char **argv){
             fprintf(stdout, "%s", XX);
             fprintf(stdout, GRT_STRING_FMT, "Y(km)");
             char s_channel[5];
-            for(int i=0; i<3; ++i){
+            for(int i=0; i<CHANNEL_NUM; ++i){
                 sprintf(s_channel, "%s%c", s_computeType, toupper(chs[i])); 
                 fprintf(stdout, GRT_STRING_FMT, s_channel);
             }
 
             if(calc_upar){
-                for(int k=0; k<3; ++k){
-                    for(int i=0; i<3; ++i){
+                for(int k=0; k<CHANNEL_NUM; ++k){
+                    for(int i=0; i<CHANNEL_NUM; ++i){
                         sprintf(s_channel, "%c%s%c", tolower(chs[k]), s_computeType, toupper(chs[i])); 
                         fprintf(stdout, GRT_STRING_FMT, s_channel);
                     }
@@ -434,8 +423,8 @@ int main(int argc, char **argv){
             printHead = true;
         }
 
-        double (*grn3)[6];  // 使用对应类型的格林函数
-        double tmpsyn[3];
+        double (*grn3)[CHANNEL_NUM];  // 使用对应类型的格林函数
+        double tmpsyn[CHANNEL_NUM];
         for(int ityp=0; ityp<calcUTypes; ++ityp){
             // 求位移空间导数时，需调整比例系数
             switch (ityp){
@@ -470,16 +459,16 @@ int main(int argc, char **argv){
 
             tmpsyn[0] = tmpsyn[1] = tmpsyn[2] = 0.0;
             // 计算震源辐射因子
-            set_source_radiation(srcCoef, computeType, ityp==3, M0, upar_scale, azrad, mchn);
+            set_source_radiation(srcRadi, computeType, ityp==3, M0, upar_scale, azrad, mchn);
 
-            for(int i=0; i<3; ++i){
-                for(int k=0; k<6; ++k){
-                    tmpsyn[i] += grn3[i][k] * srcCoef[i][k];
+            for(int i=0; i<CHANNEL_NUM; ++i){
+                for(int k=0; k<SRC_M_NUM; ++k){
+                    tmpsyn[i] += grn3[k][i] * srcRadi[k][i];
                 }
             }
 
             // 保存数据
-            for(int i=0; i<3; ++i){
+            for(int i=0; i<CHANNEL_NUM; ++i){
                 if(ityp == 0){
                     syn[i] = tmpsyn[i];
                 } else {
@@ -499,12 +488,12 @@ int main(int argc, char **argv){
 
         // 输出数据
         fprintf(stdout, GRT_REAL_FMT GRT_REAL_FMT, x0, y0);
-        for(int i=0; i<3; ++i){
+        for(int i=0; i<CHANNEL_NUM; ++i){
             fprintf(stdout, GRT_REAL_FMT, syn[i]);
         }
         if(calc_upar){
-            for(int i=0; i<3; ++i){
-                for(int k=0; k<3; ++k){
+            for(int i=0; i<CHANNEL_NUM; ++i){
+                for(int k=0; k<CHANNEL_NUM; ++k){
                     fprintf(stdout, GRT_REAL_FMT, syn_upar[i][k]);
                 }
             }

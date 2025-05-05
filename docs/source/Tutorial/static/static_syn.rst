@@ -43,18 +43,18 @@ Python中合成静态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.uti
 
         .. literalinclude:: run/run.sh
             :language: bash
-            :start-after: BEGIN SYN EXP
-            :end-before: END SYN EXP
+            :start-after: BEGIN SYN EX
+            :end-before: END SYN EX
 
     .. group-tab:: Python 
 
         .. literalinclude:: run/run.py
             :language: python
-            :start-after: BEGIN SYN EXP
-            :end-before: END SYN EXP
+            :start-after: BEGIN SYN EX
+            :end-before: END SYN EX
 
 
-.. image:: run/syn_exp.png
+.. image:: run/syn_ex.png
     :width: 500px
     :align: center
 

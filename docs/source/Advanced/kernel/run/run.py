@@ -25,7 +25,7 @@ vels = np.arange(0.1, 0.6, 0.001)
 # 不指定ktypes，默认返回全部核函数，均以2D数组的形式保存，shape=(nfreqs, nvels)
 kerDct = pygrt.utils.read_kernels_freqs("pygrtstats", vels)
 print(kerDct.keys())
-# dict_keys(['_vels', '_freqs', 'EXP_q0', 'EXP_w0', 'VF_q0', 'VF_w0', 'HF_q1', 'HF_w1', 'HF_v1', 'DC_q0', 'DC_w0', 'DC_q1', 'DC_w1', 'DC_v1', 'DC_q2', 'DC_w2', 'DC_v2'])
+# dict_keys(['_vels', '_freqs', 'EX_q', 'EX_w', 'VF_q', 'VF_w', 'HF_q', 'HF_w', 'HF_v', 'DD_q', 'DD_w', 'DS_q', 'DS_w', 'DS_v', 'SS_q', 'SS_w', 'SS_v'])
 # END read
 # -----------------------------------------------------------------
 
@@ -42,7 +42,7 @@ def plot_kernel(kerDct:dict, RorI:bool, out:Union[str,None]=None):
             continue
         ktypes.append(key)
 
-    srctypes = ['EXP0', 'VF0', 'HF1', 'DC0', 'DC1', 'DC2']
+    srctypes = ['EX', 'VF', 'HF', 'DD', 'DS', 'SS']
 
     vels = kerDct['_vels']
     freqs = kerDct['_freqs']
@@ -51,7 +51,7 @@ def plot_kernel(kerDct:dict, RorI:bool, out:Union[str,None]=None):
     gs = fig.add_gridspec(len(srctypes), 3)
     qwvLst = ['q', 'w', 'v']
     for ik, key in enumerate(ktypes):
-        srctype = key.split("_")[0]+key.split("_")[1][1:]
+        srctype = key.split("_")[0]
         qwv = key.split("_")[1][0]
         
         ax = fig.add_subplot(gs[srctypes.index(srctype), qwvLst.index(qwv)])

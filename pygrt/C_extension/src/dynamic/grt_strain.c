@@ -30,8 +30,6 @@ static char *command = NULL;
 static bool rot2ZNE = false;
 
 // 三分量
-const char zrtchs[3] = {'Z', 'R', 'T'};
-const char znechs[3] = {'Z', 'N', 'E'};
 const char *chs = NULL;
 
 
@@ -127,7 +125,7 @@ int main(int argc, char **argv){
     rot2ZNE = (access(s_filepath, F_OK) == 0);
 
     // 指示特定的通道名
-    chs = (rot2ZNE)? znechs : zrtchs;
+    chs = (rot2ZNE)? ZNEchs : ZRTchs;
 
 
     // 读取一个头段变量，获得基本参数，分配数组内存

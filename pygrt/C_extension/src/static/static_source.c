@@ -18,17 +18,13 @@
 
 
 void static_source_coef(
-    MYCOMPLEX delta, MYREAL k,
-    MYCOMPLEX EXP[3][3][2], MYCOMPLEX VF[3][3][2], MYCOMPLEX HF[3][3][2], MYCOMPLEX DC[3][3][2])
+    MYCOMPLEX delta, MYREAL k, MYCOMPLEX coef[SRC_M_NUM][QWV_NUM][2])
 {
     // 先全部赋0 
-    for(MYINT i=0; i<3; ++i){
-        for(MYINT j=0; j<3; ++j){
+    for(MYINT i=0; i<SRC_M_NUM; ++i){
+        for(MYINT j=0; j<QWV_NUM; ++j){
             for(MYINT p=0; p<2; ++p){
-                if(EXP!=NULL) EXP[i][j][p] = RZERO;
-                if(VF!=NULL)  VF[i][j][p] = RZERO;
-                if(HF!=NULL)  HF[i][j][p] = RZERO;
-                if(DC!=NULL)  DC[i][j][p] = RZERO;
+                coef[i][j][p] = CZERO;
             }
         }
     }
@@ -36,35 +32,30 @@ void static_source_coef(
     MYCOMPLEX tmp;
     MYCOMPLEX A = RONE+delta;
 
-    if(EXP!=NULL){
-    EXP[0][0][0] = tmp = (delta-RONE)/A;         EXP[0][0][1] = tmp;    
-    }
+    // 爆炸源
+    coef[0][0][0] = tmp = (delta-RONE)/A;         coef[0][0][1] = tmp;    
 
-    if(VF!=NULL){
-    VF[0][0][0] = tmp = -RONE/(RTWO*A*k);        VF[0][0][1] = - tmp;   
-    VF[0][1][0] = tmp;                           VF[0][1][1] = - tmp;
-    }
+    // 垂直力源
+    coef[1][0][0] = tmp = -RONE/(RTWO*A*k);        coef[1][0][1] = - tmp;   
+    coef[1][1][0] = tmp;                           coef[1][1][1] = - tmp;
 
-    if(HF!=NULL){
-    HF[1][0][0] = tmp = RONE/(RTWO*A*k);        HF[1][0][1] = tmp;   
-    HF[1][1][0] = - tmp;                        HF[1][1][1] = - tmp;
-    HF[1][2][0] = tmp = -RONE/k;                HF[1][2][1] = tmp;
-    }
+    // 水平力源
+    coef[2][0][0] = tmp = RONE/(RTWO*A*k);        coef[2][0][1] = tmp;   
+    coef[2][1][0] = - tmp;                        coef[2][1][1] = - tmp;
+    coef[2][2][0] = tmp = -RONE/k;                coef[2][2][1] = tmp;
 
-
-    if(DC!=NULL){
+    // 剪切位错
     // m=0
-    DC[0][0][0] = tmp = (-RONE+RFOUR*delta)/(RTWO*A);    DC[0][0][1] = tmp;
-    DC[0][1][0] = tmp = -RTHREE/(RTWO*A);                DC[0][1][1] = tmp;
+    coef[3][0][0] = tmp = (-RONE+RFOUR*delta)/(RTWO*A);    coef[3][0][1] = tmp;
+    coef[3][1][0] = tmp = -RTHREE/(RTWO*A);                coef[3][1][1] = tmp;
     // m=1
-    DC[1][0][0] = tmp = -delta/A;                        DC[1][0][1] = -tmp;
-    DC[1][1][0] = tmp = RONE/A;                          DC[1][1][1] = -tmp;
-    DC[1][2][0] = tmp = RONE;                            DC[1][2][1] = -tmp;
+    coef[4][0][0] = tmp = -delta/A;                        coef[4][0][1] = -tmp;
+    coef[4][1][0] = tmp = RONE/A;                          coef[4][1][1] = -tmp;
+    coef[4][2][0] = tmp = RONE;                            coef[4][2][1] = -tmp;
     // m=2
-    DC[2][0][0] = tmp = RONE/(RTWO*A);                   DC[2][0][1] = tmp;
-    DC[2][1][0] = tmp = -RONE/(RTWO*A);                  DC[2][1][1] = tmp;
-    DC[2][2][0] = tmp = -RONE;                           DC[2][2][1] = tmp;
-    }
+    coef[5][0][0] = tmp = RONE/(RTWO*A);                   coef[5][0][1] = tmp;
+    coef[5][1][0] = tmp = -RONE/(RTWO*A);                  coef[5][1][1] = tmp;
+    coef[5][2][0] = tmp = -RONE;                           coef[5][2][1] = tmp;
 }
 
 

@@ -21,10 +21,10 @@ P=cout
 S=1e24
 az=39.2
 for N in "" "-N" ; do
-grt.syn -G$G -Osyn_exp -P$P -A$az -S$S -Dt/0.2/0.2/0.4 -e $N
-grt.strain syn_exp/$P
-grt.rotation syn_exp/$P
-grt.stress syn_exp/$P
+grt.syn -G$G -Osyn_ex -P$P -A$az -S$S -Dt/0.2/0.2/0.4 -e $N
+grt.strain syn_ex/$P
+grt.rotation syn_ex/$P
+grt.stress syn_ex/$P
 
 fn=2
 fe=-1
@@ -69,10 +69,10 @@ cd static
 stgrt -M../${modname} -D${depsrc}/${deprcv} -X$x1/$x2/$nx -Y$y1/$y2/$ny -e > grn
 
 for N in "" "-N" ; do
-stgrt.syn -S$S -e $N < grn > stsyn_exp$N
-stgrt.strain < stsyn_exp$N > strain_exp$N
-stgrt.rotation < stsyn_exp$N > rotation_exp$N
-stgrt.stress < stsyn_exp$N > stress_exp$N
+stgrt.syn -S$S -e $N < grn > stsyn_ex$N
+stgrt.strain < stsyn_ex$N > strain_ex$N
+stgrt.rotation < stsyn_ex$N > rotation_ex$N
+stgrt.stress < stsyn_ex$N > stress_ex$N
 
 stgrt.syn -S$S -F$fn/$fe/$fz -e $N < grn > stsyn_sf$N
 stgrt.strain < stsyn_sf$N > strain_sf$N

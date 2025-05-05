@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
+"Project-Id-Version: PyGRT 0.7.1.dev5+g2230cdc.d20250427\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"POT-Creation-Date: 2025-04-27 12:43+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -19,105 +19,94 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.16.0\n"
 
-#: ../../source/API/pygrt/signals.rst:2 826ae4f989d945cdb713bf50d96f78b9
+#: ../../source/API/pygrt/signals.rst:2
 msgid "pygrt.signals"
 msgstr ""
 
-#: 1a688c60139c47e88edf1ef33fe8e842 of pygrt.signals
+#: of pygrt.signals
 msgid "file"
 msgstr ""
 
-#: 77a86239cee948dc8a0c381fe12228ab of pygrt.signals:1
+#: of pygrt.signals:1
 msgid "signals.py"
 msgstr ""
 
-#: 8f46bd1e94d44ea0be3f08196431e674 of pygrt.signals
+#: of pygrt.signals
 msgid "author"
 msgstr ""
 
-#: 307e8661b3dc4675adfc192d20067a40 of pygrt.signals:2
+#: of pygrt.signals:2
 msgid "Zhu Dengda (zhudengda@mail.iggcas.ac.cn)"
 msgstr ""
 
-#: 2462e3983d2a418685fe9684710157ae of pygrt.signals
+#: of pygrt.signals
 msgid "date"
 msgstr ""
 
-#: 5ede04d129804ab1a5cab3454f0444ee of pygrt.signals:3
+#: of pygrt.signals:3
 msgid "2024-07-24"
 msgstr ""
 
-#: 4bb8292c4311475b8e62109a980c5508 of pygrt.signals:5
+#: of pygrt.signals:5
 msgid "该文件包括一些常见的时间信号，最高幅值均为1"
 msgstr ""
 
-#: ab72cecd5a2143f199c075b595f64e1a of pygrt.signals.gen_triangle_wave:1
+#: of pygrt.signals.gen_triangle_wave:1
 msgid "生成三角信号"
 msgstr ""
 
-#: ../../source/API/pygrt/signals.rst 24f135aa18b641698bc0916924f72d38
-#: 2be25b17260d45609876e730e266b6b5 316336503c354e29b54bb8d3c7dd9ab6
-#: aee3ce5579194c979e331902b0498c57
+#: ../../source/API/pygrt/signals.rst
 msgid "参数"
 msgstr ""
 
-#: 44cdf0371f1b44a29130cc6f429fe4a5 4b593fba00d44022bfb11bfcdfb80eb9 of
-#: pygrt.signals.gen_parabola_wave:3 pygrt.signals.gen_triangle_wave:3
+#: of pygrt.signals.gen_parabola_wave:3 pygrt.signals.gen_triangle_wave:3
 msgid "信号时长(s)"
 msgstr ""
 
-#: 81a9b15456e2413db4657599ab3e2e07 bb8754dda35f4d0b95345cbc9a833d8a
-#: d50a99bd25774ffb8ab2d34a2ec2ea95 f3d55f32a0964610b8636e629f340a2c of
-#: pygrt.signals.gen_parabola_wave:4 pygrt.signals.gen_ricker_wave:4
+#: of pygrt.signals.gen_parabola_wave:4 pygrt.signals.gen_ricker_wave:4
 #: pygrt.signals.gen_trap_wave:6 pygrt.signals.gen_triangle_wave:4
 msgid "采样间隔(s)"
 msgstr ""
 
-#: ../../source/API/pygrt/signals.rst 385567215d574c4998266bebfa2c0d28
-#: 98b95fd8652d4178936e03bf72116f8b d137595837dd4cd99833302e38b9ac06
-#: da50e0e2f1ea4edf8659e7d1f544b66b
+#: ../../source/API/pygrt/signals.rst
 msgid "返回"
 msgstr ""
 
-#: 33a36f6d52304c8eafc2deb357be0aed 6060ed206def41caa88018afc9197151
-#: 75dbcc8392924852be92a1b7f739c84b a9d35fdfc9df4be98937b367b0d8e32f of
-#: pygrt.signals.gen_parabola_wave:6 pygrt.signals.gen_ricker_wave:6
+#: of pygrt.signals.gen_parabola_wave:6 pygrt.signals.gen_ricker_wave:6
 #: pygrt.signals.gen_trap_wave:8 pygrt.signals.gen_triangle_wave:6
 msgid "- **wave** -    波形幅值序列"
 msgstr ""
 
-#: 03eaccd252444fc1853f41c9cb7f44e8 4517016889fc4047b5f9feb7b1316673
-#: d0243c533d3b43b888e537ece69b69c2 d9741f7463e7439d8c6e39d406506087 of
-#: pygrt.signals.gen_parabola_wave:7 pygrt.signals.gen_ricker_wave:7
+#: of pygrt.signals.gen_parabola_wave:7 pygrt.signals.gen_ricker_wave:7
 #: pygrt.signals.gen_trap_wave:9 pygrt.signals.gen_triangle_wave:7
 msgid "**wave** -    波形幅值序列"
 msgstr ""
 
-#: 76e0bf9cc01b4d59ba039c6e53a6896c of pygrt.signals.gen_parabola_wave:1
+#: of pygrt.signals.gen_parabola_wave:1
 msgid "生成抛物线信号"
 msgstr ""
 
-#: 5f94146b22db4fb8b04104644be1e336 of pygrt.signals.gen_trap_wave:1
+#: of pygrt.signals.gen_trap_wave:1
 msgid "生成梯形信号"
 msgstr ""
 
-#: a7a4eeec403b46d4a748f111cb2785f7 of pygrt.signals.gen_trap_wave:3
+#: of pygrt.signals.gen_trap_wave:3
 msgid "上坡截止时刻(s)"
 msgstr ""
 
-#: b64077affd5d433bb2d191d6b64835b0 of pygrt.signals.gen_trap_wave:4
+#: of pygrt.signals.gen_trap_wave:4
 msgid "平台截止时刻(s)"
 msgstr ""
 
-#: e61a03db386f4844a59924706a557c00 of pygrt.signals.gen_trap_wave:5
+#: of pygrt.signals.gen_trap_wave:5
 msgid "下坡截止时刻(s)"
 msgstr ""
 
-#: b8f3abdfb16c4f88947d71d28e3a92a0 of pygrt.signals.gen_ricker_wave:1
+#: of pygrt.signals.gen_ricker_wave:1
 msgid "生成Ricker子波"
 msgstr ""
 
-#: cdccd3cbe4bf453f97992227b91ab612 of pygrt.signals.gen_ricker_wave:3
+#: of pygrt.signals.gen_ricker_wave:3
 msgid "中心频率(Hz)"
 msgstr ""
 

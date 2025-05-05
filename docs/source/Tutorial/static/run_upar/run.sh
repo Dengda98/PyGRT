@@ -1,6 +1,8 @@
 #!/bin/bash
 set -eu
 
+rm -rf grn* syn* strain stress rotation *.png
+
 depsrc=2
 deprcv=0
 

@@ -26,7 +26,7 @@ stgrnLst = pymod.compute_grn(
 # 返回的是自定义类型的numpy数组
 statsdata = pygrt.utils.read_statsfile(f"pygrtstats_{depsrc}_{deprcv}/K_0050_*")
 print(statsdata.dtype)
-# [('k', '<f8'), ('EXP_q0', '<c16'), ('EXP_w0', '<c16'), ('VF_q0', '<c16'), ('VF_w0', '<c16'), ('HF_q1', '<c16'), ('HF_w1', '<c16'), ('HF_v1', '<c16'), ('DC_q0', '<c16'), ('DC_w0', '<c16'), ('DC_q1', '<c16'), ('DC_w1', '<c16'), ('DC_v1', '<c16'), ('DC_q2', '<c16'), ('DC_w2', '<c16'), ('DC_v2', '<c16')]
+# [('k', '<f8'), ('EX_q', '<c16'), ('EX_w', '<c16'), ('VF_q', '<c16'), ('VF_w', '<c16'), ('HF_q', '<c16'), ('HF_w', '<c16'), ('HF_v', '<c16'), ('DD_q', '<c16'), ('DD_w', '<c16'), ('DS_q', '<c16'), ('DS_w', '<c16'), ('DS_v', '<c16'), ('SS_q', '<c16'), ('SS_w', '<c16'), ('SS_v', '<c16')]
 # END read statsfile
 # -------------------------------------------------------------------
 
@@ -35,12 +35,11 @@ print(statsdata.dtype)
 # BEGIN plot stats
 ir = 2
 dist=distarr[ir]
-srctype="DC"
-mtype="2"
+srctype="SS"
 ptype="0"
-fig, ax = pygrt.utils.plot_statsdata(statsdata, dist=dist, srctype=srctype, mtype=mtype, ptype=ptype)
+fig, ax = pygrt.utils.plot_statsdata(statsdata, dist=dist, srctype=srctype, ptype=ptype)
 fig.tight_layout()
-fig.savefig(f"{srctype}_{mtype}{ptype}.png", dpi=100)
+fig.savefig(f"{srctype}_{ptype}.png", dpi=100)
 # END plot stats
 # -------------------------------------------------------------------
 
@@ -48,12 +47,11 @@ fig.savefig(f"{srctype}_{mtype}{ptype}.png", dpi=100)
 # BEGIN plot stats RI
 ir = 2
 dist=distarr[ir]
-srctype="DC"
-mtype="2"
+srctype="SS"
 ptype="0"
-fig, ax = pygrt.utils.plot_statsdata(statsdata, dist=dist, srctype=srctype, mtype=mtype, ptype=ptype, RorI=2)
+fig, ax = pygrt.utils.plot_statsdata(statsdata, dist=dist, srctype=srctype, ptype=ptype, RorI=2)
 fig.tight_layout()
-fig.savefig(f"{srctype}_{mtype}{ptype}_RI.png", dpi=100)
+fig.savefig(f"{srctype}_{ptype}_RI.png", dpi=100)
 # END plot stats RI
 # -------------------------------------------------------------------
 
@@ -73,12 +71,11 @@ stgrnLst = pymod.compute_grn(
 statsdata = pygrt.utils.read_statsfile(f"pygrtstats_{depsrc}_{deprcv}/K_0050_*")
 
 dist=10
-srctype="DC"
-mtype="2"
+srctype="SS"
 ptype="0"
-fig, ax = pygrt.utils.plot_statsdata(statsdata, dist=dist, srctype=srctype, mtype=mtype, ptype=ptype, RorI=2)
+fig, ax = pygrt.utils.plot_statsdata(statsdata, dist=dist, srctype=srctype, ptype=ptype, RorI=2)
 fig.tight_layout()
-fig.savefig(f"{srctype}_{mtype}{ptype}_{depsrc}_RI.png", dpi=100)
+fig.savefig(f"{srctype}_{ptype}_{depsrc}_RI.png", dpi=100)
 # END DEPSRC 0.0 DGRN
 # -------------------------------------------------------------------
 
@@ -88,12 +85,11 @@ fig.savefig(f"{srctype}_{mtype}{ptype}_{depsrc}_RI.png", dpi=100)
 ir = 2
 statsdata1, statsdata2, ptamdata, dist = pygrt.utils.read_statsfile_ptam(f"pygrtstats_{depsrc}_{deprcv}/PTAM_{ir:04d}_*/PTAM_0050_*")
 
-srctype="DC"
-mtype="2"
+srctype="SS"
 ptype="0"
-fig, ax = pygrt.utils.plot_statsdata_ptam(statsdata1, statsdata2, ptamdata, dist=dist, srctype=srctype, mtype=mtype, ptype=ptype, RorI=2)
+fig, ax = pygrt.utils.plot_statsdata_ptam(statsdata1, statsdata2, ptamdata, dist=dist, srctype=srctype, ptype=ptype, RorI=2)
 fig.tight_layout()
-fig.savefig(f"{srctype}_{mtype}{ptype}_{depsrc}_ptam_RI.png", dpi=100)
+fig.savefig(f"{srctype}_{ptype}_{depsrc}_ptam_RI.png", dpi=100)
 # END plot ptam
 # -------------------------------------------------------------------
 
@@ -117,18 +113,17 @@ static_grn = pymod.compute_static_grn(xarr, yarr, statsfile=f"static_pygrtstats_
 ir = 0
 statsdata1, statsdata2, ptamdata, dist = pygrt.utils.read_statsfile_ptam(f"static_pygrtstats_{depsrc}_{deprcv}/PTAM_{ir:04d}_*/PTAM")
 
-srctype="DC"
-mtype="2"
+srctype="SS"
 ptype="0"
 # 只使用离散波数积分的积分变化
-fig, ax = pygrt.utils.plot_statsdata(statsdata1, dist=dist, srctype=srctype, mtype=mtype, ptype=ptype, RorI=True)
+fig, ax = pygrt.utils.plot_statsdata(statsdata1, dist=dist, srctype=srctype, ptype=ptype, RorI=True)
 fig.tight_layout()
-fig.savefig(f"{srctype}_{mtype}{ptype}_{depsrc}_static.png", dpi=100)
+fig.savefig(f"{srctype}_{ptype}_{depsrc}_static.png", dpi=100)
 
 # 使用了峰谷平均法的积分变化
-fig, ax = pygrt.utils.plot_statsdata_ptam(statsdata1, statsdata2, ptamdata, dist=dist, srctype=srctype, mtype=mtype, ptype=ptype, RorI=True)
+fig, ax = pygrt.utils.plot_statsdata_ptam(statsdata1, statsdata2, ptamdata, dist=dist, srctype=srctype, ptype=ptype, RorI=True)
 fig.tight_layout()
-fig.savefig(f"{srctype}_{mtype}{ptype}_{depsrc}_ptam_static.png", dpi=100)
+fig.savefig(f"{srctype}_{ptype}_{depsrc}_ptam_static.png", dpi=100)
 
 # END SGRN
 # -------------------------------------------------------------------

@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
+"Project-Id-Version: PyGRT 0.7.1.dev5+g2230cdc.d20250427\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"POT-Creation-Date: 2025-04-27 12:43+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -20,17 +20,14 @@ msgstr ""
 "Generated-By: Babel 2.16.0\n"
 
 #: ../../source/API/C_extension/travt/travt.rst:2
-#: f257dc831f804cb9bbbfe669ef6dfa87
 msgid "travt.h"
 msgstr ""
 
 #: ../../source/API/C_extension/travt/travt.rst
-#: 011ff5f0c1434ada87064a9231ddd252
 msgid "Functions"
 msgstr ""
 
 #: ../../source/API/C_extension/travt/travt.rst
-#: 2d4bb4d4e7d2486aa203c4ef93ee9395
 msgid "参数"
 msgstr ""
 

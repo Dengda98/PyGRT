@@ -18,8 +18,9 @@
  * \f] 
  * 其中虚数部分的正负号和书中不同，是因为书中使用的傅里叶变换的e指数符号和我们通常使用的相反。
  * 
- * @param Qinv     (in) 1/Q
- * @param omega    (in)复数频率\f$ \tilde{\omega} =\omega - i\zeta \f$ 
+ * @param[in]    Qinv     1/Q
+ * @param[in]    omega    复数频率\f$ \tilde{\omega} =\omega - i\zeta \f$ 
+ * 
  * @return atncoef 系数因子，作用在 \f$ k=\omega / c(\omega)\f$的计算
  */
 MYCOMPLEX attenuation_law(MYREAL Qinv, MYCOMPLEX omega);

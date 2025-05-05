@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
+"Project-Id-Version: PyGRT 0.7.1.dev5+g2230cdc.d20250427\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"POT-Creation-Date: 2025-04-27 12:43+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -20,27 +20,22 @@ msgstr ""
 "Generated-By: Babel 2.16.0\n"
 
 #: ../../source/API/C_extension/common/sacio.rst:2
-#: 6da4b0d7ad674f878e8ff70d32a1b800
 msgid "sacio.h"
 msgstr ""
 
 #: ../../source/API/C_extension/common/sacio.rst
-#: 7fd9710ce00e42efa4c1fe0e96ef651c
 msgid "Defines"
 msgstr ""
 
 #: ../../source/API/C_extension/common/sacio.rst
-#: e3562ab288204e35ba80e176f8364a36
 msgid "Typedefs"
 msgstr ""
 
 #: ../../source/API/C_extension/common/sacio.rst
-#: ec46016ca4244ec186333c6f7765df43
 msgid "Functions"
 msgstr ""
 
 #: ../../source/API/C_extension/common/sacio.rst
-#: 62d9d7be941d4cb08211749777656ca3
 msgid "Public Members"
 msgstr ""
 

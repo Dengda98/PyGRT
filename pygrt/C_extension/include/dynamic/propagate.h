@@ -21,10 +21,10 @@
 /**
  * kernel函数根据(5.5.3)式递推计算广义反射透射矩阵， 再根据公式得到
  * 
- *      1.EXP 爆炸源， (P0)   
- *      2.VF  垂直力源, (P0, SV0)  
- *      3.HF  水平力源, (P1, SV1, SH1)  
- *      4.DC  剪切源, (P0, SV0), (P1, SV1, SH1), (P2, SV2, SH2)  
+ *  1.EX 爆炸源， (P0)   
+ *  2.VF  垂直力源, (P0, SV0)  
+ *  3.HF  水平力源, (P1, SV1, SH1)  
+ *  4.DC  剪切源, (P0, SV0), (P1, SV1, SH1), (P2, SV2, SH2)  
  *
  *  的 \f$ q_m, w_m, v_m \f$ 系数(\f$ m=0,1,2 \f$), 
  *
@@ -79,25 +79,17 @@
  *  即空间划分为FA,AB,BL, 计算这三个广义层的系数矩阵，再讨论震源层和接收层的深浅，
  *  计算相应的矩阵。  
  *
- *  @param  mod1d     (in)`MODEL1D` 结构体指针
- *  @param  omega     (in)复数频率
- *  @param   k        (in)波数
- *  @param    EXP_qwv[3][3]    (out)爆炸源核函数
- *  @param    VF_qwv[3][3]     (out)垂直力源核函数
- *  @param    HF_qwv[3][3]     (out)水平力源核函数
- *  @param    DC_qwv[3][3]     (out)剪切源核函数 
- *  @param    calc_uiz       (in)是否计算ui_z（位移u对坐标z的偏导）
- *  @param    EXP_uiz_qwv[3][3]    (out)爆炸源产生的ui_z的核函数，下同
- *  @param    VF_uiz_qwv[3][3]     (out)垂直力源核函数
- *  @param    HF_uiz_qwv[3][3]     (out)水平力源核函数
- *  @param    DC_uiz_qwv[3][3]     (out)剪切源核函数 
+ *  @param[in]     mod1d           `MODEL1D` 结构体指针
+ *  @param[in]     k               波数
+ *  @param[out]    QWV             不同震源，不同阶数的核函数 \f$ q_m, w_m, v_m \f$
+ *  @param[in]     calc_uiz        是否计算ui_z（位移u对坐标z的偏导）
+ *  @param[out]    QWV_uiz         不同震源，不同阶数的核函数对z的偏导 \f$ \frac{\partial q_m}{\partial z}, \frac{\partial w_m}{\partial z}, \frac{\partial v_m}{\partial z} \f$
+ *  @param[out]    stats           状态代码，是否有除零错误，非0为异常值
  * 
  */
 void kernel(
-    const MODEL1D *mod1d, MYCOMPLEX omega, MYREAL k,
-    MYCOMPLEX EXP_qwv[3][3], MYCOMPLEX VF_qwv[3][3], MYCOMPLEX HF_qwv[3][3], MYCOMPLEX DC_qwv[3][3],
-    bool calc_uiz,
-    MYCOMPLEX EXP_uiz_qwv[3][3], MYCOMPLEX VF_uiz_qwv[3][3], MYCOMPLEX HF_uiz_qwv[3][3], MYCOMPLEX DC_uiz_qwv[3][3]);
+    const MODEL1D *mod1d, MYCOMPLEX omega, MYREAL k, MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
+    bool calc_uiz, MYCOMPLEX QWV_uiz[SRC_M_NUM][QWV_NUM], MYINT *stats);
 
 
 

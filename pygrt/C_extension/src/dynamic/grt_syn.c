@@ -53,7 +53,7 @@ static double M0 = 0.0;
 // 在放大系数上是否需要乘上震源处的剪切模量
 static bool mult_src_mu = false;
 // 存储不同震源的震源机制相关参数的数组
-static double mchn[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+static double mchn[MECHANISM_NUM] = {0};
 // 最终要计算的震源类型
 static int computeType=GRT_SYN_COMPUTE_EX;
 static char s_computeType[3] = "EX";
@@ -80,25 +80,11 @@ static int G_flag=0, O_flag=0, A_flag=0,
            D_flag=0, I_flag=0, J_flag=0, 
            e_flag=0, N_flag=0;
 
-// 三分量代号
-static const char zrtchs[3] = {'Z', 'R', 'T'};
-static const char znechs[3] = {'Z', 'N', 'E'};
-
 // 计算和位移相关量的种类（1-位移，2-ui_z，3-ui_r，4-ui_t）
 static int calcUTypes=1;
 
-// 文件名前缀，分别用于合成，1-位移，2-ui_z，3-ui_r，4-ui_t。顺序不能更改
-static const char sacin_prefixes[4][2] = {"", "z", "r", ""};  // 输入文件
-static char sacout_prefixes[4][2] = {"", "z", "r", "t"}; // 输出文件
-
 // 震源名称数组，以及方向因子数组
-static const int srcnum = 6;
-static const char *srcName[] = {"EX", "VF", "HF", "DD", "DS", "SS"};
-static double srcCoef[3][6] = { // 三分量和chs数组对应
-    {0.0, 0.0, 0.0, 0.0, 0.0, 0.0}, 
-    {0.0, 0.0, 0.0, 0.0, 0.0, 0.0}, 
-    {0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
-};
+static double srcRadi[SRC_M_NUM][CHANNEL_NUM] = {0};
 
 // 卷积的时间函数类型
 static char tftype = GRT_SIG_CUSTOM;
@@ -577,16 +563,16 @@ static void getopt_from_command(int argc, char **argv){
  * 将某一道合成地震图保存到sac文件
  * 
  * @param      buffer      输出文件夹字符串(重复使用)
- * @param      s_prefix2   SAC文件名和通道名前缀
+ * @param      pfx         通道名前缀
  * @param      ch          分量名， Z/R/T
  * @param      arr         数据指针
  * @param      hd          SAC头段变量
  */
-static void save_to_sac(char *buffer, const char *s_prefix2, const char ch, float *arr, SACHEAD hd){
+static void save_to_sac(char *buffer, const char *pfx, const char ch, float *arr, SACHEAD hd){
     hd.az = azimuth;
     hd.baz = backazimuth;
-    snprintf(hd.kcmpnm, sizeof(hd.kcmpnm), "%s%s%c", s_prefix2, s_computeType, ch);
-    sprintf(buffer, "%s/%s%s%c.sac", s_output_dir, s_prefix2, s_prefix, ch);
+    snprintf(hd.kcmpnm, sizeof(hd.kcmpnm), "%s%s%c", pfx, s_computeType, ch);
+    sprintf(buffer, "%s/%s%s%c.sac", s_output_dir, pfx, s_prefix, ch);
     write_sac(buffer, hd, arr);
 }
 
@@ -657,10 +643,7 @@ int main(int argc, char **argv){
     getopt_from_command(argc, argv);
 
     // 根据参数设置，选择分量名
-    const char *chs = (rot2ZNE)? znechs : zrtchs;
-    for(int i=1; i<4; ++i){
-        sacout_prefixes[i][0] = tolower(chs[i-1]);
-    }
+    const char *chs = (rot2ZNE)? ZNEchs : ZRTchs;
 
     char *buffer = (char*)malloc(sizeof(char)*(strlen(s_grnpath)+strlen(s_output_dir)+strlen(s_prefix)+100));
     float **ptarrout=NULL, *arrout=NULL;
@@ -704,10 +687,10 @@ int main(int argc, char **argv){
         }
         
         // 重新计算方向因子
-        set_source_radiation(srcCoef, computeType, (ityp==3), M0, upar_scale, azrad, mchn);
+        set_source_radiation(srcRadi, computeType, (ityp==3), M0, upar_scale, azrad, mchn);
 
-        for(int c=0; c<3; ++c){
-            ch = zrtchs[c];
+        for(int c=0; c<CHANNEL_NUM; ++c){
+            ch = ZRTchs[c];
             
             // 定义SACHEAD指针
             if(ityp==0){
@@ -719,11 +702,16 @@ int main(int argc, char **argv){
             }
             arrout = *ptarrout;
 
-            for(int k=0; k<srcnum; ++k){
-                coef = srcCoef[c][k];
+            for(int k=0; k<SRC_M_NUM; ++k){
+                coef = srcRadi[k][c];
                 if(coef == 0.0) continue;
-    
-                sprintf(buffer, "%s/%s%s%c.sac", s_grnpath, sacin_prefixes[ityp], srcName[k], ch);
+
+                if(ityp==0 || ityp==3){
+                    sprintf(buffer, "%s/%s%c.sac", s_grnpath, SRC_M_NAME_ABBR[k], ch);
+                } else {
+                    sprintf(buffer, "%s/%c%s%c.sac", s_grnpath, tolower(ZRTchs[ityp-1]), SRC_M_NAME_ABBR[k], ch);
+                }
+                
                 float *arr = read_SAC(command, buffer, pthd, NULL);
                 hd0 = *pthd; // 备份一份
 
@@ -809,11 +797,13 @@ int main(int argc, char **argv){
     }
 
     // 保存到SAC文件
-    for(int i1=0; i1<3; ++i1){
-        save_to_sac(buffer, sacout_prefixes[0], chs[i1], arrsyn[i1], hdsyn[i1]);
+    for(int i1=0; i1<CHANNEL_NUM; ++i1){
+        char pfx[20]="";
+        save_to_sac(buffer, pfx, chs[i1], arrsyn[i1], hdsyn[i1]);
         if(calc_upar){
-            for(int i2=0; i2<3; ++i2){
-                save_to_sac(buffer, sacout_prefixes[i1+1], chs[i2], arrsyn_upar[i1][i2], hdsyn_upar[i1][i2]);
+            for(int i2=0; i2<CHANNEL_NUM; ++i2){
+                sprintf(pfx, "%c", tolower(chs[i1]));
+                save_to_sac(buffer, pfx, chs[i2], arrsyn_upar[i1][i2], hdsyn_upar[i1][i2]);
             }
         }
     }

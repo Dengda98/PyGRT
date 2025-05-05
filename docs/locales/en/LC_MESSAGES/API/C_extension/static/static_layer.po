@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
+"Project-Id-Version: PyGRT 0.7.1.dev5+g2230cdc.d20250427\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"POT-Creation-Date: 2025-04-27 12:43+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -20,18 +20,14 @@ msgstr ""
 "Generated-By: Babel 2.16.0\n"
 
 #: ../../source/API/C_extension/static/static_layer.rst:2
-#: 8f219523eb8c4ab3ae838290b2a5362b
 msgid "static_layer.h"
 msgstr ""
 
 #: ../../source/API/C_extension/static/static_layer.rst
-#: 4a38c345ff0741e191394f0b06bae481
 msgid "Functions"
 msgstr ""
 
 #: ../../source/API/C_extension/static/static_layer.rst
-#: 1a67a3358550415fb8f1bdc7b58317d8 3862ffb5dfac4de4b3d8e9eb11e77f3a
-#: 4b86cd980ede4f7d830d5ec5efd65fe6 e19f605279254c20a29878e2e57a8a05
 msgid "参数"
 msgstr ""
 

@@ -19,23 +19,23 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.16.0\n"
 
-#: ../../source/copyright.rst:2 818bf63e92874469bca547e5e3a8a3f0
+#: ../../source/copyright.rst:2 
 msgid "版权声明"
 msgstr "Copyright statement"
 
-#: ../../source/copyright.rst:6 21a40ef21223452eac3ae474df76da89
+#: ../../source/copyright.rst:6 
 msgid "开源许可"
 msgstr "Open Source License"
 
-#: ../../source/copyright.rst:8 08b58d3ba4514141abf752172bd6ef8f
+#: ../../source/copyright.rst:8 
 msgid "本项目采用 GPL-3.0 开源许可证发布，您可自由访问、使用及修改代码，但须遵守以下约束："
 msgstr "This project is released under GPL-3.0 license. You may freely access, use and modify the code, subject to the following restrictions:"
 
-#: ../../source/copyright.rst:10 ebe1303e1179482eb0c228d1105b085a
+#: ../../source/copyright.rst:10 
 msgid "**禁止商用** ：未经书面许可，不得将本项目代码、衍生物或服务用于任何商业用途。"
 msgstr "**Commercial Use Prohibited**: Without explicit written permission, you may not use the code, derivatives or services for any commercial purposes."
 
-#: ../../source/copyright.rst:11 9e062b9c76a94955b4c0675da217ffcf
+#: ../../source/copyright.rst:11 
 msgid ""
 "**禁止二次分发** ：您无权以任何形式（包括但不限于代码托管平台、打包发布等）公开分发本项目源代码。唯一官方下载渠道为： `PyGRT "
 "<https://github.com/Dengda98/PyGRT>`_"
@@ -45,15 +45,15 @@ msgstr ""
 "platforms or packaged releases). The only official distribution channel is: "
 "`PyGRT <https://github.com/Dengda98/PyGRT>`_"
 
-#: ../../source/copyright.rst:15 96b3e189624f4c9586c3ab8a80857518
+#: ../../source/copyright.rst:15 
 msgid "修改与贡献"
 msgstr "Modifications and Contributions"
 
-#: ../../source/copyright.rst:17 a8a3f51abe4f4f3e9824879b3289bf0a
+#: ../../source/copyright.rst:17 
 msgid "**开源义务** ：任何基于本项目的修改或衍生作品，必须以相同许可证完全开源。"
 msgstr "**Open Source Requirement**: Any modifications or derivative works must be fully open-sourced under the same license."
 
-#: ../../source/copyright.rst:18 7c88558f02a14c2f82c26d60214991d4
+#: ../../source/copyright.rst:18 
 msgid "**贡献建议** ：欢迎通过 GitHub Pull Request 提交改进，所有贡献需遵循本项目代码规范与许可条款。"
 msgstr "**Contribution Guidelines**: Improvements via GitHub Pull Requests are welcome. All contributions must comply with the project's coding standards and license terms."
 

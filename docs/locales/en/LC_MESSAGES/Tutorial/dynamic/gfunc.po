@@ -19,27 +19,27 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.16.0\n"
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:4 4312fe3422564999833c02615f9df47f
+#: ../../source/Tutorial/dynamic/gfunc.rst:4 
 msgid "计算动态格林函数"
 msgstr "Compute Dynamic Green's Functions"
 
-#: ../../source/Tutorial/dynamic/gfunc.rst b57eff1703904bf18c8d85b416e48cfc
+#: ../../source/Tutorial/dynamic/gfunc.rst 
 msgid "Author"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:6 527b881c3490415b8e291edd6379262d
+#: ../../source/Tutorial/dynamic/gfunc.rst:6 
 msgid "Zhu Dengda"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst cf4e9165fd2d454cb96b761f075563d4
+#: ../../source/Tutorial/dynamic/gfunc.rst 
 msgid "Email"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:7 8b80da9c7e134566bdc072c199a8398c
+#: ../../source/Tutorial/dynamic/gfunc.rst:7 
 msgid "zhudengda@mail.iggcas.ac.cn"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:12 9288aca0916f4b2ea3b7885a8fccadca
+#: ../../source/Tutorial/dynamic/gfunc.rst:12 
 msgid ""
 "Python中计算动态格林函数的主函数为 :func:`compute_grn() "
 "<pygrt.pymod.PyModel1D.compute_grn>` ，C程序为 :command:`grt`。"
@@ -48,7 +48,7 @@ msgstr ""
 ":func:`compute_grn() <pygrt.pymod.PyModel1D.compute_grn>`, and the "
 "corresponding C program is :command:`grt`."
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:14 0e41f3b7ef1a4a77b0581d5bb3bc2e44
+#: ../../source/Tutorial/dynamic/gfunc.rst:14 
 msgid ""
 "核心计算逻辑来自  :ref:`初稿 <yao_init_manuscripts>` ，具体代码可见与C API中对应同名 :file:`*.c`"
 " 文件，其中计算格林函数频谱的主函数为 :file:`grt.c` 里的 "
@@ -61,7 +61,7 @@ msgstr ""
 ":file:`grt.c`. The coordinate system for the output results is shown in "
 "the figure below."
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:22 5917a70015914e51a621a95344f74145
+#: ../../source/Tutorial/dynamic/gfunc.rst:22 
 msgid ""
 "**推导过程中定义的Z分量与C/Python输出的Z分量方向相反**。因为从Z轴向下为正的坐标系对于 **半无限水平分层均匀介质** "
 "来讲更便于公式推导；而在结果输出后，会对Z分量取相反数，因为Z轴向上和目前实采数据使用的Z轴方向一致，这更便于后续数据处理。"
@@ -75,7 +75,7 @@ msgstr ""
 " in current real-world data, making subsequent data processing more "
 "convenient."
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:24 02ac3f22cdc045c89bdef59b7621d44a
+#: ../../source/Tutorial/dynamic/gfunc.rst:24 
 msgid ""
 "除非特别指明（例如描述震源机制），且一般使用 **PyGRT** 时也不会涉及底层程序内部， **在实际使用过程中提及的Z轴均以向上为正** "
 "，仅在讨论代码内部细节和公式推导时对此加以区分。"
@@ -86,11 +86,11 @@ msgstr ""
 " positive upward**, with distinctions made only when discussing internal "
 "code details and formula derivations."
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:29 f9c5c8ca0bd94c14b15a466fbf1bffbd
+#: ../../source/Tutorial/dynamic/gfunc.rst:29 
 msgid "示例程序"
 msgstr "Simple run"
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:31 202fb73ffcff4b08b298c6a80d80dacd
+#: ../../source/Tutorial/dynamic/gfunc.rst:31 
 msgid ""
 "假设在 :file:`milrow` "
 "模型中，震源深度2km，接收点位于地表，震中距为5km，8km和10km，计算格林函数，要求采样点数500个点，采样间隔0.02s。"
@@ -100,11 +100,11 @@ msgstr ""
 "and 10km. Compute the Green's functions with 500 sampling points and a "
 "sampling interval of 0.02s."
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:35 f2915d95710c45c782f6bbf04b9777c4
+#: ../../source/Tutorial/dynamic/gfunc.rst:35 
 msgid "C"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:42 b48a54370e6b43649fde13649edebbc6
+#: ../../source/Tutorial/dynamic/gfunc.rst:42 
 msgid ""
 "不同震源深度、接收点深度和震中距的格林函数会在 :rst:dir:`GRN/milrow_{depsrc}_{deprcv}_{dist}/` "
 "路径下，使用SAC格式保存。"
@@ -113,7 +113,7 @@ msgstr ""
 "epicentral distances are saved in SAC format under the path "
 ":rst:dir:`GRN/milrow_{depsrc}_{deprcv}_{dist}/`."
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:44 b597d6560c994c0bbe1aee78d1648581
+#: ../../source/Tutorial/dynamic/gfunc.rst:44 
 msgid ""
 "一些基本信息（包括源点和场点的物性参数）保存在SAC头段变量中，其中 :c:var:`t0` 和 :c:var:`t1` "
 "分别代表初至P波和初至S波的到时。在不设定其它参数时，程序中使用0（发震时刻）作为参考时间，故其等价于走时。"
@@ -125,17 +125,17 @@ msgstr ""
 "0 (the origin time) as the reference time, so they are equivalent to "
 "travel times."
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:46 56024a2dfccb495ca114e8850c8cfcd9
+#: ../../source/Tutorial/dynamic/gfunc.rst:46 
 msgid ":command:`grt.travt` 命令可以显式地再计算初至波走时，"
 msgstr ""
 "The :command:`grt.travt` command can explicitly recalculate the travel "
 "times of the first waves."
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:53 3443b5bfe79740f49f05448e787ba96c
+#: ../../source/Tutorial/dynamic/gfunc.rst:53 
 msgid "走时结果会输出到终端，"
 msgstr "The travel time results will be output to the terminal."
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:58 9c6238af11194bbdab885ec745aad1fa
+#: ../../source/Tutorial/dynamic/gfunc.rst:58 
 msgid ""
 "如果你没有安装SAC软件，可以使用Python的ObsPy库读取生成的SAC数据，或者使用 :command:`grt.b2a` "
 "工具临时将SAC格式文件转为如下的文本文件："
@@ -145,18 +145,18 @@ msgstr ""
 "tool to temporarily convert SAC format files into the following text "
 "files:"
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:65 b0b8e733036d4d93b908e63c2447c44f
+#: ../../source/Tutorial/dynamic/gfunc.rst:65 
 msgid "输出的文本文件如下，两列分别为时间点和幅值。这种输出仅保留波形信息，缺失SAC文件中的头段变量。"
 msgstr ""
 "The output text file is as follows, with two columns representing time "
 "points and amplitudes, respectively. This output retains only waveform "
 "information and lacks the header variables in the SAC file."
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:70 4a3d766721f44e80a4c5e43e08e65fa2
+#: ../../source/Tutorial/dynamic/gfunc.rst:70 
 msgid "Python"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:77 17dbc428ce2243f2af35b831cd2b4311
+#: ../../source/Tutorial/dynamic/gfunc.rst:77 
 msgid ""
 "多个震中距的格林函数以列表形式返回，其中每个元素为 |Stream| 类。:class:`Trace.stats.sac` "
 "中保存了SAC头段变量，与C程序输出保持一致。"
@@ -166,11 +166,11 @@ msgstr ""
 ":class:`Trace.stats.sac` contains the SAC header variables, consistent "
 "with the output of the C program."
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:82 dbaed76ef7f34ed2a2d7a385465fb840
+#: ../../source/Tutorial/dynamic/gfunc.rst:82 
 msgid "格林函数计算结果的单位："
 msgstr "Units of the computed Green's function results:"
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:84 9ca8ff2eea1a4d23993eff54cd7e1536
+#: ../../source/Tutorial/dynamic/gfunc.rst:84 
 msgid ""
 "爆炸源：  :math:`10^{-20} \\, \\frac{\\text{cm}}{\\text{dyne} \\cdot "
 "\\text{cm}}`"
@@ -178,11 +178,11 @@ msgstr ""
 "Explosion:  :math:`10^{-20} \\, \\frac{\\text{cm}}{\\text{dyne} \\cdot "
 "\\text{cm}}`"
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:85 ff19f184111f421897dfd37fe3659c15
+#: ../../source/Tutorial/dynamic/gfunc.rst:85 
 msgid "单力源：  :math:`10^{-15} \\, \\frac{\\text{cm}}{\\text{dyne}}`"
 msgstr "Single Force:  :math:`10^{-15} \\, \\frac{\\text{cm}}{\\text{dyne}}`"
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:86 3135fe3079a049348aa334888cf87f13
+#: ../../source/Tutorial/dynamic/gfunc.rst:86 
 msgid ""
 "剪切源：  :math:`10^{-20} \\, \\frac{\\text{cm}}{\\text{dyne} \\cdot "
 "\\text{cm}}`"
@@ -190,7 +190,7 @@ msgstr ""
 "Shear:  :math:`10^{-20} \\, \\frac{\\text{cm}}{\\text{dyne} \\cdot "
 "\\text{cm}}`"
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:87 7fb0fb4635f642589c6d7cbfe1295699
+#: ../../source/Tutorial/dynamic/gfunc.rst:87 
 msgid ""
 "矩张量源： :math:`10^{-20} \\, \\frac{\\text{cm}}{\\text{dyne} \\cdot "
 "\\text{cm}}`"
@@ -198,21 +198,21 @@ msgstr ""
 "Moment Tensor: :math:`10^{-20} \\, \\frac{\\text{cm}}{\\text{dyne} \\cdot"
 " \\text{cm}}`"
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:92 e9b61555602e4c44ad8204b3dd963bf9
+#: ../../source/Tutorial/dynamic/gfunc.rst:92 
 msgid "离散波数积分"
 msgstr "Discrete wavenumber integration"
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:94 9d2f9f7ce3864248be1295426fb541f6
+#: ../../source/Tutorial/dynamic/gfunc.rst:94 
 msgid "格林函数频谱的计算本质转化为求以下积分:"
 msgstr ""
 "The essence of calculating the Green's functions spectra is transformed "
 "into solving the following integrals:"
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:96 7b26addcbf9e47b99eec0ba68d561dc1
+#: ../../source/Tutorial/dynamic/gfunc.rst:96 
 msgid "P_m(\\omega) = \\int_0^\\infty F_m(k, \\omega)J_m(kr)kdk"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:100 93a7e16857954427acff5c4229f3eee3
+#: ../../source/Tutorial/dynamic/gfunc.rst:100 
 msgid ""
 "其中 :math:`F_m(k,\\omega)` 称为核函数，它是和介质属性相关的量，与震中距无关。我们可以使用离散波数积分法 "
 ":ref:`(Bouchon, 1981) <bouchon_1981>` 将上式积分转变为求和:"
@@ -223,17 +223,17 @@ msgstr ""
 ":ref:`(Bouchon, 1981) <bouchon_1981>` to transform the above integral "
 "into a summation:"
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:102 1df6a1eece5342fcb3462ff4ae6bdc80
+#: ../../source/Tutorial/dynamic/gfunc.rst:102 
 msgid "P_m(\\omega) = \\Delta k \\sum_{j=0}^{\\infty} F_m(k_j,\\omega)J_m(k_j r)k_j"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:106 3675493efafa44dca67e40b40714875d
+#: ../../source/Tutorial/dynamic/gfunc.rst:106 
 msgid "其中 :math:`\\Delta k = 2\\pi/L, k_j=j\\Delta k`，:math:`L` 为特征长度，要求满足:"
 msgstr ""
 "where :math:`\\Delta k = 2\\pi/L, k_j=j\\Delta k`, and :math:`L` is the "
 "characteristic length, which must satisfy:"
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:108 67a4adc517ad4f6b842d99f7a072882f
+#: ../../source/Tutorial/dynamic/gfunc.rst:108 
 msgid ""
 "\\left\\{\n"
 "\\begin{aligned}\n"
@@ -243,7 +243,7 @@ msgid ""
 "\\right."
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:117 1de90b5ae5bb4841bbf79c0aaad26146
+#: ../../source/Tutorial/dynamic/gfunc.rst:117 
 msgid ""
 "其中 :math:`\\alpha` 为参考P波速度， :math:`T` 为所需计算的理论地震图的总时间长度。常见的保守经验值为 "
 ":math:`L=20r` ，但也应依具体情况而定 。为了避开附加源以及奇点的影响，:ref:`(Bouchon, 1981) "
@@ -259,11 +259,11 @@ msgstr ""
 "detailed derivation, refer to :ref:`(Bouchon, 1981) <bouchon_1981>` and "
 ":ref:`(Zhang Haiming, 2021) <zhang_book_2021>`."
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:123 9b1c768c4ef64fda8f88dd5195ac7e73
+#: ../../source/Tutorial/dynamic/gfunc.rst:123 
 msgid "积分形式分类"
 msgstr "Types of integral forms"
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:125 53659ddf4d27420db91d4db205c88525
+#: ../../source/Tutorial/dynamic/gfunc.rst:125 
 msgid ""
 "通过在面谐矢量坐标系中建立波函数进行公式推导，最终格林函数的三分量频谱 :math:`W_m(\\omega), Q_m(\\omega), "
 "V_m(\\omega)` (分别为垂向，径向，切向)可以表达为:"
@@ -274,7 +274,7 @@ msgstr ""
 "vertical, radial, and tangential components, respectively) can be "
 "expressed as:"
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:127 4c45f6a6e95345889ef742ac1a0cc7ff
+#: ../../source/Tutorial/dynamic/gfunc.rst:127 
 msgid ""
 "\\left\\{\n"
 "\\begin{aligned}\n"
@@ -287,7 +287,7 @@ msgid ""
 "\\right."
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:139 ab9a0b5b8f75460a881dda0b78c555bd
+#: ../../source/Tutorial/dynamic/gfunc.rst:139 
 msgid ""
 "初次推导该公式可能会对虚数 :math:`i` 及公式中的正负号感到疑惑，但其实这里的设计是将虚数 :math:`i` 和方向因子 "
 ":math:`e^{im\\theta}` 合并，所以在后续合成理论地震图时你会发现，:math:`m=0,1,2` 阶的 :math:`W_m,"
@@ -302,7 +302,7 @@ msgstr ""
 " directional derivative of :math:`V_m` with respect to "
 ":math:`(m\\theta)`."
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:142 6162322cf45f4e47ab26b67fbd89a7a5
+#: ../../source/Tutorial/dynamic/gfunc.rst:142 
 msgid ""
 "公式来自 :ref:`初稿 <yao_init_manuscripts>` (5.6.22)式，其中阶数 :math:`m=0,1,2`。核函数 "
 ":math:`q_m,w_m,v_m` "
@@ -316,7 +316,7 @@ msgstr ""
 " cases where the source is shallower than the field point, which is not "
 "shown here)."
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:144 d2a9c36abf324391947893b2ae36b80f
+#: ../../source/Tutorial/dynamic/gfunc.rst:144 
 msgid ""
 "\\begin{aligned}\n"
 "\\begin{bmatrix} q_m \\\\ w_m \\end{bmatrix} &=\n"
@@ -335,7 +335,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:158 439cedb9ce664c4286f68f537c3d77d5
+#: ../../source/Tutorial/dynamic/gfunc.rst:158 
 msgid ""
 "为了方便程序实现，根据积分形式，我们对待求积分进行如下分类，其中每一阶都分为4类( :math:`p=0,1,2,3` )，除了0阶只需两类，此时"
 " :math:`v_0=0` :"
@@ -345,11 +345,11 @@ msgstr ""
 "into four types (:math:`p=0,1,2,3`), except for the 0th order, which "
 "requires only two types, where :math:`v_0=0`:"
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:160 d5a04a0727cd447ab717c963b086f530
+#: ../../source/Tutorial/dynamic/gfunc.rst:160 
 msgid ":math:`m=0`  [#]_"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:162 e983f189b2f74a9886a995576090442d
+#: ../../source/Tutorial/dynamic/gfunc.rst:162 
 msgid ""
 "\\left\\{\n"
 "\\begin{aligned}\n"
@@ -359,11 +359,11 @@ msgid ""
 "\\right."
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:172 a0d6b32b60b44a84a6cb9ab3f848cdc1
+#: ../../source/Tutorial/dynamic/gfunc.rst:172 
 msgid ":math:`m=1,2`"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:174 d7febd670e2149e99202e018efbe9d88
+#: ../../source/Tutorial/dynamic/gfunc.rst:174 
 msgid ""
 "\\left\\{\n"
 "\\begin{aligned}\n"
@@ -376,7 +376,7 @@ msgid ""
 "\\right."
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:186 fde71aca360f42bdbb33c2fa1bf8cb0f
+#: ../../source/Tutorial/dynamic/gfunc.rst:186 
 msgid ""
 "以上每个积分都形成 :math:`\\int_0^\\infty F_m(k, \\omega)J_m(kr)kdk` "
 "的形式，便可逐个使用离散波数积分（或Filon积分、峰谷平均法等）求解每个积分。"
@@ -386,17 +386,17 @@ msgstr ""
 "discrete wavenumber integration (or Filon integration, peak-trough "
 "averaging method, etc.)."
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:188 bcb17948bb50491aa022075c682da123
+#: ../../source/Tutorial/dynamic/gfunc.rst:188 
 msgid "感谢席超强博士 `@xichaoqiang <https://github.com/xichaoqiang>`_ 的订正。"
 msgstr ""
 "Thanks to Dr. Chaoqiang Xi `@xichaoqiang "
 "<https://github.com/xichaoqiang>`_ for the corrections."
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:194 7f3cffa784a04c6b8844336717d770fe
+#: ../../source/Tutorial/dynamic/gfunc.rst:194 
 msgid "格林函数分类"
 msgstr "Types of Green's Functions"
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:196 bf831e53ab1542069a8abcde92fb85d8
+#: ../../source/Tutorial/dynamic/gfunc.rst:196 
 msgid "程序会输出15个格林函数（也可以选择输出哪些震源），但并不是每个震源类型对应的每一阶每种积分类型都存在。以下为15个格林函数定义的名称，以及对应上述的阶数以及积分类型:"
 msgstr ""
 "The program will output 15 Green's functions (or you can choose which "
@@ -404,27 +404,27 @@ msgstr ""
 "and every type of integral. Below are the names of the 15 defined Green's"
 " functions, along with their corresponding orders and integral types:"
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:199 1d24fbc4ee3545ae8a8fffe5a931bfd1
+#: ../../source/Tutorial/dynamic/gfunc.rst:199 
 msgid "**名称**"
 msgstr "**Name**"
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:199 5bbefbdccc174a769c40f269c3abb1e0
+#: ../../source/Tutorial/dynamic/gfunc.rst:199 
 msgid "**格林函数类型**"
 msgstr "**Green's Function Type**"
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:199 978285963f484daca3583a0ab469bd0a
+#: ../../source/Tutorial/dynamic/gfunc.rst:199 
 msgid "**对应阶数**"
 msgstr "**Order**"
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:199 1e397a8f49954adca1bfc063e23ae796
+#: ../../source/Tutorial/dynamic/gfunc.rst:199 
 msgid "**对应积分类型**"
 msgstr "**Integral Type**"
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:201 002443a4725a4bd497f18f6b1babcd40
+#: ../../source/Tutorial/dynamic/gfunc.rst:201 
 msgid "EXZ"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:201 941607e835ad4b82ae86241759067981
+#: ../../source/Tutorial/dynamic/gfunc.rst:201 
 msgid "爆炸源Z分量"
 msgstr "Explosion, Vertical Upward"
 
@@ -433,10 +433,7 @@ msgstr "Explosion, Vertical Upward"
 #: ../../source/Tutorial/dynamic/gfunc.rst:205
 #: ../../source/Tutorial/dynamic/gfunc.rst:207
 #: ../../source/Tutorial/dynamic/gfunc.rst:215
-#: ../../source/Tutorial/dynamic/gfunc.rst:217 2245b7094eb4435baede91605a41b6a6
-#: 4fa45e2c76a2481a9047e767f2e0fb3c 513a46d37bce4ef2a8f165ef62431c6c
-#: 57a711a395724c9da99ed7f0ebf6a89b 9d1b65696de34a5a8ae4ccafd6920001
-#: c737a65691ae4c38abb1a59b9a800949
+#: ../../source/Tutorial/dynamic/gfunc.rst:217 
 msgid ":math:`m=0`"
 msgstr ""
 
@@ -445,49 +442,45 @@ msgstr ""
 #: ../../source/Tutorial/dynamic/gfunc.rst:209
 #: ../../source/Tutorial/dynamic/gfunc.rst:215
 #: ../../source/Tutorial/dynamic/gfunc.rst:219
-#: ../../source/Tutorial/dynamic/gfunc.rst:225 3c8b49c29d5b4231be8d2164e4dcf483
-#: 4e59777844b5405b8149802abbff0131 874d8e86a80a4f44ad6880b6e3770306
-#: 9d591b2b7f6e4f0dae1997db5f1cc9a6 a4b1b7c2ebcb45fa8bd61ce39ebcc649
-#: c7dd980cba5b431594aa0a24e934827d
+#: ../../source/Tutorial/dynamic/gfunc.rst:225 
 msgid ":math:`p=2`"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:203 08737e0245d94c85bf886108283b0419
+#: ../../source/Tutorial/dynamic/gfunc.rst:203 
 msgid "EXR"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:203 649ccc684f0d46eaab0e73e31a18eef2
+#: ../../source/Tutorial/dynamic/gfunc.rst:203 
 msgid "爆炸源R分量"
 msgstr "Explosion, Radial Outward"
 
 #: ../../source/Tutorial/dynamic/gfunc.rst:203
 #: ../../source/Tutorial/dynamic/gfunc.rst:207
-#: ../../source/Tutorial/dynamic/gfunc.rst:217 038780040e234d3b9fd7851557a52554
-#: 67025985fec14eff9376d529dd3b0314 dd9bf46f572f43d084682ca34b4377ad
+#: ../../source/Tutorial/dynamic/gfunc.rst:217 
 msgid ":math:`p=0`"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:205 d0ef1050be19449fa6e501d84756bb33
+#: ../../source/Tutorial/dynamic/gfunc.rst:205 
 msgid "VFZ"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:205 67cb4489ecc24fd4b5aae64ec1aaf7c6
+#: ../../source/Tutorial/dynamic/gfunc.rst:205 
 msgid "垂直向下力源Z分量"
 msgstr "Vertical Downward Force, Vertical Upward"
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:207 144a2801705d43fea9803988f8cadf42
+#: ../../source/Tutorial/dynamic/gfunc.rst:207 
 msgid "VFR"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:207 127a0920209c4a6e84fd05057aec3ffd
+#: ../../source/Tutorial/dynamic/gfunc.rst:207 
 msgid "垂直向下力源R分量"
 msgstr "Vertical Downward Force, Radial Outward"
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:209 8d5a40dd05d94a4eb05faf9ec28903fa
+#: ../../source/Tutorial/dynamic/gfunc.rst:209 
 msgid "HFZ"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:209 8427d51a82a7465d955ec739c58b66bf
+#: ../../source/Tutorial/dynamic/gfunc.rst:209 
 msgid "水平力源Z分量"
 msgstr "Horizontal Force, Vertical Upward"
 
@@ -496,111 +489,105 @@ msgstr "Horizontal Force, Vertical Upward"
 #: ../../source/Tutorial/dynamic/gfunc.rst:213
 #: ../../source/Tutorial/dynamic/gfunc.rst:219
 #: ../../source/Tutorial/dynamic/gfunc.rst:221
-#: ../../source/Tutorial/dynamic/gfunc.rst:223 11d125ec61bc471ea340647de1823ba8
-#: 2bc22f80fce54f8cac5fea3203c02eb8 6c7efd65d8544569abdf76bdde0ac9e1
-#: b66e1968f47f4b7b9a5699df6e2624c2 c71451f5958f4e14b89170cd9a26b459
-#: d2369e56c2f14b85a50c82b9e6d97559
+#: ../../source/Tutorial/dynamic/gfunc.rst:223 
 msgid ":math:`m=1`"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:211 dff8a362f0e74dfab37f3cbfd4702103
+#: ../../source/Tutorial/dynamic/gfunc.rst:211 
 msgid "HFR"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:211 35b6af4603c147568484e197aa21ea3e
+#: ../../source/Tutorial/dynamic/gfunc.rst:211 
 msgid "水平力源R分量"
 msgstr "Horizontal Force, Radial Outward"
 
 #: ../../source/Tutorial/dynamic/gfunc.rst:211
 #: ../../source/Tutorial/dynamic/gfunc.rst:221
-#: ../../source/Tutorial/dynamic/gfunc.rst:227 26c6824f51994908aaa468cb5f8bf42f
-#: b39e19fdbc884004a7c83d31bff1c556 ffe292c19bca40abacb637ce9310131a
+#: ../../source/Tutorial/dynamic/gfunc.rst:227 
 msgid ":math:`(p=0)+(p=1)`"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:213 34bbcdbf71274dae8d2b4b72906f07d9
+#: ../../source/Tutorial/dynamic/gfunc.rst:213 
 msgid "HFT"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:213 0a2a01e24e10442ba836520e3117cafc
+#: ../../source/Tutorial/dynamic/gfunc.rst:213 
 msgid "水平力源T分量"
 msgstr "Horizontal Force, Transverse Clockwise"
 
 #: ../../source/Tutorial/dynamic/gfunc.rst:213
 #: ../../source/Tutorial/dynamic/gfunc.rst:223
-#: ../../source/Tutorial/dynamic/gfunc.rst:229 0e54d8e2b1f54c2a996651cd222548c0
-#: 6f7cf6ab278a407383dd00b87ab7de43 ff21b0ea0e2c4fab84306514c30a57a5
+#: ../../source/Tutorial/dynamic/gfunc.rst:229 
 msgid ":math:`-(p=1)+(p=3)`"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:215 ef465b4ae7904041b2ebdd7d51414067
+#: ../../source/Tutorial/dynamic/gfunc.rst:215 
 msgid "DDZ"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:215 cd1f375690e344f98d1ecc451e25f282
+#: ../../source/Tutorial/dynamic/gfunc.rst:215 
 msgid "倾角45度倾滑Z分量"
 msgstr "45° dip slip, Vertical Upward"
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:217 2204d9f0d2774562bc9b282e47585503
+#: ../../source/Tutorial/dynamic/gfunc.rst:217 
 msgid "DDR"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:217 d42347c1860643d0bf2f5fa57c4e975f
+#: ../../source/Tutorial/dynamic/gfunc.rst:217 
 msgid "倾角45度倾滑R分量"
 msgstr "45° dip slip, Radial Outward"
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:219 e07f91f4a07a47dba460e74bfab42f32
+#: ../../source/Tutorial/dynamic/gfunc.rst:219 
 msgid "DSZ"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:219 4fe3aaea963c4f66ad76f729c1f161e8
+#: ../../source/Tutorial/dynamic/gfunc.rst:219 
 msgid "倾角90度倾滑Z分量"
 msgstr "90° dip slip, Vertical Upward"
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:221 3c23d08da15c412793d829b4a822642a
+#: ../../source/Tutorial/dynamic/gfunc.rst:221 
 msgid "DSR"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:221 8a8d0df583ec4efa8c79679bb026ead7
+#: ../../source/Tutorial/dynamic/gfunc.rst:221 
 msgid "倾角90度倾滑R分量"
 msgstr "90° dip slip, Radial Outward"
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:223 0edac21110884ad882357ed0b184e432
+#: ../../source/Tutorial/dynamic/gfunc.rst:223 
 msgid "DST"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:223 98d86d2a0a954da39fb6900c60a44aa2
+#: ../../source/Tutorial/dynamic/gfunc.rst:223 
 msgid "倾角90度倾滑T分量"
 msgstr "90° dip slip, Transverse Clockwise"
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:225 f1f911610c1f477ca480c0d78c171743
+#: ../../source/Tutorial/dynamic/gfunc.rst:225 
 msgid "SSZ"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:225 1639e3a4277b48d3a4cf71815a273099
+#: ../../source/Tutorial/dynamic/gfunc.rst:225 
 msgid "倾角90度走滑Z分量"
 msgstr "Vertical strike slip, Vertical Upward"
 
 #: ../../source/Tutorial/dynamic/gfunc.rst:225
 #: ../../source/Tutorial/dynamic/gfunc.rst:227
-#: ../../source/Tutorial/dynamic/gfunc.rst:229 0708c2c707054fa58a7395b096a9f097
-#: 15d6638941544f2083c5a91905c0c097 dfb154fe455f452c9f13ebdaec28a13d
+#: ../../source/Tutorial/dynamic/gfunc.rst:229 
 msgid ":math:`m=2`"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:227 7e5177e8c0e24938b0f9e350fe103e45
+#: ../../source/Tutorial/dynamic/gfunc.rst:227 
 msgid "SSR"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:227 fa77e6bb33f2445a8af5603c468d1b4c
+#: ../../source/Tutorial/dynamic/gfunc.rst:227 
 msgid "倾角90度走滑R分量"
 msgstr "Vertical strike slip, Radial Outward"
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:229 1aa04dbfaa6a48048da39f71e7830f96
+#: ../../source/Tutorial/dynamic/gfunc.rst:229 
 msgid "SST"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:229 d933e035278149b6a18a7810d837fc3c
+#: ../../source/Tutorial/dynamic/gfunc.rst:229 
 msgid "倾角90度走滑T分量"
 msgstr "Vertical strike slip, Transverse Clockwise"
 

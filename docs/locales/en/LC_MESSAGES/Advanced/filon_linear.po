@@ -19,27 +19,27 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.16.0\n"
 
-#: ../../source/Advanced/filon_linear.rst:2 8d6246fc47cf412a895160abe9aadf32
+#: ../../source/Advanced/filon_linear.rst:2 
 msgid "Filon积分法"
 msgstr "Filon's Integration Method"
 
-#: ../../source/Advanced/filon_linear.rst 4bbb4bf9ad084a93ae45b593136b355f
+#: ../../source/Advanced/filon_linear.rst 
 msgid "Author"
 msgstr ""
 
-#: ../../source/Advanced/filon_linear.rst:4 ec9d87b6890f4943a41a4f2f6e09f5fc
+#: ../../source/Advanced/filon_linear.rst:4 
 msgid "Zhu Dengda"
 msgstr ""
 
-#: ../../source/Advanced/filon_linear.rst c5d0558aaa4b4bfa8e424d8abe1682ed
+#: ../../source/Advanced/filon_linear.rst 
 msgid "Email"
 msgstr ""
 
-#: ../../source/Advanced/filon_linear.rst:5 d323f38759e24ccc9550f8d65bc14d1b
+#: ../../source/Advanced/filon_linear.rst:5 
 msgid "zhudengda@mail.iggcas.ac.cn"
 msgstr ""
 
-#: ../../source/Advanced/filon_linear.rst:11 e2009788c8944845a18f4712a18e272d
+#: ../../source/Advanced/filon_linear.rst:11 
 msgid ""
 "谨慎使用固定间隔的Filon积分法，除非你很清楚原理以及误差来源。后期会考虑加入 **自适应Filon积分法** :ref:`(张海明, 2021) "
 "<zhang_book_2021>` 以减少固定积分间隔的影响。"
@@ -48,7 +48,7 @@ msgstr ""
 "In the future, **Self-Adaptive Filon's Integration Method** :ref:`(Zhang Haiming, 2021) <zhang_book_2021>` "
 "may be considered to mitigate the impact of fixed integration intervals."
 
-#: ../../source/Advanced/filon_linear.rst:14 6eb088fc43f04478a91373cb2fb527f5
+#: ../../source/Advanced/filon_linear.rst:14 
 msgid ""
 "以下介绍程序中使用的 **基于两点线性插值的Filon积分** :ref:`(纪晨, 姚振兴, 1995) <jichen_1995>`  "
 ":ref:`(初稿) <yao_init_manuscripts>` ，主要介绍思路，具体公式推导详见对应论文。"
@@ -57,25 +57,25 @@ msgstr ""
 ":ref:`(Ji Chen, Yao Zhenxing, 1995) <jichen_1995>` :ref:`(初稿) <yao_init_manuscripts>` "
 "used in the program, mainly explaining the idea. For detailed formula derivations, refer to the corresponding paper."
 
-#: ../../source/Advanced/filon_linear.rst:16 01d56ee3f5e3407a9bc0a519df5271b2
+#: ../../source/Advanced/filon_linear.rst:16 
 msgid "对于以下积分，"
 msgstr "For the following integral,"
 
-#: ../../source/Advanced/filon_linear.rst:18 28eb781747fd4a70b9f1fac3fbc2fd7b
+#: ../../source/Advanced/filon_linear.rst:18 
 msgid "P_m(\\omega,r) = \\int_0^{k_{\\text{max}}} F_m(k, \\omega)J_m(kr)kdk"
 msgstr ""
 
-#: ../../source/Advanced/filon_linear.rst:22 6e7ad2bd12494b49aef8420293843a24
+#: ../../source/Advanced/filon_linear.rst:22 
 msgid "分成两个部分，"
 msgstr "It is divided into two parts,"
 
-#: ../../source/Advanced/filon_linear.rst:24 c751a3bbaed64e3caea38bf528cebdd4
+#: ../../source/Advanced/filon_linear.rst:24 
 msgid ""
 "P_m(\\omega,r) = \\int_0^{k^*} F_m(k, \\omega)J_m(kr)kdk + "
 "\\int_{k^*}^{k_{\\text{max}}} F_m(k, \\omega)J_m(kr)kdk"
 msgstr ""
 
-#: ../../source/Advanced/filon_linear.rst:28 97a62e7c22b747fe94de689648d8eea5
+#: ../../source/Advanced/filon_linear.rst:28 
 msgid ""
 "其中积分第一部分仍然使用离散波数积分求解 （见 :ref:`k_integ_rst` "
 "部分），积分第二部分将Bessel函数取渐近表达式，可将其转为以下形式"
@@ -83,7 +83,7 @@ msgstr ""
 "The first part of the integral still uses discrete wavenumber integration to solve (see :ref:`k_integ_rst` section), "
 "and the second part of the integral takes the asymptotic expression of the Bessel function, which can be transformed into the following form."
 
-#: ../../source/Advanced/filon_linear.rst:30 71452cef25294a0c8e413c4945806945
+#: ../../source/Advanced/filon_linear.rst:30 
 msgid ""
 "\\begin{align}\n"
 "P_m(\\omega,r) &= \\sqrt{\\dfrac{2}{\\pi r}}\n"
@@ -93,7 +93,7 @@ msgid ""
 "\\end{align}"
 msgstr ""
 
-#: ../../source/Advanced/filon_linear.rst:38 cdebd4ae800a454d96cb12051469e7f1
+#: ../../source/Advanced/filon_linear.rst:38 
 msgid ""
 "其中高亮部分的积分是Filon积分的关键。在每一个区间 :math:`[k_i, k_{i+1}], k_i=(i-1) \\Delta k` "
 "内，使用两点线性插值公式，:math:`\\bar{F}` 可表示为"
@@ -101,13 +101,13 @@ msgstr ""
 "The highlighted part of the integral is the key to Filon's integration. In each interval :math:`[k_i, k_{i+1}], k_i=(i-1) \\Delta k`, "
 "using the two-point linear interpolation formula, :math:`\\bar{F}` can be expressed as"
 
-#: ../../source/Advanced/filon_linear.rst:40 a46cac27c72c4365b58d0dceaf3def59
+#: ../../source/Advanced/filon_linear.rst:40 
 msgid ""
 "\\bar{F} = \\bar{F}_i + \\dfrac{\\bar{F}_{i+1} - \\bar{F}_i}{\\Delta k} "
 "(k - k_i)"
 msgstr ""
 
-#: ../../source/Advanced/filon_linear.rst:44 4996c5f9de9949bcaf0a929f1941416e
+#: ../../source/Advanced/filon_linear.rst:44 
 msgid ""
 "将此式代回积分公式中，可得到 "
 "**该区间内的积分解析解**，而最终的解即为多个区间内解析解的和。可进一步推导，将相邻区间的解析解中的部分式子两两相消，得到更简化的整个区间的解析解。由于相比于Bessel函数，"
@@ -119,15 +119,15 @@ msgstr ""
 "Further derivation can simplify the analytical solution for the entire interval by canceling out parts of the formulas in adjacent intervals. "
 "Since :math:`\\bar{F}` often changes more slowly compared to the Bessel function, Filon's integration can achieve good accuracy even with relatively large step sizes :math:`\\Delta k`."
 
-#: ../../source/Advanced/filon_linear.rst:50 c56e55eda1b44df89be60e118ece0d8f
+#: ../../source/Advanced/filon_linear.rst:50 
 msgid "从以上推导可看出，该方法的精度取决于以下两个方面："
 msgstr "From the above derivation, it can be seen that the accuracy of this method depends on the following two aspects:"
 
-#: ../../source/Advanced/filon_linear.rst:52 ac21a2033ce242198b5c60368705fd10
+#: ../../source/Advanced/filon_linear.rst:52 
 msgid "**Bessel函数渐近表达式与真实值的误差：** 通过将积分分为两个部分计算，可大幅减少该误差。"
 msgstr "**Error between the asymptotic expression of the Bessel function and the true value:** Dividing the integral into two parts can significantly reduce this error."
 
-#: ../../source/Advanced/filon_linear.rst:54 c31f02fdb01d414e986e050b2f5d7816
+#: ../../source/Advanced/filon_linear.rst:54 
 msgid ""
 "**区间内核函数线性拟合与真实值的误差：** 该误差受人为设定的Filon积分间隔控制。当 **区间过大** "
 "时，线性拟合效果很差，计算结果偏差较大。"
@@ -135,15 +135,15 @@ msgstr ""
 "**Error between the linear fitting of the kernel function within the interval and the true value:** This error is controlled by the manually set Filon's integration interval. "
 "When the **interval is too large**, the linear fitting effect is poor, and the calculation result deviates significantly."
 
-#: ../../source/Advanced/filon_linear.rst:57 41818569315f47b78336bef70d2624cd
+#: ../../source/Advanced/filon_linear.rst:57 
 msgid "通过以下可选参数，可使用Filon积分。"
 msgstr "Filon's integration can be used through the following optional parameters."
 
-#: ../../source/Advanced/filon_linear.rst:61 4a786d3828764929b1b374c267d9ad3e
+#: ../../source/Advanced/filon_linear.rst:61 
 msgid "C"
 msgstr ""
 
-#: ../../source/Advanced/filon_linear.rst:63 dee77885e33245c38d566f571fe86a22
+#: ../../source/Advanced/filon_linear.rst:63 
 msgid ""
 ":command:`grt` 和 :command:`stgrt` 程序支持以下可选参数来使用Filon积分，具体说明详见 "
 ":command:`grt -h` 或 :command:`stgrt -h`。"
@@ -151,27 +151,27 @@ msgstr ""
 "The :command:`grt` and :command:`stgrt` programs support the following optional parameters to use Filon's integration. "
 "For detailed explanations, see :command:`grt -h` or :command:`stgrt -h`."
 
-#: ../../source/Advanced/filon_linear.rst:65 2a1aa2be881845f6abbd5bf339403cfe
+#: ../../source/Advanced/filon_linear.rst:65 
 msgid "``-L<length>[/<Flength>/<Fcut>]``"
 msgstr ""
 
-#: ../../source/Advanced/filon_linear.rst:67 dd40fc0537b740ba9908efb73fbed0c0
+#: ../../source/Advanced/filon_linear.rst:67 
 msgid "``<length>``  定义离散波数积分的积分间隔 （见 :ref:`k_integ_rst` 部分）"
 msgstr "``<length>`` defines the integration interval for discrete wavenumber integration (see :ref:`k_integ_rst` section)."
 
-#: ../../source/Advanced/filon_linear.rst:68 3f709a78baca4ffbb08dbac8681b8b61
+#: ../../source/Advanced/filon_linear.rst:68 
 msgid "``<Flength>`` 定义Filon积分间隔，公式和离散波数积分使用的一致。"
 msgstr "``<Flength>`` defines the Filon's integration interval, consistent with the formula used for discrete wavenumber integration."
 
-#: ../../source/Advanced/filon_linear.rst:69 5a4a70deda4f4bf198ee4501055d9049
+#: ../../source/Advanced/filon_linear.rst:69 
 msgid "``<Fcut>`` 定义了两个积分的分割点， :math:`k^*=` ``<Fcut>`` :math:`/r_{\\text{max}}`"
 msgstr "``<Fcut>`` defines the division point of the two integrals, :math:`k^*=` ``<Fcut>`` :math:`/r_{\\text{max}}`."
 
-#: ../../source/Advanced/filon_linear.rst:71 7970f3518caa46619b25d9ea0ae51c7e
+#: ../../source/Advanced/filon_linear.rst:71 
 msgid "Python"
 msgstr ""
 
-#: ../../source/Advanced/filon_linear.rst:73 a0a886c49b3241408071fe745984f923
+#: ../../source/Advanced/filon_linear.rst:73 
 msgid ""
 ":func:`compute_grn() <pygrt.pymod.PyModel1D.compute_grn>` 函数和 "
 ":func:`compute_static_grn() <pygrt.pymod.PyModel1D.compute_static_grn>` "
@@ -181,7 +181,7 @@ msgstr ""
 ":func:`compute_static_grn() <pygrt.pymod.PyModel1D.compute_static_grn>` function "
 "support the following optional parameters to use Filon's integration. For detailed explanations, see the API."
 
-#: ../../source/Advanced/filon_linear.rst:75 b6b49209453a449fb38a5a8ee36b10ca
+#: ../../source/Advanced/filon_linear.rst:75 
 msgid "``filonLC:List[float]`` 需给定两个量，分别对应C选项卡中的 ``<Flength>`` 参数和 ``<Fcut>`` 参数。"
 msgstr "``filonLC:List[float]`` requires two values, corresponding to the ``<Flength>`` and ``<Fcut>`` parameters in the C tab."
 

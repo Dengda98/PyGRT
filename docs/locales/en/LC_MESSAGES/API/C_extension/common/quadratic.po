@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
+"Project-Id-Version: PyGRT 0.7.1.dev5+g2230cdc.d20250427\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"POT-Creation-Date: 2025-04-27 12:43+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -20,23 +20,18 @@ msgstr ""
 "Generated-By: Babel 2.16.0\n"
 
 #: ../../source/API/C_extension/common/quadratic.rst:2
-#: 317610a82ddf417fa3d7a09267219584
 msgid "quadratic.h"
 msgstr ""
 
 #: ../../source/API/C_extension/common/quadratic.rst
-#: 5f3692dcb60a4c30ac9d8197667f1c44
 msgid "Functions"
 msgstr ""
 
 #: ../../source/API/C_extension/common/quadratic.rst
-#: 55b77a3d1dbc46ef9fc4e26063c66167 bfc1a8378e4e4a69b6cec24d47055f42
-#: cb982c5f51964c918feb785cb9aa7ab1
 msgid "参数"
 msgstr ""
 
 #: ../../source/API/C_extension/common/quadratic.rst
-#: 6b1617b423a24e80b530fe2e384eb5dc afbb5a5bd8fa4075b64c0fa028b99e85
 msgid "返回"
 msgstr ""
 

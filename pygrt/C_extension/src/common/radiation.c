@@ -13,8 +13,8 @@
 #include "common/const.h"
 
 void set_source_radiation(
-    double srcCoef[3][6], const int computeType, const bool par_theta,
-    const double M0, const double coef, const double azrad, const double mchn[6]
+    double srcRadi[SRC_M_NUM][CHANNEL_NUM], const int computeType, const bool par_theta,
+    const double M0, const double coef, const double azrad, const double mchn[MECHANISM_NUM]
 ){
     double mult;
     if(computeType == GRT_SYN_COMPUTE_SF){
@@ -28,8 +28,8 @@ void set_source_radiation(
     caz = cos(azrad);
 
     if(computeType == GRT_SYN_COMPUTE_EX){
-        srcCoef[0][0] = srcCoef[1][0] = (par_theta)? 0.0 : mult; // Z/R
-        srcCoef[2][0] = 0.0; // T
+        srcRadi[0][0] = srcRadi[0][1] = (par_theta)? 0.0 : mult; // Z/R
+        srcRadi[0][2] = 0.0; // T
     }  
     else if(computeType == GRT_SYN_COMPUTE_SF){
         double A0, A1, A4;
@@ -40,10 +40,10 @@ void set_source_radiation(
         A4 = (- fn*saz + fe*caz)*mult;
 
         // 公式(4.6.20)
-        srcCoef[0][1] = srcCoef[1][1] = (par_theta)? 0.0 : A0; // VF, Z/R
-        srcCoef[0][2] = srcCoef[1][2] = (par_theta)? A4 : A1; // HF, Z/R
-        srcCoef[2][1] = 0.0; // VF, T
-        srcCoef[2][2] = (par_theta)? -A1 : A4; // HF, T
+        srcRadi[1][0] = srcRadi[1][1] = (par_theta)? 0.0 : A0; // VF, Z/R
+        srcRadi[2][0] = srcRadi[2][1] = (par_theta)? A4 : A1; // HF, Z/R
+        srcRadi[1][2] = 0.0; // VF, T
+        srcRadi[2][2] = (par_theta)? -A1 : A4; // HF, T
     }
     else if(computeType == GRT_SYN_COMPUTE_DC){
         double strike, dip, rake;
@@ -67,12 +67,12 @@ void set_source_radiation(
         A4 = mult * (- cdip2*srak*cthe - cdip*crak*sthe);
         A5 = mult * (sdip*crak*cthe2 - 0.5*sdip2*srak*sthe2);
 
-        srcCoef[0][3] = srcCoef[1][3] = (par_theta)? 0.0 : A0; // DD, Z/R
-        srcCoef[0][4] = srcCoef[1][4] = (par_theta)? A4 : A1; // DS, Z/R
-        srcCoef[0][5] = srcCoef[1][5] = (par_theta)? 2.0*A5 : A2; // SS, Z/R
-        srcCoef[2][3] = 0.0; // DD, T
-        srcCoef[2][4] = (par_theta)? -A1 : A4;  // DS, T
-        srcCoef[2][5] = (par_theta)? -2.0*A2 : A5;  // DS, T
+        srcRadi[3][0] = srcRadi[3][1] = (par_theta)? 0.0 : A0; // DD, Z/R
+        srcRadi[4][0] = srcRadi[4][1] = (par_theta)? A4 : A1; // DS, Z/R
+        srcRadi[5][0] = srcRadi[5][1] = (par_theta)? 2.0*A5 : A2; // SS, Z/R
+        srcRadi[3][2] = 0.0; // DD, T
+        srcRadi[4][2] = (par_theta)? -A1 : A4;  // DS, T
+        srcRadi[5][2] = (par_theta)? -2.0*A2 : A5;  // DS, T
     }
     else if(computeType == GRT_SYN_COMPUTE_MT){
         // 公式(4.9.7)但修改了各向同性的量
@@ -96,13 +96,13 @@ void set_source_radiation(
         A4 = mult * (M13*saz - M23*caz);
         A5 = mult * (-0.5*(M11 - M22)*saz2 + M12*caz2);
 
-        srcCoef[0][0] = srcCoef[1][0] = (par_theta)? 0.0 : mult*Mexp; // EX, Z/R
-        srcCoef[0][3] = srcCoef[1][3] = (par_theta)? 0.0 : A0; // DD, Z/R
-        srcCoef[0][4] = srcCoef[1][4] = (par_theta)? A4 : A1; // DS, Z/R
-        srcCoef[0][5] = srcCoef[1][5] = (par_theta)? 2.0*A5 : A2; // SS, Z/R
-        srcCoef[2][0] = 0.0; // EX, T
-        srcCoef[2][3] = 0.0; // DD, T
-        srcCoef[2][4] = (par_theta)? -A1 : A4;  // DS, T
-        srcCoef[2][5] = (par_theta)? -2.0*A2 : A5;  // DS, T
+        srcRadi[0][0] = srcRadi[0][1] = (par_theta)? 0.0 : mult*Mexp; // EX, Z/R
+        srcRadi[3][0] = srcRadi[3][1] = (par_theta)? 0.0 : A0; // DD, Z/R
+        srcRadi[4][0] = srcRadi[4][1] = (par_theta)? A4 : A1; // DS, Z/R
+        srcRadi[5][0] = srcRadi[5][1] = (par_theta)? 2.0*A5 : A2; // SS, Z/R
+        srcRadi[0][2] = 0.0; // EX, T
+        srcRadi[3][2] = 0.0; // DD, T
+        srcRadi[4][2] = (par_theta)? -A1 : A4;  // DS, T
+        srcRadi[5][2] = (par_theta)? -2.0*A2 : A5;  // DS, T
     }
 }

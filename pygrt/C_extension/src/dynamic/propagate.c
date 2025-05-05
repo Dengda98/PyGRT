@@ -29,30 +29,15 @@
 
 
 void kernel(
-    const MODEL1D *mod1d, MYCOMPLEX omega, MYREAL k,
-    MYCOMPLEX EXP_qwv[3][3], MYCOMPLEX VF_qwv[3][3], MYCOMPLEX HF_qwv[3][3], MYCOMPLEX DC_qwv[3][3],
+    const MODEL1D *mod1d, MYCOMPLEX omega, MYREAL k, MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
     bool calc_uiz,
-    MYCOMPLEX EXP_uiz_qwv[3][3], MYCOMPLEX VF_uiz_qwv[3][3], MYCOMPLEX HF_uiz_qwv[3][3], MYCOMPLEX DC_uiz_qwv[3][3])
+    MYCOMPLEX QWV_uiz[SRC_M_NUM][QWV_NUM], MYINT *stats)
 {
     // 初始化qwv为0
-    for(MYINT i=0; i<3; ++i){
-        for(MYINT j=0; j<3; ++j){
-            if(EXP_qwv!=NULL) EXP_qwv[i][j] = RZERO;
-            if(VF_qwv!=NULL)  VF_qwv[i][j] = RZERO;
-            if(HF_qwv!=NULL)  HF_qwv[i][j] = RZERO;
-            if(DC_qwv!=NULL)  DC_qwv[i][j] = RZERO;
-        }
-    }
-
-    if(calc_uiz){
-        // 初始化qwv为0
-        for(MYINT i=0; i<3; ++i){
-            for(MYINT j=0; j<3; ++j){
-                if(EXP_uiz_qwv!=NULL) EXP_uiz_qwv[i][j] = RZERO;
-                if(VF_uiz_qwv!=NULL)  VF_uiz_qwv[i][j] = RZERO;
-                if(HF_uiz_qwv!=NULL)  HF_uiz_qwv[i][j] = RZERO;
-                if(DC_uiz_qwv!=NULL)  DC_uiz_qwv[i][j] = RZERO;
-            }
+    for(MYINT i=0; i<SRC_M_NUM; ++i){
+        for(MYINT j=0; j<QWV_NUM; ++j){
+            QWV[i][j] = CZERO;
+            if(calc_uiz)  QWV_uiz[i][j] = CZERO;
         }
     }
 
@@ -62,6 +47,10 @@ void kernel(
     MYINT imin, imax; // 相对浅层深层层位
     imin = mod1d->imin;
     imax = mod1d->imax;
+    // bool ircvup = true;
+    // MYINT isrc = 2;
+    // MYINT ircv = 1;
+    // MYINT imin=1, imax=2;
     
 
     // 初始化广义反射透射系数矩阵
@@ -122,8 +111,14 @@ void kernel(
 
     
     // 定义物理层内的反射透射系数矩阵，相对于界面上的系数矩阵增加了时间延迟因子
-    MYCOMPLEX RD[2][2], RDL, TD[2][2], TDL;
-    MYCOMPLEX RU[2][2], RUL, TU[2][2], TUL;
+    MYCOMPLEX RD[2][2] = INIT_C_ZERO_2x2_MATRIX;
+    MYCOMPLEX RDL = CZERO;
+    MYCOMPLEX RU[2][2] = INIT_C_ZERO_2x2_MATRIX;
+    MYCOMPLEX RUL = CZERO;
+    MYCOMPLEX TD[2][2] = INIT_C_IDENTITY_2x2_MATRIX;
+    MYCOMPLEX TDL = CONE;
+    MYCOMPLEX TU[2][2] = INIT_C_IDENTITY_2x2_MATRIX;
+    MYCOMPLEX TUL = CONE;
     MYCOMPLEX *const pRDL = &RDL;
     MYCOMPLEX *const pTDL = &TDL;
     MYCOMPLEX *const pRUL = &RUL;
@@ -172,8 +167,10 @@ void kernel(
         mod1d_mu1 = lay->mu;
         mod1d_kaka1 = lay->kaka;
         mod1d_kbkb1 = lay->kbkb;
-        mod1d_xa1 = CSQRT(RONE - mod1d_kaka1/(k*k));
-        mod1d_xb1 = CSQRT(RONE - mod1d_kbkb1/(k*k));
+        mod1d_xa1 = sqrt(RONE - mod1d_kaka1/(k*k));
+        mod1d_xb1 = sqrt(RONE - mod1d_kbkb1/(k*k));
+        // mod1d_xa1 = sqrt(k*k - mod1d_kaka1)/k;
+        // mod1d_xb1 = sqrt(k*k - mod1d_kbkb1)/k;
 
         if(0==iy){
             top_xa = mod1d_xa1;
@@ -197,11 +194,37 @@ void kernel(
                 mod1d_Rho0, mod1d_xa0, mod1d_xb0, mod1d_kbkb0, mod1d_mu0, 
                 mod1d_Rho1, mod1d_xa1, mod1d_xb1, mod1d_kbkb1, mod1d_mu1, 
                 mod1d_thk0, // 使用iy-1层的厚度
-                omega, k, 
+                k, 
                 RD, pRDL, RU, pRUL, 
-                TD, pTDL, TU, pTUL);
+                TD, pTDL, TU, pTUL, stats);
+            if(*stats==INVERSE_FAILURE)  goto BEFORE_RETURN;
         }
 
+#if Print_GRTCOEF == 1
+        // TEST-------------------------------------------------------------
+        // fprintf(stderr, "k=%f. iy=%d\n", k, iy);
+        // fprintf(stderr, "RD\n");
+        // cmatmxn_print(2, 2, RD);
+        // fprintf(stderr, "RDL="GRT_CMPLX_FMT"\n", creal(RDL), cimag(RDL));
+        // fprintf(stderr, "RU\n");
+        // cmatmxn_print(2, 2, RU);
+        // fprintf(stderr, "RUL="GRT_CMPLX_FMT"\n", creal(RUL), cimag(RUL));
+        // fprintf(stderr, "TD\n");
+        // cmatmxn_print(2, 2, TD);
+        // fprintf(stderr, "TDL="GRT_CMPLX_FMT"\n", creal(TDL), cimag(TDL));
+        // fprintf(stderr, "TU\n");
+        // cmatmxn_print(2, 2, TU);
+        // fprintf(stderr, "TUL="GRT_CMPLX_FMT"\n", creal(TUL), cimag(TUL));
+        // if(creal(omega)==PI2*15e-4 && iy==5){
+        // fprintf(stderr, GRT_REAL_FMT, k);
+        // for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(RD[i][j]), cimag(RD[i][j]));
+        // for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(RU[i][j]), cimag(RU[i][j]));
+        // for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(TD[i][j]), cimag(TD[i][j]));
+        // for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(TU[i][j]), cimag(TU[i][j]));
+        // fprintf(stderr, "\n");
+        // }
+        // TEST-------------------------------------------------------------
+#endif
         // FA
         if(iy < imin){ 
             if(iy == 1){ // 初始化FA
@@ -232,7 +255,8 @@ void kernel(
                     RD, RDL, RU, RUL, 
                     TD, TDL, TU, TUL,
                     RD_FA, pRDL_FA, RU_FA, pRUL_FA, 
-                    TD_FA, pTDL_FA, TU_FA, pTUL_FA);  
+                    TD_FA, pTDL_FA, TU_FA, pTUL_FA, stats);  
+                if(*stats==INVERSE_FAILURE)  goto BEFORE_RETURN;
             }
         } 
         else if(iy==imin){ // 虚拟层位，可对递推公式简化
@@ -270,7 +294,8 @@ void kernel(
                     RD, RDL, RU, RUL, 
                     TD, TDL, TU, TUL,
                     RD_RS, pRDL_RS, RU_RS, pRUL_RS, 
-                    TD_RS, pTDL_RS, TU_RS, pTUL_RS);  // 写入原地址
+                    TD_RS, pTDL_RS, TU_RS, pTUL_RS, stats);  // 写入原地址
+                if(*stats==INVERSE_FAILURE)  goto BEFORE_RETURN;
             }
         } 
         else if(iy==imax){ // 虚拟层位，可对递推公式简化
@@ -312,7 +337,7 @@ void kernel(
                         RD, RDL, RU, RUL, 
                         TD, TDL, TU, TUL,
                         RD_BL, pRDL_BL, RU_BL, pRUL_BL, 
-                        TD_BL, pTDL_BL, TU_BL, pTUL_BL);  // 写入原地址
+                        TD_BL, pTDL_BL, TU_BL, pTUL_BL, stats);  // 写入原地址
                 } else {
                     recursion_RT_2x2(
                         RD_BL, RDL_BL, RU_BL, RUL_BL, 
@@ -320,9 +345,9 @@ void kernel(
                         RD, RDL, RU, RUL, 
                         TD, TDL, TU, TUL,
                         RD_BL, pRDL_BL, NULL, NULL, 
-                        NULL, NULL, NULL, NULL);  // 写入原地址
+                        NULL, NULL, NULL, NULL, stats);  // 写入原地址
                 }
-                
+                if(*stats==INVERSE_FAILURE)  goto BEFORE_RETURN;
             }
         } // END if
 
@@ -334,34 +359,25 @@ void kernel(
 
 
     // 计算震源系数
-    MYCOMPLEX EXP[3][3][2], VF[3][3][2], HF[3][3][2], DC[3][3][2];
-    MYCOMPLEX (*pEXP)[3][2] = (EXP_qwv!=NULL)? EXP : NULL; 
-    MYCOMPLEX (*pVF)[3][2]  = (VF_qwv!=NULL)?  VF  : NULL; 
-    MYCOMPLEX (*pHF)[3][2]  = (HF_qwv!=NULL)?  HF  : NULL; 
-    MYCOMPLEX (*pDC)[3][2]  = (DC_qwv!=NULL)?  DC  : NULL; 
-    for(MYINT i=0; i<3; ++i){
-        for(MYINT j=0; j<3; ++j){
-            for(MYINT p=0; p<2; ++p){
-                EXP[i][j][p] = VF[i][j][p] = HF[i][j][p] = DC[i][j][p] = RZERO;
-            }
-        }
-    }
-    source_coef(src_xa, src_xb, src_kaka, src_kbkb, omega, k, pEXP, pVF, pHF, pDC);
+    MYCOMPLEX src_coef[SRC_M_NUM][QWV_NUM][2] = {0};
+    source_coef(src_xa, src_xb, src_kaka, src_kbkb, k, src_coef);
 
     // 临时中转矩阵 (temperary)
-    MYCOMPLEX tmpR1[2][2], tmpR2[2][2], tmp2x2[2][2], tmpRL, tmp2x2_uiz[2][2], tmpRL_uiz;
+    MYCOMPLEX tmpR2[2][2], tmp2x2[2][2], tmpRL, tmp2x2_uiz[2][2], tmpRL_uiz;
     MYCOMPLEX inv_2x2T[2][2], invT;
 
     // 递推RU_FA
-    calc_R_tilt(top_xa, top_xb, top_kbkb, k, R_tilt);
+    calc_R_tilt(top_xa, top_xb, top_kbkb, k, R_tilt, stats);
+    if(*stats==INVERSE_FAILURE)  goto BEFORE_RETURN;
     recursion_RU(
         R_tilt, RONE, 
         RD_FA, RDL_FA,
         RU_FA, RUL_FA, 
         TD_FA, TDL_FA,
         TU_FA, TUL_FA,
-        RU_FA, pRUL_FA, NULL, NULL);
-
+        RU_FA, pRUL_FA, NULL, NULL, stats);
+    if(*stats==INVERSE_FAILURE)  goto BEFORE_RETURN;
+    
     // 根据震源和台站相对位置，计算最终的系数
     if(ircvup){ // A接收  B震源
 
@@ -375,52 +391,86 @@ void kernel(
             RU_RS, RUL_RS, 
             TD_RS, TDL_RS,
             TU_RS, TUL_RS,
-            RU_FB, pRUL_FB, inv_2x2T, &invT);
+            RU_FB, pRUL_FB, inv_2x2T, &invT, stats);
+        if(*stats==INVERSE_FAILURE)  goto BEFORE_RETURN;
         
+#if Print_GRTCOEF == 1
+        // TEST-------------------------------------------------------------
+        if(creal(omega)==PI2*0.1){
+        fprintf(stderr, GRT_REAL_FMT, k);
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(RD_BL[i][j]), cimag(RD_BL[i][j]));
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(RU_BL[i][j]), cimag(RU_BL[i][j]));
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(TD_BL[i][j]), cimag(TD_BL[i][j]));
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(TU_BL[i][j]), cimag(TU_BL[i][j]));
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(RD_RS[i][j]), cimag(RD_RS[i][j]));
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(RU_RS[i][j]), cimag(RU_RS[i][j]));
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(TD_RS[i][j]), cimag(TD_RS[i][j]));
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(TU_RS[i][j]), cimag(TU_RS[i][j]));
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(RD_FA[i][j]), cimag(RD_FA[i][j]));
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(RU_FA[i][j]), cimag(RU_FA[i][j]));
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(TD_FA[i][j]), cimag(TD_FA[i][j]));
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(TU_FA[i][j]), cimag(TU_FA[i][j]));
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(RU_FB[i][j]), cimag(RU_FB[i][j]));
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(R_tilt[i][j]), cimag(R_tilt[i][j]));
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(R_EV[i][j]), cimag(R_EV[i][j]));
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(inv_2x2T[i][j]), cimag(inv_2x2T[i][j]));
+        cmat2x2_mul(RD_BL, RU_FB, tmpR2);
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(tmpR2[i][j]), cimag(tmpR2[i][j]));
+        cmat2x2_one_sub(tmpR2);
+        cmat2x2_inv(tmpR2, tmpR2, stats);// (I - xx)^-1
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(tmpR2[i][j]), cimag(tmpR2[i][j]));
+        cmat2x2_mul(inv_2x2T, tmpR2, tmp2x2);
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(tmp2x2[i][j]), cimag(tmp2x2[i][j]));
+        cmat2x2_mul(R_EV, tmp2x2, tmp2x2);
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(tmp2x2[i][j]), cimag(tmp2x2[i][j]));
+        fprintf(stderr, "\n");
+        }
+        // TEST-------------------------------------------------------------
+#endif
+
         // 公式(5.7.12-14)
-        // cmat2x2_mul(R_EV, inv_2x2T, tmpR1);
         cmat2x2_mul(RD_BL, RU_FB, tmpR2);
         cmat2x2_one_sub(tmpR2);
-        cmat2x2_inv(tmpR2, tmpR2);// (I - xx)^-1
+        cmat2x2_inv(tmpR2, tmpR2, stats);// (I - xx)^-1
+        if(*stats==INVERSE_FAILURE)  goto BEFORE_RETURN;
         cmat2x2_mul(inv_2x2T, tmpR2, tmp2x2);
 
         if(calc_uiz) cmat2x2_assign(tmp2x2, tmp2x2_uiz); // 为后续计算空间导数备份
 
         cmat2x2_mul(R_EV, tmp2x2, tmp2x2);
         tmpRL = R_EVL * invT  / (RONE - RDL_BL * RUL_FB);
-        for(MYINT m=0; m<3; ++m){
-            if(0==m){
-                // 爆炸源
-                if(EXP_qwv!=NULL) get_qwv(ircvup, tmp2x2, tmpRL, RD_BL, RDL_BL, EXP[m], EXP_qwv[m]);
-                // 垂直力源
-                if(VF_qwv!=NULL)  get_qwv(ircvup, tmp2x2, tmpRL, RD_BL, RDL_BL, VF[m], VF_qwv[m]);
-            }
-            
-            // 水平力源
-            if(1==m && HF_qwv!=NULL) get_qwv(ircvup, tmp2x2, tmpRL, RD_BL, RDL_BL, HF[m], HF_qwv[m]);
 
-            // 剪切位错
-            if(DC_qwv!=NULL)  get_qwv(ircvup, tmp2x2, tmpRL, RD_BL, RDL_BL, DC[m], DC_qwv[m]);
+        for(MYINT i=0; i<SRC_M_NUM; ++i){
+            get_qwv(ircvup, tmp2x2, tmpRL, RD_BL, RDL_BL, src_coef[i], QWV[i]);
         }
+
+        // for(MYINT i=0; i<SRC_M_NUM; ++i){
+        //     MYCOMPLEX QW[2] = {src_coef[i][0][0], src_coef[i][1][0]};
+        //     MYCOMPLEX QW2[2] = {src_coef[i][0][1], src_coef[i][1][1]};
+        //     cmat2x1_mul(RD_BL, QW, QW);
+        //     QW[0] += QW2[0]; 
+        //     QW[1] += QW2[1]; 
+        //     cmat2x2_mul(RD_BL, RU_FB, tmpR2);
+        //     cmat2x2_one_sub(tmpR2);
+        //     cmat2x2_inv(tmpR2, tmpR2, stats);
+        //     if(*stats==INVERSE_FAILURE)  goto BEFORE_RETURN;
+        //     cmat2x1_mul(tmpR2, QW, QW);
+        //     cmat2x1_mul(inv_2x2T, QW, QW);
+        //     cmat2x1_mul(R_EV, QW, QW);
+        //     MYCOMPLEX V = R_EVL * invT  / (RONE - RDL_BL * RUL_FB) * (RDL_BL*src_coef[i][2][0] + src_coef[i][2][1]);
+        //     QWV[i][0] = QW[0];
+        //     QWV[i][1] = QW[1];
+        //     QWV[i][2] = V;
+        // }
         
 
         if(calc_uiz){
             calc_uiz_R_EV(rcv_xa, rcv_xb, ircvup, k, RU_FA, RUL_FA, uiz_R_EV, puiz_R_EVL);
             cmat2x2_mul(uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
             tmpRL_uiz = tmpRL / R_EVL * uiz_R_EVL;
-            for(MYINT m=0; m<3; ++m){
-                if(0==m){
-                    // 爆炸源
-                    if(EXP_uiz_qwv!=NULL) get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RD_BL, RDL_BL, EXP[m], EXP_uiz_qwv[m]);
-                    // 垂直力源
-                    if(VF_uiz_qwv!=NULL)  get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RD_BL, RDL_BL, VF[m], VF_uiz_qwv[m]);
-                }
-                
-                // 水平力源
-                if(1==m && HF_uiz_qwv!=NULL) get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RD_BL, RDL_BL, HF[m], HF_uiz_qwv[m]);
 
-                // 剪切位错
-                if(DC_uiz_qwv!=NULL)  get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RD_BL, RDL_BL, DC[m], DC_uiz_qwv[m]);
+            for(MYINT i=0; i<SRC_M_NUM; ++i){
+                get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RD_BL, RDL_BL, src_coef[i], QWV_uiz[i]);
             }    
         }
     } 
@@ -436,33 +486,23 @@ void kernel(
             TD_RS, TDL_RS,
             TU_RS, TUL_RS,
             RD_BL, RDL_BL,
-            RD_AL, pRDL_AL, inv_2x2T, &invT);
+            RD_AL, pRDL_AL, inv_2x2T, &invT, stats);
+        if(*stats==INVERSE_FAILURE)  goto BEFORE_RETURN;
         
         // 公式(5.7.26-27)
-        // cmat2x2_mul(R_EV, inv_2x2T, tmpR1);
         cmat2x2_mul(RU_FA, RD_AL, tmpR2);
         cmat2x2_one_sub(tmpR2);
-        cmat2x2_inv(tmpR2, tmpR2);// (I - xx)^-1
+        cmat2x2_inv(tmpR2, tmpR2, stats);// (I - xx)^-1
+        if(*stats==INVERSE_FAILURE)  goto BEFORE_RETURN;
         cmat2x2_mul(inv_2x2T, tmpR2, tmp2x2);
 
         if(calc_uiz) cmat2x2_assign(tmp2x2, tmp2x2_uiz); // 为后续计算空间导数备份
 
         cmat2x2_mul(R_EV, tmp2x2, tmp2x2);
         tmpRL = R_EVL * invT / (RONE - RUL_FA * RDL_AL);
-        for(MYINT m=0; m<3; ++m){
-            if(0==m){
-                // 爆炸源
-                if(EXP_qwv!=NULL) get_qwv(ircvup, tmp2x2, tmpRL, RU_FA, RUL_FA, EXP[m], EXP_qwv[m]);
-                // 垂直力源
-                if(VF_qwv!=NULL)  get_qwv(ircvup, tmp2x2, tmpRL, RU_FA, RUL_FA, VF[m], VF_qwv[m]);
-            }
-            
-            // 水平力源
-            if(1==m && HF_qwv!=NULL) get_qwv(ircvup, tmp2x2, tmpRL, RU_FA, RUL_FA, HF[m], HF_qwv[m]);
 
-            // 剪切位错
-            if(DC_qwv!=NULL)  get_qwv(ircvup, tmp2x2, tmpRL, RU_FA, RUL_FA, DC[m], DC_qwv[m]);
-
+        for(MYINT i=0; i<SRC_M_NUM; ++i){
+            get_qwv(ircvup, tmp2x2, tmpRL, RU_FA, RUL_FA, src_coef[i], QWV[i]);
         }
 
 
@@ -470,26 +510,27 @@ void kernel(
             calc_uiz_R_EV(rcv_xa, rcv_xb, ircvup, k, RD_BL, RDL_BL, uiz_R_EV, puiz_R_EVL);    
             cmat2x2_mul(uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
             tmpRL_uiz = tmpRL / R_EVL * uiz_R_EVL;
-            for(MYINT m=0; m<3; ++m){
-                if(0==m){
-                    // 爆炸源
-                    if(EXP_uiz_qwv!=NULL) get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RU_FA, RUL_FA, EXP[m], EXP_uiz_qwv[m]);
-                    // 垂直力源
-                    if(VF_uiz_qwv!=NULL)  get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RU_FA, RUL_FA, VF[m], VF_uiz_qwv[m]);
-                }
-                
-                // 水平力源
-                if(1==m && HF_uiz_qwv!=NULL) get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RU_FA, RUL_FA, HF[m], HF_uiz_qwv[m]);
-    
-                // 剪切位错
-                if(DC_uiz_qwv!=NULL)  get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RU_FA, RUL_FA, DC[m], DC_uiz_qwv[m]);
-    
+            
+            for(MYINT i=0; i<SRC_M_NUM; ++i){
+                get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RU_FA, RUL_FA, src_coef[i], QWV_uiz[i]);
             }
         }
 
-
     } // END if
 
+
+
+    BEFORE_RETURN:
+
+    // 对一些特殊情况的修正
+    // 当震源和场点均位于地表时，可理论验证DS分量恒为0，这里直接赋0以避免后续的精度干扰
+    if(mod1d->lays[isrc].dep == RZERO && mod1d->lays[ircv].dep == RZERO)
+    {
+        for(MYINT c=0; c<QWV_NUM; ++c){
+            QWV[SRC_M_DS_INDEX][c] = CZERO;
+            if(calc_uiz)  QWV_uiz[SRC_M_DS_INDEX][c] = CZERO;
+        }
+    }
 
 }
 

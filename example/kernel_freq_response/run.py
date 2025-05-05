@@ -16,7 +16,7 @@ vels = np.arange(0.1, 0.6, 0.001)
 kerDct = pygrt.utils.read_kernels_freqs("pygrtstats", vels)
 
 
-Type = "HF_v1"
+Type = "HF_v"
 vels = kerDct['_vels']
 freqs = kerDct['_freqs']
 data = kerDct[Type].copy()

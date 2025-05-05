@@ -16,12 +16,12 @@
  * 且不共享层位，即使深度相同，中间也考虑一个厚度为0的层。
  * 故当abs(isrc-ircv)==1时，说明两点位于同一物理层
  * 
- * @param    Thk    每层厚度 
- * @param    Vel    每层速度
- * @param    nlay   层数
- * @param    isrc   震源所在层位
- * @param    ircv   场点所在层位
- * @param    epidist   震中距
+ * @param[in]    Thk           每层厚度 
+ * @param[in]    Vel           每层速度
+ * @param[in]    nlay          层数
+ * @param[in]    isrc          震源所在层位
+ * @param[in]    ircv          场点所在层位
+ * @param[in]    epidist       震中距
  */
 MYREAL compute_travt1d(
     MYREAL *Thk, MYREAL *Vel, int nlay, 

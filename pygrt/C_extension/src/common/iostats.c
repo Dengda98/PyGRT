@@ -8,6 +8,7 @@
  */
 
 #include <stdio.h> 
+#include <string.h>
 #include <stdbool.h>
 #include <complex.h>
 
@@ -17,78 +18,125 @@
 
 
 void write_stats(
-    FILE *f0, MYREAL k, 
-    const MYCOMPLEX EXP_qwv[3][3], const MYCOMPLEX VF_qwv[3][3], 
-    const MYCOMPLEX HF_qwv[3][3],  const MYCOMPLEX DC_qwv[3][3]
-    // const MYCOMPLEX EXP_J[3][4], const MYCOMPLEX VF_J[3][4], 
-    // const MYCOMPLEX HF_J[3][4],  const MYCOMPLEX DC_J[3][4]
-){
+    FILE *f0, MYREAL k, const MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM])
+{
     fwrite(&k, sizeof(MYREAL), 1, f0);
 
-    fwrite(&EXP_qwv[0][0], sizeof(MYCOMPLEX), 2, f0);
+    for(MYINT im=0; im<SRC_M_NUM; ++im){
+        MYINT modr = SRC_M_ORDERS[im];
+        for(MYINT c=0; c<QWV_NUM; ++c){
+            if(modr == 0 && qwvchs[c] == 'v')   continue;
 
-    fwrite(&VF_qwv[0][0], sizeof(MYCOMPLEX), 2, f0);
-    
-    fwrite(&HF_qwv[1][0], sizeof(MYCOMPLEX), 3, f0);
-
-    fwrite(&DC_qwv[0][0], sizeof(MYCOMPLEX), 2, f0);
-
-    fwrite(&DC_qwv[1][0], sizeof(MYCOMPLEX), 3, f0);
-
-    fwrite(&DC_qwv[2][0], sizeof(MYCOMPLEX), 3, f0);
-
-    // fwrite(&EXP_J[0][0], sizeof(MYCOMPLEX), 1, f0);
-    // fwrite(&EXP_J[0][2], sizeof(MYCOMPLEX), 1, f0);
-
-    // fwrite(&VF_J[0][0], sizeof(MYCOMPLEX), 1, f0);
-    // fwrite(&VF_J[0][2], sizeof(MYCOMPLEX), 1, f0);
-
-    // fwrite(&HF_J[1], sizeof(MYCOMPLEX), 4, f0);
-
-    // fwrite(&DC_J[0][0], sizeof(MYCOMPLEX), 1, f0);
-    // fwrite(&DC_J[0][2], sizeof(MYCOMPLEX), 1, f0);
-
-    // fwrite(&DC_J[1], sizeof(MYCOMPLEX), 4, f0);
-    // fwrite(&DC_J[2], sizeof(MYCOMPLEX), 4, f0);
-
+            fwrite(&QWV[im][c], sizeof(MYCOMPLEX), 1, f0);
+        }
+    }
 }
 
 
+MYINT extract_stats(FILE *bf0, FILE *af0){
+    // 打印标题
+    if(bf0 == NULL){
+        char K[20];
+        snprintf(K, sizeof(K), GRT_STRING_FMT, "k");  K[0]='#';
+        fprintf(af0, "%s", K);
+
+        for(MYINT im=0; im<SRC_M_NUM; ++im){
+            MYINT modr = SRC_M_ORDERS[im];
+            for(MYINT c=0; c<QWV_NUM; ++c){
+                if(modr == 0 && qwvchs[c] == 'v')   continue;
+
+                snprintf(K, sizeof(K), "%s_%c", SRC_M_NAME_ABBR[im], qwvchs[c]);
+                fprintf(af0, GRT_STR_CMPLX_FMT, K);
+            }
+        }
+
+        return 0;
+    }
+
+    MYREAL k;
+    MYCOMPLEX val;
+
+    if(1 != fread(&k, sizeof(MYREAL), 1, bf0))  return -1;
+    fprintf(af0, GRT_REAL_FMT, k);
+
+    for(MYINT im=0; im<SRC_M_NUM; ++im){
+        MYINT modr = SRC_M_ORDERS[im];
+        for(MYINT c=0; c<QWV_NUM; ++c){
+            if(modr == 0 && qwvchs[c] == 'v')   continue;
+
+            if(1 != fread(&val, sizeof(MYCOMPLEX), 1, bf0))  return -1;
+            fprintf(af0, GRT_CMPLX_FMT, creal(val), cimag(val));
+        }
+    }
+
+    return 0;
+}
 
 
 void write_stats_ptam(
-    FILE *f0, MYREAL k, MYINT maxNpt, 
-    const MYCOMPLEX EXPpt[3][4][maxNpt], const MYCOMPLEX VFpt[3][4][maxNpt],
-    const MYCOMPLEX HFpt[3][4][maxNpt],  const MYCOMPLEX DCpt[3][4][maxNpt],
-    const MYREAL kEXPpt[3][4][maxNpt], const MYREAL kVFpt[3][4][maxNpt],
-    const MYREAL kHFpt[3][4][maxNpt],  const MYREAL kDCpt[3][4][maxNpt])
-{
-    
-    MYINT i, m, v;
+    FILE *f0, 
+    MYREAL Kpt[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT],
+    MYCOMPLEX Fpt[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT]
+){
 
-    for(i=0; i<maxNpt; ++i){
-        for(m=0; m<3; ++m){
-            for(v=0; v<4; ++v){
-                if(m==0 && (v==0||v==2)){
-                    fwrite(&kEXPpt[m][v][i], sizeof(MYREAL),  1, f0);
-                    fwrite( &EXPpt[m][v][i], sizeof(MYCOMPLEX), 1, f0);
-
-                    fwrite(&kVFpt[m][v][i], sizeof(MYREAL),  1, f0);
-                    fwrite( &VFpt[m][v][i], sizeof(MYCOMPLEX), 1, f0);
-                }
-
-                if(m==1){
-                    fwrite(&kHFpt[m][v][i], sizeof(MYREAL),  1, f0);
-                    fwrite( &HFpt[m][v][i], sizeof(MYCOMPLEX), 1, f0);
-                }
-
-                if(((m==0 && (v==0||v==2)) || m!=0)){
-                    fwrite(&kDCpt[m][v][i], sizeof(MYREAL),  1, f0);
-                    fwrite( &DCpt[m][v][i], sizeof(MYCOMPLEX), 1, f0);
-                }
-
+    for(MYINT i=0; i<PTAM_MAX_PT; ++i){
+        for(MYINT im=0; im<SRC_M_NUM; ++im){
+            MYINT modr = SRC_M_ORDERS[im];
+            for(MYINT v=0; v<INTEG_NUM; ++v){
+                if(modr == 0 && v!=0 && v!=2)  continue;
+                
+                fwrite(&Kpt[im][v][i], sizeof(MYREAL),  1, f0);
+                fwrite(&Fpt[im][v][i], sizeof(MYCOMPLEX), 1, f0);
             }
         }
     }
     
+}
+
+
+MYINT extract_stats_ptam(FILE *bf0, FILE *af0){
+    // 打印标题
+    if(bf0 == NULL){
+        char K[20], K2[20];
+        MYINT icol=0;
+
+        for(MYINT im=0; im<SRC_M_NUM; ++im){
+            MYINT modr = SRC_M_ORDERS[im];
+            for(MYINT v=0; v<INTEG_NUM; ++v){
+                if(modr == 0 && v!=0 && v!=2)  continue;
+
+                snprintf(K2, sizeof(K2), "sum_%s_%d_k", SRC_M_NAME_ABBR[im], v);
+                if(icol==0){
+                    snprintf(K, sizeof(K), GRT_STRING_FMT, K2);  K2[0]='#';
+                    fprintf(af0, "%s", K);
+                } else {
+                    fprintf(af0, GRT_STRING_FMT, K2);
+                }
+                snprintf(K2, sizeof(K2), "sum_%s_%d", SRC_M_NAME_ABBR[im], v);
+                fprintf(af0, GRT_STR_CMPLX_FMT, K2);
+                
+                icol++;
+            }
+        }
+
+        return 0;
+    }
+
+
+    MYREAL k;
+    MYCOMPLEX val;
+
+    for(MYINT im=0; im<SRC_M_NUM; ++im){
+        MYINT modr = SRC_M_ORDERS[im];
+        for(MYINT v=0; v<INTEG_NUM; ++v){
+            if(modr == 0 && v!=0 && v!=2)  continue;
+
+            if(1 != fread(&k, sizeof(MYREAL), 1, bf0))  return -1;
+            fprintf(af0, GRT_REAL_FMT, k);
+            if(1 != fread(&val, sizeof(MYCOMPLEX), 1, bf0))  return -1;
+            fprintf(af0, GRT_CMPLX_FMT, creal(val), cimag(val));
+        }
+    }
+
+    return 0;
 }

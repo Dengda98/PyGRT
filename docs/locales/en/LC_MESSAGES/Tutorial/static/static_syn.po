@@ -20,30 +20,26 @@ msgstr ""
 "Generated-By: Babel 2.16.0\n"
 
 #: ../../source/Tutorial/static/static_syn.rst:4
-#: 8b11bbc387d44d8b8a3588ad9e4a12a2
 msgid "合成静态位移"
 msgstr "Synthesize Static Displacements"
 
-#: ../../source/Tutorial/static/static_syn.rst f2d1b8ad71f24b48b5f95998726b5b5e
+#: ../../source/Tutorial/static/static_syn.rst 
 msgid "Author"
 msgstr ""
 
 #: ../../source/Tutorial/static/static_syn.rst:6
-#: c249600a818042a9828854de81b25a5c
 msgid "Zhu Dengda"
 msgstr ""
 
-#: ../../source/Tutorial/static/static_syn.rst 559a6d6ee4094453998a6c6134428826
+#: ../../source/Tutorial/static/static_syn.rst 
 msgid "Email"
 msgstr ""
 
 #: ../../source/Tutorial/static/static_syn.rst:7
-#: 21d923b92e8544ad821309665d007ab7
 msgid "zhudengda@mail.iggcas.ac.cn"
 msgstr ""
 
 #: ../../source/Tutorial/static/static_syn.rst:11
-#: 631cf21c045d4d9ab9e66d2ecb0344b0
 msgid ""
 "Python中合成静态位移的主函数为 :func:`gen_syn_from_gf_*() "
 "<pygrt.utils.gen_syn_from_gf_DC>` （\\*表示对不同震源）（与合成动态位移的函数共用）  ，C程序为 "
@@ -52,17 +48,14 @@ msgstr ""
 "The main function in Python for synthesizing static displacements is :func:`gen_syn_from_gf_*() <pygrt.utils.gen_syn_from_gf_DC>` (\\* represents different sources) (same as the dynamic case), and the corresponding C program is :command:`stgrt.syn`."
 
 #: ../../source/Tutorial/static/static_syn.rst:13
-#: cb20d746e062466d8173c95498da6082
 msgid "使用上节计算的格林函数，合成静态位移。为方便画图，以下结果都使用ZNE分量。"
 msgstr "Using the Green's functions calculated in the previous section, synthesize static displacements. For convenience in plotting, the following results all use the ZNE components."
 
 #: ../../source/Tutorial/static/static_syn.rst:16
-#: 22df650c2fe144f0ad8fb5407be6ce29
 msgid "不同震源"
 msgstr "Types of sources"
 
 #: ../../source/Tutorial/static/static_syn.rst:17
-#: 22c0f531802e4ed2908b8c42f96c3007
 msgid ""
 "以下绘图使用Python绘制，绘图函数如下。这里也提供 `GMT <https://www.generic-mapping-"
 "tools.org/>`_ 绘图脚本（需根据实际数据调整参数，仅作参考）。"
@@ -75,25 +68,18 @@ msgstr "The following plots are drawn using Python, with the plotting functions 
 #: ../../source/Tutorial/static/static_syn.rst:124
 #: ../../source/Tutorial/static/static_syn.rst:153
 #: ../../source/Tutorial/static/static_syn.rst:177
-#: 0673dd2ec05a4de781e7944b775dc07d 1c6811060b11430d8635319c19d5400f
-#: 25f39ff0900343dbbd00a6cdc235f8cf 56fd297755e54f19a7d41eaccc824c5a
-#: 7fb01bfa676849fb84f4e335d58c14f0 e4b63c7c897e4cd5b2de5c4267d126e7
-#: ff00b3953d7445238437824cc1918f55
 msgid "Python"
 msgstr ""
 
 #: ../../source/Tutorial/static/static_syn.rst:28
-#: 254bc751da5d4c96b3f78415799042b0
 msgid "GMT"
 msgstr ""
 
 #: ../../source/Tutorial/static/static_syn.rst:37
-#: 36034c65597f4f99b1125635f5418cbf
 msgid "爆炸源"
 msgstr "explosion"
 
 #: ../../source/Tutorial/static/static_syn.rst:38
-#: 2de7e9f92c8644d995c41afc1bbbc847
 msgid "标量矩 1e24 dyne·cm。"
 msgstr "Scalar moment of 1e24 dyne·cm."
 
@@ -103,44 +89,34 @@ msgstr "Scalar moment of 1e24 dyne·cm."
 #: ../../source/Tutorial/static/static_syn.rst:117
 #: ../../source/Tutorial/static/static_syn.rst:146
 #: ../../source/Tutorial/static/static_syn.rst:170
-#: 1d54828b358f408db5c88152905c96c4 37414ca4186e496da0ede9930199a902
-#: 6ffc0fa8d98f4790bfbc4f3e6ccbd2ff 96a8c7311f0e40de9d49e4997733f2da
-#: dcdea25fec5f4331b7584c32a87960da f053a2b4a3ac4e66a64952a4367a916a
 msgid "C"
 msgstr ""
 
 #: ../../source/Tutorial/static/static_syn.rst:63
-#: 8c89c119867148be9a8e147c89500f28
 msgid "单力源"
 msgstr "single force"
 
 #: ../../source/Tutorial/static/static_syn.rst:64
-#: fc475727c7e34341bd8dde694b851931
 msgid "北向力 :math:`f_N=1`，东向力 :math:`f_E=-0.5`，垂直向下的力 :math:`f_Z=2`，单位 1e16 dyne。"
 msgstr "Northward force :math:`f_N=1`, Eastward force :math:`f_E=-0.5`, and Downward vertical force :math:`f_Z=2`, unit of 1e16 dyne."
 
 #: ../../source/Tutorial/static/static_syn.rst:89
-#: c3f62a510fba46989984f4d7dad1edf4
 msgid "剪切源"
 msgstr "shear"
 
 #: ../../source/Tutorial/static/static_syn.rst:90
-#: 448be3cbb9bc44b0982f03629ce9a3b7
 msgid "断层走向33°，倾角50°，滑动角120°，标量矩 1e24 dyne·cm。"
 msgstr "Strike of 33°, Dip of 50°, Slip of 120°, Scalar moment of 1e24 dyne·cm."
 
 #: ../../source/Tutorial/static/static_syn.rst:113
-#: 1e17ff709a4b4434b86d5d2e0f923dc0
 msgid "这里如果改变倾角为90°，滑动角0°，就可以看到清晰的蝴蝶状辐射花样。"
 msgstr "If the dip angle is changed to 90° and the slip angle to 0°, a clear butterfly-shaped radiation pattern can be observed."
 
 #: ../../source/Tutorial/static/static_syn.rst:140
-#: 21702d5a9d804db1b3b48aa610ed898f
 msgid "矩张量源"
 msgstr "moment tensor"
 
 #: ../../source/Tutorial/static/static_syn.rst:141
-#: e53c12482c4744459ff6d707507faefc
 msgid ""
 ":math:`M_{xx}=0.1, M_{xy}=-0.2, M_{xz}=1.0, M_{yy}=0.3, M_{yz}=-0.5, "
 "M_{zz}=-2.0`，单位 1e24 dyne·cm， **其中X为北向，Y为东向，Z为垂直向下**。"
@@ -149,7 +125,6 @@ msgstr ""
 "M_{zz}=-2.0`, unit 1e24 dyne·cm, **where X is Northward，Y is Eastward，Z is Downward.**"
 
 #: ../../source/Tutorial/static/static_syn.rst:166
-#: 5c1dbb81363949579df7932ba9115829
 msgid "若指定 :math:`M_{xy}=-0.2`，其它均为零，则为纯剪切。"
 msgstr "If :math:`M_{xy}=-0.2` is specified and all others are zero, it represents pure shear."
 

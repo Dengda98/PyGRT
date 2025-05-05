@@ -23,9 +23,9 @@
 #include "common/iostats.h"
 #include "common/search.h"
 
-static char *command;
-static PYMODEL1D *pymod;
-static double depsrc, deprcv;
+extern char *optarg;
+extern int optind;
+extern int optopt;
 
 //****************** 在该文件以内的全局变量 ***********************//
 // 命令名称
@@ -38,8 +38,8 @@ static double vmax, vmin;
 // 震源和场点深度
 static double depsrc, deprcv;
 static char *s_depsrc = NULL, *s_deprcv = NULL;
-// 波数积分间隔, Filon积分间隔，Filon积分起始点
-static double Length=0.0, filonLength=0.0, filonCut=0.0;
+// 波数积分间隔, Filon积分间隔，自适应Filon积分采样精度，Filon积分起始点
+static double Length=0.0, filonLength=0.0, safilonTol=0.0, filonCut=0.0;
 static double Length0=15.0; // 默认Length
 // 波数积分相关变量
 static double keps=-1.0, k0=5.0;
@@ -67,8 +67,6 @@ static int M_flag=0, D_flag=0,
             X_flag=0, Y_flag=0, 
             e_flag=0;
 
-// 三分量代号
-const char chs[3] = {'Z', 'R', 'T'};
 
 /**
  * 打印使用说明
@@ -115,7 +113,7 @@ printf("\n"
 "                 <y2>: end coordinate (km).\n"
 "                 <ny>: number of points.\n"
 "\n"
-"    -L<length>[/<Flength>/<Fcut>]\n"
+"    -L[a]<length>[/<Flength>/<Fcut>]\n"
 "                 Define the wavenumber integration interval\n"
 "                 dk=(2*PI)/(<length>*rmax). rmax is the maximum \n"
 "                 epicentral distance. \n"
@@ -128,6 +126,9 @@ printf("\n"
 "                   into two parts, [0, k*] and [k*, kmax], \n"
 "                   in which k*=<Fcut>/rmax, and use DWM with\n"
 "                   <length> and FIM with <Flength>, respectively.\n"
+"                 + manually set three POSITIVE values, with -La,\n"
+"                   in this case, <Flength> will be <Ftol> for Self-\n"
+"                   Adaptive FIM.\n"
 "\n"
 "    -V<vmin_ref> \n"
 "                 (Inherited from the dynamic case, and the numerical\n"
@@ -249,11 +250,19 @@ static void getopt_from_command(int argc, char **argv){
                 }
                 break;
 
-            // 波数积分间隔 -L<length>[/<Flength>/<Fcut>]
+            // 波数积分间隔 -L[a]<length>[/<Flength>/<Fcut>]
             case 'L':
                 L_flag = 1;
                 {
-                    int n = sscanf(optarg, "%lf/%lf/%lf", &Length, &filonLength, &filonCut);
+                    // 检查首字母是否为a，表明使用自适应Filon积分
+                    int pos=0;
+                    bool useSAFIM = false;
+                    if(optarg[0] == 'a'){
+                        pos++;
+                        useSAFIM = true;
+                    }
+                    double filona = 0.0;
+                    int n = sscanf(optarg+pos, "%lf/%lf/%lf", &Length, &filona, &filonCut);
                     if(n != 1 && n != 3){
                         fprintf(stderr, "[%s] " BOLD_RED "Error in -L.\n" DEFAULT_RESTORE, command);
                         exit(EXIT_FAILURE);
@@ -262,9 +271,16 @@ static void getopt_from_command(int argc, char **argv){
                         fprintf(stderr, "[%s] " BOLD_RED "Error! In -L, length should be positive.\n" DEFAULT_RESTORE, command);
                         exit(EXIT_FAILURE);
                     }
-                    if(n == 3 && (filonLength <= 0 || filonCut < 0)){
-                        fprintf(stderr, "[%s] " BOLD_RED "Error! In -L, Flength should be positive, Fcut should be nonnegative.\n" DEFAULT_RESTORE, command);
+                    if(n == 3 && (filona <= 0 || filonCut < 0)){
+                        fprintf(stderr, "[%s] " BOLD_RED "Error! In -L, Flength/Ftol should be positive, Fcut should be nonnegative.\n" DEFAULT_RESTORE, command);
                         exit(EXIT_FAILURE);
+                    }
+                    if(n == 3){
+                        if(useSAFIM){
+                            safilonTol = filona;
+                        } else {
+                            filonLength = filona;
+                        }
                     }
                 }
                 
@@ -404,7 +420,7 @@ static void getopt_from_command(int argc, char **argv){
     rs = (MYREAL*)calloc(nr, sizeof(MYREAL));
     for(int iy=0; iy<ny; ++iy){
         for(int ix=0; ix<nx; ++ix){
-            rs[ix + iy*nx] = SQRT(xs[ix]*xs[ix] + ys[iy]*ys[iy]);
+            rs[ix + iy*nx] = sqrt(xs[ix]*xs[ix] + ys[iy]*ys[iy]);
             if(rs[ix + iy*nx] < 1e-5)  rs[ix + iy*nx] = 1e-5;  // 避免0震中距
         }
     }
@@ -414,6 +430,43 @@ static void getopt_from_command(int argc, char **argv){
 
 
 
+/**
+ * 打印各分量的名称
+ * 
+ * @param[in]   prefix    前缀字符串
+ */
+static void print_grn_title(const char *prefix){
+    for(int i=0; i<SRC_M_NUM; ++i){
+        int modr = SRC_M_ORDERS[i];
+        char s_title[10+strlen(prefix)];
+        for(int c=0; c<CHANNEL_NUM; ++c){
+            if(modr==0 && ZRTchs[c]=='T')  continue;
+
+            snprintf(s_title, sizeof(s_title), "%s%s%c", prefix, SRC_M_NAME_ABBR[i], ZRTchs[c]);
+            fprintf(stdout, GRT_STRING_FMT, s_title);
+        }
+    }
+}
+
+/**
+ * 打印各分量的值
+ * 
+ * @param      grn       静态格林函数结果
+ * @param      sgn0      全局符号
+ */
+static void print_grn_value(const MYREAL grn[SRC_M_NUM][CHANNEL_NUM], const int sgn0){
+    for(int i=0; i<SRC_M_NUM; ++i){
+        int modr = SRC_M_ORDERS[i];
+        int sgn = 1;
+        for(int c=0; c<CHANNEL_NUM; ++c){
+            if(modr==0 && ZRTchs[c]=='T')  continue;
+
+            sgn = (ZRTchs[c]=='Z') ? -sgn0 : sgn0;
+
+            fprintf(stdout, GRT_REAL_FMT, sgn * grn[i][c]);
+        }
+    }
+}
 
 
 int main(int argc, char **argv){
@@ -470,36 +523,17 @@ int main(int argc, char **argv){
     }
 
 
-    // 建立格林函数的complex数组
-    MYREAL (*EXPgrn)[2] = (MYREAL(*)[2])calloc(nr, sizeof(*EXPgrn));
-    MYREAL (*VFgrn)[2]  = (MYREAL(*)[2])calloc(nr, sizeof(*VFgrn));
-    MYREAL (*HFgrn)[3]  = (MYREAL(*)[3])calloc(nr, sizeof(*HFgrn));
-    MYREAL (*DDgrn)[2]  = (MYREAL(*)[2])calloc(nr, sizeof(*DDgrn));
-    MYREAL (*DSgrn)[3]  = (MYREAL(*)[3])calloc(nr, sizeof(*DSgrn));
-    MYREAL (*SSgrn)[3]  = (MYREAL(*)[3])calloc(nr, sizeof(*SSgrn));
+    // 建立格林函数的浮点数
+    MYREAL (*grn)[SRC_M_NUM][CHANNEL_NUM] = (MYREAL (*)[SRC_M_NUM][CHANNEL_NUM]) calloc(nr, sizeof(*grn));
+    MYREAL (*grn_uiz)[SRC_M_NUM][CHANNEL_NUM] = (calc_upar)? (MYREAL (*)[SRC_M_NUM][CHANNEL_NUM]) calloc(nr, sizeof(*grn_uiz)) : NULL;
+    MYREAL (*grn_uir)[SRC_M_NUM][CHANNEL_NUM] = (calc_upar)? (MYREAL (*)[SRC_M_NUM][CHANNEL_NUM]) calloc(nr, sizeof(*grn_uir)) : NULL;
 
-    MYREAL (*EXPgrn_uiz)[2] = (calc_upar)? (MYREAL(*)[2])calloc(nr, sizeof(*EXPgrn)) : NULL;
-    MYREAL (*VFgrn_uiz)[2]  = (calc_upar)? (MYREAL(*)[2])calloc(nr, sizeof(*VFgrn)) : NULL;
-    MYREAL (*HFgrn_uiz)[3]  = (calc_upar)? (MYREAL(*)[3])calloc(nr, sizeof(*HFgrn)) : NULL;
-    MYREAL (*DDgrn_uiz)[2]  = (calc_upar)? (MYREAL(*)[2])calloc(nr, sizeof(*DDgrn)) : NULL;
-    MYREAL (*DSgrn_uiz)[3]  = (calc_upar)? (MYREAL(*)[3])calloc(nr, sizeof(*DSgrn)) : NULL;
-    MYREAL (*SSgrn_uiz)[3]  = (calc_upar)? (MYREAL(*)[3])calloc(nr, sizeof(*SSgrn)) : NULL;
-
-    MYREAL (*EXPgrn_uir)[2] = (calc_upar)? (MYREAL(*)[2])calloc(nr, sizeof(*EXPgrn)) : NULL;
-    MYREAL (*VFgrn_uir)[2]  = (calc_upar)? (MYREAL(*)[2])calloc(nr, sizeof(*VFgrn)) : NULL;
-    MYREAL (*HFgrn_uir)[3]  = (calc_upar)? (MYREAL(*)[3])calloc(nr, sizeof(*HFgrn)) : NULL;
-    MYREAL (*DDgrn_uir)[2]  = (calc_upar)? (MYREAL(*)[2])calloc(nr, sizeof(*DDgrn)) : NULL;
-    MYREAL (*DSgrn_uir)[3]  = (calc_upar)? (MYREAL(*)[3])calloc(nr, sizeof(*DSgrn)) : NULL;
-    MYREAL (*SSgrn_uir)[3]  = (calc_upar)? (MYREAL(*)[3])calloc(nr, sizeof(*SSgrn)) : NULL;
 
     //==============================================================================
     // 计算静态格林函数
     integ_static_grn(
-        pymod, nr, rs, vmin_ref, keps, k0, Length, filonLength, filonCut, 
-        EXPgrn, VFgrn, HFgrn, DDgrn, DSgrn, SSgrn,
-        calc_upar, 
-        EXPgrn_uiz, VFgrn_uiz, HFgrn_uiz, DDgrn_uiz, DSgrn_uiz, SSgrn_uiz, 
-        EXPgrn_uir, VFgrn_uir, HFgrn_uir, DDgrn_uir, DSgrn_uir, SSgrn_uir, 
+        pymod, nr, rs, vmin_ref, keps, k0, Length, filonLength, safilonTol, filonCut, 
+        grn, calc_upar, grn_uiz, grn_uir,
         s_statsdir
     );
     //==============================================================================
@@ -515,26 +549,17 @@ int main(int argc, char **argv){
     fprintf(stdout, "# "GRT_REAL_FMT" "GRT_REAL_FMT" "GRT_REAL_FMT"\n", src_va, src_vb, src_rho);
     fprintf(stdout, "# "GRT_REAL_FMT" "GRT_REAL_FMT" "GRT_REAL_FMT"\n", rcv_va, rcv_vb, rcv_rho);
 
-    // 定义标题数组
-    const char *titles[15] = {
-        "EXZ", "EXR", "VFZ", "VFR", "HFZ", "HFR", "HFT",
-        "DDZ", "DDR", "DSZ", "DSR", "DST", "SSZ", "SSR", "SST"
-    };
-    const char *upar_titles[30] = {
-        "zEXZ", "zEXR", "zVFZ", "zVFR", "zHFZ", "zHFR", "zHFT",
-        "zDDZ", "zDDR", "zDSZ", "zDSR", "zDST", "zSSZ", "zSSR", "zSST",
-        "rEXZ", "rEXR", "rVFZ", "rVFR", "rHFZ", "rHFR", "rHFT",
-        "rDDZ", "rDDR", "rDSZ", "rDSR", "rDST", "rSSZ", "rSSR", "rSST"
-    };
 
     // 输出标题
     char XX[20];
     sprintf(XX, GRT_STRING_FMT, "X(km)"); XX[0]='#';
     fprintf(stdout, "%s", XX);
     fprintf(stdout, GRT_STRING_FMT, "Y(km)");
-    for(int i=0; i<15; ++i) fprintf(stdout, GRT_STRING_FMT, titles[i]);
+    print_grn_title("");
+
     if(calc_upar) {
-        for(int i=0; i<30; ++i)  fprintf(stdout, GRT_STRING_FMT, upar_titles[i]);
+        print_grn_title("z");
+        print_grn_title("r");
     }
     fprintf(stdout, "\n");
 
@@ -543,25 +568,12 @@ int main(int argc, char **argv){
         for(int ix=0; ix<nx; ++ix) {
             int ir = ix + iy * nx;
             fprintf(stdout, GRT_REAL_FMT GRT_REAL_FMT, xs[ix], ys[iy]);
-            MYREAL *grns[] = {
-                EXPgrn[ir], VFgrn[ir], HFgrn[ir], DDgrn[ir], DSgrn[ir], SSgrn[ir]
-            };
-            int grn_sizes[] = {2, 2, 3, 2, 3, 3};
-            // 对Z分量反向
-            for(int i=0; i<6; ++i) {
-                for (int j=0; j<grn_sizes[i]; ++j)
-                    fprintf(stdout, GRT_REAL_FMT, (j == 0 ? -1.0 : 1.0) * grns[i][j]);
-            }
+
+            print_grn_value(grn[ir], 1);
+
             if(calc_upar) {
-                // 前6个是对z的偏导，注意后续对z符号的判断
-                MYREAL *upar_grns[] = {
-                    EXPgrn_uiz[ir], VFgrn_uiz[ir], HFgrn_uiz[ir], DDgrn_uiz[ir], DSgrn_uiz[ir], SSgrn_uiz[ir],
-                    EXPgrn_uir[ir], VFgrn_uir[ir], HFgrn_uir[ir], DDgrn_uir[ir], DSgrn_uir[ir], SSgrn_uir[ir]
-                };
-                for(int i=0; i<12; ++i) {
-                    for(int j=0; j<grn_sizes[i % 6]; ++j)
-                        fprintf(stdout, GRT_REAL_FMT, (j == 0 ? -1.0 : 1.0) * (i < 6 ? -1.0 : 1.0) * upar_grns[i][j]);
-                }
+                print_grn_value(grn_uiz[ir], -1);
+                print_grn_value(grn_uir[ir], 1);
             }
             fprintf(stdout, "\n");
         }

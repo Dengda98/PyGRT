@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
+"Project-Id-Version: PyGRT 0.7.1.dev5+g2230cdc.d20250427\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"POT-Creation-Date: 2025-04-27 12:43+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -20,18 +20,14 @@ msgstr ""
 "Generated-By: Babel 2.16.0\n"
 
 #: ../../source/API/C_extension/common/integral.rst:2
-#: 6abb4c7e6aed4a6289bd62fdf292aee8
 msgid "integral.h"
 msgstr ""
 
 #: ../../source/API/C_extension/common/integral.rst
-#: 51503e516b144c04bd8d0e7b34f5ec2c
 msgid "Functions"
 msgstr ""
 
 #: ../../source/API/C_extension/common/integral.rst
-#: 07edee11f98f48a0b7512b6107204aec 9af82f7b94484cbbac2cd245cb4d31ad
-#: f04cc646e9414e0ba935b8d1e31d89cf
 msgid "参数"
 msgstr ""
 

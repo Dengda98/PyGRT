@@ -13,34 +13,38 @@
 /**
  * 计算2x2复矩阵的逆  
  * 
- * @param      M[2][2]    (in)原矩阵
- * @param   invM[2][2]    (out)逆矩阵
+ * @param[in]      M        原矩阵
+ * @param[out]     invM     逆矩阵
+ * @param[out]     stats    状态代码，是否有除零错误，非0为异常值
  */ 
-inline GCC_ALWAYS_INLINE void cmat2x2_inv(const MYCOMPLEX M[2][2], MYCOMPLEX invM[2][2]) {
+inline GCC_ALWAYS_INLINE void cmat2x2_inv(const MYCOMPLEX M[2][2], MYCOMPLEX invM[2][2], MYINT *stats) {
     MYCOMPLEX M00 = M[0][0];
+    MYCOMPLEX M01 = M[0][1];
+    MYCOMPLEX M10 = M[1][0];
     MYCOMPLEX M11 = M[1][1];
-    MYCOMPLEX det = M00*M11 - M[0][1]*M[1][0];
+    MYCOMPLEX det = M00*M11 - M01*M10;
     if ( det == RZERO ){
-        // fprintf(stderr, "%.5e+%.5ej %.5e+%.5ej \n", CREAL(M[0][0]), CIMAG(M[0][0]), CREAL(M[0][1]), CIMAG(M[0][1]));
-        // fprintf(stderr, "%.5e+%.5ej %.5e+%.5ej \n", CREAL(M[1][0]), CIMAG(M[1][0]), CREAL(M[1][1]), CIMAG(M[1][1]));
+        // fprintf(stderr, "%.5e+%.5ej %.5e+%.5ej \n", creal(M[0][0]), cimag(M[0][0]), creal(M[0][1]), cimag(M[0][1]));
+        // fprintf(stderr, "%.5e+%.5ej %.5e+%.5ej \n", creal(M[1][0]), cimag(M[1][0]), creal(M[1][1]), cimag(M[1][1]));
         // fprintf(stderr, "matrix2x2 det=0.0, set matrix inv = 0.0.\n");
-        det = RZERO;
-    } else {
-        det = RONE/det;
+        // det = RZERO;
+        *stats = INVERSE_FAILURE;
+        return;
     }
 
-    invM[0][0] = M11 * det;
-    invM[0][1] = M[0][1] * (-det);
-    invM[1][0] = M[1][0] * (-det);
-    invM[1][1] = M00 * det;
+    invM[0][0] = M11 / det;
+    invM[0][1] = - M01 / det;
+    invM[1][0] = - M10 / det;
+    invM[1][1] = M00 / det;
+    *stats = INVERSE_SUCCESS;
 }
 
 /**
  * 计算2x2复矩阵的和  
  * 
- * @param     M1[2][2]    (in)矩阵1
- * @param     M2[2][2]    (in)矩阵2
- * @param     M[2][2]     (out)和矩阵
+ * @param[in]      M1     矩阵1
+ * @param[in]      M2     矩阵2
+ * @param[out]     M      和矩阵
  */ 
 inline GCC_ALWAYS_INLINE void cmat2x2_add(const MYCOMPLEX M1[2][2], const MYCOMPLEX M2[2][2], MYCOMPLEX M[2][2]){
     M[0][0] = M1[0][0] + M2[0][0];
@@ -52,9 +56,9 @@ inline GCC_ALWAYS_INLINE void cmat2x2_add(const MYCOMPLEX M1[2][2], const MYCOMP
 /**
  * 计算2x2复矩阵的差  
  * 
- * @param     M1[2][2]    (in)矩阵1
- * @param     M2[2][2]    (in)矩阵2
- * @param     M[2][2]     (out)差矩阵 M1-M2
+ * @param[in]      M1     矩阵1
+ * @param[in]      M2     矩阵2
+ * @param[out]     M      差矩阵, M1 - M2
  */ 
 inline GCC_ALWAYS_INLINE void cmat2x2_sub(const MYCOMPLEX M1[2][2], const MYCOMPLEX M2[2][2], MYCOMPLEX M[2][2]){
     M[0][0] = M1[0][0] - M2[0][0];
@@ -66,7 +70,7 @@ inline GCC_ALWAYS_INLINE void cmat2x2_sub(const MYCOMPLEX M1[2][2], const MYCOMP
 /**
  * 计算单位阵与2x2复矩阵的差  
  * 
- * @param     M[2][2]     (inout)差矩阵 I-M2
+ * @param[in,out]     M       差矩阵 I-M2
  */ 
 inline GCC_ALWAYS_INLINE void cmat2x2_one_sub(MYCOMPLEX M[2][2]){
     M[0][0] = RONE - M[0][0];
@@ -78,9 +82,9 @@ inline GCC_ALWAYS_INLINE void cmat2x2_one_sub(MYCOMPLEX M[2][2]){
 /**
  * 计算2x2复矩阵的积(矩阵相乘)  
  * 
- * @param     M1[2][2]    (in)矩阵1
- * @param     M2[2][2]    (in)矩阵2
- * @param     M[2][2]     (out)积矩阵 M1 * M2
+ * @param[in]      M1     矩阵1
+ * @param[in]      M2     矩阵2
+ * @param[out]     M      积矩阵, M1 * M2
  */ 
 inline GCC_ALWAYS_INLINE void cmat2x2_mul(const MYCOMPLEX M1[2][2], const MYCOMPLEX M2[2][2], MYCOMPLEX M[2][2]){
     MYCOMPLEX M011, M012, M021, M022;
@@ -98,9 +102,9 @@ inline GCC_ALWAYS_INLINE void cmat2x2_mul(const MYCOMPLEX M1[2][2], const MYCOMP
 /**
  * 计算2x2复矩阵和常量的积
  * 
- * @param     M1[2][2]    (in)矩阵1
- * @param     k           (in)常数
- * @param     M[2][2]     (out)积矩阵 k * M1
+ * @param[in]      M1     矩阵1
+ * @param[in]      k      常数
+ * @param[out]     M      积矩阵, k * M2
  */
 inline GCC_ALWAYS_INLINE void cmat2x2_k(const MYCOMPLEX M1[2][2], MYCOMPLEX k0, MYCOMPLEX M[2][2]){
     M[0][0] = M1[0][0] * k0;
@@ -112,9 +116,9 @@ inline GCC_ALWAYS_INLINE void cmat2x2_k(const MYCOMPLEX M1[2][2], MYCOMPLEX k0, 
 /**
  * 计算2x2复矩阵和2x1的复向量的积
  * 
- * @param     M1[2][2]    (in)矩阵1
- * @param     M2[2]       (in)向量2
- * @param     M[2][2]     (out)积向量 M1 * M2
+ * @param[in]      M1     矩阵1
+ * @param[in]      M2     向量
+ * @param[out]     M      积矩阵, M1 * M2
  */
 inline GCC_ALWAYS_INLINE void cmat2x1_mul(const MYCOMPLEX M1[2][2], const MYCOMPLEX M2[2], MYCOMPLEX M[2]){
     MYCOMPLEX M00, M10;
@@ -127,8 +131,8 @@ inline GCC_ALWAYS_INLINE void cmat2x1_mul(const MYCOMPLEX M1[2][2], const MYCOMP
 /** 
  * 2x2复矩阵赋值 
  * 
- * @param     M1[2][2]    (in)源矩阵
- * @param     M2[2][2]    (out)目标矩阵
+ * @param[in]      M1     源矩阵
+ * @param[out]     M2     目标矩阵
  */
 inline GCC_ALWAYS_INLINE void cmat2x2_assign(const MYCOMPLEX M1[2][2], MYCOMPLEX M2[2][2]){
     M2[0][0] = M1[0][0];
@@ -140,12 +144,12 @@ inline GCC_ALWAYS_INLINE void cmat2x2_assign(const MYCOMPLEX M1[2][2], MYCOMPLEX
 /** 
  * 计算nxn复矩阵的积(小矩阵)(最暴力的方式)
  * 
- * @param     m1          (in)M1矩阵行数
- * @param     n1          (in)M1矩阵列数
- * @param     p1          (in)M2矩阵列数
- * @param     M1[m1][n1]  (in)M1矩阵 
- * @param     M2[n1][p1]  (in)M2矩阵 
- * @param     M[m1][p1]   (out)积矩阵 M1 * M2
+ * @param[in]     m1            M1矩阵行数
+ * @param[in]     n1            M1矩阵列数
+ * @param[in]     p1            M2矩阵列数
+ * @param[in]     M1            M1矩阵 
+ * @param[in]     M2            M2矩阵 
+ * @param[out]    M             积矩阵 M1 * M2
  */
 inline GCC_ALWAYS_INLINE void cmatmxn_mul(MYINT m1, MYINT n1, MYINT p1, const MYCOMPLEX M1[m1][n1], const MYCOMPLEX M2[n1][p1], MYCOMPLEX M[m1][p1]){
     MYINT m, n, k;
@@ -170,14 +174,14 @@ inline GCC_ALWAYS_INLINE void cmatmxn_mul(MYINT m1, MYINT n1, MYINT p1, const MY
 /** 
  * 从M1大矩阵中划分Q子矩阵
  * 
- * @param     m1          (in)M1矩阵行数
- * @param     n1          (in)M1矩阵列数
- * @param     M1[m1][n1]  (in)M1矩阵 
- * @param     im          (in)子矩阵起始行索引
- * @param     in          (in)子矩阵起始列索引
- * @param     lm          (in)子矩阵行数
- * @param     ln          (in)子矩阵列数
- * @param     Q[lm][ln]   (out)子矩阵
+ * @param[in]     m1           M1矩阵行数
+ * @param[in]     n1           M1矩阵列数
+ * @param[in]     M1           M1矩阵 
+ * @param[in]     im           子矩阵起始行索引
+ * @param[in]     in           子矩阵起始列索引
+ * @param[in]     lm           子矩阵行数
+ * @param[in]     ln           子矩阵列数
+ * @param[out]    Q            子矩阵
  */
 inline GCC_ALWAYS_INLINE void cmatmxn_block(MYINT m1, MYINT n1, const MYCOMPLEX M[m1][n1], MYINT im, MYINT in, MYINT lm, MYINT ln, MYCOMPLEX Q[lm][ln]){
     for(MYINT m=0; m<lm; ++m){
@@ -190,16 +194,16 @@ inline GCC_ALWAYS_INLINE void cmatmxn_block(MYINT m1, MYINT n1, const MYCOMPLEX 
 /**
  * 打印矩阵 
  * 
- * @param     m1          (in)M1矩阵行数
- * @param     n1          (in)M1矩阵列数
- * @param     M1[m1][n1]  (in)M1矩阵 
+ * @param[in]     m1          M1矩阵行数
+ * @param[in]     n1          M1矩阵列数
+ * @param[in]     M1          M1矩阵 
  * 
  */
 inline GCC_ALWAYS_INLINE void cmatmxn_print(MYINT m1, MYINT n1, const MYCOMPLEX M1[m1][n1]){
     for(MYINT i=0; i<m1; ++i){
         for(MYINT j=0; j<n1; ++j){
-            printf(" %15.5e + J%-15.5e ", CREAL(M1[i][j]), CIMAG(M1[i][j]));
+            fprintf(stderr, " %15.5e + J%-15.5e ", creal(M1[i][j]), cimag(M1[i][j]));
         }
-        printf("\n");
+        fprintf(stderr, "\n");
     }
 }

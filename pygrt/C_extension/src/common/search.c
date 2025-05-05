@@ -42,7 +42,7 @@ MYINT findClosest_MYREAL(const MYREAL array[], MYINT size, MYREAL target) {
     MYINT ires=0;
     MYREAL mindist=-1.0, dist=0.0;
     for (MYINT i = 0; i < size; ++i) {
-        dist = FABS(target-array[i]);
+        dist = fabs(target-array[i]);
         if(mindist < 0.0 || dist < mindist){
             ires = i;
             mindist = dist;

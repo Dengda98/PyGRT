@@ -82,7 +82,7 @@ exclude_patterns = []
 
 language = 'zh_CN'
 locale_dirs = ['../locales/']  # 存放翻译文件的目录
-gettext_uuid = True
+gettext_uuid = False
 gettext_compact = False
 
 # -- Options for HTML output -------------------------------------------------

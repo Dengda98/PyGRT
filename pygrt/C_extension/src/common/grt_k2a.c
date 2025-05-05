@@ -17,6 +17,7 @@
 #include "common/const.h"
 #include "common/logo.h"
 #include "common/colorstr.h"
+#include "common/iostats.h"
 
 
 extern char *optarg;
@@ -117,51 +118,16 @@ static void getopt_from_command(int argc, char **argv){
  * @param     fp       文件指针
  */
 static void print_K(FILE *fp){
-    MYREAL k;
-    MYCOMPLEX res[4];
-    const int nsrc = 6, ncols = 15;
-    int nums[] = {2,2,3,2,3,3};
-    const char *colnames[] = {
-        "EXP_q0", "EXP_w0", "VF_q0", "VF_w0",
-        "HF_q1", "HF_w1", "HF_v1",
-        "DC_q0", "DC_w0",
-        "DC_q1", "DC_w1", "DC_v1",
-        "DC_q2", "DC_w2", "DC_v2"
-    };
-
-    // 先输出列名
-    {
-        char K[20];
-        sprintf(K, GRT_STRING_FMT, "k");  K[0]='#';
-        fprintf(stdout, "%s", K);
-        for(int i=0; i<ncols; ++i){
-            fprintf(stdout, GRT_STR_CMPLX_FMT, colnames[i]);
-        }
-        fprintf(stdout, "\n");
-    }
+    // 打印标题
+    extract_stats(NULL, stdout);
+    fprintf(stdout, "\n");
     
-    bool fullrow=false;
     // 读取数据    
     while (true) {
-        fullrow=false;
-
-        if(1 != fread(&k, sizeof(MYREAL), 1, fp)) break;
-        fprintf(stdout, GRT_REAL_FMT, k);
-
-        for(int i=0; i<nsrc; ++i){
-            if(nums[i] != fread(res, sizeof(MYCOMPLEX), nums[i], fp)) break;
-            for(int m=0; m<nums[i]; ++m){
-                fprintf(stdout, GRT_CMPLX_FMT, CREAL(res[m]), CIMAG(res[m]));
-            }
-            if(i==nsrc-1)  fullrow=true;
-        }
+        if(0 != extract_stats(fp, stdout))  break;
 
         fprintf(stdout, "\n");
-        
-        // 是否读完一整行
-        if(! fullrow)  break;
     }
-
 }
 
 /**
@@ -170,55 +136,15 @@ static void print_K(FILE *fp){
  * @param     fp       文件指针
  */
 static void print_PTAM(FILE *fp){
-    MYREAL k;
-    MYCOMPLEX res;
-    const int ntyps = 18;
-    const char *colnames[] = {
-        "EXP_00", "VF_00", "DC_00", 
-        "EXP_02", "VF_02", "DC_02", 
-        "HF_10", "DC_10", 
-        "HF_11", "DC_11", 
-        "HF_12", "DC_12", 
-        "HF_13", "DC_13",
-        "DC_20", "DC_21", "DC_22", "DC_23"
-    };
-
-    // 先输出列名
-    {
-        char K[20], K2[20];
-        sprintf(K2, "sum_%s_k", colnames[0]);
-        sprintf(K, GRT_STRING_FMT, K2);  K[0]='#';
-        fprintf(stdout, "%s", K);
-        sprintf(K2, "sum_%s", colnames[0]);
-        fprintf(stdout, GRT_STR_CMPLX_FMT, K2);
-        for(int i=1; i<ntyps; ++i){
-            sprintf(K2, "sum_%s_k", colnames[i]);
-            fprintf(stdout, GRT_STRING_FMT, K2);
-            sprintf(K2, "sum_%s", colnames[i]);
-            fprintf(stdout, GRT_STR_CMPLX_FMT, K2);
-        }
-        fprintf(stdout, "\n");
-    }
+    // 打印标题
+    extract_stats_ptam(NULL, stdout);
+    fprintf(stdout, "\n");
     
-    bool fullrow=false;
     // 读取数据    
     while (true) {
-        fullrow=false;
-
-        for(int i=0; i<ntyps; ++i){
-            if(1 != fread(&k, sizeof(MYREAL), 1, fp)) break;
-            fprintf(stdout, GRT_REAL_FMT, k);
-
-            if(1 != fread(&res, sizeof(MYCOMPLEX), 1, fp)) break;
-            fprintf(stdout, GRT_CMPLX_FMT, CREAL(res), CIMAG(res));
-            
-            if(i==ntyps-1)  fullrow=true;
-        }
+        if(0 != extract_stats_ptam(fp, stdout))  break;
 
         fprintf(stdout, "\n");
-        
-        // 是否读完一整行
-        if(! fullrow)  break;
     }
 
 }
