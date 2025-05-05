@@ -318,6 +318,13 @@ jobs:
           ./run1.sh
           python run2.py
 
+      - name: Test far field using SAFIM
+        working-directory: ${{ env.EXAMPLE_COPY_PATH }}/far_field
+        run: |
+          chmod +x *.sh
+          ./run.sh
+          python run.py
+
       - name: Test strain stress (dynamic)
         working-directory: ${{ env.EXAMPLE_COPY_PATH }}/compute_strain_stress/dynamic
         run: |

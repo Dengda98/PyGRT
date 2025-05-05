@@ -250,6 +250,13 @@ jobs:
           ./run_grt.sh
           python run_pygrt.py
 
+      - name: Test far field using SAFIM
+        working-directory: ${{ env.EXAMPLE_COPY_PATH }}/far_field
+        run: |
+          chmod +x *.sh
+          ./run.sh
+          python run.py
+
       # - name: Test 2 site_effect
       #   working-directory: ${{ env.EXAMPLE_COPY_PATH }}/site_effect
       #   run: |
