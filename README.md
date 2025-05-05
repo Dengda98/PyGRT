@@ -46,7 +46,7 @@
   Accelerated with **OpenMP** for parallel processing.
 
 - **Integration**:  
-  Built on the **Generalized Reflection-Transmission matrix Method (GRTM)** and the **Discrete Wavenumber Method (DWM)**, **PyGRT** integrates the **Peak-Trough Averaging Method (PTAM)** and **Filon’s Integration Method (FIM)** to handle diverse source-receiver distributions. 
+  Built on the **Generalized Reflection-Transmission matrix Method (GRTM)** and the **Discrete Wavenumber Method (DWM)**, **PyGRT** integrates the **Peak-Trough Averaging Method (PTAM)**, **Filon’s Integration Method (FIM)** and **Self-Adaptive Filon’s Integration Method (SAFIM)** to handle diverse source-receiver distributions. 
 
 - **Modular Design**:   
   Clean and organized code structure, making it easy to extend and maintain.
@@ -151,6 +151,9 @@ Then you can run the command like `grt` in terminal.
   <img alt="imag_G" src="example/kernel_freq_response/imag_G.png" width="500">
 </p>
 
+<p align='center'>
+  <img alt="imag_G" src="https://pygrt.readthedocs.io/zh-cn/latest/_images/safim.png" width="800">
+</p>
 
 
 # Contact
