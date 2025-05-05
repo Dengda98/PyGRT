@@ -19,11 +19,13 @@
  */ 
 inline GCC_ALWAYS_INLINE void cmat2x2_inv(const MYCOMPLEX M[2][2], MYCOMPLEX invM[2][2], MYINT *stats) {
     MYCOMPLEX M00 = M[0][0];
+    MYCOMPLEX M01 = M[0][1];
+    MYCOMPLEX M10 = M[1][0];
     MYCOMPLEX M11 = M[1][1];
-    MYCOMPLEX det = M00*M11 - M[0][1]*M[1][0];
+    MYCOMPLEX det = M00*M11 - M01*M10;
     if ( det == RZERO ){
-        // fprintf(stderr, "%.5e+%.5ej %.5e+%.5ej \n", CREAL(M[0][0]), CIMAG(M[0][0]), CREAL(M[0][1]), CIMAG(M[0][1]));
-        // fprintf(stderr, "%.5e+%.5ej %.5e+%.5ej \n", CREAL(M[1][0]), CIMAG(M[1][0]), CREAL(M[1][1]), CIMAG(M[1][1]));
+        // fprintf(stderr, "%.5e+%.5ej %.5e+%.5ej \n", creal(M[0][0]), cimag(M[0][0]), creal(M[0][1]), cimag(M[0][1]));
+        // fprintf(stderr, "%.5e+%.5ej %.5e+%.5ej \n", creal(M[1][0]), cimag(M[1][0]), creal(M[1][1]), cimag(M[1][1]));
         // fprintf(stderr, "matrix2x2 det=0.0, set matrix inv = 0.0.\n");
         // det = RZERO;
         *stats = INVERSE_FAILURE;
@@ -31,8 +33,8 @@ inline GCC_ALWAYS_INLINE void cmat2x2_inv(const MYCOMPLEX M[2][2], MYCOMPLEX inv
     }
 
     invM[0][0] = M11 / det;
-    invM[0][1] = - M[0][1] / det;
-    invM[1][0] = - M[1][0] / det;
+    invM[0][1] = - M01 / det;
+    invM[1][0] = - M10 / det;
     invM[1][1] = M00 / det;
     *stats = INVERSE_SUCCESS;
 }
@@ -200,7 +202,7 @@ inline GCC_ALWAYS_INLINE void cmatmxn_block(MYINT m1, MYINT n1, const MYCOMPLEX 
 inline GCC_ALWAYS_INLINE void cmatmxn_print(MYINT m1, MYINT n1, const MYCOMPLEX M1[m1][n1]){
     for(MYINT i=0; i<m1; ++i){
         for(MYINT j=0; j<n1; ++j){
-            fprintf(stderr, " %15.5e + J%-15.5e ", CREAL(M1[i][j]), CIMAG(M1[i][j]));
+            fprintf(stderr, " %15.5e + J%-15.5e ", creal(M1[i][j]), cimag(M1[i][j]));
         }
         fprintf(stderr, "\n");
     }

@@ -1438,6 +1438,10 @@ def plot_statsdata(statsdata:np.ndarray, dist:float, srctype:str, ptype:str, Ror
 
     karr = statsdata['k'] 
     dk = (karr[1] - karr[0])   # 假设均匀dk
+    is_evendk = np.allclose(np.diff(karr), dk, atol=1e-10)  # 是否为均匀dk
+    if not is_evendk:
+        raise ValueError("Sorry, this function only supports even-distributed k.")
+    
     if 0.5*np.pi/dk < dist:  # 对于bessel函数这种震荡函数，假设一个周期内至少取4个点
         print(f"WARNING! dist ({dist}) > PI/(2*dk) ({0.5*np.pi/dk:.5e}.)")
 
@@ -1529,6 +1533,10 @@ def plot_statsdata_ptam(statsdata1:np.ndarray, statsdata2:np.ndarray, statsdata_
     karr2 = statsdata2['k'] 
     dk2 = karr2[1] - karr2[0]
     Fname, Farr2, FJname, FJarr2 = _get_stats_Fname(statsdata2, karr2, dist, srctype, ptype)
+
+    is_evendk = np.allclose(np.diff(karr1), dk1, atol=1e-10) and np.allclose(np.diff(karr2), dk2, atol=1e-10)  # 是否为均匀dk
+    if not is_evendk:
+        raise ValueError("Sorry, this function only supports even-distributed k.")
 
     # 将两个过程的结果拼起来
     Farr = np.hstack((Farr1, Farr2))

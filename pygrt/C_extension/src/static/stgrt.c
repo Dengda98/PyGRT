@@ -24,6 +24,7 @@
 #include "common/dwm.h"
 #include "common/ptam.h"
 #include "common/fim.h"
+#include "common/safim.h"
 #include "common/const.h"
 #include "common/model.h"
 #include "common/integral.h"
@@ -64,7 +65,7 @@ static void recordin_GRN(
 
 void integ_static_grn(
     PYMODEL1D *pymod1d, MYINT nr, MYREAL *rs, MYREAL vmin_ref, MYREAL keps, MYREAL k0, MYREAL Length,
-    MYREAL filonLength, MYREAL filonCut, 
+    MYREAL filonLength, MYREAL safilonTol, MYREAL filonCut, 
 
     // 返回值，代表Z、R、T分量
     MYREAL grn[nr][SRC_M_NUM][CHANNEL_NUM],
@@ -89,6 +90,7 @@ void integ_static_grn(
     if(vmin_ref < RZERO)  keps = -RONE;  // 若使用峰谷平均法，则不使用keps进行收敛判断
 
     MYREAL k=0.0;
+    bool useFIM = (filonLength > RZERO) || (safilonTol > RZERO) ;    // 是否使用Filon积分（包括自适应Filon）
     const MYREAL dk=fabs(PI2/(Length*rmax));     // 波数积分间隔
     const MYREAL filondk = (filonLength > RZERO) ? PI2/(filonLength*rmax) : RZERO;  // Filon积分间隔
     const MYREAL filonK = filonCut/rmax;  // 波数积分和Filon积分的分割点
@@ -162,16 +164,26 @@ void integ_static_grn(
 
     // 常规的波数积分
     k = discrete_integ(
-        mod1d, dk, (filondk > RZERO)? filonK : kmax, keps, 0.0, nr, rs, 
+        mod1d, dk, (useFIM)? filonK : kmax, keps, 0.0, nr, rs, 
         sum_J, calc_upar, sum_uiz_J, sum_uir_J,
         fstats, static_kernel, &inv_stats);
     
     // 基于线性插值的Filon积分
-    if(filondk > RZERO){
-        k = linear_filon_integ(
-            mod1d, k, dk, filondk, kmax, keps, 0.0, nr, rs, 
-            sum_J, calc_upar, sum_uiz_J, sum_uir_J,
-            fstats, static_kernel, &inv_stats);
+    if(useFIM){
+        if(filondk > RZERO){
+            // 基于线性插值的Filon积分，固定采样间隔
+            k = linear_filon_integ(
+                mod1d, k, dk, filondk, kmax, keps, 0.0, nr, rs, 
+                sum_J, calc_upar, sum_uiz_J, sum_uir_J,
+                fstats, static_kernel, &inv_stats);
+        }
+        else if(safilonTol > RZERO){
+            // 基于自适应采样的Filon积分
+            k = sa_filon_integ(
+                mod1d, kmax, k, dk, safilonTol, kmax, 0.0, nr, rs, 
+                sum_J, calc_upar, sum_uiz_J, sum_uir_J,
+                fstats, static_kernel, &inv_stats);
+        }
     }
 
     // k之后的部分使用峰谷平均法进行显式收敛，建议在浅源地震的时候使用   

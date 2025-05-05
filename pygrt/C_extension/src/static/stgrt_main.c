@@ -23,9 +23,9 @@
 #include "common/iostats.h"
 #include "common/search.h"
 
-static char *command;
-static PYMODEL1D *pymod;
-static double depsrc, deprcv;
+extern char *optarg;
+extern int optind;
+extern int optopt;
 
 //****************** 在该文件以内的全局变量 ***********************//
 // 命令名称
@@ -38,8 +38,8 @@ static double vmax, vmin;
 // 震源和场点深度
 static double depsrc, deprcv;
 static char *s_depsrc = NULL, *s_deprcv = NULL;
-// 波数积分间隔, Filon积分间隔，Filon积分起始点
-static double Length=0.0, filonLength=0.0, filonCut=0.0;
+// 波数积分间隔, Filon积分间隔，自适应Filon积分采样精度，Filon积分起始点
+static double Length=0.0, filonLength=0.0, safilonTol=0.0, filonCut=0.0;
 static double Length0=15.0; // 默认Length
 // 波数积分相关变量
 static double keps=-1.0, k0=5.0;
@@ -113,7 +113,7 @@ printf("\n"
 "                 <y2>: end coordinate (km).\n"
 "                 <ny>: number of points.\n"
 "\n"
-"    -L<length>[/<Flength>/<Fcut>]\n"
+"    -L[a]<length>[/<Flength>/<Fcut>]\n"
 "                 Define the wavenumber integration interval\n"
 "                 dk=(2*PI)/(<length>*rmax). rmax is the maximum \n"
 "                 epicentral distance. \n"
@@ -126,6 +126,9 @@ printf("\n"
 "                   into two parts, [0, k*] and [k*, kmax], \n"
 "                   in which k*=<Fcut>/rmax, and use DWM with\n"
 "                   <length> and FIM with <Flength>, respectively.\n"
+"                 + manually set three POSITIVE values, with -La,\n"
+"                   in this case, <Flength> will be <Ftol> for Self-\n"
+"                   Adaptive FIM.\n"
 "\n"
 "    -V<vmin_ref> \n"
 "                 (Inherited from the dynamic case, and the numerical\n"
@@ -247,11 +250,19 @@ static void getopt_from_command(int argc, char **argv){
                 }
                 break;
 
-            // 波数积分间隔 -L<length>[/<Flength>/<Fcut>]
+            // 波数积分间隔 -L[a]<length>[/<Flength>/<Fcut>]
             case 'L':
                 L_flag = 1;
                 {
-                    int n = sscanf(optarg, "%lf/%lf/%lf", &Length, &filonLength, &filonCut);
+                    // 检查首字母是否为a，表明使用自适应Filon积分
+                    int pos=0;
+                    bool useSAFIM = false;
+                    if(optarg[0] == 'a'){
+                        pos++;
+                        useSAFIM = true;
+                    }
+                    double filona = 0.0;
+                    int n = sscanf(optarg+pos, "%lf/%lf/%lf", &Length, &filona, &filonCut);
                     if(n != 1 && n != 3){
                         fprintf(stderr, "[%s] " BOLD_RED "Error in -L.\n" DEFAULT_RESTORE, command);
                         exit(EXIT_FAILURE);
@@ -260,9 +271,16 @@ static void getopt_from_command(int argc, char **argv){
                         fprintf(stderr, "[%s] " BOLD_RED "Error! In -L, length should be positive.\n" DEFAULT_RESTORE, command);
                         exit(EXIT_FAILURE);
                     }
-                    if(n == 3 && (filonLength <= 0 || filonCut < 0)){
-                        fprintf(stderr, "[%s] " BOLD_RED "Error! In -L, Flength should be positive, Fcut should be nonnegative.\n" DEFAULT_RESTORE, command);
+                    if(n == 3 && (filona <= 0 || filonCut < 0)){
+                        fprintf(stderr, "[%s] " BOLD_RED "Error! In -L, Flength/Ftol should be positive, Fcut should be nonnegative.\n" DEFAULT_RESTORE, command);
                         exit(EXIT_FAILURE);
+                    }
+                    if(n == 3){
+                        if(useSAFIM){
+                            safilonTol = filona;
+                        } else {
+                            filonLength = filona;
+                        }
                     }
                 }
                 
@@ -514,7 +532,7 @@ int main(int argc, char **argv){
     //==============================================================================
     // 计算静态格林函数
     integ_static_grn(
-        pymod, nr, rs, vmin_ref, keps, k0, Length, filonLength, filonCut, 
+        pymod, nr, rs, vmin_ref, keps, k0, Length, filonLength, safilonTol, filonCut, 
         grn, calc_upar, grn_uiz, grn_uir,
         s_statsdir
     );

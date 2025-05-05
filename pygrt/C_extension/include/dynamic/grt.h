@@ -41,6 +41,7 @@ void set_num_threads(int num_threads);
  * @param[in]      k0               波数积分的上限 \f$ \tilde{k_{max}}=\sqrt{(k_{0}*\pi/hs)^2 + (ampk*w/vmin_{ref})^2} \f$ ，k循环必须退出, hs=max(震源和台站深度差,1.0) 
  * @param[in]      Length           波数k积分间隔 \f$ dk=2\pi/(fabs(L)*r_{max}) \f$ 
  * @param[in]      filonLength      Filon积分间隔
+ * @param[in]      safilonTol       自适应Filon积分采样精度
  * @param[in]      filonCut         波数积分和Filon积分的分割点
  * @param[in]      print_progressbar        是否打印进度条
  * 
@@ -58,7 +59,7 @@ void set_num_threads(int num_threads);
 void integ_grn_spec(
     PYMODEL1D *pymod1d, MYINT nf1, MYINT nf2, MYREAL *freqs,  
     MYINT nr, MYREAL *rs, MYREAL wI, 
-    MYREAL vmin_ref, MYREAL keps, MYREAL ampk, MYREAL k0, MYREAL Length, MYREAL filonLength, MYREAL filonCut,             
+    MYREAL vmin_ref, MYREAL keps, MYREAL ampk, MYREAL k0, MYREAL Length, MYREAL filonLength, MYREAL safilonTol, MYREAL filonCut,             
     bool print_progressbar, 
 
     // 返回值，代表Z、R、T分量

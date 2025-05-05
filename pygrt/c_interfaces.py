@@ -32,7 +32,7 @@ C_integ_grn_spec = libgrt.integ_grn_spec
 C_integ_grn_spec.argtypes = [
     POINTER(c_PyModel1D), c_int, c_int, PREAL,       
     c_int, PREAL, REAL,
-    REAL, REAL, REAL, REAL, REAL, REAL, REAL,
+    REAL, REAL, REAL, REAL, REAL, REAL, REAL, REAL,
     c_bool,
 
     POINTER((PCPLX*CHANNEL_NUM)*SRC_M_NUM),
@@ -54,7 +54,7 @@ C_integ_static_grn = libgrt.integ_static_grn
 C_integ_static_grn.restype = None
 C_integ_static_grn.argtypes = [
     POINTER(c_PyModel1D), c_int, PREAL, REAL, REAL, REAL, REAL, 
-    REAL, REAL, 
+    REAL, REAL, REAL, 
     POINTER((REAL*CHANNEL_NUM)*SRC_M_NUM),
     c_bool,
     POINTER((REAL*CHANNEL_NUM)*SRC_M_NUM),

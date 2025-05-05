@@ -24,6 +24,7 @@
 #include "dynamic/propagate.h"
 #include "common/ptam.h"
 #include "common/fim.h"
+#include "common/safim.h"
 #include "common/dwm.h"
 #include "common/integral.h"
 #include "common/iostats.h"
@@ -81,7 +82,7 @@ static void recordin_GRN(
 void integ_grn_spec(
     PYMODEL1D *pymod1d, MYINT nf1, MYINT nf2, MYREAL *freqs,  
     MYINT nr, MYREAL *rs, MYREAL wI, 
-    MYREAL vmin_ref, MYREAL keps, MYREAL ampk, MYREAL k0, MYREAL Length, MYREAL filonLength, MYREAL filonCut,      
+    MYREAL vmin_ref, MYREAL keps, MYREAL ampk, MYREAL k0, MYREAL Length, MYREAL filonLength, MYREAL safilonTol, MYREAL filonCut,      
     bool print_progressbar, 
 
     // 返回值，代表Z、R、T分量
@@ -110,8 +111,8 @@ void integ_grn_spec(
     const LAYER *src_lay = main_mod1d->lays + main_mod1d->isrc;
     const MYREAL Rho = src_lay->Rho; // 震源区密度
     const MYREAL fac = RONE/(RFOUR*PI*Rho);
-    const MYREAL hs = (FABS(pymod1d->depsrc - pymod1d->deprcv) < MIN_DEPTH_GAP_SRC_RCV)? 
-                      MIN_DEPTH_GAP_SRC_RCV : FABS(pymod1d->depsrc - pymod1d->deprcv); // hs=max(震源和台站深度差,1.0)
+    const MYREAL hs = (fabs(pymod1d->depsrc - pymod1d->deprcv) < MIN_DEPTH_GAP_SRC_RCV)? 
+                      MIN_DEPTH_GAP_SRC_RCV : fabs(pymod1d->depsrc - pymod1d->deprcv); // hs=max(震源和台站深度差,1.0)
 
     // 乘相应系数
     k0 *= PI/hs;
@@ -120,6 +121,7 @@ void integ_grn_spec(
 
     if(vmin_ref < RZERO)  keps = -RONE;  // 若使用峰谷平均法，则不使用keps进行收敛判断
 
+    bool useFIM = (filonLength > RZERO) || (safilonTol > RZERO) ;    // 是否使用Filon积分（包括自适应Filon）
     const MYREAL dk=PI2/(Length*rmax);     // 波数积分间隔
     const MYREAL filondk = (filonLength > RZERO) ? PI2/(filonLength*rmax) : RZERO;  // Filon积分间隔
     const MYREAL filonK = filonCut/rmax;  // 波数积分和Filon积分的分割点
@@ -147,6 +149,9 @@ void integ_grn_spec(
 
     // 进度条变量 
     MYINT progress=0;
+
+    // 每个频率的计算中是否有除0错误
+    MYINT freq_invstats[nf2+1];
 
     // 频率omega循环
     // schedule语句可以动态调度任务，最大程度地使用计算资源
@@ -217,42 +222,58 @@ void integ_grn_spec(
 
         MYREAL kmax;
         // vmin_ref的正负性在这里不影响
-        kmax = SQRT(k02 + ampk2*(w/vmin_ref)*(w/vmin_ref));
+        kmax = sqrt(k02 + ampk2*(w/vmin_ref)*(w/vmin_ref));
 
+        // 计算核函数过程中是否有遇到除零错误
+        freq_invstats[iw]=INVERSE_SUCCESS;
 
         // 常规的波数积分
         k = discrete_integ(
-            local_mod1d, dk, (filondk > RZERO)? filonK : kmax, keps, omega, nr, rs, 
+            local_mod1d, dk, (useFIM)? filonK : kmax, keps, omega, nr, rs, 
             sum_J, calc_upar, sum_uiz_J, sum_uir_J,
-            fstats, kernel);
-            
-        // 基于线性插值的Filon积分
-        if(filondk > RZERO){
-            k = linear_filon_integ(
-                local_mod1d, k, dk, filondk, kmax, keps, omega, nr, rs, 
-                sum_J, calc_upar, sum_uiz_J, sum_uir_J,
-                fstats, kernel);
+            fstats, kernel, &freq_invstats[iw]);
+    
+        // 使用Filon积分
+        if(useFIM && freq_invstats[iw]==INVERSE_SUCCESS){
+            if(filondk > RZERO){
+                // 基于线性插值的Filon积分，固定采样间隔
+                k = linear_filon_integ(
+                    local_mod1d, k, dk, filondk, kmax, keps, omega, nr, rs, 
+                    sum_J, calc_upar, sum_uiz_J, sum_uir_J,
+                    fstats, kernel, &freq_invstats[iw]);
+            }
+            else if(safilonTol > RZERO){
+                // 基于自适应采样的Filon积分
+                k = sa_filon_integ(
+                    local_mod1d, fabs(vmin_ref)/ampk, k, dk, safilonTol, kmax, omega, nr, rs, 
+                    sum_J, calc_upar, sum_uiz_J, sum_uir_J,
+                    fstats, kernel, &freq_invstats[iw]);
+            }
         }
 
         // k之后的部分使用峰谷平均法进行显式收敛，建议在浅源地震的时候使用   
-        if(vmin_ref < RZERO){
+        if(vmin_ref < RZERO && freq_invstats[iw]==INVERSE_SUCCESS){
             PTA_method(
                 local_mod1d, k, dk, omega, nr, rs, 
                 sum_J, calc_upar, sum_uiz_J, sum_uir_J,
-                ptam_fstatsnr, kernel);
+                ptam_fstatsnr, kernel, &freq_invstats[iw]);
         }
 
-        // printf("iw=%d, w=%.5e, k=%.5e, dk=%.5e, nk=%d\n", iw, w, k, dk, (int)(k/dk));
-
-
+        // fprintf(stderr, "iw=%d, w=%.5e, k=%.5e, dk=%.5e, nk=%d\n", iw, w, k, dk, (int)(k/dk));
+        // fflush(stderr);
 
         // 记录到格林函数结构体内
-        recordin_GRN(iw, nr, coef, sum_J, grn);
-        if(calc_upar){
-            recordin_GRN(iw, nr, coef, sum_uiz_J, grn_uiz);
-            recordin_GRN(iw, nr, coef, sum_uir_J, grn_uir);
+        // 如果计算核函数过程中存在除零错误，则放弃该频率【通常在大震中距的低频段】
+        if(freq_invstats[iw]==INVERSE_SUCCESS){ 
+            recordin_GRN(iw, nr, coef, sum_J, grn);
+            if(calc_upar){
+                recordin_GRN(iw, nr, coef, sum_uiz_J, grn_uiz);
+                recordin_GRN(iw, nr, coef, sum_uir_J, grn_uir);
+            }
         }
-        
+        // else{
+        //     fprintf(stderr, "iw=%d, f=%f, failed, filled with 0.\n", iw, w/PI2);
+        // }
 
         if(fstats!=NULL) fclose(fstats);
         for(MYINT ir=0; ir<nr; ++ir){
@@ -296,11 +317,19 @@ void integ_grn_spec(
         } 
     }
 
+    // 打印freq_invstats
+    for(MYINT iw=nf1; iw<=nf2; ++iw){
+        if(freq_invstats[iw]==INVERSE_FAILURE){
+            fprintf(stderr, "iw=%d, freq=%e(Hz), meet Zero Divison Error, results are filled with 0.\n", iw, freqs[iw]);
+        }
+    }
+
     // 程序运行结束时间
     struct timeval end_t;
     gettimeofday(&end_t, NULL);
     if(print_progressbar) printf("Runtime: %.3f s\n", (end_t.tv_sec - begin_t.tv_sec) + (end_t.tv_usec - begin_t.tv_usec) / 1e6);
     fflush(stdout);
+
 }
 
 

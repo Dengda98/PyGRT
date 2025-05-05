@@ -29,6 +29,7 @@
  * @param[in]      k0               波数积分的上限
  * @param[in]      Length           波数k积分间隔 \f$ dk=2\pi/(fabs(L)*r_{max}) \f$ 
  * @param[in]      filonLength      Filon积分间隔
+ * @param[in]      safilonTol       自适应Filon积分的采样精度
  * @param[in]      filonCut         波数积分和Filon积分的分割点
  * 
  * @param[out]      grn               浮点数数组，不同震源不同阶数的静态格林函数的Z、R、T分量
@@ -42,7 +43,7 @@
  */
 void integ_static_grn(
     PYMODEL1D *pymod1d, MYINT nr, MYREAL *rs, MYREAL vmin_ref, MYREAL keps, MYREAL k0, MYREAL Length,
-    MYREAL filonLength, MYREAL filonCut, 
+    MYREAL filonLength, MYREAL safilonTol, MYREAL filonCut, 
 
     // 返回值，代表Z、R、T分量
     MYREAL grn[nr][SRC_M_NUM][CHANNEL_NUM],

@@ -47,6 +47,10 @@ void kernel(
     MYINT imin, imax; // 相对浅层深层层位
     imin = mod1d->imin;
     imax = mod1d->imax;
+    // bool ircvup = true;
+    // MYINT isrc = 2;
+    // MYINT ircv = 1;
+    // MYINT imin=1, imax=2;
     
 
     // 初始化广义反射透射系数矩阵
@@ -107,8 +111,14 @@ void kernel(
 
     
     // 定义物理层内的反射透射系数矩阵，相对于界面上的系数矩阵增加了时间延迟因子
-    MYCOMPLEX RD[2][2], RDL, TD[2][2], TDL;
-    MYCOMPLEX RU[2][2], RUL, TU[2][2], TUL;
+    MYCOMPLEX RD[2][2] = INIT_C_ZERO_2x2_MATRIX;
+    MYCOMPLEX RDL = CZERO;
+    MYCOMPLEX RU[2][2] = INIT_C_ZERO_2x2_MATRIX;
+    MYCOMPLEX RUL = CZERO;
+    MYCOMPLEX TD[2][2] = INIT_C_IDENTITY_2x2_MATRIX;
+    MYCOMPLEX TDL = CONE;
+    MYCOMPLEX TU[2][2] = INIT_C_IDENTITY_2x2_MATRIX;
+    MYCOMPLEX TUL = CONE;
     MYCOMPLEX *const pRDL = &RDL;
     MYCOMPLEX *const pTDL = &TDL;
     MYCOMPLEX *const pRUL = &RUL;
@@ -157,10 +167,10 @@ void kernel(
         mod1d_mu1 = lay->mu;
         mod1d_kaka1 = lay->kaka;
         mod1d_kbkb1 = lay->kbkb;
-        // mod1d_xa1 = CSQRT(RONE - mod1d_kaka1/(k*k));
-        // mod1d_xb1 = CSQRT(RONE - mod1d_kbkb1/(k*k));
-        mod1d_xa1 = CSQRT(k*k - mod1d_kaka1)/k;
-        mod1d_xb1 = CSQRT(k*k - mod1d_kbkb1)/k;
+        mod1d_xa1 = sqrt(RONE - mod1d_kaka1/(k*k));
+        mod1d_xb1 = sqrt(RONE - mod1d_kbkb1/(k*k));
+        // mod1d_xa1 = sqrt(k*k - mod1d_kaka1)/k;
+        // mod1d_xb1 = sqrt(k*k - mod1d_kbkb1)/k;
 
         if(0==iy){
             top_xa = mod1d_xa1;
@@ -192,19 +202,27 @@ void kernel(
 
 #if Print_GRTCOEF == 1
         // TEST-------------------------------------------------------------
-        fprintf(stderr, "k=%f. iy=%d\n", k, iy);
-        fprintf(stderr, "RD\n");
-        cmatmxn_print(2, 2, RD);
-        fprintf(stderr, "RDL="GRT_CMPLX_FMT"\n", CREAL(RDL), CIMAG(RDL));
-        fprintf(stderr, "RU\n");
-        cmatmxn_print(2, 2, RU);
-        fprintf(stderr, "RUL="GRT_CMPLX_FMT"\n", CREAL(RUL), CIMAG(RUL));
-        fprintf(stderr, "TD\n");
-        cmatmxn_print(2, 2, TD);
-        fprintf(stderr, "TDL="GRT_CMPLX_FMT"\n", CREAL(TDL), CIMAG(TDL));
-        fprintf(stderr, "TU\n");
-        cmatmxn_print(2, 2, TU);
-        fprintf(stderr, "TUL="GRT_CMPLX_FMT"\n", CREAL(TUL), CIMAG(TUL));
+        // fprintf(stderr, "k=%f. iy=%d\n", k, iy);
+        // fprintf(stderr, "RD\n");
+        // cmatmxn_print(2, 2, RD);
+        // fprintf(stderr, "RDL="GRT_CMPLX_FMT"\n", creal(RDL), cimag(RDL));
+        // fprintf(stderr, "RU\n");
+        // cmatmxn_print(2, 2, RU);
+        // fprintf(stderr, "RUL="GRT_CMPLX_FMT"\n", creal(RUL), cimag(RUL));
+        // fprintf(stderr, "TD\n");
+        // cmatmxn_print(2, 2, TD);
+        // fprintf(stderr, "TDL="GRT_CMPLX_FMT"\n", creal(TDL), cimag(TDL));
+        // fprintf(stderr, "TU\n");
+        // cmatmxn_print(2, 2, TU);
+        // fprintf(stderr, "TUL="GRT_CMPLX_FMT"\n", creal(TUL), cimag(TUL));
+        // if(creal(omega)==PI2*15e-4 && iy==5){
+        // fprintf(stderr, GRT_REAL_FMT, k);
+        // for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(RD[i][j]), cimag(RD[i][j]));
+        // for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(RU[i][j]), cimag(RU[i][j]));
+        // for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(TD[i][j]), cimag(TD[i][j]));
+        // for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(TU[i][j]), cimag(TU[i][j]));
+        // fprintf(stderr, "\n");
+        // }
         // TEST-------------------------------------------------------------
 #endif
         // FA
@@ -375,7 +393,40 @@ void kernel(
             TU_RS, TUL_RS,
             RU_FB, pRUL_FB, inv_2x2T, &invT, stats);
         if(*stats==INVERSE_FAILURE)  goto BEFORE_RETURN;
-
+        
+#if Print_GRTCOEF == 1
+        // TEST-------------------------------------------------------------
+        if(creal(omega)==PI2*0.1){
+        fprintf(stderr, GRT_REAL_FMT, k);
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(RD_BL[i][j]), cimag(RD_BL[i][j]));
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(RU_BL[i][j]), cimag(RU_BL[i][j]));
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(TD_BL[i][j]), cimag(TD_BL[i][j]));
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(TU_BL[i][j]), cimag(TU_BL[i][j]));
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(RD_RS[i][j]), cimag(RD_RS[i][j]));
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(RU_RS[i][j]), cimag(RU_RS[i][j]));
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(TD_RS[i][j]), cimag(TD_RS[i][j]));
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(TU_RS[i][j]), cimag(TU_RS[i][j]));
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(RD_FA[i][j]), cimag(RD_FA[i][j]));
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(RU_FA[i][j]), cimag(RU_FA[i][j]));
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(TD_FA[i][j]), cimag(TD_FA[i][j]));
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(TU_FA[i][j]), cimag(TU_FA[i][j]));
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(RU_FB[i][j]), cimag(RU_FB[i][j]));
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(R_tilt[i][j]), cimag(R_tilt[i][j]));
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(R_EV[i][j]), cimag(R_EV[i][j]));
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(inv_2x2T[i][j]), cimag(inv_2x2T[i][j]));
+        cmat2x2_mul(RD_BL, RU_FB, tmpR2);
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(tmpR2[i][j]), cimag(tmpR2[i][j]));
+        cmat2x2_one_sub(tmpR2);
+        cmat2x2_inv(tmpR2, tmpR2, stats);// (I - xx)^-1
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(tmpR2[i][j]), cimag(tmpR2[i][j]));
+        cmat2x2_mul(inv_2x2T, tmpR2, tmp2x2);
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(tmp2x2[i][j]), cimag(tmp2x2[i][j]));
+        cmat2x2_mul(R_EV, tmp2x2, tmp2x2);
+        for(int i=0; i<2; ++i)  for(int j=0; j<2; ++j)  fprintf(stderr, GRT_CMPLX_FMT, creal(tmp2x2[i][j]), cimag(tmp2x2[i][j]));
+        fprintf(stderr, "\n");
+        }
+        // TEST-------------------------------------------------------------
+#endif
 
         // 公式(5.7.12-14)
         cmat2x2_mul(RD_BL, RU_FB, tmpR2);
@@ -392,6 +443,25 @@ void kernel(
         for(MYINT i=0; i<SRC_M_NUM; ++i){
             get_qwv(ircvup, tmp2x2, tmpRL, RD_BL, RDL_BL, src_coef[i], QWV[i]);
         }
+
+        // for(MYINT i=0; i<SRC_M_NUM; ++i){
+        //     MYCOMPLEX QW[2] = {src_coef[i][0][0], src_coef[i][1][0]};
+        //     MYCOMPLEX QW2[2] = {src_coef[i][0][1], src_coef[i][1][1]};
+        //     cmat2x1_mul(RD_BL, QW, QW);
+        //     QW[0] += QW2[0]; 
+        //     QW[1] += QW2[1]; 
+        //     cmat2x2_mul(RD_BL, RU_FB, tmpR2);
+        //     cmat2x2_one_sub(tmpR2);
+        //     cmat2x2_inv(tmpR2, tmpR2, stats);
+        //     if(*stats==INVERSE_FAILURE)  goto BEFORE_RETURN;
+        //     cmat2x1_mul(tmpR2, QW, QW);
+        //     cmat2x1_mul(inv_2x2T, QW, QW);
+        //     cmat2x1_mul(R_EV, QW, QW);
+        //     MYCOMPLEX V = R_EVL * invT  / (RONE - RDL_BL * RUL_FB) * (RDL_BL*src_coef[i][2][0] + src_coef[i][2][1]);
+        //     QWV[i][0] = QW[0];
+        //     QWV[i][1] = QW[1];
+        //     QWV[i][2] = V;
+        // }
         
 
         if(calc_uiz){

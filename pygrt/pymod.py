@@ -143,7 +143,9 @@ class PyModel1D:
         ampk:float=1.15,
         k0:float=5.0, 
         Length:float=0.0, 
-        filonLC:Union[np.ndarray,List[float]]=[0.0,0.0],
+        filonLength:float=0.0,
+        safilonTol:float=0.0,
+        filonCut:float=0.0,
         delayT0:float=0.0,
         delayV0:float=0.0,
         calc_upar:bool=False,
@@ -172,7 +174,9 @@ class PyModel1D:
             :param    k0:            波数k积分的上限 :math:`\tilde{k_{max}}=\sqrt{(k_{0}*\pi/hs)^2 + (ampk*w/vmin_{ref})^2}` , 波数k积分循环必须退出, hs=max(震源和台站深度差,1.0)
             :param    Length:        定义波数k积分的间隔 `dk=2\pi / (L*rmax)`, 选取要求见 :ref:`(Bouchon, 1981) <bouchon_1981>` 
                                      :ref:`(张海明, 2021) <zhang_book_2021>`，默认自动选择
-            :param    filonLC:       Filon积分的间隔 filonLength, 和波数积分和Filon积分的分割点filonCut, k*=<filonCut>/rmax
+            :param    filonLength:   Filon积分的间隔
+            :param    safilonTol:    自适应Filon积分采样精度
+            :param    filonCut:      波数积分和Filon积分的分割点filonCut, k*=<filonCut>/rmax
             :param    calc_upar:     是否计算位移u的空间导数
             :param    gf_source:     待计算的震源类型
             :param    statsfile:     波数k积分（包括Filon积分和峰谷平均法）的过程记录文件，常用于debug或者观察积分过程中 :math:`F(k,\omega)` 和  :math:`F(k,\omega)J_m(kr)k` 的变化    
@@ -211,11 +215,17 @@ class PyModel1D:
         
         if Length < 0.0:
             raise ValueError(f"Length ({Length}) < 0")
-        if np.any(filonLC) < 0.0:
-            raise ValueError(f"filonLC ({filonLC}) < 0") 
+        if filonLength < 0.0:
+            raise ValueError(f"filonLength ({filonLength}) < 0") 
+        if filonCut < 0.0:
+            raise ValueError(f"filonCut ({filonCut}) < 0") 
+        if safilonTol < 0.0:
+            raise ValueError(f"filonCut ({safilonTol}) < 0") 
         
-        filonLC = np.array(filonLC).astype(NPCT_REAL_TYPE)
-
+        # 只能设置一种filon积分方法
+        if safilonTol > 0.0 and filonLength > 0.0:
+            raise ValueError(f"You should only set one of filonLength and safilonTol.")
+        
         nf = nt//2+1 
         df = 1/(nt*dt)
         fnyq = 1/(2*dt)
@@ -322,8 +332,10 @@ class PyModel1D:
             else:
                 print("")
             print(f"Length={abs(Length)}", end="")
-            if filonLC[0] > 0.0:
-                print(f",{filonLC}, using FIM.")
+            if filonLength > 0.0:
+                print(f",{filonLength},{filonCut}, using FIM.")
+            elif safilonTol > 0.0:
+                print(f",{safilonTol},{filonCut}, using SAFIM.")
             else:
                 print("")
             print(f"nt={nt}")
@@ -354,7 +366,7 @@ class PyModel1D:
         #=================================================================================
         C_integ_grn_spec(
             self.c_pymod1d, nf1, nf2, c_freqs, nrs, c_rs, wI, 
-            vmin_ref, keps, ampk, k0, Length, filonLC[0], filonLC[1], print_runtime,
+            vmin_ref, keps, ampk, k0, Length, filonLength, safilonTol, filonCut, print_runtime,
             c_grnArr, calc_upar, c_grnArr_uiz, c_grnArr_uir,
             c_statsfile, nstatsidxs, c_statsidxs
         )
@@ -434,7 +446,9 @@ class PyModel1D:
         keps:float=-1.0,  
         k0:float=5.0, 
         Length:float=15.0, 
-        filonLC:Union[np.ndarray,List[float]]=[0.0,0.0],
+        filonLength:float=0.0,
+        safilonTol:float=0.0,
+        filonCut:float=0.0,
         calc_upar:bool=False,
         statsfile:Union[str,None]=None):
 
@@ -449,7 +463,9 @@ class PyModel1D:
                                         为负数代表不提前判断收敛，按照波数积分上限进行积分
             :param       k0:            波数k积分的上限 :math:`\tilde{k_{max}}=(k_{0}*\pi/hs)^2` , 波数k积分循环必须退出, hs=max(震源和台站深度差,1.0)
             :param       Length:        定义波数k积分的间隔 `dk=2\pi / (L*rmax)`, 默认15；负数表示使用Filon积分
-            :param       filonLC:       Filon积分的间隔 filonLength, 和波数积分和Filon积分的分割点filonCut, k*=<filonCut>/rmax
+            :param       filonLength:   Filon积分的间隔
+            :param       safilonTol:    自适应Filon积分采样精度
+            :param       filonCut:      波数积分和Filon积分的分割点filonCut, k*=<filonCut>/rmax
             :param       calc_upar:     是否计算位移u的空间导数
             :param       statsfile:     波数k积分（包括Filon积分和峰谷平均法）的过程记录文件，常用于debug或者观察积分过程中 :math:`F(k,\omega)` 和  :math:`F(k,\omega)J_m(kr)k` 的变化    
 
@@ -459,8 +475,16 @@ class PyModel1D:
 
         if Length < 0.0:
             raise ValueError(f"Length ({Length}) < 0")
-        if np.any(filonLC) < 0.0:
-            raise ValueError(f"filonLC ({filonLC}) < 0") 
+        if filonLength < 0.0:
+            raise ValueError(f"filonLength ({filonLength}) < 0") 
+        if filonCut < 0.0:
+            raise ValueError(f"filonCut ({filonCut}) < 0") 
+        if safilonTol < 0.0:
+            raise ValueError(f"filonCut ({safilonTol}) < 0") 
+        
+        # 只能设置一种filon积分方法
+        if safilonTol > 0.0 and filonLength > 0.0:
+            raise ValueError(f"You should only set one of filonLength and safilonTol.")
         
 
         depsrc = self.depsrc
@@ -516,7 +540,7 @@ class PyModel1D:
         #     剪切源 DD[ZR],DS[ZRT],SS[ZRT]          1e-20 cm/(dyne*cm)
         #=================================================================================
         C_integ_static_grn(
-            self.c_pymod1d, nr, c_rs, vmin_ref, keps, k0, Length, filonLC[0], filonLC[1],
+            self.c_pymod1d, nr, c_rs, vmin_ref, keps, k0, Length, filonLength, safilonTol, filonCut, 
             c_pygrn, calc_upar, c_pygrn_uiz, c_pygrn_uir,
             c_statsfile
         )

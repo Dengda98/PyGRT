@@ -19,7 +19,7 @@
  * 
  * @param[in]     k              波数
  * @param[in]     r              震中距 
- * @param[out]    QWV            不同震源，不同阶数的核函数 \f$ q_m, w_m, v_m \f$
+ * @param[in]     QWV            不同震源，不同阶数的核函数 \f$ q_m, w_m, v_m \f$
  * @param[in]     calc_uir       是否计算ui_r（位移u对坐标r的偏导）
  * @param[out]    SUM            该dk区间内的积分值
  * 
@@ -53,7 +53,7 @@ void merge_Pk(
  * @param[in]     k              波数
  * @param[in]     r              震中距 
  * @param[in]     iscos          是否使用cos函数，否则使用sin函数
- * @param[out]    QWV            不同震源，不同阶数的核函数 \f$ q_m, w_m, v_m \f$
+ * @param[in]     QWV            不同震源，不同阶数的核函数 \f$ q_m, w_m, v_m \f$
  * @param[in]     calc_uir       是否计算ui_r（位移u对坐标r的偏导）
  * @param[out]    SUM            该dk区间内的积分值
  *  
@@ -61,5 +61,24 @@ void merge_Pk(
 void int_Pk_filon(
     MYREAL k, MYREAL r, bool iscos,
     const MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
+    bool calc_uir,
+    MYCOMPLEX SUM[SRC_M_NUM][INTEG_NUM]);
+
+
+/**
+ * 对sqrt(k)*F(k,w)进行二次曲线拟合，再计算 (a*k^2 + b*k + c) * cos(kr - (2m+1)/4) 的积分，其中涉及两种数组形状：
+ *    + QWV. 存储的是核函数，第一个维度不同震源，不同阶数，第二个维度3代表三类系数qm,wm,vm  
+ *    + SUM. 存储的是该三点区间内的积分值，第一个维度不同震源，不同阶数，维度4代表4种类型的F(k,w)Jm(kr)k的类型
+ * 
+ * @param[in]     k3            三点等距波数
+ * @param[in]     r             震中距 
+ * @param[in]     QWV3          k3对应的不同震源，不同阶数的核函数 \f$ q_m, w_m, v_m \f$
+ * @param[in]     calc_uir      是否计算ui_r（位移u对坐标r的偏导）
+ * @param[out]    SUM           该三点区间内的积分值
+ * 
+ */
+void int_Pk_sa_filon(
+    const MYREAL k3[3], MYREAL r, 
+    const MYCOMPLEX QWV3[3][SRC_M_NUM][QWV_NUM],
     bool calc_uir,
     MYCOMPLEX SUM[SRC_M_NUM][INTEG_NUM]);
