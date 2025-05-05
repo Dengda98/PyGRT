@@ -51,6 +51,7 @@ typedef int MYINT;  ///< 整数
 #define RTWO 2.0            ///< 2.0
 #define RTHREE 3.0            ///< 3.0
 #define RFOUR 4.0            ///< 4.0
+#define RTWOTHIRD 0.6666666666666667  ///< 2/3
 #define PI  3.141592653589793        ///< \f$ \pi \f$
 #define PI2 6.283185307179586        ///< \f$ 2\pi \f$
 #define HALFPI 1.5707963267948966   ///< \f$ \frac{\pi}{2} \f$
