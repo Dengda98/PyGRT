@@ -187,7 +187,7 @@ void kernel(
                 k, 
                 RD, pRDL, RU, pRUL, 
                 TD, pTDL, TU, pTUL, stats);
-            if(*stats==INVERSE_FAILURE)  return;
+            if(*stats==INVERSE_FAILURE)  goto BEFORE_RETURN;
         }
 
 #if Print_GRTCOEF == 1
@@ -238,7 +238,7 @@ void kernel(
                     TD, TDL, TU, TUL,
                     RD_FA, pRDL_FA, RU_FA, pRUL_FA, 
                     TD_FA, pTDL_FA, TU_FA, pTUL_FA, stats);  
-                if(*stats==INVERSE_FAILURE)  return;
+                if(*stats==INVERSE_FAILURE)  goto BEFORE_RETURN;
             }
         } 
         else if(iy==imin){ // 虚拟层位，可对递推公式简化
@@ -277,7 +277,7 @@ void kernel(
                     TD, TDL, TU, TUL,
                     RD_RS, pRDL_RS, RU_RS, pRUL_RS, 
                     TD_RS, pTDL_RS, TU_RS, pTUL_RS, stats);  // 写入原地址
-                if(*stats==INVERSE_FAILURE)  return;
+                if(*stats==INVERSE_FAILURE)  goto BEFORE_RETURN;
             }
         } 
         else if(iy==imax){ // 虚拟层位，可对递推公式简化
@@ -329,7 +329,7 @@ void kernel(
                         RD_BL, pRDL_BL, NULL, NULL, 
                         NULL, NULL, NULL, NULL, stats);  // 写入原地址
                 }
-                if(*stats==INVERSE_FAILURE)  return;
+                if(*stats==INVERSE_FAILURE)  goto BEFORE_RETURN;
             }
         } // END if
 
@@ -350,7 +350,7 @@ void kernel(
 
     // 递推RU_FA
     calc_R_tilt(top_xa, top_xb, top_kbkb, k, R_tilt, stats);
-    if(*stats==INVERSE_FAILURE)  return;
+    if(*stats==INVERSE_FAILURE)  goto BEFORE_RETURN;
     recursion_RU(
         R_tilt, RONE, 
         RD_FA, RDL_FA,
@@ -358,7 +358,7 @@ void kernel(
         TD_FA, TDL_FA,
         TU_FA, TUL_FA,
         RU_FA, pRUL_FA, NULL, NULL, stats);
-    if(*stats==INVERSE_FAILURE)  return;
+    if(*stats==INVERSE_FAILURE)  goto BEFORE_RETURN;
     
     // 根据震源和台站相对位置，计算最终的系数
     if(ircvup){ // A接收  B震源
@@ -374,13 +374,14 @@ void kernel(
             TD_RS, TDL_RS,
             TU_RS, TUL_RS,
             RU_FB, pRUL_FB, inv_2x2T, &invT, stats);
-        if(*stats==INVERSE_FAILURE)  return;
-        
+        if(*stats==INVERSE_FAILURE)  goto BEFORE_RETURN;
+
+
         // 公式(5.7.12-14)
         cmat2x2_mul(RD_BL, RU_FB, tmpR2);
         cmat2x2_one_sub(tmpR2);
         cmat2x2_inv(tmpR2, tmpR2, stats);// (I - xx)^-1
-        if(*stats==INVERSE_FAILURE)  return;
+        if(*stats==INVERSE_FAILURE)  goto BEFORE_RETURN;
         cmat2x2_mul(inv_2x2T, tmpR2, tmp2x2);
 
         if(calc_uiz) cmat2x2_assign(tmp2x2, tmp2x2_uiz); // 为后续计算空间导数备份
@@ -416,13 +417,13 @@ void kernel(
             TU_RS, TUL_RS,
             RD_BL, RDL_BL,
             RD_AL, pRDL_AL, inv_2x2T, &invT, stats);
-        if(*stats==INVERSE_FAILURE)  return;
+        if(*stats==INVERSE_FAILURE)  goto BEFORE_RETURN;
         
         // 公式(5.7.26-27)
         cmat2x2_mul(RU_FA, RD_AL, tmpR2);
         cmat2x2_one_sub(tmpR2);
         cmat2x2_inv(tmpR2, tmpR2, stats);// (I - xx)^-1
-        if(*stats==INVERSE_FAILURE)  return;
+        if(*stats==INVERSE_FAILURE)  goto BEFORE_RETURN;
         cmat2x2_mul(inv_2x2T, tmpR2, tmp2x2);
 
         if(calc_uiz) cmat2x2_assign(tmp2x2, tmp2x2_uiz); // 为后续计算空间导数备份
@@ -447,6 +448,19 @@ void kernel(
 
     } // END if
 
+
+
+    BEFORE_RETURN:
+
+    // 对一些特殊情况的修正
+    // 当震源和场点均位于地表时，可理论验证DS分量恒为0，这里直接赋0以避免后续的精度干扰
+    if(mod1d->lays[isrc].dep == RZERO && mod1d->lays[ircv].dep == RZERO)
+    {
+        for(MYINT c=0; c<QWV_NUM; ++c){
+            QWV[SRC_M_DS_INDEX][c] = CZERO;
+            if(calc_uiz)  QWV_uiz[SRC_M_DS_INDEX][c] = CZERO;
+        }
+    }
 
 }
 
