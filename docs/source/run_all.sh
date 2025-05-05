@@ -58,5 +58,6 @@ if [[ $1 == '7' || $1 == '' ]]; then
     chmod +x *.sh
     ./run.sh
     python run.py
+    python plot.py
     cd -
 fi
