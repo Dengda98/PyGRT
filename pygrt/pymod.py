@@ -42,7 +42,6 @@ class PyModel1D:
             :param    deprcv:     台站深度(km)  
 
         '''
-        self.modarr:np.ndarray = modarr0.copy()
         self.depsrc:float = depsrc 
         self.deprcv:float = deprcv 
         self.c_pymod1d:c_PyModel1D 
@@ -63,8 +62,10 @@ class PyModel1D:
         self.isrc = self.c_pymod1d.isrc
         self.ircv = self.c_pymod1d.ircv
 
-        self.vmax = np.max(self.modarr[:, 1:3])
-        self.vmin = np.min(self.modarr[:, 1:3])
+        va = npct.as_array(self.c_pymod1d.Va, (self.c_pymod1d.n,))
+        vb = npct.as_array(self.c_pymod1d.Vb, (self.c_pymod1d.n,))
+        self.vmin = min(np.min(va), np.min(vb))
+        self.vmax = max(np.max(va), np.max(vb))
 
     
     def compute_travt1d(self, dist:float):
@@ -374,14 +375,14 @@ class PyModel1D:
         #/////////////////////////////////////////////////////////////////////////////////
 
         # 震源和场点层的物性，写入sac头段变量
-        rcv_va = self.modarr[self.ircv, 1]
-        rcv_vb = self.modarr[self.ircv, 2]
-        rcv_rho = self.modarr[self.ircv, 3]
-        rcv_qainv = 1.0/self.modarr[self.ircv, 4]
-        rcv_qbinv = 1.0/self.modarr[self.ircv, 5]
-        src_va = self.modarr[self.isrc, 1]
-        src_vb = self.modarr[self.isrc, 2]
-        src_rho = self.modarr[self.isrc, 3]
+        rcv_va = self.c_pymod1d.Va[self.ircv]
+        rcv_vb = self.c_pymod1d.Vb[self.ircv]
+        rcv_rho = self.c_pymod1d.Rho[self.ircv]
+        rcv_qainv = 1.0/self.c_pymod1d.Qa[self.ircv]
+        rcv_qbinv = 1.0/self.c_pymod1d.Qb[self.ircv]
+        src_va = self.c_pymod1d.Va[self.isrc]
+        src_vb = self.c_pymod1d.Vb[self.isrc]
+        src_rho = self.c_pymod1d.Rho[self.isrc]
         
         # 对应实际采集的地震信号，取向上为正(和理论推导使用的方向相反)
         dataLst = []
@@ -548,12 +549,12 @@ class PyModel1D:
         #/////////////////////////////////////////////////////////////////////////////////
 
         # 震源和场点层的物性
-        rcv_va = self.modarr[self.ircv, 1]
-        rcv_vb = self.modarr[self.ircv, 2]
-        rcv_rho = self.modarr[self.ircv, 3]
-        src_va = self.modarr[self.isrc, 1]
-        src_vb = self.modarr[self.isrc, 2]
-        src_rho = self.modarr[self.isrc, 3]
+        rcv_va = self.c_pymod1d.Va[self.ircv]
+        rcv_vb = self.c_pymod1d.Vb[self.ircv]
+        rcv_rho = self.c_pymod1d.Rho[self.ircv]
+        src_va = self.c_pymod1d.Va[self.isrc]
+        src_vb = self.c_pymod1d.Vb[self.isrc]
+        src_rho = self.c_pymod1d.Rho[self.isrc]
 
         # 结果字典
         dataDct = {}
