@@ -231,8 +231,10 @@ class PyModel1D:
             
         f1 = max(0, f1) 
         f2 = min(f2, fnyq + df)
-        nf1 = max(0, int(np.floor(f1/df)))
-        nf2 = min(int(np.ceil(f2/df)), nf-1) 
+        nf1 = min(int(np.ceil(f1/df)), nf-1)
+        nf2 = min(int(np.floor(f2/df)), nf-1)
+        if nf2 < nf1:
+            nf2 = nf1
 
         # 所有频点 
         freqs = (np.arange(0, nf)*df).astype(NPCT_REAL_TYPE) 

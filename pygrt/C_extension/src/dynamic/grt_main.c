@@ -1027,13 +1027,14 @@ int main(int argc, char **argv) {
 
     nf1 = 0; nf2 = nf-1;
     if(freq1 > 0.0){
-        nf1 = (int)(freq1/df) + 1;
+        nf1 = ceil(freq1/df);
         if(nf1 >= nf-1)    nf1 = nf-1;
     }
     if(freq2 > 0.0){
-        nf2 = (int)(freq2/df) + 1;
+        nf2 = floor(freq2/df);
         if(nf2 >= nf-1)    nf2 = nf-1;
     }
+    if(nf2 < nf1) nf2 = nf1;
 
     // 波数积分中间文件输出目录
     if(nstatsidxs > 0){
