@@ -271,9 +271,6 @@ void integ_grn_spec(
                 recordin_GRN(iw, nr, coef, sum_uir_J, grn_uir);
             }
         }
-        // else{
-        //     fprintf(stderr, "iw=%d, f=%f, failed, filled with 0.\n", iw, w/PI2);
-        // }
 
         if(fstats!=NULL) fclose(fstats);
         for(MYINT ir=0; ir<nr; ++ir){
@@ -297,8 +294,6 @@ void integ_grn_spec(
             if(print_progressbar) printprogressBar("Computing Green Functions: ", progress*100/(nf2-nf1+1));
         } 
         
-
-
 
         // Free allocated memory for temporary variables
         free(sum_J);

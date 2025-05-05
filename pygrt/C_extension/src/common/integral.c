@@ -169,6 +169,7 @@ void int_Pk_sa_filon(
     // 考虑大震中距，忽略第一项，再使用bessel渐近公式
     MYINT modr0 = (calc_uir)? 1 : 0;
     MYINT kodr0 = (calc_uir)? 1 : 0;
+    MYINT sgn = (calc_uir)? -1 : 1;
 
     // 对sqrt(k)*F(k,w)进行二次曲线拟合，再计算 (a*k^2 + b*k + c) * cos(kr - (2m+1)/4) 的积分
     // 拟合二次函数的参数
@@ -181,7 +182,7 @@ void int_Pk_sa_filon(
             if(modr==0 && qwvchs[c] == 'v')  continue;
 
             MYCOMPLEX F3[3];
-            for(MYINT d=0; d<3; ++d)  F3[d] = QWV3[d][im][c] * sqrt(k3[d]);
+            for(MYINT d=0; d<3; ++d)  F3[d] = QWV3[d][im][c] * sqrt(k3[d]) * sgn;
 
             // 拟合参数
             quad_term(k3, F3, &quad_a[im][c], &quad_b[im][c], &quad_c[im][c]);
