@@ -16,6 +16,7 @@ from obspy import read, Stream, Trace, UTCDateTime
 from scipy.fft import irfft, ifft
 from obspy.core import AttribDict
 from typing import List, Dict, Union
+import tempfile
 
 from time import time
 from copy import deepcopy
@@ -41,84 +42,30 @@ class PyModel1D:
             :param    deprcv:     台站深度(km)  
 
         '''
-        self.modarr:np.ndarray
-        self.depsrc = depsrc 
-        self.deprcv = deprcv 
+        self.modarr:np.ndarray = modarr0.copy()
+        self.depsrc:float = depsrc 
+        self.deprcv:float = deprcv 
         self.c_pymod1d:c_PyModel1D 
 
-        if depsrc < 0:
-            raise ValueError(f"depsrc ({depsrc}) < 0")
-        if deprcv < 0:
-            raise ValueError(f"deprcv ({deprcv}) < 0")
+        # 将modarr写入临时数组
+        with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmpfile:
+            np.savetxt(tmpfile, modarr0, "%.15e")
+            tmp_path = tmpfile.name  # 获取临时文件路径
+            print(tmp_path)
 
-
-        modarr = modarr0.copy()
-
-        # 最后一层，本质只为保证震源和台站能插入模型中
-        modarr[-1, 0] = np.max([modarr[-1, 0], 9e10, deprcv, depsrc]) + 1.0 
-
-        # 将震源和台站的虚拟层位插入模型
-        dep = 0.0
-        ircv = 0
-        for i in range(modarr.shape[0]):
-            dep += modarr[i,0]
-            if dep > deprcv:
-                ircv = i+1
-                lay = np.copy(modarr[i,:])
-                lay[0] = dep - deprcv
-                modarr[i,0] -= lay[0]
-                modarr = np.insert(modarr, ircv, lay, axis=0)
-                break   
-
-        dep = 0.0
-        isrc = 0 
-        for i in range(modarr.shape[0]):
-            dep += modarr[i,0]
-            if dep > depsrc:
-                isrc = i+1
-                lay = np.copy(modarr[i,:])
-                lay[0] = dep - depsrc
-                modarr[i,0] -= lay[0]
-                modarr = np.insert(modarr, isrc, lay, axis=0)
-                break 
-
-        # 如果台站位于震源深度以下，需要调整层索引; 因为先插入的台站，再插入的震源 
-        if depsrc < deprcv:
-            ircv += 1
-
-        # 调整层厚，拒绝0厚度层 
-        # for i in range(modarr.shape[0]):
-        #     if modarr[i, 0] == 0.0:
-        #         modarr[i, 0] = 1e-5
-
-            
-        c_pymod1d = c_PyModel1D(
-            modarr.shape[0],
-            depsrc,
-            deprcv,
-            isrc, 
-            ircv, 
-            (ircv<isrc),
-
-            npct.as_ctypes(modarr[:,0].astype(NPCT_REAL_TYPE)),
-            npct.as_ctypes(modarr[:,1].astype(NPCT_REAL_TYPE)),
-            npct.as_ctypes(modarr[:,2].astype(NPCT_REAL_TYPE)),
-            npct.as_ctypes(modarr[:,3].astype(NPCT_REAL_TYPE)),
-            npct.as_ctypes(modarr[:,4].astype(NPCT_REAL_TYPE)),
-            npct.as_ctypes(modarr[:,5].astype(NPCT_REAL_TYPE)),
-        )
-
-        self.modarr = modarr
-        self.c_pymod1d = c_pymod1d
-
-        self.isrc = isrc
-        self.ircv = ircv
+        try:
+            c_pymod_ptr = C_read_pymod_from_file("pygrt".encode("utf-8"), tmp_path.encode("utf-8"), depsrc, deprcv)
+            self.c_pymod1d = c_pymod_ptr.contents  # 这部分内存在C中申请，需由C函数释放。占用不多，这里跳过
+        finally:
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+        
+        self.isrc = self.c_pymod1d.isrc
+        self.ircv = self.c_pymod1d.ircv
 
         self.vmax = np.max(self.modarr[:, 1:3])
         self.vmin = np.min(self.modarr[:, 1:3])
-        if self.vmin <= 0.0:
-            raise ValueError("Zero Velocity ??")
-        
+
     
     def compute_travt1d(self, dist:float):
         r"""
@@ -163,21 +110,18 @@ class PyModel1D:
         deprcv = self.deprcv
         nr = len(distarr)
 
-        pygrnLst = []
+        pygrnLst:List[List[List[PyGreenFunction]]] = []
         c_grnArr = (((PCPLX*CHANNEL_NUM)*SRC_M_NUM)*nr)()
         
         for ir in range(len(distarr)):
             dist = distarr[ir]
+            pygrnLst.append([])
             for isrc in range(SRC_M_NUM):
-                modr = SRC_M_ORDERS[isrc]
+                pygrnLst[ir].append([])
                 for ic, comp in enumerate(ZRTchs):
 
-                    if modr == 0 and comp == 'T':
-                        c_grnArr[ir][isrc][ic] = None
-                        continue
-
                     pygrn = PyGreenFunction(f'{prefix}{SRC_M_NAME_ABBR[isrc]}{comp}', nt, dt, freqs, wI, dist, depsrc, deprcv)
-                    pygrnLst.append(pygrn)
+                    pygrnLst[ir][isrc].append(pygrn)
                     c_grnArr[ir][isrc][ic] = pygrn.cmplx_grn.ctypes.data_as(PCPLX)
 
         return pygrnLst, c_grnArr
@@ -439,18 +383,27 @@ class PyModel1D:
             # 计算走时
             travtP, travtS = self.compute_travt1d(dist)
 
-            for pygrn in pygrnLst:
-                sgn = -1 if pygrn.name[-1]=='Z' else 1
-                stream.append(pygrn.freq2time(delayT, travtP, travtS, sgn ))
+            for im in range(SRC_M_NUM):
+                if(not calc_EX and im==0):
+                    continue
+                if(not calc_VF and im==1):
+                    continue
+                if(not calc_HF and im==2):
+                    continue
+                if(not calc_DC and im>=3):
+                    continue
 
-            if calc_upar:
-                for pygrn in pygrnLst_uiz:
-                    sgn = -1 if pygrn.name[-1]=='Z' else 1
-                    stream.append(pygrn.freq2time(delayT, travtP, travtS, sgn*(-1) ))
-
-                for pygrn in pygrnLst_uir:
-                    sgn = -1 if pygrn.name[-1]=='Z' else 1
-                    stream.append(pygrn.freq2time(delayT, travtP, travtS, sgn ))
+                modr = SRC_M_ORDERS[im]
+                sgn = 1
+                for c in range(CHANNEL_NUM):
+                    if(modr==0 and ZRTchs[c]=='T'):
+                        continue
+                    
+                    sgn = -1 if ZRTchs[c]=='Z'=='Z' else 1
+                    stream.append(pygrnLst[ir][im][c].freq2time(delayT, travtP, travtS, sgn ))
+                    if(calc_upar):
+                        stream.append(pygrnLst_uiz[ir][im][c].freq2time(delayT, travtP, travtS, sgn*(-1) ))
+                        stream.append(pygrnLst_uir[ir][im][c].freq2time(delayT, travtP, travtS, sgn  ))
 
 
             # 在sac头段变量部分
@@ -466,7 +419,6 @@ class PyModel1D:
                 SAC['user8'] = src_rho
 
             dataLst.append(stream)
-
 
         return dataLst  
 
