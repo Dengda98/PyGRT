@@ -50,7 +50,6 @@ class PyModel1D:
         with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmpfile:
             np.savetxt(tmpfile, modarr0, "%.15e")
             tmp_path = tmpfile.name  # 获取临时文件路径
-            print(tmp_path)
 
         try:
             c_pymod_ptr = C_read_pymod_from_file("pygrt".encode("utf-8"), tmp_path.encode("utf-8"), depsrc, deprcv)
