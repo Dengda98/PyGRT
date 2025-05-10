@@ -62,7 +62,7 @@ C和Python导出的核函数文件是一致的，底层调用的是相同的函�
             :start-after: BEGIN read statsfile
             :end-before: END read statsfile
 
-其中除了波数 ``k`` 外，每条结果的命名格式均为 ``{srcType}_{q/w/v}{m}``，与 :ref:`gfunc_rst` 部分介绍的积分公式中的核函数 :math:`q_m, w_m, v_m` 保持一致。
+其中除了波数 ``k`` 外，每条结果的命名格式均为 ``{srcType}_{q/w/v}``，与 :ref:`gfunc_rst` 部分介绍的积分公式中的核函数 :math:`q_m, w_m, v_m` 保持一致。
 
 .. note:: 
 

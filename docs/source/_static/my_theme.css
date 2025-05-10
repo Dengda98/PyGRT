@@ -1,6 +1,6 @@
-/* .wy-nav-content {
-    max-width: 800px;
-} */
+.wy-nav-content {
+    max-width: 950px;
+}
 
 /* 设置代码块的淡黄色背景 */
 .highlight {
@@ -37,4 +37,52 @@
 }
 .footnote-reference::after {
     content: "]";
+}
+
+/* 调整数学公式编号位置，RTD主题特有的bug... */
+/* 详见https://github.com/readthedocs/sphinx_rtd_theme/issues/301 */
+/* https://github.com/readthedocs/sphinx_rtd_theme/pull/383 */
+div.math {
+    position: relative;
+    padding-right: 2.5em;
+}
+.eqno {
+    height: 100%;
+    position: absolute;
+    right: 0;
+    padding-left: 5px;
+    padding-bottom: 5px;
+    /* Fix for mouse over in Firefox */
+    padding-right: 1px;
+}
+.eqno:before {
+    /* Force vertical alignment of number */
+    display: inline-block;
+    height: 100%;
+    vertical-align: middle;
+    content: "";
+}
+.eqno .headerlink {
+    display: none;
+    visibility: hidden;
+    font-size: 14px;
+    padding-left: .3em;
+}
+.eqno:hover .headerlink {
+    display: inline-block;
+    visibility: hidden;
+    /* margin-right: -1.05em; */  /* 鼠标悬停时会偏移 */
+}
+.eqno .headerlink:after {
+    visibility: visible;
+    content: "\f0c1";
+    font-family: FontAwesome;
+    display: inline-block;
+    margin-left: -.9em;
+}
+/* Make responsive */
+.MathJax_Display {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
 }
