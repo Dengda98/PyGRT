@@ -1,0 +1,24 @@
+公式补充
+================
+
+:Author: Zhu Dengda
+:Email:  zhudengda@mail.iggcas.ac.cn
+
+-----------------------------------------------------------
+
+（以下面向选修中科院《理论地震学》课程的学生）
+
+硕士阶段我在雁栖湖选修了中科院《理论地震学》课程，教材包括 :ref:`《理论地震图及其应用（初稿）》 <yao_init_manuscripts>` ，后因兴趣，研读了相关论文，推导公式，编写了 **PyGRT** 程序包。以下是摸索过程中推导的一些公式（持续补充），作为对教材公式的补充，欢迎批评指正。
+
+.. note::
+
+    公式推导过程中的Z轴取向下为正，详见 :ref:`Warning <warning_C_python_Z_direction>` 。
+
+.. toctree::
+  :maxdepth: 1
+
+  static_uniform
+  static_source
+
+
+

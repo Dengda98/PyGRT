@@ -72,6 +72,7 @@
   install
   Tutorial/index 
   Advanced/index 
+  Formula/index
   API/api
   copyright
 
