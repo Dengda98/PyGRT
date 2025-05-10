@@ -186,7 +186,7 @@ Fourier变换对
 .. math:: 
     :label:
 
-    G_{ij} = \dfrac{1}{16 \pi \mu (1-\nu) r}  \left[ (3-4\nu) \delta_{ij} + \gamma_i \gamma_j \right] = \dfrac{1}{4\pi \mu} \dfrac{\Delta}{1+\Delta} \dfrac{1}{R} \left( \dfrac{\delta_{ij}}{\Delta} + \gamma_i \gamma_j \right)
+    G_{ij} = \dfrac{1}{16 \pi \mu (1-\nu) r}  \left[ (3-4\nu) \delta_{ij} + \gamma_i \gamma_j \right] = \dfrac{1}{4\pi \mu} \dfrac{\Delta}{1+\Delta} \dfrac{1}{r} \left( \dfrac{\delta_{ij}}{\Delta} + \gamma_i \gamma_j \right)
 
 其中 :math:`\Delta=\dfrac{1}{3-4\nu}=\dfrac{\lambda+\mu}{\lambda+3\mu}` ， :math:`\gamma_i=r_i/r` 为方向余弦， :math:`r` 为源点和场点的直线距离。最终解 :eq:`Gtensor` 的表达式与朗道的弹性理论教材保持一致 [#]_ 。
 
