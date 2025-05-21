@@ -74,11 +74,11 @@ $(LIB_DIR):
 # build dynamic library
 # The order in the compiled statement is critical, otherwise the library will not be linked
 OBJS = $(wildcard $(BUILD_DIR)/**/*.o)
-$(LIB_DIR)/$(LIBD_NAME):
+$(LIB_DIR)/$(LIBD_NAME): objs
 	$(CC) -shared -o $@ $(OBJS) $(LDFLAGS) 
 
 # build static library
-$(LIB_DIR)/$(LIBS_NAME):
+$(LIB_DIR)/$(LIBS_NAME): objs
 	ar rcs $@ $(OBJS)  
 	
 
