@@ -194,7 +194,7 @@ void kernel(
                 mod1d_Rho0, mod1d_xa0, mod1d_xb0, mod1d_kbkb0, mod1d_mu0, 
                 mod1d_Rho1, mod1d_xa1, mod1d_xb1, mod1d_kbkb1, mod1d_mu1, 
                 mod1d_thk0, // 使用iy-1层的厚度
-                k, 
+                omega, k, 
                 RD, pRDL, RU, pRUL, 
                 TD, pTDL, TU, pTUL, stats);
             if(*stats==INVERSE_FAILURE)  goto BEFORE_RETURN;

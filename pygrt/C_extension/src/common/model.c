@@ -214,7 +214,7 @@ void update_mod1d_omega(MODEL1D *mod1d, MYCOMPLEX omega){
         atnb = attenuation_law(lay->Qbinv, omega);
         
         ka0 = omega/(Va0*atna);
-        kb0 = omega/(Vb0*atnb);
+        kb0 = (Vb0>RZERO)? omega/(Vb0*atnb) : CZERO;
         lay->kaka = ka0*ka0;
         lay->kbkb = kb0*kb0;
         
@@ -303,8 +303,9 @@ PYMODEL1D * read_pymod_from_file(const char *command, const char *modelpath, dou
             return NULL;
         };
 
-        if(va <= 0.0 || vb <= 0.0 || rho <= 0.0 || qa <= 0.0 || qb <= 0.0){
-            fprintf(stderr, "[%s] " BOLD_RED "In line %d, nonpositive value is not supported.\n" DEFAULT_RESTORE, command, iline);
+        if(va <= 0.0 || rho <= 0.0 || qa <= 0.0 || qb <= 0.0){
+        // if(va <= 0.0 || vb <= 0.0 || rho <= 0.0 || qa <= 0.0 || qb <= 0.0){
+            fprintf(stderr, "[%s] " BOLD_RED "In model file, line %d, nonpositive value is not supported.\n" DEFAULT_RESTORE, command, iline);
             return NULL;
         }
 
@@ -391,4 +392,18 @@ PYMODEL1D * read_pymod_from_file(const char *command, const char *modelpath, dou
     free(modarr);
     
     return pymod;
+}
+
+
+void get_pymod_vmin_vmax(const PYMODEL1D *pymod, double *vmin, double *vmax){
+    *vmin = __DBL_MAX__;
+    *vmax = RZERO;
+    const MYREAL *Va = pymod->Va;
+    const MYREAL *Vb = pymod->Vb;
+    for(MYINT i=0; i<pymod->n; ++i){
+        if(Va[i] < *vmin) *vmin = Va[i];
+        if(Va[i] > *vmax) *vmax = Va[i];
+        if(Vb[i] < *vmin && Vb[i] > RZERO) *vmin = Vb[i];
+        if(Vb[i] > *vmax && Vb[i] > RZERO) *vmax = Vb[i];
+    }
 }

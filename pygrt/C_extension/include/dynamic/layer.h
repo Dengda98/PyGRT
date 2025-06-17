@@ -89,6 +89,7 @@ void calc_uiz_R_EV(
  * @param[in]      kbkb2         下层的S波水平波数的平方 \f$ k_b^2=(\frac{\omega}{V_b})^2 \f$
  * @param[in]      mu2           下层的剪切模量
  * @param[in]      thk           上层层厚
+ * @param[in]      omega         角频率
  * @param[in]      k             波数
  * @param[out]     RD            P-SV 下传反射系数矩阵
  * @param[out]     RDL           SH 下传反射系数
@@ -104,11 +105,33 @@ void calc_uiz_R_EV(
 void calc_RT_2x2(
     MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, 
     MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, 
-    MYREAL thk, MYREAL k, 
+    MYREAL thk, MYCOMPLEX omega, MYREAL k, 
     MYCOMPLEX RD[2][2], MYCOMPLEX *RDL, MYCOMPLEX RU[2][2], MYCOMPLEX *RUL, 
     MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX TU[2][2], MYCOMPLEX *TUL, MYINT *stats);
 
+/** 固-固 界面，函数参数与 calc_RT_2x2 函数一致 */
+void calc_RT_ss_2x2(
+    MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, 
+    MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, 
+    MYREAL thk, MYCOMPLEX omega, MYREAL k, 
+    MYCOMPLEX RD[2][2], MYCOMPLEX *RDL, MYCOMPLEX RU[2][2], MYCOMPLEX *RUL, 
+    MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX TU[2][2], MYCOMPLEX *TUL, MYINT *stats);
 
+/** 液-液 界面，函数参数与 calc_RT_2x2 函数一致 */
+void calc_RT_ll_2x2(
+    MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, 
+    MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, 
+    MYREAL thk, MYCOMPLEX omega, MYREAL k, 
+    MYCOMPLEX RD[2][2], MYCOMPLEX *RDL, MYCOMPLEX RU[2][2], MYCOMPLEX *RUL, 
+    MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX TU[2][2], MYCOMPLEX *TUL, MYINT *stats);
+
+/** 液-固 界面，函数参数与 calc_RT_2x2 函数一致 */
+void calc_RT_ls_2x2(
+    MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, 
+    MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, 
+    MYREAL thk, MYCOMPLEX omega, MYREAL k, 
+    MYCOMPLEX RD[2][2], MYCOMPLEX *RDL, MYCOMPLEX RU[2][2], MYCOMPLEX *RUL, 
+    MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX TU[2][2], MYCOMPLEX *TUL, MYINT *stats);
 
 /**
  * 【未使用，仅用于代码测试】
