@@ -97,12 +97,6 @@ void calc_uiz_R_EV(
     const MYCOMPLEX R[2][2], MYCOMPLEX RL, 
     MYCOMPLEX R_EV[2][2], MYCOMPLEX *R_EVL)
 {
-    // TODO: 考虑液体层
-    if(xb_rcv == CONE){
-        fprintf(stderr, "NotImplementedError! function calc_uiz_R_EV.\n");
-        exit(EXIT_FAILURE);
-    }
-
     // 将势函数转为ui,z在(B_m, P_m, C_m)系下的分量
     // 新推导的公式
     MYCOMPLEX ak = k*k*xa_rcv;
@@ -112,15 +106,24 @@ void calc_uiz_R_EV(
     MYCOMPLEX D11[2][2] = {{ak, bb}, {aa, bk}};
     MYCOMPLEX D12[2][2] = {{-ak, bb}, {aa, -bk}};
 
+    if(ircvup){// 震源更深
+        *R_EVL = (RONE - (RL))*bk;
+    } else { // 接收点更深
+        *R_EVL = (RL - RONE)*bk;
+    }
+
+    // 位于液体层
+    if(xb_rcv == CONE){
+        D11[0][1] = D11[1][1] = D12[0][1] = D12[1][1] = *R_EVL = RZERO;
+    }
+
     // 公式(5.7.7,25)
     if(ircvup){// 震源更深
         cmat2x2_mul(D12, R, R_EV);
         cmat2x2_add(D11, R_EV, R_EV);
-        *R_EVL = (RONE - (RL))*bk;
     } else { // 接收点更深
         cmat2x2_mul(D11, R, R_EV);
         cmat2x2_add(D12, R_EV, R_EV);
-        *R_EVL = (RL - RONE)*bk;
     }
     
 }    
@@ -230,24 +233,24 @@ void calc_RT_ls_2x2(
     MYCOMPLEX Og2k = RONE - RHALF*kb2k;
     MYCOMPLEX Og2k2 = Og2k*Og2k;
     MYCOMPLEX A = RTWO*Og2k2*xa1*mu2 + RHALF*lamka1k*kb2k*xa2 - RTWO*mu2*xa1*xa2*xb2;
-    MYCOMPLEX B = RTWO*Og2k2*xa1*mu2 - RHALF*lamka1k*kb2k*xa2 + RTWO*mu2*xa1*xa2*xb2;
-    MYCOMPLEX C = RTWO*Og2k2*xa1*mu2 + RHALF*lamka1k*kb2k*xa2 + RTWO*mu2*xa1*xa2*xb2;
+    MYCOMPLEX B = RTWO*Og2k2*xa1*mu2 + lamka1k*xa2*(RONE + Og2k) - RTWO*mu2*xa1*xa2*xb2;
+    MYCOMPLEX C = RTWO*Og2k2*xa1*mu2 - lamka1k*xa2*(RONE + Og2k) - RTWO*mu2*xa1*xa2*xb2;
     MYCOMPLEX D = RTWO*Og2k2*xa1*mu2 - RHALF*lamka1k*kb2k*xa2 - RTWO*mu2*xa1*xa2*xb2;
     
     // 按液体层在上层处理
     if(computeRayl){
-        pRD[0][0] = D/A; 
+        pRD[0][0] = - D/A; 
         pRD[0][1] = pRD[1][0] = pRD[1][1] = CZERO;
 
-        pRU[0][0] = -B/A;
-        pRU[0][1] = -RFOUR*Og2k*xa1*xb2*mu2/A;
-        pRU[1][0] = xa2/xb2 * pRU[0][1];
+        pRU[0][0] = B/A;
+        pRU[0][1] = RTWO*Og2k*lamka1k/A;
+        pRU[1][0] = RTWO*xa2*xa2*lamka1k/A;
         pRU[1][1] = -C/A;
 
         pTD[0][0] = -RTWO*Og2k*xa1*lamka1k/A;      pTD[0][1] = CZERO;
         pTD[1][0] = -RTWO*lamka1k*xa1*xa2/A;       pTD[1][1] = CZERO;
 
-        pTU[0][0] = -RTWO*Og2k*xa2*kb2k*mu2/A;     pTU[0][1] = -RTWO*xa2*xb2*kb2k*mu2/A;
+        pTU[0][0] = RFOUR*xa2*mu2*(Og2k2 - xa2*xb2)/A;     pTU[0][1] = pTU[0][0]/xa2;
         pTU[1][0] = pTU[1][1] = CZERO;
 
         // 回归数组，增加时移
@@ -264,7 +267,9 @@ void calc_RT_ls_2x2(
         *pTDL = RZERO;
         *pTUL = RZERO;
 
-        // 特殊数值，无需再增加时移
+        // 回归数组，增加时移
+        // 特殊数值，仅需为潜在的RDL添加
+        *RDL *= ex2b;
     }
 
 
