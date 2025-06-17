@@ -363,7 +363,7 @@ void kernel(
     source_coef(src_xa, src_xb, src_kaka, src_kbkb, k, src_coef);
 
     // 临时中转矩阵 (temperary)
-    MYCOMPLEX tmpR2[2][2], tmp2x2[2][2], tmpRL, tmp2x2_uiz[2][2], tmpRL_uiz;
+    MYCOMPLEX tmpR2[2][2], tmp2x2[2][2], tmpRL, tmp2x2_uiz[2][2], tmpRL2;
     MYCOMPLEX inv_2x2T[2][2], invT;
 
     // 递推RU_FA
@@ -438,10 +438,11 @@ void kernel(
         if(calc_uiz) cmat2x2_assign(tmp2x2, tmp2x2_uiz); // 为后续计算空间导数备份
 
         cmat2x2_mul(R_EV, tmp2x2, tmp2x2);
-        tmpRL = R_EVL * invT  / (RONE - RDL_BL * RUL_FB);
+        tmpRL = invT  / (RONE - RDL_BL * RUL_FB);
+        tmpRL2 = R_EVL * tmpRL;
 
         for(MYINT i=0; i<SRC_M_NUM; ++i){
-            get_qwv(ircvup, tmp2x2, tmpRL, RD_BL, RDL_BL, src_coef[i], QWV[i]);
+            get_qwv(ircvup, tmp2x2, tmpRL2, RD_BL, RDL_BL, src_coef[i], QWV[i]);
         }
 
         // for(MYINT i=0; i<SRC_M_NUM; ++i){
@@ -467,10 +468,10 @@ void kernel(
         if(calc_uiz){
             calc_uiz_R_EV(rcv_xa, rcv_xb, ircvup, k, RU_FA, RUL_FA, uiz_R_EV, puiz_R_EVL);
             cmat2x2_mul(uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
-            tmpRL_uiz = tmpRL / R_EVL * uiz_R_EVL;
+            tmpRL2 = uiz_R_EVL * tmpRL;
 
             for(MYINT i=0; i<SRC_M_NUM; ++i){
-                get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RD_BL, RDL_BL, src_coef[i], QWV_uiz[i]);
+                get_qwv(ircvup, tmp2x2_uiz, tmpRL2, RD_BL, RDL_BL, src_coef[i], QWV_uiz[i]);
             }    
         }
     } 
@@ -499,20 +500,21 @@ void kernel(
         if(calc_uiz) cmat2x2_assign(tmp2x2, tmp2x2_uiz); // 为后续计算空间导数备份
 
         cmat2x2_mul(R_EV, tmp2x2, tmp2x2);
-        tmpRL = R_EVL * invT / (RONE - RUL_FA * RDL_AL);
+        tmpRL = invT / (RONE - RUL_FA * RDL_AL);
+        tmpRL2 = R_EVL * tmpRL;
 
         for(MYINT i=0; i<SRC_M_NUM; ++i){
-            get_qwv(ircvup, tmp2x2, tmpRL, RU_FA, RUL_FA, src_coef[i], QWV[i]);
+            get_qwv(ircvup, tmp2x2, tmpRL2, RU_FA, RUL_FA, src_coef[i], QWV[i]);
         }
 
 
         if(calc_uiz){
             calc_uiz_R_EV(rcv_xa, rcv_xb, ircvup, k, RD_BL, RDL_BL, uiz_R_EV, puiz_R_EVL);    
             cmat2x2_mul(uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
-            tmpRL_uiz = tmpRL / R_EVL * uiz_R_EVL;
+            tmpRL2 = uiz_R_EVL * tmpRL;
             
             for(MYINT i=0; i<SRC_M_NUM; ++i){
-                get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RU_FA, RUL_FA, src_coef[i], QWV_uiz[i]);
+                get_qwv(ircvup, tmp2x2_uiz, tmpRL2, RU_FA, RUL_FA, src_coef[i], QWV_uiz[i]);
             }
         }
 
