@@ -1,5 +1,5 @@
-液体-液体界面和液体-固体界面的反射透射系数矩阵
-==================================================
+含液体层的反射透射系数矩阵
+==================================
 
 :Author: Zhu Dengda
 :Email:  zhudengda@mail.iggcas.ac.cn
@@ -8,7 +8,7 @@
 
 当界面两侧存在液体时，边界条件变为 **垂直位移连续，垂直应力连续，切向应力为0** ，此时使用 :doc:`RT` 介绍的方法，可以比较方便直观地推导这两种情况下的 R/T 矩阵。
 
-以下推导以动态解为例，最终每一项系数的详细表达式（包括静态解）我使用 Python 库 `SymPy <https://www.sympy.org/>`_ 辅助推导，可在这里下载 :download:`RT_liquid_formula.ipynb` （ :doc:`预览 <RT_liquid_formula>` ）。
+以下推导以动态解为例，最终每一项系数的详细表达式我使用 Python 库 `SymPy <https://www.sympy.org/>`_ 辅助推导，可在这里下载 :download:`RT_liquid_formula.ipynb` （ :doc:`预览 <RT_liquid_formula>` ）。
 
 液体-液体界面
 ------------------
@@ -102,15 +102,15 @@
 液体-固体界面
 ------------------
 
-我们假设界面位于第1/2层之间，上层为液体，下层为固体（对于相反的情况只需取反向的 R/T 矩阵即可，例如 :math:`\mathbf{R}_D \leftrightarrow \mathbf{R}_U`），根据边界条件，有
+我们使用角标 :math:`l` 表示液体层，角标 :math:`s` 表示固体层。当上时层为液体，下层为固体（对于相反的情况只需取反向的 R/T 矩阵即可，例如 :math:`\mathbf{R}_D \leftrightarrow \mathbf{R}_U`），根据边界条件，有
 
 .. math::
     :label: layer12
 
     \left[
     \begin{array}{c|c}
-    a_1              &  -a_1             \\
-    -\rho_1\omega^2  & -\rho_1\omega^2   \\
+    a_l              &  -a_l             \\
+    -\rho_l\omega^2  & -\rho_l\omega^2   \\
     \hline
     0                &  0                \\
     \end{array}
@@ -124,10 +124,10 @@
     \right] = 
     \left[
     \begin{array}{cc|cc}
-    a_2   &   k     &  -a_2  &  k  \\
-    2\mu_2\Omega_2 & 2k\mu_2 b_2 & 2\mu_2\Omega_2 & -2k\mu_2 b_2 \\
+    a_s   &   k     &  -a_s  &  k  \\
+    2\mu_s\Omega_s & 2k\mu_s b_s & 2\mu_s\Omega_s & -2k\mu_s b_s \\
     \hline
-    2k\mu_2 a_2 & 2\mu_2\Omega_2 & -2k\mu_2 a_2 & 2\mu_2\Omega_2 \\
+    2k\mu_s a_s & 2\mu_s\Omega_s & -2k\mu_s a_s & 2\mu_s\Omega_s \\
     \end{array}
     \right]
     \left[
@@ -152,8 +152,8 @@
 
     \left[
     \begin{array}{c|c}
-    a_1              &  -a_1             \\
-    -\rho_1\omega^2  & -\rho_1\omega^2   \\
+    a_l              &  -a_l             \\
+    -\rho_l\omega^2  & -\rho_l\omega^2   \\
     \hline
     0                &  0                \\
     \end{array}
@@ -167,10 +167,10 @@
     \right] = 
     \left[
     \begin{array}{cc}
-    -a_2  &  k  \\
-    2\mu_2\Omega_2 & -2k\mu_2 b_2 \\
+    -a_s  &  k  \\
+    2\mu_s\Omega_s & -2k\mu_s b_s \\
     \hline
-    -2k\mu_2 a_2 & 2\mu_2\Omega_2 \\
+    -2k\mu_s a_s & 2\mu_s\Omega_s \\
     \end{array}
     \right]
     \begin{bmatrix}
@@ -185,10 +185,10 @@
 
     \left[
     \begin{array}{c|cc}
-    -a_1            &     -a_2           &  k             \\
-    \rho_1\omega^2  &     2\mu_2\Omega_2 & -2k\mu_2 b_2   \\
+    -a_l            &     -a_s           &  k             \\
+    \rho_l\omega^2  &     2\mu_s\Omega_s & -2k\mu_s b_s   \\
     \hline
-    0               &     -2k\mu_2 a_2   & 2\mu_2\Omega_2 \\
+    0               &     -2k\mu_s a_s   & 2\mu_s\Omega_s \\
     \end{array}
     \right]
     \left[
@@ -201,8 +201,8 @@
     \right] = 
     \left[
     \begin{array}{c}
-    -a_1 \\
-    -\rho_1\omega^2 \\
+    -a_l \\
+    -\rho_l\omega^2 \\
     \hline
     0
     \end{array}
@@ -242,8 +242,8 @@
 
     \left[
     \begin{array}{c}
-    a_1 \\
-    -\rho_1\omega^2 \\
+    a_l \\
+    -\rho_l\omega^2 \\
     \hline
     0
     \end{array}
@@ -251,10 +251,10 @@
     \left[\phi_m^-(z_1^-)\right] = 
     \left[
     \begin{array}{cc|cc}
-    a_2   &   k     &  -a_2  &  k  \\
-    2\mu_2\Omega_2 & 2k\mu_2 b_2 & 2\mu_2\Omega_2 & -2k\mu_2 b_2 \\
+    a_s   &   k     &  -a_s  &  k  \\
+    2\mu_s\Omega_s & 2k\mu_s b_s & 2\mu_s\Omega_s & -2k\mu_s b_s \\
     \hline
-    2k\mu_2 a_2 & 2\mu_2\Omega_2 & -2k\mu_2 a_2 & 2\mu_2\Omega_2 \\
+    2k\mu_s a_s & 2\mu_s\Omega_s & -2k\mu_s a_s & 2\mu_s\Omega_s \\
     \end{array}
     \right]
     \left[
@@ -274,10 +274,10 @@
 
     \left[
     \begin{array}{c|cc}
-    -a_1            &     -a_2           &  k             \\
-    \rho_1\omega^2  &     2\mu_2\Omega_2 & -2k\mu_2 b_2   \\
+    -a_l            &     -a_s           &  k             \\
+    \rho_l\omega^2  &     2\mu_s\Omega_s & -2k\mu_s b_s   \\
     \hline
-    0               &     -2k\mu_2 a_2   & 2\mu_2\Omega_2 \\
+    0               &     -2k\mu_s a_s   & 2\mu_s\Omega_s \\
     \end{array}
     \right]
     \left[
@@ -290,10 +290,10 @@
     \right] = 
     \left[
     \begin{array}{cc|cc}
-    -a_2   &   -k    \\
-    -2\mu_2\Omega_2 & -2k\mu_2 b_2 \\
+    -a_s   &   -k    \\
+    -2\mu_s\Omega_s & -2k\mu_s b_s \\
     \hline
-    -2k\mu_2 a_2 & -2\mu_2\Omega_2  \\
+    -2k\mu_s a_s & -2\mu_s\Omega_s  \\
     \end{array}
     \right]
     \left[
@@ -341,21 +341,24 @@
     \end{bmatrix}_{3\times3} = 
     \left[
     \begin{array}{c|cc}
-    -a_1            &     -a_2           &  k             \\
-    \rho_1\omega^2  &     2\mu_2\Omega_2 & -2k\mu_2 b_2   \\
+    -a_l            &     -a_s           &  k             \\
+    \rho_l\omega^2  &     2\mu_s\Omega_s & -2k\mu_s b_s   \\
     \hline
-    0               &     -2k\mu_2 a_2   & 2\mu_2\Omega_2 \\
+    0               &     -2k\mu_s a_s   & 2\mu_s\Omega_s \\
     \end{array}
     \right]^{-1}
     \left[
     \begin{array}{cc|c}
-    -a_2   &   -k    &   -a_1 \\
-    -2\mu_2\Omega_2 & -2k\mu_2 b_2  & -\rho_1\omega^2\\
+    -a_s   &   -k    &   -a_l \\
+    -2\mu_s\Omega_s & -2k\mu_s b_s  & -\rho_l\omega^2\\
     \hline
-    -2k\mu_2 a_2 & -2\mu_2\Omega_2 & 0 \\
+    -2k\mu_s a_s & -2\mu_s\Omega_s & 0 \\
     \end{array}
     \right]
 
 之后的操作如增加时间延迟因子，广义 R/T 矩阵递推等不受影响。在程序中为保持 2x2 矩阵，只将以上结果填充在对应位置即可，其余项为0。
+
+固体-液体界面
+----------------
 
 
