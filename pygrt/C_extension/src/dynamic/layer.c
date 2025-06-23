@@ -233,24 +233,24 @@ void calc_RT_ls_2x2(
     MYCOMPLEX Og2k = RONE - RHALF*kb2k;
     MYCOMPLEX Og2k2 = Og2k*Og2k;
     MYCOMPLEX A = RTWO*Og2k2*xa1*mu2 + RHALF*lamka1k*kb2k*xa2 - RTWO*mu2*xa1*xa2*xb2;
-    MYCOMPLEX B = RTWO*Og2k2*xa1*mu2 + lamka1k*xa2*(RONE + Og2k) - RTWO*mu2*xa1*xa2*xb2;
-    MYCOMPLEX C = RTWO*Og2k2*xa1*mu2 - lamka1k*xa2*(RONE + Og2k) - RTWO*mu2*xa1*xa2*xb2;
+    MYCOMPLEX B = RTWO*Og2k2*xa1*mu2 - RHALF*lamka1k*kb2k*xa2 + RTWO*mu2*xa1*xa2*xb2;
+    MYCOMPLEX C = RTWO*Og2k2*xa1*mu2 + RHALF*lamka1k*kb2k*xa2 + RTWO*mu2*xa1*xa2*xb2;
     MYCOMPLEX D = RTWO*Og2k2*xa1*mu2 - RHALF*lamka1k*kb2k*xa2 - RTWO*mu2*xa1*xa2*xb2;
     
     // 按液体层在上层处理
     if(computeRayl){
-        pRD[0][0] = - D/A; 
+        pRD[0][0] = D/A; 
         pRD[0][1] = pRD[1][0] = pRD[1][1] = CZERO;
 
-        pRU[0][0] = B/A;
-        pRU[0][1] = RTWO*Og2k*lamka1k/A;
-        pRU[1][0] = RTWO*xa2*xa2*lamka1k/A;
-        pRU[1][1] = -C/A;
+        pRU[0][0] = - B/A;
+        pRU[0][1] = - RFOUR*Og2k*xa1*xb2*mu2/A;
+        pRU[1][0] = pRU[0][1]/xb2 * xa2;
+        pRU[1][1] = - C/A;
 
-        pTD[0][0] = -RTWO*Og2k*xa1*lamka1k/A;      pTD[0][1] = CZERO;
-        pTD[1][0] = -RTWO*lamka1k*xa1*xa2/A;       pTD[1][1] = CZERO;
+        pTD[0][0] = - RTWO*Og2k*xa1*lamka1k/A;      pTD[0][1] = CZERO;
+        pTD[1][0] = pTD[0][0]/Og2k*xa2;             pTD[1][1] = CZERO;
 
-        pTU[0][0] = RFOUR*xa2*mu2*(Og2k2 - xa2*xb2)/A;     pTU[0][1] = pTU[0][0]/xa2;
+        pTU[0][0] = - RTWO*Og2k*xa2*mu2*kb2k/A;     pTU[0][1] = pTU[0][0]/Og2k*xb2;
         pTU[1][0] = pTU[1][1] = CZERO;
 
         // 回归数组，增加时移
