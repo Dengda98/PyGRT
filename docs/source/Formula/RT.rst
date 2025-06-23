@@ -10,7 +10,7 @@
 
 原推导过程涉及多种矢量符号，比较容易产生混淆，以下尽量将矩阵、矢量展开。
 
-以下推导以 P-SV 情况为例。
+以下推导以动态 P-SV 情况为例。
 
 最终每一项系数的详细表达式我使用 Python 库 `SymPy <https://www.sympy.org/>`_ 辅助推导，包括与原推导结果的对比验证，可在这里下载 :download:`RT_formula.ipynb` （ :doc:`预览 <RT_formula>` ）。
 

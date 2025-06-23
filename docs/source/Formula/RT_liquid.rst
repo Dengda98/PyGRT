@@ -1,5 +1,5 @@
 液体-液体界面和液体-固体界面的反射透射系数矩阵
-============================================
+==================================================
 
 :Author: Zhu Dengda
 :Email:  zhudengda@mail.iggcas.ac.cn
@@ -8,7 +8,7 @@
 
 当界面两侧存在液体时，边界条件变为 **垂直位移连续，垂直应力连续，切向应力为0** ，此时使用 :doc:`RT` 介绍的方法，可以比较方便直观地推导这两种情况下的 R/T 矩阵。
 
-最终每一项系数的详细表达式我使用 Python 库 `SymPy <https://www.sympy.org/>`_ 辅助推导，可在这里下载 :download:`RT_liquid_formula.ipynb` （ :doc:`预览 <RT_liquid_formula>` ）。
+以下推导以动态解为例，最终每一项系数的详细表达式（包括静态解）我使用 Python 库 `SymPy <https://www.sympy.org/>`_ 辅助推导，可在这里下载 :download:`RT_liquid_formula.ipynb` （ :doc:`预览 <RT_liquid_formula>` ）。
 
 液体-液体界面
 ------------------

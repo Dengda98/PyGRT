@@ -14,13 +14,29 @@
 
     公式推导过程中的Z轴取向下为正，详见 :ref:`Warning <warning_C_python_Z_direction>` 。
 
+**动态解**
+
+.. hlist::
+    :columns: 1
+
+    - :doc:`RT`
+    - :doc:`RT_liquid`
+
+**静态解**
+
+.. hlist::
+    :columns: 1
+
+    - :doc:`static_uniform`
+    - :doc:`static_source`
+
+
+
 .. toctree::
-  :maxdepth: 1
+    :maxdepth: 1
+    :hidden:
 
-  static_uniform
-  static_source
-  RT
-  RT_liquid
-
-
-
+    static_uniform
+    static_source
+    RT
+    RT_liquid
