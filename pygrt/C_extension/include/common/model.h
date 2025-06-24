@@ -151,7 +151,7 @@ PYMODEL1D * read_pymod_from_file(const char *command, const char *modelpath, dou
 
 
 /**
- * 计算PYMODEL1D结构体中的最大最小速度
+ * 计算PYMODEL1D结构体中的最大最小速度（非零值）
  * 
  * @param    pymod   (in)`PYMODEL1D` 结构体指针
  * @param    vmin    (out)最小速度
