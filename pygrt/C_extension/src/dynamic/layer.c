@@ -185,6 +185,7 @@ void calc_RT_ls_2x2(
     // 后缀1表示上层的液体的物理参数，后缀2表示下层的固体的物理参数
     // 若mu2==0, 则下层为液体，参数需相互交换 
 
+    // 延迟因子始终作用于上层
     MYCOMPLEX exa, exb, exab, ex2a, ex2b; 
     MYCOMPLEX tmp;
 
@@ -195,7 +196,6 @@ void calc_RT_ls_2x2(
     ex2a = exa * exa;
     ex2b = exb * exb;
 
- 
     bool computeRayl = true;
     bool computeLove = true;
     if(RD==NULL || RU==NULL || TD==NULL || TU==NULL) computeRayl=false;
@@ -203,6 +203,7 @@ void calc_RT_ls_2x2(
 
     // 讨论液-固 or 固-液
     bool isfluidUp = (mu1 == CZERO);  // 上层是否为液体
+    MYINT sgn = 1;
     if(isfluidUp && mu2 == CZERO){
         fprintf(stderr, BOLD_RED "Error: fluid-fluid interface is not allowed in calc_RT_fs_2x2\n" DEFAULT_RESTORE);
         exit(EXIT_FAILURE);
@@ -223,6 +224,7 @@ void calc_RT_ls_2x2(
         GRT_SWAP(MYCOMPLEX, xb1, xb2);
         GRT_SWAP(MYCOMPLEX, kbkb1, kbkb2);
         GRT_SWAP(MYCOMPLEX, mu1, mu2);
+        sgn = -1;
     }
 
     
@@ -243,14 +245,14 @@ void calc_RT_ls_2x2(
         pRD[0][1] = pRD[1][0] = pRD[1][1] = CZERO;
 
         pRU[0][0] = - B/A;
-        pRU[0][1] = - RFOUR*Og2k*xa1*xb2*mu2/A;
+        pRU[0][1] = - RFOUR*Og2k*xa1*xb2*mu2/A * sgn;
         pRU[1][0] = pRU[0][1]/xb2 * xa2;
         pRU[1][1] = - C/A;
 
         pTD[0][0] = - RTWO*Og2k*xa1*lamka1k/A;      pTD[0][1] = CZERO;
-        pTD[1][0] = pTD[0][0]/Og2k*xa2;             pTD[1][1] = CZERO;
+        pTD[1][0] = pTD[0][0]/Og2k*xa2 * sgn;       pTD[1][1] = CZERO;
 
-        pTU[0][0] = - RTWO*Og2k*xa2*mu2*kb2k/A;     pTU[0][1] = pTU[0][0]/Og2k*xb2;
+        pTU[0][0] = - RTWO*Og2k*xa2*mu2*kb2k/A;     pTU[0][1] = pTU[0][0]/Og2k*xb2 * sgn;
         pTU[1][0] = pTU[1][1] = CZERO;
 
         // 回归数组，增加时移
@@ -259,6 +261,9 @@ void calc_RT_ls_2x2(
 
         TD[0][0] *= exa;    TD[0][1] *= exb;
         TD[1][0] *= exa;    TD[1][1] *= exb;
+
+        TU[0][0] *= exa;    TU[0][1] *= exa;
+        TU[1][0] *= exb;    TU[1][1] *= exb;
     }
 
     if(computeLove){
