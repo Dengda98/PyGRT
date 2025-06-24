@@ -69,6 +69,9 @@ class PyModel1D:
             self.hasLiquid = True
         
         self.vmin = min(np.min(va), np.min(vb))
+        # 最小非零速度
+        nonzero_vb = vb[vb > 0]
+        self.vmin = min(np.min(va), np.min(nonzero_vb)) if nonzero_vb.size else np.min(va)
         self.vmax = max(np.max(va), np.max(vb))
 
     
