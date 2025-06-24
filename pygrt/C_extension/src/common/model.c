@@ -255,7 +255,7 @@ void realloc_pymod(PYMODEL1D *pymod, MYINT n){
 }
 
 
-PYMODEL1D * read_pymod_from_file(const char *command, const char *modelpath, double depsrc, double deprcv){
+PYMODEL1D * read_pymod_from_file(const char *command, const char *modelpath, double depsrc, double deprcv, bool allowLiquid){
     FILE *fp;
     if((fp = fopen(modelpath, "r")) == NULL){
         fprintf(stderr, "[%s] " BOLD_RED "Model file open error.\n" DEFAULT_RESTORE, command);
@@ -304,8 +304,12 @@ PYMODEL1D * read_pymod_from_file(const char *command, const char *modelpath, dou
         };
 
         if(va <= 0.0 || rho <= 0.0 || qa <= 0.0 || qb <= 0.0){
-        // if(va <= 0.0 || vb <= 0.0 || rho <= 0.0 || qa <= 0.0 || qb <= 0.0){
             fprintf(stderr, "[%s] " BOLD_RED "In model file, line %d, nonpositive value is not supported.\n" DEFAULT_RESTORE, command, iline);
+            return NULL;
+        }
+
+        if(!allowLiquid && vb <=0){
+            fprintf(stderr, "[%s] " BOLD_RED "In model file, line %d, nonpositive Vs is not supported.\n" DEFAULT_RESTORE, command, iline);
             return NULL;
         }
 

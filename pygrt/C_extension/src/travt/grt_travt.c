@@ -205,7 +205,7 @@ int main(int argc, char **argv){
     getopt_from_command(argc, argv);
     
     // 读入模型文件
-    if((pymod = read_pymod_from_file(command, s_modelpath, depsrc, deprcv)) ==NULL){
+    if((pymod = read_pymod_from_file(command, s_modelpath, depsrc, deprcv, true)) ==NULL){
         exit(EXIT_FAILURE);
     }
     // print_pymod(pymod);
