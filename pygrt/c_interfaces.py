@@ -90,7 +90,7 @@ C_compute_travt1d.argtypes = [
 C_read_pymod_from_file = libgrt.read_pymod_from_file
 """读取模型文件并进行预处理"""
 C_read_pymod_from_file.restype = POINTER(c_PyModel1D)
-C_read_pymod_from_file.argtypes = [c_char_p, c_char_p, c_double, c_double]
+C_read_pymod_from_file.argtypes = [c_char_p, c_char_p, c_double, c_double, c_bool]
 
 C_free_pymod = libgrt.free_pymod
 """释放C程序中申请的PYMODEL1D结构体内存"""

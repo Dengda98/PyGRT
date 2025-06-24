@@ -40,11 +40,13 @@ class PyModel1D:
             :param    modarr0:    模型数组，每行格式为[thickness(km), Vp(km/s), Vs(km/s), Rho(g/cm^3), Qp, Qs]  
             :param    depsrc:     震源深度(km)  
             :param    deprcv:     台站深度(km)  
+            :param    allowLiquid:    是否允许液体层
 
         '''
         self.depsrc:float = depsrc 
         self.deprcv:float = deprcv 
         self.c_pymod1d:c_PyModel1D 
+        self.hasLiquid:bool = False  # 传入的模型是否有液体层
 
         # 将modarr写入临时数组
         with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmpfile:
@@ -52,7 +54,7 @@ class PyModel1D:
             tmp_path = tmpfile.name  # 获取临时文件路径
 
         try:
-            c_pymod_ptr = C_read_pymod_from_file("pygrt".encode("utf-8"), tmp_path.encode("utf-8"), depsrc, deprcv)
+            c_pymod_ptr = C_read_pymod_from_file("pygrt".encode("utf-8"), tmp_path.encode("utf-8"), depsrc, deprcv, True)
             self.c_pymod1d = c_pymod_ptr.contents  # 这部分内存在C中申请，需由C函数释放。占用不多，这里跳过
         finally:
             if os.path.exists(tmp_path):
@@ -63,6 +65,9 @@ class PyModel1D:
 
         va = npct.as_array(self.c_pymod1d.Va, (self.c_pymod1d.n,))
         vb = npct.as_array(self.c_pymod1d.Vb, (self.c_pymod1d.n,))
+        if np.any(vb == 0.0):
+            self.hasLiquid = True
+        
         self.vmin = min(np.min(va), np.min(vb))
         self.vmax = max(np.max(va), np.max(vb))
 
@@ -472,6 +477,12 @@ class PyModel1D:
             :return:
                 - **dataDct** -   字典形式的格林函数
         """
+
+        if self.hasLiquid:
+            raise NotImplementedError(
+                "The feature for calculating static displacements "
+                "in a model with liquid layers has not yet been implemented."
+            )
 
         if Length < 0.0:
             raise ValueError(f"Length ({Length}) < 0")

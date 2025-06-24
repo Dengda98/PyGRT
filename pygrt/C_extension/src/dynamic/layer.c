@@ -12,35 +12,44 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <complex.h>
 
 #include "dynamic/layer.h"
 #include "common/model.h"
 #include "common/prtdbg.h"
 #include "common/matrix.h"
+#include "common/colorstr.h"
 
 
 
 void calc_R_tilt(
     MYCOMPLEX xa0, MYCOMPLEX xb0, MYCOMPLEX kbkb0, MYREAL k, MYCOMPLEX R_tilt[2][2], MYINT *stats)
 {   
+    if(kbkb0 != CZERO){
+        // 固体表面
+        // 公式(5.3.10-14)
+        MYCOMPLEX Delta = RZERO;
+        MYREAL kk = k*k; 
+        MYCOMPLEX kbkb_k2inv = kbkb0/kk;
+        MYCOMPLEX kbkb_k4inv = RQUART*kbkb_k2inv*kbkb_k2inv;
 
-    // // 公式(5.3.10-14)
-    MYCOMPLEX Delta = RZERO;
-    MYREAL kk = k*k; 
-    MYCOMPLEX kbkb_k2inv = kbkb0/kk;
-    MYCOMPLEX kbkb_k4inv = RQUART*kbkb_k2inv*kbkb_k2inv;
-
-    // 对公式(5.3.10-14)进行重新整理，对浮点数友好一些
-    Delta = -RONE + xa0*xb0 + kbkb_k2inv - kbkb_k4inv;
-    if(Delta == CZERO){
-        *stats = INVERSE_FAILURE;
-        return;
+        // 对公式(5.3.10-14)进行重新整理，对浮点数友好一些
+        Delta = -RONE + xa0*xb0 + kbkb_k2inv - kbkb_k4inv;
+        if(Delta == CZERO){
+            *stats = INVERSE_FAILURE;
+            return;
+        }
+        R_tilt[0][0] = (RONE + xa0*xb0 - kbkb_k2inv + kbkb_k4inv) / Delta;
+        R_tilt[0][1] = RTWO * xb0 * (RONE - RHALF*kbkb_k2inv) / Delta;
+        R_tilt[1][0] = RTWO * xa0 * (RONE - RHALF*kbkb_k2inv) / Delta;
+        R_tilt[1][1] = R_tilt[0][0];
     }
-    R_tilt[0][0] = (RONE + xa0*xb0 - kbkb_k2inv + kbkb_k4inv) / Delta;
-    R_tilt[0][1] = RTWO * xb0 * (RONE - RHALF*kbkb_k2inv) / Delta;
-    R_tilt[1][0] = RTWO * xa0 * (RONE - RHALF*kbkb_k2inv) / Delta;
-    R_tilt[1][1] = R_tilt[0][0];
+    else {
+        // 液体表面
+        R_tilt[0][0] = -RONE;
+        R_tilt[1][1] = R_tilt[0][1] = R_tilt[1][0] = CZERO;
+    }
 }
 
 
@@ -51,9 +60,24 @@ void calc_R_EV(
     const MYCOMPLEX R[2][2], MYCOMPLEX RL, 
     MYCOMPLEX R_EV[2][2], MYCOMPLEX *R_EVL)
 {
-    // 公式(5.2.19)
-    MYCOMPLEX D11[2][2] = {{k, k*xb_rcv}, {k*xa_rcv, k}};
-    MYCOMPLEX D12[2][2] = {{k, -k*xb_rcv}, {-k*xa_rcv, k}};
+    MYCOMPLEX D11[2][2], D12[2][2];
+    if(xb_rcv != CONE){
+        // 位于固体层
+        // 公式(5.2.19)
+        D11[0][0] = k;         D11[0][1] = k*xb_rcv;
+        D11[1][0] = k*xa_rcv;  D11[1][1] = k;
+        D12[0][0] = k;         D12[0][1] = -k*xb_rcv;
+        D12[1][0] = -k*xa_rcv; D12[1][1] = k;
+        *R_EVL = (RONE + (RL))*k;
+    } else {
+        // 位于液体层
+        D11[0][0] = k;         D11[0][1] = RZERO;
+        D11[1][0] = k*xa_rcv;  D11[1][1] = RZERO;
+        D12[0][0] = k;         D12[0][1] = RZERO;
+        D12[1][0] = -k*xa_rcv; D12[1][1] = RZERO;
+        *R_EVL = RZERO;
+    }
+    
 
     // 公式(5.7.7,25)
     if(ircvup){// 震源更深
@@ -63,7 +87,6 @@ void calc_R_EV(
         cmat2x2_mul(D11, R, R_EV);
         cmat2x2_add(D12, R_EV, R_EV);
     }
-    *R_EVL = (RONE + (RL))*k;
 
 }
 
@@ -83,26 +106,192 @@ void calc_uiz_R_EV(
     MYCOMPLEX D11[2][2] = {{ak, bb}, {aa, bk}};
     MYCOMPLEX D12[2][2] = {{-ak, bb}, {aa, -bk}};
 
+    if(ircvup){// 震源更深
+        *R_EVL = (RONE - (RL))*bk;
+    } else { // 接收点更深
+        *R_EVL = (RL - RONE)*bk;
+    }
+
+    // 位于液体层
+    if(xb_rcv == CONE){
+        D11[0][1] = D11[1][1] = D12[0][1] = D12[1][1] = *R_EVL = RZERO;
+    }
+
     // 公式(5.7.7,25)
     if(ircvup){// 震源更深
         cmat2x2_mul(D12, R, R_EV);
         cmat2x2_add(D11, R_EV, R_EV);
-        *R_EVL = (RONE - (RL))*bk;
     } else { // 接收点更深
         cmat2x2_mul(D11, R, R_EV);
         cmat2x2_add(D12, R_EV, R_EV);
-        *R_EVL = (RL - RONE)*bk;
     }
     
 }    
     
 
 
-void calc_RT_2x2(
+void calc_RT_ll_2x2(
     MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, 
     MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, 
     MYREAL thk, // 使用上层的厚度
-    MYREAL k, 
+    MYCOMPLEX omega, MYREAL k, 
+    MYCOMPLEX RD[2][2], MYCOMPLEX *RDL, MYCOMPLEX RU[2][2], MYCOMPLEX *RUL, 
+    MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX TU[2][2], MYCOMPLEX *TUL, MYINT *stats)
+{
+    MYCOMPLEX exa, ex2a; 
+
+    exa = exp(-k*thk*xa1);
+    ex2a = exa * exa;
+
+
+    bool computeRayl = true;
+    bool computeLove = true;
+    if(RD==NULL || RU==NULL || TD==NULL || TU==NULL) computeRayl=false;
+    if(RDL==NULL || RUL==NULL || TDL==NULL || TUL==NULL) computeLove=false;
+    
+    MYCOMPLEX A = xa1*Rho2 + xa2*Rho1;
+
+    if(computeRayl){
+        RD[0][0] = (xa1*Rho2 - xa2*Rho1)/A * ex2a;  
+        RD[0][1] = RD[1][0] = RD[1][1] = CZERO;
+        
+        RU[0][0] = (xa2*Rho1 - xa1*Rho2)/A;
+        RU[0][1] = RU[1][0] = RU[1][1] = CZERO;
+
+        TD[0][0] = RTWO*xa1*Rho1/A * exa;
+        TD[0][1] = TD[1][0] = TD[1][1] = CZERO;
+
+        TU[0][0] = RTWO*xa2*Rho2/A * exa;
+        TU[0][1] = TU[1][0] = TU[1][1] = CZERO;
+    }
+
+    if(computeLove){
+        *RDL = RZERO;
+        *RUL = RZERO;
+        *TDL = RZERO;
+        *TUL = RZERO;
+    }
+}
+
+
+void calc_RT_ls_2x2(
+    MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, 
+    MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, 
+    MYREAL thk, // 使用上层的厚度
+    MYCOMPLEX omega, MYREAL k, 
+    MYCOMPLEX RD[2][2], MYCOMPLEX *RDL, MYCOMPLEX RU[2][2], MYCOMPLEX *RUL, 
+    MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX TU[2][2], MYCOMPLEX *TUL, MYINT *stats)
+{
+    // 后缀1表示上层的液体的物理参数，后缀2表示下层的固体的物理参数
+    // 若mu2==0, 则下层为液体，参数需相互交换 
+
+    // 延迟因子始终作用于上层
+    MYCOMPLEX exa, exb, exab, ex2a, ex2b; 
+    MYCOMPLEX tmp;
+
+    exa = exp(-k*thk*xa1);
+    exb = exp(-k*thk*xb1);
+
+    exab = exa * exb;
+    ex2a = exa * exa;
+    ex2b = exb * exb;
+
+    bool computeRayl = true;
+    bool computeLove = true;
+    if(RD==NULL || RU==NULL || TD==NULL || TU==NULL) computeRayl=false;
+    if(RDL==NULL || RUL==NULL || TDL==NULL || TUL==NULL) computeLove=false;
+
+    // 讨论液-固 or 固-液
+    bool isfluidUp = (mu1 == CZERO);  // 上层是否为液体
+    MYINT sgn = 1;
+    if(isfluidUp && mu2 == CZERO){
+        fprintf(stderr, BOLD_RED "Error: fluid-fluid interface is not allowed in calc_RT_fs_2x2\n" DEFAULT_RESTORE);
+        exit(EXIT_FAILURE);
+    }
+
+
+    // 使用指针
+    MYCOMPLEX (*pRD)[2], *pRDL, (*pRU)[2], *pRUL;
+    MYCOMPLEX (*pTD)[2], *pTDL, (*pTU)[2], *pTUL;
+    if(isfluidUp){
+        pRD = RD; pRDL = RDL; pRU = RU; pRUL = RUL;
+        pTD = TD; pTDL = TDL; pTU = TU; pTUL = TUL;
+    } else {
+        pRD = RU; pRDL = RUL; pRU = RD; pRUL = RDL;
+        pTD = TU; pTDL = TUL; pTU = TD; pTUL = TDL;
+        GRT_SWAP(MYREAL, Rho1, Rho2);
+        GRT_SWAP(MYCOMPLEX, xa1, xa2);
+        GRT_SWAP(MYCOMPLEX, xb1, xb2);
+        GRT_SWAP(MYCOMPLEX, kbkb1, kbkb2);
+        GRT_SWAP(MYCOMPLEX, mu1, mu2);
+        sgn = -1;
+    }
+
+    
+    // 定义一些中间变量来简化运算和书写
+    MYREAL k2 = k*k;
+    MYCOMPLEX lamka1k = Rho1*omega*omega/k2;
+    MYCOMPLEX kb2k = kbkb2/k2;
+    MYCOMPLEX Og2k = RONE - RHALF*kb2k;
+    MYCOMPLEX Og2k2 = Og2k*Og2k;
+    MYCOMPLEX A = RTWO*Og2k2*xa1*mu2 + RHALF*lamka1k*kb2k*xa2 - RTWO*mu2*xa1*xa2*xb2;
+    MYCOMPLEX B = RTWO*Og2k2*xa1*mu2 - RHALF*lamka1k*kb2k*xa2 + RTWO*mu2*xa1*xa2*xb2;
+    MYCOMPLEX C = RTWO*Og2k2*xa1*mu2 + RHALF*lamka1k*kb2k*xa2 + RTWO*mu2*xa1*xa2*xb2;
+    MYCOMPLEX D = RTWO*Og2k2*xa1*mu2 - RHALF*lamka1k*kb2k*xa2 - RTWO*mu2*xa1*xa2*xb2;
+
+    if(A == CZERO){
+        *stats = INVERSE_FAILURE;
+        return;
+    }
+    
+    // 按液体层在上层处理
+    if(computeRayl){
+        pRD[0][0] = D/A; 
+        pRD[0][1] = pRD[1][0] = pRD[1][1] = CZERO;
+
+        pRU[0][0] = - B/A;
+        pRU[0][1] = - RFOUR*Og2k*xa1*xb2*mu2/A * sgn;
+        pRU[1][0] = pRU[0][1]/xb2 * xa2;
+        pRU[1][1] = - C/A;
+
+        pTD[0][0] = - RTWO*Og2k*xa1*lamka1k/A;      pTD[0][1] = CZERO;
+        pTD[1][0] = pTD[0][0]/Og2k*xa2 * sgn;       pTD[1][1] = CZERO;
+
+        pTU[0][0] = - RTWO*Og2k*xa2*mu2*kb2k/A;     pTU[0][1] = pTU[0][0]/Og2k*xb2 * sgn;
+        pTU[1][0] = pTU[1][1] = CZERO;
+
+        // 回归数组，增加时移
+        RD[0][0] *= ex2a;   RD[0][1] *= exab;
+        RD[1][0] *= exab;   RD[1][1] *= ex2b;
+
+        TD[0][0] *= exa;    TD[0][1] *= exb;
+        TD[1][0] *= exa;    TD[1][1] *= exb;
+
+        TU[0][0] *= exa;    TU[0][1] *= exa;
+        TU[1][0] *= exb;    TU[1][1] *= exb;
+    }
+
+    if(computeLove){
+        *pRDL = RZERO;
+        *pRUL = RONE;
+        *pTDL = RZERO;
+        *pTUL = RZERO;
+
+        // 回归数组，增加时移
+        // 特殊数值，仅需为潜在的RDL添加
+        *RDL *= ex2b;
+    }
+
+
+}
+
+
+
+void calc_RT_ss_2x2(
+    MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, 
+    MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, 
+    MYREAL thk, // 使用上层的厚度
+    MYCOMPLEX omega, MYREAL k, 
     MYCOMPLEX RD[2][2], MYCOMPLEX *RDL, MYCOMPLEX RU[2][2], MYCOMPLEX *RUL, 
     MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX TU[2][2], MYCOMPLEX *TUL, MYINT *stats)
 {
@@ -202,6 +391,39 @@ void calc_RT_2x2(
         *TUL = mu2*xb2 * tmp;
     }
   
+}
+
+
+void calc_RT_2x2(
+    MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, 
+    MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, 
+    MYREAL thk, // 使用上层的厚度
+    MYCOMPLEX omega, MYREAL k, 
+    MYCOMPLEX RD[2][2], MYCOMPLEX *RDL, MYCOMPLEX RU[2][2], MYCOMPLEX *RUL, 
+    MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX TU[2][2], MYCOMPLEX *TUL, MYINT *stats)
+{
+    // 根据界面两侧的具体情况选择函数
+    if(mu1 != CZERO && mu2 != CZERO){
+        calc_RT_ss_2x2(
+            Rho1, xa1, xb1, kbkb1, mu1, 
+            Rho2, xa2, xb2, kbkb2, mu2, 
+            thk, omega, k, 
+            RD, RDL, RU, RUL, TD, TDL, TU, TUL, stats);
+    }
+    else if(mu1 == CZERO && mu2 == CZERO){
+        calc_RT_ll_2x2(
+            Rho1, xa1, xb1, kbkb1, mu1, 
+            Rho2, xa2, xb2, kbkb2, mu2, 
+            thk, omega, k, 
+            RD, RDL, RU, RUL, TD, TDL, TU, TUL, stats);
+    }
+    else{
+        calc_RT_ls_2x2(
+            Rho1, xa1, xb1, kbkb1, mu1, 
+            Rho2, xa2, xb2, kbkb2, mu2, 
+            thk, omega, k, 
+            RD, RDL, RU, RUL, TD, TDL, TU, TUL, stats);
+    }
 }
 
 

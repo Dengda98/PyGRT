@@ -143,8 +143,20 @@ PYMODEL1D * init_pymod(MYINT n);
  * @param[in]    modelpath      模型文件路径
  * @param[in]    depsrc         震源深度
  * @param[in]    deprcv         接收深度
+ * @param[in]    allowLiquid    是否允许液体层
  * 
  * @return    `PYMODEL1D` 结构体指针
  * 
  */
-PYMODEL1D * read_pymod_from_file(const char *command, const char *modelpath, double depsrc, double deprcv);
+PYMODEL1D * read_pymod_from_file(const char *command, const char *modelpath, double depsrc, double deprcv, bool allowLiquid);
+
+
+/**
+ * 计算PYMODEL1D结构体中的最大最小速度（非零值）
+ * 
+ * @param    pymod   (in)`PYMODEL1D` 结构体指针
+ * @param    vmin    (out)最小速度
+ * @param    vmax    (out)最大速度
+ * 
+ */
+void get_pymod_vmin_vmax(const PYMODEL1D *pymod, double *vmin, double *vmax);

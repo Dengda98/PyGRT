@@ -17,9 +17,30 @@
 
 
 MYREAL compute_travt1d(
-    const MYREAL *Thk, const MYREAL *Vel, const int nlay, 
+    const MYREAL *Thk, const MYREAL *Vel0, const int nlay, 
     const int isrc, const int ircv, const MYREAL dist)
 {
+    // 以防速度数组中存在零速度的情况，这里新建数组以去除0速度
+    MYREAL *Vel = (MYREAL*)malloc(sizeof(MYREAL)*nlay);
+    for(int i=0; i<nlay; ++i){
+        Vel[i] = (Vel0[i] <= 0.0)? 1e-6 : Vel0[i];  // 给一个极慢值
+    }
+
+    // 根据互易原则，震源和场点可交换
+    int imin, imax;
+    imin = (isrc < ircv)? isrc : ircv;
+    imax = (isrc < ircv)? ircv : isrc;
+
+    // 如果震源与台站之间存在零速度层，则此时单一震相类型的走时不必再计算，
+    // 直接返回默认值
+    for(int i = imin; i <= imax; ++i){
+        if(Vel0[i] == 0.0){
+            free(Vel);
+            return -12345.00;
+        }
+    }
+    
+
     // 震源和场点速度
     MYREAL vsrc = Vel[isrc];
     MYREAL vrcv = Vel[ircv];
@@ -31,10 +52,6 @@ MYREAL compute_travt1d(
     for(int i=0; i<ircv; ++i) {deprcv += Thk[i];} 
     MYREAL depdif = fabs(depsrc - deprcv);
 
-    // 根据互易原则，震源和场点可交换
-    int imin, imax;
-    imin = (isrc < ircv)? isrc : ircv;
-    imax = (isrc < ircv)? ircv : isrc;
 
     // 初始化走时
     MYREAL travt = 9.0e30;
@@ -351,6 +368,7 @@ MYREAL compute_travt1d(
 
     } // END 寻找投射位置
 
+    free(Vel);
 
     return travt;
 }

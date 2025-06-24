@@ -476,17 +476,12 @@ int main(int argc, char **argv){
     getopt_from_command(argc, argv);
 
     // 读入模型文件
-    if((pymod = read_pymod_from_file(command, s_modelpath, depsrc, deprcv)) ==NULL){
+    if((pymod = read_pymod_from_file(command, s_modelpath, depsrc, deprcv, false)) ==NULL){
         exit(EXIT_FAILURE);
     }
 
     // 最大最小速度
-    vmax = pymod->Va[findMinMax_MYREAL(pymod->Va, pymod->n, true)];
-    vmin = pymod->Vb[findMinMax_MYREAL(pymod->Vb, pymod->n, false)];
-    if(vmin > vmax) {
-        double tmp;
-        tmp = vmin; vmin = vmax; vmax = tmp;
-    }
+    get_pymod_vmin_vmax(pymod, &vmin, &vmax);
 
     // 参考最小速度
     if(vmin_ref == 0.0){
