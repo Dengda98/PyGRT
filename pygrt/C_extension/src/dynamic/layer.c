@@ -238,6 +238,11 @@ void calc_RT_ls_2x2(
     MYCOMPLEX B = RTWO*Og2k2*xa1*mu2 - RHALF*lamka1k*kb2k*xa2 + RTWO*mu2*xa1*xa2*xb2;
     MYCOMPLEX C = RTWO*Og2k2*xa1*mu2 + RHALF*lamka1k*kb2k*xa2 + RTWO*mu2*xa1*xa2*xb2;
     MYCOMPLEX D = RTWO*Og2k2*xa1*mu2 - RHALF*lamka1k*kb2k*xa2 - RTWO*mu2*xa1*xa2*xb2;
+
+    if(A == CZERO){
+        *stats = INVERSE_FAILURE;
+        return;
+    }
     
     // 按液体层在上层处理
     if(computeRayl){
