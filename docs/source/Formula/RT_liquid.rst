@@ -6,7 +6,7 @@
 
 -----------------------------------------------------------
 
-当界面两侧存在液体时，边界条件变为 **垂直位移连续，垂直应力连续，切向应力为0** ，此时使用 :doc:`RT` 介绍的方法，可以比较方便直观地推导这两种情况下的 R/T 矩阵。
+当界面两侧存在液体时，边界条件变为 **垂直位移连续，垂直应力连续，切向应力为0** ，此时使用 :doc:`RT` 介绍的方法，可以比较方便直观地推导含液体层的 R/T 矩阵。
 
 以下推导以动态解为例，最终每一项系数的详细表达式我使用 Python 库 `SymPy <https://www.sympy.org/>`_ 辅助推导，可在这里下载 :download:`RT_liquid_formula.ipynb` （ :doc:`预览 <RT_liquid_formula>` ）。
 
@@ -102,7 +102,7 @@
 液体-固体界面
 ------------------
 
-我们使用角标 :math:`l` 表示液体层，角标 :math:`s` 表示固体层。当上时层为液体，下层为固体（对于相反的情况只需取反向的 R/T 矩阵即可，例如 :math:`\mathbf{R}_D \leftrightarrow \mathbf{R}_U`），根据边界条件，有
+我们使用角标 :math:`l` 表示液体层，角标 :math:`s` 表示固体层。当上层为液体，下层为固体时，根据边界条件，有
 
 .. math::
     :label: layer12
@@ -356,9 +356,33 @@
     \end{array}
     \right]
 
-之后的操作如增加时间延迟因子，广义 R/T 矩阵递推等不受影响。在程序中为保持 2x2 矩阵，只将以上结果填充在对应位置即可，其余项为0。
-
 固体-液体界面
 ----------------
 
+当上层为固体，下层为液体时，推导过程和 `液体-固体界面`_ 完全一致。这里仅给出最终的 R/T 矩阵满足的计算式，读者稍作推导即可验证，
 
+.. math::
+    :label:
+
+    \begin{bmatrix}
+    \mathbf{T}_D^{1\times2}  & \mathbf{R}_U^{1\times1} \\
+    \mathbf{R}_D^{2\times2}  & \mathbf{T}_U^{2\times1} \\
+    \end{bmatrix}_{3\times3} = 
+    \left[
+    \begin{array}{c|cc}
+    a_l             &     a_s            &  k             \\
+    \rho_l\omega^2  &     2\mu_s\Omega_s &  2k\mu_s b_s   \\
+    \hline
+    0               &     2k\mu_s a_s    &  2\mu_s\Omega_s \\
+    \end{array}
+    \right]^{-1}
+    \left[
+    \begin{array}{cc|c}
+    a_s             &   -k            &   a_l \\
+    -2\mu_s\Omega_s & 2k\mu_s b_s     &   -\rho_l\omega^2\\
+    \hline
+    2k\mu_s a_s     & -2\mu_s\Omega_s &   0 \\
+    \end{array}
+    \right]
+
+之后的操作如增加时间延迟因子，广义 R/T 矩阵递推等不受影响。在程序中为保持 2x2 矩阵，只将以上结果填充在对应位置即可，其余项为0。
