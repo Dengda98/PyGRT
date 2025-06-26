@@ -445,25 +445,6 @@ void kernel(
             get_qwv(ircvup, tmp2x2, tmpRL2, RD_BL, RDL_BL, src_coef[i], QWV[i]);
         }
 
-        // for(MYINT i=0; i<SRC_M_NUM; ++i){
-        //     MYCOMPLEX QW[2] = {src_coef[i][0][0], src_coef[i][1][0]};
-        //     MYCOMPLEX QW2[2] = {src_coef[i][0][1], src_coef[i][1][1]};
-        //     cmat2x1_mul(RD_BL, QW, QW);
-        //     QW[0] += QW2[0]; 
-        //     QW[1] += QW2[1]; 
-        //     cmat2x2_mul(RD_BL, RU_FB, tmpR2);
-        //     cmat2x2_one_sub(tmpR2);
-        //     cmat2x2_inv(tmpR2, tmpR2, stats);
-        //     if(*stats==INVERSE_FAILURE)  goto BEFORE_RETURN;
-        //     cmat2x1_mul(tmpR2, QW, QW);
-        //     cmat2x1_mul(inv_2x2T, QW, QW);
-        //     cmat2x1_mul(R_EV, QW, QW);
-        //     MYCOMPLEX V = R_EVL * invT  / (RONE - RDL_BL * RUL_FB) * (RDL_BL*src_coef[i][2][0] + src_coef[i][2][1]);
-        //     QWV[i][0] = QW[0];
-        //     QWV[i][1] = QW[1];
-        //     QWV[i][2] = V;
-        // }
-        
 
         if(calc_uiz){
             calc_uiz_R_EV(rcv_xa, rcv_xb, ircvup, k, RU_FA, RUL_FA, uiz_R_EV, puiz_R_EVL);
