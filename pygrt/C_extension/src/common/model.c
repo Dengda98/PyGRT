@@ -308,8 +308,13 @@ PYMODEL1D * read_pymod_from_file(const char *command, const char *modelpath, dou
             return NULL;
         }
 
-        if(!allowLiquid && vb <=0){
-            fprintf(stderr, "[%s] " BOLD_RED "In model file, line %d, nonpositive Vs is not supported.\n" DEFAULT_RESTORE, command, iline);
+        if(vb < 0.0){
+            fprintf(stderr, "[%s] " BOLD_RED "In model file, line %d, negative Vs is not supported.\n" DEFAULT_RESTORE, command, iline);
+            return NULL;
+        }
+
+        if(!allowLiquid && vb == 0.0){
+            fprintf(stderr, "[%s] " BOLD_RED "In model file, line %d, Vs==0.0 is not supported.\n" DEFAULT_RESTORE, command, iline);
             return NULL;
         }
 
@@ -391,6 +396,17 @@ PYMODEL1D * read_pymod_from_file(const char *command, const char *modelpath, dou
     pymod->n = nlay;
     pymod->depsrc = depsrc;
     pymod->deprcv = deprcv;
+
+    // 检查，接收点不能位于液-液、固-液界面
+    if(isrc < nlay-1 && pymod->Thk[ircv] == 0.0 && pymod->Vb[ircv]*pymod->Vb[ircv+1] == 0.0){
+        fprintf(stderr, 
+            "[%s] " BOLD_RED "The receiver is located on the interface where there is liquid on one side. "
+            "Due to the discontinuity of the tangential displacement on this interface, "
+            "to reduce ambiguity, it is recommended that you add a small offset to the receiver depth, "
+            "thereby explicitly placing the receiver within a specific layer. \n"
+            DEFAULT_RESTORE, command);
+        return NULL;
+    }
 
     fclose(fp);
     free(modarr);
