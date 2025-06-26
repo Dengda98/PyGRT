@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGRT 0.7.1.dev5+g2230cdc.d20250427\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-05 22:22+0800\n"
+"POT-Creation-Date: 2025-06-24 23:47+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -73,6 +73,10 @@ msgstr ""
 
 #: of pygrt.pymod.PyModel1D.__init__:5
 msgid "台站深度(km)"
+msgstr ""
+
+#: of pygrt.pymod.PyModel1D.__init__:6
+msgid "是否允许液体层"
 msgstr ""
 
 #: of pygrt.pymod.PyModel1D.compute_travt1d:1

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"POT-Creation-Date: 2025-06-24 23:47+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -19,63 +19,79 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.16.0\n"
 
-#: ../../source/Tutorial/prepare.rst:2 
+#: ../../source/Tutorial/prepare.rst:2
 msgid "准备工作"
 msgstr "Preparation"
 
-#: ../../source/Tutorial/prepare.rst 
+#: ../../source/Tutorial/prepare.rst
 msgid "Author"
 msgstr ""
 
-#: ../../source/Tutorial/prepare.rst:4 
+#: ../../source/Tutorial/prepare.rst:4
 msgid "Zhu Dengda"
 msgstr ""
 
-#: ../../source/Tutorial/prepare.rst 
+#: ../../source/Tutorial/prepare.rst
 msgid "Email"
 msgstr ""
 
-#: ../../source/Tutorial/prepare.rst:5 
+#: ../../source/Tutorial/prepare.rst:5
 msgid "zhudengda@mail.iggcas.ac.cn"
 msgstr ""
 
-#: ../../source/Tutorial/prepare.rst:11 
+#: ../../source/Tutorial/prepare.rst:11
 msgid "安装 **PyGRT**"
 msgstr "Install **PyGRT**"
 
-#: ../../source/Tutorial/prepare.rst:13 
+#: ../../source/Tutorial/prepare.rst:13
 msgid "详见 :ref:`install_section` 。"
 msgstr "See :ref:`install_section` ."
 
-#: ../../source/Tutorial/prepare.rst:17 
+#: ../../source/Tutorial/prepare.rst:17
 msgid "建立模型文件"
 msgstr "Create model file"
 
-#: ../../source/Tutorial/prepare.rst:22 
+#: ../../source/Tutorial/prepare.rst:22
 msgid "这里的选项卡 **C** 不代表内部是C语言代码，而是 **使用C语言编译出的可执行程序** （与之相关）。后续的选项卡沿用此设定，不再解释。"
-msgstr "The tab **C** here does not represent C language code inside, but rather **an executable program compiled using the C language** (related to it). Subsequent tabs follow this convention and will not be explained further."
+msgstr ""
+"The tab **C** here does not represent C language code inside, but rather "
+"**an executable program compiled using the C language** (related to it). "
+"Subsequent tabs follow this convention and will not be explained further."
 
-#: ../../source/Tutorial/prepare.rst:26 
+#: ../../source/Tutorial/prepare.rst:26
 msgid "C"
 msgstr ""
 
-#: ../../source/Tutorial/prepare.rst:28 
+#: ../../source/Tutorial/prepare.rst:28
 msgid "**PyGRT** 以如下自由格式定义模型中每层的物性参数，每列之间以空格隔开"
-msgstr "**PyGRT** defines the physical parameters of each layer in the model using the following free format, with columns separated by spaces."
+msgstr ""
+"**PyGRT** defines the physical parameters of each layer in the model "
+"using the following free format, with columns separated by spaces."
 
-#: ../../source/Tutorial/prepare.rst:35 
+#: ../../source/Tutorial/prepare.rst:35
 msgid "例如 :file:`milrow` 模型（假设文本文件名为 `milrow` ）"
-msgstr "For example, the :file:`milrow` model (assuming the text file is named `milrow`)."
+msgstr ""
+"For example, the :file:`milrow` model (assuming the text file is named "
+"`milrow`)."
 
-#: ../../source/Tutorial/prepare.rst:41 
+#: ../../source/Tutorial/prepare.rst:41
 msgid "Python"
 msgstr ""
 
-#: ../../source/Tutorial/prepare.rst:43 
+#: ../../source/Tutorial/prepare.rst:43
 msgid "模型格式与C一致，在Python中可以使用 :code:`np.loadtxt()` 导入文本文件，或者手动定义数组"
-msgstr "The model format is consistent with C, and in Python, you can use :code:`np.loadtxt()` to import the text file or manually define the array."
+msgstr ""
+"The model format is consistent with C, and in Python, you can use "
+":code:`np.loadtxt()` to import the text file or manually define the "
+"array."
 
-#: ../../source/Tutorial/prepare.rst:53 
+#: ../../source/Tutorial/prepare.rst:53
 msgid "最后一行表示半空间，对应厚度值不会被使用。"
-msgstr "The last line represents the half-space, and the corresponding thickness value will not be used."
+msgstr ""
+"The last line represents the half-space, and the corresponding thickness "
+"value will not be used."
+
+#: ../../source/Tutorial/prepare.rst:57
+msgid "Vs 设置为 0 表示该层为液体层。"
+msgstr "Setting Vs to 0 indicates that this layer is a liquid layer."
 
