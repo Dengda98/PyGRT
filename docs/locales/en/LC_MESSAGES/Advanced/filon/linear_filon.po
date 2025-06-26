@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGRT 0.6.1.dev17+g4521452.d20250424\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-05 22:22+0800\n"
+"POT-Creation-Date: 2025-06-26 18:19+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -211,11 +211,18 @@ msgstr ""
 
 #: ../../source/Advanced/filon/linear_filon.rst:77
 msgid "``filonLength:float`` 对应C选项卡中的 ``<Flength>`` 参数"
-msgstr ""
-"``filonLength:List`` corresponding to the ``<Flength>`` in the C tab."
+msgstr "``filonLength:List`` corresponding to the ``<Flength>`` in the C tab."
 
 #: ../../source/Advanced/filon/linear_filon.rst:78
 msgid "``filonCut:float`` 对应C选项卡中的 ``<Fcut>`` 参数"
+msgstr "``filonCut:float`` corresponding to the ``<Fcut>`` in the C tab."
+
+#: ../../source/Advanced/filon/linear_filon.rst:82
+msgid ""
+"在程序中，固定间隔的Filon积分不计算近场项，即 :doc:`/Tutorial/dynamic/gfunc` 中介绍的 :math:`p=1`"
+" 对应的积分项。"
 msgstr ""
-"``filonCut:float`` corresponding to the ``<Fcut>`` in the C tab."
+"In the program, Fixed-Interval FIM does not compute the near-field term, that is, "
+"the integral term corresponding to :math:`p=1` introduced in :doc:`/Tutorial/dynamic/gfunc`."
+
 
