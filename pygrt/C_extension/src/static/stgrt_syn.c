@@ -350,7 +350,19 @@ int main(int argc, char **argv){
                 fprintf(stderr, "[%s] " BOLD_RED "Error! Unable to read src property from \"%s\". \n" DEFAULT_RESTORE, command, line);
                 exit(EXIT_FAILURE);
             }
-            src_mu = src_vb*src_vb*src_rho*1e10;
+            if(src_va <= 0.0 || src_vb < 0.0 || src_rho <= 0.0){
+                fprintf(stderr, "[%s] " BOLD_RED "Error! Bad src_va, src_vb or src_rho from \"%s\".\n" DEFAULT_RESTORE, command, line);
+                exit(EXIT_FAILURE);
+            }
+            if(src_vb == 0.0 && mult_src_mu){
+                fprintf(stderr, "[%s] " BOLD_RED 
+                    "Error! Zero src_vb from \"%s\". "
+                    "Maybe you try to use -Su<scale> but the source is in the liquid. "
+                    "Use -S<scale> instead.\n" 
+                    DEFAULT_RESTORE, command, line);
+                exit(EXIT_FAILURE);
+                src_mu = src_vb*src_vb*src_rho*1e10;
+            }
 
             if(mult_src_mu)  M0 *= src_mu;
         }
@@ -358,6 +370,10 @@ int main(int argc, char **argv){
             // 读取场点物性参数
             if(3 != sscanf(line, "# %lf %lf %lf", &rcv_va, &rcv_vb, &rcv_rho)){
                 fprintf(stderr, "[%s] " BOLD_RED "Error! Unable to read rcv property from \"%s\". \n" DEFAULT_RESTORE, command, line);
+                exit(EXIT_FAILURE);
+            }
+            if(rcv_va <= 0.0 || rcv_vb < 0.0 || rcv_rho <= 0.0){
+                fprintf(stderr, "[%s] " BOLD_RED "Error! Bad rcv_va, rcv_vb or rcv_rho in line %d from \"%s\".\n" DEFAULT_RESTORE, command, iline, line);
                 exit(EXIT_FAILURE);
             }
         }

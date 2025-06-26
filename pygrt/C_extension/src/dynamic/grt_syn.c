@@ -239,14 +239,23 @@ static void check_grn_exist(const char *name){
         exit(EXIT_FAILURE);
     }
     // 检查文件的同时将src_mu计算出来
-    if(src_mu == 0.0){
+    if(src_mu == 0.0 && mult_src_mu){
         SACHEAD hd;
         read_SAC_HEAD(command, buffer, &hd);
-        double vb, rho;
+        double va, vb, rho;
+        va = hd.user6;
         vb = hd.user7;
         rho = hd.user8;
-        if(vb <= 0.0 || rho <= 0.0){
-            fprintf(stderr, "[%s] " BOLD_RED "Error! read necessary header value from \"%s\" error.\n" DEFAULT_RESTORE, command, buffer);
+        if(va <= 0.0 || vb < 0.0 || rho <= 0.0){
+            fprintf(stderr, "[%s] " BOLD_RED "Error! Bad src_va, src_vb or src_rho in \"%s\" header.\n" DEFAULT_RESTORE, command, buffer);
+            exit(EXIT_FAILURE);
+        }
+        if(vb == 0.0){
+            fprintf(stderr, "[%s] " BOLD_RED 
+                "Error! Zero src_vb in \"%s\" header. "
+                "Maybe you try to use -Su<scale> but the source is in the liquid. "
+                "Use -S<scale> instead.\n" 
+                DEFAULT_RESTORE, command, buffer);
             exit(EXIT_FAILURE);
         }
         src_mu = vb*vb*rho*1e10;

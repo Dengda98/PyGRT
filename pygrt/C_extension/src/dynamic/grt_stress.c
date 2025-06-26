@@ -145,8 +145,8 @@ int main(int argc, char **argv){
     float rho=hd.user3;
     float Qainv=hd.user4;
     float Qbinv=hd.user5;
-    if(va <= 0.0 || vb <= 0.0 || rho <= 0.0){
-        fprintf(stderr, "[%s] " BOLD_RED "Error! read necessary header value from \"%s\" error.\n" DEFAULT_RESTORE, command, s_filepath);
+    if(va <= 0.0 || vb < 0.0 || rho <= 0.0){
+        fprintf(stderr, "[%s] " BOLD_RED "Error! Bad rcv_va, rcv_vb or rcv_rho in \"%s\" header.\n" DEFAULT_RESTORE, command, s_filepath);
         exit(EXIT_FAILURE);
     }
     // 申请内存
