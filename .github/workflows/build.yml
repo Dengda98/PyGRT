@@ -346,6 +346,19 @@ jobs:
           ./run_grt.sh
           python view_dynamic.py
 
+      - name: Test compare_results_liquid
+        working-directory: ${{ env.EXAMPLE_COPY_PATH }}/compare_results_liquid
+        run: |
+          chmod +x *.sh
+          ./run_grt.sh
+          python plot_cps_pygrt.py
+
+      - name: Test seafloor
+        working-directory: ${{ env.EXAMPLE_COPY_PATH }}/seafloor
+        run: |
+          chmod +x *.sh
+          ./run_grt.sh
+
       - name: Remove the test files
         run: |
           rm -rf ${{ env.EXAMPLE_COPY_PATH }}
