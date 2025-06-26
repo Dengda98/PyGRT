@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-05 22:46+0800\n"
+"POT-Creation-Date: 2025-06-26 16:18+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -145,10 +145,11 @@ msgstr ""
 "increases, integrand oscillates more rapidly, requiring smaller "
 "integration steps , which significantly reduces computational efficiency."
 " At present, **PyGRT** implements **Filon's Integration based on linear "
-"interpolation** :ref:`(纪晨, 姚振兴, 1995) <jichen_1995>` :ref:`(初稿) <yao_init_manuscripts>` "
-"and **Self-Adaptive Filon's Integration** :ref:`(Chen and Zhang, 2001) "
-"<chen_2001>` :ref:`(张海明, 2021) <zhang_book_2021>`  to alleviate this problem  . The Bessel function "
-"in each integral cell is asymptotical formula, so that the analytical "
+"interpolation** :ref:`(纪晨, 姚振兴, 1995) <jichen_1995>` :ref:`(初稿) "
+"<yao_init_manuscripts>` and **Self-Adaptive Filon's Integration** "
+":ref:`(Chen and Zhang, 2001) <chen_2001>` :ref:`(张海明, 2021) "
+"<zhang_book_2021>`  to alleviate this problem  . The Bessel function in "
+"each integral cell is asymptotical formula, so that the analytical "
 "solution can be obtained by the approximation of the integral in each "
 "interval, which can increase the integration interval of the wavenumber "
 "and improve the calculation speed."
@@ -204,11 +205,11 @@ msgstr ""
 "`docs/ <https://github.com/Dengda98/PyGRT/tree/main/docs/source>`_, where"
 " you can view the example code and drawing scripts."
 
-#: ../../source/index.rst:82
+#: ../../source/index.rst:83
 msgid "主要参考"
 msgstr "Main References"
 
-#: ../../source/index.rst:86
+#: ../../source/index.rst:87
 msgid ""
 "Michel Bouchon. 1981. A simple method to calculate Green's functions for "
 "elastic layered media. Bulletin of the Seismological Society of America. "
@@ -216,13 +217,13 @@ msgid ""
 "<https://doi.org/10.1785/BSSA0710040959>`_"
 msgstr ""
 
-#: ../../source/index.rst:90
+#: ../../source/index.rst:91
 msgid "纪晨, 姚振兴, 1995. 区域地震范围的宽频带理论地震图算法研究[J]. 地球物理学报, 38(4): 460-468."
 msgstr ""
 "Ji C, Yao Z, 1995. THE STUDY OF THE METHOD FOR BROADBAND REGIONAL "
 "SYNTHETIC SEISMOGRAM[J]. Chinese Journal of Geophysics. 38(4): 460-468."
 
-#: ../../source/index.rst:94
+#: ../../source/index.rst:95
 msgid ""
 "谢小碧, 姚振兴, 1989. 计算分层介质中位错点源静态位移场的广义反射、透射系数矩阵和离散波数方法[J]. 地球物理学报, 32(3): "
 "270-280."
@@ -232,11 +233,11 @@ msgstr ""
 "Half-Space by DisLocation Source[J]. Acta Geophysics Sinica, 32(3): "
 "270-280."
 
-#: ../../source/index.rst:98
+#: ../../source/index.rst:99
 msgid "姚振兴, 谢小碧. 2022/03. 理论地震图及其应用（初稿）."
 msgstr ""
 
-#: ../../source/index.rst:102
+#: ../../source/index.rst:103
 msgid ""
 "Yao Z. X. and D. G. Harkrider. 1983. A generalized refelection-"
 "transmission coefficient matrix and discrete wavenumber method for "
@@ -244,11 +245,11 @@ msgid ""
 "`10.1785/BSSA07306A1685 <https://doi.org/10.1785/BSSA07306A1685>`_"
 msgstr ""
 
-#: ../../source/index.rst:106
+#: ../../source/index.rst:107
 msgid "张海明. 2021. 地震学中的Lamb问题（上）. 科学出版社."
 msgstr ""
 
-#: ../../source/index.rst:110
+#: ../../source/index.rst:111
 msgid ""
 "Zhang, H. M., Chen, X. F., and Chang, S. 2003. An efficient numerical "
 "method for computing synthetic seismograms for a layered half-space with "
@@ -258,11 +259,19 @@ msgid ""
 "<https://doi.org/10.1007/978-3-0348-8010-7_3>`_"
 msgstr ""
 
-#: ../../source/index.rst:114
+#: ../../source/index.rst:115
 msgid ""
 "Chen, X., Zhang, H., 2001. An Efficient Method for Computing Green’s "
 "Functions for a Layered Half-Space at Large Epicentral Distances. "
 "Bulletin of the Seismological Society of America 91, 858–869. doi: "
 "`10.1785/0120000113  <https://doi.org/10.1785/0120000113>`_"
+msgstr ""
+
+#: ../../source/index.rst:119
+msgid ""
+"Kennett, B. L. N., and N. J. Kerry, 1979. Seismic waves in a stratified "
+"half space, Geophysical Journal International, 57, no. 3, 557–583, doi: "
+"`10.1111/j.1365-246X.1979.tb06779.x "
+"<https://doi.org/10.1111/j.1365-246X.1979.tb06779.x>`_"
 msgstr ""
 

@@ -113,3 +113,7 @@
 .. _chen_2001:
 
 .. [8] Chen, X., Zhang, H., 2001. An Efficient Method for Computing Green’s Functions for a Layered Half-Space at Large Epicentral Distances. Bulletin of the Seismological Society of America 91, 858–869. doi: `10.1785/0120000113  <https://doi.org/10.1785/0120000113>`_ 
+
+.. _kennett&kerry_1979:
+
+.. [9] Kennett, B. L. N., and N. J. Kerry, 1979. Seismic waves in a stratified half space, Geophysical Journal International, 57, no. 3, 557–583, doi: `10.1111/j.1365-246X.1979.tb06779.x <https://doi.org/10.1111/j.1365-246X.1979.tb06779.x>`_
