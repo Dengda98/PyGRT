@@ -76,3 +76,7 @@
 
         + ``filonLength:float`` 对应C选项卡中的 ``<Flength>`` 参数
         + ``filonCut:float`` 对应C选项卡中的 ``<Fcut>`` 参数
+
+.. note::
+
+    在程序中，固定间隔的Filon积分不计算近场项，即 :doc:`/Tutorial/dynamic/gfunc` 中介绍的 :math:`p=1` 对应的积分项。
