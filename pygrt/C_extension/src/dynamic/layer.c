@@ -485,9 +485,6 @@ void calc_RT_2x2_from_4x4(
     E[3][3] = 1/exb;
     cmatmxn_mul(4, 4, 4, E, Q, Q);
 
-    // fprintf(stderr, "Q\n");
-    // cmatmxn_print(4, 4, Q);
-
     // 对Q矩阵划分子矩阵 
     MYCOMPLEX Q11[2][2], Q12[2][2], Q21[2][2], Q22[2][2];
     cmatmxn_block(4, 4, Q, 0, 0, 2, 2, Q11);
