@@ -35,6 +35,8 @@
 
  + **PyGRT is extremely easy to install** by distributing precompiled binary files.
 
+ + **PyGRT now supports the model with liquid layers.**
+
  + **PyGRT is still evolving**, and more features will be released in the future.
 
 # Features
