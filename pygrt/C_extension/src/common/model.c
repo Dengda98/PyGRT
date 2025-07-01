@@ -398,12 +398,23 @@ PYMODEL1D * read_pymod_from_file(const char *command, const char *modelpath, dou
     pymod->deprcv = deprcv;
 
     // 检查，接收点不能位于液-液、固-液界面
-    if(isrc < nlay-1 && pymod->Thk[ircv] == 0.0 && pymod->Vb[ircv]*pymod->Vb[ircv+1] == 0.0){
+    if(ircv < nlay-1 && pymod->Thk[ircv] == 0.0 && pymod->Vb[ircv]*pymod->Vb[ircv+1] == 0.0){
         fprintf(stderr, 
             "[%s] " BOLD_RED "The receiver is located on the interface where there is liquid on one side. "
             "Due to the discontinuity of the tangential displacement on this interface, "
-            "to reduce ambiguity, it is recommended that you add a small offset to the receiver depth, "
-            "thereby explicitly placing the receiver within a specific layer. \n"
+            "to reduce ambiguity, you should add a small offset to the receiver depth, "
+            "thereby explicitly placing it within a specific layer. \n"
+            DEFAULT_RESTORE, command);
+        return NULL;
+    }
+
+    // 检查 --> 源点不能位于液-液、固-液界面
+    if(isrc < nlay-1 && pymod->Thk[isrc] == 0.0 && pymod->Vb[isrc]*pymod->Vb[isrc+1] == 0.0){
+        fprintf(stderr, 
+            "[%s] " BOLD_RED "The source is located on the interface where there is liquid on one side. "
+            "Due to the discontinuity of the tangential displacement on this interface, "
+            "to reduce ambiguity, you should add a small offset to the source depth, "
+            "thereby explicitly placing it within a specific layer. \n"
             DEFAULT_RESTORE, command);
         return NULL;
     }
