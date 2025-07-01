@@ -995,6 +995,12 @@ int main(int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
+    // 当震源位于液体层中时，仅允许计算爆炸源对应的格林函数
+    // 程序结束前会输出对应警告
+    if(pymod->Vb[pymod->isrc]==0.0){
+        doHF = doVF = doDC = false;
+    }
+
     // 最大最小速度
     get_pymod_vmin_vmax(pymod, &vmin, &vmax);
 
@@ -1203,6 +1209,14 @@ int main(int argc, char **argv) {
         }
 
         free(s_output_subdir);
+    }
+
+    // 输出警告：当震源位于液体层中时，仅允许计算爆炸源对应的格林函数
+    if(pymod->Vb[pymod->isrc]==0.0){
+        fprintf(stderr, "[%s] " BOLD_YELLOW 
+            "The source is located in the liquid layer, "
+            "therefore only the Green's Funtions for the Explosion source will be computed.\n" 
+            DEFAULT_RESTORE, command);
     }
     
 
