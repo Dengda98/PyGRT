@@ -75,6 +75,7 @@ jobs:
             curl -o /etc/yum.repos.d/CentOS-Base.repo https://mirrors.aliyun.com/repo/Centos-7.repo && \
             yum clean all -y && yum makecache -y && yum install -y gcc make
           "
+      
       - name: Build static FFTW in container (Ubuntu)
         if: contains(matrix.os, 'ubuntu')
         run: |
@@ -128,6 +129,15 @@ jobs:
           ls -l bin/
           ldd lib/libgrt.so
           ldd bin/*
+
+      # - name: Build the project (Ubuntu)
+      #   if: contains(matrix.os, 'ubuntu')
+      #   working-directory: ./pygrt/C_extension  
+      #   run: |
+      #     make 
+      #     make cleanbuild
+      #     ldd lib/libgrt.so
+      #     ldd bin/*
 
       - name: Build the project in container (Ubuntu)
         if: contains(matrix.os, 'ubuntu')
