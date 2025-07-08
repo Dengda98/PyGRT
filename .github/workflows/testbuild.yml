@@ -59,6 +59,7 @@ jobs:
           rm -rf docs/
 
       # ------------------------------- 安装依赖 -----------------------------------------------
+      # 在 ubuntu 系统上创建低版本 glibc (2.17) 的环境进行编译，以提供向后兼容能力
       - name: Create CentOS 7.7 container (Ubuntu)
         if: contains(matrix.os, 'ubuntu')
         run: |
@@ -74,7 +75,7 @@ jobs:
             curl -o /etc/yum.repos.d/CentOS-Base.repo https://mirrors.aliyun.com/repo/Centos-7.repo && \
             yum clean all -y && yum makecache -y && yum install -y gcc make
           "
-      - name: Build FFTW in container (Ubuntu)
+      - name: Build static FFTW in container (Ubuntu)
         if: contains(matrix.os, 'ubuntu')
         run: |
           docker exec ${{ env.CONTAINER_ID }} bash -c "
