@@ -82,7 +82,7 @@ jobs:
                 ./configure && make && make install && \
                 ./configure --enable-float && make && make install && \
               cd .. && rm -rf fftw* && \
-              cd ./pygrt/C_extension && ls && make && cd -
+              cd ./pygrt/C_extension && ls && make && make cleanbuild && cd -
             "
 
       - name: Install dependencies (macOS)
@@ -122,7 +122,7 @@ jobs:
         working-directory: ./pygrt/C_extension  
         run: |
           # make 
-          make cleanbuild
+          # make cleanbuild
           ldd lib/libgrt.so
           ldd bin/*
 
