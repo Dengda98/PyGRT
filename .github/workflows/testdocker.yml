@@ -1,0 +1,26 @@
+name: Just test docker
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build: # 编译C程序和C库
+    runs-on: ubuntu-22.04
+
+    steps:  
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create build directory
+        run: mkdir -p build-output
+
+      - name: Pull CentOS 7.7 Docker image
+        run: docker pull centos:7.7
+
+      - name: Verify glibc version
+        run: |
+          docker run --rm centos:7.7 ldd --version
+          docker run --rm centos:7.7 rpm -q glibc
+
+
+
