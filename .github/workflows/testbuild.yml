@@ -22,62 +22,62 @@ jobs:
       run:
         shell: bash
 
-  steps:
-    - name: Checkout code  # 下载库代码
-      uses: actions/checkout@v3
-      with:
-        fetch-depth: 1  
+    steps:
+      - name: Checkout code  # 下载库代码
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1  
 
-    - name: Remove docs  # 删除docs文件夹，程序打包不需要
-      run: |
-        rm -rf docs/
+      - name: Remove docs  # 删除docs文件夹，程序打包不需要
+        run: |
+          rm -rf docs/
 
-    - name: Check CentOS 7.7 Docker image
-      run: |
-        ldd --version
-        rpm -q glibc
+      - name: Check CentOS 7.7 Docker image
+        run: |
+          ldd --version
+          rpm -q glibc
 
-    # --------------------------- 安装依赖 ------------------------------------------
-    - name: Install dependencies
-      run: |
-        # sudo apt update
-        # sudo apt install -y libfftw3-dev
-        mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup && \
-        curl -o /etc/yum.repos.d/CentOS-Base.repo https://mirrors.aliyun.com/repo/Centos-7.repo && \
-        yum clean all -y && yum makecache -y && yum install -y gcc make && \
-        curl -O https://www.fftw.org/fftw-3.3.10.tar.gz && tar -xzvf fftw-3.3.10.tar.gz && \
-        cd fftw-3.3.10 && \
-          ./configure && make && make install && \
-          ./configure --enable-float && make && make install && \
-        cd .. && rm -rf fftw* && \
-        cd ./pygrt/C_extension && ls && make && make cleanbuild && cd -
+      # --------------------------- 安装依赖 ------------------------------------------
+      - name: Install dependencies
+        run: |
+          # sudo apt update
+          # sudo apt install -y libfftw3-dev
+          mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup && \
+          curl -o /etc/yum.repos.d/CentOS-Base.repo https://mirrors.aliyun.com/repo/Centos-7.repo && \
+          yum clean all -y && yum makecache -y && yum install -y gcc make && \
+          curl -O https://www.fftw.org/fftw-3.3.10.tar.gz && tar -xzvf fftw-3.3.10.tar.gz && \
+          cd fftw-3.3.10 && \
+            ./configure && make && make install && \
+            ./configure --enable-float && make && make install && \
+          cd .. && rm -rf fftw* && \
+          cd ./pygrt/C_extension && ls && make && make cleanbuild && cd -
 
-    - name: Build the project
-      working-directory: ./pygrt/C_extension  
-      run: |
-        # make 
-        # make cleanbuild
-        ldd lib/libgrt.so
-        ldd bin/*
+      - name: Build the project
+        working-directory: ./pygrt/C_extension  
+        run: |
+          # make 
+          # make cleanbuild
+          ldd lib/libgrt.so
+          ldd bin/*
 
-    # --------------------------- 打包整个程序 ---------------------
-    - name: Package the binary
-      run: |
-        SUFFIX_PLAT_NAME="manylinux2014_x86_64"
-        PACK_NAME=pygrt_kit-${{ github.ref_name }}-${SUFFIX_PLAT_NAME}
-        echo "PACK_NAME=$PACK_NAME" >> $GITHUB_ENV
-        FILE_CONTENT=$(ls)
-        mkdir -p $PACK_NAME
-        cp -r ${FILE_CONTENT} $PACK_NAME/
-        tar -czvf $PACK_NAME.tar.gz $PACK_NAME
-        rm -rf $PACK_NAME
+      # --------------------------- 打包整个程序 ---------------------
+      - name: Package the binary
+        run: |
+          SUFFIX_PLAT_NAME="manylinux2014_x86_64"
+          PACK_NAME=pygrt_kit-${{ github.ref_name }}-${SUFFIX_PLAT_NAME}
+          echo "PACK_NAME=$PACK_NAME" >> $GITHUB_ENV
+          FILE_CONTENT=$(ls)
+          mkdir -p $PACK_NAME
+          cp -r ${FILE_CONTENT} $PACK_NAME/
+          tar -czvf $PACK_NAME.tar.gz $PACK_NAME
+          rm -rf $PACK_NAME
 
-    # -------------------- upload artifacts -----------------------
-    - name: Upload artifact (*.tar.gz)
-      uses: actions/upload-artifact@v4
-      with:
-        name: ubuntu-22.04-x86_64_tar
-        path: ${{ env.PACK_NAME }}.tar.gz
+      # -------------------- upload artifacts -----------------------
+      - name: Upload artifact (*.tar.gz)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ubuntu-22.04-x86_64_tar
+          path: ${{ env.PACK_NAME }}.tar.gz
 
   # ----------------------------------------------------------------------------------
   build: # 编译C程序和C库
