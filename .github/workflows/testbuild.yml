@@ -81,7 +81,7 @@ jobs:
               cd fftw-3.3.10 && \
                 ./configure && make && make install && \
                 ./configure --enable-float && make && make install && \
-              cd .. && rm -rf fftw* \
+              cd .. && rm -rf fftw* && \
               cd ./pygrt/C_extension && ls && make && cd -
             "
 
