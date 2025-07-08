@@ -1,13 +1,14 @@
 name: Just test
 
 # 触发机制为“非主分支的提交”
-on: workflow_dispatch
-  # push:
-  #   paths:
-  #     - 'pygrt/**'  # 源码文件夹有提交才触发测试
-  #   branches-ignore:
-  #     - main    # 排除主分支
-  #     - master  # 如果有 master 分支，也可以排除
+on: 
+  workflow_dispatch:
+  push:
+    paths:
+      - 'pygrt/**'  # 源码文件夹有提交才触发测试
+    branches-ignore:
+      - main    # 排除主分支
+      - master  # 如果有 master 分支，也可以排除
 
 jobs:
   build: # 编译C程序和C库
@@ -29,6 +30,11 @@ jobs:
     defaults:
       run:
         shell: bash
+
+    container: 
+      if: contains(matrix.os, 'ubuntu') || null
+      image: centos:7.7.1908
+      options: -v ${{ github.workspace }}:/workspace -w /workspace
 
     steps:
       - name: Set MSYS2 (Windows)  # windows平台使用MSYS2工具编译程序
@@ -55,13 +61,11 @@ jobs:
         run: |
           rm -rf docs/
 
-      - name: Pull CentOS 7.7 Docker image
+      - name: Check CentOS 7.7 Docker image
         if: contains(matrix.os, 'ubuntu')  
         run: |
-          docker pull centos:7.7.1908
-          # Verify glibc version
-          docker run --rm centos:7.7.1908 ldd --version
-          docker run --rm centos:7.7.1908 rpm -q glibc
+          ldd --version
+          rpm -q glibc
 
       # --------------------------- 安装依赖 ------------------------------------------
       - name: Install dependencies (Ubuntu)
@@ -69,21 +73,15 @@ jobs:
         run: |
           # sudo apt update
           # sudo apt install -y libfftw3-dev
-          docker run --rm \
-            -v ${{ github.workspace }}:/workspace \
-            -w /workspace \
-            centos:7.7.1908 \
-            /bin/bash -c " \
-              mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup && \
-              curl -o /etc/yum.repos.d/CentOS-Base.repo https://mirrors.aliyun.com/repo/Centos-7.repo && \
-              yum clean all -y && yum makecache -y && yum install -y gcc make && \
-              curl -O https://www.fftw.org/fftw-3.3.10.tar.gz && tar -xzvf fftw-3.3.10.tar.gz && \
-              cd fftw-3.3.10 && \
-                ./configure && make && make install && \
-                ./configure --enable-float && make && make install && \
-              cd .. && rm -rf fftw* && \
-              cd ./pygrt/C_extension && ls && make && make cleanbuild && cd -
-            "
+          mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup && \
+          curl -o /etc/yum.repos.d/CentOS-Base.repo https://mirrors.aliyun.com/repo/Centos-7.repo && \
+          yum clean all -y && yum makecache -y && yum install -y gcc make && \
+          curl -O https://www.fftw.org/fftw-3.3.10.tar.gz && tar -xzvf fftw-3.3.10.tar.gz && \
+          cd fftw-3.3.10 && \
+            ./configure && make && make install && \
+            ./configure --enable-float && make && make install && \
+          cd .. && rm -rf fftw* && \
+          cd ./pygrt/C_extension && ls && make && make cleanbuild && cd -
 
       - name: Install dependencies (macOS)
         # 匹配包含 "macos" 的操作系统
