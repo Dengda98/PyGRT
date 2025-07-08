@@ -69,8 +69,11 @@ jobs:
         run: |
           # sudo apt update
           # sudo apt install -y libfftw3-dev
-          docker run --rm -v $(pwd):/workspace centos:7.7.1908 \
-            yum install -y gcc make fftw3 fftw3-devel
+          docker run --rm \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            centos:7.7.1908 \
+            /bin/bash -c "yum install -y gcc make fftw3 fftw3-devel"
 
       - name: Install dependencies (macOS)
         # 匹配包含 "macos" 的操作系统
@@ -109,7 +112,11 @@ jobs:
         working-directory: ./pygrt/C_extension  
         run: |
           # make 
-          docker run --rm -v $(pwd):/workspace -w /workspace centos:7.7.1908 make
+          docker run --rm \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            centos:7.7.1908 \
+            /bin/bash -c "make"
 
           make cleanbuild
           ldd lib/libgrt.so
