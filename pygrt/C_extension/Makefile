@@ -13,7 +13,7 @@ VERSION := v$(shell cat version )
 # NEED EXPLICITY SET LIBRARY PATH on MacOS
 LFFT_FLAGS := -l:libfftw3.a  -l:libfftw3f.a
 
-CC := gcc
+CC := gcc 
 
 
 # add -static to enforce gcc link the static library, no matter standard-lib or custom-lib,
