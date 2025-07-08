@@ -38,7 +38,7 @@ ARCH =
 
 # However, Maybe -static is not working for standard-lib on MacOS, 
 # at least for now, it's not a big problem.
-CFLAGS := $(LINK_STATIC) $(LFFT_FLAGS) -lm -O3 -g\
+CFLAGS := $(LINK_STATIC) $(LFFT_FLAGS) -lm -O3 -std=gnu99 \
 		  -fPIC -Wall -Wextra $(STACK_MEM) -I$(shell realpath $(INC_DIR)) \
 		  -D'GRT_VERSION=\"$(VERSION)\"'  $(ARCH)  $(FOMPFLAGS)
 #  -fdump-tree-all  -g -ffast-math -O3 -fno-associative-math  -march=native -mtune=native 
