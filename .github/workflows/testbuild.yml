@@ -6,90 +6,12 @@ on:
   push:
     paths:
       - 'pygrt/**'  # 源码文件夹有提交才触发测试
-      - '.github/workflows/testbuild.yml'
     branches-ignore:
       - main    # 排除主分支
       - master  # 如果有 master 分支，也可以排除
 
 jobs:
-  # ----------------------------------------------------------------------------------
-  build_on_docker:  # 在低版本glibc上编译C程序和C库
-    runs-on: ubuntu-22.04
-    container: 
-      image: centos:7.7.1908
-      options: -v ${{ github.workspace }}:/workspace -w /workspace
-
-    defaults:
-      run:
-        shell: bash
-
-    steps:
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 16  # 兼容旧版 GLIBC
-          
-      - name: Install YUM
-        run: |
-          # sudo apt update
-          # sudo apt install -y libfftw3-dev
-          mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup && \
-          curl -o /etc/yum.repos.d/CentOS-Base.repo https://mirrors.aliyun.com/repo/Centos-7.repo && \
-          yum clean all -y && yum makecache -y && yum install -y gcc make && \
-          curl -O https://www.fftw.org/fftw-3.3.10.tar.gz && tar -xzvf fftw-3.3.10.tar.gz && \
-          cd fftw-3.3.10 && \
-            ./configure && make && make install && \
-            ./configure --enable-float && make && make install && \
-          cd .. && rm -rf fftw*
-
-      - name: Checkout code  # 下载库代码
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 1  
-
-      - name: Remove docs  # 删除docs文件夹，程序打包不需要
-        run: |
-          rm -rf docs/
-
-      - name: Check CentOS 7.7 Docker image
-        run: |
-          ldd --version
-          rpm -q glibc
-
-      # --------------------------- 安装依赖 ------------------------------------------
-      - name: Install dependencies
-        run: |
-          # sudo apt update
-          # sudo apt install -y libfftw3-dev
-          cd ./pygrt/C_extension && ls && make && make cleanbuild && cd -
-
-      - name: Build the project
-        working-directory: ./pygrt/C_extension  
-        run: |
-          # make 
-          # make cleanbuild
-          ldd lib/libgrt.so
-          ldd bin/*
-
-      # --------------------------- 打包整个程序 ---------------------
-      - name: Package the binary
-        run: |
-          SUFFIX_PLAT_NAME="manylinux2014_x86_64"
-          PACK_NAME=pygrt_kit-${{ github.ref_name }}-${SUFFIX_PLAT_NAME}
-          echo "PACK_NAME=$PACK_NAME" >> $GITHUB_ENV
-          FILE_CONTENT=$(ls)
-          mkdir -p $PACK_NAME
-          cp -r ${FILE_CONTENT} $PACK_NAME/
-          tar -czvf $PACK_NAME.tar.gz $PACK_NAME
-          rm -rf $PACK_NAME
-
-      # -------------------- upload artifacts -----------------------
-      - name: Upload artifact (*.tar.gz)
-        uses: actions/upload-artifact@v4
-        with:
-          name: ubuntu-22.04-x86_64_tar
-          path: ${{ env.PACK_NAME }}.tar.gz
-
-  # ----------------------------------------------------------------------------------
+  # =======================================================================================
   build: # 编译C程序和C库
     runs-on: ${{ matrix.os }}
     strategy:
@@ -97,6 +19,8 @@ jobs:
         include:
           - os: windows-2022
             arch: x86_64                  # windows x86_6
+          - os: ubuntu-22.04
+            arch: x86_64                  # Ubuntu x86_64
           - os: macos-13
             arch: x86_64                  # macOS Intel
           - os: macos-14
@@ -133,7 +57,43 @@ jobs:
         run: |
           rm -rf docs/
 
-      # --------------------------- 安装依赖 ------------------------------------------
+      - name: Create CentOS 7.7 container
+        if: contains(matrix.os, 'ubuntu')
+        run: |
+          CONTAINER_ID=$(docker create -v ${{ github.workspace }}:/workspace -w /workspace centos:7.7.1908 sleep infinity)
+          echo "CONTAINER_ID=$CONTAINER_ID" >> $GITHUB_ENV
+          docker start $CONTAINER_ID
+
+      - name: Install dependencies in container
+        if: contains(matrix.os, 'ubuntu')
+        run: |
+          docker exec ${{ env.CONTAINER_ID }} bash -c "
+            mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup && \
+            curl -o /etc/yum.repos.d/CentOS-Base.repo https://mirrors.aliyun.com/repo/Centos-7.repo && \
+            yum clean all -y && yum makecache -y && yum install -y gcc make
+          "
+      - name: Build FFTW in container
+        if: contains(matrix.os, 'ubuntu')
+        run: |
+          docker exec ${{ env.CONTAINER_ID }} bash -c "
+            curl -O https://www.fftw.org/fftw-3.3.10.tar.gz && tar -xzvf fftw-3.3.10.tar.gz && \
+            cd fftw-3.3.10 && \
+            ./configure && make && make install && \
+            ./configure --enable-float && make && make install && \
+            cd .. && rm -rf fftw*
+          "
+
+      - name: Build C_extension in container
+        if: contains(matrix.os, 'ubuntu')
+        run: |
+          docker exec ${{ env.CONTAINER_ID }} bash -c "cd ./pygrt/C_extension && ls && make && make cleanbuild"
+
+      - name: Cleanup container
+        if: contains(matrix.os, 'ubuntu')
+        run: |
+          docker stop ${{ env.CONTAINER_ID }}
+          docker rm ${{ env.CONTAINER_ID }}
+
       - name: Install dependencies (macOS)
         # 匹配包含 "macos" 的操作系统
         if: contains(matrix.os, 'macos')    
@@ -166,6 +126,15 @@ jobs:
           otool -L lib/libgrt.so
           otool -L bin/*
 
+      - name: Build the project (Ubuntu)
+        if: contains(matrix.os, 'ubuntu')
+        working-directory: ./pygrt/C_extension  
+        run: |
+          # make 
+          # make cleanbuild
+          ldd lib/libgrt.so
+          ldd bin/*
+
       - name: Build the project (Windows)
         if: contains(matrix.os, 'windows')
         shell: msys2 {0}
@@ -183,7 +152,9 @@ jobs:
       - name: Define the package OS suffix
         run: |
           # 符合pypi命名规范，否则上传失败
-          if [[ "${{ matrix.os }}" == *"macos"* && "${{ matrix.arch }}" == *"x86_64"* ]]; then
+          if [[ "${{ matrix.os }}" == *"ubuntu"* ]]; then
+            SUFFIX_PLAT_NAME="manylinux2014_x86_64"
+          elif [[ "${{ matrix.os }}" == *"macos"* && "${{ matrix.arch }}" == *"x86_64"* ]]; then
             SUFFIX_PLAT_NAME="macosx_10_9_x86_64"
           elif [[ "${{ matrix.os }}" == *"macos"* && "${{ matrix.arch }}" == *"arm64"* ]]; then
             SUFFIX_PLAT_NAME="macosx_11_0_arm64"
@@ -218,7 +189,7 @@ jobs:
   # =======================================================================================
   test_project: # 在全新系统上测试程序，不安装其它依赖，看能否运行
     runs-on: ${{ matrix.os }}
-    needs: [build, build_on_docker]
+    needs: build
     strategy:
       matrix:
         include:
