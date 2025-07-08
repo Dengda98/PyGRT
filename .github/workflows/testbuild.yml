@@ -108,6 +108,8 @@ jobs:
         run: |
           make 
           make cleanbuild
+          ls -l lib/
+          ls -l bin/
           ldd lib/libgrt.so
           ldd bin/*
 
