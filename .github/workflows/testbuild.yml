@@ -62,16 +62,6 @@ jobs:
           # Verify glibc version
           docker run --rm centos:7.7.1908 ldd --version
           docker run --rm centos:7.7.1908 rpm -q glibc
-          # 备份原配置
-          docker run --rm centos:7.7.1908 \
-            mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup
-          # 使用阿里云镜像
-          docker run --rm centos:7.7.1908 \
-            curl -o /etc/yum.repos.d/CentOS-Base.repo https://mirrors.aliyun.com/repo/Centos-7.rep
-          docker run --rm centos:7.7.1908 \
-            yum clean all 
-          docker run --rm centos:7.7.1908 \
-            yum makecache
 
       # --------------------------- 安装依赖 ------------------------------------------
       - name: Install dependencies (Ubuntu)
@@ -83,7 +73,11 @@ jobs:
             -v ${{ github.workspace }}:/workspace \
             -w /workspace \
             centos:7.7.1908 \
-            /bin/bash -c "yum update -y && yum install -y gcc make fftw3 fftw3-devel"
+            /bin/bash <<EOF
+              mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup
+              curl -o /etc/yum.repos.d/CentOS-Base.repo https://mirrors.aliyun.com/repo/Centos-7.repo
+              yum update -y && yum install -y gcc make fftw3 fftw3-devel
+            EOF
 
       - name: Install dependencies (macOS)
         # 匹配包含 "macos" 的操作系统
