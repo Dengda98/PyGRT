@@ -24,6 +24,10 @@ jobs:
         shell: bash
 
     steps:
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16  # 兼容旧版 GLIBC
+          
       - name: Install YUM
         run: |
           # sudo apt update
