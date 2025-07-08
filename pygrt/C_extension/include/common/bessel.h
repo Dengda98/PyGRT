@@ -10,13 +10,6 @@
 
 #include "common/const.h"
 
-// WINDOWS 系统上 MSYS2 上的数学函数可能命名不一样
-#if _TEST_WHETHER_WIN32_
-#define j0 _j0
-#define j1 _j1
-#define jn _jn
-#endif
-
 /**
  * 计算Bessel函数 \f$ J_m(x), m=0,1,2 \f$ 
  * 
