@@ -2,6 +2,7 @@ name: Just test
 
 # 触发机制为“非主分支的提交”
 on:
+  workflow_dispatch:
   push:
     paths:
       - 'pygrt/**'  # 源码文件夹有提交才触发测试
@@ -89,6 +90,8 @@ jobs:
                 CC=gcc-14 \
                 LFFT_FLAGS="$FFT_LIB_PATH/libfftw3.a $FFT_LIB_PATH/libfftw3f.a"
           make cleanbuild
+          ls -l lib/
+          ls -l bin/
           otool -L lib/libgrt.so
           otool -L bin/*
 
