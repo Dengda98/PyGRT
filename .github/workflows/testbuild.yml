@@ -131,8 +131,9 @@ jobs:
 
       - name: Build the project in container (Ubuntu)
         if: contains(matrix.os, 'ubuntu')
+        working-directory: ./pygrt/C_extension  
         run: |
-          docker exec ${{ env.CONTAINER_ID }} bash -c "cd ./pygrt/C_extension && ls && make && make cleanbuild"
+          docker exec ${{ env.CONTAINER_ID }} bash -c "ls && make && make cleanbuild"
           ldd lib/libgrt.so
           ldd bin/*
 
