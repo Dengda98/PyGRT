@@ -58,14 +58,15 @@ jobs:
         run: |
           rm -rf docs/
 
-      - name: Create CentOS 7.7 container
+      # ------------------------------- 安装依赖 -----------------------------------------------
+      - name: Create CentOS 7.7 container (Ubuntu)
         if: contains(matrix.os, 'ubuntu')
         run: |
           CONTAINER_ID=$(docker create -v ${{ github.workspace }}:/workspace -w /workspace centos:7.7.1908 sleep infinity)
           echo "CONTAINER_ID=$CONTAINER_ID" >> $GITHUB_ENV
           docker start $CONTAINER_ID
 
-      - name: Install dependencies in container
+      - name: Update yum in container (Ubuntu)
         if: contains(matrix.os, 'ubuntu')
         run: |
           docker exec ${{ env.CONTAINER_ID }} bash -c "
@@ -73,7 +74,7 @@ jobs:
             curl -o /etc/yum.repos.d/CentOS-Base.repo https://mirrors.aliyun.com/repo/Centos-7.repo && \
             yum clean all -y && yum makecache -y && yum install -y gcc make
           "
-      - name: Build FFTW in container
+      - name: Build FFTW in container (Ubuntu)
         if: contains(matrix.os, 'ubuntu')
         run: |
           docker exec ${{ env.CONTAINER_ID }} bash -c "
@@ -83,17 +84,6 @@ jobs:
             ./configure --enable-float && make && make install && \
             cd .. && rm -rf fftw*
           "
-
-      - name: Build C_extension in container
-        if: contains(matrix.os, 'ubuntu')
-        run: |
-          docker exec ${{ env.CONTAINER_ID }} bash -c "cd ./pygrt/C_extension && ls && make && make cleanbuild"
-
-      - name: Cleanup container
-        if: contains(matrix.os, 'ubuntu')
-        run: |
-          docker stop ${{ env.CONTAINER_ID }}
-          docker rm ${{ env.CONTAINER_ID }}
 
       - name: Install dependencies (macOS)
         # 匹配包含 "macos" 的操作系统
@@ -106,12 +96,11 @@ jobs:
           echo "FFT_INC_PATH=$FFTW_PREFIX/include" >> $GITHUB_ENV
           echo "FFT_LIB_PATH=$FFTW_PREFIX/lib" >> $GITHUB_ENV
 
-      # ----------------- 编译C库和C程序 ----------------------------------
+      # -------------------------------- 编译C库和C程序 ----------------------------------
       - name: Build the project (macOS)
         if: contains(matrix.os, 'macos')
         working-directory: ./pygrt/C_extension  
         run: |
-          
           # Mac系统需要显式设置头文件路径和库路径
           export C_INCLUDE_PATH=$FFT_INC_PATH:$C_INCLUDE_PATH
           export LIBRARY_PATH=$FFT_LIB_PATH:${LIBRARY_PATH}
@@ -127,15 +116,6 @@ jobs:
           otool -L lib/libgrt.so
           otool -L bin/*
 
-      - name: Build the project (Ubuntu)
-        if: contains(matrix.os, 'ubuntu')
-        working-directory: ./pygrt/C_extension  
-        run: |
-          # make 
-          # make cleanbuild
-          ldd lib/libgrt.so
-          ldd bin/*
-
       - name: Build the project (Windows)
         if: contains(matrix.os, 'windows')
         shell: msys2 {0}
@@ -148,8 +128,20 @@ jobs:
           ldd lib/libgrt.so
           ldd bin/*
 
+      - name: Build the project in container (Ubuntu)
+        if: contains(matrix.os, 'ubuntu')
+        run: |
+          docker exec ${{ env.CONTAINER_ID }} bash -c "cd ./pygrt/C_extension && ls && make && make cleanbuild"
+          ldd lib/libgrt.so
+          ldd bin/*
 
-      # ------------------------ 定义接下来打包程序命名时的系统名后缀 ---------------
+      - name: Cleanup container (Ubuntu)
+        if: contains(matrix.os, 'ubuntu')
+        run: |
+          docker stop ${{ env.CONTAINER_ID }}
+          docker rm ${{ env.CONTAINER_ID }}
+
+      # ------------------------------------- 定义接下来打包程序命名时的系统名后缀 -------------------------------
       - name: Define the package OS suffix
         run: |
           # 符合pypi命名规范，否则上传失败
