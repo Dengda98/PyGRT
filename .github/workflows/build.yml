@@ -1,6 +1,7 @@
 name: Build C programs and libraries, publish to PyPI and create a release
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - "v*.*.*"  
