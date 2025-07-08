@@ -59,9 +59,11 @@ jobs:
         if: contains(matrix.os, 'ubuntu')  
         run: |
           docker pull centos:7.7.1908
+          container_id=$(docker run -d centos:7.7.1908 -v ${{ github.workspace }}:/workspace -w /workspace)
           # Verify glibc version
           docker run --rm centos:7.7.1908 ldd --version
           docker run --rm centos:7.7.1908 rpm -q glibc
+          echo "DOCKER_ID=${container_id}" >> $GITHUB_ENV
 
       # --------------------------- 安装依赖 ------------------------------------------
       - name: Install dependencies (Ubuntu)
@@ -69,10 +71,7 @@ jobs:
         run: |
           # sudo apt update
           # sudo apt install -y libfftw3-dev
-          docker run --rm \
-            -v ${{ github.workspace }}:/workspace \
-            -w /workspace \
-            centos:7.7.1908 \
+          docker exec ${{ env.DOCKER_ID }} \
             /bin/bash -c " \
               mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup && \
               curl -o /etc/yum.repos.d/CentOS-Base.repo https://mirrors.aliyun.com/repo/Centos-7.repo && \
