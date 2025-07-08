@@ -1,14 +1,13 @@
 name: Just test
 
 # 触发机制为“非主分支的提交”
-on:
-  workflow_dispatch:
-  push:
-    paths:
-      - 'pygrt/**'  # 源码文件夹有提交才触发测试
-    branches-ignore:
-      - main    # 排除主分支
-      - master  # 如果有 master 分支，也可以排除
+on: workflow_dispatch
+  # push:
+  #   paths:
+  #     - 'pygrt/**'  # 源码文件夹有提交才触发测试
+  #   branches-ignore:
+  #     - main    # 排除主分支
+  #     - master  # 如果有 master 分支，也可以排除
 
 jobs:
   build: # 编译C程序和C库
