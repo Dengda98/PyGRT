@@ -59,11 +59,9 @@ jobs:
         if: contains(matrix.os, 'ubuntu')  
         run: |
           docker pull centos:7.7.1908
-          container_id=$(docker run -d centos:7.7.1908 -v ${{ github.workspace }}:/workspace -w /workspace)
           # Verify glibc version
           docker run --rm centos:7.7.1908 ldd --version
           docker run --rm centos:7.7.1908 rpm -q glibc
-          echo "DOCKER_ID=${container_id}" >> $GITHUB_ENV
 
       # --------------------------- 安装依赖 ------------------------------------------
       - name: Install dependencies (Ubuntu)
@@ -71,11 +69,19 @@ jobs:
         run: |
           # sudo apt update
           # sudo apt install -y libfftw3-dev
-          docker exec ${{ env.DOCKER_ID }} \
+          docker run --rm \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            centos:7.7.1908 \
             /bin/bash -c " \
               mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup && \
               curl -o /etc/yum.repos.d/CentOS-Base.repo https://mirrors.aliyun.com/repo/Centos-7.repo && \
-              yum clean all -y && yum makecache -y && yum install -y gcc make fftw3 fftw3-devel && \
+              yum clean all -y && yum makecache -y && yum install -y gcc make && \
+              wget https://www.fftw.org/fftw-3.3.10.tar.gz && tar -xzvf fftw-3.3.10.tar.gz && \
+              cd fftw-3.3.10 && \
+                ./configure && make && make install && \
+                ./configure --enable-float && make && make install && \
+              cd - && rm -rf fftw* \
               cd ./pygrt/C_extension  && make && cd -
             "
 
