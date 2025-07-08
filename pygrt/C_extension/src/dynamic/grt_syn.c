@@ -30,11 +30,6 @@
 #include "common/coord.h"
 
 
-
-extern char *optarg;
-extern int optind;
-extern int optopt;
-
 //****************** 在该文件以内的全局变量 ***********************//
 // 命令名称
 static char *command = NULL;
