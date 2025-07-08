@@ -18,11 +18,25 @@ jobs:
     container: 
       image: centos:7.7.1908
       options: -v ${{ github.workspace }}:/workspace -w /workspace
+
     defaults:
       run:
         shell: bash
 
     steps:
+      - name: Install YUM
+        run: |
+          # sudo apt update
+          # sudo apt install -y libfftw3-dev
+          mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup && \
+          curl -o /etc/yum.repos.d/CentOS-Base.repo https://mirrors.aliyun.com/repo/Centos-7.repo && \
+          yum clean all -y && yum makecache -y && yum install -y gcc make && \
+          curl -O https://www.fftw.org/fftw-3.3.10.tar.gz && tar -xzvf fftw-3.3.10.tar.gz && \
+          cd fftw-3.3.10 && \
+            ./configure && make && make install && \
+            ./configure --enable-float && make && make install && \
+          cd .. && rm -rf fftw*
+
       - name: Checkout code  # 下载库代码
         uses: actions/checkout@v3
         with:
@@ -42,14 +56,6 @@ jobs:
         run: |
           # sudo apt update
           # sudo apt install -y libfftw3-dev
-          mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup && \
-          curl -o /etc/yum.repos.d/CentOS-Base.repo https://mirrors.aliyun.com/repo/Centos-7.repo && \
-          yum clean all -y && yum makecache -y && yum install -y gcc make && \
-          curl -O https://www.fftw.org/fftw-3.3.10.tar.gz && tar -xzvf fftw-3.3.10.tar.gz && \
-          cd fftw-3.3.10 && \
-            ./configure && make && make install && \
-            ./configure --enable-float && make && make install && \
-          cd .. && rm -rf fftw* && \
           cd ./pygrt/C_extension && ls && make && make cleanbuild && cd -
 
       - name: Build the project
