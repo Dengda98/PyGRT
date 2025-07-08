@@ -77,7 +77,7 @@ jobs:
               mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup && \
               curl -o /etc/yum.repos.d/CentOS-Base.repo https://mirrors.aliyun.com/repo/Centos-7.repo && \
               yum clean all -y && yum makecache -y && yum install -y gcc make && \
-              wget https://www.fftw.org/fftw-3.3.10.tar.gz && tar -xzvf fftw-3.3.10.tar.gz && \
+              curl -O https://www.fftw.org/fftw-3.3.10.tar.gz && tar -xzvf fftw-3.3.10.tar.gz && \
               cd fftw-3.3.10 && \
                 ./configure && make && make install && \
                 ./configure --enable-float && make && make install && \
