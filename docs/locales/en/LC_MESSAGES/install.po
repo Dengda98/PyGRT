@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"POT-Creation-Date: 2025-07-09 13:12+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -27,85 +27,174 @@ msgstr "Installation"
 msgid "Author"
 msgstr ""
 
-#: ../../source/install.rst:7 0e95fbf43db843d4b0bf26e3e3492d6d
+#: ../../source/install.rst:7
 msgid "Zhu Dengda"
 msgstr ""
 
-#: ../../source/install.rst 85ff72b5d97a41b3b4738a5f24324f20
+#: ../../source/install.rst
 msgid "Email"
 msgstr ""
 
-#: ../../source/install.rst:8 d7f30dfed6bf4b46851acf19d102f2db
+#: ../../source/install.rst:8
 msgid "zhudengda@mail.iggcas.ac.cn"
 msgstr ""
 
-#: ../../source/install.rst:16 27bdef979f8a46baa27e0477d7f0897f
+#: ../../source/install.rst:16
 msgid "依赖"
 msgstr "Dependency"
 
-#: ../../source/install.rst:18 308b67a67a2346099baf99414c2c16cf
+#: ../../source/install.rst:18
 msgid ""
 "如果你想使用C程序，你需要 `Seismic Analysis Code (SAC) "
 "<http://www.iris.edu/ds/nodes/dmc/forms/sac/>`_ ，因为C程序以二进制的SAC格式输出波形。"
 msgstr ""
-"If you want to use C programs, you'll need `Seismic Analysis Code (SAC) <http://www.iris.edu/ds/nodes/dmc/forms/sac/>`_ because C programs output waveforms in binary SAC format."
+"If you want to use C programs, you'll need `Seismic Analysis Code (SAC) "
+"<http://www.iris.edu/ds/nodes/dmc/forms/sac/>`_ because C programs output"
+" waveforms in binary SAC format."
 
-#: ../../source/install.rst:19 3c15371f62ec43f19077680859c5241b
+#: ../../source/install.rst:19
 msgid "如果你想以Python脚本形式使用，依赖已在 :file:`setup.py` 中写好，直接使用 :command:`pip` 安装即可。"
-msgstr "If you want to use it as Python scripts, you can install the dependencies in :file:`setup.py` using :command:`pip`."
+msgstr ""
+"If you want to use it as Python scripts, you can install the dependencies"
+" in :file:`setup.py` using :command:`pip`."
 
-#: ../../source/install.rst:23 c7986dea83c04550b095c3e6fd7d45f6
+#: ../../source/install.rst:23
 msgid "免编译安装"
 msgstr "Compile-free installation"
 
-#: ../../source/install.rst:25 74f1f1cd716c425e9e3f00f742c6433f
-msgid "目前 **PyGRT** 已分发内置预编译二进制文件的安装包，用户仅需运行以下命令即可"
-msgstr "**PyGRT** is now distributed with pre-compiled binaries, allowing users to install it simply by running the following command"
+#: ../../source/install.rst:25
+msgid ""
+"目前 **PyGRT** 已分发内置预编译二进制文件的安装包，用户仅需运行以下命令即可（建议使用 `Anaconda "
+"<https://anaconda.org>`_ 虚拟环境）"
+msgstr ""
+"**PyGRT** is now distributed with pre-compiled binaries, allowing users "
+"to install it simply by running the following command "
+"(Recommend `Anaconda <https://anaconda.org>`_  virtual environment)"
 
-#: ../../source/install.rst:31 8bd078a6229340178d8e15f602498ffb
+#: ../../source/install.rst:31
 msgid "或者从 |gr| 中下载最新版本的程序压缩包（符合自己的操作系统），解压，在根目录下运行以下命令即可"
-msgstr "Or download the latest version from |gr| (compatible with your operating system), uncompress it, and run the following command in the root directory"
+msgstr ""
+"Or download the latest version from |gr| (compatible with your operating "
+"system), uncompress it, and run the following command in the root "
+"directory"
 
-#: ../../source/install.rst:37 899ededea4c14162a9005934bb4d177b
+#: ../../source/install.rst:37
 msgid ""
 "如果你不想使用Python，只想使用传统的命令行形式运行C程序，也可从 |gr| 中下载最新版本的程序压缩包（符合自己的操作系统），解压，其中 "
 ":rst:dir:`pygrt/C_extension/bin` 和 :rst:dir:`pygrt/C_extension/lib` "
-"为预编译好的可执行文件目录和动态/静态库目录，按自己习惯配置环境变量 :envvar:`PATH` 即可。"
+"为预编译好的可执行文件目录和动态/静态库目录，按自己习惯配置环境变量 :envvar:`PATH` 即可（详见下方）。"
 msgstr ""
-"If you don't want to use Python and only want to run C programs in the traditional command-line form, "
-"you can also download the latest version from |gr| (compatible with your operating system), uncompress it, "
-"inside :rst:dir:`pygrt/C_extension/bin` and :rst:dir:`pygrt/C_extension/lib` are the pre-compiled executable files and the dynamic/static libraries, with the :envvar:`PATH` environment variable configured as you like."
+"If you don't want to use Python and only want to run C programs in the "
+"traditional command-line form, you can also download the latest version "
+"from |gr| (compatible with your operating system), uncompress it, inside "
+":rst:dir:`pygrt/C_extension/bin` and :rst:dir:`pygrt/C_extension/lib` are"
+" the pre-compiled executable files and the dynamic/static libraries, with"
+" the :envvar:`PATH` environment variable configured as you like (see below)."
 
-#: ../../source/install.rst:42 a93c8b5df2724414a2cc4c75969b7e4a
+#: ../../source/install.rst:41
 msgid "环境变量配置"
 msgstr "Environment variable configuration"
 
-#: ../../source/install.rst:43 4c6e1a2060cf4f938dc03ce8de82fe78
+#: ../../source/install.rst:42
 msgid ""
 "如果你使用 :command:`pip` 安装后，想使用其中的C程序（ :command:`grt` , :command:`grt.syn` "
 "etc. ），需配置环境变量 :envvar:`PATH` 。运行以下命令"
-msgstr "If you want to use the containing C programs ( :command:`grt` , :command:`grt.syn` etc.) after running :command:`pip install`, "
-"you need to configure environment variable :envvar:`PATH`. Running command below."
+msgstr ""
+"If you want to use the containing C programs ( :command:`grt` , "
+":command:`grt.syn` etc.) after running :command:`pip install`, you need "
+"to configure environment variable :envvar:`PATH`. Running command below."
 
-#: ../../source/install.rst:49 275196b2cc4e4e91ab31c70829040d07
+#: ../../source/install.rst:48
 msgid "输出"
 msgstr "output"
 
-#: ../../source/install.rst:57 e616acbf09a04c9192fb9b920c43e7d6
-msgid ""
-"将其中的“PyGRT executable file directory”路径添加到环境变量 :envvar:`PATH` "
-"中即可。C程序的运行独立于Python，每个C程序可使用 ``-h`` 查看帮助。"
+#: ../../source/install.rst:56
+msgid "将其中的“PyGRT executable file directory”路径添加到环境变量 :envvar:`PATH` 中即可。"
 msgstr ""
-"Add the \"PyGRT executable file directory\" path to the environment variable  :envvar:`PATH`. C programs run independently of Python. For each C program, use ``-h`` to see help."
+"Add the \"PyGRT executable file directory\" path to the environment "
+"variable  :envvar:`PATH`. "
 
-#: ../../source/install.rst:61 fd7aeec1a7d447a1a48abebc2d007ce5
+#: ../../source/install.rst:58
+msgid ""
+"如果是从 |gr| 上直接下载的程序，指向使用，则只需将解压后的 :rst:dir:`bin/` 路径添加到环境变量 :envvar:`PATH`"
+" 中即可。"
+msgstr ""
+"If you downloaded the program directly from |gr|, simply add the extracted :rst:dir:`bin/` path to the :envvar:`PATH` environment variable."
+
+#: ../../source/install.rst:60
+msgid "C程序的运行独立于Python，每个C程序可使用 ``-h`` 查看帮助。"
+msgstr "C programs run independently of Python. For each C program, use ``-h`` to see help."
+
+#: ../../source/install.rst:64
+msgid "从源码编译安装"
+msgstr "Build from source"
+
+#: ../../source/install.rst:66
+msgid ""
+"如果安装好预编译版本后，运行 C 或 Python 提示 “GLIBC” "
+"版本缺失以及其它库的版本问题，可尝试从源码从头编译二进制库文件和可执行文件。"
+msgstr ""
+"If, after installing the pre-compiled version, running C or Python reports a missing \"GLIBC\" version "
+"or other library version issues, try compiling the binary libraries and executables from source."
+
+#: ../../source/install.rst:68
+msgid "安装程序开发所需的基本工具，如 :command:`gcc` 编译器， :command:`make` 工具等。"
+msgstr "Install the basic tools required for program development, such as the :command:`gcc` compiler and :command:`make` tool."
+
+#: ../../source/install.rst:70
+msgid "安装 `FFTW <https://www.fftw.org/>`_ 。"
+msgstr "Install `FFTW <https://www.fftw.org/>`_ ."
+
+#: ../../source/install.rst:72
+msgid ""
+"要求安装双精度和单精度两个版本，且要求编译出静态库，并要求在环境变量 :envvar:`LIBRARY_PATH` "
+"中配置静态库路径。如果从源码编译安装 FFTW ，通常在其目录下运行以下命令即可安装+配置路径成功（以 Ubuntu 系统为例）："
+msgstr ""
+"Both double-precision and single-precision versions are required, and static libraries must be compiled. "
+"The static library path should be configured in the :envvar:`LIBRARY_PATH` environment variable. "
+"If installing FFTW from source, usually run the following commands in its directory to install "
+"and configure the path successfully (using Ubuntu as an example):"
+
+#: ../../source/install.rst:86
+msgid "编译 **PyGRT** 。"
+msgstr "Build **PyGRT**."
+
+#: ../../source/install.rst:88
+msgid ""
+"切换到 **PyGRT** 程序目录（不论是使用 :command:`pip` 安装的还是从 |gr| 下载的），切换到 "
+":rst:dir:`pygrt/C_extension` ，运行"
+msgstr ""
+"Switch to the **PyGRT** program directory (whether installed via :command:`pip` or downloaded from |gr|), "
+"then switch to :rst:dir:`pygrt/C_extension` and run"
+
+#: ../../source/install.rst:94
+msgid ""
+"进行编译。编译成功后会在 :rst:dir:`bin/` 和 :rst:dir:`lib/` "
+"路径下看到新编译出来的可执行文件和库文件。如果正确配置了 :envvar:`PATH` 可尝试运行 :command:`grt -h` "
+"看能否正常打印帮助文档。再运行"
+msgstr ""
+"to compile. After successful compilation, you will see the newly built executables and "
+"libraries in :rst:dir:`bin/` and :rst:dir:`lib/`. If :envvar:`PATH` is configured correctly, "
+"you can try running :command:`grt -h` to check if the help documentation prints normally. Then run"
+
+#: ../../source/install.rst:100
+msgid "可清理编译过程产生的中间文件夹 :rst:dir:`build/` 。"
+msgstr "You can clean up the intermediate :rst:dir:`build/` folder generated during compilation."
+
+#: ../../source/install.rst:103
 msgid "常见问题"
 msgstr "FAQs"
 
-#: ../../source/install.rst:62 e62039578af5407ebacbe1791c55e3a0
+#: ../../source/install.rst:104
 msgid ""
-"如果运行报错，提示缺少依赖（常见于MacOS），这通常是缺少 ``OpenMP`` 库。尝试安装 ``gcc`` 编译器，其中会自带 "
-"``OpenMP``。"
+"如果运行报错，提示缺少依赖（常见于MacOS），这通常是缺少 ``OpenMP`` 库。尝试安装 :command:`gcc` "
+"编译器，其中会自带 ``OpenMP``。"
 msgstr ""
-"If you get an error indicating a missing dependency (usually on MacOS), it's usually the absence of the ``OpenMP`` library. Try installing the ``gcc`` compiler, which comes with ``OpenMP``"
+"If you get an error indicating a missing dependency (usually on MacOS), "
+"it's usually the absence of the ``OpenMP`` library. Try installing the "
+":command:`gcc` compiler, which comes with ``OpenMP``"
+
+#: ../../source/install.rst:105
+msgid "“GLIBC” 版本缺失：请尝试从源码编译。"
+msgstr "Missing \"GLIBC\" version: try to build from source."
 
