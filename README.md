@@ -109,7 +109,7 @@ Two ways, choose one:
       ```
 
 3. Build from Source Code.   
-   *Not recommend.*
+   See [**中文文档**](https://pygrt.readthedocs.io/zh-cn/)  |  [**English Document**](https://pygrt.readthedocs.io/en/)  
 
 # Setting
 
