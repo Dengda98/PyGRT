@@ -163,6 +163,6 @@ If you have any questions or suggestions, feel free to reach out:
 - **Email**: zhudengda@mail.iggcas.ac.cn
 - **GitHub Issues**: You can also raise an issue directly on GitHub.
 
-# Citation
+<!-- # Citation
 
-> Zhu D., J. Wang*, J. Hao, S. Yao, Y. Xu, T. Xu and Z. Yao (2025). PyGRT: An Efficient and Integrated Python Package for Computing Synthetic Seismograms in a Layered Half-Space Model. Seismological Research Letters. (under review)
+> Zhu D., J. Wang*, J. Hao, S. Yao, Y. Xu, T. Xu and Z. Yao (2025). PyGRT: An Efficient and Integrated Python Package for Computing Synthetic Seismograms in a Layered Half-Space Model. Seismological Research Letters. (under review) -->
