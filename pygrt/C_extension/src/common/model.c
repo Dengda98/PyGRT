@@ -210,8 +210,8 @@ void update_mod1d_omega(MODEL1D *mod1d, MYCOMPLEX omega){
         Va0 = lay->Va;
         Vb0 = lay->Vb;
 
-        atna = attenuation_law(lay->Qainv, omega);
-        atnb = attenuation_law(lay->Qbinv, omega);
+        atna = (lay->Qainv > 0.0)? attenuation_law(lay->Qainv, omega) : 1.0;
+        atnb = (lay->Qbinv > 0.0)? attenuation_law(lay->Qbinv, omega) : 1.0;
         
         ka0 = omega/(Va0*atna);
         kb0 = (Vb0>RZERO)? omega/(Vb0*atnb) : CZERO;
