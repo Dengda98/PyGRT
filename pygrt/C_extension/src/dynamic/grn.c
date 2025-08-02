@@ -1,5 +1,5 @@
 /**
- * @file   grt.c
+ * @file   grn.c
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2024-07-24
  * 
@@ -20,7 +20,7 @@
 #include <sys/time.h>
 #include <omp.h>
 
-#include "dynamic/grt.h"
+#include "dynamic/grn.h"
 #include "dynamic/propagate.h"
 #include "common/ptam.h"
 #include "common/fim.h"

@@ -1,5 +1,5 @@
 /**
- * @file   stgrt_main.c
+ * @file   grt_static_greenfn.c
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2025-02-18
  * 
@@ -14,7 +14,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 
-#include "static/stgrt.h"
+#include "static/static_grn.h"
 #include "common/const.h"
 #include "common/model.h"
 #include "common/colorstr.h"
@@ -466,7 +466,7 @@ static void print_grn_value(const MYREAL grn[SRC_M_NUM][CHANNEL_NUM], const int 
 }
 
 
-int main(int argc, char **argv){
+int static_greenfn_main(int argc, char **argv){
     command = argv[0];
 
     // 传入参数 
@@ -571,5 +571,6 @@ int main(int argc, char **argv){
         }
     }
 
+    return EXIT_SUCCESS;
 }
 

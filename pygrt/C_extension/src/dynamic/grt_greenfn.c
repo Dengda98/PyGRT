@@ -1,5 +1,5 @@
 /**
- * @file   grt_main.c
+ * @file   grt_greenfn.c
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2024-11-28
  * 
@@ -18,7 +18,7 @@
 #include <errno.h>
 #include <omp.h>
 
-#include "dynamic/grt.h"
+#include "dynamic/grn.h"
 #include "dynamic/signals.h"
 #include "travt/travt.h"
 #include "common/const.h"
@@ -980,7 +980,7 @@ static void write_one_to_sac(
 //====================================================================================
 //====================================================================================
 //====================================================================================
-int main(int argc, char **argv) {
+int greenfn_main(int argc, char **argv) {
     command = argv[0];
 
     // 传入参数 
@@ -1253,7 +1253,7 @@ int main(int argc, char **argv) {
     free_pymod(pymod);
 
 
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 

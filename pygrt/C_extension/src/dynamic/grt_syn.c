@@ -642,7 +642,7 @@ static void data_zrt2zne(float *syn[3], float *syn_upar[3][3], int nt, double az
 //====================================================================================
 //====================================================================================
 //====================================================================================
-int main(int argc, char **argv){
+int syn_main(int argc, char **argv){
     command = argv[0];
     getopt_from_command(argc, argv);
 
@@ -841,5 +841,6 @@ int main(int argc, char **argv){
     if(tfparams!=NULL) free(tfparams);
     if(tfarr!=NULL)  free(tfarr);
 
+    return EXIT_SUCCESS;
 }
 

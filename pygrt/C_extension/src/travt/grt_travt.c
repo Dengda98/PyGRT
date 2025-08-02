@@ -1,5 +1,5 @@
 /**
- * @file   travt.c
+ * @file   grt_travt.c
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2024-08
  * 
@@ -9,11 +9,41 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 #include <stdbool.h>
+#include <string.h>
+#include <unistd.h>
 
-
+#include "travt/travt.h"
 #include "common/const.h"
+#include "common/model.h"
+#include "common/logo.h"
+#include "common/colorstr.h"
+#include "common/util.h"
+
+
+typedef struct {
+    char *name;
+    struct {
+        bool active;
+        char *s_modelpath;
+    } M;
+    struct {
+        bool active;
+        MYREAL depsrc;
+        MYREAL deprcv;
+        char *s_depsrc;
+        char *s_deprcv;
+    } D;
+    struct {
+        bool active;
+        char **s_rs;
+        MYREAL *rs;
+        MYINT nr;
+    } R;
+
+} GRT_SUBMODULE_CTRL;
+
+
 
 
 MYREAL compute_travt1d(
@@ -371,4 +401,147 @@ MYREAL compute_travt1d(
     free(Vel);
 
     return travt;
+}
+
+
+
+/**
+ * 打印使用说明
+ */
+static void print_help(){
+print_logo();
+printf("\n"
+"[grt.travt]\n\n"
+"    A Supplementary Tool of GRT to Compute First Arrival Traveltime\n"
+"    of P-wave and S-wave in Horizontally Layerd Halfspace Model. \n"
+"\n\n"
+"Usage:\n"
+"----------------------------------------------------------------\n"
+"    grt.travt -M<model> -D<depsrc>/<deprcv> -R<r1>,<r2>[,...]\n"
+"\n\n"
+"Options:\n"
+"----------------------------------------------------------------\n"
+"    -M<model>    Filepath to 1D horizontally layered halfspace \n"
+"                 model. The model file has 6 columns: \n"
+"\n"
+"         +-------+----------+----------+-------------+----+----+\n"
+"         | H(km) | Vp(km/s) | Vs(km/s) | Rho(g/cm^3) | Qp | Qa |\n"
+"         +-------+----------+----------+-------------+----+----+\n"
+"\n"
+"                 and the number of layers are unlimited.\n"
+"\n"
+"    -D<depsrc>/<deprcv>\n"
+"                 <depsrc>: source depth (km).\n"
+"                 <deprcv>: receiver depth (km).\n"
+"\n"
+"    -R<r1>,<r2>[,...]\n"
+"                 Multiple epicentral distance (km), \n"
+"                 seperated by comma.\n"
+"\n"
+"    -h           Display this help message.\n"
+"\n\n"
+"Examples:\n"
+"----------------------------------------------------------------\n"
+"    grt.travt -Mmilrow -D2/0 -R10,20,30,40,50\n"
+"\n\n\n"
+);
+}
+
+
+/**
+ * 从命令行中读取选项，处理后记录到全局变量中
+ * 
+ * @param     argc      命令行的参数个数
+ * @param     argv      多个参数字符串指针
+ */
+static void getopt_from_command(GRT_SUBMODULE_CTRL *Ctrl, int argc, char **argv){
+    int opt;
+    while ((opt = getopt(argc, argv, ":M:D:R:h")) != -1) {
+        switch (opt) {
+            // 模型路径，其中每行分别为 
+            //      厚度(km)  Vp(km/s)  Vs(km/s)  Rho(g/cm^3)  Qp   Qs
+            // 互相用空格隔开即可
+            case 'M':
+                Ctrl->M.active = true;
+                Ctrl->M.s_modelpath = (char*)malloc(sizeof(char)*(strlen(optarg)+1));
+                strcpy(Ctrl->M.s_modelpath, optarg);
+                // s_modelname = get_basename(s_modelpath);
+                break;
+
+            // 震源和场点深度， -Ddepsrc/deprcv
+            case 'D':
+                Ctrl->D.active = true;
+                Ctrl->D.s_depsrc = (char*)malloc(sizeof(char)*(strlen(optarg)+1));
+                Ctrl->D.s_deprcv = (char*)malloc(sizeof(char)*(strlen(optarg)+1));
+                if(2 != sscanf(optarg, "%[^/]/%s", Ctrl->D.s_depsrc, Ctrl->D.s_deprcv)){
+                    GRTBadOptionError(Ctrl, D, "");
+                };
+                if(1 != sscanf(Ctrl->D.s_depsrc, "%lf", &Ctrl->D.depsrc)){
+                    GRTBadOptionError(Ctrl, D, "");
+                }
+                if(1 != sscanf(Ctrl->D.s_deprcv, "%lf", &Ctrl->D.deprcv)){
+                    GRTBadOptionError(Ctrl, D, "");
+                }
+                if(Ctrl->D.depsrc < 0.0 || Ctrl->D.deprcv < 0.0){
+                    GRTBadOptionError(Ctrl, D, "Negative value in -D is not supported.");
+                }
+                break;
+
+            // 震中距数组，-Rr1,r2,r3,r4 ...
+            case 'R':
+                Ctrl->R.active = true;
+                Ctrl->R.s_rs = string_split(optarg, ",", &Ctrl->R.nr);
+                // 转为浮点数
+                Ctrl->R.rs = (MYREAL*)realloc(Ctrl->R.rs, sizeof(MYREAL)*(Ctrl->R.nr));
+                for(MYINT i=0; i<Ctrl->R.nr; ++i){
+                    Ctrl->R.rs[i] = atof(Ctrl->R.s_rs[i]);
+                    if(Ctrl->R.rs[i] < 0.0){
+                        GRTBadOptionError(Ctrl, R, "Can't set negative epicentral distance(%f) in -R.", Ctrl->R.rs[i]);
+                    }
+                }
+                break;
+
+            GRT_Common_Options_in_Switch(Ctrl, (char)(optopt));
+        }
+    }
+
+    // 检查必须设置的参数是否有设置
+    GRTCheckOptionEmpty(Ctrl, argc-1);
+    GRTCheckOptionActive(Ctrl, M);
+    GRTCheckOptionActive(Ctrl, D);
+    GRTCheckOptionActive(Ctrl, R);
+
+}
+
+
+int travt_main(int argc, char **argv){
+    GRT_SUBMODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
+    char *command = argv[0];
+
+    Ctrl->name = argv[0];
+
+    getopt_from_command(Ctrl, argc, argv);
+
+    PYMODEL1D *pymod;
+    
+    // 读入模型文件
+    if((pymod = read_pymod_from_file(command, Ctrl->M.s_modelpath, Ctrl->D.depsrc, Ctrl->D.deprcv, true)) == NULL){
+        exit(EXIT_FAILURE);
+    }
+    // print_pymod(pymod);
+
+    printf("------------------------------------------------\n");
+    printf(" Distance(km)     Tp(secs)         Ts(secs)     \n");
+    double travtP=-1, travtS=-1;
+    for(int i=0; i<Ctrl->R.nr; ++i){
+        travtP = compute_travt1d(
+        pymod->Thk, pymod->Va, pymod->n, pymod->isrc, pymod->ircv, Ctrl->R.rs[i]);
+        travtS = compute_travt1d(
+        pymod->Thk, pymod->Vb, pymod->n, pymod->isrc, pymod->ircv, Ctrl->R.rs[i]);
+        
+        printf(" %-15s  %-15.3f  %-15.3f\n", Ctrl->R.s_rs[i], travtP, travtS);
+    }
+    printf("------------------------------------------------\n");
+
+    return EXIT_SUCCESS;
 }

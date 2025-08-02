@@ -1,5 +1,5 @@
 /**
- * @file   stgrt.h
+ * @file   static_grn.h
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2025-04-03
  * 

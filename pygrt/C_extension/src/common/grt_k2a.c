@@ -146,7 +146,7 @@ static void print_PTAM(FILE *fp){
 }
 
 
-int main(int argc, char **argv){
+int k2a_main(int argc, char **argv){
     command = argv[0];
 
     getopt_from_command(argc, argv);
@@ -184,4 +184,6 @@ int main(int argc, char **argv){
     }
 
     fclose(fp);
+
+    return EXIT_SUCCESS;
 }

@@ -1,5 +1,5 @@
 /**
- * @file   stgrt_stress.c
+ * @file   grt_static_stress.c
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2025-04-08
  * 
@@ -80,7 +80,7 @@ static void getopt_from_command(int argc, char **argv){
 }
 
 
-int main(int argc, char **argv){
+int static_stress_main(int argc, char **argv){
     command = argv[0]; 
 
     getopt_from_command(argc, argv);
@@ -248,4 +248,5 @@ int main(int argc, char **argv){
         exit(EXIT_FAILURE);
     }
 
+    return EXIT_SUCCESS;
 }

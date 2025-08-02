@@ -30,7 +30,7 @@ static char *command = NULL;
 static bool rot2ZNE = false;
 
 // 三分量
-const char *chs = NULL;
+static const char *chs = NULL;
 
 
 /**
@@ -92,7 +92,7 @@ static void getopt_from_command(int argc, char **argv){
 
 
 
-int main(int argc, char **argv){
+int rotation_main(int argc, char **argv){
     command = argv[0];
 
     getopt_from_command(argc, argv);
@@ -181,4 +181,7 @@ int main(int argc, char **argv){
     free(s_filepath);
     free(s_synpath);
     free(s_prefix);
+
+
+    return EXIT_SUCCESS;
 }

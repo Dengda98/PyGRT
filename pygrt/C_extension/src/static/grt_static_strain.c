@@ -1,5 +1,5 @@
 /**
- * @file   stgrt_strain.c
+ * @file   grt_static_strain.c
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2025-04-08
  * 
@@ -79,7 +79,7 @@ static void getopt_from_command(int argc, char **argv){
 }
 
 
-int main(int argc, char **argv){
+int static_strain_main(int argc, char **argv){
     command = argv[0]; 
 
     getopt_from_command(argc, argv);
@@ -227,4 +227,5 @@ int main(int argc, char **argv){
         exit(EXIT_FAILURE);
     }
 
+    return EXIT_SUCCESS;
 }

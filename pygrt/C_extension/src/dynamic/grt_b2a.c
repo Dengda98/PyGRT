@@ -81,7 +81,7 @@ static void getopt_from_command(int argc, char **argv){
     }
 }
 
-int main(int argc, char **argv){
+int b2a_main(int argc, char **argv){
     command = argv[0];
 
     getopt_from_command(argc, argv);
@@ -107,4 +107,6 @@ int main(int argc, char **argv){
     }
 
     free(arr);
+
+    return EXIT_SUCCESS;
 }

@@ -95,7 +95,7 @@ static void getopt_from_command(int argc, char **argv){
 
 
 
-int main(int argc, char **argv){
+int stress_main(int argc, char **argv){
     command = argv[0];
 
     getopt_from_command(argc, argv);
@@ -286,4 +286,7 @@ int main(int argc, char **argv){
     free(s_filepath);
     free(s_synpath);
     free(s_prefix);
+
+
+    return EXIT_SUCCESS;
 }

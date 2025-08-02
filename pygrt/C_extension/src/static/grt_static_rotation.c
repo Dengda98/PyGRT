@@ -1,5 +1,5 @@
 /**
- * @file   stgrt_rotation.c
+ * @file   grt_static_rotation.c
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2025-04-08
  * 
@@ -80,7 +80,7 @@ static void getopt_from_command(int argc, char **argv){
 }
 
 
-int main(int argc, char **argv){
+int static_rotation_main(int argc, char **argv){
     command = argv[0]; 
 
     getopt_from_command(argc, argv);
@@ -225,4 +225,6 @@ int main(int argc, char **argv){
         fprintf(stderr, "[%s] " BOLD_RED "Error! Empty input. \n" DEFAULT_RESTORE, command);
         exit(EXIT_FAILURE);
     }
+
+    return EXIT_SUCCESS;
 }
