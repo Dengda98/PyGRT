@@ -175,12 +175,15 @@ static void free_Ctrl(GRT_SUBMODULE_CTRL *Ctrl){
     free(Ctrl->R.rs);
 
     // S
-    free(Ctrl->S.s_raw);
-    for(int i=0; i<Ctrl->S.nstatsidxs; ++i){
-        free(Ctrl->S.s_statsidxs[i]);
+    if(Ctrl->S.active){
+        free(Ctrl->S.s_raw);
+        for(int i=0; i<Ctrl->S.nstatsidxs; ++i){
+            free(Ctrl->S.s_statsidxs[i]);
+        }
+        free(Ctrl->S.s_statsidxs);
+        free(Ctrl->S.statsidxs);
+        free(Ctrl->S.s_statsdir);
     }
-    free(Ctrl->S.s_statsidxs);
-    free(Ctrl->S.statsidxs);
 
     free(Ctrl);
 }
