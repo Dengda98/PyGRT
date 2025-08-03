@@ -20,13 +20,17 @@
 #include "common/colorstr.h"
 #include "common/util.h"
 
+#include "grt.h"
 
+/** 该子模块的参数控制结构体 */
 typedef struct {
     char *name;
+    /** 输入模型 */
     struct {
         bool active;
         char *s_modelpath;
     } M;
+    /** 震源和接收器深度 */
     struct {
         bool active;
         MYREAL depsrc;
@@ -34,15 +38,30 @@ typedef struct {
         char *s_depsrc;
         char *s_deprcv;
     } D;
+    /** 震中距 */
     struct {
         bool active;
         char **s_rs;
         MYREAL *rs;
         MYINT nr;
     } R;
-
 } GRT_SUBMODULE_CTRL;
 
+
+/** 释放结构体的内存 */
+static void free_Ctrl(GRT_SUBMODULE_CTRL *Ctrl){
+    free(Ctrl->M.s_modelpath);
+    free(Ctrl->D.s_depsrc);
+    free(Ctrl->D.s_deprcv);
+
+    free(Ctrl->R.rs);
+    for(MYINT ir=0; ir<Ctrl->R.nr; ++ir){
+        free(Ctrl->R.s_rs[ir]);
+    }
+    free(Ctrl->R.s_rs);
+
+    free(Ctrl);
+}
 
 
 
@@ -411,13 +430,13 @@ MYREAL compute_travt1d(
 static void print_help(){
 print_logo();
 printf("\n"
-"[grt.travt]\n\n"
+"[grt travt]\n\n"
 "    A Supplementary Tool of GRT to Compute First Arrival Traveltime\n"
 "    of P-wave and S-wave in Horizontally Layerd Halfspace Model. \n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
-"    grt.travt -M<model> -D<depsrc>/<deprcv> -R<r1>,<r2>[,...]\n"
+"    grt travt -M<model> -D<depsrc>/<deprcv> -R<r1>,<r2>[,...]\n"
 "\n\n"
 "Options:\n"
 "----------------------------------------------------------------\n"
@@ -442,7 +461,7 @@ printf("\n"
 "\n\n"
 "Examples:\n"
 "----------------------------------------------------------------\n"
-"    grt.travt -Mmilrow -D2/0 -R10,20,30,40,50\n"
+"    grt travt -Mmilrow -D2/0 -R10,20,30,40,50\n"
 "\n\n\n"
 );
 }
@@ -514,6 +533,7 @@ static void getopt_from_command(GRT_SUBMODULE_CTRL *Ctrl, int argc, char **argv)
 }
 
 
+/** 子模块主函数 */
 int travt_main(int argc, char **argv){
     GRT_SUBMODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
     char *command = argv[0];
@@ -543,5 +563,6 @@ int travt_main(int argc, char **argv){
     }
     printf("------------------------------------------------\n");
 
+    free_Ctrl(Ctrl);
     return EXIT_SUCCESS;
 }
