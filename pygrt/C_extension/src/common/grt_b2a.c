@@ -45,17 +45,20 @@ printf("\n"
 
 /** 从命令行中读取选项，处理后记录到全局变量中 */
 static void getopt_from_command(GRT_SUBMODULE_CTRL *Ctrl, int argc, char **argv){
+    char* command = Ctrl->name;
     int opt;
     while ((opt = getopt(argc, argv, ":h")) != -1) {
         switch (opt) {
-            GRT_Common_Options_in_Switch(Ctrl, (char)(optopt));
+            GRT_Common_Options_in_Switch(command, (char)(optopt));
         }
     }
 
     // 检查必选项有没有设置
-    GRTCheckOptionEmpty(Ctrl, argc != 2);
+    GRTCheckOptionSet(command, argc > 1);
 }
 
+
+/** 子模块主函数 */
 int b2a_main(int argc, char **argv){
     GRT_SUBMODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
     Ctrl->name = strdup(argv[0]);
@@ -63,11 +66,9 @@ int b2a_main(int argc, char **argv){
     getopt_from_command(Ctrl, argc, argv);
 
     Ctrl->s_filepath = strdup(argv[1]);
+    
     // 检查文件名是否存在
-    if(access(Ctrl->s_filepath, F_OK) == -1){
-        GRTRaiseError("[%s] Error! %s not exists.\n", Ctrl->name, Ctrl->s_filepath);
-    }
-
+    GRTCheckFileExist(Ctrl->name, Ctrl->s_filepath);
 
     // 读入SAC文件
     SACHEAD hd;

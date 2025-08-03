@@ -459,6 +459,7 @@ printf("\n"
 
 /** 从命令行中读取选项，处理后记录到全局变量中 */
 static void getopt_from_command(GRT_SUBMODULE_CTRL *Ctrl, int argc, char **argv){
+    char* command = Ctrl->name;
     int opt;
     while ((opt = getopt(argc, argv, ":M:D:R:h")) != -1) {
         switch (opt) {
@@ -478,16 +479,16 @@ static void getopt_from_command(GRT_SUBMODULE_CTRL *Ctrl, int argc, char **argv)
                 Ctrl->D.s_depsrc = (char*)malloc(sizeof(char)*(strlen(optarg)+1));
                 Ctrl->D.s_deprcv = (char*)malloc(sizeof(char)*(strlen(optarg)+1));
                 if(2 != sscanf(optarg, "%[^/]/%s", Ctrl->D.s_depsrc, Ctrl->D.s_deprcv)){
-                    GRTBadOptionError(Ctrl, D, "");
+                    GRTBadOptionError(command, D, "");
                 };
                 if(1 != sscanf(Ctrl->D.s_depsrc, "%lf", &Ctrl->D.depsrc)){
-                    GRTBadOptionError(Ctrl, D, "");
+                    GRTBadOptionError(command, D, "");
                 }
                 if(1 != sscanf(Ctrl->D.s_deprcv, "%lf", &Ctrl->D.deprcv)){
-                    GRTBadOptionError(Ctrl, D, "");
+                    GRTBadOptionError(command, D, "");
                 }
                 if(Ctrl->D.depsrc < 0.0 || Ctrl->D.deprcv < 0.0){
-                    GRTBadOptionError(Ctrl, D, "Negative value in -D is not supported.");
+                    GRTBadOptionError(command, D, "Negative value in -D is not supported.");
                 }
                 break;
 
@@ -500,20 +501,20 @@ static void getopt_from_command(GRT_SUBMODULE_CTRL *Ctrl, int argc, char **argv)
                 for(MYINT i=0; i<Ctrl->R.nr; ++i){
                     Ctrl->R.rs[i] = atof(Ctrl->R.s_rs[i]);
                     if(Ctrl->R.rs[i] < 0.0){
-                        GRTBadOptionError(Ctrl, R, "Can't set negative epicentral distance(%f) in -R.", Ctrl->R.rs[i]);
+                        GRTBadOptionError(command, R, "Can't set negative epicentral distance(%f) in -R.", Ctrl->R.rs[i]);
                     }
                 }
                 break;
 
-            GRT_Common_Options_in_Switch(Ctrl, (char)(optopt));
+            GRT_Common_Options_in_Switch(command, (char)(optopt));
         }
     }
 
     // 检查必须设置的参数是否有设置
-    GRTCheckOptionEmpty(Ctrl, argc == 1);
-    GRTCheckOptionActive(Ctrl, M);
-    GRTCheckOptionActive(Ctrl, D);
-    GRTCheckOptionActive(Ctrl, R);
+    GRTCheckOptionSet(command, argc > 1);
+    GRTCheckOptionActive(command, Ctrl, M);
+    GRTCheckOptionActive(command, Ctrl, D);
+    GRTCheckOptionActive(command, Ctrl, R);
 
 }
 

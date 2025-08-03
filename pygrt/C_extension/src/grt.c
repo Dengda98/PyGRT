@@ -59,15 +59,16 @@ printf("For each submodule, you can use -h to see the help message.\n\n");
  * @param     argv      多个参数字符串指针
  */
 static void getopt_from_command(GRT_MAIN_CTRL *Ctrl, int argc, char **argv){
+    char* command = Ctrl->name;
     int opt;
     while ((opt = getopt(argc, argv, ":h")) != -1) {
         switch (opt) {
-            GRT_Common_Options_in_Switch(Ctrl, optopt);
+            GRT_Common_Options_in_Switch(command, optopt);
         }
     }
 
     // 必须有输入
-    GRTCheckOptionEmpty(Ctrl, argc == 1);
+    GRTCheckOptionSet(command, argc > 1);
 }
 
 
@@ -75,7 +76,7 @@ static void getopt_from_command(GRT_MAIN_CTRL *Ctrl, int argc, char **argv){
 int dispatch_command(int argc, char **argv) {
     char *entry_name = argv[1];
     
-    for (GRT_SUBMODULE_ENTRY *entry = GRT_Submodules_Entry; entry->name != NULL; entry++) {
+    for (const GRT_SUBMODULE_ENTRY *entry = GRT_Submodules_Entry; entry->name != NULL; entry++) {
         if (strcmp(entry_name, entry->name) == 0) {
             return entry->func(argc - 1, argv + 1);
         }

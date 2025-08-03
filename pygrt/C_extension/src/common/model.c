@@ -9,6 +9,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <complex.h>
 
 #include "common/model.h"
@@ -16,6 +17,7 @@
 #include "common/attenuation.h"
 #include "common/colorstr.h"
 
+#include "grt_error.h"
 
 void print_mod1d(const MODEL1D *mod1d){
     LAYER *lay;
@@ -256,11 +258,9 @@ void realloc_pymod(PYMODEL1D *pymod, MYINT n){
 
 
 PYMODEL1D * read_pymod_from_file(const char *command, const char *modelpath, double depsrc, double deprcv, bool allowLiquid){
-    FILE *fp;
-    if((fp = fopen(modelpath, "r")) == NULL){
-        fprintf(stderr, "[%s] " BOLD_RED "Model file open error.\n" DEFAULT_RESTORE, command);
-        return NULL;
-    }
+    GRTCheckFileExist(command, modelpath);
+    
+    FILE *fp = GRTCheckOpenFile(command, modelpath, "r");
 
     MYINT isrc=-1, ircv=-1;
     MYINT *pmin_idx, *pmax_idx, *pimg_idx;

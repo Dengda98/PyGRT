@@ -18,11 +18,12 @@
 #include "common/const.h"
 #include "common/logo.h"
 
+#include "grt_error.h"
+
 // ------------------------------------------------------
 /** X 宏，用于定义子模块命令。后续的命令名称和函数名称均与此匹配 */
 #define GRT_Submodule_List   \
     /* dynamic */          \
-    X(greenfn)             \
     X(syn)                 \
     X(rotation)            \
     X(strain)              \
@@ -64,48 +65,8 @@ extern const char *GRT_Submodule_Names[];
 
 
 
-// GRT自定义报错信息
-#define GRTRaiseError(ErrorMessage, ...) ({\
-    fprintf(stderr, BOLD_RED ErrorMessage DEFAULT_RESTORE, ##__VA_ARGS__);\
-    exit(EXIT_FAILURE);\
-})
-
-// GRT报错：选项设置不符要求
-#define GRTBadOptionError(Ctrl, X, MoreErrorMessage, ...) ({\
-    GRTRaiseError("[%s] Error in -"#X" . "MoreErrorMessage" Use \"-h\" for help.\n", Ctrl->name, ##__VA_ARGS__);\
-})
-
-// GRT报错：选项未设置参数    注意这里使用的是 %c 和 运行时变量X
-#define GRTMissArgsError(Ctrl, X, MoreErrorMessage, ...) ({\
-    GRTRaiseError("[%s] Error! Option \"-%c\" requires an argument. "MoreErrorMessage" Use \"-h\" for help.\n", Ctrl->name, X, ##__VA_ARGS__);\
-})
-
-// GRT报错：非法选项    注意这里使用的是 %c 和 运行时变量X
-#define GRTInvalidOptionError(Ctrl, X, MoreErrorMessage, ...) ({\
-    GRTRaiseError("[%s] Error! Option \"-%c\" is invalid. "MoreErrorMessage" Use \"-h\" for help.\n", Ctrl->name, X, ##__VA_ARGS__);\
-})
-
-// GRT报错：检查某个选项是否启用
-#define GRTCheckOptionActive(Ctrl, X) ({\
-    if( ! Ctrl->X.active){\
-        GRTRaiseError("[%s] Error! Need set options -\""#X"\". Use \"-h\" for help.\n", Ctrl->name);\
-    }\
-})
-
-// GRT报错：检查是否有使用选项
-#define GRTCheckOptionEmpty(Ctrl, condition) ({\
-    if((condition)){\
-        GRTRaiseError("[%s] Error! Need set options. Use \"-h\" for help.\n", Ctrl->name);\
-    }\
-})
-
-
-
-
-
-
 /** 共有的命令行处理语句 */ 
-#define GRT_Common_Options_in_Switch(Ctrl, X) \
+#define GRT_Common_Options_in_Switch(name, X) \
     /** 帮助 */  \
     case 'h': \
         print_help(); \
@@ -113,11 +74,11 @@ extern const char *GRT_Submodule_Names[];
         break; \
     /** 参数缺失 */  \
     case ':': \
-        GRTMissArgsError(Ctrl, X, ""); \
+        GRTMissArgsError(name, X, ""); \
         break; \
     /** 非法选项 */  \
     case '?': \
     default: \
-        GRTInvalidOptionError(Ctrl, X, ""); \
+        GRTInvalidOptionError(name, X, ""); \
         break; \
 
