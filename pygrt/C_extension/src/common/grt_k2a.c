@@ -28,9 +28,7 @@ static void free_Ctrl(GRT_SUBMODULE_CTRL *Ctrl){
     free(Ctrl);
 }
 
-/**
- * 打印使用说明
- */
+/** 打印使用说明 */
 static void print_help(){
 printf("\n"
 "[grt k2a]\n\n"
@@ -45,12 +43,7 @@ printf("\n"
 }
 
 
-/**
- * 从命令行中读取选项，处理后记录到全局变量中
- * 
- * @param     argc      命令行的参数个数
- * @param     argv      多个参数字符串指针
- */
+/** 从命令行中读取选项，处理后记录到全局变量中 */
 static void getopt_from_command(GRT_SUBMODULE_CTRL *Ctrl, int argc, char **argv){
     int opt;
     while ((opt = getopt(argc, argv, ":h")) != -1) {
