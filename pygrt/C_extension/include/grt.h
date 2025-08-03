@@ -20,10 +20,13 @@
 
 #include "grt_error.h"
 
+#define GRT_MAIN_COMMAND   "grt"   ///< 主程序名
+
 // ------------------------------------------------------
 /** X 宏，用于定义子模块命令。后续的命令名称和函数名称均与此匹配 */
 #define GRT_Submodule_List   \
     /* dynamic */          \
+    X(greenfn)             \
     X(syn)                 \
     X(rotation)            \
     X(strain)              \

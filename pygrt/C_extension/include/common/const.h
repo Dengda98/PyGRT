@@ -93,6 +93,10 @@ typedef int MYINT;  ///< 整数
 #define GRT_CMPLX_FMT "%18.8e%-+14.8ej"   ///< 复数输出格式
 #define GRT_STR_CMPLX_FMT "%34s"    ///< 与复数格式同长度的字符串输出格式
 
+#define GRT_MAX(a, b) ((a) > (b) ? (a) : (b))  ///< 求两者较大值
+#define GRT_MIN(a, b) ((a) < (b) ? (a) : (b))  ///< 求两者较小值
+
+#define GRT_SQUARE(x) ((x) * (x))  ///< 计算一个数的平方
 
 // -----------------------------------------------------------------------------
 #define CHANNEL_NUM    3     ///< 3, 代码中分量个数（ZRT，ZNE）

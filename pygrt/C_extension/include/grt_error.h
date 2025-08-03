@@ -9,7 +9,9 @@
 
 #pragma once 
 
-
+#include <unistd.h>
+#include <sys/stat.h>
+#include <errno.h>
 
 // GRT自定义报错信息
 #define GRTRaiseError(ErrorMessage, ...) ({\
@@ -40,6 +42,11 @@
 // GRT报错：文件打开失败
 #define GRTFileOpenError(name, filepath) ({\
     GRTRaiseError("[%s] Error! Cannot open File \"%s\". Please check.\n", name, filepath);\
+})
+
+// GRT报错：目录创建失败
+#define GRTMakeDirError(name, dirpath, errno) ({\
+    GRTRaiseError("[%s] Error! Unable to create folder %s. Error code: %d\n", name, dirpath, errno);\
 })
 
 
@@ -74,4 +81,13 @@
     }\
     /** 返回文件指针 */ \
     _fp_;\
+})
+
+// GRT检查：创建目录
+#define GRTCheckMakeDir(name, dirpath) ({\
+    if(mkdir(dirpath, 0777) != 0){\
+        if(errno != EEXIST){\
+            GRTMakeDirError(name, dirpath, errno);\
+        }\
+    }\
 })
