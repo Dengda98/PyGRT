@@ -55,21 +55,69 @@ typedef struct {
 #undef X
 
 /** 注册所有子模块命令 */
-GRT_SUBMODULE_ENTRY GRT_Submodules_Entry[] = {
-    #define X(name) {#name, name##_main},
-        GRT_Submodule_List
-    #undef X
-    {NULL, NULL} // 结束标记
-};
-
+extern const GRT_SUBMODULE_ENTRY GRT_Submodules_Entry[];
 
 /** 定义包含子模块名称的字符串数组 */
-const char *GRT_Submodule_Names[] = {
-    #define X(name) #name ,
-        GRT_Submodule_List
-    #undef X
-    NULL
-};
+extern const char *GRT_Submodule_Names[];
 
 
+
+
+
+// GRT自定义报错信息
+#define GRTRaiseError(ErrorMessage, ...) ({\
+    fprintf(stderr, BOLD_RED ErrorMessage DEFAULT_RESTORE, ##__VA_ARGS__);\
+    exit(EXIT_FAILURE);\
+})
+
+// GRT报错：选项设置不符要求
+#define GRTBadOptionError(Ctrl, X, MoreErrorMessage, ...) ({\
+    GRTRaiseError("[%s] Error in -"#X" . "MoreErrorMessage" Use \"-h\" for help.\n", Ctrl->name, ##__VA_ARGS__);\
+})
+
+// GRT报错：选项未设置参数    注意这里使用的是 %c 和 运行时变量X
+#define GRTMissArgsError(Ctrl, X, MoreErrorMessage, ...) ({\
+    GRTRaiseError("[%s] Error! Option \"-%c\" requires an argument. "MoreErrorMessage" Use \"-h\" for help.\n", Ctrl->name, X, ##__VA_ARGS__);\
+})
+
+// GRT报错：非法选项    注意这里使用的是 %c 和 运行时变量X
+#define GRTInvalidOptionError(Ctrl, X, MoreErrorMessage, ...) ({\
+    GRTRaiseError("[%s] Error! Option \"-%c\" is invalid. "MoreErrorMessage" Use \"-h\" for help.\n", Ctrl->name, X, ##__VA_ARGS__);\
+})
+
+// GRT报错：检查某个选项是否启用
+#define GRTCheckOptionActive(Ctrl, X) ({\
+    if( ! Ctrl->X.active){\
+        GRTRaiseError("[%s] Error! Need set options -\""#X"\". Use \"-h\" for help.\n", Ctrl->name);\
+    }\
+})
+
+// GRT报错：检查是否有使用选项
+#define GRTCheckOptionEmpty(Ctrl, N) ({\
+    if((N) == 0){\
+        GRTRaiseError("[%s] Error! Need set options. Use \"-h\" for help.\n", Ctrl->name);\
+    }\
+})
+
+
+
+
+
+
+/** 共有的命令行处理语句 */ 
+#define GRT_Common_Options_in_Switch(Ctrl, X) \
+    /** 帮助 */  \
+    case 'h': \
+        print_help(); \
+        exit(EXIT_SUCCESS); \
+        break; \
+    /** 参数缺失 */  \
+    case ':': \
+        GRTMissArgsError(Ctrl, X, ""); \
+        break; \
+    /** 非法选项 */  \
+    case '?': \
+    default: \
+        GRTInvalidOptionError(Ctrl, X, ""); \
+        break; \
 

@@ -10,6 +10,22 @@
 
 #include "grt.h"
 
+/** 注册所有子模块命令 */
+const GRT_SUBMODULE_ENTRY GRT_Submodules_Entry[] = {
+    #define X(name) {#name, name##_main},
+        GRT_Submodule_List
+    #undef X
+    {NULL, NULL} // 结束标记
+};
+
+/** 定义包含子模块名称的字符串数组 */
+const char *GRT_Submodule_Names[] = {
+    #define X(name) #name ,
+        GRT_Submodule_List
+    #undef X
+    NULL
+};
+
 
 typedef struct {
     char *name;
@@ -55,7 +71,7 @@ static void getopt_from_command(GRT_MAIN_CTRL *Ctrl, int argc, char **argv){
 }
 
 
-// 查找并执行子命令
+/** 查找并执行子命令 */
 int dispatch_command(int argc, char **argv) {
     char *entry_name = argv[1];
     
@@ -71,7 +87,7 @@ int dispatch_command(int argc, char **argv) {
 }
 
 
-// 主函数
+/** 主函数 */
 int main(int argc, char **argv) {
     GRT_MAIN_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
     Ctrl->name = argv[0];
