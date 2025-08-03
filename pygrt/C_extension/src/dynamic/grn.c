@@ -119,7 +119,7 @@ void integ_grn_spec(
     const MYREAL k02 = k0*k0;
     const MYREAL ampk2 = ampk*ampk;
 
-    if(vmin_ref < RZERO)  keps = -RONE;  // 若使用峰谷平均法，则不使用keps进行收敛判断
+    if(vmin_ref < RZERO)  keps = RZERO;  // 若使用峰谷平均法，则不使用keps进行收敛判断
 
     bool useFIM = (filonLength > RZERO) || (safilonTol > RZERO) ;    // 是否使用Filon积分（包括自适应Filon）
     const MYREAL dk=PI2/(Length*rmax);     // 波数积分间隔
