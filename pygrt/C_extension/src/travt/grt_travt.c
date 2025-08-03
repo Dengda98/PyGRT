@@ -420,7 +420,7 @@ MYREAL compute_travt1d(
 /** 打印使用说明 */
 static void print_help(){
 printf("\n"
-"[grt travt]\n\n"
+"[grt travt] %s\n\n", GRT_VERSION);printf(
 "    A Supplementary Tool of GRT to Compute First Arrival Traveltime\n"
 "    of P-wave and S-wave in Horizontally Layerd Halfspace Model. \n"
 "\n\n"
@@ -468,9 +468,7 @@ static void getopt_from_command(GRT_SUBMODULE_CTRL *Ctrl, int argc, char **argv)
             // 互相用空格隔开即可
             case 'M':
                 Ctrl->M.active = true;
-                Ctrl->M.s_modelpath = (char*)malloc(sizeof(char)*(strlen(optarg)+1));
-                strcpy(Ctrl->M.s_modelpath, optarg);
-                // s_modelname = get_basename(s_modelpath);
+                Ctrl->M.s_modelpath = strdup(optarg);
                 break;
 
             // 震源和场点深度， -Ddepsrc/deprcv
@@ -501,7 +499,7 @@ static void getopt_from_command(GRT_SUBMODULE_CTRL *Ctrl, int argc, char **argv)
                 for(MYINT i=0; i<Ctrl->R.nr; ++i){
                     Ctrl->R.rs[i] = atof(Ctrl->R.s_rs[i]);
                     if(Ctrl->R.rs[i] < 0.0){
-                        GRTBadOptionError(command, R, "Can't set negative epicentral distance(%f) in -R.", Ctrl->R.rs[i]);
+                        GRTBadOptionError(command, R, "Can't set negative epicentral distance(%f).", Ctrl->R.rs[i]);
                     }
                 }
                 break;

@@ -30,7 +30,7 @@ static void free_Ctrl(GRT_SUBMODULE_CTRL *Ctrl){
 /** 打印使用说明 */
 static void print_help(){
 printf("\n"
-"[grt b2a]\n\n"
+"[grt b2a] %s\n\n", GRT_VERSION);printf(
 "    Convert a binary SAC file into an ASCII file, \n"
 "    write to standard output (ignore header vars).\n"
 "\n\n"

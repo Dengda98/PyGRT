@@ -31,7 +31,7 @@ static void free_Ctrl(GRT_SUBMODULE_CTRL *Ctrl){
 /** 打印使用说明 */
 static void print_help(){
 printf("\n"
-"[grt k2a]\n\n"
+"[grt k2a] %s\n\n", GRT_VERSION);printf(
 "    Convert a binary stats file generated during wavenumber integration\n"
 "    into an ASCII file, write to standard output.\n"
 "\n\n"
