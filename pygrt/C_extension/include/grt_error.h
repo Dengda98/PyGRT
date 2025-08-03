@@ -11,6 +11,7 @@
 
 #include <unistd.h>
 #include <sys/stat.h>
+#include <dirent.h>
 #include <errno.h>
 
 // GRT自定义报错信息
@@ -36,7 +37,7 @@
 
 // GRT报错：文件不存在
 #define GRTFileNotFoundError(name, filepath) ({\
-    GRTRaiseError("[%s] Error! File \"%s\" not found. Please check the filepath.\n", name, filepath);\
+    GRTRaiseError("[%s] Error! File \"%s\" not found. Please check.\n", name, filepath);\
 })
 
 // GRT报错：文件打开失败
@@ -47,6 +48,11 @@
 // GRT报错：目录创建失败
 #define GRTMakeDirError(name, dirpath, errno) ({\
     GRTRaiseError("[%s] Error! Unable to create folder %s. Error code: %d\n", name, dirpath, errno);\
+})
+
+// GRT报错：目录不存在
+#define GRTDirNotFoundError(name, dirpath) ({\
+    GRTRaiseError("[%s] Error! Directory \"%s\" not found. Please check.\n", name, dirpath);\
 })
 
 
@@ -89,5 +95,12 @@
         if(errno != EEXIST){\
             GRTMakeDirError(name, dirpath, errno);\
         }\
+    }\
+})
+
+// GRT检查：目录是否存在
+#define GRTCheckDirExist(name, dirpath) ({\
+    if(opendir(dirpath) == NULL) {\
+        GRTDirNotFoundError(name, dirpath);\
     }\
 })
