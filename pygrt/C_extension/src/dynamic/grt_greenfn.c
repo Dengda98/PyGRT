@@ -25,12 +25,12 @@
 
 
 // 一些变量的非零默认值
-#define GRT_GREENFN_ZETA        0.8
-#define GRT_GREENFN_FREQ1      -1.0
-#define GRT_GREENFN_FREQ2      -1.0
-#define GRT_GREENFN_VMIN_REF    0.1
-#define GRT_GREENFN_K0          5.0
-#define GRT_GREENFN_AMPK       1.15
+#define GRT_GREENFN_N_ZETA        0.8
+#define GRT_GREENFN_H_FREQ1      -1.0
+#define GRT_GREENFN_H_FREQ2      -1.0
+#define GRT_GREENFN_V_VMIN_REF    0.1
+#define GRT_GREENFN_K_K0          5.0
+#define GRT_GREENFN_K_AMPK       1.15
 #define GRT_GREENFN_G_EX       true
 #define GRT_GREENFN_G_VF       true
 #define GRT_GREENFN_G_HF       true
@@ -313,7 +313,7 @@ printf("\n"
 "                 <dt>:   time interval (secs). \n"
 "                 <zeta>: define the coefficient of imaginary \n"
 "                         frequency wI=zeta*PI/T, where T=nt*dt.\n"
-"                         Default zeta=%.1f.\n", GRT_GREENFN_ZETA); printf(
+"                         Default zeta=%.1f.\n", GRT_GREENFN_N_ZETA); printf(
 "\n"
 "    -R<r1>,<r2>[,...]\n"
 "                 Multiple epicentral distance (km), \n"
@@ -324,8 +324,8 @@ printf("\n"
 "\n"
 "    -H<f1>/<f2>  Apply bandpass filer with rectangle window, \n"
 "                 default no filter.\n"
-"                 <f1>: lower frequency (Hz), %.1f means low pass.\n", GRT_GREENFN_FREQ1); printf(
-"                 <f2>: upper frequency (Hz), %.1f means high pass.\n", GRT_GREENFN_FREQ2); printf(
+"                 <f1>: lower frequency (Hz), %.1f means low pass.\n", GRT_GREENFN_H_FREQ1); printf(
+"                 <f2>: upper frequency (Hz), %.1f means high pass.\n", GRT_GREENFN_H_FREQ2); printf(
 "\n"
 "    -L[a]<length>[/<Flength>/<Fcut>]\n"
 "                 Define the wavenumber integration interval\n"
@@ -353,7 +353,7 @@ printf("\n"
 "                 There are 3 cases:\n"
 "                 + (default) not set or set 0.0.\n"); printf(
 "                   <vmin_ref> will be the minimum velocity\n"
-"                   of model, but limited to %.1f. and if the \n", GRT_GREENFN_VMIN_REF); printf(
+"                   of model, but limited to %.1f. and if the \n", GRT_GREENFN_V_VMIN_REF); printf(
 "                   depth gap between source and receiver is \n"
 "                   thinner than %.1f km, PTAM will be appled\n", MIN_DEPTH_GAP_SRC_RCV); printf(
 "                   automatically.\n"
@@ -377,10 +377,10 @@ printf("\n"
 "                 sqrt( (<k0>*mult)^2 + (<ampk>*w/<vmin_ref>)^2 ),\n"
 "                 default mult=1.0.\n"
 "                 <k0>:   designed to give residual k at\n"
-"                         0 frequency, default is %.1f, and \n", GRT_GREENFN_K0); printf(
+"                         0 frequency, default is %.1f, and \n", GRT_GREENFN_K_K0); printf(
 "                         multiply PI/hs in program, \n"
 "                         where hs = max(fabs(depsrc-deprcv), %.1f).\n", MIN_DEPTH_GAP_SRC_RCV); printf(
-"                 <ampk>: amplification factor, default is %.2f.\n", GRT_GREENFN_AMPK); printf(
+"                 <ampk>: amplification factor, default is %.2f.\n", GRT_GREENFN_K_AMPK); printf(
 "                 <keps>: a threshold for break wavenumber \n"
 "                         integration in advance. See \n"
 "                         (Yao and Harkrider, 1983) for details.\n"
@@ -433,12 +433,12 @@ static void getopt_from_command(GRT_SUBMODULE_CTRL *Ctrl, int argc, char **argv)
     char* command = Ctrl->name;
 
     // 先为个别参数设置非0初始值
-    Ctrl->N.zeta = GRT_GREENFN_ZETA;
-    Ctrl->H.freq1 = GRT_GREENFN_FREQ1;
-    Ctrl->H.freq2 = GRT_GREENFN_FREQ2;
-    Ctrl->V.vmin_ref = GRT_GREENFN_VMIN_REF;
-    Ctrl->K.k0 = GRT_GREENFN_K0;
-    Ctrl->K.ampk = GRT_GREENFN_AMPK;
+    Ctrl->N.zeta = GRT_GREENFN_N_ZETA;
+    Ctrl->H.freq1 = GRT_GREENFN_H_FREQ1;
+    Ctrl->H.freq2 = GRT_GREENFN_H_FREQ2;
+    Ctrl->V.vmin_ref = GRT_GREENFN_V_VMIN_REF;
+    Ctrl->K.k0 = GRT_GREENFN_K_K0;
+    Ctrl->K.ampk = GRT_GREENFN_K_AMPK;
     Ctrl->G.doEX = GRT_GREENFN_G_EX;
     Ctrl->G.doVF = GRT_GREENFN_G_VF;
     Ctrl->G.doHF = GRT_GREENFN_G_HF;
@@ -782,7 +782,7 @@ int greenfn_main(int argc, char **argv) {
 
     // 参考最小速度
     if(!Ctrl->V.active){
-        Ctrl->V.vmin_ref = GRT_MAX(vmin, GRT_GREENFN_VMIN_REF);
+        Ctrl->V.vmin_ref = GRT_MAX(vmin, GRT_GREENFN_V_VMIN_REF);
     } 
 
     // 如果没有主动设置vmin_ref，则判断是否要自动使用PTAM

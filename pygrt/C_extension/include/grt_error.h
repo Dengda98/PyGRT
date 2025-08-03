@@ -100,7 +100,9 @@
 
 // GRT检查：目录是否存在
 #define GRTCheckDirExist(name, dirpath) ({\
-    if(opendir(dirpath) == NULL) {\
+    DIR *dir = opendir(dirpath);\
+    if(dir == NULL) {\
         GRTDirNotFoundError(name, dirpath);\
     }\
+    closedir(dir);\
 })
