@@ -8,14 +8,8 @@
  * 
  */
 
-#include <stdio.h>
-#include <unistd.h>
 #include <complex.h>
 #include <fftw3.h>
-#include <string.h>
-#include <stdlib.h>
-#include <sys/stat.h>
-#include <errno.h>
 #include <omp.h>
 
 #include "dynamic/grn.h"
@@ -25,99 +19,234 @@
 #include "common/model.h"
 #include "common/search.h"
 #include "common/sacio.h"
-#include "common/logo.h"
-#include "common/colorstr.h"
+#include "common/util.h"
+
+#include "grt.h"
 
 
-#ifdef GRT_USE_FLOAT 
-#define _FFTW_COMPLEX   fftwf_complex
-#define _FFTW_PLAN      fftwf_plan
-#define _FFTW_EXECUTE   fftwf_execute
-#define _FFTW_MALLOC    fftwf_malloc
-#define _FFTW_FREE      fftwf_free
-#define _FFTW_DESTROY_PLAN   fftwf_destroy_plan
-#define _FFTW_PLAN_DFT_C2R_1D   fftwf_plan_dft_c2r_1d
-#else 
-#define _FFTW_COMPLEX   fftw_complex
-#define _FFTW_PLAN      fftw_plan
-#define _FFTW_EXECUTE   fftw_execute
-#define _FFTW_MALLOC    fftw_malloc
-#define _FFTW_FREE      fftw_free
-#define _FFTW_DESTROY_PLAN   fftw_destroy_plan
-#define _FFTW_PLAN_DFT_C2R_1D   fftw_plan_dft_c2r_1d
-#endif
+// 一些变量的非零默认值
+#define GRT_GREENFN_ZETA        0.8
+#define GRT_GREENFN_FREQ1      -1.0
+#define GRT_GREENFN_FREQ2      -1.0
+#define GRT_GREENFN_VMIN_REF    0.1
+#define GRT_GREENFN_K0          5.0
+#define GRT_GREENFN_AMPK       1.15
+#define GRT_GREENFN_G_EX       true
+#define GRT_GREENFN_G_VF       true
+#define GRT_GREENFN_G_HF       true
+#define GRT_GREENFN_G_DC       true
 
 
-//****************** 在该文件以内的全局变量 ***********************//
-// 命令名称
-static char *command = NULL;
-// 线程数
-static int nthreads=-1;
-// 模型路径，模型PYMODEL1D指针，全局最大最小速度
-static char *s_modelpath = NULL;
-static char *s_modelname = NULL;
-static PYMODEL1D *pymod;
-static double vmax, vmin;
-// 震源和场点深度
-static double depsrc, deprcv;
-static char *s_depsrc = NULL, *s_deprcv = NULL;
-// 点数、采样间隔、时窗长度、频率点数、频率间隔
-static int nt; 
-static double dt;
-static double winT;
-static int nf1, nf2, nf;
-static double df, dw;
-static MYREAL *freqs = NULL;
-// 输出目录
-static char *s_output_dir = NULL;
-// 计算频率范围
-static double freq1=-1.0, freq2=-1.0;
-// 虚频率系数和虚频率
-static double zeta=0.8, wI=0.0;
-// 波数积分间隔, Filon积分间隔，自适应Filon积分采样精度，Filon积分起始点
-static double Length=0.0, filonLength=0.0, safilonTol=0.0, filonCut=0.0;
-// 波数积分相关变量
-static double keps=-1.0, ampk=1.15, k0=5.0;
-// 参考最小速度，小于0表示使用峰谷平均法;
-static double vmin_ref=0.0;
-static const double min_vmin_ref=0.1;
-// 自动使用峰谷平均法的最小厚度差
-static const double hs_ptam = MIN_DEPTH_GAP_SRC_RCV;
-// 时间延迟量，延迟参考速度。总延迟=T0 + dist/V0;
-static double delayT=0.0, delayT0=0.0, delayV0=0.0;
-static double tmax; // 时窗最大截止时刻
-// 震中距数组以及保存对应初至波走时的数组
-static char **s_rs = NULL;
-static MYREAL *rs = NULL;
-static int nr=0;
-// 是否silence整个输出
-static bool silenceInput=false;
-// 输出单个频率下的波数积分过程文件 -S
-static char *s_statsdir = NULL; // 保存目录，和SAC文件目录同级
-static char **s_statsidxs = NULL;
-static MYINT nstatsidxs=0;
-static MYINT *statsidxs = NULL;
-// 计算哪些格林函数，确定震源类型, 默认计算全部
-static bool doEX=true, doVF=true, doHF=true, doDC=true;
 
-// 是否计算位移空间导数
-static bool calc_upar=false;
+/** 该子模块的参数控制结构体 */
+typedef struct {
+    char *name;
+    /** 输入模型 */
+    struct {
+        bool active;
+        char *s_modelpath;        ///< 模型路径
+        const char *s_modelname;  ///< 模型名称
+        PYMODEL1D *pymod;         ///< 模型PYMODEL1D结构体指针
+    } M;
+    /** 震源和接收器深度 */
+    struct {
+        bool active;
+        MYREAL depsrc;
+        MYREAL deprcv;
+        char *s_depsrc;
+        char *s_deprcv;
+    } D;
+    /** 波形时窗 */
+    struct {
+        bool active;
+        MYINT nt;
+        MYINT nf;
+        MYREAL dt;
+        MYREAL df;
+        MYREAL winT;  ///< 时窗长度 
+        MYREAL zeta;  ///< 虚频率系数， w <- w - zeta*PI/r* 1j
+        MYREAL wI;    ///< 虚频率  zeta*PI/r
+        MYREAL *freqs;
+    } N;
+    /** 输出目录 */
+    struct {
+        bool active;
+        char *s_output_dir;
+    } O;
+    /** 频段 */
+    struct {
+        bool active;
+        MYREAL freq1;
+        MYREAL freq2;
+        MYINT nf1;
+        MYINT nf2;
+    } H;
+    /** 波数积分间隔 */
+    struct {
+        bool active;
+        MYREAL Length;
+        MYREAL filonLength;
+        MYREAL safilonTol;
+        MYREAL filonCut;
+    } L;
+    /** 波数积分上限 */
+    struct {
+        bool active;
+        MYREAL keps;
+        MYREAL ampk;
+        MYREAL k0;
+    } K;
+    /** 参考速度 */
+    struct {
+        bool active;
+        MYREAL vmin_ref;
+    } V;
+    /** 时间延迟 */
+    struct {
+        bool active;
+        MYREAL delayT0;
+        MYREAL delayV0;
+    } E;
+    /** 波数积分过程的核函数文件 */
+    struct {
+        bool active;
+        char *s_raw;
+        char **s_statsidxs;
+        MYINT *statsidxs;
+        MYINT nstatsidxs;
+        char *s_statsdir;  ///< 保存目录，和SAC文件目录同级
+    } S;
+    /** 震中距 */
+    struct {
+        bool active;
+        char *s_raw;
+        char **s_rs;
+        MYREAL *rs;
+        MYINT nr;
+    } R;
+    /** 多线程 */
+    struct {
+        bool active;
+        MYINT nthreads; ///< 线程数
+    } P;
+    /** 输出哪些震源的格林函数 */
+    struct {
+        bool active;
+        bool doEX;
+        bool doVF;
+        bool doHF;
+        bool doDC;
+    } G;
+    /** 是否计算空间导数 */
+    struct {
+        bool active;
+    } e;
+    /** 静默输出 */
+    struct {
+        bool active;
+    } s;
+} GRT_SUBMODULE_CTRL;
 
-// 各选项的标志变量，初始化为0，定义了则为1
-static int M_flag=0, D_flag=0, N_flag=0, 
-            O_flag=0, H_flag=0,
-            L_flag=0, V_flag=0, E_flag=0, 
-            K_flag=0, s_flag=0, 
-            S_flag=0, R_flag=0, P_flag=0,
-            G_flag=0, e_flag=0;
+
+/** 释放结构体的内存 */
+static void free_Ctrl(GRT_SUBMODULE_CTRL *Ctrl){
+    free(Ctrl->name);
+
+    // M
+    free(Ctrl->M.s_modelpath);
+    free_pymod(Ctrl->M.pymod);
+    
+    // D
+    free(Ctrl->D.s_depsrc);
+    free(Ctrl->D.s_deprcv);
+
+    // N
+    free(Ctrl->N.freqs);
+
+    // O
+    free(Ctrl->O.s_output_dir);
+
+    // R
+    free(Ctrl->R.s_raw);
+    for(int ir=0; ir<Ctrl->R.nr; ++ir){
+        free(Ctrl->R.s_rs[ir]);
+    }
+    free(Ctrl->R.s_rs);
+    free(Ctrl->R.rs);
+
+    // S
+    free(Ctrl->S.s_raw);
+    for(int i=0; i<Ctrl->S.nstatsidxs; ++i){
+        free(Ctrl->S.s_statsidxs[i]);
+    }
+    free(Ctrl->S.s_statsidxs);
+    free(Ctrl->S.statsidxs);
+
+    free(Ctrl);
+}
 
 
-/**
- * 打印使用说明
- */
+/** 打印结构体中的参数 */
+static void print_Ctrl(const GRT_SUBMODULE_CTRL *Ctrl){
+    print_pymod(Ctrl->M.pymod);
+
+    const char format[]      = "   \%-20s  \%s\n";
+    const char format_real[] = "   \%-20s  \%.3f\n";
+    const char format_int[]  = "   \%-20s  \%d\n";
+    char line[100];
+    printf("------------------------------------------------\n");
+    printf(format, "PARAMETER", "VALUE");
+    printf(format, "model_path", Ctrl->M.s_modelpath);
+    if(Ctrl->V.vmin_ref < 0.0){
+        snprintf(line, sizeof(line), "%.3f, Using PTAM", Ctrl->V.vmin_ref);
+    } else {
+        snprintf(line, sizeof(line), "%.3f", Ctrl->V.vmin_ref);
+    }
+    printf(format, "vmin_ref", line);
+    if(Ctrl->L.filonLength > 0.0){  
+        snprintf(line, sizeof(line), "%.3f,%.3f,%.3f, using FIM", Ctrl->L.Length, Ctrl->L.filonLength, Ctrl->L.filonCut);
+    } else if(Ctrl->L.safilonTol > 0.0){
+        snprintf(line, sizeof(line), "%.3f,%.3e,%.3f, using SAFIM.", Ctrl->L.Length, Ctrl->L.safilonTol, Ctrl->L.filonCut);
+    } else {
+        snprintf(line, sizeof(line), "%.3f", Ctrl->L.Length);
+    }
+    printf(format, "Length", line);
+    printf(format_int, "nt", Ctrl->N.nt);
+    printf(format_real, "dt", Ctrl->N.dt);
+    printf(format_real, "winT", Ctrl->N.winT);
+    printf(format_real, "zeta", Ctrl->N.zeta);
+    printf(format_real, "delayT0", Ctrl->E.delayT0);
+    printf(format_real, "delayV0", Ctrl->E.delayV0);
+    printf(format_real, "tmax", Ctrl->E.delayT0 + Ctrl->N.winT);
+    printf(format_real, "k0", Ctrl->K.k0);
+    printf(format_real, "ampk", Ctrl->K.ampk);
+    printf(format_real, "keps", Ctrl->K.keps);
+    printf(format_real, "maxfreq(Hz)", Ctrl->N.freqs[Ctrl->N.nf-1]);
+    printf(format_real, "f1(Hz)", Ctrl->N.freqs[Ctrl->H.nf1]);
+    printf(format_real, "f2(Hz)", Ctrl->N.freqs[Ctrl->H.nf2]);
+    printf(format, "distances(km)", Ctrl->R.s_raw);
+    if(Ctrl->S.nstatsidxs > 0){
+        printf(format, "statsfile_index", Ctrl->S.s_raw);
+    }
+    line[0] = '\0';
+    if(Ctrl->G.doEX) snprintf(line+strlen(line), sizeof(line)-strlen(line), "EX,");
+    if(Ctrl->G.doVF)  snprintf(line+strlen(line), sizeof(line)-strlen(line), "VF,");
+    if(Ctrl->G.doHF)  snprintf(line+strlen(line), sizeof(line)-strlen(line), "HF,");
+    if(Ctrl->G.doDC)  snprintf(line+strlen(line), sizeof(line)-strlen(line), "DC,");
+    printf(format, "sources", line);
+    
+    printf("------------------------------------------------\n");
+
+    printf("\n\n");
+}
+
+/** 打印使用说明 */
 static void print_help(){
-print_logo();
 printf("\n"
+"[grt greenfn] %s\n\n", GRT_VERSION);printf(
+"    Compute the Green's Functions in Horizontally Layered\n"
+"    Halfspace Model.\n"
+"\n\n"
 "+ To get more precise results when source and receiver are \n"
 "  at a close or same depth, Peak-Trough Average Method(PTAM)\n"
 "  (Zhang et al., 2003) will be applied automatically.\n"
@@ -157,7 +286,7 @@ printf("\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
-"    grt -M<model> -D<depsrc>/<deprcv> -N<nt>/<dt>[/<zeta>] \n"
+"    grt greenfn -M<model> -D<depsrc>/<deprcv> -N<nt>/<dt>[/<zeta>] \n"
 "        -R<r1>,<r2>[,...]    [-O<outdir>]    [-H<f1>/<f2>] \n"
 "        [-L<length>]    [-V<vmin_ref>]     [-E<t0>[/<v0>]] \n" 
 "        [-K<k0>[/<ampk>/<keps>]]            [-P<nthreads>]\n"
@@ -184,7 +313,7 @@ printf("\n"
 "                 <dt>:   time interval (secs). \n"
 "                 <zeta>: define the coefficient of imaginary \n"
 "                         frequency wI=zeta*PI/T, where T=nt*dt.\n"
-"                         Default zeta=%.1f.\n", zeta); printf(
+"                         Default zeta=%.1f.\n", GRT_GREENFN_ZETA); printf(
 "\n"
 "    -R<r1>,<r2>[,...]\n"
 "                 Multiple epicentral distance (km), \n"
@@ -195,15 +324,15 @@ printf("\n"
 "\n"
 "    -H<f1>/<f2>  Apply bandpass filer with rectangle window, \n"
 "                 default no filter.\n"
-"                 <f1>: lower frequency (Hz), %.1f means low pass.\n", freq1); printf(
-"                 <f2>: upper frequency (Hz), %.1f means high pass.\n", freq2); printf(
+"                 <f1>: lower frequency (Hz), %.1f means low pass.\n", GRT_GREENFN_FREQ1); printf(
+"                 <f2>: upper frequency (Hz), %.1f means high pass.\n", GRT_GREENFN_FREQ2); printf(
 "\n"
 "    -L[a]<length>[/<Flength>/<Fcut>]\n"
 "                 Define the wavenumber integration interval\n"
 "                 dk=(2*PI)/(<length>*rmax). rmax is the maximum \n"
 "                 epicentral distance. \n"
 "                 There are 4 cases:\n"
-"                 + (default) not set or set %.1f.\n", Length); printf(
+"                 + (default) not set or set 0.0.\n"); printf(
 "                   <length> will be determined automatically\n"
 "                   in program with the criterion (Bouchon, 1980).\n"
 "                 + manually set one POSITIVE value, e.g. -L20\n"
@@ -222,11 +351,11 @@ printf("\n"
 "                 of wavenumber integration, see the\n"
 "                 description of -K for the specific formula.\n"
 "                 There are 3 cases:\n"
-"                 + (default) not set or set %.1f.\n", vmin_ref); printf(
+"                 + (default) not set or set 0.0.\n"); printf(
 "                   <vmin_ref> will be the minimum velocity\n"
-"                   of model, but limited to %.1f. and if the \n", min_vmin_ref); printf(
+"                   of model, but limited to %.1f. and if the \n", GRT_GREENFN_VMIN_REF); printf(
 "                   depth gap between source and receiver is \n"
-"                   thinner than %.1f km, PTAM will be appled\n", hs_ptam); printf(
+"                   thinner than %.1f km, PTAM will be appled\n", MIN_DEPTH_GAP_SRC_RCV); printf(
 "                   automatically.\n"
 "                 + manually set POSITIVE value. \n"
 "                 + manually set NEGATIVE value, \n"
@@ -237,9 +366,9 @@ printf("\n"
 "                 delay = <t0> + dist/<v0>, dist is the\n"
 "                 straight-line distance between source and \n"
 "                 receiver.\n"
-"                 <t0>: reference delay (s), default t0=%.1f\n", delayT0); printf(
+"                 <t0>: reference delay (s), default t0=0.0\n"); printf(
 "                 <v0>: reference velocity (km/s), \n"
-"                       default %.1f not use.\n", delayV0); printf(
+"                       default 0.0 not use.\n"); printf(
 "\n"
 "    -K<k0>[/<ampk>/<keps>]\n"
 "                 Several parameters designed to define the\n"
@@ -248,20 +377,21 @@ printf("\n"
 "                 sqrt( (<k0>*mult)^2 + (<ampk>*w/<vmin_ref>)^2 ),\n"
 "                 default mult=1.0.\n"
 "                 <k0>:   designed to give residual k at\n"
-"                         0 frequency, default is %.1f, and \n", k0); printf(
+"                         0 frequency, default is %.1f, and \n", GRT_GREENFN_K0); printf(
 "                         multiply PI/hs in program, \n"
 "                         where hs = max(fabs(depsrc-deprcv), %.1f).\n", MIN_DEPTH_GAP_SRC_RCV); printf(
-"                 <ampk>: amplification factor, default is %.2f.\n", ampk); printf(
+"                 <ampk>: amplification factor, default is %.2f.\n", GRT_GREENFN_AMPK); printf(
 "                 <keps>: a threshold for break wavenumber \n"
 "                         integration in advance. See \n"
 "                         (Yao and Harkrider, 1983) for details.\n"
-"                         Default %.1f not use.\n", keps); printf(
+"                         Default 0.0 not use.\n"); printf(
 "\n"
 "    -P<n>        Number of threads. Default use all cores.\n"
 "\n"
 "    -G<b1>[/<b2>/<b3>/<b4>]\n"
 "                 Designed to choose which kind of source's Green's \n"
-"                 functions will be computed, default is all (%d/%d/%d/%d). \n", (int)doEX, (int)doVF, (int)doHF, (int)doDC); printf(
+"                 functions will be computed, default is all (%d/%d/%d/%d). \n", 
+(int)GRT_GREENFN_G_EX, (int)GRT_GREENFN_G_VF, (int)GRT_GREENFN_G_HF, (int)GRT_GREENFN_G_DC); printf(
 "                 Four bool type (0 or 1) options are\n"
 "                 <b1>: Explosion (EX)\n"
 "                 <b2>: Vertical Force (VF)\n"
@@ -290,122 +420,92 @@ printf("\n"
 "\n\n"
 "Examples:\n"
 "----------------------------------------------------------------\n"
-"    grt -Mmilrow -N1000/0.01 -D2/0 -Ores -R2,4,6,8,10\n"
+"    grt greenfn -Mmilrow -N1000/0.01 -D2/0 -Ores -R2,4,6,8,10\n"
 "\n\n\n"
 );
 
 }
 
 
-/**
- * 从路径字符串中找到用/或\\分隔的最后一项
- * 
- * @param    path     路径字符串指针
- * 
- * @return   指向最后一项字符串的指针
- */
-static char* get_basename(char* path) {
-    // 找到最后一个 '/'
-    char* last_slash = strrchr(path, '/'); 
-    
-#ifdef _WIN32
-    char* last_backslash = strrchr(path, '\\');
-    if (last_backslash && (!last_slash || last_backslash > last_slash)) {
-        last_slash = last_backslash;
-    }
-#endif
-    if (last_slash) {
-        // 返回最后一个 '/' 之后的部分
-        return last_slash + 1; 
-    }
-    // 如果没有 '/'，整个路径就是最后一项
-    return path; 
-}
 
-/**
- * 从命令行中读取选项，处理后记录到全局变量中
- * 
- * @param     argc      命令行的参数个数
- * @param     argv      多个参数字符串指针
- */
-static void getopt_from_command(int argc, char **argv){
+/** 从命令行中读取选项，处理后记录到全局变量中 */
+static void getopt_from_command(GRT_SUBMODULE_CTRL *Ctrl, int argc, char **argv){
+    char* command = Ctrl->name;
+
+    // 先为个别参数设置非0初始值
+    Ctrl->N.zeta = GRT_GREENFN_ZETA;
+    Ctrl->H.freq1 = GRT_GREENFN_FREQ1;
+    Ctrl->H.freq2 = GRT_GREENFN_FREQ2;
+    Ctrl->V.vmin_ref = GRT_GREENFN_VMIN_REF;
+    Ctrl->K.k0 = GRT_GREENFN_K0;
+    Ctrl->K.ampk = GRT_GREENFN_AMPK;
+    Ctrl->G.doEX = GRT_GREENFN_G_EX;
+    Ctrl->G.doVF = GRT_GREENFN_G_VF;
+    Ctrl->G.doHF = GRT_GREENFN_G_HF;
+    Ctrl->G.doDC = GRT_GREENFN_G_DC;
+
     int opt;
-    while ((opt = getopt(argc, argv, ":M:D:N:O:H:L:V:E:K:shR:S:P:G:e")) != -1) {
+    while ((opt = getopt(argc, argv, ":M:D:N:O:H:L:V:E:K:R:S:P:G:esh")) != -1) {
         switch (opt) {
             // 模型路径，其中每行分别为 
             //      厚度(km)  Vp(km/s)  Vs(km/s)  Rho(g/cm^3)  Qp   Qs
             // 互相用空格隔开即可
             case 'M':
-                M_flag = 1;
-                s_modelpath = (char*)malloc(sizeof(char)*(strlen(optarg)+1));
-                strcpy(s_modelpath, optarg);
-                if(access(s_modelpath, F_OK) == -1){
-                    fprintf(stderr, "[%s] " BOLD_RED "Error! File \"%s\" set by -M not exists.\n" DEFAULT_RESTORE, command, s_modelpath);
-                    exit(EXIT_FAILURE);
-                }
-            
-                s_modelname = get_basename(s_modelpath);
+                Ctrl->M.active = true;
+                Ctrl->M.s_modelpath = strdup(optarg);
+                Ctrl->M.s_modelname = get_basename(Ctrl->M.s_modelpath);
                 break;
 
             // 震源和场点深度， -Ddepsrc/deprcv
             case 'D':
-                D_flag = 1;
-                s_depsrc = (char*)malloc(sizeof(char)*(strlen(optarg)+1));
-                s_deprcv = (char*)malloc(sizeof(char)*(strlen(optarg)+1));
-                if(2 != sscanf(optarg, "%[^/]/%s", s_depsrc, s_deprcv)){
-                    fprintf(stderr, "[%s] " BOLD_RED "Error in -D.\n" DEFAULT_RESTORE, command);
-                    exit(EXIT_FAILURE);
+                Ctrl->D.active = true;
+                Ctrl->D.s_depsrc = (char*)malloc(sizeof(char)*(strlen(optarg)+1));
+                Ctrl->D.s_deprcv = (char*)malloc(sizeof(char)*(strlen(optarg)+1));
+                if(2 != sscanf(optarg, "%[^/]/%s", Ctrl->D.s_depsrc, Ctrl->D.s_deprcv)){
+                    GRTBadOptionError(command, D, "");
                 };
-                if(1 != sscanf(s_depsrc, "%lf", &depsrc)){
-                    fprintf(stderr, "[%s] " BOLD_RED "Error in -D.\n"  DEFAULT_RESTORE, command);
-                    exit(EXIT_FAILURE);
+                if(1 != sscanf(Ctrl->D.s_depsrc, "%lf", &Ctrl->D.depsrc)){
+                    GRTBadOptionError(command, D, "");
                 }
-                if(1 != sscanf(s_deprcv, "%lf", &deprcv)){
-                    fprintf(stderr, "[%s] " BOLD_RED "Error in -D.\n" DEFAULT_RESTORE, command);
-                    exit(EXIT_FAILURE);
+                if(1 != sscanf(Ctrl->D.s_deprcv, "%lf", &Ctrl->D.deprcv)){
+                    GRTBadOptionError(command, D, "");
                 }
-                if(depsrc < 0.0 || deprcv < 0.0){
-                    fprintf(stderr, "[%s] " BOLD_RED "Error! Negative value in -D is not supported.\n" DEFAULT_RESTORE, command);
-                    exit(EXIT_FAILURE);
+                if(Ctrl->D.depsrc < 0.0 || Ctrl->D.deprcv < 0.0){
+                    GRTBadOptionError(command, D, "Negative value in -D is not supported.");
                 }
                 break;
 
             // 点数,采样间隔,虚频率 -Nnt/dt/[zeta]
             case 'N':
-                N_flag = 1;
-                if(2 > sscanf(optarg, "%d/%lf/%lf", &nt, &dt, &zeta)){
-                    fprintf(stderr, "[%s] " BOLD_RED "Error in -N.\n" DEFAULT_RESTORE, command);
-                    exit(EXIT_FAILURE);
+                Ctrl->N.active = true;
+                if(2 > sscanf(optarg, "%d/%lf/%lf", &Ctrl->N.nt, &Ctrl->N.dt, &Ctrl->N.zeta)){
+                    GRTBadOptionError(command, N, "");
                 };
-                if(nt <= 0 || dt <= 0.0 || zeta <= 0.0){
-                    fprintf(stderr, "[%s] " BOLD_RED "Error! Nonpositive value in -N is not supported.\n" DEFAULT_RESTORE, command);
-                    exit(EXIT_FAILURE);
+                if(Ctrl->N.nt <= 0 || Ctrl->N.dt <= 0.0 || Ctrl->N.zeta <= 0.0){
+                    GRTBadOptionError(command, N, "Nonpositive value in -N is not supported.");
                 }
                 break;
 
             // 输出路径 -Ooutput_dir
             case 'O':
-                O_flag = 1;
-                s_output_dir = (char*)malloc(sizeof(char)*(strlen(optarg)+1));
-                strcpy(s_output_dir, optarg);
+                Ctrl->O.active = true;
+                Ctrl->O.s_output_dir = strdup(optarg);
                 break;
 
             // 频带 -H f1/f2
             case 'H':
-                H_flag = 1;
-                if(2 != sscanf(optarg, "%lf/%lf", &freq1, &freq2)){
-                    fprintf(stderr, "[%s] " BOLD_RED "Error in -H.\n" DEFAULT_RESTORE, command);
-                    exit(EXIT_FAILURE);
+                Ctrl->H.active = true;
+                if(2 != sscanf(optarg, "%lf/%lf", &Ctrl->H.freq1, &Ctrl->H.freq2)){
+                    GRTBadOptionError(command, H, "");
                 };
-                if(freq1>0.0 && freq2>0.0 && freq1 > freq2){
-                    fprintf(stderr, "[%s] " BOLD_RED "Error! In -H, positive freq1 should be less than positive freq2.\n" DEFAULT_RESTORE, command);
-                    exit(EXIT_FAILURE);
+                if(Ctrl->H.freq1>0.0 && Ctrl->H.freq2>0.0 && Ctrl->H.freq1 > Ctrl->H.freq2){
+                    GRTBadOptionError(command, H, "Positive freq1 should be less than positive freq2.");
                 }
                 break;
 
             // 波数积分间隔 -L[a]<length>[/<Flength>/<Fcut>]
             case 'L':
-                L_flag = 1;
+                Ctrl->L.active = true;
                 {
                     // 检查首字母是否为a，表明使用自适应Filon积分
                     int pos=0;
@@ -415,128 +515,91 @@ static void getopt_from_command(int argc, char **argv){
                         useSAFIM = true;
                     }
                     double filona = 0.0;
-                    int n = sscanf(optarg+pos, "%lf/%lf/%lf", &Length, &filona, &filonCut);
+                    int n = sscanf(optarg+pos, "%lf/%lf/%lf", &Ctrl->L.Length, &filona, &Ctrl->L.filonCut);
                     if(n != 1 && n != 3){
-                        fprintf(stderr, "[%s] " BOLD_RED "Error in -L.\n" DEFAULT_RESTORE, command);
-                        exit(EXIT_FAILURE);
+                        GRTBadOptionError(command, L, "");
                     };
-                    if(n == 1 && Length <= 0){
-                        fprintf(stderr, "[%s] " BOLD_RED "Error! In -L, length should be positive.\n" DEFAULT_RESTORE, command);
-                        exit(EXIT_FAILURE);
+                    if(n == 1 && Ctrl->L.Length <= 0){
+                        GRTBadOptionError(command, L, "Length should be positive.");
                     }
-                    if(n == 3 && (filona <= 0 || filonCut < 0)){
-                        fprintf(stderr, "[%s] " BOLD_RED "Error! In -L, Flength/Ftol should be positive, Fcut should be nonnegative.\n" DEFAULT_RESTORE, command);
-                        exit(EXIT_FAILURE);
+                    if(n == 3 && (filona <= 0 || Ctrl->L.filonCut < 0)){
+                        GRTBadOptionError(command, L, "Flength/Ftol should be positive, Fcut should be nonnegative.");
                     }
                     if(n == 3){
-                        if(useSAFIM){
-                            safilonTol = filona;
-                        } else {
-                            filonLength = filona;
-                        }
+                        useSAFIM ? (Ctrl->L.safilonTol = filona) : (Ctrl->L.filonLength = filona);
                     }
                 }
-                
                 break;
 
             // 参考最小速度 -Vvmin_ref
             case 'V':
-                V_flag = 1;
-                if(0 == sscanf(optarg, "%lf", &vmin_ref)){
-                    fprintf(stderr, "[%s] " BOLD_RED "Error in -V.\n" DEFAULT_RESTORE, command);
-                    exit(EXIT_FAILURE);
+                Ctrl->V.active = true;
+                if(0 == sscanf(optarg, "%lf", &Ctrl->V.vmin_ref)){
+                    GRTBadOptionError(command, V, "");
                 };
                 break;
 
             // 时间延迟 -ET0/V0
             case 'E':
-                E_flag = 1;
-                if(0 == sscanf(optarg, "%lf/%lf", &delayT0, &delayV0)){
-                    fprintf(stderr, "[%s] " BOLD_RED "Error in -E.\n" DEFAULT_RESTORE, command);
-                    exit(EXIT_FAILURE);
+                Ctrl->E.active = true;
+                if(0 == sscanf(optarg, "%lf/%lf", &Ctrl->E.delayT0, &Ctrl->E.delayV0)){
+                    GRTBadOptionError(command, E, "");
                 };
-                if(delayV0 < 0.0){
-                    fprintf(stderr, "[%s] " BOLD_RED "Error! Can't set negative v0(%f) in -E.\n" DEFAULT_RESTORE, command, delayV0);
-                    exit(EXIT_FAILURE);
+                if(Ctrl->E.delayV0 < 0.0){
+                    GRTBadOptionError(command, E, "Can't set negative v0(%f) in -E.", Ctrl->E.delayV0);
                 }
                 break;
 
             // 波数积分相关变量 -Kk0/ampk/keps
             case 'K':
-                K_flag = 1;
-                {
-                    if(0 == sscanf(optarg, "%lf/%lf/%lf", &k0, &ampk, &keps)){
-                        fprintf(stderr, "[%s] " BOLD_RED "Error in -K.\n" DEFAULT_RESTORE, command);
-                        exit(EXIT_FAILURE);
-                    };
+                Ctrl->K.active = true;
+                if(0 == sscanf(optarg, "%lf/%lf/%lf", &Ctrl->K.k0, &Ctrl->K.ampk, &Ctrl->K.keps)){
+                    GRTBadOptionError(command, K, "");
+                };
+                if(Ctrl->K.k0 < 0.0){
+                    GRTBadOptionError(command, K, "Can't set negative k0(%f).", Ctrl->K.k0);
                 }
-                
-                if(k0 < 0.0){
-                    fprintf(stderr, "[%s] " BOLD_RED "Error! Can't set negative k0(%f) in -K.\n" DEFAULT_RESTORE, command, k0);
-                    exit(EXIT_FAILURE);
-                }
-                if(ampk < 0.0){
-                    fprintf(stderr, "[%s] " BOLD_RED "Error! Can't set negative ampk(%f) in -K.\n" DEFAULT_RESTORE, command, ampk);
-                    exit(EXIT_FAILURE);
+                if(Ctrl->K.ampk < 0.0){
+                    GRTBadOptionError(command, K, "Can't set negative ampk(%f).", Ctrl->K.ampk);
                 }
                 break;
 
             // 不打印在终端
             case 's':
-                s_flag = 1;
-                silenceInput = true;
+                Ctrl->s.active = true;
                 break;
 
             // 震中距数组，-Rr1,r2,r3,r4 ...
             case 'R':
-                R_flag = 1;
-                {
-                    char *token;
-                    char *str_copy = strdup(optarg);  // 创建字符串副本，以免修改原始字符串
-                    token = strtok(str_copy, ",");
-
-                    while(token != NULL){
-                        s_rs = (char**)realloc(s_rs, sizeof(char*)*(nr+1));
-                        s_rs[nr] = NULL;
-                        s_rs[nr] = (char*)realloc(s_rs[nr], sizeof(char)*(strlen(token)+1));
-                        rs = (MYREAL*)realloc(rs, sizeof(MYREAL)*(nr+1));
-                        strcpy(s_rs[nr], token);
-                        rs[nr] = atof(token);
-                        if(rs[nr] == 0.0){
-                            fprintf(stderr, "[%s] " BOLD_RED "Warning! Add 1e-5 to Zero epicentral distance in -R.\n" DEFAULT_RESTORE, command);
-                            rs[nr] += 1e-5;
-                        }
-                        if(rs[nr] < 0.0){
-                            fprintf(stderr, "[%s] " BOLD_RED "Error! Can't set negative epicentral distance(%f) in -R.\n" DEFAULT_RESTORE, command, rs[nr]);
-                            exit(EXIT_FAILURE);
-                        }
-
-
-                        token = strtok(NULL, ",");
-                        nr++;
+                Ctrl->R.active = true;
+                Ctrl->R.s_raw = strdup(optarg);
+                Ctrl->R.s_rs = string_split(optarg, ",", &Ctrl->R.nr);
+                // 转为浮点数
+                Ctrl->R.rs = (MYREAL*)realloc(Ctrl->R.rs, sizeof(MYREAL)*(Ctrl->R.nr));
+                for(MYINT i=0; i<Ctrl->R.nr; ++i){
+                    Ctrl->R.rs[i] = atof(Ctrl->R.s_rs[i]);
+                    if(Ctrl->R.rs[i] < 0.0){
+                        GRTBadOptionError(command, R, "Can't set negative epicentral distance(%f).", Ctrl->R.rs[i]);
                     }
-                    free(str_copy);
                 }
                 break;
 
             // 多线程数 -Pnthreads
             case 'P':
-                P_flag = 1;
-                if(1 != sscanf(optarg, "%d", &nthreads)){
-                    fprintf(stderr, "[%s] " BOLD_RED "Error in -P.\n" DEFAULT_RESTORE, command);
-                    exit(EXIT_FAILURE);
+                Ctrl->P.active = true;
+                if(1 != sscanf(optarg, "%d", &Ctrl->P.nthreads)){
+                    GRTBadOptionError(command, P, "");
                 };
-                if(nthreads <= 0){
-                    fprintf(stderr, "[%s] " BOLD_RED "Error! Nonpositive value in -P is not supported.\n" DEFAULT_RESTORE, command);
-                    exit(EXIT_FAILURE);
+                if(Ctrl->P.nthreads <= 0){
+                    GRTBadOptionError(command, P, "Nonpositive value is not supported.");
                 }
-                set_num_threads(nthreads);
+                set_num_threads(Ctrl->P.nthreads);
                 break;
 
             // 选择要计算的格林函数 -G1/1/1/1
             case 'G': 
-                G_flag = 1;
-                doEX = doVF = doHF = doDC = false;
+                Ctrl->G.active = true;
+                Ctrl->G.doEX = Ctrl->G.doVF = Ctrl->G.doHF = Ctrl->G.doDC = false;
                 {
                     int i1, i2, i3, i4;
                     i1 = i2 = i3 = i4 = 0;
@@ -544,110 +607,54 @@ static void getopt_from_command(int argc, char **argv){
                         fprintf(stderr, "[%s] " BOLD_RED "Error in -G.\n" DEFAULT_RESTORE, command);
                         exit(EXIT_FAILURE);
                     };
-                    doEX = (i1!=0);
-                    doVF  = (i2!=0);
-                    doHF  = (i3!=0);
-                    doDC  = (i4!=0);
+                    Ctrl->G.doEX = (i1!=0);
+                    Ctrl->G.doVF  = (i2!=0);
+                    Ctrl->G.doHF  = (i3!=0);
+                    Ctrl->G.doDC  = (i4!=0);
                 }
-                
                 // 至少要有一个真
-                if(!(doEX || doVF || doHF || doDC)){
-                    fprintf(stderr, "[%s] " BOLD_RED "Error! At least set one true value in -G.\n" DEFAULT_RESTORE, command);
-                    exit(EXIT_FAILURE);
+                if(!(Ctrl->G.doEX || Ctrl->G.doVF || Ctrl->G.doHF || Ctrl->G.doDC)){
+                    GRTBadOptionError(command, G, "At least set one true value.");
                 }
-
                 break;
 
             // 输出波数积分中间文件， -Sidx1,idx2,idx3,...
             case 'S':
-                S_flag = 1;
-                {
-                    char *token;
-                    char *str_copy = strdup(optarg);  // 创建字符串副本，以免修改原始字符串
-                    token = strtok(str_copy, ",");
-
-                    while(token != NULL){
-                        s_statsidxs = (char**)realloc(s_statsidxs, sizeof(char*)*(nstatsidxs+1));
-                        s_statsidxs[nstatsidxs] = NULL;
-                        s_statsidxs[nstatsidxs] = (char*)realloc(s_statsidxs[nstatsidxs], sizeof(char)*(strlen(token)+1));
-                        strcpy(s_statsidxs[nstatsidxs], token);
-                        statsidxs = (MYINT*)realloc(statsidxs, sizeof(MYINT)*(nstatsidxs+1));
-                        statsidxs[nstatsidxs] = atoi(token);
-
-                        token = strtok(NULL, ",");
-                        nstatsidxs++;
-                    }
-                    free(str_copy);
+                Ctrl->S.active = true;
+                Ctrl->S.s_raw = strdup(optarg);
+                Ctrl->S.s_statsidxs = string_split(optarg, ",", &Ctrl->S.nstatsidxs);
+                // 转为浮点数
+                Ctrl->S.statsidxs = (MYINT*)realloc(Ctrl->S.statsidxs, sizeof(MYINT)*(Ctrl->S.nstatsidxs));
+                for(MYINT i=0; i<Ctrl->S.nstatsidxs; ++i){
+                    Ctrl->S.statsidxs[i] = atof(Ctrl->S.s_statsidxs[i]);
                 }
                 break;
 
             // 是否计算位移空间导数
             case 'e':
-                e_flag = 1;
-                calc_upar = true;
+                Ctrl->e.active = true;
                 break;
             
-            // 帮助
-            case 'h':
-                print_help();
-                exit(EXIT_SUCCESS);
-                break;
-
-            // 参数缺失
-            case ':':
-                fprintf(stderr, "[%s] " BOLD_RED "Error! Option '-%c' requires an argument. Use '-h' for help.\n" DEFAULT_RESTORE, command, optopt);
-                exit(EXIT_FAILURE);
-                break;
-
-            // 非法选项
-            case '?':
-            default:
-                fprintf(stderr, "[%s] " BOLD_RED "Error! Option '-%c' is invalid. Use '-h' for help.\n" DEFAULT_RESTORE, command, optopt);
-                exit(EXIT_FAILURE);
-                break;
+            GRT_Common_Options_in_Switch(command, (char)(optopt));
         }
     } // END get options
 
     // 检查必须设置的参数是否有设置
-    if(argc == 1){
-        fprintf(stderr, "[%s] " BOLD_RED "Error! Need set options. Use '-h' for help.\n" DEFAULT_RESTORE, command);
-        exit(EXIT_FAILURE);
-    }
-    if(M_flag == 0){
-        fprintf(stderr, "[%s] " BOLD_RED "Error! Need set -M. Use '-h' for help.\n" DEFAULT_RESTORE, command);
-        exit(EXIT_FAILURE);
-    }
-    if(D_flag == 0){
-        fprintf(stderr, "[%s] " BOLD_RED "Error! Need set -D. Use '-h' for help.\n" DEFAULT_RESTORE, command);
-        exit(EXIT_FAILURE);
-    }
-    if(N_flag == 0){
-        fprintf(stderr, "[%s] " BOLD_RED "Error! Need set -N. Use '-h' for help.\n" DEFAULT_RESTORE, command);
-        exit(EXIT_FAILURE);
-    }
-    if(R_flag == 0){
-        fprintf(stderr, "[%s] " BOLD_RED "Error! Need set -R. Use '-h' for help.\n" DEFAULT_RESTORE, command);
-        exit(EXIT_FAILURE);
-    }
-    if(O_flag == 0){
-        fprintf(stderr, "[%s] " BOLD_RED "Error! Need set -O. Use '-h' for help.\n" DEFAULT_RESTORE, command);
-        exit(EXIT_FAILURE);
-    }
-
+    GRTCheckOptionSet(command, argc > 1);
+    GRTCheckOptionActive(command, Ctrl, M);
+    GRTCheckOptionActive(command, Ctrl, D);
+    GRTCheckOptionActive(command, Ctrl, N);
+    GRTCheckOptionActive(command, Ctrl, R);
+    GRTCheckOptionActive(command, Ctrl, O);
 
     // 建立保存目录
-    if(mkdir(s_output_dir, 0777) != 0){
-        if(errno != EEXIST){
-            fprintf(stderr, "[%s] " BOLD_RED "Error! Unable to create folder %s. Error code: %d\n" DEFAULT_RESTORE, command, s_output_dir, errno);
-            exit(EXIT_FAILURE);
-        }
-    }
-    
+    GRTCheckMakeDir(command, Ctrl->O.s_output_dir);
 
     // 在目录中保留命令
-    char *dummy = (char*)malloc(sizeof(char)*(strlen(s_output_dir)+100));
-    sprintf(dummy, "%s/command", s_output_dir);
-    FILE *fp = fopen(dummy, "a");
+    char *dummy = (char*)malloc(sizeof(char)*(strlen(Ctrl->O.s_output_dir)+100));
+    sprintf(dummy, "%s/command", Ctrl->O.s_output_dir);
+    FILE *fp = GRTCheckOpenFile(command, dummy, "a");
+    fprintf(fp, GRT_MAIN_COMMAND " ");  // 主程序名
     for(int i=0; i<argc; ++i){
         fprintf(fp, "%s ", argv[i]);
     }
@@ -656,52 +663,17 @@ static void getopt_from_command(int argc, char **argv){
     free(dummy);
 }
 
-/**
- * 将长数组以换行的方式打印
- * 
- * @param   nlen1     第一列字符宽度
- * @param   nlen2     第二列字符宽度
- * @param   rowname   行名
- * @param   s_arr     字符串数组
- * @param   arrsize   数组长度
- */
-static void print_long_array_in_tabel(
-    const int nlen1, const int nlen2, const char *rowname,
-    const char **s_arr, const int arrsize)
-{
-    char tmp[nlen2-2];
-    printf("| %-*s | ", nlen1-3, rowname);
-    {
-        tmp[0] = '\0';
-        int len = 0;
-        for(int m=0; m<arrsize; ++m){
-            len = strlen(tmp);
-            char s2[strlen(s_arr[m])+2]; // 加上'\0'和逗号的长度
-            snprintf(s2, sizeof(s2), "%s,", s_arr[m]);
-
-            snprintf(tmp+len, sizeof(tmp)-len, "%s", s2);
-            while(sizeof(tmp) - strlen(tmp) == 1){ // 允许换行
-                printf("%-*s |\n", nlen2-3, tmp);
-                snprintf(tmp, sizeof(tmp), "%s", s2+(strlen(tmp)-len));
-                if(strcmp(tmp, ",") == 0 && m==arrsize-1)  break;
-                printf("| %-*s | ", nlen1-3, "");
-                len -= strlen(tmp);
-            }
-            if(strcmp(tmp, ",") == 0 && m==arrsize-1)  break;
-        }
-
-        if(strlen(tmp) > 0 && strcmp(tmp, ",") != 0){
-            printf("%-*s |\n", nlen2-3, tmp);
-        }
-    }
-}
-
 
 /**
  * 将某一道做ifft，做时间域处理，保存到sac文件
  * 
  * @param     delay     时间延迟
  * @param     mult      幅值放大系数
+ * @param     nt        点数
+ * @param     dt        采样间隔
+ * @param     nf        频率点数
+ * @param     df        频率间隔
+ * @param     wI        虚频率
  * @param     grncplx   复数形式的格林函数频谱
  * @param     fftw_grn  将频谱写到FFTW_COMPLEX类型中
  * @param     out       ifft后的时域数据
@@ -711,13 +683,13 @@ static void print_long_array_in_tabel(
  * @param     outpath   sac文件保存路径
  */
 static void ifft_one_trace(
-    MYREAL delay, MYREAL mult,
+    MYREAL delay, MYREAL mult, MYINT nt, MYREAL dt, MYINT nf, MYREAL df, MYREAL wI,
     MYCOMPLEX *grncplx, _FFTW_COMPLEX *fftw_grn, MYREAL *out, float *float_arr,
     _FFTW_PLAN plan, SACHEAD *hd, const char *outpath)
 {
     // 赋值复数，包括时移
     MYCOMPLEX cfac, ccoef;
-    cfac = exp(I*dw*delay);
+    cfac = exp(I*PI2*df*delay);
     ccoef = mult;
     for(int i=0; i<nf; ++i){
         fftw_grn[i] = grncplx[i] * ccoef;
@@ -742,214 +714,18 @@ static void ifft_one_trace(
     }
 
     write_sac(outpath, *hd, float_arr);
-    // FILE *fp = fopen(outpath, "wb");
-    // fwrite(out, sizeof(float), nt, fp);
-    // fclose(fp);
 }
 
 
-/**
- * 以表格形式打印使用的参数
- */
-static void print_parameters(){
-    // 模拟打两列表格，第一列参数名，第二列参数值
-    print_pymod(pymod);
-    const int nlen1=20, nlen2=45; // 两列字符宽度
-    // 制作每行分割线
-    char splitline[nlen1+nlen2+2];
-    splitline[0] = '+';
-    for(int i=1; i<nlen1; splitline[i]='-', ++i);
-    splitline[nlen1] = '+';
-    for(int i=nlen1+1; i<nlen1+nlen2; splitline[i]='-', ++i);
-    splitline[nlen1+nlen2] = '+';
-    splitline[nlen1+nlen2+1] = '\0';
-    // 用于输出值的特殊处理
-    char tmp[nlen2-2];
 
-    printf("%s\n", splitline);
-    printf("| %-*s | %-*s |\n", nlen1-3, "Parameter", nlen2-3, "Value");
-    printf("%s\n", splitline);
-    printf("| %-*s | %-*s |\n", nlen1-3, "model_path", nlen2-3, s_modelpath);
-    printf("| %-*s | %-*f |\n", nlen1-3, "vmin", nlen2-3, vmin);
-    printf("| %-*s | %-*f |\n", nlen1-3, "vmax", nlen2-3, vmax);
-    // 特殊处理vmin_ref的输出
-    snprintf(tmp, sizeof(tmp), "%f", fabs(vmin_ref));
-    if(vmin_ref < 0.0) strncat(tmp, ", using PTAM.", sizeof(tmp)-strlen(tmp)-1);
-    printf("| %-*s | %-*s |\n", nlen1-3, "vmin_ref", nlen2-3, tmp);
-    // 特殊处理length的输出
-    snprintf(tmp, sizeof(tmp), "%f", Length);
-    if(filonLength > 0.0){  
-        snprintf(tmp, sizeof(tmp), "%f,%f,%f", Length, filonLength, filonCut);
-        strncat(tmp, ", using FIM.", sizeof(tmp)-strlen(tmp)-1);
-    } else if(safilonTol > 0.0){
-        snprintf(tmp, sizeof(tmp), "%f,%f,%f", Length, safilonTol, filonCut);
-        strncat(tmp, ", using SAFIM.", sizeof(tmp)-strlen(tmp)-1);
-    }
-    printf("| %-*s | %-*s |\n", nlen1-3, "length", nlen2-3, tmp);
-    // 
-    printf("| %-*s | %-*d |\n", nlen1-3, "nt", nlen2-3, nt);
-    printf("| %-*s | %-*f |\n", nlen1-3, "dt", nlen2-3, dt);
-    printf("| %-*s | %-*f |\n", nlen1-3, "winT", nlen2-3, winT);
-    printf("| %-*s | %-*f |\n", nlen1-3, "zeta", nlen2-3, zeta);
-    printf("| %-*s | %-*f |\n", nlen1-3, "delayT0", nlen2-3, delayT0);
-    printf("| %-*s | %-*f |\n", nlen1-3, "delayV0", nlen2-3, delayV0);
-    printf("| %-*s | %-*f |\n", nlen1-3, "tmax", nlen2-3, tmax);
-    printf("| %-*s | %-*f |\n", nlen1-3, "k0", nlen2-3, k0);
-    printf("| %-*s | %-*f |\n", nlen1-3, "ampk", nlen2-3, ampk);
-    printf("| %-*s | %-*f |\n", nlen1-3, "keps", nlen2-3, keps);
-    printf("| %-*s | %-*f |\n", nlen1-3, "maxfreq(Hz)", nlen2-3, freqs[nf-1]);
-    printf("| %-*s | %-*f |\n", nlen1-3, "f1(Hz)", nlen2-3, freqs[nf1]);
-    printf("| %-*s | %-*f |\n", nlen1-3, "f2(Hz)", nlen2-3, freqs[nf2]);
-    // 特殊处理震中距的输出
-    print_long_array_in_tabel(nlen1, nlen2, "distances(km)", (const char **)s_rs, nr);
-    
-    // 特殊处理statsfile index的输出
-    if(nstatsidxs > 0){
-        print_long_array_in_tabel(nlen1, nlen2, "statsfile_index", (const char **)s_statsidxs, nstatsidxs);
-    }
-        
-    printf("| %-*s | ", nlen1-3, "sources");
-    tmp[0] = '\0';
-    if(doEX) snprintf(tmp+strlen(tmp), sizeof(tmp)-strlen(tmp), "EX,");
-    if(doVF)  snprintf(tmp+strlen(tmp), sizeof(tmp)-strlen(tmp), "VF,");
-    if(doHF)  snprintf(tmp+strlen(tmp), sizeof(tmp)-strlen(tmp), "HF,");
-    if(doDC)  snprintf(tmp+strlen(tmp), sizeof(tmp)-strlen(tmp), "DC,");
-    printf("%-*s |\n", nlen2-3, tmp);
-    
-    // 特殊处理输出路径
-    printf("| %-*s | ", nlen1-3, "output_path");
-    {
-        int len=0;
-        tmp[0] = '\0';
-        snprintf(tmp+strlen(tmp), sizeof(tmp)-strlen(tmp), "%s", s_output_dir);
-        len = strlen(tmp);
-        while(sizeof(tmp) - strlen(tmp) == 1){ // 允许换行
-            printf("%-*s |\n", nlen2-3, tmp);
-            snprintf(tmp, sizeof(tmp), "%s", s_output_dir+(strlen(tmp)-len));
-            printf("| %-*s | ", nlen1-3, "");
-            len -= strlen(tmp);
-        }
-        if(strlen(tmp) > 0){
-            printf("%-*s |\n", nlen2-3, tmp);
-        }
-    }
-    printf("%s\n", splitline);
-    printf("\n");
-    
-}
-
-
-/**
- * 以表格形式打印输出的文件夹和走时
- * 
- * @param     s_output_subdir     输出文件夹
- * @param     s_R                 字符串形式的震中距
- * @param     Tp                  P波初至走时
- * @param     Ts                  S波初至走时
- */
-static void print_outdir_travt(const char *s_output_subdir, const char *s_R, double Tp, double Ts){
-    // 进入该函数的次数 
-    static int numin = 0;
-
-    static const int ncols = 4;
-    static const int nlens[] = {28, 17, 13, 13};
-    int Nlen=0;
-    for(int ic=0; ic<ncols; ++ic){
-        Nlen += nlens[ic]; 
-    }
-    // 定义分割线
-    char splitline[Nlen+2];
-    {
-        int n=0;
-        for(int ic=0; ic<ncols; ++ic){
-            splitline[n] = '+';
-            for(int i=1; i<nlens[ic]; ++i){
-                splitline[n + i] = '-';
-            }
-            n += nlens[ic];
-        }
-        splitline[Nlen] = '+';
-        splitline[Nlen+1] = '\0';
-    }
-    
-    // 第一次执行该函数，打印题头
-    if(numin == 0){
-        printf("\n");
-        printf("%s\n", splitline);
-        printf("| %-*s ", nlens[0]-3, "Output Directory");
-        printf("| %-*s ", nlens[1]-3, "Distance(km)");
-        printf("| %-*s ", nlens[2]-3, "Tp(secs)");
-        printf("| %-*s ", nlens[2]-3, "Ts(secs)");
-        printf("|\n");
-        printf("%s\n", splitline);
-    }
-
-
-    // 打印目录、震中距、走时P、走时S
-    // 目录和震中距的字符串可能分行，且行数不一
-    // 这里不断分行打印，直到打印完
-    char dirtmp[nlens[0]-2];
-    char Rtmp[nlens[1]-2];
-    int lendir=0, lenR=0;
-    int LENdir=strlen(s_output_subdir);
-    int LENR=strlen(s_R);
-    dirtmp[0] = '\0';
-    Rtmp[0] = '\0';
-    int iline=0;
-    int idir=0, iR=0;
-
-    snprintf(dirtmp, sizeof(dirtmp), "%s", s_output_subdir);
-    snprintf(Rtmp, sizeof(Rtmp), "%s", s_R);
-    lendir = strlen(dirtmp);
-    lenR = strlen(Rtmp);
-    do{
-        printf("| %-*s ", nlens[0]-3, dirtmp);
-        idir += strlen(dirtmp);
-        if(sizeof(dirtmp) - strlen(dirtmp) == 1 && lendir < LENdir){
-            snprintf(dirtmp, sizeof(dirtmp), "%s", s_output_subdir+lendir);
-            lendir += strlen(dirtmp);
-        } else {
-            dirtmp[0] = '\0';
-        }
-        
-        printf("| %-*s ", nlens[1]-3, Rtmp);
-        iR += strlen(Rtmp);
-        if(sizeof(Rtmp) - strlen(Rtmp) == 1 && lenR < LENR){
-            snprintf(Rtmp, sizeof(Rtmp), "%s", s_R+lenR);
-            lenR += strlen(Rtmp);
-        } else {
-            Rtmp[0] = '\0';
-        }
-
-        if(iline == 0){
-            printf("| %-*.3f ", nlens[2]-3, Tp);
-            printf("| %-*.3f ", nlens[3]-3, Ts);
-        } else {
-            printf("| %-*s ", nlens[2]-3, " ");
-            printf("| %-*s ", nlens[3]-3, " ");
-        }
-        printf("|\n");
-
-        iline++;
-
-        // printf("iR=%d, idir=%d, LENDIR=%d\n", iR, idir, LENdir);
-
-    }while(iR < LENR || idir < LENdir);
-
-    if(numin == nr-1){
-        printf("%s\n", splitline);
-        printf("\n");
-    }
-    
-
-    numin++;
-}
 
 
 /**
  * 将一条数据反变换回时间域再进行处理，保存到SAC文件
  * 
+ * @param     Ctrl          参数控制
  * @param     srcname       震源类型
+ * @param     delayT        延迟时间
  * @param     ch            三分量类型（Z,R,T）
  * @param     hd            SAC头段变量结构体指针
  * @param     s_outpath     用于接收保存路径字符串
@@ -964,7 +740,7 @@ static void print_outdir_travt(const char *s_output_subdir, const char *s_R, dou
  * 
  */
 static void write_one_to_sac(
-    const char *srcname, const char ch, 
+    const GRT_SUBMODULE_CTRL *Ctrl, const char *srcname, const char ch, MYREAL delayT,
     SACHEAD *hd, char *s_outpath, const char *s_output_subdir, const char *s_prefix,
     const int sgn, MYCOMPLEX *grncplx, fftw_complex *fftw_grn, MYREAL *out, float *float_arr, fftw_plan plan)
 {
@@ -972,162 +748,152 @@ static void write_one_to_sac(
     snprintf(kcmpnm, sizeof(kcmpnm), "%s%s%c", s_prefix, srcname, ch);
     strcpy(hd->kcmpnm, kcmpnm);
     sprintf(s_outpath, "%s/%s.sac", s_output_subdir, kcmpnm);
-    ifft_one_trace(delayT, sgn, grncplx, fftw_grn, out, float_arr, plan, hd, s_outpath);
+    ifft_one_trace(
+        delayT, sgn, 
+        Ctrl->N.nt, Ctrl->N.dt, Ctrl->N.nf, Ctrl->N.df, Ctrl->N.wI,
+        grncplx, fftw_grn, out, float_arr, plan, hd, s_outpath);
 }
 
 
-
-//====================================================================================
-//====================================================================================
-//====================================================================================
+/** 子模块主函数 */
 int greenfn_main(int argc, char **argv) {
-    command = argv[0];
+    GRT_SUBMODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
+    Ctrl->name = strdup(argv[0]);
+    const char *command = Ctrl->name;
 
     // 传入参数 
-    getopt_from_command(argc, argv);
+    getopt_from_command(Ctrl, argc, argv);
 
     // 读入模型文件
-    if((pymod = read_pymod_from_file(command, s_modelpath, depsrc, deprcv, true)) ==NULL){
+    if((Ctrl->M.pymod = read_pymod_from_file(command, Ctrl->M.s_modelpath, Ctrl->D.depsrc, Ctrl->D.deprcv, true)) == NULL){
         exit(EXIT_FAILURE);
     }
+    PYMODEL1D *pymod = Ctrl->M.pymod;
 
     // 当震源位于液体层中时，仅允许计算爆炸源对应的格林函数
     // 程序结束前会输出对应警告
     if(pymod->Vb[pymod->isrc]==0.0){
-        doHF = doVF = doDC = false;
+        Ctrl->G.doHF = Ctrl->G.doVF = Ctrl->G.doDC = false;
     }
 
     // 最大最小速度
+    MYREAL vmin, vmax;
     get_pymod_vmin_vmax(pymod, &vmin, &vmax);
 
     // 参考最小速度
-    if(vmin_ref == 0.0){
-        vmin_ref = vmin;
-        if(vmin_ref < min_vmin_ref) vmin_ref = min_vmin_ref;
+    if(!Ctrl->V.active){
+        Ctrl->V.vmin_ref = GRT_MAX(vmin, GRT_GREENFN_VMIN_REF);
     } 
 
     // 如果没有主动设置vmin_ref，则判断是否要自动使用PTAM
-    if(V_flag == 0 && fabs(deprcv - depsrc) <= hs_ptam) {
-        vmin_ref = - fabs(vmin_ref);
+    if( !Ctrl->V.active && fabs(Ctrl->D.deprcv - Ctrl->D.depsrc) <= MIN_DEPTH_GAP_SRC_RCV) {
+        Ctrl->V.vmin_ref = - fabs(Ctrl->V.vmin_ref);
     }
 
     // 时窗长度 
-    winT = nt*dt;
+    Ctrl->N.winT = Ctrl->N.nt*Ctrl->N.dt;
 
     // 最大震中距
-    MYREAL rmax=rs[findMinMax_MYREAL(rs, nr, true)];   
+    MYREAL rmax = Ctrl->R.rs[findMinMax_MYREAL(Ctrl->R.rs, Ctrl->R.nr, true)];   
 
     // 时窗最大截止时刻
-    tmax = delayT0 + winT;
-    if(delayV0 > 0.0) tmax += rmax/delayV0;
+    MYREAL tmax = Ctrl->E.delayT0 + Ctrl->N.winT;
+    if(Ctrl->E.delayV0 > 0.0)   tmax += rmax/Ctrl->E.delayV0;
 
     // 自动选择积分间隔，默认使用传统离散波数积分
     // 自动选择会给出很保守的值（较大的Length）
-    if(Length == 0.0){
-        Length = 15.0; 
-        double jus = (vmax*tmax)*(vmax*tmax) - (deprcv-depsrc)*(deprcv-depsrc);
+    if(Ctrl->L.Length == 0.0){
+        Ctrl->L.Length = 15.0; 
+        double jus = GRT_SQUARE(vmax*tmax) - GRT_SQUARE(Ctrl->D.deprcv - Ctrl->D.depsrc);
         if(jus >= 0.0){
-            Length = 1.0 + sqrt(jus)/rmax + 0.5; // +0.5为保守值
-            if(Length < 15.0) Length = 15.0;
+            Ctrl->L.Length = GRT_MAX(1.0 + sqrt(jus)/rmax + 0.5, Ctrl->L.Length); // +0.5为保守值
         }
     }
 
     // 虚频率
-    wI = zeta*PI/winT;
+    Ctrl->N.wI = Ctrl->N.zeta*PI/Ctrl->N.winT;
 
     // 定义要计算的频率、时窗等
-    nf = nt/2 + 1;
-    df = 1.0/winT;
-    dw = 2.0*PI*df;
-    freqs = (MYREAL*)malloc(nf*sizeof(MYREAL));
-    for(int i=0; i<nf; ++i){
-        freqs[i] = i*df;
+    Ctrl->N.nf = Ctrl->N.nt/2 + 1;
+    Ctrl->N.df = 1.0/Ctrl->N.winT;
+    Ctrl->N.freqs = (MYREAL*)malloc(Ctrl->N.nf*sizeof(MYREAL));
+    for(int i=0; i<Ctrl->N.nf; ++i){
+        Ctrl->N.freqs[i] = i*Ctrl->N.df;
     }
 
-    nf1 = 0; nf2 = nf-1;
-    if(freq1 > 0.0){
-        nf1 = ceil(freq1/df);
-        if(nf1 >= nf-1)    nf1 = nf-1;
+    // 自定义频段
+    Ctrl->H.nf1 = 0; Ctrl->H.nf2 = Ctrl->N.nf-1;
+    if(Ctrl->H.freq1 > 0.0){
+        Ctrl->H.nf1 = GRT_MIN(ceil(Ctrl->H.freq1/Ctrl->N.df), Ctrl->N.nf-1);
     }
-    if(freq2 > 0.0){
-        nf2 = floor(freq2/df);
-        if(nf2 >= nf-1)    nf2 = nf-1;
+    if(Ctrl->H.freq2 > 0.0){
+        Ctrl->H.nf2 = GRT_MIN(floor(Ctrl->H.freq2/Ctrl->N.df), Ctrl->N.nf-1);
     }
-    if(nf2 < nf1) nf2 = nf1;
+    Ctrl->H.nf2 = GRT_MAX(Ctrl->H.nf1, Ctrl->H.nf2);
 
     // 波数积分中间文件输出目录
-    if(nstatsidxs > 0){
-        s_statsdir = (char*)malloc(sizeof(char)*(strlen(s_modelpath)+strlen(s_output_dir)+strlen(s_depsrc)+strlen(s_deprcv)+100));
-        sprintf(s_statsdir, "%s_grtstats", s_output_dir);
+    if(Ctrl->S.nstatsidxs > 0){
+        Ctrl->S.s_statsdir = (char*)malloc(sizeof(char)*(strlen(Ctrl->M.s_modelpath)+strlen(Ctrl->O.s_output_dir)+strlen(Ctrl->D.s_depsrc)+strlen(Ctrl->D.s_deprcv)+100));
+        sprintf(Ctrl->S.s_statsdir, "%s_grtstats", Ctrl->O.s_output_dir);
+        
         // 建立保存目录
-        if(mkdir(s_statsdir, 0777) != 0){
-            if(errno != EEXIST){
-                fprintf(stderr, "[%s] " BOLD_RED "Error! Unable to create folder %s. Error code: %d\n" DEFAULT_RESTORE, command, s_statsdir, errno);
-                exit(EXIT_FAILURE);
-            }
-        }
-        sprintf(s_statsdir, "%s/%s_%s_%s", s_statsdir, s_modelname, s_depsrc, s_deprcv);
-        if(mkdir(s_statsdir, 0777) != 0){
-            if(errno != EEXIST){
-                fprintf(stderr, "[%s] " BOLD_RED "Error! Unable to create folder %s. Error code: %d\n" DEFAULT_RESTORE, command, s_statsdir, errno);
-                exit(EXIT_FAILURE);
-            }
-        }
+        GRTCheckMakeDir(command, Ctrl->S.s_statsdir);
+        sprintf(Ctrl->S.s_statsdir, "%s/%s_%s_%s", Ctrl->S.s_statsdir, Ctrl->M.s_modelname, Ctrl->D.s_depsrc, Ctrl->D.s_deprcv);
+        GRTCheckMakeDir(command, Ctrl->S.s_statsdir);
     }
-    
 
     // 建立格林函数的complex数组
-    MYCOMPLEX *(*grn)[SRC_M_NUM][CHANNEL_NUM] = (MYCOMPLEX*(*)[SRC_M_NUM][CHANNEL_NUM]) calloc(nr, sizeof(*grn));
-    MYCOMPLEX *(*grn_uiz)[SRC_M_NUM][CHANNEL_NUM] = (calc_upar)? (MYCOMPLEX*(*)[SRC_M_NUM][CHANNEL_NUM]) calloc(nr, sizeof(*grn_uiz)) : NULL;
-    MYCOMPLEX *(*grn_uir)[SRC_M_NUM][CHANNEL_NUM] = (calc_upar)? (MYCOMPLEX*(*)[SRC_M_NUM][CHANNEL_NUM]) calloc(nr, sizeof(*grn_uir)) : NULL;
+    MYCOMPLEX *(*grn)[SRC_M_NUM][CHANNEL_NUM] = (MYCOMPLEX*(*)[SRC_M_NUM][CHANNEL_NUM]) calloc(Ctrl->R.nr, sizeof(*grn));
+    MYCOMPLEX *(*grn_uiz)[SRC_M_NUM][CHANNEL_NUM] = (Ctrl->e.active)? (MYCOMPLEX*(*)[SRC_M_NUM][CHANNEL_NUM]) calloc(Ctrl->R.nr, sizeof(*grn_uiz)) : NULL;
+    MYCOMPLEX *(*grn_uir)[SRC_M_NUM][CHANNEL_NUM] = (Ctrl->e.active)? (MYCOMPLEX*(*)[SRC_M_NUM][CHANNEL_NUM]) calloc(Ctrl->R.nr, sizeof(*grn_uir)) : NULL;
 
-    for(int ir=0; ir<nr; ++ir){
+    for(int ir=0; ir<Ctrl->R.nr; ++ir){
         for(int i=0; i<SRC_M_NUM; ++i){
             for(int c=0; c<CHANNEL_NUM; ++c){
-                grn[ir][i][c] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
-                if(grn_uiz)  grn_uiz[ir][i][c] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
-                if(grn_uir)  grn_uir[ir][i][c] = (MYCOMPLEX*)calloc(nf, sizeof(MYCOMPLEX));
+                grn[ir][i][c] = (MYCOMPLEX*)calloc(Ctrl->N.nf, sizeof(MYCOMPLEX));
+                if(grn_uiz)  grn_uiz[ir][i][c] = (MYCOMPLEX*)calloc(Ctrl->N.nf, sizeof(MYCOMPLEX));
+                if(grn_uir)  grn_uir[ir][i][c] = (MYCOMPLEX*)calloc(Ctrl->N.nf, sizeof(MYCOMPLEX));
             }
         }
     }
 
 
     // 在计算前打印所有参数
-    if(! silenceInput){
-        print_parameters();
+    if(! Ctrl->s.active){
+        print_Ctrl(Ctrl);
     }
     
 
     //==============================================================================
     // 计算格林函数
     integ_grn_spec(
-        pymod, nf1, nf2, freqs, nr, rs, wI,
-        vmin_ref, keps, ampk, k0, Length, filonLength, safilonTol, filonCut, !silenceInput,
-        grn, calc_upar, grn_uiz, grn_uir,
-        s_statsdir, nstatsidxs, statsidxs
+        pymod, Ctrl->H.nf1, Ctrl->H.nf2, Ctrl->N.freqs, Ctrl->R.nr, Ctrl->R.rs, Ctrl->N.wI,
+        Ctrl->V.vmin_ref, Ctrl->K.keps, Ctrl->K.ampk, Ctrl->K.k0, Ctrl->L.Length, Ctrl->L.filonLength, Ctrl->L.safilonTol, Ctrl->L.filonCut, !Ctrl->s.active,
+        grn, Ctrl->e.active, grn_uiz, grn_uir,
+        Ctrl->S.s_statsdir, Ctrl->S.nstatsidxs, Ctrl->S.statsidxs
     );
     //==============================================================================
     
 
     // 使用fftw3做反傅里叶变换
     // 分配fftw_complex内存
-    _FFTW_COMPLEX *fftw_grn = (_FFTW_COMPLEX*)_FFTW_MALLOC(sizeof(_FFTW_COMPLEX)*nf);
-    MYREAL *out = (MYREAL*)malloc(sizeof(MYREAL)*nt);
-    float *float_arr = (float*)malloc(sizeof(float)*nt);
+    _FFTW_COMPLEX *fftw_grn = (_FFTW_COMPLEX*)_FFTW_MALLOC(sizeof(_FFTW_COMPLEX)*Ctrl->N.nf);
+    MYREAL *out = (MYREAL*)malloc(sizeof(MYREAL)*Ctrl->N.nt);
+    float *float_arr = (float*)malloc(sizeof(float)*Ctrl->N.nt);
 
     // fftw计划
-    _FFTW_PLAN plan = _FFTW_PLAN_DFT_C2R_1D(nt, fftw_grn, out, FFTW_ESTIMATE);
+    _FFTW_PLAN plan = _FFTW_PLAN_DFT_C2R_1D(Ctrl->N.nt, fftw_grn, out, FFTW_ESTIMATE);
     
     // 建立SAC头文件，包含必要的头变量
-    SACHEAD hd = new_sac_head(dt, nt, delayT0);
+    SACHEAD hd = new_sac_head(Ctrl->N.dt, Ctrl->N.nt, Ctrl->E.delayT0);
     // 发震时刻作为参考时刻
     hd.o = 0.0; 
     hd.iztype = IO; 
     // 记录震源和台站深度
-    hd.evdp = depsrc; // km
-    hd.stel = (-1.0)*deprcv*1e3; // m
+    hd.evdp = Ctrl->D.depsrc; // km
+    hd.stel = (-1.0)*Ctrl->D.deprcv*1e3; // m
     // 写入虚频率
-    hd.user0 = wI;
+    hd.user0 = Ctrl->N.wI;
     // 写入接受点的Vp,Vs,rho
     hd.user1 = pymod->Va[pymod->ircv];
     hd.user2 = pymod->Vb[pymod->ircv];
@@ -1140,39 +906,42 @@ int greenfn_main(int argc, char **argv) {
     hd.user8 = pymod->Rho[pymod->isrc];
 
     
+    // 下面计算的同时也打印走时
+    if( ! Ctrl->s.active){
+        printf("\n\n");
+        printf("------------------------------------------------\n");
+        printf(" Distance(km)     Tp(secs)         Ts(secs)     \n");
+    }
+    
     // 做反傅里叶变换，保存SAC文件
-    for(int ir=0; ir<nr; ++ir){
-        hd.dist = rs[ir];
+    for(int ir=0; ir<Ctrl->R.nr; ++ir){
+        hd.dist = Ctrl->R.rs[ir];
 
         // 文件保存子目录
         char *s_output_subdir = (char*)malloc(sizeof(char)*(
-            strlen(s_output_dir)+strlen(s_modelpath)+
-            strlen(s_depsrc)+strlen(s_deprcv)+strlen(s_rs[ir])+100));
+            strlen(Ctrl->O.s_output_dir)+strlen(Ctrl->M.s_modelpath)+
+            strlen(Ctrl->D.s_depsrc)+strlen(Ctrl->D.s_deprcv)+strlen(Ctrl->R.s_rs[ir])+100));
         
-        sprintf(s_output_subdir, "%s/%s_%s_%s_%s", s_output_dir, s_modelname, s_depsrc, s_deprcv, s_rs[ir]);
-        if(mkdir(s_output_subdir, 0777) != 0){
-            if(errno != EEXIST){
-                fprintf(stderr, "[%s] " BOLD_RED "Error! Unable to create folder %s. Error code: %d\n" DEFAULT_RESTORE, command, s_output_subdir, errno);
-                exit(EXIT_FAILURE);
-            }
-        }
+        sprintf(s_output_subdir, "%s/%s_%s_%s_%s", Ctrl->O.s_output_dir, Ctrl->M.s_modelname, Ctrl->D.s_depsrc, Ctrl->D.s_deprcv, Ctrl->R.s_rs[ir]);
+        GRTCheckMakeDir(command, s_output_subdir);
+
         // 时间延迟 
-        delayT = delayT0;
-        if(delayV0 > 0.0) delayT += sqrt(rs[ir]*rs[ir] + (deprcv-depsrc)*(deprcv-depsrc))/delayV0;
+        MYREAL delayT = Ctrl->E.delayT0;
+        if(Ctrl->E.delayV0 > 0.0)   delayT += sqrt( GRT_SQUARE(Ctrl->R.rs[ir]) + GRT_SQUARE(Ctrl->D.deprcv - Ctrl->D.depsrc) ) / Ctrl->E.delayV0;
         // 修改SAC头段时间变量
         hd.b = delayT;
 
         // 计算理论走时
-        hd.t0 = compute_travt1d(pymod->Thk, pymod->Va, pymod->n, pymod->isrc, pymod->ircv, rs[ir]);
+        hd.t0 = compute_travt1d(pymod->Thk, pymod->Va, pymod->n, pymod->isrc, pymod->ircv, Ctrl->R.rs[ir]);
         strcpy(hd.kt0, "P");
-        hd.t1 = compute_travt1d(pymod->Thk, pymod->Vb, pymod->n, pymod->isrc, pymod->ircv, rs[ir]);
+        hd.t1 = compute_travt1d(pymod->Thk, pymod->Vb, pymod->n, pymod->isrc, pymod->ircv, Ctrl->R.rs[ir]);
         strcpy(hd.kt1, "S");
 
         for(int im=0; im<SRC_M_NUM; ++im){
-            if(!doEX && im==0)  continue;
-            if(!doVF  && im==1)  continue;
-            if(!doHF  && im==2)  continue;
-            if(!doDC  && im>=3)  continue;
+            if(!Ctrl->G.doEX  && im==0)  continue;
+            if(!Ctrl->G.doVF  && im==1)  continue;
+            if(!Ctrl->G.doHF  && im==2)  continue;
+            if(!Ctrl->G.doDC  && im>=3)  continue;
 
             int modr = SRC_M_ORDERS[im];
             int sgn=1;  // 用于反转Z分量
@@ -1180,19 +949,16 @@ int greenfn_main(int argc, char **argv) {
                 if(modr==0 && ZRTchs[c]=='T')  continue;  // 跳过输出0阶的T分量
 
                 // 文件保存总路径
-                // char *s_outpath = (char*)malloc(sizeof(char)*(strlen(s_output_dir)+100));
                 char *s_outpath = (char*)malloc(sizeof(char)*(strlen(s_output_subdir)+100));
-                // char *s_suffix = (char*)malloc(sizeof(char)*(strlen(s_depsrc)+strlen(s_deprcv)+strlen(s_rs[ir])+100));
-                // sprintf(s_suffix, "%s_%s_%s", s_depsrc, s_deprcv, s_rs[ir]);
                 char s_prefix[] = "";
 
                 // Z分量反转
                 sgn = (ZRTchs[c]=='Z') ? -1 : 1;
 
-                write_one_to_sac(SRC_M_NAME_ABBR[im], ZRTchs[c], &hd, s_outpath, s_output_subdir, s_prefix, sgn, grn[ir][im][c], fftw_grn, out, float_arr, plan);
-                if(calc_upar){
-                    write_one_to_sac(SRC_M_NAME_ABBR[im], ZRTchs[c], &hd, s_outpath, s_output_subdir, "z", sgn*(-1), grn_uiz[ir][im][c], fftw_grn, out, float_arr, plan);
-                    write_one_to_sac(SRC_M_NAME_ABBR[im], ZRTchs[c], &hd, s_outpath, s_output_subdir, "r", sgn, grn_uir[ir][im][c], fftw_grn, out, float_arr, plan);
+                write_one_to_sac(Ctrl, SRC_M_NAME_ABBR[im], ZRTchs[c], delayT, &hd, s_outpath, s_output_subdir, s_prefix, sgn, grn[ir][im][c], fftw_grn, out, float_arr, plan);
+                if(Ctrl->e.active){
+                    write_one_to_sac(Ctrl, SRC_M_NAME_ABBR[im], ZRTchs[c], delayT, &hd, s_outpath, s_output_subdir, "z", sgn*(-1), grn_uiz[ir][im][c], fftw_grn, out, float_arr, plan);
+                    write_one_to_sac(Ctrl, SRC_M_NAME_ABBR[im], ZRTchs[c], delayT, &hd, s_outpath, s_output_subdir, "r", sgn, grn_uir[ir][im][c], fftw_grn, out, float_arr, plan);
                 }
 
                 free(s_outpath);
@@ -1200,11 +966,15 @@ int greenfn_main(int argc, char **argv) {
         }
 
 
-        if(!silenceInput){
-            print_outdir_travt(s_output_subdir, s_rs[ir], hd.t0, hd.t1);
+        if( ! Ctrl->s.active){
+            printf(" %-15s  %-15.3f  %-15.3f\n", Ctrl->R.s_rs[ir], hd.t0, hd.t1);
         }
 
         free(s_output_subdir);
+    } // End distances loop
+
+    if( ! Ctrl->s.active){
+        printf("------------------------------------------------\n");
     }
 
     // 输出警告：当震源位于液体层中时，仅允许计算爆炸源对应的格林函数
@@ -1217,13 +987,7 @@ int greenfn_main(int argc, char **argv) {
     
 
     // 释放内存
-    free(s_modelpath);
-    free(s_depsrc);
-    free(s_deprcv);
-    free(s_output_dir);
-
-    for(int ir=0; ir<nr; ++ir){
-        free(s_rs[ir]);
+    for(int ir=0; ir<Ctrl->R.nr; ++ir){
         for(int i=0; i<SRC_M_NUM; ++i){
             for(int c=0; c<CHANNEL_NUM; ++c){
                 free(grn[ir][i][c]);
@@ -1236,24 +1000,12 @@ int greenfn_main(int argc, char **argv) {
     if(grn_uiz)  free(grn_uiz);
     if(grn_uir)  free(grn_uir);
 
-    free(s_rs);
-    free(rs);
-    free(s_statsdir);
-    free(statsidxs);
-    for(int i=0; i<nstatsidxs; ++i){
-        free(s_statsidxs[i]);
-    }
-    free(s_statsidxs);
-    free(freqs);
     _FFTW_FREE(fftw_grn);
     free(out);
     free(float_arr);
     _FFTW_DESTROY_PLAN(plan);
 
-    free_pymod(pymod);
-
-
+    free_Ctrl(Ctrl);
     return EXIT_SUCCESS;
 }
-
 
