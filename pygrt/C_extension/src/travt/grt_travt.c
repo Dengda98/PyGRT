@@ -7,17 +7,9 @@
  * 
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <string.h>
-#include <unistd.h>
-
 #include "travt/travt.h"
 #include "common/const.h"
 #include "common/model.h"
-#include "common/logo.h"
-#include "common/colorstr.h"
 #include "common/util.h"
 
 #include "grt.h"
@@ -428,7 +420,6 @@ MYREAL compute_travt1d(
  * 打印使用说明
  */
 static void print_help(){
-print_logo();
 printf("\n"
 "[grt travt]\n\n"
 "    A Supplementary Tool of GRT to Compute First Arrival Traveltime\n"
@@ -525,7 +516,7 @@ static void getopt_from_command(GRT_SUBMODULE_CTRL *Ctrl, int argc, char **argv)
     }
 
     // 检查必须设置的参数是否有设置
-    GRTCheckOptionEmpty(Ctrl, argc-1);
+    GRTCheckOptionEmpty(Ctrl, argc == 1);
     GRTCheckOptionActive(Ctrl, M);
     GRTCheckOptionActive(Ctrl, D);
     GRTCheckOptionActive(Ctrl, R);
@@ -536,8 +527,6 @@ static void getopt_from_command(GRT_SUBMODULE_CTRL *Ctrl, int argc, char **argv)
 /** 子模块主函数 */
 int travt_main(int argc, char **argv){
     GRT_SUBMODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
-    char *command = argv[0];
-
     Ctrl->name = argv[0];
 
     getopt_from_command(Ctrl, argc, argv);
@@ -545,7 +534,7 @@ int travt_main(int argc, char **argv){
     PYMODEL1D *pymod;
     
     // 读入模型文件
-    if((pymod = read_pymod_from_file(command, Ctrl->M.s_modelpath, Ctrl->D.depsrc, Ctrl->D.deprcv, true)) == NULL){
+    if((pymod = read_pymod_from_file(Ctrl->name, Ctrl->M.s_modelpath, Ctrl->D.depsrc, Ctrl->D.deprcv, true)) == NULL){
         exit(EXIT_FAILURE);
     }
     // print_pymod(pymod);
