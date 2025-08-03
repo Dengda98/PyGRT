@@ -9,94 +9,69 @@
  */
 
 
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "common/sacio2.h"
-#include "common/logo.h"
-#include "common/colorstr.h"
+
+#include "grt.h"
+
+/** 该子模块的参数控制结构体 */
+typedef struct {
+    char *name;
+    /** 输入文件路径 */
+    char *s_filepath;
+} GRT_SUBMODULE_CTRL;
 
 
-//****************** 在该文件以内的全局变量 ***********************//
-// 命令名称
-static char *command = NULL;
+/** 释放结构体的内存 */
+static void free_Ctrl(GRT_SUBMODULE_CTRL *Ctrl){
+    free(Ctrl->s_filepath);
+    free(Ctrl);
+}
 
-/**
- * 打印使用说明
- */
+/** 打印使用说明 */
 static void print_help(){
-print_logo();
 printf("\n"
-"[grt.b2a]\n\n"
+"[grt b2a]\n\n"
 "    Convert a binary SAC file into an ASCII file, \n"
 "    write to standard output (ignore header vars).\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
-"    grt.b2a <sacfile>\n"
+"    grt b2a <sacfile>\n"
 "\n\n\n"
 );
 }
 
 
 
-/**
- * 从命令行中读取选项，处理后记录到全局变量中
- * 
- * @param     argc      命令行的参数个数
- * @param     argv      多个参数字符串指针
- */
-static void getopt_from_command(int argc, char **argv){
+/** 从命令行中读取选项，处理后记录到全局变量中 */
+static void getopt_from_command(GRT_SUBMODULE_CTRL *Ctrl, int argc, char **argv){
     int opt;
     while ((opt = getopt(argc, argv, ":h")) != -1) {
         switch (opt) {
-
-            // 帮助
-            case 'h':
-                print_help();
-                exit(EXIT_SUCCESS);
-                break;
-
-            // 参数缺失
-            case ':':
-                fprintf(stderr, "[%s] " BOLD_RED "Error! Option '-%c' requires an argument. Use '-h' for help.\n" DEFAULT_RESTORE, command, optopt);
-                exit(EXIT_FAILURE);
-                break;
-
-            // 非法选项
-            case '?':
-            default:
-                fprintf(stderr, "[%s] " BOLD_RED "Error! Option '-%c' is invalid. Use '-h' for help.\n" DEFAULT_RESTORE, command, optopt);
-                exit(EXIT_FAILURE);
-                break;
+            GRT_Common_Options_in_Switch(Ctrl, (char)(optopt));
         }
     }
 
     // 检查必选项有没有设置
-    if(argc != 2){
-        fprintf(stderr, "[%s] " BOLD_RED "Error! Need set options. Use '-h' for help.\n" DEFAULT_RESTORE, command);
-        exit(EXIT_FAILURE);
-    }
+    GRTCheckOptionEmpty(Ctrl, argc != 2);
 }
 
 int b2a_main(int argc, char **argv){
-    command = argv[0];
+    GRT_SUBMODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
+    Ctrl->name = strdup(argv[0]);
 
-    getopt_from_command(argc, argv);
+    getopt_from_command(Ctrl, argc, argv);
 
-    const char *filepath = argv[1];
+    Ctrl->s_filepath = strdup(argv[1]);
     // 检查文件名是否存在
-    if(access(filepath, F_OK) == -1){
-        fprintf(stderr, "[%s] " BOLD_RED "Error! %s not exists.\n" DEFAULT_RESTORE, command, filepath);
-        exit(EXIT_FAILURE);
+    if(access(Ctrl->s_filepath, F_OK) == -1){
+        GRTRaiseError("[%s] Error! %s not exists.\n", Ctrl->name, Ctrl->s_filepath);
     }
 
 
     // 读入SAC文件
     SACHEAD hd;
-    float *arr = read_SAC(command, filepath, &hd, NULL);
+    float *arr = read_SAC(Ctrl->name, Ctrl->s_filepath, &hd, NULL);
 
     // 将波形写入标准输出，第一列时间，第二列振幅
     float begt = hd.b;
@@ -108,5 +83,6 @@ int b2a_main(int argc, char **argv){
 
     free(arr);
 
+    free_Ctrl(Ctrl);
     return EXIT_SUCCESS;
 }
