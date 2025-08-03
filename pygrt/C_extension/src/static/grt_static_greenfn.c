@@ -88,6 +88,34 @@ typedef struct {
 } GRT_SUBMODULE_CTRL;
 
 
+/** 释放结构体的内存 */
+static void free_Ctrl(GRT_SUBMODULE_CTRL *Ctrl){
+    free(Ctrl->name);
+
+    // M
+    free(Ctrl->M.s_modelpath);
+    free_pymod(Ctrl->M.pymod);
+    
+    // D
+    free(Ctrl->D.s_depsrc);
+    free(Ctrl->D.s_deprcv);
+
+    // X
+    free(Ctrl->X.xs);
+
+    // Y
+    free(Ctrl->Y.ys);
+
+    free(Ctrl->rs);
+
+    // S
+    if(Ctrl->S.active){
+        free(Ctrl->S.s_statsdir);
+    }
+
+    free(Ctrl);
+}
+
 
 /**
  * 打印使用说明
@@ -196,33 +224,7 @@ printf("\n"
 }
 
 
-/** 释放结构体的内存 */
-static void free_Ctrl(GRT_SUBMODULE_CTRL *Ctrl){
-    free(Ctrl->name);
 
-    // M
-    free(Ctrl->M.s_modelpath);
-    free_pymod(Ctrl->M.pymod);
-    
-    // D
-    free(Ctrl->D.s_depsrc);
-    free(Ctrl->D.s_deprcv);
-
-    // X
-    free(Ctrl->X.xs);
-
-    // Y
-    free(Ctrl->Y.ys);
-
-    free(Ctrl->rs);
-
-    // S
-    if(Ctrl->S.active){
-        free(Ctrl->S.s_statsdir);
-    }
-
-    free(Ctrl);
-}
 
 
 /** 从命令行中读取选项，处理后记录到全局变量中 */

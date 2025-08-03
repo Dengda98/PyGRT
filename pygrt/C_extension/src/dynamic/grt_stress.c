@@ -27,6 +27,7 @@ typedef struct {
 
 /** 释放结构体的内存 */
 static void free_Ctrl(GRT_SUBMODULE_CTRL *Ctrl){
+    free(Ctrl->name);
     free(Ctrl->s_dirpath);
     free(Ctrl->s_prefix);
     free(Ctrl->s_synpath);
