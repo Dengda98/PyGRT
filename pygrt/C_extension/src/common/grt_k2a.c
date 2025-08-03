@@ -17,7 +17,7 @@
 /** 该子模块的参数控制结构体 */
 typedef struct {
     char *name;
-    /** 输入模型 */
+    /** 输入文件路径 */
     char *s_filepath;
 } GRT_SUBMODULE_CTRL;
 
