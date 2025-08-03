@@ -67,7 +67,7 @@ static void getopt_from_command(GRT_MAIN_CTRL *Ctrl, int argc, char **argv){
     }
 
     // 必须有输入
-    GRTCheckOptionEmpty(Ctrl, argc-1);
+    GRTCheckOptionEmpty(Ctrl, argc == 1);
 }
 
 

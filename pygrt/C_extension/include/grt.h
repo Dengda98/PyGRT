@@ -93,8 +93,8 @@ extern const char *GRT_Submodule_Names[];
 })
 
 // GRT报错：检查是否有使用选项
-#define GRTCheckOptionEmpty(Ctrl, N) ({\
-    if((N) == 0){\
+#define GRTCheckOptionEmpty(Ctrl, condition) ({\
+    if((condition)){\
         GRTRaiseError("[%s] Error! Need set options. Use \"-h\" for help.\n", Ctrl->name);\
     }\
 })
