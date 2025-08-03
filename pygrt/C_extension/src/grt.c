@@ -27,15 +27,20 @@ const char *GRT_Submodule_Names[] = {
 };
 
 
+/** 参数控制结构体 */
 typedef struct {
     char *name;
     
 } GRT_MAIN_CTRL;
 
 
-/**
- * 打印使用说明
- */
+/** 释放结构体的内存 */
+static void free_Ctrl(GRT_MAIN_CTRL *Ctrl){
+    free(Ctrl->name);
+    free(Ctrl);
+}
+
+/** 打印使用说明 */
 static void print_help(){
 print_logo();
 printf("\n"
@@ -52,12 +57,7 @@ printf("\n\n");
 printf("For each submodule, you can use -h to see the help message.\n\n");
 }
 
-/**
- * 从命令行中读取选项，处理后记录到参数控制结构体
- * 
- * @param     argc      命令行的参数个数
- * @param     argv      多个参数字符串指针
- */
+/** 从命令行中读取选项，处理后记录到参数控制结构体 */
 static void getopt_from_command(GRT_MAIN_CTRL *Ctrl, int argc, char **argv){
     char* command = Ctrl->name;
     int opt;
@@ -72,30 +72,41 @@ static void getopt_from_command(GRT_MAIN_CTRL *Ctrl, int argc, char **argv){
 }
 
 
-/** 查找并执行子命令 */
-int dispatch_command(int argc, char **argv) {
-    char *entry_name = argv[1];
+/** 查找并执行子模块 */
+int dispatch_command(GRT_MAIN_CTRL *Ctrl, int argc, char **argv) {
+    char *entry_name = (char*)malloc((strlen(argv[1]) + ((argc > 2)? strlen(argv[2]) : 0) + 100)*sizeof(char));
+    strcpy(entry_name, argv[1]);
+
+    // 计算静态解
+    bool is_static = false;
+    if(strcmp(argv[1], "static") == 0 && argc > 2){
+        is_static = true;
+        sprintf(entry_name, "static_%s", argv[2]);
+    }
     
     for (const GRT_SUBMODULE_ENTRY *entry = GRT_Submodules_Entry; entry->name != NULL; entry++) {
         if (strcmp(entry_name, entry->name) == 0) {
-            return entry->func(argc - 1, argv + 1);
+            free(entry_name);
+            return entry->func(argc - 1 - (int)is_static, argv + 1 + (int)is_static);
         }
     }
-    
 
     // 未知子模块
-    GRTRaiseError("Error! Unknown submodule %s. Use \"-h\" for help.\n", entry_name);
+    GRTRaiseError("[%s] Error! Unknown submodule %s. Use \"-h\" for help.\n", Ctrl->name, entry_name);
 }
 
 
 /** 主函数 */
 int main(int argc, char **argv) {
     GRT_MAIN_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
-    Ctrl->name = argv[0];
+    Ctrl->name = strdup(argv[0]);
 
-    if(argc == 2){
+    if(argc <= 2){
         getopt_from_command(Ctrl, argc, argv);
     }
+    
+    dispatch_command(Ctrl, argc, argv);
 
-    return dispatch_command(argc, argv);
+    free_Ctrl(Ctrl);
+    return EXIT_SUCCESS;
 }
