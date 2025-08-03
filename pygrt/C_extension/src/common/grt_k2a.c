@@ -104,11 +104,11 @@ static void print_PTAM(FILE *fp){
 
 int k2a_main(int argc, char **argv){
     GRT_SUBMODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
-    Ctrl->name = argv[0];
+    Ctrl->name = strdup(argv[0]);
 
     getopt_from_command(Ctrl, argc, argv);
 
-    Ctrl->s_filepath = argv[1];
+    Ctrl->s_filepath = strdup(argv[1]);
     // 检查文件名是否存在
     if(access(Ctrl->s_filepath, F_OK) == -1){
         GRTRaiseError("[%s] Error! %s not exists.\n", Ctrl->name, Ctrl->s_filepath);

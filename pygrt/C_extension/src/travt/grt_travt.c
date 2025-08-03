@@ -42,6 +42,7 @@ typedef struct {
 
 /** 释放结构体的内存 */
 static void free_Ctrl(GRT_SUBMODULE_CTRL *Ctrl){
+    free(Ctrl->name);
     free(Ctrl->M.s_modelpath);
     free(Ctrl->D.s_depsrc);
     free(Ctrl->D.s_deprcv);
@@ -527,7 +528,7 @@ static void getopt_from_command(GRT_SUBMODULE_CTRL *Ctrl, int argc, char **argv)
 /** 子模块主函数 */
 int travt_main(int argc, char **argv){
     GRT_SUBMODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
-    Ctrl->name = argv[0];
+    Ctrl->name = strdup(argv[0]);
 
     getopt_from_command(Ctrl, argc, argv);
 
