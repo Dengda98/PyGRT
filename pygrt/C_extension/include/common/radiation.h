@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include <stdbool.h>
+
 #include "common/const.h"
 
 #define GRT_SYN_COMPUTE_EX 0   ///< 计算爆炸源
