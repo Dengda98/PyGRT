@@ -11,17 +11,17 @@
 #include "grt.h"
 
 /** 注册所有子模块命令 */
-const GRT_SUBMODULE_ENTRY GRT_Submodules_Entry[] = {
+const GRT_MODULE_ENTRY GRT_Modules_Entry[] = {
     #define X(name) {#name, name##_main},
-        GRT_Submodule_List
+        GRT_Module_List
     #undef X
     {NULL, NULL} // 结束标记
 };
 
 /** 定义包含子模块名称的字符串数组 */
-const char *GRT_Submodule_Names[] = {
+const char *GRT_Module_Names[] = {
     #define X(name) #name ,
-        GRT_Submodule_List
+        GRT_Module_List
     #undef X
     NULL
 };
@@ -47,21 +47,21 @@ printf("\n"
 "Usage: \n"
 "----------------------------------------------------------------\n"
 "    grt [options]\n"
-"    grt <submodule name> [<submodule-options>] ...\n\n\n"
+"    grt <module-name> [<module-options>] ...\n\n\n"
 "Options:\n"
 "----------------------------------------------------------------\n"
 "    -v            Display the program version.\n"
 "\n"
 "    -h            Display this help message.\n"
 "\n\n");
-printf("GRT supports the following submodules:\n"
+printf("GRT supports the following modules:\n"
 "----------------------------------------------------------------\n");
-for (MYINT n = 0; GRT_Submodule_Names[n] != NULL; ++n) {
-    const char *name = GRT_Submodule_Names[n];
+for (MYINT n = 0; GRT_Module_Names[n] != NULL; ++n) {
+    const char *name = GRT_Module_Names[n];
     printf("    %-s\n", name);
 }
 printf("\n"
-"For each submodule, you can use -h to see its help message, e.g.\n"
+"For each module, you can use -h to see its help message, e.g.\n"
 "    grt greenfn -h \n"
 "\n");
 }
@@ -101,7 +101,7 @@ int dispatch_command(GRT_MAIN_CTRL *Ctrl, int argc, char **argv) {
     
     int return_code = EXIT_SUCCESS;
     bool valid_entry_name = false;
-    for (const GRT_SUBMODULE_ENTRY *entry = GRT_Submodules_Entry; entry->name != NULL; entry++) {
+    for (const GRT_MODULE_ENTRY *entry = GRT_Modules_Entry; entry->name != NULL; entry++) {
         if (strcmp(entry_name, entry->name) == 0) {
             return_code = entry->func(argc - 1 - (int)is_single_static, argv + 1 + (int)is_single_static);
             valid_entry_name = true;
@@ -111,7 +111,7 @@ int dispatch_command(GRT_MAIN_CTRL *Ctrl, int argc, char **argv) {
     
     // 未知子模块
     if( ! valid_entry_name){
-        GRTRaiseError("[%s] Error! Unknown submodule %s. Use \"-h\" for help.\n", Ctrl->name, entry_name);
+        GRTRaiseError("[%s] Error! Unknown module %s. Use \"-h\" for help.\n", Ctrl->name, entry_name);
     }
     
     free(entry_name);

@@ -15,10 +15,10 @@
 /** 该子模块的参数控制结构体 */
 typedef struct {
     char *name;
-} GRT_SUBMODULE_CTRL;
+} GRT_MODULE_CTRL;
 
 /** 释放结构体的内存 */
-static void free_Ctrl(GRT_SUBMODULE_CTRL *Ctrl){
+static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
     free(Ctrl->name);
     free(Ctrl);
 }
@@ -40,7 +40,7 @@ printf("\n"
 
 
 /** 从命令行中读取选项，处理后记录到全局变量中 */
-static void getopt_from_command(GRT_SUBMODULE_CTRL *Ctrl, int argc, char **argv){
+static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     char* command = Ctrl->name;
     int opt;
     while ((opt = getopt(argc, argv, ":h")) != -1) {
@@ -49,14 +49,13 @@ static void getopt_from_command(GRT_SUBMODULE_CTRL *Ctrl, int argc, char **argv)
         }
     }
 
-    // 检查必选项有没有设置
-    GRTCheckOptionSet(command, argc > 1);
+    // 暂不支持设置其它参数
 }
 
 
 /** 子模块主函数 */
 int static_rotation_main(int argc, char **argv){
-    GRT_SUBMODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
+    GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
     Ctrl->name = strdup(argv[0]);
     const char *command = Ctrl->name;
 

@@ -27,7 +27,7 @@
 
 // ------------------------------------------------------
 /** X 宏，用于定义子模块命令。后续的命令名称和函数名称均与此匹配 */
-#define GRT_Submodule_List   \
+#define GRT_Module_List   \
     /* dynamic */          \
     X(greenfn)             \
     X(syn)                 \
@@ -47,25 +47,25 @@
 // ------------------------------------------------------
 
 /** 子模块的函数指针类型 */
-typedef int (*GRT_SUBMODULE_FUNC)(int argc, char **argv);
+typedef int (*GRT_MODULE_FUNC)(int argc, char **argv);
 
 /** 子模块命令注册结构 */
 typedef struct {
     const char *name;
-    GRT_SUBMODULE_FUNC func;
-} GRT_SUBMODULE_ENTRY;
+    GRT_MODULE_FUNC func;
+} GRT_MODULE_ENTRY;
 
 
 /** 声明所有子模块函数 */
 #define X(name) int name##_main(int argc, char **argv);
-    GRT_Submodule_List
+    GRT_Module_List
 #undef X
 
 /** 注册所有子模块命令 */
-extern const GRT_SUBMODULE_ENTRY GRT_Submodules_Entry[];
+extern const GRT_MODULE_ENTRY GRT_Modules_Entry[];
 
 /** 定义包含子模块名称的字符串数组 */
-extern const char *GRT_Submodule_Names[];
+extern const char *GRT_Module_Names[];
 
 
 

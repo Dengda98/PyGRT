@@ -113,11 +113,11 @@ typedef struct {
     MYINT computeType;
     char s_computeType[3];
 
-} GRT_SUBMODULE_CTRL;
+} GRT_MODULE_CTRL;
 
 
 /** 释放结构体的内存 */
-static void free_Ctrl(GRT_SUBMODULE_CTRL *Ctrl){
+static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
     free(Ctrl->name);
     // G
     free(Ctrl->G.s_grnpath);
@@ -137,7 +137,7 @@ static void print_help(){
 printf("\n"
 "[grt syn] %s\n\n", GRT_VERSION);printf(
 "    A Supplementary Tool of GRT to Compute Three-Component \n"
-"    Displacement with the outputs of submodule `greenfn`.\n"
+"    Displacement with the outputs of module `greenfn`.\n"
 "    Three components are:\n"
 "       + Up (Z),\n"
 "       + Radial Outward (R),\n"
@@ -159,7 +159,7 @@ printf("\n"
 "\n\n"
 "Options:\n"
 "----------------------------------------------------------------\n"
-"    -G<grn_path>  Green's Functions output directory of submodule `greenfn`.\n"
+"    -G<grn_path>  Green's Functions output directory of module `greenfn`.\n"
 "\n"
 "    -A<azimuth>   Azimuth in degree, from source to station.\n"
 "\n"
@@ -264,7 +264,7 @@ printf("\n"
  * 
  * @param    name    格林函数文件名（不含父级目录）
  */
-static void check_grn_exist(GRT_SUBMODULE_CTRL *Ctrl, const char *name){
+static void check_grn_exist(GRT_MODULE_CTRL *Ctrl, const char *name){
     const char *command = Ctrl->name;
     char *buffer = (char*)malloc(sizeof(char)*(strlen(Ctrl->G.s_grnpath)+strlen(name)+100));
     sprintf(buffer, "%s/%s", Ctrl->G.s_grnpath, name);
@@ -293,7 +293,7 @@ static void check_grn_exist(GRT_SUBMODULE_CTRL *Ctrl, const char *name){
 
 
 /** 从命令行中读取选项，处理后记录到全局变量中 */
-static void getopt_from_command(GRT_SUBMODULE_CTRL *Ctrl, int argc, char **argv){
+static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     const char *command = Ctrl->name;
 
     // 先为个别参数设置非0初始值
@@ -563,7 +563,7 @@ static void getopt_from_command(GRT_SUBMODULE_CTRL *Ctrl, int argc, char **argv)
  * @param      arr         数据指针
  * @param      hd          SAC头段变量
  */
-static void save_to_sac(GRT_SUBMODULE_CTRL *Ctrl, char *buffer, const char *pfx, const char ch, float *arr, SACHEAD hd){
+static void save_to_sac(GRT_MODULE_CTRL *Ctrl, char *buffer, const char *pfx, const char ch, float *arr, SACHEAD hd){
     hd.az = Ctrl->A.azimuth;
     hd.baz = Ctrl->A.backazimuth;
     snprintf(hd.kcmpnm, sizeof(hd.kcmpnm), "%s%s%c", pfx, Ctrl->s_computeType, ch);
@@ -579,7 +579,7 @@ static void save_to_sac(GRT_SUBMODULE_CTRL *Ctrl, char *buffer, const char *pfx,
  * @param      tfnt        点数
  * @param      dt          采样间隔
  */
-static void save_tf_to_sac(GRT_SUBMODULE_CTRL *Ctrl, char *buffer, float *tfarr, int tfnt, float dt){
+static void save_tf_to_sac(GRT_MODULE_CTRL *Ctrl, char *buffer, float *tfarr, int tfnt, float dt){
     SACHEAD hd = new_sac_head(dt, tfnt, 0.0);
     sprintf(buffer, "%s/sig.sac", Ctrl->O.s_output_dir);
     write_sac(buffer, hd, tfarr);
@@ -632,7 +632,7 @@ static void data_zrt2zne(float *syn[3], float *syn_upar[3][3], int nt, double az
 
 /** 子模块主函数 */
 int syn_main(int argc, char **argv){
-    GRT_SUBMODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
+    GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
     Ctrl->name = strdup(argv[0]);
     const char *command = Ctrl->name;
 
