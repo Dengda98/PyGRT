@@ -131,10 +131,10 @@ void calc_uiz_R_EV(
 
 
 void calc_RT_ll_2x2(
-    MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, 
-    MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, 
+    MYREAL Rho1, MYCOMPLEX xa1,
+    MYREAL Rho2, MYCOMPLEX xa2,
     MYREAL thk, // 使用上层的厚度
-    MYCOMPLEX omega, MYREAL k, 
+    MYCOMPLEX omega, MYREAL k,
     MYCOMPLEX RD[2][2], MYCOMPLEX *RDL, MYCOMPLEX RU[2][2], MYCOMPLEX *RUL, 
     MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX TU[2][2], MYCOMPLEX *TUL, MYINT *stats)
 {
@@ -150,6 +150,10 @@ void calc_RT_ll_2x2(
     if(RDL==NULL || RUL==NULL || TDL==NULL || TUL==NULL) computeLove=false;
     
     MYCOMPLEX A = xa1*Rho2 + xa2*Rho1;
+    if(A==CZERO){
+        *stats = INVERSE_FAILURE;
+        return;
+    }
 
     if(computeRayl){
         RD[0][0] = (xa1*Rho2 - xa2*Rho1)/A * ex2a;  
@@ -187,7 +191,6 @@ void calc_RT_ls_2x2(
 
     // 延迟因子始终作用于上层
     MYCOMPLEX exa, exb, exab, ex2a, ex2b; 
-    MYCOMPLEX tmp;
 
     exa = exp(-k*thk*xa1);
     exb = exp(-k*thk*xb1);
@@ -412,8 +415,8 @@ void calc_RT_2x2(
     }
     else if(mu1 == CZERO && mu2 == CZERO){
         calc_RT_ll_2x2(
-            Rho1, xa1, xb1, kbkb1, mu1, 
-            Rho2, xa2, xb2, kbkb2, mu2, 
+            Rho1, xa1,
+            Rho2, xa2,
             thk, omega, k, 
             RD, RDL, RU, RUL, TD, TDL, TU, TUL, stats);
     }
