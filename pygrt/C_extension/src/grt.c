@@ -50,18 +50,20 @@ printf("\n"
 "    grt <submodule name> [<submodule-options>] ...\n\n\n"
 "Options:\n"
 "----------------------------------------------------------------\n"
-"    -v            Display version.\n"
+"    -v            Display the program version.\n"
 "\n"
 "    -h            Display this help message.\n"
-);
+"\n\n");
 printf("GRT supports the following submodules:\n"
 "----------------------------------------------------------------\n");
 for (MYINT n = 0; GRT_Submodule_Names[n] != NULL; ++n) {
     const char *name = GRT_Submodule_Names[n];
     printf("    %-s\n", name);
 }
-printf("\n\n");
-printf("For each submodule, you can use -h to see the help message.\n\n");
+printf("\n"
+"For each submodule, you can use -h to see its help message, e.g.\n"
+"    grt greenfn -h \n"
+"\n");
 }
 
 /** 从命令行中读取选项，处理后记录到参数控制结构体 */
