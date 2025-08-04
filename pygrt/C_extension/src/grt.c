@@ -77,22 +77,26 @@ int dispatch_command(GRT_MAIN_CTRL *Ctrl, int argc, char **argv) {
     char *entry_name = (char*)malloc((strlen(argv[1]) + ((argc > 2)? strlen(argv[2]) : 0) + 100)*sizeof(char));
     strcpy(entry_name, argv[1]);
 
-    // 计算静态解
-    bool is_static = false;
+    // 是否单独传入“static”以计算静态解
+    bool is_single_static = false;
     if(strcmp(argv[1], "static") == 0 && argc > 2){
-        is_static = true;
+        is_single_static = true;
         sprintf(entry_name, "static_%s", argv[2]);
     }
     
+    int return_code = EXIT_SUCCESS;
     for (const GRT_SUBMODULE_ENTRY *entry = GRT_Submodules_Entry; entry->name != NULL; entry++) {
         if (strcmp(entry_name, entry->name) == 0) {
-            free(entry_name);
-            return entry->func(argc - 1 - (int)is_static, argv + 1 + (int)is_static);
+            return_code = entry->func(argc - 1 - (int)is_single_static, argv + 1 + (int)is_single_static);
+            break;
         }
     }
-
+    
     // 未知子模块
     GRTRaiseError("[%s] Error! Unknown submodule %s. Use \"-h\" for help.\n", Ctrl->name, entry_name);
+    
+    free(entry_name);
+    return return_code;
 }
 
 
