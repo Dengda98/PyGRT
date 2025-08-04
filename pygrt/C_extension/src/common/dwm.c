@@ -86,7 +86,7 @@ MYREAL discrete_integ(
                     sum_J[ir][i][v] += SUM[i][v];
                     
                     // 是否提前判断达到收敛
-                    if(keps < RZERO || (modr==0 && v!=0 && v!=2))  continue;
+                    if(keps <= RZERO || (modr==0 && v!=0 && v!=2))  continue;
                     
                     iendk0 = iendk0 && (fabs(SUM[i][v])/ fabs(sum_J[ir][i][v]) <= keps);
                 }

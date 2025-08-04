@@ -1,0 +1,90 @@
+/**
+ * @file   grt.h
+ * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
+ * @date   2025-08
+ * 
+ * C 程序的主函数，由此发起各个子模块的任务
+ * 
+ */
+
+#pragma once
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <dirent.h>
+#include <ctype.h>
+#include <stdbool.h>
+
+#include "common/const.h"
+#include "common/logo.h"
+
+#include "grt_error.h"
+
+#define GRT_MAIN_COMMAND   "grt"   ///< 主程序名
+
+// ------------------------------------------------------
+/** X 宏，用于定义子模块命令。后续的命令名称和函数名称均与此匹配 */
+#define GRT_Submodule_List   \
+    /* dynamic */          \
+    X(greenfn)             \
+    X(syn)                 \
+    X(rotation)            \
+    X(strain)              \
+    X(stress)              \
+    /* static */           \
+    X(static_greenfn)      \
+    X(static_syn)          \
+    X(static_rotation)     \
+    X(static_strain)       \
+    X(static_stress)       \
+    /* other */            \
+    X(k2a)                 \
+    X(b2a)                 \
+    X(travt)               \
+// ------------------------------------------------------
+
+/** 子模块的函数指针类型 */
+typedef int (*GRT_SUBMODULE_FUNC)(int argc, char **argv);
+
+/** 子模块命令注册结构 */
+typedef struct {
+    const char *name;
+    GRT_SUBMODULE_FUNC func;
+} GRT_SUBMODULE_ENTRY;
+
+
+/** 声明所有子模块函数 */
+#define X(name) int name##_main(int argc, char **argv);
+    GRT_Submodule_List
+#undef X
+
+/** 注册所有子模块命令 */
+extern const GRT_SUBMODULE_ENTRY GRT_Submodules_Entry[];
+
+/** 定义包含子模块名称的字符串数组 */
+extern const char *GRT_Submodule_Names[];
+
+
+
+
+
+/** 共有的命令行处理语句 */ 
+#define GRT_Common_Options_in_Switch(name, X) \
+    /** 帮助 */  \
+    case 'h': \
+        print_help(); \
+        exit(EXIT_SUCCESS); \
+        break; \
+    /** 参数缺失 */  \
+    case ':': \
+        GRTMissArgsError(name, X, ""); \
+        break; \
+    /** 非法选项 */  \
+    case '?': \
+    default: \
+        GRTInvalidOptionError(name, X, ""); \
+        break; \
+

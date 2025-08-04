@@ -117,11 +117,12 @@ void calc_RT_ss_2x2(
     MYCOMPLEX RD[2][2], MYCOMPLEX *RDL, MYCOMPLEX RU[2][2], MYCOMPLEX *RUL, 
     MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX TU[2][2], MYCOMPLEX *TUL, MYINT *stats);
 
-/** 液-液 界面，函数参数与 calc_RT_2x2 函数一致 */
+/** 液-液 界面，函数参数与 calc_RT_2x2 函数类似，只是删除了不必要的参数 */
 void calc_RT_ll_2x2(
-    MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, 
-    MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, 
-    MYREAL thk, MYCOMPLEX omega, MYREAL k, 
+    MYREAL Rho1, MYCOMPLEX xa1,
+    MYREAL Rho2, MYCOMPLEX xa2,
+    MYREAL thk, // 使用上层的厚度
+    MYCOMPLEX omega, MYREAL k,
     MYCOMPLEX RD[2][2], MYCOMPLEX *RDL, MYCOMPLEX RU[2][2], MYCOMPLEX *RUL, 
     MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX TU[2][2], MYCOMPLEX *TUL, MYINT *stats);
 

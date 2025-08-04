@@ -1,5 +1,5 @@
 /**
- * @file   stgrt_rotation.c
+ * @file   grt_static_rotation.c
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2025-04-08
  * 
@@ -8,82 +8,59 @@
  */
 
 
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <string.h>
-#include <stdbool.h>
-
 #include "common/const.h"
-#include "common/logo.h"
-#include "common/colorstr.h"
 
+#include "grt.h"
 
-//****************** 在该文件以内的全局变量 ***********************//
-// 命令名称
-static char *command = NULL;
+/** 该子模块的参数控制结构体 */
+typedef struct {
+    char *name;
+} GRT_SUBMODULE_CTRL;
 
-// 输出分量格式，即是否需要旋转到ZNE
-static bool rot2ZNE = false;
+/** 释放结构体的内存 */
+static void free_Ctrl(GRT_SUBMODULE_CTRL *Ctrl){
+    free(Ctrl->name);
+    free(Ctrl);
+}
 
-/**
- * 打印使用说明
- */
+/** 打印使用说明 */
 static void print_help(){
-print_logo();
 printf("\n"
-"[stgrt.rotation]\n\n"
+"[grt static rotation] %s\n\n", GRT_VERSION);printf(
 "    Conbine spatial derivatives of static displacements (read from stdin)\n"
 "    into rotation tensor. For example, \"ZR\" in filename means\n"
 "    0.5*(u_{z,r} - u_{r,z}).\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
-"    stgrt.rotation < <file>\n"
+"    grt static rotation < <file>\n"
 "\n\n\n"
 );
 }
 
 
-/**
- * 从命令行中读取选项，处理后记录到全局变量中
- * 
- * @param     argc      命令行的参数个数
- * @param     argv      多个参数字符串指针
- */
-static void getopt_from_command(int argc, char **argv){
+/** 从命令行中读取选项，处理后记录到全局变量中 */
+static void getopt_from_command(GRT_SUBMODULE_CTRL *Ctrl, int argc, char **argv){
+    char* command = Ctrl->name;
     int opt;
     while ((opt = getopt(argc, argv, ":h")) != -1) {
         switch (opt) {
-
-            // 帮助
-            case 'h':
-                print_help();
-                exit(EXIT_SUCCESS);
-                break;
-
-            // 参数缺失
-            case ':':
-                fprintf(stderr, "[%s] " BOLD_RED "Error! Option '-%c' requires an argument. Use '-h' for help.\n" DEFAULT_RESTORE, command, optopt);
-                exit(EXIT_FAILURE);
-                break;
-
-            // 非法选项
-            case '?':
-            default:
-                fprintf(stderr, "[%s] " BOLD_RED "Error! Option '-%c' is invalid. Use '-h' for help.\n" DEFAULT_RESTORE, command, optopt);
-                exit(EXIT_FAILURE);
-                break;
+            GRT_Common_Options_in_Switch(command, (char)(optopt));
         }
     }
+
+    // 检查必选项有没有设置
+    GRTCheckOptionSet(command, argc > 1);
 }
 
 
-int main(int argc, char **argv){
-    command = argv[0]; 
+/** 子模块主函数 */
+int static_rotation_main(int argc, char **argv){
+    GRT_SUBMODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
+    Ctrl->name = strdup(argv[0]);
+    const char *command = Ctrl->name;
 
-    getopt_from_command(argc, argv);
+    getopt_from_command(Ctrl, argc, argv);
 
     // 从标准输入中读取合成的静态位移及其空间导数
     double x0, y0, syn[3], syn_upar[3][3];  // [3][3]表示u_{i,j}
@@ -119,6 +96,9 @@ int main(int argc, char **argv){
     // 三分量
     const char *chs = NULL;
 
+    // 输出分量格式，即是否需要旋转到ZNE
+    bool rot2ZNE = false;
+
     // 逐行读入
     char line[1024];
     int iline = 0;
@@ -127,15 +107,13 @@ int main(int argc, char **argv){
         if(iline == 1){
             // 读取震源物性参数
             if(3 != sscanf(line, "# %lf %lf %lf", &src_va, &src_vb, &src_rho)){
-                fprintf(stderr, "[%s] " BOLD_RED "Error! Unable to read src property from \"%s\". \n" DEFAULT_RESTORE, command, line);
-                exit(EXIT_FAILURE);
+                GRTRaiseError("[%s] Error! Unable to read src property from \"%s\". \n", command, line);
             }
         }
         else if(iline == 2){
             // 读取场点物性参数
             if(3 != sscanf(line, "# %lf %lf %lf", &rcv_va, &rcv_vb, &rcv_rho)){
-                fprintf(stderr, "[%s] " BOLD_RED "Error! Unable to read rcv property from \"%s\". \n" DEFAULT_RESTORE, command, line);
-                exit(EXIT_FAILURE);
+                GRTRaiseError("[%s] Error! Unable to read rcv property from \"%s\". \n", command, line);
             }
         }
         else if(iline == 3){
@@ -155,8 +133,7 @@ int main(int argc, char **argv){
 
             // 想合成位移空间导数但输入的格林函数没有
             if(ncols < 14){
-                fprintf(stderr, "[%s] " BOLD_RED "Error! The input has no spatial derivatives. \n" DEFAULT_RESTORE, command);
-                exit(EXIT_FAILURE);
+                GRTRaiseError("[%s] Error! The input has no spatial derivatives. \n", command);
             }
         }
         if(line[0] == '#')  continue;
@@ -222,7 +199,9 @@ int main(int argc, char **argv){
     }
 
     if(iline==0){
-        fprintf(stderr, "[%s] " BOLD_RED "Error! Empty input. \n" DEFAULT_RESTORE, command);
-        exit(EXIT_FAILURE);
+        GRTRaiseError("[%s] Error! Empty input. \n", command);
     }
+
+    free_Ctrl(Ctrl);
+    return EXIT_SUCCESS;
 }

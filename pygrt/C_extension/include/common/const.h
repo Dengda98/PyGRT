@@ -38,9 +38,25 @@ typedef int MYINT;  ///< 整数
 #ifdef GRT_USE_FLOAT 
     typedef float _Complex  MYCOMPLEX;   ///< 复数
     typedef float MYREAL;   ///< 浮点数
+
+    #define _FFTW_COMPLEX   fftwf_complex
+    #define _FFTW_PLAN      fftwf_plan
+    #define _FFTW_EXECUTE   fftwf_execute
+    #define _FFTW_MALLOC    fftwf_malloc
+    #define _FFTW_FREE      fftwf_free
+    #define _FFTW_DESTROY_PLAN   fftwf_destroy_plan
+    #define _FFTW_PLAN_DFT_C2R_1D   fftwf_plan_dft_c2r_1d
 #else 
     typedef double _Complex MYCOMPLEX;
     typedef double MYREAL;
+
+    #define _FFTW_COMPLEX   fftw_complex
+    #define _FFTW_PLAN      fftw_plan
+    #define _FFTW_EXECUTE   fftw_execute
+    #define _FFTW_MALLOC    fftw_malloc
+    #define _FFTW_FREE      fftw_free
+    #define _FFTW_DESTROY_PLAN   fftw_destroy_plan
+    #define _FFTW_PLAN_DFT_C2R_1D   fftw_plan_dft_c2r_1d
 #endif
 
 // 常数
@@ -77,6 +93,10 @@ typedef int MYINT;  ///< 整数
 #define GRT_CMPLX_FMT "%18.8e%-+14.8ej"   ///< 复数输出格式
 #define GRT_STR_CMPLX_FMT "%34s"    ///< 与复数格式同长度的字符串输出格式
 
+#define GRT_MAX(a, b) ((a) > (b) ? (a) : (b))  ///< 求两者较大值
+#define GRT_MIN(a, b) ((a) < (b) ? (a) : (b))  ///< 求两者较小值
+
+#define GRT_SQUARE(x) ((x) * (x))  ///< 计算一个数的平方
 
 // -----------------------------------------------------------------------------
 #define CHANNEL_NUM    3     ///< 3, 代码中分量个数（ZRT，ZNE）
@@ -123,3 +143,4 @@ extern const char ZRTchs[];
 
 /** ZNE三分量代号 */
 extern const char ZNEchs[];
+

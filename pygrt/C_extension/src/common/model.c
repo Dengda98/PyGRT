@@ -9,6 +9,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <complex.h>
 
 #include "common/model.h"
@@ -16,6 +17,7 @@
 #include "common/attenuation.h"
 #include "common/colorstr.h"
 
+#include "grt_error.h"
 
 void print_mod1d(const MODEL1D *mod1d){
     LAYER *lay;
@@ -38,7 +40,7 @@ void print_pymod(const PYMODEL1D *pymod){
     // 每列字符宽度
     // [isrc/ircv] [h(km)] [Vp(km/s)] [Vs(km/s)] [Rho(g/cm^3)] [Qp] [Qs]
     const int ncols = 7;
-    const int nlens[] = {11, 10, 13, 13, 16, 13, 13};
+    const int nlens[] = {13, 12, 13, 13, 16, 13, 13};
     int Nlen=0;
     for(int ic=0; ic<ncols; ++ic){
         Nlen += nlens[ic]; 
@@ -71,7 +73,7 @@ void print_pymod(const PYMODEL1D *pymod){
     printf("%s\n", splitline);
 
 
-    char indexstr[nlens[0]-2];
+    char indexstr[nlens[0]-2+10];  // +10 以防止 -Wformat-truncation= 警告
     for(MYINT i=0; i<pymod->n; ++i){
         if(i==pymod->isrc){
             snprintf(indexstr, sizeof(indexstr), "%d [src]", i+1);
@@ -256,11 +258,9 @@ void realloc_pymod(PYMODEL1D *pymod, MYINT n){
 
 
 PYMODEL1D * read_pymod_from_file(const char *command, const char *modelpath, double depsrc, double deprcv, bool allowLiquid){
-    FILE *fp;
-    if((fp = fopen(modelpath, "r")) == NULL){
-        fprintf(stderr, "[%s] " BOLD_RED "Model file open error.\n" DEFAULT_RESTORE, command);
-        return NULL;
-    }
+    GRTCheckFileExist(command, modelpath);
+    
+    FILE *fp = GRTCheckOpenFile(command, modelpath, "r");
 
     MYINT isrc=-1, ircv=-1;
     MYINT *pmin_idx, *pmax_idx, *pimg_idx;

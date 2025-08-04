@@ -1,5 +1,5 @@
 /**
- * @file   stgrt.c
+ * @file   static_grn.c
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2025-04-03
  * 
@@ -19,7 +19,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 
-#include "static/stgrt.h"
+#include "static/static_grn.h"
 #include "static/static_propagate.h"
 #include "common/dwm.h"
 #include "common/ptam.h"

@@ -1,5 +1,6 @@
 BUILD_DIR := build
 INC_DIR := include
+SRC_DIR := src
 BIN_DIR := bin
 LIB_DIR := lib
 LNAME := grt
@@ -22,7 +23,7 @@ FOMPFLAGS := -fopenmp
 
 # link static library on Windows
 LINK_STATIC := 
-LDFLAGS := $(FOMPFLAGS)
+LDFLAGS := $(FOMPFLAGS) $(LFFT_FLAGS)
 
 # expand stack memory for Windows
 STACK_MEM := 
@@ -40,47 +41,71 @@ ARCH =
 # at least for now, it's not a big problem.
 CFLAGS := $(LINK_STATIC) $(LFFT_FLAGS) -lm -O3 -std=gnu99 \
 		  -fPIC -Wall -Wextra $(STACK_MEM) -I$(shell realpath $(INC_DIR)) \
-		  -D'GRT_VERSION=\"$(VERSION)\"'  $(ARCH)  $(FOMPFLAGS)
+		  -DGRT_VERSION=\"$(VERSION)\"  $(ARCH)  $(FOMPFLAGS)
 #  -fdump-tree-all  -g -ffast-math -O3 -fno-associative-math  -march=native -mtune=native 
 
 
-# 定义子目录
-SUBDIRS = \
-    src/common \
-	src/dynamic \
-	src/static \
-	src/travt
+# 获取所有源文件
+SRCS = $(shell find $(SRC_DIR) -name '*.c')
+# 转为中间文件
+OBJS = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SRCS))
 
+DEPS := $(OBJS:.o=.d)  # include main functions here
+
+PROGS := $(BIN_DIR)/grt
+
+# Main targets
+.PHONY: all objs progs libs clean cleanbuild
 
 all: objs progs libs
 
+objs: $(BUILD_DIR) $(OBJS)
 
-objs:
-	for dir in $(SUBDIRS); do \
-		$(MAKE) -C $$dir CC="$(CC)" CFLAGS="$(CFLAGS)" objs || exit 1; \
-	done
-
-progs: objs 
-	for dir in $(SUBDIRS); do \
-		$(MAKE) -C $$dir CC="$(CC)" CFLAGS="$(CFLAGS)" progs || exit 1; \
-	done
-
+progs: objs $(BIN_DIR) $(PROGS)
 
 libs: objs $(LIB_DIR) $(LIB_DIR)/$(LIBS_NAME)  $(LIB_DIR)/$(LIBD_NAME)
+
+$(BUILD_DIR):
+	@mkdir -p $(BUILD_DIR)
+
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
+	$(CC) -o $@  -c $< $(CFLAGS) 
+
+# ------------------------Executable files------------------------
+$(BIN_DIR):
+	@mkdir -p $(BIN_DIR)
+
+$(PROGS): $(OBJS)
+	$(CC) -o $@ $^  $(CFLAGS)
+
+# ----------------------- Dependency generation -----------------------
+# Dependency generation (only for non-clean targets)
+ifneq ($(MAKECMDGOALS),clean)
+ifneq ($(MAKECMDGOALS),cleanbuild)
+-include $(DEPS)
+endif
+endif
+
+$(BUILD_DIR)/%.d: $(SRC_DIR)/%.c
+	@mkdir -p $(shell dirname $@)
+	@$(CC) $(CFLAGS) -MM $< > $@.$$$$; \
+	sed 's,\($*\)\.o[ :]*,$(BUILD_DIR)/\1.o $@ : ,g' < $@.$$$$ > $@; \
+	rm -f $@.$$$$
+
+# ----------------------------------------------------------------------
 
 $(LIB_DIR):
 	@mkdir -p $@
 
 # build dynamic library
 # The order in the compiled statement is critical, otherwise the library will not be linked
-OBJS = $(wildcard $(BUILD_DIR)/**/*.o)
-$(LIB_DIR)/$(LIBD_NAME): objs
-	$(CC) -shared -o $@ $(OBJS) $(LDFLAGS) 
+$(LIB_DIR)/$(LIBD_NAME): $(OBJS)
+	$(CC) -shared -o $@ $^ $(LDFLAGS)
 
 # build static library
-$(LIB_DIR)/$(LIBS_NAME): objs
-	ar rcs $@ $(OBJS)  
-	
+$(LIB_DIR)/$(LIBS_NAME): $(OBJS)
+	ar rcs $@ $^  
+
 
 cleanbuild:
 	rm -rf $(BUILD_DIR)
