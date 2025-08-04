@@ -46,7 +46,14 @@ print_logo();
 printf("\n"
 "Usage: \n"
 "----------------------------------------------------------------\n"
-"    grt <submodule name> [options] ...\n\n\n");
+"    grt [options]\n"
+"    grt <submodule name> [<submodule-options>] ...\n\n\n"
+"Options:\n"
+"----------------------------------------------------------------\n"
+"    -v            Display version.\n"
+"\n"
+"    -h            Display this help message.\n"
+);
 printf("GRT supports the following submodules:\n"
 "----------------------------------------------------------------\n");
 for (MYINT n = 0; GRT_Submodule_Names[n] != NULL; ++n) {
@@ -61,8 +68,14 @@ printf("For each submodule, you can use -h to see the help message.\n\n");
 static void getopt_from_command(GRT_MAIN_CTRL *Ctrl, int argc, char **argv){
     char* command = Ctrl->name;
     int opt;
-    while ((opt = getopt(argc, argv, ":h")) != -1) {
+    while ((opt = getopt(argc, argv, ":vh")) != -1) {
         switch (opt) {
+            // 打印版本
+            case 'v':
+                printf(GRT_MAIN_COMMAND" %s\n", GRT_VERSION);
+                exit(EXIT_SUCCESS);
+                break;
+
             GRT_Common_Options_in_Switch(command, optopt);
         }
     }
