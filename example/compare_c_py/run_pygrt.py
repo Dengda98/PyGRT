@@ -152,8 +152,8 @@ for ZNE in [False, True]:
 
 
 #-------------------------- Static -----------------------------------------
-xarr = np.linspace(-3, 3, 11)
-yarr = np.linspace(-4, 4, 16)
+xarr = np.arange(-3, 3.1, 0.6)
+yarr = np.arange(-4, 4.1, 0.8)
 static_grn = pymod.compute_static_grn(xarr, yarr, calc_upar=True)
 
 for ZNE in [False, True]:

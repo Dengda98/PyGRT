@@ -13,4 +13,4 @@ modname="halfspace"
 out="GRN"
 
 # compute Green's Functions
-grt -M${modname} -O${out} -N${nt}/${dt} -D${depsrc}/${deprcv} -R${dist} -G0/1/1/0   # Vertical and Horizontal Force
+grt greenfn -M${modname} -O${out} -N${nt}/${dt} -D${depsrc}/${deprcv} -R${dist} -G0/1/1/0   # Vertical and Horizontal Force

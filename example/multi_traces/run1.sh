@@ -16,4 +16,4 @@ modname="mod1"
 out="GRN"
 
 # compute Green's Functions
-grt -M${modname} -O${out} -N${nt}/${dt} -D${depsrc}/${deprcv} -R${distarr} -G0/1/0/0  # 只生成垂直力源的格林函数
+grt greenfn -M${modname} -O${out} -N${nt}/${dt} -D${depsrc}/${deprcv} -R${distarr} -G0/1/0/0  # 只生成垂直力源的格林函数
