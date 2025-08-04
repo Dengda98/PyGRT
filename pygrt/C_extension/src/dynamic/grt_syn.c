@@ -295,6 +295,11 @@ static void check_grn_exist(GRT_SUBMODULE_CTRL *Ctrl, const char *name){
 /** 从命令行中读取选项，处理后记录到全局变量中 */
 static void getopt_from_command(GRT_SUBMODULE_CTRL *Ctrl, int argc, char **argv){
     const char *command = Ctrl->name;
+
+    // 先为个别参数设置非0初始值
+    Ctrl->computeType = GRT_SYN_COMPUTE_EX;
+    sprintf(Ctrl->s_computeType, "%s", "EX");
+
     int opt;
     while ((opt = getopt(argc, argv, ":G:A:S:M:F:T:O:P:D:I:J:Nehs")) != -1) {
         switch (opt) {
