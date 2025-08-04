@@ -100,15 +100,19 @@ int dispatch_command(GRT_MAIN_CTRL *Ctrl, int argc, char **argv) {
     }
     
     int return_code = EXIT_SUCCESS;
+    bool valid_entry_name = false;
     for (const GRT_SUBMODULE_ENTRY *entry = GRT_Submodules_Entry; entry->name != NULL; entry++) {
         if (strcmp(entry_name, entry->name) == 0) {
             return_code = entry->func(argc - 1 - (int)is_single_static, argv + 1 + (int)is_single_static);
+            valid_entry_name = true;
             break;
         }
     }
     
     // 未知子模块
-    GRTRaiseError("[%s] Error! Unknown submodule %s. Use \"-h\" for help.\n", Ctrl->name, entry_name);
+    if( ! valid_entry_name){
+        GRTRaiseError("[%s] Error! Unknown submodule %s. Use \"-h\" for help.\n", Ctrl->name, entry_name);
+    }
     
     free(entry_name);
     return return_code;

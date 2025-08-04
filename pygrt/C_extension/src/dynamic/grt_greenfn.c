@@ -978,6 +978,7 @@ int greenfn_main(int argc, char **argv) {
 
     if( ! Ctrl->s.active){
         printf("------------------------------------------------\n");
+        printf("\n");
     }
 
     // 输出警告：当震源位于液体层中时，仅允许计算爆炸源对应的格林函数
