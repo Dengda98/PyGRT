@@ -145,11 +145,11 @@ typedef struct {
     struct {
         bool active;
     } s;
-} GRT_SUBMODULE_CTRL;
+} GRT_MODULE_CTRL;
 
 
 /** 释放结构体的内存 */
-static void free_Ctrl(GRT_SUBMODULE_CTRL *Ctrl){
+static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
     free(Ctrl->name);
 
     // M
@@ -190,7 +190,7 @@ static void free_Ctrl(GRT_SUBMODULE_CTRL *Ctrl){
 
 
 /** 打印结构体中的参数 */
-static void print_Ctrl(const GRT_SUBMODULE_CTRL *Ctrl){
+static void print_Ctrl(const GRT_MODULE_CTRL *Ctrl){
     print_pymod(Ctrl->M.pymod);
 
     const char format[]      = "   \%-20s  \%s\n";
@@ -432,7 +432,7 @@ printf("\n"
 
 
 /** 从命令行中读取选项，处理后记录到全局变量中 */
-static void getopt_from_command(GRT_SUBMODULE_CTRL *Ctrl, int argc, char **argv){
+static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     char* command = Ctrl->name;
 
     // 先为个别参数设置非0初始值
@@ -743,7 +743,7 @@ static void ifft_one_trace(
  * 
  */
 static void write_one_to_sac(
-    const GRT_SUBMODULE_CTRL *Ctrl, const char *srcname, const char ch, MYREAL delayT,
+    const GRT_MODULE_CTRL *Ctrl, const char *srcname, const char ch, MYREAL delayT,
     SACHEAD *hd, char *s_outpath, const char *s_output_subdir, const char *s_prefix,
     const int sgn, MYCOMPLEX *grncplx, fftw_complex *fftw_grn, MYREAL *out, float *float_arr, fftw_plan plan)
 {
@@ -760,7 +760,7 @@ static void write_one_to_sac(
 
 /** 子模块主函数 */
 int greenfn_main(int argc, char **argv) {
-    GRT_SUBMODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
+    GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
     Ctrl->name = strdup(argv[0]);
     const char *command = Ctrl->name;
 
@@ -978,6 +978,7 @@ int greenfn_main(int argc, char **argv) {
 
     if( ! Ctrl->s.active){
         printf("------------------------------------------------\n");
+        printf("\n");
     }
 
     // 输出警告：当震源位于液体层中时，仅允许计算爆炸源对应的格林函数

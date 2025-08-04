@@ -14,6 +14,6 @@ deprcv2=`echo $deprcv+$diff | bc | awk '{printf("%.3f", $1)}'`
 dist=10
 dist2=`echo $dist+$diff | bc | awk '{printf("%.3f", $1)}'`
 
-grt -M${modname} -O${out} -N${nt}/${dt} -D${depsrc}/$deprcv -R$dist -e
-grt -M${modname} -O${out} -N${nt}/${dt} -D${depsrc}/$deprcv2 -R$dist
-grt -M${modname} -O${out} -N${nt}/${dt} -D${depsrc}/$deprcv -R$dist2
+grt greenfn -M${modname} -O${out} -N${nt}/${dt} -D${depsrc}/$deprcv -R$dist -e
+grt greenfn -M${modname} -O${out} -N${nt}/${dt} -D${depsrc}/$deprcv2 -R$dist
+grt greenfn -M${modname} -O${out} -N${nt}/${dt} -D${depsrc}/$deprcv -R$dist2

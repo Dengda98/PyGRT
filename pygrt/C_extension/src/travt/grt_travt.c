@@ -37,11 +37,11 @@ typedef struct {
         MYREAL *rs;
         MYINT nr;
     } R;
-} GRT_SUBMODULE_CTRL;
+} GRT_MODULE_CTRL;
 
 
 /** 释放结构体的内存 */
-static void free_Ctrl(GRT_SUBMODULE_CTRL *Ctrl){
+static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
     free(Ctrl->name);
     free(Ctrl->M.s_modelpath);
     free(Ctrl->D.s_depsrc);
@@ -458,7 +458,7 @@ printf("\n"
 
 
 /** 从命令行中读取选项，处理后记录到全局变量中 */
-static void getopt_from_command(GRT_SUBMODULE_CTRL *Ctrl, int argc, char **argv){
+static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     char* command = Ctrl->name;
     int opt;
     while ((opt = getopt(argc, argv, ":M:D:R:h")) != -1) {
@@ -519,7 +519,7 @@ static void getopt_from_command(GRT_SUBMODULE_CTRL *Ctrl, int argc, char **argv)
 
 /** 子模块主函数 */
 int travt_main(int argc, char **argv){
-    GRT_SUBMODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
+    GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
     Ctrl->name = strdup(argv[0]);
 
     getopt_from_command(Ctrl, argc, argv);

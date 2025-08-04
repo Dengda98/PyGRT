@@ -10,5 +10,5 @@ dt=0.2
 modname="liquid"
 out="GRN"
 
-grt -M${modname} -O${out} -N${nt}/${dt} -D${depsrc}/${deprcv} -R${dist} -L20
+grt greenfn -M${modname} -O${out} -N${nt}/${dt} -D${depsrc}/${deprcv} -R${dist} -L20
 

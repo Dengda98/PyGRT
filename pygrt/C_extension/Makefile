@@ -31,7 +31,7 @@ STACK_MEM :=
 ifeq ($(OS),Windows_NT)  # link static oenpmp on windows
 	STACK_MEM := -Wl,-stack,0x1000000
     LINK_STATIC := -static
-	LDFLAGS := $(LINK_STATIC) $(FOMPFLAGS)
+	LDFLAGS := $(LINK_STATIC) $(FOMPFLAGS) $(LFFT_FLAGS)
 endif
 
 # change architecture for macOS, from make command
