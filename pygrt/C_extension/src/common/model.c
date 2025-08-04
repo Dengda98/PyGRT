@@ -40,7 +40,7 @@ void print_pymod(const PYMODEL1D *pymod){
     // 每列字符宽度
     // [isrc/ircv] [h(km)] [Vp(km/s)] [Vs(km/s)] [Rho(g/cm^3)] [Qp] [Qs]
     const int ncols = 7;
-    const int nlens[] = {11, 10, 13, 13, 16, 13, 13};
+    const int nlens[] = {13, 12, 13, 13, 16, 13, 13};
     int Nlen=0;
     for(int ic=0; ic<ncols; ++ic){
         Nlen += nlens[ic]; 
@@ -73,7 +73,7 @@ void print_pymod(const PYMODEL1D *pymod){
     printf("%s\n", splitline);
 
 
-    char indexstr[nlens[0]-2];
+    char indexstr[nlens[0]-2+10];  // +10 以防止 -Wformat-truncation= 警告
     for(MYINT i=0; i<pymod->n; ++i){
         if(i==pymod->isrc){
             snprintf(indexstr, sizeof(indexstr), "%d [src]", i+1);
