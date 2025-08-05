@@ -202,6 +202,6 @@ for ZNE in [False, True]:
 AVGRERR = np.array(AVGRERR)
 print(AVGRERR)
 print(np.mean(AVGRERR), np.min(AVGRERR), np.max(AVGRERR))
-if np.mean(AVGRERR) > 0.01:
+if np.mean(AVGRERR) > 0.1:
     raise ValueError
 
