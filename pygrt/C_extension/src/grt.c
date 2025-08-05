@@ -97,6 +97,13 @@ int dispatch_command(GRT_MAIN_CTRL *Ctrl, int argc, char **argv) {
     if(strcmp(argv[1], "static") == 0 && argc > 2){
         is_single_static = true;
         sprintf(entry_name, "static_%s", argv[2]);
+
+        // 同理也“修改” argv[2] 参数
+        char *newarg = (char*)malloc((strlen(argv[2]) + 100)*sizeof(char));
+        sprintf(newarg, "static_%s", argv[2]);
+        
+        // 原本指向系统分配的只读内存的指针被覆盖，故后续需要手动free
+        argv[2] = newarg;
     }
     
     int return_code = EXIT_SUCCESS;
@@ -113,7 +120,8 @@ int dispatch_command(GRT_MAIN_CTRL *Ctrl, int argc, char **argv) {
     if( ! valid_entry_name){
         GRTRaiseError("[%s] Error! Unknown module %s. Use \"-h\" for help.\n", Ctrl->name, entry_name);
     }
-    
+
+    if(is_single_static)  free(argv[2]);
     free(entry_name);
     return return_code;
 }
