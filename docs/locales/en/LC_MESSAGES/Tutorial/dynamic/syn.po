@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"POT-Creation-Date: 2025-08-05 13:28+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -19,49 +19,60 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.16.0\n"
 
-#: ../../source/Tutorial/dynamic/syn.rst:4 
+#: ../../source/Tutorial/dynamic/syn.rst:2
 msgid "合成动态位移"
 msgstr "Synthesize Dynamic Displacements"
 
-#: ../../source/Tutorial/dynamic/syn.rst 
+#: ../../source/Tutorial/dynamic/syn.rst
 msgid "Author"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/syn.rst:6 
+#: ../../source/Tutorial/dynamic/syn.rst:4
 msgid "Zhu Dengda"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/syn.rst 
+#: ../../source/Tutorial/dynamic/syn.rst
 msgid "Email"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/syn.rst:7 
+#: ../../source/Tutorial/dynamic/syn.rst:5
 msgid "zhudengda@mail.iggcas.ac.cn"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/syn.rst:13 
+#: ../../source/Tutorial/dynamic/syn.rst:11
 msgid "**震源机制参数中（如单力源、矩张量源）Z轴取向下为正。**"
-msgstr "**In the focal mechanism parameters (e.g., single force source, moment tensor source), the Z-axis is positive downward.**"
+msgstr ""
+"**In the focal mechanism parameters (e.g., single force source, moment "
+"tensor source), the Z-axis is positive downward.**"
 
-#: ../../source/Tutorial/dynamic/syn.rst:16 
+#: ../../source/Tutorial/dynamic/syn.rst:14
 msgid ""
 "Python中合成动态位移的主函数为 :func:`gen_syn_from_gf_*() "
-"<pygrt.utils.gen_syn_from_gf_DC>` （\\*表示对不同震源）  ，C程序为 :command:`grt.syn`。"
+"<pygrt.utils.gen_syn_from_gf_DC>` （\\*表示对不同震源）  ，C模块为 :command:`syn`。"
 msgstr ""
-"The main function in Python for synthesizing dynamic displacements is :func:`gen_syn_from_gf_*() <pygrt.utils.gen_syn_from_gf_DC>` (\\* represents different sources), and the corresponding C program is :command:`grt.syn`."
+"The main function in Python for synthesizing dynamic displacements is "
+":func:`gen_syn_from_gf_*() <pygrt.utils.gen_syn_from_gf_DC>` (\\* "
+"represents different sources), and the corresponding C module is "
+":command:`syn`."
 
-#: ../../source/Tutorial/dynamic/syn.rst:18 
+#: ../../source/Tutorial/dynamic/syn.rst:16
 msgid "使用上节计算的格林函数，合成动态位移（理论地震图）。方便起见，这里统一使用milrow模型，震源深度2km，场点位于地表，震中距10km的格林函数，方位角30°。"
-msgstr "Using the Green's functions calculated in the previous section, synthesize dynamic displacements (theoretical seismograms). For convenience, Green's function based on milrow model + focal depth 2km + surface receiver + epicenter distance 10km is used."
+msgstr ""
+"Using the Green's functions calculated in the previous section, "
+"synthesize dynamic displacements (theoretical seismograms). For "
+"convenience, Green's function based on milrow model + focal depth 2km + "
+"surface receiver + epicenter distance 10km is used."
 
-#: ../../source/Tutorial/dynamic/syn.rst:20 
+#: ../../source/Tutorial/dynamic/syn.rst:18
 msgid ""
 "在已知三分量格林函数 :math:`W_m(t), Q_m(t), V_m(t)` 后，合成三分量位移 :math:`u_z(t), "
 "u_r(t), u_\\theta (t)` 的公式为"
 msgstr ""
-"After obtaining the three-component Green's functions :math:`W_m(t), Q_m(t), V_m(t)`, the formula for synthesizing the three-component displacements :math:`u_z(t), u_r(t), u_\\theta (t)` is"
+"After obtaining the three-component Green's functions :math:`W_m(t), "
+"Q_m(t), V_m(t)`, the formula for synthesizing the three-component "
+"displacements :math:`u_z(t), u_r(t), u_\\theta (t)` is"
 
-#: ../../source/Tutorial/dynamic/syn.rst:22 
+#: ../../source/Tutorial/dynamic/syn.rst:20
 msgid ""
 "\\left\\{\n"
 "\\begin{aligned}\n"
@@ -73,121 +84,141 @@ msgid ""
 "\\right."
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/syn.rst:32 
+#: ../../source/Tutorial/dynamic/syn.rst:30
 msgid ""
 "其中 :math:`D(t)` 为震源时间函数，:math:`*` 表示卷积，:math:`A_m` 为与方位角和震源机制相关的方向因子，其中 "
 ":math:`u_z, u_r` 的方向因子相同，而 :math:`u_\\theta` 的方向因子满足"
 msgstr ""
-"where :math:`D(t)` is the source time function, :math:`*` denotes convolution, and :math:`A_m` represents the directional factors related to azimuth and source mechanism. The directional factors for :math:`u_z` and :math:`u_r` are the same, while the directional factor for :math:`u_\\theta` satisfies"
+"where :math:`D(t)` is the source time function, :math:`*` denotes "
+"convolution, and :math:`A_m` represents the directional factors related "
+"to azimuth and source mechanism. The directional factors for :math:`u_z` "
+"and :math:`u_r` are the same, while the directional factor for "
+":math:`u_\\theta` satisfies"
 
-#: ../../source/Tutorial/dynamic/syn.rst:34 
+#: ../../source/Tutorial/dynamic/syn.rst:32
 msgid "A_{m+3} = \\frac{d A_m}{d (m\\theta)}, m=1,2"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/syn.rst:38 
+#: ../../source/Tutorial/dynamic/syn.rst:36
 msgid "其中 :math:`m` 为阶数，:math:`\\theta` 为方位角。"
 msgstr "where :math:`m` is the order, :math:`\\theta` is azimuth."
 
-#: ../../source/Tutorial/dynamic/syn.rst:43 
+#: ../../source/Tutorial/dynamic/syn.rst:41
 msgid "合成位移的结果单位为 :math:`\\text{cm}`。"
 msgstr "The unit of the synthesized displacement results is :math:`\\text{cm}`."
 
-#: ../../source/Tutorial/dynamic/syn.rst:47 
+#: ../../source/Tutorial/dynamic/syn.rst:45
 msgid "不同震源"
 msgstr "Types of sources"
 
-#: ../../source/Tutorial/dynamic/syn.rst:49 
+#: ../../source/Tutorial/dynamic/syn.rst:47
 msgid "以下绘图使用Python绘制，绘图函数如下："
-msgstr "The following plots are drawn using Python, and the plotting function is as follows:"
+msgstr ""
+"The following plots are drawn using Python, and the plotting function is "
+"as follows:"
 
-#: ../../source/Tutorial/dynamic/syn.rst:58 
+#: ../../source/Tutorial/dynamic/syn.rst:56
 msgid "爆炸源"
 msgstr "explosion"
 
-#: ../../source/Tutorial/dynamic/syn.rst:59 
+#: ../../source/Tutorial/dynamic/syn.rst:57
 msgid "标量矩 1e24 dyne·cm。"
 msgstr "Scalar moment of 1e24 dyne·cm."
 
-#: ../../source/Tutorial/dynamic/syn.rst:63
-#: ../../source/Tutorial/dynamic/syn.rst:89
-#: ../../source/Tutorial/dynamic/syn.rst:114
-#: ../../source/Tutorial/dynamic/syn.rst:139
-#: ../../source/Tutorial/dynamic/syn.rst:165
-#: ../../source/Tutorial/dynamic/syn.rst:191
-#: ../../source/Tutorial/dynamic/syn.rst:220 
+#: ../../source/Tutorial/dynamic/syn.rst:61
+#: ../../source/Tutorial/dynamic/syn.rst:87
+#: ../../source/Tutorial/dynamic/syn.rst:112
+#: ../../source/Tutorial/dynamic/syn.rst:137
+#: ../../source/Tutorial/dynamic/syn.rst:163
+#: ../../source/Tutorial/dynamic/syn.rst:189
+#: ../../source/Tutorial/dynamic/syn.rst:218
 msgid "C"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/syn.rst:70
-#: ../../source/Tutorial/dynamic/syn.rst:96
-#: ../../source/Tutorial/dynamic/syn.rst:121
-#: ../../source/Tutorial/dynamic/syn.rst:146
-#: ../../source/Tutorial/dynamic/syn.rst:172
-#: ../../source/Tutorial/dynamic/syn.rst:200
-#: ../../source/Tutorial/dynamic/syn.rst:228 
+#: ../../source/Tutorial/dynamic/syn.rst:68
+#: ../../source/Tutorial/dynamic/syn.rst:94
+#: ../../source/Tutorial/dynamic/syn.rst:119
+#: ../../source/Tutorial/dynamic/syn.rst:144
+#: ../../source/Tutorial/dynamic/syn.rst:170
+#: ../../source/Tutorial/dynamic/syn.rst:198
+#: ../../source/Tutorial/dynamic/syn.rst:226
 msgid "Python"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/syn.rst:84 
+#: ../../source/Tutorial/dynamic/syn.rst:82
 msgid "单力源"
 msgstr "single force"
 
-#: ../../source/Tutorial/dynamic/syn.rst:85 
+#: ../../source/Tutorial/dynamic/syn.rst:83
 msgid "北向力 :math:`f_N=1`，东向力 :math:`f_E=-0.5`，垂直向下的力 :math:`f_Z=2`，单位 1e16 dyne。"
-msgstr "Northward force :math:`f_N=1`, Eastward force :math:`f_E=-0.5`, and Downward vertical force :math:`f_Z=2`, unit of 1e16 dyne."
+msgstr ""
+"Northward force :math:`f_N=1`, Eastward force :math:`f_E=-0.5`, and "
+"Downward vertical force :math:`f_Z=2`, unit of 1e16 dyne."
 
-#: ../../source/Tutorial/dynamic/syn.rst:109 
+#: ../../source/Tutorial/dynamic/syn.rst:107
 msgid "剪切源"
 msgstr "shear"
 
-#: ../../source/Tutorial/dynamic/syn.rst:110 
+#: ../../source/Tutorial/dynamic/syn.rst:108
 msgid "断层走向33°，倾角50°，滑动角120°，标量矩 1e24 dyne·cm。"
 msgstr "Strike of 33°, Dip of 50°, Slip of 120°, Scalar moment of 1e24 dyne·cm."
 
-#: ../../source/Tutorial/dynamic/syn.rst:134 
+#: ../../source/Tutorial/dynamic/syn.rst:132
 msgid "矩张量源"
 msgstr "moment tensor"
 
-#: ../../source/Tutorial/dynamic/syn.rst:135 
+#: ../../source/Tutorial/dynamic/syn.rst:133
 msgid ""
 ":math:`M_{xx}=0.1, M_{xy}=-0.2, M_{xz}=1.0, M_{yy}=0.3, M_{yz}=-0.5, "
 "M_{zz}=-2.0`，单位 1e24 dyne·cm， **其中X为北向，Y为东向，Z为垂直向下**。"
 msgstr ""
 ":math:`M_{xx}=0.1, M_{xy}=-0.2, M_{xz}=1.0, M_{yy}=0.3, M_{yz}=-0.5, "
-"M_{zz}=-2.0`, unit 1e24 dyne·cm, **where X is Northward，Y is Eastward，Z is Downward.**"
+"M_{zz}=-2.0`, unit 1e24 dyne·cm, **where X is Northward，Y is Eastward，Z "
+"is Downward.**"
 
-#: ../../source/Tutorial/dynamic/syn.rst:160 
+#: ../../source/Tutorial/dynamic/syn.rst:158
 msgid "分量旋转"
 msgstr "Components rotation"
 
-#: ../../source/Tutorial/dynamic/syn.rst:161 
+#: ../../source/Tutorial/dynamic/syn.rst:159
 msgid "**PyGRT** 计算默认输出为ZRT分量（柱坐标系），可以设置参数以输出ZNE分量，这里以剪切源为例，"
-msgstr "**PyGRT** calculations by default output ZRT components (cylindrical coordinate system), but parameters can be set to output ZNE components. Here, a shear source is used as an example."
+msgstr ""
+"**PyGRT** calculations by default output ZRT components (cylindrical "
+"coordinate system), but parameters can be set to output ZNE components. "
+"Here, a shear source is used as an example."
 
-#: ../../source/Tutorial/dynamic/syn.rst:186 
+#: ../../source/Tutorial/dynamic/syn.rst:184
 msgid "卷积时间函数"
 msgstr "Convolve a time function"
 
-#: ../../source/Tutorial/dynamic/syn.rst:187 
+#: ../../source/Tutorial/dynamic/syn.rst:185
 msgid "**PyGRT** 内置了一些震源时间函数，例如抛物波、梯形波、雷克子波或自定义，这里以单力源为例。"
-msgstr "**PyGRT** has built-in source time functions such as parabolic wave, trapezoidal wave, Ricker wavelet, or custom ones. Here, a single force source is used as an example."
+msgstr ""
+"**PyGRT** has built-in source time functions such as parabolic wave, "
+"trapezoidal wave, Ricker wavelet, or custom ones. Here, a single force "
+"source is used as an example."
 
-#: ../../source/Tutorial/dynamic/syn.rst:198 
+#: ../../source/Tutorial/dynamic/syn.rst:196
 msgid ""
 "生成的时间函数会以SAC格式保存在对应路径中，文件名为 :file:`sig.sac`。 其它时间函数以及具体参数用法可使用 "
-":command:`grt.syn -h` 查看说明。"
+":command:`grt syn -h` 查看说明。"
 msgstr ""
-"The generated time function will be saved in SAC format at the corresponding path, with the filename :file:`sig.sac`. For other time functions and specific parameter usage, refer to the instructions using :command:`grt.syn -h`."
+"The generated time function will be saved in SAC format at the "
+"corresponding path, with the filename :file:`sig.sac`. For other time "
+"functions and specific parameter usage, refer to the instructions using "
+":command:`grt syn -h`."
 
-#: ../../source/Tutorial/dynamic/syn.rst:207 
+#: ../../source/Tutorial/dynamic/syn.rst:205
 msgid "其它时间函数以及具体参数用法可在 :py:mod:`pygrt.signals` 模块中查看函数参数。"
-msgstr "Other time functions and specific parameter usage can be found in the :py:mod:`pygrt.signals` module by checking the function parameters."
+msgstr ""
+"Other time functions and specific parameter usage can be found in the "
+":py:mod:`pygrt.signals` module by checking the function parameters."
 
-#: ../../source/Tutorial/dynamic/syn.rst:215 
+#: ../../source/Tutorial/dynamic/syn.rst:213
 msgid "位移对时间积分、微分"
 msgstr "Displacement integration and differentiation over time"
 
-#: ../../source/Tutorial/dynamic/syn.rst:216 
+#: ../../source/Tutorial/dynamic/syn.rst:214
 msgid "这里以矩张量源为例。"
 msgstr "Here, a moment tensor source is used as an example."
 

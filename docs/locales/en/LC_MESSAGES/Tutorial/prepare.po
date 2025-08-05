@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-06-24 23:47+0800\n"
+"POT-Creation-Date: 2025-08-05 13:28+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -44,18 +44,18 @@ msgid "安装 **PyGRT**"
 msgstr "Install **PyGRT**"
 
 #: ../../source/Tutorial/prepare.rst:13
-msgid "详见 :ref:`install_section` 。"
-msgstr "See :ref:`install_section` ."
+msgid "详见 :doc:`/install` 。"
+msgstr "See :doc:`/install` ."
 
 #: ../../source/Tutorial/prepare.rst:17
 msgid "建立模型文件"
 msgstr "Create model file"
 
 #: ../../source/Tutorial/prepare.rst:22
-msgid "这里的选项卡 **C** 不代表内部是C语言代码，而是 **使用C语言编译出的可执行程序** （与之相关）。后续的选项卡沿用此设定，不再解释。"
+msgid "这里的选项卡 **C** 不代表内部是C语言代码，而是 **使用C程序** :command:`grt` 。后续的选项卡沿用此设定，不再解释。"
 msgstr ""
 "The tab **C** here does not represent C language code inside, but rather "
-"**an executable program compiled using the C language** (related to it). "
+"**an executable program :command:`grt` compiled using the C language** . "
 "Subsequent tabs follow this convention and will not be explained further."
 
 #: ../../source/Tutorial/prepare.rst:26
