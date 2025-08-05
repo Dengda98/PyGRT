@@ -83,8 +83,8 @@
 
 计算 **静态解** 的过程相同，只是在名称上有如下区别：
 
-+ Python 函数名称增加了 "static_" ，例如 :func:`compute_static_grn() <pygrt.pymod.PyModel1D.compute_static_grn>` 。
-+ C 程序模块名增加 "static_" 前缀，例如 :command:`static_greenfn` ；或者在 :command:`grt` 与无 "static_" 前缀的模块名之间增加 "static" 命令，
++ Python 函数名称增加 "static\_" ，例如 :func:`compute_static_grn() <pygrt.pymod.PyModel1D.compute_static_grn>` 。
++ C 程序模块名增加 "static\_" 前缀，例如 :command:`static_greenfn` ；或者在 :command:`grt` 与无 "static\_" 前缀的模块名之间增加 "static" 命令，
   即支持以下两种方式（以 :command:`greenfn` 模块为例）：
 
   .. code-block:: bash

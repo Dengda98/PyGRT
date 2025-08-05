@@ -17,12 +17,12 @@
 
 
 
-**PyGRT** : 一个用于计算在半无限水平分层均匀介质模型中的理论地震图的 **Python**\程序包，使用广义反射透射系数矩阵法(**G**\eneralized **R**\eflection-**T**\ransmission coefficient matrix) 以及离散波数法等方法计算。   
+**PyGRT** : 一个用于计算在半无限水平分层均匀介质模型中的理论地震图的 **C/Python**\程序包，使用广义反射透射系数矩阵法(**G**\eneralized **R**\eflection-**T**\ransmission coefficient matrix) 以及离散波数法等方法计算。   
 
 **PyGRT** 能计算什么？
 --------------------------
 目前，**PyGRT** 可计算区域尺度内半无限水平分层均匀介质中的 **动态与静态的位移，以及应力、应变、旋转张量。**
-
+**PyGRT** 将持续维护并扩展与之相关的计算功能。
 
 运行平台
 ---------

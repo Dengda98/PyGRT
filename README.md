@@ -108,7 +108,7 @@ Two ways, choose one:
       pip install -v .
       ```
 
-3. Build from Source Code.   
+3. *Build from Source Code.   
    See [**中文文档**](https://pygrt.readthedocs.io/zh-cn/)  |  [**English Document**](https://pygrt.readthedocs.io/en/)  
 
 # Setting
