@@ -11,5 +11,7 @@ C extension API
 
    C_extension/common
    C_extension/dynamic
+   C_extension/grt.h
+   C_extension/grt_error.h
    C_extension/static
    C_extension/travt

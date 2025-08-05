@@ -1,6 +1,4 @@
 
-.. _self_adaptive_filon:
-
 自适应Filon积分法
 ===================
 
@@ -9,7 +7,7 @@
 
 -----------------------------------------------------------
 
-在 :ref:`linear_filon` 部分简单介绍了Filon积分的过程与核心原理，即 **分段计算积分的解析解**，而以下介绍的 **自适应Filon积分法（SAFIM）** ，便是 **动态分段**，在核函数变化剧烈的部分多采样，在核函数变化平缓的部分少采样。具体原理详见 :ref:`(Chen and Zhang, 2001) <chen_2001>` :ref:`(张海明, 2021) <zhang_book_2021>` 。
+在 :doc:`/Advanced/filon/linear_filon` 部分简单介绍了Filon积分的过程与核心原理，即 **分段计算积分的解析解**，而以下介绍的 **自适应Filon积分法（SAFIM）** ，便是 **动态分段**，在核函数变化剧烈的部分多采样，在核函数变化平缓的部分少采样。具体原理详见 :ref:`(Chen and Zhang, 2001) <chen_2001>` :ref:`(张海明, 2021) <zhang_book_2021>` 。
 
 
 参数介绍
@@ -21,13 +19,13 @@
 
     .. group-tab:: C 
 
-        :command:`grt` 和 :command:`stgrt` 程序支持以下可选参数来使用自适应Filon积分，具体说明详见 :command:`grt -h` 或 :command:`stgrt -h`。
+        :command:`greenfn` 和 :command:`static_greenfn` 模块支持以下可选参数来使用自适应Filon积分，具体说明详见 :command:`grt greenfn -h` 或 :command:`grt static greenfn -h`。
 
         + ``-La<length>[/<Ftol>/<Fcut>]``
          
-          + ``<length>``  定义离散波数积分的积分间隔 （见 :ref:`k_integ_rst` 部分, :ref:`linear_filon` 部分）
+          + ``<length>``  定义离散波数积分的积分间隔 （见 :doc:`/Advanced/k_integ` 部分, :doc:`/Advanced/filon/linear_filon` 部分）
           + ``<Ftol>`` 定义自适应采样精度，见 :ref:`(Chen and Zhang, 2001) <chen_2001>`  :ref:`(张海明, 2021) <zhang_book_2021>`，通常1e-2即可。
-          + ``<Fcut>`` 定义了两个积分的分割点， :math:`k^*=` ``<Fcut>`` :math:`/r_{\text{max}}` （见 :ref:`linear_filon` 部分）
+          + ``<Fcut>`` 定义了两个积分的分割点， :math:`k^*=` ``<Fcut>`` :math:`/r_{\text{max}}` （见 :doc:`/Advanced/filon/linear_filon` 部分）
          
     .. group-tab:: Python
 

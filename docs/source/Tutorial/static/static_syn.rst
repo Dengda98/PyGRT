@@ -1,5 +1,3 @@
-.. _static_syn_rst:
-
 合成静态位移
 =================
 
@@ -8,7 +6,7 @@
 
 -----------------------------------------------------------
 
-Python中合成静态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.utils.gen_syn_from_gf_DC>` （\*表示对不同震源）（与合成动态位移的函数共用）  ，C程序为 :command:`stgrt.syn`。
+Python中合成静态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.utils.gen_syn_from_gf_DC>` （\*表示对不同震源）（与合成动态位移的函数共用）  ，C模块为 :command:`static_syn`。
 
 使用上节计算的格林函数，合成静态位移。为方便画图，以下结果都使用ZNE分量。
 
