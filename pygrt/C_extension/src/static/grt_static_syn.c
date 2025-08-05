@@ -68,7 +68,7 @@ static void print_help(){
 printf("\n"
 "[grt static syn] %s\n\n", GRT_VERSION);printf(
 "    Compute static displacement with the outputs of \n"
-"    command `stgrt` (reading from stdin).\n"
+"    module `static_greenfn` (reading from stdin).\n"
 "    Three components are:\n"
 "       + Up (Z),\n"
 "       + Radial Outward (R),\n"
