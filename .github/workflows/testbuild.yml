@@ -76,14 +76,15 @@ jobs:
             yum clean all -y && yum makecache -y && yum install -y gcc make
           "
       
+      # Centos 7.7 docker环境中编译fftw库需要添加 -fPIC
       - name: Build static FFTW in container (Ubuntu)
         if: contains(matrix.os, 'ubuntu')
         run: |
           docker exec ${{ env.CONTAINER_ID }} bash -c "
             curl -O https://www.fftw.org/fftw-3.3.10.tar.gz && tar -xzvf fftw-3.3.10.tar.gz && \
             cd fftw-3.3.10 && \
-            ./configure && make && make install && \
-            ./configure --enable-float && make && make install && \
+            ./configure CFLAGS="-fPIC" && make && make install && \
+            ./configure CFLAGS="-fPIC" --enable-float && make && make install && \
             cd .. && rm -rf fftw*
           "
 
