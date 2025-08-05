@@ -61,21 +61,6 @@
 本文档页面源码位于 Github主页的 `docs/ <https://github.com/Dengda98/PyGRT/tree/main/docs/source>`_，可查看示例代码和画图脚本。
 
 
-
-.. toctree::
-  :maxdepth: 1
-  :caption: 目录
-  :numbered: 3
-
-
-  文档首页 <self>
-  install
-  Tutorial/index 
-  Advanced/index 
-  Formula/index
-  API/api
-  copyright
-
 --------------------------------------------------------------------------
 
 
