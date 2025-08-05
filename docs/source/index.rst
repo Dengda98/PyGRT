@@ -61,21 +61,6 @@
 本文档页面源码位于 Github主页的 `docs/ <https://github.com/Dengda98/PyGRT/tree/main/docs/source>`_，可查看示例代码和画图脚本。
 
 
-
-.. toctree::
-  :maxdepth: 1
-  :caption: 目录
-  :numbered: 3
-
-
-  文档首页 <self>
-  install
-  Tutorial/index 
-  Advanced/index 
-  Formula/index
-  API/api
-  copyright
-
 --------------------------------------------------------------------------
 
 
@@ -117,3 +102,32 @@
 .. _kennett&kerry_1979:
 
 .. [9] Kennett, B. L. N., and N. J. Kerry, 1979. Seismic waves in a stratified half space, Geophysical Journal International, 57, no. 3, 557–583, doi: `10.1111/j.1365-246X.1979.tb06779.x <https://doi.org/10.1111/j.1365-246X.1979.tb06779.x>`_
+
+
+
+.. toctree::
+   :caption: PyGRT 入门
+   :hidden:
+   :maxdepth: 1
+
+   install
+   Tutorial/index 
+
+
+.. toctree::
+   :caption: PyGRT 进阶
+   :hidden:
+   :maxdepth: 1
+
+   Advanced/index 
+   Formula/index
+
+
+.. toctree::
+   :caption: 附录
+   :hidden:
+   :maxdepth: 1
+
+   API/api
+   changelog
+   copyright
