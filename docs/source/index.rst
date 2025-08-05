@@ -55,26 +55,9 @@
 
 --------------------------------------------------------------------------
 
+若对具体实现过程感兴趣，尤其是在学习 **广义反射透射系数矩阵、离散波数法、线性/自适应Filon积分法、峰谷平均法** 等内容感到迷惑难解时，可以在运行程序的同时结合阅读相关 **C代码**，我在C代码中给出了 **明确的中文注释以及相关公式索引** ，希望能帮助你在学习相关内容时解答一些疑惑。
 
-以下包括 **Python** 和 **C** 两部分的API介绍。若对具体实现过程感兴趣，尤其是在学习 **广义反射透射系数矩阵、离散波数法、线性/自适应Filon积分法、峰谷平均法** 等内容感到迷惑难解时，可以在运行程序的同时结合阅读相关 **C代码**，我在C代码中给出了 **明确的中文注释以及相关公式索引** ，希望能帮助你在学习相关内容时解答一些疑惑。
-
-本文档页面源码位于 Github主页的 `docs/ <https://github.com/Dengda98/PyGRT/tree/main/docs/source>`_，可查看示例代码和画图脚本。
-
-
-
-.. toctree::
-  :maxdepth: 1
-  :caption: 目录
-  :numbered: 3
-
-
-  文档首页 <self>
-  install
-  Tutorial/index 
-  Advanced/index 
-  Formula/index
-  API/api
-  copyright
+本文档页面源码位于 Github 主页的 `docs/ <https://github.com/Dengda98/PyGRT/tree/main/docs/source>`_，可查看示例代码和画图脚本。
 
 --------------------------------------------------------------------------
 
@@ -117,3 +100,31 @@
 .. _kennett&kerry_1979:
 
 .. [9] Kennett, B. L. N., and N. J. Kerry, 1979. Seismic waves in a stratified half space, Geophysical Journal International, 57, no. 3, 557–583, doi: `10.1111/j.1365-246X.1979.tb06779.x <https://doi.org/10.1111/j.1365-246X.1979.tb06779.x>`_
+
+
+
+.. toctree::
+   :caption: PyGRT 入门
+   :hidden:
+   :maxdepth: 1
+
+   install
+   Tutorial/index 
+
+
+.. toctree::
+   :caption: PyGRT 进阶
+   :hidden:
+   :maxdepth: 1
+
+   Advanced/index 
+   Formula/index
+
+
+.. toctree::
+   :caption: 附录
+   :hidden:
+   :maxdepth: 1
+
+   API/api
+   copyright

@@ -99,7 +99,7 @@ html_theme_options = {
     'prev_next_buttons_location': 'bottom',
     'style_external_links': False,
     'collapse_navigation': True,
-    'sticky_navigation': True,
+    'sticky_navigation': False, #True,
     'navigation_depth': 4,
     'includehidden': True,
     'titles_only': False,

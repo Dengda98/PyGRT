@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-05 13:34+0800\n"
+"POT-Creation-Date: 2025-08-05 14:54+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -19,13 +19,17 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.16.0\n"
 
-#: ../../source/index.rst:65
-msgid "文档首页"
-msgstr "Document Homepage"
+#: ../../source/index.rst:106
+msgid "PyGRT 入门"
+msgstr "GETTING STARTED"
 
-#: ../../source/index.rst:65
-msgid "目录"
-msgstr "Table of Contents"
+#: ../../source/index.rst:115
+msgid "PyGRT 进阶"
+msgstr "ADVANCED"
+
+#: ../../source/index.rst:124
+msgid "附录"
+msgstr "Appendix"
 
 #: ../../source/index.rst:2
 msgid "**PyGRT** 文档"
@@ -192,27 +196,29 @@ msgstr ""
 "relevant quantities can be easily observed, which is convenient for "
 "various tests and understanding in the learning process."
 
-#: ../../source/index.rst:59
+#: ../../source/index.rst:58
+#, fuzzy
 msgid ""
-"以下包括 **Python** 和 **C** 两部分的API介绍。若对具体实现过程感兴趣，尤其是在学习 "
-"**广义反射透射系数矩阵、离散波数法、线性/自适应Filon积分法、峰谷平均法** 等内容感到迷惑难解时，可以在运行程序的同时结合阅读相关 "
-"**C代码**，我在C代码中给出了 **明确的中文注释以及相关公式索引** ，希望能帮助你在学习相关内容时解答一些疑惑。"
+"若对具体实现过程感兴趣，尤其是在学习 **广义反射透射系数矩阵、离散波数法、线性/自适应Filon积分法、峰谷平均法** "
+"等内容感到迷惑难解时，可以在运行程序的同时结合阅读相关 **C代码**，我在C代码中给出了 **明确的中文注释以及相关公式索引** "
+"，希望能帮助你在学习相关内容时解答一些疑惑。"
 msgstr "\\"
 
-#: ../../source/index.rst:61
+#: ../../source/index.rst:60
+#, fuzzy
 msgid ""
-"本文档页面源码位于 Github主页的 `docs/ "
+"本文档页面源码位于 Github 主页的 `docs/ "
 "<https://github.com/Dengda98/PyGRT/tree/main/docs/source>`_，可查看示例代码和画图脚本。"
 msgstr ""
 "The source code for this documentation is on the Github homepage at  "
 "`docs/ <https://github.com/Dengda98/PyGRT/tree/main/docs/source>`_, where"
 " you can view the example code and drawing scripts."
 
-#: ../../source/index.rst:83
+#: ../../source/index.rst:66
 msgid "主要参考"
 msgstr "Main References"
 
-#: ../../source/index.rst:87
+#: ../../source/index.rst:70
 msgid ""
 "Michel Bouchon. 1981. A simple method to calculate Green's functions for "
 "elastic layered media. Bulletin of the Seismological Society of America. "
@@ -220,13 +226,13 @@ msgid ""
 "<https://doi.org/10.1785/BSSA0710040959>`_"
 msgstr ""
 
-#: ../../source/index.rst:91
+#: ../../source/index.rst:74
 msgid "纪晨, 姚振兴, 1995. 区域地震范围的宽频带理论地震图算法研究[J]. 地球物理学报, 38(4): 460-468."
 msgstr ""
 "Ji C, Yao Z, 1995. THE STUDY OF THE METHOD FOR BROADBAND REGIONAL "
 "SYNTHETIC SEISMOGRAM[J]. Chinese Journal of Geophysics. 38(4): 460-468."
 
-#: ../../source/index.rst:95
+#: ../../source/index.rst:78
 msgid ""
 "谢小碧, 姚振兴, 1989. 计算分层介质中位错点源静态位移场的广义反射、透射系数矩阵和离散波数方法[J]. 地球物理学报, 32(3): "
 "270-280."
@@ -236,11 +242,11 @@ msgstr ""
 "Half-Space by DisLocation Source[J]. Acta Geophysics Sinica, 32(3): "
 "270-280."
 
-#: ../../source/index.rst:99
+#: ../../source/index.rst:82
 msgid "姚振兴, 谢小碧. 2022/03. 理论地震图及其应用（初稿）."
 msgstr ""
 
-#: ../../source/index.rst:103
+#: ../../source/index.rst:86
 msgid ""
 "Yao Z. X. and D. G. Harkrider. 1983. A generalized refelection-"
 "transmission coefficient matrix and discrete wavenumber method for "
@@ -248,11 +254,11 @@ msgid ""
 "`10.1785/BSSA07306A1685 <https://doi.org/10.1785/BSSA07306A1685>`_"
 msgstr ""
 
-#: ../../source/index.rst:107
+#: ../../source/index.rst:90
 msgid "张海明. 2021. 地震学中的Lamb问题（上）. 科学出版社."
 msgstr ""
 
-#: ../../source/index.rst:111
+#: ../../source/index.rst:94
 msgid ""
 "Zhang, H. M., Chen, X. F., and Chang, S. 2003. An efficient numerical "
 "method for computing synthetic seismograms for a layered half-space with "
@@ -262,7 +268,7 @@ msgid ""
 "<https://doi.org/10.1007/978-3-0348-8010-7_3>`_"
 msgstr ""
 
-#: ../../source/index.rst:115
+#: ../../source/index.rst:98
 msgid ""
 "Chen, X., Zhang, H., 2001. An Efficient Method for Computing Green’s "
 "Functions for a Layered Half-Space at Large Epicentral Distances. "
@@ -270,11 +276,17 @@ msgid ""
 "`10.1785/0120000113  <https://doi.org/10.1785/0120000113>`_"
 msgstr ""
 
-#: ../../source/index.rst:119
+#: ../../source/index.rst:102
 msgid ""
 "Kennett, B. L. N., and N. J. Kerry, 1979. Seismic waves in a stratified "
 "half space, Geophysical Journal International, 57, no. 3, 557–583, doi: "
 "`10.1111/j.1365-246X.1979.tb06779.x "
 "<https://doi.org/10.1111/j.1365-246X.1979.tb06779.x>`_"
 msgstr ""
+
+#~ msgid "文档首页"
+#~ msgstr "Document Homepage"
+
+#~ msgid "目录"
+#~ msgstr "Table of Contents"
 
