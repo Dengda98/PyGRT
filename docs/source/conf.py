@@ -62,7 +62,7 @@ nbsphinx_requirejs_path = ''  # 加上该选项，否则nbsphinx插件会导致m
 source_suffix = {
     '.rst': 'restructuredtext',
     # '.txt': 'markdown',
-    # '.md': 'markdown',
+    '.md': 'markdown',
 } 
 
 myst_enable_extensions = [
