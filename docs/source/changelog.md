@@ -1,6 +1,39 @@
 Changelog
 ====================
 
+## PyGRT v0.10.0
+
+This is a **major update** before releasing a _stable version_, primarily concerning the execution style of the C program (the Python interface remains unaffected). Recognizing that compiling multiple executables would **significantly hinder future maintenance and feature expansion**, and considering the current early-stage program isn't too complex yet, I decided to implement this change promptly. 
+
+Inspired by  [`Git`](https://git-scm.com/) and [`GMT`](https://www.generic-mapping-tools.org/) programs, **PyGRT** will now compile into just one executable — **`grt`** — starting with this version. Similar to GMT, it will invoke different modules to perform various computational functions, for example:
+
+``` bash
+## Calculate Green's functions (equivalent to the old 'grt' command)
+grt greenfn [arg1] [arg2] ...
+## Synthesize theoretical seismograms (equivalent to the old 'grt.syn' command)
+grt syn [arg1] [arg2] ...
+## Calculate static Green's functions (equivalent to the old 'stgrt' command)
+grt static greenfn [arg1] [arg2] ...
+...
+```
+
+**`grt`** and each module's help documentation can be printed using `-h`. The [online documentation](https://pygrt.readthedocs.io/) has been updated accordingly, and all example scripts have been modified to reflect these changes.
+
+
+* DOC: update installation and remove some unused `*.po` files by [@Dengda98](https://github.com/Dengda98) in [#52](https://github.com/Dengda98/PyGRT/pull/52)
+* FIX: allow zero Q^-1, and relevant attenuation scale equals 1.0 by [@Dengda98](https://github.com/Dengda98) in [#53](https://github.com/Dengda98/PyGRT/pull/53)
+* Run C-command `grt` like GMT-style by [@Dengda98](https://github.com/Dengda98) in [#55](https://github.com/Dengda98/PyGRT/pull/55)
+* FEAT: add grt -v to show the version by [@Dengda98](https://github.com/Dengda98) in [#56](https://github.com/Dengda98/PyGRT/pull/56)
+* FIX: update new command in `example/` scripts by [@Dengda98](https://github.com/Dengda98) in [#57](https://github.com/Dengda98/PyGRT/pull/57)
+* CI: add CFLAGS="-fPIC" in fftw builds in centos 7 docker by [@Dengda98](https://github.com/Dengda98) in [#58](https://github.com/Dengda98/PyGRT/pull/58)
+* STYLE: alyways display `static_<name>` by [@Dengda98](https://github.com/Dengda98) in [#60](https://github.com/Dengda98/PyGRT/pull/60)
+* DOC: add changelog.md by [@Dengda98](https://github.com/Dengda98) in [#61](https://github.com/Dengda98/PyGRT/pull/61)
+* DOC: change switch color by [@Dengda98](https://github.com/Dengda98) in [#62](https://github.com/Dengda98/PyGRT/pull/62)
+* FIX: update new command in `docs/` scripts, and update their description in doc by [@Dengda98](https://github.com/Dengda98) in [#59](https://github.com/Dengda98/PyGRT/pull/59)
+
+
+**Full Changelog**: [v0.9.2...v0.10.0](https://github.com/Dengda98/PyGRT/compare/v0.9.2...v0.10.0)
+
 
 ##   PyGRT v0.9.2
 
@@ -59,7 +92,7 @@ Upgrade via `pip install --upgrade pygrt-kit`.
 
 I'm excited to announce that **now PyGRT supports Self-Adaptive Filon's Integration Method(SAFIM)**, a powerful tool to efficiently compute Green's Functions at large epicentral distances.
 
-![image](https://pygrt.readthedocs.io/zh-cn/dev/_images/safim.png)
+![image](https://pygrt.readthedocs.io/zh-cn/v0.8.0/_images/safim.png)
 
 * Refactor codes, and support Self-Adaptive Filon's Integration Method (SAFIM) by [@Dengda98](https://github.com/Dengda98) in [#27](https://github.com/Dengda98/PyGRT/pull/27)
 * DOC: add SAFIM by [@Dengda98](https://github.com/Dengda98) in [#28](https://github.com/Dengda98/PyGRT/pull/28)
