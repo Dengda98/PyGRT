@@ -16,6 +16,20 @@
     background-color: #00bd88 !important;
 }
 
+/* 更改斑斑切换和语言切换的符号字体颜色 */
+.wy-side-nav-search div.switch-menus {
+    color: rgb(79, 79, 79)
+}
+
+.wy-side-nav-search div.switch-menus div.language-switch select {
+    color: rgb(79, 79, 79)
+}
+
+.wy-side-nav-search div.switch-menus div.version-switch select {
+    color: rgb(79, 79, 79)
+}
+
+
 /* 如果需要，同时修改顶部标题栏颜色 */
 /* .wy-nav-top {
     background-color: #FF5722 !important;
