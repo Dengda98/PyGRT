@@ -112,6 +112,13 @@ html_js_files = [
     'my_custom.js',
 ]
 
+html_context = {
+    "versions": {
+        "latest": "dev",
+        "v0.9.2": "v0.9.2",
+        "v0.8.0": "v0.8.0"
+    }
+}
 
 autodoc_default_options = {
     'member-order': 'bysource',
