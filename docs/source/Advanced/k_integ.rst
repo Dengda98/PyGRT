@@ -1,5 +1,3 @@
-.. _k_integ_rst:
-
 控制波数积分
 ===================
 
@@ -8,13 +6,13 @@
 
 -----------------------------------------------------------
 
-在 :ref:`gfunc_rst` 部分介绍了程序将按以下形式从数值上计算波数积分，
+在 :doc:`/Tutorial/dynamic/gfunc` 部分介绍了程序将按以下形式从数值上计算波数积分，
 
 .. math:: 
 
    P_m(\omega) = \Delta k \sum_{j=0}^{\infty} F_m(k_j,\omega)J_m(k_j r)k_j
 
-其中 :math:`\Delta k = 2\pi/L, k_j=j\Delta k`，:math:`L` 为特征长度，即 :math:`L` 控制波数积分的积分间隔，默认根据 :ref:`gfunc_rst` 部分介绍的约束条件自动确定。
+其中 :math:`\Delta k = 2\pi/L, k_j=j\Delta k`，:math:`L` 为特征长度，即 :math:`L` 控制波数积分的积分间隔，默认根据 :doc:`/Tutorial/dynamic/gfunc` 部分介绍的约束条件自动确定。
 
 程序会取一个较大值 :math:`k_{\text{max}}` 作为波数积分的上限，经验公式为
 
@@ -46,7 +44,7 @@
 
     .. group-tab:: C 
 
-        :command:`grt` 程序支持以下可选参数来控制波数积分，具体说明详见 :command:`grt -h`。  
+        :command:`greenfn` 模块支持以下可选参数来控制波数积分，具体说明详见 :command:`grt greenfn -h`。  
 
         + ``-K<k0>[/<ampk>/<keps>]``  
          
@@ -58,7 +56,7 @@
 
         + ``-L<length>``， 对应公式中的 :math:`L` 的系数, :math:`L=` ``<length>`` :math:`\cdot r_{\text{max}}`
         
-        :command:`stgrt` 程序支持以下可选参数来控制波数积分，参数与上面对应，具体说明详见 :command:`stgrt -h`。
+        :command:`static_greenfn` 模块支持以下可选参数来控制波数积分，参数与上面对应，具体说明详见 :command:`grt static greenfn -h`。
 
         + ``-K<k0>[/<keps>]``  
         + ``-L<length>``

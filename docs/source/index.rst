@@ -6,23 +6,14 @@
 
 -----------------------------------------------------------
 
+**Github Homepage:** https://github.com/Dengda98/PyGRT
 
-.. raw:: html 
-
-  <!-- Place this tag in your head or just before your close body tag. -->
-  <script async defer src="https://buttons.github.io/buttons.js"></script>
-
-  <!-- Place this tag where you want the button to render. -->
-  <a class="github-button" href="https://github.com/Dengda98/PyGRT" data-icon="octicon-star" data-size="large" aria-label="Star Dengda98/PyGRT on GitHub">Star</a>
-
-
-
-**PyGRT** : 一个用于计算在半无限水平分层均匀介质模型中的理论地震图的 **Python**\程序包，使用广义反射透射系数矩阵法(**G**\eneralized **R**\eflection-**T**\ransmission coefficient matrix) 以及离散波数法等方法计算。   
+**PyGRT** : 一个用于计算在半无限水平分层均匀介质模型中的理论地震图的 **C/Python**\程序包，使用广义反射透射系数矩阵法(**G**\eneralized **R**\eflection-**T**\ransmission coefficient matrix) 以及离散波数法等方法计算。   
 
 **PyGRT** 能计算什么？
 --------------------------
 目前，**PyGRT** 可计算区域尺度内半无限水平分层均匀介质中的 **动态与静态的位移，以及应力、应变、旋转张量。**
-
+**PyGRT** 将持续维护并扩展与之相关的计算功能。
 
 运行平台
 ---------
@@ -55,11 +46,9 @@
 
 --------------------------------------------------------------------------
 
-
-以下包括 **Python** 和 **C** 两部分的API介绍。如果只关心程序的使用，可以只查看 **Python** 部分；若对具体实现过程感兴趣，尤其是在学习 **广义反射透射系数矩阵、离散波数法、线性Filon积分法、峰谷平均法** 等内容感到迷惑难解时，可以在运行程序的同时结合阅读相关 **C代码**，我在C代码中给出了 **明确的中文注释以及相关公式索引** ，希望能帮助你在学习相关内容时解答一些疑惑。
+若对具体实现过程感兴趣，尤其是在学习 **广义反射透射系数矩阵、离散波数法、线性/自适应Filon积分法、峰谷平均法** 等内容感到迷惑难解时，可以在运行程序的同时结合阅读相关 **C代码**，我在C代码中给出了 **明确的中文注释以及相关公式索引** ，希望能帮助你在学习相关内容时解答一些疑惑。
 
 本文档页面源码位于 Github主页的 `docs/ <https://github.com/Dengda98/PyGRT/tree/main/docs/source>`_，可查看示例代码和画图脚本。
-
 
 --------------------------------------------------------------------------
 

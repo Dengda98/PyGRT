@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"POT-Creation-Date: 2025-08-05 13:28+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -42,15 +42,21 @@ msgstr ""
 #: ../../source/Tutorial/static/static_gfunc.rst:9
 msgid ""
 "Python中计算静态格林函数的主函数为 :func:`compute_static_grn() "
-"<pygrt.pymod.PyModel1D.compute_static_grn>` ，C程序为 :command:`stgrt`。"
+"<pygrt.pymod.PyModel1D.compute_static_grn>` ，C模块为 "
+":command:`static_greenfn`。"
 msgstr ""
-"The main function for computing static Green's functions in Python is :func:`compute_static_grn() <pygrt.pymod.PyModel1D.compute_static_grn>`, and the corresponding C program is :command:`stgrt`."
+"The main function for computing static Green's functions in Python is "
+":func:`compute_static_grn() <pygrt.pymod.PyModel1D.compute_static_grn>`, "
+"and the corresponding C module is :command:`static_greenfn`."
 
 #: ../../source/Tutorial/static/static_gfunc.rst:11
 msgid ""
-"建议先阅读完动态格林函数的计算过程（ :ref:`gfunc_rst` ）。静态情况与动态情况采取的计算方法一致，只是推导细节会有不同，详见 "
-":ref:`初稿 <yao_init_manuscripts>` 。"
-msgstr "It is recommended to first read through the process of computing dynamic Green's functions (:ref:`gfunc_rst`). The computation methods for static and dynamic cases are the same, but the derivation details differ. See :ref:`初稿 <yao_init_manuscripts>` for more details."
+"建议先阅读完 :doc:`/Tutorial/dynamic/gfunc` 部分。静态情况与动态情况采取的计算方法一致，只是推导细节会有不同，详见"
+" :ref:`初稿 <yao_init_manuscripts>` 。"
+msgstr ""
+"It is recommended to first read :doc:`/Tutorial/dynamic/gfunc` section. The computation methods for static "
+"and dynamic cases are the same, but the derivation details differ. See "
+":ref:`初稿 <yao_init_manuscripts>` for more details."
 
 #: ../../source/Tutorial/static/static_gfunc.rst:15
 msgid "示例程序"
@@ -58,9 +64,14 @@ msgstr "Simple run"
 
 #: ../../source/Tutorial/static/static_gfunc.rst:17
 msgid ""
-"假设在 :file:`milrow` "
-"模型中，震源深度2km，接收点位于地表。北向(X/km)在[-3,3]范围内等距采样41个点，东向(Y/km)在[-2.5,2.5]范围内等距采样33个点，计算这些点上的静态格林函数。"
-msgstr "Assume in the :file:`milrow` model, the source depth is 2 km, and the receiver is located on the surface. The north direction (X/km) is sampled evenly at 41 points within the range [-3, 3], and the east direction (Y/km) is sampled evenly at 33 points within the range [-2.5, 2.5]. Compute the static Green's functions at these points."
+"假设在 :file:`milrow` 模型中，震源深度2km，接收点位于地表。北向(X/km)在[-3,3]范围内等距间隔 0.15 km "
+"采样，东向(Y/km)在[-2.5,2.5]范围内等距间隔 0.15 km 采样，计算这些点上的静态格林函数。"
+msgstr ""
+"Assume in the :file:`milrow` model, the source depth is 2 km, and the "
+"receiver is located on the surface. The north direction (X/km) is sampled"
+" evenly in 0.15 km interval within the range [-3, 3], and the east direction "
+"(Y/km) is sampled evenly in 0.15 km interval within the range [-2.5, 2.5]. "
+"Compute the static Green's functions at these points."
 
 #: ../../source/Tutorial/static/static_gfunc.rst:21
 msgid "C"
@@ -68,7 +79,10 @@ msgstr ""
 
 #: ../../source/Tutorial/static/static_gfunc.rst:28
 msgid "输出的 :file:`grn` 文件内部如下，开头的 ``#`` 用于保存源点和场点所在介质层的物性参数。"
-msgstr "The content of the output :file:`grn` file is as follows, with the leading ``#`` used to store the physical properties of the medium layers where the source and receiver points are located."
+msgstr ""
+"The content of the output :file:`grn` file is as follows, with the "
+"leading ``#`` used to store the physical properties of the medium layers "
+"where the source and receiver points are located."
 
 #: ../../source/Tutorial/static/static_gfunc.rst:34
 msgid "Python"
@@ -76,5 +90,7 @@ msgstr ""
 
 #: ../../source/Tutorial/static/static_gfunc.rst:41
 msgid "函数返回字典类型，包括一些基本参数以及格林函数（2D矩阵）。"
-msgstr "The function returns a dictionary type, including some basic parameters and Green's functions (2D matrix)."
+msgstr ""
+"The function returns a dictionary type, including some basic parameters "
+"and Green's functions (2D matrix)."
 

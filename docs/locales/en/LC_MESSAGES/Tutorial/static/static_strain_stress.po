@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"POT-Creation-Date: 2025-08-05 13:28+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -41,10 +41,14 @@ msgstr ""
 
 #: ../../source/Tutorial/static/static_strain_stress.rst:9
 msgid ""
-"除了使用不同的函数名/程序名，输出文件不同之外，流程基本和 :ref:`strain_stress_rst` "
-"类似。这里直接给出脚本。运行后注意观察和 :ref:`static_syn_rst` 的输出有了什么变化。"
+"除了使用不同的函数名/程序名，输出文件不同之外，流程基本和 :doc:`/Tutorial/dynamic/strain_stress` "
+"类似。这里直接给出脚本。运行后注意观察和 :doc:`/Tutorial/dynamic/syn` 的输出有了什么变化。"
 msgstr ""
-"Apart from using different function names/program names and different output files, the process is basically similar to :ref:`strain_stress_rst`. Here, the script is provided directly. After running, pay attention to what changes have occurred compared to the output of :ref:`static_syn_rst`."
+"Apart from using different function names/program names and different "
+"output files, the process is basically similar to "
+":doc:`/Tutorial/dynamic/strain_stress`. Here, the script is provided directly. After "
+"running, pay attention to what changes have occurred compared to the "
+"output of :doc:`/Tutorial/dynamic/syn`."
 
 #: ../../source/Tutorial/static/static_strain_stress.rst:13
 msgid "C"
@@ -56,5 +60,9 @@ msgstr ""
 
 #: ../../source/Tutorial/static/static_strain_stress.rst:40
 msgid "由于场点位于地表（自由表面），过Z平面的应力均为0（由于浮点数计算误差，呈极小非零数），结果和理论保持一致。"
-msgstr "Since the field point is located on the surface (free surface), the stress across the Z-plane is zero (appearing as a very small non-zero value due to floating-point calculation errors), consistent with the theoretical results."
+msgstr ""
+"Since the field point is located on the surface (free surface), the "
+"stress across the Z-plane is zero (appearing as a very small non-zero "
+"value due to floating-point calculation errors), consistent with the "
+"theoretical results."
 

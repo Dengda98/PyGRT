@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-23 10:42+0800\n"
+"POT-Creation-Date: 2025-08-05 13:28+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -19,51 +19,51 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.16.0\n"
 
-#: ../../source/Tutorial/kernel/kernel.rst:2 
+#: ../../source/Advanced/kernel/kernel.rst:2
 msgid "核函数 :math:`f-v` 谱图"
 msgstr "Kernel function :math:`f-v` spectrum"
 
-#: ../../source/Tutorial/kernel/kernel.rst 
+#: ../../source/Advanced/kernel/kernel.rst
 msgid "Author"
 msgstr ""
 
-#: ../../source/Tutorial/kernel/kernel.rst:4 
+#: ../../source/Advanced/kernel/kernel.rst:4
 msgid "Zhu Dengda"
 msgstr ""
 
-#: ../../source/Tutorial/kernel/kernel.rst 
+#: ../../source/Advanced/kernel/kernel.rst
 msgid "Email"
 msgstr ""
 
-#: ../../source/Tutorial/kernel/kernel.rst:5 
+#: ../../source/Advanced/kernel/kernel.rst:5
 msgid "zhudengda@mail.iggcas.ac.cn"
 msgstr ""
 
-#: ../../source/Tutorial/kernel/kernel.rst:10 
+#: ../../source/Advanced/kernel/kernel.rst:10
 msgid ""
-"在 :ref:`integ_converg_rst` 部分介绍了程序可以导出积分过程中不同频率的核函数值，这使得我们可以绘制核函数的 "
-":math:`f-v` 谱图 [#]_ ，以观察其中的频散特征 。"
+"在 :doc:`/Advanced/integ_converg/integ_converg` "
+"部分介绍了程序可以导出积分过程中不同频率的核函数值，这使得我们可以绘制核函数的 :math:`f-v` 谱图 [#]_ ，以观察其中的频散特征 。"
 msgstr ""
-"In the :ref:`integ_converg_rst` section, the program is introduced to "
+"In the :doc:`/Advanced/integ_converg/integ_converg` section, the program is introduced to "
 "export kernel function values at different frequencies during the "
-"integration phase, allowing us to plot the kernel function :math:`f-v` spectrum "
-"[#]_ to observe its dispersion characteristics."
+"integration phase, allowing us to plot the kernel function :math:`f-v` "
+"spectrum [#]_ to observe its dispersion characteristics."
 
-#: ../../source/Tutorial/kernel/kernel.rst:12 
+#: ../../source/Advanced/kernel/kernel.rst:12
 msgid "以薄层模型为例，"
 msgstr "Taking the thin-layer model as an example,"
 
-#: ../../source/Tutorial/kernel/kernel.rst:17 
+#: ../../source/Advanced/kernel/kernel.rst:17
 msgid "感谢席超强博士 `@xichaoqiang <https://github.com/xichaoqiang>`_ 的建议。"
 msgstr ""
 "Thanks to Dr. Chaoqiang Xi `@xichaoqiang "
 "<https://github.com/xichaoqiang>`_ for the suggestion."
 
-#: ../../source/Tutorial/kernel/kernel.rst:21 
+#: ../../source/Advanced/kernel/kernel.rst:21
 msgid "生成核函数文件"
 msgstr "Generate kernel function file"
 
-#: ../../source/Tutorial/kernel/kernel.rst:25 
+#: ../../source/Advanced/kernel/kernel.rst:25
 msgid "与之前的示例相比，这里添加了控制波数积分的参数，以显式控制核函数的采样间隔和范围。但这并非是计算格林函数的最佳参数，故此时格林函数计算结果很可能是不收敛的。"
 msgstr ""
 "Compared to the previous example, parameters for controlling the "
@@ -72,19 +72,19 @@ msgstr ""
 "optimal parameters for calculating the Green's function, so the Green's "
 "function calculation results may not converge in this case."
 
-#: ../../source/Tutorial/kernel/kernel.rst:30 
+#: ../../source/Advanced/kernel/kernel.rst:30
 msgid "C"
 msgstr ""
 
-#: ../../source/Tutorial/kernel/kernel.rst:38 
+#: ../../source/Advanced/kernel/kernel.rst:38
 msgid "Python"
 msgstr ""
 
-#: ../../source/Tutorial/kernel/kernel.rst:47 
+#: ../../source/Advanced/kernel/kernel.rst:47
 msgid "读取，插值，获得 :math:`f-v` 谱"
 msgstr "Read, intepolate, and get Kernel function :math:`f-v` spectrum"
 
-#: ../../source/Tutorial/kernel/kernel.rst:48 
+#: ../../source/Advanced/kernel/kernel.rst:48
 msgid ""
 "Python端提供了 :py:func:`pygrt.utils.read_kernels_freqs` 函数来完成所有频率的核函数读取以及从波数"
 " ``k`` 插值到特定速度点 ``v`` 的工作 ( :math:`v=\\omega/k` )，最后获得保存有核函数的 :math:`f-v`"
@@ -96,36 +96,36 @@ msgstr ""
 ":math:`v=\\omega/k` ), and finally obtaining a dictionary containing the "
 "Kernel function :math:`f-v` spectra."
 
-#: ../../source/Tutorial/kernel/kernel.rst:56 
+#: ../../source/Advanced/kernel/kernel.rst:56
 msgid "绘制核函数 :math:`f-v` 谱图"
 msgstr "Plot kernel function :math:`f-v` spectrum"
 
-#: ../../source/Tutorial/kernel/kernel.rst:57 
+#: ../../source/Advanced/kernel/kernel.rst:57
 msgid "以下将使用Python进行图件绘制。"
 msgstr "The following will use Python for plotting."
 
-#: ../../source/Tutorial/kernel/kernel.rst:66 
+#: ../../source/Advanced/kernel/kernel.rst:66
 msgid "**虚部**"
 msgstr "Imaginary part"
 
-#: ../../source/Tutorial/kernel/kernel.rst:73 
+#: ../../source/Advanced/kernel/kernel.rst:73
 msgid "**实部**"
 msgstr "Real part"
 
-#: ../../source/Tutorial/kernel/kernel.rst:82 
+#: ../../source/Advanced/kernel/kernel.rst:82
 msgid ""
 "从图上可看到， **核函数** :math:`f-v` **谱图的虚部峰值正是频散曲线的位置** ，尽管其中不同震源的核函数幅值不同，但 "
 ":math:`q_m，w_m` 呈现的频散特征一致，这对应的是 **Rayleigh波频散** ，而 :math:`v_m` 对应的是 "
 "**Love波频散** 。"
 msgstr ""
-"From the figure, it can be seen that **the peaks of the imaginary part of "
-"the kernel function** :math:`f-v` **spectra correspond to the position of the "
-"dispersion curve**. Although the kernel function amplitudes of different "
-"sources vary, the dispersion characteristics presented by :math:`q_m, "
-"w_m` are consistent, which corresponds to **Rayleigh wave dispersion**, "
-"while :math:`v_m` corresponds to **Love wave dispersion**."
+"From the figure, it can be seen that **the peaks of the imaginary part of"
+" the kernel function** :math:`f-v` **spectra correspond to the position "
+"of the dispersion curve**. Although the kernel function amplitudes of "
+"different sources vary, the dispersion characteristics presented by "
+":math:`q_m, w_m` are consistent, which corresponds to **Rayleigh wave "
+"dispersion**, while :math:`v_m` corresponds to **Love wave dispersion**."
 
-#: ../../source/Tutorial/kernel/kernel.rst:84 
+#: ../../source/Advanced/kernel/kernel.rst:84
 msgid "不同的震源场点深度、不同的虚频率都会导致幅值变化，积分间隔则会影响插值效果。"
 msgstr ""
 "Different source/receiver depths and different imaginary frequencies will"

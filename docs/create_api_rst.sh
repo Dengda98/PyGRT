@@ -13,7 +13,7 @@ SDIR="../pygrt/C_extension/include"
 c_api_rst="$APIDIR/c_api.rst"
 
 cat > $c_api_rst <<EOF
-C extension API
+C API
 ===============================
 
 :Author: Zhu Dengda
@@ -26,29 +26,48 @@ C extension API
 
 EOF
 
-for dir1 in $(ls $SDIR); do
-    mkdir -p $PDIR/$dir1
-    cat > $PDIR/$dir1.rst <<EOF
-$dir1
-=========================================
+for item in $(ls $SDIR); do
+    echo $item
+    if [ -d $SDIR/$item ]; then
+        mkdir -p $PDIR/$item
+        content=(
+            "$item"
+            "========================================="
+            ""
+            ".. toctree::"
+            "   :maxdepth: 2"
+            ""
+        )
+        printf "%s\n" "${content[@]}" > $PDIR/$item.rst
 
-.. toctree::
-   :maxdepth: 2
+        for hnm in $(ls $SDIR/$item); do
+            content=(
+                "$hnm"
+                "--------------------------------------"
+                ""
+                ".. doxygenfile:: $hnm"
+                "   :project: h_PyGRT"
+                ""
+            )
+            printf "%s\n" "${content[@]}" > $PDIR/$item/${hnm%%.*}.rst
+            echo "   $item/${hnm%%.*}" >> $PDIR/$item.rst
+        done
 
-EOF
-    for hnm in $(ls $SDIR/$dir1); do
-        cat > $PDIR/$dir1/${hnm%%.*}.rst <<EOF
-$hnm
---------------------------------------
+    elif [ -f $SDIR/$item ]; then
+        content=(
+            "$item"
+            "--------------------------------------"
+            ""
+            ".. doxygenfile:: $item"
+            "   :project: h_PyGRT"
+            ""
+        )
+        printf "%s\n" "${content[@]}" > $PDIR/${item%%.*}.rst
+    fi
+    
+    echo "   C_extension/${item%%.*}" >> $c_api_rst
 
-.. doxygenfile:: $hnm
-    :project: h_PyGRT
-EOF
-
-    echo "   $dir1/${hnm%%.*}" >> $PDIR/$dir1.rst
-    done
-
-    echo "   C_extension/$dir1" >> $c_api_rst
+    
 done
 
 
@@ -63,14 +82,13 @@ SDIR="../pygrt"
 py_api_rst="$APIDIR/py_api.rst"
 
 cat > $py_api_rst <<EOF
-**PyGRT** package API
+Python API
 ========================
 
 :Author: Zhu Dengda
 :Email:  zhudengda@mail.iggcas.ac.cn
 
 -----------------------------------------------------------
-
 
 .. toctree::
    :maxdepth: 2
@@ -82,17 +100,18 @@ for py in $(ls -1 $SDIR/*.py | xargs -n1 basename); do
         continue
     fi
 
-    cat > $PDIR/${py%%.*}.rst <<EOF
-pygrt.${py%%.*}
---------------------------------------
+    content=(
+        "pygrt.${py%%.*}"
+        "--------------------------------------"
+        ""
+        ".. automodule:: pygrt.${py%%.*}"
+        "   :members:"
+        "   :undoc-members:"
+        "   :show-inheritance:"
+        ""
+    )
 
-.. automodule:: pygrt.${py%%.*}
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-EOF
-
+    printf "%s\n" "${content[@]}" > $PDIR/${py%%.*}.rst
     echo "   pygrt/${py%%.*}" >> $py_api_rst
 
 done

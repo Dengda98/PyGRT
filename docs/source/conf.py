@@ -99,7 +99,7 @@ html_theme_options = {
     'prev_next_buttons_location': 'bottom',
     'style_external_links': False,
     'collapse_navigation': True,
-    'sticky_navigation': True,
+    'sticky_navigation': False, #True,
     'navigation_depth': 4,
     'includehidden': True,
     'titles_only': False,
@@ -112,6 +112,13 @@ html_js_files = [
     'my_custom.js',
 ]
 
+html_context = {
+    "versions": {
+        "latest": "dev",
+        "v0.9.2": "v0.9.2",
+        "v0.8.0": "v0.8.0"
+    }
+}
 
 autodoc_default_options = {
     'member-order': 'bysource',

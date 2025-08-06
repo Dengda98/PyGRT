@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-22 15:39+0800\n"
+"POT-Creation-Date: 2025-08-05 13:28+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -19,7 +19,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.16.0\n"
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:4
+#: ../../source/Tutorial/dynamic/strain_stress.rst:2
 msgid "计算动态应变、旋转、应力张量"
 msgstr "Compute Dynamic Strain, Rotation, and Stress Tensors"
 
@@ -27,7 +27,7 @@ msgstr "Compute Dynamic Strain, Rotation, and Stress Tensors"
 msgid "Author"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:6
+#: ../../source/Tutorial/dynamic/strain_stress.rst:4
 msgid "Zhu Dengda"
 msgstr ""
 
@@ -35,125 +35,140 @@ msgstr ""
 msgid "Email"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:7
+#: ../../source/Tutorial/dynamic/strain_stress.rst:5
 msgid "zhudengda@mail.iggcas.ac.cn"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:12
+#: ../../source/Tutorial/dynamic/strain_stress.rst:10
 msgid ""
 "计算这些张量需要计算位移的空间导数 :math:`\\partial z,\\partial r,\\partial \\theta` "
-"[#partial]_ 。 从前文关于格林函数的计算 （ :ref:`gfunc_rst` ） 和位移合成的公式 （ :ref:`syn_rst`"
-" ） 出发，位移空间导数分两个步骤计算，再根据几何方程和本构方程合成应变、旋转和应力张量。"
+"[#partial]_ 。 从前文关于格林函数的计算 （ :doc:`/Tutorial/dynamic/gfunc` ） 和位移合成的公式 （ "
+":doc:`/Tutorial/dynamic/syn` ） 出发，位移空间导数分两个步骤计算，再根据几何方程和本构方程合成应变、旋转和应力张量。"
 msgstr ""
 "To compute these tensors, the spatial derivatives of displacement "
 ":math:`\\partial z,\\partial r,\\partial \\theta` [#partial]_ need to be "
 "calculated. Starting from the calculation of Green's functions "
-"(:ref:`gfunc_rst`) and the formula for displacement synthesis "
-"(:ref:`syn_rst`), the spatial derivatives of displacement are computed in "
-"two steps, and then strain, rotation, and stress tensors are synthesized "
-"based on the geometric and constitutive equations."
+"(:doc:`/Tutorial/dynamic/gfunc`) and the formula for displacement synthesis "
+"(:doc:`/Tutorial/dynamic/syn`), the spatial derivatives of displacement are computed in"
+" two steps, and then strain, rotation, and stress tensors are synthesized"
+" based on the geometric and constitutive equations."
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:14
+#: ../../source/Tutorial/dynamic/strain_stress.rst:12
 msgid ""
 ":math:`\\partial z,\\partial r,\\partial \\theta` 为 "
 ":math:`\\dfrac{\\partial}{\\partial z},\\dfrac{\\partial}{\\partial "
 "r},\\dfrac{\\partial}{\\partial \\theta}` 的简写。"
 msgstr ""
 ":math:`\\partial z,\\partial r,\\partial \\theta` are abbreviations for "
-":math:`\\dfrac{\\partial}{\\partial z},\\dfrac{\\partial}{\\partial r},"
-"\\dfrac{\\partial}{\\partial \\theta}`."
+":math:`\\dfrac{\\partial}{\\partial z},\\dfrac{\\partial}{\\partial "
+"r},\\dfrac{\\partial}{\\partial \\theta}`."
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:15
+msgid "计算格林函数阶段，求出 :math:`\\partial z,\\partial r`"
+msgstr ""
+"During the Green's function calculation phase, compute :math:`\\partial "
+"z,\\partial r`"
 
 #: ../../source/Tutorial/dynamic/strain_stress.rst:17
-msgid "计算格林函数阶段，求出 :math:`\\partial z,\\partial r`"
-msgstr "During the Green's function calculation phase, compute :math:`\\partial z,\\partial r`"
-
-#: ../../source/Tutorial/dynamic/strain_stress.rst:19
 msgid ""
 "假设在 :file:`milrow` "
 "模型中，震源深度2km，接收点位于地表，震中距为10km，计算格林函数及其空间导数，要求采样点数500个点，采样间隔0.02s。"
 msgstr ""
-"Assume in the :file:`milrow` model, the source depth is 2km, the receiver is "
-"located on the surface, the epicentral distance is 10km, and the Green's "
-"functions and their spatial derivatives are calculated with 500 sampling "
-"points and a sampling interval of 0.02s."
+"Assume in the :file:`milrow` model, the source depth is 2km, the receiver"
+" is located on the surface, the epicentral distance is 10km, and the "
+"Green's functions and their spatial derivatives are calculated with 500 "
+"sampling points and a sampling interval of 0.02s."
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:23
-#: ../../source/Tutorial/dynamic/strain_stress.rst:60
-#: ../../source/Tutorial/dynamic/strain_stress.rst:83
-#: ../../source/Tutorial/dynamic/strain_stress.rst:136
-#: ../../source/Tutorial/dynamic/strain_stress.rst:168
-#: ../../source/Tutorial/dynamic/strain_stress.rst:202
+#: ../../source/Tutorial/dynamic/strain_stress.rst:21
+#: ../../source/Tutorial/dynamic/strain_stress.rst:58
+#: ../../source/Tutorial/dynamic/strain_stress.rst:81
+#: ../../source/Tutorial/dynamic/strain_stress.rst:134
+#: ../../source/Tutorial/dynamic/strain_stress.rst:166
+#: ../../source/Tutorial/dynamic/strain_stress.rst:200
 msgid "C"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:30
+#: ../../source/Tutorial/dynamic/strain_stress.rst:28
 msgid ""
 "在 :rst:dir:`GRN/milrow_{depsrc}_{deprcv}_{dist}/` "
 "路径下，文件名开头有\"r\"和\"z\"就代表 :math:`\\partial r` 和 :math:`\\partial z`。"
 msgstr ""
 "In the :rst:dir:`GRN/milrow_{depsrc}_{deprcv}_{dist}/` path, file names "
-"starting with \"r\" and \"z\" represent :math:`\\partial r` and :math:`\\partial z`, respectively."
+"starting with \"r\" and \"z\" represent :math:`\\partial r` and "
+":math:`\\partial z`, respectively."
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:32
-#: ../../source/Tutorial/dynamic/strain_stress.rst:69
-#: ../../source/Tutorial/dynamic/strain_stress.rst:92
-#: ../../source/Tutorial/dynamic/strain_stress.rst:145
-#: ../../source/Tutorial/dynamic/strain_stress.rst:177
-#: ../../source/Tutorial/dynamic/strain_stress.rst:211
+#: ../../source/Tutorial/dynamic/strain_stress.rst:30
+#: ../../source/Tutorial/dynamic/strain_stress.rst:67
+#: ../../source/Tutorial/dynamic/strain_stress.rst:90
+#: ../../source/Tutorial/dynamic/strain_stress.rst:143
+#: ../../source/Tutorial/dynamic/strain_stress.rst:175
+#: ../../source/Tutorial/dynamic/strain_stress.rst:209
 msgid "Python"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:39
+#: ../../source/Tutorial/dynamic/strain_stress.rst:37
 msgid "通道名开头有\"r\"和\"z\"就代表 :math:`\\partial r` 和 :math:`\\partial z`。"
-msgstr "Channel names starting with \"r\" and \"z\" represent :math:`\\partial r` and :math:`\\partial z`, respectively."
+msgstr ""
+"Channel names starting with \"r\" and \"z\" represent :math:`\\partial r`"
+" and :math:`\\partial z`, respectively."
+
+#: ../../source/Tutorial/dynamic/strain_stress.rst:42
+msgid "计算格林函数阶段求出的空间导数的单位："
+msgstr ""
+"The unit of spatial derivatives computed during the Green's function "
+"calculation phase:"
 
 #: ../../source/Tutorial/dynamic/strain_stress.rst:44
-msgid "计算格林函数阶段求出的空间导数的单位："
-msgstr "The unit of spatial derivatives computed during the Green's function calculation phase:"
-
-#: ../../source/Tutorial/dynamic/strain_stress.rst:46
 msgid "爆炸源：  :math:`10^{-25} \\, /\\text{dyne} \\cdot \\text{cm}`"
 msgstr "Explosion:  :math:`10^{-25} \\, /\\text{dyne} \\cdot \\text{cm}`"
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:47
+#: ../../source/Tutorial/dynamic/strain_stress.rst:45
 msgid "单力源：  :math:`10^{-20} \\, /\\text{dyne}`"
 msgstr "Single Force:  :math:`10^{-20} \\, /\\text{dyne}`"
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:48
+#: ../../source/Tutorial/dynamic/strain_stress.rst:46
 msgid "剪切源：  :math:`10^{-25} \\, /\\text{dyne} \\cdot \\text{cm}`"
 msgstr "Shear:  :math:`10^{-25} \\, /\\text{dyne} \\cdot \\text{cm}`"
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:49
+#: ../../source/Tutorial/dynamic/strain_stress.rst:47
 msgid "矩张量源： :math:`10^{-25} \\, /\\text{dyne} \\cdot \\text{cm}`"
 msgstr "Moment Tensor: :math:`10^{-25} \\, /\\text{dyne} \\cdot \\text{cm}`"
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:54
+#: ../../source/Tutorial/dynamic/strain_stress.rst:52
 msgid "合成位移阶段，求出 :math:`\\partial \\theta / r` 并合成位移空间导数"
-msgstr "During the displacement synthesis phase, compute :math:`\\partial \\theta / r` and synthesize the spatial derivatives of displacement."
+msgstr ""
+"During the displacement synthesis phase, compute :math:`\\partial \\theta"
+" / r` and synthesize the spatial derivatives of displacement."
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:56
+#: ../../source/Tutorial/dynamic/strain_stress.rst:54
 msgid ""
 "假设震源为剪切源，断层走向33°，倾角50°，滑动角120°，标量矩 1e24 dyne·cm，方位角30°。待求项中有 :math:`r` "
 "是为了保证量纲统一。"
 msgstr ""
-"Assume the source is a shear source with a fault strike of 33°, dip angle of "
-"50°, rake angle of 120°, scalar moment of 1e24 dyne·cm, and azimuth of 30°. "
-"The inclusion of :math:`r` in the terms to be solved ensures dimensional consistency."
+"Assume the source is a shear source with a fault strike of 33°, dip angle"
+" of 50°, rake angle of 120°, scalar moment of 1e24 dyne·cm, and azimuth "
+"of 30°. The inclusion of :math:`r` in the terms to be solved ensures "
+"dimensional consistency."
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:67
+#: ../../source/Tutorial/dynamic/strain_stress.rst:65
 msgid ""
 "在 :rst:dir:`syn_dc/` 路径下，文件名开头有\"r\"，\"z\"，\"t\"分别代表 :math:`\\partial r`，"
 " :math:`\\partial z`，:math:`\\partial \\theta / r`。"
 msgstr ""
-"In the :rst:dir:`syn_dc/` path, file names starting with \"r\", \"z\", and \"t\" represent :math:`\\partial r`, :math:`\\partial z`, and :math:`\\partial \\theta / r`, respectively."
+"In the :rst:dir:`syn_dc/` path, file names starting with \"r\", \"z\", "
+"and \"t\" represent :math:`\\partial r`, :math:`\\partial z`, and "
+":math:`\\partial \\theta / r`, respectively."
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:76
+#: ../../source/Tutorial/dynamic/strain_stress.rst:74
 msgid ""
 "通道名开头有\"r\"，\"z\"，\"t\"分别代表 :math:`\\partial r`， :math:`\\partial "
 "z`，:math:`\\partial \\theta / r`。"
-msgstr "Channel names starting with \"r\", \"z\", and \"t\" represent :math:`\\partial r`, :math:`\\partial z`, and :math:`\\partial \\theta / r`, respectively."
+msgstr ""
+"Channel names starting with \"r\", \"z\", and \"t\" represent "
+":math:`\\partial r`, :math:`\\partial z`, and :math:`\\partial \\theta / "
+"r`, respectively."
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:79
+#: ../../source/Tutorial/dynamic/strain_stress.rst:77
 msgid ""
 "以上计算的空间导数在柱坐标系下，即 :math:`\\dfrac{\\partial "
 "u(z,r,\\theta)}{\\partial(z,r,\\theta)}`。如果需要 :math:`\\dfrac{\\partial "
@@ -163,140 +178,175 @@ msgstr ""
 "The spatial derivatives calculated above are in cylindrical coordinates, "
 "i.e., :math:`\\dfrac{\\partial u(z,r,\\theta)}{\\partial(z,r,\\theta)}`. "
 "If :math:`\\dfrac{\\partial u(z,x,y)}{\\partial(z,x,y)}` is needed "
-"(:math:`x` represents northward, :math:`y` represents eastward), appropriate "
-"parameters can be passed, and the prefix of the output identifiers will "
-"change from \"z/r/t\" to \"z/x/y\"."
+"(:math:`x` represents northward, :math:`y` represents eastward), "
+"appropriate parameters can be passed, and the prefix of the output "
+"identifiers will change from \"z/r/t\" to \"z/x/y\"."
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:90
+#: ../../source/Tutorial/dynamic/strain_stress.rst:88
 msgid ""
 "在 :rst:dir:`syn_dc_zne/` 路径下，文件名开头有\"z\"，\"n\"，\"e\"分别代表 :math:`\\partial"
 " z`， :math:`\\partial x`，:math:`\\partial y`。"
 msgstr ""
-"In the :rst:dir:`syn_dc_zne/` path, file names starting with \"z\", \"n\", and \"e\" represent :math:`\\partial z`, :math:`\\partial x`, and :math:`\\partial y`, respectively."
+"In the :rst:dir:`syn_dc_zne/` path, file names starting with \"z\", "
+"\"n\", and \"e\" represent :math:`\\partial z`, :math:`\\partial x`, and "
+":math:`\\partial y`, respectively."
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:99
+#: ../../source/Tutorial/dynamic/strain_stress.rst:97
 msgid ""
 "通道名开头有\"z\"，\"n\"，\"e\"分别代表 :math:`\\partial z`， :math:`\\partial "
 "x`，:math:`\\partial y`。"
-msgstr "Channel names starting with \"z\", \"n\", and \"e\" represent :math:`\\partial z`, :math:`\\partial x`, and :math:`\\partial y`, respectively."
+msgstr ""
+"Channel names starting with \"z\", \"n\", and \"e\" represent "
+":math:`\\partial z`, :math:`\\partial x`, and :math:`\\partial y`, "
+"respectively."
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:103
+#: ../../source/Tutorial/dynamic/strain_stress.rst:101
 msgid "不可以使用ObsPy库中提供的Stream.rotate()函数进行位移空间导数的旋转。"
-msgstr "The Stream.rotate() function provided by the ObsPy library cannot be used to rotate the spatial derivatives of displacement."
+msgstr ""
+"The Stream.rotate() function provided by the ObsPy library cannot be used"
+" to rotate the spatial derivatives of displacement."
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:108
+#: ../../source/Tutorial/dynamic/strain_stress.rst:106
 msgid "合成的位移空间导数单位为1。"
 msgstr "The synthesized spatial derivative of displacement has a unit of 1."
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:112
+#: ../../source/Tutorial/dynamic/strain_stress.rst:110
 msgid "合成应变、旋转、应力张量"
 msgstr "Synthesize strain, rotation, and stress tensors"
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:113
+#: ../../source/Tutorial/dynamic/strain_stress.rst:111
 msgid "应变和应力均为二阶对称张量，故将输出6个独立分量；而旋转张量为二阶反对称张量，将输出3个独立分量。"
-msgstr "Strain and stress are both second-order symmetric tensors, so six independent components will be output; while the rotation tensor is a second-order skew symmetric tensor, three independent components will be output."
+msgstr ""
+"Strain and stress are both second-order symmetric tensors, so six "
+"independent components will be output; while the rotation tensor is a "
+"second-order skew symmetric tensor, three independent components will be "
+"output."
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:115
+#: ../../source/Tutorial/dynamic/strain_stress.rst:113
 msgid ""
 "程序选择张量输出结果的坐标系的依据是——根据文件名/通道名判断是否存在 :math:`\\dfrac{\\partial "
 "u_x}{\\partial x}`，如果有则使用ZNE坐标系，否则使用ZRT坐标系。 "
 "**所以建议保存结果的文件夹中只使用同种坐标系**，就像上面分为 :rst:dir:`syn_dc/` 和 "
 ":rst:dir:`syn_dc_zne/` 两个文件夹保存。"
 msgstr ""
-"The program determines the coordinate system for tensor output based on the "
-"file name/channel name by checking for the presence of :math:`\\dfrac{\\partial "
-"u_x}{\\partial x}`. If it exists, the ZNE coordinate system is used; otherwise, "
-"the ZRT coordinate system is used. **It is recommended to use only one type of "
-"coordinate system in the folder where results are saved**, as demonstrated above "
-"by saving results in separate folders: :rst:dir:`syn_dc/` and :rst:dir:`syn_dc_zne/`."
+"The program determines the coordinate system for tensor output based on "
+"the file name/channel name by checking for the presence of "
+":math:`\\dfrac{\\partial u_x}{\\partial x}`. If it exists, the ZNE "
+"coordinate system is used; otherwise, the ZRT coordinate system is used. "
+"**It is recommended to use only one type of coordinate system in the "
+"folder where results are saved**, as demonstrated above by saving results"
+" in separate folders: :rst:dir:`syn_dc/` and :rst:dir:`syn_dc_zne/`."
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:117
+#: ../../source/Tutorial/dynamic/strain_stress.rst:115
 msgid "以下绘图使用Python绘制，绘图函数如下："
-msgstr "The following plots are drawn using Python, and the plotting functions are as follows:"
+msgstr ""
+"The following plots are drawn using Python, and the plotting functions "
+"are as follows:"
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:126
+#: ../../source/Tutorial/dynamic/strain_stress.rst:124
 msgid "应变张量"
 msgstr "strain tensor"
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:127
+#: ../../source/Tutorial/dynamic/strain_stress.rst:125
 msgid "根据几何方程（应变-位移关系） [#covariant]_"
-msgstr "According to the geometric equations (strain-displacement relationship) [#covariant]_"
+msgstr ""
+"According to the geometric equations (strain-displacement relationship) "
+"[#covariant]_"
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:129
+#: ../../source/Tutorial/dynamic/strain_stress.rst:127
 msgid ""
 "e_{ij} = \\dfrac{1}{2} \\left( u_{i,j} + u_{j,i} \\right) = \\dfrac{1}{2}"
 " \\left( \\dfrac{\\partial u_i}{\\partial x_j} + \\dfrac{\\partial "
 "u_j}{\\partial x_i}  \\right)"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:143
+#: ../../source/Tutorial/dynamic/strain_stress.rst:141
 msgid ""
 "在 :rst:dir:`syn_dc_zne/` 原路径下，生成 "
 ":file:`*.strain.??.sac`，文件名中包括分量名，如ZZ、ZN等。"
 msgstr ""
-"In the original path :rst:dir:`syn_dc_zne/`, files named :file:`*.strain.??.sac` are generated, with component names such as ZZ, ZN included in the file names."
+"In the original path :rst:dir:`syn_dc_zne/`, files named "
+":file:`*.strain.??.sac` are generated, with component names such as ZZ, "
+"ZN included in the file names."
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:152
-#: ../../source/Tutorial/dynamic/strain_stress.rst:218
+#: ../../source/Tutorial/dynamic/strain_stress.rst:150
+#: ../../source/Tutorial/dynamic/strain_stress.rst:216
 msgid "返回的 |Stream| 通道名即为分量名，如ZZ、ZN等。"
-msgstr "The returned |Stream| channel names are the component names, such as ZZ, ZN, etc."
+msgstr ""
+"The returned |Stream| channel names are the component names, such as ZZ, "
+"ZN, etc."
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:159
+#: ../../source/Tutorial/dynamic/strain_stress.rst:157
 msgid "旋转张量"
 msgstr "rotation tensor"
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:160
+#: ../../source/Tutorial/dynamic/strain_stress.rst:158
 msgid "根据旋转-位移关系 [#covariant]_"
 msgstr "According to the rotation-displacement relationship [#covariant]_"
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:162
+#: ../../source/Tutorial/dynamic/strain_stress.rst:160
 msgid ""
 "w_{ij} = \\dfrac{1}{2} \\left( u_{i,j} - u_{j,i} \\right) = \\dfrac{1}{2}"
 " \\left( \\dfrac{\\partial u_i}{\\partial x_j} - \\dfrac{\\partial "
 "u_j}{\\partial x_i}  \\right)"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:175
+#: ../../source/Tutorial/dynamic/strain_stress.rst:173
 msgid ""
 "在 :rst:dir:`syn_dc_zne/` 原路径下，生成 "
 ":file:`*.rotation.??.sac`，文件名中包括分量名，如ZN，ZE，NE。"
 msgstr ""
-"In the original path :rst:dir:`syn_dc_zne/`, files named :file:`*.rotation.??.sac` are generated, with component names such as ZN, ZE, NE included in the file names."
+"In the original path :rst:dir:`syn_dc_zne/`, files named "
+":file:`*.rotation.??.sac` are generated, with component names such as ZN,"
+" ZE, NE included in the file names."
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:184
+#: ../../source/Tutorial/dynamic/strain_stress.rst:182
 msgid "返回的 |Stream| 通道名即为分量名，如ZN，ZE，NE。"
-msgstr "The returned |Stream| channel names are the component names, such as ZN, ZE, NE."
+msgstr ""
+"The returned |Stream| channel names are the component names, such as ZN, "
+"ZE, NE."
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:191
+#: ../../source/Tutorial/dynamic/strain_stress.rst:189
 msgid "应力张量"
 msgstr "stress tensor"
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:192
+#: ../../source/Tutorial/dynamic/strain_stress.rst:190
 msgid "根据各向同性介质的本构方程 [#covariant]_"
 msgstr "According to the constitutive equation of isotropic media [#covariant]_"
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:194
+#: ../../source/Tutorial/dynamic/strain_stress.rst:192
 msgid ""
 "\\sigma_{ij} = \\lambda \\delta_{ij} e_{kk} + 2 \\mu e_{ij} = \\lambda "
 "\\delta_{ij} u_{kk} + \\mu \\left( u_{i,j} + u_{j,i} \\right)"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:209
+#: ../../source/Tutorial/dynamic/strain_stress.rst:207
 msgid ""
 "在 :rst:dir:`syn_dc_zne/` 原路径下，生成 "
 ":file:`*.stress.??.sac`，文件名中包括分量名，如ZZ、ZN等。"
 msgstr ""
-"In the original path :rst:dir:`syn_dc_zne/`, files named :file:`*.stress.??.sac` are generated, with component names such as ZZ, ZN included in the file names."
+"In the original path :rst:dir:`syn_dc_zne/`, files named "
+":file:`*.stress.??.sac` are generated, with component names such as ZZ, "
+"ZN included in the file names."
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:226
+#: ../../source/Tutorial/dynamic/strain_stress.rst:224
 msgid "计算得到的应力的单位为 :math:`\\frac{\\text{dyne}}{\\text{cm}^2} = 0.1 \\text{Pa}`。"
-msgstr "The computed stress has a unit of :math:`\\frac{\\text{dyne}}{\\text{cm}^2} = 0.1 \\text{Pa}`."
+msgstr ""
+"The computed stress has a unit of "
+":math:`\\frac{\\text{dyne}}{\\text{cm}^2} = 0.1 \\text{Pa}`."
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:229
+#: ../../source/Tutorial/dynamic/strain_stress.rst:227
 msgid "由于场点位于地表（自由表面），过Z平面的应力均为0（由于浮点数计算误差，呈极小非零数），结果和理论保持一致。"
-msgstr "Since the field point is located on the surface (free surface), the stress across the Z-plane is zero (appearing as a very small non-zero value due to floating-point calculation errors), consistent with the theoretical results."
+msgstr ""
+"Since the field point is located on the surface (free surface), the "
+"stress across the Z-plane is zero (appearing as a very small non-zero "
+"value due to floating-point calculation errors), consistent with the "
+"theoretical results."
 
-#: ../../source/Tutorial/dynamic/strain_stress.rst:233
+#: ../../source/Tutorial/dynamic/strain_stress.rst:231
 msgid "这只适用于ZNE坐标系，对于ZRT坐标系需考虑协变导数。程序中已考虑，这里不再做公式介绍。"
-msgstr "This only applies to the ZNE coordinate system. For the ZRT coordinate system, covariant derivatives need to be considered. This has already been accounted for in the program, the formulas are not introduced here."
+msgstr ""
+"This only applies to the ZNE coordinate system. For the ZRT coordinate "
+"system, covariant derivatives need to be considered. This has already "
+"been accounted for in the program, the formulas are not introduced here."
 

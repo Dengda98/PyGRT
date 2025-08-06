@@ -1,6 +1,4 @@
 
-.. _install_section:
-
 安装
 =============
 
@@ -15,7 +13,7 @@
 依赖
 ------------
 
-+ 如果你想使用C程序，你需要 `Seismic Analysis Code (SAC) <http://www.iris.edu/ds/nodes/dmc/forms/sac/>`_ ，因为C程序以二进制的SAC格式输出波形。
++ 如果你想使用C程序 :command:`grt` ，你需要 `Seismic Analysis Code (SAC) <http://www.iris.edu/ds/nodes/dmc/forms/sac/>`_ ，因为C程序以二进制的SAC格式输出波形。
 + 如果你想以Python脚本形式使用，依赖已在 :file:`setup.py` 中写好，直接使用 :command:`pip` 安装即可。
 
 
@@ -39,7 +37,7 @@
 
 环境变量配置
 -------------
-+ 如果你使用 :command:`pip` 安装后，想使用其中的C程序（ :command:`grt` , :command:`grt.syn` etc. ），需配置环境变量 :envvar:`PATH` 。运行以下命令
++ 如果你使用 :command:`pip` 安装后，想使用编译好的C程序 :command:`grt` ，需配置环境变量 :envvar:`PATH` 。运行以下命令
 
   .. code-block:: bash
 
@@ -53,11 +51,11 @@
       PyGRT executable file directory: </path/to/installation/bin>
       PyGRT library directory: </path/to/installation/lib>
 
-  将其中的“PyGRT executable file directory”路径添加到环境变量 :envvar:`PATH` 中即可。
+  将其中的 “PyGRT executable file directory” 路径添加到环境变量 :envvar:`PATH` 中即可。
 
 + 如果是从 |gr| 上直接下载的程序，指向使用，则只需将解压后的 :rst:dir:`bin/` 路径添加到环境变量 :envvar:`PATH` 中即可。
 
-C程序的运行独立于Python，每个C程序可使用 ``-h`` 查看帮助。
+C程序 :command:`grt` 的运行独立于Python，每个C程序可使用 ``-h`` 查看帮助。
 
 
 从源码编译安装
@@ -74,12 +72,12 @@ C程序的运行独立于Python，每个C程序可使用 ``-h`` 查看帮助。
   .. code-block:: bash
       
     # 编译双精度版本
-    ./configure
+    ./configure CFLAGS="-fPIC" 
     make
     make install
 
     # 编译单精度版本
-    ./configure --enable-float
+    ./configure CFLAGS="-fPIC" --enable-float
     make
     make install
 
