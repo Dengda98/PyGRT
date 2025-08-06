@@ -21,17 +21,17 @@
 # Overview
 **[PyGRT](https://github.com/Dengda98/PyGRT): An Efficient and Integrated C/Python Package for Computing Synthetic Seismograms, Strain, Rotation and Stress Tensor in a Layered Half-Space Model (Dynamic & Static Cases)**
 
- + **PyGRT** now can compute following properties in **both dynamic and static case.**
-    - [x] **Displacements and its spatial derivatives**
-    - [x] **Strain Tensor**
-    - [x] **Rotation Tensor**
-    - [x] **Stress Tensor**
+ + **PyGRT** now can compute following properties in **both dynamic and static case.**  
+    ✔️ **Displacements and its spatial derivatives**  
+    ✔️ **Strain Tensor**  
+    ✔️ **Rotation Tensor**  
+    ✔️ **Stress Tensor**
 
 
- + **At present, PyGRT can run on**
-    - [x] **Linux**
-    - [x] **MacOS**
-    - [x] **Windows**
+ + **At present, PyGRT can run on**  
+    ✔️ **Linux**  
+    ✔️ **MacOS**  
+    ✔️ **Windows**
 
  + **PyGRT is extremely easy to install** by distributing precompiled binary files.
 
