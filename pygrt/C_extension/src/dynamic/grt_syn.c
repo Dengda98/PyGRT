@@ -118,17 +118,17 @@ typedef struct {
 
 /** 释放结构体的内存 */
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
-    free(Ctrl->name);
+    GRT_SAFE_FREE_PTR(Ctrl->name);
     // G
-    free(Ctrl->G.s_grnpath);
+    GRT_SAFE_FREE_PTR(Ctrl->G.s_grnpath);
     // O
-    free(Ctrl->O.s_output_dir);
+    GRT_SAFE_FREE_PTR(Ctrl->O.s_output_dir);
     // P
-    free(Ctrl->P.s_prefix);
+    GRT_SAFE_FREE_PTR(Ctrl->P.s_prefix);
     // D
-    if(Ctrl->D.tfparams!=NULL) free(Ctrl->D.tfparams);
-    if(Ctrl->D.tfarr!=NULL)  free(Ctrl->D.tfarr);
-    free(Ctrl);
+    GRT_SAFE_FREE_PTR(Ctrl->D.tfparams);
+    GRT_SAFE_FREE_PTR(Ctrl->D.tfarr);
+    GRT_SAFE_FREE_PTR(Ctrl);
 }
 
 
@@ -288,7 +288,7 @@ static void check_grn_exist(GRT_MODULE_CTRL *Ctrl, const char *name){
         }
         Ctrl->S.src_mu = vb*vb*rho*1e10;
     }
-    free(buffer);
+    GRT_SAFE_FREE_PTR(buffer);
 }
 
 
@@ -735,7 +735,7 @@ int syn_main(int argc, char **argv){
                     fac *= dfac;
                 }
     
-                free(arr);
+                GRT_SAFE_FREE_PTR(arr);
             } // ENDFOR 不同震源
             
             // 再次检查内存，例如爆炸源的T分量，不会进入上述for循环，导致arrout没有分配内存
@@ -767,7 +767,7 @@ int syn_main(int argc, char **argv){
                 for(int i=0; i<nt; ++i){
                     arrout[i] = convarr[i] * dt; // dt是连续卷积的系数
                 }
-                free(convarr);
+                GRT_SAFE_FREE_PTR(convarr);
             }
     
             // 处理虚频率
@@ -827,11 +827,12 @@ int syn_main(int argc, char **argv){
     }
     
 
-    free(buffer);
+    GRT_SAFE_FREE_PTR(buffer);
+    
     for(int i=0; i<3; ++i){
-        if(arrsyn[i] != NULL)  free(arrsyn[i]);
+        GRT_SAFE_FREE_PTR(arrsyn[i]);
         for(int j=0; j<3; ++j){
-            if(arrsyn_upar[i][j] != NULL)  free(arrsyn_upar[i][j]);
+            GRT_SAFE_FREE_PTR(arrsyn_upar[i][j]);
         }
     }
 

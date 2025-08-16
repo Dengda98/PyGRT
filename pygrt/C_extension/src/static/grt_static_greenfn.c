@@ -90,30 +90,30 @@ typedef struct {
 
 /** 释放结构体的内存 */
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
-    free(Ctrl->name);
+    GRT_SAFE_FREE_PTR(Ctrl->name);
 
     // M
-    free(Ctrl->M.s_modelpath);
+    GRT_SAFE_FREE_PTR(Ctrl->M.s_modelpath);
     free_pymod(Ctrl->M.pymod);
     
     // D
-    free(Ctrl->D.s_depsrc);
-    free(Ctrl->D.s_deprcv);
+    GRT_SAFE_FREE_PTR(Ctrl->D.s_depsrc);
+    GRT_SAFE_FREE_PTR(Ctrl->D.s_deprcv);
 
     // X
-    free(Ctrl->X.xs);
+    GRT_SAFE_FREE_PTR(Ctrl->X.xs);
 
     // Y
-    free(Ctrl->Y.ys);
+    GRT_SAFE_FREE_PTR(Ctrl->Y.ys);
 
-    free(Ctrl->rs);
+    GRT_SAFE_FREE_PTR(Ctrl->rs);
 
     // S
     if(Ctrl->S.active){
-        free(Ctrl->S.s_statsdir);
+        GRT_SAFE_FREE_PTR(Ctrl->S.s_statsdir);
     }
 
-    free(Ctrl);
+    GRT_SAFE_FREE_PTR(Ctrl);
 }
 
 
@@ -532,9 +532,9 @@ int static_greenfn_main(int argc, char **argv){
     }
 
     // 释放内存
-    free(grn);
-    if(grn_uiz) free(grn_uiz);
-    if(grn_uir) free(grn_uir);
+    GRT_SAFE_FREE_PTR(grn);
+    GRT_SAFE_FREE_PTR(grn_uiz);
+    GRT_SAFE_FREE_PTR(grn_uir);
 
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;

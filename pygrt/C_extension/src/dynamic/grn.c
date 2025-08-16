@@ -18,7 +18,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
-#include <omp.h>
 
 #include "dynamic/grn.h"
 #include "dynamic/propagate.h"
@@ -33,14 +32,6 @@
 #include "common/prtdbg.h"
 #include "common/search.h"
 #include "common/progressbar.h"
-
-
-
-void set_num_threads(int num_threads){
-#ifdef _OPENMP
-    omp_set_num_threads(num_threads);
-#endif
-}
 
 
 /**
@@ -74,7 +65,7 @@ static void recordin_GRN(
         }
     }
 
-    free(tmp_grn);
+    GRT_SAFE_FREE_PTR(tmp_grn);
 }
 
 
@@ -129,8 +120,7 @@ void integ_grn_spec(
 
     // PTAM的积分中间结果, 每个震中距两个文件，因为PTAM对不同震中距使用不同的dk
     // 在文件名后加后缀，区分不同震中距
-    char *ptam_fstatsdir[nr];
-    for(MYINT ir=0; ir<nr; ++ir) {ptam_fstatsdir[ir] = NULL;}
+    char **ptam_fstatsdir = (char**)calloc(nr, sizeof(char*));
     if(statsstr!=NULL && nstatsidxs > 0 && vmin_ref < RZERO){
         for(MYINT ir=0; ir<nr; ++ir){
             ptam_fstatsdir[ir] = (char*)malloc((strlen(statsstr)+200)*sizeof(char));
@@ -214,7 +204,7 @@ void integ_grn_spec(
                     ptam_fstatsnr[ir][1] = fopen(fname, "wb");
                 }
             } // end init rs loop
-            free(fname);
+            GRT_SAFE_FREE_PTR(fname);
         }
 
         
@@ -281,7 +271,7 @@ void integ_grn_spec(
                 fclose(ptam_fstatsnr[ir][1]);
             }
         }
-        free(ptam_fstatsnr);
+        GRT_SAFE_FREE_PTR(ptam_fstatsnr);
 
     #ifdef _OPENMP
         free_mod1d(local_mod1d);
@@ -296,9 +286,9 @@ void integ_grn_spec(
         
 
         // Free allocated memory for temporary variables
-        free(sum_J);
-        if(sum_uiz_J) free(sum_uiz_J);
-        if(sum_uir_J) free(sum_uir_J);
+        GRT_SAFE_FREE_PTR(sum_J);
+        GRT_SAFE_FREE_PTR(sum_uiz_J);
+        GRT_SAFE_FREE_PTR(sum_uir_J);
 
     } // END omega loop
 
@@ -306,11 +296,7 @@ void integ_grn_spec(
 
     free_mod1d(main_mod1d);
 
-    for(MYINT ir=0; ir<nr; ++ir){
-        if(ptam_fstatsdir[ir]!=NULL){
-            free(ptam_fstatsdir[ir]);
-        } 
-    }
+    GRT_SAFE_FREE_PTR_ARRAY(ptam_fstatsdir, nr);
 
     // 打印freq_invstats
     for(MYINT iw=nf1; iw<=nf2; ++iw){

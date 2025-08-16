@@ -137,7 +137,7 @@ MYREAL discrete_integ(
     // printf("w=%15.5e, ik=%d\n", creal(omega), ik);
 
     BEFORE_RETURN:
-    free(iendkrs);
+    GRT_SAFE_FREE_PTR(iendkrs);
 
     return k;
 

@@ -24,11 +24,11 @@ typedef struct {
 
 /** 释放结构体的内存 */
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
-    free(Ctrl->name);
-    free(Ctrl->s_dirpath);
-    free(Ctrl->s_prefix);
-    free(Ctrl->s_synpath);
-    free(Ctrl);
+    GRT_SAFE_FREE_PTR(Ctrl->name);
+    GRT_SAFE_FREE_PTR(Ctrl->s_dirpath);
+    GRT_SAFE_FREE_PTR(Ctrl->s_prefix);
+    GRT_SAFE_FREE_PTR(Ctrl->s_synpath);
+    GRT_SAFE_FREE_PTR(Ctrl);
 }
 
 /** 打印使用说明 */
@@ -155,8 +155,8 @@ int strain_main(int argc, char **argv){
         }
     }
 
-    if(arrin)   free(arrin);
-    if(arrout)  free(arrout);
+    GRT_SAFE_FREE_PTR(arrin);
+    GRT_SAFE_FREE_PTR(arrout);
 
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;

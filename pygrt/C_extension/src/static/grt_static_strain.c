@@ -18,8 +18,8 @@ typedef struct {
 
 /** 释放结构体的内存 */
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
-    free(Ctrl->name);
-    free(Ctrl);
+    GRT_SAFE_FREE_PTR(Ctrl->name);
+    GRT_SAFE_FREE_PTR(Ctrl);
 }
 
 /** 打印使用说明 */
@@ -123,7 +123,7 @@ int static_strain_main(int argc, char **argv){
                 ncols++;
                 token = strtok(NULL, " ");
             }
-            free(copyline);
+            GRT_SAFE_FREE_PTR(copyline);
 
             // 指示特定的通道名
             chs = (rot2ZNE)? ZNEchs : ZRTchs;
@@ -141,7 +141,7 @@ int static_strain_main(int argc, char **argv){
         for(int i=0; i<ncols; ++i){
             sscanf(token, "%lf", pt_grn[i]);  token = strtok(NULL, " ");
         }
-        free(copyline);
+        GRT_SAFE_FREE_PTR(copyline);
 
         // 计算震中距
         dist = sqrt(x0*x0 + y0*y0);

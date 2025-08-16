@@ -259,12 +259,12 @@ void PTA_method(
     }
 
     BEFORE_RETURN:
-    free(SUM3); free(SUM3_uiz); free(SUM3_uir);
-    free(sum_J); free(sum_uiz_J); free(sum_uir_J); 
+    GRT_SAFE_FREE_PTR(SUM3); GRT_SAFE_FREE_PTR(SUM3_uiz); GRT_SAFE_FREE_PTR(SUM3_uir);
+    GRT_SAFE_FREE_PTR(sum_J); GRT_SAFE_FREE_PTR(sum_uiz_J); GRT_SAFE_FREE_PTR(sum_uir_J); 
 
-    free(Kpt);  free(Fpt);  free(Ipt);  free(Gpt);
-    free(Kpt_uiz);  free(Fpt_uiz);  free(Ipt_uiz);  free(Gpt_uiz);
-    free(Kpt_uir);  free(Fpt_uir);  free(Ipt_uir);  free(Gpt_uir);
+    GRT_SAFE_FREE_PTR(Kpt);  GRT_SAFE_FREE_PTR(Fpt);  GRT_SAFE_FREE_PTR(Ipt);  GRT_SAFE_FREE_PTR(Gpt);
+    GRT_SAFE_FREE_PTR(Kpt_uiz);  GRT_SAFE_FREE_PTR(Fpt_uiz);  GRT_SAFE_FREE_PTR(Ipt_uiz);  GRT_SAFE_FREE_PTR(Gpt_uiz);
+    GRT_SAFE_FREE_PTR(Kpt_uir);  GRT_SAFE_FREE_PTR(Fpt_uir);  GRT_SAFE_FREE_PTR(Ipt_uir);  GRT_SAFE_FREE_PTR(Gpt_uir);
 
 }
 

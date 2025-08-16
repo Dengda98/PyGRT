@@ -59,8 +59,8 @@ typedef struct {
 
 /** 释放结构体的内存 */
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
-    free(Ctrl->name);
-    free(Ctrl);
+    GRT_SAFE_FREE_PTR(Ctrl->name);
+    GRT_SAFE_FREE_PTR(Ctrl);
 }
 
 /** 打印使用说明 */
@@ -365,7 +365,7 @@ int static_syn_main(int argc, char **argv){
                 ncols++;
                 token = strtok(NULL, " ");
             }
-            free(copyline);
+            GRT_SAFE_FREE_PTR(copyline);
 
             // 想合成位移空间导数但输入的格林函数没有
             if(Ctrl->e.active && ncols < max_ncol){
@@ -380,7 +380,7 @@ int static_syn_main(int argc, char **argv){
         for(int i=0; i<ncols; ++i){
             sscanf(token, "%lf", pt_grn[i]);  token = strtok(NULL, " ");
         }
-        free(copyline);
+        GRT_SAFE_FREE_PTR(copyline);
 
         // 计算方位角
         azrad = atan2(y0, x0);

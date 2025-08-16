@@ -16,14 +16,6 @@
 
 #include "common/model.h"
 
-/**
- * 设置OpenMP多线程数
- * 
- * @param[in]   num_threads        线程数
- */
-void set_num_threads(int num_threads);
-
-
 
 /**
  * 积分计算Z, R, T三个分量格林函数的频谱的核心函数（被Python调用）  

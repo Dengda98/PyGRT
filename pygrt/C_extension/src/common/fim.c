@@ -247,12 +247,12 @@ MYREAL linear_filon_integ(
 
 
     BEFORE_RETURN:
-    free(sum_J);
-    if(sum_uiz_J) free(sum_uiz_J);
-    if(sum_uir_J) free(sum_uir_J);
+    GRT_SAFE_FREE_PTR(sum_J);
+    GRT_SAFE_FREE_PTR(sum_uiz_J);
+    GRT_SAFE_FREE_PTR(sum_uir_J);
 
 
-    free(iendkrs);
+    GRT_SAFE_FREE_PTR(iendkrs);
 
     return k;
 }
