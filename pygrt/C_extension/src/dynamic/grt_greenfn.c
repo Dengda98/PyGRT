@@ -988,8 +988,8 @@ int greenfn_main(int argc, char **argv) {
         for(int i=0; i<SRC_M_NUM; ++i){
             for(int c=0; c<CHANNEL_NUM; ++c){
                 GRT_SAFE_FREE_PTR(grn[ir][i][c]);
-                GRT_SAFE_FREE_PTR(grn_uiz[ir][i][c]);
-                GRT_SAFE_FREE_PTR(grn_uir[ir][i][c]);
+                if(grn_uiz) GRT_SAFE_FREE_PTR(grn_uiz[ir][i][c]);
+                if(grn_uir) GRT_SAFE_FREE_PTR(grn_uir[ir][i][c]);
             }
         }
     }
