@@ -23,9 +23,9 @@ typedef struct {
 
 /** 释放结构体的内存 */
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
-    free(Ctrl->name);
-    free(Ctrl->s_filepath);
-    free(Ctrl);
+    GRT_SAFE_FREE_PTR(Ctrl->name);
+    GRT_SAFE_FREE_PTR(Ctrl->s_filepath);
+    GRT_SAFE_FREE_PTR(Ctrl);
 }
 
 /** 打印使用说明 */
@@ -83,7 +83,7 @@ int b2a_main(int argc, char **argv){
         printf("%13.7e  %13.7e\n", begt+dt*i, arr[i]);
     }
 
-    free(arr);
+    GRT_SAFE_FREE_PTR(arr);
 
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;

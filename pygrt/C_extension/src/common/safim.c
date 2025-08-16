@@ -434,11 +434,11 @@ MYREAL sa_filon_integ(
 
 
     BEFORE_RETURN:
-    free(stack.data);
+    GRT_SAFE_FREE_PTR(stack.data);
 
-    free(sum_J);
-    if(sum_uiz_J) free(sum_uiz_J);
-    if(sum_uir_J) free(sum_uir_J);
+    GRT_SAFE_FREE_PTR(sum_J);
+    GRT_SAFE_FREE_PTR(sum_uiz_J);
+    GRT_SAFE_FREE_PTR(sum_uir_J);
 
 
     return Kitv.k3[2]; // 最后k值

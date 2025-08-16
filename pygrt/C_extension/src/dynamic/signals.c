@@ -125,14 +125,14 @@ void linear_convolve_time_function(float *arr, int nt, float dt, const char tfty
     for(int i=0; i<nt; ++i){
         arr[i] = yarr[i] * dt; // dt为卷积的系数
     }
-    free(yarr);
+    GRT_SAFE_FREE_PTR(yarr);
 
 
     if(TFarr!=NULL || TFnt!=NULL){
         if(TFarr!=NULL) *TFarr = tfarr;
         if(TFnt!=NULL)  *TFnt  = tfnt;
     } else {
-        free(tfarr);
+        GRT_SAFE_FREE_PTR(tfarr);
     }   
 
 }
@@ -356,5 +356,5 @@ float * get_custom_wave(int *Nt, const char *tfparams){
 
 
 void free1d(void *pt){
-    free(pt);
+    GRT_SAFE_FREE_PTR(pt);
 }

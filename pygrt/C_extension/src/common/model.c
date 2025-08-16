@@ -103,13 +103,13 @@ void print_pymod(const PYMODEL1D *pymod){
 }
 
 void free_pymod(PYMODEL1D *pymod){
-    free(pymod->Thk);
-    free(pymod->Va);
-    free(pymod->Vb);
-    free(pymod->Rho);
-    free(pymod->Qa);
-    free(pymod->Qb);
-    free(pymod);
+    GRT_SAFE_FREE_PTR(pymod->Thk);
+    GRT_SAFE_FREE_PTR(pymod->Va);
+    GRT_SAFE_FREE_PTR(pymod->Vb);
+    GRT_SAFE_FREE_PTR(pymod->Rho);
+    GRT_SAFE_FREE_PTR(pymod->Qa);
+    GRT_SAFE_FREE_PTR(pymod->Qb);
+    GRT_SAFE_FREE_PTR(pymod);
 }
 
 
@@ -196,8 +196,8 @@ void copy_mod1d(const MODEL1D *mod1d1, MODEL1D *mod1d2){
 
 
 void free_mod1d(MODEL1D *mod1d){
-    free(mod1d->lays);
-    free(mod1d);
+    GRT_SAFE_FREE_PTR(mod1d->lays);
+    GRT_SAFE_FREE_PTR(mod1d);
 }
 
 
@@ -420,7 +420,7 @@ PYMODEL1D * read_pymod_from_file(const char *command, const char *modelpath, dou
     }
 
     fclose(fp);
-    free(modarr);
+    GRT_SAFE_FREE_PTR(modarr);
     
     return pymod;
 }

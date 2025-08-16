@@ -42,18 +42,15 @@ typedef struct {
 
 /** 释放结构体的内存 */
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
-    free(Ctrl->name);
-    free(Ctrl->M.s_modelpath);
-    free(Ctrl->D.s_depsrc);
-    free(Ctrl->D.s_deprcv);
+    GRT_SAFE_FREE_PTR(Ctrl->name);
+    GRT_SAFE_FREE_PTR(Ctrl->M.s_modelpath);
+    GRT_SAFE_FREE_PTR(Ctrl->D.s_depsrc);
+    GRT_SAFE_FREE_PTR(Ctrl->D.s_deprcv);
 
-    free(Ctrl->R.rs);
-    for(MYINT ir=0; ir<Ctrl->R.nr; ++ir){
-        free(Ctrl->R.s_rs[ir]);
-    }
-    free(Ctrl->R.s_rs);
+    GRT_SAFE_FREE_PTR(Ctrl->R.rs);
+    GRT_SAFE_FREE_PTR_ARRAY(Ctrl->R.s_rs, Ctrl->R.nr);
 
-    free(Ctrl);
+    GRT_SAFE_FREE_PTR(Ctrl);
 }
 
 
@@ -77,7 +74,7 @@ MYREAL compute_travt1d(
     // 直接返回默认值
     for(int i = imin; i <= imax; ++i){
         if(Vel0[i] == 0.0){
-            free(Vel);
+            GRT_SAFE_FREE_PTR(Vel);
             return -12345.00;
         }
     }

@@ -7,6 +7,7 @@
  */
 
 #include "common/const.h"
+#include <omp.h>
 
 
 /** 分别对应爆炸源(0阶)，垂直力源(0阶)，水平力源(1阶)，剪切源(0,1,2阶) */ 
@@ -26,3 +27,11 @@ const char ZRTchs[] = {'Z', 'R', 'T'};
 
 /** ZNE三分量代号 */
 const char ZNEchs[] = {'Z', 'N', 'E'};
+
+
+
+void set_num_threads(int num_threads){
+#ifdef _OPENMP
+    omp_set_num_threads(num_threads);
+#endif
+}

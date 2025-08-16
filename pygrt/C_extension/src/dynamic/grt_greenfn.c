@@ -10,7 +10,6 @@
 
 #include <complex.h>
 #include <fftw3.h>
-#include <omp.h>
 
 #include "dynamic/grn.h"
 #include "dynamic/signals.h"
@@ -150,42 +149,36 @@ typedef struct {
 
 /** 释放结构体的内存 */
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
-    free(Ctrl->name);
+    GRT_SAFE_FREE_PTR(Ctrl->name);
 
     // M
-    free(Ctrl->M.s_modelpath);
+    GRT_SAFE_FREE_PTR(Ctrl->M.s_modelpath);
     free_pymod(Ctrl->M.pymod);
     
     // D
-    free(Ctrl->D.s_depsrc);
-    free(Ctrl->D.s_deprcv);
+    GRT_SAFE_FREE_PTR(Ctrl->D.s_depsrc);
+    GRT_SAFE_FREE_PTR(Ctrl->D.s_deprcv);
 
     // N
-    free(Ctrl->N.freqs);
+    GRT_SAFE_FREE_PTR(Ctrl->N.freqs);
 
     // O
-    free(Ctrl->O.s_output_dir);
+    GRT_SAFE_FREE_PTR(Ctrl->O.s_output_dir);
 
     // R
-    free(Ctrl->R.s_raw);
-    for(int ir=0; ir<Ctrl->R.nr; ++ir){
-        free(Ctrl->R.s_rs[ir]);
-    }
-    free(Ctrl->R.s_rs);
-    free(Ctrl->R.rs);
+    GRT_SAFE_FREE_PTR_ARRAY(Ctrl->R.s_rs, Ctrl->R.nr);
+    GRT_SAFE_FREE_PTR(Ctrl->R.s_raw);
+    GRT_SAFE_FREE_PTR(Ctrl->R.rs);
 
     // S
     if(Ctrl->S.active){
-        free(Ctrl->S.s_raw);
-        for(int i=0; i<Ctrl->S.nstatsidxs; ++i){
-            free(Ctrl->S.s_statsidxs[i]);
-        }
-        free(Ctrl->S.s_statsidxs);
-        free(Ctrl->S.statsidxs);
-        free(Ctrl->S.s_statsdir);
+        GRT_SAFE_FREE_PTR(Ctrl->S.s_raw);
+        GRT_SAFE_FREE_PTR_ARRAY(Ctrl->S.s_statsidxs, Ctrl->S.nstatsidxs);
+        GRT_SAFE_FREE_PTR(Ctrl->S.statsidxs);
+        GRT_SAFE_FREE_PTR(Ctrl->S.s_statsdir);
     }
 
-    free(Ctrl);
+    GRT_SAFE_FREE_PTR(Ctrl);
 }
 
 
@@ -663,7 +656,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     }
     fprintf(fp, "\n");
     fclose(fp);
-    free(dummy);
+    GRT_SAFE_FREE_PTR(dummy);
 }
 
 
@@ -964,7 +957,7 @@ int greenfn_main(int argc, char **argv) {
                     write_one_to_sac(Ctrl, SRC_M_NAME_ABBR[im], ZRTchs[c], delayT, &hd, s_outpath, s_output_subdir, "r", sgn, grn_uir[ir][im][c], fftw_grn, out, float_arr, plan);
                 }
 
-                free(s_outpath);
+                GRT_SAFE_FREE_PTR(s_outpath);
             }
         }
 
@@ -973,7 +966,7 @@ int greenfn_main(int argc, char **argv) {
             printf(" %-15s  %-15.3f  %-15.3f\n", Ctrl->R.s_rs[ir], hd.t0, hd.t1);
         }
 
-        free(s_output_subdir);
+        GRT_SAFE_FREE_PTR(s_output_subdir);
     } // End distances loop
 
     if( ! Ctrl->s.active){
@@ -994,19 +987,19 @@ int greenfn_main(int argc, char **argv) {
     for(int ir=0; ir<Ctrl->R.nr; ++ir){
         for(int i=0; i<SRC_M_NUM; ++i){
             for(int c=0; c<CHANNEL_NUM; ++c){
-                free(grn[ir][i][c]);
-                if(grn_uiz)  free(grn_uiz[ir][i][c]);
-                if(grn_uir)  free(grn_uir[ir][i][c]);
+                GRT_SAFE_FREE_PTR(grn[ir][i][c]);
+                GRT_SAFE_FREE_PTR(grn_uiz[ir][i][c]);
+                GRT_SAFE_FREE_PTR(grn_uir[ir][i][c]);
             }
         }
     }
-    free(grn);
-    if(grn_uiz)  free(grn_uiz);
-    if(grn_uir)  free(grn_uir);
+    GRT_SAFE_FREE_PTR(grn);
+    GRT_SAFE_FREE_PTR(grn_uiz);
+    GRT_SAFE_FREE_PTR(grn_uir);
 
     _FFTW_FREE(fftw_grn);
-    free(out);
-    free(float_arr);
+    GRT_SAFE_FREE_PTR(out);
+    GRT_SAFE_FREE_PTR(float_arr);
     _FFTW_DESTROY_PLAN(plan);
 
     free_Ctrl(Ctrl);

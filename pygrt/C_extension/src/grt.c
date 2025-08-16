@@ -36,8 +36,8 @@ typedef struct {
 
 /** 释放结构体的内存 */
 static void free_Ctrl(GRT_MAIN_CTRL *Ctrl){
-    free(Ctrl->name);
-    free(Ctrl);
+    GRT_SAFE_FREE_PTR(Ctrl->name);
+    GRT_SAFE_FREE_PTR(Ctrl);
 }
 
 /** 打印使用说明 */
@@ -121,8 +121,8 @@ int dispatch_command(GRT_MAIN_CTRL *Ctrl, int argc, char **argv) {
         GRTRaiseError("[%s] Error! Unknown module %s. Use \"-h\" for help.\n", Ctrl->name, entry_name);
     }
 
-    if(is_single_static)  free(argv[2]);
-    free(entry_name);
+    if(is_single_static)  GRT_SAFE_FREE_PTR(argv[2]);
+    GRT_SAFE_FREE_PTR(entry_name);
     return return_code;
 }
 

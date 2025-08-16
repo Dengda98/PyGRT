@@ -27,11 +27,11 @@ typedef struct {
 
 /** 释放结构体的内存 */
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
-    free(Ctrl->name);
-    free(Ctrl->s_dirpath);
-    free(Ctrl->s_prefix);
-    free(Ctrl->s_synpath);
-    free(Ctrl);
+    GRT_SAFE_FREE_PTR(Ctrl->name);
+    GRT_SAFE_FREE_PTR(Ctrl->s_dirpath);
+    GRT_SAFE_FREE_PTR(Ctrl->s_prefix);
+    GRT_SAFE_FREE_PTR(Ctrl->s_synpath);
+    GRT_SAFE_FREE_PTR(Ctrl);
 }
 
 
@@ -245,14 +245,14 @@ int stress_main(int argc, char **argv){
     }
 
 
-    if(arrin)  free(arrin);
-    if(arrout)  free(arrout);
+    GRT_SAFE_FREE_PTR(arrin);
+    GRT_SAFE_FREE_PTR(arrout);
 
-    if(lam_ukk)  fftwf_free(lam_ukk);
-    if(lams)  fftwf_free(lams);
-    if(mus)   fftwf_free(mus);
-    if(carrin)  fftwf_free(carrin);
-    if(carrout)  fftwf_free(carrout);
+    GRT_SAFE_FFTWF_FREE_PTR(lam_ukk);
+    GRT_SAFE_FFTWF_FREE_PTR(lams);
+    GRT_SAFE_FFTWF_FREE_PTR(mus);
+    GRT_SAFE_FFTWF_FREE_PTR(carrin);
+    GRT_SAFE_FFTWF_FREE_PTR(carrout);
 
     fftwf_destroy_plan(plan);
     fftwf_destroy_plan(plan_inv);

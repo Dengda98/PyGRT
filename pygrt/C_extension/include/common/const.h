@@ -98,6 +98,33 @@ typedef int MYINT;  ///< 整数
 
 #define GRT_SQUARE(x) ((x) * (x))  ///< 计算一个数的平方
 
+// 内存管理
+// 释放单个指针
+#define GRT_SAFE_FREE_PTR(ptr) ({\
+    if(ptr!=NULL) {\
+        free(ptr);\
+    }\
+})
+#define GRT_SAFE_FFTW_FREE_PTR(ptr) ({\
+    if(ptr!=NULL) {\
+        fftw_free(ptr);\
+    }\
+})
+#define GRT_SAFE_FFTWF_FREE_PTR(ptr) ({\
+    if(ptr!=NULL) {\
+        fftwf_free(ptr);\
+    }\
+})
+// 释放指针数组
+#define GRT_SAFE_FREE_PTR_ARRAY(ptr, count) ({\
+    if(ptr!=NULL){\
+        for(MYINT i=0; i<count; ++i){\
+            GRT_SAFE_FREE_PTR(ptr[i]);\
+        }\
+        GRT_SAFE_FREE_PTR(ptr);\
+    }\
+})
+
 // -----------------------------------------------------------------------------
 #define CHANNEL_NUM    3     ///< 3, 代码中分量个数（ZRT，ZNE）
 
@@ -144,3 +171,10 @@ extern const char ZRTchs[];
 /** ZNE三分量代号 */
 extern const char ZNEchs[];
 
+
+/**
+ * 设置OpenMP多线程数
+ * 
+ * @param[in]   num_threads        线程数
+ */
+void set_num_threads(int num_threads);
