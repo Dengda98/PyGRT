@@ -66,6 +66,7 @@ class c_PyModel1D(Structure):
     :field isrc:     震源所在层位
     :field ircv:     台站所在层位
     :field ircvup:   台站层位是否高于震源 
+    :field io_depth: 模型读入的第一列是否为每层顶界面深度
     :field thk:      数组, 每层层厚(km)
     :field Va:       数组, 每层P波速度(km/s)
     :field Vb:       数组, 每层S波速度(km/s)
@@ -81,6 +82,7 @@ class c_PyModel1D(Structure):
         ('isrc', c_int),
         ('ircv', c_int),
         ('ircvup', c_bool),
+        ('io_depth', c_bool),
 
         ('Thk', PREAL),
         ('Va', PREAL),
