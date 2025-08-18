@@ -49,6 +49,7 @@ typedef struct _PYMODEL1D {
     MYINT isrc; ///< 震源所在虚拟层位, isrc>=1
     MYINT ircv; ///< 接收点所在虚拟层位, ircv>=1, ircv != isrc
     bool ircvup; ///< 接收点位于浅层, ircv < isrc
+    bool io_depth; ///< 读取的模型首列为每层顶界面深度
 
     MYREAL *Thk; ///< Thk[n], 最后一层厚度不使用(当作正无穷), km
     MYREAL *Va;  ///< Va[n]   P波速度  km/s

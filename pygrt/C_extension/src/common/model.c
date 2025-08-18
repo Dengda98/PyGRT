@@ -148,8 +148,8 @@ void get_mod1d(const PYMODEL1D *pymod1d, MODEL1D *mod1d){
         lay->Va  = pymod1d->Va[i];
         lay->Vb  = pymod1d->Vb[i];
         lay->Rho = pymod1d->Rho[i];
-        lay->Qainv  = RONE/pymod1d->Qa[i];
-        lay->Qbinv  = RONE/pymod1d->Qb[i];
+        lay->Qainv  = (pymod1d->Qa[i] > 0.0)? RONE/pymod1d->Qa[i] : 0.0;
+        lay->Qbinv  = (pymod1d->Qb[i] > 0.0)? RONE/pymod1d->Qb[i] : 0.0;
 
         lay->mu = (lay->Vb)*(lay->Vb)*(lay->Rho);
         lay->lambda = (lay->Va)*(lay->Va)*(lay->Rho) - RTWO*lay->mu;
@@ -232,15 +232,15 @@ void update_mod1d_omega(MODEL1D *mod1d, MYCOMPLEX omega){
 
 
 PYMODEL1D * init_pymod(MYINT n){
-    PYMODEL1D *pymod = (PYMODEL1D *)malloc(sizeof(PYMODEL1D));
+    PYMODEL1D *pymod = (PYMODEL1D *)calloc(1, sizeof(PYMODEL1D));
     pymod->n = n;
     
-    pymod->Thk = (MYREAL*)malloc(sizeof(MYREAL)*n);
-    pymod->Va = (MYREAL*)malloc(sizeof(MYREAL)*n);
-    pymod->Vb = (MYREAL*)malloc(sizeof(MYREAL)*n);
-    pymod->Rho = (MYREAL*)malloc(sizeof(MYREAL)*n);
-    pymod->Qa = (MYREAL*)malloc(sizeof(MYREAL)*n);
-    pymod->Qb = (MYREAL*)malloc(sizeof(MYREAL)*n);
+    pymod->Thk = (MYREAL*)calloc(n, sizeof(MYREAL));
+    pymod->Va = (MYREAL*)calloc(n, sizeof(MYREAL));
+    pymod->Vb = (MYREAL*)calloc(n, sizeof(MYREAL));
+    pymod->Rho = (MYREAL*)calloc(n, sizeof(MYREAL));
+    pymod->Qa = (MYREAL*)calloc(n, sizeof(MYREAL));
+    pymod->Qb = (MYREAL*)calloc(n, sizeof(MYREAL));
 
     return pymod;
 }
@@ -283,13 +283,15 @@ PYMODEL1D * read_pymod_from_file(const char *command, const char *modelpath, dou
     // 初始化
     PYMODEL1D *pymod = init_pymod(1);
 
-    const int ncols = 6; // 模型文件有6列
+    const int ncols = 6; // 模型文件有6列，或除去qa qb有四列
+    const int ncols_noQ = 4;
     char line[1024];
     int iline = 0;
     double h, va, vb, rho, qa, qb;
     double (*modarr)[ncols] = NULL;
-    h = va = vb = rho = qa = qb = -9.0;
+    h = va = vb = rho = qa = qb = 0.0;
     int nlay = 0;
+    pymod->io_depth = false;
 
     while(fgets(line, sizeof(line), fp)) {
         iline++;
@@ -297,13 +299,19 @@ PYMODEL1D * read_pymod_from_file(const char *command, const char *modelpath, dou
         // 注释行
         if(line[0]=='#')  continue;
 
-        h = va = vb = rho = qa = qb = -9.0;
-        if(ncols != sscanf(line, "%lf %lf %lf %lf %lf %lf\n", &h, &va, &vb, &rho, &qa, &qb)){
+        h = va = vb = rho = qa = qb = 0.0;
+        MYINT nscan = sscanf(line, "%lf %lf %lf %lf %lf %lf\n", &h, &va, &vb, &rho, &qa, &qb);
+        if(ncols != nscan && ncols_noQ != nscan){
             fprintf(stderr, "[%s] " BOLD_RED "Model file read error in line %d.\n" DEFAULT_RESTORE, command, iline);
             return NULL;
         };
 
-        if(va <= 0.0 || rho <= 0.0 || qa <= 0.0 || qb <= 0.0){
+        // 读取首行，如果首行首列为 0 ，则首列指示每层顶界面深度而非厚度
+        if(nlay == 0 && h == 0.0){
+            pymod->io_depth = true;
+        }
+
+        if(va <= 0.0 || rho <= 0.0 || (ncols == nscan && (qa <= 0.0 || qb <= 0.0))){
             fprintf(stderr, "[%s] " BOLD_RED "In model file, line %d, nonpositive value is not supported.\n" DEFAULT_RESTORE, command, iline);
             return NULL;
         }
@@ -335,9 +343,15 @@ PYMODEL1D * read_pymod_from_file(const char *command, const char *modelpath, dou
         return NULL;
     }
 
+    // 如果读取了深度，转为厚度
+    if(pymod->io_depth){
+        for(int i=1; i<nlay; ++i){
+            modarr[i-1][0] = modarr[i][0] - modarr[i-1][0];
+        }
+    }
 
     // 对最后一层的厚度做特殊处理
-    modarr[nlay-1][0] = depmax + 100.0; // 保证够厚即可，用于下面定义虚拟层，实际计算不会用到最后一层厚度
+    modarr[nlay-1][0] = depmax + 1e30; // 保证够厚即可，用于下面定义虚拟层，实际计算不会用到最后一层厚度
     
     int nlay0 = nlay;
     nlay = 0;
