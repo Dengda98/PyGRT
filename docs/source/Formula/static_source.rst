@@ -81,7 +81,7 @@
     \\
     \mathbf{P}_m &= \mathbf{e}_z J_m(kr)e^{im\theta}
 
-将 :eq:`u_pot3` 式和 :eq:`pot3` 式代入 :eq:`u_qwv` 式，得到系数 :math:`q_m, v_m, w_m` 和势函数之间的关系，
+将 :eq:`u_pot3` 式和 :eq:`pot3` 式代入 :eq:`u_qwv` 式，得到系数 :math:`q_m, v_m, w_m` 和垂直波函数之间的关系，
 
 .. math:: 
     :label: qwv_pot
@@ -93,7 +93,7 @@
     v_m &= \chi_m 
     \\
 
-其中三个势函数均吸收了 :math:`k` 因子，即 :math:`\phi_m \leftarrow k\phi_m, \psi_m \leftarrow k\psi_m, \chi_m \leftarrow k\chi_m` ，这会体现在后续的震源系数中。
+其中三个垂直波函数均吸收了 :math:`k` 因子，即 :math:`\phi_m \leftarrow k\phi_m, \psi_m \leftarrow k\psi_m, \chi_m \leftarrow k\chi_m` ，这会体现在后续的震源系数中。
 
 为了求解震源系数，需将 :doc:`static_uniform` 部分的最终表达式展开成 :eq:`u_qwv` 的形式，对应的垂直波函数的系数 :math:`(B_m, D_m, F_m)` 即为震源系数。具体而言，我们可将位移同一分量的不同表达式进行对比得到震源系数。将 :eq:`qwv_pot` 式代入 :eq:`u_qwv` 式，柱坐标系下的位移三分量表达式为
 
