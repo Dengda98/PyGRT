@@ -18,22 +18,19 @@
 #include "common/prtdbg.h"
 
 
-
-
-void source_coef(
+void source_coef_PSV(
     MYCOMPLEX src_xa, MYCOMPLEX src_xb, MYCOMPLEX src_kaka, MYCOMPLEX src_kbkb, 
     MYREAL k,
-    MYCOMPLEX coef[SRC_M_NUM][QWV_NUM][2])
+    MYCOMPLEX coef[SRC_M_NUM][QWV_NUM-1][2])
 {
     // 先全部赋0 
     for(MYINT i=0; i<SRC_M_NUM; ++i){
-        for(MYINT j=0; j<QWV_NUM; ++j){
+        for(MYINT j=0; j<QWV_NUM-1; ++j){
             for(MYINT p=0; p<2; ++p){
                 coef[i][j][p] = CZERO;
             }
         }
     }
-
 
     MYCOMPLEX a = k*src_xa;
     MYCOMPLEX b = k*src_xb;
@@ -53,7 +50,6 @@ void source_coef(
     // 方向性因子包含水平力方向与震源台站连线方向的夹角
     coef[2][0][0] = tmp = -k / a;              coef[2][0][1] = tmp;
     coef[2][1][0] = tmp = -RONE;               coef[2][1][1] = - tmp;
-    coef[2][2][0] = tmp = src_kbkb / k / b;    coef[2][2][1] = tmp;
 
     // 剪切位错 (4.8.34)
     // m=0
@@ -62,13 +58,41 @@ void source_coef(
     // m=1
     coef[4][0][0] = tmp = RTWO*k;                      coef[4][0][1] = - tmp;
     coef[4][1][0] = tmp = (RTWO*kk - src_kbkb) / b;    coef[4][1][1] = tmp;
-    coef[4][2][0] = tmp = - src_kbkb / k;              coef[4][2][1] = - tmp;
 
     // m=2
     coef[5][0][0] = tmp = - kk / a;                    coef[5][0][1] = tmp;
     coef[5][1][0] = tmp = - k;                         coef[5][1][1] = - tmp;
-    coef[5][2][0] = tmp = src_kbkb / b;                coef[5][2][1] = tmp;
 
+}
+
+
+void source_coef_SH(
+    MYCOMPLEX src_xb, MYCOMPLEX src_kbkb, 
+    MYREAL k,
+    MYCOMPLEX coef[SRC_M_NUM][2])
+{
+    // 先全部赋0 
+    for(MYINT i=0; i<SRC_M_NUM; ++i){
+        for(MYINT p=0; p<2; ++p){
+            coef[i][p] = CZERO;
+        }
+    }
+
+
+    MYCOMPLEX b = k*src_xb;
+    MYCOMPLEX tmp;
+    
+    // 水平力源 (4.6.21,26), 这里可以把x1,x2方向的力转到r,theta方向
+    // 推导可发现，r方向的力形成P,SV波, theta方向的力形成SH波
+    // 方向性因子包含水平力方向与震源台站连线方向的夹角
+    coef[2][0] = tmp = src_kbkb / k / b;    coef[2][1] = tmp;
+
+    // 剪切位错 (4.8.34)
+    // m=1
+    coef[4][0] = tmp = - src_kbkb / k;              coef[4][1] = - tmp;
+
+    // m=2
+    coef[5][0] = tmp = src_kbkb / b;                coef[5][1] = tmp;
 
 }
 
