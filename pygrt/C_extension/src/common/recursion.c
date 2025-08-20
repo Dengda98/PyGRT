@@ -380,19 +380,20 @@ void get_qwv(
     bool ircvup, 
     const MYCOMPLEX R1[2][2], MYCOMPLEX RL1, 
     const MYCOMPLEX R2[2][2], MYCOMPLEX RL2, 
-    const MYCOMPLEX coef[QWV_NUM][2], MYCOMPLEX qwv[QWV_NUM])
+    const MYCOMPLEX coef_PSV[QWV_NUM-1][2], const MYCOMPLEX coef_SH[2], 
+    MYCOMPLEX qwv[QWV_NUM])
 {
     MYCOMPLEX qw0[2], qw1[2], v0;
-    MYCOMPLEX coefD[2] = {coef[0][0], coef[1][0]};
-    MYCOMPLEX coefU[2] = {coef[0][1], coef[1][1]};
+    MYCOMPLEX coefD[2] = {coef_PSV[0][0], coef_PSV[1][0]};
+    MYCOMPLEX coefU[2] = {coef_PSV[0][1], coef_PSV[1][1]};
     if(ircvup){
         cmat2x1_mul(R2, coefD, qw0);
         qw0[0] += coefU[0]; qw0[1] += coefU[1]; 
-        v0 = RL1 * (RL2*coef[2][0] + coef[2][1]);
+        v0 = RL1 * (RL2*coef_SH[0] + coef_SH[1]);
     } else {
         cmat2x1_mul(R2, coefU, qw0);
         qw0[0] += coefD[0]; qw0[1] += coefD[1]; 
-        v0 = RL1 * (coef[2][0] + RL2*coef[2][1]);
+        v0 = RL1 * (coef_SH[0] + RL2*coef_SH[1]);
     }
     cmat2x1_mul(R1, qw0, qw1);
 

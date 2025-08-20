@@ -18,7 +18,7 @@
 /**
  * 根据公式(4.6.6)，(4.6.15)，(4.6.21,26)，(4.8.34)计算不同震源不同阶数的震源系数，
  * 数组形状代表在[i][j][p]时表示i类震源的
- * P(j=0),SV(j=1),SH(j=2)的震源系数(分别对应q,w,v)，且分为下行波(p=0)和上行波(p=1). 
+ * P(j=0),SV(j=1)的震源系数(分别对应q,w)，且分为下行波(p=0)和上行波(p=1). 
  * 
  * @param[in]     src_xa       震源层的P波归一化垂直波数 \f$ \sqrt{1 - (k_a/k)^2} \f$
  * @param[in]     src_xb       震源层的S波归一化垂直波数 \f$ \sqrt{1 - (k_b/k)^2} \f$
@@ -28,7 +28,13 @@
  * @param[out]    coef         震源系数 \f$ P_m, SV_m, SH_m \f$
  * 
  */
-void source_coef(
+void source_coef_PSV(
     MYCOMPLEX src_xa, MYCOMPLEX src_xb, MYCOMPLEX src_kaka, MYCOMPLEX src_kbkb, 
     MYREAL k,
-    MYCOMPLEX coef[SRC_M_NUM][QWV_NUM][2]);
+    MYCOMPLEX coef[SRC_M_NUM][QWV_NUM-1][2]);
+
+/* SH 波的震源系数，参数见 source_coef_PSV  */
+void source_coef_SH(
+    MYCOMPLEX src_xb, MYCOMPLEX src_kbkb, 
+    MYREAL k,
+    MYCOMPLEX coef[SRC_M_NUM][2]);

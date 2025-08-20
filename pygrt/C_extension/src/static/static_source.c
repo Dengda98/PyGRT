@@ -16,13 +16,11 @@
 #include "static/static_source.h"
 #include "common/const.h"
 
-
-void static_source_coef(
-    MYCOMPLEX delta, MYREAL k, MYCOMPLEX coef[SRC_M_NUM][QWV_NUM][2])
+void static_source_coef_PSV(MYCOMPLEX delta, MYREAL k, MYCOMPLEX coef[SRC_M_NUM][QWV_NUM-1][2])
 {
     // 先全部赋0 
     for(MYINT i=0; i<SRC_M_NUM; ++i){
-        for(MYINT j=0; j<QWV_NUM; ++j){
+        for(MYINT j=0; j<QWV_NUM-1; ++j){
             for(MYINT p=0; p<2; ++p){
                 coef[i][j][p] = CZERO;
             }
@@ -42,7 +40,6 @@ void static_source_coef(
     // 水平力源
     coef[2][0][0] = tmp = RONE/(RTWO*A*k);        coef[2][0][1] = tmp;   
     coef[2][1][0] = - tmp;                        coef[2][1][1] = - tmp;
-    coef[2][2][0] = tmp = -RONE/k;                coef[2][2][1] = tmp;
 
     // 剪切位错
     // m=0
@@ -51,11 +48,31 @@ void static_source_coef(
     // m=1
     coef[4][0][0] = tmp = -delta/A;                        coef[4][0][1] = -tmp;
     coef[4][1][0] = tmp = RONE/A;                          coef[4][1][1] = -tmp;
-    coef[4][2][0] = tmp = RONE;                            coef[4][2][1] = -tmp;
     // m=2
     coef[5][0][0] = tmp = RONE/(RTWO*A);                   coef[5][0][1] = tmp;
     coef[5][1][0] = tmp = -RONE/(RTWO*A);                  coef[5][1][1] = tmp;
-    coef[5][2][0] = tmp = -RONE;                           coef[5][2][1] = tmp;
+}
+
+
+void static_source_coef_SH(MYREAL k, MYCOMPLEX coef[SRC_M_NUM][2])
+{
+    // 先全部赋0 
+    for(MYINT i=0; i<SRC_M_NUM; ++i){
+        for(MYINT p=0; p<2; ++p){
+            coef[i][p] = CZERO;
+        }
+    }
+
+    MYCOMPLEX tmp;
+
+    // 水平力源
+    coef[2][0] = tmp = -RONE/k;                coef[2][1] = tmp;
+
+    // 剪切位错
+    // m=1
+    coef[4][0] = tmp = RONE;                            coef[4][1] = -tmp;
+    // m=2
+    coef[5][0] = tmp = -RONE;                           coef[5][1] = tmp;
 }
 
 

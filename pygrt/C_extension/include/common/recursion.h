@@ -354,11 +354,13 @@ void recursion_RT_SH_imaginary(
  * @param[in]     RL1           SH波，  \f$ R_1\f$
  * @param[in]     R2            P-SV波，\f$\mathbf{R_2}\f$矩阵
  * @param[in]     RL2           SH波，  \f$ R_2\f$
- * @param[in]     coef          震源系数，\f$ P_m, SV_m, SH_m \f$ ，维度2表示下行波(p=0)和上行波(p=1)
+ * @param[in]     coef_PSV      P-SV 波震源系数，\f$ P_m, SV_m\f$ ，维度2表示下行波(p=0)和上行波(p=1)
+ * @param[in]     coef_SH       SH 波震源系数，\f$ SH_m \f$ ，维度2表示下行波(p=0)和上行波(p=1)
  * @param[out]    qwv           最终通过矩阵传播计算出的在台站位置的\f$ q_m,w_m,v_m\f$
  */
 void get_qwv(
     bool ircvup, 
     const MYCOMPLEX R1[2][2], MYCOMPLEX RL1, 
     const MYCOMPLEX R2[2][2], MYCOMPLEX RL2, 
-    const MYCOMPLEX coef[QWV_NUM][2], MYCOMPLEX qwv[QWV_NUM]);
+    const MYCOMPLEX coef_PSV[QWV_NUM-1][2], const MYCOMPLEX coef_SH[2], 
+    MYCOMPLEX qwv[QWV_NUM]);

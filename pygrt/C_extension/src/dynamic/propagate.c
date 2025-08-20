@@ -273,8 +273,10 @@ void kernel(
 
 
     // 计算震源系数
-    MYCOMPLEX src_coef[SRC_M_NUM][QWV_NUM][2] = {0};
-    source_coef(src_xa, src_xb, src_kaka, src_kbkb, k, src_coef);
+    MYCOMPLEX src_coef_PSV[SRC_M_NUM][QWV_NUM-1][2] = {0};
+    MYCOMPLEX src_coef_SH[SRC_M_NUM][2] = {0};
+    source_coef_PSV(src_xa, src_xb, src_kaka, src_kbkb, k, src_coef_PSV);
+    source_coef_SH(src_xb, src_kbkb, k, src_coef_SH);
 
     // 临时中转矩阵 (temperary)
     MYCOMPLEX tmpR2[2][2], tmp2x2[2][2], tmpRL, tmp2x2_uiz[2][2], tmpRL2;
@@ -357,7 +359,7 @@ void kernel(
         tmpRL2 = R_EVL * tmpRL;
 
         for(MYINT i=0; i<SRC_M_NUM; ++i){
-            get_qwv(ircvup, tmp2x2, tmpRL2, RD_BL, RDL_BL, src_coef[i], QWV[i]);
+            get_qwv(ircvup, tmp2x2, tmpRL2, RD_BL, RDL_BL, src_coef_PSV[i], src_coef_SH[i], QWV[i]);
         }
 
 
@@ -368,7 +370,7 @@ void kernel(
             tmpRL2 = uiz_R_EVL * tmpRL;
 
             for(MYINT i=0; i<SRC_M_NUM; ++i){
-                get_qwv(ircvup, tmp2x2_uiz, tmpRL2, RD_BL, RDL_BL, src_coef[i], QWV_uiz[i]);
+                get_qwv(ircvup, tmp2x2_uiz, tmpRL2, RD_BL, RDL_BL, src_coef_PSV[i], src_coef_SH[i], QWV_uiz[i]);
             }    
         }
     } 
@@ -402,7 +404,7 @@ void kernel(
         tmpRL2 = R_EVL * tmpRL;
 
         for(MYINT i=0; i<SRC_M_NUM; ++i){
-            get_qwv(ircvup, tmp2x2, tmpRL2, RU_FA, RUL_FA, src_coef[i], QWV[i]);
+            get_qwv(ircvup, tmp2x2, tmpRL2, RU_FA, RUL_FA, src_coef_PSV[i], src_coef_SH[i], QWV[i]);
         }
 
 
@@ -413,7 +415,7 @@ void kernel(
             tmpRL2 = uiz_R_EVL * tmpRL;
             
             for(MYINT i=0; i<SRC_M_NUM; ++i){
-                get_qwv(ircvup, tmp2x2_uiz, tmpRL2, RU_FA, RUL_FA, src_coef[i], QWV_uiz[i]);
+                get_qwv(ircvup, tmp2x2_uiz, tmpRL2, RU_FA, RUL_FA, src_coef_PSV[i], src_coef_SH[i], QWV_uiz[i]);
             }
         }
 
