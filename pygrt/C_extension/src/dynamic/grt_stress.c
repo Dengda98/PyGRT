@@ -244,8 +244,6 @@ int stress_main(int argc, char **argv){
         }
     }
 
-    GRT_SAFE_FREE_PTR(s_filepath);
-
     GRT_SAFE_FREE_PTR(arrin);
     GRT_SAFE_FREE_PTR(arrout);
 
