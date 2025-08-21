@@ -14,6 +14,8 @@
 #include <dirent.h>
 #include <errno.h>
 
+#include "common/colorstr.h"
+
 // GRT自定义报错信息
 #define GRTRaiseError(ErrorMessage, ...) ({\
     fprintf(stderr, BOLD_RED ErrorMessage DEFAULT_RESTORE, ##__VA_ARGS__);\
@@ -22,7 +24,7 @@
 
 // GRT报错：选项设置不符要求
 #define GRTBadOptionError(name, X, MoreErrorMessage, ...) ({\
-    GRTRaiseError("[%s] Error in -"#X". "MoreErrorMessage" Use \"-h\" for help.\n", name, ##__VA_ARGS__);\
+    GRTRaiseError("[%s] Error in \"-"#X"\". "MoreErrorMessage" Use \"-h\" for help.\n", name, ##__VA_ARGS__);\
 })
 
 // GRT报错：选项未设置参数    注意这里使用的是 %c 和 运行时变量X
@@ -61,7 +63,7 @@
 // GRT检查：某个选项是否启用
 #define GRTCheckOptionActive(name, Ctrl, X) ({\
     if(!(Ctrl->X.active)){\
-        GRTRaiseError("[%s] Error! Need set options -\""#X"\". Use \"-h\" for help.\n", name);\
+        GRTRaiseError("[%s] Error! Need set options \"-"#X"\". Use \"-h\" for help.\n", name);\
     }\
 })
 

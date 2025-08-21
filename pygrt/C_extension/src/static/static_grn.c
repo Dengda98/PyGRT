@@ -110,10 +110,8 @@ void integ_static_grn(
     char **ptam_fstatsdir = (char**)calloc(nr, sizeof(char*));
     if(needfstats && vmin_ref < RZERO){
         for(MYINT ir=0; ir<nr; ++ir){
-            ptam_fstatsdir[ir] = (char*)malloc((strlen(statsstr)+200)*sizeof(char));
-            ptam_fstatsdir[ir][0] = '\0';
             // 新建文件夹目录 
-            sprintf(ptam_fstatsdir[ir], "%s/PTAM_%04d_%.5e", statsstr, ir, rs[ir]);
+            GRT_SAFE_ASPRINTF(&ptam_fstatsdir[ir], "%s/PTAM_%04d_%.5e", statsstr, ir, rs[ir]);
             if(mkdir(ptam_fstatsdir[ir], 0777) != 0){
                 if(errno != EEXIST){
                     printf("Unable to create folder %s. Error code: %d\n", ptam_fstatsdir[ir], errno);
@@ -128,10 +126,9 @@ void integ_static_grn(
     // PTAM为每个震中距都创建波数积分记录文件
     FILE *(*ptam_fstatsnr)[2] = (FILE *(*)[2])malloc(nr * sizeof(*ptam_fstatsnr));
     {   
-        MYINT len0 = (statsstr!=NULL) ? strlen(statsstr) : 0;
-        char *fname = (char *)malloc((len0+200)*sizeof(char));
+        char *fname = NULL;
         if(needfstats){
-            sprintf(fname, "%s/K", statsstr);
+            GRT_SAFE_ASPRINTF(&fname, "%s/K", statsstr);
             fstats = fopen(fname, "wb");
         }
         for(MYINT ir=0; ir<nr; ++ir){
@@ -148,9 +145,9 @@ void integ_static_grn(
             ptam_fstatsnr[ir][0] = ptam_fstatsnr[ir][1] = NULL;
             if(needfstats && vmin_ref < RZERO){
                 // 峰谷平均法
-                sprintf(fname, "%s/K", ptam_fstatsdir[ir]);
+                GRT_SAFE_ASPRINTF(&fname, "%s/K", ptam_fstatsdir[ir]);
                 ptam_fstatsnr[ir][0] = fopen(fname, "wb");
-                sprintf(fname, "%s/PTAM", ptam_fstatsdir[ir]);
+                GRT_SAFE_ASPRINTF(&fname, "%s/PTAM", ptam_fstatsdir[ir]);
                 ptam_fstatsnr[ir][1] = fopen(fname, "wb");
             }
         }  

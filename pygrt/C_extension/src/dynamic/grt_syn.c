@@ -266,8 +266,8 @@ printf("\n"
  */
 static void check_grn_exist(GRT_MODULE_CTRL *Ctrl, const char *name){
     const char *command = Ctrl->name;
-    char *buffer = (char*)malloc(sizeof(char)*(strlen(Ctrl->G.s_grnpath)+strlen(name)+100));
-    sprintf(buffer, "%s/%s", Ctrl->G.s_grnpath, name);
+    char *buffer = NULL;
+    GRT_SAFE_ASPRINTF(&buffer, "%s/%s", Ctrl->G.s_grnpath, name);
     GRTCheckFileExist(command, buffer);
 
     // 检查文件的同时将src_mu计算出来
@@ -557,32 +557,34 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 /**
  * 将某一道合成地震图保存到sac文件
  * 
- * @param      buffer      输出文件夹字符串(重复使用)
  * @param      pfx         通道名前缀
  * @param      ch          分量名， Z/R/T
  * @param      arr         数据指针
  * @param      hd          SAC头段变量
  */
-static void save_to_sac(GRT_MODULE_CTRL *Ctrl, char *buffer, const char *pfx, const char ch, float *arr, SACHEAD hd){
+static void save_to_sac(GRT_MODULE_CTRL *Ctrl, const char *pfx, const char ch, float *arr, SACHEAD hd){
     hd.az = Ctrl->A.azimuth;
     hd.baz = Ctrl->A.backazimuth;
+    char *buffer = NULL;
     snprintf(hd.kcmpnm, sizeof(hd.kcmpnm), "%s%s%c", pfx, Ctrl->s_computeType, ch);
-    sprintf(buffer, "%s/%s%s%c.sac", Ctrl->O.s_output_dir, pfx, Ctrl->P.s_prefix, ch);
+    GRT_SAFE_ASPRINTF(&buffer, "%s/%s%s%c.sac", Ctrl->O.s_output_dir, pfx, Ctrl->P.s_prefix, ch);
     write_sac(buffer, hd, arr);
+    GRT_SAFE_FREE_PTR(buffer);
 }
 
 /**
  * 将时间函数保存到sac文件
  * 
- * @param      buffer      输出文件夹
  * @param      tfarr       时间函数数据指针
  * @param      tfnt        点数
  * @param      dt          采样间隔
  */
-static void save_tf_to_sac(GRT_MODULE_CTRL *Ctrl, char *buffer, float *tfarr, int tfnt, float dt){
+static void save_tf_to_sac(GRT_MODULE_CTRL *Ctrl, float *tfarr, int tfnt, float dt){
+    char *buffer = NULL;
     SACHEAD hd = new_sac_head(dt, tfnt, 0.0);
-    sprintf(buffer, "%s/sig.sac", Ctrl->O.s_output_dir);
+    GRT_SAFE_ASPRINTF(&buffer, "%s/sig.sac", Ctrl->O.s_output_dir);
     write_sac(buffer, hd, tfarr);
+    GRT_SAFE_FREE_PTR(buffer);
 }
 
 
@@ -644,7 +646,6 @@ int syn_main(int argc, char **argv){
     // 根据参数设置，选择分量名
     const char *chs = (rot2ZNE)? ZNEchs : ZRTchs;
 
-    char *buffer = (char*)malloc(sizeof(char)*(strlen(Ctrl->G.s_grnpath)+strlen(Ctrl->O.s_output_dir)+strlen(Ctrl->P.s_prefix)+100));
     float **ptarrout=NULL, *arrout=NULL;
     float *arrsyn[3] = {NULL, NULL, NULL};
     float *arrsyn_upar[3][3] = {NULL};
@@ -706,10 +707,11 @@ int syn_main(int argc, char **argv){
                 coef = Ctrl->srcRadi[k][c];
                 if(coef == 0.0) continue;
 
+                char *buffer = NULL;
                 if(ityp==0 || ityp==3){
-                    sprintf(buffer, "%s/%s%c.sac", Ctrl->G.s_grnpath, SRC_M_NAME_ABBR[k], ch);
+                    GRT_SAFE_ASPRINTF(&buffer, "%s/%s%c.sac", Ctrl->G.s_grnpath, SRC_M_NAME_ABBR[k], ch);
                 } else {
-                    sprintf(buffer, "%s/%c%s%c.sac", Ctrl->G.s_grnpath, tolower(ZRTchs[ityp-1]), SRC_M_NAME_ABBR[k], ch);
+                    GRT_SAFE_ASPRINTF(&buffer, "%s/%c%s%c.sac", Ctrl->G.s_grnpath, tolower(ZRTchs[ityp-1]), SRC_M_NAME_ABBR[k], ch);
                 }
                 
                 float *arr = read_SAC(command, buffer, pthd, NULL);
@@ -736,6 +738,7 @@ int syn_main(int argc, char **argv){
                 }
     
                 GRT_SAFE_FREE_PTR(arr);
+                GRT_SAFE_FREE_PTR(buffer);
             } // ENDFOR 不同震源
             
             // 再次检查内存，例如爆炸源的T分量，不会进入上述for循环，导致arrout没有分配内存
@@ -798,11 +801,11 @@ int syn_main(int argc, char **argv){
     // 保存到SAC文件
     for(int i1=0; i1<CHANNEL_NUM; ++i1){
         char pfx[20]="";
-        save_to_sac(Ctrl, buffer, pfx, chs[i1], arrsyn[i1], hdsyn[i1]);
+        save_to_sac(Ctrl, pfx, chs[i1], arrsyn[i1], hdsyn[i1]);
         if(Ctrl->e.active){
             for(int i2=0; i2<CHANNEL_NUM; ++i2){
                 sprintf(pfx, "%c", tolower(chs[i1]));
-                save_to_sac(Ctrl, buffer, pfx, chs[i2], arrsyn_upar[i1][i2], hdsyn_upar[i1][i2]);
+                save_to_sac(Ctrl, pfx, chs[i2], arrsyn_upar[i1][i2], hdsyn_upar[i1][i2]);
             }
         }
     }
@@ -817,7 +820,7 @@ int syn_main(int argc, char **argv){
             Ctrl->D.tfarr[i] *= fac;
             fac *= dfac;
         }
-        save_tf_to_sac(Ctrl, buffer, Ctrl->D.tfarr, Ctrl->D.tfnt, dt);
+        save_tf_to_sac(Ctrl, Ctrl->D.tfarr, Ctrl->D.tfnt, dt);
     }  
     
     if(! Ctrl->s.active) {
@@ -826,8 +829,6 @@ int syn_main(int argc, char **argv){
         if(Ctrl->D.tfarr!=NULL) printf("[%s] Time Function saved.\n", command);
     }
     
-
-    GRT_SAFE_FREE_PTR(buffer);
     
     for(int i=0; i<3; ++i){
         GRT_SAFE_FREE_PTR(arrsyn[i]);
