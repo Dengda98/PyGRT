@@ -90,7 +90,7 @@ int stress_main(int argc, char **argv){
     // ----------------------------------------------------------------------------------
     // 开始读取计算，输出6个量
     char c1, c2;
-    char *s_filepath = (char*)malloc(sizeof(char) * (strlen(Ctrl->s_synpath)+strlen(Ctrl->s_prefix)+100));
+    char *s_filepath = NULL;
 
     // 输出分量格式，即是否需要旋转到ZNE
     bool rot2ZNE = false;
@@ -98,7 +98,7 @@ int stress_main(int argc, char **argv){
     const char *chs = NULL;
 
     // 判断标志性文件是否存在，来判断输出使用ZNE还是ZRT
-    sprintf(s_filepath, "%s/n%sN.sac", Ctrl->s_synpath, Ctrl->s_prefix);
+    GRT_SAFE_ASPRINTF(&s_filepath, "%s/n%sN.sac", Ctrl->s_synpath, Ctrl->s_prefix);
     rot2ZNE = (access(s_filepath, F_OK) == 0);
 
     // 指示特定的通道名
@@ -107,7 +107,7 @@ int stress_main(int argc, char **argv){
 
     // 读取一个头段变量，获得基本参数，分配数组内存
     SACHEAD hd;
-    sprintf(s_filepath, "%s/%c%s%c.sac", Ctrl->s_synpath, tolower(chs[0]), Ctrl->s_prefix, chs[0]);
+    GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%s%c.sac", Ctrl->s_synpath, tolower(chs[0]), Ctrl->s_prefix, chs[0]);
     read_SAC_HEAD(command, s_filepath, &hd);
     int npts=hd.npts;
     float dt=hd.delta;
@@ -162,7 +162,7 @@ int stress_main(int argc, char **argv){
         c1 = chs[i1];
 
         // 读取数据 u_{k,k}
-        sprintf(s_filepath, "%s/%c%s%c.sac", Ctrl->s_synpath, tolower(c1), Ctrl->s_prefix, c1);
+        GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%s%c.sac", Ctrl->s_synpath, tolower(c1), Ctrl->s_prefix, c1);
         arrin = read_SAC(command, s_filepath, &hd, arrin);
 
         // 累加
@@ -171,7 +171,7 @@ int stress_main(int argc, char **argv){
     }
     // 加上协变导数
     if(!rot2ZNE){
-        sprintf(s_filepath, "%s/%sR.sac", Ctrl->s_synpath, Ctrl->s_prefix);
+        GRT_SAFE_ASPRINTF(&s_filepath, "%s/%sR.sac", Ctrl->s_synpath, Ctrl->s_prefix);
         arrin = read_SAC(command, s_filepath, &hd, arrin);
         fftwf_execute(plan);
         for(int i=0; i<nf; ++i)  lam_ukk[i] += carrin[i]/dist*1e-5;
@@ -196,7 +196,7 @@ int stress_main(int argc, char **argv){
             c2 = chs[i2];
 
             // 读取数据 u_{i,j}
-            sprintf(s_filepath, "%s/%c%s%c.sac", Ctrl->s_synpath, tolower(c2), Ctrl->s_prefix, c1);
+            GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%s%c.sac", Ctrl->s_synpath, tolower(c2), Ctrl->s_prefix, c1);
             arrin = read_SAC(command, s_filepath, &hd, arrin);
 
             // 累加
@@ -204,7 +204,7 @@ int stress_main(int argc, char **argv){
             for(int i=0; i<nf; ++i)  carrout[i] += carrin[i];
 
             // 读取数据 u_{j,i}
-            sprintf(s_filepath, "%s/%c%s%c.sac", Ctrl->s_synpath, tolower(c1), Ctrl->s_prefix, c2);
+            GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%s%c.sac", Ctrl->s_synpath, tolower(c1), Ctrl->s_prefix, c2);
             arrin = read_SAC(command, s_filepath, &hd, arrin);
             
             // 累加
@@ -219,14 +219,14 @@ int stress_main(int argc, char **argv){
             // 特殊情况需加上协变导数，1e-5是因为km->cm
             if(c1=='R' && c2=='T'){
                 // 读取数据 u_T
-                sprintf(s_filepath, "%s/%sT.sac", Ctrl->s_synpath, Ctrl->s_prefix);
+                GRT_SAFE_ASPRINTF(&s_filepath, "%s/%sT.sac", Ctrl->s_synpath, Ctrl->s_prefix);
                 arrin = read_SAC(command, s_filepath, &hd, arrin);
                 fftwf_execute(plan);
                 for(int i=0; i<nf; ++i)  carrout[i] -= mus[i] * carrin[i] / dist * 1e-5;
             }
             else if(c1=='T' && c2=='T'){
                 // 读取数据 u_R
-                sprintf(s_filepath, "%s/%sR.sac", Ctrl->s_synpath, Ctrl->s_prefix);
+                GRT_SAFE_ASPRINTF(&s_filepath, "%s/%sR.sac", Ctrl->s_synpath, Ctrl->s_prefix);
                 arrin = read_SAC(command, s_filepath, &hd, arrin);
                 fftwf_execute(plan);
                 for(int i=0; i<nf; ++i)  carrout[i] += 2.0f * mus[i] * carrin[i] / dist * 1e-5;
@@ -236,14 +236,13 @@ int stress_main(int argc, char **argv){
             fftwf_execute(plan_inv);
             for(int i=0; i<npts; ++i)  arrout[i] /= npts;
             sprintf(hd.kcmpnm, "%c%c", c1, c2);
-            sprintf(s_filepath, "%s/%s.stress.%c%c.sac", Ctrl->s_synpath, Ctrl->s_prefix, c1, c2);
+            GRT_SAFE_ASPRINTF(&s_filepath, "%s/%s.stress.%c%c.sac", Ctrl->s_synpath, Ctrl->s_prefix, c1, c2);
             write_sac(s_filepath, hd, arrout);
 
             // 置零
             for(int i=0; i<nf; ++i)  carrout[i] = 0.0f + I*0.0f;
         }
     }
-
 
     GRT_SAFE_FREE_PTR(arrin);
     GRT_SAFE_FREE_PTR(arrout);
@@ -257,6 +256,7 @@ int stress_main(int argc, char **argv){
     fftwf_destroy_plan(plan);
     fftwf_destroy_plan(plan_inv);
 
+    GRT_SAFE_FREE_PTR(s_filepath);
 
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;

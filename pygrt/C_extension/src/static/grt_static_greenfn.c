@@ -467,11 +467,11 @@ int static_greenfn_main(int argc, char **argv){
 
     // 波数积分输出目录
     if(Ctrl->S.active){
-        Ctrl->S.s_statsdir = (char*)malloc(sizeof(char)*(strlen(Ctrl->M.s_modelpath)+strlen(Ctrl->D.s_depsrc)+strlen(Ctrl->D.s_deprcv)+100));
-        sprintf(Ctrl->S.s_statsdir, "stgrtstats");
+        Ctrl->S.s_statsdir = NULL;
+        GRT_SAFE_ASPRINTF(&Ctrl->S.s_statsdir, "stgrtstats");
         // 建立保存目录
         GRTCheckMakeDir(command, Ctrl->S.s_statsdir);
-        sprintf(Ctrl->S.s_statsdir, "%s/%s_%s_%s", Ctrl->S.s_statsdir, Ctrl->M.s_modelname, Ctrl->D.s_depsrc, Ctrl->D.s_deprcv);
+        GRT_SAFE_ASPRINTF(&Ctrl->S.s_statsdir, "%s/%s_%s_%s", Ctrl->S.s_statsdir, Ctrl->M.s_modelname, Ctrl->D.s_depsrc, Ctrl->D.s_deprcv);
         GRTCheckMakeDir(command, Ctrl->S.s_statsdir);
     }
 

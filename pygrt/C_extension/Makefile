@@ -41,7 +41,7 @@ ARCH =
 # at least for now, it's not a big problem.
 CFLAGS := $(LINK_STATIC) $(LFFT_FLAGS) -lm -O3 -std=gnu99 \
 		  -fPIC -Wall -Wextra $(STACK_MEM) -I$(shell realpath $(INC_DIR)) \
-		  -DGRT_VERSION=\"$(VERSION)\"  $(ARCH)  $(FOMPFLAGS)
+		  -DGRT_VERSION=\"$(VERSION)\" -D_GNU_SOURCE  $(ARCH)  $(FOMPFLAGS)
 #  -fdump-tree-all  -g -ffast-math -O3 -fno-associative-math  -march=native -mtune=native 
 
 

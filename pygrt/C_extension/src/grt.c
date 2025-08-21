@@ -89,18 +89,17 @@ static void getopt_from_command(GRT_MAIN_CTRL *Ctrl, int argc, char **argv){
 
 /** 查找并执行子模块 */
 int dispatch_command(GRT_MAIN_CTRL *Ctrl, int argc, char **argv) {
-    char *entry_name = (char*)malloc((strlen(argv[1]) + ((argc > 2)? strlen(argv[2]) : 0) + 100)*sizeof(char));
-    strcpy(entry_name, argv[1]);
+    char *entry_name = strdup(argv[1]);
 
     // 是否单独传入“static”以计算静态解
     bool is_single_static = false;
     if(strcmp(argv[1], "static") == 0 && argc > 2){
         is_single_static = true;
-        sprintf(entry_name, "static_%s", argv[2]);
+        GRT_SAFE_ASPRINTF(&entry_name, "static_%s", argv[2]);
 
         // 同理也“修改” argv[2] 参数
-        char *newarg = (char*)malloc((strlen(argv[2]) + 100)*sizeof(char));
-        sprintf(newarg, "static_%s", argv[2]);
+        char *newarg = NULL;
+        GRT_SAFE_ASPRINTF(&newarg, "static_%s", argv[2]);
         
         // 原本指向系统分配的只读内存的指针被覆盖，故后续需要手动free
         argv[2] = newarg;
