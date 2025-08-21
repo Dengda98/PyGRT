@@ -11,6 +11,8 @@
 #include <complex.h> 
 #include <tgmath.h>
 
+#include "grt_error.h"
+
 // CMPLX macro not exist on MacOS
 #ifndef CMPLX
     #define CMPLX(real, imag) ((double)(real) + (double)(imag) * I)  ///< 复数扩展宏，添加此指令以适配MacOS
@@ -99,6 +101,15 @@ typedef int MYINT;  ///< 整数
         GRT_SAFE_FREE_PTR(ptr);\
     }\
 })
+
+#define GRT_SAFE_ASPRINTF(ptr, fmt, ...) ({\
+    int res;\
+    if((res = asprintf(ptr, fmt, ##__VA_ARGS__)) == -1){\
+        GRTRaiseError("Abnormal Error in asprintf from function %s.\n", __func__);\
+    };\
+})
+
+#define GRT_SAFE_
 
 // -----------------------------------------------------------------------------
 #define CHANNEL_NUM    3     ///< 3, 代码中分量个数（ZRT，ZNE）

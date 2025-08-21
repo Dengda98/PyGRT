@@ -645,8 +645,8 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     GRTCheckMakeDir(command, Ctrl->O.s_output_dir);
 
     // 在目录中保留命令
-    char *dummy = (char*)malloc(sizeof(char)*(strlen(Ctrl->O.s_output_dir)+100));
-    sprintf(dummy, "%s/command", Ctrl->O.s_output_dir);
+    char *dummy = NULL;
+    GRT_SAFE_ASPRINTF(&dummy, "%s/command", Ctrl->O.s_output_dir);
     FILE *fp = GRTCheckOpenFile(command, dummy, "a");
     fprintf(fp, GRT_MAIN_COMMAND " ");  // 主程序名
     for(int i=0; i<argc; ++i){
@@ -739,12 +739,12 @@ int greenfn_main(int argc, char **argv) {
 
     // 波数积分中间文件输出目录
     if(Ctrl->S.nstatsidxs > 0){
-        Ctrl->S.s_statsdir = (char*)malloc(sizeof(char)*(strlen(Ctrl->M.s_modelpath)+strlen(Ctrl->O.s_output_dir)+strlen(Ctrl->D.s_depsrc)+strlen(Ctrl->D.s_deprcv)+100));
-        sprintf(Ctrl->S.s_statsdir, "%s_grtstats", Ctrl->O.s_output_dir);
+        Ctrl->S.s_statsdir = NULL;
+        GRT_SAFE_ASPRINTF(&Ctrl->S.s_statsdir, "%s_grtstats", Ctrl->O.s_output_dir);
         
         // 建立保存目录
         GRTCheckMakeDir(command, Ctrl->S.s_statsdir);
-        sprintf(Ctrl->S.s_statsdir, "%s/%s_%s_%s", Ctrl->S.s_statsdir, Ctrl->M.s_modelname, Ctrl->D.s_depsrc, Ctrl->D.s_deprcv);
+        GRT_SAFE_ASPRINTF(&Ctrl->S.s_statsdir, "%s/%s_%s_%s", Ctrl->S.s_statsdir, Ctrl->M.s_modelname, Ctrl->D.s_depsrc, Ctrl->D.s_deprcv);
         GRTCheckMakeDir(command, Ctrl->S.s_statsdir);
     }
 
