@@ -8,17 +8,15 @@
  * 
  */
 
-#include <complex.h>
-#include <fftw3.h>
 
 #include "dynamic/grn.h"
 #include "dynamic/signals.h"
-#include "travt/travt.h"
 #include "common/const.h"
 #include "common/model.h"
 #include "common/search.h"
 #include "common/sacio.h"
 #include "common/util.h"
+#include "common/myfftw.h"
 
 #include "grt.h"
 
@@ -660,95 +658,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 }
 
 
-/**
- * 将某一道做ifft，做时间域处理，保存到sac文件
- * 
- * @param     delay     时间延迟
- * @param     mult      幅值放大系数
- * @param     nt        点数
- * @param     dt        采样间隔
- * @param     nf        频率点数
- * @param     df        频率间隔
- * @param     wI        虚频率
- * @param     grncplx   复数形式的格林函数频谱
- * @param     fftw_grn  将频谱写到FFTW_COMPLEX类型中
- * @param     out       ifft后的时域数据
- * @param     float_arr 将时域数据写到float类型的数组中
- * @param     plan      FFTW_PLAN
- * @param     hd        SAC头段变量结构体
- * @param     outpath   sac文件保存路径
- */
-static void ifft_one_trace(
-    MYREAL delay, MYREAL mult, MYINT nt, MYREAL dt, MYINT nf, MYREAL df, MYREAL wI,
-    MYCOMPLEX *grncplx, _FFTW_COMPLEX *fftw_grn, MYREAL *out, float *float_arr,
-    _FFTW_PLAN plan, SACHEAD *hd, const char *outpath)
-{
-    // 赋值复数，包括时移
-    MYCOMPLEX cfac, ccoef;
-    cfac = exp(I*PI2*df*delay);
-    ccoef = mult;
-    for(int i=0; i<nf; ++i){
-        fftw_grn[i] = grncplx[i] * ccoef;
-        ccoef *= cfac;
-    }
 
-    // 发起fft任务 
-    _FFTW_EXECUTE(plan);
-
-    // 归一化，并处理虚频
-    double fac, coef;
-    coef = df * exp(delay*wI);
-    fac = exp(wI*dt);
-    for(int i=0; i<nt; ++i){
-        out[i] *= coef;
-        coef *= fac;
-    }
-
-    // 以sac文件保存到本地
-    for(int i=0; i<nt; ++i){
-        float_arr[i] = out[i];
-    }
-
-    write_sac(outpath, *hd, float_arr);
-}
-
-
-
-
-
-/**
- * 将一条数据反变换回时间域再进行处理，保存到SAC文件
- * 
- * @param     Ctrl          参数控制
- * @param     srcname       震源类型
- * @param     delayT        延迟时间
- * @param     ch            三分量类型（Z,R,T）
- * @param     hd            SAC头段变量结构体指针
- * @param     s_outpath     用于接收保存路径字符串
- * @param     s_output_subdir    保存路径所在文件夹
- * @param     s_prefix           sac文件名以及通道名名称前缀
- * @param     sgn                数据待乘符号(-1/1)
- * @param     grncplx   复数形式的格林函数频谱
- * @param     fftw_grn  将频谱写到FFTW_COMPLEX类型中
- * @param     out       ifft后的时域数据
- * @param     float_arr 将时域数据写到float类型的数组中
- * @param     plan      FFTW_PLAN
- * 
- */
-static void write_one_to_sac(
-    const GRT_MODULE_CTRL *Ctrl, const char *srcname, const char ch, MYREAL delayT,
-    SACHEAD *hd, char *s_outpath, const char *s_output_subdir, const char *s_prefix,
-    const int sgn, MYCOMPLEX *grncplx, fftw_complex *fftw_grn, MYREAL *out, float *float_arr, fftw_plan plan)
-{
-    char kcmpnm[9];
-    snprintf(kcmpnm, sizeof(kcmpnm), "%s%s%c", s_prefix, srcname, ch);
-    strcpy(hd->kcmpnm, kcmpnm);
-    sprintf(s_outpath, "%s/%s.sac", s_output_subdir, kcmpnm);
-    ifft_one_trace(
-        delayT, sgn, 
-        Ctrl->N.nt, Ctrl->N.dt, Ctrl->N.nf, Ctrl->N.df, Ctrl->N.wI,
-        grncplx, fftw_grn, out, float_arr, plan, hd, s_outpath);
-}
 
 
 /** 子模块主函数 */
@@ -871,117 +781,41 @@ int greenfn_main(int argc, char **argv) {
     //==============================================================================
     
 
-    // 使用fftw3做反傅里叶变换
-    // 分配fftw_complex内存
-    _FFTW_COMPLEX *fftw_grn = (_FFTW_COMPLEX*)_FFTW_MALLOC(sizeof(_FFTW_COMPLEX)*Ctrl->N.nf);
-    MYREAL *out = (MYREAL*)malloc(sizeof(MYREAL)*Ctrl->N.nt);
-    float *float_arr = (float*)malloc(sizeof(float)*Ctrl->N.nt);
-
-    // fftw计划
-    _FFTW_PLAN plan = _FFTW_PLAN_DFT_C2R_1D(Ctrl->N.nt, fftw_grn, out, FFTW_ESTIMATE);
-    
-    // 建立SAC头文件，包含必要的头变量
-    SACHEAD hd = new_sac_head(Ctrl->N.dt, Ctrl->N.nt, Ctrl->E.delayT0);
-    // 发震时刻作为参考时刻
-    hd.o = 0.0; 
-    hd.iztype = IO; 
-    // 记录震源和台站深度
-    hd.evdp = Ctrl->D.depsrc; // km
-    hd.stel = (-1.0)*Ctrl->D.deprcv*1e3; // m
-    // 写入虚频率
-    hd.user0 = Ctrl->N.wI;
-    // 写入接受点的Vp,Vs,rho
-    hd.user1 = pymod->Va[pymod->ircv];
-    hd.user2 = pymod->Vb[pymod->ircv];
-    hd.user3 = pymod->Rho[pymod->ircv];
-    hd.user4 = RONE/pymod->Qa[pymod->ircv];
-    hd.user5 = RONE/pymod->Qb[pymod->ircv];
-    // 写入震源点的Vp,Vs,rho
-    hd.user6 = pymod->Va[pymod->isrc];
-    hd.user7 = pymod->Vb[pymod->isrc];
-    hd.user8 = pymod->Rho[pymod->isrc];
+    // 使用fftw3做反傅里叶变换，并保存到 SAC 
+    FFTW_HOLDER *fftw_holder = create_fftw_holder_C2R_1D(Ctrl->N.nt, Ctrl->N.dt, Ctrl->N.nf, Ctrl->N.df);
+    // fftw_holder->naive_inv = true;
+    // 手动归零最后一个频点虚部
+    for(MYINT ir=0; ir<Ctrl->R.nr; ++ir){
+        for(int i=0; i<SRC_M_NUM; ++i){
+            for(int c=0; c<CHANNEL_NUM; ++c){
+                grn[ir][i][c][Ctrl->N.nf-1] = creal(grn[ir][i][c][Ctrl->N.nf-1]);
+                if(grn_uiz)  grn_uiz[ir][i][c][Ctrl->N.nf-1] = creal(grn_uiz[ir][i][c][Ctrl->N.nf-1]);
+                if(grn_uir)  grn_uir[ir][i][c][Ctrl->N.nf-1] = creal(grn_uir[ir][i][c][Ctrl->N.nf-1]);
+            }
+        }
+    }
+    MYREAL (* travtPS)[2] = (MYREAL (*)[2])calloc(Ctrl->R.nr, sizeof(MYREAL)*2);
+    GF_freq2time_write_to_file(
+        command, pymod, 
+        Ctrl->O.s_output_dir, Ctrl->M.s_modelname, Ctrl->D.s_depsrc, Ctrl->D.s_deprcv,
+        Ctrl->N.wI, fftw_holder,
+        Ctrl->R.nr, Ctrl->R.s_rs, Ctrl->R.rs, travtPS,
+        Ctrl->D.depsrc, Ctrl->D.deprcv, Ctrl->E.delayT0, Ctrl->E.delayV0, Ctrl->e.active,
+        Ctrl->G.doEX, Ctrl->G.doVF, Ctrl->G.doHF, Ctrl->G.doDC, 
+        ZRTchs, grn, grn_uiz, grn_uir);
 
     
-    // 下面计算的同时也打印走时
+    // 打印走时
     if( ! Ctrl->s.active){
         printf("\n\n");
         printf("------------------------------------------------\n");
         printf(" Distance(km)     Tp(secs)         Ts(secs)     \n");
-    }
-    
-    // 做反傅里叶变换，保存SAC文件
-    for(int ir=0; ir<Ctrl->R.nr; ++ir){
-        hd.dist = Ctrl->R.rs[ir];
-
-        // 文件保存子目录
-        char *s_output_subdir = (char*)malloc(sizeof(char)*(
-            strlen(Ctrl->O.s_output_dir)+strlen(Ctrl->M.s_modelpath)+
-            strlen(Ctrl->D.s_depsrc)+strlen(Ctrl->D.s_deprcv)+strlen(Ctrl->R.s_rs[ir])+100));
-        
-        sprintf(s_output_subdir, "%s/%s_%s_%s_%s", Ctrl->O.s_output_dir, Ctrl->M.s_modelname, Ctrl->D.s_depsrc, Ctrl->D.s_deprcv, Ctrl->R.s_rs[ir]);
-        GRTCheckMakeDir(command, s_output_subdir);
-
-        // 时间延迟 
-        MYREAL delayT = Ctrl->E.delayT0;
-        if(Ctrl->E.delayV0 > 0.0)   delayT += sqrt( GRT_SQUARE(Ctrl->R.rs[ir]) + GRT_SQUARE(Ctrl->D.deprcv - Ctrl->D.depsrc) ) / Ctrl->E.delayV0;
-        // 修改SAC头段时间变量
-        hd.b = delayT;
-
-        // 计算理论走时
-        hd.t0 = compute_travt1d(pymod->Thk, pymod->Va, pymod->n, pymod->isrc, pymod->ircv, Ctrl->R.rs[ir]);
-        strcpy(hd.kt0, "P");
-        hd.t1 = compute_travt1d(pymod->Thk, pymod->Vb, pymod->n, pymod->isrc, pymod->ircv, Ctrl->R.rs[ir]);
-        strcpy(hd.kt1, "S");
-
-        for(int im=0; im<SRC_M_NUM; ++im){
-            if(!Ctrl->G.doEX  && im==0)  continue;
-            if(!Ctrl->G.doVF  && im==1)  continue;
-            if(!Ctrl->G.doHF  && im==2)  continue;
-            if(!Ctrl->G.doDC  && im>=3)  continue;
-
-            int modr = SRC_M_ORDERS[im];
-            int sgn=1;  // 用于反转Z分量
-            for(int c=0; c<CHANNEL_NUM; ++c){
-                if(modr==0 && ZRTchs[c]=='T')  continue;  // 跳过输出0阶的T分量
-
-                // 文件保存总路径
-                char *s_outpath = (char*)malloc(sizeof(char)*(strlen(s_output_subdir)+100));
-                char s_prefix[] = "";
-
-                // Z分量反转
-                sgn = (ZRTchs[c]=='Z') ? -1 : 1;
-
-                write_one_to_sac(Ctrl, SRC_M_NAME_ABBR[im], ZRTchs[c], delayT, &hd, s_outpath, s_output_subdir, s_prefix, sgn, grn[ir][im][c], fftw_grn, out, float_arr, plan);
-                if(Ctrl->e.active){
-                    write_one_to_sac(Ctrl, SRC_M_NAME_ABBR[im], ZRTchs[c], delayT, &hd, s_outpath, s_output_subdir, "z", sgn*(-1), grn_uiz[ir][im][c], fftw_grn, out, float_arr, plan);
-                    write_one_to_sac(Ctrl, SRC_M_NAME_ABBR[im], ZRTchs[c], delayT, &hd, s_outpath, s_output_subdir, "r", sgn, grn_uir[ir][im][c], fftw_grn, out, float_arr, plan);
-                }
-
-                GRT_SAFE_FREE_PTR(s_outpath);
-            }
+        for(int ir=0; ir<Ctrl->R.nr; ++ir){
+            printf(" %-15s  %-15.3f  %-15.3f\n", Ctrl->R.s_rs[ir], travtPS[ir][0], travtPS[ir][1]);
         }
-
-
-        if( ! Ctrl->s.active){
-            printf(" %-15s  %-15.3f  %-15.3f\n", Ctrl->R.s_rs[ir], hd.t0, hd.t1);
-        }
-
-        GRT_SAFE_FREE_PTR(s_output_subdir);
-    } // End distances loop
-
-    if( ! Ctrl->s.active){
         printf("------------------------------------------------\n");
         printf("\n");
     }
-
-    // 输出警告：当震源位于液体层中时，仅允许计算爆炸源对应的格林函数
-    if(pymod->Vb[pymod->isrc]==0.0){
-        fprintf(stderr, "[%s] " BOLD_YELLOW 
-            "The source is located in the liquid layer, "
-            "therefore only the Green's Funtions for the Explosion source will be computed.\n" 
-            DEFAULT_RESTORE, command);
-    }
-    
 
     // 释放内存
     for(int ir=0; ir<Ctrl->R.nr; ++ir){
@@ -996,11 +830,9 @@ int greenfn_main(int argc, char **argv) {
     GRT_SAFE_FREE_PTR(grn);
     GRT_SAFE_FREE_PTR(grn_uiz);
     GRT_SAFE_FREE_PTR(grn_uir);
+    GRT_SAFE_FREE_PTR(travtPS);
 
-    _FFTW_FREE(fftw_grn);
-    GRT_SAFE_FREE_PTR(out);
-    GRT_SAFE_FREE_PTR(float_arr);
-    _FFTW_DESTROY_PLAN(plan);
+    destroy_fftw_holder(fftw_holder);
 
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;
