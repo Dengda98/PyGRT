@@ -7,8 +7,7 @@
  * 
  */
 
-#include <complex.h>
-#include <fftw3.h>
+#include "common/myfftw.h"
 
 #include "common/attenuation.h"
 #include "common/sacio2.h"
@@ -129,20 +128,13 @@ int stress_main(int argc, char **argv){
     // 不同频率的lambda和mu
     fftwf_complex *lams = (fftwf_complex*)fftwf_malloc(sizeof(fftwf_complex)*nf);
     fftwf_complex *mus = (fftwf_complex*)fftwf_malloc(sizeof(fftwf_complex)*nf);
-    // 分配FFTW数组
-    fftwf_complex *carrin = (fftwf_complex*)fftwf_malloc(sizeof(fftwf_complex)*nf);
-    fftwf_complex *carrout = (fftwf_complex*)fftwf_malloc(sizeof(fftwf_complex)*nf);
-    float *arrin = (float*)malloc(sizeof(float)*npts);
-    float *arrout = (float*)malloc(sizeof(float)*npts);
-    fftwf_plan plan = fftwf_plan_dft_r2c_1d(npts, arrin, carrin, FFTW_ESTIMATE);
-    fftwf_plan plan_inv = fftwf_plan_dft_c2r_1d(npts, carrout, arrout, FFTW_ESTIMATE);
+    // 分配FFTW
+    FFTWF_HOLDER *fwd_fftw_holder = create_fftwf_holder_R2C_1D(npts, dt, nf, df);
+    FFTWF_HOLDER *inv_fftw_holder = create_fftwf_holder_C2R_1D(npts, dt, nf, df);
     // 初始化
-    for(int i=0; i<nf; ++i){
-        lam_ukk[i] = lams[i] = mus[i] = carrin[i] = carrout[i] = 0.0f + I*0.0f;
-    }
-    for(int i=0; i<npts; ++i){
-        arrin[i] = arrout[i] = 0.0f;
-    }
+    memset(lam_ukk, 0, sizeof(fftwf_complex)*nf);
+    memset(lams, 0, sizeof(fftwf_complex)*nf);
+    memset(mus, 0, sizeof(fftwf_complex)*nf);
     // 计算不同频率下的拉梅系数
     for(int i=0; i<nf; ++i){
         float freq, w;
@@ -163,30 +155,26 @@ int stress_main(int argc, char **argv){
 
         // 读取数据 u_{k,k}
         GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%s%c.sac", Ctrl->s_synpath, tolower(c1), Ctrl->s_prefix, c1);
-        arrin = read_SAC(command, s_filepath, &hd, arrin);
+        read_SAC(command, s_filepath, &hd, fwd_fftw_holder->w_t);
 
         // 累加
-        fftwf_execute(plan);
-        for(int i=0; i<nf; ++i)  lam_ukk[i] += carrin[i];
+        fftwf_execute(fwd_fftw_holder->plan);
+        for(int i=0; i<nf; ++i)  lam_ukk[i] += fwd_fftw_holder->W_f[i];
     }
     // 加上协变导数
     if(!rot2ZNE){
         GRT_SAFE_ASPRINTF(&s_filepath, "%s/%sR.sac", Ctrl->s_synpath, Ctrl->s_prefix);
-        arrin = read_SAC(command, s_filepath, &hd, arrin);
-        fftwf_execute(plan);
-        for(int i=0; i<nf; ++i)  lam_ukk[i] += carrin[i]/dist*1e-5;
+        read_SAC(command, s_filepath, &hd, fwd_fftw_holder->w_t);
+        fftwf_execute(fwd_fftw_holder->plan);
+        for(int i=0; i<nf; ++i)  lam_ukk[i] += fwd_fftw_holder->W_f[i]/dist*1e-5;
     }
 
     // 乘上lambda系数
     for(int i=0; i<nf; ++i)  lam_ukk[i] *= lams[i];
 
     // 重新初始化
-    for(int i=0; i<nf; ++i){
-        carrin[i] = carrout[i] = 0.0f + I*0.0f;
-    }
-    for(int i=0; i<npts; ++i){
-        arrin[i] = arrout[i] = 0.0f;
-    }
+    reset_fftwf_holder_zero(fwd_fftw_holder);
+    reset_fftwf_holder_zero(inv_fftw_holder);
 
     // ----------------------------------------------------------------------------------
     // 循环6个分量
@@ -197,64 +185,61 @@ int stress_main(int argc, char **argv){
 
             // 读取数据 u_{i,j}
             GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%s%c.sac", Ctrl->s_synpath, tolower(c2), Ctrl->s_prefix, c1);
-            arrin = read_SAC(command, s_filepath, &hd, arrin);
+            read_SAC(command, s_filepath, &hd, fwd_fftw_holder->w_t);
 
             // 累加
-            fftwf_execute(plan);
-            for(int i=0; i<nf; ++i)  carrout[i] += carrin[i];
+            fftwf_execute(fwd_fftw_holder->plan);
+            for(int i=0; i<nf; ++i)  inv_fftw_holder->W_f[i] += fwd_fftw_holder->W_f[i];
 
             // 读取数据 u_{j,i}
             GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%s%c.sac", Ctrl->s_synpath, tolower(c1), Ctrl->s_prefix, c2);
-            arrin = read_SAC(command, s_filepath, &hd, arrin);
+            read_SAC(command, s_filepath, &hd, fwd_fftw_holder->w_t);
             
             // 累加
-            fftwf_execute(plan);
-            for(int i=0; i<nf; ++i)  carrout[i] = (carrout[i] + carrin[i]) * mus[i];
+            fftwf_execute(fwd_fftw_holder->plan);
+            for(int i=0; i<nf; ++i)  inv_fftw_holder->W_f[i] = (inv_fftw_holder->W_f[i] + fwd_fftw_holder->W_f[i]) * mus[i];
 
             // 对于对角线分量，需加上lambda * u_kk
             if(c1 == c2){
-                for(int i=0; i<nf; ++i)  carrout[i] += lam_ukk[i];
+                for(int i=0; i<nf; ++i)  inv_fftw_holder->W_f[i] += lam_ukk[i];
             }
 
             // 特殊情况需加上协变导数，1e-5是因为km->cm
             if(c1=='R' && c2=='T'){
                 // 读取数据 u_T
                 GRT_SAFE_ASPRINTF(&s_filepath, "%s/%sT.sac", Ctrl->s_synpath, Ctrl->s_prefix);
-                arrin = read_SAC(command, s_filepath, &hd, arrin);
-                fftwf_execute(plan);
-                for(int i=0; i<nf; ++i)  carrout[i] -= mus[i] * carrin[i] / dist * 1e-5;
+                read_SAC(command, s_filepath, &hd, fwd_fftw_holder->w_t);
+                fftwf_execute(fwd_fftw_holder->plan);
+                for(int i=0; i<nf; ++i)  inv_fftw_holder->W_f[i] -= mus[i] * fwd_fftw_holder->W_f[i] / dist * 1e-5;
             }
             else if(c1=='T' && c2=='T'){
                 // 读取数据 u_R
                 GRT_SAFE_ASPRINTF(&s_filepath, "%s/%sR.sac", Ctrl->s_synpath, Ctrl->s_prefix);
-                arrin = read_SAC(command, s_filepath, &hd, arrin);
-                fftwf_execute(plan);
-                for(int i=0; i<nf; ++i)  carrout[i] += 2.0f * mus[i] * carrin[i] / dist * 1e-5;
+                read_SAC(command, s_filepath, &hd, fwd_fftw_holder->w_t);
+                fftwf_execute(fwd_fftw_holder->plan);
+                for(int i=0; i<nf; ++i)  inv_fftw_holder->W_f[i] += 2.0f * mus[i] * fwd_fftw_holder->W_f[i] / dist * 1e-5;
             }
             
             // 保存到SAC
-            fftwf_execute(plan_inv);
-            for(int i=0; i<npts; ++i)  arrout[i] /= npts;
+            fftwf_execute(inv_fftw_holder->plan);
+            for(int i=0; i<npts; ++i)  inv_fftw_holder->w_t[i] /= npts;
             sprintf(hd.kcmpnm, "%c%c", c1, c2);
             GRT_SAFE_ASPRINTF(&s_filepath, "%s/%s.stress.%c%c.sac", Ctrl->s_synpath, Ctrl->s_prefix, c1, c2);
-            write_sac(s_filepath, hd, arrout);
+            write_sac(s_filepath, hd, inv_fftw_holder->w_t);
 
             // 置零
-            for(int i=0; i<nf; ++i)  carrout[i] = 0.0f + I*0.0f;
+            reset_fftwf_holder_zero(inv_fftw_holder);
+
         }
     }
 
-    GRT_SAFE_FREE_PTR(arrin);
-    GRT_SAFE_FREE_PTR(arrout);
 
-    GRT_SAFE_FFTWF_FREE_PTR(lam_ukk);
-    GRT_SAFE_FFTWF_FREE_PTR(lams);
-    GRT_SAFE_FFTWF_FREE_PTR(mus);
-    GRT_SAFE_FFTWF_FREE_PTR(carrin);
-    GRT_SAFE_FFTWF_FREE_PTR(carrout);
+    destroy_fftwf_holder(fwd_fftw_holder);
+    destroy_fftwf_holder(inv_fftw_holder);
 
-    fftwf_destroy_plan(plan);
-    fftwf_destroy_plan(plan_inv);
+    GRT_SAFE_FFTW_FREE_PTR(lam_ukk, f);
+    GRT_SAFE_FFTW_FREE_PTR(lams, f);
+    GRT_SAFE_FFTW_FREE_PTR(mus, f);
 
     GRT_SAFE_FREE_PTR(s_filepath);
 

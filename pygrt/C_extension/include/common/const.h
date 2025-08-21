@@ -40,25 +40,9 @@ typedef int MYINT;  ///< 整数
 #ifdef GRT_USE_FLOAT 
     typedef float _Complex  MYCOMPLEX;   ///< 复数
     typedef float MYREAL;   ///< 浮点数
-
-    #define _FFTW_COMPLEX   fftwf_complex
-    #define _FFTW_PLAN      fftwf_plan
-    #define _FFTW_EXECUTE   fftwf_execute
-    #define _FFTW_MALLOC    fftwf_malloc
-    #define _FFTW_FREE      fftwf_free
-    #define _FFTW_DESTROY_PLAN   fftwf_destroy_plan
-    #define _FFTW_PLAN_DFT_C2R_1D   fftwf_plan_dft_c2r_1d
 #else 
     typedef double _Complex MYCOMPLEX;
     typedef double MYREAL;
-
-    #define _FFTW_COMPLEX   fftw_complex
-    #define _FFTW_PLAN      fftw_plan
-    #define _FFTW_EXECUTE   fftw_execute
-    #define _FFTW_MALLOC    fftw_malloc
-    #define _FFTW_FREE      fftw_free
-    #define _FFTW_DESTROY_PLAN   fftw_destroy_plan
-    #define _FFTW_PLAN_DFT_C2R_1D   fftw_plan_dft_c2r_1d
 #endif
 
 // 常数
@@ -107,16 +91,7 @@ typedef int MYINT;  ///< 整数
         free(ptr);\
     }\
 })
-#define GRT_SAFE_FFTW_FREE_PTR(ptr) ({\
-    if(ptr!=NULL) {\
-        fftw_free(ptr);\
-    }\
-})
-#define GRT_SAFE_FFTWF_FREE_PTR(ptr) ({\
-    if(ptr!=NULL) {\
-        fftwf_free(ptr);\
-    }\
-})
+
 // 释放指针数组
 #define GRT_SAFE_FREE_PTR_ARRAY(ptr, count) ({\
     if(ptr!=NULL){\

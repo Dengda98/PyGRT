@@ -7,10 +7,6 @@
  * 
  */
 
-
-#include <complex.h>
-#include <fftw3.h>
-
 #include "dynamic/signals.h"
 #include "common/sacio2.h"
 #include "common/const.h"

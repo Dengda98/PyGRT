@@ -18,8 +18,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-#include <complex.h>
-#include <fftw3.h>
 
 #include "dynamic/signals.h"
 #include "common/const.h"
