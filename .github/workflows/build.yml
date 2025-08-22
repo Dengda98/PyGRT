@@ -404,6 +404,13 @@ jobs:
           chmod +x *.sh
           ./run_grt.sh
 
+      - name: Test upsampling
+        working-directory: ${{ env.EXAMPLE_COPY_PATH }}/upsampling
+        run: |
+          chmod +x *.sh
+          ./run.sh
+          python run.py
+
       - name: Remove the test files
         run: |
           rm -rf ${{ env.EXAMPLE_COPY_PATH }}
