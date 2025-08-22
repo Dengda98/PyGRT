@@ -108,7 +108,7 @@ class PyModel1D:
     def _init_grn(
         self,
         distarr:np.ndarray,
-        nt:int, dt:float, freqs:np.ndarray, wI:float, prefix:str=''):
+        nt:int, dt:float, upsampling_n:int, freqs:np.ndarray, wI:float, prefix:str=''):
 
         '''
             建立各个震源对应的格林函数类
@@ -128,7 +128,7 @@ class PyModel1D:
                 pygrnLst[ir].append([])
                 for ic, comp in enumerate(ZRTchs):
 
-                    pygrn = PyGreenFunction(f'{prefix}{SRC_M_NAME_ABBR[isrc]}{comp}', nt, dt, freqs, wI, dist, depsrc, deprcv)
+                    pygrn = PyGreenFunction(f'{prefix}{SRC_M_NAME_ABBR[isrc]}{comp}', nt, dt, upsampling_n, freqs, wI, dist, depsrc, deprcv)
                     pygrnLst[ir][isrc].append(pygrn)
                     c_grnArr[ir][isrc][ic] = pygrn.cmplx_grn.ctypes.data_as(PCPLX)
 
@@ -144,6 +144,7 @@ class PyModel1D:
         distarr:Union[np.ndarray,List[float],float], 
         nt:int, 
         dt:float, 
+        upsampling_n:int = 1,
         freqband:Union[np.ndarray,List[float]]=[-1,-1],
         zeta:float=0.8, 
         vmin_ref:float=0.0,
@@ -170,6 +171,7 @@ class PyModel1D:
             :param    distarr:       多个震中距(km) 的数组, 或单个震中距的浮点数
             :param    nt:            时间点数，借助于 `SciPy`，nt不再要求是2的幂次
             :param    dt:            采样间隔(s)  
+            :param    upsampling_n:  升采样倍数
             :param    freqband:      频率范围(Hz)，以此确定待计算的离散频率点
             :param    zeta:          定义虚频率的系数 :math:`\zeta` ， 虚频率 :math:`\tilde{\omega} = \omega - j*w_I, w_I = \zeta*\pi/T, T=nt*dt` , T为时窗长度。
                                      使用离散波数积分时为了避开附加源以及奇点的影响， :ref:`(Bouchon, 1981) <bouchon_1981>`  在频率上添加微小虚部，
@@ -304,15 +306,15 @@ class PyModel1D:
 
 
         # 初始化格林函数
-        pygrnLst, c_grnArr = self._init_grn(distarr, nt, dt, freqs, wI, '')
+        pygrnLst, c_grnArr = self._init_grn(distarr, nt, dt, upsampling_n, freqs, wI, '')
         
         pygrnLst_uiz = []
         c_grnArr_uiz = None
         pygrnLst_uir = []
         c_grnArr_uir = None
         if calc_upar:
-            pygrnLst_uiz, c_grnArr_uiz = self._init_grn(distarr, nt, dt, freqs, wI, 'z')
-            pygrnLst_uir, c_grnArr_uir = self._init_grn(distarr, nt, dt, freqs, wI, 'r')
+            pygrnLst_uiz, c_grnArr_uiz = self._init_grn(distarr, nt, dt, upsampling_n, freqs, wI, 'z')
+            pygrnLst_uir, c_grnArr_uir = self._init_grn(distarr, nt, dt, upsampling_n, freqs, wI, 'r')
 
 
         c_statsfile = None 
