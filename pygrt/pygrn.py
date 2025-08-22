@@ -34,6 +34,7 @@ class PyGreenFunction:
             name:str,
             nt:int, 
             dt:float, 
+            upsampling_n:int,
             freqs:np.ndarray,
             wI:float,
             dist:float,
@@ -45,6 +46,7 @@ class PyGreenFunction:
             :param    name:          格林函数名称，震源类型(EX,VF,HF,DD,DS,SS)+三分量(Z,R,T)
             :param    nt:            时间点数  
             :param    dt:            采样间隔(s)  
+            :param    upsampling_n:  升采样倍数 
             :param    freqs:         频率数组(Hz)
             :param    wI:          定义虚频率，omega = w - j*wI, wI = wI  
             :param    dist:          震中距(km)
@@ -60,6 +62,7 @@ class PyGreenFunction:
         self.name = name
         self.nt = nt
         self.dt = dt 
+        self.upsampling_n = upsampling_n 
         self.wI = wI 
         self.dist = dist 
         self.depsrc = depsrc
@@ -74,7 +77,7 @@ class PyGreenFunction:
         self.wI = wI
 
         # 提前建立Trace时间序列  
-        self.SACTrace = SACTrace(npts=nt, delta=dt, iztype='io') 
+        self.SACTrace = SACTrace(npts=nt*upsampling_n, delta=dt/upsampling_n, iztype='io') 
         sac = self.SACTrace
         sac.evdp = depsrc
         sac.stel = (-1)*deprcv
@@ -125,8 +128,8 @@ class PyGreenFunction:
 
         df = freqs[-1] - freqs[-2]
         sac = self.SACTrace
-        nt = sac.npts
-        dt = sac.delta
+        nt = sac.npts   # 可能考虑升采样的点数
+        dt = sac.delta  # 可能考虑升采样的采样间隔
         wI = sac.user0
 
         T = nt*dt
