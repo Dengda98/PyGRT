@@ -819,17 +819,6 @@ int greenfn_main(int argc, char **argv) {
     FFTW_HOLDER *fftw_holder = create_fftw_holder_C2R_1D(
         Ctrl->N.nt*Ctrl->N.upsample_n, Ctrl->N.dt/Ctrl->N.upsample_n, Ctrl->N.nf, Ctrl->N.df);
 
-    // fftw_holder->naive_inv = true;
-    // 手动归零最后一个频点虚部
-    for(MYINT ir=0; ir<Ctrl->R.nr; ++ir){
-        for(int i=0; i<SRC_M_NUM; ++i){
-            for(int c=0; c<CHANNEL_NUM; ++c){
-                grn[ir][i][c][Ctrl->N.nf-1] = creal(grn[ir][i][c][Ctrl->N.nf-1]);
-                if(grn_uiz)  grn_uiz[ir][i][c][Ctrl->N.nf-1] = creal(grn_uiz[ir][i][c][Ctrl->N.nf-1]);
-                if(grn_uir)  grn_uir[ir][i][c][Ctrl->N.nf-1] = creal(grn_uir[ir][i][c][Ctrl->N.nf-1]);
-            }
-        }
-    }
     MYREAL (* travtPS)[2] = (MYREAL (*)[2])calloc(Ctrl->R.nr, sizeof(MYREAL)*2);
     GF_freq2time_write_to_file(
         command, pymod, 
