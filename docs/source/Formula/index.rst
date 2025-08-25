@@ -21,6 +21,7 @@
 
     - :doc:`RT`
     - :doc:`RT_liquid`
+    - :doc:`uiz`
 
 **静力学震源参数**
 
