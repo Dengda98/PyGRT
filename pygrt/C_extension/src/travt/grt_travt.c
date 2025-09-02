@@ -7,10 +7,10 @@
  * 
  */
 
-#include "travt/travt.h"
-#include "common/const.h"
-#include "common/model.h"
-#include "common/util.h"
+#include "grt/travt/travt.h"
+#include "grt/common/const.h"
+#include "grt/common/model.h"
+#include "grt/common/util.h"
 
 #include "grt.h"
 
@@ -55,7 +55,7 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
 
 
 
-MYREAL compute_travt1d(
+MYREAL grt_compute_travt1d(
     const MYREAL *Thk, const MYREAL *Vel0, const int nlay, 
     const int isrc, const int ircv, const MYREAL dist)
 {
@@ -490,7 +490,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             // 震中距数组，-Rr1,r2,r3,r4 ...
             case 'R':
                 Ctrl->R.active = true;
-                Ctrl->R.s_rs = string_split(optarg, ",", &Ctrl->R.nr);
+                Ctrl->R.s_rs = grt_string_split(optarg, ",", &Ctrl->R.nr);
                 // 转为浮点数
                 Ctrl->R.rs = (MYREAL*)realloc(Ctrl->R.rs, sizeof(MYREAL)*(Ctrl->R.nr));
                 for(MYINT i=0; i<Ctrl->R.nr; ++i){
@@ -521,10 +521,10 @@ int travt_main(int argc, char **argv){
 
     getopt_from_command(Ctrl, argc, argv);
 
-    PYMODEL1D *pymod;
+    GRT_PYMODEL1D *pymod;
     
     // 读入模型文件
-    if((pymod = read_pymod_from_file(Ctrl->name, Ctrl->M.s_modelpath, Ctrl->D.depsrc, Ctrl->D.deprcv, true)) == NULL){
+    if((pymod = grt_read_pymod_from_file(Ctrl->name, Ctrl->M.s_modelpath, Ctrl->D.depsrc, Ctrl->D.deprcv, true)) == NULL){
         exit(EXIT_FAILURE);
     }
     // print_pymod(pymod);
@@ -533,9 +533,9 @@ int travt_main(int argc, char **argv){
     printf(" Distance(km)     Tp(secs)         Ts(secs)     \n");
     double travtP=-1, travtS=-1;
     for(int i=0; i<Ctrl->R.nr; ++i){
-        travtP = compute_travt1d(
+        travtP = grt_compute_travt1d(
         pymod->Thk, pymod->Va, pymod->n, pymod->isrc, pymod->ircv, Ctrl->R.rs[i]);
-        travtS = compute_travt1d(
+        travtS = grt_compute_travt1d(
         pymod->Thk, pymod->Vb, pymod->n, pymod->isrc, pymod->ircv, Ctrl->R.rs[i]);
         
         printf(" %-15s  %-15.3f  %-15.3f\n", Ctrl->R.s_rs[i], travtP, travtS);

@@ -19,12 +19,12 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "dynamic/signals.h"
-#include "common/const.h"
-#include "common/colorstr.h"
+#include "grt/dynamic/signals.h"
+#include "grt/common/const.h"
+#include "grt/common/colorstr.h"
 
 
-bool check_tftype_tfparams(const char tftype, const char *tfparams){
+bool grt_check_tftype_tfparams(const char tftype, const char *tfparams){
 
     // 抛物波
     if(GRT_SIG_PARABOLA == tftype){
@@ -76,7 +76,7 @@ bool check_tftype_tfparams(const char tftype, const char *tfparams){
 }
 
 
-float * get_time_function(int *TFnt, float dt, const char tftype, const char *tfparams){
+float * grt_get_time_function(int *TFnt, float dt, const char tftype, const char *tfparams){
     // 获得时间函数
     float *tfarr=NULL;
     int tfnt=0;
@@ -84,23 +84,23 @@ float * get_time_function(int *TFnt, float dt, const char tftype, const char *tf
     if(GRT_SIG_PARABOLA == tftype){
         float t0=0.0;
         sscanf(tfparams, "%f", &t0);
-        tfarr = get_parabola_wave(dt, &t0, &tfnt);
+        tfarr = grt_get_parabola_wave(dt, &t0, &tfnt);
     }
     // 梯形波
     else if(GRT_SIG_TRAPEZOID == tftype){
         float t1=0.0, t2=0.0, t3=0.0;
         sscanf(tfparams, "%f/%f/%f", &t1, &t2, &t3);
-        tfarr = get_trap_wave(dt, &t1, &t2, &t3, &tfnt);
+        tfarr = grt_get_trap_wave(dt, &t1, &t2, &t3, &tfnt);
     }
     // 雷克子波
     else if(GRT_SIG_RICKER == tftype){
         float f0=0.0;
         sscanf(tfparams, "%f", &f0);
-        tfarr = get_ricker_wave(dt, f0, &tfnt);
+        tfarr = grt_get_ricker_wave(dt, f0, &tfnt);
     }
     // 自定义时间函数
     else if(GRT_SIG_CUSTOM == tftype){
-        tfarr = get_custom_wave(&tfnt, tfparams);
+        tfarr = grt_get_custom_wave(&tfnt, tfparams);
     }
 
     *TFnt = tfnt;
@@ -113,11 +113,11 @@ void linear_convolve_time_function(float *arr, int nt, float dt, const char tfty
     // 获得时间函数
     float *tfarr=NULL;
     int tfnt=0;
-    tfarr = get_time_function(&tfnt, dt, tftype, tfparams);
+    tfarr = grt_get_time_function(&tfnt, dt, tftype, tfparams);
 
     float *yarr = (float*)calloc(nt, sizeof(float));
     // 线性卷积
-    oaconvolve(arr, nt, tfarr, tfnt, yarr, nt, false);
+    grt_oaconvolve(arr, nt, tfarr, tfnt, yarr, nt, false);
 
     // 原地更改
     for(int i=0; i<nt; ++i){
@@ -136,7 +136,7 @@ void linear_convolve_time_function(float *arr, int nt, float dt, const char tfty
 }
 
 
-void oaconvolve(float *x, int nx, float *h, int nh, float *y, int ny, bool iscircular) {
+void grt_oaconvolve(float *x, int nx, float *h, int nh, float *y, int ny, bool iscircular) {
     if(iscircular){
         for(int n=0; n<ny; ++n) {
             y[n] = 0.0;
@@ -157,7 +157,7 @@ void oaconvolve(float *x, int nx, float *h, int nh, float *y, int ny, bool iscir
 }
 
 
-float trap_area(const float *x, int nx, float dt){
+float grt_trap_area(const float *x, int nx, float dt){
     float area = 0.0;
     for(int i=0; i<nx-1; ++i){
         area += (x[i] + x[i+1])*0.5/dt;
@@ -166,7 +166,7 @@ float trap_area(const float *x, int nx, float dt){
 }
 
 
-void trap_integral(float *x, int nx, float dt){
+void grt_trap_integral(float *x, int nx, float dt){
     // 矩形法
     // x[0] = 0.0; // 边界条件
     // for(int i=1; i<nx; ++i){
@@ -184,7 +184,7 @@ void trap_integral(float *x, int nx, float dt){
 
 
 
-void differential(float *x, int nx, float dt){
+void grt_differential(float *x, int nx, float dt){
     // 中心差分
     float tmp, x0=x[0];
     float h=2.0*dt;
@@ -198,7 +198,7 @@ void differential(float *x, int nx, float dt){
 }
 
 
-float * get_parabola_wave(float dt, float *Tlen, int *Nt){
+float * grt_get_parabola_wave(float dt, float *Tlen, int *Nt){
     float tlen = *Tlen;
     int nt = floorf(tlen/dt);
     if(fabsf(tlen - nt*dt) <= 1e-6) nt--;
@@ -223,7 +223,7 @@ float * get_parabola_wave(float dt, float *Tlen, int *Nt){
 }
 
 
-float * get_trap_wave(float dt, float *T1, float *T2, float *T3, int *Nt){
+float * grt_get_trap_wave(float dt, float *T1, float *T2, float *T3, int *Nt){
     // 如果t1==t2，则退化为三角波
     bool istriangle = (*T1==*T2)? true : false;
 
@@ -289,7 +289,7 @@ float * get_trap_wave(float dt, float *T1, float *T2, float *T3, int *Nt){
 }
 
 
-float * get_ricker_wave(float dt, float f0, int *Nt){
+float * grt_get_ricker_wave(float dt, float f0, int *Nt){
     if(1.0/dt <= 2.0*f0) { // 在当前采样率下，主频f0过高
         fprintf(stderr, BOLD_RED "Error! Compare to sampling freq (%.3f), dominant freq (%.3f) is too high.\n" DEFAULT_RESTORE,
                 1.0/dt, f0);
@@ -314,7 +314,7 @@ float * get_ricker_wave(float dt, float f0, int *Nt){
 }
 
 
-float * get_custom_wave(int *Nt, const char *tfparams){
+float * grt_get_custom_wave(int *Nt, const char *tfparams){
     float *tfarr = (float*)malloc(sizeof(float)*1);
     FILE *fp;
     if((fp = fopen(tfparams, "r")) == NULL){
@@ -353,6 +353,6 @@ float * get_custom_wave(int *Nt, const char *tfparams){
 }
 
 
-void free1d(void *pt){
+void grt_free1d(void *pt){
     GRT_SAFE_FREE_PTR(pt);
 }

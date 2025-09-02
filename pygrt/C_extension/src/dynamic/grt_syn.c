@@ -7,11 +7,11 @@
  * 
  */
 
-#include "dynamic/signals.h"
-#include "common/sacio2.h"
-#include "common/const.h"
-#include "common/radiation.h"
-#include "common/coord.h"
+#include "grt/dynamic/signals.h"
+#include "grt/common/sacio2.h"
+#include "grt/common/const.h"
+#include "grt/common/radiation.h"
+#include "grt/common/coord.h"
 
 #include "grt.h"
 
@@ -269,7 +269,7 @@ static void check_grn_exist(GRT_MODULE_CTRL *Ctrl, const char *name){
     // 检查文件的同时将src_mu计算出来
     if(Ctrl->S.src_mu == 0.0 && Ctrl->S.mult_src_mu){
         SACHEAD hd;
-        read_SAC_HEAD(command, buffer, &hd);
+        grt_read_SAC_HEAD(command, buffer, &hd);
         double va, vb, rho;
         va = hd.user6;
         vb = hd.user7;
@@ -417,7 +417,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     GRTBadOptionError(command, D, "");
                 }
                 // 检查测试
-                if(! check_tftype_tfparams(Ctrl->D.tftype, Ctrl->D.tfparams)){
+                if(! grt_check_tftype_tfparams(Ctrl->D.tftype, Ctrl->D.tfparams)){
                     GRTBadOptionError(command, D, "");
                 }
                 break;
@@ -610,9 +610,9 @@ static void data_zrt2zne(float *syn[3], float *syn_upar[3][3], int nt, double az
         }
 
         if(doupar) {
-            rot_zrt2zxy_upar(azrad, dblsyn, dblupar, dist*1e5);
+            grt_rot_zrt2zxy_upar(azrad, dblsyn, dblupar, dist*1e5);
         } else {
-            rot_zxy2zrt_vec(-azrad, dblsyn);
+            grt_rot_zxy2zrt_vec(-azrad, dblsyn);
         }
         
 
@@ -684,7 +684,7 @@ int syn_main(int argc, char **argv){
         }
         
         // 重新计算方向因子
-        set_source_radiation(Ctrl->srcRadi, Ctrl->computeType, (ityp==3), Ctrl->S.M0, upar_scale, Ctrl->A.azrad, Ctrl->mchn);
+        grt_set_source_radiation(Ctrl->srcRadi, Ctrl->computeType, (ityp==3), Ctrl->S.M0, upar_scale, Ctrl->A.azrad, Ctrl->mchn);
 
         for(int c=0; c<CHANNEL_NUM; ++c){
             ch = ZRTchs[c];
@@ -710,7 +710,7 @@ int syn_main(int argc, char **argv){
                     GRT_SAFE_ASPRINTF(&buffer, "%s/%c%s%c.sac", Ctrl->G.s_grnpath, tolower(ZRTchs[ityp-1]), SRC_M_NAME_ABBR[k], ch);
                 }
                 
-                float *arr = read_SAC(command, buffer, pthd, NULL);
+                float *arr = grt_read_SAC(command, buffer, pthd, NULL);
                 hd0 = *pthd; // 备份一份
 
                 nt = pthd->npts;
@@ -746,7 +746,7 @@ int syn_main(int argc, char **argv){
     
             if(Ctrl->D.active && Ctrl->D.tfarr==NULL){
                 // 获得时间函数 
-                Ctrl->D.tfarr = get_time_function(&Ctrl->D.tfnt, dt, Ctrl->D.tftype, Ctrl->D.tfparams);
+                Ctrl->D.tfarr = grt_get_time_function(&Ctrl->D.tfnt, dt, Ctrl->D.tftype, Ctrl->D.tfparams);
                 if(Ctrl->D.tfarr==NULL){
                     GRTRaiseError("[%s] get time function error.\n", command);
                 }
@@ -762,7 +762,7 @@ int syn_main(int argc, char **argv){
             // 时域循环卷积
             if(Ctrl->D.tfarr!=NULL){
                 float *convarr = (float*)calloc(nt, sizeof(float));
-                oaconvolve(arrout, nt, Ctrl->D.tfarr, Ctrl->D.tfnt, convarr, nt, true);
+                grt_oaconvolve(arrout, nt, Ctrl->D.tfarr, Ctrl->D.tfnt, convarr, nt, true);
                 for(int i=0; i<nt; ++i){
                     arrout[i] = convarr[i] * dt; // dt是连续卷积的系数
                 }
@@ -779,10 +779,10 @@ int syn_main(int argc, char **argv){
     
             // 时域积分或求导
             for(int i=0; i<Ctrl->I.int_times; ++i){
-                trap_integral(arrout, nt, dt);
+                grt_trap_integral(arrout, nt, dt);
             }
             for(int i=0; i<Ctrl->J.dif_times; ++i){
-                differential(arrout, nt, dt);
+                grt_differential(arrout, nt, dt);
             }
     
         } // ENDFOR 三分量

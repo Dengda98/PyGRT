@@ -18,12 +18,12 @@
 #include <complex.h>
 #include <stdlib.h>
 
-#include "common/ptam.h"
-#include "common/quadratic.h"
-#include "common/integral.h"
-#include "common/iostats.h"
-#include "common/const.h"
-#include "common/model.h"
+#include "grt/common/ptam.h"
+#include "grt/common/quadratic.h"
+#include "grt/common/integral.h"
+#include "grt/common/iostats.h"
+#include "grt/common/const.h"
+#include "grt/common/model.h"
 
 
 /**
@@ -48,7 +48,7 @@ static void process_peak_or_trough(
 {
     MYCOMPLEX tmp0;
     if (Gpt[ir][im][v] >= PTAM_WINDOW_SIZE-1 && Ipt[ir][im][v] < PTAM_MAX_PT) {
-        if (cplx_peak_or_trough(im, v, J3[ir], k, dk, &Kpt[ir][im][v][Ipt[ir][im][v]], &tmp0) != 0) {
+        if (grt_cplx_peak_or_trough(im, v, J3[ir], k, dk, &Kpt[ir][im][v][Ipt[ir][im][v]], &tmp0) != 0) {
             Fpt[ir][im][v][Ipt[ir][im][v]++] = tmp0;
             Gpt[ir][im][v] = 0;
         } else if (Gpt[ir][im][v] >= PTAM_MAX_WAITS) {  // 不再等待，直接取中点作为波峰波谷
@@ -116,14 +116,14 @@ static void ptam_once(
 }
 
 
-void PTA_method(
-    const MODEL1D *mod1d, MYREAL k0, MYREAL predk, MYCOMPLEX omega, 
+void grt_PTA_method(
+    const GRT_MODEL1D *mod1d, MYREAL k0, MYREAL predk, MYCOMPLEX omega, 
     MYINT nr, MYREAL *rs,
     MYCOMPLEX sum_J0[nr][SRC_M_NUM][INTEG_NUM],
     bool calc_upar,
     MYCOMPLEX sum_uiz_J0[nr][SRC_M_NUM][INTEG_NUM],
     MYCOMPLEX sum_uir_J0[nr][SRC_M_NUM][INTEG_NUM],
-    FILE *ptam_fstatsnr[nr][2], KernelFunc kerfunc, MYINT *stats)
+    FILE *ptam_fstatsnr[nr][2], GRT_KernelFunc kerfunc, MYINT *stats)
 {   
     // 需要兼容对正常收敛而不具有规律波峰波谷的序列
     // 有时序列收敛比较好，不表现为规律的波峰波谷，
@@ -205,10 +205,10 @@ void PTA_method(
             if(*stats==INVERSE_FAILURE)  goto BEFORE_RETURN;
 
             // 记录核函数
-            if(fstatsK!=NULL)  write_stats(fstatsK, k, QWV);
+            if(fstatsK!=NULL)  grt_write_stats(fstatsK, k, QWV);
 
             // 计算被积函数一项 F(k,w)Jm(kr)k
-            int_Pk(k, rs[ir], QWV, false, SUM3[ir][PTAM_WINDOW_SIZE-1]);  // [PTAM_WINDOW_SIZE-1]表示把新点值放在最后
+            grt_int_Pk(k, rs[ir], QWV, false, SUM3[ir][PTAM_WINDOW_SIZE-1]);  // [PTAM_WINDOW_SIZE-1]表示把新点值放在最后
             // 判断和记录波峰波谷
             ptam_once( ir, nr, precoef, k, dk,  SUM3, sum_J, Kpt, Fpt, Ipt, Gpt, &iendk0);
             
@@ -216,13 +216,13 @@ void PTA_method(
             if(calc_upar){
                 // ------------------------------- ui_z -----------------------------------
                 // 计算被积函数一项 F(k,w)Jm(kr)k
-                int_Pk(k, rs[ir], QWV_uiz, false, SUM3_uiz[ir][PTAM_WINDOW_SIZE-1]);  // [PTAM_WINDOW_SIZE-1]表示把新点值放在最后
+                grt_int_Pk(k, rs[ir], QWV_uiz, false, SUM3_uiz[ir][PTAM_WINDOW_SIZE-1]);  // [PTAM_WINDOW_SIZE-1]表示把新点值放在最后
                 // 判断和记录波峰波谷
                 ptam_once(ir, nr, precoef, k, dk, SUM3_uiz, sum_uiz_J, Kpt_uiz, Fpt_uiz, Ipt_uiz, Gpt_uiz, &iendk0);
 
                 // ------------------------------- ui_r -----------------------------------
                 // 计算被积函数一项 F(k,w)Jm(kr)k
-                int_Pk(k, rs[ir], QWV, true, SUM3_uir[ir][PTAM_WINDOW_SIZE-1]);  // [PTAM_WINDOW_SIZE-1]表示把新点值放在最后
+                grt_int_Pk(k, rs[ir], QWV, true, SUM3_uir[ir][PTAM_WINDOW_SIZE-1]);  // [PTAM_WINDOW_SIZE-1]表示把新点值放在最后
                 // 判断和记录波峰波谷
                 ptam_once(ir, nr, precoef, k, dk, SUM3_uir, sum_uir_J, Kpt_uir, Fpt_uir, Ipt_uir, Gpt_uir, &iendk0);
             
@@ -240,18 +240,18 @@ void PTA_method(
     for(MYINT ir=0; ir<nr; ++ir){
         FILE *fstatsP = ptam_fstatsnr[ir][1];
         // 记录到文件
-        if(fstatsP!=NULL)  write_stats_ptam(fstatsP, Kpt[ir], Fpt[ir]);
+        if(fstatsP!=NULL)  grt_write_stats_ptam(fstatsP, Kpt[ir], Fpt[ir]);
 
         for(MYINT i=0; i<SRC_M_NUM; ++i){
             for(MYINT v=0; v<INTEG_NUM; ++v){
-                cplx_shrink(Ipt[ir][i][v], Fpt[ir][i][v]);  
+                grt_cplx_shrink(Ipt[ir][i][v], Fpt[ir][i][v]);  
                 sum_J0[ir][i][v] = Fpt[ir][i][v][0];
 
                 if(calc_upar){
-                    cplx_shrink(Ipt_uiz[ir][i][v], Fpt_uiz[ir][i][v]);  
+                    grt_cplx_shrink(Ipt_uiz[ir][i][v], Fpt_uiz[ir][i][v]);  
                     sum_uiz_J0[ir][i][v] = Fpt_uiz[ir][i][v][0];
                 
-                    cplx_shrink(Ipt_uir[ir][i][v], Fpt_uir[ir][i][v]);  
+                    grt_cplx_shrink(Ipt_uir[ir][i][v], Fpt_uir[ir][i][v]);  
                     sum_uir_J0[ir][i][v] = Fpt_uir[ir][i][v][0];
                 }
             }
@@ -271,7 +271,7 @@ void PTA_method(
 
 
 
-MYINT cplx_peak_or_trough(MYINT idx1, MYINT idx2, const MYCOMPLEX arr[PTAM_WINDOW_SIZE][SRC_M_NUM][INTEG_NUM], MYREAL k, MYREAL dk, MYREAL *pk, MYCOMPLEX *value){
+MYINT grt_cplx_peak_or_trough(MYINT idx1, MYINT idx2, const MYCOMPLEX arr[PTAM_WINDOW_SIZE][SRC_M_NUM][INTEG_NUM], MYREAL k, MYREAL dk, MYREAL *pk, MYCOMPLEX *value){
     MYCOMPLEX f1, f2, f3;
     MYREAL rf1, rf2, rf3;
     MYINT stat=0;
@@ -299,7 +299,7 @@ MYINT cplx_peak_or_trough(MYINT idx1, MYINT idx2, const MYCOMPLEX arr[PTAM_WINDO
 
     // 二次多项式
     MYCOMPLEX a, b, c;
-    quad_term(xarr, farr, &a, &b, &c);
+    grt_quad_term(xarr, farr, &a, &b, &c);
 
     MYREAL k0 = x2;
     *pk = k0;
@@ -322,7 +322,7 @@ MYINT cplx_peak_or_trough(MYINT idx1, MYINT idx2, const MYCOMPLEX arr[PTAM_WINDO
 }
 
 
-void cplx_shrink(MYINT n1, MYCOMPLEX *arr){
+void grt_cplx_shrink(MYINT n1, MYCOMPLEX *arr){
     for(MYINT n=n1; n>1; --n){
         for(MYINT i=0; i<n-1; ++i){
             arr[i] = 0.5*(arr[i] + arr[i+1]);

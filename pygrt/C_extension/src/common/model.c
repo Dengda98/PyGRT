@@ -12,14 +12,14 @@
 #include <unistd.h>
 #include <complex.h>
 
-#include "common/model.h"
-#include "common/prtdbg.h"
-#include "common/attenuation.h"
-#include "common/colorstr.h"
+#include "grt/common/model.h"
+#include "grt/common/prtdbg.h"
+#include "grt/common/attenuation.h"
+#include "grt/common/colorstr.h"
 
-#include "grt_error.h"
+#include "grt/common/checkerror.h"
 
-void print_mod1d(const MODEL1D *mod1d){
+void grt_print_mod1d(const GRT_MODEL1D *mod1d){
     LAYER *lay;
     for(MYINT u=0; u<50; ++u){printf("---"); } printf("\n");
     for(MYINT i=0; i<mod1d->n; ++i){
@@ -35,7 +35,7 @@ void print_mod1d(const MODEL1D *mod1d){
     }
 }
 
-void print_pymod(const PYMODEL1D *pymod){
+void grt_print_pymod(const GRT_PYMODEL1D *pymod){
     // 模拟表格，打印速度
     // 每列字符宽度
     // [isrc/ircv] [h(km)] [Vp(km/s)] [Vs(km/s)] [Rho(g/cm^3)] [Qp] [Qs]
@@ -102,7 +102,7 @@ void print_pymod(const PYMODEL1D *pymod){
     printf("\n");
 }
 
-void free_pymod(PYMODEL1D *pymod){
+void grt_free_pymod(GRT_PYMODEL1D *pymod){
     GRT_SAFE_FREE_PTR(pymod->Thk);
     GRT_SAFE_FREE_PTR(pymod->Va);
     GRT_SAFE_FREE_PTR(pymod->Vb);
@@ -113,8 +113,8 @@ void free_pymod(PYMODEL1D *pymod){
 }
 
 
-MODEL1D * init_mod1d(MYINT n){
-    MODEL1D *mod1d = (MODEL1D *)malloc(sizeof(MODEL1D));
+GRT_MODEL1D * grt_init_mod1d(MYINT n){
+    GRT_MODEL1D *mod1d = (GRT_MODEL1D *)malloc(sizeof(GRT_MODEL1D));
     mod1d->n = n;
     mod1d->lays = (LAYER *)malloc(sizeof(LAYER) * n);
     return mod1d;
@@ -122,7 +122,7 @@ MODEL1D * init_mod1d(MYINT n){
 
 
 
-void get_mod1d(const PYMODEL1D *pymod1d, MODEL1D *mod1d){
+void grt_get_mod1d(const GRT_PYMODEL1D *pymod1d, GRT_MODEL1D *mod1d){
     MYINT n = pymod1d->n;
     mod1d->n = n;
     mod1d->isrc = pymod1d->isrc;
@@ -161,7 +161,7 @@ void get_mod1d(const PYMODEL1D *pymod1d, MODEL1D *mod1d){
 }
 
 
-void copy_mod1d(const MODEL1D *mod1d1, MODEL1D *mod1d2){
+void grt_copy_mod1d(const GRT_MODEL1D *mod1d1, GRT_MODEL1D *mod1d2){
     MYINT n = mod1d1->n;
     mod1d2->n = mod1d1->n;
     mod1d2->isrc = mod1d1->isrc;
@@ -195,14 +195,14 @@ void copy_mod1d(const MODEL1D *mod1d1, MODEL1D *mod1d2){
 }
 
 
-void free_mod1d(MODEL1D *mod1d){
+void grt_free_mod1d(GRT_MODEL1D *mod1d){
     GRT_SAFE_FREE_PTR(mod1d->lays);
     GRT_SAFE_FREE_PTR(mod1d);
 }
 
 
 
-void update_mod1d_omega(MODEL1D *mod1d, MYCOMPLEX omega){
+void grt_update_mod1d_omega(GRT_MODEL1D *mod1d, MYCOMPLEX omega){
     MYREAL Va0, Vb0;
     MYCOMPLEX ka0, kb0;
     MYCOMPLEX atna, atnb;
@@ -212,8 +212,8 @@ void update_mod1d_omega(MODEL1D *mod1d, MYCOMPLEX omega){
         Va0 = lay->Va;
         Vb0 = lay->Vb;
 
-        atna = (lay->Qainv > 0.0)? attenuation_law(lay->Qainv, omega) : 1.0;
-        atnb = (lay->Qbinv > 0.0)? attenuation_law(lay->Qbinv, omega) : 1.0;
+        atna = (lay->Qainv > 0.0)? grt_attenuation_law(lay->Qainv, omega) : 1.0;
+        atnb = (lay->Qbinv > 0.0)? grt_attenuation_law(lay->Qbinv, omega) : 1.0;
         
         ka0 = omega/(Va0*atna);
         kb0 = (Vb0>RZERO)? omega/(Vb0*atnb) : CZERO;
@@ -231,8 +231,8 @@ void update_mod1d_omega(MODEL1D *mod1d, MYCOMPLEX omega){
 }
 
 
-PYMODEL1D * init_pymod(MYINT n){
-    PYMODEL1D *pymod = (PYMODEL1D *)calloc(1, sizeof(PYMODEL1D));
+GRT_PYMODEL1D * grt_init_pymod(MYINT n){
+    GRT_PYMODEL1D *pymod = (GRT_PYMODEL1D *)calloc(1, sizeof(GRT_PYMODEL1D));
     pymod->n = n;
     
     pymod->Thk = (MYREAL*)calloc(n, sizeof(MYREAL));
@@ -245,7 +245,7 @@ PYMODEL1D * init_pymod(MYINT n){
     return pymod;
 }
 
-void realloc_pymod(PYMODEL1D *pymod, MYINT n){
+void grt_realloc_pymod(GRT_PYMODEL1D *pymod, MYINT n){
     pymod->n = n;
 
     pymod->Thk = (MYREAL*)realloc(pymod->Thk, n*sizeof(MYREAL));
@@ -257,7 +257,7 @@ void realloc_pymod(PYMODEL1D *pymod, MYINT n){
 }
 
 
-PYMODEL1D * read_pymod_from_file(const char *command, const char *modelpath, double depsrc, double deprcv, bool allowLiquid){
+GRT_PYMODEL1D * grt_read_pymod_from_file(const char *command, const char *modelpath, double depsrc, double deprcv, bool allowLiquid){
     GRTCheckFileExist(command, modelpath);
     
     FILE *fp = GRTCheckOpenFile(command, modelpath, "r");
@@ -281,7 +281,7 @@ PYMODEL1D * read_pymod_from_file(const char *command, const char *modelpath, dou
     pimg_idx = pmin_idx;
 
     // 初始化
-    PYMODEL1D *pymod = init_pymod(1);
+    GRT_PYMODEL1D *pymod = grt_init_pymod(1);
 
     const int ncols = 6; // 模型文件有6列，或除去qa qb有四列
     const int ncols_noQ = 4;
@@ -374,7 +374,7 @@ PYMODEL1D * read_pymod_from_file(const char *command, const char *modelpath, dou
         for(int k=0; k<2; ++k){
             // printf("%d, %d, %lf, %lf, %e ", i, k, depth+h, depimg, depth+h- depimg);
             if(*pimg_idx < 0 && depth+h >= depimg && depsrc >= 0.0 && deprcv >= 0.0){
-                realloc_pymod(pymod, nlay+1);
+                grt_realloc_pymod(pymod, nlay+1);
                 pymod->Thk[nlay] = depimg - depth;
                 pymod->Va[nlay] = va;
                 pymod->Vb[nlay] = vb;
@@ -393,7 +393,7 @@ PYMODEL1D * read_pymod_from_file(const char *command, const char *modelpath, dou
         }
         
 
-        realloc_pymod(pymod, nlay+1);
+        grt_realloc_pymod(pymod, nlay+1);
         pymod->Thk[nlay] = h;
         pymod->Va[nlay] = va;
         pymod->Vb[nlay] = vb;
@@ -440,7 +440,7 @@ PYMODEL1D * read_pymod_from_file(const char *command, const char *modelpath, dou
 }
 
 
-void get_pymod_vmin_vmax(const PYMODEL1D *pymod, double *vmin, double *vmax){
+void grt_get_pymod_vmin_vmax(const GRT_PYMODEL1D *pymod, double *vmin, double *vmax){
     *vmin = __DBL_MAX__;
     *vmax = RZERO;
     const MYREAL *Va = pymod->Va;

@@ -48,10 +48,10 @@ def gen_parabola_wave(vlen, dt):
     ct1 = c_float(vlen)
     cnt = c_int(0)
 
-    carr = C_get_parabola_wave(dt, byref(ct1), byref(cnt))
+    carr = C_grt_get_parabola_wave(dt, byref(ct1), byref(cnt))
     arr = npct.as_array(carr, shape=(cnt.value,)).copy()
 
-    C_free(carr)
+    C_grt_free(carr)
 
     return arr
 
@@ -72,10 +72,10 @@ def gen_trap_wave(t1, t2, t3, dt):
     ct3 = c_float(t3)
     cnt = c_int(0)
 
-    carr = C_get_trap_wave(dt, byref(ct1), byref(ct2), byref(ct3), byref(cnt))
+    carr = C_grt_get_trap_wave(dt, byref(ct1), byref(ct2), byref(ct3), byref(cnt))
     arr = npct.as_array(carr, shape=(cnt.value,)).copy()
 
-    C_free(carr)
+    C_grt_free(carr)
 
     return arr
 
@@ -92,11 +92,11 @@ def gen_ricker_wave(f0:float, dt:float):
     '''
     cnt = c_int(0)
 
-    carr = C_get_ricker_wave(dt, f0, byref(cnt))
+    carr = C_grt_get_ricker_wave(dt, f0, byref(cnt))
     if cast(carr, c_void_p).value is None:
         raise ValueError("NULL pointer")
     arr = npct.as_array(carr, shape=(cnt.value,)).copy()
 
-    C_free(carr)
+    C_grt_free(carr)
 
     return arr

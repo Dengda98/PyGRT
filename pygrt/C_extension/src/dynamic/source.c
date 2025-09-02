@@ -12,13 +12,13 @@
 #include <stdio.h>
 #include <complex.h>
 
-#include "dynamic/source.h"
-#include "common/model.h"
-#include "common/matrix.h"
-#include "common/prtdbg.h"
+#include "grt/dynamic/source.h"
+#include "grt/common/model.h"
+#include "grt/common/matrix.h"
+#include "grt/common/prtdbg.h"
 
 
-void source_coef_PSV(
+void grt_source_coef_PSV(
     MYCOMPLEX src_xa, MYCOMPLEX src_xb, MYCOMPLEX src_kaka, MYCOMPLEX src_kbkb, 
     MYREAL k,
     MYCOMPLEX coef[SRC_M_NUM][QWV_NUM-1][2])
@@ -66,7 +66,7 @@ void source_coef_PSV(
 }
 
 
-void source_coef_SH(
+void grt_source_coef_SH(
     MYCOMPLEX src_xb, MYCOMPLEX src_kbkb, 
     MYREAL k,
     MYCOMPLEX coef[SRC_M_NUM][2])

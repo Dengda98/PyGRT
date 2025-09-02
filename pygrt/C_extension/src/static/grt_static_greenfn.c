@@ -8,13 +8,13 @@
  */
 
 
-#include "static/static_grn.h"
-#include "common/const.h"
-#include "common/model.h"
-#include "common/integral.h"
-#include "common/iostats.h"
-#include "common/search.h"
-#include "common/util.h"
+#include "grt/static/static_grn.h"
+#include "grt/common/const.h"
+#include "grt/common/model.h"
+#include "grt/common/integral.h"
+#include "grt/common/iostats.h"
+#include "grt/common/search.h"
+#include "grt/common/util.h"
 
 #include "grt.h"
 
@@ -32,7 +32,7 @@ typedef struct {
         bool active;
         char *s_modelpath;        ///< 模型路径
         const char *s_modelname;  ///< 模型名称
-        PYMODEL1D *pymod;         ///< 模型PYMODEL1D结构体指针
+        GRT_PYMODEL1D *pymod;         ///< 模型PYMODEL1D结构体指针
     } M;
     /** 震源和接收器深度 */
     struct {
@@ -94,7 +94,7 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
 
     // M
     GRT_SAFE_FREE_PTR(Ctrl->M.s_modelpath);
-    free_pymod(Ctrl->M.pymod);
+    grt_free_pymod(Ctrl->M.pymod);
     
     // D
     GRT_SAFE_FREE_PTR(Ctrl->D.s_depsrc);
@@ -244,7 +244,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             case 'M':
                 Ctrl->M.active = true;
                 Ctrl->M.s_modelpath = strdup(optarg);
-                Ctrl->M.s_modelname = get_basename(Ctrl->M.s_modelpath);
+                Ctrl->M.s_modelname = grt_get_basename(Ctrl->M.s_modelpath);
                 break;
 
             // 震源和场点深度， -Ddepsrc/deprcv
@@ -443,14 +443,14 @@ int static_greenfn_main(int argc, char **argv){
     getopt_from_command(Ctrl, argc, argv);
 
     // 读入模型文件（暂先不考虑液体层）
-    if((Ctrl->M.pymod = read_pymod_from_file(command, Ctrl->M.s_modelpath, Ctrl->D.depsrc, Ctrl->D.deprcv, false)) == NULL){
+    if((Ctrl->M.pymod = grt_read_pymod_from_file(command, Ctrl->M.s_modelpath, Ctrl->D.depsrc, Ctrl->D.deprcv, false)) == NULL){
         exit(EXIT_FAILURE);
     }
-    PYMODEL1D *pymod = Ctrl->M.pymod;
+    GRT_PYMODEL1D *pymod = Ctrl->M.pymod;
 
     // 最大最小速度
     MYREAL vmin, vmax;
-    get_pymod_vmin_vmax(pymod, &vmin, &vmax);
+    grt_get_pymod_vmin_vmax(pymod, &vmin, &vmax);
 
     // 参考最小速度
     if(!Ctrl->V.active){
@@ -483,7 +483,7 @@ int static_greenfn_main(int argc, char **argv){
 
     //==============================================================================
     // 计算静态格林函数
-    integ_static_grn(
+    grt_integ_static_grn(
         pymod, Ctrl->nr, Ctrl->rs, Ctrl->V.vmin_ref, Ctrl->K.keps, Ctrl->K.k0, Ctrl->L.Length, Ctrl->L.filonLength, Ctrl->L.safilonTol, Ctrl->L.filonCut, 
         grn, Ctrl->e.active, grn_uiz, grn_uir,
         Ctrl->S.s_statsdir

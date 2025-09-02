@@ -8,9 +8,9 @@
  */
 
 
-#include "common/const.h"
-#include "common/radiation.h"
-#include "common/coord.h"
+#include "grt/common/const.h"
+#include "grt/common/radiation.h"
+#include "grt/common/coord.h"
 
 #include "grt.h"
 
@@ -454,7 +454,7 @@ int static_syn_main(int argc, char **argv){
 
             tmpsyn[0] = tmpsyn[1] = tmpsyn[2] = 0.0;
             // 计算震源辐射因子
-            set_source_radiation(Ctrl->srcRadi, Ctrl->computeType, ityp==3, Ctrl->S.M0, upar_scale, azrad, Ctrl->mchn);
+            grt_set_source_radiation(Ctrl->srcRadi, Ctrl->computeType, ityp==3, Ctrl->S.M0, upar_scale, azrad, Ctrl->mchn);
 
             for(int i=0; i<CHANNEL_NUM; ++i){
                 for(int k=0; k<SRC_M_NUM; ++k){
@@ -475,9 +475,9 @@ int static_syn_main(int argc, char **argv){
         // 是否要转到ZNE
         if(rot2ZNE){
             if(Ctrl->e.active){
-                rot_zrt2zxy_upar(azrad, syn, syn_upar, dist*1e5);
+                grt_rot_zrt2zxy_upar(azrad, syn, syn_upar, dist*1e5);
             } else {
-                rot_zxy2zrt_vec(-azrad, syn);
+                grt_rot_zxy2zrt_vec(-azrad, syn);
             }
         }
 

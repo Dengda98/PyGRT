@@ -9,10 +9,10 @@
 
 #include <stdio.h>
 
-#include "common/progressbar.h"
+#include "grt/common/progressbar.h"
 
 
-void printprogressBar(const char *prefix, MYINT percentage) {
+void grt_printprogressBar(const char *prefix, MYINT percentage) {
     printf("\r\033[K"); // 移动到行首并清空行
     if(prefix!=NULL) printf("%s", prefix);
     printf("[");

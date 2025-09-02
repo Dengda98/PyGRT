@@ -9,14 +9,14 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include "common/search.h"
-#include "common/const.h"
+#include "grt/common/search.h"
+#include "grt/common/const.h"
 
 static bool _gt_(MYREAL a1, MYREAL a2) { return a1 > a2; }
 static bool _lt_(MYREAL a1, MYREAL a2) { return a1 < a2; }
 
 
-MYINT findElement_MYINT(const MYINT array[], MYINT size, MYINT target) {
+MYINT grt_findElement_MYINT(const MYINT array[], MYINT size, MYINT target) {
     for (MYINT i = 0; i < size; ++i) {
         if (array[i] == target) {
             return i;  // 找到目标元素，返回索引
@@ -25,7 +25,7 @@ MYINT findElement_MYINT(const MYINT array[], MYINT size, MYINT target) {
     return -1;  // 未找到目标元素，返回-1
 }
 
-MYINT findLessEqualClosest_MYREAL(const MYREAL array[], MYINT size, MYREAL target) {
+MYINT grt_findLessEqualClosest_MYREAL(const MYREAL array[], MYINT size, MYREAL target) {
     MYINT ires=-1;
     MYREAL mindist=-1.0, dist=0.0;
     for (MYINT i = 0; i < size; ++i) {
@@ -38,7 +38,7 @@ MYINT findLessEqualClosest_MYREAL(const MYREAL array[], MYINT size, MYREAL targe
     return ires;
 }
 
-MYINT findClosest_MYREAL(const MYREAL array[], MYINT size, MYREAL target) {
+MYINT grt_findClosest_MYREAL(const MYREAL array[], MYINT size, MYREAL target) {
     MYINT ires=0;
     MYREAL mindist=-1.0, dist=0.0;
     for (MYINT i = 0; i < size; ++i) {
@@ -51,7 +51,7 @@ MYINT findClosest_MYREAL(const MYREAL array[], MYINT size, MYREAL target) {
     return ires;
 }
 
-MYINT findMinMax_MYREAL(const MYREAL array[], MYINT size, bool isMax) {
+MYINT grt_findMinMax_MYREAL(const MYREAL array[], MYINT size, bool isMax) {
     MYREAL rmax = array[0];
     MYINT idx=0;
     bool (*_func)(MYREAL, MYREAL) = (isMax)? _gt_ : _lt_;

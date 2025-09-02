@@ -42,7 +42,7 @@ static void free_Ctrl(GRT_MAIN_CTRL *Ctrl){
 
 /** 打印使用说明 */
 static void print_help(){
-print_logo();
+grt_print_logo();
 printf("\n"
 "Usage: \n"
 "----------------------------------------------------------------\n"

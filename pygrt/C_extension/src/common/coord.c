@@ -10,9 +10,9 @@
 #include <stdbool.h>
 #include <tgmath.h>
 
+#include "grt/common/coord.h"
 
-
-void rot_zxy2zrt_vec(double theta, double A[3]){
+void grt_rot_zxy2zrt_vec(double theta, double A[3]){
     double s1, s2, s3;
     s1 = A[0];  s2 = A[1];  s3 = A[2];
     double st = sin(theta);
@@ -24,7 +24,7 @@ void rot_zxy2zrt_vec(double theta, double A[3]){
 
 
 
-void rot_zxy2zrt_symtensor2odr(double theta, double A[6]) {
+void grt_rot_zxy2zrt_symtensor2odr(double theta, double A[6]) {
     double s11, s12, s13, s22, s23, s33;
     s11 = A[0];   s12 = A[1];   s13 = A[2];
                   s22 = A[3];   s23 = A[4];
@@ -45,7 +45,7 @@ void rot_zxy2zrt_symtensor2odr(double theta, double A[6]) {
 
 
 
-void rot_zrt2zxy_upar(const double theta, double u[3], double upar[3][3], const double r){
+void grt_rot_zrt2zxy_upar(const double theta, double u[3], double upar[3][3], const double r){
     double s00, s01, s02;
     double s10, s11, s12;
     double s20, s21, s22;

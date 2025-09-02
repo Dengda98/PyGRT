@@ -8,8 +8,8 @@
  */
 
 
-#include "common/sacio2.h"
-#include "common/const.h"
+#include "grt/common/sacio2.h"
+#include "grt/common/const.h"
 
 #include "grt.h"
 
@@ -105,7 +105,7 @@ int strain_main(int argc, char **argv){
     // 读取一个头段变量，获得基本参数，分配数组内存
     SACHEAD hd;
     GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%s%c.sac", Ctrl->s_synpath, tolower(chs[0]), Ctrl->s_prefix, chs[0]);
-    read_SAC_HEAD(command, s_filepath, &hd);
+    grt_read_SAC_HEAD(command, s_filepath, &hd);
     int npts=hd.npts;
     float dist=hd.dist;
     float *arrout = (float*)calloc(npts, sizeof(float));
@@ -119,14 +119,14 @@ int strain_main(int argc, char **argv){
 
             // 读取数据 u_{i,j}
             GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%s%c.sac", Ctrl->s_synpath, tolower(c2), Ctrl->s_prefix, c1);
-            arrin = read_SAC(command, s_filepath, &hd, arrin);
+            arrin = grt_read_SAC(command, s_filepath, &hd, arrin);
 
             // 累加
             for(int i=0; i<npts; ++i)  arrout[i] += arrin[i];
 
             // 读取数据 u_{j,i}
             GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%s%c.sac", Ctrl->s_synpath, tolower(c1), Ctrl->s_prefix, c2);
-            arrin = read_SAC(command, s_filepath, &hd, arrin);
+            arrin = grt_read_SAC(command, s_filepath, &hd, arrin);
 
             // 累加
             for(int i=0; i<npts; ++i)  arrout[i] = (arrout[i] + arrin[i]) * 0.5f;
@@ -135,13 +135,13 @@ int strain_main(int argc, char **argv){
             if(c1=='R' && c2=='T'){
                 // 读取数据 u_T
                 GRT_SAFE_ASPRINTF(&s_filepath, "%s/%sT.sac", Ctrl->s_synpath, Ctrl->s_prefix);
-                arrin = read_SAC(command, s_filepath, &hd, arrin);
+                arrin = grt_read_SAC(command, s_filepath, &hd, arrin);
                 for(int i=0; i<npts; ++i)  arrout[i] -= 0.5f * arrin[i] / dist * 1e-5;
             }
             else if(c1=='T' && c2=='T'){
                 // 读取数据 u_R
                 GRT_SAFE_ASPRINTF(&s_filepath, "%s/%sR.sac", Ctrl->s_synpath, Ctrl->s_prefix);
-                arrin = read_SAC(command, s_filepath, &hd, arrin);
+                arrin = grt_read_SAC(command, s_filepath, &hd, arrin);
                 for(int i=0; i<npts; ++i)  arrout[i] += arrin[i] / dist * 1e-5;
             }
 

@@ -17,11 +17,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "common/safim.h"
-#include "common/integral.h"
-#include "common/iostats.h"
-#include "common/const.h"
-#include "common/model.h"
+#include "grt/common/safim.h"
+#include "grt/common/integral.h"
+#include "grt/common/iostats.h"
+#include "grt/common/const.h"
+#include "grt/common/model.h"
 
 
 /**
@@ -255,7 +255,7 @@ static void interv_integ(
         }
 
         // 该分段内的积分
-        int_Pk_sa_filon(ptKitv->k3, rs[ir], ptKitv->F3, false, SUM);
+        grt_int_Pk_sa_filon(ptKitv->k3, rs[ir], ptKitv->F3, false, SUM);
         for(MYINT i=0; i<SRC_M_NUM; ++i){
             MYINT modr = SRC_M_ORDERS[i];
             for(MYINT v=0; v<INTEG_NUM; ++v){
@@ -266,7 +266,7 @@ static void interv_integ(
 
         if(calc_upar){
             //----------------------------- ui_z --------------------------------------
-            int_Pk_sa_filon(ptKitv->k3, rs[ir], ptKitv->F3_uiz, false, SUM);
+            grt_int_Pk_sa_filon(ptKitv->k3, rs[ir], ptKitv->F3_uiz, false, SUM);
             for(MYINT i=0; i<SRC_M_NUM; ++i){
                 MYINT modr = SRC_M_ORDERS[i];
                 for(MYINT v=0; v<INTEG_NUM; ++v){
@@ -276,7 +276,7 @@ static void interv_integ(
             }
 
             //----------------------------- ui_r --------------------------------------
-            int_Pk_sa_filon(ptKitv->k3, rs[ir], ptKitv->F3, true, SUM);
+            grt_int_Pk_sa_filon(ptKitv->k3, rs[ir], ptKitv->F3, true, SUM);
             for(MYINT i=0; i<SRC_M_NUM; ++i){
                 MYINT modr = SRC_M_ORDERS[i];
                 for(MYINT v=0; v<INTEG_NUM; ++v){
@@ -292,14 +292,14 @@ static void interv_integ(
 
 
 
-MYREAL sa_filon_integ(
-    const MODEL1D *mod1d, MYREAL vmin, MYREAL k0, MYREAL dk0, MYREAL tol, MYREAL kmax, MYCOMPLEX omega, 
+MYREAL grt_sa_filon_integ(
+    const GRT_MODEL1D *mod1d, MYREAL vmin, MYREAL k0, MYREAL dk0, MYREAL tol, MYREAL kmax, MYCOMPLEX omega, 
     MYINT nr, MYREAL *rs,
     MYCOMPLEX sum_J0[nr][SRC_M_NUM][INTEG_NUM],
     bool calc_upar,
     MYCOMPLEX sum_uiz_J0[nr][SRC_M_NUM][INTEG_NUM],
     MYCOMPLEX sum_uir_J0[nr][SRC_M_NUM][INTEG_NUM],
-    FILE *fstats, KernelFunc kerfunc, MYINT *stats)
+    FILE *fstats, GRT_KernelFunc kerfunc, MYINT *stats)
 {   
     // 将k区间整体分为[dk0, kref]和[kref, kmax]，后一段使用更宽松的拟合规则
     MYREAL kref = creal(omega)/fabs(vmin);
@@ -338,7 +338,7 @@ MYREAL sa_filon_integ(
     MYREAL maxabsQWV_uiz[GTYPES_MAX]={0};
 
     // 记录第一个值
-    if(fstats!=NULL)  write_stats(fstats, Kitv.k3[0], Kitv.F3[0]);
+    if(fstats!=NULL)  grt_write_stats(fstats, Kitv.k3[0], Kitv.F3[0]);
 
     // 自适应采样
     while(stack.size > 0) {
@@ -407,10 +407,10 @@ MYREAL sa_filon_integ(
             // 记录后四个采样值
             if(fstats!=NULL){
                 for(MYINT i=1; i<3; ++i){
-                    write_stats(fstats, Kitv_left.k3[i], Kitv_left.F3[i]);
+                    grt_write_stats(fstats, Kitv_left.k3[i], Kitv_left.F3[i]);
                 }
                 for(MYINT i=1; i<3; ++i){
-                    write_stats(fstats, Kitv_right.k3[i], Kitv_right.F3[i]);
+                    grt_write_stats(fstats, Kitv_right.k3[i], Kitv_right.F3[i]);
                 }
             }
             // 计算积分

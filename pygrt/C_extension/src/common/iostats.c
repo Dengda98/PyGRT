@@ -12,12 +12,12 @@
 #include <stdbool.h>
 #include <complex.h>
 
-#include "common/iostats.h"
-#include "common/const.h"
+#include "grt/common/iostats.h"
+#include "grt/common/const.h"
 
 
 
-void write_stats(
+void grt_write_stats(
     FILE *f0, MYREAL k, const MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM])
 {
     fwrite(&k, sizeof(MYREAL), 1, f0);
@@ -33,7 +33,7 @@ void write_stats(
 }
 
 
-MYINT extract_stats(FILE *bf0, FILE *af0){
+MYINT grt_extract_stats(FILE *bf0, FILE *af0){
     // 打印标题
     if(bf0 == NULL){
         char K[20];
@@ -73,7 +73,7 @@ MYINT extract_stats(FILE *bf0, FILE *af0){
 }
 
 
-void write_stats_ptam(
+void grt_write_stats_ptam(
     FILE *f0, 
     MYREAL Kpt[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT],
     MYCOMPLEX Fpt[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT]
@@ -94,7 +94,7 @@ void write_stats_ptam(
 }
 
 
-MYINT extract_stats_ptam(FILE *bf0, FILE *af0){
+MYINT grt_extract_stats_ptam(FILE *bf0, FILE *af0){
     // 打印标题
     if(bf0 == NULL){
         char K[20], K2[20];

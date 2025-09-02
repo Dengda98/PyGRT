@@ -19,16 +19,16 @@
 #include <sys/stat.h>
 #include <errno.h>
 
-#include "static/static_grn.h"
-#include "static/static_propagate.h"
-#include "common/dwm.h"
-#include "common/ptam.h"
-#include "common/fim.h"
-#include "common/safim.h"
-#include "common/const.h"
-#include "common/model.h"
-#include "common/integral.h"
-#include "common/search.h"
+#include "grt/static/static_grn.h"
+#include "grt/static/static_propagate.h"
+#include "grt/common/dwm.h"
+#include "grt/common/ptam.h"
+#include "grt/common/fim.h"
+#include "grt/common/safim.h"
+#include "grt/common/const.h"
+#include "grt/common/model.h"
+#include "grt/common/integral.h"
+#include "grt/common/search.h"
 
 
 
@@ -48,7 +48,7 @@ static void recordin_GRN(
     MYCOMPLEX (*tmp_grn)[SRC_M_NUM][CHANNEL_NUM] = (MYCOMPLEX(*)[SRC_M_NUM][CHANNEL_NUM])calloc(nr, sizeof(*tmp_grn));
 
     for(MYINT ir=0; ir<nr; ++ir){
-        merge_Pk(sum_J[ir], tmp_grn[ir]);
+        grt_merge_Pk(sum_J[ir], tmp_grn[ir]);
 
         for(MYINT i=0; i<SRC_M_NUM; ++i) {
             for(MYINT c=0; c<CHANNEL_NUM; ++c){
@@ -63,8 +63,8 @@ static void recordin_GRN(
 
 
 
-void integ_static_grn(
-    PYMODEL1D *pymod1d, MYINT nr, MYREAL *rs, MYREAL vmin_ref, MYREAL keps, MYREAL k0, MYREAL Length,
+void grt_integ_static_grn(
+    GRT_PYMODEL1D *pymod1d, MYINT nr, MYREAL *rs, MYREAL vmin_ref, MYREAL keps, MYREAL k0, MYREAL Length,
     MYREAL filonLength, MYREAL safilonTol, MYREAL filonCut, 
 
     // 返回值，代表Z、R、T分量
@@ -76,11 +76,11 @@ void integ_static_grn(
 
     const char *statsstr // 积分结果输出
 ){
-    MYREAL rmax=rs[findMinMax_MYREAL(rs, nr, true)];   // 最大震中距
+    MYREAL rmax=rs[grt_findMinMax_MYREAL(rs, nr, true)];   // 最大震中距
 
     // pymod1d -> mod1d
-    MODEL1D *mod1d = init_mod1d(pymod1d->n);
-    get_mod1d(pymod1d, mod1d);
+    GRT_MODEL1D *mod1d = grt_init_mod1d(pymod1d->n);
+    grt_get_mod1d(pymod1d, mod1d);
 
     const MYREAL hs = (fabs(pymod1d->depsrc - pymod1d->deprcv) < MIN_DEPTH_GAP_SRC_RCV)? 
                       MIN_DEPTH_GAP_SRC_RCV : fabs(pymod1d->depsrc - pymod1d->deprcv); // hs=max(震源和台站深度差,1.0)
@@ -159,35 +159,35 @@ void integ_static_grn(
     MYINT inv_stats=INVERSE_SUCCESS;
 
     // 常规的波数积分
-    k = discrete_integ(
+    k = grt_discrete_integ(
         mod1d, dk, (useFIM)? filonK : kmax, keps, 0.0, nr, rs, 
         sum_J, calc_upar, sum_uiz_J, sum_uir_J,
-        fstats, static_kernel, &inv_stats);
+        fstats, grt_static_kernel, &inv_stats);
     
     // 基于线性插值的Filon积分
     if(useFIM){
         if(filondk > RZERO){
             // 基于线性插值的Filon积分，固定采样间隔
-            k = linear_filon_integ(
+            k = grt_linear_filon_integ(
                 mod1d, k, dk, filondk, kmax, keps, 0.0, nr, rs, 
                 sum_J, calc_upar, sum_uiz_J, sum_uir_J,
-                fstats, static_kernel, &inv_stats);
+                fstats, grt_static_kernel, &inv_stats);
         }
         else if(safilonTol > RZERO){
             // 基于自适应采样的Filon积分
-            k = sa_filon_integ(
+            k = grt_sa_filon_integ(
                 mod1d, kmax, k, dk, safilonTol, kmax, 0.0, nr, rs, 
                 sum_J, calc_upar, sum_uiz_J, sum_uir_J,
-                fstats, static_kernel, &inv_stats);
+                fstats, grt_static_kernel, &inv_stats);
         }
     }
 
     // k之后的部分使用峰谷平均法进行显式收敛，建议在浅源地震的时候使用   
     if(vmin_ref < RZERO){
-        PTA_method(
+        grt_PTA_method(
             mod1d, k, dk, 0.0, nr, rs, 
             sum_J, calc_upar, sum_uiz_J, sum_uir_J,
-            ptam_fstatsnr, static_kernel, &inv_stats);
+            ptam_fstatsnr, grt_static_kernel, &inv_stats);
     }
 
 
@@ -208,7 +208,7 @@ void integ_static_grn(
     GRT_SAFE_FREE_PTR(sum_uiz_J);
     GRT_SAFE_FREE_PTR(sum_uir_J);
 
-    free_mod1d(mod1d);
+    grt_free_mod1d(mod1d);
 
     GRT_SAFE_FREE_PTR_ARRAY(ptam_fstatsdir, nr);
 

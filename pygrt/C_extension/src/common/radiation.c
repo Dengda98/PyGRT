@@ -9,10 +9,10 @@
 
 #include <stdbool.h>
 
-#include "common/radiation.h"
-#include "common/const.h"
+#include "grt/common/radiation.h"
+#include "grt/common/const.h"
 
-void set_source_radiation(
+void grt_set_source_radiation(
     double srcRadi[SRC_M_NUM][CHANNEL_NUM], const int computeType, const bool par_theta,
     const double M0, const double coef, const double azrad, const double mchn[MECHANISM_NUM]
 ){
