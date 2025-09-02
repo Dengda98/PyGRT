@@ -71,7 +71,7 @@ static void recordin_GRN(
 
 
 void grt_integ_grn_spec(
-    GRT_PYMODEL1D *pymod1d, MYINT nf1, MYINT nf2, MYREAL *freqs,  
+    GRT_MODEL1D *mod1d, MYINT nf1, MYINT nf2, MYREAL *freqs,  
     MYINT nr, MYREAL *rs, MYREAL wI, 
     MYREAL vmin_ref, MYREAL keps, MYREAL ampk, MYREAL k0, MYREAL Length, MYREAL filonLength, MYREAL safilonTol, MYREAL filonCut,      
     bool print_progressbar, 
@@ -95,15 +95,9 @@ void grt_integ_grn_spec(
     MYINT irmax = grt_findMinMax_MYREAL(rs, nr, true);
     MYREAL rmax=rs[irmax];   
 
-    // pymod1d -> mod1d
-    GRT_MODEL1D *main_mod1d = grt_init_mod1d(pymod1d->n);
-    grt_get_mod1d(pymod1d, main_mod1d);
-
-    const LAYER *src_lay = main_mod1d->lays + main_mod1d->isrc;
-    const MYREAL Rho = src_lay->Rho; // 震源区密度
+    const MYREAL Rho = mod1d->Rho[mod1d->isrc]; // 震源区密度
     const MYREAL fac = RONE/(RFOUR*PI*Rho);
-    const MYREAL hs = (fabs(pymod1d->depsrc - pymod1d->deprcv) < MIN_DEPTH_GAP_SRC_RCV)? 
-                      MIN_DEPTH_GAP_SRC_RCV : fabs(pymod1d->depsrc - pymod1d->deprcv); // hs=max(震源和台站深度差,1.0)
+    const MYREAL hs = GRT_MAX(fabs(mod1d->depsrc - mod1d->deprcv), MIN_DEPTH_GAP_SRC_RCV); // hs=max(震源和台站深度差,1.0)
 
     // 乘相应系数
     k0 *= PI/hs;
@@ -161,10 +155,9 @@ void grt_integ_grn_spec(
         GRT_MODEL1D *local_mod1d = NULL;
     #ifdef _OPENMP 
         // 定义局部模型对象
-        local_mod1d = grt_init_mod1d(main_mod1d->n);
-        grt_copy_mod1d(main_mod1d, local_mod1d);
+        local_mod1d = grt_copy_mod1d(mod1d);
     #else 
-        local_mod1d = main_mod1d;
+        local_mod1d = mod1d;
     #endif
         grt_update_mod1d_omega(local_mod1d, omega);
 
@@ -289,9 +282,6 @@ void grt_integ_grn_spec(
 
     } // END omega loop
 
-
-
-    grt_free_mod1d(main_mod1d);
 
     GRT_SAFE_FREE_PTR_ARRAY(ptam_fstatsdir, nr);
 

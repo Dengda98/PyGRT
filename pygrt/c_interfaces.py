@@ -30,7 +30,7 @@ libgrt = cdll.LoadLibrary(
 C_grt_integ_grn_spec = libgrt.grt_integ_grn_spec
 """C库中计算格林函数的主函数 integ_grn_spec, 详见C API同名函数"""
 C_grt_integ_grn_spec.argtypes = [
-    POINTER(c_PyModel1D), c_int, c_int, PREAL,       
+    POINTER(c_GRT_MODEL1D), c_int, c_int, PREAL,       
     c_int, PREAL, REAL,
     REAL, REAL, REAL, REAL, REAL, REAL, REAL, REAL,
     c_bool,
@@ -53,7 +53,7 @@ C_grt_integ_static_grn = libgrt.grt_integ_static_grn
 """计算静态格林函数"""
 C_grt_integ_static_grn.restype = None
 C_grt_integ_static_grn.argtypes = [
-    POINTER(c_PyModel1D), c_int, PREAL, REAL, REAL, REAL, REAL, 
+    POINTER(c_GRT_MODEL1D), c_int, PREAL, REAL, REAL, REAL, REAL, 
     REAL, REAL, REAL, 
     POINTER((REAL*CHANNEL_NUM)*SRC_M_NUM),
     c_bool,
@@ -87,15 +87,15 @@ C_grt_compute_travt1d.argtypes = [
 ]
 
 
-C_grt_read_pymod_from_file = libgrt.grt_read_pymod_from_file
+C_grt_read_mod1d_from_file = libgrt.grt_read_mod1d_from_file
 """读取模型文件并进行预处理"""
-C_grt_read_pymod_from_file.restype = POINTER(c_PyModel1D)
-C_grt_read_pymod_from_file.argtypes = [c_char_p, c_char_p, c_double, c_double, c_bool]
+C_grt_read_mod1d_from_file.restype = POINTER(c_GRT_MODEL1D)
+C_grt_read_mod1d_from_file.argtypes = [c_char_p, c_char_p, c_double, c_double, c_bool]
 
-C_grt_free_pymod = libgrt.grt_free_pymod
-"""释放C程序中申请的PYMODEL1D结构体内存"""
-C_grt_free_pymod.restype = None
-C_grt_free_pymod.argtypes = [POINTER(c_PyModel1D)]
+C_grt_free_mod1d = libgrt.grt_free_mod1d
+"""释放C程序中申请的 GRT_MODEL1D 结构体内存"""
+C_grt_free_mod1d.restype = None
+C_grt_free_mod1d.argtypes = [POINTER(c_GRT_MODEL1D)]
 
 # -------------------------------------------------------------------
 #                      C函数定义的时间函数

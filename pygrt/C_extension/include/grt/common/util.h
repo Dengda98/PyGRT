@@ -42,7 +42,7 @@ const char* grt_get_basename(const char* path);
  * 处理单个震中距对应的数据逆变换和SAC保存
  * 
  * @param[in]         command       模块名
- * @param[in]         pymod         模型结构体指针
+ * @param[in]         mod1d         模型结构体指针
  * @param[in]         s_output_dir  保存目录（调用前已创建）
  * @param[in]         s_modelname   模型名称
  * @param[in]         s_depsrc      震源深度字符串
@@ -70,7 +70,7 @@ const char* grt_get_basename(const char* path);
  * 
  */
 void grt_GF_freq2time_write_to_file(
-    const char *command, const GRT_PYMODEL1D *pymod, 
+    const char *command, const GRT_MODEL1D *mod1d, 
     const char *s_output_dir, const char *s_modelname, const char *s_depsrc, const char *s_deprcv,    
     const MYREAL wI, GRT_FFTW_HOLDER *pt_fh,
     const MYINT nr, char *s_dists[nr], const MYREAL dists[nr], MYREAL travtPS[nr][2],
