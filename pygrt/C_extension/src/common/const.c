@@ -30,7 +30,7 @@ const char ZNEchs[] = {'Z', 'N', 'E'};
 
 
 
-void set_num_threads(int num_threads){
+void grt_set_num_threads(int num_threads){
 #ifdef _OPENMP
     omp_set_num_threads(num_threads);
 #endif

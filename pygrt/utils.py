@@ -215,9 +215,9 @@ def _gen_syn_from_static_gf(grn:dict, calc_upar:bool, compute_type:str, M0:float
                         for k in range(3):
                             dblupar[k + i*3] = XX[i+1, k, ix, iy]
                 if calc_upar:
-                    C_rot_zrt2zxy_upar(azrad, dblsyn, dblupar, dist*1e5)
+                    C_grt_rot_zrt2zxy_upar(azrad, dblsyn, dblupar, dist*1e5)
                 else:
-                    C_rot_zxy2zrt_vec(-azrad, dblsyn)
+                    C_grt_rot_zxy2zrt_vec(-azrad, dblsyn)
 
                 for i in range(3):
                     XX[0, i, ix, iy] = dblsyn[i]
@@ -291,9 +291,9 @@ def _data_zrt2zne(stall:Stream):
                     dbleupar[i2 + i1*3] = uparLst[i2 + i1*3].data[n]
         
         if doupar:
-            C_rot_zrt2zxy_upar(azrad, dblsyn, dbleupar, dist*1e5)
+            C_grt_rot_zrt2zxy_upar(azrad, dblsyn, dbleupar, dist*1e5)
         else:
-            C_rot_zxy2zrt_vec(-azrad, dblsyn)
+            C_grt_rot_zxy2zrt_vec(-azrad, dblsyn)
 
         # 将结果写入原数组
         for i1 in range(3):
@@ -804,10 +804,10 @@ def _compute_stress(st_syn:Stream):
         freq = 0.01 if i==0 else df*i 
         w = 2.0*np.pi*freq 
         omega[0] = w
-        C_py_attenuation_law(Qbinv, omega, atte)
+        C_grt_py_attenuation_law(Qbinv, omega, atte)
         attb = atte[0] + atte[1]*1j
         mus[i] = vb*vb*attb*attb*rho*1e10
-        C_py_attenuation_law(Qainv, omega, atte)
+        C_grt_py_attenuation_law(Qainv, omega, atte)
         atta = atte[0] + atte[1]*1j
         lams[i] = va*va*atta*atta*rho*1e10 - 2.0*mus[i]
     

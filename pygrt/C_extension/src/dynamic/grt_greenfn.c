@@ -620,7 +620,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 if(Ctrl->P.nthreads <= 0){
                     GRTBadOptionError(command, P, "Nonpositive value is not supported.");
                 }
-                set_num_threads(Ctrl->P.nthreads);
+                grt_set_num_threads(Ctrl->P.nthreads);
                 break;
 
             // 选择要计算的格林函数 -G1/1/1/1

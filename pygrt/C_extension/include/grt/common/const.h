@@ -161,4 +161,4 @@ extern const char ZNEchs[];
  * 
  * @param[in]   num_threads        线程数
  */
-void set_num_threads(int num_threads);
+void grt_set_num_threads(int num_threads);

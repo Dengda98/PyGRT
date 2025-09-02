@@ -54,7 +54,7 @@ class PyModel1D:
             tmp_path = tmpfile.name  # 获取临时文件路径
 
         try:
-            c_pymod_ptr = C_read_pymod_from_file("pygrt".encode("utf-8"), tmp_path.encode("utf-8"), depsrc, deprcv, True)
+            c_pymod_ptr = C_grt_read_pymod_from_file("pygrt".encode("utf-8"), tmp_path.encode("utf-8"), depsrc, deprcv, True)
             self.c_pymod1d = c_pymod_ptr.contents  # 这部分内存在C中申请，需由C函数释放。占用不多，这里跳过
         finally:
             if os.path.exists(tmp_path):
@@ -85,7 +85,7 @@ class PyModel1D:
               - **travtP**  -  初至P波走时(s)
               - **travtS**  -  初至S波走时(s)
         """
-        travtP = C_compute_travt1d(
+        travtP = C_grt_compute_travt1d(
             self.c_pymod1d.Thk,
             self.c_pymod1d.Va,
             self.c_pymod1d.n,
@@ -93,7 +93,7 @@ class PyModel1D:
             self.c_pymod1d.ircv,
             dist
         )
-        travtS = C_compute_travt1d(
+        travtS = C_grt_compute_travt1d(
             self.c_pymod1d.Thk,
             self.c_pymod1d.Vb,
             self.c_pymod1d.n,
@@ -374,7 +374,7 @@ class PyModel1D:
         #     爆炸源 EX[ZR]                          1e-20 cm/(dyne*cm)
         #     剪切源 DD[ZR],DS[ZRT],SS[ZRT]          1e-20 cm/(dyne*cm)
         #=================================================================================
-        C_integ_grn_spec(
+        C_grt_integ_grn_spec(
             self.c_pymod1d, nf1, nf2, c_freqs, nrs, c_rs, wI, 
             vmin_ref, keps, ampk, k0, Length, filonLength, safilonTol, filonCut, print_runtime,
             c_grnArr, calc_upar, c_grnArr_uiz, c_grnArr_uir,
@@ -555,7 +555,7 @@ class PyModel1D:
         #     爆炸源 EX[ZR]                          1e-20 cm/(dyne*cm)
         #     剪切源 DD[ZR],DS[ZRT],SS[ZRT]          1e-20 cm/(dyne*cm)
         #=================================================================================
-        C_integ_static_grn(
+        C_grt_integ_static_grn(
             self.c_pymod1d, nr, c_rs, vmin_ref, keps, k0, Length, filonLength, safilonTol, filonCut, 
             c_pygrn, calc_upar, c_pygrn_uiz, c_pygrn_uir,
             c_statsfile
