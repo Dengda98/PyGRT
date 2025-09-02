@@ -7,10 +7,10 @@
  * 
  */
 
-#include "travt/travt.h"
-#include "common/const.h"
-#include "common/model.h"
-#include "common/util.h"
+#include "grt/travt/travt.h"
+#include "grt/common/const.h"
+#include "grt/common/model.h"
+#include "grt/common/util.h"
 
 #include "grt.h"
 

@@ -7,8 +7,8 @@
  */
 
 
-#include "common/attenuation.h"
-#include "common/const.h"
+#include "grt/common/attenuation.h"
+#include "grt/common/const.h"
 
 
 

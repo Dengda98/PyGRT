@@ -13,8 +13,8 @@
 #include <stdio.h>
 #include <complex.h>
 
-#include "static/static_source.h"
-#include "common/const.h"
+#include "grt/static/static_source.h"
+#include "grt/common/const.h"
 
 void static_source_coef_PSV(MYCOMPLEX delta, MYREAL k, MYCOMPLEX coef[SRC_M_NUM][QWV_NUM-1][2])
 {

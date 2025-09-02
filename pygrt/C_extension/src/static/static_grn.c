@@ -19,16 +19,16 @@
 #include <sys/stat.h>
 #include <errno.h>
 
-#include "static/static_grn.h"
-#include "static/static_propagate.h"
-#include "common/dwm.h"
-#include "common/ptam.h"
-#include "common/fim.h"
-#include "common/safim.h"
-#include "common/const.h"
-#include "common/model.h"
-#include "common/integral.h"
-#include "common/search.h"
+#include "grt/static/static_grn.h"
+#include "grt/static/static_propagate.h"
+#include "grt/common/dwm.h"
+#include "grt/common/ptam.h"
+#include "grt/common/fim.h"
+#include "grt/common/safim.h"
+#include "grt/common/const.h"
+#include "grt/common/model.h"
+#include "grt/common/integral.h"
+#include "grt/common/search.h"
 
 
 

@@ -12,8 +12,8 @@
 #include <stdbool.h>
 #include <complex.h>
 
-#include "common/iostats.h"
-#include "common/const.h"
+#include "grt/common/iostats.h"
+#include "grt/common/const.h"
 
 
 

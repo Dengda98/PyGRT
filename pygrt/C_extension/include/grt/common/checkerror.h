@@ -1,9 +1,9 @@
 /**
- * @file   grt_error.h
+ * @file   checkerror.h
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2025-08
  * 
- * 一些用于报错的宏
+ * 一些检查和报错的宏
  * 
  */
 
@@ -14,7 +14,7 @@
 #include <dirent.h>
 #include <errno.h>
 
-#include "common/colorstr.h"
+#include "grt/common/colorstr.h"
 
 // GRT自定义报错信息
 #define GRTRaiseError(ErrorMessage, ...) ({\

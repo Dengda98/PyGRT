@@ -16,11 +16,11 @@
 #include <complex.h>
 #include <string.h>
 
-#include "dynamic/layer.h"
-#include "common/model.h"
-#include "common/prtdbg.h"
-#include "common/matrix.h"
-#include "common/colorstr.h"
+#include "grt/dynamic/layer.h"
+#include "grt/common/model.h"
+#include "grt/common/prtdbg.h"
+#include "grt/common/matrix.h"
+#include "grt/common/colorstr.h"
 
 
 void calc_R_tilt_PSV(MYCOMPLEX xa0, MYCOMPLEX xb0, MYCOMPLEX kbkb0, MYREAL k, MYCOMPLEX R_tilt[2][2], MYINT *stats)

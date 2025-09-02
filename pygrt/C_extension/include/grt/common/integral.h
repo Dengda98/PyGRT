@@ -9,7 +9,7 @@
 
 #pragma once 
 
-#include "common/const.h"
+#include "grt/common/const.h"
 
 /**
  * 计算核函数和Bessel函数的乘积，相当于计算了一个小积分区间内的值。参数中涉及两种数组形状：

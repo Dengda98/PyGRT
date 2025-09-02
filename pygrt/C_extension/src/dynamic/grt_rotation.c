@@ -8,8 +8,8 @@
  */
 
 
-#include "common/sacio2.h"
-#include "common/const.h"
+#include "grt/common/sacio2.h"
+#include "grt/common/const.h"
 
 #include "grt.h"
 

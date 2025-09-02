@@ -9,7 +9,7 @@
 
 #include <stdio.h>
 
-#include "common/progressbar.h"
+#include "grt/common/progressbar.h"
 
 
 void printprogressBar(const char *prefix, MYINT percentage) {

@@ -7,8 +7,8 @@
  */
 
 
-#include "common/bessel.h"
-#include "common/const.h"
+#include "grt/common/bessel.h"
+#include "grt/common/const.h"
 
 void bessel012(MYREAL x, MYREAL *bj0, MYREAL *bj1, MYREAL *bj2){
     *bj0 = j0(x);

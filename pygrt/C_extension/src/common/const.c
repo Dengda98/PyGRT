@@ -6,7 +6,7 @@
  * 将全局变量放在该文件中
  */
 
-#include "common/const.h"
+#include "grt/common/const.h"
 #include <omp.h>
 
 

@@ -10,7 +10,7 @@
  */
 #pragma once
 
-#include "common/const.h"
+#include "grt/common/const.h"
  
 /**
  * 计算不同震源的静态震源系数，文献/书中仅提供剪切源的震源系数，其它震源系数重新推导

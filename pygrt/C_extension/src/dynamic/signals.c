@@ -19,9 +19,9 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "dynamic/signals.h"
-#include "common/const.h"
-#include "common/colorstr.h"
+#include "grt/dynamic/signals.h"
+#include "grt/common/const.h"
+#include "grt/common/colorstr.h"
 
 
 bool check_tftype_tfparams(const char tftype, const char *tfparams){

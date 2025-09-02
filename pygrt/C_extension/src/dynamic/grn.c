@@ -19,19 +19,19 @@
 #include <string.h>
 #include <sys/time.h>
 
-#include "dynamic/grn.h"
-#include "dynamic/propagate.h"
-#include "common/ptam.h"
-#include "common/fim.h"
-#include "common/safim.h"
-#include "common/dwm.h"
-#include "common/integral.h"
-#include "common/iostats.h"
-#include "common/const.h"
-#include "common/model.h"
-#include "common/prtdbg.h"
-#include "common/search.h"
-#include "common/progressbar.h"
+#include "grt/dynamic/grn.h"
+#include "grt/dynamic/propagate.h"
+#include "grt/common/ptam.h"
+#include "grt/common/fim.h"
+#include "grt/common/safim.h"
+#include "grt/common/dwm.h"
+#include "grt/common/integral.h"
+#include "grt/common/iostats.h"
+#include "grt/common/const.h"
+#include "grt/common/model.h"
+#include "grt/common/prtdbg.h"
+#include "grt/common/search.h"
+#include "grt/common/progressbar.h"
 
 
 /**

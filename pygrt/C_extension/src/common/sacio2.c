@@ -10,9 +10,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "common/sacio2.h"
-#include "common/sacio.h"
-#include "common/colorstr.h"
+#include "grt/common/sacio2.h"
+#include "grt/common/sacio.h"
+#include "grt/common/colorstr.h"
 
 
 void read_SAC_HEAD(const char *command, const char *name, SACHEAD *hd){

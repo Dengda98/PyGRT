@@ -12,10 +12,10 @@
 #include <stdio.h>
 #include <complex.h>
 
-#include "dynamic/source.h"
-#include "common/model.h"
-#include "common/matrix.h"
-#include "common/prtdbg.h"
+#include "grt/dynamic/source.h"
+#include "grt/common/model.h"
+#include "grt/common/matrix.h"
+#include "grt/common/prtdbg.h"
 
 
 void source_coef_PSV(

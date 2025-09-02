@@ -17,7 +17,7 @@
 #include <complex.h>
 #include <fftw3.h>
 
-#include "common/const.h"
+#include "grt/common/const.h"
 
 
 #define FOR_EACH_FFTW_TYPE   \

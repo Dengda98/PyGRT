@@ -12,10 +12,10 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#include "common/integral.h"
-#include "common/const.h"
-#include "common/bessel.h"
-#include "common/quadratic.h"
+#include "grt/common/integral.h"
+#include "grt/common/const.h"
+#include "grt/common/bessel.h"
+#include "grt/common/quadratic.h"
 
 
 

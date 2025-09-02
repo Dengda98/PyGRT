@@ -11,7 +11,7 @@
 #include <complex.h> 
 #include <tgmath.h>
 
-#include "grt_error.h"
+#include "grt/common/checkerror.h"
 
 // CMPLX macro not exist on MacOS
 #ifndef CMPLX
@@ -108,8 +108,6 @@ typedef int MYINT;  ///< 整数
         GRTRaiseError("Abnormal Error in asprintf from function %s.\n", __func__);\
     };\
 })
-
-#define GRT_SAFE_
 
 // -----------------------------------------------------------------------------
 #define CHANNEL_NUM    3     ///< 3, 代码中分量个数（ZRT，ZNE）

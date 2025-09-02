@@ -11,12 +11,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "common/util.h"
-#include "common/model.h"
-#include "common/const.h"
-#include "common/sacio.h"
-#include "common/myfftw.h"
-#include "travt/travt.h"
+#include "grt/common/util.h"
+#include "grt/common/model.h"
+#include "grt/common/const.h"
+#include "grt/common/sacio.h"
+#include "grt/common/myfftw.h"
+#include "grt/travt/travt.h"
 
 char ** string_split(const char *string, const char *delim, int *size)
 {

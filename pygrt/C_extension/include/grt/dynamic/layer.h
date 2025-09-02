@@ -13,8 +13,8 @@
 
 #pragma once
 
-#include "common/model.h"
-#include "common/const.h"
+#include "grt/common/model.h"
+#include "grt/common/const.h"
 
 /**
  * 计算自由表面的 P-SV 波反射系数，公式(5.3.10-14) 

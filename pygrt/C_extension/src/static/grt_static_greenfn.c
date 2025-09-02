@@ -8,13 +8,13 @@
  */
 
 
-#include "static/static_grn.h"
-#include "common/const.h"
-#include "common/model.h"
-#include "common/integral.h"
-#include "common/iostats.h"
-#include "common/search.h"
-#include "common/util.h"
+#include "grt/static/static_grn.h"
+#include "grt/common/const.h"
+#include "grt/common/model.h"
+#include "grt/common/integral.h"
+#include "grt/common/iostats.h"
+#include "grt/common/search.h"
+#include "grt/common/util.h"
 
 #include "grt.h"
 

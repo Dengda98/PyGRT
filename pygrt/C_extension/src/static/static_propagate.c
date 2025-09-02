@@ -15,13 +15,13 @@
 #include <stdio.h>
 #include <complex.h>
 
-#include "static/static_propagate.h"
-#include "static/static_layer.h"
-#include "static/static_source.h"
-#include "common/recursion.h"
-#include "common/model.h"
-#include "common/const.h"
-#include "common/matrix.h"
+#include "grt/static/static_propagate.h"
+#include "grt/static/static_layer.h"
+#include "grt/static/static_source.h"
+#include "grt/common/recursion.h"
+#include "grt/common/model.h"
+#include "grt/common/const.h"
+#include "grt/common/matrix.h"
 
 
 void static_kernel(

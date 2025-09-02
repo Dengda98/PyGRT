@@ -10,7 +10,7 @@
 
 #include <complex.h>
 #include <stdbool.h>
-#include "common/const.h"
+#include "grt/common/const.h"
 
 /** 单个水平层的结构体 */
 typedef struct _LAYER {

@@ -8,9 +8,9 @@
  * 
  */
 
-#include "common/const.h"
-#include "common/iostats.h"
-#include "common/util.h"
+#include "grt/common/const.h"
+#include "grt/common/iostats.h"
+#include "grt/common/util.h"
 
 #include "grt.h"
 

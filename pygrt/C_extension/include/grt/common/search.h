@@ -9,7 +9,7 @@
 #pragma once
 
 #include <stdbool.h>
-#include "common/const.h"
+#include "grt/common/const.h"
 
 /**
  * 该函数对输入的整数数组进行线性搜索，找到目标值时返回其索引。

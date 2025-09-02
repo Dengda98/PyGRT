@@ -9,14 +9,14 @@
  */
 
 
-#include "dynamic/grn.h"
-#include "dynamic/signals.h"
-#include "common/const.h"
-#include "common/model.h"
-#include "common/search.h"
-#include "common/sacio.h"
-#include "common/util.h"
-#include "common/myfftw.h"
+#include "grt/dynamic/grn.h"
+#include "grt/dynamic/signals.h"
+#include "grt/common/const.h"
+#include "grt/common/model.h"
+#include "grt/common/search.h"
+#include "grt/common/sacio.h"
+#include "grt/common/util.h"
+#include "grt/common/myfftw.h"
 
 #include "grt.h"
 

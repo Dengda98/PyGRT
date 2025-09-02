@@ -9,7 +9,7 @@
  */
 
 
-#include "common/sacio2.h"
+#include "grt/common/sacio2.h"
 
 #include "grt.h"
 

@@ -8,9 +8,9 @@
  */
 
 
-#include "common/const.h"
-#include "common/radiation.h"
-#include "common/coord.h"
+#include "grt/common/const.h"
+#include "grt/common/radiation.h"
+#include "grt/common/coord.h"
 
 #include "grt.h"
 

@@ -14,11 +14,11 @@
 #include <complex.h>
 #include <stdlib.h>
 
-#include "common/fim.h"
-#include "common/integral.h"
-#include "common/iostats.h"
-#include "common/const.h"
-#include "common/model.h"
+#include "grt/common/fim.h"
+#include "grt/common/integral.h"
+#include "grt/common/iostats.h"
+#include "grt/common/const.h"
+#include "grt/common/model.h"
 
 
 

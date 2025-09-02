@@ -15,13 +15,13 @@
 #include <complex.h>
 #include <string.h>
 
-#include "dynamic/propagate.h"
-#include "dynamic/layer.h"
-#include "dynamic/source.h"
-#include "common/recursion.h"
-#include "common/model.h"
-#include "common/matrix.h"
-#include "common/prtdbg.h"
+#include "grt/dynamic/propagate.h"
+#include "grt/dynamic/layer.h"
+#include "grt/dynamic/source.h"
+#include "grt/common/recursion.h"
+#include "grt/common/model.h"
+#include "grt/common/matrix.h"
+#include "grt/common/prtdbg.h"
 
 
 void kernel(

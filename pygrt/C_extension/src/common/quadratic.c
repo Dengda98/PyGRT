@@ -12,8 +12,8 @@
 
 #include <stdio.h>
 
-#include "common/quadratic.h"
-#include "common/const.h"
+#include "grt/common/quadratic.h"
+#include "grt/common/const.h"
 
 
 

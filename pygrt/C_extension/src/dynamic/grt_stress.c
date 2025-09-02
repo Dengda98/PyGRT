@@ -7,11 +7,11 @@
  * 
  */
 
-#include "common/myfftw.h"
+#include "grt/common/myfftw.h"
 
-#include "common/attenuation.h"
-#include "common/sacio2.h"
-#include "common/const.h"
+#include "grt/common/attenuation.h"
+#include "grt/common/sacio2.h"
+#include "grt/common/const.h"
 
 #include "grt.h"
 

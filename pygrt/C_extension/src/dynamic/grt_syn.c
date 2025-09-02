@@ -7,11 +7,11 @@
  * 
  */
 
-#include "dynamic/signals.h"
-#include "common/sacio2.h"
-#include "common/const.h"
-#include "common/radiation.h"
-#include "common/coord.h"
+#include "grt/dynamic/signals.h"
+#include "grt/common/sacio2.h"
+#include "grt/common/const.h"
+#include "grt/common/radiation.h"
+#include "grt/common/coord.h"
 
 #include "grt.h"
 

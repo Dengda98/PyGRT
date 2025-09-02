@@ -9,8 +9,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include "common/search.h"
-#include "common/const.h"
+#include "grt/common/search.h"
+#include "grt/common/const.h"
 
 static bool _gt_(MYREAL a1, MYREAL a2) { return a1 > a2; }
 static bool _lt_(MYREAL a1, MYREAL a2) { return a1 < a2; }

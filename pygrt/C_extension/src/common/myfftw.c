@@ -8,9 +8,8 @@
  */
 
 #include <string.h>
-#include "common/myfftw.h"
-
-#include "grt_error.h"
+#include "grt/common/myfftw.h"
+#include "grt/common/checkerror.h"
 
 #define X(T, s, S) \
 static FFTW##S##_HOLDER *  init_fftw##s##_holder(const MYINT nt, const MYREAL dt, const MYINT nf_valid, const MYREAL df)\

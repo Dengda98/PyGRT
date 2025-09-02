@@ -11,7 +11,7 @@
 #pragma once 
 
 
-#include "common/model.h"
+#include "grt/common/model.h"
 
 /**
  * 计算核函数的函数指针，动态与静态的接口一致

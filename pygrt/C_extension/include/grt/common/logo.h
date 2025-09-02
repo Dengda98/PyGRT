@@ -12,9 +12,9 @@
 
 #include <stdio.h>
 
-#include "common/const.h"
-#include "common/version.h"
-#include "common/colorstr.h"
+#include "grt/common/const.h"
+#include "grt/common/version.h"
+#include "grt/common/colorstr.h"
 
 #if _TEST_WHETHER_WIN32_
 #include <windows.h>

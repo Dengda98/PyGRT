@@ -15,7 +15,7 @@
 
 #include <stdbool.h>
 
-#include "common/const.h"
+#include "grt/common/const.h"
 
 /**
  * 计算自由表面的 P-SV 静态反射系数，公式(6.3.12)

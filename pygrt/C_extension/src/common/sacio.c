@@ -29,7 +29,7 @@
 #include <string.h>
 #include <math.h>
 #include <ctype.h>
-#include "common/sacio.h"
+#include "grt/common/sacio.h"
 
 /* function prototype for local use */
 static void    byte_swap       (char *pt, size_t n);

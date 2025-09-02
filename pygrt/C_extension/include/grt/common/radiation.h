@@ -11,7 +11,7 @@
 
 #include <stdbool.h>
 
-#include "common/const.h"
+#include "grt/common/const.h"
 
 #define GRT_SYN_COMPUTE_EX 0   ///< 计算爆炸源
 #define GRT_SYN_COMPUTE_SF 1   ///< 计算单力源

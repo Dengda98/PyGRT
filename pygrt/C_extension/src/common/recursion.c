@@ -14,9 +14,9 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include "common/recursion.h"
-#include "common/const.h"
-#include "common/matrix.h"
+#include "grt/common/recursion.h"
+#include "grt/common/const.h"
+#include "grt/common/matrix.h"
 
 
 void recursion_RD(

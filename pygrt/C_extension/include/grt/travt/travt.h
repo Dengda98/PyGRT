@@ -9,7 +9,7 @@
 
 #pragma once 
 
-#include "common/const.h"
+#include "grt/common/const.h"
 
 /**
  * 已知每层的厚度和速度，且震源和场点位于（虚拟）界面上,

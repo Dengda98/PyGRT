@@ -12,12 +12,12 @@
 #include <unistd.h>
 #include <complex.h>
 
-#include "common/model.h"
-#include "common/prtdbg.h"
-#include "common/attenuation.h"
-#include "common/colorstr.h"
+#include "grt/common/model.h"
+#include "grt/common/prtdbg.h"
+#include "grt/common/attenuation.h"
+#include "grt/common/colorstr.h"
 
-#include "grt_error.h"
+#include "grt/common/checkerror.h"
 
 void print_mod1d(const MODEL1D *mod1d){
     LAYER *lay;

@@ -18,8 +18,8 @@
 
 #include <stdio.h>
 
-#include "common/model.h"
-#include "common/kernel.h"
+#include "grt/common/model.h"
+#include "grt/common/kernel.h"
 
 
 

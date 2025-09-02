@@ -18,10 +18,10 @@
 #include <ctype.h>
 #include <stdbool.h>
 
-#include "common/const.h"
-#include "common/logo.h"
+#include "grt/common/const.h"
+#include "grt/common/logo.h"
+#include "grt/common/checkerror.h"
 
-#include "grt_error.h"
 
 #define GRT_MAIN_COMMAND   "grt"   ///< 主程序名
 

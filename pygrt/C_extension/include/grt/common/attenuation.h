@@ -9,7 +9,7 @@
 
 #pragma once 
 
-#include "common/const.h"
+#include "grt/common/const.h"
 
 /**
  *  品质因子Q 对 波速的影响, Futterman causal Q, 参考Aki&Richards, 2009, Chapter 5.5.1

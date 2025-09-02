@@ -11,9 +11,9 @@
 
 #include <stdbool.h>
 
-#include "common/const.h"
-#include "common/model.h"
-#include "common/myfftw.h"
+#include "grt/common/const.h"
+#include "grt/common/model.h"
+#include "grt/common/myfftw.h"
 
 /**
  * 指定分隔符，从一串字符串中分割出子字符串数组
