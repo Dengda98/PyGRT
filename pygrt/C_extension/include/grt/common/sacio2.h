@@ -18,7 +18,7 @@
  * @param      name           (in)SAC文件路径
  * @param      hd             (out)SAC头段变量结构体
  */
-void read_SAC_HEAD(const char *command, const char *name, SACHEAD *hd);
+void grt_read_SAC_HEAD(const char *command, const char *name, SACHEAD *hd);
 
 
 /**
@@ -31,4 +31,4 @@ void read_SAC_HEAD(const char *command, const char *name, SACHEAD *hd);
  * 
  * @return     浮点数指针
  */
-float * read_SAC(const char *command, const char *name, SACHEAD *hd, float *arrout);
+float * grt_read_SAC(const char *command, const char *name, SACHEAD *hd, float *arrout);

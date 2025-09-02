@@ -52,7 +52,7 @@ static void recordin_GRN(
     MYCOMPLEX (*tmp_grn)[SRC_M_NUM][CHANNEL_NUM] = (MYCOMPLEX(*)[SRC_M_NUM][CHANNEL_NUM])calloc(nr, sizeof(*tmp_grn));
 
     for(MYINT ir=0; ir<nr; ++ir){
-        merge_Pk(sum_J[ir], tmp_grn[ir]);
+        grt_merge_Pk(sum_J[ir], tmp_grn[ir]);
 
         for(MYINT i=0; i<SRC_M_NUM; ++i) {
             MYINT modr = SRC_M_ORDERS[i];
@@ -70,8 +70,8 @@ static void recordin_GRN(
 
 
 
-void integ_grn_spec(
-    PYMODEL1D *pymod1d, MYINT nf1, MYINT nf2, MYREAL *freqs,  
+void grt_integ_grn_spec(
+    GRT_PYMODEL1D *pymod1d, MYINT nf1, MYINT nf2, MYREAL *freqs,  
     MYINT nr, MYREAL *rs, MYREAL wI, 
     MYREAL vmin_ref, MYREAL keps, MYREAL ampk, MYREAL k0, MYREAL Length, MYREAL filonLength, MYREAL safilonTol, MYREAL filonCut,      
     bool print_progressbar, 
@@ -92,12 +92,12 @@ void integ_grn_spec(
     gettimeofday(&begin_t, NULL);
 
     // 最大震中距
-    MYINT irmax = findMinMax_MYREAL(rs, nr, true);
+    MYINT irmax = grt_findMinMax_MYREAL(rs, nr, true);
     MYREAL rmax=rs[irmax];   
 
     // pymod1d -> mod1d
-    MODEL1D *main_mod1d = init_mod1d(pymod1d->n);
-    get_mod1d(pymod1d, main_mod1d);
+    GRT_MODEL1D *main_mod1d = grt_init_mod1d(pymod1d->n);
+    grt_get_mod1d(pymod1d, main_mod1d);
 
     const LAYER *src_lay = main_mod1d->lays + main_mod1d->isrc;
     const MYREAL Rho = src_lay->Rho; // 震源区密度
@@ -158,18 +158,18 @@ void integ_grn_spec(
         MYCOMPLEX (*sum_uiz_J)[SRC_M_NUM][INTEG_NUM] = (calc_upar)? (MYCOMPLEX(*)[SRC_M_NUM][INTEG_NUM])calloc(nr, sizeof(*sum_uiz_J)) : NULL;
         MYCOMPLEX (*sum_uir_J)[SRC_M_NUM][INTEG_NUM] = (calc_upar)? (MYCOMPLEX(*)[SRC_M_NUM][INTEG_NUM])calloc(nr, sizeof(*sum_uir_J)) : NULL;
 
-        MODEL1D *local_mod1d = NULL;
+        GRT_MODEL1D *local_mod1d = NULL;
     #ifdef _OPENMP 
         // 定义局部模型对象
-        local_mod1d = init_mod1d(main_mod1d->n);
-        copy_mod1d(main_mod1d, local_mod1d);
+        local_mod1d = grt_init_mod1d(main_mod1d->n);
+        grt_copy_mod1d(main_mod1d, local_mod1d);
     #else 
         local_mod1d = main_mod1d;
     #endif
-        update_mod1d_omega(local_mod1d, omega);
+        grt_update_mod1d_omega(local_mod1d, omega);
 
         // 是否要输出积分过程文件
-        bool needfstats = (statsstr!=NULL && ((findElement_MYINT(statsidxs, nstatsidxs, iw) >= 0) || (findElement_MYINT(statsidxs, nstatsidxs, -1) >= 0)));
+        bool needfstats = (statsstr!=NULL && ((grt_findElement_MYINT(statsidxs, nstatsidxs, iw) >= 0) || (grt_findElement_MYINT(statsidxs, nstatsidxs, -1) >= 0)));
 
         // 为当前频率创建波数积分记录文件
         FILE *fstats = NULL;
@@ -215,35 +215,35 @@ void integ_grn_spec(
         freq_invstats[iw]=INVERSE_SUCCESS;
 
         // 常规的波数积分
-        k = discrete_integ(
+        k = grt_discrete_integ(
             local_mod1d, dk, (useFIM)? filonK : kmax, keps, omega, nr, rs, 
             sum_J, calc_upar, sum_uiz_J, sum_uir_J,
-            fstats, kernel, &freq_invstats[iw]);
+            fstats, grt_kernel, &freq_invstats[iw]);
     
         // 使用Filon积分
         if(useFIM && freq_invstats[iw]==INVERSE_SUCCESS){
             if(filondk > RZERO){
                 // 基于线性插值的Filon积分，固定采样间隔
-                k = linear_filon_integ(
+                k = grt_linear_filon_integ(
                     local_mod1d, k, dk, filondk, kmax, keps, omega, nr, rs, 
                     sum_J, calc_upar, sum_uiz_J, sum_uir_J,
-                    fstats, kernel, &freq_invstats[iw]);
+                    fstats, grt_kernel, &freq_invstats[iw]);
             }
             else if(safilonTol > RZERO){
                 // 基于自适应采样的Filon积分
-                k = sa_filon_integ(
+                k = grt_sa_filon_integ(
                     local_mod1d, fabs(vmin_ref)/ampk, k, dk, safilonTol, kmax, omega, nr, rs, 
                     sum_J, calc_upar, sum_uiz_J, sum_uir_J,
-                    fstats, kernel, &freq_invstats[iw]);
+                    fstats, grt_kernel, &freq_invstats[iw]);
             }
         }
 
         // k之后的部分使用峰谷平均法进行显式收敛，建议在浅源地震的时候使用   
         if(vmin_ref < RZERO && freq_invstats[iw]==INVERSE_SUCCESS){
-            PTA_method(
+            grt_PTA_method(
                 local_mod1d, k, dk, omega, nr, rs, 
                 sum_J, calc_upar, sum_uiz_J, sum_uir_J,
-                ptam_fstatsnr, kernel, &freq_invstats[iw]);
+                ptam_fstatsnr, grt_kernel, &freq_invstats[iw]);
         }
 
         // fprintf(stderr, "iw=%d, w=%.5e, k=%.5e, dk=%.5e, nk=%d\n", iw, w, k, dk, (int)(k/dk));
@@ -271,14 +271,14 @@ void integ_grn_spec(
         GRT_SAFE_FREE_PTR(ptam_fstatsnr);
 
     #ifdef _OPENMP
-        free_mod1d(local_mod1d);
+        grt_free_mod1d(local_mod1d);
     #endif
 
         // 记录进度条变量 
         #pragma omp critical
         {
             progress++;
-            if(print_progressbar) printprogressBar("Computing Green Functions: ", progress*100/(nf2-nf1+1));
+            if(print_progressbar) grt_printprogressBar("Computing Green Functions: ", progress*100/(nf2-nf1+1));
         } 
         
 
@@ -291,7 +291,7 @@ void integ_grn_spec(
 
 
 
-    free_mod1d(main_mod1d);
+    grt_free_mod1d(main_mod1d);
 
     GRT_SAFE_FREE_PTR_ARRAY(ptam_fstatsdir, nr);
 

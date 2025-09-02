@@ -66,12 +66,12 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
  */
 static void print_K(FILE *fp){
     // 打印标题
-    extract_stats(NULL, stdout);
+    grt_extract_stats(NULL, stdout);
     fprintf(stdout, "\n");
     
     // 读取数据    
     while (true) {
-        if(0 != extract_stats(fp, stdout))  break;
+        if(0 != grt_extract_stats(fp, stdout))  break;
 
         fprintf(stdout, "\n");
     }
@@ -84,12 +84,12 @@ static void print_K(FILE *fp){
  */
 static void print_PTAM(FILE *fp){
     // 打印标题
-    extract_stats_ptam(NULL, stdout);
+    grt_extract_stats(NULL, stdout);
     fprintf(stdout, "\n");
     
     // 读取数据    
     while (true) {
-        if(0 != extract_stats_ptam(fp, stdout))  break;
+        if(0 != grt_extract_stats_ptam(fp, stdout))  break;
 
         fprintf(stdout, "\n");
     }
@@ -113,7 +113,7 @@ int k2a_main(int argc, char **argv){
     FILE *fp = GRTCheckOpenFile(Ctrl->name, Ctrl->s_filepath, "rb");
 
     // 根据文件名确定函数
-    const char *basename = get_basename(Ctrl->s_filepath);
+    const char *basename = grt_get_basename(Ctrl->s_filepath);
     if(strncmp(basename, "PTAM", 4) == 0) {
         print_PTAM(fp);
     } else if(strncmp(basename, "K", 1) == 0) {

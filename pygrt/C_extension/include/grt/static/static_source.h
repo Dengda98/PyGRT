@@ -22,7 +22,7 @@
  * @param[in]     k        波数
  * @param[out]    coef     震源系数 \f$ P_m, SV_m, SH_m \f$
  */
-void static_source_coef_PSV(MYCOMPLEX delta, MYREAL k, MYCOMPLEX coef[SRC_M_NUM][QWV_NUM-1][2]);
+void grt_static_source_coef_PSV(MYCOMPLEX delta, MYREAL k, MYCOMPLEX coef[SRC_M_NUM][QWV_NUM-1][2]);
 
 /* SH 波的静态震源系数，参数见 static_source_coef_PSV */
-void static_source_coef_SH(MYREAL k, MYCOMPLEX coef[SRC_M_NUM][2]);
+void grt_static_source_coef_SH(MYREAL k, MYCOMPLEX coef[SRC_M_NUM][2]);

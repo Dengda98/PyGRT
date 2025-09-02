@@ -26,7 +26,7 @@
  * @note     文件记录的值均为波数积分的中间结果，与最终的结果还差一系列的系数，
  *           记录其值主要用于参考其变化趋势。
  */
-void write_stats(
+void grt_write_stats(
     FILE *f0, MYREAL k, const MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM]);
 
 
@@ -38,7 +38,7 @@ void write_stats(
  * 
  * @return   0表示读取成功，-1表示读取结果/失败
  */
-MYINT extract_stats(FILE *bf0, FILE *af0);
+MYINT grt_extract_stats(FILE *bf0, FILE *af0);
 
 
 
@@ -53,7 +53,7 @@ MYINT extract_stats(FILE *bf0, FILE *af0);
  *           记录其值主要用于参考其变化趋势。
  * 
  */
-void write_stats_ptam(
+void grt_write_stats_ptam(
     FILE *f0, 
     MYREAL Kpt[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT],
     MYCOMPLEX Fpt[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT]);
@@ -67,5 +67,5 @@ void write_stats_ptam(
  * 
  * @return   0表示读取成功，-1表示读取结果/失败
  */
-MYINT extract_stats_ptam(FILE *bf0, FILE *af0);
+MYINT grt_extract_stats_ptam(FILE *bf0, FILE *af0);
 

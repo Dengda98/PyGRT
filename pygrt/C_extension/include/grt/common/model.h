@@ -38,7 +38,7 @@ typedef struct _MODEL1D {
     MYINT imax; ///< 较深的虚拟层位，max(isrc, ircv)
     bool ircvup; ///< 接收点是否浅于震源层, ircv < isrc
     
-} MODEL1D;
+} GRT_MODEL1D;
 
 
 /** 用于从Python传递数据的中间结构体 */
@@ -57,7 +57,7 @@ typedef struct _PYMODEL1D {
     MYREAL *Rho; ///< Rho[n]  密度  g/cm^3
     MYREAL *Qa; ///< Qa[n]     P波Q值
     MYREAL *Qb; ///< Qb[n]     S波Q值
-} PYMODEL1D;
+} GRT_PYMODEL1D;
 
 
 /**
@@ -66,7 +66,7 @@ typedef struct _PYMODEL1D {
  * @param[in]    mod1d   `MODEL1D` 结构体指针
  * 
  */
-void print_mod1d(const MODEL1D *mod1d);
+void grt_print_mod1d(const GRT_MODEL1D *mod1d);
 
 /**
  * 打印PYMODEL1D模型参数信息，主要用于调试程序 
@@ -74,14 +74,14 @@ void print_mod1d(const MODEL1D *mod1d);
  * @param[in]    pymod    `PYMODEL1D` 结构体指针
  * 
  */
-void print_pymod(const PYMODEL1D *pymod);
+void grt_print_pymod(const GRT_PYMODEL1D *pymod);
 
 /**
  * 释放 `PYMODEL1D` 结构体指针 
  * 
  * @param[out]     pymod      `PYMODEL1D` 结构体指针
  */
-void free_pymod(PYMODEL1D *pymod);
+void grt_free_pymod(GRT_PYMODEL1D *pymod);
 
 /**
  * 初始化模型内存空间 
@@ -91,7 +91,7 @@ void free_pymod(PYMODEL1D *pymod);
  * @return    `MODEL1D` 结构体指针
  * 
  */
-MODEL1D * init_mod1d(MYINT n);
+GRT_MODEL1D * grt_init_mod1d(MYINT n);
 
 /**
  * 将 `PYMODEL1D` 结构体信息转到 `MODEL1D` 结构体中
@@ -100,7 +100,7 @@ MODEL1D * init_mod1d(MYINT n);
  * @param[out]    mod1d      `MODEL1D` 结构体指针
  * 
  */
-void get_mod1d(const PYMODEL1D *pymod1d, MODEL1D *mod1d);
+void grt_get_mod1d(const GRT_PYMODEL1D *pymod1d, GRT_MODEL1D *mod1d);
 
 /**
  * 复制 `MODEL1D` 结构体，要求都以初始化
@@ -109,14 +109,14 @@ void get_mod1d(const PYMODEL1D *pymod1d, MODEL1D *mod1d);
  * @param[out]    mod1d2    `MODEL1D` 目标结构体指针
  * 
  */
-void copy_mod1d(const MODEL1D *mod1d1, MODEL1D *mod1d2);
+void grt_copy_mod1d(const GRT_MODEL1D *mod1d1, GRT_MODEL1D *mod1d2);
 
 /**
  * 释放 `MODEL1D` 结构体指针 
  * 
  * @param[out]     mod1d     `MODEL1D` 结构体指针
  */
-void free_mod1d(MODEL1D *mod1d);
+void grt_free_mod1d(GRT_MODEL1D *mod1d);
 
 
 /**
@@ -125,7 +125,7 @@ void free_mod1d(MODEL1D *mod1d);
  * @param[in,out]     mod1d     `MODEL1D` 结构体指针
  * @param[in]         omega     复数频率
  */
-void update_mod1d_omega(MODEL1D *mod1d, MYCOMPLEX omega);
+void grt_update_mod1d_omega(GRT_MODEL1D *mod1d, MYCOMPLEX omega);
 
 /**
  * 初始化PYMODEL1D模型内存空间 
@@ -135,7 +135,7 @@ void update_mod1d_omega(MODEL1D *mod1d, MYCOMPLEX omega);
  * @return    `PYMODEL1D` 结构体指针
  * 
  */
-PYMODEL1D * init_pymod(MYINT n);
+GRT_PYMODEL1D * grt_init_pymod(MYINT n);
 
 /**
  * 从文件中读取模型文件，以PYMODEL1D结构体形式
@@ -149,7 +149,7 @@ PYMODEL1D * init_pymod(MYINT n);
  * @return    `PYMODEL1D` 结构体指针
  * 
  */
-PYMODEL1D * read_pymod_from_file(const char *command, const char *modelpath, double depsrc, double deprcv, bool allowLiquid);
+GRT_PYMODEL1D * grt_read_pymod_from_file(const char *command, const char *modelpath, double depsrc, double deprcv, bool allowLiquid);
 
 
 /**
@@ -160,4 +160,4 @@ PYMODEL1D * read_pymod_from_file(const char *command, const char *modelpath, dou
  * @param    vmax    (out)最大速度
  * 
  */
-void get_pymod_vmin_vmax(const PYMODEL1D *pymod, double *vmin, double *vmax);
+void grt_get_pymod_vmin_vmax(const GRT_PYMODEL1D *pymod, double *vmin, double *vmax);

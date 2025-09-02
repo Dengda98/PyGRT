@@ -16,6 +16,6 @@
 /**
  * 计算核函数的函数指针，动态与静态的接口一致
  */
-typedef void (*KernelFunc) (
-    const MODEL1D *mod1d, MYCOMPLEX omega, MYREAL k, MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
+typedef void (*GRT_KernelFunc) (
+    const GRT_MODEL1D *mod1d, MYCOMPLEX omega, MYREAL k, MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
     bool calc_uiz, MYCOMPLEX QWV_uiz[SRC_M_NUM][QWV_NUM], MYINT *stats);

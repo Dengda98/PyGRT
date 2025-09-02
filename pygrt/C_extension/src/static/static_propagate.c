@@ -24,8 +24,8 @@
 #include "grt/common/matrix.h"
 
 
-void static_kernel(
-    const MODEL1D *mod1d, MYCOMPLEX omega, MYREAL k, MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
+void grt_static_kernel(
+    const GRT_MODEL1D *mod1d, MYCOMPLEX omega, MYREAL k, MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
     bool calc_uiz, MYCOMPLEX QWV_uiz[SRC_M_NUM][QWV_NUM], MYINT *stats)
 {   
     // 初始化qwv为0
@@ -130,12 +130,12 @@ void static_kernel(
         }
 
         // 对第iy层的系数矩阵赋值，加入时间延迟因子(第iy-1界面与第iy界面之间)
-        calc_static_RT_PSV(
+        grt_calc_static_RT_PSV(
             mod1d_delta0, mod1d_mu0,
             mod1d_delta1, mod1d_mu1,
             mod1d_thk0, k, // 使用iy-1层的厚度
             RD, RU, TD, TU);
-        calc_static_RT_SH(
+        grt_calc_static_RT_SH(
             mod1d_mu0, mod1d_mu1,
             mod1d_thk0, k, // 使用iy-1层的厚度
             &RDL, &RUL, &TDL, &TUL);
@@ -146,7 +146,7 @@ void static_kernel(
                 GRT_RT_PSV_ASSIGN(FA);
                 GRT_RT_SH_ASSIGN(FA);
             } else { // 递推FA
-                recursion_RT(
+                grt_recursion_RT(
                     RD_FA, RDL_FA, RU_FA, RUL_FA, 
                     TD_FA, TDL_FA, TU_FA, TUL_FA,
                     RD, RDL, RU, RUL, 
@@ -161,7 +161,7 @@ void static_kernel(
                 GRT_RT_PSV_ASSIGN(RS);
                 GRT_RT_SH_ASSIGN(RS);
             } else { // 递推RS
-                recursion_RT(
+                grt_recursion_RT(
                     RD_RS, RDL_RS, RU_RS, RUL_RS, 
                     TD_RS, TDL_RS, TU_RS, TUL_RS,
                     RD, RDL, RU, RUL, 
@@ -177,7 +177,7 @@ void static_kernel(
                 GRT_RT_SH_ASSIGN(BL);
             } else { // 递推BL
                 // 只有 RD 矩阵最终会被使用到
-                recursion_RT(
+                grt_recursion_RT(
                     RD_BL, RDL_BL, RU_BL, RUL_BL, 
                     TD_BL, TDL_BL, TU_BL, TUL_BL,
                     RD, RDL, RU, RUL, 
@@ -195,16 +195,16 @@ void static_kernel(
     // 计算震源系数
     MYCOMPLEX src_coef_PSV[SRC_M_NUM][QWV_NUM-1][2] = {0};
     MYCOMPLEX src_coef_SH[SRC_M_NUM][2] = {0};
-    static_source_coef_PSV(src_delta, k, src_coef_PSV);
-    static_source_coef_SH(k, src_coef_SH);
+    grt_static_source_coef_PSV(src_delta, k, src_coef_PSV);
+    grt_static_source_coef_SH(k, src_coef_SH);
 
     // 临时中转矩阵 (temperary)
     MYCOMPLEX tmpR2[2][2], tmp2x2[2][2], tmpRL, tmp2x2_uiz[2][2], tmpRL_uiz;
     MYCOMPLEX inv_2x2T[2][2], invT;
 
     // 递推RU_FA
-    calc_static_R_tilt_PSV(top_delta, R_tilt);
-    recursion_RU(
+    grt_calc_static_R_tilt_PSV(top_delta, R_tilt);
+    grt_recursion_RU(
         R_tilt, RONE, 
         RD_FA, RDL_FA,
         RU_FA, RUL_FA, 
@@ -215,11 +215,11 @@ void static_kernel(
     // 根据震源和台站相对位置，计算最终的系数
     if(ircvup){ // A接收  B震源
         // 计算R_EV
-        calc_static_R_EV_PSV(ircvup, RU_FA, R_EV);
-        calc_static_R_EV_SH(RUL_FA, &R_EVL);
+        grt_calc_static_R_EV_PSV(ircvup, RU_FA, R_EV);
+        grt_calc_static_R_EV_SH(RUL_FA, &R_EVL);
 
         // 递推RU_FS
-        recursion_RU(
+        grt_recursion_RU(
             RU_FA, RUL_FA, // 已从ZR变为FR，加入了自由表面的效应
             RD_RS, RDL_RS,
             RU_RS, RUL_RS, 
@@ -228,40 +228,40 @@ void static_kernel(
             RU_FB, &RUL_FB, inv_2x2T, &invT, stats);
         
         // 公式(5.7.12-14)
-        cmat2x2_mul(RD_BL, RU_FB, tmpR2);
-        cmat2x2_one_sub(tmpR2);
-        cmat2x2_inv(tmpR2, tmpR2, stats);// (I - xx)^-1
-        cmat2x2_mul(inv_2x2T, tmpR2, tmp2x2);
+        grt_cmat2x2_mul(RD_BL, RU_FB, tmpR2);
+        grt_cmat2x2_one_sub(tmpR2);
+        grt_cmat2x2_inv(tmpR2, tmpR2, stats);// (I - xx)^-1
+        grt_cmat2x2_mul(inv_2x2T, tmpR2, tmp2x2);
 
-        if(calc_uiz) cmat2x2_assign(tmp2x2, tmp2x2_uiz); // 为后续计算空间导数备份
+        if(calc_uiz) grt_cmat2x2_assign(tmp2x2, tmp2x2_uiz); // 为后续计算空间导数备份
 
-        cmat2x2_mul(R_EV, tmp2x2, tmp2x2);
+        grt_cmat2x2_mul(R_EV, tmp2x2, tmp2x2);
         tmpRL = R_EVL * invT  / (RONE - RDL_BL * RUL_FB);
 
         for(MYINT i=0; i<SRC_M_NUM; ++i){
-            get_qwv(ircvup, tmp2x2, tmpRL, RD_BL, RDL_BL, src_coef_PSV[i], src_coef_SH[i], QWV[i]);
+            grt_get_qwv(ircvup, tmp2x2, tmpRL, RD_BL, RDL_BL, src_coef_PSV[i], src_coef_SH[i], QWV[i]);
         }
         
 
         if(calc_uiz){
-            calc_static_uiz_R_EV_PSV(rcv_delta, ircvup, k, RU_FA, uiz_R_EV);
-            calc_static_uiz_R_EV_SH(ircvup, k, RUL_FA, &uiz_R_EVL);
-            cmat2x2_mul(uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
+            grt_calc_static_uiz_R_EV_PSV(rcv_delta, ircvup, k, RU_FA, uiz_R_EV);
+            grt_calc_static_uiz_R_EV_SH(ircvup, k, RUL_FA, &uiz_R_EVL);
+            grt_cmat2x2_mul(uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
             tmpRL_uiz = tmpRL / R_EVL * uiz_R_EVL;
             
             for(MYINT i=0; i<SRC_M_NUM; ++i){
-                get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RD_BL, RDL_BL, src_coef_PSV[i], src_coef_SH[i], QWV_uiz[i]);
+                grt_get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RD_BL, RDL_BL, src_coef_PSV[i], src_coef_SH[i], QWV_uiz[i]);
             }    
         }
     }
     else { // A震源  B接收
 
         // 计算R_EV
-        calc_static_R_EV_PSV(ircvup, RD_BL, R_EV);    
-        calc_static_R_EV_SH(RDL_BL, &R_EVL);    
+        grt_calc_static_R_EV_PSV(ircvup, RD_BL, R_EV);    
+        grt_calc_static_R_EV_SH(RDL_BL, &R_EVL);    
 
         // 递推RD_SL
-        recursion_RD(
+        grt_recursion_RD(
             RD_RS, RDL_RS,
             RU_RS, RUL_RS,
             TD_RS, TDL_RS,
@@ -270,28 +270,28 @@ void static_kernel(
             RD_AL, &RDL_AL, inv_2x2T, &invT, stats);
         
         // 公式(5.7.26-27)
-        cmat2x2_mul(RU_FA, RD_AL, tmpR2);
-        cmat2x2_one_sub(tmpR2);
-        cmat2x2_inv(tmpR2, tmpR2, stats);// (I - xx)^-1
-        cmat2x2_mul(inv_2x2T, tmpR2, tmp2x2);
+        grt_cmat2x2_mul(RU_FA, RD_AL, tmpR2);
+        grt_cmat2x2_one_sub(tmpR2);
+        grt_cmat2x2_inv(tmpR2, tmpR2, stats);// (I - xx)^-1
+        grt_cmat2x2_mul(inv_2x2T, tmpR2, tmp2x2);
         
-        if(calc_uiz) cmat2x2_assign(tmp2x2, tmp2x2_uiz); // 为后续计算空间导数备份
+        if(calc_uiz) grt_cmat2x2_assign(tmp2x2, tmp2x2_uiz); // 为后续计算空间导数备份
 
-        cmat2x2_mul(R_EV, tmp2x2, tmp2x2);
+        grt_cmat2x2_mul(R_EV, tmp2x2, tmp2x2);
         tmpRL = R_EVL * invT / (RONE - RUL_FA * RDL_AL);
         
         for(MYINT i=0; i<SRC_M_NUM; ++i){
-            get_qwv(ircvup, tmp2x2, tmpRL, RU_FA, RUL_FA, src_coef_PSV[i], src_coef_SH[i], QWV[i]);
+            grt_get_qwv(ircvup, tmp2x2, tmpRL, RU_FA, RUL_FA, src_coef_PSV[i], src_coef_SH[i], QWV[i]);
         }
 
         if(calc_uiz){
-            calc_static_uiz_R_EV_PSV(rcv_delta, ircvup, k, RD_BL, uiz_R_EV);    
-            calc_static_uiz_R_EV_SH(ircvup, k, RDL_BL, &uiz_R_EVL);    
-            cmat2x2_mul(uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
+            grt_calc_static_uiz_R_EV_PSV(rcv_delta, ircvup, k, RD_BL, uiz_R_EV);    
+            grt_calc_static_uiz_R_EV_SH(ircvup, k, RDL_BL, &uiz_R_EVL);    
+            grt_cmat2x2_mul(uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
             tmpRL_uiz = tmpRL / R_EVL * uiz_R_EVL;
             
             for(MYINT i=0; i<SRC_M_NUM; ++i){
-                get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RU_FA, RUL_FA, src_coef_PSV[i], src_coef_SH[i], QWV_uiz[i]);
+                grt_get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RU_FA, RUL_FA, src_coef_PSV[i], src_coef_SH[i], QWV_uiz[i]);
             }
         }
     } // END if

@@ -17,7 +17,7 @@
  * @param[in]    theta        r轴相对x轴的旋转弧度(负数表示逆变换，即zrt->zxy)
  * @param[out]   A            待旋转的矢量(s1, s2, s3)
  */
-void rot_zxy2zrt_vec(double theta, double A[3]);
+void grt_rot_zxy2zrt_vec(double theta, double A[3]);
 
 
 
@@ -27,7 +27,7 @@ void rot_zxy2zrt_vec(double theta, double A[3]);
  * @param[in]    theta       r轴相对x轴的旋转弧度(负数表示逆变换，即zrt->zxy)
  * @param[out]   A           待旋转的二阶对称张量(s11, s12, s13, s22, s23, s33)
  */
-void rot_zxy2zrt_symtensor2odr(double theta, double A[6]);
+void grt_rot_zxy2zrt_symtensor2odr(double theta, double A[6]);
 
 
 /**
@@ -53,4 +53,4 @@ void rot_zxy2zrt_symtensor2odr(double theta, double A[6]);
  * @param[in,out]   upar       柱坐标下的位移空间偏导
  * @param[in]       r          r轴坐标
  */
-void rot_zrt2zxy_upar(const double theta, double u[3], double upar[3][3], const double r);
+void grt_rot_zrt2zxy_upar(const double theta, double u[3], double upar[3][3], const double r);

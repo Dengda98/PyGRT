@@ -48,8 +48,8 @@
  * @param[in]       statsidxs              特定频点的索引值
  * 
  */ 
-void integ_grn_spec(
-    PYMODEL1D *pymod1d, MYINT nf1, MYINT nf2, MYREAL *freqs,  
+void grt_integ_grn_spec(
+    GRT_PYMODEL1D *pymod1d, MYINT nf1, MYINT nf2, MYREAL *freqs,  
     MYINT nr, MYREAL *rs, MYREAL wI, 
     MYREAL vmin_ref, MYREAL keps, MYREAL ampk, MYREAL k0, MYREAL Length, MYREAL filonLength, MYREAL safilonTol, MYREAL filonCut,             
     bool print_progressbar, 

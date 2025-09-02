@@ -24,7 +24,7 @@
  * @param[out]    SUM            该dk区间内的积分值
  * 
  */
-void int_Pk(
+void grt_int_Pk(
     MYREAL k, MYREAL r, 
     const MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
     bool calc_uir,
@@ -39,7 +39,7 @@ void int_Pk(
  * @param[in]     sum_J           积分结果
  * @param[out]    tol             Z、R、T分量结果
  */
-void merge_Pk(
+void grt_merge_Pk(
     const MYCOMPLEX sum_J[SRC_M_NUM][INTEG_NUM], MYCOMPLEX tol[SRC_M_NUM][CHANNEL_NUM]);
 
 
@@ -58,7 +58,7 @@ void merge_Pk(
  * @param[out]    SUM            该dk区间内的积分值
  *  
  */
-void int_Pk_filon(
+void grt_int_Pk_filon(
     MYREAL k, MYREAL r, bool iscos,
     const MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
     bool calc_uir,
@@ -77,7 +77,7 @@ void int_Pk_filon(
  * @param[out]    SUM           该三点区间内的积分值
  * 
  */
-void int_Pk_sa_filon(
+void grt_int_Pk_sa_filon(
     const MYREAL k3[3], MYREAL r, 
     const MYCOMPLEX QWV3[3][SRC_M_NUM][QWV_NUM],
     bool calc_uir,

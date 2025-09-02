@@ -23,7 +23,7 @@
 #include "grt/common/colorstr.h"
 
 
-void calc_R_tilt_PSV(MYCOMPLEX xa0, MYCOMPLEX xb0, MYCOMPLEX kbkb0, MYREAL k, MYCOMPLEX R_tilt[2][2], MYINT *stats)
+void grt_calc_R_tilt_PSV(MYCOMPLEX xa0, MYCOMPLEX xb0, MYCOMPLEX kbkb0, MYREAL k, MYCOMPLEX R_tilt[2][2], MYINT *stats)
 {
     if(kbkb0 != CZERO){
         // 固体表面
@@ -52,7 +52,7 @@ void calc_R_tilt_PSV(MYCOMPLEX xa0, MYCOMPLEX xb0, MYCOMPLEX kbkb0, MYREAL k, MY
 }
 
 
-void calc_R_EV_PSV(
+void grt_calc_R_EV_PSV(
     MYCOMPLEX xa_rcv, MYCOMPLEX xb_rcv, bool ircvup, MYREAL k, 
     const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2])
 {
@@ -74,16 +74,16 @@ void calc_R_EV_PSV(
 
     // 公式(5.7.7,25)
     if(ircvup){// 震源更深
-        cmat2x2_mul(D12, R, R_EV);
-        cmat2x2_add(D11, R_EV, R_EV);
+        grt_cmat2x2_mul(D12, R, R_EV);
+        grt_cmat2x2_add(D11, R_EV, R_EV);
     } else { // 接收点更深
-        cmat2x2_mul(D11, R, R_EV);
-        cmat2x2_add(D12, R_EV, R_EV);
+        grt_cmat2x2_mul(D11, R, R_EV);
+        grt_cmat2x2_add(D12, R_EV, R_EV);
     }
 }
 
 
-void calc_R_EV_SH(MYCOMPLEX xb_rcv, MYREAL k, MYCOMPLEX RL, MYCOMPLEX *R_EVL)
+void grt_calc_R_EV_SH(MYCOMPLEX xb_rcv, MYREAL k, MYCOMPLEX RL, MYCOMPLEX *R_EVL)
 {
     if(xb_rcv != CONE){
         // 位于固体层
@@ -96,7 +96,7 @@ void calc_R_EV_SH(MYCOMPLEX xb_rcv, MYREAL k, MYCOMPLEX RL, MYCOMPLEX *R_EVL)
 }
 
 
-void calc_uiz_R_EV_PSV(
+void grt_calc_uiz_R_EV_PSV(
     MYCOMPLEX xa_rcv, MYCOMPLEX xb_rcv, bool ircvup,
     MYREAL k, 
     const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2])
@@ -117,16 +117,16 @@ void calc_uiz_R_EV_PSV(
 
     // 公式(5.7.7,25)
     if(ircvup){// 震源更深
-        cmat2x2_mul(D12, R, R_EV);
-        cmat2x2_add(D11, R_EV, R_EV);
+        grt_cmat2x2_mul(D12, R, R_EV);
+        grt_cmat2x2_add(D11, R_EV, R_EV);
     } else { // 接收点更深
-        cmat2x2_mul(D11, R, R_EV);
-        cmat2x2_add(D12, R_EV, R_EV);
+        grt_cmat2x2_mul(D11, R, R_EV);
+        grt_cmat2x2_add(D12, R_EV, R_EV);
     }
 }    
 
 
-void calc_uiz_R_EV_SH(MYCOMPLEX xb_rcv, bool ircvup, MYREAL k, MYCOMPLEX RL, MYCOMPLEX *R_EVL)
+void grt_calc_uiz_R_EV_SH(MYCOMPLEX xb_rcv, bool ircvup, MYREAL k, MYCOMPLEX RL, MYCOMPLEX *R_EVL)
 {
     // 将势函数转为ui,z在(B_m, P_m, C_m)系下的分量
     // 新推导的公式
@@ -146,7 +146,7 @@ void calc_uiz_R_EV_SH(MYCOMPLEX xb_rcv, bool ircvup, MYREAL k, MYCOMPLEX RL, MYC
 }    
 
 
-void calc_RT_ll_PSV(
+void grt_calc_RT_ll_PSV(
     MYREAL Rho1, MYCOMPLEX xa1,
     MYREAL Rho2, MYCOMPLEX xa2,
     MYREAL thk, // 使用上层的厚度
@@ -179,7 +179,7 @@ void calc_RT_ll_PSV(
 
 }
 
-void calc_RT_ll_SH(MYCOMPLEX *RDL, MYCOMPLEX *RUL, MYCOMPLEX *TDL, MYCOMPLEX *TUL)
+void grt_calc_RT_ll_SH(MYCOMPLEX *RDL, MYCOMPLEX *RUL, MYCOMPLEX *TDL, MYCOMPLEX *TUL)
 {
     *RDL = RZERO;
     *RUL = RZERO;
@@ -189,7 +189,7 @@ void calc_RT_ll_SH(MYCOMPLEX *RDL, MYCOMPLEX *RUL, MYCOMPLEX *TDL, MYCOMPLEX *TU
 
 
 
-void calc_RT_ls_PSV(
+void grt_calc_RT_ls_PSV(
     MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, 
     MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, 
     MYREAL thk, // 使用上层的厚度
@@ -280,7 +280,7 @@ void calc_RT_ls_PSV(
 }
 
 
-void calc_RT_ls_SH(
+void grt_calc_RT_ls_SH(
     MYCOMPLEX xb1, MYCOMPLEX mu1, MYCOMPLEX mu2, 
     MYREAL thk, // 使用上层的厚度
     MYCOMPLEX omega, MYREAL k,
@@ -326,7 +326,7 @@ void calc_RT_ls_SH(
 
 
 
-void calc_RT_ss_PSV(
+void grt_calc_RT_ss_PSV(
     MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, 
     MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, 
     MYREAL thk, // 使用上层的厚度
@@ -411,7 +411,7 @@ void calc_RT_ss_PSV(
 }
 
 
-void calc_RT_ss_SH(
+void grt_calc_RT_ss_SH(
     MYCOMPLEX xb1, MYCOMPLEX mu1, 
     MYCOMPLEX xb2, MYCOMPLEX mu2, 
     MYREAL thk, // 使用上层的厚度
@@ -437,7 +437,7 @@ void calc_RT_ss_SH(
 
 
 
-void calc_RT_PSV(
+void grt_calc_RT_PSV(
     MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, 
     MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, 
     MYREAL thk, // 使用上层的厚度
@@ -447,21 +447,21 @@ void calc_RT_PSV(
 {
     // 根据界面两侧的具体情况选择函数
     if(mu1 != CZERO && mu2 != CZERO){
-        calc_RT_ss_PSV(
+        grt_calc_RT_ss_PSV(
             Rho1, xa1, xb1, kbkb1, mu1, 
             Rho2, xa2, xb2, kbkb2, mu2, 
             thk, omega, k, 
             RD, RU, TD, TU, stats);
     }
     else if(mu1 == CZERO && mu2 == CZERO){
-        calc_RT_ll_PSV(
+        grt_calc_RT_ll_PSV(
             Rho1, xa1,
             Rho2, xa2,
             thk, omega, k, 
             RD, RU, TD, TU, stats);
     }
     else{
-        calc_RT_ls_PSV(
+        grt_calc_RT_ls_PSV(
             Rho1, xa1, xb1, kbkb1, mu1, 
             Rho2, xa2, xb2, kbkb2, mu2, 
             thk, omega, k, 
@@ -470,7 +470,7 @@ void calc_RT_PSV(
 }
 
 
-void calc_RT_SH(
+void grt_calc_RT_SH(
     MYCOMPLEX xb1, MYCOMPLEX mu1, 
     MYCOMPLEX xb2, MYCOMPLEX mu2, 
     MYREAL thk, // 使用上层的厚度
@@ -480,18 +480,18 @@ void calc_RT_SH(
 {
     // 根据界面两侧的具体情况选择函数
     if(mu1 != CZERO && mu2 != CZERO){
-        calc_RT_ss_SH(
+        grt_calc_RT_ss_SH(
             xb1, mu1, 
             xb2, mu2, 
             thk, omega, k, 
             RDL, RUL, TDL, TUL);
     }
     else if(mu1 == CZERO && mu2 == CZERO){
-        calc_RT_ll_SH(
+        grt_calc_RT_ll_SH(
             RDL, RUL, TDL, TUL);
     }
     else{
-        calc_RT_ls_SH(
+        grt_calc_RT_ls_SH(
             xb1, mu1, mu2, 
             thk, omega, k, 
             RDL, RUL, TDL, TUL);
@@ -501,7 +501,7 @@ void calc_RT_SH(
 
 
 
-void get_layer_D(
+void grt_get_layer_D(
     MYCOMPLEX xa, MYCOMPLEX xb, MYCOMPLEX kbkb, MYCOMPLEX mu,
     MYCOMPLEX omega, MYREAL k, MYCOMPLEX D[4][4], bool inverse)
 {
@@ -527,7 +527,7 @@ void get_layer_D(
     }
 }
 
-void get_layer_D11(
+void grt_get_layer_D11(
     MYCOMPLEX xa, MYCOMPLEX xb, MYREAL k, MYCOMPLEX D[2][2])
 {
     // 第iy层物理量
@@ -535,7 +535,7 @@ void get_layer_D11(
     D[1][0] = k*xa;     D[1][1] = k;   
 }
 
-void get_layer_D12(
+void grt_get_layer_D12(
     MYCOMPLEX xa, MYCOMPLEX xb, MYREAL k, MYCOMPLEX D[2][2])
 {
     // 第iy层物理量
@@ -543,7 +543,7 @@ void get_layer_D12(
     D[1][0] = -k*xa;     D[1][1] = k;   
 }
 
-void get_layer_D11_uiz(
+void grt_get_layer_D11_uiz(
     MYCOMPLEX xa, MYCOMPLEX xb, MYREAL k, MYCOMPLEX D[2][2])
 {
     // 第iy层物理量
@@ -554,7 +554,7 @@ void get_layer_D11_uiz(
     D[1][0] = a*a;     D[1][1] = b*k;   
 }
 
-void get_layer_D12_uiz(
+void grt_get_layer_D12_uiz(
     MYCOMPLEX xa, MYCOMPLEX xb, MYREAL k, MYCOMPLEX D[2][2])
 {
     // 第iy层物理量
@@ -565,7 +565,7 @@ void get_layer_D12_uiz(
     D[1][0] = a*a;       D[1][1] = - b*k;   
 }
 
-void get_layer_D21(
+void grt_get_layer_D21(
     MYCOMPLEX xa, MYCOMPLEX xb, MYCOMPLEX kbkb, MYCOMPLEX mu,
     MYCOMPLEX omega, MYREAL k, MYCOMPLEX D[2][2])
 {
@@ -577,7 +577,7 @@ void get_layer_D21(
     D[1][0] = 2*k*mu*k*xa;     D[1][1] = 2*mu*Omg;   
 }
 
-void get_layer_D22(
+void grt_get_layer_D22(
     MYCOMPLEX xa, MYCOMPLEX xb, MYCOMPLEX kbkb, MYCOMPLEX mu,
     MYCOMPLEX omega, MYREAL k, MYCOMPLEX D[2][2])
 {
@@ -589,7 +589,7 @@ void get_layer_D22(
     D[1][0] = -2*k*mu*k*xa;    D[1][1] = 2*mu*Omg;   
 }
 
-void get_layer_T(
+void grt_get_layer_T(
     MYCOMPLEX xb, MYCOMPLEX mu,
     MYCOMPLEX omega, MYREAL k, MYCOMPLEX T[2][2], bool inverse)
 {
@@ -607,7 +607,7 @@ void get_layer_T(
     }
 }
 
-void get_layer_E_Love(MYCOMPLEX xb1, MYREAL thk, MYREAL k, MYCOMPLEX E[2][2], bool inverse)
+void grt_get_layer_E_Love(MYCOMPLEX xb1, MYREAL thk, MYREAL k, MYCOMPLEX E[2][2], bool inverse)
 {
     MYCOMPLEX exb = exp(k*thk*xb1); 
 
@@ -622,7 +622,7 @@ void get_layer_E_Love(MYCOMPLEX xb1, MYREAL thk, MYREAL k, MYCOMPLEX E[2][2], bo
     
 }
 
-void get_layer_E_Rayl(
+void grt_get_layer_E_Rayl(
     MYCOMPLEX xa1, MYCOMPLEX xb1, MYREAL thk, MYREAL k, MYCOMPLEX E[4][4], bool inverse)
 {
     MYCOMPLEX exa, exb; 
@@ -645,7 +645,7 @@ void get_layer_E_Rayl(
     }
 }
 
-void calc_RT_from_4x4(
+void grt_calc_RT_from_4x4(
     MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, 
     MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, 
     MYCOMPLEX omega, MYREAL thk,
@@ -656,10 +656,10 @@ void calc_RT_from_4x4(
 
     MYCOMPLEX D1_inv[4][4], D2[4][4], Q[4][4];
 
-    get_layer_D(xa1, xb1, kbkb1, mu1, omega, k, D1_inv, true);
-    get_layer_D(xa2, xb2, kbkb2, mu2, omega, k, D2,    false);
+    grt_get_layer_D(xa1, xb1, kbkb1, mu1, omega, k, D1_inv, true);
+    grt_get_layer_D(xa2, xb2, kbkb2, mu2, omega, k, D2,    false);
 
-    cmatmxn_mul(4, 4, 4, D1_inv, D2, Q);
+    grt_cmatmxn_mul(4, 4, 4, D1_inv, D2, Q);
 
     MYCOMPLEX exa, exb; 
 
@@ -671,26 +671,26 @@ void calc_RT_from_4x4(
     E[1][1] = exb;
     E[2][2] = 1/exa;
     E[3][3] = 1/exb;
-    cmatmxn_mul(4, 4, 4, E, Q, Q);
+    grt_cmatmxn_mul(4, 4, 4, E, Q, Q);
 
     // 对Q矩阵划分子矩阵 
     MYCOMPLEX Q11[2][2], Q12[2][2], Q21[2][2], Q22[2][2];
-    cmatmxn_block(4, 4, Q, 0, 0, 2, 2, Q11);
-    cmatmxn_block(4, 4, Q, 0, 2, 2, 2, Q12);
-    cmatmxn_block(4, 4, Q, 2, 0, 2, 2, Q21);
-    cmatmxn_block(4, 4, Q, 2, 2, 2, 2, Q22);
+    grt_cmatmxn_block(4, 4, Q, 0, 0, 2, 2, Q11);
+    grt_cmatmxn_block(4, 4, Q, 0, 2, 2, 2, Q12);
+    grt_cmatmxn_block(4, 4, Q, 2, 0, 2, 2, Q21);
+    grt_cmatmxn_block(4, 4, Q, 2, 2, 2, 2, Q22);
 
     // 计算反射透射系数 
     // TD
-    cmat2x2_inv(Q22, TD, stats);
+    grt_cmat2x2_inv(Q22, TD, stats);
     // RD
-    cmat2x2_mul(Q12, TD, RD); 
+    grt_cmat2x2_mul(Q12, TD, RD); 
     // RU
-    cmat2x2_mul(TD, Q21, RU);
-    cmat2x2_k(RU, -1, RU);
+    grt_cmat2x2_mul(TD, Q21, RU);
+    grt_cmat2x2_k(RU, -1, RU);
     // TU
-    cmat2x2_mul(Q12, RU, TU);
-    cmat2x2_add(Q11, TU, TU);
+    grt_cmat2x2_mul(Q12, RU, TU);
+    grt_cmat2x2_add(Q11, TU, TU);
 
     *RDL = (mu1*xb1 - mu2*xb2) / (mu1*xb1 + mu2*xb2) * exa*exa;
     *RUL = - (*RDL);

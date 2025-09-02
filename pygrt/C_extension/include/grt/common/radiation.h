@@ -33,7 +33,7 @@
  *                                   对于剪切源，mchn={strike, dip, rake}，
  *                                   对于张量源，mchn={Mxx, Mxy, Mxz, Myy, Myz, Mzz}
  */
-void set_source_radiation(
+void grt_set_source_radiation(
     double srcRadi[SRC_M_NUM][CHANNEL_NUM], const int computeType, const bool par_theta,
     const double M0, const double coef, const double azrad, const double mchn[MECHANISM_NUM]
 );

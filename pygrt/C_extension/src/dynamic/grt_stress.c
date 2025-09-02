@@ -107,7 +107,7 @@ int stress_main(int argc, char **argv){
     // 读取一个头段变量，获得基本参数，分配数组内存
     SACHEAD hd;
     GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%s%c.sac", Ctrl->s_synpath, tolower(chs[0]), Ctrl->s_prefix, chs[0]);
-    read_SAC_HEAD(command, s_filepath, &hd);
+    grt_read_SAC_HEAD(command, s_filepath, &hd);
     int npts=hd.npts;
     float dt=hd.delta;
     float dist=hd.dist;
@@ -129,8 +129,8 @@ int stress_main(int argc, char **argv){
     fftwf_complex *lams = (fftwf_complex*)fftwf_malloc(sizeof(fftwf_complex)*nf);
     fftwf_complex *mus = (fftwf_complex*)fftwf_malloc(sizeof(fftwf_complex)*nf);
     // 分配FFTW
-    FFTWF_HOLDER *fwd_fftw_holder = create_fftwf_holder_R2C_1D(npts, dt, nf, df);
-    FFTWF_HOLDER *inv_fftw_holder = create_fftwf_holder_C2R_1D(npts, dt, nf, df);
+    GRT_FFTWF_HOLDER *fwd_fftw_holder = grt_create_fftwf_holder_R2C_1D(npts, dt, nf, df);
+    GRT_FFTWF_HOLDER *inv_fftw_holder = grt_create_fftwf_holder_C2R_1D(npts, dt, nf, df);
     // 初始化
     memset(lam_ukk, 0, sizeof(fftwf_complex)*nf);
     memset(lams, 0, sizeof(fftwf_complex)*nf);
@@ -141,8 +141,8 @@ int stress_main(int argc, char **argv){
         freq = (i==0) ? 0.01f : df*i; // 计算衰减因子不能为0频
         w = PI2 * freq;
         fftwf_complex atta, attb;
-        atta = attenuation_law(Qainv, w);
-        attb = attenuation_law(Qbinv, w);
+        atta = grt_attenuation_law(Qainv, w);
+        attb = grt_attenuation_law(Qbinv, w);
         // 乘上1e10，转为dyne/(cm^2)
         mus[i] = vb*vb*attb*attb*rho*1e10;
         lams[i] = va*va*atta*atta*rho*1e10 - 2.0*mus[i];
@@ -155,7 +155,7 @@ int stress_main(int argc, char **argv){
 
         // 读取数据 u_{k,k}
         GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%s%c.sac", Ctrl->s_synpath, tolower(c1), Ctrl->s_prefix, c1);
-        read_SAC(command, s_filepath, &hd, fwd_fftw_holder->w_t);
+        grt_read_SAC(command, s_filepath, &hd, fwd_fftw_holder->w_t);
 
         // 累加
         fftwf_execute(fwd_fftw_holder->plan);
@@ -164,7 +164,7 @@ int stress_main(int argc, char **argv){
     // 加上协变导数
     if(!rot2ZNE){
         GRT_SAFE_ASPRINTF(&s_filepath, "%s/%sR.sac", Ctrl->s_synpath, Ctrl->s_prefix);
-        read_SAC(command, s_filepath, &hd, fwd_fftw_holder->w_t);
+        grt_read_SAC(command, s_filepath, &hd, fwd_fftw_holder->w_t);
         fftwf_execute(fwd_fftw_holder->plan);
         for(int i=0; i<nf; ++i)  lam_ukk[i] += fwd_fftw_holder->W_f[i]/dist*1e-5;
     }
@@ -173,8 +173,8 @@ int stress_main(int argc, char **argv){
     for(int i=0; i<nf; ++i)  lam_ukk[i] *= lams[i];
 
     // 重新初始化
-    reset_fftwf_holder_zero(fwd_fftw_holder);
-    reset_fftwf_holder_zero(inv_fftw_holder);
+    grt_reset_fftwf_holder_zero(fwd_fftw_holder);
+    grt_reset_fftwf_holder_zero(inv_fftw_holder);
 
     // ----------------------------------------------------------------------------------
     // 循环6个分量
@@ -185,7 +185,7 @@ int stress_main(int argc, char **argv){
 
             // 读取数据 u_{i,j}
             GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%s%c.sac", Ctrl->s_synpath, tolower(c2), Ctrl->s_prefix, c1);
-            read_SAC(command, s_filepath, &hd, fwd_fftw_holder->w_t);
+            grt_read_SAC(command, s_filepath, &hd, fwd_fftw_holder->w_t);
 
             // 累加
             fftwf_execute(fwd_fftw_holder->plan);
@@ -193,7 +193,7 @@ int stress_main(int argc, char **argv){
 
             // 读取数据 u_{j,i}
             GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%s%c.sac", Ctrl->s_synpath, tolower(c1), Ctrl->s_prefix, c2);
-            read_SAC(command, s_filepath, &hd, fwd_fftw_holder->w_t);
+            grt_read_SAC(command, s_filepath, &hd, fwd_fftw_holder->w_t);
             
             // 累加
             fftwf_execute(fwd_fftw_holder->plan);
@@ -208,14 +208,14 @@ int stress_main(int argc, char **argv){
             if(c1=='R' && c2=='T'){
                 // 读取数据 u_T
                 GRT_SAFE_ASPRINTF(&s_filepath, "%s/%sT.sac", Ctrl->s_synpath, Ctrl->s_prefix);
-                read_SAC(command, s_filepath, &hd, fwd_fftw_holder->w_t);
+                grt_read_SAC(command, s_filepath, &hd, fwd_fftw_holder->w_t);
                 fftwf_execute(fwd_fftw_holder->plan);
                 for(int i=0; i<nf; ++i)  inv_fftw_holder->W_f[i] -= mus[i] * fwd_fftw_holder->W_f[i] / dist * 1e-5;
             }
             else if(c1=='T' && c2=='T'){
                 // 读取数据 u_R
                 GRT_SAFE_ASPRINTF(&s_filepath, "%s/%sR.sac", Ctrl->s_synpath, Ctrl->s_prefix);
-                read_SAC(command, s_filepath, &hd, fwd_fftw_holder->w_t);
+                grt_read_SAC(command, s_filepath, &hd, fwd_fftw_holder->w_t);
                 fftwf_execute(fwd_fftw_holder->plan);
                 for(int i=0; i<nf; ++i)  inv_fftw_holder->W_f[i] += 2.0f * mus[i] * fwd_fftw_holder->W_f[i] / dist * 1e-5;
             }
@@ -228,14 +228,14 @@ int stress_main(int argc, char **argv){
             write_sac(s_filepath, hd, inv_fftw_holder->w_t);
 
             // 置零
-            reset_fftwf_holder_zero(inv_fftw_holder);
+            grt_reset_fftwf_holder_zero(inv_fftw_holder);
 
         }
     }
 
 
-    destroy_fftwf_holder(fwd_fftw_holder);
-    destroy_fftwf_holder(inv_fftw_holder);
+    grt_destroy_fftwf_holder(fwd_fftw_holder);
+    grt_destroy_fftwf_holder(inv_fftw_holder);
 
     GRT_SAFE_FFTW_FREE_PTR(lam_ukk, f);
     GRT_SAFE_FFTW_FREE_PTR(lams, f);

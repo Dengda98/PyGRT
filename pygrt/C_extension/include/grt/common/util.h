@@ -24,7 +24,7 @@
  * 
  * @return   split    子字符串数组
  */
-char ** string_split(const char *string, const char *delim, int *size);
+char ** grt_string_split(const char *string, const char *delim, int *size);
 
 
 /**
@@ -34,7 +34,7 @@ char ** string_split(const char *string, const char *delim, int *size);
  * 
  * @return   指向最后一项字符串的指针
  */
-const char* get_basename(const char* path);
+const char* grt_get_basename(const char* path);
 
 
 
@@ -69,10 +69,10 @@ const char* get_basename(const char* path);
  * @param[in]         grn_uir       格林函数对r偏导频谱结果
  * 
  */
-void GF_freq2time_write_to_file(
-    const char *command, const PYMODEL1D *pymod, 
+void grt_GF_freq2time_write_to_file(
+    const char *command, const GRT_PYMODEL1D *pymod, 
     const char *s_output_dir, const char *s_modelname, const char *s_depsrc, const char *s_deprcv,    
-    const MYREAL wI, FFTW_HOLDER *pt_fh,
+    const MYREAL wI, GRT_FFTW_HOLDER *pt_fh,
     const MYINT nr, char *s_dists[nr], const MYREAL dists[nr], MYREAL travtPS[nr][2],
     const MYREAL depsrc, const MYREAL deprcv,
     const MYREAL delayT0, const MYREAL delayV0, const bool calc_upar,

@@ -24,7 +24,7 @@
  * @param[out]    R_tilt            P-SV系数矩阵，SH系数为1
  * 
  */
-void calc_static_R_tilt_PSV(MYCOMPLEX delta1, MYCOMPLEX R_tilt[2][2]);
+void grt_calc_static_R_tilt_PSV(MYCOMPLEX delta1, MYCOMPLEX R_tilt[2][2]);
 
 
 /**
@@ -35,7 +35,7 @@ void calc_static_R_tilt_PSV(MYCOMPLEX delta1, MYCOMPLEX R_tilt[2][2]);
  * @param[out]     R_EV            P-SV接收函数矩阵
  * 
  */
-void calc_static_R_EV_PSV(bool ircvup, const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2]);
+void grt_calc_static_R_EV_PSV(bool ircvup, const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2]);
 
 /**
  * 计算接收点位置的 SH 静态接收矩阵，将波场转为位移，公式(6.3.37)
@@ -44,7 +44,7 @@ void calc_static_R_EV_PSV(bool ircvup, const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2
  * @param[out]     R_EVL           SH接收函数值
  * 
  */
-void calc_static_R_EV_SH(MYCOMPLEX RL, MYCOMPLEX *R_EVL);
+void grt_calc_static_R_EV_SH(MYCOMPLEX RL, MYCOMPLEX *R_EVL);
 
 /**
  * 计算接收点位置的ui_z的 P-SV 静态接收矩阵，即将波场转为ui_z。
@@ -57,7 +57,7 @@ void calc_static_R_EV_SH(MYCOMPLEX RL, MYCOMPLEX *R_EVL);
  * @param[out]     R_EV            P-SV接收函数矩阵
  * 
  */
-void calc_static_uiz_R_EV_PSV(
+void grt_calc_static_uiz_R_EV_PSV(
     MYCOMPLEX delta1, bool ircvup, MYREAL k, 
     const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2]);
 
@@ -71,7 +71,7 @@ void calc_static_uiz_R_EV_PSV(
  * @param[out]     R_EVL           SH接收函数值
  * 
  */
-void calc_static_uiz_R_EV_SH(bool ircvup, MYREAL k, MYCOMPLEX RL, MYCOMPLEX *R_EVL);
+void grt_calc_static_uiz_R_EV_SH(bool ircvup, MYREAL k, MYCOMPLEX RL, MYCOMPLEX *R_EVL);
 
 
 /**
@@ -90,7 +90,7 @@ void calc_static_uiz_R_EV_SH(bool ircvup, MYREAL k, MYCOMPLEX RL, MYCOMPLEX *R_E
  * @param[out]      TU            P-SV 上传透射系数矩阵
  * 
  */
-void calc_static_RT_PSV(
+void grt_calc_static_RT_PSV(
     MYCOMPLEX delta1, MYCOMPLEX mu1, 
     MYCOMPLEX delta2, MYCOMPLEX mu2, 
     MYREAL thk, MYREAL k,
@@ -110,7 +110,7 @@ void calc_static_RT_PSV(
  * @param[out]      TUL           SH 上传透射系数
  * 
  */
-void calc_static_RT_SH(
+void grt_calc_static_RT_SH(
     MYCOMPLEX mu1, MYCOMPLEX mu2, 
     MYREAL thk, MYREAL k,
     MYCOMPLEX *RDL, MYCOMPLEX *RUL, MYCOMPLEX *TDL, MYCOMPLEX *TUL);

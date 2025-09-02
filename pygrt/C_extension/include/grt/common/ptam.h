@@ -46,14 +46,14 @@
  * 
  * 
  */
-void PTA_method(
-    const MODEL1D *mod1d, MYREAL k0, MYREAL predk, MYCOMPLEX omega, 
+void grt_PTA_method(
+    const GRT_MODEL1D *mod1d, MYREAL k0, MYREAL predk, MYCOMPLEX omega, 
     MYINT nr, MYREAL *rs,
     MYCOMPLEX sum_J0[nr][SRC_M_NUM][INTEG_NUM],
     bool calc_upar,
     MYCOMPLEX sum_uiz_J0[nr][SRC_M_NUM][INTEG_NUM],
     MYCOMPLEX sum_uir_J0[nr][SRC_M_NUM][INTEG_NUM],
-    FILE *ptam_fstatsnr[nr][2], KernelFunc kerfunc, MYINT *stats);
+    FILE *ptam_fstatsnr[nr][2], GRT_KernelFunc kerfunc, MYINT *stats);
 
 
 
@@ -73,7 +73,7 @@ void PTA_method(
  * @return    波峰(1)，波谷(-1)，其它(0)
  *  
  */
-MYINT cplx_peak_or_trough(
+MYINT grt_cplx_peak_or_trough(
     MYINT idx1, MYINT idx2, const MYCOMPLEX arr[PTAM_WINDOW_SIZE][SRC_M_NUM][INTEG_NUM], 
     MYREAL k, MYREAL dk, MYREAL *pk, MYCOMPLEX *value);
 
@@ -88,4 +88,4 @@ MYINT cplx_peak_or_trough(
  * @param[in,out]     arr         振荡的数组，最终收敛值在第一个，arr[0] 
  * 
  */
-void cplx_shrink(MYINT n1, MYCOMPLEX *arr);
+void grt_cplx_shrink(MYINT n1, MYCOMPLEX *arr);

@@ -22,14 +22,14 @@
 
 
 
-MYREAL linear_filon_integ(
-    const MODEL1D *mod1d, MYREAL k0, MYREAL dk0, MYREAL dk, MYREAL kmax, MYREAL keps, MYCOMPLEX omega, 
+MYREAL grt_linear_filon_integ(
+    const GRT_MODEL1D *mod1d, MYREAL k0, MYREAL dk0, MYREAL dk, MYREAL kmax, MYREAL keps, MYCOMPLEX omega, 
     MYINT nr, MYREAL *rs,
     MYCOMPLEX sum_J0[nr][SRC_M_NUM][INTEG_NUM],
     bool calc_upar,
     MYCOMPLEX sum_uiz_J0[nr][SRC_M_NUM][INTEG_NUM],
     MYCOMPLEX sum_uir_J0[nr][SRC_M_NUM][INTEG_NUM],
-    FILE *fstats, KernelFunc kerfunc, MYINT *stats)
+    FILE *fstats, GRT_KernelFunc kerfunc, MYINT *stats)
 {   
     // 从0开始，存储第二部分Filon积分的结果
     MYCOMPLEX (*sum_J)[SRC_M_NUM][INTEG_NUM] = (MYCOMPLEX(*)[SRC_M_NUM][INTEG_NUM])calloc(nr, sizeof(*sum_J));
@@ -63,7 +63,7 @@ MYREAL linear_filon_integ(
         if(*stats==INVERSE_FAILURE)  goto BEFORE_RETURN;
 
         // 记录积分结果
-        if(fstats!=NULL)  write_stats(fstats, k, QWV);
+        if(fstats!=NULL)  grt_write_stats(fstats, k, QWV);
 
         // 震中距rs循环
         iendk = true;
@@ -77,7 +77,7 @@ MYREAL linear_filon_integ(
             }
             
             // F(k, w)*Jm(kr)k 的近似公式, sqrt(k) * F(k,w) * cos
-            int_Pk_filon(k, rs[ir], true, QWV, false, SUM);
+            grt_int_Pk_filon(k, rs[ir], true, QWV, false, SUM);
 
             iendk0 = true;
             for(MYINT i=0; i<SRC_M_NUM; ++i){
@@ -105,7 +105,7 @@ MYREAL linear_filon_integ(
             if(calc_upar){
                 // ------------------------------- ui_z -----------------------------------
                 // 计算被积函数一项 F(k,w)Jm(kr)k
-                int_Pk_filon(k, rs[ir], true, QWV_uiz, false, SUM);
+                grt_int_Pk_filon(k, rs[ir], true, QWV_uiz, false, SUM);
                 
                 // keps不参与计算位移空间导数的积分，背后逻辑认为u收敛，则uiz也收敛
                 for(MYINT i=0; i<SRC_M_NUM; ++i){
@@ -116,7 +116,7 @@ MYREAL linear_filon_integ(
 
                 // ------------------------------- ui_r -----------------------------------
                 // 计算被积函数一项 F(k,w)Jm(kr)k
-                int_Pk_filon(k, rs[ir], true, QWV, true, SUM);
+                grt_int_Pk_filon(k, rs[ir], true, QWV, true, SUM);
                 
                 // keps不参与计算位移空间导数的积分，背后逻辑认为u收敛，则uir也收敛
                 for(MYINT i=0; i<SRC_M_NUM; ++i){
@@ -178,10 +178,10 @@ MYREAL linear_filon_integ(
 
         for(MYINT ir=0; ir<nr; ++ir){
             // Gc
-            int_Pk_filon(k0N, rs[ir], true, QWV, false, SUM_Gc[iik]);
+            grt_int_Pk_filon(k0N, rs[ir], true, QWV, false, SUM_Gc[iik]);
             
             // Gs
-            int_Pk_filon(k0N, rs[ir], false, QWV, false, SUM_Gs[iik]);
+            grt_int_Pk_filon(k0N, rs[ir], false, QWV, false, SUM_Gs[iik]);
 
             
             MYREAL tmp = RONE / (rs[ir]*rs[ir]*dk);
@@ -199,10 +199,10 @@ MYREAL linear_filon_integ(
                 // ------------------------------- ui_z -----------------------------------
                 // 计算被积函数一项 F(k,w)Jm(kr)k
                 // Gc
-                int_Pk_filon(k0N, rs[ir], true, QWV_uiz, false, SUM_Gc[iik]);
+                grt_int_Pk_filon(k0N, rs[ir], true, QWV_uiz, false, SUM_Gc[iik]);
                 
                 // Gs
-                int_Pk_filon(k0N, rs[ir], false, QWV_uiz, false, SUM_Gs[iik]);
+                grt_int_Pk_filon(k0N, rs[ir], false, QWV_uiz, false, SUM_Gs[iik]);
 
                 for(MYINT i=0; i<SRC_M_NUM; ++i){
                     for(MYINT v=0; v<INTEG_NUM; ++v){
@@ -214,10 +214,10 @@ MYREAL linear_filon_integ(
                 // ------------------------------- ui_r -----------------------------------
                 // 计算被积函数一项 F(k,w)Jm(kr)k
                 // Gc
-                int_Pk_filon(k0N, rs[ir], true, QWV, true, SUM_Gc[iik]);
+                grt_int_Pk_filon(k0N, rs[ir], true, QWV, true, SUM_Gc[iik]);
                 
                 // Gs
-                int_Pk_filon(k0N, rs[ir], false, QWV, true, SUM_Gs[iik]);
+                grt_int_Pk_filon(k0N, rs[ir], false, QWV, true, SUM_Gs[iik]);
 
                 for(MYINT i=0; i<SRC_M_NUM; ++i){
                     for(MYINT v=0; v<INTEG_NUM; ++v){

@@ -19,7 +19,7 @@
 
 
 
-void int_Pk(
+void grt_int_Pk(
     MYREAL k, MYREAL r, 
     // F(ki,w)， 第一个维度表示不同震源，不同阶数，第二个维度3代表三类系数qm,wm,vm 
     const MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
@@ -34,12 +34,12 @@ void int_Pk(
 
     MYREAL Jmcoef[MORDER_MAX+1] = {0};
 
-    bessel012(kr, &bjmk[0], &bjmk[1], &bjmk[2]); 
+    grt_bessel012(kr, &bjmk[0], &bjmk[1], &bjmk[2]); 
     if(calc_uir){
         MYREAL bjmk0[MORDER_MAX+1] = {0};
         for(MYINT i=0; i<=MORDER_MAX; ++i)  bjmk0[i] = bjmk[i];
 
-        besselp012(kr, &bjmk[0], &bjmk[1], &bjmk[2]); 
+        grt_besselp012(kr, &bjmk[0], &bjmk[1], &bjmk[2]); 
         kcoef = k*k;
 
         for(MYINT i=1; i<=MORDER_MAX; ++i)  Jmcoef[i] = kr_inv * (-kr_inv * bjmk0[i] + bjmk[i]);
@@ -70,7 +70,7 @@ void int_Pk(
 }
 
 
-void int_Pk_filon(
+void grt_int_Pk_filon(
     MYREAL k, MYREAL r, bool iscos,
     const MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
     bool calc_uir,
@@ -159,7 +159,7 @@ static MYCOMPLEX interg_quad_cos(
 
 
 
-void int_Pk_sa_filon(
+void grt_int_Pk_sa_filon(
     const MYREAL k3[3], MYREAL r, 
     const MYCOMPLEX QWV3[3][SRC_M_NUM][QWV_NUM],
     bool calc_uir,
@@ -185,7 +185,7 @@ void int_Pk_sa_filon(
             for(MYINT d=0; d<3; ++d)  F3[d] = QWV3[d][im][c] * sqrt(k3[d]) * sgn;
 
             // 拟合参数
-            quad_term(k3, F3, &quad_a[im][c], &quad_b[im][c], &quad_c[im][c]);
+            grt_quad_term(k3, F3, &quad_a[im][c], &quad_b[im][c], &quad_c[im][c]);
         }
     }
 
@@ -208,7 +208,7 @@ void int_Pk_sa_filon(
 
 
 
-void merge_Pk(
+void grt_merge_Pk(
     // F(ki,w)Jm(ki*r)ki，
     const MYCOMPLEX sum_J[SRC_M_NUM][INTEG_NUM], 
     // 累积求和，Z、R、T分量 

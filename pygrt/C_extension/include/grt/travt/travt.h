@@ -23,6 +23,6 @@
  * @param[in]    ircv          场点所在层位
  * @param[in]    dist          震中距
  */
-MYREAL compute_travt1d(
+MYREAL grt_compute_travt1d(
     const MYREAL *Thk, const MYREAL *Vel0, const int nlay, 
     const int isrc, const int ircv, const MYREAL dist);

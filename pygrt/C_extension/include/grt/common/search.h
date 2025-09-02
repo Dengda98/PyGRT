@@ -24,7 +24,7 @@
  * @note 如果数组中存在多个目标值，该函数返回第一个匹配的索引。
  * 
  */
-MYINT findElement_MYINT(const MYINT array[], MYINT size, MYINT target);
+MYINT grt_findElement_MYINT(const MYINT array[], MYINT size, MYINT target);
 
 /**
  * 搜索浮点数数组中最接近目标值且小于目标值的索引。
@@ -39,7 +39,7 @@ MYINT findElement_MYINT(const MYINT array[], MYINT size, MYINT target);
  * @note 如果数组中存在多个目标值，该函数返回第一个匹配的索引。
  * 
  */
-MYINT findLessEqualClosest_MYREAL(const MYREAL array[], MYINT size, MYREAL target);
+MYINT grt_findLessEqualClosest_MYREAL(const MYREAL array[], MYINT size, MYREAL target);
 
 /**
  * 搜索浮点数数组中最接近目标值的索引。
@@ -53,7 +53,7 @@ MYINT findLessEqualClosest_MYREAL(const MYREAL array[], MYINT size, MYREAL targe
  * @note 如果数组中存在多个目标值，该函数返回第一个匹配的索引。
  * 
  */
-MYINT findClosest_MYREAL(const MYREAL array[], MYINT size, MYREAL target);
+MYINT grt_findClosest_MYREAL(const MYREAL array[], MYINT size, MYREAL target);
 
 /**
  * 搜索浮点数数组的最大或最小值，返回其索引。
@@ -67,4 +67,4 @@ MYINT findClosest_MYREAL(const MYREAL array[], MYINT size, MYREAL target);
  * @note 如果数组中存在相同最值，该函数返回第一个匹配的索引。
  * 
  */
-MYINT findMinMax_MYREAL(const MYREAL array[], MYINT size, bool isMax);
+MYINT grt_findMinMax_MYREAL(const MYREAL array[], MYINT size, bool isMax);

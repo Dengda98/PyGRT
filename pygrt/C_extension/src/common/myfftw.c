@@ -12,9 +12,9 @@
 #include "grt/common/checkerror.h"
 
 #define X(T, s, S) \
-static FFTW##S##_HOLDER *  init_fftw##s##_holder(const MYINT nt, const MYREAL dt, const MYINT nf_valid, const MYREAL df)\
+static GRT_FFTW##S##_HOLDER *  grt_init_fftw##s##_holder(const MYINT nt, const MYREAL dt, const MYINT nf_valid, const MYREAL df)\
 {\
-    FFTW##S##_HOLDER *fh = (FFTW##S##_HOLDER*)calloc(1, sizeof(FFTW##S##_HOLDER));\
+    GRT_FFTW##S##_HOLDER *fh = (GRT_FFTW##S##_HOLDER*)calloc(1, sizeof(GRT_FFTW##S##_HOLDER));\
     if (!fh) {\
         GRTRaiseError("Failed to allocate memory in function %s\n.", __func__);\
     }\
@@ -34,30 +34,30 @@ static FFTW##S##_HOLDER *  init_fftw##s##_holder(const MYINT nt, const MYREAL dt
 }\
 \
 \
-void reset_fftw##s##_holder_zero(FFTW##S##_HOLDER *fh)\
+void grt_reset_fftw##s##_holder_zero(GRT_FFTW##S##_HOLDER *fh)\
 {\
     memset(fh->w_t, 0, sizeof(T)*fh->nt);\
     memset(fh->W_f, 0, sizeof(fftw##s##_complex)*fh->nf);\
 }\
 \
 \
-FFTW##S##_HOLDER * create_fftw##s##_holder_C2R_1D(const MYINT nt, const MYREAL dt, const MYINT nf_valid, const MYREAL df)\
+GRT_FFTW##S##_HOLDER * grt_create_fftw##s##_holder_C2R_1D(const MYINT nt, const MYREAL dt, const MYINT nf_valid, const MYREAL df)\
 {\
-    FFTW##S##_HOLDER * fh = init_fftw##s##_holder(nt, dt, nf_valid, df);\
+    GRT_FFTW##S##_HOLDER * fh = grt_init_fftw##s##_holder(nt, dt, nf_valid, df);\
     fh->plan = fftw##s##_plan_dft_c2r_1d(nt, fh->W_f, fh->w_t, FFTW_ESTIMATE);\
     return fh;\
 }\
 \
 \
-FFTW##S##_HOLDER * create_fftw##s##_holder_R2C_1D(const MYINT nt, const MYREAL dt, const MYINT nf_valid, const MYREAL df)\
+GRT_FFTW##S##_HOLDER * grt_create_fftw##s##_holder_R2C_1D(const MYINT nt, const MYREAL dt, const MYINT nf_valid, const MYREAL df)\
 {\
-    FFTW##S##_HOLDER * fh = init_fftw##s##_holder(nt, dt, nf_valid, df);\
+    GRT_FFTW##S##_HOLDER * fh = grt_init_fftw##s##_holder(nt, dt, nf_valid, df);\
     fh->plan = fftw##s##_plan_dft_r2c_1d(nt, fh->w_t, fh->W_f, FFTW_ESTIMATE);\
     return fh;\
 }\
 \
 \
-void destroy_fftw##s##_holder(FFTW##S##_HOLDER *fh)\
+void grt_destroy_fftw##s##_holder(GRT_FFTW##S##_HOLDER *fh)\
 {\
     if (fh) {\
         fftw##s##_destroy_plan(fh->plan);\
@@ -68,7 +68,7 @@ void destroy_fftw##s##_holder(FFTW##S##_HOLDER *fh)\
 }\
 \
 \
-void naive_inverse_transform_##T(FFTW##S##_HOLDER *fh)\
+void grt_naive_inverse_transform_##T(GRT_FFTW##S##_HOLDER *fh)\
 {\
     MYINT nt = fh->nt;\
     MYINT nf = fh->nf;\

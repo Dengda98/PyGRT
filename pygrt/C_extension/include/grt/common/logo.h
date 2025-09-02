@@ -21,7 +21,7 @@
 #endif
 
 
-inline GCC_ALWAYS_INLINE void print_logo(){
+inline GCC_ALWAYS_INLINE void grt_print_logo(){
 
 #if _TEST_WHETHER_WIN32_
     // 在Windows上设置控制台代码页为UTF-8，以显示下方由特殊字符组成的logo

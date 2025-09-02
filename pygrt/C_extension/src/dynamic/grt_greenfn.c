@@ -44,7 +44,7 @@ typedef struct {
         bool active;
         char *s_modelpath;        ///< 模型路径
         const char *s_modelname;  ///< 模型名称
-        PYMODEL1D *pymod;         ///< 模型PYMODEL1D结构体指针
+        GRT_PYMODEL1D *pymod;         ///< 模型PYMODEL1D结构体指针
     } M;
     /** 震源和接收器深度 */
     struct {
@@ -153,7 +153,7 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
 
     // M
     GRT_SAFE_FREE_PTR(Ctrl->M.s_modelpath);
-    free_pymod(Ctrl->M.pymod);
+    grt_free_pymod(Ctrl->M.pymod);
     
     // D
     GRT_SAFE_FREE_PTR(Ctrl->D.s_depsrc);
@@ -184,7 +184,7 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
 
 /** 打印结构体中的参数 */
 static void print_Ctrl(const GRT_MODULE_CTRL *Ctrl){
-    print_pymod(Ctrl->M.pymod);
+    grt_print_pymod(Ctrl->M.pymod);
 
     const char format[]      = "   \%-20s  \%s\n";
     const char format_real[] = "   \%-20s  \%.3f\n";
@@ -455,7 +455,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             case 'M':
                 Ctrl->M.active = true;
                 Ctrl->M.s_modelpath = strdup(optarg);
-                Ctrl->M.s_modelname = get_basename(Ctrl->M.s_modelpath);
+                Ctrl->M.s_modelname = grt_get_basename(Ctrl->M.s_modelpath);
                 break;
 
             // 震源和场点深度， -Ddepsrc/deprcv
@@ -600,7 +600,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             case 'R':
                 Ctrl->R.active = true;
                 Ctrl->R.s_raw = strdup(optarg);
-                Ctrl->R.s_rs = string_split(optarg, ",", &Ctrl->R.nr);
+                Ctrl->R.s_rs = grt_string_split(optarg, ",", &Ctrl->R.nr);
                 // 转为浮点数
                 Ctrl->R.rs = (MYREAL*)realloc(Ctrl->R.rs, sizeof(MYREAL)*(Ctrl->R.nr));
                 for(MYINT i=0; i<Ctrl->R.nr; ++i){
@@ -649,7 +649,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             case 'S':
                 Ctrl->S.active = true;
                 Ctrl->S.s_raw = strdup(optarg);
-                Ctrl->S.s_statsidxs = string_split(optarg, ",", &Ctrl->S.nstatsidxs);
+                Ctrl->S.s_statsidxs = grt_string_split(optarg, ",", &Ctrl->S.nstatsidxs);
                 // 转为浮点数
                 Ctrl->S.statsidxs = (MYINT*)realloc(Ctrl->S.statsidxs, sizeof(MYINT)*(Ctrl->S.nstatsidxs));
                 for(MYINT i=0; i<Ctrl->S.nstatsidxs; ++i){
@@ -704,10 +704,10 @@ int greenfn_main(int argc, char **argv) {
     getopt_from_command(Ctrl, argc, argv);
 
     // 读入模型文件
-    if((Ctrl->M.pymod = read_pymod_from_file(command, Ctrl->M.s_modelpath, Ctrl->D.depsrc, Ctrl->D.deprcv, true)) == NULL){
+    if((Ctrl->M.pymod = grt_read_pymod_from_file(command, Ctrl->M.s_modelpath, Ctrl->D.depsrc, Ctrl->D.deprcv, true)) == NULL){
         exit(EXIT_FAILURE);
     }
-    PYMODEL1D *pymod = Ctrl->M.pymod;
+    GRT_PYMODEL1D *pymod = Ctrl->M.pymod;
 
     // 当震源位于液体层中时，仅允许计算爆炸源对应的格林函数
     // 程序结束前会输出对应警告
@@ -717,7 +717,7 @@ int greenfn_main(int argc, char **argv) {
 
     // 最大最小速度
     MYREAL vmin, vmax;
-    get_pymod_vmin_vmax(pymod, &vmin, &vmax);
+    grt_get_pymod_vmin_vmax(pymod, &vmin, &vmax);
 
     // 参考最小速度
     if(!Ctrl->V.active){
@@ -733,7 +733,7 @@ int greenfn_main(int argc, char **argv) {
     Ctrl->N.winT = Ctrl->N.nt*Ctrl->N.dt;
 
     // 最大震中距
-    MYREAL rmax = Ctrl->R.rs[findMinMax_MYREAL(Ctrl->R.rs, Ctrl->R.nr, true)];   
+    MYREAL rmax = Ctrl->R.rs[grt_findMinMax_MYREAL(Ctrl->R.rs, Ctrl->R.nr, true)];   
 
     // 时窗最大截止时刻
     MYREAL tmax = Ctrl->E.delayT0 + Ctrl->N.winT;
@@ -805,7 +805,7 @@ int greenfn_main(int argc, char **argv) {
 
     //==============================================================================
     // 计算格林函数
-    integ_grn_spec(
+    grt_integ_grn_spec(
         pymod, Ctrl->H.nf1, Ctrl->H.nf2, Ctrl->N.freqs, Ctrl->R.nr, Ctrl->R.rs, Ctrl->N.wI,
         Ctrl->V.vmin_ref, Ctrl->K.keps, Ctrl->K.ampk, Ctrl->K.k0, Ctrl->L.Length, Ctrl->L.filonLength, Ctrl->L.safilonTol, Ctrl->L.filonCut, !Ctrl->s.active,
         grn, Ctrl->e.active, grn_uiz, grn_uir,
@@ -816,11 +816,11 @@ int greenfn_main(int argc, char **argv) {
 
     // 使用fftw3做反傅里叶变换，并保存到 SAC 
     // 其中考虑了升采样倍数
-    FFTW_HOLDER *fftw_holder = create_fftw_holder_C2R_1D(
+    GRT_FFTW_HOLDER *fftw_holder = grt_create_fftw_holder_C2R_1D(
         Ctrl->N.nt*Ctrl->N.upsample_n, Ctrl->N.dt/Ctrl->N.upsample_n, Ctrl->N.nf, Ctrl->N.df);
 
     MYREAL (* travtPS)[2] = (MYREAL (*)[2])calloc(Ctrl->R.nr, sizeof(MYREAL)*2);
-    GF_freq2time_write_to_file(
+    grt_GF_freq2time_write_to_file(
         command, pymod, 
         Ctrl->O.s_output_dir, Ctrl->M.s_modelname, Ctrl->D.s_depsrc, Ctrl->D.s_deprcv,
         Ctrl->N.wI, fftw_holder,
@@ -857,7 +857,7 @@ int greenfn_main(int argc, char **argv) {
     GRT_SAFE_FREE_PTR(grn_uir);
     GRT_SAFE_FREE_PTR(travtPS);
 
-    destroy_fftw_holder(fftw_holder);
+    grt_destroy_fftw_holder(fftw_holder);
 
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;

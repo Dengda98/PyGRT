@@ -19,34 +19,34 @@
 #include "grt/common/model.h"
 #include "grt/common/matrix.h"
 
-void calc_static_R_tilt_PSV(MYCOMPLEX delta1, MYCOMPLEX R_tilt[2][2]){
+void grt_calc_static_R_tilt_PSV(MYCOMPLEX delta1, MYCOMPLEX R_tilt[2][2]){
     // 公式(6.3.12)
     R_tilt[0][0] = R_tilt[1][1] = CZERO;
     R_tilt[0][1] = -delta1;
     R_tilt[1][0] = -RONE/delta1;
 }
 
-void calc_static_R_EV_PSV(bool ircvup, const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2])
+void grt_calc_static_R_EV_PSV(bool ircvup, const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2])
 {
     MYCOMPLEX D11[2][2] = {{RONE, -RONE}, {RONE, RONE}};
     MYCOMPLEX D12[2][2] = {{RONE, -RONE}, {-RONE, -RONE}};
 
     // 公式(6.3.35,37)
     if(ircvup){// 震源更深
-        cmat2x2_mul(D12, R, R_EV);
-        cmat2x2_add(D11, R_EV, R_EV);
+        grt_cmat2x2_mul(D12, R, R_EV);
+        grt_cmat2x2_add(D11, R_EV, R_EV);
     } else { // 接收点更深
-        cmat2x2_mul(D11, R, R_EV);
-        cmat2x2_add(D12, R_EV, R_EV);
+        grt_cmat2x2_mul(D11, R, R_EV);
+        grt_cmat2x2_add(D12, R_EV, R_EV);
     }
 }
 
-void calc_static_R_EV_SH(MYCOMPLEX RL, MYCOMPLEX *R_EVL)
+void grt_calc_static_R_EV_SH(MYCOMPLEX RL, MYCOMPLEX *R_EVL)
 {
     *R_EVL = (RONE + (RL));
 }
 
-void calc_static_uiz_R_EV_PSV(
+void grt_calc_static_uiz_R_EV_PSV(
     MYCOMPLEX delta1, bool ircvup, MYREAL k, 
     const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2])
 {
@@ -55,15 +55,15 @@ void calc_static_uiz_R_EV_PSV(
     MYCOMPLEX D11[2][2] = {{k, -k-kd2}, {k, k-kd2}};
     MYCOMPLEX D12[2][2] = {{-k, k+kd2}, {k, k-kd2}};
     if(ircvup){// 震源更深
-        cmat2x2_mul(D12, R, R_EV);
-        cmat2x2_add(D11, R_EV, R_EV);
+        grt_cmat2x2_mul(D12, R, R_EV);
+        grt_cmat2x2_add(D11, R_EV, R_EV);
     } else { // 接收点更深
-        cmat2x2_mul(D11, R, R_EV);
-        cmat2x2_add(D12, R_EV, R_EV);
+        grt_cmat2x2_mul(D11, R, R_EV);
+        grt_cmat2x2_add(D12, R_EV, R_EV);
     }
 }
 
-void calc_static_uiz_R_EV_SH(bool ircvup, MYREAL k, MYCOMPLEX RL, MYCOMPLEX *R_EVL)
+void grt_calc_static_uiz_R_EV_SH(bool ircvup, MYREAL k, MYCOMPLEX RL, MYCOMPLEX *R_EVL)
 {
     // 新推导公式
     if(ircvup){// 震源更深
@@ -74,7 +74,7 @@ void calc_static_uiz_R_EV_SH(bool ircvup, MYREAL k, MYCOMPLEX RL, MYCOMPLEX *R_E
 }
 
 
-void calc_static_RT_PSV(
+void grt_calc_static_RT_PSV(
     MYCOMPLEX delta1, MYCOMPLEX mu1, 
     MYCOMPLEX delta2, MYCOMPLEX mu2, 
     MYREAL thk, MYREAL k,
@@ -128,7 +128,7 @@ void calc_static_RT_PSV(
     // printf("-----------------------------\n");
 }
 
-void calc_static_RT_SH(
+void grt_calc_static_RT_SH(
     MYCOMPLEX mu1, MYCOMPLEX mu2, 
     MYREAL thk, MYREAL k,
     MYCOMPLEX *RDL, MYCOMPLEX *RUL, MYCOMPLEX *TDL, MYCOMPLEX *TUL)

@@ -46,7 +46,7 @@
 
 
 /** 合并 recursion_RD_PSV(SH) */
-void recursion_RD(
+void grt_recursion_RD(
     const MYCOMPLEX RD1[2][2], MYCOMPLEX RDL1, const MYCOMPLEX RU1[2][2], MYCOMPLEX RUL1,
     const MYCOMPLEX TD1[2][2], MYCOMPLEX TDL1, const MYCOMPLEX TU1[2][2], MYCOMPLEX TUL1,
     const MYCOMPLEX RD2[2][2], MYCOMPLEX RDL2, 
@@ -65,7 +65,7 @@ void recursion_RD(
  * @param[out]     stats           状态代码，是否有除零错误，非0为异常值
  * 
  */
-void recursion_RD_PSV(
+void grt_recursion_RD_PSV(
     const MYCOMPLEX RD1[2][2], const MYCOMPLEX RU1[2][2],
     const MYCOMPLEX TD1[2][2], const MYCOMPLEX TU1[2][2],
     const MYCOMPLEX RD2[2][2],
@@ -84,14 +84,14 @@ void recursion_RD_PSV(
  * @param[out]     stats           状态代码，是否有除零错误，非0为异常值
  * 
  */
-void recursion_RD_SH(
+void grt_recursion_RD_SH(
     MYCOMPLEX RDL1, MYCOMPLEX RUL1,
     MYCOMPLEX TDL1, MYCOMPLEX TUL1,
     MYCOMPLEX RDL2, MYCOMPLEX *RDL, MYCOMPLEX *invT, MYINT *stats);
 
 
 /** 合并 recursion_TD_PSV(SH) */
-void recursion_TD(
+void grt_recursion_TD(
     const MYCOMPLEX RU1[2][2], MYCOMPLEX RUL1,
     const MYCOMPLEX TD1[2][2], MYCOMPLEX TDL1, 
     const MYCOMPLEX RD2[2][2], MYCOMPLEX RDL2, 
@@ -110,7 +110,7 @@ void recursion_TD(
  * @param[out]    stats               状态代码，是否有除零错误，非0为异常值
  * 
  */
-void recursion_TD_PSV(
+void grt_recursion_TD_PSV(
     const MYCOMPLEX RU1[2][2], const MYCOMPLEX TD1[2][2],
     const MYCOMPLEX RD2[2][2], const MYCOMPLEX TD2[2][2],
     MYCOMPLEX TD[2][2], MYCOMPLEX inv_2x2T[2][2], MYINT *stats);
@@ -127,14 +127,14 @@ void recursion_TD_PSV(
  * @param[out]    stats               状态代码，是否有除零错误，非0为异常值
  * 
  */
-void recursion_TD_SH(
+void grt_recursion_TD_SH(
     MYCOMPLEX RUL1, MYCOMPLEX TDL1, 
     MYCOMPLEX RDL2, MYCOMPLEX TDL2, 
     MYCOMPLEX *TDL, MYCOMPLEX *invT, MYINT *stats);
 
 
 /** 合并 recursion_RU_PSV(SH) */
-void recursion_RU(
+void grt_recursion_RU(
     const MYCOMPLEX RU1[2][2], MYCOMPLEX RUL1,
     const MYCOMPLEX RD2[2][2], MYCOMPLEX RDL2, const MYCOMPLEX RU2[2][2], MYCOMPLEX RUL2,
     const MYCOMPLEX TD2[2][2], MYCOMPLEX TDL2, const MYCOMPLEX TU2[2][2], MYCOMPLEX TUL2,
@@ -153,7 +153,7 @@ void recursion_RU(
  * @param[out]    stats               状态代码，是否有除零错误，非0为异常值
  * 
  */
-void recursion_RU_PSV(
+void grt_recursion_RU_PSV(
     const MYCOMPLEX RU1[2][2], const MYCOMPLEX RD2[2][2], 
     const MYCOMPLEX RU2[2][2], const MYCOMPLEX TD2[2][2], 
     const MYCOMPLEX TU2[2][2], 
@@ -172,7 +172,7 @@ void recursion_RU_PSV(
  * @param[out]    stats               状态代码，是否有除零错误，非0为异常值
  * 
  */
-void recursion_RU_SH(
+void grt_recursion_RU_SH(
     MYCOMPLEX RUL1, MYCOMPLEX RDL2,
     MYCOMPLEX RUL2, MYCOMPLEX TDL2, 
     MYCOMPLEX TUL2,
@@ -180,7 +180,7 @@ void recursion_RU_SH(
 
 
 /** 合并 recursion_TU_PSV(SH) */
-void recursion_TU(
+void grt_recursion_TU(
     const MYCOMPLEX RU1[2][2], MYCOMPLEX RUL1,
     const MYCOMPLEX TU1[2][2], MYCOMPLEX TUL1,
     const MYCOMPLEX RD2[2][2], MYCOMPLEX RDL2,
@@ -199,7 +199,7 @@ void recursion_TU(
  * @param[out]    stats               状态代码，是否有除零错误，非0为异常值
  * 
  */
-void recursion_TU_PSV(
+void grt_recursion_TU_PSV(
     const MYCOMPLEX RU1[2][2], const MYCOMPLEX TU1[2][2],
     const MYCOMPLEX RD2[2][2], const MYCOMPLEX TU2[2][2],
     MYCOMPLEX TU[2][2], MYCOMPLEX inv_2x2T[2][2], MYINT *stats);
@@ -216,7 +216,7 @@ void recursion_TU_PSV(
  * @param[out]    stats               状态代码，是否有除零错误，非0为异常值
  * 
  */
-void recursion_TU_SH(
+void grt_recursion_TU_SH(
     MYCOMPLEX RUL1, MYCOMPLEX TUL1,
     MYCOMPLEX RDL2, MYCOMPLEX TUL2,
     MYCOMPLEX *TUL, MYCOMPLEX *invT, MYINT *stats);
@@ -225,7 +225,7 @@ void recursion_TU_SH(
 
 
 /** 合并 recursion_RT_PSV(SH) */
-void recursion_RT(
+void grt_recursion_RT(
     const MYCOMPLEX RD1[2][2], MYCOMPLEX RDL1, const MYCOMPLEX RU1[2][2], MYCOMPLEX RUL1,
     const MYCOMPLEX TD1[2][2], MYCOMPLEX TDL1, const MYCOMPLEX TU1[2][2], MYCOMPLEX TUL1,
     const MYCOMPLEX RD2[2][2], MYCOMPLEX RDL2, const MYCOMPLEX RU2[2][2], MYCOMPLEX RUL2,
@@ -252,7 +252,7 @@ void recursion_RT(
  * @param[out]    stats               状态代码，是否有除零错误，非0为异常值
  * 
  */
-void recursion_RT_PSV(
+void grt_recursion_RT_PSV(
     const MYCOMPLEX RD1[2][2], const MYCOMPLEX RU1[2][2],
     const MYCOMPLEX TD1[2][2], const MYCOMPLEX TU1[2][2],
     const MYCOMPLEX RD2[2][2], const MYCOMPLEX RU2[2][2],
@@ -279,7 +279,7 @@ void recursion_RT_PSV(
  * @param[out]    stats               状态代码，是否有除零错误，非0为异常值
  * 
  */
-void recursion_RT_SH(
+void grt_recursion_RT_SH(
     MYCOMPLEX RDL1, MYCOMPLEX RUL1,
     MYCOMPLEX TDL1, MYCOMPLEX TUL1,
     MYCOMPLEX RDL2, MYCOMPLEX RUL2,
@@ -290,7 +290,7 @@ void recursion_RT_SH(
 
 
 /** 合并 recursion_RT_PSV(SH)_imaginary */
-void recursion_RT_imaginary(
+void grt_recursion_RT_imaginary(
     MYCOMPLEX xa1, MYCOMPLEX xb1, MYREAL thk, MYREAL k, // 使用上层的厚度
     MYCOMPLEX RU[2][2], MYCOMPLEX *RUL, 
     MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX TU[2][2], MYCOMPLEX *TUL);
@@ -306,7 +306,7 @@ void recursion_RT_imaginary(
  * @param[in,out]     TD             上层 P-SV 下传透射系数矩阵
  * @param[in,out]     TU             上层 P-SV 上传透射系数矩阵
  */
-void recursion_RT_PSV_imaginary(
+void grt_recursion_RT_PSV_imaginary(
     MYCOMPLEX xa1, MYCOMPLEX xb1, MYREAL thk, MYREAL k, // 使用上层的厚度
     MYCOMPLEX RU[2][2], MYCOMPLEX TD[2][2], MYCOMPLEX TU[2][2]);
 
@@ -320,7 +320,7 @@ void recursion_RT_PSV_imaginary(
  * @param[in,out]     TDL            上层 SH 下传透射系数
  * @param[in,out]     TUL            上层 SH 上传透射系数
  */
-void recursion_RT_SH_imaginary(
+void grt_recursion_RT_SH_imaginary(
     MYCOMPLEX xb1, MYREAL thk, MYREAL k, // 使用上层的厚度
     MYCOMPLEX *RUL, MYCOMPLEX *TDL, MYCOMPLEX *TUL);
 
@@ -358,7 +358,7 @@ void recursion_RT_SH_imaginary(
  * @param[in]     coef_SH       SH 波震源系数，\f$ SH_m \f$ ，维度2表示下行波(p=0)和上行波(p=1)
  * @param[out]    qwv           最终通过矩阵传播计算出的在台站位置的\f$ q_m,w_m,v_m\f$
  */
-void get_qwv(
+void grt_get_qwv(
     bool ircvup, 
     const MYCOMPLEX R1[2][2], MYCOMPLEX RL1, 
     const MYCOMPLEX R2[2][2], MYCOMPLEX RL2, 

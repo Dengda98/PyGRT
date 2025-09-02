@@ -26,7 +26,7 @@
  * 
  * @return     检查是否通过
  */
-bool check_tftype_tfparams(const char tftype, const char *tfparams);
+bool grt_check_tftype_tfparams(const char tftype, const char *tfparams);
 
 /**
  * 获得时间函数，要求提前运行check_tftype_tfparams函数以检查参数
@@ -38,7 +38,7 @@ bool check_tftype_tfparams(const char tftype, const char *tfparams);
  * 
  * @return     时间函数指针
  */
-float * get_time_function(int *TFnt, float dt, const char tftype, const char *tfparams);
+float * grt_get_time_function(int *TFnt, float dt, const char tftype, const char *tfparams);
 
 
 /**
@@ -53,7 +53,7 @@ float * get_time_function(int *TFnt, float dt, const char tftype, const char *tf
  * @param[out]     TFarr       指向时间函数的指针的指针
  * @param[out]     TFnt        返回的时间函数点数
  */
-void linear_convolve_time_function(float *arr, int nt, float dt, const char tftype, const char *tfparams, float **TFarr, int *TFnt);
+void grt_linear_convolve_time_function(float *arr, int nt, float dt, const char tftype, const char *tfparams, float **TFarr, int *TFnt);
 
 
 /**
@@ -67,7 +67,7 @@ void linear_convolve_time_function(float *arr, int nt, float dt, const char tfty
  * @param[in]    ny           输出数组点数
  * @param[in]    iscircular   是否使用循环卷积
  */
-void oaconvolve(float *x, int nx, float *h, int nh, float *y, int ny, bool iscircular);
+void grt_oaconvolve(float *x, int nx, float *h, int nh, float *y, int ny, bool iscircular);
 
 
 /**
@@ -79,7 +79,7 @@ void oaconvolve(float *x, int nx, float *h, int nh, float *y, int ny, bool iscir
  * 
  * @return    积分结果
  */
-float trap_area(const float *x, int nx, float dt);
+float grt_trap_area(const float *x, int nx, float dt);
 
 
 /**
@@ -89,7 +89,7 @@ float trap_area(const float *x, int nx, float dt);
  * @param[in]         nx    数组长度
  * @param[in]         dt    时间间隔
  */
-void trap_integral(float *x, int nx, float dt);
+void grt_trap_integral(float *x, int nx, float dt);
 
 /**
  * 对时间序列做中心一阶差分
@@ -98,7 +98,7 @@ void trap_integral(float *x, int nx, float dt);
  * @param[in]         nx    数组长度
  * @param[in]         dt    时间间隔
  */
-void differential(float *x, int nx, float dt);
+void grt_differential(float *x, int nx, float dt);
 
 
 
@@ -112,7 +112,7 @@ void differential(float *x, int nx, float dt);
  * 
  * @return   float指针
  */
-float * get_parabola_wave(float dt, float *Tlen, int *Nt);
+float * grt_get_parabola_wave(float dt, float *Tlen, int *Nt);
 
 
 
@@ -144,7 +144,7 @@ float * get_parabola_wave(float dt, float *Tlen, int *Nt);
  * 
  * @return   float指针
  */
-float * get_trap_wave(float dt, float *T1, float *T2, float *T3, int *Nt);
+float * grt_get_trap_wave(float dt, float *T1, float *T2, float *T3, int *Nt);
 
 
 
@@ -159,7 +159,7 @@ float * get_trap_wave(float dt, float *T1, float *T2, float *T3, int *Nt);
  * 
  * @return   float指针
  */
-float * get_ricker_wave(float dt, float f0, int *Nt);
+float * grt_get_ricker_wave(float dt, float f0, int *Nt);
 
 
 /**
@@ -170,11 +170,11 @@ float * get_ricker_wave(float dt, float f0, int *Nt);
  * 
  * @return   float指针
  */
-float * get_custom_wave(int *Nt, const char *tfparams);
+float * grt_get_custom_wave(int *Nt, const char *tfparams);
 
 /**
  * 专用于在Python端释放C中申请的内存
  * 
  * @param[out]     pt    指针
  */
-void free1d(void *pt);
+void grt_free1d(void *pt);

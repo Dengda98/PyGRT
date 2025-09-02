@@ -41,8 +41,8 @@
  * @param[in]       statsstr           积分过程输出目录
  * 
  */
-void integ_static_grn(
-    PYMODEL1D *pymod1d, MYINT nr, MYREAL *rs, MYREAL vmin_ref, MYREAL keps, MYREAL k0, MYREAL Length,
+void grt_integ_static_grn(
+    GRT_PYMODEL1D *pymod1d, MYINT nr, MYREAL *rs, MYREAL vmin_ref, MYREAL keps, MYREAL k0, MYREAL Length,
     MYREAL filonLength, MYREAL safilonTol, MYREAL filonCut, 
 
     // 返回值，代表Z、R、T分量

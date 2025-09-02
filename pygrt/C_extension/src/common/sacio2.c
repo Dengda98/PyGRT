@@ -15,7 +15,7 @@
 #include "grt/common/colorstr.h"
 
 
-void read_SAC_HEAD(const char *command, const char *name, SACHEAD *hd){
+void grt_read_SAC_HEAD(const char *command, const char *name, SACHEAD *hd){
     int lswap = read_sac_head(name, hd);
     if(lswap == -1){
         fprintf(stderr, "[%s] " BOLD_RED "read %s head failed.\n" DEFAULT_RESTORE, command, name);
@@ -24,7 +24,7 @@ void read_SAC_HEAD(const char *command, const char *name, SACHEAD *hd){
 }
 
 
-float * read_SAC(const char *command, const char *name, SACHEAD *hd, float *arrout){
+float * grt_read_SAC(const char *command, const char *name, SACHEAD *hd, float *arrout){
     float *arrin=NULL;
     if((arrin = read_sac(name, hd)) == NULL){
         fprintf(stderr, "[%s] " BOLD_RED "read %s failed.\n" DEFAULT_RESTORE, command, name);

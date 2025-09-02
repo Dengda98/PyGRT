@@ -43,11 +43,11 @@
  * 
  * @return  k        积分截至时的波数
  */
-MYREAL discrete_integ(
-    const MODEL1D *mod1d, MYREAL dk, MYREAL kmax, MYREAL keps, MYCOMPLEX omega, 
+MYREAL grt_discrete_integ(
+    const GRT_MODEL1D *mod1d, MYREAL dk, MYREAL kmax, MYREAL keps, MYCOMPLEX omega, 
     MYINT nr, MYREAL *rs,
     MYCOMPLEX sum_J[nr][SRC_M_NUM][INTEG_NUM],
     bool calc_upar,
     MYCOMPLEX sum_uiz_J[nr][SRC_M_NUM][INTEG_NUM],
     MYCOMPLEX sum_uir_J[nr][SRC_M_NUM][INTEG_NUM],
-    FILE *fstats, KernelFunc kerfunc, MYINT *stats);
+    FILE *fstats, GRT_KernelFunc kerfunc, MYINT *stats);

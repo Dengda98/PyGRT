@@ -25,7 +25,7 @@
  * @param[out]    pb           拟合b值
  * @param[out]    pc           拟合c值
  */
-void quad_term(const MYREAL x[3], const MYCOMPLEX f[3], MYCOMPLEX *pa, MYCOMPLEX *pb, MYCOMPLEX *pc);
+void grt_quad_term(const MYREAL x[3], const MYCOMPLEX f[3], MYCOMPLEX *pa, MYCOMPLEX *pb, MYCOMPLEX *pc);
 
 
 /**
@@ -38,7 +38,7 @@ void quad_term(const MYREAL x[3], const MYCOMPLEX f[3], MYCOMPLEX *pa, MYCOMPLEX
  * @return    \f$ f(x) = ax^2 + bx + c \f$
  * 
  */
-MYCOMPLEX quad_eval(MYREAL x, MYCOMPLEX a, MYCOMPLEX b, MYCOMPLEX c);
+MYCOMPLEX grt_quad_eval(MYREAL x, MYCOMPLEX a, MYCOMPLEX b, MYCOMPLEX c);
 
 
 /**
@@ -52,4 +52,4 @@ MYCOMPLEX quad_eval(MYREAL x, MYCOMPLEX a, MYCOMPLEX b, MYCOMPLEX c);
  * @return    \f$  \frac{1}{3}a(x_2^3-x_1^3) + \frac{1}{2}b(x_2^2-x_1^2) + c(x_2-x_1) \f$ 
  * 
  */
-MYCOMPLEX quad_integral(MYREAL x1, MYREAL x2, MYCOMPLEX a, MYCOMPLEX b, MYCOMPLEX c);
+MYCOMPLEX grt_quad_integral(MYREAL x1, MYREAL x2, MYCOMPLEX a, MYCOMPLEX b, MYCOMPLEX c);

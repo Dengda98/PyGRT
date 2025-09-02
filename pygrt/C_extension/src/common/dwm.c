@@ -23,14 +23,14 @@
 #include "grt/common/const.h"
 
 
-MYREAL discrete_integ(
-    const MODEL1D *mod1d, MYREAL dk, MYREAL kmax, MYREAL keps, MYCOMPLEX omega, 
+MYREAL grt_discrete_integ(
+    const GRT_MODEL1D *mod1d, MYREAL dk, MYREAL kmax, MYREAL keps, MYCOMPLEX omega, 
     MYINT nr, MYREAL *rs,
     MYCOMPLEX sum_J[nr][SRC_M_NUM][INTEG_NUM],
     bool calc_upar,
     MYCOMPLEX sum_uiz_J[nr][SRC_M_NUM][INTEG_NUM],
     MYCOMPLEX sum_uir_J[nr][SRC_M_NUM][INTEG_NUM],
-    FILE *fstats, KernelFunc kerfunc, MYINT *stats)
+    FILE *fstats, GRT_KernelFunc kerfunc, MYINT *stats)
 {
     MYCOMPLEX SUM[SRC_M_NUM][INTEG_NUM];
 
@@ -62,7 +62,7 @@ MYREAL discrete_integ(
         if(*stats==INVERSE_FAILURE)  goto BEFORE_RETURN;
         
         // 记录积分核函数
-        if(fstats!=NULL)  write_stats(fstats, k, QWV);
+        if(fstats!=NULL)  grt_write_stats(fstats, k, QWV);
 
         // 震中距rs循环
         iendk = true;
@@ -76,7 +76,7 @@ MYREAL discrete_integ(
             }
             
             // 计算被积函数一项 F(k,w)Jm(kr)k
-            int_Pk(k, rs[ir], QWV, false, SUM);
+            grt_int_Pk(k, rs[ir], QWV, false, SUM);
             
             iendk0 = true;
             for(MYINT i=0; i<SRC_M_NUM; ++i){
@@ -104,7 +104,7 @@ MYREAL discrete_integ(
             if(calc_upar){
                 // ------------------------------- ui_z -----------------------------------
                 // 计算被积函数一项 F(k,w)Jm(kr)k
-                int_Pk(k, rs[ir], QWV_uiz, false, SUM);
+                grt_int_Pk(k, rs[ir], QWV_uiz, false, SUM);
                 
                 // keps不参与计算位移空间导数的积分，背后逻辑认为u收敛，则uiz也收敛
                 for(MYINT i=0; i<SRC_M_NUM; ++i){
@@ -115,7 +115,7 @@ MYREAL discrete_integ(
 
                 // ------------------------------- ui_r -----------------------------------
                 // 计算被积函数一项 F(k,w)Jm(kr)k
-                int_Pk(k, rs[ir], QWV, true, SUM);
+                grt_int_Pk(k, rs[ir], QWV, true, SUM);
                 
                 // keps不参与计算位移空间导数的积分，背后逻辑认为u收敛，则uiz也收敛
                 for(MYINT i=0; i<SRC_M_NUM; ++i){

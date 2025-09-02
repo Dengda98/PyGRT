@@ -73,7 +73,7 @@ int b2a_main(int argc, char **argv){
 
     // 读入SAC文件
     SACHEAD hd;
-    float *arr = read_SAC(Ctrl->name, Ctrl->s_filepath, &hd, NULL);
+    float *arr = grt_read_SAC(Ctrl->name, Ctrl->s_filepath, &hd, NULL);
 
     // 将波形写入标准输出，第一列时间，第二列振幅
     float begt = hd.b;

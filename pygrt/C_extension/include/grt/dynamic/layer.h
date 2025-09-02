@@ -27,7 +27,7 @@
  * @param[out]    stats          状态代码，是否有除零错误，非0为异常值
  * 
  */
-void calc_R_tilt_PSV(MYCOMPLEX xa0, MYCOMPLEX xb0, MYCOMPLEX kbkb0, MYREAL k, MYCOMPLEX R_tilt[2][2], MYINT *stats);
+void grt_calc_R_tilt_PSV(MYCOMPLEX xa0, MYCOMPLEX xb0, MYCOMPLEX kbkb0, MYREAL k, MYCOMPLEX R_tilt[2][2], MYINT *stats);
 
 
 /**
@@ -41,7 +41,7 @@ void calc_R_tilt_PSV(MYCOMPLEX xa0, MYCOMPLEX xb0, MYCOMPLEX kbkb0, MYREAL k, MY
  * @param[out]    R_EV            P-SV接收函数矩阵
  * 
  */
-void calc_R_EV_PSV(
+void grt_calc_R_EV_PSV(
     MYCOMPLEX xa_rcv, MYCOMPLEX xb_rcv, bool ircvup,
     MYREAL k, 
     const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2]);
@@ -55,7 +55,7 @@ void calc_R_EV_PSV(
  * @param[out]    R_EVL           SH接收函数值
  * 
  */
-void calc_R_EV_SH(
+void grt_calc_R_EV_SH(
     MYCOMPLEX xb_rcv,
     MYREAL k, 
     MYCOMPLEX RL, MYCOMPLEX *R_EVL);
@@ -73,7 +73,7 @@ void calc_R_EV_SH(
  * @param[out]    R_EV            P-SV接收函数矩阵
  * 
  */
-void calc_uiz_R_EV_PSV(
+void grt_calc_uiz_R_EV_PSV(
     MYCOMPLEX xa_rcv, MYCOMPLEX xb_rcv, bool ircvup,
     MYREAL k, 
     const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2]);
@@ -90,7 +90,7 @@ void calc_uiz_R_EV_PSV(
  * @param[out]    R_EVL           SH接收函数值
  * 
  */
-void calc_uiz_R_EV_SH(
+void grt_calc_uiz_R_EV_SH(
     MYCOMPLEX xb_rcv, bool ircvup,
     MYREAL k, 
     MYCOMPLEX RL, MYCOMPLEX *R_EVL);
@@ -122,7 +122,7 @@ void calc_uiz_R_EV_SH(
  * @param[out]     stats         状态代码，是否有除零错误，非0为异常值
  * 
  */
-void calc_RT_PSV(
+void grt_calc_RT_PSV(
     MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, 
     MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, 
     MYREAL thk, // 使用上层的厚度
@@ -149,7 +149,7 @@ void calc_RT_PSV(
  * @param[out]     stats         状态代码，是否有除零错误，非0为异常值
  * 
  */
-void calc_RT_SH(
+void grt_calc_RT_SH(
     MYCOMPLEX xb1, MYCOMPLEX mu1, 
     MYCOMPLEX xb2, MYCOMPLEX mu2, 
     MYREAL thk, // 使用上层的厚度
@@ -158,7 +158,7 @@ void calc_RT_SH(
     MYCOMPLEX *TDL, MYCOMPLEX *TUL);
 
 /** 液-液 界面，函数参数见 calc_RT_PSV 函数 */
-void calc_RT_ll_PSV(
+void grt_calc_RT_ll_PSV(
     MYREAL Rho1, MYCOMPLEX xa1,
     MYREAL Rho2, MYCOMPLEX xa2,
     MYREAL thk, // 使用上层的厚度
@@ -167,12 +167,12 @@ void calc_RT_ll_PSV(
     MYCOMPLEX TD[2][2], MYCOMPLEX TU[2][2], MYINT *stats);
 
 /** 液-液 界面，函数参数见 calc_RT_SH 函数 */
-void calc_RT_ll_SH(
+void grt_calc_RT_ll_SH(
     MYCOMPLEX *RDL, MYCOMPLEX *RUL, 
     MYCOMPLEX *TDL, MYCOMPLEX *TUL);
 
 /** 液-固 界面，函数参数见 calc_RT_PSV 函数 */
-void calc_RT_ls_PSV(
+void grt_calc_RT_ls_PSV(
     MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, 
     MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, 
     MYREAL thk, // 使用上层的厚度
@@ -181,7 +181,7 @@ void calc_RT_ls_PSV(
     MYCOMPLEX TD[2][2], MYCOMPLEX TU[2][2], MYINT *stats);
 
 /** 液-固 界面，函数参数见 calc_RT_SH 函数 */
-void calc_RT_ls_SH(
+void grt_calc_RT_ls_SH(
     MYCOMPLEX xb1, MYCOMPLEX mu1, MYCOMPLEX mu2, 
     MYREAL thk, // 使用上层的厚度
     MYCOMPLEX omega, MYREAL k,
@@ -189,7 +189,7 @@ void calc_RT_ls_SH(
     MYCOMPLEX *TDL, MYCOMPLEX *TUL);
 
 /** 固-固 界面，函数参数见 calc_RT_PSV 函数 */
-void calc_RT_ss_PSV(
+void grt_calc_RT_ss_PSV(
     MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, 
     MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, 
     MYREAL thk, // 使用上层的厚度
@@ -198,7 +198,7 @@ void calc_RT_ss_PSV(
     MYCOMPLEX TD[2][2], MYCOMPLEX TU[2][2], MYINT *stats);
 
 /** 固-固 界面，函数参数见 calc_RT_SH 函数 */
-void calc_RT_ss_SH(
+void grt_calc_RT_ss_SH(
     MYCOMPLEX xb1, MYCOMPLEX mu1, 
     MYCOMPLEX xb2, MYCOMPLEX mu2, 
     MYREAL thk, // 使用上层的厚度
@@ -221,34 +221,34 @@ void calc_RT_ss_SH(
  * @param[in]      inverse       是否生成逆矩阵
  * 
  */
-void get_layer_D(
+void grt_get_layer_D(
     MYCOMPLEX xa, MYCOMPLEX xb, MYCOMPLEX kbkb, MYCOMPLEX mu, 
     MYCOMPLEX omega, MYREAL k, MYCOMPLEX D[4][4], bool inverse);
 
 /** 子矩阵 D11，函数参数见 get_layer_D 函数 */
-void get_layer_D11(
+void grt_get_layer_D11(
     MYCOMPLEX xa, MYCOMPLEX xb, MYREAL k, MYCOMPLEX D[2][2]);
 
 /** 子矩阵 D12，函数参数见 get_layer_D 函数 */
-void get_layer_D12(
+void grt_get_layer_D12(
     MYCOMPLEX xa, MYCOMPLEX xb, MYREAL k, MYCOMPLEX D[2][2]);
 
 /** 子矩阵 D21，函数参数见 get_layer_D 函数 */
-void get_layer_D21(
+void grt_get_layer_D21(
     MYCOMPLEX xa, MYCOMPLEX xb, MYCOMPLEX kbkb, MYCOMPLEX mu,
     MYCOMPLEX omega, MYREAL k, MYCOMPLEX D[2][2]);
 
 /** 子矩阵 D22，函数参数见 get_layer_D 函数 */
-void get_layer_D22(
+void grt_get_layer_D22(
     MYCOMPLEX xa, MYCOMPLEX xb, MYCOMPLEX kbkb, MYCOMPLEX mu,
     MYCOMPLEX omega, MYREAL k, MYCOMPLEX D[2][2]);
 
 /** 子矩阵 D11_uiz，后缀uiz表示连接位移对z的偏导和垂直波函数，函数参数见 get_layer_D 函数 */
-void get_layer_D11_uiz(
+void grt_get_layer_D11_uiz(
     MYCOMPLEX xa, MYCOMPLEX xb, MYREAL k, MYCOMPLEX D[2][2]);
 
 /** 子矩阵 D12_uiz，函数参数见 get_layer_D 函数 */
-void get_layer_D12_uiz(
+void grt_get_layer_D12_uiz(
     MYCOMPLEX xa, MYCOMPLEX xb, MYREAL k, MYCOMPLEX D[2][2]);
 
 
@@ -264,15 +264,15 @@ void get_layer_D12_uiz(
  * @param[in]      inverse       是否生成逆矩阵
  * 
  */
-void get_layer_T(
+void grt_get_layer_T(
     MYCOMPLEX xb, MYCOMPLEX mu,
     MYCOMPLEX omega, MYREAL k, MYCOMPLEX T[2][2], bool inverse);
 
 /** 计算 P-SV 型垂直波函数的时间延迟矩阵，公式(5.2.27) */
-void get_layer_E_Rayl(MYCOMPLEX xa1, MYCOMPLEX xb1, MYREAL thk, MYREAL k, MYCOMPLEX E[4][4], bool inverse);
+void grt_get_layer_E_Rayl(MYCOMPLEX xa1, MYCOMPLEX xb1, MYREAL thk, MYREAL k, MYCOMPLEX E[4][4], bool inverse);
 
 /** 计算 SH 型垂直波函数的时间延迟矩阵，公式(5.2.28) */
-void get_layer_E_Love(MYCOMPLEX xb1, MYREAL thk, MYREAL k, MYCOMPLEX E[2][2], bool inverse);
+void grt_get_layer_E_Love(MYCOMPLEX xb1, MYREAL thk, MYREAL k, MYCOMPLEX E[2][2], bool inverse);
 
 
 
@@ -281,7 +281,7 @@ void get_layer_E_Love(MYCOMPLEX xb1, MYREAL thk, MYREAL k, MYCOMPLEX E[2][2], bo
  *  和 calc_RT_PSV(SH) 函数解决相同问题，但没有使用显式推导的公式，而是直接做矩阵运算，
  *  函数接口也类似
  */
-void calc_RT_from_4x4(
+void grt_calc_RT_from_4x4(
     MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, 
     MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, 
     MYCOMPLEX omega, MYREAL thk,

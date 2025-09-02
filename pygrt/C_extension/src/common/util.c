@@ -18,7 +18,7 @@
 #include "grt/common/myfftw.h"
 #include "grt/travt/travt.h"
 
-char ** string_split(const char *string, const char *delim, int *size)
+char ** grt_string_split(const char *string, const char *delim, int *size)
 {
     char *str_copy = strdup(string);  // 创建字符串副本，以免修改原始字符串
     char *token = strtok(str_copy, delim);
@@ -41,7 +41,7 @@ char ** string_split(const char *string, const char *delim, int *size)
 }
 
 
-const char* get_basename(const char* path) {
+const char* grt_get_basename(const char* path) {
     // 找到最后一个 '/'
     char* last_slash = strrchr(path, '/'); 
     
@@ -78,7 +78,7 @@ const char* get_basename(const char* path) {
  */
 static void write_one_to_sac(
     const char *srcname, const char ch, const MYREAL delayT,
-    const MYREAL wI, FFTW_HOLDER *pt_fh,
+    const MYREAL wI, GRT_FFTW_HOLDER *pt_fh,
     SACHEAD *pt_hd, const char *s_output_subdir, const char *s_prefix,
     const int sgn, const MYCOMPLEX *grncplx)
 {
@@ -88,7 +88,7 @@ static void write_one_to_sac(
     GRT_SAFE_ASPRINTF(&s_outpath, "%s/%s.sac", s_output_subdir, pt_hd->kcmpnm);
 
     // 执行fft任务会修改数组，需重新置零
-    reset_fftw_holder_zero(pt_fh);
+    grt_reset_fftw_holder_zero(pt_fh);
     
     // 赋值复数，包括时移
     MYCOMPLEX cfac, ccoef;
@@ -105,7 +105,7 @@ static void write_one_to_sac(
         // 发起fft任务 
         fftw_execute(pt_fh->plan);
     } else {
-        naive_inverse_transform_double(pt_fh);
+        grt_naive_inverse_transform_double(pt_fh);
     }
     
 
@@ -156,8 +156,8 @@ static void write_one_to_sac(
  * 
  */
 static void single_freq2time_write_to_file(
-    const char *command, const PYMODEL1D *pymod, const char *s_prefix, 
-    const MYREAL wI, FFTW_HOLDER *pt_fh,
+    const char *command, const GRT_PYMODEL1D *pymod, const char *s_prefix, 
+    const MYREAL wI, GRT_FFTW_HOLDER *pt_fh,
     const char *s_dist, const MYREAL dist,
     const MYREAL depsrc, const MYREAL deprcv,
     const MYREAL delayT0, const MYREAL delayV0, const bool calc_upar,
@@ -180,9 +180,9 @@ static void single_freq2time_write_to_file(
     pt_hd->b = delayT;
 
     // 计算理论走时
-    pt_hd->t0 = compute_travt1d(pymod->Thk, pymod->Va, pymod->n, pymod->isrc, pymod->ircv, dist);
+    pt_hd->t0 = grt_compute_travt1d(pymod->Thk, pymod->Va, pymod->n, pymod->isrc, pymod->ircv, dist);
     strcpy(pt_hd->kt0, "P");
-    pt_hd->t1 = compute_travt1d(pymod->Thk, pymod->Vb, pymod->n, pymod->isrc, pymod->ircv, dist);
+    pt_hd->t1 = grt_compute_travt1d(pymod->Thk, pymod->Vb, pymod->n, pymod->isrc, pymod->ircv, dist);
     strcpy(pt_hd->kt1, "S");
 
     for(int im=0; im<SRC_M_NUM; ++im){
@@ -231,10 +231,10 @@ static void single_freq2time_write_to_file(
 
 
 
-void GF_freq2time_write_to_file(
-    const char *command, const PYMODEL1D *pymod, 
+void grt_GF_freq2time_write_to_file(
+    const char *command, const GRT_PYMODEL1D *pymod, 
     const char *s_output_dir, const char *s_modelname, const char *s_depsrc, const char *s_deprcv,    
-    const MYREAL wI, FFTW_HOLDER *pt_fh,
+    const MYREAL wI, GRT_FFTW_HOLDER *pt_fh,
     const MYINT nr, char *s_dists[nr], const MYREAL dists[nr], MYREAL travtPS[nr][2],
     const MYREAL depsrc, const MYREAL deprcv,
     const MYREAL delayT0, const MYREAL delayV0, const bool calc_upar,
