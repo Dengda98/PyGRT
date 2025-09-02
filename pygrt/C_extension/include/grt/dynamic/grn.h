@@ -20,7 +20,7 @@
 /**
  * 积分计算Z, R, T三个分量格林函数的频谱的核心函数（被Python调用）  
  * 
- * @param[in]      pymod1d          `PYMODEL1D` 结构体指针 
+ * @param[in]      mod1d            `GRT_MODEL1D` 结构体指针 
  * @param[in]      nf1              开始计算频谱的频率索引值, 总范围在[nf1, nf2]
  * @param[in]      nf2              结束计算频谱的频率索引值, 总范围在[nf1, nf2]
  * @param[in]      freqs            所有频点的频率值（包括未计算的）
@@ -49,7 +49,7 @@
  * 
  */ 
 void grt_integ_grn_spec(
-    GRT_PYMODEL1D *pymod1d, MYINT nf1, MYINT nf2, MYREAL *freqs,  
+    GRT_MODEL1D *mod1d, MYINT nf1, MYINT nf2, MYREAL *freqs,  
     MYINT nr, MYREAL *rs, MYREAL wI, 
     MYREAL vmin_ref, MYREAL keps, MYREAL ampk, MYREAL k0, MYREAL Length, MYREAL filonLength, MYREAL safilonTol, MYREAL filonCut,             
     bool print_progressbar, 

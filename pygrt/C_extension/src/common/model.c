@@ -3,14 +3,14 @@
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2024-07-24
  * 
- * MODEL1D结构体的相关操作函数
+ * GRT_MODEL1D 结构体的相关操作函数
  * 
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <complex.h>
+#include <string.h>
 
 #include "grt/common/model.h"
 #include "grt/common/prtdbg.h"
@@ -19,23 +19,26 @@
 
 #include "grt/common/checkerror.h"
 
-void grt_print_mod1d(const GRT_MODEL1D *mod1d){
-    LAYER *lay;
-    for(MYINT u=0; u<50; ++u){printf("---"); } printf("\n");
-    for(MYINT i=0; i<mod1d->n; ++i){
-        lay = mod1d->lays+i;
-        printf("     Dep=%6.2f, Va=%6.2f, Vb=%6.2f, thk=%6.2f, Rho=%6.2f, 1/Qa=%6.2e, 1/Qb=%6.2e\n",
-                     lay->dep, lay->Va, lay->Vb, lay->thk, lay->Rho, lay->Qainv, lay->Qbinv);
-        printf("     mu=(%e %+e I)\n", creal(lay->mu), cimag(lay->mu));
-        printf("     lambda=(%e %+e I)\n", creal(lay->lambda), cimag(lay->lambda));
-        printf("     delta=(%e %+e I)\n", creal(lay->delta), cimag(lay->delta));
-        printf("     ka^2=%e%+eJ\n", creal(lay->kaka), cimag(lay->kaka));
-        printf("     kb^2=%e%+eJ\n", creal(lay->kbkb), cimag(lay->kbkb));
-        for(MYINT u=0; u<50; ++u){printf("---"); } printf("\n");
-    }
-}
 
-void grt_print_pymod(const GRT_PYMODEL1D *pymod){
+// 定义宏，方便写代码
+#define GRT_FOR_EACH_MODEL_QUANTITY_ARRAY \
+    X(Thk, MYREAL)\
+    X(Dep, MYREAL)\
+    X(Va, MYREAL)\
+    X(Vb, MYREAL)\
+    X(Rho, MYREAL)\
+    X(Qa, MYREAL)\
+    X(Qb, MYREAL)\
+    X(Qainv, MYREAL)\
+    X(Qbinv, MYREAL)\
+    X(mu, MYCOMPLEX)\
+    X(lambda, MYCOMPLEX)\
+    X(delta, MYCOMPLEX)\
+    X(kaka, MYCOMPLEX)\
+    X(kbkb, MYCOMPLEX)\
+
+
+void grt_print_mod1d(const GRT_MODEL1D *mod1d){
     // 模拟表格，打印速度
     // 每列字符宽度
     // [isrc/ircv] [h(km)] [Vp(km/s)] [Vs(km/s)] [Rho(g/cm^3)] [Qp] [Qs]
@@ -74,10 +77,10 @@ void grt_print_pymod(const GRT_PYMODEL1D *pymod){
 
 
     char indexstr[nlens[0]-2+10];  // +10 以防止 -Wformat-truncation= 警告
-    for(MYINT i=0; i<pymod->n; ++i){
-        if(i==pymod->isrc){
+    for(MYINT i=0; i<mod1d->n; ++i){
+        if(i==mod1d->isrc){
             snprintf(indexstr, sizeof(indexstr), "%d [src]", i+1);
-        } else if(i==pymod->ircv){
+        } else if(i==mod1d->ircv){
             snprintf(indexstr, sizeof(indexstr), "%d [rcv]", i+1);
         } else {
             snprintf(indexstr, sizeof(indexstr), "%d      ", i+1);
@@ -85,144 +88,82 @@ void grt_print_pymod(const GRT_PYMODEL1D *pymod){
 
         printf("| %*s ", nlens[0]-3, indexstr);
 
-        if(i < pymod->n-1){
-            printf("| %-*.2f ", nlens[1]-3, pymod->Thk[i]);
+        if(i < mod1d->n-1){
+            printf("| %-*.2f ", nlens[1]-3, mod1d->Thk[i]);
         } else {
             printf("| %-*s ", nlens[1]-3, "Inf");
         }
         
-        printf("| %-*.2f ", nlens[2]-3, pymod->Va[i]);
-        printf("| %-*.2f ", nlens[3]-3, pymod->Vb[i]);
-        printf("| %-*.2f ", nlens[4]-3, pymod->Rho[i]);
-        printf("| %-*.2e ", nlens[5]-3, pymod->Qa[i]);
-        printf("| %-*.2e ", nlens[6]-3, pymod->Qb[i]);
+        printf("| %-*.2f ", nlens[2]-3, mod1d->Va[i]);
+        printf("| %-*.2f ", nlens[3]-3, mod1d->Vb[i]);
+        printf("| %-*.2f ", nlens[4]-3, mod1d->Rho[i]);
+        printf("| %-*.2e ", nlens[5]-3, mod1d->Qa[i]);
+        printf("| %-*.2e ", nlens[6]-3, mod1d->Qb[i]);
         printf("|\n");
     }
     printf("%s\n", splitline);
     printf("\n");
 }
 
-void grt_free_pymod(GRT_PYMODEL1D *pymod){
-    GRT_SAFE_FREE_PTR(pymod->Thk);
-    GRT_SAFE_FREE_PTR(pymod->Va);
-    GRT_SAFE_FREE_PTR(pymod->Vb);
-    GRT_SAFE_FREE_PTR(pymod->Rho);
-    GRT_SAFE_FREE_PTR(pymod->Qa);
-    GRT_SAFE_FREE_PTR(pymod->Qb);
-    GRT_SAFE_FREE_PTR(pymod);
+void grt_free_mod1d(GRT_MODEL1D *mod1d){
+    #define X(P, T)  GRT_SAFE_FREE_PTR(mod1d->P);
+        GRT_FOR_EACH_MODEL_QUANTITY_ARRAY
+    #undef X
+
+    GRT_SAFE_FREE_PTR(mod1d);
 }
 
 
 GRT_MODEL1D * grt_init_mod1d(MYINT n){
-    GRT_MODEL1D *mod1d = (GRT_MODEL1D *)malloc(sizeof(GRT_MODEL1D));
+    GRT_MODEL1D *mod1d = (GRT_MODEL1D *)calloc(1, sizeof(GRT_MODEL1D));
     mod1d->n = n;
-    mod1d->lays = (LAYER *)malloc(sizeof(LAYER) * n);
+
+    #define X(P, T)  mod1d->P = (T*)calloc(n, sizeof(T));
+        GRT_FOR_EACH_MODEL_QUANTITY_ARRAY
+    #undef X
+
     return mod1d;
 }
 
 
-
-void grt_get_mod1d(const GRT_PYMODEL1D *pymod1d, GRT_MODEL1D *mod1d){
-    MYINT n = pymod1d->n;
-    mod1d->n = n;
-    mod1d->isrc = pymod1d->isrc;
-    mod1d->ircv = pymod1d->ircv;
-    mod1d->ircvup = pymod1d->ircvup;
-
-    if(mod1d->ircvup){
-        mod1d->imin = mod1d->ircv; 
-        mod1d->imax = mod1d->isrc; 
-    } else {
-        mod1d->imin = mod1d->isrc; 
-        mod1d->imax = mod1d->ircv; 
-    }
-
-    // MYREAL Rho0;
-    // MYREAL Vb0;
-    LAYER *lay;
-    MYREAL dep=0.0;
-    for(MYINT i=0; i<n; ++i){
-        lay = mod1d->lays + i;
-        lay->thk = pymod1d->Thk[i];
-        lay->dep = dep;
-        lay->Va  = pymod1d->Va[i];
-        lay->Vb  = pymod1d->Vb[i];
-        lay->Rho = pymod1d->Rho[i];
-        lay->Qainv  = (pymod1d->Qa[i] > 0.0)? RONE/pymod1d->Qa[i] : 0.0;
-        lay->Qbinv  = (pymod1d->Qb[i] > 0.0)? RONE/pymod1d->Qb[i] : 0.0;
-
-        lay->mu = (lay->Vb)*(lay->Vb)*(lay->Rho);
-        lay->lambda = (lay->Va)*(lay->Va)*(lay->Rho) - RTWO*lay->mu;
-        lay->delta = (lay->lambda + lay->mu) / (lay->lambda + RTHREE*lay->mu);
-
-        dep += pymod1d->Thk[i];
-    }
-
-}
-
-
-void grt_copy_mod1d(const GRT_MODEL1D *mod1d1, GRT_MODEL1D *mod1d2){
+GRT_MODEL1D * grt_copy_mod1d(const GRT_MODEL1D *mod1d1){
+    GRT_MODEL1D *mod1d2 = grt_init_mod1d(mod1d1->n);
     MYINT n = mod1d1->n;
     mod1d2->n = mod1d1->n;
+    mod1d2->depsrc = mod1d1->depsrc;
+    mod1d2->deprcv = mod1d1->deprcv;
     mod1d2->isrc = mod1d1->isrc;
     mod1d2->ircv = mod1d1->ircv;
     mod1d2->ircvup = mod1d1->ircvup;
+    mod1d2->io_depth = mod1d1->io_depth;
 
-    mod1d2->imin = mod1d1->imin;
-    mod1d2->imax = mod1d1->imax;
+    #define X(P, T)  memcpy(mod1d2->P, mod1d1->P, sizeof(T)*n);
+        GRT_FOR_EACH_MODEL_QUANTITY_ARRAY
+    #undef X
 
-    LAYER *lay1, *lay2;
-    for(MYINT i=0; i<n; ++i){
-        lay1 = mod1d1->lays + i;
-        lay2 = mod1d2->lays + i;
-
-        lay2->thk = lay1->thk;
-        lay2->dep = lay1->dep;
-        lay2->Va = lay1->Va;
-        lay2->Vb = lay1->Vb;
-        lay2->Rho = lay1->Rho;
-        lay2->Qainv = lay1->Qainv;
-        lay2->Qbinv = lay1->Qbinv;
-
-        lay2->mu = lay1->mu;
-        lay2->kaka = lay1->kaka;
-        lay2->kbkb = lay1->kbkb;
-
-        lay2->lambda = lay1->lambda;
-        lay2->delta = lay1->delta;
-    }
-    
+    return mod1d2;
 }
-
-
-void grt_free_mod1d(GRT_MODEL1D *mod1d){
-    GRT_SAFE_FREE_PTR(mod1d->lays);
-    GRT_SAFE_FREE_PTR(mod1d);
-}
-
 
 
 void grt_update_mod1d_omega(GRT_MODEL1D *mod1d, MYCOMPLEX omega){
     MYREAL Va0, Vb0;
     MYCOMPLEX ka0, kb0;
     MYCOMPLEX atna, atnb;
-    LAYER *lay;
     for(MYINT i=0; i<mod1d->n; ++i){
-        lay = mod1d->lays + i;
-        Va0 = lay->Va;
-        Vb0 = lay->Vb;
+        Va0 = mod1d->Va[i];
+        Vb0 = mod1d->Vb[i];
 
-        atna = (lay->Qainv > 0.0)? grt_attenuation_law(lay->Qainv, omega) : 1.0;
-        atnb = (lay->Qbinv > 0.0)? grt_attenuation_law(lay->Qbinv, omega) : 1.0;
+        atna = (mod1d->Qainv[i] > 0.0)? grt_attenuation_law(mod1d->Qainv[i], omega) : 1.0;
+        atnb = (mod1d->Qbinv[i] > 0.0)? grt_attenuation_law(mod1d->Qbinv[i], omega) : 1.0;
         
         ka0 = omega/(Va0*atna);
         kb0 = (Vb0>RZERO)? omega/(Vb0*atnb) : CZERO;
-        lay->kaka = ka0*ka0;
-        lay->kbkb = kb0*kb0;
+        mod1d->kaka[i] = ka0*ka0;
+        mod1d->kbkb[i] = kb0*kb0;
         
-        lay->mu = (Vb0*atnb)*(Vb0*atnb)*(lay->Rho);
-        lay->lambda = (Va0*atnb)*(Va0*atnb)*(lay->Rho) - 2*lay->mu;
-        lay->delta = (lay->lambda + lay->mu) / (lay->lambda + 3*lay->mu);
+        mod1d->mu[i] = (Vb0*atnb)*(Vb0*atnb)*(mod1d->Rho[i]);
+        mod1d->lambda[i] = (Va0*atnb)*(Va0*atnb)*(mod1d->Rho[i]) - 2*mod1d->mu[i];
+        mod1d->delta[i] = (mod1d->lambda[i] + mod1d->mu[i]) / (mod1d->lambda[i] + 3.0*mod1d->mu[i]);
     }
 
 #if Print_GRTCOEF == 1
@@ -231,33 +172,17 @@ void grt_update_mod1d_omega(GRT_MODEL1D *mod1d, MYCOMPLEX omega){
 }
 
 
-GRT_PYMODEL1D * grt_init_pymod(MYINT n){
-    GRT_PYMODEL1D *pymod = (GRT_PYMODEL1D *)calloc(1, sizeof(GRT_PYMODEL1D));
-    pymod->n = n;
-    
-    pymod->Thk = (MYREAL*)calloc(n, sizeof(MYREAL));
-    pymod->Va = (MYREAL*)calloc(n, sizeof(MYREAL));
-    pymod->Vb = (MYREAL*)calloc(n, sizeof(MYREAL));
-    pymod->Rho = (MYREAL*)calloc(n, sizeof(MYREAL));
-    pymod->Qa = (MYREAL*)calloc(n, sizeof(MYREAL));
-    pymod->Qb = (MYREAL*)calloc(n, sizeof(MYREAL));
+void grt_realloc_mod1d(GRT_MODEL1D *mod1d, MYINT n){
+    mod1d->n = n;
 
-    return pymod;
-}
-
-void grt_realloc_pymod(GRT_PYMODEL1D *pymod, MYINT n){
-    pymod->n = n;
-
-    pymod->Thk = (MYREAL*)realloc(pymod->Thk, n*sizeof(MYREAL));
-    pymod->Va = (MYREAL*)realloc(pymod->Va, n*sizeof(MYREAL));
-    pymod->Vb = (MYREAL*)realloc(pymod->Vb, n*sizeof(MYREAL));
-    pymod->Rho = (MYREAL*)realloc(pymod->Rho, n*sizeof(MYREAL));
-    pymod->Qa = (MYREAL*)realloc(pymod->Qa, n*sizeof(MYREAL));
-    pymod->Qb = (MYREAL*)realloc(pymod->Qb, n*sizeof(MYREAL));
+    #define X(P, T)  mod1d->P = (T*)realloc(mod1d->P, n*sizeof(T));
+        GRT_FOR_EACH_MODEL_QUANTITY_ARRAY
+    #undef X
 }
 
 
-GRT_PYMODEL1D * grt_read_pymod_from_file(const char *command, const char *modelpath, double depsrc, double deprcv, bool allowLiquid){
+
+GRT_MODEL1D * grt_read_mod1d_from_file(const char *command, const char *modelpath, double depsrc, double deprcv, bool allowLiquid){
     GRTCheckFileExist(command, modelpath);
     
     FILE *fp = GRTCheckOpenFile(command, modelpath, "r");
@@ -281,7 +206,7 @@ GRT_PYMODEL1D * grt_read_pymod_from_file(const char *command, const char *modelp
     pimg_idx = pmin_idx;
 
     // 初始化
-    GRT_PYMODEL1D *pymod = grt_init_pymod(1);
+    GRT_MODEL1D *mod1d = grt_init_mod1d(1);
 
     const int ncols = 6; // 模型文件有6列，或除去qa qb有四列
     const int ncols_noQ = 4;
@@ -291,7 +216,7 @@ GRT_PYMODEL1D * grt_read_pymod_from_file(const char *command, const char *modelp
     double (*modarr)[ncols] = NULL;
     h = va = vb = rho = qa = qb = 0.0;
     int nlay = 0;
-    pymod->io_depth = false;
+    mod1d->io_depth = false;
 
     while(fgets(line, sizeof(line), fp)) {
         iline++;
@@ -308,7 +233,7 @@ GRT_PYMODEL1D * grt_read_pymod_from_file(const char *command, const char *modelp
 
         // 读取首行，如果首行首列为 0 ，则首列指示每层顶界面深度而非厚度
         if(nlay == 0 && h == 0.0){
-            pymod->io_depth = true;
+            mod1d->io_depth = true;
         }
 
         if(va <= 0.0 || rho <= 0.0 || (ncols == nscan && (qa <= 0.0 || qb <= 0.0))){
@@ -344,7 +269,7 @@ GRT_PYMODEL1D * grt_read_pymod_from_file(const char *command, const char *modelp
     }
 
     // 如果读取了深度，转为厚度
-    if(pymod->io_depth){
+    if(mod1d->io_depth){
         for(int i=1; i<nlay; ++i){
             modarr[i-1][0] = modarr[i][0] - modarr[i-1][0];
         }
@@ -374,13 +299,15 @@ GRT_PYMODEL1D * grt_read_pymod_from_file(const char *command, const char *modelp
         for(int k=0; k<2; ++k){
             // printf("%d, %d, %lf, %lf, %e ", i, k, depth+h, depimg, depth+h- depimg);
             if(*pimg_idx < 0 && depth+h >= depimg && depsrc >= 0.0 && deprcv >= 0.0){
-                grt_realloc_pymod(pymod, nlay+1);
-                pymod->Thk[nlay] = depimg - depth;
-                pymod->Va[nlay] = va;
-                pymod->Vb[nlay] = vb;
-                pymod->Rho[nlay] = rho;
-                pymod->Qa[nlay] = qa;
-                pymod->Qb[nlay] = qb;
+                grt_realloc_mod1d(mod1d, nlay+1);
+                mod1d->Thk[nlay] = depimg - depth;
+                mod1d->Va[nlay] = va;
+                mod1d->Vb[nlay] = vb;
+                mod1d->Rho[nlay] = rho;
+                mod1d->Qa[nlay] = qa;
+                mod1d->Qb[nlay] = qb;
+                mod1d->Qainv[nlay] = (qa > 0.0)? 1.0/qa : 0.0;
+                mod1d->Qbinv[nlay] = (qb > 0.0)? 1.0/qb : 0.0;
                 h = h - (depimg - depth);
 
                 depth += depimg - depth;
@@ -393,26 +320,28 @@ GRT_PYMODEL1D * grt_read_pymod_from_file(const char *command, const char *modelp
         }
         
 
-        grt_realloc_pymod(pymod, nlay+1);
-        pymod->Thk[nlay] = h;
-        pymod->Va[nlay] = va;
-        pymod->Vb[nlay] = vb;
-        pymod->Rho[nlay] = rho;
-        pymod->Qa[nlay] = qa;
-        pymod->Qb[nlay] = qb;
+        grt_realloc_mod1d(mod1d, nlay+1);
+        mod1d->Thk[nlay] = h;
+        mod1d->Va[nlay] = va;
+        mod1d->Vb[nlay] = vb;
+        mod1d->Rho[nlay] = rho;
+        mod1d->Qa[nlay] = qa;
+        mod1d->Qb[nlay] = qb;
+        mod1d->Qainv[nlay] = (qa > 0.0)? 1.0/qa : 0.0;
+        mod1d->Qbinv[nlay] = (qb > 0.0)? 1.0/qb : 0.0;
         depth += h;
         nlay++;
     }
 
-    pymod->isrc = isrc;
-    pymod->ircv = ircv;
-    pymod->ircvup = ircvup;
-    pymod->n = nlay;
-    pymod->depsrc = depsrc;
-    pymod->deprcv = deprcv;
+    mod1d->isrc = isrc;
+    mod1d->ircv = ircv;
+    mod1d->ircvup = ircvup;
+    mod1d->n = nlay;
+    mod1d->depsrc = depsrc;
+    mod1d->deprcv = deprcv;
 
     // 检查，接收点不能位于液-液、固-液界面
-    if(ircv < nlay-1 && pymod->Thk[ircv] == 0.0 && pymod->Vb[ircv]*pymod->Vb[ircv+1] == 0.0){
+    if(ircv < nlay-1 && mod1d->Thk[ircv] == 0.0 && mod1d->Vb[ircv]*mod1d->Vb[ircv+1] == 0.0){
         fprintf(stderr, 
             "[%s] " BOLD_RED "The receiver is located on the interface where there is liquid on one side. "
             "Due to the discontinuity of the tangential displacement on this interface, "
@@ -423,7 +352,7 @@ GRT_PYMODEL1D * grt_read_pymod_from_file(const char *command, const char *modelp
     }
 
     // 检查 --> 源点不能位于液-液、固-液界面
-    if(isrc < nlay-1 && pymod->Thk[isrc] == 0.0 && pymod->Vb[isrc]*pymod->Vb[isrc+1] == 0.0){
+    if(isrc < nlay-1 && mod1d->Thk[isrc] == 0.0 && mod1d->Vb[isrc]*mod1d->Vb[isrc+1] == 0.0){
         fprintf(stderr, 
             "[%s] " BOLD_RED "The source is located on the interface where there is liquid on one side. "
             "Due to the discontinuity of the tangential displacement on this interface, "
@@ -433,19 +362,26 @@ GRT_PYMODEL1D * grt_read_pymod_from_file(const char *command, const char *modelp
         return NULL;
     }
 
+    // 将每层顶界面深度写入数组
+    depth = 0.0;
+    for(int iz=0; iz<mod1d->n; ++iz){
+        mod1d->Dep[iz] = depth;
+        depth += mod1d->Thk[iz];
+    }
+
     fclose(fp);
     GRT_SAFE_FREE_PTR(modarr);
     
-    return pymod;
+    return mod1d;
 }
 
 
-void grt_get_pymod_vmin_vmax(const GRT_PYMODEL1D *pymod, double *vmin, double *vmax){
+void grt_get_mod1d_vmin_vmax(const GRT_MODEL1D *mod1d, double *vmin, double *vmax){
     *vmin = __DBL_MAX__;
     *vmax = RZERO;
-    const MYREAL *Va = pymod->Va;
-    const MYREAL *Vb = pymod->Vb;
-    for(MYINT i=0; i<pymod->n; ++i){
+    const MYREAL *Va = mod1d->Va;
+    const MYREAL *Vb = mod1d->Vb;
+    for(MYINT i=0; i<mod1d->n; ++i){
         if(Va[i] < *vmin) *vmin = Va[i];
         if(Va[i] > *vmax) *vmax = Va[i];
         if(Vb[i] < *vmin && Vb[i] > RZERO) *vmin = Vb[i];

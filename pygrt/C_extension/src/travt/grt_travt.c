@@ -21,6 +21,7 @@ typedef struct {
     struct {
         bool active;
         char *s_modelpath;
+        GRT_MODEL1D *mod1d;         ///< 模型结构体指针
     } M;
     /** 震源和接收器深度 */
     struct {
@@ -44,6 +45,7 @@ typedef struct {
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
     GRT_SAFE_FREE_PTR(Ctrl->name);
     GRT_SAFE_FREE_PTR(Ctrl->M.s_modelpath);
+    grt_free_mod1d(Ctrl->M.mod1d);
     GRT_SAFE_FREE_PTR(Ctrl->D.s_depsrc);
     GRT_SAFE_FREE_PTR(Ctrl->D.s_deprcv);
 
@@ -521,22 +523,20 @@ int travt_main(int argc, char **argv){
 
     getopt_from_command(Ctrl, argc, argv);
 
-    GRT_PYMODEL1D *pymod;
-    
     // 读入模型文件
-    if((pymod = grt_read_pymod_from_file(Ctrl->name, Ctrl->M.s_modelpath, Ctrl->D.depsrc, Ctrl->D.deprcv, true)) == NULL){
+    if((Ctrl->M.mod1d = grt_read_mod1d_from_file(Ctrl->name, Ctrl->M.s_modelpath, Ctrl->D.depsrc, Ctrl->D.deprcv, true)) == NULL){
         exit(EXIT_FAILURE);
     }
-    // print_pymod(pymod);
+    GRT_MODEL1D *mod1d = Ctrl->M.mod1d;
 
     printf("------------------------------------------------\n");
     printf(" Distance(km)     Tp(secs)         Ts(secs)     \n");
     double travtP=-1, travtS=-1;
     for(int i=0; i<Ctrl->R.nr; ++i){
         travtP = grt_compute_travt1d(
-        pymod->Thk, pymod->Va, pymod->n, pymod->isrc, pymod->ircv, Ctrl->R.rs[i]);
+        mod1d->Thk, mod1d->Va, mod1d->n, mod1d->isrc, mod1d->ircv, Ctrl->R.rs[i]);
         travtS = grt_compute_travt1d(
-        pymod->Thk, pymod->Vb, pymod->n, pymod->isrc, pymod->ircv, Ctrl->R.rs[i]);
+        mod1d->Thk, mod1d->Vb, mod1d->n, mod1d->isrc, mod1d->ircv, Ctrl->R.rs[i]);
         
         printf(" %-15s  %-15.3f  %-15.3f\n", Ctrl->R.s_rs[i], travtP, travtS);
     }

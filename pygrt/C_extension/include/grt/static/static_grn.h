@@ -22,7 +22,7 @@
 /**
  * 积分计算Z, R, T三个分量静态格林函数的核心函数
  * 
- * @param[in]      pymod1d          `PYMODEL1D` 结构体指针 
+ * @param[in]      mod1d            `GRT_MODEL1D` 结构体指针 
  * @param[in]      nr               震中距数量
  * @param[in]      rs               震中距数组 
  * @param[in]      keps             波数积分的收敛条件，要求在某震中距下所有格林函数都收敛，为负数代表不提前判断收敛，按照波数积分上限进行积分 
@@ -42,7 +42,7 @@
  * 
  */
 void grt_integ_static_grn(
-    GRT_PYMODEL1D *pymod1d, MYINT nr, MYREAL *rs, MYREAL vmin_ref, MYREAL keps, MYREAL k0, MYREAL Length,
+    GRT_MODEL1D *mod1d, MYINT nr, MYREAL *rs, MYREAL vmin_ref, MYREAL keps, MYREAL k0, MYREAL Length,
     MYREAL filonLength, MYREAL safilonTol, MYREAL filonCut, 
 
     // 返回值，代表Z、R、T分量

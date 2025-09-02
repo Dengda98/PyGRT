@@ -132,7 +132,7 @@ static void write_one_to_sac(
  * 处理单个震中距对应的数据逆变换和SAC保存
  * 
  * @param[in]         command       模块名
- * @param[in]         pymod         模型结构体指针
+ * @param[in]         mod1d         模型结构体指针
  * @param[in]         s_prefix      保存路径前缀
  * @param[in]         wI            虚频率
  * @param[in,out]     pt_fh         FFTW结构体
@@ -156,7 +156,7 @@ static void write_one_to_sac(
  * 
  */
 static void single_freq2time_write_to_file(
-    const char *command, const GRT_PYMODEL1D *pymod, const char *s_prefix, 
+    const char *command, const GRT_MODEL1D *mod1d, const char *s_prefix, 
     const MYREAL wI, GRT_FFTW_HOLDER *pt_fh,
     const char *s_dist, const MYREAL dist,
     const MYREAL depsrc, const MYREAL deprcv,
@@ -180,9 +180,9 @@ static void single_freq2time_write_to_file(
     pt_hd->b = delayT;
 
     // 计算理论走时
-    pt_hd->t0 = grt_compute_travt1d(pymod->Thk, pymod->Va, pymod->n, pymod->isrc, pymod->ircv, dist);
+    pt_hd->t0 = grt_compute_travt1d(mod1d->Thk, mod1d->Va, mod1d->n, mod1d->isrc, mod1d->ircv, dist);
     strcpy(pt_hd->kt0, "P");
-    pt_hd->t1 = grt_compute_travt1d(pymod->Thk, pymod->Vb, pymod->n, pymod->isrc, pymod->ircv, dist);
+    pt_hd->t1 = grt_compute_travt1d(mod1d->Thk, mod1d->Vb, mod1d->n, mod1d->isrc, mod1d->ircv, dist);
     strcpy(pt_hd->kt1, "S");
 
     for(int im=0; im<SRC_M_NUM; ++im){
@@ -232,7 +232,7 @@ static void single_freq2time_write_to_file(
 
 
 void grt_GF_freq2time_write_to_file(
-    const char *command, const GRT_PYMODEL1D *pymod, 
+    const char *command, const GRT_MODEL1D *mod1d, 
     const char *s_output_dir, const char *s_modelname, const char *s_depsrc, const char *s_deprcv,    
     const MYREAL wI, GRT_FFTW_HOLDER *pt_fh,
     const MYINT nr, char *s_dists[nr], const MYREAL dists[nr], MYREAL travtPS[nr][2],
@@ -255,15 +255,15 @@ void grt_GF_freq2time_write_to_file(
     // 写入虚频率
     hd.user0 = wI;
     // 写入接受点的Vp,Vs,rho
-    hd.user1 = pymod->Va[pymod->ircv];
-    hd.user2 = pymod->Vb[pymod->ircv];
-    hd.user3 = pymod->Rho[pymod->ircv];
-    hd.user4 = RONE/pymod->Qa[pymod->ircv];
-    hd.user5 = RONE/pymod->Qb[pymod->ircv];
+    hd.user1 = mod1d->Va[mod1d->ircv];
+    hd.user2 = mod1d->Vb[mod1d->ircv];
+    hd.user3 = mod1d->Rho[mod1d->ircv];
+    hd.user4 = mod1d->Qainv[mod1d->ircv];
+    hd.user5 = mod1d->Qbinv[mod1d->ircv];
     // 写入震源点的Vp,Vs,rho
-    hd.user6 = pymod->Va[pymod->isrc];
-    hd.user7 = pymod->Vb[pymod->isrc];
-    hd.user8 = pymod->Rho[pymod->isrc];
+    hd.user6 = mod1d->Va[mod1d->isrc];
+    hd.user7 = mod1d->Vb[mod1d->isrc];
+    hd.user8 = mod1d->Rho[mod1d->isrc];
 
     char *s_output_dirprefx = NULL;
     GRT_SAFE_ASPRINTF(&s_output_dirprefx, "%s/%s_%s_%s", s_output_dir, s_modelname, s_depsrc, s_deprcv);
@@ -273,7 +273,7 @@ void grt_GF_freq2time_write_to_file(
         hd.dist = dists[ir];
 
         single_freq2time_write_to_file(
-            command, pymod, s_output_dirprefx, 
+            command, mod1d, s_output_dirprefx, 
             wI, pt_fh,
             s_dists[ir], dists[ir], depsrc, deprcv,
             delayT0, delayV0, calc_upar,
@@ -288,7 +288,7 @@ void grt_GF_freq2time_write_to_file(
     }
 
     // 输出警告：当震源位于液体层中时，仅允许计算爆炸源对应的格林函数
-    if(pymod->Vb[pymod->isrc]==0.0){
+    if(mod1d->Vb[mod1d->isrc]==0.0){
         fprintf(stderr, "[%s] " BOLD_YELLOW 
             "The source is located in the liquid layer, "
             "therefore only the Green's Funtions for the Explosion source will be computed.\n" 

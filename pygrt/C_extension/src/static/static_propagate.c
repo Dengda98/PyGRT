@@ -41,8 +41,8 @@ void grt_static_kernel(
     MYINT isrc = mod1d->isrc; // 震源所在虚拟层位, isrc>=1
     MYINT ircv = mod1d->ircv; // 接收点所在虚拟层位, ircv>=1, ircv != isrc
     MYINT imin, imax; // 相对浅层深层层位
-    imin = mod1d->imin;
-    imax = mod1d->imax;
+    imin = GRT_MIN(mod1d->isrc, mod1d->ircv);
+    imax = GRT_MAX(mod1d->isrc, mod1d->ircv);
 
     // 初始化广义反射透射系数矩阵
     // BL
@@ -94,7 +94,6 @@ void grt_static_kernel(
 
     // 模型参数
     // 后缀0，1分别代表上层和下层
-    LAYER *lay = NULL;
     MYREAL mod1d_thk0, mod1d_thk1;
     MYCOMPLEX mod1d_mu0, mod1d_mu1;
     MYCOMPLEX mod1d_delta0, mod1d_delta1;
@@ -105,17 +104,15 @@ void grt_static_kernel(
 
     // 从顶到底进行矩阵递推, 公式(5.5.3)
     for(MYINT iy=0; iy<mod1d->n; ++iy){ // 因为n>=3, 故一定会进入该循环
-        lay = mod1d->lays + iy;
-
         // 赋值上层 
         mod1d_thk0 = mod1d_thk1;
         mod1d_mu0 = mod1d_mu1;
         mod1d_delta0 = mod1d_delta1;
 
         // 更新模型参数
-        mod1d_thk1 = lay->thk;
-        mod1d_mu1 = lay->mu;
-        mod1d_delta1 = lay->delta;
+        mod1d_thk1 = mod1d->Thk[iy];
+        mod1d_mu1 = mod1d->mu[iy];
+        mod1d_delta1 = mod1d->delta[iy];
 
         if(0==iy){
             top_delta = mod1d_delta1;

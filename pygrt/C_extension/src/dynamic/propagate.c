@@ -41,8 +41,8 @@ void grt_kernel(
     MYINT isrc = mod1d->isrc; // 震源所在虚拟层位, isrc>=1
     MYINT ircv = mod1d->ircv; // 接收点所在虚拟层位, ircv>=1, ircv != isrc
     MYINT imin, imax; // 相对浅层深层层位
-    imin = mod1d->imin;
-    imax = mod1d->imax;
+    imin = GRT_MIN(mod1d->isrc, mod1d->ircv);
+    imax = GRT_MAX(mod1d->isrc, mod1d->ircv);
     // bool ircvup = true;
     // MYINT isrc = 2;
     // MYINT ircv = 1;
@@ -105,7 +105,6 @@ void grt_kernel(
 
     // 模型参数
     // 后缀0，1分别代表上层和下层
-    LAYER *lay = NULL;
     MYREAL mod1d_thk0, mod1d_thk1, mod1d_Rho0, mod1d_Rho1;
     MYCOMPLEX mod1d_mu0, mod1d_mu1;
     MYCOMPLEX mod1d_kaka1, mod1d_kbkb0, mod1d_kbkb1;
@@ -117,7 +116,6 @@ void grt_kernel(
 
     // 从顶到底进行矩阵递推, 公式(5.5.3)
     for(MYINT iy=0; iy<mod1d->n; ++iy){ // 因为n>=3, 故一定会进入该循环
-        lay = mod1d->lays + iy;
 
         // 赋值上层 
         mod1d_thk0 = mod1d_thk1;
@@ -128,11 +126,11 @@ void grt_kernel(
         mod1d_xb0 = mod1d_xb1;
 
         // 更新模型参数
-        mod1d_thk1 = lay->thk;
-        mod1d_Rho1 = lay->Rho;
-        mod1d_mu1 = lay->mu;
-        mod1d_kaka1 = lay->kaka;
-        mod1d_kbkb1 = lay->kbkb;
+        mod1d_thk1 = mod1d->Thk[iy];
+        mod1d_Rho1 = mod1d->Rho[iy];
+        mod1d_mu1 = mod1d->mu[iy];
+        mod1d_kaka1 = mod1d->kaka[iy];
+        mod1d_kbkb1 = mod1d->kbkb[iy];
         mod1d_xa1 = sqrt(RONE - mod1d_kaka1/(k*k));
         mod1d_xb1 = sqrt(RONE - mod1d_kbkb1/(k*k));
         // mod1d_xa1 = sqrt(k*k - mod1d_kaka1)/k;
@@ -427,7 +425,7 @@ void grt_kernel(
 
     // 对一些特殊情况的修正
     // 当震源和场点均位于地表时，可理论验证DS分量恒为0，这里直接赋0以避免后续的精度干扰
-    if(mod1d->lays[isrc].dep == RZERO && mod1d->lays[ircv].dep == RZERO)
+    if(mod1d->Dep[mod1d->isrc] == RZERO && mod1d->Dep[mod1d->ircv] == RZERO)
     {
         for(MYINT c=0; c<QWV_NUM; ++c){
             QWV[SRC_M_DS_INDEX][c] = CZERO;

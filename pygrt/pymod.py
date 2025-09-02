@@ -45,7 +45,7 @@ class PyModel1D:
         '''
         self.depsrc:float = depsrc 
         self.deprcv:float = deprcv 
-        self.c_pymod1d:c_PyModel1D 
+        self.c_mod1d:c_GRT_MODEL1D 
         self.hasLiquid:bool = False  # 传入的模型是否有液体层
 
         # 将modarr写入临时数组
@@ -54,17 +54,17 @@ class PyModel1D:
             tmp_path = tmpfile.name  # 获取临时文件路径
 
         try:
-            c_pymod_ptr = C_grt_read_pymod_from_file("pygrt".encode("utf-8"), tmp_path.encode("utf-8"), depsrc, deprcv, True)
-            self.c_pymod1d = c_pymod_ptr.contents  # 这部分内存在C中申请，需由C函数释放。占用不多，这里跳过
+            c_mod1d_ptr = C_grt_read_mod1d_from_file("pygrt".encode("utf-8"), tmp_path.encode("utf-8"), depsrc, deprcv, True)
+            self.c_mod1d = c_mod1d_ptr.contents  # 这部分内存在C中申请，需由C函数释放。占用不多，这里跳过
         finally:
             if os.path.exists(tmp_path):
                 os.unlink(tmp_path)
         
-        self.isrc = self.c_pymod1d.isrc
-        self.ircv = self.c_pymod1d.ircv
+        self.isrc = self.c_mod1d.isrc
+        self.ircv = self.c_mod1d.ircv
 
-        va = npct.as_array(self.c_pymod1d.Va, (self.c_pymod1d.n,))
-        vb = npct.as_array(self.c_pymod1d.Vb, (self.c_pymod1d.n,))
+        va = npct.as_array(self.c_mod1d.Va, (self.c_mod1d.n,))
+        vb = npct.as_array(self.c_mod1d.Vb, (self.c_mod1d.n,))
         if np.any(vb == 0.0):
             self.hasLiquid = True
         
@@ -86,19 +86,19 @@ class PyModel1D:
               - **travtS**  -  初至S波走时(s)
         """
         travtP = C_grt_compute_travt1d(
-            self.c_pymod1d.Thk,
-            self.c_pymod1d.Va,
-            self.c_pymod1d.n,
-            self.c_pymod1d.isrc,
-            self.c_pymod1d.ircv,
+            self.c_mod1d.Thk,
+            self.c_mod1d.Va,
+            self.c_mod1d.n,
+            self.c_mod1d.isrc,
+            self.c_mod1d.ircv,
             dist
         )
         travtS = C_grt_compute_travt1d(
-            self.c_pymod1d.Thk,
-            self.c_pymod1d.Vb,
-            self.c_pymod1d.n,
-            self.c_pymod1d.isrc,
-            self.c_pymod1d.ircv,
+            self.c_mod1d.Thk,
+            self.c_mod1d.Vb,
+            self.c_mod1d.n,
+            self.c_mod1d.isrc,
+            self.c_mod1d.ircv,
             dist
         )
 
@@ -375,7 +375,7 @@ class PyModel1D:
         #     剪切源 DD[ZR],DS[ZRT],SS[ZRT]          1e-20 cm/(dyne*cm)
         #=================================================================================
         C_grt_integ_grn_spec(
-            self.c_pymod1d, nf1, nf2, c_freqs, nrs, c_rs, wI, 
+            self.c_mod1d, nf1, nf2, c_freqs, nrs, c_rs, wI, 
             vmin_ref, keps, ampk, k0, Length, filonLength, safilonTol, filonCut, print_runtime,
             c_grnArr, calc_upar, c_grnArr_uiz, c_grnArr_uir,
             c_statsfile, nstatsidxs, c_statsidxs
@@ -384,14 +384,14 @@ class PyModel1D:
         #/////////////////////////////////////////////////////////////////////////////////
 
         # 震源和场点层的物性，写入sac头段变量
-        rcv_va = self.c_pymod1d.Va[self.ircv]
-        rcv_vb = self.c_pymod1d.Vb[self.ircv]
-        rcv_rho = self.c_pymod1d.Rho[self.ircv]
-        rcv_qainv = 0.0 if self.c_pymod1d.Qa[self.ircv] <= 0.0 else 1.0/self.c_pymod1d.Qa[self.ircv]
-        rcv_qbinv = 0.0 if self.c_pymod1d.Qb[self.ircv] <= 0.0 else 1.0/self.c_pymod1d.Qb[self.ircv]
-        src_va = self.c_pymod1d.Va[self.isrc]
-        src_vb = self.c_pymod1d.Vb[self.isrc]
-        src_rho = self.c_pymod1d.Rho[self.isrc]
+        rcv_va = self.c_mod1d.Va[self.ircv]
+        rcv_vb = self.c_mod1d.Vb[self.ircv]
+        rcv_rho = self.c_mod1d.Rho[self.ircv]
+        rcv_qainv = self.c_mod1d.Qainv[self.ircv]
+        rcv_qbinv = self.c_mod1d.Qbinv[self.ircv]
+        src_va = self.c_mod1d.Va[self.isrc]
+        src_vb = self.c_mod1d.Vb[self.isrc]
+        src_rho = self.c_mod1d.Rho[self.isrc]
         
         # 对应实际采集的地震信号，取向上为正(和理论推导使用的方向相反)
         dataLst = []
@@ -556,7 +556,7 @@ class PyModel1D:
         #     剪切源 DD[ZR],DS[ZRT],SS[ZRT]          1e-20 cm/(dyne*cm)
         #=================================================================================
         C_grt_integ_static_grn(
-            self.c_pymod1d, nr, c_rs, vmin_ref, keps, k0, Length, filonLength, safilonTol, filonCut, 
+            self.c_mod1d, nr, c_rs, vmin_ref, keps, k0, Length, filonLength, safilonTol, filonCut, 
             c_pygrn, calc_upar, c_pygrn_uiz, c_pygrn_uir,
             c_statsfile
         )
@@ -564,12 +564,12 @@ class PyModel1D:
         #/////////////////////////////////////////////////////////////////////////////////
 
         # 震源和场点层的物性
-        rcv_va = self.c_pymod1d.Va[self.ircv]
-        rcv_vb = self.c_pymod1d.Vb[self.ircv]
-        rcv_rho = self.c_pymod1d.Rho[self.ircv]
-        src_va = self.c_pymod1d.Va[self.isrc]
-        src_vb = self.c_pymod1d.Vb[self.isrc]
-        src_rho = self.c_pymod1d.Rho[self.isrc]
+        rcv_va = self.c_mod1d.Va[self.ircv]
+        rcv_vb = self.c_mod1d.Vb[self.ircv]
+        rcv_rho = self.c_mod1d.Rho[self.ircv]
+        src_va = self.c_mod1d.Va[self.isrc]
+        src_vb = self.c_mod1d.Vb[self.isrc]
+        src_rho = self.c_mod1d.Rho[self.isrc]
 
         # 结果字典
         dataDct = {}

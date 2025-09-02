@@ -31,7 +31,7 @@ __all__ = [
     "PREAL",
     "PCPLX",
 
-    "c_PyModel1D",
+    "c_GRT_MODEL1D",
 ]
 
 
@@ -53,12 +53,13 @@ NPCT_CMPLX_TYPE = f'c{int(NPCT_REAL_TYPE[1:])*2}'
 
 
 REAL = c_float if USE_FLOAT else c_double
+CPLX = REAL*2
 PREAL = POINTER(REAL)
-PCPLX = POINTER(REAL*2)
+PCPLX = POINTER(CPLX)
 
-class c_PyModel1D(Structure):
+class c_GRT_MODEL1D(Structure):
     """
-    和C结构体PYMODEL1D作匹配
+    和C结构体 GRT_MODEL1D 作匹配
 
     :field n:        层数
     :filed depsrc:   震源深度 km
@@ -67,7 +68,9 @@ class c_PyModel1D(Structure):
     :field ircv:     台站所在层位
     :field ircvup:   台站层位是否高于震源 
     :field io_depth: 模型读入的第一列是否为每层顶界面深度
+
     :field thk:      数组, 每层层厚(km)
+    :field dep:      数组, 每层顶界面深度(km)
     :field Va:       数组, 每层P波速度(km/s)
     :field Vb:       数组, 每层S波速度(km/s)
     :field Rho:      数组, 每层密度(g/cm^3)
@@ -85,9 +88,18 @@ class c_PyModel1D(Structure):
         ('io_depth', c_bool),
 
         ('Thk', PREAL),
+        ('Dep', PREAL),
         ('Va', PREAL),
         ('Vb', PREAL),
         ('Rho', PREAL),
         ('Qa', PREAL),
         ('Qb', PREAL),
+        ('Qainv', PREAL),
+        ('Qbinv', PREAL),
+
+        ('mu', PCPLX),
+        ('lambda', PCPLX),
+        ('delta', PCPLX),
+        ('kaka', PCPLX),
+        ('kbkb', PCPLX),
     ]

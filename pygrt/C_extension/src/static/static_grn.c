@@ -64,7 +64,7 @@ static void recordin_GRN(
 
 
 void grt_integ_static_grn(
-    GRT_PYMODEL1D *pymod1d, MYINT nr, MYREAL *rs, MYREAL vmin_ref, MYREAL keps, MYREAL k0, MYREAL Length,
+    GRT_MODEL1D *mod1d, MYINT nr, MYREAL *rs, MYREAL vmin_ref, MYREAL keps, MYREAL k0, MYREAL Length,
     MYREAL filonLength, MYREAL safilonTol, MYREAL filonCut, 
 
     // 返回值，代表Z、R、T分量
@@ -78,12 +78,8 @@ void grt_integ_static_grn(
 ){
     MYREAL rmax=rs[grt_findMinMax_MYREAL(rs, nr, true)];   // 最大震中距
 
-    // pymod1d -> mod1d
-    GRT_MODEL1D *mod1d = grt_init_mod1d(pymod1d->n);
-    grt_get_mod1d(pymod1d, mod1d);
+    const MYREAL hs = GRT_MAX(fabs(mod1d->depsrc - mod1d->deprcv), MIN_DEPTH_GAP_SRC_RCV); // hs=max(震源和台站深度差,1.0)
 
-    const MYREAL hs = (fabs(pymod1d->depsrc - pymod1d->deprcv) < MIN_DEPTH_GAP_SRC_RCV)? 
-                      MIN_DEPTH_GAP_SRC_RCV : fabs(pymod1d->depsrc - pymod1d->deprcv); // hs=max(震源和台站深度差,1.0)
     // 乘相应系数
     k0 *= PI/hs;
 
@@ -192,7 +188,7 @@ void grt_integ_static_grn(
 
 
     
-    MYCOMPLEX src_mu = (mod1d->lays + mod1d->isrc)->mu;
+    MYCOMPLEX src_mu = mod1d->mu[mod1d->isrc];
     MYCOMPLEX fac = dk * RONE/(RFOUR*PI * src_mu);
     
     // 将积分结果记录到浮点数数组中
@@ -207,8 +203,6 @@ void grt_integ_static_grn(
     GRT_SAFE_FREE_PTR(sum_J);
     GRT_SAFE_FREE_PTR(sum_uiz_J);
     GRT_SAFE_FREE_PTR(sum_uir_J);
-
-    grt_free_mod1d(mod1d);
 
     GRT_SAFE_FREE_PTR_ARRAY(ptam_fstatsdir, nr);
 
