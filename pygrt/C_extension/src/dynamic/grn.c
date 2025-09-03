@@ -92,7 +92,7 @@ void grt_integ_grn_spec(
     gettimeofday(&begin_t, NULL);
 
     // 最大震中距
-    MYINT irmax = grt_findMinMax_MYREAL(rs, nr, true);
+    MYINT irmax = grt_findMax_MYREAL(rs, nr);
     MYREAL rmax=rs[irmax];   
 
     const MYREAL Rho = mod1d->Rho[mod1d->isrc]; // 震源区密度
