@@ -157,7 +157,7 @@ void grt_update_mod1d_omega(GRT_MODEL1D *mod1d, MYCOMPLEX omega){
         atnb = (mod1d->Qbinv[i] > 0.0)? grt_attenuation_law(mod1d->Qbinv[i], omega) : 1.0;
         
         ka0 = omega/(Va0*atna);
-        kb0 = (Vb0>RZERO)? omega/(Vb0*atnb) : CZERO;
+        kb0 = (Vb0>0.0)? omega/(Vb0*atnb) : 0.0;
         mod1d->kaka[i] = ka0*ka0;
         mod1d->kbkb[i] = kb0*kb0;
         
@@ -376,15 +376,15 @@ GRT_MODEL1D * grt_read_mod1d_from_file(const char *command, const char *modelpat
 }
 
 
-void grt_get_mod1d_vmin_vmax(const GRT_MODEL1D *mod1d, double *vmin, double *vmax){
-    *vmin = __DBL_MAX__;
-    *vmax = RZERO;
+void grt_get_mod1d_vmin_vmax(const GRT_MODEL1D *mod1d, MYREAL *vmin, MYREAL *vmax){
+    *vmin = 9.0e30;
+    *vmax = 0.0;
     const MYREAL *Va = mod1d->Va;
     const MYREAL *Vb = mod1d->Vb;
     for(MYINT i=0; i<mod1d->n; ++i){
         if(Va[i] < *vmin) *vmin = Va[i];
         if(Va[i] > *vmax) *vmax = Va[i];
-        if(Vb[i] < *vmin && Vb[i] > RZERO) *vmin = Vb[i];
-        if(Vb[i] > *vmax && Vb[i] > RZERO) *vmax = Vb[i];
+        if(Vb[i] < *vmin && Vb[i] > 0.0) *vmin = Vb[i];
+        if(Vb[i] > *vmax && Vb[i] > 0.0) *vmax = Vb[i];
     }
 }

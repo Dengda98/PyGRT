@@ -23,12 +23,12 @@ inline GCC_ALWAYS_INLINE void grt_cmat2x2_inv(const MYCOMPLEX M[2][2], MYCOMPLEX
     MYCOMPLEX M10 = M[1][0];
     MYCOMPLEX M11 = M[1][1];
     MYCOMPLEX det = M00*M11 - M01*M10;
-    if ( det == RZERO ){
+    if ( det == 0.0 ){
         // fprintf(stderr, "%.5e+%.5ej %.5e+%.5ej \n", creal(M[0][0]), cimag(M[0][0]), creal(M[0][1]), cimag(M[0][1]));
         // fprintf(stderr, "%.5e+%.5ej %.5e+%.5ej \n", creal(M[1][0]), cimag(M[1][0]), creal(M[1][1]), cimag(M[1][1]));
         // fprintf(stderr, "matrix2x2 det=0.0, set matrix inv = 0.0.\n");
-        // det = RZERO;
-        *stats = INVERSE_FAILURE;
+        // det = 0.0;
+        *stats = GRT_INVERSE_FAILURE;
         return;
     }
 
@@ -36,7 +36,7 @@ inline GCC_ALWAYS_INLINE void grt_cmat2x2_inv(const MYCOMPLEX M[2][2], MYCOMPLEX
     invM[0][1] = - M01 / det;
     invM[1][0] = - M10 / det;
     invM[1][1] = M00 / det;
-    *stats = INVERSE_SUCCESS;
+    *stats = GRT_INVERSE_SUCCESS;
 }
 
 /**
@@ -73,10 +73,10 @@ inline GCC_ALWAYS_INLINE void grt_cmat2x2_sub(const MYCOMPLEX M1[2][2], const MY
  * @param[in,out]     M       差矩阵 I-M2
  */ 
 inline GCC_ALWAYS_INLINE void grt_cmat2x2_one_sub(MYCOMPLEX M[2][2]){
-    M[0][0] = RONE - M[0][0];
+    M[0][0] = 1.0 - M[0][0];
     M[0][1] = - M[0][1];
     M[1][0] = - M[1][0];
-    M[1][1] = RONE - M[1][1];
+    M[1][1] = 1.0 - M[1][1];
 }
 
 /**

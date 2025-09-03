@@ -53,7 +53,7 @@ MYCOMPLEX grt_quad_integral(MYREAL x1, MYREAL x2, MYCOMPLEX a, MYCOMPLEX b, MYCO
     MYREAL xx1, xx2, xxx1, xxx2;
     xx1 = x1*x1;    xx2 = x2*x2;
     xxx1 = xx1*x1;  xxx2 = xx2*x2; 
-    return a/RTHREE*(xxx2 - xxx1) + b/RTWO*(xx2 - xx1) + c*(x2 - x1);
+    return a/3.0*(xxx2 - xxx1) + b/2.0*(xx2 - xx1) + c*(x2 - x1);
 }
 
 

@@ -31,10 +31,10 @@
 void grt_source_coef_PSV(
     MYCOMPLEX src_xa, MYCOMPLEX src_xb, MYCOMPLEX src_kaka, MYCOMPLEX src_kbkb, 
     MYREAL k,
-    MYCOMPLEX coef[SRC_M_NUM][QWV_NUM-1][2]);
+    MYCOMPLEX coef[GRT_SRC_M_NUM][GRT_QWV_NUM-1][2]);
 
 /* SH 波的震源系数，参数见 source_coef_PSV  */
 void grt_source_coef_SH(
     MYCOMPLEX src_xb, MYCOMPLEX src_kbkb, 
     MYREAL k,
-    MYCOMPLEX coef[SRC_M_NUM][2]);
+    MYCOMPLEX coef[GRT_SRC_M_NUM][2]);

@@ -18,14 +18,14 @@
 
 
 void grt_write_stats(
-    FILE *f0, MYREAL k, const MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM])
+    FILE *f0, MYREAL k, const MYCOMPLEX QWV[GRT_SRC_M_NUM][GRT_QWV_NUM])
 {
     fwrite(&k, sizeof(MYREAL), 1, f0);
 
-    for(MYINT im=0; im<SRC_M_NUM; ++im){
-        MYINT modr = SRC_M_ORDERS[im];
-        for(MYINT c=0; c<QWV_NUM; ++c){
-            if(modr == 0 && qwvchs[c] == 'v')   continue;
+    for(MYINT im=0; im<GRT_SRC_M_NUM; ++im){
+        MYINT modr = GRT_SRC_M_ORDERS[im];
+        for(MYINT c=0; c<GRT_QWV_NUM; ++c){
+            if(modr == 0 && GRT_QWV_CODES[c] == 'v')   continue;
 
             fwrite(&QWV[im][c], sizeof(MYCOMPLEX), 1, f0);
         }
@@ -40,12 +40,12 @@ MYINT grt_extract_stats(FILE *bf0, FILE *af0){
         snprintf(K, sizeof(K), GRT_STRING_FMT, "k");  K[0]='#';
         fprintf(af0, "%s", K);
 
-        for(MYINT im=0; im<SRC_M_NUM; ++im){
-            MYINT modr = SRC_M_ORDERS[im];
-            for(MYINT c=0; c<QWV_NUM; ++c){
-                if(modr == 0 && qwvchs[c] == 'v')   continue;
+        for(MYINT im=0; im<GRT_SRC_M_NUM; ++im){
+            MYINT modr = GRT_SRC_M_ORDERS[im];
+            for(MYINT c=0; c<GRT_QWV_NUM; ++c){
+                if(modr == 0 && GRT_QWV_CODES[c] == 'v')   continue;
 
-                snprintf(K, sizeof(K), "%s_%c", SRC_M_NAME_ABBR[im], qwvchs[c]);
+                snprintf(K, sizeof(K), "%s_%c", GRT_SRC_M_NAME_ABBR[im], GRT_QWV_CODES[c]);
                 fprintf(af0, GRT_STR_CMPLX_FMT, K);
             }
         }
@@ -59,10 +59,10 @@ MYINT grt_extract_stats(FILE *bf0, FILE *af0){
     if(1 != fread(&k, sizeof(MYREAL), 1, bf0))  return -1;
     fprintf(af0, GRT_REAL_FMT, k);
 
-    for(MYINT im=0; im<SRC_M_NUM; ++im){
-        MYINT modr = SRC_M_ORDERS[im];
-        for(MYINT c=0; c<QWV_NUM; ++c){
-            if(modr == 0 && qwvchs[c] == 'v')   continue;
+    for(MYINT im=0; im<GRT_SRC_M_NUM; ++im){
+        MYINT modr = GRT_SRC_M_ORDERS[im];
+        for(MYINT c=0; c<GRT_QWV_NUM; ++c){
+            if(modr == 0 && GRT_QWV_CODES[c] == 'v')   continue;
 
             if(1 != fread(&val, sizeof(MYCOMPLEX), 1, bf0))  return -1;
             fprintf(af0, GRT_CMPLX_FMT, creal(val), cimag(val));
@@ -75,14 +75,14 @@ MYINT grt_extract_stats(FILE *bf0, FILE *af0){
 
 void grt_write_stats_ptam(
     FILE *f0, 
-    MYREAL Kpt[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT],
-    MYCOMPLEX Fpt[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT]
+    MYREAL Kpt[GRT_SRC_M_NUM][GRT_INTEG_NUM][GRT_PTAM_PT_MAX],
+    MYCOMPLEX Fpt[GRT_SRC_M_NUM][GRT_INTEG_NUM][GRT_PTAM_PT_MAX]
 ){
 
-    for(MYINT i=0; i<PTAM_MAX_PT; ++i){
-        for(MYINT im=0; im<SRC_M_NUM; ++im){
-            MYINT modr = SRC_M_ORDERS[im];
-            for(MYINT v=0; v<INTEG_NUM; ++v){
+    for(MYINT i=0; i<GRT_PTAM_PT_MAX; ++i){
+        for(MYINT im=0; im<GRT_SRC_M_NUM; ++im){
+            MYINT modr = GRT_SRC_M_ORDERS[im];
+            for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
                 if(modr == 0 && v!=0 && v!=2)  continue;
                 
                 fwrite(&Kpt[im][v][i], sizeof(MYREAL),  1, f0);
@@ -100,19 +100,19 @@ MYINT grt_extract_stats_ptam(FILE *bf0, FILE *af0){
         char K[20], K2[20];
         MYINT icol=0;
 
-        for(MYINT im=0; im<SRC_M_NUM; ++im){
-            MYINT modr = SRC_M_ORDERS[im];
-            for(MYINT v=0; v<INTEG_NUM; ++v){
+        for(MYINT im=0; im<GRT_SRC_M_NUM; ++im){
+            MYINT modr = GRT_SRC_M_ORDERS[im];
+            for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
                 if(modr == 0 && v!=0 && v!=2)  continue;
 
-                snprintf(K2, sizeof(K2), "sum_%s_%d_k", SRC_M_NAME_ABBR[im], v);
+                snprintf(K2, sizeof(K2), "sum_%s_%d_k", GRT_SRC_M_NAME_ABBR[im], v);
                 if(icol==0){
                     snprintf(K, sizeof(K), GRT_STRING_FMT, K2);  K2[0]='#';
                     fprintf(af0, "%s", K);
                 } else {
                     fprintf(af0, GRT_STRING_FMT, K2);
                 }
-                snprintf(K2, sizeof(K2), "sum_%s_%d", SRC_M_NAME_ABBR[im], v);
+                snprintf(K2, sizeof(K2), "sum_%s_%d", GRT_SRC_M_NAME_ABBR[im], v);
                 fprintf(af0, GRT_STR_CMPLX_FMT, K2);
                 
                 icol++;
@@ -126,9 +126,9 @@ MYINT grt_extract_stats_ptam(FILE *bf0, FILE *af0){
     MYREAL k;
     MYCOMPLEX val;
 
-    for(MYINT im=0; im<SRC_M_NUM; ++im){
-        MYINT modr = SRC_M_ORDERS[im];
-        for(MYINT v=0; v<INTEG_NUM; ++v){
+    for(MYINT im=0; im<GRT_SRC_M_NUM; ++im){
+        MYINT modr = GRT_SRC_M_ORDERS[im];
+        for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
             if(modr == 0 && v!=0 && v!=2)  continue;
 
             if(1 != fread(&k, sizeof(MYREAL), 1, bf0))  return -1;

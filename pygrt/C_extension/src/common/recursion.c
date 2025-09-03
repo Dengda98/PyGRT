@@ -46,7 +46,7 @@ void grt_recursion_RD_PSV(
     // RD, RDL
     grt_cmat2x2_mul(RU1, RD2, tmp1);
     grt_cmat2x2_one_sub(tmp1);
-    grt_cmat2x2_inv(tmp1, tmp1, stats);  if(*stats==INVERSE_FAILURE)  return;
+    grt_cmat2x2_inv(tmp1, tmp1, stats);  if(*stats==GRT_INVERSE_FAILURE)  return;
     grt_cmat2x2_mul(tmp1, TD1, tmp2);
     if(inv_2x2T!=NULL) grt_cmat2x2_assign(tmp2, inv_2x2T);
 
@@ -62,12 +62,12 @@ void grt_recursion_RD_SH(
 {
     MYCOMPLEX inv1;
 
-    inv1 = RONE - RUL1*RDL2;
-    if(inv1 == CZERO){
-        *stats=INVERSE_FAILURE;
+    inv1 = 1.0 - RUL1*RDL2;
+    if(inv1 == 0.0){
+        *stats=GRT_INVERSE_FAILURE;
         return;
     }
-    inv1 = RONE / inv1 * TDL1;
+    inv1 = 1.0 / inv1 * TDL1;
     *RDL = RDL1 + TUL1*RDL2*inv1;
     if(invT!=NULL)  *invT = inv1;
 }
@@ -98,7 +98,7 @@ void grt_recursion_TD_PSV(
     // TD, TDL
     grt_cmat2x2_mul(RU1, RD2, tmp2);
     grt_cmat2x2_one_sub(tmp2);
-    grt_cmat2x2_inv(tmp2, tmp1, stats);  if(*stats==INVERSE_FAILURE)  return;
+    grt_cmat2x2_inv(tmp2, tmp1, stats);  if(*stats==GRT_INVERSE_FAILURE)  return;
     grt_cmat2x2_mul(tmp1, TD1, tmp2);
     if(inv_2x2T!=NULL)  grt_cmat2x2_assign(tmp2, inv_2x2T);
     grt_cmat2x2_mul(TD2, tmp2, TD);
@@ -111,12 +111,12 @@ void grt_recursion_TD_SH(
 {
     MYCOMPLEX inv1;
 
-    inv1 = RONE - RUL1*RDL2;
-    if(inv1 == CZERO){
-        *stats=INVERSE_FAILURE;
+    inv1 = 1.0 - RUL1*RDL2;
+    if(inv1 == 0.0){
+        *stats=GRT_INVERSE_FAILURE;
         return;
     }
-    inv1 = RONE / inv1 * TDL1;
+    inv1 = 1.0 / inv1 * TDL1;
     *TDL = TDL2 * inv1;
     if(invT!=NULL) *invT = inv1;
 }
@@ -148,7 +148,7 @@ void grt_recursion_RU_PSV(
     // RU, RUL
     grt_cmat2x2_mul(RD2, RU1, tmp2);
     grt_cmat2x2_one_sub(tmp2);
-    grt_cmat2x2_inv(tmp2, tmp1, stats);  if(*stats==INVERSE_FAILURE)  return;
+    grt_cmat2x2_inv(tmp2, tmp1, stats);  if(*stats==GRT_INVERSE_FAILURE)  return;
     grt_cmat2x2_mul(tmp1, TU2, tmp2);
     if(inv_2x2T!=NULL)  grt_cmat2x2_assign(tmp2, inv_2x2T);
 
@@ -166,12 +166,12 @@ void grt_recursion_RU_SH(
 {
     MYCOMPLEX inv1;
 
-    inv1 = RONE - RUL1*RDL2;
-    if(inv1 == CZERO){
-        *stats=INVERSE_FAILURE;
+    inv1 = 1.0 - RUL1*RDL2;
+    if(inv1 == 0.0){
+        *stats=GRT_INVERSE_FAILURE;
         return;
     }
-    inv1 = RONE / inv1 * TUL2;
+    inv1 = 1.0 / inv1 * TUL2;
     *RUL = RUL2 + TDL2*RUL1*inv1; 
     if(invT!=NULL)  *invT = inv1;
 }
@@ -203,7 +203,7 @@ void grt_recursion_TU_PSV(
     // TU, TUL
     grt_cmat2x2_mul(RD2, RU1, tmp2);
     grt_cmat2x2_one_sub(tmp2);
-    grt_cmat2x2_inv(tmp2, tmp1, stats);  if(*stats==INVERSE_FAILURE)  return;
+    grt_cmat2x2_inv(tmp2, tmp1, stats);  if(*stats==GRT_INVERSE_FAILURE)  return;
     grt_cmat2x2_mul(tmp1, TU2, tmp2);
     if(inv_2x2T!=NULL) grt_cmat2x2_assign(tmp2, inv_2x2T);
     grt_cmat2x2_mul(TU1, tmp2, TU);
@@ -218,12 +218,12 @@ void grt_recursion_TU_SH(
 {
     MYCOMPLEX inv1;
 
-    inv1 = RONE - RUL1*RDL2;
-    if(inv1 == CZERO){
-        *stats=INVERSE_FAILURE;
+    inv1 = 1.0 - RUL1*RDL2;
+    if(inv1 == 0.0){
+        *stats=GRT_INVERSE_FAILURE;
         return;
     }
-    inv1 = RONE / inv1 * TUL2;
+    inv1 = 1.0 / inv1 * TUL2;
     *TUL = TUL1 * inv1;
     if(invT!=NULL)  *invT = inv1;
 }
@@ -261,7 +261,7 @@ void grt_recursion_RT_PSV(
 
     grt_cmat2x2_mul(RU1, RD2, tmp1);
     grt_cmat2x2_one_sub(tmp1);
-    grt_cmat2x2_inv(tmp1, tmp1, stats);  if(*stats==INVERSE_FAILURE)  return;
+    grt_cmat2x2_inv(tmp1, tmp1, stats);  if(*stats==GRT_INVERSE_FAILURE)  return;
     grt_cmat2x2_mul(tmp1, TD1, tmp2);
 
     // TD
@@ -274,7 +274,7 @@ void grt_recursion_RT_PSV(
 
     grt_cmat2x2_mul(RD2, RU1, tmp1);
     grt_cmat2x2_one_sub(tmp1);
-    grt_cmat2x2_inv(tmp1, tmp1, stats);  if(*stats==INVERSE_FAILURE)  return;
+    grt_cmat2x2_inv(tmp1, tmp1, stats);  if(*stats==GRT_INVERSE_FAILURE)  return;
     grt_cmat2x2_mul(tmp1, TU2, tmp2);
 
     // TU
@@ -298,12 +298,12 @@ void grt_recursion_RT_SH(
     // 临时
     MYCOMPLEX inv0, inv1T;
 
-    inv0 = RONE - RUL1*RDL2;
-    if(inv0 == CZERO){
-        *stats=INVERSE_FAILURE;
+    inv0 = 1.0 - RUL1*RDL2;
+    if(inv0 == 0.0){
+        *stats=GRT_INVERSE_FAILURE;
         return;
     }
-    inv0 = RONE / inv0;
+    inv0 = 1.0 / inv0;
 
     inv1T = inv0 * TDL1;
     // TDL
@@ -380,8 +380,8 @@ void grt_get_qwv(
     bool ircvup, 
     const MYCOMPLEX R1[2][2], MYCOMPLEX RL1, 
     const MYCOMPLEX R2[2][2], MYCOMPLEX RL2, 
-    const MYCOMPLEX coef_PSV[QWV_NUM-1][2], const MYCOMPLEX coef_SH[2], 
-    MYCOMPLEX qwv[QWV_NUM])
+    const MYCOMPLEX coef_PSV[GRT_QWV_NUM-1][2], const MYCOMPLEX coef_SH[2], 
+    MYCOMPLEX qwv[GRT_QWV_NUM])
 {
     MYCOMPLEX qw0[2], qw1[2], v0;
     MYCOMPLEX coefD[2] = {coef_PSV[0][0], coef_PSV[1][0]};

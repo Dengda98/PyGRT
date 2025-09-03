@@ -43,21 +43,21 @@
  */
 static void process_peak_or_trough(
     MYINT ir, MYINT im, MYINT v, MYREAL k, MYREAL dk, 
-    MYCOMPLEX (*J3)[PTAM_WINDOW_SIZE][SRC_M_NUM][INTEG_NUM], MYREAL (*Kpt)[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT], 
-    MYCOMPLEX (*Fpt)[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT], MYINT (*Ipt)[SRC_M_NUM][INTEG_NUM], MYINT (*Gpt)[SRC_M_NUM][INTEG_NUM], bool *iendk0)
+    MYCOMPLEX (*J3)[GRT_PTAM_WINDOW_SIZE][GRT_SRC_M_NUM][GRT_INTEG_NUM], MYREAL (*Kpt)[GRT_SRC_M_NUM][GRT_INTEG_NUM][GRT_PTAM_PT_MAX], 
+    MYCOMPLEX (*Fpt)[GRT_SRC_M_NUM][GRT_INTEG_NUM][GRT_PTAM_PT_MAX], MYINT (*Ipt)[GRT_SRC_M_NUM][GRT_INTEG_NUM], MYINT (*Gpt)[GRT_SRC_M_NUM][GRT_INTEG_NUM], bool *iendk0)
 {
     MYCOMPLEX tmp0;
-    if (Gpt[ir][im][v] >= PTAM_WINDOW_SIZE-1 && Ipt[ir][im][v] < PTAM_MAX_PT) {
+    if (Gpt[ir][im][v] >= GRT_PTAM_WINDOW_SIZE-1 && Ipt[ir][im][v] < GRT_PTAM_PT_MAX) {
         if (grt_cplx_peak_or_trough(im, v, J3[ir], k, dk, &Kpt[ir][im][v][Ipt[ir][im][v]], &tmp0) != 0) {
             Fpt[ir][im][v][Ipt[ir][im][v]++] = tmp0;
             Gpt[ir][im][v] = 0;
-        } else if (Gpt[ir][im][v] >= PTAM_MAX_WAITS) {  // 不再等待，直接取中点作为波峰波谷
+        } else if (Gpt[ir][im][v] >= GRT_PTAM_WAITS_MAX) {  // 不再等待，直接取中点作为波峰波谷
             Kpt[ir][im][v][Ipt[ir][im][v]] = k - dk;
             Fpt[ir][im][v][Ipt[ir][im][v]++] = J3[ir][1][im][v];
             Gpt[ir][im][v] = 0;
         }
     }
-    *iendk0 = *iendk0 && (Ipt[ir][im][v] == PTAM_MAX_PT);
+    *iendk0 = *iendk0 && (Ipt[ir][im][v] == GRT_PTAM_PT_MAX);
 }
 
 
@@ -82,30 +82,30 @@ static void process_peak_or_trough(
  */
 static void ptam_once(
     const MYINT ir, const MYINT nr, const MYREAL precoef, MYREAL k, MYREAL dk, 
-    MYCOMPLEX SUM3[nr][PTAM_WINDOW_SIZE][SRC_M_NUM][INTEG_NUM],
-    MYCOMPLEX sum_J[nr][SRC_M_NUM][INTEG_NUM],
-    MYREAL Kpt[nr][SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT],
-    MYCOMPLEX Fpt[nr][SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT],
-    MYINT Ipt[nr][SRC_M_NUM][INTEG_NUM],
-    MYINT Gpt[nr][SRC_M_NUM][INTEG_NUM],
+    MYCOMPLEX SUM3[nr][GRT_PTAM_WINDOW_SIZE][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    MYCOMPLEX sum_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    MYREAL Kpt[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM][GRT_PTAM_PT_MAX],
+    MYCOMPLEX Fpt[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM][GRT_PTAM_PT_MAX],
+    MYINT Ipt[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    MYINT Gpt[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     bool *iendk0)
 {
     *iendk0 = true;
-    for(MYINT i=0; i<SRC_M_NUM; ++i){
-        MYINT modr = SRC_M_ORDERS[i];
-        for(MYINT v=0; v<INTEG_NUM; ++v){
+    for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
+        MYINT modr = GRT_SRC_M_ORDERS[i];
+        for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
             if(modr == 0 && v!=0 && v!= 2)  continue;
 
             // 赋更新量
             // SUM3转为求和结果
-            sum_J[ir][i][v] += SUM3[ir][PTAM_WINDOW_SIZE-1][i][v] * precoef;
-            SUM3[ir][PTAM_WINDOW_SIZE-1][i][v] = sum_J[ir][i][v];         
+            sum_J[ir][i][v] += SUM3[ir][GRT_PTAM_WINDOW_SIZE-1][i][v] * precoef;
+            SUM3[ir][GRT_PTAM_WINDOW_SIZE-1][i][v] = sum_J[ir][i][v];         
             
             // 3点以上，判断波峰波谷 
             process_peak_or_trough(ir, i, v, k, dk, SUM3, Kpt, Fpt, Ipt, Gpt, iendk0);
 
             // 左移动点, 
-            for(MYINT jj=0; jj<PTAM_WINDOW_SIZE-1; ++jj){
+            for(MYINT jj=0; jj<GRT_PTAM_WINDOW_SIZE-1; ++jj){
                 SUM3[ir][jj][i][v] = SUM3[ir][jj+1][i][v];
             }
 
@@ -119,10 +119,10 @@ static void ptam_once(
 void grt_PTA_method(
     const GRT_MODEL1D *mod1d, MYREAL k0, MYREAL predk, MYCOMPLEX omega, 
     MYINT nr, MYREAL *rs,
-    MYCOMPLEX sum_J0[nr][SRC_M_NUM][INTEG_NUM],
+    MYCOMPLEX sum_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     bool calc_upar,
-    MYCOMPLEX sum_uiz_J0[nr][SRC_M_NUM][INTEG_NUM],
-    MYCOMPLEX sum_uir_J0[nr][SRC_M_NUM][INTEG_NUM],
+    MYCOMPLEX sum_uiz_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    MYCOMPLEX sum_uir_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     FILE *ptam_fstatsnr[nr][2], GRT_KernelFunc kerfunc, MYINT *stats)
 {   
     // 需要兼容对正常收敛而不具有规律波峰波谷的序列
@@ -132,42 +132,58 @@ void grt_PTA_method(
     MYREAL k=0.0;
 
     // 不同震源不同阶数的核函数 F(k, w) 
-    MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM];
-    MYCOMPLEX QWV_uiz[SRC_M_NUM][QWV_NUM];
+    MYCOMPLEX QWV[GRT_SRC_M_NUM][GRT_QWV_NUM];
+    MYCOMPLEX QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM];
+
+    // 使用宏函数，方便定义
+    #define __CALLOC_ARRAY(VAR, TYP, __ARR) \
+        TYP (*VAR)__ARR = (TYP (*)__ARR)calloc(nr, sizeof(*VAR));
 
     // 用于接收F(ki,w)Jm(ki*r)ki
     // 存储采样的值，维度3表示通过连续3个点来判断波峰或波谷
     // 既用于存储被积函数，也最后用于存储求和的结果
-    MYCOMPLEX (*SUM3)[PTAM_WINDOW_SIZE][SRC_M_NUM][INTEG_NUM] = (MYCOMPLEX (*)[PTAM_WINDOW_SIZE][SRC_M_NUM][INTEG_NUM])calloc(nr, sizeof(*SUM3));
-    MYCOMPLEX (*SUM3_uiz)[PTAM_WINDOW_SIZE][SRC_M_NUM][INTEG_NUM] = (MYCOMPLEX (*)[PTAM_WINDOW_SIZE][SRC_M_NUM][INTEG_NUM])calloc(nr, sizeof(*SUM3_uiz));
-    MYCOMPLEX (*SUM3_uir)[PTAM_WINDOW_SIZE][SRC_M_NUM][INTEG_NUM] = (MYCOMPLEX (*)[PTAM_WINDOW_SIZE][SRC_M_NUM][INTEG_NUM])calloc(nr, sizeof(*SUM3_uir));
+    #define __ARR [GRT_PTAM_WINDOW_SIZE][GRT_SRC_M_NUM][GRT_INTEG_NUM]
+        __CALLOC_ARRAY(SUM3, MYCOMPLEX, __ARR);
+        __CALLOC_ARRAY(SUM3_uiz, MYCOMPLEX, __ARR);
+        __CALLOC_ARRAY(SUM3_uir, MYCOMPLEX, __ARR);
+    #undef __ARR
 
     // 之前求和的值
-    MYCOMPLEX (*sum_J)[SRC_M_NUM][INTEG_NUM] = (MYCOMPLEX(*)[SRC_M_NUM][INTEG_NUM])calloc(nr, sizeof(*sum_J));
-    MYCOMPLEX (*sum_uiz_J)[SRC_M_NUM][INTEG_NUM] =  (MYCOMPLEX(*)[SRC_M_NUM][INTEG_NUM])calloc(nr, sizeof(*sum_uiz_J));
-    MYCOMPLEX (*sum_uir_J)[SRC_M_NUM][INTEG_NUM] =  (MYCOMPLEX(*)[SRC_M_NUM][INTEG_NUM])calloc(nr, sizeof(*sum_uir_J));
+    #define __ARR [GRT_SRC_M_NUM][GRT_INTEG_NUM]
+        __CALLOC_ARRAY(sum_J, MYCOMPLEX, __ARR);
+        __CALLOC_ARRAY(sum_uiz_J, MYCOMPLEX, __ARR);
+        __CALLOC_ARRAY(sum_uir_J, MYCOMPLEX, __ARR);
+    #undef __ARR
 
     // 存储波峰波谷的位置和值
-    MYREAL (*Kpt)[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT] = (MYREAL (*)[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT])calloc(nr, sizeof(*Kpt));
-    MYCOMPLEX (*Fpt)[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT] = (MYCOMPLEX (*)[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT])calloc(nr, sizeof(*Fpt));
-    MYINT (*Ipt)[SRC_M_NUM][INTEG_NUM] = (MYINT (*)[SRC_M_NUM][INTEG_NUM])calloc(nr, sizeof(*Ipt));
+    #define __ARR [GRT_SRC_M_NUM][GRT_INTEG_NUM][GRT_PTAM_PT_MAX]
+        __CALLOC_ARRAY(Kpt, MYREAL, __ARR);
+        __CALLOC_ARRAY(Fpt, MYCOMPLEX, __ARR);
 
-    MYREAL (*Kpt_uiz)[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT] = (MYREAL (*)[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT])calloc(nr, sizeof(*Kpt_uiz));
-    MYCOMPLEX (*Fpt_uiz)[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT] = (MYCOMPLEX (*)[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT])calloc(nr, sizeof(*Fpt_uiz));
-    MYINT (*Ipt_uiz)[SRC_M_NUM][INTEG_NUM] = (MYINT (*)[SRC_M_NUM][INTEG_NUM])calloc(nr, sizeof(*Ipt_uiz));
+        __CALLOC_ARRAY(Kpt_uiz, MYREAL, __ARR);
+        __CALLOC_ARRAY(Fpt_uiz, MYCOMPLEX, __ARR);
 
-    MYREAL (*Kpt_uir)[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT] = (MYREAL (*)[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT])calloc(nr, sizeof(*Kpt_uir));
-    MYCOMPLEX (*Fpt_uir)[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT] = (MYCOMPLEX (*)[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT])calloc(nr, sizeof(*Fpt_uir));
-    MYINT (*Ipt_uir)[SRC_M_NUM][INTEG_NUM] = (MYINT (*)[SRC_M_NUM][INTEG_NUM])calloc(nr, sizeof(*Ipt_uir));
+        __CALLOC_ARRAY(Kpt_uir, MYREAL, __ARR);
+        __CALLOC_ARRAY(Fpt_uir, MYCOMPLEX, __ARR);
+    #undef __ARR
 
-    // 记录点数，当峰谷找到后，清零
-    MYINT (*Gpt)[SRC_M_NUM][INTEG_NUM] = (MYINT (*)[SRC_M_NUM][INTEG_NUM])calloc(nr, sizeof(*Gpt));
-    MYINT (*Gpt_uiz)[SRC_M_NUM][INTEG_NUM] = (MYINT (*)[SRC_M_NUM][INTEG_NUM])calloc(nr, sizeof(*Gpt_uiz));
-    MYINT (*Gpt_uir)[SRC_M_NUM][INTEG_NUM] = (MYINT (*)[SRC_M_NUM][INTEG_NUM])calloc(nr, sizeof(*Gpt_uir));
+    #define __ARR [GRT_SRC_M_NUM][GRT_INTEG_NUM]
+        // 存储波峰波谷的总个数
+        __CALLOC_ARRAY(Ipt, MYINT, __ARR);
+        __CALLOC_ARRAY(Ipt_uiz, MYINT, __ARR);
+        __CALLOC_ARRAY(Ipt_uir, MYINT, __ARR);
+
+        // 记录点数，当峰谷找到后，清零
+        __CALLOC_ARRAY(Gpt, MYINT, __ARR);
+        __CALLOC_ARRAY(Gpt_uiz, MYINT, __ARR);
+        __CALLOC_ARRAY(Gpt_uir, MYINT, __ARR);
+    #undef __ARR
+    #undef __CALLOC_ARRAY
+
 
     for(MYINT ir=0; ir<nr; ++ir){
-        for(MYINT i=0; i<SRC_M_NUM; ++i){
-            for(MYINT v=0; v<INTEG_NUM; ++v){
+        for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
+            for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
                 sum_J[ir][i][v] = sum_J0[ir][i][v];
 
                 if(calc_upar){
@@ -185,10 +201,10 @@ void grt_PTA_method(
 
     // 对于PTAM，不同震中距使用不同dk
     for(MYINT ir=0; ir<nr; ++ir){
-        MYREAL dk = PI/((PTAM_MAX_WAITS-1)*rs[ir]); 
+        MYREAL dk = PI/((GRT_PTAM_WAITS_MAX-1)*rs[ir]); 
         MYREAL precoef = dk/predk; // 提前乘dk系数，以抵消格林函数主函数计算时最后乘dk
         // 根据波峰波谷的目标也给出一个kmax，+5以防万一 
-        MYREAL kmax = k0 + (PTAM_MAX_PT+5)*PI/rs[ir];
+        MYREAL kmax = k0 + (GRT_PTAM_PT_MAX+5)*PI/rs[ir];
 
         bool iendk0=false;
 
@@ -202,13 +218,13 @@ void grt_PTA_method(
 
             // 计算核函数 F(k, w)
             kerfunc(mod1d, omega, k, QWV, calc_upar, QWV_uiz, stats); 
-            if(*stats==INVERSE_FAILURE)  goto BEFORE_RETURN;
+            if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
             // 记录核函数
             if(fstatsK!=NULL)  grt_write_stats(fstatsK, k, QWV);
 
             // 计算被积函数一项 F(k,w)Jm(kr)k
-            grt_int_Pk(k, rs[ir], QWV, false, SUM3[ir][PTAM_WINDOW_SIZE-1]);  // [PTAM_WINDOW_SIZE-1]表示把新点值放在最后
+            grt_int_Pk(k, rs[ir], QWV, false, SUM3[ir][GRT_PTAM_WINDOW_SIZE-1]);  // [GRT_PTAM_WINDOW_SIZE-1]表示把新点值放在最后
             // 判断和记录波峰波谷
             ptam_once( ir, nr, precoef, k, dk,  SUM3, sum_J, Kpt, Fpt, Ipt, Gpt, &iendk0);
             
@@ -216,13 +232,13 @@ void grt_PTA_method(
             if(calc_upar){
                 // ------------------------------- ui_z -----------------------------------
                 // 计算被积函数一项 F(k,w)Jm(kr)k
-                grt_int_Pk(k, rs[ir], QWV_uiz, false, SUM3_uiz[ir][PTAM_WINDOW_SIZE-1]);  // [PTAM_WINDOW_SIZE-1]表示把新点值放在最后
+                grt_int_Pk(k, rs[ir], QWV_uiz, false, SUM3_uiz[ir][GRT_PTAM_WINDOW_SIZE-1]);  // [GRT_PTAM_WINDOW_SIZE-1]表示把新点值放在最后
                 // 判断和记录波峰波谷
                 ptam_once(ir, nr, precoef, k, dk, SUM3_uiz, sum_uiz_J, Kpt_uiz, Fpt_uiz, Ipt_uiz, Gpt_uiz, &iendk0);
 
                 // ------------------------------- ui_r -----------------------------------
                 // 计算被积函数一项 F(k,w)Jm(kr)k
-                grt_int_Pk(k, rs[ir], QWV, true, SUM3_uir[ir][PTAM_WINDOW_SIZE-1]);  // [PTAM_WINDOW_SIZE-1]表示把新点值放在最后
+                grt_int_Pk(k, rs[ir], QWV, true, SUM3_uir[ir][GRT_PTAM_WINDOW_SIZE-1]);  // [GRT_PTAM_WINDOW_SIZE-1]表示把新点值放在最后
                 // 判断和记录波峰波谷
                 ptam_once(ir, nr, precoef, k, dk, SUM3_uir, sum_uir_J, Kpt_uir, Fpt_uir, Ipt_uir, Gpt_uir, &iendk0);
             
@@ -242,8 +258,8 @@ void grt_PTA_method(
         // 记录到文件
         if(fstatsP!=NULL)  grt_write_stats_ptam(fstatsP, Kpt[ir], Fpt[ir]);
 
-        for(MYINT i=0; i<SRC_M_NUM; ++i){
-            for(MYINT v=0; v<INTEG_NUM; ++v){
+        for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
+            for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
                 grt_cplx_shrink(Ipt[ir][i][v], Fpt[ir][i][v]);  
                 sum_J0[ir][i][v] = Fpt[ir][i][v][0];
 
@@ -259,19 +275,24 @@ void grt_PTA_method(
     }
 
     BEFORE_RETURN:
-    GRT_SAFE_FREE_PTR(SUM3); GRT_SAFE_FREE_PTR(SUM3_uiz); GRT_SAFE_FREE_PTR(SUM3_uir);
-    GRT_SAFE_FREE_PTR(sum_J); GRT_SAFE_FREE_PTR(sum_uiz_J); GRT_SAFE_FREE_PTR(sum_uir_J); 
 
-    GRT_SAFE_FREE_PTR(Kpt);  GRT_SAFE_FREE_PTR(Fpt);  GRT_SAFE_FREE_PTR(Ipt);  GRT_SAFE_FREE_PTR(Gpt);
-    GRT_SAFE_FREE_PTR(Kpt_uiz);  GRT_SAFE_FREE_PTR(Fpt_uiz);  GRT_SAFE_FREE_PTR(Ipt_uiz);  GRT_SAFE_FREE_PTR(Gpt_uiz);
-    GRT_SAFE_FREE_PTR(Kpt_uir);  GRT_SAFE_FREE_PTR(Fpt_uir);  GRT_SAFE_FREE_PTR(Ipt_uir);  GRT_SAFE_FREE_PTR(Gpt_uir);
+    #define __FREE_ALL_ARRAY \
+        X(SUM3)    X(SUM3_uiz)    X(SUM3_uir) \
+        X(sum_J)   X(sum_uiz_J)   X(sum_uir_J) \
+        X(Kpt)     X(Fpt)         X(Ipt)       X(Gpt) \
+        X(Kpt_uiz)     X(Fpt_uiz)         X(Ipt_uiz)       X(Gpt_uiz) \
+        X(Kpt_uir)     X(Fpt_uir)         X(Ipt_uir)       X(Gpt_uir) \
 
+    #define X(A)  GRT_SAFE_FREE_PTR(A);
+        __FREE_ALL_ARRAY
+    #undef X
+    #undef __FREE_ALL_ARRAY
 }
 
 
 
 
-MYINT grt_cplx_peak_or_trough(MYINT idx1, MYINT idx2, const MYCOMPLEX arr[PTAM_WINDOW_SIZE][SRC_M_NUM][INTEG_NUM], MYREAL k, MYREAL dk, MYREAL *pk, MYCOMPLEX *value){
+MYINT grt_cplx_peak_or_trough(MYINT idx1, MYINT idx2, const MYCOMPLEX arr[GRT_PTAM_WINDOW_SIZE][GRT_SRC_M_NUM][GRT_INTEG_NUM], MYREAL k, MYREAL dk, MYREAL *pk, MYCOMPLEX *value){
     MYCOMPLEX f1, f2, f3;
     MYREAL rf1, rf2, rf3;
     MYINT stat=0;

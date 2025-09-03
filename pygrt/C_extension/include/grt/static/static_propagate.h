@@ -23,5 +23,5 @@
  * 
  */
 void grt_static_kernel(
-    const GRT_MODEL1D *mod1d, MYCOMPLEX omega, MYREAL k, MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
-    bool calc_uiz, MYCOMPLEX QWV_uiz[SRC_M_NUM][QWV_NUM], MYINT *stats);
+    const GRT_MODEL1D *mod1d, MYCOMPLEX omega, MYREAL k, MYCOMPLEX QWV[GRT_SRC_M_NUM][GRT_QWV_NUM],
+    bool calc_uiz, MYCOMPLEX QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM], MYINT *stats);

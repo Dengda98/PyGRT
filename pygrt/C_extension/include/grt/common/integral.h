@@ -26,9 +26,9 @@
  */
 void grt_int_Pk(
     MYREAL k, MYREAL r, 
-    const MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
+    const MYCOMPLEX QWV[GRT_SRC_M_NUM][GRT_QWV_NUM],
     bool calc_uir,
-    MYCOMPLEX SUM[SRC_M_NUM][INTEG_NUM]);
+    MYCOMPLEX SUM[GRT_SRC_M_NUM][GRT_INTEG_NUM]);
 
 
 
@@ -40,7 +40,7 @@ void grt_int_Pk(
  * @param[out]    tol             Z、R、T分量结果
  */
 void grt_merge_Pk(
-    const MYCOMPLEX sum_J[SRC_M_NUM][INTEG_NUM], MYCOMPLEX tol[SRC_M_NUM][CHANNEL_NUM]);
+    const MYCOMPLEX sum_J[GRT_SRC_M_NUM][GRT_INTEG_NUM], MYCOMPLEX tol[GRT_SRC_M_NUM][GRT_CHANNEL_NUM]);
 
 
 
@@ -60,9 +60,9 @@ void grt_merge_Pk(
  */
 void grt_int_Pk_filon(
     MYREAL k, MYREAL r, bool iscos,
-    const MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
+    const MYCOMPLEX QWV[GRT_SRC_M_NUM][GRT_QWV_NUM],
     bool calc_uir,
-    MYCOMPLEX SUM[SRC_M_NUM][INTEG_NUM]);
+    MYCOMPLEX SUM[GRT_SRC_M_NUM][GRT_INTEG_NUM]);
 
 
 /**
@@ -79,6 +79,6 @@ void grt_int_Pk_filon(
  */
 void grt_int_Pk_sa_filon(
     const MYREAL k3[3], MYREAL r, 
-    const MYCOMPLEX QWV3[3][SRC_M_NUM][QWV_NUM],
+    const MYCOMPLEX QWV3[3][GRT_SRC_M_NUM][GRT_QWV_NUM],
     bool calc_uir,
-    MYCOMPLEX SUM[SRC_M_NUM][INTEG_NUM]);
+    MYCOMPLEX SUM[GRT_SRC_M_NUM][GRT_INTEG_NUM]);

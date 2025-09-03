@@ -21,15 +21,15 @@
 
 void grt_calc_static_R_tilt_PSV(MYCOMPLEX delta1, MYCOMPLEX R_tilt[2][2]){
     // 公式(6.3.12)
-    R_tilt[0][0] = R_tilt[1][1] = CZERO;
+    R_tilt[0][0] = R_tilt[1][1] = 0.0;
     R_tilt[0][1] = -delta1;
-    R_tilt[1][0] = -RONE/delta1;
+    R_tilt[1][0] = -1.0/delta1;
 }
 
 void grt_calc_static_R_EV_PSV(bool ircvup, const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2])
 {
-    MYCOMPLEX D11[2][2] = {{RONE, -RONE}, {RONE, RONE}};
-    MYCOMPLEX D12[2][2] = {{RONE, -RONE}, {-RONE, -RONE}};
+    MYCOMPLEX D11[2][2] = {{1.0, -1.0}, {1.0, 1.0}};
+    MYCOMPLEX D12[2][2] = {{1.0, -1.0}, {-1.0, -1.0}};
 
     // 公式(6.3.35,37)
     if(ircvup){// 震源更深
@@ -43,7 +43,7 @@ void grt_calc_static_R_EV_PSV(bool ircvup, const MYCOMPLEX R[2][2], MYCOMPLEX R_
 
 void grt_calc_static_R_EV_SH(MYCOMPLEX RL, MYCOMPLEX *R_EVL)
 {
-    *R_EVL = (RONE + (RL));
+    *R_EVL = (1.0 + (RL));
 }
 
 void grt_calc_static_uiz_R_EV_PSV(
@@ -51,7 +51,7 @@ void grt_calc_static_uiz_R_EV_PSV(
     const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2])
 {
     // 新推导公式
-    MYCOMPLEX kd2 = RTWO*k*delta1;
+    MYCOMPLEX kd2 = 2.0*k*delta1;
     MYCOMPLEX D11[2][2] = {{k, -k-kd2}, {k, k-kd2}};
     MYCOMPLEX D12[2][2] = {{-k, k+kd2}, {k, k-kd2}};
     if(ircvup){// 震源更深
@@ -67,9 +67,9 @@ void grt_calc_static_uiz_R_EV_SH(bool ircvup, MYREAL k, MYCOMPLEX RL, MYCOMPLEX 
 {
     // 新推导公式
     if(ircvup){// 震源更深
-        *R_EVL = (RONE - (RL))*k;
+        *R_EVL = (1.0 - (RL))*k;
     } else { // 接收点更深
-        *R_EVL = (RL - RONE)*k;
+        *R_EVL = (RL - 1.0)*k;
     }
 }
 
@@ -96,26 +96,26 @@ void grt_calc_static_RT_PSV(
 
     // REFELCTION
     //------------------ RD -----------------------------------
-    RD[0][0] = -RTWO*delta1*k*thk*dmu/A112 * ex2;
-    RD[0][1] = - ( RFOUR*del11*k2*thk2*A221*dmu + A112*B ) / (A221*A112) * ex2;
+    RD[0][0] = -2.0*delta1*k*thk*dmu/A112 * ex2;
+    RD[0][1] = - ( 4.0*del11*k2*thk2*A221*dmu + A112*B ) / (A221*A112) * ex2;
     RD[1][0] = - dmu/A112 * ex2;
     RD[1][1] = RD[0][0];
     //------------------ RU -----------------------------------
-    RU[0][0] = RZERO;
+    RU[0][0] = 0.0;
     RU[0][1] = B/A112;
     RU[1][0] = dmu/A221;
-    RU[1][1] = RZERO;
+    RU[1][1] = 0.0;
 
     // Transmission
     //------------------ TD -----------------------------------
-    TD[0][0] = mu1*(RONE+delta1)/(A112) * ex;
-    TD[0][1] = RTWO*mu1*delta1*k*thk*(RONE+delta1)/(A112) * ex;
-    TD[1][0] = RZERO;
+    TD[0][0] = mu1*(1.0+delta1)/(A112) * ex;
+    TD[0][1] = 2.0*mu1*delta1*k*thk*(1.0+delta1)/(A112) * ex;
+    TD[1][0] = 0.0;
     TD[1][1] = TD[0][0]*A112/A221;
     //------------------ TU -----------------------------------
-    TU[0][0] = mu2*(RONE+delta2)/A221 * ex;
-    TU[0][1] = RTWO*delta1*k*thk*mu2*(RONE+delta2)/A112 * ex;
-    TU[1][0] = RZERO;
+    TU[0][0] = mu2*(1.0+delta2)/A221 * ex;
+    TU[0][1] = 2.0*delta1*k*thk*mu2*(1.0+delta2)/A112 * ex;
+    TU[1][0] = 0.0;
     TU[1][1] = TU[0][0]*A221/A112;
 
     // printf("delta1=%.5e%+.5ej, delta2=%.5e%+.5ej, mu1=%.5e%+.5ej, mu2=%.5e%+.5ej, thk=%e, k=%e\n", 
@@ -147,6 +147,6 @@ void grt_calc_static_RT_SH(
     *RUL = - dmu/amu;
 
     // Transmission
-    *TDL = RTWO*mu1/amu * ex;
+    *TDL = 2.0*mu1/amu * ex;
     *TUL = (*TDL)*mu2/mu1;
 }

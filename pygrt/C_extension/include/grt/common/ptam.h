@@ -49,10 +49,10 @@
 void grt_PTA_method(
     const GRT_MODEL1D *mod1d, MYREAL k0, MYREAL predk, MYCOMPLEX omega, 
     MYINT nr, MYREAL *rs,
-    MYCOMPLEX sum_J0[nr][SRC_M_NUM][INTEG_NUM],
+    MYCOMPLEX sum_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     bool calc_upar,
-    MYCOMPLEX sum_uiz_J0[nr][SRC_M_NUM][INTEG_NUM],
-    MYCOMPLEX sum_uir_J0[nr][SRC_M_NUM][INTEG_NUM],
+    MYCOMPLEX sum_uiz_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    MYCOMPLEX sum_uir_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     FILE *ptam_fstatsnr[nr][2], GRT_KernelFunc kerfunc, MYINT *stats);
 
 
@@ -74,7 +74,7 @@ void grt_PTA_method(
  *  
  */
 MYINT grt_cplx_peak_or_trough(
-    MYINT idx1, MYINT idx2, const MYCOMPLEX arr[PTAM_WINDOW_SIZE][SRC_M_NUM][INTEG_NUM], 
+    MYINT idx1, MYINT idx2, const MYCOMPLEX arr[GRT_PTAM_WINDOW_SIZE][GRT_SRC_M_NUM][GRT_INTEG_NUM], 
     MYREAL k, MYREAL dk, MYREAL *pk, MYCOMPLEX *value);
 
 

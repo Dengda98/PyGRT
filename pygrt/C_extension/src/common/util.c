@@ -163,9 +163,9 @@ static void single_freq2time_write_to_file(
     const MYREAL delayT0, const MYREAL delayV0, const bool calc_upar,
     const bool doEX, const bool doVF, const bool doHF, const bool doDC, 
     SACHEAD *pt_hd, const char *chalst,
-    MYCOMPLEX *grn[SRC_M_NUM][CHANNEL_NUM], 
-    MYCOMPLEX *grn_uiz[SRC_M_NUM][CHANNEL_NUM], 
-    MYCOMPLEX *grn_uir[SRC_M_NUM][CHANNEL_NUM])
+    MYCOMPLEX *grn[GRT_SRC_M_NUM][GRT_CHANNEL_NUM], 
+    MYCOMPLEX *grn_uiz[GRT_SRC_M_NUM][GRT_CHANNEL_NUM], 
+    MYCOMPLEX *grn_uir[GRT_SRC_M_NUM][GRT_CHANNEL_NUM])
 {
     // 文件保存子目录
     char *s_output_subdir = NULL;
@@ -185,38 +185,38 @@ static void single_freq2time_write_to_file(
     pt_hd->t1 = grt_compute_travt1d(mod1d->Thk, mod1d->Vb, mod1d->n, mod1d->isrc, mod1d->ircv, dist);
     strcpy(pt_hd->kt1, "S");
 
-    for(int im=0; im<SRC_M_NUM; ++im){
+    for(int im=0; im<GRT_SRC_M_NUM; ++im){
         if(! doEX  && im==0)  continue;
         if(! doVF  && im==1)  continue;
         if(! doHF  && im==2)  continue;
         if(! doDC  && im>=3)  continue;
 
-        int modr = SRC_M_ORDERS[im];
+        int modr = GRT_SRC_M_ORDERS[im];
         int sgn=1;  // 用于反转Z分量
-        for(int c=0; c<CHANNEL_NUM; ++c){
-            if(modr==0 && ZRTchs[c]=='T')  continue;  // 跳过输出0阶的T分量
+        for(int c=0; c<GRT_CHANNEL_NUM; ++c){
+            if(modr==0 && GRT_ZRT_CODES[c]=='T')  continue;  // 跳过输出0阶的T分量
 
             // 判断是否为所需的分量
-            if(strchr(chalst, ZRTchs[c]) == NULL)  continue;
+            if(strchr(chalst, GRT_ZRT_CODES[c]) == NULL)  continue;
 
             // Z分量反转
-            sgn = (ZRTchs[c]=='Z') ? -1 : 1;
+            sgn = (GRT_ZRT_CODES[c]=='Z') ? -1 : 1;
 
             write_one_to_sac(
-                SRC_M_NAME_ABBR[im], ZRTchs[c], delayT, 
+                GRT_SRC_M_NAME_ABBR[im], GRT_ZRT_CODES[c], delayT, 
                 wI, pt_fh,
                 pt_hd, s_output_subdir, "", sgn, 
                 grn[im][c]);
 
             if(calc_upar){
                 write_one_to_sac(
-                    SRC_M_NAME_ABBR[im], ZRTchs[c], delayT, 
+                    GRT_SRC_M_NAME_ABBR[im], GRT_ZRT_CODES[c], delayT, 
                     wI, pt_fh,
                     pt_hd, s_output_subdir, "z", sgn*(-1), 
                     grn_uiz[im][c]);
 
                 write_one_to_sac(
-                    SRC_M_NAME_ABBR[im], ZRTchs[c], delayT, 
+                    GRT_SRC_M_NAME_ABBR[im], GRT_ZRT_CODES[c], delayT, 
                     wI, pt_fh,
                     pt_hd, s_output_subdir, "r", sgn, 
                     grn_uir[im][c]);
@@ -240,9 +240,9 @@ void grt_GF_freq2time_write_to_file(
     const MYREAL delayT0, const MYREAL delayV0, const bool calc_upar,
     const bool doEX, const bool doVF, const bool doHF, const bool doDC, 
     const char *chalst,
-    MYCOMPLEX *grn[nr][SRC_M_NUM][CHANNEL_NUM], 
-    MYCOMPLEX *grn_uiz[nr][SRC_M_NUM][CHANNEL_NUM], 
-    MYCOMPLEX *grn_uir[nr][SRC_M_NUM][CHANNEL_NUM])
+    MYCOMPLEX *grn[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM], 
+    MYCOMPLEX *grn_uiz[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM], 
+    MYCOMPLEX *grn_uir[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM])
 {
     // 建立SAC头文件，包含必要的头变量
     SACHEAD hd = new_sac_head(pt_fh->dt, pt_fh->nt, delayT0);

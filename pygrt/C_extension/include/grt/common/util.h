@@ -78,6 +78,6 @@ void grt_GF_freq2time_write_to_file(
     const MYREAL delayT0, const MYREAL delayV0, const bool calc_upar,
     const bool doEX, const bool doVF, const bool doHF, const bool doDC, 
     const char *chalst,
-    MYCOMPLEX *grn[nr][SRC_M_NUM][CHANNEL_NUM], 
-    MYCOMPLEX *grn_uiz[nr][SRC_M_NUM][CHANNEL_NUM], 
-    MYCOMPLEX *grn_uir[nr][SRC_M_NUM][CHANNEL_NUM]);
+    MYCOMPLEX *grn[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM], 
+    MYCOMPLEX *grn_uiz[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM], 
+    MYCOMPLEX *grn_uir[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM]);

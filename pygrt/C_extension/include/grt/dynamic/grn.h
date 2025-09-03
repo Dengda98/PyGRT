@@ -55,11 +55,11 @@ void grt_integ_grn_spec(
     bool print_progressbar, 
 
     // 返回值，代表Z、R、T分量
-    MYCOMPLEX *grn[nr][SRC_M_NUM][CHANNEL_NUM],
+    MYCOMPLEX *grn[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
 
     bool calc_upar,
-    MYCOMPLEX *grn_uiz[nr][SRC_M_NUM][CHANNEL_NUM],
-    MYCOMPLEX *grn_uir[nr][SRC_M_NUM][CHANNEL_NUM],
+    MYCOMPLEX *grn_uiz[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
+    MYCOMPLEX *grn_uir[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
 
     const char *statsstr, // 积分过程输出
     MYINT  nstatsidxs, // 仅输出特定频点

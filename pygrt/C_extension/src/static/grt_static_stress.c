@@ -137,7 +137,7 @@ int static_stress_main(int argc, char **argv){
             GRT_SAFE_FREE_PTR(copyline);
 
             // 指示特定的通道名
-            chs = (rot2ZNE)? ZNEchs : ZRTchs;
+            chs = (rot2ZNE)? GRT_ZNE_CODES : GRT_ZRT_CODES;
 
             // 想合成位移空间导数但输入的格林函数没有
             if(ncols < 14){
