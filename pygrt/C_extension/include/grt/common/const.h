@@ -77,6 +77,8 @@ typedef int MYINT;  ///< 整数
 #define GRT_STR_CMPLX_LONG_FMT "%51s"    ///< 与复数格式同长度的字符串输出格式（更长）
 #define GRT_CMPLX_SPLIT(x)  creal(x), cimag(x)   ///< 用于打印复数时将实部虚部分开
 
+#define GRT_COMMENT_HEAD  '#'   ///< # 号， 作为注释的字符
+
 #define GRT_MAX(a, b) ((a) > (b) ? (a) : (b))  ///< 求两者较大值
 #define GRT_MIN(a, b) ((a) < (b) ? (a) : (b))  ///< 求两者较小值
 

@@ -100,6 +100,27 @@ GRT_MODEL1D * grt_read_mod1d_from_file(const char *command, const char *modelpat
 
 
 /**
+ * 从模型文件中判断各个量的大致精度（字符串长度），以确定浮点数输出位数
+ * 
+ * @param[in]    command        命令名称
+ * @param[in]    modelpath      模型文件路径
+ * @param[out]   diglen         每一列的最大字符串长度
+ * 
+ */
+void grt_get_model_diglen_from_file(const char *command, const char *modelpath, MYINT diglen[6]);
+
+/**
+ * 浮点数比较，检查模型中是否存在该速度（不论Vp,Vs）
+ * 
+ * @param[in]   mod1d    模型
+ * @param[in]   vel      输入速度
+ * @param[in]   tol      浮点数比较精度
+ * 
+ * @return    是否存在
+ */
+bool grt_check_vel_in_mod(const GRT_MODEL1D *mod1d, const MYREAL vel, const MYREAL tol);
+
+/**
  * 计算最大最小速度（非零值）
  * 
  * @param    mod1d   (in)`GRT_MODEL1D` 结构体指针

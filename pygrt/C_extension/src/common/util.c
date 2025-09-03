@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "grt/common/util.h"
 #include "grt/common/model.h"
@@ -41,6 +42,23 @@ char ** grt_string_split(const char *string, const char *delim, int *size)
 }
 
 
+int grt_string_ncols(const char *string, const char* delim){
+    int count = 0;
+    
+    const char *str = string;
+    while (*str) {
+        // 跳过所有分隔符
+        while (*str && strchr(delim, *str)) str++;
+        // 如果还有非分隔符字符，增加计数
+        if (*str) count++;
+        // 跳过所有非分隔符字符
+        while (*str && !strchr(delim, *str)) str++;
+    }
+    
+    return count;
+}
+
+
 const char* grt_get_basename(const char* path) {
     // 找到最后一个 '/'
     char* last_slash = strrchr(path, '/'); 
@@ -58,6 +76,31 @@ const char* grt_get_basename(const char* path) {
     // 如果没有 '/'，整个路径就是最后一项
     return path; 
 }
+
+
+void grt_trim_whitespace(char* str) {
+    char* end;
+    
+    // 去除首部空白
+    while (isspace((unsigned char)*str)) str++;
+    
+    // 去除尾部空白
+    end = str + strlen(str) - 1;
+    while (end > str && isspace((unsigned char)*end)) end--;
+    
+    // 写入终止符
+    *(end + 1) = '\0';
+}
+
+
+bool grt_is_comment_or_empty(const char* line) {
+    // 跳过前导空白
+    while (isspace((unsigned char)*line)) line++;
+    
+    // 检查是否为空行或注释行
+    return (*line == '\0' || *line == GRT_COMMENT_HEAD);
+}
+
 
 
 

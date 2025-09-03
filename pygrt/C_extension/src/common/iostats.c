@@ -37,7 +37,7 @@ MYINT grt_extract_stats(FILE *bf0, FILE *af0){
     // 打印标题
     if(bf0 == NULL){
         char K[20];
-        snprintf(K, sizeof(K), GRT_STRING_FMT, "k");  K[0]='#';
+        snprintf(K, sizeof(K), GRT_STRING_FMT, "k");  K[0]=GRT_COMMENT_HEAD;
         fprintf(af0, "%s", K);
 
         for(MYINT im=0; im<GRT_SRC_M_NUM; ++im){
@@ -107,7 +107,7 @@ MYINT grt_extract_stats_ptam(FILE *bf0, FILE *af0){
 
                 snprintf(K2, sizeof(K2), "sum_%s_%d_k", GRT_SRC_M_NAME_ABBR[im], v);
                 if(icol==0){
-                    snprintf(K, sizeof(K), GRT_STRING_FMT, K2);  K2[0]='#';
+                    snprintf(K, sizeof(K), GRT_STRING_FMT, K2);  K2[0]=GRT_COMMENT_HEAD;
                     fprintf(af0, "%s", K);
                 } else {
                     fprintf(af0, GRT_STRING_FMT, K2);

@@ -8,6 +8,7 @@
  */
 
 #include "grt/common/const.h"
+#include "grt/common/util.h"
 
 #include "grt.h"
 
@@ -133,7 +134,8 @@ int static_strain_main(int argc, char **argv){
                 GRTRaiseError("[%s] Error! The input has no spatial derivatives. \n", command);
             }
         }
-        if(line[0] == '#')  continue;
+        // 注释行
+        if(grt_is_comment_or_empty(line))  continue;
 
         // 读取该行数据
         char *copyline = strdup(line);
@@ -154,7 +156,7 @@ int static_strain_main(int argc, char **argv){
             fprintf(stdout, "# "GRT_REAL_FMT" "GRT_REAL_FMT" "GRT_REAL_FMT"\n", rcv_va, rcv_vb, rcv_rho);
             
             char XX[20];
-            sprintf(XX, GRT_STRING_FMT, "X(km)"); XX[0]='#';
+            sprintf(XX, GRT_STRING_FMT, "X(km)"); XX[0]=GRT_COMMENT_HEAD;
             fprintf(stdout, "%s", XX);
             fprintf(stdout, GRT_STRING_FMT, "Y(km)");
             char s_channel[15];

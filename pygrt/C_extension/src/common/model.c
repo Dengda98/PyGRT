@@ -16,6 +16,7 @@
 #include "grt/common/prtdbg.h"
 #include "grt/common/attenuation.h"
 #include "grt/common/colorstr.h"
+#include "grt/common/util.h"
 
 #include "grt/common/checkerror.h"
 
@@ -222,7 +223,7 @@ GRT_MODEL1D * grt_read_mod1d_from_file(const char *command, const char *modelpat
         iline++;
         
         // 注释行
-        if(line[0]=='#')  continue;
+        if(grt_is_comment_or_empty(line))  continue;
 
         h = va = vb = rho = qa = qb = 0.0;
         MYINT nscan = sscanf(line, "%lf %lf %lf %lf %lf %lf\n", &h, &va, &vb, &rho, &qa, &qb);
@@ -374,6 +375,38 @@ GRT_MODEL1D * grt_read_mod1d_from_file(const char *command, const char *modelpat
     
     return mod1d;
 }
+
+
+void grt_get_model_diglen_from_file(const char *command, const char *modelpath, MYINT diglen[6]){
+    FILE *fp = GRTCheckOpenFile(command, modelpath, "r");
+    ssize_t read;
+    size_t len;
+    char *line = NULL;
+
+    memset(diglen, 0, sizeof(MYINT)*6);
+
+    while((read = getline(&line, &len, fp) != -1)){
+        char *token = strtok(line, " \n");
+        for(MYINT i=0; i<6; ++i){
+            if(token == NULL) break;
+            diglen[i] = GRT_MAX(diglen[i], (MYINT)strlen(token));
+            token = strtok(NULL, " \n");
+        }
+    }
+
+    GRT_SAFE_FREE_PTR(line);
+    fclose(fp);
+}
+
+
+bool grt_check_vel_in_mod(const GRT_MODEL1D *mod1d, const MYREAL vel, const MYREAL tol){
+    // 浮点数比较，检查是否存在该速度值
+    for(MYINT i=0; i<mod1d->n; ++i){
+        if(fabs(vel - mod1d->Va[i])<tol || fabs(vel - mod1d->Vb[i])<tol)  return true;
+    }
+    return false;
+}
+
 
 
 void grt_get_mod1d_vmin_vmax(const GRT_MODEL1D *mod1d, MYREAL *vmin, MYREAL *vmax){
