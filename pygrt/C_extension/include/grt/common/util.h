@@ -62,6 +62,14 @@ void grt_trim_whitespace(char* str);
  */
 bool grt_is_comment_or_empty(const char* line);
 
+
+/**
+ * 由于 Windows MSYS2 环境没有 getline 函数（即使定义了 _GNU_SOURCE）
+ * 所以这里需要使用自定义的 getline 函数，参数与 POSIX 定义相同
+ */
+ssize_t grt_getline(char **lineptr, size_t *n, FILE *stream);
+
+
 /**
  * 处理单个震中距对应的数据逆变换和SAC保存
  * 

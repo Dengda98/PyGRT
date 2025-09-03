@@ -324,9 +324,11 @@ float * grt_get_custom_wave(int *Nt, const char *tfparams){
     }
 
     // 逐行读入
-    char line[1024];
+    size_t len;
+    char *line = NULL;
+
     int nt = 0;
-    while(fgets(line, sizeof(line), fp)) {
+    while(grt_getline(&line, &len, fp) != -1) {
         // 注释行
         if(grt_is_comment_or_empty(line))  continue;
 
@@ -344,6 +346,7 @@ float * grt_get_custom_wave(int *Nt, const char *tfparams){
     }
 
     fclose(fp);
+    GRT_SAFE_FREE_PTR(line);
 
     *Nt = nt;
     return tfarr;

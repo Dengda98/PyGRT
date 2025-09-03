@@ -100,9 +100,11 @@ int static_rotation_main(int argc, char **argv){
     bool rot2ZNE = false;
 
     // 逐行读入
-    char line[1024];
+    size_t len;
+    char *line = NULL;
+
     int iline = 0;
-    while(fgets(line, sizeof(line), stdin)){
+    while(grt_getline(&line, &len, stdin) != -1){
         iline++;
         if(iline == 1){
             // 读取震源物性参数
@@ -203,6 +205,7 @@ int static_rotation_main(int argc, char **argv){
         GRTRaiseError("[%s] Error! Empty input. \n", command);
     }
 
+    GRT_SAFE_FREE_PTR(line);
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;
 }

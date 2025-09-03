@@ -102,6 +102,62 @@ bool grt_is_comment_or_empty(const char* line) {
 }
 
 
+ssize_t grt_getline(char **lineptr, size_t *n, FILE *stream){
+    if (!lineptr || !n || !stream) {
+        return -1;
+    }
+    
+    char *buf = *lineptr;
+    size_t size = *n;
+    size_t len = 0;
+    int c;
+    
+    // 如果缓冲区为空，分配初始缓冲区
+    if (buf == NULL || size == 0) {
+        size = 128;
+        buf = malloc(size);
+        if (buf == NULL) {
+            return -1;
+        }
+    }
+    
+    // 逐字符读取直到换行符或EOF
+    while ((c = fgetc(stream)) != EOF) {
+        // 检查是否需要扩展缓冲区
+        if (len + 1 >= size) {
+            size_t new_size = size * 2;
+            char *new_buf = realloc(buf, new_size);
+            if (new_buf == NULL) {
+                free(buf);
+                return -1;
+            }
+            buf = new_buf;
+            size = new_size;
+        }
+        
+        buf[len++] = c;
+        
+        // 遇到换行符停止读取
+        if (c == '\n') {
+            break;
+        }
+    }
+    
+    // 如果没有读取到任何字符且遇到EOF
+    if (len == 0 && c == EOF) {
+        return -1;
+    }
+    
+    // 添加字符串终止符
+    buf[len] = '\0';
+    
+    *lineptr = buf;
+    *n = size;
+    
+    return len;
+}
+
+
 
 
 /**
