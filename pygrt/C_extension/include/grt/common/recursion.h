@@ -35,15 +35,6 @@
     TUL_##suffix = TUL;\
 })
 
-/*
-#define CMAT_ASSIGN(suffix) ({\
-    cmat2x2_assign(RD, RD_##suffix);  RDL_##suffix = RDL; \
-    cmat2x2_assign(RU, RU_##suffix);  RUL_##suffix = RUL; \
-    cmat2x2_assign(TD, TD_##suffix);  TDL_##suffix = TDL; \
-    cmat2x2_assign(TU, TU_##suffix);  TUL_##suffix = TUL; \
-})
-*/
-
 
 /** 合并 recursion_RD_PSV(SH) */
 void grt_recursion_RD(
@@ -362,5 +353,5 @@ void grt_get_qwv(
     bool ircvup, 
     const MYCOMPLEX R1[2][2], MYCOMPLEX RL1, 
     const MYCOMPLEX R2[2][2], MYCOMPLEX RL2, 
-    const MYCOMPLEX coef_PSV[QWV_NUM-1][2], const MYCOMPLEX coef_SH[2], 
-    MYCOMPLEX qwv[QWV_NUM]);
+    const MYCOMPLEX coef_PSV[GRT_QWV_NUM-1][2], const MYCOMPLEX coef_SH[2], 
+    MYCOMPLEX qwv[GRT_QWV_NUM]);

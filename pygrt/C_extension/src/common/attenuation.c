@@ -13,8 +13,8 @@
 
 
 MYCOMPLEX grt_attenuation_law(MYREAL Qinv, MYCOMPLEX omega){
-    return RONE + Qinv/PI * log(omega/PI2) + RHALF*Qinv*I;
-    // return RONE;
+    return 1.0 + Qinv/PI * log(omega/PI2) + 0.5*Qinv*I;
+    // return 1.0;
 }
 
 void grt_py_attenuation_law(MYREAL Qinv, MYREAL omg[2], MYREAL atte[2]){

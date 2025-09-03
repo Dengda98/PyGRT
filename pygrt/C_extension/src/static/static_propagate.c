@@ -25,14 +25,14 @@
 
 
 void grt_static_kernel(
-    const GRT_MODEL1D *mod1d, MYCOMPLEX omega, MYREAL k, MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
-    bool calc_uiz, MYCOMPLEX QWV_uiz[SRC_M_NUM][QWV_NUM], MYINT *stats)
+    const GRT_MODEL1D *mod1d, MYCOMPLEX omega, MYREAL k, MYCOMPLEX QWV[GRT_SRC_M_NUM][GRT_QWV_NUM],
+    bool calc_uiz, MYCOMPLEX QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM], MYINT *stats)
 {   
     // 初始化qwv为0
-    for(MYINT i=0; i<SRC_M_NUM; ++i){
-        for(MYINT j=0; j<QWV_NUM; ++j){
-            QWV[i][j] = CZERO;
-            if(calc_uiz)  QWV_uiz[i][j] = CZERO;
+    for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
+        for(MYINT j=0; j<GRT_QWV_NUM; ++j){
+            QWV[i][j] = 0.0;
+            if(calc_uiz)  QWV_uiz[i][j] = 0.0;
         }
     }
 
@@ -46,45 +46,45 @@ void grt_static_kernel(
 
     // 初始化广义反射透射系数矩阵
     // BL
-    MYCOMPLEX RD_BL[2][2] = INIT_C_ZERO_2x2_MATRIX;
-    MYCOMPLEX RDL_BL = CZERO;
-    MYCOMPLEX RU_BL[2][2] = INIT_C_ZERO_2x2_MATRIX;
-    MYCOMPLEX RUL_BL = CZERO;
-    MYCOMPLEX TD_BL[2][2] = INIT_C_IDENTITY_2x2_MATRIX;
-    MYCOMPLEX TDL_BL = CONE;
-    MYCOMPLEX TU_BL[2][2] = INIT_C_IDENTITY_2x2_MATRIX;
-    MYCOMPLEX TUL_BL = CONE;
+    MYCOMPLEX RD_BL[2][2] = GRT_INIT_ZERO_2x2_MATRIX;
+    MYCOMPLEX RDL_BL = 0.0;
+    MYCOMPLEX RU_BL[2][2] = GRT_INIT_ZERO_2x2_MATRIX;
+    MYCOMPLEX RUL_BL = 0.0;
+    MYCOMPLEX TD_BL[2][2] = GRT_INIT_IDENTITY_2x2_MATRIX;
+    MYCOMPLEX TDL_BL = 1.0;
+    MYCOMPLEX TU_BL[2][2] = GRT_INIT_IDENTITY_2x2_MATRIX;
+    MYCOMPLEX TUL_BL = 1.0;
     // AL
-    MYCOMPLEX RD_AL[2][2] = INIT_C_ZERO_2x2_MATRIX;
-    MYCOMPLEX RDL_AL = CZERO;
+    MYCOMPLEX RD_AL[2][2] = GRT_INIT_ZERO_2x2_MATRIX;
+    MYCOMPLEX RDL_AL = 0.0;
     // RS
-    MYCOMPLEX RD_RS[2][2] = INIT_C_ZERO_2x2_MATRIX;
-    MYCOMPLEX RDL_RS = CZERO;
-    MYCOMPLEX RU_RS[2][2] = INIT_C_ZERO_2x2_MATRIX;
-    MYCOMPLEX RUL_RS = CZERO;
-    MYCOMPLEX TD_RS[2][2] = INIT_C_IDENTITY_2x2_MATRIX;
-    MYCOMPLEX TDL_RS = CONE;
-    MYCOMPLEX TU_RS[2][2] = INIT_C_IDENTITY_2x2_MATRIX;
-    MYCOMPLEX TUL_RS = CONE;
+    MYCOMPLEX RD_RS[2][2] = GRT_INIT_ZERO_2x2_MATRIX;
+    MYCOMPLEX RDL_RS = 0.0;
+    MYCOMPLEX RU_RS[2][2] = GRT_INIT_ZERO_2x2_MATRIX;
+    MYCOMPLEX RUL_RS = 0.0;
+    MYCOMPLEX TD_RS[2][2] = GRT_INIT_IDENTITY_2x2_MATRIX;
+    MYCOMPLEX TDL_RS = 1.0;
+    MYCOMPLEX TU_RS[2][2] = GRT_INIT_IDENTITY_2x2_MATRIX;
+    MYCOMPLEX TUL_RS = 1.0;
     // FA (实际先计算ZA，再递推到FA)
-    MYCOMPLEX RD_FA[2][2] = INIT_C_ZERO_2x2_MATRIX;
-    MYCOMPLEX RDL_FA = CZERO;
-    MYCOMPLEX RU_FA[2][2] = INIT_C_ZERO_2x2_MATRIX;
-    MYCOMPLEX RUL_FA = CZERO;
-    MYCOMPLEX TD_FA[2][2] = INIT_C_IDENTITY_2x2_MATRIX;
-    MYCOMPLEX TDL_FA = CONE;
-    MYCOMPLEX TU_FA[2][2] = INIT_C_IDENTITY_2x2_MATRIX;
-    MYCOMPLEX TUL_FA = CONE;
+    MYCOMPLEX RD_FA[2][2] = GRT_INIT_ZERO_2x2_MATRIX;
+    MYCOMPLEX RDL_FA = 0.0;
+    MYCOMPLEX RU_FA[2][2] = GRT_INIT_ZERO_2x2_MATRIX;
+    MYCOMPLEX RUL_FA = 0.0;
+    MYCOMPLEX TD_FA[2][2] = GRT_INIT_IDENTITY_2x2_MATRIX;
+    MYCOMPLEX TDL_FA = 1.0;
+    MYCOMPLEX TU_FA[2][2] = GRT_INIT_IDENTITY_2x2_MATRIX;
+    MYCOMPLEX TUL_FA = 1.0;
     // FB (实际先计算ZB，再递推到FB)
-    MYCOMPLEX RU_FB[2][2] = INIT_C_ZERO_2x2_MATRIX;
-    MYCOMPLEX RUL_FB = CZERO;
+    MYCOMPLEX RU_FB[2][2] = GRT_INIT_ZERO_2x2_MATRIX;
+    MYCOMPLEX RUL_FB = 0.0;
 
     // 定义物理层内的反射透射系数矩阵，相对于界面上的系数矩阵增加了时间延迟因子
     MYCOMPLEX RD[2][2], RDL, TD[2][2], TDL;
     MYCOMPLEX RU[2][2], RUL, TU[2][2], TUL;
 
     // 自由表面的反射系数
-    MYCOMPLEX R_tilt[2][2] = INIT_C_ZERO_2x2_MATRIX; // SH波在自由表面的反射系数为1，不必定义变量
+    MYCOMPLEX R_tilt[2][2] = GRT_INIT_ZERO_2x2_MATRIX; // SH波在自由表面的反射系数为1，不必定义变量
 
     // 接收点处的接收矩阵
     MYCOMPLEX R_EV[2][2], R_EVL;
@@ -97,9 +97,9 @@ void grt_static_kernel(
     MYREAL mod1d_thk0, mod1d_thk1;
     MYCOMPLEX mod1d_mu0, mod1d_mu1;
     MYCOMPLEX mod1d_delta0, mod1d_delta1;
-    MYCOMPLEX top_delta = CZERO;
-    MYCOMPLEX src_delta = CZERO;
-    MYCOMPLEX rcv_delta = CZERO;
+    MYCOMPLEX top_delta = 0.0;
+    MYCOMPLEX src_delta = 0.0;
+    MYCOMPLEX rcv_delta = 0.0;
     
 
     // 从顶到底进行矩阵递推, 公式(5.5.3)
@@ -190,8 +190,8 @@ void grt_static_kernel(
 
 
     // 计算震源系数
-    MYCOMPLEX src_coef_PSV[SRC_M_NUM][QWV_NUM-1][2] = {0};
-    MYCOMPLEX src_coef_SH[SRC_M_NUM][2] = {0};
+    MYCOMPLEX src_coef_PSV[GRT_SRC_M_NUM][GRT_QWV_NUM-1][2] = {0};
+    MYCOMPLEX src_coef_SH[GRT_SRC_M_NUM][2] = {0};
     grt_static_source_coef_PSV(src_delta, k, src_coef_PSV);
     grt_static_source_coef_SH(k, src_coef_SH);
 
@@ -202,7 +202,7 @@ void grt_static_kernel(
     // 递推RU_FA
     grt_calc_static_R_tilt_PSV(top_delta, R_tilt);
     grt_recursion_RU(
-        R_tilt, RONE, 
+        R_tilt, 1.0, 
         RD_FA, RDL_FA,
         RU_FA, RUL_FA, 
         TD_FA, TDL_FA,
@@ -233,9 +233,9 @@ void grt_static_kernel(
         if(calc_uiz) grt_cmat2x2_assign(tmp2x2, tmp2x2_uiz); // 为后续计算空间导数备份
 
         grt_cmat2x2_mul(R_EV, tmp2x2, tmp2x2);
-        tmpRL = R_EVL * invT  / (RONE - RDL_BL * RUL_FB);
+        tmpRL = R_EVL * invT  / (1.0 - RDL_BL * RUL_FB);
 
-        for(MYINT i=0; i<SRC_M_NUM; ++i){
+        for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
             grt_get_qwv(ircvup, tmp2x2, tmpRL, RD_BL, RDL_BL, src_coef_PSV[i], src_coef_SH[i], QWV[i]);
         }
         
@@ -246,7 +246,7 @@ void grt_static_kernel(
             grt_cmat2x2_mul(uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
             tmpRL_uiz = tmpRL / R_EVL * uiz_R_EVL;
             
-            for(MYINT i=0; i<SRC_M_NUM; ++i){
+            for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
                 grt_get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RD_BL, RDL_BL, src_coef_PSV[i], src_coef_SH[i], QWV_uiz[i]);
             }    
         }
@@ -275,9 +275,9 @@ void grt_static_kernel(
         if(calc_uiz) grt_cmat2x2_assign(tmp2x2, tmp2x2_uiz); // 为后续计算空间导数备份
 
         grt_cmat2x2_mul(R_EV, tmp2x2, tmp2x2);
-        tmpRL = R_EVL * invT / (RONE - RUL_FA * RDL_AL);
+        tmpRL = R_EVL * invT / (1.0 - RUL_FA * RDL_AL);
         
-        for(MYINT i=0; i<SRC_M_NUM; ++i){
+        for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
             grt_get_qwv(ircvup, tmp2x2, tmpRL, RU_FA, RUL_FA, src_coef_PSV[i], src_coef_SH[i], QWV[i]);
         }
 
@@ -287,7 +287,7 @@ void grt_static_kernel(
             grt_cmat2x2_mul(uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
             tmpRL_uiz = tmpRL / R_EVL * uiz_R_EVL;
             
-            for(MYINT i=0; i<SRC_M_NUM; ++i){
+            for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
                 grt_get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RU_FA, RUL_FA, src_coef_PSV[i], src_coef_SH[i], QWV_uiz[i]);
             }
         }

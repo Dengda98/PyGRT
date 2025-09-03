@@ -41,17 +41,17 @@
  * @param[out]   grn            三分量结果，浮点数数组
  */
 static void recordin_GRN(
-    MYINT nr, MYCOMPLEX coef, MYCOMPLEX sum_J[nr][SRC_M_NUM][INTEG_NUM],
-    MYREAL grn[nr][SRC_M_NUM][CHANNEL_NUM]
+    MYINT nr, MYCOMPLEX coef, MYCOMPLEX sum_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    MYREAL grn[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM]
 ){
     // 局部变量，将某个频点的格林函数谱临时存放
-    MYCOMPLEX (*tmp_grn)[SRC_M_NUM][CHANNEL_NUM] = (MYCOMPLEX(*)[SRC_M_NUM][CHANNEL_NUM])calloc(nr, sizeof(*tmp_grn));
+    MYCOMPLEX (*tmp_grn)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM] = (MYCOMPLEX(*)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM])calloc(nr, sizeof(*tmp_grn));
 
     for(MYINT ir=0; ir<nr; ++ir){
         grt_merge_Pk(sum_J[ir], tmp_grn[ir]);
 
-        for(MYINT i=0; i<SRC_M_NUM; ++i) {
-            for(MYINT c=0; c<CHANNEL_NUM; ++c){
+        for(MYINT i=0; i<GRT_SRC_M_NUM; ++i) {
+            for(MYINT c=0; c<GRT_CHANNEL_NUM; ++c){
                 grn[ir][i][c] = creal(coef * tmp_grn[ir][i][c]);
             }
 
@@ -68,35 +68,35 @@ void grt_integ_static_grn(
     MYREAL filonLength, MYREAL safilonTol, MYREAL filonCut, 
 
     // 返回值，代表Z、R、T分量
-    MYREAL grn[nr][SRC_M_NUM][CHANNEL_NUM],
+    MYREAL grn[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
 
     bool calc_upar,
-    MYREAL grn_uiz[nr][SRC_M_NUM][CHANNEL_NUM],
-    MYREAL grn_uir[nr][SRC_M_NUM][CHANNEL_NUM],
+    MYREAL grn_uiz[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
+    MYREAL grn_uir[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
 
     const char *statsstr // 积分结果输出
 ){
     MYREAL rmax=rs[grt_findMinMax_MYREAL(rs, nr, true)];   // 最大震中距
 
-    const MYREAL hs = GRT_MAX(fabs(mod1d->depsrc - mod1d->deprcv), MIN_DEPTH_GAP_SRC_RCV); // hs=max(震源和台站深度差,1.0)
+    const MYREAL hs = GRT_MAX(fabs(mod1d->depsrc - mod1d->deprcv), GRT_MIN_DEPTH_GAP_SRC_RCV); // hs=max(震源和台站深度差,1.0)
 
     // 乘相应系数
     k0 *= PI/hs;
 
-    if(vmin_ref < RZERO)  keps = -RONE;  // 若使用峰谷平均法，则不使用keps进行收敛判断
+    if(vmin_ref < 0.0)  keps = -1.0;  // 若使用峰谷平均法，则不使用keps进行收敛判断
 
     MYREAL k=0.0;
-    bool useFIM = (filonLength > RZERO) || (safilonTol > RZERO) ;    // 是否使用Filon积分（包括自适应Filon）
+    bool useFIM = (filonLength > 0.0) || (safilonTol > 0.0) ;    // 是否使用Filon积分（包括自适应Filon）
     const MYREAL dk=fabs(PI2/(Length*rmax));     // 波数积分间隔
-    const MYREAL filondk = (filonLength > RZERO) ? PI2/(filonLength*rmax) : RZERO;  // Filon积分间隔
+    const MYREAL filondk = (filonLength > 0.0) ? PI2/(filonLength*rmax) : 0.0;  // Filon积分间隔
     const MYREAL filonK = filonCut/rmax;  // 波数积分和Filon积分的分割点
 
     const MYREAL kmax = k0;
     // 求和 sum F(ki,w)Jm(ki*r)ki 
     // 关于形状详见int_Pk()函数内的注释
-    MYCOMPLEX (*sum_J)[SRC_M_NUM][INTEG_NUM] = (MYCOMPLEX(*)[SRC_M_NUM][INTEG_NUM])calloc(nr, sizeof(*sum_J));
-    MYCOMPLEX (*sum_uiz_J)[SRC_M_NUM][INTEG_NUM] = (calc_upar)? (MYCOMPLEX(*)[SRC_M_NUM][INTEG_NUM])calloc(nr, sizeof(*sum_uiz_J)) : NULL;
-    MYCOMPLEX (*sum_uir_J)[SRC_M_NUM][INTEG_NUM] = (calc_upar)? (MYCOMPLEX(*)[SRC_M_NUM][INTEG_NUM])calloc(nr, sizeof(*sum_uir_J)) : NULL;
+    MYCOMPLEX (*sum_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (MYCOMPLEX(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_J));
+    MYCOMPLEX (*sum_uiz_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (calc_upar)? (MYCOMPLEX(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_uiz_J)) : NULL;
+    MYCOMPLEX (*sum_uir_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (calc_upar)? (MYCOMPLEX(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_uir_J)) : NULL;
 
     // 是否要输出积分过程文件
     bool needfstats = (statsstr!=NULL);
@@ -104,7 +104,7 @@ void grt_integ_static_grn(
     // PTAM的积分中间结果, 每个震中距两个文件，因为PTAM对不同震中距使用不同的dk
     // 在文件名后加后缀，区分不同震中距
     char **ptam_fstatsdir = (char**)calloc(nr, sizeof(char*));
-    if(needfstats && vmin_ref < RZERO){
+    if(needfstats && vmin_ref < 0.0){
         for(MYINT ir=0; ir<nr; ++ir){
             // 新建文件夹目录 
             GRT_SAFE_ASPRINTF(&ptam_fstatsdir[ir], "%s/PTAM_%04d_%.5e", statsstr, ir, rs[ir]);
@@ -128,18 +128,18 @@ void grt_integ_static_grn(
             fstats = fopen(fname, "wb");
         }
         for(MYINT ir=0; ir<nr; ++ir){
-            for(MYINT i=0; i<SRC_M_NUM; ++i){
-                for(MYINT v=0; v<INTEG_NUM; ++v){
-                    sum_J[ir][i][v] = CZERO;
+            for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
+                for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
+                    sum_J[ir][i][v] = 0.0;
                     if(calc_upar){
-                        sum_uiz_J[ir][i][v] = CZERO;
-                        sum_uir_J[ir][i][v] = CZERO;
+                        sum_uiz_J[ir][i][v] = 0.0;
+                        sum_uir_J[ir][i][v] = 0.0;
                     }
                 }
             }
     
             ptam_fstatsnr[ir][0] = ptam_fstatsnr[ir][1] = NULL;
-            if(needfstats && vmin_ref < RZERO){
+            if(needfstats && vmin_ref < 0.0){
                 // 峰谷平均法
                 GRT_SAFE_ASPRINTF(&fname, "%s/K", ptam_fstatsdir[ir]);
                 ptam_fstatsnr[ir][0] = fopen(fname, "wb");
@@ -152,7 +152,7 @@ void grt_integ_static_grn(
 
     // 计算核函数过程中是否有遇到除零错误
     //【静态解理论上不会有除零错误，这里是对应动态解的函数接口，作为一个占位符】
-    MYINT inv_stats=INVERSE_SUCCESS;
+    MYINT inv_stats=GRT_INVERSE_SUCCESS;
 
     // 常规的波数积分
     k = grt_discrete_integ(
@@ -162,14 +162,14 @@ void grt_integ_static_grn(
     
     // 基于线性插值的Filon积分
     if(useFIM){
-        if(filondk > RZERO){
+        if(filondk > 0.0){
             // 基于线性插值的Filon积分，固定采样间隔
             k = grt_linear_filon_integ(
                 mod1d, k, dk, filondk, kmax, keps, 0.0, nr, rs, 
                 sum_J, calc_upar, sum_uiz_J, sum_uir_J,
                 fstats, grt_static_kernel, &inv_stats);
         }
-        else if(safilonTol > RZERO){
+        else if(safilonTol > 0.0){
             // 基于自适应采样的Filon积分
             k = grt_sa_filon_integ(
                 mod1d, kmax, k, dk, safilonTol, kmax, 0.0, nr, rs, 
@@ -179,7 +179,7 @@ void grt_integ_static_grn(
     }
 
     // k之后的部分使用峰谷平均法进行显式收敛，建议在浅源地震的时候使用   
-    if(vmin_ref < RZERO){
+    if(vmin_ref < 0.0){
         grt_PTA_method(
             mod1d, k, dk, 0.0, nr, rs, 
             sum_J, calc_upar, sum_uiz_J, sum_uir_J,
@@ -189,7 +189,7 @@ void grt_integ_static_grn(
 
     
     MYCOMPLEX src_mu = mod1d->mu[mod1d->isrc];
-    MYCOMPLEX fac = dk * RONE/(RFOUR*PI * src_mu);
+    MYCOMPLEX fac = dk * 1.0/(4.0*PI * src_mu);
     
     // 将积分结果记录到浮点数数组中
     recordin_GRN(nr, fac, sum_J, grn);

@@ -22,39 +22,39 @@
 void grt_int_Pk(
     MYREAL k, MYREAL r, 
     // F(ki,w)， 第一个维度表示不同震源，不同阶数，第二个维度3代表三类系数qm,wm,vm 
-    const MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
+    const MYCOMPLEX QWV[GRT_SRC_M_NUM][GRT_QWV_NUM],
     // F(ki,w)Jm(ki*r)ki，第一个维度表示不同震源，不同阶数，第二个维度代表4种类型的F(k,w)Jm(kr)k的类型
     bool calc_uir,
-    MYCOMPLEX SUM[SRC_M_NUM][INTEG_NUM])
+    MYCOMPLEX SUM[GRT_SRC_M_NUM][GRT_INTEG_NUM])
 {
-    MYREAL bjmk[MORDER_MAX+1] = {0};
+    MYREAL bjmk[GRT_MORDER_MAX+1] = {0};
     MYREAL kr = k*r;
-    MYREAL kr_inv = RONE/kr;
+    MYREAL kr_inv = 1.0/kr;
     MYREAL kcoef = k;
 
-    MYREAL Jmcoef[MORDER_MAX+1] = {0};
+    MYREAL Jmcoef[GRT_MORDER_MAX+1] = {0};
 
     grt_bessel012(kr, &bjmk[0], &bjmk[1], &bjmk[2]); 
     if(calc_uir){
-        MYREAL bjmk0[MORDER_MAX+1] = {0};
-        for(MYINT i=0; i<=MORDER_MAX; ++i)  bjmk0[i] = bjmk[i];
+        MYREAL bjmk0[GRT_MORDER_MAX+1] = {0};
+        for(MYINT i=0; i<=GRT_MORDER_MAX; ++i)  bjmk0[i] = bjmk[i];
 
         grt_besselp012(kr, &bjmk[0], &bjmk[1], &bjmk[2]); 
         kcoef = k*k;
 
-        for(MYINT i=1; i<=MORDER_MAX; ++i)  Jmcoef[i] = kr_inv * (-kr_inv * bjmk0[i] + bjmk[i]);
+        for(MYINT i=1; i<=GRT_MORDER_MAX; ++i)  Jmcoef[i] = kr_inv * (-kr_inv * bjmk0[i] + bjmk[i]);
     } 
     else {
-        for(MYINT i=1; i<=MORDER_MAX; ++i)  Jmcoef[i] = bjmk[i]*kr_inv;
+        for(MYINT i=1; i<=GRT_MORDER_MAX; ++i)  Jmcoef[i] = bjmk[i]*kr_inv;
     }
 
-    for(MYINT i=1; i<=MORDER_MAX; ++i)  Jmcoef[i] *= kcoef;
-    for(MYINT i=0; i<=MORDER_MAX; ++i)  bjmk[i] *= kcoef;
+    for(MYINT i=1; i<=GRT_MORDER_MAX; ++i)  Jmcoef[i] *= kcoef;
+    for(MYINT i=0; i<=GRT_MORDER_MAX; ++i)  bjmk[i] *= kcoef;
 
 
     // 公式(5.6.22), 将公式分解为F(k,w)Jm(kr)k的形式
-    for(MYINT i=0; i<SRC_M_NUM; ++i){
-        MYINT modr = SRC_M_ORDERS[i];  // 对应m阶数
+    for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
+        MYINT modr = GRT_SRC_M_ORDERS[i];  // 对应m阶数
         if(modr == 0){
             SUM[i][0] = - QWV[i][0] * bjmk[1];   // - q0*J1*k
             SUM[i][2] =   QWV[i][1] * bjmk[0];   //   w0*J0*k
@@ -72,16 +72,16 @@ void grt_int_Pk(
 
 void grt_int_Pk_filon(
     MYREAL k, MYREAL r, bool iscos,
-    const MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM],
+    const MYCOMPLEX QWV[GRT_SRC_M_NUM][GRT_QWV_NUM],
     bool calc_uir,
-    MYCOMPLEX SUM[SRC_M_NUM][INTEG_NUM])
+    MYCOMPLEX SUM[GRT_SRC_M_NUM][GRT_INTEG_NUM])
 {
     MYREAL phi0 = 0.0;
     if(! iscos)  phi0 = - HALFPI;  // 在cos函数中添加的相位差，用于计算sin函数
 
     MYREAL kr = k*r;
     MYREAL kcoef = sqrt(k);
-    MYREAL bjmk[MORDER_MAX+1] = {0};
+    MYREAL bjmk[GRT_MORDER_MAX+1] = {0};
 
     if(calc_uir){
         kcoef *= k;
@@ -96,11 +96,11 @@ void grt_int_Pk_filon(
         bjmk[2] = cos(kr - FIVEQUARTERPI - phi0);
     }
 
-    for(MYINT i=0; i<=MORDER_MAX; ++i)  bjmk[i] *= kcoef;
+    for(MYINT i=0; i<=GRT_MORDER_MAX; ++i)  bjmk[i] *= kcoef;
     
     // 公式(5.6.22), 将公式分解为F(k,w)Jm(kr)k的形式，忽略近场项
-    for(MYINT i=0; i<SRC_M_NUM; ++i){
-        MYINT modr = SRC_M_ORDERS[i];  // 对应m阶数
+    for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
+        MYINT modr = GRT_SRC_M_ORDERS[i];  // 对应m阶数
         if(modr == 0){
             SUM[i][0] = - QWV[i][0] * bjmk[1];   // - q0*J1*k
             SUM[i][2] =   QWV[i][1] * bjmk[0];   //   w0*J0*k
@@ -161,9 +161,9 @@ static MYCOMPLEX interg_quad_cos(
 
 void grt_int_Pk_sa_filon(
     const MYREAL k3[3], MYREAL r, 
-    const MYCOMPLEX QWV3[3][SRC_M_NUM][QWV_NUM],
+    const MYCOMPLEX QWV3[3][GRT_SRC_M_NUM][GRT_QWV_NUM],
     bool calc_uir,
-    MYCOMPLEX SUM[SRC_M_NUM][INTEG_NUM])
+    MYCOMPLEX SUM[GRT_SRC_M_NUM][GRT_INTEG_NUM])
 {
     // 使用bessel递推公式 Jm'(x) = m/x * Jm(x) - J_{m+1}(x)
     // 考虑大震中距，忽略第一项，再使用bessel渐近公式
@@ -173,13 +173,13 @@ void grt_int_Pk_sa_filon(
 
     // 对sqrt(k)*F(k,w)进行二次曲线拟合，再计算 (a*k^2 + b*k + c) * cos(kr - (2m+1)/4) 的积分
     // 拟合二次函数的参数
-    MYCOMPLEX quad_a[SRC_M_NUM][QWV_NUM]={0};
-    MYCOMPLEX quad_b[SRC_M_NUM][QWV_NUM]={0};
-    MYCOMPLEX quad_c[SRC_M_NUM][QWV_NUM]={0};
-    for(MYINT im=0; im<SRC_M_NUM; ++im){
-        MYINT modr = SRC_M_ORDERS[im];
-        for(MYINT c=0; c<QWV_NUM; ++c){
-            if(modr==0 && qwvchs[c] == 'v')  continue;
+    MYCOMPLEX quad_a[GRT_SRC_M_NUM][GRT_QWV_NUM]={0};
+    MYCOMPLEX quad_b[GRT_SRC_M_NUM][GRT_QWV_NUM]={0};
+    MYCOMPLEX quad_c[GRT_SRC_M_NUM][GRT_QWV_NUM]={0};
+    for(MYINT im=0; im<GRT_SRC_M_NUM; ++im){
+        MYINT modr = GRT_SRC_M_ORDERS[im];
+        for(MYINT c=0; c<GRT_QWV_NUM; ++c){
+            if(modr==0 && GRT_QWV_CODES[c] == 'v')  continue;
 
             MYCOMPLEX F3[3];
             for(MYINT d=0; d<3; ++d)  F3[d] = QWV3[d][im][c] * sqrt(k3[d]) * sgn;
@@ -191,8 +191,8 @@ void grt_int_Pk_sa_filon(
 
     MYREAL kmin = k3[0], kmax = k3[2];
     // 公式(5.6.22), 将公式分解为F(k,w)Jm(kr)k的形式
-    for(MYINT im=0; im<SRC_M_NUM; ++im){
-        MYINT modr = SRC_M_ORDERS[im];  // 对应m阶数
+    for(MYINT im=0; im<GRT_SRC_M_NUM; ++im){
+        MYINT modr = GRT_SRC_M_ORDERS[im];  // 对应m阶数
         if(modr == 0){
             SUM[im][0] = - interg_quad_cos(quad_a[im][0],quad_b[im][0],quad_c[im][0],1+modr0,r,kmin,kmax,kodr0);   // - q0*J1*k
             SUM[im][2] =   interg_quad_cos(quad_a[im][1],quad_b[im][1],quad_c[im][1],0+modr0,r,kmin,kmax,kodr0);   //   w0*J0*k
@@ -210,12 +210,12 @@ void grt_int_Pk_sa_filon(
 
 void grt_merge_Pk(
     // F(ki,w)Jm(ki*r)ki，
-    const MYCOMPLEX sum_J[SRC_M_NUM][INTEG_NUM], 
+    const MYCOMPLEX sum_J[GRT_SRC_M_NUM][GRT_INTEG_NUM], 
     // 累积求和，Z、R、T分量 
-    MYCOMPLEX tol[SRC_M_NUM][CHANNEL_NUM])
+    MYCOMPLEX tol[GRT_SRC_M_NUM][GRT_CHANNEL_NUM])
 {   
-    for(MYINT i=0; i<SRC_M_NUM; ++i){
-        MYINT modr = SRC_M_ORDERS[i];
+    for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
+        MYINT modr = GRT_SRC_M_ORDERS[i];
         if(modr==0){
             tol[i][0] = sum_J[i][2];
             tol[i][1] = sum_J[i][0];

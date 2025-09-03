@@ -99,7 +99,7 @@ int strain_main(int argc, char **argv){
     rot2ZNE = (access(s_filepath, F_OK) == 0);
 
     // 指示特定的通道名
-    chs = (rot2ZNE)? ZNEchs : ZRTchs;
+    chs = (rot2ZNE)? GRT_ZNE_CODES : GRT_ZRT_CODES;
 
 
     // 读取一个头段变量，获得基本参数，分配数组内存

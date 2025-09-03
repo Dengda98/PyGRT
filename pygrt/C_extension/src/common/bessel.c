@@ -21,6 +21,6 @@ void grt_besselp012(MYREAL x, MYREAL *bj0, MYREAL *bj1, MYREAL *bj2){
     MYREAL j1=*bj1;
     MYREAL j2=*bj2;
     *bj0 = -j1;
-    *bj1 = j0 - RONE/x * j1;
-    *bj2 = j1 - RTWO/x * j2;
+    *bj1 = j0 - 1.0/x * j1;
+    *bj2 = j1 - 2.0/x * j2;
 }

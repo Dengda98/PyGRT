@@ -356,7 +356,7 @@ printf("\n"
 "                   <vmin_ref> will be the minimum velocity\n"
 "                   of model, but limited to %.1f. and if the \n", GRT_GREENFN_V_VMIN_REF); printf(
 "                   depth gap between source and receiver is \n"
-"                   thinner than %.1f km, PTAM will be appled\n", MIN_DEPTH_GAP_SRC_RCV); printf(
+"                   thinner than %.1f km, PTAM will be appled\n", GRT_MIN_DEPTH_GAP_SRC_RCV); printf(
 "                   automatically.\n"
 "                 + manually set POSITIVE value. \n"
 "                 + manually set NEGATIVE value, \n"
@@ -380,7 +380,7 @@ printf("\n"
 "                 <k0>:   designed to give residual k at\n"
 "                         0 frequency, default is %.1f, and \n", GRT_GREENFN_K_K0); printf(
 "                         multiply PI/hs in program, \n"
-"                         where hs = max(fabs(depsrc-deprcv), %.1f).\n", MIN_DEPTH_GAP_SRC_RCV); printf(
+"                         where hs = max(fabs(depsrc-deprcv), %.1f).\n", GRT_MIN_DEPTH_GAP_SRC_RCV); printf(
 "                 <ampk>: amplification factor, default is %.2f.\n", GRT_GREENFN_K_AMPK); printf(
 "                 <keps>: a threshold for break wavenumber \n"
 "                         integration in advance. See \n"
@@ -725,7 +725,7 @@ int greenfn_main(int argc, char **argv) {
     } 
 
     // 如果没有主动设置vmin_ref，则判断是否要自动使用PTAM
-    if( !Ctrl->V.active && fabs(Ctrl->D.deprcv - Ctrl->D.depsrc) <= MIN_DEPTH_GAP_SRC_RCV) {
+    if( !Ctrl->V.active && fabs(Ctrl->D.deprcv - Ctrl->D.depsrc) <= GRT_MIN_DEPTH_GAP_SRC_RCV) {
         Ctrl->V.vmin_ref = - fabs(Ctrl->V.vmin_ref);
     }
 
@@ -782,13 +782,13 @@ int greenfn_main(int argc, char **argv) {
     }
 
     // 建立格林函数的complex数组
-    MYCOMPLEX *(*grn)[SRC_M_NUM][CHANNEL_NUM] = (MYCOMPLEX*(*)[SRC_M_NUM][CHANNEL_NUM]) calloc(Ctrl->R.nr, sizeof(*grn));
-    MYCOMPLEX *(*grn_uiz)[SRC_M_NUM][CHANNEL_NUM] = (Ctrl->e.active)? (MYCOMPLEX*(*)[SRC_M_NUM][CHANNEL_NUM]) calloc(Ctrl->R.nr, sizeof(*grn_uiz)) : NULL;
-    MYCOMPLEX *(*grn_uir)[SRC_M_NUM][CHANNEL_NUM] = (Ctrl->e.active)? (MYCOMPLEX*(*)[SRC_M_NUM][CHANNEL_NUM]) calloc(Ctrl->R.nr, sizeof(*grn_uir)) : NULL;
+    MYCOMPLEX *(*grn)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM] = (MYCOMPLEX*(*)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM]) calloc(Ctrl->R.nr, sizeof(*grn));
+    MYCOMPLEX *(*grn_uiz)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM] = (Ctrl->e.active)? (MYCOMPLEX*(*)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM]) calloc(Ctrl->R.nr, sizeof(*grn_uiz)) : NULL;
+    MYCOMPLEX *(*grn_uir)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM] = (Ctrl->e.active)? (MYCOMPLEX*(*)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM]) calloc(Ctrl->R.nr, sizeof(*grn_uir)) : NULL;
 
     for(int ir=0; ir<Ctrl->R.nr; ++ir){
-        for(int i=0; i<SRC_M_NUM; ++i){
-            for(int c=0; c<CHANNEL_NUM; ++c){
+        for(int i=0; i<GRT_SRC_M_NUM; ++i){
+            for(int c=0; c<GRT_CHANNEL_NUM; ++c){
                 grn[ir][i][c] = (MYCOMPLEX*)calloc(Ctrl->N.nf, sizeof(MYCOMPLEX));
                 if(grn_uiz)  grn_uiz[ir][i][c] = (MYCOMPLEX*)calloc(Ctrl->N.nf, sizeof(MYCOMPLEX));
                 if(grn_uir)  grn_uir[ir][i][c] = (MYCOMPLEX*)calloc(Ctrl->N.nf, sizeof(MYCOMPLEX));
@@ -826,7 +826,7 @@ int greenfn_main(int argc, char **argv) {
         Ctrl->R.nr, Ctrl->R.s_rs, Ctrl->R.rs, travtPS,
         Ctrl->D.depsrc, Ctrl->D.deprcv, Ctrl->E.delayT0, Ctrl->E.delayV0, Ctrl->e.active,
         Ctrl->G.doEX, Ctrl->G.doVF, Ctrl->G.doHF, Ctrl->G.doDC, 
-        ZRTchs, grn, grn_uiz, grn_uir);
+        GRT_ZRT_CODES, grn, grn_uiz, grn_uir);
 
     
     // 打印走时
@@ -843,8 +843,8 @@ int greenfn_main(int argc, char **argv) {
 
     // 释放内存
     for(int ir=0; ir<Ctrl->R.nr; ++ir){
-        for(int i=0; i<SRC_M_NUM; ++i){
-            for(int c=0; c<CHANNEL_NUM; ++c){
+        for(int i=0; i<GRT_SRC_M_NUM; ++i){
+            for(int c=0; c<GRT_CHANNEL_NUM; ++c){
                 GRT_SAFE_FREE_PTR(grn[ir][i][c]);
                 if(grn_uiz) GRT_SAFE_FREE_PTR(grn_uiz[ir][i][c]);
                 if(grn_uir) GRT_SAFE_FREE_PTR(grn_uir[ir][i][c]);

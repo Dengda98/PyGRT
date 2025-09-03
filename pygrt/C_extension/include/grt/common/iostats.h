@@ -27,7 +27,7 @@
  *           记录其值主要用于参考其变化趋势。
  */
 void grt_write_stats(
-    FILE *f0, MYREAL k, const MYCOMPLEX QWV[SRC_M_NUM][QWV_NUM]);
+    FILE *f0, MYREAL k, const MYCOMPLEX QWV[GRT_SRC_M_NUM][GRT_QWV_NUM]);
 
 
 /**
@@ -55,8 +55,8 @@ MYINT grt_extract_stats(FILE *bf0, FILE *af0);
  */
 void grt_write_stats_ptam(
     FILE *f0, 
-    MYREAL Kpt[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT],
-    MYCOMPLEX Fpt[SRC_M_NUM][INTEG_NUM][PTAM_MAX_PT]);
+    MYREAL Kpt[GRT_SRC_M_NUM][GRT_INTEG_NUM][GRT_PTAM_PT_MAX],
+    MYCOMPLEX Fpt[GRT_SRC_M_NUM][GRT_INTEG_NUM][GRT_PTAM_PT_MAX]);
 
 
 /**

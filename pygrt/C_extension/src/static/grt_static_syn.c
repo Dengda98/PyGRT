@@ -46,10 +46,10 @@ typedef struct {
     } e;
 
     // 存储不同震源的震源机制相关参数的数组
-    MYREAL mchn[MECHANISM_NUM];
+    MYREAL mchn[GRT_MECHANISM_NUM];
 
     // 方向因子数组
-    MYREAL srcRadi[SRC_M_NUM][CHANNEL_NUM];
+    MYREAL srcRadi[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
 
     // 最终要计算的震源类型
     MYINT computeType;
@@ -265,17 +265,17 @@ int static_syn_main(int argc, char **argv){
     getopt_from_command(Ctrl, argc, argv);
 
     // 辐射因子
-    // double srcRadi[SRC_M_NUM][CHANNEL_NUM]={0};
+    // double srcRadi[GRT_SRC_M_NUM][GRT_CHANNEL_NUM]={0};
 
     // 从标准输入中读取静态格林函数表
-    double x0, y0, grn[SRC_M_NUM][CHANNEL_NUM]={0}, syn[CHANNEL_NUM]={0}, syn_upar[CHANNEL_NUM][CHANNEL_NUM]={0};
-    double grn_uiz[SRC_M_NUM][CHANNEL_NUM]={0}, grn_uir[SRC_M_NUM][CHANNEL_NUM]={0};
+    double x0, y0, grn[GRT_SRC_M_NUM][GRT_CHANNEL_NUM]={0}, syn[GRT_CHANNEL_NUM]={0}, syn_upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM]={0};
+    double grn_uiz[GRT_SRC_M_NUM][GRT_CHANNEL_NUM]={0}, grn_uir[GRT_SRC_M_NUM][GRT_CHANNEL_NUM]={0};
 
     // 输出分量格式，即是否需要旋转到ZNE
     bool rot2ZNE = Ctrl->N.active;
 
     // 根据参数设置，选择分量名
-    const char *chs = (rot2ZNE)? ZNEchs : ZRTchs;
+    const char *chs = (rot2ZNE)? GRT_ZNE_CODES : GRT_ZRT_CODES;
 
 
     // 建立一个指针数组，方便读取多列数据
@@ -287,9 +287,9 @@ int static_syn_main(int argc, char **argv){
         *(pt++) = &x0;
         *(pt++) = &y0;
         for(int m=0; m<3; ++m){
-            for(int k=0; k<SRC_M_NUM; ++k){
-                for(int c=0; c<CHANNEL_NUM; ++c){
-                    if(SRC_M_ORDERS[k]==0 && ZRTchs[c] == 'T')  continue;
+            for(int k=0; k<GRT_SRC_M_NUM; ++k){
+                for(int c=0; c<GRT_CHANNEL_NUM; ++c){
+                    if(GRT_SRC_M_ORDERS[k]==0 && GRT_ZRT_CODES[c] == 'T')  continue;
 
                     if(m==0){
                         *pt = &grn[k][c];
@@ -400,14 +400,14 @@ int static_syn_main(int argc, char **argv){
             fprintf(stdout, "%s", XX);
             fprintf(stdout, GRT_STRING_FMT, "Y(km)");
             char s_channel[5];
-            for(int i=0; i<CHANNEL_NUM; ++i){
+            for(int i=0; i<GRT_CHANNEL_NUM; ++i){
                 sprintf(s_channel, "%s%c", Ctrl->s_computeType, toupper(chs[i])); 
                 fprintf(stdout, GRT_STRING_FMT, s_channel);
             }
 
             if(Ctrl->e.active){
-                for(int k=0; k<CHANNEL_NUM; ++k){
-                    for(int i=0; i<CHANNEL_NUM; ++i){
+                for(int k=0; k<GRT_CHANNEL_NUM; ++k){
+                    for(int i=0; i<GRT_CHANNEL_NUM; ++i){
                         sprintf(s_channel, "%c%s%c", tolower(chs[k]), Ctrl->s_computeType, toupper(chs[i])); 
                         fprintf(stdout, GRT_STRING_FMT, s_channel);
                     }
@@ -418,8 +418,8 @@ int static_syn_main(int argc, char **argv){
             printHead = true;
         }
 
-        double (*grn3)[CHANNEL_NUM];  // 使用对应类型的格林函数
-        double tmpsyn[CHANNEL_NUM];
+        double (*grn3)[GRT_CHANNEL_NUM];  // 使用对应类型的格林函数
+        double tmpsyn[GRT_CHANNEL_NUM];
         for(int ityp=0; ityp<calcUTypes; ++ityp){
             // 求位移空间导数时，需调整比例系数
             switch (ityp){
@@ -456,14 +456,14 @@ int static_syn_main(int argc, char **argv){
             // 计算震源辐射因子
             grt_set_source_radiation(Ctrl->srcRadi, Ctrl->computeType, ityp==3, Ctrl->S.M0, upar_scale, azrad, Ctrl->mchn);
 
-            for(int i=0; i<CHANNEL_NUM; ++i){
-                for(int k=0; k<SRC_M_NUM; ++k){
+            for(int i=0; i<GRT_CHANNEL_NUM; ++i){
+                for(int k=0; k<GRT_SRC_M_NUM; ++k){
                     tmpsyn[i] += grn3[k][i] * Ctrl->srcRadi[k][i];
                 }
             }
 
             // 保存数据
-            for(int i=0; i<CHANNEL_NUM; ++i){
+            for(int i=0; i<GRT_CHANNEL_NUM; ++i){
                 if(ityp == 0){
                     syn[i] = tmpsyn[i];
                 } else {
@@ -483,12 +483,12 @@ int static_syn_main(int argc, char **argv){
 
         // 输出数据
         fprintf(stdout, GRT_REAL_FMT GRT_REAL_FMT, x0, y0);
-        for(int i=0; i<CHANNEL_NUM; ++i){
+        for(int i=0; i<GRT_CHANNEL_NUM; ++i){
             fprintf(stdout, GRT_REAL_FMT, syn[i]);
         }
         if(Ctrl->e.active){
-            for(int i=0; i<CHANNEL_NUM; ++i){
-                for(int k=0; k<CHANNEL_NUM; ++k){
+            for(int i=0; i<GRT_CHANNEL_NUM; ++i){
+                for(int k=0; k<GRT_CHANNEL_NUM; ++k){
                     fprintf(stdout, GRT_REAL_FMT, syn_upar[i][k]);
                 }
             }

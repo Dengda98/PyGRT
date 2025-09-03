@@ -21,13 +21,13 @@
 void grt_source_coef_PSV(
     MYCOMPLEX src_xa, MYCOMPLEX src_xb, MYCOMPLEX src_kaka, MYCOMPLEX src_kbkb, 
     MYREAL k,
-    MYCOMPLEX coef[SRC_M_NUM][QWV_NUM-1][2])
+    MYCOMPLEX coef[GRT_SRC_M_NUM][GRT_QWV_NUM-1][2])
 {
     // 先全部赋0 
-    for(MYINT i=0; i<SRC_M_NUM; ++i){
-        for(MYINT j=0; j<QWV_NUM-1; ++j){
+    for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
+        for(MYINT j=0; j<GRT_QWV_NUM-1; ++j){
             for(MYINT p=0; p<2; ++p){
-                coef[i][j][p] = CZERO;
+                coef[i][j][p] = 0.0;
             }
         }
     }
@@ -42,22 +42,22 @@ void grt_source_coef_PSV(
     coef[0][0][0] = tmp = src_kaka / a;         coef[0][0][1] = tmp;    
     
     // 垂直力源 (4.6.15)
-    coef[1][0][0] = tmp = -RONE;                 coef[1][0][1] = - tmp;
+    coef[1][0][0] = tmp = -1.0;                 coef[1][0][1] = - tmp;
     coef[1][1][0] = tmp = -k / b;                coef[1][1][1] = tmp;
 
     // 水平力源 (4.6.21,26), 这里可以把x1,x2方向的力转到r,theta方向
     // 推导可发现，r方向的力形成P,SV波, theta方向的力形成SH波
     // 方向性因子包含水平力方向与震源台站连线方向的夹角
     coef[2][0][0] = tmp = -k / a;              coef[2][0][1] = tmp;
-    coef[2][1][0] = tmp = -RONE;               coef[2][1][1] = - tmp;
+    coef[2][1][0] = tmp = -1.0;               coef[2][1][1] = - tmp;
 
     // 剪切位错 (4.8.34)
     // m=0
-    coef[3][0][0] = tmp = (RTWO*src_kaka - RTHREE*kk) / a;    coef[3][0][1] = tmp;
-    coef[3][1][0] = tmp = -RTHREE*k;                          coef[3][1][1] = - tmp;
+    coef[3][0][0] = tmp = (2.0*src_kaka - 3.0*kk) / a;    coef[3][0][1] = tmp;
+    coef[3][1][0] = tmp = -3.0*k;                          coef[3][1][1] = - tmp;
     // m=1
-    coef[4][0][0] = tmp = RTWO*k;                      coef[4][0][1] = - tmp;
-    coef[4][1][0] = tmp = (RTWO*kk - src_kbkb) / b;    coef[4][1][1] = tmp;
+    coef[4][0][0] = tmp = 2.0*k;                      coef[4][0][1] = - tmp;
+    coef[4][1][0] = tmp = (2.0*kk - src_kbkb) / b;    coef[4][1][1] = tmp;
 
     // m=2
     coef[5][0][0] = tmp = - kk / a;                    coef[5][0][1] = tmp;
@@ -69,12 +69,12 @@ void grt_source_coef_PSV(
 void grt_source_coef_SH(
     MYCOMPLEX src_xb, MYCOMPLEX src_kbkb, 
     MYREAL k,
-    MYCOMPLEX coef[SRC_M_NUM][2])
+    MYCOMPLEX coef[GRT_SRC_M_NUM][2])
 {
     // 先全部赋0 
-    for(MYINT i=0; i<SRC_M_NUM; ++i){
+    for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
         for(MYINT p=0; p<2; ++p){
-            coef[i][p] = CZERO;
+            coef[i][p] = 0.0;
         }
     }
 

@@ -100,10 +100,10 @@ typedef struct {
     } e;
 
     // 存储不同震源的震源机制相关参数的数组
-    MYREAL mchn[MECHANISM_NUM];
+    MYREAL mchn[GRT_MECHANISM_NUM];
 
     // 方向因子数组
-    MYREAL srcRadi[SRC_M_NUM][CHANNEL_NUM];
+    MYREAL srcRadi[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
 
     // 最终要计算的震源类型
     MYINT computeType;
@@ -640,7 +640,7 @@ int syn_main(int argc, char **argv){
     bool rot2ZNE = Ctrl->N.active;
 
     // 根据参数设置，选择分量名
-    const char *chs = (rot2ZNE)? ZNEchs : ZRTchs;
+    const char *chs = (rot2ZNE)? GRT_ZNE_CODES : GRT_ZRT_CODES;
 
     float **ptarrout=NULL, *arrout=NULL;
     float *arrsyn[3] = {NULL, NULL, NULL};
@@ -686,8 +686,8 @@ int syn_main(int argc, char **argv){
         // 重新计算方向因子
         grt_set_source_radiation(Ctrl->srcRadi, Ctrl->computeType, (ityp==3), Ctrl->S.M0, upar_scale, Ctrl->A.azrad, Ctrl->mchn);
 
-        for(int c=0; c<CHANNEL_NUM; ++c){
-            ch = ZRTchs[c];
+        for(int c=0; c<GRT_CHANNEL_NUM; ++c){
+            ch = GRT_ZRT_CODES[c];
             
             // 定义SACHEAD指针
             if(ityp==0){
@@ -699,15 +699,15 @@ int syn_main(int argc, char **argv){
             }
             arrout = *ptarrout;
 
-            for(int k=0; k<SRC_M_NUM; ++k){
+            for(int k=0; k<GRT_SRC_M_NUM; ++k){
                 coef = Ctrl->srcRadi[k][c];
                 if(coef == 0.0) continue;
 
                 char *buffer = NULL;
                 if(ityp==0 || ityp==3){
-                    GRT_SAFE_ASPRINTF(&buffer, "%s/%s%c.sac", Ctrl->G.s_grnpath, SRC_M_NAME_ABBR[k], ch);
+                    GRT_SAFE_ASPRINTF(&buffer, "%s/%s%c.sac", Ctrl->G.s_grnpath, GRT_SRC_M_NAME_ABBR[k], ch);
                 } else {
-                    GRT_SAFE_ASPRINTF(&buffer, "%s/%c%s%c.sac", Ctrl->G.s_grnpath, tolower(ZRTchs[ityp-1]), SRC_M_NAME_ABBR[k], ch);
+                    GRT_SAFE_ASPRINTF(&buffer, "%s/%c%s%c.sac", Ctrl->G.s_grnpath, tolower(GRT_ZRT_CODES[ityp-1]), GRT_SRC_M_NAME_ABBR[k], ch);
                 }
                 
                 float *arr = grt_read_SAC(command, buffer, pthd, NULL);
@@ -795,11 +795,11 @@ int syn_main(int argc, char **argv){
     }
 
     // 保存到SAC文件
-    for(int i1=0; i1<CHANNEL_NUM; ++i1){
+    for(int i1=0; i1<GRT_CHANNEL_NUM; ++i1){
         char pfx[20]="";
         save_to_sac(Ctrl, pfx, chs[i1], arrsyn[i1], hdsyn[i1]);
         if(Ctrl->e.active){
-            for(int i2=0; i2<CHANNEL_NUM; ++i2){
+            for(int i2=0; i2<GRT_CHANNEL_NUM; ++i2){
                 sprintf(pfx, "%c", tolower(chs[i1]));
                 save_to_sac(Ctrl, pfx, chs[i2], arrsyn_upar[i1][i2], hdsyn_upar[i1][i2]);
             }

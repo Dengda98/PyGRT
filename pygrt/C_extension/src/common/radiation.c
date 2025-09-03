@@ -13,8 +13,8 @@
 #include "grt/common/const.h"
 
 void grt_set_source_radiation(
-    double srcRadi[SRC_M_NUM][CHANNEL_NUM], const int computeType, const bool par_theta,
-    const double M0, const double coef, const double azrad, const double mchn[MECHANISM_NUM]
+    double srcRadi[GRT_SRC_M_NUM][GRT_CHANNEL_NUM], const int computeType, const bool par_theta,
+    const double M0, const double coef, const double azrad, const double mchn[GRT_MECHANISM_NUM]
 ){
     double mult;
     if(computeType == GRT_SYN_COMPUTE_SF){
