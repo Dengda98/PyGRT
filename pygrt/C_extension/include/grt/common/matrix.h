@@ -3,7 +3,7 @@
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2024-07-24
  * 
- * 2x2小矩阵的加、减、乘、除、求逆等操作，由于均为小型数组操作，所有函数均为内联函数               
+ * 小矩阵的加、减、乘、除、求逆等操作，由于均为小型数组操作，所有函数均为内联函数               
  */
 
 #pragma once
@@ -142,7 +142,7 @@ inline GCC_ALWAYS_INLINE void grt_cmat2x2_assign(const MYCOMPLEX M1[2][2], MYCOM
 }
 
 /** 
- * 计算nxn复矩阵的积(小矩阵)(最暴力的方式)
+ * 计算mxn复矩阵的积(小矩阵)(最暴力的方式)
  * 
  * @param[in]     m1            M1矩阵行数
  * @param[in]     n1            M1矩阵列数
@@ -172,6 +172,31 @@ inline GCC_ALWAYS_INLINE void grt_cmatmxn_mul(MYINT m1, MYINT n1, MYINT p1, cons
 }
 
 /** 
+ * 计算mxn复矩阵的转置矩阵(不共轭)
+ * 
+ * @param[in]     m1            M1矩阵行数
+ * @param[in]     n1            M1矩阵列数
+ * @param[in]     M1            M1矩阵 
+ * @param[out]    M2            M2矩阵 (M1^T)
+ */
+inline GCC_ALWAYS_INLINE void grt_cmatmxn_transpose(MYINT m1, MYINT n1, const MYCOMPLEX M1[m1][n1], MYCOMPLEX M2[n1][m1]){
+    MYINT m, n;
+    MYCOMPLEX M0[n1][m1];
+    for(m=0; m<m1; ++m){
+        for(n=0; n<n1; ++n){
+            M0[n][m] = M1[m][n];
+        }
+    }
+
+    // memcpy(M, M0, sizeof(MYCOMPLEX)*m1*p1);
+    for(m=0; m<m1; ++m){
+        for(n=0; n<n1; ++n){
+            M2[n][m] = M0[n][m];
+        }
+    }
+}
+
+/** 
  * 从M1大矩阵中划分Q子矩阵
  * 
  * @param[in]     m1           M1矩阵行数
@@ -191,6 +216,28 @@ inline GCC_ALWAYS_INLINE void grt_cmatmxn_block(MYINT m1, MYINT n1, const MYCOMP
     }
 }
 
+
+/** 
+ * 将小矩阵Q填充到M1大矩阵中
+ * 
+ * @param[in]     m1           M1矩阵行数
+ * @param[in]     n1           M1矩阵列数
+ * @param[in]     M1           M1矩阵 
+ * @param[in]     im           子矩阵起始行索引
+ * @param[in]     in           子矩阵起始列索引
+ * @param[in]     lm           子矩阵行数
+ * @param[in]     ln           子矩阵列数
+ * @param[out]    Q            子矩阵
+ */
+inline GCC_ALWAYS_INLINE void grt_cmatmxn_block_assign(MYINT m1, MYINT n1, MYCOMPLEX M[m1][n1], MYINT im, MYINT in, MYINT lm, MYINT ln, const MYCOMPLEX Q[lm][ln]){
+    for(MYINT m=0; m<lm; ++m){
+        for(MYINT n=0; n<ln; ++n){
+            M[im+m][in+n] = Q[m][n];
+        }
+    }
+}
+
+
 /**
  * 打印矩阵 
  * 
@@ -205,5 +252,26 @@ inline GCC_ALWAYS_INLINE void grt_cmatmxn_print(MYINT m1, MYINT n1, const MYCOMP
             fprintf(stderr, " %15.5e + J%-15.5e ", creal(M1[i][j]), cimag(M1[i][j]));
         }
         fprintf(stderr, "\n");
+    }
+}
+
+
+/**
+ * 计算mxn复矩阵和nx1的复向量的积
+ * 
+ * @param[in]      M1     矩阵1
+ * @param[in]      M2     向量
+ * @param[out]     M      积矩阵, M1 * M2
+ */
+inline GCC_ALWAYS_INLINE void grt_cmatmx1_mul(MYINT m1, MYINT n1, const MYCOMPLEX M1[m1][n1], const MYCOMPLEX M2[n1], MYCOMPLEX M[n1]){
+    MYCOMPLEX M0[n1];
+    for(MYINT i=0; i<m1; ++i){
+        M0[i] = 0.0;
+        for(MYINT j=0; j<n1; ++j){
+            M0[i] += M1[i][j] * M2[j];
+        }
+    }
+    for(MYINT i=0; i<n1; ++i){
+        M[i] = M0[i];
     }
 }

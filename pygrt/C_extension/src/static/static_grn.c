@@ -76,7 +76,7 @@ void grt_integ_static_grn(
 
     const char *statsstr // 积分结果输出
 ){
-    MYREAL rmax=rs[grt_findMinMax_MYREAL(rs, nr, true)];   // 最大震中距
+    MYREAL rmax=rs[grt_findMax_MYREAL(rs, nr)];   // 最大震中距
 
     const MYREAL hs = GRT_MAX(fabs(mod1d->depsrc - mod1d->deprcv), GRT_MIN_DEPTH_GAP_SRC_RCV); // hs=max(震源和台站深度差,1.0)
 

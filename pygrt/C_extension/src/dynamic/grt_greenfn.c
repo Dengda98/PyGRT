@@ -733,7 +733,7 @@ int greenfn_main(int argc, char **argv) {
     Ctrl->N.winT = Ctrl->N.nt*Ctrl->N.dt;
 
     // 最大震中距
-    MYREAL rmax = Ctrl->R.rs[grt_findMinMax_MYREAL(Ctrl->R.rs, Ctrl->R.nr, true)];   
+    MYREAL rmax = Ctrl->R.rs[grt_findMax_MYREAL(Ctrl->R.rs, Ctrl->R.nr)];   
 
     // 时窗最大截止时刻
     MYREAL tmax = Ctrl->E.delayT0 + Ctrl->N.winT;
