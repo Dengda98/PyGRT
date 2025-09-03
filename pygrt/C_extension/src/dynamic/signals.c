@@ -22,6 +22,7 @@
 #include "grt/dynamic/signals.h"
 #include "grt/common/const.h"
 #include "grt/common/colorstr.h"
+#include "grt/common/util.h"
 
 
 bool grt_check_tftype_tfparams(const char tftype, const char *tfparams){
@@ -323,17 +324,13 @@ float * grt_get_custom_wave(int *Nt, const char *tfparams){
     }
 
     // 逐行读入
-    char line[1024];
-    char first_char = '\0';
+    size_t len;
+    char *line = NULL;
+
     int nt = 0;
-    while(fgets(line, sizeof(line), fp)) {
-        first_char = '\0';
-        // 读入第一个非空字符，判断是否是注释行
-        if(sscanf(line, " %c", &first_char) == 1){
-            if(first_char == '#')  continue;
-        } else {
-            continue;  // 空行，跳过
-        }
+    while(grt_getline(&line, &len, fp) != -1) {
+        // 注释行
+        if(grt_is_comment_or_empty(line))  continue;
 
         tfarr = (float*)realloc(tfarr, sizeof(float)*(nt+1));
         if(sscanf(line, " %f", &tfarr[nt]) < 1){
@@ -347,6 +344,9 @@ float * grt_get_custom_wave(int *Nt, const char *tfparams){
         fprintf(stderr, BOLD_RED "custom time function file read error. Empty?\n" DEFAULT_RESTORE);
         return NULL;
     }
+
+    fclose(fp);
+    GRT_SAFE_FREE_PTR(line);
 
     *Nt = nt;
     return tfarr;

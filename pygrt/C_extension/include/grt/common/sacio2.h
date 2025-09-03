@@ -14,9 +14,9 @@
 /**
  * 读取SAC头段变量
  * 
- * @param      command        (in)当前程序命令名称
- * @param      name           (in)SAC文件路径
- * @param      hd             (out)SAC头段变量结构体
+ * @param[in]       command        当前程序命令名称
+ * @param[in]       name           SAC文件路径
+ * @param[out]      hd             SAC头段变量结构体
  */
 void grt_read_SAC_HEAD(const char *command, const char *name, SACHEAD *hd);
 
@@ -24,10 +24,10 @@ void grt_read_SAC_HEAD(const char *command, const char *name, SACHEAD *hd);
 /**
  * 读取SAC文件
  * 
- * @param      command        (in)当前程序命令名称
- * @param      name           (in)SAC文件路径
- * @param      hd             (out)SAC头段变量结构体
- * @param      arrout         (inout)预分配内存，不需要则设为NULL
+ * @param[in]       command       当前程序命令名称
+ * @param[in]       name          SAC文件路径
+ * @param[out]      hd            SAC头段变量结构体
+ * @param[in,out]   arrout        预分配内存，不需要则设为NULL
  * 
  * @return     浮点数指针
  */

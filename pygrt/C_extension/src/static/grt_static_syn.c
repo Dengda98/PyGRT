@@ -11,6 +11,7 @@
 #include "grt/common/const.h"
 #include "grt/common/radiation.h"
 #include "grt/common/coord.h"
+#include "grt/common/util.h"
 
 #include "grt.h"
 
@@ -326,9 +327,12 @@ int static_syn_main(int argc, char **argv){
     // 震中距
     double dist = 0.0;
 
-    char line[1024];
+    // 逐行读入
+    size_t len;
+    char *line = NULL;
+
     int iline = 0;
-    while(fgets(line, sizeof(line), stdin)){
+    while(grt_getline(&line, &len, stdin) != -1){
         iline++;
         if(iline == 1){
             // 读取震源物性参数
@@ -372,7 +376,8 @@ int static_syn_main(int argc, char **argv){
                 GRTRaiseError("[%s] Error! The input has no spatial derivatives. \n", command);
             }
         }
-        if(line[0] == '#')  continue;
+        // 注释行
+        if(grt_is_comment_or_empty(line))  continue;
 
         // 读取该行数据
         char *copyline = strdup(line);
@@ -396,7 +401,7 @@ int static_syn_main(int argc, char **argv){
             fprintf(stdout, "# "GRT_REAL_FMT" "GRT_REAL_FMT" "GRT_REAL_FMT"\n", rcv_va, rcv_vb, rcv_rho);
             
             char XX[20];
-            sprintf(XX, GRT_STRING_FMT, "X(km)"); XX[0]='#';
+            sprintf(XX, GRT_STRING_FMT, "X(km)"); XX[0]=GRT_COMMENT_HEAD;
             fprintf(stdout, "%s", XX);
             fprintf(stdout, GRT_STRING_FMT, "Y(km)");
             char s_channel[5];
@@ -503,6 +508,7 @@ int static_syn_main(int argc, char **argv){
         GRTRaiseError("[%s] Error! Empty input. \n", command);
     }
 
+    GRT_SAFE_FREE_PTR(line);
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;
 }

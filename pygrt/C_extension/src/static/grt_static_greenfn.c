@@ -504,7 +504,7 @@ int static_greenfn_main(int argc, char **argv){
 
     // 输出标题
     char XX[20];
-    sprintf(XX, GRT_STRING_FMT, "X(km)"); XX[0]='#';
+    sprintf(XX, GRT_STRING_FMT, "X(km)"); XX[0]=GRT_COMMENT_HEAD;
     fprintf(stdout, "%s", XX);
     fprintf(stdout, GRT_STRING_FMT, "Y(km)");
     print_grn_title("");
