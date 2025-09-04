@@ -631,8 +631,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     int i1, i2, i3, i4;
                     i1 = i2 = i3 = i4 = 0;
                     if(0 == sscanf(optarg, "%d/%d/%d/%d", &i1, &i2, &i3, &i4)){
-                        fprintf(stderr, "[%s] " BOLD_RED "Error in -G.\n" DEFAULT_RESTORE, command);
-                        exit(EXIT_FAILURE);
+                        GRTBadOptionError(command, G, "");
                     };
                     Ctrl->G.doEX = (i1!=0);
                     Ctrl->G.doVF  = (i2!=0);

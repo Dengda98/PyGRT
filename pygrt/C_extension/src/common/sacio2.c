@@ -12,14 +12,14 @@
 
 #include "grt/common/sacio2.h"
 #include "grt/common/sacio.h"
-#include "grt/common/colorstr.h"
+
+#include "grt/common/checkerror.h"
 
 
 void grt_read_SAC_HEAD(const char *command, const char *name, SACHEAD *hd){
     int lswap = read_sac_head(name, hd);
     if(lswap == -1){
-        fprintf(stderr, "[%s] " BOLD_RED "read %s head failed.\n" DEFAULT_RESTORE, command, name);
-        exit(EXIT_FAILURE);
+        GRTRaiseError("[%s] read %s head failed.\n", command, name);
     }
 }
 
@@ -27,8 +27,7 @@ void grt_read_SAC_HEAD(const char *command, const char *name, SACHEAD *hd){
 float * grt_read_SAC(const char *command, const char *name, SACHEAD *hd, float *arrout){
     float *arrin=NULL;
     if((arrin = read_sac(name, hd)) == NULL){
-        fprintf(stderr, "[%s] " BOLD_RED "read %s failed.\n" DEFAULT_RESTORE, command, name);
-        exit(EXIT_FAILURE);
+        GRTRaiseError("[%s] read %s failed.\n", command, name);
     }
 
     if(arrout!=NULL){
