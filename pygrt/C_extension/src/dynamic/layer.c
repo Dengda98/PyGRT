@@ -20,8 +20,8 @@
 #include "grt/common/model.h"
 #include "grt/common/prtdbg.h"
 #include "grt/common/matrix.h"
-#include "grt/common/colorstr.h"
 
+#include "grt/common/checkerror.h"
 
 void grt_calc_R_tilt_PSV(MYCOMPLEX xa0, MYCOMPLEX xb0, MYCOMPLEX kbkb0, MYREAL k, MYCOMPLEX R_tilt[2][2], MYINT *stats)
 {
@@ -214,8 +214,7 @@ void grt_calc_RT_ls_PSV(
     bool isfluidUp = (mu1 == 0.0);  // 上层是否为液体
     MYINT sgn = 1;
     if(isfluidUp && mu2 == 0.0){
-        fprintf(stderr, BOLD_RED "Error: fluid-fluid interface is not allowed in calc_RT_ls_2x2\n" DEFAULT_RESTORE);
-        exit(EXIT_FAILURE);
+        GRTRaiseError("Error: fluid-fluid interface is not allowed in function %s\n", __func__);
     }
 
     // 使用指针
@@ -299,8 +298,7 @@ void grt_calc_RT_ls_SH(
     // 讨论液-固 or 固-液
     bool isfluidUp = (mu1 == 0.0);  // 上层是否为液体
     if(isfluidUp && mu2 == 0.0){
-        fprintf(stderr, BOLD_RED "Error: fluid-fluid interface is not allowed in calc_RT_ls_2x2\n" DEFAULT_RESTORE);
-        exit(EXIT_FAILURE);
+        GRTRaiseError("Error: fluid-fluid interface is not allowed in function %s\n", __func__);
     }
 
     // 使用指针

@@ -79,7 +79,7 @@ int stress_main(int argc, char **argv){
     // 保存文件前缀 
     Ctrl->s_prefix  = (char*)malloc(sizeof(char)*(strlen(Ctrl->s_dirpath)+1));
     if(2 != sscanf(Ctrl->s_dirpath, "%[^/]/%s", Ctrl->s_synpath, Ctrl->s_prefix)){
-        GRTRaiseError("[%s] " BOLD_RED "Error format in \"%s\".\n" DEFAULT_RESTORE, command, Ctrl->s_dirpath);
+        GRTRaiseError("[%s] Error format in \"%s\".\n", command, Ctrl->s_dirpath);
     }
 
     // 检查是否存在该目录
@@ -119,7 +119,7 @@ int stress_main(int argc, char **argv){
     float Qainv=hd.user4;
     float Qbinv=hd.user5;
     if(va <= 0.0 || vb < 0.0 || rho <= 0.0){
-        fprintf(stderr, "[%s] " BOLD_RED "Error! Bad rcv_va, rcv_vb or rcv_rho in \"%s\" header.\n" DEFAULT_RESTORE, command, s_filepath);
+        fprintf(stderr, "[%s] Error! Bad rcv_va, rcv_vb or rcv_rho in \"%s\" header.\n", command, s_filepath);
         exit(EXIT_FAILURE);
     }
     // 申请内存

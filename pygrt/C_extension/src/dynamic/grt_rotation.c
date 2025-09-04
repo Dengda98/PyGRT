@@ -78,7 +78,7 @@ int rotation_main(int argc, char **argv){
     // 保存文件前缀 
     Ctrl->s_prefix  = (char*)malloc(sizeof(char)*(strlen(Ctrl->s_dirpath)+1));
     if(2 != sscanf(Ctrl->s_dirpath, "%[^/]/%s", Ctrl->s_synpath, Ctrl->s_prefix)){
-        GRTRaiseError("[%s] " BOLD_RED "Error format in \"%s\".\n" DEFAULT_RESTORE, command, Ctrl->s_dirpath);
+        GRTRaiseError("[%s] Error format in \"%s\".\n", command, Ctrl->s_dirpath);
     }
 
     // 检查是否存在该目录

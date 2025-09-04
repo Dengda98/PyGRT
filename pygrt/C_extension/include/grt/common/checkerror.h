@@ -18,8 +18,13 @@
 
 // GRT自定义报错信息
 #define GRTRaiseError(ErrorMessage, ...) ({\
-    fprintf(stderr, BOLD_RED ErrorMessage DEFAULT_RESTORE, ##__VA_ARGS__);\
+    fprintf(stderr, BOLD_RED ErrorMessage "\n" DEFAULT_RESTORE, ##__VA_ARGS__);\
     exit(EXIT_FAILURE);\
+})
+
+// GRT自定义警告信息，不结束程序
+#define GRTRaiseWarning(WarnMessage, ...) ({\
+    fprintf(stderr, BOLD_YELLOW WarnMessage "\n" DEFAULT_RESTORE, ##__VA_ARGS__);\
 })
 
 // GRT报错：选项设置不符要求

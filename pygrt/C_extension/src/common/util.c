@@ -19,6 +19,8 @@
 #include "grt/common/myfftw.h"
 #include "grt/travt/travt.h"
 
+#include "grt/common/checkerror.h"
+
 char ** grt_string_split(const char *string, const char *delim, int *size)
 {
     char *str_copy = strdup(string);  // 创建字符串副本，以免修改原始字符串
@@ -388,10 +390,10 @@ void grt_GF_freq2time_write_to_file(
 
     // 输出警告：当震源位于液体层中时，仅允许计算爆炸源对应的格林函数
     if(mod1d->Vb[mod1d->isrc]==0.0){
-        fprintf(stderr, "[%s] " BOLD_YELLOW 
-            "The source is located in the liquid layer, "
+        GRTRaiseWarning(
+            "[%s] The source is located in the liquid layer, "
             "therefore only the Green's Funtions for the Explosion source will be computed.\n" 
-            DEFAULT_RESTORE, command);
+            , command);
     }
 
 }
