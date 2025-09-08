@@ -21,13 +21,13 @@
  * 
  * @param[in]     xa0            表层的P波归一化垂直波数 \f$ \sqrt{1 - (k_a/k)^2} \f$
  * @param[in]     xb0            表层的S波归一化垂直波数 \f$ \sqrt{1 - (k_b/k)^2} \f$
- * @param[in]     kbkb0          表层的S波水平波数的平方 \f$ k_b^2=(\frac{\omega}{V_b})^2 \f$
+ * @param[in]     cbcb0          相速度与表层的S波速度比值的平方 \f$ c_b^2=(\frac{c}{V_b})^2 \f$
  * @param[in]     k              波数
  * @param[out]    R_tilt         P-SV系数矩阵，SH系数为1
  * @param[out]    stats          状态代码，是否有除零错误，非0为异常值
  * 
  */
-void grt_calc_R_tilt_PSV(MYCOMPLEX xa0, MYCOMPLEX xb0, MYCOMPLEX kbkb0, MYREAL k, MYCOMPLEX R_tilt[2][2], MYINT *stats);
+void grt_calc_R_tilt_PSV(MYCOMPLEX xa0, MYCOMPLEX xb0, MYCOMPLEX cbcb0, MYREAL k, MYCOMPLEX R_tilt[2][2], MYINT *stats);
 
 
 /**
@@ -105,12 +105,12 @@ void grt_calc_uiz_R_EV_SH(
  * @param[in]      Rho1          上层的密度
  * @param[in]      xa1           上层的P波归一化垂直波数 \f$ \sqrt{1 - (k_a/k)^2} \f$
  * @param[in]      xb1           上层的S波归一化垂直波数 \f$ \sqrt{1 - (k_b/k)^2} \f$
- * @param[in]      kbkb1         上层的S波水平波数的平方 \f$ k_b^2=(\frac{\omega}{V_b})^2 \f$
+ * @param[in]      cbcb1         相速度与上层的S波速度比值的平方 \f$ c_b^2=(\frac{c}{V_b})^2 \f$
  * @param[in]      mu1           上层的剪切模量
  * @param[in]      Rho2          下层的密度
  * @param[in]      xa2           下层的P波归一化垂直波数 \f$ \sqrt{1 - (k_a/k)^2} \f$
  * @param[in]      xb2           下层的S波归一化垂直波数 \f$ \sqrt{1 - (k_b/k)^2} \f$
- * @param[in]      kbkb2         下层的S波水平波数的平方 \f$ k_b^2=(\frac{\omega}{V_b})^2 \f$
+ * @param[in]      cbcb2         相速度与下层的S波速度比值的平方 \f$ c_b^2=(\frac{c}{V_b})^2 \f$
  * @param[in]      mu2           下层的剪切模量
  * @param[in]      thk           上层层厚
  * @param[in]      omega         角频率
@@ -123,8 +123,8 @@ void grt_calc_uiz_R_EV_SH(
  * 
  */
 void grt_calc_RT_PSV(
-    MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, 
-    MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, 
+    MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX cbcb1, MYCOMPLEX mu1, 
+    MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX cbcb2, MYCOMPLEX mu2, 
     MYREAL thk, // 使用上层的厚度
     MYCOMPLEX omega, MYREAL k, 
     MYCOMPLEX RD[2][2], MYCOMPLEX RU[2][2],
@@ -173,8 +173,8 @@ void grt_calc_RT_ll_SH(
 
 /** 液-固 界面，函数参数见 calc_RT_PSV 函数 */
 void grt_calc_RT_ls_PSV(
-    MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, 
-    MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, 
+    MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX cbcb1, MYCOMPLEX mu1, 
+    MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX cbcb2, MYCOMPLEX mu2, 
     MYREAL thk, // 使用上层的厚度
     MYCOMPLEX omega, MYREAL k, 
     MYCOMPLEX RD[2][2], MYCOMPLEX RU[2][2], 
@@ -190,8 +190,8 @@ void grt_calc_RT_ls_SH(
 
 /** 固-固 界面，函数参数见 calc_RT_PSV 函数 */
 void grt_calc_RT_ss_PSV(
-    MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, 
-    MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, 
+    MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX cbcb1, MYCOMPLEX mu1, 
+    MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX cbcb2, MYCOMPLEX mu2, 
     MYREAL thk, // 使用上层的厚度
     MYCOMPLEX omega, MYREAL k, 
     MYCOMPLEX RD[2][2], MYCOMPLEX RU[2][2],

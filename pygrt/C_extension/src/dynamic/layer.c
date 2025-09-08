@@ -23,25 +23,24 @@
 
 #include "grt/common/checkerror.h"
 
-void grt_calc_R_tilt_PSV(MYCOMPLEX xa0, MYCOMPLEX xb0, MYCOMPLEX kbkb0, MYREAL k, MYCOMPLEX R_tilt[2][2], MYINT *stats)
+void grt_calc_R_tilt_PSV(MYCOMPLEX xa0, MYCOMPLEX xb0, MYCOMPLEX cbcb0, MYREAL k, MYCOMPLEX R_tilt[2][2], MYINT *stats)
 {
-    if(kbkb0 != 0.0){
+    if(cbcb0 != 0.0){
         // 固体表面
         // 公式(5.3.10-14)
         MYCOMPLEX Delta = 0.0;
-        MYREAL kk = k*k; 
-        MYCOMPLEX kbkb_k2inv = kbkb0/kk;
-        MYCOMPLEX kbkb_k4inv = 0.25*kbkb_k2inv*kbkb_k2inv;
+        // MYREAL kk = k*k; 
+        MYCOMPLEX cbcb02 = 0.25*cbcb0*cbcb0;
 
         // 对公式(5.3.10-14)进行重新整理，对浮点数友好一些
-        Delta = -1.0 + xa0*xb0 + kbkb_k2inv - kbkb_k4inv;
+        Delta = -1.0 + xa0*xb0 + cbcb0 - cbcb02;
         if(Delta == 0.0){
             *stats = GRT_INVERSE_FAILURE;
             return;
         }
-        R_tilt[0][0] = (1.0 + xa0*xb0 - kbkb_k2inv + kbkb_k4inv) / Delta;
-        R_tilt[0][1] = 2.0 * xb0 * (1.0 - 0.5*kbkb_k2inv) / Delta;
-        R_tilt[1][0] = 2.0 * xa0 * (1.0 - 0.5*kbkb_k2inv) / Delta;
+        R_tilt[0][0] = (1.0 + xa0*xb0 - cbcb0 + cbcb02) / Delta;
+        R_tilt[0][1] = 2.0 * xb0 * (1.0 - 0.5*cbcb0) / Delta;
+        R_tilt[1][0] = 2.0 * xa0 * (1.0 - 0.5*cbcb0) / Delta;
         R_tilt[1][1] = R_tilt[0][0];
     }
     else {
@@ -190,8 +189,8 @@ void grt_calc_RT_ll_SH(MYCOMPLEX *RDL, MYCOMPLEX *RUL, MYCOMPLEX *TDL, MYCOMPLEX
 
 
 void grt_calc_RT_ls_PSV(
-    MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, 
-    MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, 
+    MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX cbcb1, MYCOMPLEX mu1, 
+    MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX cbcb2, MYCOMPLEX mu2, 
     MYREAL thk, // 使用上层的厚度
     MYCOMPLEX omega, MYREAL k, 
     MYCOMPLEX RD[2][2], MYCOMPLEX RU[2][2], 
@@ -229,7 +228,7 @@ void grt_calc_RT_ls_PSV(
         GRT_SWAP(MYREAL, Rho1, Rho2);
         GRT_SWAP(MYCOMPLEX, xa1, xa2);
         GRT_SWAP(MYCOMPLEX, xb1, xb2);
-        GRT_SWAP(MYCOMPLEX, kbkb1, kbkb2);
+        GRT_SWAP(MYCOMPLEX, cbcb1, cbcb2);
         GRT_SWAP(MYCOMPLEX, mu1, mu2);
         sgn = -1;
     }
@@ -238,7 +237,7 @@ void grt_calc_RT_ls_PSV(
     // 定义一些中间变量来简化运算和书写
     MYREAL k2 = k*k;
     MYCOMPLEX lamka1k = Rho1*omega*omega/k2;
-    MYCOMPLEX kb2k = kbkb2/k2;
+    MYCOMPLEX kb2k = cbcb2;
     MYCOMPLEX Og2k = 1.0 - 0.5*kb2k;
     MYCOMPLEX Og2k2 = Og2k*Og2k;
     MYCOMPLEX A = 2.0*Og2k2*xa1*mu2 + 0.5*lamka1k*kb2k*xa2 - 2.0*mu2*xa1*xa2*xb2;
@@ -325,8 +324,8 @@ void grt_calc_RT_ls_SH(
 
 
 void grt_calc_RT_ss_PSV(
-    MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, 
-    MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, 
+    MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX cbcb1, MYCOMPLEX mu1, 
+    MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX cbcb2, MYCOMPLEX mu2, 
     MYREAL thk, // 使用上层的厚度
     MYCOMPLEX omega, MYREAL k, 
     MYCOMPLEX RD[2][2], MYCOMPLEX RU[2][2],
@@ -345,12 +344,12 @@ void grt_calc_RT_ss_PSV(
     
 
     // 定义一些中间变量来简化运算和书写
-    MYREAL kk = k*k;
+    // MYREAL kk = k*k;
     MYCOMPLEX dmu = mu1/mu2 - 1.0; // mu1 - mu2; 分子分母同除mu2
     MYCOMPLEX dmu2 = dmu*dmu;
 
-    MYCOMPLEX mu1kb1_k2 = mu1/mu2*kbkb1/kk;// mu1*kb1_k2;
-    MYCOMPLEX mu2kb2_k2 = kbkb2/kk; // mu2*kb2_k2;
+    MYCOMPLEX mu1cbcb1 = mu1/mu2*cbcb1;// mu1*kb1_k2;
+    MYCOMPLEX mu2cbcb2 = cbcb2; // mu2*kb2_k2;
 
     MYREAL rho12 = Rho1 / Rho2;
     MYREAL rho21 = Rho2 / Rho1;
@@ -362,8 +361,8 @@ void grt_calc_RT_ss_PSV(
     // 
     // 以下对公式重新整理，提出k的高阶项，以避免上述问题
     MYCOMPLEX Delta;
-    Delta =   dmu2*(1.0-xa1*xb1)*(1.0-xa2*xb2) + mu1kb1_k2*dmu*(rho21*(1.0-xa1*xb1) - (1.0-xa2*xb2)) 
-            + 0.25*mu1kb1_k2*mu2kb2_k2*(rho12*(1.0-xa2*xb2) + rho21*(1.0-xa1*xb1) - 2.0 - (xa1*xb2+xa2*xb1));
+    Delta =   dmu2*(1.0-xa1*xb1)*(1.0-xa2*xb2) + mu1cbcb1*dmu*(rho21*(1.0-xa1*xb1) - (1.0-xa2*xb2)) 
+            + 0.25*mu1cbcb1*mu2cbcb2*(rho12*(1.0-xa2*xb2) + rho21*(1.0-xa1*xb1) - 2.0 - (xa1*xb2+xa2*xb1));
 
     if( Delta == 0.0 ){
         // printf("# zero Delta_inv=%e+%eJ\n", creal(Delta_inv), cimag(Delta_inv));
@@ -374,37 +373,37 @@ void grt_calc_RT_ss_PSV(
     // REFELCTION
     //------------------ RD -----------------------------------
     // rpp+
-    RD[0][0] = ( - dmu2*(1.0+xa1*xb1)*(1.0-xa2*xb2) - mu1kb1_k2*dmu*(rho21*(1.0+xa1*xb1) - (1.0-xa2*xb2))
-                    - 0.25*mu1kb1_k2*mu2kb2_k2*(rho12*(1.0-xa2*xb2) + rho21*(1.0+xa1*xb1) - 2.0 + (xa1*xb2-xa2*xb1))) / Delta * ex2a;
+    RD[0][0] = ( - dmu2*(1.0+xa1*xb1)*(1.0-xa2*xb2) - mu1cbcb1*dmu*(rho21*(1.0+xa1*xb1) - (1.0-xa2*xb2))
+                    - 0.25*mu1cbcb1*mu2cbcb2*(rho12*(1.0-xa2*xb2) + rho21*(1.0+xa1*xb1) - 2.0 + (xa1*xb2-xa2*xb1))) / Delta * ex2a;
     // rsp+
-    RD[0][1] = ( - dmu2*(1.0-xa2*xb2) + 0.5*mu1kb1_k2*dmu*((1.0-xa2*xb2) - 2.0*rho21) 
-                    + 0.25*mu1kb1_k2*mu2kb2_k2*(1.0-rho21)) / Delta * (-2.0*xb1) * exab;
+    RD[0][1] = ( - dmu2*(1.0-xa2*xb2) + 0.5*mu1cbcb1*dmu*((1.0-xa2*xb2) - 2.0*rho21) 
+                    + 0.25*mu1cbcb1*mu2cbcb2*(1.0-rho21)) / Delta * (-2.0*xb1) * exab;
     // rps+
     RD[1][0] = RD[0][1]*(xa1/xb1);
     // rss+
-    RD[1][1] = ( - dmu2*(1.0+xa1*xb1)*(1.0-xa2*xb2) - mu1kb1_k2*dmu*(rho21*(1.0+xa1*xb1) - (1.0-xa2*xb2))
-                    - 0.25*mu1kb1_k2*mu2kb2_k2*(rho12*(1.0-xa2*xb2) + rho21*(1.0+xa1*xb1) - 2.0 - (xa1*xb2-xa2*xb1))) / Delta * ex2b;
+    RD[1][1] = ( - dmu2*(1.0+xa1*xb1)*(1.0-xa2*xb2) - mu1cbcb1*dmu*(rho21*(1.0+xa1*xb1) - (1.0-xa2*xb2))
+                    - 0.25*mu1cbcb1*mu2cbcb2*(rho12*(1.0-xa2*xb2) + rho21*(1.0+xa1*xb1) - 2.0 - (xa1*xb2-xa2*xb1))) / Delta * ex2b;
     //------------------ RU -----------------------------------
     // rpp-
-    RU[0][0] = ( - dmu2*(1.0-xa1*xb1)*(1.0+xa2*xb2) - mu1kb1_k2*dmu*(rho21*(1.0-xa1*xb1) - (1.0+xa2*xb2))
-                    - 0.25*mu1kb1_k2*mu2kb2_k2*(rho12*(1.0+xa2*xb2) + rho21*(1.0-xa1*xb1) - 2.0 - (xa1*xb2-xa2*xb1))) / Delta;
+    RU[0][0] = ( - dmu2*(1.0-xa1*xb1)*(1.0+xa2*xb2) - mu1cbcb1*dmu*(rho21*(1.0-xa1*xb1) - (1.0+xa2*xb2))
+                    - 0.25*mu1cbcb1*mu2cbcb2*(rho12*(1.0+xa2*xb2) + rho21*(1.0-xa1*xb1) - 2.0 - (xa1*xb2-xa2*xb1))) / Delta;
     // rsp-
-    RU[0][1] = ( - dmu2*(1.0-xa1*xb1) - 0.5*mu1kb1_k2*dmu*(rho21*(1.0-xa1*xb1) - 2.0)
-                    + 0.25*mu1kb1_k2*mu2kb2_k2*(1.0-rho12)) / Delta * (2.0*xb2);
+    RU[0][1] = ( - dmu2*(1.0-xa1*xb1) - 0.5*mu1cbcb1*dmu*(rho21*(1.0-xa1*xb1) - 2.0)
+                    + 0.25*mu1cbcb1*mu2cbcb2*(1.0-rho12)) / Delta * (2.0*xb2);
     // rps-
     RU[1][0] = RU[0][1]*(xa2/xb2);
     // rss-
-    RU[1][1] = ( - dmu2*(1.0-xa1*xb1)*(1.0+xa2*xb2) - mu1kb1_k2*dmu*(rho21*(1.0-xa1*xb1) - (1.0+xa2*xb2))
-                    - 0.25*mu1kb1_k2*mu2kb2_k2*(rho12*(1.0+xa2*xb2) + rho21*(1.0-xa1*xb1) - 2.0 + (xa1*xb2-xa2*xb1))) / Delta;
+    RU[1][1] = ( - dmu2*(1.0-xa1*xb1)*(1.0+xa2*xb2) - mu1cbcb1*dmu*(rho21*(1.0-xa1*xb1) - (1.0+xa2*xb2))
+                    - 0.25*mu1cbcb1*mu2cbcb2*(rho12*(1.0+xa2*xb2) + rho21*(1.0-xa1*xb1) - 2.0 + (xa1*xb2-xa2*xb1))) / Delta;
 
     // REFRACTION
-    tmp = mu1kb1_k2*xa1*(dmu*(xb2-xb1) - 0.5*mu1kb1_k2*(rho21*xb1+xb2)) / Delta * exa;
+    tmp = mu1cbcb1*xa1*(dmu*(xb2-xb1) - 0.5*mu1cbcb1*(rho21*xb1+xb2)) / Delta * exa;
     TD[0][0] = tmp;     TU[0][0] = (rho21*xa2/xa1) * tmp;
-    tmp = mu1kb1_k2*xb1*(dmu*(1.0-xa1*xb2) - 0.5*mu1kb1_k2*(1.0-rho21)) / Delta * exb;
+    tmp = mu1cbcb1*xb1*(dmu*(1.0-xa1*xb2) - 0.5*mu1cbcb1*(1.0-rho21)) / Delta * exb;
     TD[0][1] = tmp;     TU[1][0] = (rho21*xa2/xb1) * tmp;
-    tmp = mu1kb1_k2*xa1*(dmu*(1.0-xa2*xb1) - 0.5*mu1kb1_k2*(1.0-rho21)) / Delta * exa;
+    tmp = mu1cbcb1*xa1*(dmu*(1.0-xa2*xb1) - 0.5*mu1cbcb1*(1.0-rho21)) / Delta * exa;
     TD[1][0] = tmp;     TU[0][1] = (rho21*xb2/xa1) * tmp;
-    tmp = mu1kb1_k2*xb1*(dmu*(xa2-xa1) - 0.5*mu1kb1_k2*(rho21*xa1+xa2)) / Delta * exb;
+    tmp = mu1cbcb1*xb1*(dmu*(xa2-xa1) - 0.5*mu1cbcb1*(rho21*xa1+xa2)) / Delta * exb;
     TD[1][1] = tmp;     TU[1][1] = (rho21*xb2/xb1) * tmp;
 }
 
@@ -436,8 +435,8 @@ void grt_calc_RT_ss_SH(
 
 
 void grt_calc_RT_PSV(
-    MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, 
-    MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, 
+    MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX cbcb1, MYCOMPLEX mu1, 
+    MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX cbcb2, MYCOMPLEX mu2, 
     MYREAL thk, // 使用上层的厚度
     MYCOMPLEX omega, MYREAL k, 
     MYCOMPLEX RD[2][2], MYCOMPLEX RU[2][2],
@@ -446,8 +445,8 @@ void grt_calc_RT_PSV(
     // 根据界面两侧的具体情况选择函数
     if(mu1 != 0.0 && mu2 != 0.0){
         grt_calc_RT_ss_PSV(
-            Rho1, xa1, xb1, kbkb1, mu1, 
-            Rho2, xa2, xb2, kbkb2, mu2, 
+            Rho1, xa1, xb1, cbcb1, mu1, 
+            Rho2, xa2, xb2, cbcb2, mu2, 
             thk, omega, k, 
             RD, RU, TD, TU, stats);
     }
@@ -460,8 +459,8 @@ void grt_calc_RT_PSV(
     }
     else{
         grt_calc_RT_ls_PSV(
-            Rho1, xa1, xb1, kbkb1, mu1, 
-            Rho2, xa2, xb2, kbkb2, mu2, 
+            Rho1, xa1, xb1, cbcb1, mu1, 
+            Rho2, xa2, xb2, cbcb2, mu2, 
             thk, omega, k, 
             RD, RU, TD, TU, stats);
     }

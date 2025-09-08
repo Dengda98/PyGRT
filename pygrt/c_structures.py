@@ -100,6 +100,6 @@ class c_GRT_MODEL1D(Structure):
         ('mu', PCPLX),
         ('lambda', PCPLX),
         ('delta', PCPLX),
-        ('kaka', PCPLX),
-        ('kbkb', PCPLX),
+        ('atna', PCPLX),
+        ('atnb', PCPLX),
     ]

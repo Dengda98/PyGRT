@@ -94,9 +94,9 @@ void grt_static_kernel(
 
     // 模型参数
     // 后缀0，1分别代表上层和下层
-    MYREAL mod1d_thk0, mod1d_thk1;
-    MYCOMPLEX mod1d_mu0, mod1d_mu1;
-    MYCOMPLEX mod1d_delta0, mod1d_delta1;
+    MYREAL thk0, thk1;
+    MYCOMPLEX mu0, mu1;
+    MYCOMPLEX delta0, delta1;
     MYCOMPLEX top_delta = 0.0;
     MYCOMPLEX src_delta = 0.0;
     MYCOMPLEX rcv_delta = 0.0;
@@ -105,36 +105,36 @@ void grt_static_kernel(
     // 从顶到底进行矩阵递推, 公式(5.5.3)
     for(MYINT iy=0; iy<mod1d->n; ++iy){ // 因为n>=3, 故一定会进入该循环
         // 赋值上层 
-        mod1d_thk0 = mod1d_thk1;
-        mod1d_mu0 = mod1d_mu1;
-        mod1d_delta0 = mod1d_delta1;
+        thk0 = thk1;
+        mu0 = mu1;
+        delta0 = delta1;
 
         // 更新模型参数
-        mod1d_thk1 = mod1d->Thk[iy];
-        mod1d_mu1 = mod1d->mu[iy];
-        mod1d_delta1 = mod1d->delta[iy];
+        thk1 = mod1d->Thk[iy];
+        mu1 = mod1d->mu[iy];
+        delta1 = mod1d->delta[iy];
 
         if(0==iy){
-            top_delta = mod1d_delta1;
+            top_delta = delta1;
             continue;
         }
 
         // 确定上下层的物性参数
         if(ircv==iy){
-            rcv_delta = mod1d_delta1;
+            rcv_delta = delta1;
         } else if(isrc==iy){
-            src_delta = mod1d_delta1;
+            src_delta = delta1;
         }
 
         // 对第iy层的系数矩阵赋值，加入时间延迟因子(第iy-1界面与第iy界面之间)
         grt_calc_static_RT_PSV(
-            mod1d_delta0, mod1d_mu0,
-            mod1d_delta1, mod1d_mu1,
-            mod1d_thk0, k, // 使用iy-1层的厚度
+            delta0, mu0,
+            delta1, mu1,
+            thk0, k, // 使用iy-1层的厚度
             RD, RU, TD, TU);
         grt_calc_static_RT_SH(
-            mod1d_mu0, mod1d_mu1,
-            mod1d_thk0, k, // 使用iy-1层的厚度
+            mu0, mu1,
+            thk0, k, // 使用iy-1层的厚度
             &RDL, &RUL, &TDL, &TUL);
 
         // FA

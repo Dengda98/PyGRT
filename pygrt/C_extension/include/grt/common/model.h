@@ -36,8 +36,8 @@ typedef struct {
     MYCOMPLEX *mu;       ///< mu[n] \f$ V_b^2 * \rho \f$
     MYCOMPLEX *lambda;   ///< lambda[n] \f$ V_a^2 * \rho - 2*\mu \f$
     MYCOMPLEX *delta;    ///< delta[n] \f$ (\lambda+\mu)/(\lambda+3*\mu) \f$
-    MYCOMPLEX *kaka;     ///< kaka[n] \f$ (\omega/V_a)^2 \f$
-    MYCOMPLEX *kbkb;     ///< kbkb[n] \f$ (\omega/V_b)^2 \f$
+    MYCOMPLEX *atna;
+    MYCOMPLEX *atnb;
 
 } GRT_MODEL1D;
 
