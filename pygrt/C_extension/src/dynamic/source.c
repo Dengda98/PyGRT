@@ -19,7 +19,7 @@
 
 
 void grt_source_coef_PSV(
-    MYCOMPLEX src_xa, MYCOMPLEX src_xb, MYCOMPLEX src_kaka, MYCOMPLEX src_kbkb, 
+    MYCOMPLEX src_xa, MYCOMPLEX src_xb, MYCOMPLEX src_caca, MYCOMPLEX src_cbcb, 
     MYREAL k,
     MYCOMPLEX coef[GRT_SRC_M_NUM][GRT_QWV_NUM-1][2])
 {
@@ -32,42 +32,42 @@ void grt_source_coef_PSV(
         }
     }
 
-    MYCOMPLEX a = k*src_xa;
-    MYCOMPLEX b = k*src_xb;
-    MYREAL kk = k*k;
+    // MYCOMPLEX a = k*src_xa;
+    // MYCOMPLEX b = k*src_xb;
+    // MYREAL kk = k*k;
     MYCOMPLEX tmp;
 
 
     // 爆炸源， 通过(4.9.8)的矩张量源公式，提取各向同性的量(M11+M22+M33)，-a+k^2/a -> ka^2/a
-    coef[0][0][0] = tmp = src_kaka / a;         coef[0][0][1] = tmp;    
+    coef[0][0][0] = tmp = (src_caca / src_xa) * k;         coef[0][0][1] = tmp;    
     
     // 垂直力源 (4.6.15)
     coef[1][0][0] = tmp = -1.0;                 coef[1][0][1] = - tmp;
-    coef[1][1][0] = tmp = -k / b;                coef[1][1][1] = tmp;
+    coef[1][1][0] = tmp = -1.0 / src_xb;         coef[1][1][1] = tmp;
 
     // 水平力源 (4.6.21,26), 这里可以把x1,x2方向的力转到r,theta方向
     // 推导可发现，r方向的力形成P,SV波, theta方向的力形成SH波
     // 方向性因子包含水平力方向与震源台站连线方向的夹角
-    coef[2][0][0] = tmp = -k / a;              coef[2][0][1] = tmp;
+    coef[2][0][0] = tmp = -1.0 / src_xa;       coef[2][0][1] = tmp;
     coef[2][1][0] = tmp = -1.0;               coef[2][1][1] = - tmp;
 
     // 剪切位错 (4.8.34)
     // m=0
-    coef[3][0][0] = tmp = (2.0*src_kaka - 3.0*kk) / a;    coef[3][0][1] = tmp;
+    coef[3][0][0] = tmp = ((2.0*src_caca - 3.0) / src_xa) * k;    coef[3][0][1] = tmp;
     coef[3][1][0] = tmp = -3.0*k;                          coef[3][1][1] = - tmp;
     // m=1
     coef[4][0][0] = tmp = 2.0*k;                      coef[4][0][1] = - tmp;
-    coef[4][1][0] = tmp = (2.0*kk - src_kbkb) / b;    coef[4][1][1] = tmp;
+    coef[4][1][0] = tmp = ((2.0 - src_cbcb) / src_xb) * k;    coef[4][1][1] = tmp;
 
     // m=2
-    coef[5][0][0] = tmp = - kk / a;                    coef[5][0][1] = tmp;
+    coef[5][0][0] = tmp = - (1.0 / src_xa) * k;                    coef[5][0][1] = tmp;
     coef[5][1][0] = tmp = - k;                         coef[5][1][1] = - tmp;
 
 }
 
 
 void grt_source_coef_SH(
-    MYCOMPLEX src_xb, MYCOMPLEX src_kbkb, 
+    MYCOMPLEX src_xb, MYCOMPLEX src_cbcb, 
     MYREAL k,
     MYCOMPLEX coef[GRT_SRC_M_NUM][2])
 {
@@ -79,20 +79,20 @@ void grt_source_coef_SH(
     }
 
 
-    MYCOMPLEX b = k*src_xb;
+    // MYCOMPLEX b = k*src_xb;
     MYCOMPLEX tmp;
     
     // 水平力源 (4.6.21,26), 这里可以把x1,x2方向的力转到r,theta方向
     // 推导可发现，r方向的力形成P,SV波, theta方向的力形成SH波
     // 方向性因子包含水平力方向与震源台站连线方向的夹角
-    coef[2][0] = tmp = src_kbkb / k / b;    coef[2][1] = tmp;
+    coef[2][0] = tmp = src_cbcb / src_xb;    coef[2][1] = tmp;
 
     // 剪切位错 (4.8.34)
     // m=1
-    coef[4][0] = tmp = - src_kbkb / k;              coef[4][1] = - tmp;
+    coef[4][0] = tmp = - src_cbcb * k;              coef[4][1] = - tmp;
 
     // m=2
-    coef[5][0] = tmp = src_kbkb / b;                coef[5][1] = tmp;
+    coef[5][0] = tmp = (src_cbcb / src_xb) * k;                coef[5][1] = tmp;
 
 }
 

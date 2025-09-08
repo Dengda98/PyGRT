@@ -105,74 +105,74 @@ void grt_kernel(
 
     // 模型参数
     // 后缀0，1分别代表上层和下层
-    MYREAL mod1d_thk0, mod1d_thk1, mod1d_Rho0, mod1d_Rho1;
-    MYCOMPLEX mod1d_mu0, mod1d_mu1;
-    MYCOMPLEX mod1d_kaka1, mod1d_kbkb0, mod1d_kbkb1;
-    MYCOMPLEX mod1d_xa0, mod1d_xb0, mod1d_xa1, mod1d_xb1;
-    MYCOMPLEX top_xa=0.0, top_xb=0.0, top_kbkb=0.0;
+    MYREAL thk0, thk1, Rho0, Rho1, Va1, Vb1;
+    MYCOMPLEX mu0, mu1;
+    MYCOMPLEX xa0=0.0, xb0=0.0, xa1=0.0, xb1=0.0;
+    MYCOMPLEX top_xa=0.0, top_xb=0.0;
     MYCOMPLEX rcv_xa=0.0, rcv_xb=0.0;
-    MYCOMPLEX src_xa=0.0, src_xb=0.0, src_kaka=0.0, src_kbkb=0.0;
+    MYCOMPLEX src_xa=0.0, src_xb=0.0;
+    MYCOMPLEX cbcb0=0.0, cbcb1=0.0;
+    MYCOMPLEX caca1=0.0;
+    MYCOMPLEX src_caca=0.0, src_cbcb=0.0;
+    MYCOMPLEX top_cbcb=0.0;
 
+    // 相速度
+    MYCOMPLEX c_phase = omega / k;
 
     // 从顶到底进行矩阵递推, 公式(5.5.3)
     for(MYINT iy=0; iy<mod1d->n; ++iy){ // 因为n>=3, 故一定会进入该循环
 
         // 赋值上层 
-        mod1d_thk0 = mod1d_thk1;
-        mod1d_Rho0 = mod1d_Rho1;
-        mod1d_mu0 = mod1d_mu1;
-        mod1d_kbkb0 = mod1d_kbkb1;
-        mod1d_xa0 = mod1d_xa1;
-        mod1d_xb0 = mod1d_xb1;
+        thk0 = thk1;
+        Rho0 = Rho1;
+        mu0 = mu1;
+        xa0 = xa1;
+        xb0 = xb1;
+        cbcb0 = cbcb1;
 
         // 更新模型参数
-        mod1d_thk1 = mod1d->Thk[iy];
-        mod1d_Rho1 = mod1d->Rho[iy];
-        mod1d_mu1 = mod1d->mu[iy];
-        mod1d_kaka1 = mod1d->kaka[iy];
-        mod1d_kbkb1 = mod1d->kbkb[iy];
-        mod1d_xa1 = sqrt(1.0 - mod1d_kaka1/(k*k));
-        mod1d_xb1 = sqrt(1.0 - mod1d_kbkb1/(k*k));
-        // mod1d_xa1 = sqrt(k*k - mod1d_kaka1)/k;
-        // mod1d_xb1 = sqrt(k*k - mod1d_kbkb1)/k;
+        thk1 = mod1d->Thk[iy];
+        Rho1 = mod1d->Rho[iy];
+        mu1 = mod1d->mu[iy];
+        Va1 = mod1d->Va[iy];
+        caca1 = c_phase/(Va1*mod1d->atna[iy]);
+        caca1 *= caca1;
+        Vb1 = mod1d->Vb[iy];
+        cbcb1 = (Vb1>0.0)? c_phase/(Vb1*mod1d->atnb[iy]) : 0.0;
+        cbcb1 *= cbcb1;
+        xa1 = sqrt(1.0 - caca1);
+        xb1 = sqrt(1.0 - cbcb1);
 
         if(0==iy){
-            top_xa = mod1d_xa1;
-            top_xb = mod1d_xb1;
-            top_kbkb = mod1d_kbkb1;
+            top_xa = xa1;
+            top_xb = xb1;
+            top_cbcb = cbcb1;
             continue;
         }
 
         // 确定上下层的物性参数
         if(ircv==iy){
-            rcv_xa = mod1d_xa1;
-            rcv_xb = mod1d_xb1;
+            rcv_xa = xa1;
+            rcv_xb = xb1;
         } else if(isrc==iy){
-            src_xa = mod1d_xa1;
-            src_xb = mod1d_xb1;
-            src_kaka = mod1d_kaka1;
-            src_kbkb = mod1d_kbkb1;
+            src_xa = xa1;
+            src_xb = xb1;
+            src_caca = caca1;
+            src_cbcb = cbcb1;
         } else {
             // 对第iy层的系数矩阵赋值，加入时间延迟因子(第iy-1界面与第iy界面之间)
             grt_calc_RT_PSV(
-                mod1d_Rho0, mod1d_xa0, mod1d_xb0, mod1d_kbkb0, mod1d_mu0, 
-                mod1d_Rho1, mod1d_xa1, mod1d_xb1, mod1d_kbkb1, mod1d_mu1, 
-                mod1d_thk0, // 使用iy-1层的厚度
+                Rho0, xa0, xb0, cbcb0, mu0, 
+                Rho1, xa1, xb1, cbcb1, mu1, 
+                thk0, // 使用iy-1层的厚度
                 omega, k, 
                 RD, RU, TD, TU, stats);
             grt_calc_RT_SH(
-                mod1d_xb0, mod1d_mu0, 
-                mod1d_xb1, mod1d_mu1, 
-                mod1d_thk0, // 使用iy-1层的厚度
+                xb0, mu0, 
+                xb1, mu1, 
+                thk0, // 使用iy-1层的厚度
                 omega, k, 
                 &RDL, &RUL, &TDL, &TUL);
-            // calc_RT_2x2(
-            //     mod1d_Rho0, mod1d_xa0, mod1d_xb0, mod1d_kbkb0, mod1d_mu0, 
-            //     mod1d_Rho1, mod1d_xa1, mod1d_xb1, mod1d_kbkb1, mod1d_mu1, 
-            //     mod1d_thk0, // 使用iy-1层的厚度
-            //     omega, k, 
-            //     RD, pRDL, RU, pRUL, 
-            //     TD, pTDL, TU, pTUL, stats);
             if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
         }
 
@@ -219,7 +219,7 @@ void grt_kernel(
         } 
         else if(iy==imin){ // 虚拟层位，可对递推公式简化
             grt_recursion_RT_imaginary(
-                mod1d_xa0, mod1d_xb0, mod1d_thk0, k,
+                xa0, xb0, thk0, k,
                 RU_FA, &RUL_FA, 
                 TD_FA, &TDL_FA, TU_FA, &TUL_FA);
         }
@@ -241,7 +241,7 @@ void grt_kernel(
         } 
         else if(iy==imax){ // 虚拟层位，可对递推公式简化
             grt_recursion_RT_imaginary(
-                mod1d_xa0, mod1d_xb0, mod1d_thk0, k,
+                xa0, xb0, thk0, k,
                 RU_RS, &RUL_RS, 
                 TD_RS, &TDL_RS, TU_RS, &TUL_RS);
         }
@@ -273,15 +273,15 @@ void grt_kernel(
     // 计算震源系数
     MYCOMPLEX src_coef_PSV[GRT_SRC_M_NUM][GRT_QWV_NUM-1][2] = {0};
     MYCOMPLEX src_coef_SH[GRT_SRC_M_NUM][2] = {0};
-    grt_source_coef_PSV(src_xa, src_xb, src_kaka, src_kbkb, k, src_coef_PSV);
-    grt_source_coef_SH(src_xb, src_kbkb, k, src_coef_SH);
+    grt_source_coef_PSV(src_xa, src_xb, src_caca, src_cbcb, k, src_coef_PSV);
+    grt_source_coef_SH(src_xb, src_cbcb, k, src_coef_SH);
 
     // 临时中转矩阵 (temperary)
     MYCOMPLEX tmpR2[2][2], tmp2x2[2][2], tmpRL, tmp2x2_uiz[2][2], tmpRL2;
     MYCOMPLEX inv_2x2T[2][2], invT;
 
     // 递推RU_FA
-    grt_calc_R_tilt_PSV(top_xa, top_xb, top_kbkb, k, R_tilt, stats);
+    grt_calc_R_tilt_PSV(top_xa, top_xb, top_cbcb, k, R_tilt, stats);
     if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
     grt_recursion_RU(
         R_tilt, 1.0, 

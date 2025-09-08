@@ -34,8 +34,8 @@
     X(mu, MYCOMPLEX)\
     X(lambda, MYCOMPLEX)\
     X(delta, MYCOMPLEX)\
-    X(kaka, MYCOMPLEX)\
-    X(kbkb, MYCOMPLEX)\
+    X(atna, MYCOMPLEX)\
+    X(atnb, MYCOMPLEX)\
 
 
 void grt_print_mod1d(const GRT_MODEL1D *mod1d){
@@ -147,7 +147,7 @@ GRT_MODEL1D * grt_copy_mod1d(const GRT_MODEL1D *mod1d1){
 
 void grt_update_mod1d_omega(GRT_MODEL1D *mod1d, MYCOMPLEX omega){
     MYREAL Va0, Vb0;
-    MYCOMPLEX ka0, kb0;
+    // MYCOMPLEX ka0, kb0;
     MYCOMPLEX atna, atnb;
     for(MYINT i=0; i<mod1d->n; ++i){
         Va0 = mod1d->Va[i];
@@ -155,11 +155,9 @@ void grt_update_mod1d_omega(GRT_MODEL1D *mod1d, MYCOMPLEX omega){
 
         atna = (mod1d->Qainv[i] > 0.0)? grt_attenuation_law(mod1d->Qainv[i], omega) : 1.0;
         atnb = (mod1d->Qbinv[i] > 0.0)? grt_attenuation_law(mod1d->Qbinv[i], omega) : 1.0;
-        
-        ka0 = omega/(Va0*atna);
-        kb0 = (Vb0>0.0)? omega/(Vb0*atnb) : 0.0;
-        mod1d->kaka[i] = ka0*ka0;
-        mod1d->kbkb[i] = kb0*kb0;
+
+        mod1d->atna[i] = atna;
+        mod1d->atnb[i] = atnb;
         
         mod1d->mu[i] = (Vb0*atnb)*(Vb0*atnb)*(mod1d->Rho[i]);
         mod1d->lambda[i] = (Va0*atnb)*(Va0*atnb)*(mod1d->Rho[i]) - 2*mod1d->mu[i];
