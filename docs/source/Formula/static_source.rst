@@ -49,7 +49,7 @@
     \\
     \psi(r, \theta, z) &= \sum_{m=-\infty}^{\infty} e^{im\theta} \int_0^\infty \psi_m(k,z) J_m(kr) k dk 
     \\
-    \chi(r, \theta, z) &= \sum_{m=-\infty}^{\infty} e^{im\theta} \int_0^\infty \chi_m(k,z) J_m(kr) k dk 
+    \chi(r, \theta, z) &= \sum_{m=-\infty}^{\infty} i e^{im\theta} \int_0^\infty \chi_m(k,z) J_m(kr) k dk 
     \\
 
 其中垂直波函数
@@ -68,7 +68,7 @@
     :label: u_qwv
 
     \mathbf{u} = \sum_{m=-\infty}^{\infty} e^{im\theta} \int_0^\infty 
-    ( q_m(k,z) \mathbf{B}_m + v_m(k,z) \mathbf{c}_m + w_m(k,z) \mathbf{P}_m ) k dk
+    ( q_m(k,z) \mathbf{B}_m + i v_m(k,z) \mathbf{c}_m + w_m(k,z) \mathbf{P}_m ) k dk
 
 其中，
 
@@ -81,7 +81,7 @@
     \\
     \mathbf{P}_m &= \mathbf{e}_z J_m(kr)e^{im\theta}
 
-将 :eq:`u_pot3` 式和 :eq:`pot3` 式代入 :eq:`u_qwv` 式，得到系数 :math:`q_m, v_m, w_m` 和垂直波函数之间的关系，
+:eq:`pot3` 式和 :eq:`u_qwv` 额外提出的虚数单位是为了后续方便定义方向因子。将 :eq:`u_pot3` 式和 :eq:`pot3` 式代入 :eq:`u_qwv` 式，得到系数 :math:`q_m, v_m, w_m` 和垂直波函数之间的关系，
 
 .. math:: 
     :label: qwv_pot
@@ -105,7 +105,7 @@
     \left\{
         \phi_m -  \left[ 1 + 2\Delta(z-z_j) \dfrac{\partial}{\partial z} \right] \psi_m
     \right\} J_m^{'}(kr)
-    +  \chi_m \dfrac{im}{kr} J_m(kr)
+    -  \chi_m \dfrac{m}{kr} J_m(kr)
     \right\} k dk 
     \\
     u_\theta &= \sum_{m=-\infty}^{\infty} i e^{im\theta} \int_0^\infty 
@@ -113,7 +113,7 @@
     \left\{
          \phi_m -  \left[ 1 + 2\Delta(z-z_j) \dfrac{\partial}{\partial z} \right] \psi_m
     \right\} \dfrac{m}{kr} J_m(kr)
-    + i \chi_m J_m^{'}(kr)
+    - \chi_m J_m^{'}(kr)
     \right\} k dk 
     \\
     u_z &= \sum_{m=-\infty}^{\infty} e^{im\theta} \int_0^\infty 
@@ -132,7 +132,7 @@
     \left[
         (B_m - D_m) + 2\Delta\varepsilon k  (z-z_j) D_m
     \right] J_m^{'}(kr)
-    +  F_m \dfrac{im}{kr} J_m(kr)
+    -  F_m \dfrac{m}{kr} J_m(kr)
     \right\} e^{-k|z-z_j|} k dk 
     \\
     u_\theta &= \sum_{m=-\infty}^{\infty} i e^{im\theta} \int_0^\infty 
@@ -140,7 +140,7 @@
     \left[
         (B_m - D_m) + 2\Delta\varepsilon k  (z-z_j) D_m
     \right] \dfrac{m}{kr} J_m(kr)
-    + i  F_m J_m^{'}(kr)
+    - F_m J_m^{'}(kr)
     \right\} e^{-k|z-z_j|} k dk 
     \\
     u_z &= \sum_{m=-\infty}^{\infty} e^{im\theta} \int_0^\infty 
@@ -198,7 +198,7 @@
     \\
     \psi(r, \theta, z) &= \dfrac{1}{4\pi\mu} \sum_{m=0}^{2} A_m(\theta) \int_0^\infty SV_m(k,z) e^{-k|z-z_j|}  J_m(kr) k dk 
     \\
-    \chi(r, \theta, z) &= \dfrac{1}{4\pi\mu} \sum_{m=1}^{2} A_{m+2}(\theta) \int_0^\infty SH_m(k,z) e^{-k|z-z_j|}  J_m(kr) k dk 
+    \chi(r, \theta, z) &= \dfrac{1}{4\pi\mu} \sum_{m=1}^{2} A_{m+3}(\theta) \int_0^\infty SH_m(k,z) e^{-k|z-z_j|}  J_m(kr) k dk 
     \\
 
 其中方向因子为
@@ -287,7 +287,7 @@
     :label:
 
     B_1 &= - D_1 = \dfrac{1}{8\pi\mu(1+\Delta)k} \\
-    F_1 &= - \dfrac{i}{4\pi \mu k}
+    F_1 &= - \dfrac{1}{4\pi \mu k}
 
 同样将势函数表达成 :eq:`pot_A_PS` 式，得到方向因子 [#]_
 
