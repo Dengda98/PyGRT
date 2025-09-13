@@ -18,7 +18,7 @@
     \def \Cm{\mathbf{C}_m}
     \def \Pm{\mathbf{P}_m}
 
-    \mathbf{u} &= \sum_{m=0}^{\infty} \int_0^{\infty} \left( q_m \Bm + v_m \Cm + w_m \Pm  \right) k dk \\
+    \mathbf{u} &= \sum_{m=0}^{\infty} \int_0^{\infty} \left( q_m \Bm + i v_m \Cm + w_m \Pm  \right) k dk \\
 
 根据势函数 :math:`(\phi, \psi, \chi)` 与位移的关系，以及柱面谐矢量的表达式，可以得到位移 :math:`\mathbf{u}` 各分量的表达式，
 
