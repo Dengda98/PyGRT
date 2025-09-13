@@ -20,6 +20,7 @@
     :columns: 1
 
     - :doc:`RT`
+    - :doc:`RT_static`
     - :doc:`RT_liquid`
     - :doc:`uiz`
 
@@ -38,6 +39,7 @@
     :hidden:
 
     RT
+    RT_static
     RT_liquid
     uiz
     static_uniform
