@@ -148,32 +148,26 @@ void grt_calc_uiz_R_EV_SH(MYCOMPLEX xb_rcv, bool ircvup, MYREAL k, MYCOMPLEX RL,
 void grt_calc_RT_ll_PSV(
     MYREAL Rho1, MYCOMPLEX xa1,
     MYREAL Rho2, MYCOMPLEX xa2,
-    MYREAL thk, // 使用上层的厚度
     MYCOMPLEX omega, MYREAL k,
     MYCOMPLEX RD[2][2], MYCOMPLEX RU[2][2], 
     MYCOMPLEX TD[2][2], MYCOMPLEX TU[2][2], MYINT *stats)
 {
-    MYCOMPLEX exa, ex2a; 
-
-    exa = exp(-k*thk*xa1);
-    ex2a = exa * exa;
-
     MYCOMPLEX A = xa1*Rho2 + xa2*Rho1;
     if(A==0.0){
         *stats = GRT_INVERSE_FAILURE;
         return;
     }
 
-    RD[0][0] = (xa1*Rho2 - xa2*Rho1)/A * ex2a;  
+    RD[0][0] = (xa1*Rho2 - xa2*Rho1)/A;  
     RD[0][1] = RD[1][0] = RD[1][1] = 0.0;
     
     RU[0][0] = (xa2*Rho1 - xa1*Rho2)/A;
     RU[0][1] = RU[1][0] = RU[1][1] = 0.0;
 
-    TD[0][0] = 2.0*xa1*Rho1/A * exa;
+    TD[0][0] = 2.0*xa1*Rho1/A;
     TD[0][1] = TD[1][0] = TD[1][1] = 0.0;
 
-    TU[0][0] = 2.0*xa2*Rho2/A * exa;
+    TU[0][0] = 2.0*xa2*Rho2/A;
     TU[0][1] = TU[1][0] = TU[1][1] = 0.0;
 
 }
@@ -191,23 +185,12 @@ void grt_calc_RT_ll_SH(MYCOMPLEX *RDL, MYCOMPLEX *RUL, MYCOMPLEX *TDL, MYCOMPLEX
 void grt_calc_RT_ls_PSV(
     MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX cbcb1, MYCOMPLEX mu1, 
     MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX cbcb2, MYCOMPLEX mu2, 
-    MYREAL thk, // 使用上层的厚度
-    MYCOMPLEX omega, MYREAL k, 
+    MYCOMPLEX omega, MYREAL k,
     MYCOMPLEX RD[2][2], MYCOMPLEX RU[2][2], 
     MYCOMPLEX TD[2][2], MYCOMPLEX TU[2][2], MYINT *stats)
 {
     // 后缀1表示上层的液体的物理参数，后缀2表示下层的固体的物理参数
     // 若mu2==0, 则下层为液体，参数需相互交换 
-
-    // 延迟因子始终作用于上层
-    MYCOMPLEX exa, exb, exab, ex2a, ex2b; 
-
-    exa = exp(-k*thk*xa1);
-    exb = exp(-k*thk*xb1);
-
-    exab = exa * exb;
-    ex2a = exa * exa;
-    ex2b = exb * exb;
 
     // 讨论液-固 or 固-液
     bool isfluidUp = (mu1 == 0.0);  // 上层是否为液体
@@ -235,8 +218,7 @@ void grt_calc_RT_ls_PSV(
 
     
     // 定义一些中间变量来简化运算和书写
-    MYREAL k2 = k*k;
-    MYCOMPLEX lamka1k = Rho1*omega*omega/k2;
+    MYCOMPLEX lamka1k = Rho1*GRT_SQUARE(omega/k);
     MYCOMPLEX kb2k = cbcb2;
     MYCOMPLEX Og2k = 1.0 - 0.5*kb2k;
     MYCOMPLEX Og2k2 = Og2k*Og2k;
@@ -265,34 +247,17 @@ void grt_calc_RT_ls_PSV(
     pTU[0][0] = - 2.0*Og2k*xa2*mu2*kb2k/A;     pTU[0][1] = pTU[0][0]/Og2k*xb2 * sgn;
     pTU[1][0] = pTU[1][1] = 0.0;
 
-    // 回归数组，增加时移
-    RD[0][0] *= ex2a;   RD[0][1] *= exab;
-    RD[1][0] *= exab;   RD[1][1] *= ex2b;
-
-    TD[0][0] *= exa;    TD[0][1] *= exb;
-    TD[1][0] *= exa;    TD[1][1] *= exb;
-
-    TU[0][0] *= exa;    TU[0][1] *= exa;
-    TU[1][0] *= exb;    TU[1][1] *= exb;
-
 }
 
 
 void grt_calc_RT_ls_SH(
     MYCOMPLEX xb1, MYCOMPLEX mu1, MYCOMPLEX mu2, 
-    MYREAL thk, // 使用上层的厚度
     MYCOMPLEX omega, MYREAL k,
     MYCOMPLEX *RDL, MYCOMPLEX *RUL, 
     MYCOMPLEX *TDL, MYCOMPLEX *TUL)
 {
     // 后缀1表示上层的液体的物理参数，后缀2表示下层的固体的物理参数
     // 若mu2==0, 则下层为液体，参数需相互交换 
-
-    // 延迟因子始终作用于上层
-    MYCOMPLEX exb, ex2b;
-
-    exb = exp(-k*thk*xb1);
-    ex2b = exb * exb;
 
     // 讨论液-固 or 固-液
     bool isfluidUp = (mu1 == 0.0);  // 上层是否为液体
@@ -315,10 +280,6 @@ void grt_calc_RT_ls_SH(
     *pRUL = 1.0;
     *pTDL = 0.0;
     *pTUL = 0.0;
-
-    // 回归数组，增加时移
-    // 特殊数值，仅需为潜在的RDL添加
-    *RDL *= ex2b;
 }
 
 
@@ -326,22 +287,11 @@ void grt_calc_RT_ls_SH(
 void grt_calc_RT_ss_PSV(
     MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX cbcb1, MYCOMPLEX mu1, 
     MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX cbcb2, MYCOMPLEX mu2, 
-    MYREAL thk, // 使用上层的厚度
-    MYCOMPLEX omega, MYREAL k, 
+    MYCOMPLEX omega, MYREAL k,
     MYCOMPLEX RD[2][2], MYCOMPLEX RU[2][2],
     MYCOMPLEX TD[2][2], MYCOMPLEX TU[2][2], MYINT *stats)
 {
-    
-    MYCOMPLEX exa, exb, exab, ex2a, ex2b; 
     MYCOMPLEX tmp;
-
-    exa = exp(-k*thk*xa1);
-    exb = exp(-k*thk*xb1);
-
-    exab = exa * exb;
-    ex2a = exa * exa;
-    ex2b = exb * exb;
-    
 
     // 定义一些中间变量来简化运算和书写
     // MYREAL kk = k*k;
@@ -374,15 +324,15 @@ void grt_calc_RT_ss_PSV(
     //------------------ RD -----------------------------------
     // rpp+
     RD[0][0] = ( - dmu2*(1.0+xa1*xb1)*(1.0-xa2*xb2) - mu1cbcb1*dmu*(rho21*(1.0+xa1*xb1) - (1.0-xa2*xb2))
-                    - 0.25*mu1cbcb1*mu2cbcb2*(rho12*(1.0-xa2*xb2) + rho21*(1.0+xa1*xb1) - 2.0 + (xa1*xb2-xa2*xb1))) / Delta * ex2a;
+                    - 0.25*mu1cbcb1*mu2cbcb2*(rho12*(1.0-xa2*xb2) + rho21*(1.0+xa1*xb1) - 2.0 + (xa1*xb2-xa2*xb1))) / Delta;
     // rsp+
     RD[0][1] = ( - dmu2*(1.0-xa2*xb2) + 0.5*mu1cbcb1*dmu*((1.0-xa2*xb2) - 2.0*rho21) 
-                    + 0.25*mu1cbcb1*mu2cbcb2*(1.0-rho21)) / Delta * (-2.0*xb1) * exab;
+                    + 0.25*mu1cbcb1*mu2cbcb2*(1.0-rho21)) / Delta * (-2.0*xb1);
     // rps+
     RD[1][0] = RD[0][1]*(xa1/xb1);
     // rss+
     RD[1][1] = ( - dmu2*(1.0+xa1*xb1)*(1.0-xa2*xb2) - mu1cbcb1*dmu*(rho21*(1.0+xa1*xb1) - (1.0-xa2*xb2))
-                    - 0.25*mu1cbcb1*mu2cbcb2*(rho12*(1.0-xa2*xb2) + rho21*(1.0+xa1*xb1) - 2.0 - (xa1*xb2-xa2*xb1))) / Delta * ex2b;
+                    - 0.25*mu1cbcb1*mu2cbcb2*(rho12*(1.0-xa2*xb2) + rho21*(1.0+xa1*xb1) - 2.0 - (xa1*xb2-xa2*xb1))) / Delta;
     //------------------ RU -----------------------------------
     // rpp-
     RU[0][0] = ( - dmu2*(1.0-xa1*xb1)*(1.0+xa2*xb2) - mu1cbcb1*dmu*(rho21*(1.0-xa1*xb1) - (1.0+xa2*xb2))
@@ -397,13 +347,13 @@ void grt_calc_RT_ss_PSV(
                     - 0.25*mu1cbcb1*mu2cbcb2*(rho12*(1.0+xa2*xb2) + rho21*(1.0-xa1*xb1) - 2.0 + (xa1*xb2-xa2*xb1))) / Delta;
 
     // REFRACTION
-    tmp = mu1cbcb1*xa1*(dmu*(xb2-xb1) - 0.5*mu1cbcb1*(rho21*xb1+xb2)) / Delta * exa;
+    tmp = mu1cbcb1*xa1*(dmu*(xb2-xb1) - 0.5*mu1cbcb1*(rho21*xb1+xb2)) / Delta;
     TD[0][0] = tmp;     TU[0][0] = (rho21*xa2/xa1) * tmp;
-    tmp = mu1cbcb1*xb1*(dmu*(1.0-xa1*xb2) - 0.5*mu1cbcb1*(1.0-rho21)) / Delta * exb;
+    tmp = mu1cbcb1*xb1*(dmu*(1.0-xa1*xb2) - 0.5*mu1cbcb1*(1.0-rho21)) / Delta;
     TD[0][1] = tmp;     TU[1][0] = (rho21*xa2/xb1) * tmp;
-    tmp = mu1cbcb1*xa1*(dmu*(1.0-xa2*xb1) - 0.5*mu1cbcb1*(1.0-rho21)) / Delta * exa;
+    tmp = mu1cbcb1*xa1*(dmu*(1.0-xa2*xb1) - 0.5*mu1cbcb1*(1.0-rho21)) / Delta;
     TD[1][0] = tmp;     TU[0][1] = (rho21*xb2/xa1) * tmp;
-    tmp = mu1cbcb1*xb1*(dmu*(xa2-xa1) - 0.5*mu1cbcb1*(rho21*xa1+xa2)) / Delta * exb;
+    tmp = mu1cbcb1*xb1*(dmu*(xa2-xa1) - 0.5*mu1cbcb1*(rho21*xa1+xa2)) / Delta;
     TD[1][1] = tmp;     TU[1][1] = (rho21*xb2/xb1) * tmp;
 }
 
@@ -411,23 +361,18 @@ void grt_calc_RT_ss_PSV(
 void grt_calc_RT_ss_SH(
     MYCOMPLEX xb1, MYCOMPLEX mu1, 
     MYCOMPLEX xb2, MYCOMPLEX mu2, 
-    MYREAL thk, // 使用上层的厚度
     MYCOMPLEX omega, MYREAL k, 
     MYCOMPLEX *RDL, MYCOMPLEX *RUL, 
     MYCOMPLEX *TDL, MYCOMPLEX *TUL)
 {
-    MYCOMPLEX exb, ex2b; 
     MYCOMPLEX tmp;
-
-    exb = exp(-k*thk*xb1);
-    ex2b = exb * exb;
 
     // REFELCTION
     *RUL = (mu2*xb2 - mu1*xb1) / (mu2*xb2 + mu1*xb1) ;
-    *RDL = - (*RUL) * ex2b;
+    *RDL = - (*RUL);
 
     // REFRACTION
-    tmp = 2.0 / (mu2*xb2 + mu1*xb1)  * exb;
+    tmp = 2.0 / (mu2*xb2 + mu1*xb1);
     *TDL = mu1*xb1 * tmp;
     *TUL = mu2*xb2 * tmp;
 }
@@ -437,7 +382,6 @@ void grt_calc_RT_ss_SH(
 void grt_calc_RT_PSV(
     MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX cbcb1, MYCOMPLEX mu1, 
     MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX cbcb2, MYCOMPLEX mu2, 
-    MYREAL thk, // 使用上层的厚度
     MYCOMPLEX omega, MYREAL k, 
     MYCOMPLEX RD[2][2], MYCOMPLEX RU[2][2],
     MYCOMPLEX TD[2][2], MYCOMPLEX TU[2][2], MYINT *stats)
@@ -447,21 +391,21 @@ void grt_calc_RT_PSV(
         grt_calc_RT_ss_PSV(
             Rho1, xa1, xb1, cbcb1, mu1, 
             Rho2, xa2, xb2, cbcb2, mu2, 
-            thk, omega, k, 
+            omega, k, 
             RD, RU, TD, TU, stats);
     }
     else if(mu1 == 0.0 && mu2 == 0.0){
         grt_calc_RT_ll_PSV(
             Rho1, xa1,
             Rho2, xa2,
-            thk, omega, k, 
+            omega, k, 
             RD, RU, TD, TU, stats);
     }
     else{
         grt_calc_RT_ls_PSV(
             Rho1, xa1, xb1, cbcb1, mu1, 
             Rho2, xa2, xb2, cbcb2, mu2, 
-            thk, omega, k, 
+            omega, k, 
             RD, RU, TD, TU, stats);
     }
 }
@@ -470,7 +414,6 @@ void grt_calc_RT_PSV(
 void grt_calc_RT_SH(
     MYCOMPLEX xb1, MYCOMPLEX mu1, 
     MYCOMPLEX xb2, MYCOMPLEX mu2, 
-    MYREAL thk, // 使用上层的厚度
     MYCOMPLEX omega, MYREAL k, 
     MYCOMPLEX *RDL, MYCOMPLEX *RUL, 
     MYCOMPLEX *TDL, MYCOMPLEX *TUL)
@@ -480,7 +423,7 @@ void grt_calc_RT_SH(
         grt_calc_RT_ss_SH(
             xb1, mu1, 
             xb2, mu2, 
-            thk, omega, k, 
+            omega, k, 
             RDL, RUL, TDL, TUL);
     }
     else if(mu1 == 0.0 && mu2 == 0.0){
@@ -490,54 +433,143 @@ void grt_calc_RT_SH(
     else{
         grt_calc_RT_ls_SH(
             xb1, mu1, mu2, 
-            thk, omega, k, 
+            omega, k, 
             RDL, RUL, TDL, TUL);
     }
 }
 
 
+void grt_delay_RT_PSV(
+    MYCOMPLEX xa1, MYCOMPLEX xb1, 
+    MYREAL thk, MYREAL k,
+    MYCOMPLEX RD[2][2], MYCOMPLEX RU[2][2], 
+    MYCOMPLEX TD[2][2], MYCOMPLEX TU[2][2])
+{
+    MYCOMPLEX exa, exb, ex2a, ex2b, exab;
+    exa = exp(- k*thk*xa1);
+    exb = exp(- k*thk*xb1);
+    ex2a = exa * exa;
+    ex2b = exb * exb;
+    exab = exa * exb;
+
+    RD[0][0] *= ex2a;   RD[0][1] *= exab;
+    RD[1][0] *= exab;   RD[1][1] *= ex2b;
+
+    TD[0][0] *= exa;    TD[0][1] *= exb;
+    TD[1][0] *= exa;    TD[1][1] *= exb;
+
+    TU[0][0] *= exa;    TU[0][1] *= exa;
+    TU[1][0] *= exb;    TU[1][1] *= exb;
+}
+
+
+void grt_delay_RT_SH(
+    MYCOMPLEX xb1, 
+    MYREAL thk, MYREAL k,
+    MYCOMPLEX *RDL, MYCOMPLEX *RUL, 
+    MYCOMPLEX *TDL, MYCOMPLEX *TUL)
+{
+    MYCOMPLEX exb, ex2b;
+    exb = exp(- k*thk*xb1);
+    ex2b = exb * exb;
+
+    *RDL *= ex2b;
+    *TDL *= exb;
+    *TUL *= exb;
+}
 
 
 void grt_get_layer_D(
     MYCOMPLEX xa, MYCOMPLEX xb, MYCOMPLEX kbkb, MYCOMPLEX mu,
-    MYCOMPLEX omega, MYREAL k, MYCOMPLEX D[4][4], bool inverse)
+    MYCOMPLEX omega, MYREAL rho, MYREAL k, MYCOMPLEX D[4][4], bool inverse, MYINT liquid_invtype)
 {
     // 第iy层物理量
     MYCOMPLEX Omg;
-    Omg = k*k - 0.5*kbkb;
-
-    if( ! inverse ){
-        D[0][0] = k;            D[0][1] = k*xb;             D[0][2] = k;            D[0][3] = -k*xb;     
-        D[1][0] = k*xa;            D[1][1] = k;             D[1][2] = -k*xa;           D[1][3] = k;   
-        D[2][0] = 2*mu*Omg;     D[2][1] = 2*k*mu*k*xb;      D[2][2] = 2*mu*Omg;     D[2][3] = -2*k*mu*k*xb;   
-        D[3][0] = 2*k*mu*k*xa;     D[3][1] = 2*mu*Omg;      D[3][2] = -2*k*mu*k*xa;    D[3][3] = 2*mu*Omg;   
-    } else {
-        D[0][0] = -2*k*mu*k*xa*k*xb;  D[0][1] = 2*mu*Omg*k*xb;    D[0][2] = k*xa*k*xb;            D[0][3] = -k*k*xb;     
-        D[1][0] = 2*mu*Omg*k*xa;   D[1][1] = -2*k*mu*k*xa*k*xb;   D[1][2] = -k*k*xa;           D[1][3] = k*xa*k*xb;   
-        D[2][0] = -2*k*mu*k*xa*k*xb;  D[2][1] = -2*mu*Omg*k*xb;   D[2][2] = k*xa*k*xb;            D[2][3] = k*k*xb;   
-        D[3][0] = -2*mu*Omg*k*xa;  D[3][1] = -2*k*mu*k*xa*k*xb;   D[3][2] = k*k*xa;            D[3][3] = k*xa*k*xb;
-        for(MYINT i=0; i<4; ++i){
-            for(MYINT j=0; j<4; ++j){
-                D[i][j] *= (-1/(2*mu*kbkb*k*xa*k*xb));
+    if(xb != 1.0){
+        Omg = k*k - 0.5*kbkb;
+        if( ! inverse ){
+            D[0][0] = k;               D[0][1] = k*xb;             D[0][2] = k;               D[0][3] = -k*xb;     
+            D[1][0] = k*xa;            D[1][1] = k;                D[1][2] = -k*xa;           D[1][3] = k;   
+            D[2][0] = 2*mu*Omg;        D[2][1] = 2*k*mu*k*xb;      D[2][2] = 2*mu*Omg;        D[2][3] = -2*k*mu*k*xb;   
+            D[3][0] = 2*k*mu*k*xa;     D[3][1] = 2*mu*Omg;         D[3][2] = -2*k*mu*k*xa;    D[3][3] = 2*mu*Omg;   
+        } else {
+            D[0][0] = -2*k*mu*k*xa*k*xb;  D[0][1] = 2*mu*Omg*k*xb;       D[0][2] = k*xa*k*xb;            D[0][3] = -k*k*xb;     
+            D[1][0] = 2*mu*Omg*k*xa;      D[1][1] = -2*k*mu*k*xa*k*xb;   D[1][2] = -k*k*xa;              D[1][3] = k*xa*k*xb;   
+            D[2][0] = -2*k*mu*k*xa*k*xb;  D[2][1] = -2*mu*Omg*k*xb;      D[2][2] = k*xa*k*xb;            D[2][3] = k*k*xb;   
+            D[3][0] = -2*mu*Omg*k*xa;     D[3][1] = -2*k*mu*k*xa*k*xb;   D[3][2] = k*k*xa;               D[3][3] = k*xa*k*xb;
+            for(MYINT i=0; i<4; ++i){
+                for(MYINT j=0; j<4; ++j){
+                    D[i][j] /= - 2*mu*kbkb*k*xa*k*xb;
+                }
             }
         }
+    } else {
+        Omg = rho * GRT_SQUARE(omega) / k;
+        if(liquid_invtype == 1){
+            if( ! inverse ){
+                D[0][0] = k;            D[0][1] = 0.0;      D[0][2] = k;               D[0][3] = 0.0;     
+                D[1][0] = k*xa;         D[1][1] = 0.0;      D[1][2] = -k*xa;           D[1][3] = 0.0;   
+                D[2][0] = - k*Omg;      D[2][1] = 0.0;      D[2][2] = - k*Omg;         D[2][3] = 0.0;   
+                D[3][0] = 0.0;          D[3][1] = 0.0;      D[3][2] = 0.0;             D[3][3] = 0.0;   
+            } else {
+                D[0][0] = xa;                 D[0][1] = 1.0 + Omg*Omg;       D[0][2] = - xa * Omg;           D[0][3] = 0.0;     
+                D[1][0] = 0.0;                D[1][1] = 0.0;                 D[1][2] = 0.0;                  D[1][3] = 0.0;   
+                D[2][0] = xa;                 D[2][1] = - (1.0 + Omg*Omg);   D[2][2] = - xa * Omg;           D[2][3] = 0.0;   
+                D[3][0] = 0.0;                D[3][1] = 0.0;                 D[3][2] = 0.0;                  D[3][3] = 0.0;
+                for(MYINT i=0; i<4; ++i){
+                    for(MYINT j=0; j<4; ++j){
+                        D[i][j] /= 2*k*xa*(1.0 + Omg*Omg);
+                    }
+                }
+            }
+        } 
+        else if(liquid_invtype == 2){
+            // 此处液体层内的 D 和 D^{-1} 只考虑了 w, \sigma_R 两项，这是由边界条件决定的
+            if( ! inverse ){
+                D[0][0] = 0.0;          D[0][1] = 0.0;      D[0][2] = 0.0;             D[0][3] = 0.0;     
+                D[1][0] = k*xa;         D[1][1] = 0.0;      D[1][2] = - k*xa;          D[1][3] = 0.0;   
+                D[2][0] = - k*Omg;      D[2][1] = 0.0;      D[2][2] = - k*Omg;         D[2][3] = 0.0;   
+                D[3][0] = 0.0;          D[3][1] = 0.0;      D[3][2] = 0.0;             D[3][3] = 0.0;   
+            } else {
+                D[0][0] = 0.0;         D[0][1] = 0.5/(k*xa);       D[0][2] = - 0.5 / (k*Omg);      D[0][3] = 0.0;     
+                D[1][0] = 0.0;         D[1][1] = 0.0;              D[1][2] = 0.0;                  D[1][3] = 0.0;   
+                D[2][0] = 0.0;         D[2][1] = - 0.5/(k*xa);     D[2][2] = - 0.5 / (k*Omg);      D[2][3] = 0.0;   
+                D[3][0] = 0.0;         D[3][1] = 0.0;              D[3][2] = 0.0;                  D[3][3] = 0.0;
+            }
+        }
+        else {
+            GRTRaiseError("Wrong execution of function %s.", __func__);
+        }
     }
+    
 }
 
 void grt_get_layer_D11(
     MYCOMPLEX xa, MYCOMPLEX xb, MYREAL k, MYCOMPLEX D[2][2])
 {
     // 第iy层物理量
-    D[0][0] = k;        D[0][1] = k*xb;
-    D[1][0] = k*xa;     D[1][1] = k;   
+    if(xb != 1.0){
+        D[0][0] = k;        D[0][1] = k*xb;
+        D[1][0] = k*xa;     D[1][1] = k;   
+    } else {
+        D[0][0] = k;        D[0][1] = 0.0;
+        D[1][0] = k*xa;     D[1][1] = 0.0;   
+    }
+    
 }
 
 void grt_get_layer_D12(
     MYCOMPLEX xa, MYCOMPLEX xb, MYREAL k, MYCOMPLEX D[2][2])
 {
     // 第iy层物理量
-    D[0][0] = k;        D[0][1] = -k*xb;
-    D[1][0] = -k*xa;     D[1][1] = k;   
+    if(xb != 1.0){
+        D[0][0] = k;        D[0][1] = -k*xb;
+        D[1][0] = -k*xa;    D[1][1] = k;   
+    } else {
+        D[0][0] = k;        D[0][1] = 0.0;
+        D[1][0] = -k*xa;    D[1][1] = 0.0;   
+    }
+    
 }
 
 void grt_get_layer_D11_uiz(
@@ -547,8 +579,13 @@ void grt_get_layer_D11_uiz(
     MYCOMPLEX a = k*xa;
     MYCOMPLEX b = k*xb;
 
-    D[0][0] = a*k;     D[0][1] = b*b;
-    D[1][0] = a*a;     D[1][1] = b*k;   
+    if(xb != 1.0){
+        D[0][0] = a*k;     D[0][1] = b*b;
+        D[1][0] = a*a;     D[1][1] = b*k;   
+    } else {
+        D[0][0] = a*k;     D[0][1] = 0.0;
+        D[1][0] = a*a;     D[1][1] = 0.0;   
+    }
 }
 
 void grt_get_layer_D12_uiz(
@@ -558,38 +595,57 @@ void grt_get_layer_D12_uiz(
     MYCOMPLEX a = k*xa;
     MYCOMPLEX b = k*xb;
 
-    D[0][0] = - a*k;     D[0][1] = b*b;
-    D[1][0] = a*a;       D[1][1] = - b*k;   
+    if(xb != 1.0){
+        D[0][0] = - a*k;     D[0][1] = b*b;
+        D[1][0] = a*a;       D[1][1] = - b*k;   
+    } else {
+        D[0][0] = - a*k;     D[0][1] = 0.0;
+        D[1][0] = a*a;       D[1][1] = 0.0;   
+    }
 }
 
 void grt_get_layer_D21(
     MYCOMPLEX xa, MYCOMPLEX xb, MYCOMPLEX kbkb, MYCOMPLEX mu,
-    MYCOMPLEX omega, MYREAL k, MYCOMPLEX D[2][2])
+    MYCOMPLEX omega, MYREAL rho, MYREAL k, MYCOMPLEX D[2][2])
 {
     // 第iy层物理量
     MYCOMPLEX Omg;
-    Omg = k*k - 0.5*kbkb;
-
-    D[0][0] = 2*mu*Omg;        D[0][1] = 2*k*mu*k*xb;
-    D[1][0] = 2*k*mu*k*xa;     D[1][1] = 2*mu*Omg;   
+    if(xb != 1.0){
+        Omg = k*k - 0.5*kbkb;
+        D[0][0] = 2*mu*Omg;        D[0][1] = 2*k*mu*k*xb;
+        D[1][0] = 2*k*mu*k*xa;     D[1][1] = 2*mu*Omg;   
+    } else {
+        D[0][0] = - rho * GRT_SQUARE(omega);        D[0][1] = 0.0;
+        D[1][0] = 0.0;                              D[1][1] = 0.0;   
+    }
+    
 }
 
 void grt_get_layer_D22(
     MYCOMPLEX xa, MYCOMPLEX xb, MYCOMPLEX kbkb, MYCOMPLEX mu,
-    MYCOMPLEX omega, MYREAL k, MYCOMPLEX D[2][2])
+    MYCOMPLEX omega, MYREAL rho, MYREAL k, MYCOMPLEX D[2][2])
 {
     // 第iy层物理量
     MYCOMPLEX Omg;
-    Omg = k*k - 0.5*kbkb;
-
-    D[0][0] = 2*mu*Omg;        D[0][1] = -2*k*mu*k*xb;
-    D[1][0] = -2*k*mu*k*xa;    D[1][1] = 2*mu*Omg;   
+    if(xb != 1.0){
+        Omg = k*k - 0.5*kbkb;
+        D[0][0] = 2*mu*Omg;        D[0][1] = -2*k*mu*k*xb;
+        D[1][0] = -2*k*mu*k*xa;    D[1][1] = 2*mu*Omg;   
+    } else {
+        D[0][0] = - rho * GRT_SQUARE(omega);        D[0][1] = 0.0;
+        D[1][0] = 0.0;                              D[1][1] = 0.0;   
+    }
 }
 
 void grt_get_layer_T(
     MYCOMPLEX xb, MYCOMPLEX mu,
     MYCOMPLEX omega, MYREAL k, MYCOMPLEX T[2][2], bool inverse)
 {
+    // 液体层不应该使用该函数
+    if(xb == 1.0){
+        GRTRaiseError("Wrong execution of function %s.", __func__);
+    }
+
     if( ! inverse ){
         T[0][0] = k;              T[0][1] = k;
         T[1][0] = mu*k*k*xb;      T[1][1] = - mu*k*k*xb;
@@ -643,18 +699,17 @@ void grt_get_layer_E_Rayl(
 }
 
 void grt_calc_RT_from_4x4(
-    MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, 
-    MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, 
+    MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, MYREAL rho1, 
+    MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, MYREAL rho2,
     MYCOMPLEX omega, MYREAL thk,
     MYREAL k, 
     MYCOMPLEX RD[2][2], MYCOMPLEX *RDL, MYCOMPLEX RU[2][2], MYCOMPLEX *RUL, 
     MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX TU[2][2], MYCOMPLEX *TUL, MYINT *stats)
 {
-
     MYCOMPLEX D1_inv[4][4], D2[4][4], Q[4][4];
 
-    grt_get_layer_D(xa1, xb1, kbkb1, mu1, omega, k, D1_inv, true);
-    grt_get_layer_D(xa2, xb2, kbkb2, mu2, omega, k, D2,    false);
+    grt_get_layer_D(xa1, xb1, kbkb1, mu1, omega, rho1, k, D1_inv, true, 2);
+    grt_get_layer_D(xa2, xb2, kbkb2, mu2, omega, rho2, k, D2,    false, 2);
 
     grt_cmatmxn_mul(4, 4, 4, D1_inv, D2, Q);
 
