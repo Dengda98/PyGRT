@@ -51,7 +51,7 @@ void grt_topfree_RU_PSV(MYCOMPLEX xa0, MYCOMPLEX xb0, MYCOMPLEX cbcb0, MYREAL k,
 }
 
 
-void grt_wave2disp_REV_PSV(
+void grt_wave2qwv_REV_PSV(
     MYCOMPLEX xa_rcv, MYCOMPLEX xb_rcv, bool ircvup, MYREAL k, 
     const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2])
 {
@@ -82,7 +82,7 @@ void grt_wave2disp_REV_PSV(
 }
 
 
-void grt_wave2disp_REV_SH(MYCOMPLEX xb_rcv, MYREAL k, MYCOMPLEX RL, MYCOMPLEX *R_EVL)
+void grt_wave2qwv_REV_SH(MYCOMPLEX xb_rcv, MYREAL k, MYCOMPLEX RL, MYCOMPLEX *R_EVL)
 {
     if(xb_rcv != 1.0){
         // 位于固体层
@@ -95,7 +95,7 @@ void grt_wave2disp_REV_SH(MYCOMPLEX xb_rcv, MYREAL k, MYCOMPLEX RL, MYCOMPLEX *R
 }
 
 
-void grt_wave2disp_z_REV_PSV(
+void grt_wave2qwv_z_REV_PSV(
     MYCOMPLEX xa_rcv, MYCOMPLEX xb_rcv, bool ircvup,
     MYREAL k, 
     const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2])
@@ -125,7 +125,7 @@ void grt_wave2disp_z_REV_PSV(
 }    
 
 
-void grt_wave2disp_z_REV_SH(MYCOMPLEX xb_rcv, bool ircvup, MYREAL k, MYCOMPLEX RL, MYCOMPLEX *R_EVL)
+void grt_wave2qwv_z_REV_SH(MYCOMPLEX xb_rcv, bool ircvup, MYREAL k, MYCOMPLEX RL, MYCOMPLEX *R_EVL)
 {
     // 将垂直波函数转为ui,z在(B_m, P_m, C_m)系下的分量
     // 新推导的公式

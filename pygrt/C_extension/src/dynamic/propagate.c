@@ -289,8 +289,8 @@ void grt_kernel(
     if(ircvup){ // A接收  B震源
 
         // 计算R_EV
-        grt_wave2disp_REV_PSV(rcv_xa, rcv_xb, ircvup, k, RU_FA, R_EV);
-        grt_wave2disp_REV_SH(rcv_xb, k, RUL_FA, &R_EVL);
+        grt_wave2qwv_REV_PSV(rcv_xa, rcv_xb, ircvup, k, RU_FA, R_EV);
+        grt_wave2qwv_REV_SH(rcv_xb, k, RUL_FA, &R_EVL);
 
         // 递推RU_FS
         grt_recursion_RU(
@@ -350,26 +350,26 @@ void grt_kernel(
         tmpRL2 = R_EVL * tmpRL;
 
         for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-            grt_psc2qwv(ircvup, tmp2x2, tmpRL2, RD_BL, RDL_BL, src_coef_PSV[i], src_coef_SH[i], QWV[i]);
+            grt_construct_qwv(ircvup, tmp2x2, tmpRL2, RD_BL, RDL_BL, src_coef_PSV[i], src_coef_SH[i], QWV[i]);
         }
 
 
         if(calc_uiz){
-            grt_wave2disp_z_REV_PSV(rcv_xa, rcv_xb, ircvup, k, RU_FA, uiz_R_EV);
-            grt_wave2disp_z_REV_SH(rcv_xb, ircvup, k, RUL_FA, &uiz_R_EVL);
+            grt_wave2qwv_z_REV_PSV(rcv_xa, rcv_xb, ircvup, k, RU_FA, uiz_R_EV);
+            grt_wave2qwv_z_REV_SH(rcv_xb, ircvup, k, RUL_FA, &uiz_R_EVL);
             grt_cmat2x2_mul(uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
             tmpRL2 = uiz_R_EVL * tmpRL;
 
             for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-                grt_psc2qwv(ircvup, tmp2x2_uiz, tmpRL2, RD_BL, RDL_BL, src_coef_PSV[i], src_coef_SH[i], QWV_uiz[i]);
+                grt_construct_qwv(ircvup, tmp2x2_uiz, tmpRL2, RD_BL, RDL_BL, src_coef_PSV[i], src_coef_SH[i], QWV_uiz[i]);
             }    
         }
     } 
     else { // A震源  B接收
 
         // 计算R_EV
-        grt_wave2disp_REV_PSV(rcv_xa, rcv_xb, ircvup, k, RD_BL, R_EV);    
-        grt_wave2disp_REV_SH(rcv_xb, k, RDL_BL, &R_EVL);    
+        grt_wave2qwv_REV_PSV(rcv_xa, rcv_xb, ircvup, k, RD_BL, R_EV);    
+        grt_wave2qwv_REV_SH(rcv_xb, k, RDL_BL, &R_EVL);    
 
         // 递推RD_SL
         grt_recursion_RD(
@@ -395,18 +395,18 @@ void grt_kernel(
         tmpRL2 = R_EVL * tmpRL;
 
         for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-            grt_psc2qwv(ircvup, tmp2x2, tmpRL2, RU_FA, RUL_FA, src_coef_PSV[i], src_coef_SH[i], QWV[i]);
+            grt_construct_qwv(ircvup, tmp2x2, tmpRL2, RU_FA, RUL_FA, src_coef_PSV[i], src_coef_SH[i], QWV[i]);
         }
 
 
         if(calc_uiz){
-            grt_wave2disp_z_REV_PSV(rcv_xa, rcv_xb, ircvup, k, RD_BL, uiz_R_EV);    
-            grt_wave2disp_z_REV_SH(rcv_xb, ircvup, k, RDL_BL, &uiz_R_EVL);    
+            grt_wave2qwv_z_REV_PSV(rcv_xa, rcv_xb, ircvup, k, RD_BL, uiz_R_EV);    
+            grt_wave2qwv_z_REV_SH(rcv_xb, ircvup, k, RDL_BL, &uiz_R_EVL);    
             grt_cmat2x2_mul(uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
             tmpRL2 = uiz_R_EVL * tmpRL;
             
             for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-                grt_psc2qwv(ircvup, tmp2x2_uiz, tmpRL2, RU_FA, RUL_FA, src_coef_PSV[i], src_coef_SH[i], QWV_uiz[i]);
+                grt_construct_qwv(ircvup, tmp2x2_uiz, tmpRL2, RU_FA, RUL_FA, src_coef_PSV[i], src_coef_SH[i], QWV_uiz[i]);
             }
         }
 
@@ -428,3 +428,33 @@ void grt_kernel(
 
 }
 
+
+
+
+
+
+void grt_construct_qwv(
+    bool ircvup, 
+    const MYCOMPLEX R1[2][2], MYCOMPLEX RL1, 
+    const MYCOMPLEX R2[2][2], MYCOMPLEX RL2, 
+    const MYCOMPLEX coef_PSV[GRT_QWV_NUM-1][2], const MYCOMPLEX coef_SH[2], 
+    MYCOMPLEX qwv[GRT_QWV_NUM])
+{
+    MYCOMPLEX qw0[2], qw1[2], v0;
+    MYCOMPLEX coefD[2] = {coef_PSV[0][0], coef_PSV[1][0]};
+    MYCOMPLEX coefU[2] = {coef_PSV[0][1], coef_PSV[1][1]};
+    if(ircvup){
+        grt_cmat2x1_mul(R2, coefD, qw0);
+        qw0[0] += coefU[0]; qw0[1] += coefU[1]; 
+        v0 = RL1 * (RL2*coef_SH[0] + coef_SH[1]);
+    } else {
+        grt_cmat2x1_mul(R2, coefU, qw0);
+        qw0[0] += coefD[0]; qw0[1] += coefD[1]; 
+        v0 = RL1 * (coef_SH[0] + RL2*coef_SH[1]);
+    }
+    grt_cmat2x1_mul(R1, qw0, qw1);
+
+    qwv[0] = qw1[0];
+    qwv[1] = qw1[1];
+    qwv[2] = v0;
+}

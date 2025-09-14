@@ -26,7 +26,7 @@ void grt_static_topfree_RU_PSV(MYCOMPLEX delta1, MYCOMPLEX R_tilt[2][2]){
     R_tilt[1][0] = -1.0/delta1;
 }
 
-void grt_static_wave2disp_REV_PSV(bool ircvup, const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2])
+void grt_static_wave2qwv_REV_PSV(bool ircvup, const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2])
 {
     MYCOMPLEX D11[2][2] = {{1.0, -1.0}, {1.0, 1.0}};
     MYCOMPLEX D12[2][2] = {{1.0, -1.0}, {-1.0, -1.0}};
@@ -41,12 +41,12 @@ void grt_static_wave2disp_REV_PSV(bool ircvup, const MYCOMPLEX R[2][2], MYCOMPLE
     }
 }
 
-void grt_static_wave2disp_REV_SH(MYCOMPLEX RL, MYCOMPLEX *R_EVL)
+void grt_static_wave2qwv_REV_SH(MYCOMPLEX RL, MYCOMPLEX *R_EVL)
 {
     *R_EVL = (1.0 + (RL));
 }
 
-void grt_static_wave2disp_z_REV_PSV(
+void grt_static_wave2qwv_z_REV_PSV(
     MYCOMPLEX delta1, bool ircvup, MYREAL k, 
     const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2])
 {
@@ -63,7 +63,7 @@ void grt_static_wave2disp_z_REV_PSV(
     }
 }
 
-void grt_static_wave2disp_z_REV_SH(bool ircvup, MYREAL k, MYCOMPLEX RL, MYCOMPLEX *R_EVL)
+void grt_static_wave2qwv_z_REV_SH(bool ircvup, MYREAL k, MYCOMPLEX RL, MYCOMPLEX *R_EVL)
 {
     // 新推导公式
     if(ircvup){// 震源更深

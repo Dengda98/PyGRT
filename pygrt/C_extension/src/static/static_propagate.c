@@ -216,8 +216,8 @@ void grt_static_kernel(
     // 根据震源和台站相对位置，计算最终的系数
     if(ircvup){ // A接收  B震源
         // 计算R_EV
-        grt_static_wave2disp_REV_PSV(ircvup, RU_FA, R_EV);
-        grt_static_wave2disp_REV_SH(RUL_FA, &R_EVL);
+        grt_static_wave2qwv_REV_PSV(ircvup, RU_FA, R_EV);
+        grt_static_wave2qwv_REV_SH(RUL_FA, &R_EVL);
 
         // 递推RU_FS
         grt_recursion_RU(
@@ -240,26 +240,26 @@ void grt_static_kernel(
         tmpRL = R_EVL * invT  / (1.0 - RDL_BL * RUL_FB);
 
         for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-            grt_psc2qwv(ircvup, tmp2x2, tmpRL, RD_BL, RDL_BL, src_coef_PSV[i], src_coef_SH[i], QWV[i]);
+            grt_construct_qwv(ircvup, tmp2x2, tmpRL, RD_BL, RDL_BL, src_coef_PSV[i], src_coef_SH[i], QWV[i]);
         }
         
 
         if(calc_uiz){
-            grt_static_wave2disp_z_REV_PSV(rcv_delta, ircvup, k, RU_FA, uiz_R_EV);
-            grt_static_wave2disp_z_REV_SH(ircvup, k, RUL_FA, &uiz_R_EVL);
+            grt_static_wave2qwv_z_REV_PSV(rcv_delta, ircvup, k, RU_FA, uiz_R_EV);
+            grt_static_wave2qwv_z_REV_SH(ircvup, k, RUL_FA, &uiz_R_EVL);
             grt_cmat2x2_mul(uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
             tmpRL_uiz = tmpRL / R_EVL * uiz_R_EVL;
             
             for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-                grt_psc2qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RD_BL, RDL_BL, src_coef_PSV[i], src_coef_SH[i], QWV_uiz[i]);
+                grt_construct_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RD_BL, RDL_BL, src_coef_PSV[i], src_coef_SH[i], QWV_uiz[i]);
             }    
         }
     }
     else { // A震源  B接收
 
         // 计算R_EV
-        grt_static_wave2disp_REV_PSV(ircvup, RD_BL, R_EV);    
-        grt_static_wave2disp_REV_SH(RDL_BL, &R_EVL);    
+        grt_static_wave2qwv_REV_PSV(ircvup, RD_BL, R_EV);    
+        grt_static_wave2qwv_REV_SH(RDL_BL, &R_EVL);    
 
         // 递推RD_SL
         grt_recursion_RD(
@@ -282,17 +282,17 @@ void grt_static_kernel(
         tmpRL = R_EVL * invT / (1.0 - RUL_FA * RDL_AL);
         
         for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-            grt_psc2qwv(ircvup, tmp2x2, tmpRL, RU_FA, RUL_FA, src_coef_PSV[i], src_coef_SH[i], QWV[i]);
+            grt_construct_qwv(ircvup, tmp2x2, tmpRL, RU_FA, RUL_FA, src_coef_PSV[i], src_coef_SH[i], QWV[i]);
         }
 
         if(calc_uiz){
-            grt_static_wave2disp_z_REV_PSV(rcv_delta, ircvup, k, RD_BL, uiz_R_EV);    
-            grt_static_wave2disp_z_REV_SH(ircvup, k, RDL_BL, &uiz_R_EVL);    
+            grt_static_wave2qwv_z_REV_PSV(rcv_delta, ircvup, k, RD_BL, uiz_R_EV);    
+            grt_static_wave2qwv_z_REV_SH(ircvup, k, RDL_BL, &uiz_R_EVL);    
             grt_cmat2x2_mul(uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
             tmpRL_uiz = tmpRL / R_EVL * uiz_R_EVL;
             
             for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-                grt_psc2qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RU_FA, RUL_FA, src_coef_PSV[i], src_coef_SH[i], QWV_uiz[i]);
+                grt_construct_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RU_FA, RUL_FA, src_coef_PSV[i], src_coef_SH[i], QWV_uiz[i]);
             }
         }
     } // END if

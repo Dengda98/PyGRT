@@ -41,7 +41,7 @@ void grt_topfree_RU_PSV(MYCOMPLEX xa0, MYCOMPLEX xb0, MYCOMPLEX cbcb0, MYREAL k,
  * @param[out]    R_EV            P-SV接收函数矩阵
  * 
  */
-void grt_wave2disp_REV_PSV(
+void grt_wave2qwv_REV_PSV(
     MYCOMPLEX xa_rcv, MYCOMPLEX xb_rcv, bool ircvup,
     MYREAL k, 
     const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2]);
@@ -55,7 +55,7 @@ void grt_wave2disp_REV_PSV(
  * @param[out]    R_EVL           SH接收函数值
  * 
  */
-void grt_wave2disp_REV_SH(
+void grt_wave2qwv_REV_SH(
     MYCOMPLEX xb_rcv,
     MYREAL k, 
     MYCOMPLEX RL, MYCOMPLEX *R_EVL);
@@ -73,7 +73,7 @@ void grt_wave2disp_REV_SH(
  * @param[out]    R_EV            P-SV接收函数矩阵
  * 
  */
-void grt_wave2disp_z_REV_PSV(
+void grt_wave2qwv_z_REV_PSV(
     MYCOMPLEX xa_rcv, MYCOMPLEX xb_rcv, bool ircvup,
     MYREAL k, 
     const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2]);
@@ -90,7 +90,7 @@ void grt_wave2disp_z_REV_PSV(
  * @param[out]    R_EVL           SH接收函数值
  * 
  */
-void grt_wave2disp_z_REV_SH(
+void grt_wave2qwv_z_REV_SH(
     MYCOMPLEX xb_rcv, bool ircvup,
     MYREAL k, 
     MYCOMPLEX RL, MYCOMPLEX *R_EVL);
