@@ -126,7 +126,8 @@ void grt_static_kernel(
             src_delta = delta1;
         }
 
-        // 对第iy层的系数矩阵赋值，加入时间延迟因子(第iy-1界面与第iy界面之间)
+        // 这里和动态解情况不同，即使是震源层、接收层这种虚拟层位也需要显式计算R/T矩阵
+        // 对第iy层的系数矩阵赋值
         grt_calc_static_RT_PSV(
             delta0, mu0,
             delta1, mu1,
@@ -136,6 +137,9 @@ void grt_static_kernel(
             mu0, mu1,
             thk0, k, // 使用iy-1层的厚度
             &RDL, &RUL, &TDL, &TUL);
+        // 加入时间延迟因子(第iy-1界面与第iy界面之间)
+        grt_delay_static_RT_PSV(thk0, k, RD, RU, TD, TU);
+        grt_delay_static_RT_SH(thk0, k, &RDL, &RUL, &TDL, &TUL);
 
         // FA
         if(iy <= imin){
