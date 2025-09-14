@@ -77,12 +77,12 @@ GRT_MODEL1D * grt_init_mod1d(MYINT n);
 GRT_MODEL1D * grt_copy_mod1d(const GRT_MODEL1D *mod1d1);
 
 /**
- * 根据不同的omega， 更新模型的 \f$ k_a^2, k_b^2 \f$ 参数
+ * 根据不同的 omega， 计算衰减系数，更新弹性模量
  * 
  * @param[in,out]     mod1d     `MODEL1D` 结构体指针
  * @param[in]         omega     复数频率
  */
-void grt_update_mod1d_omega(GRT_MODEL1D *mod1d, MYCOMPLEX omega);
+void grt_attenuate_mod1d(GRT_MODEL1D *mod1d, MYCOMPLEX omega);
 
 /**
  * 根据相速度和层位，计算 iy 层的 (c/vp)^2, (c/vs)^2 以及归一化垂直波数
