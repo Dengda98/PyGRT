@@ -170,6 +170,34 @@ void grt_update_mod1d_omega(GRT_MODEL1D *mod1d, MYCOMPLEX omega){
 }
 
 
+void grt_get_mod1d_xa_xb(
+    const GRT_MODEL1D *mod1d, const MYINT iy, const MYCOMPLEX c_phase, 
+    MYCOMPLEX *pt_caca, MYCOMPLEX *pt_xa, MYCOMPLEX *pt_cbcb, MYCOMPLEX *pt_xb)
+{
+    MYREAL va, vb;
+    va = mod1d->Va[iy];
+    vb = mod1d->Vb[iy];
+    MYCOMPLEX atna, atnb;
+    atna = mod1d->atna[iy];
+    atnb = mod1d->atnb[iy];
+
+    MYCOMPLEX caca, cbcb;
+    if(pt_caca!=NULL && pt_xa!=NULL){
+        caca = c_phase / (va*atna); 
+        caca *= caca;
+        *pt_caca = caca;
+        *pt_xa = sqrt(1.0 - caca);
+    }
+    
+    if(pt_cbcb!=NULL && pt_xb!=NULL){
+        cbcb = (vb > 0.0)? c_phase / (vb*atnb) : 0.0;  // 考虑液体层
+        cbcb *= cbcb;
+        *pt_cbcb = cbcb;
+        *pt_xb = sqrt(1.0 - cbcb);
+    }
+}
+
+
 void grt_realloc_mod1d(GRT_MODEL1D *mod1d, MYINT n){
     mod1d->n = n;
 

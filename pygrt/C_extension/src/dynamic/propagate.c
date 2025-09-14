@@ -105,7 +105,7 @@ void grt_kernel(
 
     // 模型参数
     // 后缀0，1分别代表上层和下层
-    MYREAL thk0, thk1, Rho0, Rho1, Va1, Vb1;
+    MYREAL thk0, thk1, Rho0, Rho1;
     MYCOMPLEX mu0, mu1;
     MYCOMPLEX xa0=0.0, xb0=0.0, xa1=0.0, xb1=0.0;
     MYCOMPLEX top_xa=0.0, top_xb=0.0;
@@ -134,14 +134,7 @@ void grt_kernel(
         thk1 = mod1d->Thk[iy];
         Rho1 = mod1d->Rho[iy];
         mu1 = mod1d->mu[iy];
-        Va1 = mod1d->Va[iy];
-        caca1 = c_phase/(Va1*mod1d->atna[iy]);
-        caca1 *= caca1;
-        Vb1 = mod1d->Vb[iy];
-        cbcb1 = (Vb1>0.0)? c_phase/(Vb1*mod1d->atnb[iy]) : 0.0;
-        cbcb1 *= cbcb1;
-        xa1 = sqrt(1.0 - caca1);
-        xb1 = sqrt(1.0 - cbcb1);
+        grt_get_mod1d_xa_xb(mod1d, iy, c_phase, &caca1, &xa1, &cbcb1, &xb1);
 
         if(0==iy){
             top_xa = xa1;
@@ -164,16 +157,16 @@ void grt_kernel(
             grt_calc_RT_PSV(
                 Rho0, xa0, xb0, cbcb0, mu0, 
                 Rho1, xa1, xb1, cbcb1, mu1, 
-                thk0, // 使用iy-1层的厚度
                 omega, k, 
                 RD, RU, TD, TU, stats);
             grt_calc_RT_SH(
                 xb0, mu0, 
                 xb1, mu1, 
-                thk0, // 使用iy-1层的厚度
                 omega, k, 
                 &RDL, &RUL, &TDL, &TUL);
             if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
+            grt_delay_RT_PSV(xa0, xb0, thk0, k, RD, RU, TD, TU);
+            grt_delay_RT_SH(xb0, thk0, k, &RDL, &RUL, &TDL, &TUL);
         }
 
 #if Print_GRTCOEF == 1
