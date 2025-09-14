@@ -16,6 +16,8 @@
 #include "grt/common/const.h"
 #include "grt/common/model.h"
 
+// 引入 grt_construct_qwv 函数声明
+#include "grt/dynamic/propagate.h"
 
 /**
  * 静态kernel函数根据(5.5.3)式递推计算静态广义反射透射矩阵。递推公式适用于动态和静态情况。

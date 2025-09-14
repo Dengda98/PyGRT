@@ -23,7 +23,7 @@
 
 #include "grt/common/checkerror.h"
 
-void grt_calc_R_tilt_PSV(MYCOMPLEX xa0, MYCOMPLEX xb0, MYCOMPLEX cbcb0, MYREAL k, MYCOMPLEX R_tilt[2][2], MYINT *stats)
+void grt_topfree_RU_PSV(MYCOMPLEX xa0, MYCOMPLEX xb0, MYCOMPLEX cbcb0, MYREAL k, MYCOMPLEX R_tilt[2][2], MYINT *stats)
 {
     if(cbcb0 != 0.0){
         // 固体表面
@@ -51,7 +51,7 @@ void grt_calc_R_tilt_PSV(MYCOMPLEX xa0, MYCOMPLEX xb0, MYCOMPLEX cbcb0, MYREAL k
 }
 
 
-void grt_calc_R_EV_PSV(
+void grt_wave2qwv_REV_PSV(
     MYCOMPLEX xa_rcv, MYCOMPLEX xb_rcv, bool ircvup, MYREAL k, 
     const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2])
 {
@@ -82,7 +82,7 @@ void grt_calc_R_EV_PSV(
 }
 
 
-void grt_calc_R_EV_SH(MYCOMPLEX xb_rcv, MYREAL k, MYCOMPLEX RL, MYCOMPLEX *R_EVL)
+void grt_wave2qwv_REV_SH(MYCOMPLEX xb_rcv, MYREAL k, MYCOMPLEX RL, MYCOMPLEX *R_EVL)
 {
     if(xb_rcv != 1.0){
         // 位于固体层
@@ -95,7 +95,7 @@ void grt_calc_R_EV_SH(MYCOMPLEX xb_rcv, MYREAL k, MYCOMPLEX RL, MYCOMPLEX *R_EVL
 }
 
 
-void grt_calc_uiz_R_EV_PSV(
+void grt_wave2qwv_z_REV_PSV(
     MYCOMPLEX xa_rcv, MYCOMPLEX xb_rcv, bool ircvup,
     MYREAL k, 
     const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2])
@@ -125,7 +125,7 @@ void grt_calc_uiz_R_EV_PSV(
 }    
 
 
-void grt_calc_uiz_R_EV_SH(MYCOMPLEX xb_rcv, bool ircvup, MYREAL k, MYCOMPLEX RL, MYCOMPLEX *R_EVL)
+void grt_wave2qwv_z_REV_SH(MYCOMPLEX xb_rcv, bool ircvup, MYREAL k, MYCOMPLEX RL, MYCOMPLEX *R_EVL)
 {
     // 将垂直波函数转为ui,z在(B_m, P_m, C_m)系下的分量
     // 新推导的公式
@@ -145,7 +145,7 @@ void grt_calc_uiz_R_EV_SH(MYCOMPLEX xb_rcv, bool ircvup, MYREAL k, MYCOMPLEX RL,
 }    
 
 
-void grt_calc_RT_ll_PSV(
+void grt_RT_matrix_ll_PSV(
     MYREAL Rho1, MYCOMPLEX xa1,
     MYREAL Rho2, MYCOMPLEX xa2,
     MYCOMPLEX omega, MYREAL k,
@@ -172,7 +172,7 @@ void grt_calc_RT_ll_PSV(
 
 }
 
-void grt_calc_RT_ll_SH(MYCOMPLEX *RDL, MYCOMPLEX *RUL, MYCOMPLEX *TDL, MYCOMPLEX *TUL)
+void grt_RT_matrix_ll_SH(MYCOMPLEX *RDL, MYCOMPLEX *RUL, MYCOMPLEX *TDL, MYCOMPLEX *TUL)
 {
     *RDL = 0.0;
     *RUL = 0.0;
@@ -182,7 +182,7 @@ void grt_calc_RT_ll_SH(MYCOMPLEX *RDL, MYCOMPLEX *RUL, MYCOMPLEX *TDL, MYCOMPLEX
 
 
 
-void grt_calc_RT_ls_PSV(
+void grt_RT_matrix_ls_PSV(
     MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX cbcb1, MYCOMPLEX mu1, 
     MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX cbcb2, MYCOMPLEX mu2, 
     MYCOMPLEX omega, MYREAL k,
@@ -250,7 +250,7 @@ void grt_calc_RT_ls_PSV(
 }
 
 
-void grt_calc_RT_ls_SH(
+void grt_RT_matrix_ls_SH(
     MYCOMPLEX xb1, MYCOMPLEX mu1, MYCOMPLEX mu2, 
     MYCOMPLEX omega, MYREAL k,
     MYCOMPLEX *RDL, MYCOMPLEX *RUL, 
@@ -284,7 +284,7 @@ void grt_calc_RT_ls_SH(
 
 
 
-void grt_calc_RT_ss_PSV(
+void grt_RT_matrix_ss_PSV(
     MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX cbcb1, MYCOMPLEX mu1, 
     MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX cbcb2, MYCOMPLEX mu2, 
     MYCOMPLEX omega, MYREAL k,
@@ -358,7 +358,7 @@ void grt_calc_RT_ss_PSV(
 }
 
 
-void grt_calc_RT_ss_SH(
+void grt_RT_matrix_ss_SH(
     MYCOMPLEX xb1, MYCOMPLEX mu1, 
     MYCOMPLEX xb2, MYCOMPLEX mu2, 
     MYCOMPLEX omega, MYREAL k, 
@@ -379,7 +379,7 @@ void grt_calc_RT_ss_SH(
 
 
 
-void grt_calc_RT_PSV(
+void grt_RT_matrix_PSV(
     MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX cbcb1, MYCOMPLEX mu1, 
     MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX cbcb2, MYCOMPLEX mu2, 
     MYCOMPLEX omega, MYREAL k, 
@@ -388,21 +388,21 @@ void grt_calc_RT_PSV(
 {
     // 根据界面两侧的具体情况选择函数
     if(mu1 != 0.0 && mu2 != 0.0){
-        grt_calc_RT_ss_PSV(
+        grt_RT_matrix_ss_PSV(
             Rho1, xa1, xb1, cbcb1, mu1, 
             Rho2, xa2, xb2, cbcb2, mu2, 
             omega, k, 
             RD, RU, TD, TU, stats);
     }
     else if(mu1 == 0.0 && mu2 == 0.0){
-        grt_calc_RT_ll_PSV(
+        grt_RT_matrix_ll_PSV(
             Rho1, xa1,
             Rho2, xa2,
             omega, k, 
             RD, RU, TD, TU, stats);
     }
     else{
-        grt_calc_RT_ls_PSV(
+        grt_RT_matrix_ls_PSV(
             Rho1, xa1, xb1, cbcb1, mu1, 
             Rho2, xa2, xb2, cbcb2, mu2, 
             omega, k, 
@@ -411,7 +411,7 @@ void grt_calc_RT_PSV(
 }
 
 
-void grt_calc_RT_SH(
+void grt_RT_matrix_SH(
     MYCOMPLEX xb1, MYCOMPLEX mu1, 
     MYCOMPLEX xb2, MYCOMPLEX mu2, 
     MYCOMPLEX omega, MYREAL k, 
@@ -420,18 +420,18 @@ void grt_calc_RT_SH(
 {
     // 根据界面两侧的具体情况选择函数
     if(mu1 != 0.0 && mu2 != 0.0){
-        grt_calc_RT_ss_SH(
+        grt_RT_matrix_ss_SH(
             xb1, mu1, 
             xb2, mu2, 
             omega, k, 
             RDL, RUL, TDL, TUL);
     }
     else if(mu1 == 0.0 && mu2 == 0.0){
-        grt_calc_RT_ll_SH(
+        grt_RT_matrix_ll_SH(
             RDL, RUL, TDL, TUL);
     }
     else{
-        grt_calc_RT_ls_SH(
+        grt_RT_matrix_ls_SH(
             xb1, mu1, mu2, 
             omega, k, 
             RDL, RUL, TDL, TUL);
@@ -439,7 +439,7 @@ void grt_calc_RT_SH(
 }
 
 
-void grt_delay_RT_PSV(
+void grt_delay_RT_matrix_PSV(
     MYCOMPLEX xa1, MYCOMPLEX xb1, 
     MYREAL thk, MYREAL k,
     MYCOMPLEX RD[2][2], MYCOMPLEX RU[2][2], 
@@ -463,7 +463,7 @@ void grt_delay_RT_PSV(
 }
 
 
-void grt_delay_RT_SH(
+void grt_delay_RT_matrix_SH(
     MYCOMPLEX xb1, 
     MYREAL thk, MYREAL k,
     MYCOMPLEX *RDL, MYCOMPLEX *RUL, 
@@ -698,7 +698,7 @@ void grt_get_layer_E_Rayl(
     }
 }
 
-void grt_calc_RT_from_4x4(
+void grt_RT_matrix_from_4x4(
     MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, MYREAL rho1, 
     MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, MYREAL rho2,
     MYCOMPLEX omega, MYREAL thk,

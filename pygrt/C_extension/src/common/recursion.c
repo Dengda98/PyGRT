@@ -229,7 +229,7 @@ void grt_recursion_TU_SH(
 }
 
 
-void grt_recursion_RT(
+void grt_recursion_RT_matrix(
     const MYCOMPLEX RD1[2][2], MYCOMPLEX RDL1, const MYCOMPLEX RU1[2][2], MYCOMPLEX RUL1,
     const MYCOMPLEX TD1[2][2], MYCOMPLEX TDL1, const MYCOMPLEX TU1[2][2], MYCOMPLEX TUL1,
     const MYCOMPLEX RD2[2][2], MYCOMPLEX RDL2, const MYCOMPLEX RU2[2][2], MYCOMPLEX RUL2,
@@ -237,18 +237,18 @@ void grt_recursion_RT(
     MYCOMPLEX RD[2][2], MYCOMPLEX *RDL, MYCOMPLEX RU[2][2], MYCOMPLEX *RUL,
     MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX TU[2][2], MYCOMPLEX *TUL, MYINT *stats)
 {
-    grt_recursion_RT_PSV(
+    grt_recursion_RT_matrix_PSV(
         RD1, RU1, TD1, TU1,
         RD2, RU2, TD2, TU2,
         RD, RU, TD, TU, stats);
-    grt_recursion_RT_SH(
+    grt_recursion_RT_matrix_SH(
         RDL1, RUL1, TDL1, TUL1,
         RDL2, RUL2, TDL2, TUL2,
         RDL, RUL, TDL, TUL, stats);
 }
 
 
-void grt_recursion_RT_PSV(
+void grt_recursion_RT_matrix_PSV(
     const MYCOMPLEX RD1[2][2], const MYCOMPLEX RU1[2][2],
     const MYCOMPLEX TD1[2][2], const MYCOMPLEX TU1[2][2],
     const MYCOMPLEX RD2[2][2], const MYCOMPLEX RU2[2][2],
@@ -287,7 +287,7 @@ void grt_recursion_RT_PSV(
 }
 
 
-void grt_recursion_RT_SH(
+void grt_recursion_RT_matrix_SH(
     MYCOMPLEX RDL1, MYCOMPLEX RUL1,
     MYCOMPLEX TDL1, MYCOMPLEX TUL1,
     MYCOMPLEX RDL2, MYCOMPLEX RUL2,
@@ -320,21 +320,21 @@ void grt_recursion_RT_SH(
 }
 
 
-void grt_recursion_RT_imaginary(
+void grt_recursion_RT_matrix_virtual(
     MYCOMPLEX xa1, MYCOMPLEX xb1, MYREAL thk, MYREAL k, // 使用上层的厚度
     MYCOMPLEX RU[2][2], MYCOMPLEX *RUL, 
     MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX TU[2][2], MYCOMPLEX *TUL)
 {
-    grt_recursion_RT_PSV_imaginary(
+    grt_recursion_RT_matrix_PSV_virtual(
         xa1, xb1, thk, k,
         RU, TD, TU);
-    grt_recursion_RT_SH_imaginary(
+    grt_recursion_RT_matrix_SH_virtual(
         xb1, thk, k,
         RUL, TDL, TUL);
 }
 
 
-void grt_recursion_RT_PSV_imaginary(
+void grt_recursion_RT_matrix_PSV_virtual(
     MYCOMPLEX xa1, MYCOMPLEX xb1, MYREAL thk, MYREAL k, // 使用上层的厚度
     MYCOMPLEX RU[2][2], MYCOMPLEX TD[2][2], MYCOMPLEX TU[2][2])
 {
@@ -359,7 +359,7 @@ void grt_recursion_RT_PSV_imaginary(
 }
 
 
-void grt_recursion_RT_SH_imaginary(
+void grt_recursion_RT_matrix_SH_virtual(
     MYCOMPLEX xb1, MYREAL thk, MYREAL k, // 使用上层的厚度
     MYCOMPLEX *RUL, MYCOMPLEX *TDL, MYCOMPLEX *TUL)
 {
@@ -374,31 +374,4 @@ void grt_recursion_RT_SH_imaginary(
 }
 
 
-
-
-void grt_get_qwv(
-    bool ircvup, 
-    const MYCOMPLEX R1[2][2], MYCOMPLEX RL1, 
-    const MYCOMPLEX R2[2][2], MYCOMPLEX RL2, 
-    const MYCOMPLEX coef_PSV[GRT_QWV_NUM-1][2], const MYCOMPLEX coef_SH[2], 
-    MYCOMPLEX qwv[GRT_QWV_NUM])
-{
-    MYCOMPLEX qw0[2], qw1[2], v0;
-    MYCOMPLEX coefD[2] = {coef_PSV[0][0], coef_PSV[1][0]};
-    MYCOMPLEX coefU[2] = {coef_PSV[0][1], coef_PSV[1][1]};
-    if(ircvup){
-        grt_cmat2x1_mul(R2, coefD, qw0);
-        qw0[0] += coefU[0]; qw0[1] += coefU[1]; 
-        v0 = RL1 * (RL2*coef_SH[0] + coef_SH[1]);
-    } else {
-        grt_cmat2x1_mul(R2, coefU, qw0);
-        qw0[0] += coefD[0]; qw0[1] += coefD[1]; 
-        v0 = RL1 * (coef_SH[0] + RL2*coef_SH[1]);
-    }
-    grt_cmat2x1_mul(R1, qw0, qw1);
-
-    qwv[0] = qw1[0];
-    qwv[1] = qw1[1];
-    qwv[2] = v0;
-}
 
