@@ -215,8 +215,8 @@ void grt_recursion_TU_SH(
 
 
 
-/** 合并 recursion_RT_PSV(SH) */
-void grt_recursion_RT(
+/** 合并 recursion_RT_matrix_PSV(SH) */
+void grt_recursion_RT_matrix(
     const MYCOMPLEX RD1[2][2], MYCOMPLEX RDL1, const MYCOMPLEX RU1[2][2], MYCOMPLEX RUL1,
     const MYCOMPLEX TD1[2][2], MYCOMPLEX TDL1, const MYCOMPLEX TU1[2][2], MYCOMPLEX TUL1,
     const MYCOMPLEX RD2[2][2], MYCOMPLEX RDL2, const MYCOMPLEX RU2[2][2], MYCOMPLEX RUL2,
@@ -243,7 +243,7 @@ void grt_recursion_RT(
  * @param[out]    stats               状态代码，是否有除零错误，非0为异常值
  * 
  */
-void grt_recursion_RT_PSV(
+void grt_recursion_RT_matrix_PSV(
     const MYCOMPLEX RD1[2][2], const MYCOMPLEX RU1[2][2],
     const MYCOMPLEX TD1[2][2], const MYCOMPLEX TU1[2][2],
     const MYCOMPLEX RD2[2][2], const MYCOMPLEX RU2[2][2],
@@ -270,7 +270,7 @@ void grt_recursion_RT_PSV(
  * @param[out]    stats               状态代码，是否有除零错误，非0为异常值
  * 
  */
-void grt_recursion_RT_SH(
+void grt_recursion_RT_matrix_SH(
     MYCOMPLEX RDL1, MYCOMPLEX RUL1,
     MYCOMPLEX TDL1, MYCOMPLEX TUL1,
     MYCOMPLEX RDL2, MYCOMPLEX RUL2,
@@ -280,8 +280,8 @@ void grt_recursion_RT_SH(
 
 
 
-/** 合并 recursion_RT_PSV(SH)_imaginary */
-void grt_recursion_RT_imaginary(
+/** 合并 recursion_RT_matrix_PSV(SH)_virtual */
+void grt_recursion_RT_matrix_virtual(
     MYCOMPLEX xa1, MYCOMPLEX xb1, MYREAL thk, MYREAL k, // 使用上层的厚度
     MYCOMPLEX RU[2][2], MYCOMPLEX *RUL, 
     MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX TU[2][2], MYCOMPLEX *TUL);
@@ -297,7 +297,7 @@ void grt_recursion_RT_imaginary(
  * @param[in,out]     TD             上层 P-SV 下传透射系数矩阵
  * @param[in,out]     TU             上层 P-SV 上传透射系数矩阵
  */
-void grt_recursion_RT_PSV_imaginary(
+void grt_recursion_RT_matrix_PSV_virtual(
     MYCOMPLEX xa1, MYCOMPLEX xb1, MYREAL thk, MYREAL k, // 使用上层的厚度
     MYCOMPLEX RU[2][2], MYCOMPLEX TD[2][2], MYCOMPLEX TU[2][2]);
 
@@ -311,7 +311,7 @@ void grt_recursion_RT_PSV_imaginary(
  * @param[in,out]     TDL            上层 SH 下传透射系数
  * @param[in,out]     TUL            上层 SH 上传透射系数
  */
-void grt_recursion_RT_SH_imaginary(
+void grt_recursion_RT_matrix_SH_virtual(
     MYCOMPLEX xb1, MYREAL thk, MYREAL k, // 使用上层的厚度
     MYCOMPLEX *RUL, MYCOMPLEX *TDL, MYCOMPLEX *TUL);
 
@@ -349,7 +349,7 @@ void grt_recursion_RT_SH_imaginary(
  * @param[in]     coef_SH       SH 波震源系数，\f$ SH_m \f$ ，维度2表示下行波(p=0)和上行波(p=1)
  * @param[out]    qwv           最终通过矩阵传播计算出的在台站位置的\f$ q_m,w_m,v_m\f$
  */
-void grt_get_qwv(
+void grt_psc2qwv(
     bool ircvup, 
     const MYCOMPLEX R1[2][2], MYCOMPLEX RL1, 
     const MYCOMPLEX R2[2][2], MYCOMPLEX RL2, 

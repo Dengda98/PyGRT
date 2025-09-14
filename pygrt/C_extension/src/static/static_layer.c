@@ -19,14 +19,14 @@
 #include "grt/common/model.h"
 #include "grt/common/matrix.h"
 
-void grt_calc_static_R_tilt_PSV(MYCOMPLEX delta1, MYCOMPLEX R_tilt[2][2]){
+void grt_static_topfree_RU_PSV(MYCOMPLEX delta1, MYCOMPLEX R_tilt[2][2]){
     // 公式(6.3.12)
     R_tilt[0][0] = R_tilt[1][1] = 0.0;
     R_tilt[0][1] = -delta1;
     R_tilt[1][0] = -1.0/delta1;
 }
 
-void grt_calc_static_R_EV_PSV(bool ircvup, const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2])
+void grt_static_wave2disp_REV_PSV(bool ircvup, const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2])
 {
     MYCOMPLEX D11[2][2] = {{1.0, -1.0}, {1.0, 1.0}};
     MYCOMPLEX D12[2][2] = {{1.0, -1.0}, {-1.0, -1.0}};
@@ -41,12 +41,12 @@ void grt_calc_static_R_EV_PSV(bool ircvup, const MYCOMPLEX R[2][2], MYCOMPLEX R_
     }
 }
 
-void grt_calc_static_R_EV_SH(MYCOMPLEX RL, MYCOMPLEX *R_EVL)
+void grt_static_wave2disp_REV_SH(MYCOMPLEX RL, MYCOMPLEX *R_EVL)
 {
     *R_EVL = (1.0 + (RL));
 }
 
-void grt_calc_static_uiz_R_EV_PSV(
+void grt_static_wave2disp_z_REV_PSV(
     MYCOMPLEX delta1, bool ircvup, MYREAL k, 
     const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2])
 {
@@ -63,7 +63,7 @@ void grt_calc_static_uiz_R_EV_PSV(
     }
 }
 
-void grt_calc_static_uiz_R_EV_SH(bool ircvup, MYREAL k, MYCOMPLEX RL, MYCOMPLEX *R_EVL)
+void grt_static_wave2disp_z_REV_SH(bool ircvup, MYREAL k, MYCOMPLEX RL, MYCOMPLEX *R_EVL)
 {
     // 新推导公式
     if(ircvup){// 震源更深
@@ -74,7 +74,7 @@ void grt_calc_static_uiz_R_EV_SH(bool ircvup, MYREAL k, MYCOMPLEX RL, MYCOMPLEX 
 }
 
 
-void grt_calc_static_RT_PSV(
+void grt_static_RT_matrix_PSV(
     MYCOMPLEX delta1, MYCOMPLEX mu1, 
     MYCOMPLEX delta2, MYCOMPLEX mu2, 
     MYREAL thk, MYREAL k,
@@ -115,7 +115,7 @@ void grt_calc_static_RT_PSV(
 }
 
 
-void grt_calc_static_RT_SH(
+void grt_static_RT_matrix_SH(
     MYCOMPLEX mu1, MYCOMPLEX mu2, 
     MYREAL thk, MYREAL k,
     MYCOMPLEX *RDL, MYCOMPLEX *RUL, MYCOMPLEX *TDL, MYCOMPLEX *TUL)
@@ -134,7 +134,7 @@ void grt_calc_static_RT_SH(
 }
 
 
-void grt_delay_static_RT_PSV(
+void grt_static_delay_RT_matrix_PSV(
     MYREAL thk, MYREAL k,
     MYCOMPLEX RD[2][2], MYCOMPLEX RU[2][2], 
     MYCOMPLEX TD[2][2], MYCOMPLEX TU[2][2])
@@ -154,7 +154,7 @@ void grt_delay_static_RT_PSV(
 }
 
 
-void grt_delay_static_RT_SH(
+void grt_static_delay_RT_matrix_SH(
     MYREAL thk, MYREAL k,
     MYCOMPLEX *RDL, MYCOMPLEX *RUL, 
     MYCOMPLEX *TDL, MYCOMPLEX *TUL)

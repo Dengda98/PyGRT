@@ -128,18 +128,18 @@ void grt_static_kernel(
 
         // 这里和动态解情况不同，即使是震源层、接收层这种虚拟层位也需要显式计算R/T矩阵
         // 对第iy层的系数矩阵赋值
-        grt_calc_static_RT_PSV(
+        grt_static_RT_matrix_PSV(
             delta0, mu0,
             delta1, mu1,
             thk0, k, // 使用iy-1层的厚度
             RD, RU, TD, TU);
-        grt_calc_static_RT_SH(
+        grt_static_RT_matrix_SH(
             mu0, mu1,
             thk0, k, // 使用iy-1层的厚度
             &RDL, &RUL, &TDL, &TUL);
         // 加入时间延迟因子(第iy-1界面与第iy界面之间)
-        grt_delay_static_RT_PSV(thk0, k, RD, RU, TD, TU);
-        grt_delay_static_RT_SH(thk0, k, &RDL, &RUL, &TDL, &TUL);
+        grt_static_delay_RT_matrix_PSV(thk0, k, RD, RU, TD, TU);
+        grt_static_delay_RT_matrix_SH(thk0, k, &RDL, &RUL, &TDL, &TUL);
 
         // FA
         if(iy <= imin){
@@ -147,7 +147,7 @@ void grt_static_kernel(
                 GRT_RT_PSV_ASSIGN(FA);
                 GRT_RT_SH_ASSIGN(FA);
             } else { // 递推FA
-                grt_recursion_RT(
+                grt_recursion_RT_matrix(
                     RD_FA, RDL_FA, RU_FA, RUL_FA, 
                     TD_FA, TDL_FA, TU_FA, TUL_FA,
                     RD, RDL, RU, RUL, 
@@ -162,7 +162,7 @@ void grt_static_kernel(
                 GRT_RT_PSV_ASSIGN(RS);
                 GRT_RT_SH_ASSIGN(RS);
             } else { // 递推RS
-                grt_recursion_RT(
+                grt_recursion_RT_matrix(
                     RD_RS, RDL_RS, RU_RS, RUL_RS, 
                     TD_RS, TDL_RS, TU_RS, TUL_RS,
                     RD, RDL, RU, RUL, 
@@ -178,7 +178,7 @@ void grt_static_kernel(
                 GRT_RT_SH_ASSIGN(BL);
             } else { // 递推BL
                 // 只有 RD 矩阵最终会被使用到
-                grt_recursion_RT(
+                grt_recursion_RT_matrix(
                     RD_BL, RDL_BL, RU_BL, RUL_BL, 
                     TD_BL, TDL_BL, TU_BL, TUL_BL,
                     RD, RDL, RU, RUL, 
@@ -204,7 +204,7 @@ void grt_static_kernel(
     MYCOMPLEX inv_2x2T[2][2], invT;
 
     // 递推RU_FA
-    grt_calc_static_R_tilt_PSV(top_delta, R_tilt);
+    grt_static_topfree_RU_PSV(top_delta, R_tilt);
     grt_recursion_RU(
         R_tilt, 1.0, 
         RD_FA, RDL_FA,
@@ -216,8 +216,8 @@ void grt_static_kernel(
     // 根据震源和台站相对位置，计算最终的系数
     if(ircvup){ // A接收  B震源
         // 计算R_EV
-        grt_calc_static_R_EV_PSV(ircvup, RU_FA, R_EV);
-        grt_calc_static_R_EV_SH(RUL_FA, &R_EVL);
+        grt_static_wave2disp_REV_PSV(ircvup, RU_FA, R_EV);
+        grt_static_wave2disp_REV_SH(RUL_FA, &R_EVL);
 
         // 递推RU_FS
         grt_recursion_RU(
@@ -240,26 +240,26 @@ void grt_static_kernel(
         tmpRL = R_EVL * invT  / (1.0 - RDL_BL * RUL_FB);
 
         for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-            grt_get_qwv(ircvup, tmp2x2, tmpRL, RD_BL, RDL_BL, src_coef_PSV[i], src_coef_SH[i], QWV[i]);
+            grt_psc2qwv(ircvup, tmp2x2, tmpRL, RD_BL, RDL_BL, src_coef_PSV[i], src_coef_SH[i], QWV[i]);
         }
         
 
         if(calc_uiz){
-            grt_calc_static_uiz_R_EV_PSV(rcv_delta, ircvup, k, RU_FA, uiz_R_EV);
-            grt_calc_static_uiz_R_EV_SH(ircvup, k, RUL_FA, &uiz_R_EVL);
+            grt_static_wave2disp_z_REV_PSV(rcv_delta, ircvup, k, RU_FA, uiz_R_EV);
+            grt_static_wave2disp_z_REV_SH(ircvup, k, RUL_FA, &uiz_R_EVL);
             grt_cmat2x2_mul(uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
             tmpRL_uiz = tmpRL / R_EVL * uiz_R_EVL;
             
             for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-                grt_get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RD_BL, RDL_BL, src_coef_PSV[i], src_coef_SH[i], QWV_uiz[i]);
+                grt_psc2qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RD_BL, RDL_BL, src_coef_PSV[i], src_coef_SH[i], QWV_uiz[i]);
             }    
         }
     }
     else { // A震源  B接收
 
         // 计算R_EV
-        grt_calc_static_R_EV_PSV(ircvup, RD_BL, R_EV);    
-        grt_calc_static_R_EV_SH(RDL_BL, &R_EVL);    
+        grt_static_wave2disp_REV_PSV(ircvup, RD_BL, R_EV);    
+        grt_static_wave2disp_REV_SH(RDL_BL, &R_EVL);    
 
         // 递推RD_SL
         grt_recursion_RD(
@@ -282,17 +282,17 @@ void grt_static_kernel(
         tmpRL = R_EVL * invT / (1.0 - RUL_FA * RDL_AL);
         
         for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-            grt_get_qwv(ircvup, tmp2x2, tmpRL, RU_FA, RUL_FA, src_coef_PSV[i], src_coef_SH[i], QWV[i]);
+            grt_psc2qwv(ircvup, tmp2x2, tmpRL, RU_FA, RUL_FA, src_coef_PSV[i], src_coef_SH[i], QWV[i]);
         }
 
         if(calc_uiz){
-            grt_calc_static_uiz_R_EV_PSV(rcv_delta, ircvup, k, RD_BL, uiz_R_EV);    
-            grt_calc_static_uiz_R_EV_SH(ircvup, k, RDL_BL, &uiz_R_EVL);    
+            grt_static_wave2disp_z_REV_PSV(rcv_delta, ircvup, k, RD_BL, uiz_R_EV);    
+            grt_static_wave2disp_z_REV_SH(ircvup, k, RDL_BL, &uiz_R_EVL);    
             grt_cmat2x2_mul(uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
             tmpRL_uiz = tmpRL / R_EVL * uiz_R_EVL;
             
             for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-                grt_get_qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RU_FA, RUL_FA, src_coef_PSV[i], src_coef_SH[i], QWV_uiz[i]);
+                grt_psc2qwv(ircvup, tmp2x2_uiz, tmpRL_uiz, RU_FA, RUL_FA, src_coef_PSV[i], src_coef_SH[i], QWV_uiz[i]);
             }
         }
     } // END if

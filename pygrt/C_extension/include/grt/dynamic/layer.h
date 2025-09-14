@@ -27,7 +27,7 @@
  * @param[out]    stats          状态代码，是否有除零错误，非0为异常值
  * 
  */
-void grt_calc_R_tilt_PSV(MYCOMPLEX xa0, MYCOMPLEX xb0, MYCOMPLEX cbcb0, MYREAL k, MYCOMPLEX R_tilt[2][2], MYINT *stats);
+void grt_topfree_RU_PSV(MYCOMPLEX xa0, MYCOMPLEX xb0, MYCOMPLEX cbcb0, MYREAL k, MYCOMPLEX R_tilt[2][2], MYINT *stats);
 
 
 /**
@@ -41,7 +41,7 @@ void grt_calc_R_tilt_PSV(MYCOMPLEX xa0, MYCOMPLEX xb0, MYCOMPLEX cbcb0, MYREAL k
  * @param[out]    R_EV            P-SV接收函数矩阵
  * 
  */
-void grt_calc_R_EV_PSV(
+void grt_wave2disp_REV_PSV(
     MYCOMPLEX xa_rcv, MYCOMPLEX xb_rcv, bool ircvup,
     MYREAL k, 
     const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2]);
@@ -55,7 +55,7 @@ void grt_calc_R_EV_PSV(
  * @param[out]    R_EVL           SH接收函数值
  * 
  */
-void grt_calc_R_EV_SH(
+void grt_wave2disp_REV_SH(
     MYCOMPLEX xb_rcv,
     MYREAL k, 
     MYCOMPLEX RL, MYCOMPLEX *R_EVL);
@@ -73,7 +73,7 @@ void grt_calc_R_EV_SH(
  * @param[out]    R_EV            P-SV接收函数矩阵
  * 
  */
-void grt_calc_uiz_R_EV_PSV(
+void grt_wave2disp_z_REV_PSV(
     MYCOMPLEX xa_rcv, MYCOMPLEX xb_rcv, bool ircvup,
     MYREAL k, 
     const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2]);
@@ -90,7 +90,7 @@ void grt_calc_uiz_R_EV_PSV(
  * @param[out]    R_EVL           SH接收函数值
  * 
  */
-void grt_calc_uiz_R_EV_SH(
+void grt_wave2disp_z_REV_SH(
     MYCOMPLEX xb_rcv, bool ircvup,
     MYREAL k, 
     MYCOMPLEX RL, MYCOMPLEX *R_EVL);
@@ -121,7 +121,7 @@ void grt_calc_uiz_R_EV_SH(
  * @param[out]     stats         状态代码，是否有除零错误，非0为异常值
  * 
  */
-void grt_calc_RT_PSV(
+void grt_RT_matrix_PSV(
     MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX cbcb1, MYCOMPLEX mu1, 
     MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX cbcb2, MYCOMPLEX mu2, 
     MYCOMPLEX omega, MYREAL k, 
@@ -146,7 +146,7 @@ void grt_calc_RT_PSV(
  * @param[out]     stats         状态代码，是否有除零错误，非0为异常值
  * 
  */
-void grt_calc_RT_SH(
+void grt_RT_matrix_SH(
     MYCOMPLEX xb1, MYCOMPLEX mu1, 
     MYCOMPLEX xb2, MYCOMPLEX mu2, 
     MYCOMPLEX omega, MYREAL k, 
@@ -154,7 +154,7 @@ void grt_calc_RT_SH(
     MYCOMPLEX *TDL, MYCOMPLEX *TUL);
 
 /** 液-液 界面，函数参数见 calc_RT_PSV 函数 */
-void grt_calc_RT_ll_PSV(
+void grt_RT_matrix_ll_PSV(
     MYREAL Rho1, MYCOMPLEX xa1,
     MYREAL Rho2, MYCOMPLEX xa2,
     MYCOMPLEX omega, MYREAL k,
@@ -162,12 +162,12 @@ void grt_calc_RT_ll_PSV(
     MYCOMPLEX TD[2][2], MYCOMPLEX TU[2][2], MYINT *stats);
 
 /** 液-液 界面，函数参数见 calc_RT_SH 函数 */
-void grt_calc_RT_ll_SH(
+void grt_RT_matrix_ll_SH(
     MYCOMPLEX *RDL, MYCOMPLEX *RUL, 
     MYCOMPLEX *TDL, MYCOMPLEX *TUL);
 
 /** 液-固 界面，函数参数见 calc_RT_PSV 函数 */
-void grt_calc_RT_ls_PSV(
+void grt_RT_matrix_ls_PSV(
     MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX cbcb1, MYCOMPLEX mu1, 
     MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX cbcb2, MYCOMPLEX mu2, 
     MYCOMPLEX omega, MYREAL k, 
@@ -175,14 +175,14 @@ void grt_calc_RT_ls_PSV(
     MYCOMPLEX TD[2][2], MYCOMPLEX TU[2][2], MYINT *stats);
 
 /** 液-固 界面，函数参数见 calc_RT_SH 函数 */
-void grt_calc_RT_ls_SH(
+void grt_RT_matrix_ls_SH(
     MYCOMPLEX xb1, MYCOMPLEX mu1, MYCOMPLEX mu2, 
     MYCOMPLEX omega, MYREAL k,
     MYCOMPLEX *RDL, MYCOMPLEX *RUL, 
     MYCOMPLEX *TDL, MYCOMPLEX *TUL);
 
 /** 固-固 界面，函数参数见 calc_RT_PSV 函数 */
-void grt_calc_RT_ss_PSV(
+void grt_RT_matrix_ss_PSV(
     MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX cbcb1, MYCOMPLEX mu1, 
     MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX cbcb2, MYCOMPLEX mu2, 
     MYCOMPLEX omega, MYREAL k, 
@@ -190,7 +190,7 @@ void grt_calc_RT_ss_PSV(
     MYCOMPLEX TD[2][2], MYCOMPLEX TU[2][2], MYINT *stats);
 
 /** 固-固 界面，函数参数见 calc_RT_SH 函数 */
-void grt_calc_RT_ss_SH(
+void grt_RT_matrix_ss_SH(
     MYCOMPLEX xb1, MYCOMPLEX mu1, 
     MYCOMPLEX xb2, MYCOMPLEX mu2, 
     MYCOMPLEX omega, MYREAL k, 
@@ -210,7 +210,7 @@ void grt_calc_RT_ss_SH(
  * @param[in,out]     TU          P-SV 上传透射系数矩阵     
  * 
  */
-void grt_delay_RT_PSV(
+void grt_delay_RT_matrix_PSV(
     MYCOMPLEX xa1, MYCOMPLEX xb1, 
     MYREAL thk, MYREAL k,
     MYCOMPLEX RD[2][2], MYCOMPLEX RU[2][2], 
@@ -228,7 +228,7 @@ void grt_delay_RT_PSV(
  * @param[in,out]     TUL         SH 上传透射系数矩阵     
  * 
  */
-void grt_delay_RT_SH(
+void grt_delay_RT_matrix_SH(
     MYCOMPLEX xb1, 
     MYREAL thk, MYREAL k,
     MYCOMPLEX *RDL, MYCOMPLEX *RUL, 
@@ -315,7 +315,7 @@ void grt_get_layer_E_Love(MYCOMPLEX xb1, MYREAL thk, MYREAL k, MYCOMPLEX E[2][2]
  *  和 calc_RT_PSV(SH) 函数解决相同问题，但没有使用显式推导的公式，而是直接做矩阵运算，
  *  函数接口也类似
  */
-void grt_calc_RT_from_4x4(
+void grt_RT_matrix_from_4x4(
     MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, MYREAL rho1, 
     MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, MYREAL rho2,
     MYCOMPLEX omega, MYREAL thk,
