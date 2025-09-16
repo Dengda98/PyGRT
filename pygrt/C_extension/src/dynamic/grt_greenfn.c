@@ -283,7 +283,7 @@ printf("\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
 "    grt greenfn -M<model> -D<depsrc>/<deprcv> \n"
-"        -N<nt>/<dt>[/<zeta>][+n<fac>] \n"
+"        -N<nt>/<dt>[+w<zeta>][+n<fac>] \n"
 "        -R<r1>,<r2>[,...]     -O<outdir>     [-H<f1>/<f2>] \n"
 "        [-L<length>]    [-V<vmin_ref>]     [-E<t0>[/<v0>]] \n" 
 "        [-K<k0>[/<ampk>/<keps>]]            [-P<nthreads>]\n"
@@ -305,7 +305,7 @@ printf("\n"
 "                 <depsrc>: source depth (km).\n"
 "                 <deprcv>: receiver depth (km).\n"
 "\n"
-"    -N<nt>/<dt>[/<zeta>][+n<fac>] \n"
+"    -N<nt>/<dt>[+w<zeta>][+n<fac>] \n"
 "                 <nt>:   number of points. (NOT requires 2^n).\n"
 "                 <dt>:   time interval (secs). \n"
 "                 <zeta>: define the coefficient of imaginary \n"
@@ -477,22 +477,22 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 }
                 break;
 
-            // 点数,采样间隔,虚频率 -Nnt/dt/[zeta][+n<scale>]
+            // 点数,采样间隔,虚频率 -Nnt/dt[+w<zeta>][+n<scale>]
             case 'N':
                 Ctrl->N.active = true;
                 {
                     char *string = strdup(optarg);
                     char *token = strtok(string, "+");
-                    if(2 > sscanf(token, "%d/%lf/%lf", &Ctrl->N.nt, &Ctrl->N.dt, &Ctrl->N.zeta)){
+                    if(2 != sscanf(token, "%d/%lf", &Ctrl->N.nt, &Ctrl->N.dt)){
                         GRTBadOptionError(command, N, "");
                     };
-                    if(Ctrl->N.nt <= 0 || Ctrl->N.dt <= 0.0 || Ctrl->N.zeta <= 0.0){
+                    if(Ctrl->N.nt <= 0 || Ctrl->N.dt <= 0.0){
                         GRTBadOptionError(command, N, "Nonpositive value in -N is not supported.");
                     }
 
                     // 处理 + 号指令
                     token = strtok(NULL, "+");
-                    if(token != NULL){
+                    while(token != NULL){
                         switch (token[0]){
                             case 'n':
                                 if(1 != sscanf(token+1, "%d", &Ctrl->N.upsample_n)){
@@ -502,10 +502,22 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                                     GRTBadOptionError(command, N, "+%s need positive integer, but get (%d).", token, Ctrl->N.upsample_n);
                                 }
                                 break;
+
+                            case 'w':
+                                if(1 != sscanf(token+1, "%lf", &Ctrl->N.zeta)){
+                                    GRTBadOptionError(command, N, "");
+                                }
+                                if(Ctrl->N.zeta <= 0.0){
+                                    GRTBadOptionError(command, N, "+%s need positive float, but get (%lf).", token, Ctrl->N.zeta);
+                                }
+                                break;
+                            
                             default:
                                 GRTBadOptionError(command, N, "+%s is not supported.", token);
                                 break;
                         }
+
+                        token = strtok(NULL, "+");
                     }
 
                     GRT_SAFE_FREE_PTR(string);
