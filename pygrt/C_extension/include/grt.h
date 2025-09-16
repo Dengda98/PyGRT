@@ -41,8 +41,8 @@
     X(static_strain)       \
     X(static_stress)       \
     /* other */            \
-    X(k2a)                 \
-    X(b2a)                 \
+    X(ker2asc)                 \
+    X(sac2asc)                 \
     X(travt)               \
 // ------------------------------------------------------
 
