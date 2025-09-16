@@ -159,7 +159,7 @@ void grt_integ_grn_spec(
     #else 
         local_mod1d = mod1d;
     #endif
-        grt_update_mod1d_omega(local_mod1d, omega);
+        grt_attenuate_mod1d(local_mod1d, omega);
 
         // 是否要输出积分过程文件
         bool needfstats = (statsstr!=NULL && ((grt_findElement_MYINT(statsidxs, nstatsidxs, iw) >= 0) || (grt_findElement_MYINT(statsidxs, nstatsidxs, -1) >= 0)));

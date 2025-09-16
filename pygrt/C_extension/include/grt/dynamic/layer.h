@@ -27,7 +27,7 @@
  * @param[out]    stats          状态代码，是否有除零错误，非0为异常值
  * 
  */
-void grt_calc_R_tilt_PSV(MYCOMPLEX xa0, MYCOMPLEX xb0, MYCOMPLEX cbcb0, MYREAL k, MYCOMPLEX R_tilt[2][2], MYINT *stats);
+void grt_topfree_RU_PSV(MYCOMPLEX xa0, MYCOMPLEX xb0, MYCOMPLEX cbcb0, MYREAL k, MYCOMPLEX R_tilt[2][2], MYINT *stats);
 
 
 /**
@@ -41,7 +41,7 @@ void grt_calc_R_tilt_PSV(MYCOMPLEX xa0, MYCOMPLEX xb0, MYCOMPLEX cbcb0, MYREAL k
  * @param[out]    R_EV            P-SV接收函数矩阵
  * 
  */
-void grt_calc_R_EV_PSV(
+void grt_wave2qwv_REV_PSV(
     MYCOMPLEX xa_rcv, MYCOMPLEX xb_rcv, bool ircvup,
     MYREAL k, 
     const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2]);
@@ -55,7 +55,7 @@ void grt_calc_R_EV_PSV(
  * @param[out]    R_EVL           SH接收函数值
  * 
  */
-void grt_calc_R_EV_SH(
+void grt_wave2qwv_REV_SH(
     MYCOMPLEX xb_rcv,
     MYREAL k, 
     MYCOMPLEX RL, MYCOMPLEX *R_EVL);
@@ -73,7 +73,7 @@ void grt_calc_R_EV_SH(
  * @param[out]    R_EV            P-SV接收函数矩阵
  * 
  */
-void grt_calc_uiz_R_EV_PSV(
+void grt_wave2qwv_z_REV_PSV(
     MYCOMPLEX xa_rcv, MYCOMPLEX xb_rcv, bool ircvup,
     MYREAL k, 
     const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2]);
@@ -90,14 +90,14 @@ void grt_calc_uiz_R_EV_PSV(
  * @param[out]    R_EVL           SH接收函数值
  * 
  */
-void grt_calc_uiz_R_EV_SH(
+void grt_wave2qwv_z_REV_SH(
     MYCOMPLEX xb_rcv, bool ircvup,
     MYREAL k, 
     MYCOMPLEX RL, MYCOMPLEX *R_EVL);
 
 
 /**
- * 计算界面的 P-SV 波反射透射系数RD/RU/TD/TU, 包括时间延迟因子，
+ * 计算界面的 P-SV 波反射透射系数 RD/RU/TD/TU,
  * 根据公式(5.4.14)计算系数   
  * 
  * @note   对公式(5.4.14)进行了重新整理。原公式各项之间的数量级差别过大，浮点数计算损失精度严重。
@@ -112,7 +112,6 @@ void grt_calc_uiz_R_EV_SH(
  * @param[in]      xb2           下层的S波归一化垂直波数 \f$ \sqrt{1 - (k_b/k)^2} \f$
  * @param[in]      cbcb2         相速度与下层的S波速度比值的平方 \f$ c_b^2=(\frac{c}{V_b})^2 \f$
  * @param[in]      mu2           下层的剪切模量
- * @param[in]      thk           上层层厚
  * @param[in]      omega         角频率
  * @param[in]      k             波数
  * @param[out]     RD            P-SV 下传反射系数矩阵
@@ -122,24 +121,22 @@ void grt_calc_uiz_R_EV_SH(
  * @param[out]     stats         状态代码，是否有除零错误，非0为异常值
  * 
  */
-void grt_calc_RT_PSV(
+void grt_RT_matrix_PSV(
     MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX cbcb1, MYCOMPLEX mu1, 
     MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX cbcb2, MYCOMPLEX mu2, 
-    MYREAL thk, // 使用上层的厚度
     MYCOMPLEX omega, MYREAL k, 
     MYCOMPLEX RD[2][2], MYCOMPLEX RU[2][2],
     MYCOMPLEX TD[2][2], MYCOMPLEX TU[2][2], MYINT *stats);
 
 
 /**
- * 计算界面的 SH 波反射透射系数RDL/RUL/TDL/TUL, 包括时间延迟因子，
+ * 计算界面的 SH 波反射透射系数 RDL/RUL/TDL/TUL,
  * 根据公式(5.4.31)计算系数   
  * 
  * @param[in]      xb1           上层的S波归一化垂直波数 \f$ \sqrt{1 - (k_b/k)^2} \f$
  * @param[in]      mu1           上层的剪切模量
  * @param[in]      xb2           下层的S波归一化垂直波数 \f$ \sqrt{1 - (k_b/k)^2} \f$
  * @param[in]      mu2           下层的剪切模量
- * @param[in]      thk           上层层厚
  * @param[in]      omega         角频率
  * @param[in]      k             波数
  * @param[out]     RDL           SH 下传反射系数
@@ -149,60 +146,91 @@ void grt_calc_RT_PSV(
  * @param[out]     stats         状态代码，是否有除零错误，非0为异常值
  * 
  */
-void grt_calc_RT_SH(
+void grt_RT_matrix_SH(
     MYCOMPLEX xb1, MYCOMPLEX mu1, 
     MYCOMPLEX xb2, MYCOMPLEX mu2, 
-    MYREAL thk, // 使用上层的厚度
     MYCOMPLEX omega, MYREAL k, 
     MYCOMPLEX *RDL, MYCOMPLEX *RUL, 
     MYCOMPLEX *TDL, MYCOMPLEX *TUL);
 
 /** 液-液 界面，函数参数见 calc_RT_PSV 函数 */
-void grt_calc_RT_ll_PSV(
+void grt_RT_matrix_ll_PSV(
     MYREAL Rho1, MYCOMPLEX xa1,
     MYREAL Rho2, MYCOMPLEX xa2,
-    MYREAL thk, // 使用上层的厚度
     MYCOMPLEX omega, MYREAL k,
     MYCOMPLEX RD[2][2], MYCOMPLEX RU[2][2], 
     MYCOMPLEX TD[2][2], MYCOMPLEX TU[2][2], MYINT *stats);
 
 /** 液-液 界面，函数参数见 calc_RT_SH 函数 */
-void grt_calc_RT_ll_SH(
+void grt_RT_matrix_ll_SH(
     MYCOMPLEX *RDL, MYCOMPLEX *RUL, 
     MYCOMPLEX *TDL, MYCOMPLEX *TUL);
 
 /** 液-固 界面，函数参数见 calc_RT_PSV 函数 */
-void grt_calc_RT_ls_PSV(
+void grt_RT_matrix_ls_PSV(
     MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX cbcb1, MYCOMPLEX mu1, 
     MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX cbcb2, MYCOMPLEX mu2, 
-    MYREAL thk, // 使用上层的厚度
     MYCOMPLEX omega, MYREAL k, 
     MYCOMPLEX RD[2][2], MYCOMPLEX RU[2][2], 
     MYCOMPLEX TD[2][2], MYCOMPLEX TU[2][2], MYINT *stats);
 
 /** 液-固 界面，函数参数见 calc_RT_SH 函数 */
-void grt_calc_RT_ls_SH(
+void grt_RT_matrix_ls_SH(
     MYCOMPLEX xb1, MYCOMPLEX mu1, MYCOMPLEX mu2, 
-    MYREAL thk, // 使用上层的厚度
     MYCOMPLEX omega, MYREAL k,
     MYCOMPLEX *RDL, MYCOMPLEX *RUL, 
     MYCOMPLEX *TDL, MYCOMPLEX *TUL);
 
 /** 固-固 界面，函数参数见 calc_RT_PSV 函数 */
-void grt_calc_RT_ss_PSV(
+void grt_RT_matrix_ss_PSV(
     MYREAL Rho1, MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX cbcb1, MYCOMPLEX mu1, 
     MYREAL Rho2, MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX cbcb2, MYCOMPLEX mu2, 
-    MYREAL thk, // 使用上层的厚度
     MYCOMPLEX omega, MYREAL k, 
     MYCOMPLEX RD[2][2], MYCOMPLEX RU[2][2],
     MYCOMPLEX TD[2][2], MYCOMPLEX TU[2][2], MYINT *stats);
 
 /** 固-固 界面，函数参数见 calc_RT_SH 函数 */
-void grt_calc_RT_ss_SH(
+void grt_RT_matrix_ss_SH(
     MYCOMPLEX xb1, MYCOMPLEX mu1, 
     MYCOMPLEX xb2, MYCOMPLEX mu2, 
-    MYREAL thk, // 使用上层的厚度
     MYCOMPLEX omega, MYREAL k, 
+    MYCOMPLEX *RDL, MYCOMPLEX *RUL, 
+    MYCOMPLEX *TDL, MYCOMPLEX *TUL);
+
+/**
+ * 为 P-SV 波的 R/T 矩阵添加时间延迟因子
+ * 
+ * @param[in]      xa1            P波归一化垂直波数 \f$ \sqrt{1 - (k_a/k)^2} \f$
+ * @param[in]      xb1            S波归一化垂直波数 \f$ \sqrt{1 - (k_b/k)^2} \f$
+ * @param[in]      thk            厚度
+ * @param[in]      k              波数
+ * @param[in,out]     RD          P-SV 下传反射系数矩阵
+ * @param[in,out]     RU          P-SV 上传反射系数矩阵
+ * @param[in,out]     TD          P-SV 下传透射系数矩阵
+ * @param[in,out]     TU          P-SV 上传透射系数矩阵     
+ * 
+ */
+void grt_delay_RT_matrix_PSV(
+    MYCOMPLEX xa1, MYCOMPLEX xb1, 
+    MYREAL thk, MYREAL k,
+    MYCOMPLEX RD[2][2], MYCOMPLEX RU[2][2], 
+    MYCOMPLEX TD[2][2], MYCOMPLEX TU[2][2]);
+
+/**
+ * 为 SH 波的 R/T 矩阵添加时间延迟因子
+ * 
+ * @param[in]      xb1            S波归一化垂直波数 \f$ \sqrt{1 - (k_b/k)^2} \f$
+ * @param[in]      thk            厚度
+ * @param[in]      k              波数
+ * @param[in,out]     RDL         SH 下传反射系数矩阵
+ * @param[in,out]     RUL         SH 上传反射系数矩阵
+ * @param[in,out]     TDL         SH 下传透射系数矩阵
+ * @param[in,out]     TUL         SH 上传透射系数矩阵     
+ * 
+ */
+void grt_delay_RT_matrix_SH(
+    MYCOMPLEX xb1, 
+    MYREAL thk, MYREAL k,
     MYCOMPLEX *RDL, MYCOMPLEX *RUL, 
     MYCOMPLEX *TDL, MYCOMPLEX *TUL);
 
@@ -216,14 +244,20 @@ void grt_calc_RT_ss_SH(
  * @param[in]      kbkb          S波水平波数的平方 \f$ k_b^2=(\frac{\omega}{V_b})^2 \f$
  * @param[in]      mu            剪切模量
  * @param[in]      omega         角频率
+ * @param[in]      rho           密度
  * @param[in]      k             波数
  * @param[out]     D             D矩阵(或其逆矩阵)
  * @param[in]      inverse       是否生成逆矩阵
+ * @param[in]      liquid_invtype   对于液体层，矩阵会有很多零，至少第二列、第四列和第四行均为零；
+ *                                  剩余部分根据所选类型进行讨论：
+ *                                  [1] 其余6项保留， \f$ 2\mu\Omega \f$ 退化为 \f$ - \rho \omega^2 \f$ ;
+ *                                  [2] 在 [1] 基础上第一行也置零，这用于满足液体层的边界条件；
+ *                                  对应逆矩阵使用伪逆。 
  * 
  */
 void grt_get_layer_D(
     MYCOMPLEX xa, MYCOMPLEX xb, MYCOMPLEX kbkb, MYCOMPLEX mu, 
-    MYCOMPLEX omega, MYREAL k, MYCOMPLEX D[4][4], bool inverse);
+    MYCOMPLEX omega, MYREAL rho, MYREAL k, MYCOMPLEX D[4][4], bool inverse, MYINT liquid_invtype);
 
 /** 子矩阵 D11，函数参数见 get_layer_D 函数 */
 void grt_get_layer_D11(
@@ -236,12 +270,12 @@ void grt_get_layer_D12(
 /** 子矩阵 D21，函数参数见 get_layer_D 函数 */
 void grt_get_layer_D21(
     MYCOMPLEX xa, MYCOMPLEX xb, MYCOMPLEX kbkb, MYCOMPLEX mu,
-    MYCOMPLEX omega, MYREAL k, MYCOMPLEX D[2][2]);
+    MYCOMPLEX omega, MYREAL rho, MYREAL k, MYCOMPLEX D[2][2]);
 
 /** 子矩阵 D22，函数参数见 get_layer_D 函数 */
 void grt_get_layer_D22(
     MYCOMPLEX xa, MYCOMPLEX xb, MYCOMPLEX kbkb, MYCOMPLEX mu,
-    MYCOMPLEX omega, MYREAL k, MYCOMPLEX D[2][2]);
+    MYCOMPLEX omega, MYREAL rho, MYREAL k, MYCOMPLEX D[2][2]);
 
 /** 子矩阵 D11_uiz，后缀uiz表示连接位移对z的偏导和垂直波函数，函数参数见 get_layer_D 函数 */
 void grt_get_layer_D11_uiz(
@@ -277,13 +311,13 @@ void grt_get_layer_E_Love(MYCOMPLEX xb1, MYREAL thk, MYREAL k, MYCOMPLEX E[2][2]
 
 
 /**
- *  【未使用，仅用于代码测试】
+ *  【未维护，未使用，仅用于内部代码测试】
  *  和 calc_RT_PSV(SH) 函数解决相同问题，但没有使用显式推导的公式，而是直接做矩阵运算，
  *  函数接口也类似
  */
-void grt_calc_RT_from_4x4(
-    MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, 
-    MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, 
+void grt_RT_matrix_from_4x4(
+    MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, MYREAL rho1, 
+    MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, MYREAL rho2,
     MYCOMPLEX omega, MYREAL thk,
     MYREAL k, 
     MYCOMPLEX RD[2][2], MYCOMPLEX *RDL, MYCOMPLEX RU[2][2], MYCOMPLEX *RUL, 

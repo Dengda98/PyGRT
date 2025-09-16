@@ -105,7 +105,7 @@ void grt_kernel(
 
     // 模型参数
     // 后缀0，1分别代表上层和下层
-    MYREAL thk0, thk1, Rho0, Rho1, Va1, Vb1;
+    MYREAL thk0, thk1, Rho0, Rho1;
     MYCOMPLEX mu0, mu1;
     MYCOMPLEX xa0=0.0, xb0=0.0, xa1=0.0, xb1=0.0;
     MYCOMPLEX top_xa=0.0, top_xb=0.0;
@@ -134,14 +134,7 @@ void grt_kernel(
         thk1 = mod1d->Thk[iy];
         Rho1 = mod1d->Rho[iy];
         mu1 = mod1d->mu[iy];
-        Va1 = mod1d->Va[iy];
-        caca1 = c_phase/(Va1*mod1d->atna[iy]);
-        caca1 *= caca1;
-        Vb1 = mod1d->Vb[iy];
-        cbcb1 = (Vb1>0.0)? c_phase/(Vb1*mod1d->atnb[iy]) : 0.0;
-        cbcb1 *= cbcb1;
-        xa1 = sqrt(1.0 - caca1);
-        xb1 = sqrt(1.0 - cbcb1);
+        grt_get_mod1d_xa_xb(mod1d, iy, c_phase, &caca1, &xa1, &cbcb1, &xb1);
 
         if(0==iy){
             top_xa = xa1;
@@ -161,19 +154,19 @@ void grt_kernel(
             src_cbcb = cbcb1;
         } else {
             // 对第iy层的系数矩阵赋值，加入时间延迟因子(第iy-1界面与第iy界面之间)
-            grt_calc_RT_PSV(
+            grt_RT_matrix_PSV(
                 Rho0, xa0, xb0, cbcb0, mu0, 
                 Rho1, xa1, xb1, cbcb1, mu1, 
-                thk0, // 使用iy-1层的厚度
                 omega, k, 
                 RD, RU, TD, TU, stats);
-            grt_calc_RT_SH(
+            grt_RT_matrix_SH(
                 xb0, mu0, 
                 xb1, mu1, 
-                thk0, // 使用iy-1层的厚度
                 omega, k, 
                 &RDL, &RUL, &TDL, &TUL);
             if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
+            grt_delay_RT_matrix_PSV(xa0, xb0, thk0, k, RD, RU, TD, TU);
+            grt_delay_RT_matrix_SH(xb0, thk0, k, &RDL, &RUL, &TDL, &TUL);
         }
 
 #if Print_GRTCOEF == 1
@@ -207,7 +200,7 @@ void grt_kernel(
                 GRT_RT_PSV_ASSIGN(FA);
                 GRT_RT_SH_ASSIGN(FA);
             } else { // 递推FA
-                grt_recursion_RT(
+                grt_recursion_RT_matrix(
                     RD_FA, RDL_FA, RU_FA, RUL_FA, 
                     TD_FA, TDL_FA, TU_FA, TUL_FA,
                     RD, RDL, RU, RUL, 
@@ -218,7 +211,7 @@ void grt_kernel(
             }
         } 
         else if(iy==imin){ // 虚拟层位，可对递推公式简化
-            grt_recursion_RT_imaginary(
+            grt_recursion_RT_matrix_virtual(
                 xa0, xb0, thk0, k,
                 RU_FA, &RUL_FA, 
                 TD_FA, &TDL_FA, TU_FA, &TUL_FA);
@@ -229,7 +222,7 @@ void grt_kernel(
                 GRT_RT_PSV_ASSIGN(RS);
                 GRT_RT_SH_ASSIGN(RS);
             } else { // 递推RS
-                grt_recursion_RT(
+                grt_recursion_RT_matrix(
                     RD_RS, RDL_RS, RU_RS, RUL_RS, 
                     TD_RS, TDL_RS, TU_RS, TUL_RS,
                     RD, RDL, RU, RUL, 
@@ -240,7 +233,7 @@ void grt_kernel(
             }
         } 
         else if(iy==imax){ // 虚拟层位，可对递推公式简化
-            grt_recursion_RT_imaginary(
+            grt_recursion_RT_matrix_virtual(
                 xa0, xb0, thk0, k,
                 RU_RS, &RUL_RS, 
                 TD_RS, &TDL_RS, TU_RS, &TUL_RS);
@@ -252,7 +245,7 @@ void grt_kernel(
                 GRT_RT_SH_ASSIGN(BL);
             } else { // 递推BL
                 // 只有 RD 矩阵最终会被使用到
-                grt_recursion_RT(
+                grt_recursion_RT_matrix(
                     RD_BL, RDL_BL, RU_BL, RUL_BL, 
                     TD_BL, TDL_BL, TU_BL, TUL_BL,
                     RD, RDL, RU, RUL, 
@@ -281,7 +274,7 @@ void grt_kernel(
     MYCOMPLEX inv_2x2T[2][2], invT;
 
     // 递推RU_FA
-    grt_calc_R_tilt_PSV(top_xa, top_xb, top_cbcb, k, R_tilt, stats);
+    grt_topfree_RU_PSV(top_xa, top_xb, top_cbcb, k, R_tilt, stats);
     if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
     grt_recursion_RU(
         R_tilt, 1.0, 
@@ -296,8 +289,8 @@ void grt_kernel(
     if(ircvup){ // A接收  B震源
 
         // 计算R_EV
-        grt_calc_R_EV_PSV(rcv_xa, rcv_xb, ircvup, k, RU_FA, R_EV);
-        grt_calc_R_EV_SH(rcv_xb, k, RUL_FA, &R_EVL);
+        grt_wave2qwv_REV_PSV(rcv_xa, rcv_xb, ircvup, k, RU_FA, R_EV);
+        grt_wave2qwv_REV_SH(rcv_xb, k, RUL_FA, &R_EVL);
 
         // 递推RU_FS
         grt_recursion_RU(
@@ -357,26 +350,26 @@ void grt_kernel(
         tmpRL2 = R_EVL * tmpRL;
 
         for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-            grt_get_qwv(ircvup, tmp2x2, tmpRL2, RD_BL, RDL_BL, src_coef_PSV[i], src_coef_SH[i], QWV[i]);
+            grt_construct_qwv(ircvup, tmp2x2, tmpRL2, RD_BL, RDL_BL, src_coef_PSV[i], src_coef_SH[i], QWV[i]);
         }
 
 
         if(calc_uiz){
-            grt_calc_uiz_R_EV_PSV(rcv_xa, rcv_xb, ircvup, k, RU_FA, uiz_R_EV);
-            grt_calc_uiz_R_EV_SH(rcv_xb, ircvup, k, RUL_FA, &uiz_R_EVL);
+            grt_wave2qwv_z_REV_PSV(rcv_xa, rcv_xb, ircvup, k, RU_FA, uiz_R_EV);
+            grt_wave2qwv_z_REV_SH(rcv_xb, ircvup, k, RUL_FA, &uiz_R_EVL);
             grt_cmat2x2_mul(uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
             tmpRL2 = uiz_R_EVL * tmpRL;
 
             for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-                grt_get_qwv(ircvup, tmp2x2_uiz, tmpRL2, RD_BL, RDL_BL, src_coef_PSV[i], src_coef_SH[i], QWV_uiz[i]);
+                grt_construct_qwv(ircvup, tmp2x2_uiz, tmpRL2, RD_BL, RDL_BL, src_coef_PSV[i], src_coef_SH[i], QWV_uiz[i]);
             }    
         }
     } 
     else { // A震源  B接收
 
         // 计算R_EV
-        grt_calc_R_EV_PSV(rcv_xa, rcv_xb, ircvup, k, RD_BL, R_EV);    
-        grt_calc_R_EV_SH(rcv_xb, k, RDL_BL, &R_EVL);    
+        grt_wave2qwv_REV_PSV(rcv_xa, rcv_xb, ircvup, k, RD_BL, R_EV);    
+        grt_wave2qwv_REV_SH(rcv_xb, k, RDL_BL, &R_EVL);    
 
         // 递推RD_SL
         grt_recursion_RD(
@@ -402,18 +395,18 @@ void grt_kernel(
         tmpRL2 = R_EVL * tmpRL;
 
         for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-            grt_get_qwv(ircvup, tmp2x2, tmpRL2, RU_FA, RUL_FA, src_coef_PSV[i], src_coef_SH[i], QWV[i]);
+            grt_construct_qwv(ircvup, tmp2x2, tmpRL2, RU_FA, RUL_FA, src_coef_PSV[i], src_coef_SH[i], QWV[i]);
         }
 
 
         if(calc_uiz){
-            grt_calc_uiz_R_EV_PSV(rcv_xa, rcv_xb, ircvup, k, RD_BL, uiz_R_EV);    
-            grt_calc_uiz_R_EV_SH(rcv_xb, ircvup, k, RDL_BL, &uiz_R_EVL);    
+            grt_wave2qwv_z_REV_PSV(rcv_xa, rcv_xb, ircvup, k, RD_BL, uiz_R_EV);    
+            grt_wave2qwv_z_REV_SH(rcv_xb, ircvup, k, RDL_BL, &uiz_R_EVL);    
             grt_cmat2x2_mul(uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
             tmpRL2 = uiz_R_EVL * tmpRL;
             
             for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-                grt_get_qwv(ircvup, tmp2x2_uiz, tmpRL2, RU_FA, RUL_FA, src_coef_PSV[i], src_coef_SH[i], QWV_uiz[i]);
+                grt_construct_qwv(ircvup, tmp2x2_uiz, tmpRL2, RU_FA, RUL_FA, src_coef_PSV[i], src_coef_SH[i], QWV_uiz[i]);
             }
         }
 
@@ -435,3 +428,33 @@ void grt_kernel(
 
 }
 
+
+
+
+
+
+void grt_construct_qwv(
+    bool ircvup, 
+    const MYCOMPLEX R1[2][2], MYCOMPLEX RL1, 
+    const MYCOMPLEX R2[2][2], MYCOMPLEX RL2, 
+    const MYCOMPLEX coef_PSV[GRT_QWV_NUM-1][2], const MYCOMPLEX coef_SH[2], 
+    MYCOMPLEX qwv[GRT_QWV_NUM])
+{
+    MYCOMPLEX qw0[2], qw1[2], v0;
+    MYCOMPLEX coefD[2] = {coef_PSV[0][0], coef_PSV[1][0]};
+    MYCOMPLEX coefU[2] = {coef_PSV[0][1], coef_PSV[1][1]};
+    if(ircvup){
+        grt_cmat2x1_mul(R2, coefD, qw0);
+        qw0[0] += coefU[0]; qw0[1] += coefU[1]; 
+        v0 = RL1 * (RL2*coef_SH[0] + coef_SH[1]);
+    } else {
+        grt_cmat2x1_mul(R2, coefU, qw0);
+        qw0[0] += coefD[0]; qw0[1] += coefD[1]; 
+        v0 = RL1 * (coef_SH[0] + RL2*coef_SH[1]);
+    }
+    grt_cmat2x1_mul(R1, qw0, qw1);
+
+    qwv[0] = qw1[0];
+    qwv[1] = qw1[1];
+    qwv[2] = v0;
+}

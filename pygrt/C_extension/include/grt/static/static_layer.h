@@ -24,7 +24,7 @@
  * @param[out]    R_tilt            P-SV系数矩阵，SH系数为1
  * 
  */
-void grt_calc_static_R_tilt_PSV(MYCOMPLEX delta1, MYCOMPLEX R_tilt[2][2]);
+void grt_static_topfree_RU_PSV(MYCOMPLEX delta1, MYCOMPLEX R_tilt[2][2]);
 
 
 /**
@@ -35,7 +35,7 @@ void grt_calc_static_R_tilt_PSV(MYCOMPLEX delta1, MYCOMPLEX R_tilt[2][2]);
  * @param[out]     R_EV            P-SV接收函数矩阵
  * 
  */
-void grt_calc_static_R_EV_PSV(bool ircvup, const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2]);
+void grt_static_wave2qwv_REV_PSV(bool ircvup, const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2]);
 
 /**
  * 计算接收点位置的 SH 静态接收矩阵，将波场转为位移，公式(6.3.37)
@@ -44,7 +44,7 @@ void grt_calc_static_R_EV_PSV(bool ircvup, const MYCOMPLEX R[2][2], MYCOMPLEX R_
  * @param[out]     R_EVL           SH接收函数值
  * 
  */
-void grt_calc_static_R_EV_SH(MYCOMPLEX RL, MYCOMPLEX *R_EVL);
+void grt_static_wave2qwv_REV_SH(MYCOMPLEX RL, MYCOMPLEX *R_EVL);
 
 /**
  * 计算接收点位置的ui_z的 P-SV 静态接收矩阵，即将波场转为ui_z。
@@ -57,7 +57,7 @@ void grt_calc_static_R_EV_SH(MYCOMPLEX RL, MYCOMPLEX *R_EVL);
  * @param[out]     R_EV            P-SV接收函数矩阵
  * 
  */
-void grt_calc_static_uiz_R_EV_PSV(
+void grt_static_wave2qwv_z_REV_PSV(
     MYCOMPLEX delta1, bool ircvup, MYREAL k, 
     const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2]);
 
@@ -71,11 +71,11 @@ void grt_calc_static_uiz_R_EV_PSV(
  * @param[out]     R_EVL           SH接收函数值
  * 
  */
-void grt_calc_static_uiz_R_EV_SH(bool ircvup, MYREAL k, MYCOMPLEX RL, MYCOMPLEX *R_EVL);
+void grt_static_wave2qwv_z_REV_SH(bool ircvup, MYREAL k, MYCOMPLEX RL, MYCOMPLEX *R_EVL);
 
 
 /**
- * 计算界面的 P-SV 波静态反射透射系数RD/RU/TD/TU, 包括时间延迟因子，
+ * 计算界面的 P-SV 波静态反射透射系数RD/RU/TD/TU
  * 根据公式(6.3.18)  
  * 
  * @param[in]       delta1        上层的 \f$ \Delta \f$
@@ -90,14 +90,14 @@ void grt_calc_static_uiz_R_EV_SH(bool ircvup, MYREAL k, MYCOMPLEX RL, MYCOMPLEX 
  * @param[out]      TU            P-SV 上传透射系数矩阵
  * 
  */
-void grt_calc_static_RT_PSV(
+void grt_static_RT_matrix_PSV(
     MYCOMPLEX delta1, MYCOMPLEX mu1, 
     MYCOMPLEX delta2, MYCOMPLEX mu2, 
     MYREAL thk, MYREAL k,
     MYCOMPLEX RD[2][2], MYCOMPLEX RU[2][2], MYCOMPLEX TD[2][2], MYCOMPLEX TU[2][2]);
 
 /**
- * 计算界面的 SH 波静态反射透射系数RDL/RUL/TDL/TUL, 包括时间延迟因子，
+ * 计算界面的 SH 波静态反射透射系数RDL/RUL/TDL/TUL
  * 根据公式(6.3.18)  
  * 
  * @param[in]       mu1           上层的剪切模量
@@ -110,7 +110,39 @@ void grt_calc_static_RT_PSV(
  * @param[out]      TUL           SH 上传透射系数
  * 
  */
-void grt_calc_static_RT_SH(
+void grt_static_RT_matrix_SH(
     MYCOMPLEX mu1, MYCOMPLEX mu2, 
     MYREAL thk, MYREAL k,
     MYCOMPLEX *RDL, MYCOMPLEX *RUL, MYCOMPLEX *TDL, MYCOMPLEX *TUL);
+
+
+/**
+ * 为 P-SV 波的静态 R/T 矩阵添加时间延迟因子
+ * 
+ * @param[in]      thk            厚度
+ * @param[in]      k              波数
+ * @param[in,out]     RD          P-SV 下传反射系数矩阵
+ * @param[in,out]     RU          P-SV 上传反射系数矩阵
+ * @param[in,out]     TD          P-SV 下传透射系数矩阵
+ * @param[in,out]     TU          P-SV 上传透射系数矩阵    
+ * 
+ */
+void grt_static_delay_RT_matrix_PSV(
+    MYREAL thk, MYREAL k,
+    MYCOMPLEX RD[2][2], MYCOMPLEX RU[2][2], 
+    MYCOMPLEX TD[2][2], MYCOMPLEX TU[2][2]);
+
+/**
+ * 为 SH 波的静态 R/T 矩阵添加时间延迟因子
+ * 
+ * @param[in]      thk            厚度
+ * @param[in]      k              波数
+ * @param[in,out]     RDL         SH 下传反射系数矩阵
+ * @param[in,out]     RUL         SH 上传反射系数矩阵
+ * @param[in,out]     TDL         SH 下传透射系数矩阵
+ * @param[in,out]     TUL         SH 上传透射系数矩阵     
+ */
+void grt_static_delay_RT_matrix_SH(
+    MYREAL thk, MYREAL k,
+    MYCOMPLEX *RDL, MYCOMPLEX *RUL, 
+    MYCOMPLEX *TDL, MYCOMPLEX *TUL);

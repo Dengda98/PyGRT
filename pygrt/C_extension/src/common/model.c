@@ -145,16 +145,17 @@ GRT_MODEL1D * grt_copy_mod1d(const GRT_MODEL1D *mod1d1){
 }
 
 
-void grt_update_mod1d_omega(GRT_MODEL1D *mod1d, MYCOMPLEX omega){
+void grt_attenuate_mod1d(GRT_MODEL1D *mod1d, MYCOMPLEX omega){
     MYREAL Va0, Vb0;
-    // MYCOMPLEX ka0, kb0;
     MYCOMPLEX atna, atnb;
     for(MYINT i=0; i<mod1d->n; ++i){
         Va0 = mod1d->Va[i];
         Vb0 = mod1d->Vb[i];
 
-        atna = (mod1d->Qainv[i] > 0.0)? grt_attenuation_law(mod1d->Qainv[i], omega) : 1.0;
-        atnb = (mod1d->Qbinv[i] > 0.0)? grt_attenuation_law(mod1d->Qbinv[i], omega) : 1.0;
+        // 圆频率实部为负数表明不考虑模型的 Q 值属性
+        // 在读入模型后需要需要运行一次本函数以填充弹性模量，见 grt_read_mod1d_from_file 函数
+        atna = (creal(omega) >= 0.0 && mod1d->Qainv[i] > 0.0)? grt_attenuation_law(mod1d->Qainv[i], omega) : 1.0;
+        atnb = (creal(omega) >= 0.0 && mod1d->Qbinv[i] > 0.0)? grt_attenuation_law(mod1d->Qbinv[i], omega) : 1.0;
 
         mod1d->atna[i] = atna;
         mod1d->atnb[i] = atnb;
@@ -167,6 +168,34 @@ void grt_update_mod1d_omega(GRT_MODEL1D *mod1d, MYCOMPLEX omega){
 #if Print_GRTCOEF == 1
     print_mod1d(mod1d);
 #endif
+}
+
+
+void grt_get_mod1d_xa_xb(
+    const GRT_MODEL1D *mod1d, const MYINT iy, const MYCOMPLEX c_phase, 
+    MYCOMPLEX *pt_caca, MYCOMPLEX *pt_xa, MYCOMPLEX *pt_cbcb, MYCOMPLEX *pt_xb)
+{
+    MYREAL va, vb;
+    va = mod1d->Va[iy];
+    vb = mod1d->Vb[iy];
+    MYCOMPLEX atna, atnb;
+    atna = mod1d->atna[iy];
+    atnb = mod1d->atnb[iy];
+
+    MYCOMPLEX caca, cbcb;
+    if(pt_caca!=NULL && pt_xa!=NULL){
+        caca = c_phase / (va*atna); 
+        caca *= caca;
+        *pt_caca = caca;
+        *pt_xa = sqrt(1.0 - caca);
+    }
+    
+    if(pt_cbcb!=NULL && pt_xb!=NULL){
+        cbcb = (vb > 0.0)? c_phase / (vb*atnb) : 0.0;  // 考虑液体层
+        cbcb *= cbcb;
+        *pt_cbcb = cbcb;
+        *pt_xb = sqrt(1.0 - cbcb);
+    }
 }
 
 
@@ -363,6 +392,9 @@ GRT_MODEL1D * grt_read_mod1d_from_file(const char *command, const char *modelpat
     GRT_SAFE_FREE_PTR(modarr);
     GRT_SAFE_FREE_PTR(line);
     
+    // 填充弹性模量
+    grt_attenuate_mod1d(mod1d, -1);
+
     return mod1d;
 }
 

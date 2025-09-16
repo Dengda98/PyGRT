@@ -53,12 +53,12 @@ Python中计算动态格林函数的主函数为 :func:`compute_grn() <pygrt.pym
          .. literalinclude:: run/travt
             :language: text 
 
-        + 如果你没有安装SAC软件，可以使用Python的ObsPy库读取生成的SAC数据，或者使用 :command:`b2a` 模块临时将SAC格式文件转为如下的文本文件：
+        + 如果你没有安装SAC软件，可以使用Python的ObsPy库读取生成的SAC数据，或者使用 :command:`sac2asc` 模块临时将SAC格式文件转为如下的文本文件：
 
          .. literalinclude:: run/run.sh
             :language: bash
-            :start-after: BEGIN grt.b2a
-            :end-before: END grt.b2a
+            :start-after: BEGIN grt.sac2asc
+            :end-before: END grt.sac2asc
 
          输出的文本文件如下，两列分别为时间点和幅值。这种输出仅保留波形信息，缺失SAC文件中的头段变量。
 

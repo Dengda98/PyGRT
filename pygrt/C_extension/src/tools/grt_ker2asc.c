@@ -1,5 +1,5 @@
 /**
- * @file   grt_k2a.c
+ * @file   grt_ker2asc.c
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2025-03-27
  * 
@@ -32,13 +32,13 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
 /** 打印使用说明 */
 static void print_help(){
 printf("\n"
-"[grt k2a] %s\n\n", GRT_VERSION);printf(
+"[grt ker2asc] %s\n\n", GRT_VERSION);printf(
 "    Convert a binary stats file generated during wavenumber integration\n"
 "    into an ASCII file, write to standard output.\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
-"    grt k2a <statsfile>\n"
+"    grt ker2asc <statsfile>\n"
 "\n\n\n"
 );
 }
@@ -98,7 +98,7 @@ static void print_PTAM(FILE *fp){
 
 
 /** 子模块主函数 */
-int k2a_main(int argc, char **argv){
+int ker2asc_main(int argc, char **argv){
     GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
     Ctrl->name = strdup(argv[0]);
 

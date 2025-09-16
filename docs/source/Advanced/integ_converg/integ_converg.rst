@@ -39,12 +39,12 @@ C和Python导出的核函数文件是一致的，底层调用的是相同的函�
 
     .. group-tab:: C 
 
-        :command:`k2a` 模块可将单个核函数文件转为文本格式。
+        :command:`ker2asc` 模块可将单个核函数文件转为文本格式。
 
         .. literalinclude:: run/run.sh
             :language: bash
-            :start-after: BEGIN grt.k2a
-            :end-before: END grt.k2a
+            :start-after: BEGIN grt.ker2asc
+            :end-before: END grt.ker2asc
 
         输出的文件如下，
 
@@ -143,12 +143,12 @@ C和Python导出的核函数文件是一致的，底层调用的是相同的函�
 
 .. note:: 
 
-    :command:`k2a` 模块也支持将 ``PTAM_{ir}_{dist}/PTAM_{iw}_{freq}`` 文件转为文本格式，
+    :command:`ker2asc` 模块也支持将 ``PTAM_{ir}_{dist}/PTAM_{iw}_{freq}`` 文件转为文本格式，
 
     .. literalinclude:: run/run.sh
         :language: bash
-        :start-after: BEGIN grt.k2a ptam
-        :end-before: END grt.k2a ptam
+        :start-after: BEGIN grt.ker2asc ptam
+        :end-before: END grt.ker2asc ptam
 
     输出的文件如下，
 
