@@ -1,5 +1,5 @@
 /**
- * @file   grt_b2a.c
+ * @file   grt_sac2asc.c
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2025-03-27
  * 
@@ -31,13 +31,13 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
 /** 打印使用说明 */
 static void print_help(){
 printf("\n"
-"[grt b2a] %s\n\n", GRT_VERSION);printf(
+"[grt sac2asc] %s\n\n", GRT_VERSION);printf(
 "    Convert a binary SAC file into an ASCII file, \n"
 "    write to standard output (ignore header vars).\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
-"    grt b2a <sacfile>\n"
+"    grt sac2asc <sacfile>\n"
 "\n\n\n"
 );
 }
@@ -60,7 +60,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 
 
 /** 子模块主函数 */
-int b2a_main(int argc, char **argv){
+int sac2asc_main(int argc, char **argv){
     GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
     Ctrl->name = strdup(argv[0]);
 
