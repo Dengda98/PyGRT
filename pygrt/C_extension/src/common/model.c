@@ -295,7 +295,12 @@ GRT_MODEL1D * grt_read_mod1d_from_file(const char *command, const char *modelpat
     // 如果读取了深度，转为厚度
     if(mod1d->io_depth){
         for(int i=1; i<nlay; ++i){
-            modarr[i-1][0] = modarr[i][0] - modarr[i-1][0];
+            // 检查，若为负数，则表示输入的层顶深度非递增
+            double tmp = modarr[i][0] - modarr[i-1][0];
+            if(tmp < 0.0){
+                GRTRaiseError("[%s] In model file, negative thickness found in layer %d.\n", command, i);
+            }
+            modarr[i-1][0] = tmp;
         }
     }
 
