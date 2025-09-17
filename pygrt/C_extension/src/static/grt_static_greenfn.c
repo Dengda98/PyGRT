@@ -19,7 +19,7 @@
 #include "grt.h"
 
 // 一些变量的非零默认值
-#define GRT_GREENFN_V_VMIN_REF    0.1
+#define GRT_GREENFN_K_VMIN        0.1
 #define GRT_GREENFN_K_K0          5.0
 #define GRT_GREENFN_L_LENGTH     15.0
 
@@ -45,6 +45,7 @@ typedef struct {
     /** 波数积分间隔 */
     struct {
         bool active;
+        MYINT method;
         MYREAL Length;
         MYREAL filonLength;
         MYREAL safilonTol;
@@ -55,12 +56,9 @@ typedef struct {
         bool active;
         MYREAL keps;
         MYREAL k0;
+        MYREAL vmin;
+        bool v_active;
     } K;
-    /** 参考速度 */
-    struct {
-        bool active;
-        MYREAL vmin_ref;
-    } V;
     /** 波数积分过程的核函数文件 */
     struct {
         bool active;
@@ -131,8 +129,8 @@ printf("\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
 "    grt static greenfn -M<model> -D<depsrc>/<deprcv> -X<x1>/<x2>/<dx> \n"
-"          -Y<y1>/<y2>/<dy>  [-L<length>] [-V<vmin_ref>] \n" 
-"          [-K<k0>[/<keps>]] [-S]  [-e]\n"
+"          -Y<y1>/<y2>/<dy>  [-L<length>] \n" 
+"          [-K[+k<k0>][+e<keps>][+v<vmin>]] [-S]  [-e]\n"
 "\n\n"
 "Options:\n"
 "----------------------------------------------------------------\n"
@@ -161,16 +159,16 @@ printf("\n"
 "                 <y2>: end coordinate (km).\n"
 "                 <dy>: sampling interval (km).\n"
 "\n"
-"    -L[a]<length>[/<Flength>/<Fcut>]\n"
+"    -L[a|l]<length>[/<Flength>|<Ftol>/<Fcut>]\n"
 "                 Define the wavenumber integration interval\n"
 "                 dk=(2*PI)/(<length>*rmax). rmax is the maximum \n"
 "                 epicentral distance. \n"
-"                 There are 3 cases:\n"
+"                 There are 4 cases:\n"
 "                 + (default) not set or set 0.0.\n"); printf(
 "                   <length> will be %.1f.\n", GRT_GREENFN_L_LENGTH); printf(
-"                 + manually set one POSITIVE value, e.g. -L20\n"
+"                 + manually set one POSITIVE value, e.g. -Ll20\n"
 "                 + manually set three POSITIVE values, \n"
-"                   e.g. -L20/5/10, means split the integration \n"
+"                   e.g. -Ll20/5/10, means split the integration \n"
 "                   into two parts, [0, k*] and [k*, kmax], \n"
 "                   in which k*=<Fcut>/rmax, and use DWM with\n"
 "                   <length> and FIM with <Flength>, respectively.\n"
@@ -178,20 +176,7 @@ printf("\n"
 "                   in this case, <Flength> will be <Ftol> for Self-\n"
 "                   Adaptive FIM.\n"
 "\n"
-"    -V<vmin_ref> \n"
-"                 (Inherited from the dynamic case, and the numerical\n"
-"                 value will not be used in here, except its sign.)\n"
-"                 + (default) not set or set 0.0.\n"); printf(
-"                   <vmin_ref> will be the minimum velocity\n"
-"                   of model, but limited to %.1f. and if the \n", GRT_GREENFN_V_VMIN_REF); printf(
-"                   depth gap between source and receiver is \n"
-"                   thinner than %.1f km, PTAM will be appled\n", GRT_MIN_DEPTH_GAP_SRC_RCV); printf(
-"                   automatically.\n"
-"                 + manually set POSITIVE value. \n"
-"                 + manually set NEGATIVE value, \n"
-"                   and PTAM will be appled.\n"
-"\n"
-"    -K<k0>[/<keps>]\n"
+"    -K[+k<k0>][+e<keps>][+v<vmin>]\n"
 "                 Several parameters designed to define the\n"
 "                 behavior in wavenumber integration. The upper\n"
 "                 bound is k0,\n"
@@ -201,7 +186,19 @@ printf("\n"
 "                 <keps>: a threshold for break wavenumber \n"
 "                         integration in advance. See \n"
 "                         (Yao and Harkrider, 1983) for details.\n"
-"                         Default 0.0 not use.\n"); printf(
+"                         Default 0.0 not use.\n"
+"                 <vmin>: Minimum velocity (km/s) for reference. This\n"
+"                         is designed to define the upper bound \n"
+"                         of wavenumber integration.\n"
+"                         There are 3 cases:\n"
+"                         + (default) not set or set 0.0.\n"); printf(
+"                           <vmin> will be the minimum velocity\n"
+"                           of model, but limited to %.1f. and if \n", GRT_GREENFN_K_VMIN); printf(
+"                           hs is thinner than %.1f km, PTAM will be appled\n", GRT_MIN_DEPTH_GAP_SRC_RCV); printf(
+"                           automatically.\n"
+"                         + manually set POSITIVE value. \n"
+"                         + manually set NEGATIVE value, \n"
+"                           and PTAM will be appled.\n"
 "\n"
 "    -S           Output statsfile in wavenumber integration.\n"
 "\n"
@@ -232,7 +229,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     char* command = Ctrl->name;
 
     // 先为个别参数设置非0初始值
-    Ctrl->V.vmin_ref = GRT_GREENFN_V_VMIN_REF;
+    Ctrl->K.vmin = GRT_GREENFN_K_VMIN;
     Ctrl->K.k0 = GRT_GREENFN_K_K0;
 
     int opt;
@@ -266,50 +263,94 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 }
                 break;
 
-            // 波数积分间隔 -L[a]<length>[/<Flength>/<Fcut>]
+            // 波数积分间隔 -L[a|l]<length>[/<Flength>|<Ftol>/<Fcut>]
             case 'L':
                 Ctrl->L.active = true;
-                {
-                    // 检查首字母是否为a，表明使用自适应Filon积分
-                    int pos=0;
-                    bool useSAFIM = false;
-                    if(optarg[0] == 'a'){
-                        pos++;
-                        useSAFIM = true;
+                {   
+                    // 若是纯数字，即未指定子选项，则直接使用DWM，并指定步长
+                    if(isdigit(optarg[0])){
+                        Ctrl->L.method = GRT_K_INTEG_METHOD_DWM;
+                        // 仅接受一个值，若有多个值的分隔符则报错
+                        if(strchr(optarg, '/') != NULL){
+                            GRTBadOptionError(command, L, "single -L accept only 1 argument, but found %s.\n", optarg);
+                        }
+                        if(1 != sscanf(optarg, "%lf", &Ctrl->L.Length)){
+                            GRTBadOptionError(command, L, "");
+                        }
                     }
-                    double filona = 0.0;
-                    int n = sscanf(optarg+pos, "%lf/%lf/%lf", &Ctrl->L.Length, &filona, &Ctrl->L.filonCut);
-                    if(n != 1 && n != 3){
-                        GRTBadOptionError(command, L, "");
-                    };
-                    if(n == 1 && Ctrl->L.Length <= 0){
-                        GRTBadOptionError(command, L, "Length should be positive.");
-                    }
-                    if(n == 3 && (filona <= 0 || Ctrl->L.filonCut < 0)){
-                        GRTBadOptionError(command, L, "Flength/Ftol should be positive, Fcut should be nonnegative.");
-                    }
-                    if(n == 3){
-                        useSAFIM ? (Ctrl->L.safilonTol = filona) : (Ctrl->L.filonLength = filona);
+                    // 指定了子选项
+                    else {
+                        // 固定间隔 Filon 积分
+                        if(optarg[0] == 'l'){
+                            Ctrl->L.method = GRT_K_INTEG_METHOD_FIM;
+                            if(3 != sscanf(optarg+1, "%lf/%lf/%lf", &Ctrl->L.Length, &Ctrl->L.filonLength, &Ctrl->L.filonCut)){
+                                GRTBadOptionError(command, L, "");
+                            }
+                            if(Ctrl->L.filonLength <= 0.0){
+                                GRTBadOptionError(command, L, "Flength should be positive.");
+                            }
+                        }
+                        //  自适应采样
+                        else if(optarg[0] == 'a'){
+                            Ctrl->L.method = GRT_K_INTEG_METHOD_SAFIM;
+                            if(3 != sscanf(optarg+1, "%lf/%lf/%lf", &Ctrl->L.Length, &Ctrl->L.safilonTol, &Ctrl->L.filonCut)){
+                                GRTBadOptionError(command, L, "");
+                            }
+                            if(Ctrl->L.safilonTol <= 0.0){
+                                GRTBadOptionError(command, L, "safilonTol should be positive.");
+                            }
+                        }
+
+                        // 检查共有参数
+                        if(Ctrl->L.Length <= 0.0){
+                            GRTBadOptionError(command, L, "Length should be positive.");
+                        }
+                        if(Ctrl->L.filonCut < 0.0){
+                            GRTBadOptionError(command, L, "Fcut should be nonnegative.");
+                        }
                     }
                 }
                 break;
 
-            // 参考最小速度 -Vvmin_ref
-            case 'V':
-                Ctrl->V.active = true;
-                if(0 == sscanf(optarg, "%lf", &Ctrl->V.vmin_ref)){
-                    GRTBadOptionError(command, V, "");
-                };
-                break;
-
-            // 波数积分相关变量 -Kk0/keps
+            // 波数积分相关变量 -K[+k<k0>][+e<keps>][+v<vmin>]
             case 'K':
                 Ctrl->K.active = true;
-                if(0 == sscanf(optarg, "%lf/%lf", &Ctrl->K.k0, &Ctrl->K.keps)){
-                    GRTBadOptionError(command, K, "");
-                };
-                if(Ctrl->K.k0 < 0.0){
-                    GRTBadOptionError(command, K, "Can't set negative k0(%f).", Ctrl->K.k0);
+                {
+                char *line = strdup(optarg);
+                char *token = strtok(line, "+");
+                while(token != NULL){
+                    switch(token[0]) {
+                        case 'k':
+                            if(1 != sscanf(token+1, "%lf", &Ctrl->K.k0)){
+                                GRTBadOptionError(command, K+k, "");
+                            }
+                            if(Ctrl->K.k0 < 0.0){
+                                GRTBadOptionError(command, K, "Can't set negative k0(%f).", Ctrl->K.k0);
+                            }
+                            break;
+
+                        case 'e':
+                            if(1 != sscanf(token+1, "%lf", &Ctrl->K.keps)){
+                                GRTBadOptionError(command, K+e, "");
+                            }
+                            break;
+
+                        case 'v':
+                            Ctrl->K.v_active = true;
+                            if(1 != sscanf(token+1, "%lf", &Ctrl->K.vmin)){
+                                GRTBadOptionError(command, K+v, "");
+                            }
+                            break;
+
+                        default:
+                            GRTBadOptionError(command, K, "-K+%s is not supported.", token);
+                            break;
+                    }
+
+                    token = strtok(NULL, "+");
+                }
+
+                GRT_SAFE_FREE_PTR(line);
                 }
                 break;
 
@@ -453,13 +494,13 @@ int static_greenfn_main(int argc, char **argv){
     grt_get_mod1d_vmin_vmax(mod1d, &vmin, &vmax);
 
     // 参考最小速度
-    if(!Ctrl->V.active){
-        Ctrl->V.vmin_ref = GRT_MAX(vmin, GRT_GREENFN_V_VMIN_REF);
+    if(!Ctrl->K.v_active){
+        Ctrl->K.vmin = GRT_MAX(vmin, GRT_GREENFN_K_VMIN);
     } 
 
     // 如果没有主动设置vmin_ref，则判断是否要自动使用PTAM
-    if( !Ctrl->V.active && fabs(Ctrl->D.deprcv - Ctrl->D.depsrc) <= GRT_MIN_DEPTH_GAP_SRC_RCV) {
-        Ctrl->V.vmin_ref = - fabs(Ctrl->V.vmin_ref);
+    if( !Ctrl->K.v_active && fabs(Ctrl->D.deprcv - Ctrl->D.depsrc) <= GRT_MIN_DEPTH_GAP_SRC_RCV) {
+        Ctrl->K.vmin = - fabs(Ctrl->K.vmin);
     }
     
     // 设置积分间隔默认值
@@ -484,7 +525,7 @@ int static_greenfn_main(int argc, char **argv){
     //==============================================================================
     // 计算静态格林函数
     grt_integ_static_grn(
-        mod1d, Ctrl->nr, Ctrl->rs, Ctrl->V.vmin_ref, Ctrl->K.keps, Ctrl->K.k0, Ctrl->L.Length, Ctrl->L.filonLength, Ctrl->L.safilonTol, Ctrl->L.filonCut, 
+        mod1d, Ctrl->nr, Ctrl->rs, Ctrl->K.vmin, Ctrl->K.keps, Ctrl->K.k0, Ctrl->L.Length, Ctrl->L.filonLength, Ctrl->L.safilonTol, Ctrl->L.filonCut, 
         grn, Ctrl->e.active, grn_uiz, grn_uir,
         Ctrl->S.s_statsdir
     );
