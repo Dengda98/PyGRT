@@ -233,7 +233,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     Ctrl->K.k0 = GRT_GREENFN_K_K0;
 
     int opt;
-    while ((opt = getopt(argc, argv, ":M:D:L:K:X:Y:V:Seh")) != -1) {
+    while ((opt = getopt(argc, argv, ":M:D:L:K:X:Y:Seh")) != -1) {
         switch (opt) {
             // 模型路径，其中每行分别为 
             //      厚度(km)  Vp(km/s)  Vs(km/s)  Rho(g/cm^3)  Qp   Qs
