@@ -159,6 +159,13 @@ extern const char GRT_ZRT_CODES[];
 extern const char GRT_ZNE_CODES[];
 
 
+/** 波数积分方法 */
+enum {
+    GRT_K_INTEG_METHOD_DWM = 0,  // 离散波数法
+    GRT_K_INTEG_METHOD_FIM,      // 固定间隔 Filon 积分
+    GRT_K_INTEG_METHOD_SAFIM,    // 自适应 Filon 积分
+};
+
 /**
  * 设置OpenMP多线程数
  * 

@@ -26,7 +26,7 @@
 #define GRT_GREENFN_N_UPSAMPLE    1
 #define GRT_GREENFN_H_FREQ1      -1.0
 #define GRT_GREENFN_H_FREQ2      -1.0
-#define GRT_GREENFN_V_VMIN_REF    0.1
+#define GRT_GREENFN_K_VMIN        0.1
 #define GRT_GREENFN_K_K0          5.0
 #define GRT_GREENFN_K_AMPK       1.15
 #define GRT_GREENFN_G_EX       true
@@ -83,6 +83,7 @@ typedef struct {
     /** 波数积分间隔 */
     struct {
         bool active;
+        MYINT method;
         MYREAL Length;
         MYREAL filonLength;
         MYREAL safilonTol;
@@ -94,12 +95,9 @@ typedef struct {
         MYREAL keps;
         MYREAL ampk;
         MYREAL k0;
+        MYREAL vmin;
+        bool v_active;
     } K;
-    /** 参考速度 */
-    struct {
-        bool active;
-        MYREAL vmin_ref;
-    } V;
     /** 时间延迟 */
     struct {
         bool active;
@@ -193,12 +191,12 @@ static void print_Ctrl(const GRT_MODULE_CTRL *Ctrl){
     printf("------------------------------------------------\n");
     printf(format, "PARAMETER", "VALUE");
     printf(format, "model_path", Ctrl->M.s_modelpath);
-    if(Ctrl->V.vmin_ref < 0.0){
-        snprintf(line, sizeof(line), "%.3f, Using PTAM", Ctrl->V.vmin_ref);
+    if(Ctrl->K.vmin < 0.0){
+        snprintf(line, sizeof(line), "%.3f, Using PTAM", Ctrl->K.vmin);
     } else {
-        snprintf(line, sizeof(line), "%.3f", Ctrl->V.vmin_ref);
+        snprintf(line, sizeof(line), "%.3f", Ctrl->K.vmin);
     }
-    printf(format, "vmin_ref", line);
+    printf(format, "vmin", line);
     if(Ctrl->L.filonLength > 0.0){  
         snprintf(line, sizeof(line), "%.3f,%.3f,%.3f, using FIM", Ctrl->L.Length, Ctrl->L.filonLength, Ctrl->L.filonCut);
     } else if(Ctrl->L.safilonTol > 0.0){
@@ -285,10 +283,10 @@ printf("\n"
 "    grt greenfn -M<model> -D<depsrc>/<deprcv> \n"
 "        -N<nt>/<dt>[+w<zeta>][+n<fac>] \n"
 "        -R<r1>,<r2>[,...]     -O<outdir>     [-H<f1>/<f2>] \n"
-"        [-L<length>]    [-V<vmin_ref>]     [-E<t0>[/<v0>]] \n" 
-"        [-K<k0>[/<ampk>/<keps>]]            [-P<nthreads>]\n"
-"        [-G<b1>[/<b2>/<b3>/<b4>]] [-S<i1>,<i2>[,...]] [-e]\n"
-"        [-s]\n"
+"        [-L<length>]        [-E<t0>[/<v0>]] \n" 
+"        [-K[+k<k0>][+s<ampk>][+e<keps>][+v<vmin>]]\n"
+"        [-P<nthreads>] [-Ge|v|h|s] \n"
+"        [-S<i1>,<i2>[,...]] [-e] [-s]\n"
 "\n\n"
 "Options:\n"
 "----------------------------------------------------------------\n"
@@ -328,7 +326,7 @@ printf("\n"
 "                 <f1>: lower frequency (Hz), %.1f means low pass.\n", GRT_GREENFN_H_FREQ1); printf(
 "                 <f2>: upper frequency (Hz), %.1f means high pass.\n", GRT_GREENFN_H_FREQ2); printf(
 "\n"
-"    -L[a]<length>[/<Flength>/<Fcut>]\n"
+"    -L[a|l]<length>[/<Flength>|<Ftol>/<Fcut>]\n"
 "                 Define the wavenumber integration interval\n"
 "                 dk=(2*PI)/(<length>*rmax). rmax is the maximum \n"
 "                 epicentral distance. \n"
@@ -337,30 +335,14 @@ printf("\n"
 "                   <length> will be determined automatically\n"
 "                   in program with the criterion (Bouchon, 1980).\n"
 "                 + manually set one POSITIVE value, e.g. -L20\n"
-"                 + manually set three POSITIVE values, \n"
-"                   e.g. -L20/5/10, means split the integration \n"
+"                 + manually set three POSITIVE values, with -Ll, \n"
+"                   e.g. -Ll20/10/10, means split the integration \n"
 "                   into two parts, [0, k*] and [k*, kmax], \n"
 "                   in which k*=<Fcut>/rmax, and use DWM with\n"
 "                   <length> and FIM with <Flength>, respectively.\n"
 "                 + manually set three POSITIVE values, with -La,\n"
 "                   in this case, <Flength> will be <Ftol> for Self-\n"
 "                   Adaptive FIM.\n"
-"\n"
-"    -V<vmin_ref> \n"
-"                 Minimum velocity (km/s) for reference. This\n"
-"                 is designed to define the upper bound \n"
-"                 of wavenumber integration, see the\n"
-"                 description of -K for the specific formula.\n"
-"                 There are 3 cases:\n"
-"                 + (default) not set or set 0.0.\n"); printf(
-"                   <vmin_ref> will be the minimum velocity\n"
-"                   of model, but limited to %.1f. and if the \n", GRT_GREENFN_V_VMIN_REF); printf(
-"                   depth gap between source and receiver is \n"
-"                   thinner than %.1f km, PTAM will be appled\n", GRT_MIN_DEPTH_GAP_SRC_RCV); printf(
-"                   automatically.\n"
-"                 + manually set POSITIVE value. \n"
-"                 + manually set NEGATIVE value, \n"
-"                   and PTAM will be appled.\n"
 "\n"
 "    -E<t0>[/<v0>]\n"
 "                 Introduce the time delay in results. The total \n"
@@ -371,12 +353,11 @@ printf("\n"
 "                 <v0>: reference velocity (km/s), \n"
 "                       default 0.0 not use.\n"); printf(
 "\n"
-"    -K<k0>[/<ampk>/<keps>]\n"
+"    -K[+k<k0>][+s<ampk>][+e<keps>][+v<vmin>]\n"
 "                 Several parameters designed to define the\n"
 "                 behavior in wavenumber integration. The upper\n"
 "                 bound is \n"
-"                 sqrt( (<k0>*mult)^2 + (<ampk>*w/<vmin_ref>)^2 ),\n"
-"                 default mult=1.0.\n"
+"                 sqrt( <k0>^2 + (<ampk>*w/<vmin_ref>)^2 ),\n"
 "                 <k0>:   designed to give residual k at\n"
 "                         0 frequency, default is %.1f, and \n", GRT_GREENFN_K_K0); printf(
 "                         multiply PI/hs in program, \n"
@@ -385,14 +366,25 @@ printf("\n"
 "                 <keps>: a threshold for break wavenumber \n"
 "                         integration in advance. See \n"
 "                         (Yao and Harkrider, 1983) for details.\n"
-"                         Default 0.0 not use.\n"); printf(
+"                         Default 0.0 not use.\n"
+"                 <vmin>: Minimum velocity (km/s) for reference. This\n"
+"                         is designed to define the upper bound \n"
+"                         of wavenumber integration.\n"
+"                         There are 3 cases:\n"
+"                         + (default) not set or set 0.0.\n"); printf(
+"                           <vmin> will be the minimum velocity\n"
+"                           of model, but limited to %.1f. and if \n", GRT_GREENFN_K_VMIN); printf(
+"                           hs is thinner than %.1f km, PTAM will be appled\n", GRT_MIN_DEPTH_GAP_SRC_RCV); printf(
+"                           automatically.\n"
+"                         + manually set POSITIVE value. \n"
+"                         + manually set NEGATIVE value, \n"
+"                           and PTAM will be appled.\n"
 "\n"
 "    -P<n>        Number of threads. Default use all cores.\n"
 "\n"
-"    -G<b1>[/<b2>/<b3>/<b4>]\n"
+"    -Ge|v|h|s\n"
 "                 Designed to choose which kind of source's Green's \n"
-"                 functions will be computed, default is all (%d/%d/%d/%d). \n", 
-(int)GRT_GREENFN_G_EX, (int)GRT_GREENFN_G_VF, (int)GRT_GREENFN_G_HF, (int)GRT_GREENFN_G_DC); printf(
+"                 functions will be computed, default is all (-Gevhs). \n"); printf(
 "                 Four bool type (0 or 1) options are\n"
 "                 <b1>: Explosion (EX)\n"
 "                 <b2>: Vertical Force (VF)\n"
@@ -438,7 +430,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     Ctrl->N.upsample_n = GRT_GREENFN_N_UPSAMPLE;
     Ctrl->H.freq1 = GRT_GREENFN_H_FREQ1;
     Ctrl->H.freq2 = GRT_GREENFN_H_FREQ2;
-    Ctrl->V.vmin_ref = GRT_GREENFN_V_VMIN_REF;
+    Ctrl->K.vmin = GRT_GREENFN_K_VMIN;
     Ctrl->K.k0 = GRT_GREENFN_K_K0;
     Ctrl->K.ampk = GRT_GREENFN_K_AMPK;
     Ctrl->G.doEX = GRT_GREENFN_G_EX;
@@ -447,7 +439,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     Ctrl->G.doDC = GRT_GREENFN_G_DC;
 
     int opt;
-    while ((opt = getopt(argc, argv, ":M:D:N:O:H:L:V:E:K:R:S:P:G:esh")) != -1) {
+    while ((opt = getopt(argc, argv, ":M:D:N:O:H:L:E:K:R:S:P:G:esh")) != -1) {
         switch (opt) {
             // 模型路径，其中每行分别为 
             //      厚度(km)  Vp(km/s)  Vs(km/s)  Rho(g/cm^3)  Qp   Qs
@@ -542,40 +534,53 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 }
                 break;
 
-            // 波数积分间隔 -L[a]<length>[/<Flength>/<Fcut>]
+            // 波数积分间隔 -L[a|l]<length>[/<Flength>|<Ftol>/<Fcut>]
             case 'L':
                 Ctrl->L.active = true;
-                {
-                    // 检查首字母是否为a，表明使用自适应Filon积分
-                    int pos=0;
-                    bool useSAFIM = false;
-                    if(optarg[0] == 'a'){
-                        pos++;
-                        useSAFIM = true;
+                {   
+                    // 若是纯数字，即未指定子选项，则直接使用DWM，并指定步长
+                    if(isdigit(optarg[0])){
+                        Ctrl->L.method = GRT_K_INTEG_METHOD_DWM;
+                        // 仅接受一个值，若有多个值的分隔符则报错
+                        if(strchr(optarg, '/') != NULL){
+                            GRTBadOptionError(command, L, "single -L accept only 1 argument, but found %s.\n", optarg);
+                        }
+                        if(1 != sscanf(optarg, "%lf", &Ctrl->L.Length)){
+                            GRTBadOptionError(command, L, "");
+                        }
                     }
-                    double filona = 0.0;
-                    int n = sscanf(optarg+pos, "%lf/%lf/%lf", &Ctrl->L.Length, &filona, &Ctrl->L.filonCut);
-                    if(n != 1 && n != 3){
-                        GRTBadOptionError(command, L, "");
-                    };
-                    if(n == 1 && Ctrl->L.Length <= 0){
-                        GRTBadOptionError(command, L, "Length should be positive.");
-                    }
-                    if(n == 3 && (filona <= 0 || Ctrl->L.filonCut < 0)){
-                        GRTBadOptionError(command, L, "Flength/Ftol should be positive, Fcut should be nonnegative.");
-                    }
-                    if(n == 3){
-                        useSAFIM ? (Ctrl->L.safilonTol = filona) : (Ctrl->L.filonLength = filona);
+                    // 指定了子选项
+                    else {
+                        // 固定间隔 Filon 积分
+                        if(optarg[0] == 'l'){
+                            Ctrl->L.method = GRT_K_INTEG_METHOD_FIM;
+                            if(3 != sscanf(optarg+1, "%lf/%lf/%lf", &Ctrl->L.Length, &Ctrl->L.filonLength, &Ctrl->L.filonCut)){
+                                GRTBadOptionError(command, L, "");
+                            }
+                            if(Ctrl->L.filonLength <= 0.0){
+                                GRTBadOptionError(command, L, "Flength should be positive.");
+                            }
+                        }
+                        //  自适应采样
+                        else if(optarg[0] == 'a'){
+                            Ctrl->L.method = GRT_K_INTEG_METHOD_SAFIM;
+                            if(3 != sscanf(optarg+1, "%lf/%lf/%lf", &Ctrl->L.Length, &Ctrl->L.safilonTol, &Ctrl->L.filonCut)){
+                                GRTBadOptionError(command, L, "");
+                            }
+                            if(Ctrl->L.safilonTol <= 0.0){
+                                GRTBadOptionError(command, L, "safilonTol should be positive.");
+                            }
+                        }
+
+                        // 检查共有参数
+                        if(Ctrl->L.Length <= 0.0){
+                            GRTBadOptionError(command, L, "Length should be positive.");
+                        }
+                        if(Ctrl->L.filonCut < 0.0){
+                            GRTBadOptionError(command, L, "Fcut should be nonnegative.");
+                        }
                     }
                 }
-                break;
-
-            // 参考最小速度 -Vvmin_ref
-            case 'V':
-                Ctrl->V.active = true;
-                if(0 == sscanf(optarg, "%lf", &Ctrl->V.vmin_ref)){
-                    GRTBadOptionError(command, V, "");
-                };
                 break;
 
             // 时间延迟 -ET0/V0
@@ -589,17 +594,54 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 }
                 break;
 
-            // 波数积分相关变量 -Kk0/ampk/keps
+            // 波数积分相关变量 -K[+k<k0>][+s<ampk>][+e<keps>][+v<vmin>]
             case 'K':
                 Ctrl->K.active = true;
-                if(0 == sscanf(optarg, "%lf/%lf/%lf", &Ctrl->K.k0, &Ctrl->K.ampk, &Ctrl->K.keps)){
-                    GRTBadOptionError(command, K, "");
-                };
-                if(Ctrl->K.k0 < 0.0){
-                    GRTBadOptionError(command, K, "Can't set negative k0(%f).", Ctrl->K.k0);
+                {
+                char *line = strdup(optarg);
+                char *token = strtok(line, "+");
+                while(token != NULL){
+                    switch(token[0]) {
+                        case 'k':
+                            if(1 != sscanf(token+1, "%lf", &Ctrl->K.k0)){
+                                GRTBadOptionError(command, K+k, "");
+                            }
+                            if(Ctrl->K.k0 < 0.0){
+                                GRTBadOptionError(command, K, "Can't set negative k0(%f).", Ctrl->K.k0);
+                            }
+                            break;
+
+                        case 's':
+                            if(1 != sscanf(token+1, "%lf", &Ctrl->K.ampk)){
+                                GRTBadOptionError(command, K+s, "");
+                            }
+                            if(Ctrl->K.ampk < 0.0){
+                                GRTBadOptionError(command, K, "Can't set negative ampk(%f).", Ctrl->K.ampk);
+                            }
+                            break;
+
+                        case 'e':
+                            if(1 != sscanf(token+1, "%lf", &Ctrl->K.keps)){
+                                GRTBadOptionError(command, K+e, "");
+                            }
+                            break;
+
+                        case 'v':
+                            Ctrl->K.v_active = true;
+                            if(1 != sscanf(token+1, "%lf", &Ctrl->K.vmin)){
+                                GRTBadOptionError(command, K+v, "");
+                            }
+                            break;
+
+                        default:
+                            GRTBadOptionError(command, K, "-K+%s is not supported.", token);
+                            break;
+                    }
+
+                    token = strtok(NULL, "+");
                 }
-                if(Ctrl->K.ampk < 0.0){
-                    GRTBadOptionError(command, K, "Can't set negative ampk(%f).", Ctrl->K.ampk);
+
+                GRT_SAFE_FREE_PTR(line);
                 }
                 break;
 
@@ -635,20 +677,29 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 grt_set_num_threads(Ctrl->P.nthreads);
                 break;
 
-            // 选择要计算的格林函数 -G1/1/1/1
+            // 选择要计算的格林函数 -Ge|v|h|s
             case 'G': 
                 Ctrl->G.active = true;
+                // 先全部置否
                 Ctrl->G.doEX = Ctrl->G.doVF = Ctrl->G.doHF = Ctrl->G.doDC = false;
-                {
-                    int i1, i2, i3, i4;
-                    i1 = i2 = i3 = i4 = 0;
-                    if(0 == sscanf(optarg, "%d/%d/%d/%d", &i1, &i2, &i3, &i4)){
-                        GRTBadOptionError(command, G, "");
-                    };
-                    Ctrl->G.doEX = (i1!=0);
-                    Ctrl->G.doVF  = (i2!=0);
-                    Ctrl->G.doHF  = (i3!=0);
-                    Ctrl->G.doDC  = (i4!=0);
+                for(size_t i=0; i < strlen(optarg); ++i){
+                    switch (optarg[i]) {
+                        case 'e':
+                            Ctrl->G.doEX = true;
+                            break;
+                        case 'v':
+                            Ctrl->G.doVF = true;
+                            break;
+                        case 'h':
+                            Ctrl->G.doHF = true;
+                            break;
+                        case 's':
+                            Ctrl->G.doDC = true;
+                            break;
+                        default:
+                            GRTBadOptionError(command, G, "unknown type %c.", optarg[i]);
+                            break;
+                    }
                 }
                 // 至少要有一个真
                 if(!(Ctrl->G.doEX || Ctrl->G.doVF || Ctrl->G.doHF || Ctrl->G.doDC)){
@@ -731,13 +782,13 @@ int greenfn_main(int argc, char **argv) {
     grt_get_mod1d_vmin_vmax(mod1d, &vmin, &vmax);
 
     // 参考最小速度
-    if(!Ctrl->V.active){
-        Ctrl->V.vmin_ref = GRT_MAX(vmin, GRT_GREENFN_V_VMIN_REF);
+    if(!Ctrl->K.v_active){
+        Ctrl->K.vmin = GRT_MAX(vmin, GRT_GREENFN_K_VMIN);
     } 
 
     // 如果没有主动设置vmin_ref，则判断是否要自动使用PTAM
-    if( !Ctrl->V.active && fabs(Ctrl->D.deprcv - Ctrl->D.depsrc) <= GRT_MIN_DEPTH_GAP_SRC_RCV) {
-        Ctrl->V.vmin_ref = - fabs(Ctrl->V.vmin_ref);
+    if( !Ctrl->K.v_active && fabs(Ctrl->D.deprcv - Ctrl->D.depsrc) <= GRT_MIN_DEPTH_GAP_SRC_RCV) {
+        Ctrl->K.vmin = - fabs(Ctrl->K.vmin);
     }
 
     // 时窗长度 
@@ -818,7 +869,7 @@ int greenfn_main(int argc, char **argv) {
     // 计算格林函数
     grt_integ_grn_spec(
         mod1d, Ctrl->H.nf1, Ctrl->H.nf2, Ctrl->N.freqs, Ctrl->R.nr, Ctrl->R.rs, Ctrl->N.wI,
-        Ctrl->V.vmin_ref, Ctrl->K.keps, Ctrl->K.ampk, Ctrl->K.k0, Ctrl->L.Length, Ctrl->L.filonLength, Ctrl->L.safilonTol, Ctrl->L.filonCut, !Ctrl->s.active,
+        Ctrl->K.vmin, Ctrl->K.keps, Ctrl->K.ampk, Ctrl->K.k0, Ctrl->L.Length, Ctrl->L.filonLength, Ctrl->L.safilonTol, Ctrl->L.filonCut, !Ctrl->s.active,
         grn, Ctrl->e.active, grn_uiz, grn_uir,
         Ctrl->S.s_statsdir, Ctrl->S.nstatsidxs, Ctrl->S.statsidxs
     );
