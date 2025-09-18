@@ -23,7 +23,7 @@ FOMPFLAGS := -fopenmp
 
 # link static library on Windows
 LINK_STATIC := 
-LDFLAGS := $(FOMPFLAGS) $(LFFT_FLAGS)
+LDFLAGS := $(FOMPFLAGS) $(LFFT_FLAGS)   -lnetcdf
 
 # expand stack memory for Windows
 STACK_MEM := 
@@ -31,7 +31,7 @@ STACK_MEM :=
 ifeq ($(OS),Windows_NT)  # link static oenpmp on windows
 	STACK_MEM := -Wl,-stack,0x1000000
     LINK_STATIC := -static
-	LDFLAGS := $(LINK_STATIC) $(FOMPFLAGS) $(LFFT_FLAGS)
+	LDFLAGS := $(LINK_STATIC) $(LDFLAGS)
 endif
 
 # change architecture for macOS, from make command
@@ -76,7 +76,7 @@ $(BIN_DIR):
 	@mkdir -p $(BIN_DIR)
 
 $(PROGS): $(OBJS)
-	$(CC) -o $@ $^  $(CFLAGS)
+	$(CC) -o $@ $^  $(CFLAGS) $(LDFLAGS)
 
 # ----------------------- Dependency generation -----------------------
 # Dependency generation (only for non-clean targets)

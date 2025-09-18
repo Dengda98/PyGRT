@@ -15,6 +15,7 @@
 #include "grt/common/iostats.h"
 #include "grt/common/search.h"
 #include "grt/common/util.h"
+#include "grt/common/mynetcdf.h"
 
 #include "grt.h"
 
@@ -76,6 +77,11 @@ typedef struct {
         MYINT ny;
         MYREAL *ys;
     } Y;
+    /** 输出 nc 文件名 */
+    struct {
+        bool active;
+        char *s_outgrid;
+    } O;
     /** 是否计算空间导数 */
     struct {
         bool active;
@@ -104,6 +110,9 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
     // Y
     GRT_SAFE_FREE_PTR(Ctrl->Y.ys);
 
+    // O
+    GRT_SAFE_FREE_PTR(Ctrl->O.s_outgrid);
+
     GRT_SAFE_FREE_PTR(Ctrl->rs);
 
     // S
@@ -121,7 +130,7 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
 static void print_help(){
 printf("\n"
 "[grt static greenfn] %s\n\n", GRT_VERSION);printf(
-"    Compute static Green's Functions, output to stdout. \n"
+"    Compute static Green's Functions, output to nc file. \n"
 "    The units and components are consistent with the dynamics, \n"
 "    check \"grt greenfn -h\" for details.\n"
 "\n"
@@ -129,7 +138,7 @@ printf("\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
 "    grt static greenfn -M<model> -D<depsrc>/<deprcv> -X<x1>/<x2>/<dx> \n"
-"          -Y<y1>/<y2>/<dy>  [-L<length>] \n" 
+"          -Y<y1>/<y2>/<dy>  -O<outgrid>  [-L<length>]  \n" 
 "          [-K[+k<k0>][+e<keps>][+v<vmin>]] [-S]  [-e]\n"
 "\n\n"
 "Options:\n"
@@ -158,6 +167,8 @@ printf("\n"
 "                 <y1>: start coordinate (km).\n"
 "                 <y2>: end coordinate (km).\n"
 "                 <dy>: sampling interval (km).\n"
+"\n"
+"    -O<outgrid>  Filepath to output nc grid.\n"
 "\n"
 "    -L[a|l]<length>[/<Flength>|<Ftol>/<Fcut>]\n"
 "                 Define the wavenumber integration interval\n"
@@ -215,7 +226,7 @@ printf("\n"
 "\n\n"
 "Examples:\n"
 "----------------------------------------------------------------\n"
-"    grt static greenfn -Mmilrow -D2/0 -X-10/10/20 -Y-10/10/20 > grn\n"
+"    grt static greenfn -Mmilrow -D2/0 -X-10/10/20 -Y-10/10/20 -Ostgrn.nc\n"
 "\n\n\n"
 );
 }
@@ -233,7 +244,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     Ctrl->K.k0 = GRT_GREENFN_K_K0;
 
     int opt;
-    while ((opt = getopt(argc, argv, ":M:D:L:K:X:Y:V:Seh")) != -1) {
+    while ((opt = getopt(argc, argv, ":M:D:L:K:X:Y:O:Seh")) != -1) {
         switch (opt) {
             // 模型路径，其中每行分别为 
             //      厚度(km)  Vp(km/s)  Vs(km/s)  Rho(g/cm^3)  Qp   Qs
@@ -400,6 +411,12 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 }
                 break;
 
+            // 输出 nc 文件名
+            case 'O':
+                Ctrl->O.active = true;
+                Ctrl->O.s_outgrid = strdup(optarg);
+                break;
+
             // 输出波数积分中间文件
             case 'S':
                 Ctrl->S.active = true;
@@ -420,57 +437,19 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     GRTCheckOptionActive(command, Ctrl, D);
     GRTCheckOptionActive(command, Ctrl, X);
     GRTCheckOptionActive(command, Ctrl, Y);
+    GRTCheckOptionActive(command, Ctrl, O);
 
     // 设置震中距数组
     Ctrl->nr = Ctrl->X.nx*Ctrl->Y.ny;
     Ctrl->rs = (MYREAL*)calloc(Ctrl->nr, sizeof(MYREAL));
-    for(int iy=0; iy<Ctrl->Y.ny; ++iy){
-        for(int ix=0; ix<Ctrl->X.nx; ++ix){
-            Ctrl->rs[ix + iy*Ctrl->X.nx] = GRT_MAX(sqrt(GRT_SQUARE(Ctrl->X.xs[ix]) + GRT_SQUARE(Ctrl->Y.ys[iy])), 1e-5);  // 避免0震中距
+    for(int ix=0; ix<Ctrl->X.nx; ++ix){
+        for(int iy=0; iy<Ctrl->Y.ny; ++iy){
+            Ctrl->rs[iy + ix*Ctrl->Y.ny] = GRT_MAX(sqrt(GRT_SQUARE(Ctrl->X.xs[ix]) + GRT_SQUARE(Ctrl->Y.ys[iy])), GRT_MIN_DISTANCE);  // 避免0震中距
         }
     }
 
 }
 
-
-
-/**
- * 打印各分量的名称
- * 
- * @param[in]   prefix    前缀字符串
- */
-static void print_grn_title(const char *prefix){
-    for(int i=0; i<GRT_SRC_M_NUM; ++i){
-        int modr = GRT_SRC_M_ORDERS[i];
-        char s_title[10+strlen(prefix)];
-        for(int c=0; c<GRT_CHANNEL_NUM; ++c){
-            if(modr==0 && GRT_ZRT_CODES[c]=='T')  continue;
-
-            snprintf(s_title, sizeof(s_title), "%s%s%c", prefix, GRT_SRC_M_NAME_ABBR[i], GRT_ZRT_CODES[c]);
-            fprintf(stdout, GRT_STRING_FMT, s_title);
-        }
-    }
-}
-
-/**
- * 打印各分量的值
- * 
- * @param      grn       静态格林函数结果
- * @param      sgn0      全局符号
- */
-static void print_grn_value(const MYREAL grn[GRT_SRC_M_NUM][GRT_CHANNEL_NUM], const int sgn0){
-    for(int i=0; i<GRT_SRC_M_NUM; ++i){
-        int modr = GRT_SRC_M_ORDERS[i];
-        int sgn = 1;
-        for(int c=0; c<GRT_CHANNEL_NUM; ++c){
-            if(modr==0 && GRT_ZRT_CODES[c]=='T')  continue;
-
-            sgn = (GRT_ZRT_CODES[c]=='Z') ? -sgn0 : sgn0;
-
-            fprintf(stdout, GRT_REAL_FMT, sgn * grn[i][c]);
-        }
-    }
-}
 
 
 /** 子模块主函数 */
@@ -538,39 +517,103 @@ int static_greenfn_main(int argc, char **argv){
     MYREAL rcv_vb = mod1d->Vb[mod1d->ircv];
     MYREAL rcv_rho = mod1d->Rho[mod1d->ircv];
 
-    // 输出物性参数
-    fprintf(stdout, "# "GRT_REAL_FMT" "GRT_REAL_FMT" "GRT_REAL_FMT"\n", src_va, src_vb, src_rho);
-    fprintf(stdout, "# "GRT_REAL_FMT" "GRT_REAL_FMT" "GRT_REAL_FMT"\n", rcv_va, rcv_vb, rcv_rho);
 
+    // ==================================================================================
+    // 将结果保存为 nc 格式
+    // ==================================================================================
+    int ncid, x_dimid, y_dimid;
+    const int ndims = 2;
+    int dimids[ndims];
+    int x_varid, y_varid;
+    int u_varids[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
+    int uiz_varids[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
+    int uir_varids[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
 
-    // 输出标题
-    char XX[20];
-    sprintf(XX, GRT_STRING_FMT, "X(km)"); XX[0]=GRT_COMMENT_HEAD;
-    fprintf(stdout, "%s", XX);
-    fprintf(stdout, GRT_STRING_FMT, "Y(km)");
-    print_grn_title("");
+    // 创建 NC 文件
+    GRT_NC_CHECK(nc_create(Ctrl->O.s_outgrid, NC_CLOBBER, &ncid));
 
-    if(Ctrl->e.active) {
-        print_grn_title("z");
-        print_grn_title("r");
+    // 写入全局属性
+    GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_put_att) (ncid, NC_GLOBAL, "src_va", GRT_NC_MYREAL, 1, &src_va));
+    GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_put_att) (ncid, NC_GLOBAL, "src_vb", GRT_NC_MYREAL, 1, &src_vb));
+    GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_put_att) (ncid, NC_GLOBAL, "src_rho", GRT_NC_MYREAL, 1, &src_rho));
+    GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_put_att) (ncid, NC_GLOBAL, "rcv_va", GRT_NC_MYREAL, 1, &rcv_va));
+    GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_put_att) (ncid, NC_GLOBAL, "rcv_vb", GRT_NC_MYREAL, 1, &rcv_vb));
+    GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_put_att) (ncid, NC_GLOBAL, "rcv_rho", GRT_NC_MYREAL, 1, &rcv_rho));
+    // 是否计算了位移偏导也直接写到全局属性
+    {
+        MYINT tmp = Ctrl->e.active;
+        GRT_NC_CHECK(GRT_NC_FUNC_MYINT(nc_put_att) (ncid, NC_GLOBAL, "calc_upar", GRT_NC_MYINT, 1, &tmp));
     }
-    fprintf(stdout, "\n");
 
-    // 写结果
-    for(int iy=0; iy<Ctrl->Y.ny; ++iy) {
-        for(int ix=0; ix<Ctrl->X.nx; ++ix) {
-            int ir = ix + iy * Ctrl->X.nx;
-            fprintf(stdout, GRT_REAL_FMT GRT_REAL_FMT, Ctrl->X.xs[ix], Ctrl->Y.ys[iy]);
+    // 定义维度
+    GRT_NC_CHECK(nc_def_dim(ncid, "north", Ctrl->X.nx, &x_dimid));
+    GRT_NC_CHECK(nc_def_dim(ncid, "east", Ctrl->Y.ny, &y_dimid));
+    dimids[0] = x_dimid;
+    dimids[1] = y_dimid;
 
-            print_grn_value(grn[ir], 1);
+    // 定义维度数组
+    GRT_NC_CHECK(nc_def_var(ncid, "north", GRT_NC_MYREAL, 1, &x_dimid, &x_varid));
+    GRT_NC_CHECK(nc_def_var(ncid, "east", GRT_NC_MYREAL, 1, &y_dimid, &y_varid));
 
-            if(Ctrl->e.active) {
-                print_grn_value(grn_uiz[ir], -1);
-                print_grn_value(grn_uir[ir], 1);
+    // 定义不同震源不同分量的格林函数数组
+    for(int i=0; i<GRT_SRC_M_NUM; ++i){
+        int modr = GRT_SRC_M_ORDERS[i];
+        char *s_title = NULL;
+        for(int c=0; c<GRT_CHANNEL_NUM; ++c){
+            if(modr==0 && GRT_ZRT_CODES[c]=='T')  continue;
+
+            GRT_SAFE_ASPRINTF(&s_title, "%s%c", GRT_SRC_M_NAME_ABBR[i], GRT_ZRT_CODES[c]);
+            GRT_NC_CHECK(nc_def_var(ncid, s_title, GRT_NC_MYREAL, ndims, dimids, &u_varids[i][c]));
+
+            // 位移偏导
+            if(Ctrl->e.active){
+                GRT_SAFE_ASPRINTF(&s_title, "z%s%c", GRT_SRC_M_NAME_ABBR[i], GRT_ZRT_CODES[c]);
+                GRT_NC_CHECK(nc_def_var(ncid, s_title, GRT_NC_MYREAL, ndims, dimids, &uiz_varids[i][c]));
+                GRT_SAFE_ASPRINTF(&s_title, "r%s%c", GRT_SRC_M_NAME_ABBR[i], GRT_ZRT_CODES[c]);
+                GRT_NC_CHECK(nc_def_var(ncid, s_title, GRT_NC_MYREAL, ndims, dimids, &uir_varids[i][c]));
             }
-            fprintf(stdout, "\n");
+        }
+        GRT_SAFE_FREE_PTR(s_title);
+    }
+
+    // 结束定义模式
+    GRT_NC_CHECK(nc_enddef(ncid));
+
+    // 写入数据
+    GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_put_var) (ncid, x_varid, Ctrl->X.xs));
+    GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_put_var) (ncid, y_varid, Ctrl->Y.ys));
+    MYREAL *tmpdata = (MYREAL *)calloc(Ctrl->nr, sizeof(MYREAL));
+    for(int i=0; i<GRT_SRC_M_NUM; ++i){
+        int modr = GRT_SRC_M_ORDERS[i];
+        for(int c=0; c<GRT_CHANNEL_NUM; ++c){
+            if(modr==0 && GRT_ZRT_CODES[c]=='T')  continue;
+
+            int sgn0 = 1;
+            sgn0 = (GRT_ZRT_CODES[c]=='Z')? -1 : 1;
+            for(int ir=0; ir < Ctrl->nr; ++ir){
+                tmpdata[ir] = sgn0 * grn[ir][i][c];
+            }
+
+            GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_put_var) (ncid, u_varids[i][c], tmpdata));
+
+            // 位移偏导
+            if(Ctrl->e.active){
+                for(int ir=0; ir < Ctrl->nr; ++ir){
+                    tmpdata[ir] = (-1) * sgn0 * grn_uiz[ir][i][c];  // 这里多乘的(-1)是因为对z的偏导，z需反向
+                }
+                GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_put_var) (ncid, uiz_varids[i][c], tmpdata));
+                for(int ir=0; ir < Ctrl->nr; ++ir){
+                    tmpdata[ir] = sgn0 * grn_uir[ir][i][c];  // 这里多乘的(-1)是因为对z的偏导，z需反向
+                }
+                GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_put_var) (ncid, uir_varids[i][c], tmpdata));
+            }
         }
     }
+    GRT_SAFE_FREE_PTR(tmpdata);
+
+    // 关闭文件
+    GRT_NC_CHECK(nc_close(ncid));
+
 
     // 释放内存
     GRT_SAFE_FREE_PTR(grn);
