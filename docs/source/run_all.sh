@@ -17,7 +17,7 @@ if [[ $1 == '2' || $1 == '' ]]; then
     cd Tutorial/static/run
     chmod +x *.sh
     ./run.sh
-    python run.py
+    # python run.py
     cd -
 fi
 

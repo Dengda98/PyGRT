@@ -6,12 +6,15 @@
 
 -----------------------------------------------------------
 
-除了使用不同的函数名/程序名，输出文件不同之外，流程基本和 :doc:`/Tutorial/dynamic/strain_stress` 类似。这里直接给出脚本。运行后注意观察和 :doc:`/Tutorial/dynamic/syn` 的输出有了什么变化。
+除了使用不同的函数名/程序名，输出文件不同之外，流程基本和 :doc:`/Tutorial/dynamic/strain_stress` 类似。这里直接给出脚本。
+
 
 .. tabs:: 
 
     .. group-tab:: C 
 
+        计算结果会以新增变量的形式直接写入 nc 网格，可使用 ``ncdump -h`` 查看。
+        
         .. literalinclude:: run_upar/run.sh
             :language: bash
 
