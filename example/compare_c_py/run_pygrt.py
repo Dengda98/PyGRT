@@ -84,7 +84,7 @@ AVGRERR = []
 
 #-------------------------- Dynamic -----------------------------------------
 # compute green functions
-# st_grn = pymod.compute_grn(dist, nt, dt, calc_upar=True)[0]
+st_grn = pymod.compute_grn(dist, nt, dt, calc_upar=True)[0]
 
 S=1e24
 az=39.2
