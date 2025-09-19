@@ -244,6 +244,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     Ctrl->K.k0 = GRT_GREENFN_K_K0;
 
     int opt;
+
     while ((opt = getopt(argc, argv, ":M:D:L:K:X:Y:O:Seh")) != -1) {
         switch (opt) {
             // 模型路径，其中每行分别为 
