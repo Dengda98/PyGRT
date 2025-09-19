@@ -9,6 +9,7 @@
 
 #include "grt/common/const.h"
 #include "grt/common/util.h"
+#include "grt/common/mynetcdf.h"
 
 #include "grt.h"
 
@@ -27,8 +28,9 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
 static void print_help(){
 printf("\n"
 "[grt static stress] %s\n\n", GRT_VERSION);printf(
-"    Conbine spatial derivatives of static displacements (read from stdin)\n"
-"    into stress tensor (unit: dyne/cm^2 = 0.1 Pa).\n"
+"    Conbine spatial derivatives of static displacements\n"
+"    into stress tensor (unit: dyne/cm^2 = 0.1 Pa), .\n"
+"    and write into the same nc file.\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
@@ -60,170 +62,177 @@ int static_stress_main(int argc, char **argv){
 
     getopt_from_command(Ctrl, argc, argv);
 
-    // 从标准输入中读取合成的静态位移及其空间导数
-    double x0, y0, syn[3], syn_upar[3][3];  // [3][3]表示u_{i,j}
+    // 第二个参数为 nc 文件路径
+    char *s_ingrid = strdup(argv[1]);
 
-    // 建立一个指针数组，方便读取多列数据
-    double *pt_grn[14];
-    // 按照特定顺序
-    {
-        double **pt = &pt_grn[0];
-        *(pt++) = &x0;
-        *(pt++) = &y0;
-        for(int k=0; k<3; ++k)  *(pt++) = &syn[k];
-        for(int k=0; k<3; ++k){
-            for(int i=0; i<3; ++i){
-                *(pt++) = &syn_upar[i][k]; //  u_i / x_k
-            }
-        }
-    }
+    // nc 文件相关变量
+    int in_ncid;
+    int in_x_dimid, in_y_dimid;
+    int in_x_varid, in_y_varid;
+    const int ndims = 2;
+    int in_dimids[ndims];
+    int in_syn_varids[GRT_CHANNEL_NUM];
+    int in_syn_upar_varids[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
+    int out_varids[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
 
-    // 是否已打印输出的列名
-    bool printHead = false;
-
-    // 输入列数
-    int ncols = 0;
-
-    // 物性参数
-    double src_va=0.0, src_vb=0.0, src_rho=0.0;
-    double rcv_va=0.0, rcv_vb=0.0, rcv_rho=0.0, rcv_mu=0.0, rcv_lam=0.0;
-
-    // 震中距
-    double dist = 0.0;
-
-    // 三分量
-    const char *chs = NULL;
+    // 打开 nc 文件
+    GRT_NC_CHECK(nc_open(s_ingrid, NC_WRITE, &in_ncid));
 
     // 输出分量格式，即是否需要旋转到ZNE
     bool rot2ZNE = false;
 
-    // 体积应变和lambda的乘积
-    double lam_ukk=0.0;
-
-    // 逐行读入
-    size_t len;
-    char *line = NULL;
-
-    int iline = 0;
-    while(grt_getline(&line, &len, stdin) != -1){
-        iline++;
-        if(iline == 1){
-            // 读取震源物性参数
-            if(3 != sscanf(line, "# %lf %lf %lf", &src_va, &src_vb, &src_rho)){
-                GRTRaiseError("[%s] Error! Unable to read src property from \"%s\". \n", command, line);
-            }
-            if(src_va <= 0.0 || src_vb < 0.0 || src_rho <= 0.0){
-                GRTRaiseError("[%s] Error! Bad src_va, src_vb or src_rho from \"%s\". \n", command, line);
-            }
-        }
-        else if(iline == 2){
-            // 读取场点物性参数
-            if(3 != sscanf(line, "# %lf %lf %lf", &rcv_va, &rcv_vb, &rcv_rho)){
-                GRTRaiseError("[%s] Error! Unable to read rcv property from \"%s\". \n", command, line);
-            }
-            if(rcv_va <= 0.0 || rcv_vb < 0.0 || rcv_rho <= 0.0){
-                GRTRaiseError("[%s] Error! Bad rcv_va, rcv_vb or rcv_rho in line %d from \"%s\". \n", command, iline, line);
-            }
-            rcv_mu = rcv_vb*rcv_vb*rcv_rho*1e10;
-            rcv_lam = rcv_va*rcv_va*rcv_rho*1e10 - 2.0*rcv_mu;
-        }
-        else if(iline == 3){
-            // 根据列长度判断是否有位移空间导数
-            char *copyline = strdup(line+1);  // +1去除首个#字符
-            char *token = strtok(copyline, " ");
-            while (token != NULL) {
-                // 根据列名尾字符判断是否需要旋转到ZNE，出现一次即可
-                if(!rot2ZNE && strlen(token) > 0 && token[strlen(token)-1]=='N')   rot2ZNE = true;
-                ncols++;
-                token = strtok(NULL, " ");
-            }
-            GRT_SAFE_FREE_PTR(copyline);
-
-            // 指示特定的通道名
-            chs = (rot2ZNE)? GRT_ZNE_CODES : GRT_ZRT_CODES;
-
-            // 想合成位移空间导数但输入的格林函数没有
-            if(ncols < 14){
-                GRTRaiseError("[%s] Error! The input has no spatial derivatives. \n", command);
-            }
-        }
-        // 注释行
-        if(grt_is_comment_or_empty(line))  continue;
-
-        // 读取该行数据
-        char *copyline = strdup(line);
-        char *token = strtok(copyline, " ");
-        for(int i=0; i<ncols; ++i){
-            sscanf(token, "%lf", pt_grn[i]);  token = strtok(NULL, " ");
-        }
-        GRT_SAFE_FREE_PTR(copyline);
-
-        // 计算震中距
-        dist = sqrt(x0*x0 + y0*y0);
-        if(dist < 1e-5)  dist=1e-5;
-
-        // 先计算体积应变u_kk = u_11 + u22 + u33 和 lamda的乘积，ZRT分量需包括协变导数
-        lam_ukk = syn_upar[0][0] + syn_upar[1][1] + syn_upar[2][2];
-        if(!rot2ZNE)  lam_ukk += syn[1]/dist*1e-5;
-        lam_ukk *= rcv_lam;
-
-        // 先输出列名
-        if(!printHead){
-            fprintf(stdout, "# "GRT_REAL_FMT" "GRT_REAL_FMT" "GRT_REAL_FMT"\n", src_va, src_vb, src_rho);
-            fprintf(stdout, "# "GRT_REAL_FMT" "GRT_REAL_FMT" "GRT_REAL_FMT"\n", rcv_va, rcv_vb, rcv_rho);
-            
-            char XX[20];
-            sprintf(XX, GRT_STRING_FMT, "X(km)"); XX[0]=GRT_COMMENT_HEAD;
-            fprintf(stdout, "%s", XX);
-            fprintf(stdout, GRT_STRING_FMT, "Y(km)");
-            char s_channel[15];
-            for(int k=0; k<3; ++k){
-                for(int i=k; i<3; ++i){
-                    sprintf(s_channel, "%c%c", toupper(chs[k]), toupper(chs[i])); 
-                    fprintf(stdout, GRT_STRING_FMT, s_channel);
-                }
-            }
-            fprintf(stdout, "\n");
-            printHead = true;
-        }
-
-        // 打印xy位置
-        fprintf(stdout, GRT_REAL_FMT GRT_REAL_FMT, x0, y0);
-
-        // 循环6个分量
-        char c1, c2;
-        for(int i1=0; i1<3; ++i1){
-            c1 = chs[i1];
-            for(int i2=i1; i2<3; ++i2){
-                c2 = chs[i2];
-
-                double val = 0.0;
-
-                val = rcv_mu * (syn_upar[i1][i2] + syn_upar[i2][i1]);
-
-                // 对角线分量
-                if(c1 == c2)  val += lam_ukk;
-
-                // 特殊情况需加上协变导数，1e-5是因为km->cm
-                if(c1=='R' && c2=='T'){
-                    val -= rcv_mu * syn[2] / dist * 1e-5;
-                } else if(c1=='T' && c2=='T'){
-                    val += 2.0 * rcv_mu * syn[1] / dist * 1e-5;
-                }
-
-                // 打印结果
-                fprintf(stdout, GRT_REAL_FMT, val);
-            }
-        }
-
-        fprintf(stdout, "\n");
+    // 读入数据是否旋转到ZNE
+    {
+        MYINT rot2ZNE_int;
+        GRT_NC_CHECK(GRT_NC_FUNC_MYINT(nc_get_att) (in_ncid, NC_GLOBAL, "rot2ZNE", &rot2ZNE_int));
+        rot2ZNE = !(rot2ZNE_int == 0);
     }
 
-    if(iline==0){
-        GRTRaiseError("[%s] Error! Empty input. \n", command);
+    // 三分量
+    const char *chs = (rot2ZNE)? GRT_ZNE_CODES : GRT_ZRT_CODES;
+
+    // 读入的数据是否有位移偏导
+    MYINT calc_upar;
+    GRT_NC_CHECK(GRT_NC_FUNC_MYINT(nc_get_att) (in_ncid, NC_GLOBAL, "calc_upar", &calc_upar));
+    if(calc_upar == 0){
+        GRTRaiseError("[%s] Input grid didn't have displacement derivatives.", command);
     }
 
-    GRT_SAFE_FREE_PTR(line);
+    // 读入震源类型
+    char *s_computeType = NULL;
+    {
+        size_t len = 0;
+        GRT_NC_CHECK(nc_inq_attlen(in_ncid, NC_GLOBAL, "computeType", &len));
+        s_computeType = (char *)calloc(len+1, sizeof(char));
+        GRT_NC_CHECK(nc_get_att_text(in_ncid, NC_GLOBAL, "computeType", s_computeType));
+        s_computeType[len] = '\0';
+    }
+
+    // 读入接收点的物性参数，计算 rcv_mu 和 rcv_lambda
+    MYREAL rcv_mu, rcv_lam;
+    {
+        MYREAL rcv_va=0.0, rcv_vb=0.0, rcv_rho=0.0;
+        GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_get_att) (in_ncid, NC_GLOBAL, "rcv_va", &rcv_va));
+        GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_get_att) (in_ncid, NC_GLOBAL, "rcv_vb", &rcv_vb));
+        GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_get_att) (in_ncid, NC_GLOBAL, "rcv_rho", &rcv_rho));
+        rcv_mu = rcv_vb*rcv_vb*rcv_rho*1e10;
+        rcv_lam = rcv_va*rcv_va*rcv_rho*1e10 - 2.0*rcv_mu;
+    }
+
+    // 读入坐标变量 dimid, varid
+    size_t nx, ny;
+    GRT_NC_CHECK(nc_inq_dimid(in_ncid, "north", &in_x_dimid));
+    GRT_NC_CHECK(nc_inq_dimlen(in_ncid, in_x_dimid, &nx));
+    GRT_NC_CHECK(nc_inq_dimid(in_ncid, "east", &in_y_dimid));
+    GRT_NC_CHECK(nc_inq_dimlen(in_ncid, in_y_dimid, &ny));
+    in_dimids[0] = in_x_dimid;
+    in_dimids[1] = in_y_dimid;
+
+    // 读取坐标变量
+    MYREAL *xs = (MYREAL *)calloc(nx, sizeof(MYREAL));
+    MYREAL *ys = (MYREAL *)calloc(ny, sizeof(MYREAL));
+    GRT_NC_CHECK(nc_inq_varid(in_ncid, "north", &in_x_varid));
+    GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_get_var) (in_ncid, in_x_varid, xs));
+    GRT_NC_CHECK(nc_inq_varid(in_ncid, "east", &in_y_varid));
+    GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_get_var) (in_ncid, in_y_varid, ys));
+
+    // 读入合成位移偏导 varid
+    for(int c=0; c<GRT_CHANNEL_NUM; ++c){
+        char *s_title = NULL;
+        GRT_SAFE_ASPRINTF(&s_title, "%s%c", s_computeType, toupper(chs[c]));
+        GRT_NC_CHECK(nc_inq_varid(in_ncid, s_title, &in_syn_varids[c]));
+
+        for(int c2=0; c2<GRT_CHANNEL_NUM; ++c2){
+            GRT_SAFE_ASPRINTF(&s_title, "%c%s%c", tolower(chs[c2]), s_computeType, toupper(chs[c]));
+            GRT_NC_CHECK(nc_inq_varid(in_ncid, s_title, &in_syn_upar_varids[c2][c]));
+        }
+        GRT_SAFE_FREE_PTR(s_title);
+    }
+
+    // 重新进入定义模式
+    GRT_NC_CHECK(nc_redef(in_ncid));
+
+    // 定义合成结果 varid
+    for(int c=0; c<GRT_CHANNEL_NUM; ++c){
+        char *s_title = NULL;
+        for(int c2=c; c2<GRT_CHANNEL_NUM; ++c2){
+            // 这里命名顺序要注意，例如 ZR -> mu*(u_{z,r} + u_{r,z})
+            GRT_SAFE_ASPRINTF(&s_title, "stress_%c%c", toupper(chs[c]), toupper(chs[c2]));
+            GRT_NC_CHECK(nc_def_var(in_ncid, s_title, GRT_NC_MYREAL, ndims, in_dimids, &out_varids[c2][c]));
+        }
+        GRT_SAFE_FREE_PTR(s_title);
+    }
+
+    // 结束定义模式
+    GRT_NC_CHECK(nc_enddef(in_ncid));
+
+    // 总震中距数
+    size_t nr = nx * ny;
+
+    // 先读入内存，
+    MYREAL *u[GRT_CHANNEL_NUM];
+    MYREAL *upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
+    // 计算结果
+    MYREAL *res[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
+    for(int c=0; c<GRT_CHANNEL_NUM; ++c){
+        u[c] = (MYREAL *)calloc(nr, sizeof(MYREAL));
+        GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_get_var) (in_ncid, in_syn_varids[c], u[c]));
+        for(int c2=0; c2<GRT_CHANNEL_NUM; ++c2){
+            res[c2][c] = (MYREAL *)calloc(nr, sizeof(MYREAL));
+            upar[c2][c] = (MYREAL *)calloc(nr, sizeof(MYREAL));
+            GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_get_var) (in_ncid, in_syn_upar_varids[c2][c], upar[c2][c]));
+        }
+    }
+    
+    // 每个点逐个处理
+    for(size_t ix=0; ix < nx; ++ix){
+        MYREAL x = xs[ix];
+        for(size_t iy=0; iy < ny; ++iy){
+            MYREAL y = ys[iy];
+
+            size_t ir = iy + ix*ny;
+
+            // 震中距
+            MYREAL dist = GRT_MAX(sqrt(x*x + y*y), GRT_MIN_DISTANCE);
+
+            // 先计算体积应变u_kk = u_11 + u22 + u33 和 lamda的乘积，ZRT分量需包括协变导数
+            MYREAL lam_ukk = upar[0][0][ir] + upar[1][1][ir] + upar[2][2][ir];
+            if(!rot2ZNE)  lam_ukk += u[1][ir] / dist*1e-5;
+            lam_ukk *= rcv_lam;
+
+            for(int c=0; c<GRT_CHANNEL_NUM; ++c){
+                for(int c2=c; c2<GRT_CHANNEL_NUM; ++c2){
+                    MYREAL val = rcv_mu * (upar[c2][c][ir] + upar[c][c2][ir]);
+
+                    // 对角线分量
+                    if(c == c2)   val += lam_ukk;
+                    
+                    // 特殊情况需加上协变导数，1e-5是因为km->cm
+                    if(chs[c]=='R' && chs[c2]=='T'){
+                        val -= rcv_mu * u[2][ir] / dist * 1e-5;
+                    }
+                    else if(chs[c]=='T' && chs[c2]=='T'){
+                        val += 2.0 * rcv_mu * u[1][ir] / dist * 1e-5;
+                    }
+
+                    res[c2][c][ir] = val;
+                }
+            }
+        }
+    }
+
+    // 写入 nc 文件
+    for(int c=0; c<GRT_CHANNEL_NUM; ++c){
+        for(int c2=c; c2<GRT_CHANNEL_NUM; ++c2){
+            GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_put_var) (in_ncid, out_varids[c2][c], res[c2][c]));
+        }
+    }
+    
+
+    // 关闭文件
+    GRT_NC_CHECK(nc_close(in_ncid));
+
+    GRT_SAFE_FREE_PTR(s_ingrid);
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;
 }

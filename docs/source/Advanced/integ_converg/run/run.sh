@@ -46,7 +46,7 @@ echo "..." >> ptam_stats_head
 # -------------------------------------------------------------------
 # BEGIN SGRN
 # -S 表示输出核函数文件
-grt static greenfn -Mmilrow -D0.1/0 -X2/2/1 -Y2/2/1 -S > grn
+grt static greenfn -Mmilrow -D0.1/0 -X2/2/1 -Y2/2/1 -S -Ostgrn.nc
 
 # grt.ker2asc 也可以读取静态解输出的核函数文件，格式一致
 grt ker2asc stgrtstats/milrow_0.1_0/K > static_stats

@@ -12,23 +12,11 @@ Python中合成静态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.uti
 
 不同震源
 -------------
-以下绘图使用Python绘制，绘图函数如下。这里也提供 `GMT <https://www.generic-mapping-tools.org/>`_ 绘图脚本（需根据实际数据调整参数，仅作参考）。
+以下绘图使用 `GMT <https://www.generic-mapping-tools.org/>`_  绘制。这里提供计算和绘图的 Python 脚本和 Shell 脚本供下载参考。
 
-.. tabs:: 
+:download:`Shell Scripts <run/run.sh>`
 
-    .. tab:: Python
-
-        .. literalinclude:: run/run.py
-            :language: python
-            :start-after: BEGIN plot func
-            :end-before: END plot func
-
-    .. tab:: GMT 
-
-        .. literalinclude:: run/run.sh
-            :language: bash
-            :start-after: BEGIN gmt
-            :end-before: END gmt
+:download:`Python Scripts <run/run.py>`
 
 
 爆炸源

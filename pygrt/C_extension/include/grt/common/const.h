@@ -66,6 +66,7 @@ typedef int MYINT;  ///< 整数
 #define GCC_ALWAYS_INLINE __attribute__((always_inline))  ///< gcc编译器不改动内联函数
 
 #define GRT_SWAP(type, a, b) { type temp = a; a = b; b = temp; } ///< 交换两个变量的值
+#define GRT_MIN_DISTANCE    1e-5   ///< 最小震中距，用于限制
 
 #define GRT_STRING_FMT "%18s"  ///< 字符串输出格式
 #define GRT_REAL_FMT "%18.8e"  ///< 浮点数输出格式

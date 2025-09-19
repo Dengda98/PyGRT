@@ -1,6 +1,8 @@
 import numpy as np
 import pygrt 
 from obspy import *
+from scipy.io import netcdf_file
+from typing import List
 
 
 def compare3(st_py:Stream, c_prefix:str, ZNE:bool=False, dim2:bool=False):
@@ -28,38 +30,38 @@ def compare3(st_py:Stream, c_prefix:str, ZNE:bool=False, dim2:bool=False):
 
     return error/nerr
 
+def update_dict(resDct:dict, Dct0:dict, prefix:str):
+    keys = resDct.keys()
+    for k in Dct0.keys():
+        if k in keys:
+            continue
+
+        resDct.update({f"{prefix}{k}": Dct0[k]})
 
 def static_compare3(resDct:dict, c_prefix:str):
     """return average relative error"""
 
-    nx = len(resDct['_xarr'])
-    ny = len(resDct['_yarr'])
+    print(c_prefix)
 
-    def _get_c_resDct(c_prefix:str):
-        with open(c_prefix, 'r') as f:
-            lines = [line.strip() for line in f if line.startswith('#')]
-        chs = lines[-1].split()[1:]
+    # read nc
+    with netcdf_file(c_prefix, mmap=False) as f:
+        error = 0.0
+        nerr = 0
 
-        c_res = np.loadtxt(c_prefix)
-        c_resDct = {}
-        for i in range(2, c_res.shape[1]):
-            c_resDct[chs[i]] = c_res[:,i].reshape((nx, ny), order='F')
+        for k in f.variables:
+            if k == 'north' or k == 'east':
+                continue
+            val1 = resDct[k]
+            val2 = f.variables[k][:]
+            print(k, np.mean(np.abs(val1 - val2)), np.max(val2))
+            
+            val2[val2 == 0.0] = 1.0
 
-        return c_resDct
-    
-    c_resDct = _get_c_resDct(c_prefix)
-
-    error = 0.0
-    nerr = 0
-
-    for k in c_resDct.keys():
-        val1 = resDct[k]
-        val2 = c_resDct[k]
-        rerr = np.mean(np.abs(val1 - val2) / np.abs(val2))
-        if np.isnan(rerr) or np.isinf(rerr):
-            rerr = 0.0
-        error += rerr
-        nerr += 1 
+            rerr = np.mean(np.abs(val1 - val2) / np.abs(val2))
+            if np.isnan(rerr) or np.isinf(rerr):
+                rerr = 0.0
+            error += rerr
+            nerr += 1 
 
     return error/nerr
 
@@ -159,44 +161,40 @@ static_grn = pymod.compute_static_grn(xarr, yarr, calc_upar=True)
 for ZNE in [False, True]:
     suffix = "-N" if ZNE else ""
     static_syn = pygrt.utils.gen_syn_from_gf_EX(static_grn, S, ZNE=ZNE, calc_upar=True)
-    AVGRERR.append(static_compare3(static_syn, f"static/stsyn_ex{suffix}"))
     ststrain = pygrt.utils.compute_strain(static_syn)
     strotation = pygrt.utils.compute_rotation(static_syn)
     ststress = pygrt.utils.compute_stress(static_syn)
-    AVGRERR.append(static_compare3(ststrain, f"static/strain_ex{suffix}"))
-    AVGRERR.append(static_compare3(strotation, f"static/rotation_ex{suffix}"))
-    AVGRERR.append(static_compare3(ststress, f"static/stress_ex{suffix}"))
-    print(static_syn, ststrain, strotation, ststress)
+    update_dict(static_syn, ststrain, "strain_")
+    update_dict(static_syn, ststress, "stress_")
+    update_dict(static_syn, strotation, "rotation_")
+    AVGRERR.append(static_compare3(static_syn, f"static/stsyn_ex{suffix}.nc"))
 
     static_syn = pygrt.utils.gen_syn_from_gf_SF(static_grn, S, fn, fe, fz, ZNE=ZNE, calc_upar=True)
-    AVGRERR.append(static_compare3(static_syn, f"static/stsyn_sf{suffix}"))
     ststrain = pygrt.utils.compute_strain(static_syn)
     strotation = pygrt.utils.compute_rotation(static_syn)
     ststress = pygrt.utils.compute_stress(static_syn)
-    AVGRERR.append(static_compare3(ststrain, f"static/strain_sf{suffix}"))
-    AVGRERR.append(static_compare3(strotation, f"static/rotation_sf{suffix}"))
-    AVGRERR.append(static_compare3(ststress, f"static/stress_sf{suffix}"))
-    print(static_syn, ststrain, strotation, ststress)
+    update_dict(static_syn, ststrain, "strain_")
+    update_dict(static_syn, ststress, "stress_")
+    update_dict(static_syn, strotation, "rotation_")
+    AVGRERR.append(static_compare3(static_syn, f"static/stsyn_sf{suffix}.nc"))
 
     static_syn = pygrt.utils.gen_syn_from_gf_DC(static_grn, S, stk, dip, rak, ZNE=ZNE, calc_upar=True)
-    AVGRERR.append(static_compare3(static_syn, f"static/stsyn_dc{suffix}"))
     ststrain = pygrt.utils.compute_strain(static_syn)
     strotation = pygrt.utils.compute_rotation(static_syn)
     ststress = pygrt.utils.compute_stress(static_syn)
-    AVGRERR.append(static_compare3(ststrain, f"static/strain_dc{suffix}"))
-    AVGRERR.append(static_compare3(strotation, f"static/rotation_dc{suffix}"))
-    AVGRERR.append(static_compare3(ststress, f"static/stress_dc{suffix}"))
-    print(static_syn, ststrain, strotation, ststress)
+    update_dict(static_syn, ststrain, "strain_")
+    update_dict(static_syn, ststress, "stress_")
+    update_dict(static_syn, strotation, "rotation_")
+    AVGRERR.append(static_compare3(static_syn, f"static/stsyn_dc{suffix}.nc"))
 
     static_syn = pygrt.utils.gen_syn_from_gf_MT(static_grn, S, [M11,M12,M13,M22,M23,M33], ZNE=ZNE, calc_upar=True)
-    AVGRERR.append(static_compare3(static_syn, f"static/stsyn_mt{suffix}"))
     ststrain = pygrt.utils.compute_strain(static_syn)
     strotation = pygrt.utils.compute_rotation(static_syn)
     ststress = pygrt.utils.compute_stress(static_syn)
-    AVGRERR.append(static_compare3(ststrain, f"static/strain_mt{suffix}"))
-    AVGRERR.append(static_compare3(strotation, f"static/rotation_mt{suffix}"))
-    AVGRERR.append(static_compare3(ststress, f"static/stress_mt{suffix}"))
-    print(static_syn, ststrain, strotation, ststress)
+    update_dict(static_syn, ststrain, "strain_")
+    update_dict(static_syn, ststress, "stress_")
+    update_dict(static_syn, strotation, "rotation_")
+    AVGRERR.append(static_compare3(static_syn, f"static/stsyn_mt{suffix}.nc"))
 
 
 AVGRERR = np.array(AVGRERR)

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eu
 
-rm -rf grn* syn* strain stress rotation *.png
+rm -rf stgrn* stsyn* *.png
 
 depsrc=2
 deprcv=0
@@ -14,16 +14,16 @@ y1=-2.5
 y2=2.5
 dy=0.15
 # -e 表示计算空间导数
-grt static greenfn -Mmilrow -D${depsrc}/${deprcv} -X$x1/$x2/$dx -Y$y1/$y2/$dy -e > grn
+grt static greenfn -Mmilrow -D${depsrc}/${deprcv} -X$x1/$x2/$dx -Y$y1/$y2/$dy -e -Ostgrn.nc
 
 # -N 表示输出ZNE分量
-grt static syn -S1e24 -M33/50/120 -e -N < grn > syn_dc_zne
+grt static syn -S1e24 -M33/50/120 -e -N -Gstgrn.nc -Ostsyn_dc_zne.nc
 
 # 计算应变
-grt static strain < syn_dc_zne > strain
+grt static strain stsyn_dc_zne.nc
 
 # 计算旋转
-grt static rotation < syn_dc_zne > rotation
+grt static rotation stsyn_dc_zne.nc
 
 # 计算应力
-grt static stress < syn_dc_zne > stress
+grt static stress stsyn_dc_zne.nc

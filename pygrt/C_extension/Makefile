@@ -12,7 +12,7 @@ VERSION := v$(shell cat version )
 
 # link options for FFTW
 # NEED EXPLICITY SET LIBRARY PATH on MacOS
-LFFT_FLAGS := -l:libfftw3.a  -l:libfftw3f.a
+LFFTW_FLAGS := -l:libfftw3.a  -l:libfftw3f.a
 
 CC := gcc
 
@@ -21,9 +21,11 @@ CC := gcc
 # -l like "-l:libXYZ.a" should be saved for conditional compile.
 FOMPFLAGS := -fopenmp 
 
+# NetCDF library
+LNETCDF_FLAGS :=  -lnetcdf
+
 # link static library on Windows
 LINK_STATIC := 
-LDFLAGS := $(FOMPFLAGS) $(LFFT_FLAGS)
 
 # expand stack memory for Windows
 STACK_MEM := 
@@ -31,16 +33,20 @@ STACK_MEM :=
 ifeq ($(OS),Windows_NT)  # link static oenpmp on windows
 	STACK_MEM := -Wl,-stack,0x1000000
     LINK_STATIC := -static
-	LDFLAGS := $(LINK_STATIC) $(FOMPFLAGS) $(LFFT_FLAGS)
 endif
+
+LDFLAGS := $(LINK_STATIC) $(FOMPFLAGS) -lm $(LFFTW_FLAGS) $(LNETCDF_FLAGS) $(STACK_MEM)
 
 # change architecture for macOS, from make command
 ARCH = 
 
+# load args from command
+CFLAGS2 := 
+
 # However, Maybe -static is not working for standard-lib on MacOS, 
 # at least for now, it's not a big problem.
-CFLAGS := $(LINK_STATIC) $(LFFT_FLAGS) -lm -O3 -std=gnu99 \
-		  -fPIC -Wall -Wextra $(STACK_MEM) -I$(shell realpath $(INC_DIR)) \
+CFLAGS := -O3 -std=gnu99 \
+		  -fPIC -Wall -Wextra -I$(shell realpath $(INC_DIR)) $(CFLAGS2) \
 		  -DGRT_VERSION=\"$(VERSION)\" -D_GNU_SOURCE  $(ARCH)  $(FOMPFLAGS)
 #  -fdump-tree-all  -g -ffast-math -O3 -fno-associative-math  -march=native -mtune=native 
 
@@ -76,7 +82,7 @@ $(BIN_DIR):
 	@mkdir -p $(BIN_DIR)
 
 $(PROGS): $(OBJS)
-	$(CC) -o $@ $^  $(CFLAGS)
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 # ----------------------- Dependency generation -----------------------
 # Dependency generation (only for non-clean targets)
