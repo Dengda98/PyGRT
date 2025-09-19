@@ -47,7 +47,8 @@ jobs:
 
       - name: Configured git attributes for line endings (Windows)  # 防止接下来在windows平台checkout代码时，文本文件的换行符发生变化，导致MSYS2工作出错
         if: contains(matrix.os, 'windows')    
-        run: git config --global core.autocrlf input
+        run: |
+          git config --global core.autocrlf input
 
       - name: Checkout code  # 下载库代码
         uses: actions/checkout@v3
@@ -73,19 +74,9 @@ jobs:
           docker exec ${{ env.CONTAINER_ID }} bash -c "
             mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup && \
             curl -o /etc/yum.repos.d/CentOS-Base.repo https://mirrors.aliyun.com/repo/Centos-7.repo && \
-            yum clean all -y && yum makecache -y && yum install -y gcc make
-          "
-      
-      # Centos 7.7 docker环境中编译fftw库需要添加 -fPIC
-      - name: Build static FFTW in container (Ubuntu)
-        if: contains(matrix.os, 'ubuntu')
-        run: |
-          docker exec ${{ env.CONTAINER_ID }} bash -c "
-            curl -O https://www.fftw.org/fftw-3.3.10.tar.gz && tar -xzvf fftw-3.3.10.tar.gz && \
-            cd fftw-3.3.10 && \
-            ./configure CFLAGS="-fPIC" && make && make install && \
-            ./configure CFLAGS="-fPIC" --enable-float && make && make install && \
-            cd .. && rm -rf fftw*
+            sed -i 's/mirrors.cloud.aliyuncs.com/mirrors.aliyun.com/g' /etc/yum.repos.d/CentOS-Base.repo && \
+            sed -i 's/mirrors.aliyuncs.com/mirrors.aliyun.com/g' /etc/yum.repos.d/CentOS-Base.repo && \
+            yum clean all -y && yum makecache -y && yum install -y gcc gcc-c++ make wget m4
           "
 
       - name: Install dependencies (macOS)
@@ -96,23 +87,51 @@ jobs:
           brew install fftw
 
           FFTW_PREFIX=$(brew --prefix fftw)
-          echo "FFT_INC_PATH=$FFTW_PREFIX/include" >> $GITHUB_ENV
-          echo "FFT_LIB_PATH=$FFTW_PREFIX/lib" >> $GITHUB_ENV
+          echo "FFTW_INC_PATH=$FFTW_PREFIX/include" >> $GITHUB_ENV
+          echo "FFTW_LIB_PATH=$FFTW_PREFIX/lib" >> $GITHUB_ENV
+
+
+      # ----------------------------- 安装 FFTW -------------------------------
+      - name: Install FFTW (ubuntu)
+        if: contains(matrix.os, 'ubuntu')
+        run: |
+          FILENAME="fftw3-${{ matrix.os }}-${{ matrix.arch }}"
+          # 在 centos 7 镜像中编译好的fftw
+          wget "https://raw.githubusercontent.com/Dengda98/dengda98.github.io/refs/heads/main/assets/packages/${FILENAME}.tar.gz"
+          tar -xzvf ${FILENAME}.tar.gz 
+          
+          # 这里 workspace 名称取决于创建容器时的命名
+          echo "FFTW_INC_PATH=/workspace/$FILENAME/include" >> $GITHUB_ENV
+          echo "FFTW_LIB_PATH=/workspace/$FILENAME/lib" >> $GITHUB_ENV
+
+      # ---------------------------- 安装 NetCDF -------------------------------
+      - name: Install NetCDF 
+        run: |
+          # 之前在各个系统上预编译好的 NetCDF 安装包
+          FILENAME="netcdf-c-4.9.3-${{ matrix.os }}-${{ matrix.arch }}"
+          curl -O "https://raw.githubusercontent.com/Dengda98/dengda98.github.io/refs/heads/main/assets/packages/${FILENAME}.tar.gz"
+          tar -xzvf ${FILENAME}.tar.gz
+
+          # 记录路径
+          if [[ "${{ matrix.os }}" == *"ubuntu"* ]]; then
+            echo "NC_INC_PATH=/workspace/$FILENAME/include" >> $GITHUB_ENV
+            echo "NC_LIB_PATH=/workspace/$FILENAME/lib" >> $GITHUB_ENV
+          else 
+            echo "NC_INC_PATH=$(pwd)/$FILENAME/include" >> $GITHUB_ENV
+            echo "NC_LIB_PATH=$(pwd)/$FILENAME/lib" >> $GITHUB_ENV
+          fi
+          
 
       # -------------------------------- 编译C库和C程序 ----------------------------------
       - name: Build the project (macOS)
         if: contains(matrix.os, 'macos')
         working-directory: ./pygrt/C_extension  
         run: |
-          # Mac系统需要显式设置头文件路径和库路径
-          export C_INCLUDE_PATH=$FFT_INC_PATH:$C_INCLUDE_PATH
-          export LIBRARY_PATH=$FFT_LIB_PATH:${LIBRARY_PATH}
-          export LD_LIBRARY_PATH=$FFT_LIB_PATH:${LD_LIBRARY_PATH}  
-          export DYLD_LIBRARY_PATH=$FFT_LIB_PATH:${DYLD_LIBRARY_PATH}  
-
           make ARCH="-arch ${{ matrix.arch }}" \
                 CC=gcc-14 \
-                LFFT_FLAGS="$FFT_LIB_PATH/libfftw3.a $FFT_LIB_PATH/libfftw3f.a"
+                LFFTW_FLAGS="$FFTW_LIB_PATH/libfftw3.a $FFTW_LIB_PATH/libfftw3f.a" \
+                LNETCDF_FLAGS="$NC_LIB_PATH/libnetcdf.a" \
+                CFLAGS2="-I$FFTW_INC_PATH -I$NC_INC_PATH"
           make cleanbuild
           ls -l lib/
           ls -l bin/
@@ -124,27 +143,37 @@ jobs:
         shell: msys2 {0}
         working-directory: ./pygrt/C_extension  
         run: |
-          make 
+          make \
+            LNETCDF_FLAGS="$NC_LIB_PATH/libnetcdf.a" \
+            CFLAGS2="-I$NC_INC_PATH"
+
           make cleanbuild
           ls -l lib/
           ls -l bin/
           ldd lib/libgrt.so
           ldd bin/*
 
-      # - name: Build the project (Ubuntu)
-      #   if: contains(matrix.os, 'ubuntu')
-      #   working-directory: ./pygrt/C_extension  
-      #   run: |
-      #     make 
-      #     make cleanbuild
-      #     ldd lib/libgrt.so
-      #     ldd bin/*
-
       - name: Build the project in container (Ubuntu)
         if: contains(matrix.os, 'ubuntu')
         working-directory: 
         run: |
-          docker exec ${{ env.CONTAINER_ID }} bash -c "cd ./pygrt/C_extension && ls && make && make cleanbuild && cd -"
+          cat > tmprun.sh <<EOF
+          cd ./pygrt/C_extension
+          ls
+          make \
+            LFFTW_FLAGS="$FFTW_LIB_PATH/libfftw3.a $FFTW_LIB_PATH/libfftw3f.a" \
+            LNETCDF_FLAGS="$NC_LIB_PATH/libnetcdf.a" \
+            CFLAGS2="-I$FFTW_INC_PATH -I$NC_INC_PATH"
+          make cleanbuild
+          cd -
+          EOF
+
+          echo "-------------------------------------"
+          cat tmprun.sh
+
+          docker exec ${{ env.CONTAINER_ID }} bash tmprun.sh 
+          rm tmprun.sh
+
           cd ./pygrt/C_extension 
           ldd lib/libgrt.so
           ldd bin/*
@@ -192,7 +221,8 @@ jobs:
         with:
           name: ${{ matrix.os }}-${{ matrix.arch }}_tar
           path: ${{ env.PACK_NAME }}.tar.gz
-            
+
+
 
   # =======================================================================================
   test_project: # 在全新系统上测试程序，不安装其它依赖，看能否运行
