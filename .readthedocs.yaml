@@ -15,7 +15,15 @@ build:
     # golang: "1.20"
 
   # 这里通过 apt 下载的 gmt 是旧版，目前大概是 6.3，但对目前画的图够了 
-  apt_packages: ["doxygen", "build-essential", "libfftw3-dev", "libnetcdf-dev", "gmt"]
+  apt_packages: [
+    "doxygen", 
+    "build-essential", 
+    "libfftw3-dev", 
+    "libnetcdf-dev", 
+    "netcdf-bin",
+    "nco",
+    "gmt"
+  ]
 
   jobs:
     pre_build:
