@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-05 13:28+0800\n"
+"POT-Creation-Date: 2025-09-20 11:57+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -54,9 +54,10 @@ msgid ""
 "建议先阅读完 :doc:`/Tutorial/dynamic/gfunc` 部分。静态情况与动态情况采取的计算方法一致，只是推导细节会有不同，详见"
 " :ref:`初稿 <yao_init_manuscripts>` 。"
 msgstr ""
-"It is recommended to first read :doc:`/Tutorial/dynamic/gfunc` section. The computation methods for static "
-"and dynamic cases are the same, but the derivation details differ. See "
-":ref:`初稿 <yao_init_manuscripts>` for more details."
+"It is recommended to first read :doc:`/Tutorial/dynamic/gfunc` section. "
+"The computation methods for static and dynamic cases are the same, but "
+"the derivation details differ. See :ref:`初稿 <yao_init_manuscripts>` for "
+"more details."
 
 #: ../../source/Tutorial/static/static_gfunc.rst:15
 msgid "示例程序"
@@ -69,26 +70,28 @@ msgid ""
 msgstr ""
 "Assume in the :file:`milrow` model, the source depth is 2 km, and the "
 "receiver is located on the surface. The north direction (X/km) is sampled"
-" evenly in 0.15 km interval within the range [-3, 3], and the east direction "
-"(Y/km) is sampled evenly in 0.15 km interval within the range [-2.5, 2.5]. "
-"Compute the static Green's functions at these points."
+" evenly in 0.15 km interval within the range [-3, 3], and the east "
+"direction (Y/km) is sampled evenly in 0.15 km interval within the range "
+"[-2.5, 2.5]. Compute the static Green's functions at these points."
 
 #: ../../source/Tutorial/static/static_gfunc.rst:21
 msgid "C"
 msgstr ""
 
 #: ../../source/Tutorial/static/static_gfunc.rst:28
-msgid "输出的 :file:`grn` 文件内部如下，开头的 ``#`` 用于保存源点和场点所在介质层的物性参数。"
+msgid ""
+"结果输出为 `NetCDF <https://zh.wikipedia.org/wiki/NetCDF>`_ 网格格式，方便使用 GMT "
+"等软件处理和绘制。 如下使用 ``ncdump -h`` 命令可查看网格文件基本信息。"
 msgstr ""
-"The content of the output :file:`grn` file is as follows, with the "
-"leading ``#`` used to store the physical properties of the medium layers "
-"where the source and receiver points are located."
+"The output is in the `NetCDF <https://zh.wikipedia.org/wiki/NetCDF>`_ grid format, "
+"which is convenient for processing and plotting with software such as GMT. "
+"The basic information of the grid file can be viewed by using the command ``ncdump -h`` ."
 
-#: ../../source/Tutorial/static/static_gfunc.rst:34
+#: ../../source/Tutorial/static/static_gfunc.rst:35
 msgid "Python"
 msgstr ""
 
-#: ../../source/Tutorial/static/static_gfunc.rst:41
+#: ../../source/Tutorial/static/static_gfunc.rst:42
 msgid "函数返回字典类型，包括一些基本参数以及格林函数（2D矩阵）。"
 msgstr ""
 "The function returns a dictionary type, including some basic parameters "

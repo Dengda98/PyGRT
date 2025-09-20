@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-05 13:28+0800\n"
+"POT-Creation-Date: 2025-09-20 11:57+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -128,8 +128,8 @@ msgstr ""
 #: ../../source/Tutorial/dynamic/gfunc.rst:44
 msgid ":command:`travt` 模块可以显式地再计算初至波走时，"
 msgstr ""
-"The :command:`travt` module can explicitly recalculate the travel "
-"times of the first waves."
+"The :command:`travt` module can explicitly recalculate the travel times "
+"of the first waves."
 
 #: ../../source/Tutorial/dynamic/gfunc.rst:51
 msgid "走时结果会输出到终端，"
@@ -137,13 +137,12 @@ msgstr "The travel time results will be output to the terminal."
 
 #: ../../source/Tutorial/dynamic/gfunc.rst:56
 msgid ""
-"如果你没有安装SAC软件，可以使用Python的ObsPy库读取生成的SAC数据，或者使用 :command:`b2a` "
+"如果你没有安装SAC软件，可以使用Python的ObsPy库读取生成的SAC数据，或者使用 :command:`sac2asc` "
 "模块临时将SAC格式文件转为如下的文本文件："
 msgstr ""
 "If you have not installed the SAC software, you can use Python's ObsPy "
-"library to read the generated SAC data, or use the :command:`b2a` "
-"module to temporarily convert SAC format files into the following text "
-"files:"
+"library to read the generated SAC data, or use the :command:`sac2asc` module "
+"to temporarily convert SAC format files into the following text files:"
 
 #: ../../source/Tutorial/dynamic/gfunc.rst:63
 msgid "输出的文本文件如下，两列分别为时间点和幅值。这种输出仅保留波形信息，缺失SAC文件中的头段变量。"

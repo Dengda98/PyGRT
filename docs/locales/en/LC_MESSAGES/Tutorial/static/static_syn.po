@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-05 13:28+0800\n"
+"POT-Creation-Date: 2025-09-20 11:57+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -63,74 +63,75 @@ msgstr "Types of sources"
 
 #: ../../source/Tutorial/static/static_syn.rst:15
 msgid ""
-"以下绘图使用Python绘制，绘图函数如下。这里也提供 `GMT <https://www.generic-mapping-"
-"tools.org/>`_ 绘图脚本（需根据实际数据调整参数，仅作参考）。"
+"以下绘图使用 `GMT <https://www.generic-mapping-tools.org/>`_  绘制。这里提供计算和绘图的 "
+"Python 脚本和 Shell 脚本供下载参考。"
 msgstr ""
-"The following plots are drawn using Python, with the plotting functions "
-"shown below. A `GMT <https://www.generic-mapping-tools.org/>`_ script is "
-"also provided (parameters need to be adjusted based on actual data, for "
-"reference only)."
+"The following plots are drawn using `GMT <https://www.generic-mapping-tools.org/>`_ 。 "
+"Here provide the Python and Shell scripts of computing and drawing for reference."
+
+#: ../../source/Tutorial/static/static_syn.rst:17
+msgid ":download:`Shell Scripts <run/run.sh>`"
+msgstr ""
 
 #: ../../source/Tutorial/static/static_syn.rst:19
-#: ../../source/Tutorial/static/static_syn.rst:47
-#: ../../source/Tutorial/static/static_syn.rst:73
-#: ../../source/Tutorial/static/static_syn.rst:99
-#: ../../source/Tutorial/static/static_syn.rst:122
-#: ../../source/Tutorial/static/static_syn.rst:151
-#: ../../source/Tutorial/static/static_syn.rst:175
-msgid "Python"
+msgid ":download:`Python Scripts <run/run.py>`"
 msgstr ""
 
-#: ../../source/Tutorial/static/static_syn.rst:26
-msgid "GMT"
-msgstr ""
-
-#: ../../source/Tutorial/static/static_syn.rst:35
+#: ../../source/Tutorial/static/static_syn.rst:23
 msgid "爆炸源"
 msgstr "explosion"
 
-#: ../../source/Tutorial/static/static_syn.rst:36
+#: ../../source/Tutorial/static/static_syn.rst:24
 msgid "标量矩 1e24 dyne·cm。"
 msgstr "Scalar moment of 1e24 dyne·cm."
 
-#: ../../source/Tutorial/static/static_syn.rst:40
-#: ../../source/Tutorial/static/static_syn.rst:66
-#: ../../source/Tutorial/static/static_syn.rst:92
-#: ../../source/Tutorial/static/static_syn.rst:115
-#: ../../source/Tutorial/static/static_syn.rst:144
-#: ../../source/Tutorial/static/static_syn.rst:168
+#: ../../source/Tutorial/static/static_syn.rst:28
+#: ../../source/Tutorial/static/static_syn.rst:54
+#: ../../source/Tutorial/static/static_syn.rst:80
+#: ../../source/Tutorial/static/static_syn.rst:103
+#: ../../source/Tutorial/static/static_syn.rst:132
+#: ../../source/Tutorial/static/static_syn.rst:156
 msgid "C"
 msgstr ""
 
+#: ../../source/Tutorial/static/static_syn.rst:35
 #: ../../source/Tutorial/static/static_syn.rst:61
+#: ../../source/Tutorial/static/static_syn.rst:87
+#: ../../source/Tutorial/static/static_syn.rst:110
+#: ../../source/Tutorial/static/static_syn.rst:139
+#: ../../source/Tutorial/static/static_syn.rst:163
+msgid "Python"
+msgstr ""
+
+#: ../../source/Tutorial/static/static_syn.rst:49
 msgid "单力源"
 msgstr "single force"
 
-#: ../../source/Tutorial/static/static_syn.rst:62
+#: ../../source/Tutorial/static/static_syn.rst:50
 msgid "北向力 :math:`f_N=1`，东向力 :math:`f_E=-0.5`，垂直向下的力 :math:`f_Z=2`，单位 1e16 dyne。"
 msgstr ""
 "Northward force :math:`f_N=1`, Eastward force :math:`f_E=-0.5`, and "
 "Downward vertical force :math:`f_Z=2`, unit of 1e16 dyne."
 
-#: ../../source/Tutorial/static/static_syn.rst:87
+#: ../../source/Tutorial/static/static_syn.rst:75
 msgid "剪切源"
 msgstr "shear"
 
-#: ../../source/Tutorial/static/static_syn.rst:88
+#: ../../source/Tutorial/static/static_syn.rst:76
 msgid "断层走向33°，倾角50°，滑动角120°，标量矩 1e24 dyne·cm。"
 msgstr "Strike of 33°, Dip of 50°, Slip of 120°, Scalar moment of 1e24 dyne·cm."
 
-#: ../../source/Tutorial/static/static_syn.rst:111
+#: ../../source/Tutorial/static/static_syn.rst:99
 msgid "这里如果改变倾角为90°，滑动角0°，就可以看到清晰的蝴蝶状辐射花样。"
 msgstr ""
 "If the dip angle is changed to 90° and the slip angle to 0°, a clear "
 "butterfly-shaped radiation pattern can be observed."
 
-#: ../../source/Tutorial/static/static_syn.rst:138
+#: ../../source/Tutorial/static/static_syn.rst:126
 msgid "矩张量源"
 msgstr "moment tensor"
 
-#: ../../source/Tutorial/static/static_syn.rst:139
+#: ../../source/Tutorial/static/static_syn.rst:127
 msgid ""
 ":math:`M_{xx}=0.1, M_{xy}=-0.2, M_{xz}=1.0, M_{yy}=0.3, M_{yz}=-0.5, "
 "M_{zz}=-2.0`，单位 1e24 dyne·cm， **其中X为北向，Y为东向，Z为垂直向下**。"
@@ -139,7 +140,7 @@ msgstr ""
 "M_{zz}=-2.0`, unit 1e24 dyne·cm, **where X is Northward，Y is Eastward，Z "
 "is Downward.**"
 
-#: ../../source/Tutorial/static/static_syn.rst:164
+#: ../../source/Tutorial/static/static_syn.rst:152
 msgid "若指定 :math:`M_{xy}=-0.2`，其它均为零，则为纯剪切。"
 msgstr ""
 "If :math:`M_{xy}=-0.2` is specified and all others are zero, it "
