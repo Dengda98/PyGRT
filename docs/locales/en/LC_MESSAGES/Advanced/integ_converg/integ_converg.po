@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-05 13:28+0800\n"
+"POT-Creation-Date: 2025-09-20 11:57+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -99,10 +99,10 @@ msgstr ""
 "provided."
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:42
-msgid ":command:`k2a` 模块可将单个核函数文件转为文本格式。"
+msgid ":command:`ker2asc` 模块可将单个核函数文件转为文本格式。"
 msgstr ""
-"The :command:`k2a` module can convert a single kernel function file "
-"into text format."
+"The :command:`ker2asc` module can convert a single kernel function file into "
+"text format."
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:49
 #: ../../source/Advanced/integ_converg/integ_converg.rst:153
@@ -122,8 +122,8 @@ msgid ""
 msgstr ""
 "Except for the wavenumber ``k``, the naming format of each result is "
 "``{srcType}_{q/w/v}``, consistent with the kernel functions :math:`q_m, "
-"w_m, v_m` introduced in the integral formulas in the :doc:`/Tutorial/dynamic/gfunc` "
-"section."
+"w_m, v_m` introduced in the integral formulas in the "
+":doc:`/Tutorial/dynamic/gfunc` section."
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:67
 msgid ""
@@ -245,9 +245,9 @@ msgstr ""
 "records the peaks and troughs of the integral values."
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:146
-msgid ":command:`k2a` 模块也支持将 ``PTAM_{ir}_{dist}/PTAM_{iw}_{freq}`` 文件转为文本格式，"
+msgid ":command:`ker2asc` 模块也支持将 ``PTAM_{ir}_{dist}/PTAM_{iw}_{freq}`` 文件转为文本格式，"
 msgstr ""
-"The :command:`k2a` module also supports converting the "
+"The :command:`ker2asc` module also supports converting the "
 "``PTAM_{ir}_{dist}/PTAM_{iw}_{freq}`` file into text format."
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:158

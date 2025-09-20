@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-05 13:28+0800\n"
+"POT-Creation-Date: 2025-09-20 11:57+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -42,23 +42,29 @@ msgstr ""
 #: ../../source/Tutorial/static/static_strain_stress.rst:9
 msgid ""
 "除了使用不同的函数名/程序名，输出文件不同之外，流程基本和 :doc:`/Tutorial/dynamic/strain_stress` "
-"类似。这里直接给出脚本。运行后注意观察和 :doc:`/Tutorial/dynamic/syn` 的输出有了什么变化。"
+"类似。这里直接给出脚本。"
 msgstr ""
 "Apart from using different function names/program names and different "
 "output files, the process is basically similar to "
-":doc:`/Tutorial/dynamic/strain_stress`. Here, the script is provided directly. After "
-"running, pay attention to what changes have occurred compared to the "
-"output of :doc:`/Tutorial/dynamic/syn`."
+":doc:`/Tutorial/dynamic/strain_stress`. Here, the script is provided "
+"directly. After running, pay attention to what changes have occurred "
+"compared to the output of :doc:`/Tutorial/dynamic/syn`."
 
-#: ../../source/Tutorial/static/static_strain_stress.rst:13
+#: ../../source/Tutorial/static/static_strain_stress.rst:14
 msgid "C"
 msgstr ""
 
-#: ../../source/Tutorial/static/static_strain_stress.rst:19
+#: ../../source/Tutorial/static/static_strain_stress.rst:16
+msgid "计算结果会以新增变量的形式直接写入 nc 网格，可使用 ``ncdump -h`` 查看。"
+msgstr ""
+"The results will be directly written into the nc grid in the form of new variables. "
+"You can view them using the command ``ncdump -h`` ."
+
+#: ../../source/Tutorial/static/static_strain_stress.rst:22
 msgid "Python"
 msgstr ""
 
-#: ../../source/Tutorial/static/static_strain_stress.rst:40
+#: ../../source/Tutorial/static/static_strain_stress.rst:43
 msgid "由于场点位于地表（自由表面），过Z平面的应力均为0（由于浮点数计算误差，呈极小非零数），结果和理论保持一致。"
 msgstr ""
 "Since the field point is located on the surface (free surface), the "
