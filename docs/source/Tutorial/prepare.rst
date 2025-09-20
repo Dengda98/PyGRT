@@ -25,11 +25,11 @@
 
     .. tab:: C
 
-        **PyGRT** 以如下自由格式定义模型中每层的物性参数，每列之间以空格隔开
+        **PyGRT** 以如下自由格式定义模型中每层的物性参数，每列之间以空格隔开（最后两列的 Qp, Qs 可省略）
 
         .. code-block:: text
 
-            [Thickness(km)]    [Vp(km/s)]    [Vs(km/s)]   [Rho(g/cm^3)]   [Qp]   [Qs]
+            Thickness(km)    Vp(km/s)    Vs(km/s)   Rho(g/cm^3)   [Qp]   [Qs]
 
         
         例如 :file:`milrow` 模型（假设文本文件名为 `milrow` ）
