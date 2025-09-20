@@ -2,7 +2,7 @@
 
 chmod +x *.sh
 
-# 先在线编译PyGRT
+# 先在线构建PyGRT
 cd ../pygrt/C_extension 
 make
 cd -

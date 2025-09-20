@@ -33,7 +33,7 @@
     ✔️ **MacOS**  
     ✔️ **Windows**
 
- + **PyGRT is extremely easy to install** by distributing precompiled binary files.
+ + **PyGRT is extremely easy to install** by distributing pre-built binary files.
 
  + **PyGRT now supports the model with liquid layers.**
 
@@ -54,7 +54,7 @@
   Clean and organized code structure, making it easy to extend and maintain.
 
 - **Compatibility**:  
-  **PyGRT provides pre-compiled static files**, ensuring ease of installation, usage, and portability across different systems.
+  **PyGRT provides pre-built static files**, ensuring ease of installation, usage, and portability across different systems.
 
 <p align="center">
   <img src="./figs/diagram_cut.png" alt="Image 2" width="100%" />
