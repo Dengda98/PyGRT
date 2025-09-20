@@ -100,7 +100,9 @@
    :maxdepth: 1
 
    install
-   Tutorial/index 
+   Tutorial/prepare 
+   Tutorial/dynamic/index
+   Tutorial/static/index 
 
 
 .. toctree::
