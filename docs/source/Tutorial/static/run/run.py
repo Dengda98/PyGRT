@@ -20,12 +20,12 @@ print(static_grn.keys())
 import matplotlib.pyplot as plt
 from typing import Union
 
-def plot_static(static_syn:dict, srctype:str, out:Union[str,None]=None):
+def plot_static(static_syn:dict, out:Union[str,None]=None):
     fig, ax = plt.subplots(1, 1, figsize=(10,8))
     # 设计对称色标
-    m = np.max(np.abs(static_syn[f'{srctype}Z'])) * 1.2
-    pcm = ax.pcolormesh(yarr, xarr, static_syn[f'{srctype}Z'], cmap='bwr', vmin=-m, vmax=m)
-    ax.quiver(yarr, xarr, static_syn[f'{srctype}E'], static_syn[f'{srctype}N'], 
+    m = np.max(np.abs(static_syn[f'Z'])) * 1.2
+    pcm = ax.pcolormesh(yarr, xarr, static_syn[f'Z'], cmap='bwr', vmin=-m, vmax=m)
+    ax.quiver(yarr, xarr, static_syn[f'E'], static_syn[f'N'], 
             angles='uv', pivot='mid')
     ax.set_ylim([xarr[0], xarr[-1]])
     ax.set_xlim([yarr[0], yarr[-1]])
@@ -44,8 +44,8 @@ def plot_static(static_syn:dict, srctype:str, out:Union[str,None]=None):
 # BEGIN SYN EX
 static_syn = pygrt.utils.gen_syn_from_gf_EX(static_grn, M0=1e24, ZNE=True)
 print(static_syn.keys())
-# dict_keys(['_xarr', '_yarr', '_src_va', '_src_vb', '_src_rho', '_rcv_va', '_rcv_vb', '_rcv_rho', 'EXZ', 'EXN', 'EXE'])
-plot_static(static_syn, "EX", "syn_ex.png")
+# dict_keys(['_xarr', '_yarr', '_src_va', '_src_vb', '_src_rho', '_rcv_va', '_rcv_vb', '_rcv_rho', 'Z', 'N', 'E'])
+plot_static(static_syn, "syn_ex.png")
 # END SYN EX
 # ---------------------------------------------------------------------------------
 
@@ -54,8 +54,8 @@ plot_static(static_syn, "EX", "syn_ex.png")
 # BEGIN SYN SF
 static_syn = pygrt.utils.gen_syn_from_gf_SF(static_grn, S=1e16, fN=1, fE=-0.5, fZ=2, ZNE=True)
 print(static_syn.keys())
-# dict_keys(['_xarr', '_yarr', '_src_va', '_src_vb', '_src_rho', '_rcv_va', '_rcv_vb', '_rcv_rho', 'SFZ', 'SFN', 'SFE'])
-plot_static(static_syn, "SF", "syn_sf.png")
+# dict_keys(['_xarr', '_yarr', '_src_va', '_src_vb', '_src_rho', '_rcv_va', '_rcv_vb', '_rcv_rho', 'Z', 'N', 'E'])
+plot_static(static_syn, "syn_sf.png")
 # END SYN SF
 # ---------------------------------------------------------------------------------
 
@@ -64,8 +64,8 @@ plot_static(static_syn, "SF", "syn_sf.png")
 # BEGIN SYN DC
 static_syn = pygrt.utils.gen_syn_from_gf_DC(static_grn, M0=1e24, strike=33, dip=50, rake=120, ZNE=True)
 print(static_syn.keys())
-# dict_keys(['_xarr', '_yarr', '_src_va', '_src_vb', '_src_rho', '_rcv_va', '_rcv_vb', '_rcv_rho', 'DCZ', 'DCN', 'DCE'])
-plot_static(static_syn, "DC", "syn_dc.png")
+# dict_keys(['_xarr', '_yarr', '_src_va', '_src_vb', '_src_rho', '_rcv_va', '_rcv_vb', '_rcv_rho', 'Z', 'N', 'E'])
+plot_static(static_syn, "syn_dc.png")
 # END SYN DC
 # ---------------------------------------------------------------------------------
 
@@ -73,8 +73,8 @@ plot_static(static_syn, "DC", "syn_dc.png")
 # BEGIN SYN DC2
 static_syn = pygrt.utils.gen_syn_from_gf_DC(static_grn, M0=1e24, strike=33, dip=90, rake=0, ZNE=True)
 print(static_syn.keys())
-# dict_keys(['_xarr', '_yarr', '_src_va', '_src_vb', '_src_rho', '_rcv_va', '_rcv_vb', '_rcv_rho', 'DCZ', 'DCN', 'DCE'])
-plot_static(static_syn, "DC", "syn_dc2.png")
+# dict_keys(['_xarr', '_yarr', '_src_va', '_src_vb', '_src_rho', '_rcv_va', '_rcv_vb', '_rcv_rho', 'Z', 'N', 'E'])
+plot_static(static_syn, "syn_dc2.png")
 # END SYN DC2
 # ---------------------------------------------------------------------------------
 
@@ -84,8 +84,8 @@ plot_static(static_syn, "DC", "syn_dc2.png")
 # BEGIN SYN MT
 static_syn = pygrt.utils.gen_syn_from_gf_MT(static_grn, M0=1e24, MT=[0.1,-0.2,1.0,0.3,-0.5,-2.0], ZNE=True)
 print(static_syn.keys())
-# dict_keys(['_xarr', '_yarr', '_src_va', '_src_vb', '_src_rho', '_rcv_va', '_rcv_vb', '_rcv_rho', 'MTZ', 'MTN', 'MTE'])
-plot_static(static_syn, "MT", "syn_mt.png")
+# dict_keys(['_xarr', '_yarr', '_src_va', '_src_vb', '_src_rho', '_rcv_va', '_rcv_vb', '_rcv_rho', 'Z', 'N', 'E'])
+plot_static(static_syn, "syn_mt.png")
 # END SYN MT
 # ---------------------------------------------------------------------------------
 
@@ -93,7 +93,7 @@ plot_static(static_syn, "MT", "syn_mt.png")
 # BEGIN SYN MT2
 static_syn = pygrt.utils.gen_syn_from_gf_MT(static_grn, M0=1e24, MT=[0,-0.2,0,0,0,0], ZNE=True)
 print(static_syn.keys())
-# dict_keys(['_xarr', '_yarr', '_src_va', '_src_vb', '_src_rho', '_rcv_va', '_rcv_vb', '_rcv_rho', 'MTZ', 'MTN', 'MTE'])
-plot_static(static_syn, "MT", "syn_mt2.png")
+# dict_keys(['_xarr', '_yarr', '_src_va', '_src_vb', '_src_rho', '_rcv_va', '_rcv_vb', '_rcv_rho', 'Z', 'N', 'E'])
+plot_static(static_syn, "syn_mt2.png")
 # END SYN MT2
 # ---------------------------------------------------------------------------------
