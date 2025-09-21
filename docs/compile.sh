@@ -8,10 +8,15 @@ make
 cd -
 
 # 添加到环境变量
-if [[ $(which grt) == "" ]]; then
-echo "export PATH=$(realpath ../pygrt/C_extension/bin):\$PATH" >> ~/.bashrc
-source ~/.bashrc
-fi
+cp ../pygrt/C_extension/bin/* /usr/local/bin/
+echo "-------------------------"
+echo $PATH
+echo "-------------------------"
+echo $(ll /usr/local/bin/*)
+# if [[ $(which grt) == "" ]]; then
+# echo "export PATH=$(realpath ../pygrt/C_extension/bin):\$PATH" >> ~/.bashrc
+# source ~/.bashrc
+# fi
 grt -h
 # 使用PyGRT运行文档需要的示例结果
 cd source && chmod +x *.sh && ./run_all.sh && cd -
