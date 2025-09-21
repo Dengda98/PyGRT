@@ -6,10 +6,10 @@
 
 -----------------------------------------------------------
 
+.. _warning_src_zdir:
 .. warning:: 
 
     **震源机制参数中（如单力源、矩张量源）Z轴取向下为正。**
-
 
 Python中合成动态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.utils.gen_syn_from_gf_DC>` （\*表示对不同震源）  ，C模块为 :command:`syn`。
 

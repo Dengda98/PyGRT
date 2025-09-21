@@ -68,7 +68,7 @@
 
         + ``Length:float``  定义离散波数积分的积分间隔 （见 :doc:`/Advanced/k_integ` 部分）
         + ``filonLength:float`` 定义Filon积分间隔，公式和离散波数积分使用的一致。
-        + ``filonCut:float`` 定义了两个积分的分割点， :math:`k^*=` ``<Fcut>`` :math:`/r_{\text{max}}`
+        + ``filonCut:float`` 定义了两个积分的分割点， :math:`k^*=` ``<filonCut>`` :math:`/r_{\text{max}}`
 
 .. note::
 
