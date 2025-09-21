@@ -16,16 +16,16 @@ echo "-------------------------"
 echo $PATH
 # echo "-------------------------"
 # echo $(ls /usr/local/bin/* -l)
-# echo "-------------------------"
-# echo ${READTHEDOCS_VIRTUALENV_PATH}
-# echo ${READTHEDOCS_REPOSITORY_PATH}
+echo "-------------------------"
+echo ${READTHEDOCS_VIRTUALENV_PATH}
+echo ${READTHEDOCS_REPOSITORY_PATH}
 # if [[ $(which grt) == "" ]]; then
 # echo "export PATH=$(realpath ../pygrt/C_extension/bin):\$PATH" >> ~/.bashrc
 # source ~/.bashrc
 # fi
 grt -h
 # 使用PyGRT运行文档需要的示例结果
-# cd source && chmod +x *.sh && ./run_all.sh && cd -
+cd source && chmod +x *.sh && ./run_all.sh && cd -
 
 # 清空构建的旧文档
 make clean
