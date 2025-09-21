@@ -8,11 +8,16 @@ make
 cd -
 
 # 添加到环境变量
-cp ../pygrt/C_extension/bin/* /usr/local/bin/
+# cp ../pygrt/C_extension/bin/* /usr/local/bin/
+echo "export PATH=$(realpath ../pygrt/C_extension/bin):\$PATH" >> ~/.bashrc
+source ~/.bashrc
 echo "-------------------------"
 echo $PATH
 echo "-------------------------"
-echo $(ll /usr/local/bin/*)
+echo $(ls /usr/local/bin/* -l)
+echo "-------------------------"
+echo ${READTHEDOCS_VIRTUALENV_PATH}
+echo ${READTHEDOCS_REPOSITORY_PATH}
 # if [[ $(which grt) == "" ]]; then
 # echo "export PATH=$(realpath ../pygrt/C_extension/bin):\$PATH" >> ~/.bashrc
 # source ~/.bashrc
