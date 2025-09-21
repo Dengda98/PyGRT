@@ -17,7 +17,6 @@
 typedef struct {
     char *name;
     char *s_dirpath;
-    char *s_prefix;
     char *s_synpath;
 } GRT_MODULE_CTRL;
 
@@ -26,7 +25,6 @@ typedef struct {
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
     GRT_SAFE_FREE_PTR(Ctrl->name);
     GRT_SAFE_FREE_PTR(Ctrl->s_dirpath);
-    GRT_SAFE_FREE_PTR(Ctrl->s_prefix);
     GRT_SAFE_FREE_PTR(Ctrl->s_synpath);
     GRT_SAFE_FREE_PTR(Ctrl);
 }
@@ -39,7 +37,7 @@ printf("\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
-"    grt strain <syn_dir>/<name>\n"
+"    grt strain <syn_dir>\n"
 "\n\n\n"
 );
 }
@@ -74,11 +72,6 @@ int strain_main(int argc, char **argv){
     
     // 合成地震图目录路径
     Ctrl->s_synpath = (char*)malloc(sizeof(char)*(strlen(Ctrl->s_dirpath)+1));
-    // 保存文件前缀 
-    Ctrl->s_prefix = (char*)malloc(sizeof(char)*(strlen(Ctrl->s_dirpath)+1));
-    if(2 != sscanf(Ctrl->s_dirpath, "%[^/]/%s", Ctrl->s_synpath, Ctrl->s_prefix)){
-        GRTRaiseError("[%s] Error format in \"%s\".\n", command, Ctrl->s_dirpath);
-    }
 
     // 检查是否存在该目录
     GRTCheckDirExist(command, Ctrl->s_synpath);
@@ -95,7 +88,7 @@ int strain_main(int argc, char **argv){
     const char *chs = NULL;
 
     // 判断标志性文件是否存在，来判断输出使用ZNE还是ZRT
-    GRT_SAFE_ASPRINTF(&s_filepath, "%s/n%sN.sac", Ctrl->s_synpath, Ctrl->s_prefix);
+    GRT_SAFE_ASPRINTF(&s_filepath, "%s/nN.sac", Ctrl->s_synpath);
     rot2ZNE = (access(s_filepath, F_OK) == 0);
 
     // 指示特定的通道名
@@ -104,7 +97,7 @@ int strain_main(int argc, char **argv){
 
     // 读取一个头段变量，获得基本参数，分配数组内存
     SACHEAD hd;
-    GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%s%c.sac", Ctrl->s_synpath, tolower(chs[0]), Ctrl->s_prefix, chs[0]);
+    GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%c.sac", Ctrl->s_synpath, tolower(chs[0]), chs[0]);
     grt_read_SAC_HEAD(command, s_filepath, &hd);
     int npts=hd.npts;
     float dist=hd.dist;
@@ -118,14 +111,14 @@ int strain_main(int argc, char **argv){
             c2 = chs[i2];
 
             // 读取数据 u_{i,j}
-            GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%s%c.sac", Ctrl->s_synpath, tolower(c2), Ctrl->s_prefix, c1);
+            GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%c.sac", Ctrl->s_synpath, tolower(c2), c1);
             arrin = grt_read_SAC(command, s_filepath, &hd, arrin);
 
             // 累加
             for(int i=0; i<npts; ++i)  arrout[i] += arrin[i];
 
             // 读取数据 u_{j,i}
-            GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%s%c.sac", Ctrl->s_synpath, tolower(c1), Ctrl->s_prefix, c2);
+            GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%c.sac", Ctrl->s_synpath, tolower(c1), c2);
             arrin = grt_read_SAC(command, s_filepath, &hd, arrin);
 
             // 累加
@@ -134,20 +127,20 @@ int strain_main(int argc, char **argv){
             // 特殊情况需加上协变导数，1e-5是因为km->cm
             if(c1=='R' && c2=='T'){
                 // 读取数据 u_T
-                GRT_SAFE_ASPRINTF(&s_filepath, "%s/%sT.sac", Ctrl->s_synpath, Ctrl->s_prefix);
+                GRT_SAFE_ASPRINTF(&s_filepath, "%s/T.sac", Ctrl->s_synpath);
                 arrin = grt_read_SAC(command, s_filepath, &hd, arrin);
                 for(int i=0; i<npts; ++i)  arrout[i] -= 0.5f * arrin[i] / dist * 1e-5;
             }
             else if(c1=='T' && c2=='T'){
                 // 读取数据 u_R
-                GRT_SAFE_ASPRINTF(&s_filepath, "%s/%sR.sac", Ctrl->s_synpath, Ctrl->s_prefix);
+                GRT_SAFE_ASPRINTF(&s_filepath, "%s/R.sac", Ctrl->s_synpath);
                 arrin = grt_read_SAC(command, s_filepath, &hd, arrin);
                 for(int i=0; i<npts; ++i)  arrout[i] += arrin[i] / dist * 1e-5;
             }
 
             // 保存到SAC
             sprintf(hd.kcmpnm, "%c%c", c1, c2);
-            GRT_SAFE_ASPRINTF(&s_filepath, "%s/%s.strain.%c%c.sac", Ctrl->s_synpath, Ctrl->s_prefix, c1, c2);
+            GRT_SAFE_ASPRINTF(&s_filepath, "%s/strain_%c%c.sac", Ctrl->s_synpath, c1, c2);
             write_sac(s_filepath, hd, arrout);
 
             // 置零

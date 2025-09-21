@@ -18,9 +18,6 @@
 // 防止被替换为虚数单位
 #undef I
 
-// 一些变量的非零默认值
-#define GRT_SYN_P_PREFIX      "out"
-
 // 和宏命令对应的震源类型全称
 static const char *sourceTypeFullName[] = {"Explosion", "Single Force", "Shear", "Moment Tensor"};
 
@@ -37,11 +34,6 @@ typedef struct {
         bool active;
         char *s_output_dir;
     } O;
-    /** 保存文件前缀 */
-    struct {
-        bool active;
-        char *s_prefix;
-    } P;
     /** 方位角 */
     struct {
         bool active;
@@ -119,8 +111,6 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
     GRT_SAFE_FREE_PTR(Ctrl->G.s_grnpath);
     // O
     GRT_SAFE_FREE_PTR(Ctrl->O.s_output_dir);
-    // P
-    GRT_SAFE_FREE_PTR(Ctrl->P.s_prefix);
     // D
     GRT_SAFE_FREE_PTR(Ctrl->D.tfparams);
     GRT_SAFE_FREE_PTR(Ctrl->D.tfarr);
@@ -141,7 +131,7 @@ printf("\n"
 "    and the units are cm. You can add -N to rotate ZRT to ZNE.\n"
 "\n"
 "    + Default outputs (without -I and -J) are impulse-like displacements.\n"
-"    + -D, -I and -J are applied in the frequency domain.\n"
+"    + -D, -I and -J are applied in the time domain.\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
@@ -150,7 +140,7 @@ printf("\n"
 "            [-T<Mxx>/<Mxy>/<Mxz>/<Myy>/<Myz>/<Mzz>]\n"
 "            [-F<fn>/<fe>/<fz>] \n"
 "            [-D<tftype>/<tfparams>] [-I<odr>] [-J<odr>]\n" 
-"            [-P<prefix>] [-N] [-e] [-s]\n"
+"            [-N] [-e] [-s]\n"
 "\n"
 "\n\n"
 "Options:\n"
@@ -186,8 +176,6 @@ printf("\n"
 "\n"
 "    -O<outdir>    Directory of output for saving. Default is\n"
 "                  current directory.\n"
-"\n"
-"    -P<prefix>    Prefix for single SAC file. Default is \"%s\".\n", GRT_SYN_P_PREFIX); printf(
 "\n"
 "    -D<tftype>/<tfparams>\n"
 "                  Convolve a Time Function with a maximum value of 1.0.\n"
@@ -297,7 +285,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     sprintf(Ctrl->s_computeType, "%s", "EX");
 
     int opt;
-    while ((opt = getopt(argc, argv, ":G:A:S:M:F:T:O:P:D:I:J:Nehs")) != -1) {
+    while ((opt = getopt(argc, argv, ":G:A:S:M:F:T:O:D:I:J:Nehs")) != -1) {
         switch (opt) {
             // 格林函数路径
             case 'G':
@@ -401,12 +389,6 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             case 'O':
                 Ctrl->O.active = true;
                 Ctrl->O.s_output_dir = strdup(optarg);
-                break;
-
-            // 保存文件前缀 
-            case 'P':
-                Ctrl->P.active = true;
-                Ctrl->P.s_prefix = strdup(optarg);
                 break;
 
             // 卷积时间函数
@@ -537,14 +519,9 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             #undef X
         }
     }
-    
 
     // 建立保存目录
     GRTCheckMakeDir(command, Ctrl->O.s_output_dir);
-
-    if( ! Ctrl->P.active){
-        Ctrl->P.s_prefix = strdup(GRT_SYN_P_PREFIX);
-    }
 
     if(Ctrl->S.mult_src_mu)  Ctrl->S.M0 *= Ctrl->S.src_mu;
 }
@@ -563,7 +540,7 @@ static void save_to_sac(GRT_MODULE_CTRL *Ctrl, const char *pfx, const char ch, f
     hd.baz = Ctrl->A.backazimuth;
     char *buffer = NULL;
     snprintf(hd.kcmpnm, sizeof(hd.kcmpnm), "%s%s%c", pfx, Ctrl->s_computeType, ch);
-    GRT_SAFE_ASPRINTF(&buffer, "%s/%s%s%c.sac", Ctrl->O.s_output_dir, pfx, Ctrl->P.s_prefix, ch);
+    GRT_SAFE_ASPRINTF(&buffer, "%s/%s%c.sac", Ctrl->O.s_output_dir, pfx, ch);
     write_sac(buffer, hd, arr);
     GRT_SAFE_FREE_PTR(buffer);
 }
