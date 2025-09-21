@@ -19,4 +19,4 @@ grt greenfn -M${modname} -O${out} -N${nt}/${dt} -D${depsrc}/${deprcv} -R${dist} 
 # just give a random focal mechanism
 grt syn -G${out}/${modname}_${depsrc}_${deprcv}_${dist} -A20 -S1e20 -M100/20/120 -OSYN -e
 # compute stress
-grt stress SYN/out
+grt stress SYN

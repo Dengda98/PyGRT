@@ -22,5 +22,5 @@ az=30
 grt syn -G${out}/${modname}_${depsrc}_${deprcv}_${dist} -A$az -S$S -M$stk/$dip/$rak -Dp/0.6 -Osyn_dc -e
 
 
-grt strain syn_dc/out
-grt stress syn_dc/out
+grt strain syn_dc
+grt stress syn_dc

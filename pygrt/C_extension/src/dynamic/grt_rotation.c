@@ -16,7 +16,6 @@
 /** 该子模块的参数控制结构体 */
 typedef struct {
     char *name;
-    char *s_dirpath;
     char *s_synpath;
 } GRT_MODULE_CTRL;
 
@@ -24,7 +23,6 @@ typedef struct {
 /** 释放结构体的内存 */
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
     GRT_SAFE_FREE_PTR(Ctrl->name);
-    GRT_SAFE_FREE_PTR(Ctrl->s_dirpath);
     GRT_SAFE_FREE_PTR(Ctrl->s_synpath);
     GRT_SAFE_FREE_PTR(Ctrl);
 }
@@ -64,14 +62,12 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 int rotation_main(int argc, char **argv){
     GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
     Ctrl->name = strdup(argv[0]);
-    Ctrl->s_dirpath = strdup(argv[1]);
-    
     const char *command = Ctrl->name;
 
     getopt_from_command(Ctrl, argc, argv);
     
     // 合成地震图目录路径
-    Ctrl->s_synpath = (char*)malloc(sizeof(char)*(strlen(Ctrl->s_dirpath)+1));
+    Ctrl->s_synpath = strdup(argv[1]);
 
     // 检查是否存在该目录
     GRTCheckDirExist(command, Ctrl->s_synpath);
