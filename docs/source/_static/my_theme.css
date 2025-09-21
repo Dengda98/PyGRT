@@ -2,6 +2,10 @@
     max-width: 950px;
 }
 
+.rst-content dl dt {
+    font-weight: normal;
+}
+
 /* 设置代码块的淡黄色背景 */
 .highlight {
     background: #edfecb; /* 经典的淡黄色 */
@@ -99,4 +103,21 @@ div.math {
     max-width: 100%;
     overflow-x: auto;
     overflow-y: hidden;
+}
+
+
+/* 调整所有 figure 的外边距 */
+figure {
+    margin: 30px 0 !important;
+}
+
+/* 调整图片与标题的间距 */
+figure img {
+    margin-bottom: 15px;
+}
+
+/* 调整标题样式 */
+figcaption {
+    padding-top: 10px;
+    font-style: italic;
 }

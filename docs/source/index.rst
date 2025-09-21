@@ -112,6 +112,7 @@
 
    Advanced/index 
    Formula/index
+   Module/index
 
 
 .. toctree::

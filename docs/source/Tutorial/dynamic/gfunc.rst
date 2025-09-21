@@ -82,7 +82,7 @@ Python中计算动态格林函数的主函数为 :func:`compute_grn() <pygrt.pym
    + 爆炸源：  :math:`10^{-20} \, \frac{\text{cm}}{\text{dyne} \cdot \text{cm}}`  
    + 单力源：  :math:`10^{-15} \, \frac{\text{cm}}{\text{dyne}}`
    + 剪切源：  :math:`10^{-20} \, \frac{\text{cm}}{\text{dyne} \cdot \text{cm}}`
-   + 矩张量源： :math:`10^{-20} \, \frac{\text{cm}}{\text{dyne} \cdot \text{cm}}`
+
 
 
 

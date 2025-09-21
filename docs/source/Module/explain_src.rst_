@@ -1,0 +1,25 @@
+.. _-F:
+
+**-F**\ *fn/fe/fz*
+    设置单力源参数，每个方向的力将乘上 |-S| 中定义的放大系数。关于 z 方向，详见 :ref:`Warning <warning_src_zdir>` 。
+
+    + *fn* - 北向力
+    + *fe* - 东向力
+    + *fz* - 垂直向下力
+
+
+.. _-M:
+
+**-M**\ *strike/dip/rake*
+    设置剪切源参数，角度单位为 °
+
+    + *strike* - 断层走向， 0~360
+    + *dip* - 断层倾角， 0~90
+    + *rake* - 滑动角， -180~180
+
+.. _-T:
+
+**-T**\ *Mxx/Mxy/Mxz/Myy/Myz/Mzz*
+    设置矩张量源的 6 个分量，其中下标代表 x （北向），y （东向），z （向下）。
+    关于 z 方向，详见 :ref:`Warning <warning_src_zdir>` 。
+

@@ -1,0 +1,59 @@
+.. _-D:
+
+**-D**\ *tftype/tfparams*
+    将合成结果卷积最大振幅为 1 的时间函数，支持以下选项：
+
+    + **-Dp**\ */t0* - 抛物波，*t0* (secs) 为持续时间，例如 **-Dp**\ */1.3*
+    + **-Dt**\ */t1/t2/t3* - 梯形波， 三个时刻 (secs) 分别表示爬升期、平台期和下降期的截止时刻，
+      例如 **-Dt**\ */0.1/0.2/0.4*, **-Dt**\ */0.4/0.4/0.6* （退化为三角波）
+    + **-Dr**\ */f0* - 雷克子波， *f0* 为主频 (Hz) 。
+    + **-Dc**\ */file* - （实验性质）自定义时间函数，文件 *file* 仅包含一列波形幅值。
+    
+    在卷积时为了匹配格林函数的时间间隔，会适当调整传入的时间函数参数。
+    生成的时间函数也会以 SAC 格式保存在 *outdir* 目录下。
+
+
+
+.. gmtplot::
+    :show-code: false
+    :caption: 使用 -D 不同参数生成的时间函数
+
+    # 示例模型
+    cat > mod <<EOF
+    0.0  4.0 2.7 2.5
+    EOF
+
+    grt greenfn -Mmod -D2/0 -N10/0.01 -R1 -OGRN
+    GDIR="GRN/mod_2_0_1"
+
+    gmt set FONT_TITLE 13p,1
+    gmt begin test png
+        gmt subplot begin 1x4 -Fs4c/4c -M0.2c -R0/2/0/1.5 -Baf -BWSen
+
+        gmt subplot set 0
+        title="-Dp/2"
+        gmt basemap -B+t$title
+        grt syn -G$GDIR -S1e20 -A0 $title -OSYN
+        grt sac2asc SYN/sig.sac | gmt plot
+
+        gmt subplot set 1
+        title="-Dt/0.2/0.9/1.8"
+        gmt basemap -B+t$title
+        grt syn -G$GDIR -S1e20 -A0 $title -OSYN
+        grt sac2asc SYN/sig.sac | gmt plot
+
+        gmt subplot set 2
+        title="-Dt/1.5/1.5/2.0"
+        gmt basemap -B+t$title
+        grt syn -G$GDIR -S1e20 -A0 $title -OSYN
+        grt sac2asc SYN/sig.sac | gmt plot
+
+        gmt subplot set 3
+        title="-Dr/1.2"
+        gmt basemap -R0/2/-1/1.5 -B+t$title
+        grt syn -G$GDIR -S1e20 -A0 $title -OSYN
+        grt sac2asc SYN/sig.sac | gmt plot
+
+        gmt subplot end
+
+    gmt end show

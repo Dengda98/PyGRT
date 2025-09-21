@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGRT 0.7.1.dev29+g6f42373.d20250505\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-05 13:28+0800\n"
+"POT-Creation-Date: 2025-09-22 02:12+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -46,14 +46,14 @@ msgid ""
 "**动态分段**，在核函数变化剧烈的部分多采样，在核函数变化平缓的部分少采样。具体原理详见 :ref:`(Chen and Zhang, "
 "2001) <chen_2001>` :ref:`(张海明, 2021) <zhang_book_2021>` 。"
 msgstr ""
-"In the :doc:`/Advanced/filon/linear_filon` section, the process and core principles of "
-"Filon's integration are briefly introduced, namely **piecewise analytical"
-" solutions of the integral**. The following introduces the **Self-"
-"Adaptive Filon's Integration Method (SAFIM)**, which is **dynamic "
-"segmentation**, sampling more in regions where the kernel function "
-"changes drastically and less in regions where it changes smoothly. For "
-"detailed principles, see :ref:`(Chen and Zhang, 2001) <chen_2001>` "
-":ref:`(Zhang Haiming, 2021) <zhang_book_2021>`."
+"In the :doc:`/Advanced/filon/linear_filon` section, the process and core "
+"principles of Filon's integration are briefly introduced, namely "
+"**piecewise analytical solutions of the integral**. The following "
+"introduces the **Self-Adaptive Filon's Integration Method (SAFIM)**, "
+"which is **dynamic segmentation**, sampling more in regions where the "
+"kernel function changes drastically and less in regions where it changes "
+"smoothly. For detailed principles, see :ref:`(Chen and Zhang, 2001) "
+"<chen_2001>` :ref:`(Zhang Haiming, 2021) <zhang_book_2021>`."
 
 #: ../../source/Advanced/filon/self_adaptive_filon.rst:14
 msgid "参数介绍"
@@ -64,56 +64,22 @@ msgid "通过以下可选参数，可使用自适应Filon积分。"
 msgstr "SAFIM can be used through the following optional parameters."
 
 #: ../../source/Advanced/filon/self_adaptive_filon.rst:20
-#: ../../source/Advanced/filon/self_adaptive_filon.rst:43
+#: ../../source/Advanced/filon/self_adaptive_filon.rst:38
 msgid "C"
 msgstr ""
 
 #: ../../source/Advanced/filon/self_adaptive_filon.rst:22
-msgid ""
-":command:`greenfn` 和 :command:`static_greenfn` "
-"模块支持以下可选参数来使用自适应Filon积分，具体说明详见 :command:`grt greenfn -h` 或 :command:`grt "
-"static greenfn -h`。"
+msgid "详见 :doc:`/Module/greenfn` 和 :doc:`/Module/static_greenfn` 模块的 **-L** 选项。"
 msgstr ""
-"The :command:`greenfn` and :command:`static_greenfn` modules support the following "
-"optional parameters to use SAFIM. For detailed explanations, see "
-":command:`grt greenfn -h` or :command:`grt static greenfn -h`."
+"Refer to the option **-L** in :doc:`/Module/greenfn` and "
+":doc:`/Module/static_greenfn` modules. "
 
 #: ../../source/Advanced/filon/self_adaptive_filon.rst:24
-msgid "``-La<length>[/<Ftol>/<Fcut>]``"
-msgstr ""
-
-#: ../../source/Advanced/filon/self_adaptive_filon.rst:26
-msgid ""
-"``<length>``  定义离散波数积分的积分间隔 （见 :doc:`/Advanced/k_integ` 部分, "
-":doc:`/Advanced/filon/linear_filon` 部分）"
-msgstr ""
-"``<length>`` defines the integration interval for discrete wavenumber "
-"integration (see :doc:`/Advanced/k_integ` section, :doc:`/Advanced/filon/linear_filon` "
-"section)."
-
-#: ../../source/Advanced/filon/self_adaptive_filon.rst:27
-msgid ""
-"``<Ftol>`` 定义自适应采样精度，见 :ref:`(Chen and Zhang, 2001) <chen_2001>`  "
-":ref:`(张海明, 2021) <zhang_book_2021>`，通常1e-2即可。"
-msgstr ""
-"``<Ftol>`` defines the precision of self-adaptive sampling, see "
-":ref:`(Chen and Zhang, 2001) <chen_2001>` :ref:`(张海明, 2021) "
-"<zhang_book_2021>`. In general set 1e-2."
-
-#: ../../source/Advanced/filon/self_adaptive_filon.rst:28
-msgid ""
-"``<Fcut>`` 定义了两个积分的分割点， :math:`k^*=` ``<Fcut>`` :math:`/r_{\\text{max}}` "
-"（见 :doc:`/Advanced/filon/linear_filon` 部分）"
-msgstr ""
-"``<Fcut>`` defines the division point of the two integrals, :math:`k^*=` "
-"``<Fcut>`` :math:`/r_{\\text{max}}` (see :doc:`/Advanced/filon/linear_filon` section)."
-
-#: ../../source/Advanced/filon/self_adaptive_filon.rst:30
-#: ../../source/Advanced/filon/self_adaptive_filon.rst:50
+#: ../../source/Advanced/filon/self_adaptive_filon.rst:45
 msgid "Python"
 msgstr ""
 
-#: ../../source/Advanced/filon/self_adaptive_filon.rst:32
+#: ../../source/Advanced/filon/self_adaptive_filon.rst:26
 msgid ""
 ":func:`compute_grn() <pygrt.pymod.PyModel1D.compute_grn>` 函数和 "
 ":func:`compute_static_grn() <pygrt.pymod.PyModel1D.compute_static_grn>` "
@@ -125,27 +91,46 @@ msgstr ""
 "following optional parameters to use SAFIM. For detailed explanations, "
 "see the API."
 
+#: ../../source/Advanced/filon/self_adaptive_filon.rst:28
+msgid ""
+"``Length:float``  定义离散波数积分的积分间隔 （见 :doc:`/Advanced/k_integ` 部分, "
+":doc:`/Advanced/filon/linear_filon` 部分）"
+msgstr ""
+"``Length:float`` defines the integration interval for discrete wavenumber "
+"integration (see :doc:`/Advanced/k_integ` section, "
+":doc:`/Advanced/filon/linear_filon` section)."
+
+#: ../../source/Advanced/filon/self_adaptive_filon.rst:29
+msgid ""
+"``safilonTol:float`` 定义自适应采样精度，见 :ref:`(Chen and Zhang, 2001) "
+"<chen_2001>`  :ref:`(张海明, 2021) <zhang_book_2021>`，通常1e-2即可。"
+msgstr ""
+"``safilonTol:float`` defines the precision of self-adaptive sampling, see "
+":ref:`(Chen and Zhang, 2001) <chen_2001>` :ref:`(张海明, 2021) "
+"<zhang_book_2021>`. In general set 1e-2."
+
+#: ../../source/Advanced/filon/self_adaptive_filon.rst:30
+msgid ""
+"``filonCut:float`` 定义了两个积分的分割点， :math:`k^*=` ``<filonCut>`` "
+":math:`/r_{\\text{max}}` （见 :doc:`/Advanced/filon/linear_filon` 部分）"
+msgstr ""
+"``filonCut:float`` defines the division point of the two integrals, :math:`k^*=` "
+"``<filonCut>`` :math:`/r_{\\text{max}}` (see "
+":doc:`/Advanced/filon/linear_filon` section)."
+
 #: ../../source/Advanced/filon/self_adaptive_filon.rst:34
-msgid "``safilonTol:float`` 对应C选项卡中的 ``<Ftol>`` 参数"
-msgstr "``safilonTol:List`` corresponding to the ``<Ftol>`` in the C tab."
-
-#: ../../source/Advanced/filon/self_adaptive_filon.rst:35
-msgid "``filonCut:float`` 对应C选项卡中的 ``<Fcut>`` 参数"
-msgstr "``filonCut:float`` corresponding to the ``<Fcut>`` in the C tab."
-
-#: ../../source/Advanced/filon/self_adaptive_filon.rst:39
 msgid "示例程序"
 msgstr "Simple run"
 
-#: ../../source/Advanced/filon/self_adaptive_filon.rst:45
+#: ../../source/Advanced/filon/self_adaptive_filon.rst:40
 msgid "使用 ``-S`` 导出核函数文件，"
 msgstr "use ``-S`` to export kernel function files."
 
-#: ../../source/Advanced/filon/self_adaptive_filon.rst:56
+#: ../../source/Advanced/filon/self_adaptive_filon.rst:51
 msgid "使用以下Python脚本绘制核函数采样点，"
 msgstr "Use the following Python script to plot the kernel sample points,"
 
-#: ../../source/Advanced/filon/self_adaptive_filon.rst:66
+#: ../../source/Advanced/filon/self_adaptive_filon.rst:61
 msgid ""
 "从对比图可以清晰地看出，自适应采样用更少的点数勾勒核函数的主要特征，这显著提高了计算效率。尽管自适应过程增加了额外的计算量，在小震中距范围内计算优势不明显，"
 " **但随着震中距的增加，自适应Filon积分的优势将愈发显著。**"
@@ -157,7 +142,7 @@ msgstr ""
 " small epicentral distance range, **but as the epicentral distance "
 "increases, the advantage of SAFIM becomes increasingly significant.**"
 
-#: ../../source/Advanced/filon/self_adaptive_filon.rst:70
+#: ../../source/Advanced/filon/self_adaptive_filon.rst:65
 msgid ""
 "在程序中，自适应Filon积分不计算近场项，即 :doc:`/Tutorial/dynamic/gfunc` 中介绍的 :math:`p=1` "
 "对应的积分项。"

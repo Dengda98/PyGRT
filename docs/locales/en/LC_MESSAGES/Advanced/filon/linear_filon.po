@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGRT 0.6.1.dev17+g4521452.d20250424\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-05 13:28+0800\n"
+"POT-Creation-Date: 2025-09-22 02:12+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -46,8 +46,8 @@ msgid ""
 msgstr ""
 "Use the fixed-interval Filon integration method with caution unless you "
 "fully understand its principles and sources of error. It is recommended "
-"to use :doc:`/Advanced/filon/self_adaptive_filon` to reduce the impact of fixed "
-"integration intervals."
+"to use :doc:`/Advanced/filon/self_adaptive_filon` to reduce the impact of"
+" fixed integration intervals."
 
 #: ../../source/Advanced/filon/linear_filon.rst:14
 msgid ""
@@ -84,9 +84,9 @@ msgid ""
 "部分），积分第二部分将Bessel函数取渐近表达式，可将其转为以下形式"
 msgstr ""
 "The first part of the integral still uses discrete wavenumber integration"
-" to solve (see :doc:`/Advanced/k_integ` section), and the second part of the "
-"integral takes the asymptotic expression of the Bessel function, which "
-"can be transformed into the following form."
+" to solve (see :doc:`/Advanced/k_integ` section), and the second part of "
+"the integral takes the asymptotic expression of the Bessel function, "
+"which can be transformed into the following form."
 
 #: ../../source/Advanced/filon/linear_filon.rst:30
 msgid ""
@@ -163,42 +163,16 @@ msgid "C"
 msgstr ""
 
 #: ../../source/Advanced/filon/linear_filon.rst:63
-msgid ""
-":command:`greenfn` 和 :command:`static_greenfn` "
-"模块支持以下可选参数来使用Filon积分，具体说明详见 :command:`grt greenfn -h` 或 :command:`grt "
-"static greenfn -h`。"
+msgid "详见 :doc:`/Module/greenfn` 和 :doc:`/Module/static_greenfn` 模块的 **-L** 选项。"
 msgstr ""
-"The :command:`greenfn` and :command:`static_greenfn` modules support the following "
-"optional parameters to use Filon's integration. For detailed "
-"explanations, see :command:`grt greenfn -h` or :command:`grt static greenfn -h`."
+"Refer to the option **-L** in :doc:`/Module/greenfn` and "
+":doc:`/Module/static_greenfn` modules. "
 
 #: ../../source/Advanced/filon/linear_filon.rst:65
-msgid "``-L<length>[/<Flength>/<Fcut>]``"
-msgstr ""
-
-#: ../../source/Advanced/filon/linear_filon.rst:67
-msgid "``<length>``  定义离散波数积分的积分间隔 （见 :doc:`/Advanced/k_integ` 部分）"
-msgstr ""
-"``<length>`` defines the integration interval for discrete wavenumber "
-"integration (see :doc:`/Advanced/k_integ` section)."
-
-#: ../../source/Advanced/filon/linear_filon.rst:68
-msgid "``<Flength>`` 定义Filon积分间隔，公式和离散波数积分使用的一致。"
-msgstr ""
-"``<Flength>`` defines the Filon's integration interval, consistent with "
-"the formula used for discrete wavenumber integration."
-
-#: ../../source/Advanced/filon/linear_filon.rst:69
-msgid "``<Fcut>`` 定义了两个积分的分割点， :math:`k^*=` ``<Fcut>`` :math:`/r_{\\text{max}}`"
-msgstr ""
-"``<Fcut>`` defines the division point of the two integrals, :math:`k^*=` "
-"``<Fcut>`` :math:`/r_{\\text{max}}`."
-
-#: ../../source/Advanced/filon/linear_filon.rst:71
 msgid "Python"
 msgstr ""
 
-#: ../../source/Advanced/filon/linear_filon.rst:73
+#: ../../source/Advanced/filon/linear_filon.rst:67
 msgid ""
 ":func:`compute_grn() <pygrt.pymod.PyModel1D.compute_grn>` 函数和 "
 ":func:`compute_static_grn() <pygrt.pymod.PyModel1D.compute_static_grn>` "
@@ -210,15 +184,27 @@ msgstr ""
 "following optional parameters to use Filon's integration. For detailed "
 "explanations, see the API."
 
+#: ../../source/Advanced/filon/linear_filon.rst:69
+msgid "``Length:float``  定义离散波数积分的积分间隔 （见 :doc:`/Advanced/k_integ` 部分）"
+msgstr ""
+"``Length:float`` defines the integration interval for discrete wavenumber "
+"integration (see :doc:`/Advanced/k_integ` section)."
+
+#: ../../source/Advanced/filon/linear_filon.rst:70
+msgid "``filonLength:float`` 定义Filon积分间隔，公式和离散波数积分使用的一致。"
+msgstr ""
+"``filonLength:float`` defines the Filon's integration interval, consistent with "
+"the formula used for discrete wavenumber integration."
+
+#: ../../source/Advanced/filon/linear_filon.rst:71
+msgid ""
+"``filonCut:float`` 定义了两个积分的分割点， :math:`k^*=` ``<filonCut>`` "
+":math:`/r_{\\text{max}}`"
+msgstr ""
+"``filonCut:float`` defines the division point of the two integrals, :math:`k^*=` "
+"``<filonCut>`` :math:`/r_{\\text{max}}`."
+
 #: ../../source/Advanced/filon/linear_filon.rst:75
-msgid "``filonLength:float`` 对应C选项卡中的 ``<Flength>`` 参数"
-msgstr "``filonLength:List`` corresponding to the ``<Flength>`` in the C tab."
-
-#: ../../source/Advanced/filon/linear_filon.rst:76
-msgid "``filonCut:float`` 对应C选项卡中的 ``<Fcut>`` 参数"
-msgstr "``filonCut:float`` corresponding to the ``<Fcut>`` in the C tab."
-
-#: ../../source/Advanced/filon/linear_filon.rst:80
 msgid ""
 "在程序中，固定间隔的Filon积分不计算近场项，即 :doc:`/Tutorial/dynamic/gfunc` 中介绍的 :math:`p=1`"
 " 对应的积分项。"
