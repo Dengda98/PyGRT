@@ -38,7 +38,7 @@ ker2asc
     grt ker2asc GRN_grtstats/mod_0_0/K_0050_5.00000e+00 > stats
 
     gmt begin test png
-        gmt plot stats -JX8c/3c -Bafg -BWSen -i0,1 -W0.5p,blue -l"Real"
+        gmt plot stats -JX12c/3c -Bafg -BWSen -i0,1 -W0.5p,blue -l"Real"
         gmt plot stats -i0,2 -W0.5p,blue,-- -l"Imag"
         gmt legend -DjTL+w1.5c+o0.1c -F+gwhite+c0.2p+p1p
     gmt end show

@@ -31,6 +31,7 @@ release = version
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
+sys.path.append(os.path.abspath("_extensions"))
 extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.autodoc",
@@ -45,6 +46,7 @@ extensions = [
     'sphinx_tabs.tabs',
     'sphinxcontrib.mermaid',
     'sphinx.ext.imgconverter',
+    "gmtplot",
 ] 
 
 sphinx_tabs_valid_builders = ['linkcheck']
