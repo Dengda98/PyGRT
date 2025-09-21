@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-05 13:28+0800\n"
+"POT-Creation-Date: 2025-09-21 23:21+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -48,10 +48,11 @@ msgstr ""
 "To compute these tensors, the spatial derivatives of displacement "
 ":math:`\\partial z,\\partial r,\\partial \\theta` [#partial]_ need to be "
 "calculated. Starting from the calculation of Green's functions "
-"(:doc:`/Tutorial/dynamic/gfunc`) and the formula for displacement synthesis "
-"(:doc:`/Tutorial/dynamic/syn`), the spatial derivatives of displacement are computed in"
-" two steps, and then strain, rotation, and stress tensors are synthesized"
-" based on the geometric and constitutive equations."
+"(:doc:`/Tutorial/dynamic/gfunc`) and the formula for displacement "
+"synthesis (:doc:`/Tutorial/dynamic/syn`), the spatial derivatives of "
+"displacement are computed in two steps, and then strain, rotation, and "
+"stress tensors are synthesized based on the geometric and constitutive "
+"equations."
 
 #: ../../source/Tutorial/dynamic/strain_stress.rst:12
 msgid ""
@@ -261,12 +262,10 @@ msgid ""
 msgstr ""
 
 #: ../../source/Tutorial/dynamic/strain_stress.rst:141
-msgid ""
-"在 :rst:dir:`syn_dc_zne/` 原路径下，生成 "
-":file:`*.strain.??.sac`，文件名中包括分量名，如ZZ、ZN等。"
+msgid "在 :rst:dir:`syn_dc_zne/` 原路径下，生成 :file:`strain_??.sac`，文件名中包括分量名，如ZZ、ZN等。"
 msgstr ""
 "In the original path :rst:dir:`syn_dc_zne/`, files named "
-":file:`*.strain.??.sac` are generated, with component names such as ZZ, "
+":file:`strain_??.sac` are generated, with component names such as ZZ, "
 "ZN included in the file names."
 
 #: ../../source/Tutorial/dynamic/strain_stress.rst:150
@@ -294,10 +293,10 @@ msgstr ""
 #: ../../source/Tutorial/dynamic/strain_stress.rst:173
 msgid ""
 "在 :rst:dir:`syn_dc_zne/` 原路径下，生成 "
-":file:`*.rotation.??.sac`，文件名中包括分量名，如ZN，ZE，NE。"
+":file:`rotation_??.sac`，文件名中包括分量名，如ZN，ZE，NE。"
 msgstr ""
 "In the original path :rst:dir:`syn_dc_zne/`, files named "
-":file:`*.rotation.??.sac` are generated, with component names such as ZN,"
+":file:`rotation_??.sac` are generated, with component names such as ZN,"
 " ZE, NE included in the file names."
 
 #: ../../source/Tutorial/dynamic/strain_stress.rst:182
@@ -321,12 +320,10 @@ msgid ""
 msgstr ""
 
 #: ../../source/Tutorial/dynamic/strain_stress.rst:207
-msgid ""
-"在 :rst:dir:`syn_dc_zne/` 原路径下，生成 "
-":file:`*.stress.??.sac`，文件名中包括分量名，如ZZ、ZN等。"
+msgid "在 :rst:dir:`syn_dc_zne/` 原路径下，生成 :file:`stress_??.sac`，文件名中包括分量名，如ZZ、ZN等。"
 msgstr ""
 "In the original path :rst:dir:`syn_dc_zne/`, files named "
-":file:`*.stress.??.sac` are generated, with component names such as ZZ, "
+":file:`stress_??.sac` are generated, with component names such as ZZ, "
 "ZN included in the file names."
 
 #: ../../source/Tutorial/dynamic/strain_stress.rst:224

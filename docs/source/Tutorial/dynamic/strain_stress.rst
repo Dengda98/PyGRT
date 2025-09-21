@@ -138,7 +138,7 @@
             :start-after: BEGIN STRAIN
             :end-before: END STRAIN
 
-        在 :rst:dir:`syn_dc_zne/` 原路径下，生成 :file:`*.strain.??.sac`，文件名中包括分量名，如ZZ、ZN等。
+        在 :rst:dir:`syn_dc_zne/` 原路径下，生成 :file:`strain_??.sac`，文件名中包括分量名，如ZZ、ZN等。
 
     .. group-tab:: Python
 
@@ -170,7 +170,7 @@
             :start-after: BEGIN ROTATION
             :end-before: END ROTATION
 
-        在 :rst:dir:`syn_dc_zne/` 原路径下，生成 :file:`*.rotation.??.sac`，文件名中包括分量名，如ZN，ZE，NE。
+        在 :rst:dir:`syn_dc_zne/` 原路径下，生成 :file:`rotation_??.sac`，文件名中包括分量名，如ZN，ZE，NE。
 
     .. group-tab:: Python
 
@@ -204,7 +204,7 @@
             :start-after: BEGIN STRESS
             :end-before: END STRESS
 
-        在 :rst:dir:`syn_dc_zne/` 原路径下，生成 :file:`*.stress.??.sac`，文件名中包括分量名，如ZZ、ZN等。
+        在 :rst:dir:`syn_dc_zne/` 原路径下，生成 :file:`stress_??.sac`，文件名中包括分量名，如ZZ、ZN等。
 
     .. group-tab:: Python
 

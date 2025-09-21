@@ -23,19 +23,19 @@ az=39.2
 st = pygrt.utils.gen_syn_from_gf_EX(st_grn, S, az)
 sigs = pygrt.sigs.gen_triangle_wave(0.4, dt)
 pygrt.utils.stream_convolve(st, sigs)
-pygrt.utils.stream_write_sac(st, "syn_ex/pout")
+pygrt.utils.stream_write_sac(st, "p_syn_ex/")
 
 st = pygrt.utils.gen_syn_from_gf_SF(st_grn, S, 2, -1, 4, az)
 sigs = pygrt.sigs.gen_trap_wave(0.1, 0.3, 0.6, dt)
 pygrt.utils.stream_convolve(st, sigs)
-pygrt.utils.stream_write_sac(st, "syn_sf/pout")
+pygrt.utils.stream_write_sac(st, "p_syn_sf/")
 
 st = pygrt.utils.gen_syn_from_gf_DC(st_grn, S, 77, 88, 99, az)
 sigs = pygrt.sigs.gen_parabola_wave(0.6, dt)
 pygrt.utils.stream_convolve(st, sigs)
-pygrt.utils.stream_write_sac(st, "syn_dc/pout")
+pygrt.utils.stream_write_sac(st, "p_syn_dc/")
 
 st = pygrt.utils.gen_syn_from_gf_MT(st_grn, S, [1,-2,-5,0.5,3,1.2], az)
 sigs = pygrt.sigs.gen_ricker_wave(3, dt)
 pygrt.utils.stream_convolve(st, sigs)
-pygrt.utils.stream_write_sac(st, "syn_mt/pout")
+pygrt.utils.stream_write_sac(st, "p_syn_mt/")

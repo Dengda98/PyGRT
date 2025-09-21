@@ -19,30 +19,29 @@ grt greenfn -M${modname} -O${out} -N${nt}/${dt} -D${depsrc}/${deprcv} -R${dist} 
 
 # convolve different signals
 G=$out/${modname}_${depsrc}_${deprcv}_${dist}
-P=cout
 S=1e24
 az=39.2
 for N in "" "-N" ; do
-grt syn -G$G -Osyn_ex -P$P -A$az -S$S -Dt/0.2/0.2/0.4 -e $N
-grt strain syn_ex/$P
-grt rotation syn_ex/$P
-grt stress syn_ex/$P
+grt syn -G$G -Osyn_ex$N -A$az -S$S -Dt/0.2/0.2/0.4 -e $N
+grt strain syn_ex$N
+grt rotation syn_ex$N
+grt stress syn_ex$N
 
 fn=2
 fe=-1
 fz=4
-grt syn -G$G -Osyn_sf -P$P -A$az -S$S -F$fn/$fe/$fz -Dt/0.1/0.3/0.6 -e $N
-grt strain syn_sf/$P
-grt rotation syn_sf/$P
-grt stress syn_sf/$P
+grt syn -G$G -Osyn_sf$N -A$az -S$S -F$fn/$fe/$fz -Dt/0.1/0.3/0.6 -e $N
+grt strain syn_sf$N
+grt rotation syn_sf$N
+grt stress syn_sf$N
 
 stk=77
 dip=88
 rak=99
-grt syn -G$G -Osyn_dc -P$P -A$az -S$S -M$stk/$dip/$rak -Dp/0.6 -e $N
-grt strain syn_dc/$P
-grt rotation syn_dc/$P
-grt stress syn_dc/$P
+grt syn -G$G -Osyn_dc$N -A$az -S$S -M$stk/$dip/$rak -Dp/0.6 -e $N
+grt strain syn_dc$N
+grt rotation syn_dc$N
+grt stress syn_dc$N
 
 M11=1
 M12=-2
@@ -50,10 +49,10 @@ M13=-5
 M22=0.5
 M23=3
 M33=1.2
-grt syn -G$G -Osyn_mt -P$P -A$az -S$S -T$M11/$M12/$M13/$M22/$M23/$M33 -Dr/3 -e $N
-grt strain syn_mt/$P
-grt rotation syn_mt/$P
-grt stress syn_mt/$P
+grt syn -G$G -Osyn_mt$N -A$az -S$S -T$M11/$M12/$M13/$M22/$M23/$M33 -Dr/3 -e $N
+grt strain syn_mt$N
+grt rotation syn_mt$N
+grt stress syn_mt$N
 done
 
 
