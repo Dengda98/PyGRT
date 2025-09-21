@@ -44,22 +44,7 @@
 
     .. group-tab:: C 
 
-        :command:`greenfn` 模块支持以下可选参数来控制波数积分，具体说明详见 :command:`grt greenfn -h`。  
-
-        + ``-K<k0>[/<ampk>/<keps>]``  
-         
-          + ``<k0>`` 对应公式中的 :math:`k_0` 的系数，默认为5 
-          + ``<ampk>`` 对应公式中的 :math:`s` ，默认为1.15
-          + ``<keps>`` 对应公式中的 :math:`\epsilon`，默认为-1（不使用）
-        
-        + ``-V<vmin_ref>``， 对应公式中的 :math:`v_{\text{min}}`
-
-        + ``-L<length>``， 对应公式中的 :math:`L` 的系数, :math:`L=` ``<length>`` :math:`\cdot r_{\text{max}}`
-        
-        :command:`static_greenfn` 模块支持以下可选参数来控制波数积分，参数与上面对应，具体说明详见 :command:`grt static greenfn -h`。
-
-        + ``-K<k0>[/<keps>]``  
-        + ``-L<length>``
+        详见 :doc:`/Module/greenfn` 和 :doc:`/Module/static_greenfn` 模块的 **-K** 选项。
 
     .. group-tab:: Python
 

@@ -19,20 +19,15 @@
 
     .. group-tab:: C 
 
-        :command:`greenfn` 和 :command:`static_greenfn` 模块支持以下可选参数来使用自适应Filon积分，具体说明详见 :command:`grt greenfn -h` 或 :command:`grt static greenfn -h`。
+        详见 :doc:`/Module/greenfn` 和 :doc:`/Module/static_greenfn` 模块的 **-L** 选项。
 
-        + ``-La<length>[/<Ftol>/<Fcut>]``
-         
-          + ``<length>``  定义离散波数积分的积分间隔 （见 :doc:`/Advanced/k_integ` 部分, :doc:`/Advanced/filon/linear_filon` 部分）
-          + ``<Ftol>`` 定义自适应采样精度，见 :ref:`(Chen and Zhang, 2001) <chen_2001>`  :ref:`(张海明, 2021) <zhang_book_2021>`，通常1e-2即可。
-          + ``<Fcut>`` 定义了两个积分的分割点， :math:`k^*=` ``<Fcut>`` :math:`/r_{\text{max}}` （见 :doc:`/Advanced/filon/linear_filon` 部分）
-         
     .. group-tab:: Python
 
         :func:`compute_grn() <pygrt.pymod.PyModel1D.compute_grn>` 函数和 :func:`compute_static_grn() <pygrt.pymod.PyModel1D.compute_static_grn>` 函数支持以下可选参数来使用自适应Filon积分，具体说明详见API。
 
-        + ``safilonTol:float`` 对应C选项卡中的 ``<Ftol>`` 参数
-        + ``filonCut:float`` 对应C选项卡中的 ``<Fcut>`` 参数
+        + ``Length:float``  定义离散波数积分的积分间隔 （见 :doc:`/Advanced/k_integ` 部分, :doc:`/Advanced/filon/linear_filon` 部分）
+        + ``safilonTol:float`` 定义自适应采样精度，见 :ref:`(Chen and Zhang, 2001) <chen_2001>`  :ref:`(张海明, 2021) <zhang_book_2021>`，通常1e-2即可。
+        + ``filonCut:float`` 定义了两个积分的分割点， :math:`k^*=` ``<Fcut>`` :math:`/r_{\text{max}}` （见 :doc:`/Advanced/filon/linear_filon` 部分）
 
 
 示例程序

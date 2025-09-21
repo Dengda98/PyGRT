@@ -56,24 +56,19 @@
 
 通过以下可选参数，可使用Filon积分。
 
-.. tabs:: 
+.. tabs::
 
     .. group-tab:: C 
 
-        :command:`greenfn` 和 :command:`static_greenfn` 模块支持以下可选参数来使用Filon积分，具体说明详见 :command:`grt greenfn -h` 或 :command:`grt static greenfn -h`。
-
-        + ``-L<length>[/<Flength>/<Fcut>]``
-         
-          + ``<length>``  定义离散波数积分的积分间隔 （见 :doc:`/Advanced/k_integ` 部分）
-          + ``<Flength>`` 定义Filon积分间隔，公式和离散波数积分使用的一致。
-          + ``<Fcut>`` 定义了两个积分的分割点， :math:`k^*=` ``<Fcut>`` :math:`/r_{\text{max}}`
+        详见 :doc:`/Module/greenfn` 和 :doc:`/Module/static_greenfn` 模块的 **-L** 选项。
          
     .. group-tab:: Python
 
         :func:`compute_grn() <pygrt.pymod.PyModel1D.compute_grn>` 函数和 :func:`compute_static_grn() <pygrt.pymod.PyModel1D.compute_static_grn>` 函数支持以下可选参数来使用Filon积分，具体说明详见API。
 
-        + ``filonLength:float`` 对应C选项卡中的 ``<Flength>`` 参数
-        + ``filonCut:float`` 对应C选项卡中的 ``<Fcut>`` 参数
+        + ``Length:float``  定义离散波数积分的积分间隔 （见 :doc:`/Advanced/k_integ` 部分）
+        + ``filonLength:float`` 定义Filon积分间隔，公式和离散波数积分使用的一致。
+        + ``filonCut:float`` 定义了两个积分的分割点， :math:`k^*=` ``<Fcut>`` :math:`/r_{\text{max}}`
 
 .. note::
 
