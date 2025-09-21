@@ -142,7 +142,6 @@ printf("\n"
 "\n"
 "    -h            Display this help message.\n"
 "\n\n"
-// 示例待更新
 "Examples:\n"
 "----------------------------------------------------------------\n"
 "    Say you have computed Static Green's functions with following command:\n"
@@ -404,12 +403,12 @@ int static_syn_main(int argc, char **argv){
     // 定义合成结果 varid
     for(int c=0; c<GRT_CHANNEL_NUM; ++c){
         char *s_title = NULL;
-        GRT_SAFE_ASPRINTF(&s_title, "%s%c", Ctrl->s_computeType, toupper(chs[c]));
+        GRT_SAFE_ASPRINTF(&s_title, "%c", toupper(chs[c]));
         GRT_NC_CHECK(nc_def_var(out_ncid, s_title, GRT_NC_MYREAL, ndims, out_dimids, &out_syn_varids[c]));
         // 位移偏导
         if(Ctrl->e.active){
             for(int c2=0; c2<GRT_CHANNEL_NUM; ++c2){
-                GRT_SAFE_ASPRINTF(&s_title, "%c%s%c", tolower(chs[c2]), Ctrl->s_computeType, toupper(chs[c]));
+                GRT_SAFE_ASPRINTF(&s_title, "%c%c", tolower(chs[c2]), toupper(chs[c]));
                 GRT_NC_CHECK(nc_def_var(out_ncid, s_title, GRT_NC_MYREAL, ndims, out_dimids, &out_syn_upar_varids[c2][c]));
             }
         }

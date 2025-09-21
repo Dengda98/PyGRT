@@ -84,8 +84,6 @@ def _gen_syn_from_gf(st:Stream, calc_upar:bool, compute_type:str, M0:float, az:f
     srcName = ["EX", "VF", "HF", "DD", "DS", "SS"]
     allchs = [tr.stats.channel for tr in st]
 
-    s_compute_type = compute_type.split("_")[1][:2]
-
     baz = 180 + az
     if baz > 360:
         baz -= 360
@@ -113,7 +111,7 @@ def _gen_syn_from_gf(st:Stream, calc_upar:bool, compute_type:str, M0:float, az:f
             ch = chs[c]
             tr:Trace = st[0].copy()
             tr.data[:] = 0.0
-            tr.stats.channel = kcmpnm = f'{outpref}{s_compute_type}{ch}'
+            tr.stats.channel = kcmpnm = f'{outpref}{ch}'
             __check_trace_attr_sac(tr, az=az, baz=baz, kcmpnm=kcmpnm)
             for k in range(SRC_M_NUM):
                 coef = srcRadi[k, c]
@@ -154,8 +152,6 @@ def _gen_syn_from_static_gf(grn:dict, calc_upar:bool, compute_type:str, M0:float
     sacin_prefixes = ["", "z", "r", ""]   # 输入通道名
     srcName = ["EX", "VF", "HF", "DD", "DS", "SS"]
     allchs = list(grn.keys())
-
-    s_compute_type = compute_type.split("_")[1][:2]
 
     calcUTypes = 4 if calc_upar else 1
 
@@ -233,7 +229,7 @@ def _gen_syn_from_static_gf(grn:dict, calc_upar:bool, compute_type:str, M0:float
     for ityp in range(calcUTypes):
         c1 = '' if ityp==0 else chs[ityp-1].lower()
         for c in range(3):
-            resDct[f"{c1}{s_compute_type}{chs[c]}"] = XX[ityp, c].copy()
+            resDct[f"{c1}{chs[c]}"] = XX[ityp, c].copy()
                 
     return resDct
 
@@ -250,18 +246,16 @@ def _data_zrt2zne(stall:Stream):
 
     chs = ZRTchs
 
-    midname = stall[0].stats.channel[-3:-1]
-
     synLst:List[Trace] = []  # 顺序要求Z, R, T
     uparLst:List[Trace] = [] # 顺序要求zXXZ, zXXR, zXXT, rXXZ, rXXR, rXXT, tXXZ, tXXR, tXXT
     stsyn_upar = Stream()
     for ch in chs:
-        st = stall.select(channel=f"{midname}{ch}")
+        st = stall.select(channel=f"{ch}")
         if len(st) == 1:
             synLst.append(st[0])
         
         for ch2 in chs:
-            st = stall.select(channel=f"{ch.lower()}{midname}{ch2}")
+            st = stall.select(channel=f"{ch.lower()}{ch2}")
             if len(st) == 1:
                 uparLst.append(st[0])
 
@@ -306,12 +300,12 @@ def _data_zrt2zne(stall:Stream):
     for i1 in range(3):
         ch1 = ZNEchs[i1]
         tr = synLst[i1]
-        tr.stats.channel = tr.stats.sac['kcmpnm'] = f'{midname}{ch1}'
+        tr.stats.channel = tr.stats.sac['kcmpnm'] = f'{ch1}'
         if doupar:
             for i2 in range(3):
                 ch2 = ZNEchs[i2]
                 tr = uparLst[i2 + i1*3]
-                tr.stats.channel = tr.stats.sac['kcmpnm'] = f'{ch1.lower()}{midname}{ch2}'
+                tr.stats.channel = tr.stats.sac['kcmpnm'] = f'{ch1.lower()}{ch2}'
 
     stres = Stream()
     stres.extend(synLst)
@@ -566,18 +560,11 @@ def _compute_strain_rotation(st_syn:Stream, Type:str):
         i2_offset = 1
     else:
         raise ValueError(f"{Type} not supported.")
-
-    midname = st_syn[0].stats.channel[-3:-1]
-
-    # 检查是否每个trace是否具有相同midname
-    for tr in st_syn:
-        if tr.stats.channel[-3:-1] != midname:
-            raise ValueError("WRONG INPUT! inconsistent component names.")
         
     chs = ZRTchs
 
     # 判断是否有标志性的trace
-    if len(st_syn.select(channel=f"n{midname}N")) > 0:
+    if len(st_syn.select(channel=f"nN")) > 0:
         chs = ZNEchs
 
     dist = st_syn[0].stats.sac['dist']
@@ -590,13 +577,13 @@ def _compute_strain_rotation(st_syn:Stream, Type:str):
         for i2 in range(i1+i2_offset, 3):
             c2 = chs[i2]
 
-            channel = f"{c2.lower()}{midname}{c1}"
+            channel = f"{c2.lower()}{c1}"
             st = st_syn.select(channel=channel)
             if len(st) == 0:
                 raise NameError(f"{channel} not exists.")
             tr = st[0].copy()
 
-            channel = f"{c1.lower()}{midname}{c2}"
+            channel = f"{c1.lower()}{c2}"
             st = st_syn.select(channel=channel)
             if len(st) == 0:
                 raise NameError(f"{channel} not exists.")
@@ -604,14 +591,14 @@ def _compute_strain_rotation(st_syn:Stream, Type:str):
 
             # 特殊情况加上协变导数
             if c1=='R' and c2=='T':
-                channel = f"{midname}T"
+                channel = f"T"
                 st = st_syn.select(channel=channel)
                 if len(st) == 0:
                     raise NameError(f"{channel} not exists.")
                 tr.data -= 0.5*st[0].data / dist * 1e-5
             
             elif c1=='T' and c2=='T':
-                channel = f"{midname}R"
+                channel = f"R"
                 st = st_syn.select(channel=channel)
                 if len(st) == 0:
                     raise NameError(f"{channel} not exists.")
@@ -647,21 +634,10 @@ def _compute_static_strain_rotation(syn:dict, Type:str):
     else:
         raise ValueError(f"{Type} not supported.")
 
-    midname = ""
-    # 检查是否每个分量是否具有相同midname
-    for k in syn.keys():
-        if k[0] == '_':
-            continue
-        if len(midname)==0:
-            midname = k[-3:-1]
-
-        if k[-3:-1] != midname:
-            raise ValueError("WRONG INPUT! inconsistent component names.")
-        
     chs = ZRTchs
 
     # 判断是否有标志性的分量名
-    if f"n{midname}N" in syn.keys():
+    if f"nN" in syn.keys():
         chs = ZNEchs
 
     xarr:np.ndarray = syn['_xarr']
@@ -697,22 +673,22 @@ def _compute_static_strain_rotation(syn:dict, Type:str):
                 for i2 in range(i1+i2_offset, 3):
                     c2 = chs[i2]
 
-                    channel = f"{c2.lower()}{midname}{c1}"
+                    channel = f"{c2.lower()}{c1}"
                     v12 = syn[channel][ix, iy]
 
-                    channel = f"{c1.lower()}{midname}{c2}"
+                    channel = f"{c1.lower()}{c2}"
                     v21 = syn[channel][ix, iy]
 
                     val = 0.5*(v12 + sgn*v21)
 
                     # 特殊情况加上协变导数
                     if c1=='R' and c2=='T':
-                        channel = f"{midname}T"
+                        channel = f"T"
                         v0 = syn[channel][ix, iy]
                         val -= 0.5*v0 / dist * 1e-5
 
                     elif c1=='T' and c2=='T':
-                        channel = f"{midname}R"
+                        channel = f"R"
                         v0 = syn[channel][ix, iy]
                         val += v0 / dist * 1e-5
 
@@ -769,18 +745,11 @@ def _compute_stress(st_syn:Stream):
 
     # 由于有Q值的存在，lambda和mu变成了复数，需在频域进行
 
-    midname = st_syn[0].stats.channel[-3:-1]
-
-    # 检查是否每个trace是否具有相同midname
-    for tr in st_syn:
-        if tr.stats.channel[-3:-1] != midname:
-            raise ValueError("WRONG INPUT! inconsistent component names.")
-        
     chs = ZRTchs
     rot2ZNE:bool = False
 
     # 判断是否有标志性的trace
-    if len(st_syn.select(channel=f"n{midname}N")) > 0:
+    if len(st_syn.select(channel=f"nN")) > 0:
         chs = ZNEchs
         rot2ZNE = True
 
@@ -818,7 +787,7 @@ def _compute_stress(st_syn:Stream):
     lam_ukk = np.zeros((nf,), dtype='c16')
     for i in range(3):
         c = chs[i]
-        channel = f"{c.lower()}{midname}{c}"
+        channel = f"{c.lower()}{c}"
         st = st_syn.select(channel=channel)
         if len(st) == 0:
             raise NameError(f"{channel} not exists.")
@@ -826,7 +795,7 @@ def _compute_stress(st_syn:Stream):
 
     # 加上协变导数
     if not rot2ZNE:
-        channel = f"{midname}R"
+        channel = f"R"
         st = st_syn.select(channel=channel)
         if len(st) == 0:
             raise NameError(f"{channel} not exists.")
@@ -842,14 +811,14 @@ def _compute_stress(st_syn:Stream):
         for i2 in range(i1, 3):
             c2 = chs[i2]
 
-            channel = f"{c2.lower()}{midname}{c1}"
+            channel = f"{c2.lower()}{c1}"
             st = st_syn.select(channel=channel)
             if len(st) == 0:
                 raise NameError(f"{channel} not exists.")
             tr = st[0].copy()
             fftarr = np.zeros((nf,), dtype='c16')
 
-            channel = f"{c1.lower()}{midname}{c2}"
+            channel = f"{c1.lower()}{c2}"
             st = st_syn.select(channel=channel)
             if len(st) == 0:
                 raise NameError(f"{channel} not exists.")
@@ -861,14 +830,14 @@ def _compute_stress(st_syn:Stream):
 
             # 特殊情况加上协变导数
             if c1=='R' and c2=='T':
-                channel = f"{midname}T"
+                channel = f"T"
                 st = st_syn.select(channel=channel)
                 if len(st) == 0:
                     raise NameError(f"{channel} not exists.")
                 fftarr[:] -= mus*rfft(st[0].data, nt) / dist * 1e-5
             
             elif c1=='T' and c2=='T':
-                channel = f"{midname}R"
+                channel = f"R"
                 st = st_syn.select(channel=channel)
                 if len(st) == 0:
                     raise NameError(f"{channel} not exists.")
@@ -893,23 +862,12 @@ def _compute_static_stress(syn:dict):
         :return:
             - **res** -  static stress tensor (unit: dyne/cm^2 = 0.1 Pa), in dict class.
     """
-
-    midname = ""
-    # 检查是否每个分量是否具有相同midname
-    for k in syn.keys():
-        if k[0] == '_':
-            continue
-        if len(midname)==0:
-            midname = k[-3:-1]
-
-        if k[-3:-1] != midname:
-            raise ValueError("WRONG INPUT! inconsistent component names.")
-        
+ 
     chs = ZRTchs
     rot2ZNE:bool = False
 
     # 判断是否有标志性的分量名
-    if f"n{midname}N" in syn.keys():
+    if f"nN" in syn.keys():
         chs = ZNEchs
         rot2ZNE = True
 
@@ -949,12 +907,12 @@ def _compute_static_stress(syn:dict):
             lam_ukk = 0.0
             for i in range(3):
                 c = chs[i]
-                channel = f"{c.lower()}{midname}{c}"
+                channel = f"{c.lower()}{c}"
                 lam_ukk += syn[channel][ix, iy]
             
             # 加上协变导数
             if not rot2ZNE:
-                channel = f"{midname}R"
+                channel = f"R"
                 lam_ukk += syn[channel][ix, iy] / dist * 1e-5
             
             lam_ukk *= lam
@@ -966,10 +924,10 @@ def _compute_static_stress(syn:dict):
                 for i2 in range(i1, 3):
                     c2 = chs[i2]
 
-                    channel = f"{c2.lower()}{midname}{c1}"
+                    channel = f"{c2.lower()}{c1}"
                     v12 = syn[channel][ix, iy]
 
-                    channel = f"{c1.lower()}{midname}{c2}"
+                    channel = f"{c1.lower()}{c2}"
                     v21 = syn[channel][ix, iy]
 
                     val = mu*(v12 + v21)
@@ -980,12 +938,12 @@ def _compute_static_stress(syn:dict):
 
                     # 特殊情况加上协变导数
                     if c1=='R' and c2=='T':
-                        channel = f"{midname}T"
+                        channel = f"T"
                         v0 = syn[channel][ix, iy]
                         val -= mu*v0 / dist * 1e-5
 
                     elif c1=='T' and c2=='T':
-                        channel = f"{midname}R"
+                        channel = f"R"
                         v0 = syn[channel][ix, iy]
                         val += 2.0*mu*v0 / dist * 1e-5
 
@@ -1168,30 +1126,20 @@ def stream_diff(st0:Stream, inplace=True):
     return st
 
 
-def stream_write_sac(st:Stream, path:str):
+def stream_write_sac(st:Stream, dir:str):
     '''
         将一系列Trace以SAC形式保存到本地，以发震时刻作为参考0时刻
 
         :param    st:         记录多个Trace的 :class:`obspy.Stream` 类型
-        :param    path:       保存文件名，不要加后缀，
-                              例如path="GRN/out"表明sac文件将保存在GRN文件中，
-                              文件名分别为outR.sac, outT.sac, outZ.sac，
-                              若通道名前缀有"r","z"或"t"（表示位移空间导数），则该前缀
-                              也会加到SAC文件名中，例如GRN/routR.sac
+        :param    dir:        保存目录
 
     '''
     # 新建对应文件夹
-    parent_dir = os.path.dirname(path)
-    if(len(parent_dir)>0):
-        os.makedirs(parent_dir, exist_ok=True)
+    os.makedirs(dir, exist_ok=True)
 
-    filesub = os.path.basename(path)
-    # 每一道的保存路径为path+{channel}
+    # 每一道的保存路径为 dir/{channel}.sac
     for tr in st:
-        prefix = ""
-        if tr.stats.channel[0] in ['r', 't', 'z']:
-            prefix = tr.stats.channel[0]
-        filepath = os.path.join(parent_dir, f"{prefix}{filesub}{tr.stats.channel[-1]}.sac")
+        filepath = os.path.join(dir, f"{tr.stats.channel}.sac")
         tr.write(filepath, format='SAC')
 
 

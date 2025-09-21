@@ -34,7 +34,7 @@ printf("\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
-"    grt static stress < <file>\n"
+"    grt static stress <ingrid>\n"
 "\n\n\n"
 );
 }
@@ -98,16 +98,6 @@ int static_stress_main(int argc, char **argv){
         GRTRaiseError("[%s] Input grid didn't have displacement derivatives.", command);
     }
 
-    // 读入震源类型
-    char *s_computeType = NULL;
-    {
-        size_t len = 0;
-        GRT_NC_CHECK(nc_inq_attlen(in_ncid, NC_GLOBAL, "computeType", &len));
-        s_computeType = (char *)calloc(len+1, sizeof(char));
-        GRT_NC_CHECK(nc_get_att_text(in_ncid, NC_GLOBAL, "computeType", s_computeType));
-        s_computeType[len] = '\0';
-    }
-
     // 读入接收点的物性参数，计算 rcv_mu 和 rcv_lambda
     MYREAL rcv_mu, rcv_lam;
     {
@@ -139,11 +129,11 @@ int static_stress_main(int argc, char **argv){
     // 读入合成位移偏导 varid
     for(int c=0; c<GRT_CHANNEL_NUM; ++c){
         char *s_title = NULL;
-        GRT_SAFE_ASPRINTF(&s_title, "%s%c", s_computeType, toupper(chs[c]));
+        GRT_SAFE_ASPRINTF(&s_title, "%c", toupper(chs[c]));
         GRT_NC_CHECK(nc_inq_varid(in_ncid, s_title, &in_syn_varids[c]));
 
         for(int c2=0; c2<GRT_CHANNEL_NUM; ++c2){
-            GRT_SAFE_ASPRINTF(&s_title, "%c%s%c", tolower(chs[c2]), s_computeType, toupper(chs[c]));
+            GRT_SAFE_ASPRINTF(&s_title, "%c%c", tolower(chs[c2]), toupper(chs[c]));
             GRT_NC_CHECK(nc_inq_varid(in_ncid, s_title, &in_syn_upar_varids[c2][c]));
         }
         GRT_SAFE_FREE_PTR(s_title);
