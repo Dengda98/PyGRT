@@ -9,8 +9,9 @@ cd -
 
 # 添加到环境变量
 # cp ../pygrt/C_extension/bin/* /usr/local/bin/
-export PATH=$(realpath ../pygrt/C_extension/bin):$PATH
-echo "export PATH=$(realpath ../pygrt/C_extension/bin):$PATH" >> ~/.bashrc
+# export PATH=$(realpath ../pygrt/C_extension/bin):$PATH
+# echo "export PATH=$(realpath ../pygrt/C_extension/bin):$PATH" >> ~/.bashrc
+cp ../pygrt/C_extension/bin/* ${READTHEDOCS_VIRTUALENV_PATH}/bin/
 echo "-------------------------"
 echo $PATH
 # echo "-------------------------"
