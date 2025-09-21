@@ -1,0 +1,10 @@
+**-e**
+    在计算格林函数的同时，也计算其空间导数 :math:`\dfrac{\partial (u_z, u_r, u_\theta)}{\partial (z, r)}` 。
+    偏导对应在文件名/变量名开头添加了 ``z`` 和 ``r`` 。
+    关于 :math:`\theta` 的偏导与方向因子有关，这将由 :doc:`syn` 和 :doc:`static_syn` 模块计算。
+    
+    不同震源的格林函数空间导数单位为:
+
+    + 爆炸源：  :math:`10^{-25} \, /\text{dyne} \cdot \text{cm}`  
+    + 单力源：  :math:`10^{-20} \, /\text{dyne}`
+    + 剪切源：  :math:`10^{-25} \, /\text{dyne} \cdot \text{cm}`  
