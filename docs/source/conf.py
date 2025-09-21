@@ -31,7 +31,6 @@ release = version
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-sys.path.append(os.path.abspath("_extensions"))
 extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.autodoc",
@@ -46,11 +45,7 @@ extensions = [
     'sphinx_tabs.tabs',
     'sphinxcontrib.mermaid',
     'sphinx.ext.imgconverter',
-    "gmtplot",
 ] 
-
-# use custom templater bridge defined in _extensions/templatebridge.py
-template_bridge = "templatebridge.MyTemplateBridge"
 
 sphinx_tabs_valid_builders = ['linkcheck']
 sphinx_tabs_disable_tab_closing = True   # 选项卡不关闭
