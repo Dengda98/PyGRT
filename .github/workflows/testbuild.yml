@@ -185,6 +185,11 @@ jobs:
           docker stop ${{ env.CONTAINER_ID }}
           docker rm ${{ env.CONTAINER_ID }}
 
+      # 删除安装过程中其它安装包
+      - name: Clean Installation of FFTW, NetCDF
+        run: |
+          rm -rf fftw* netcdf*
+
       # ------------------------------------- 定义接下来打包程序命名时的系统名后缀 -------------------------------
       - name: Define the package OS suffix
         run: |
@@ -366,11 +371,11 @@ jobs:
       #     chmod +x *.sh
       #     ./run_grt.sh
 
-      # - name: Test static displacement (static)
-      #   working-directory: ${{ env.EXAMPLE_COPY_PATH }}/compute_strain_stress/static
-      #   run: |
-      #     chmod +x *.sh
-      #     ./run_stgrt.sh
+      - name: Test static displacement (static)
+        working-directory: ${{ env.EXAMPLE_COPY_PATH }}/compute_strain_stress/static
+        run: |
+          chmod +x *.sh
+          ./run_stgrt.sh
 
       - name: Remove the test files
         run: |
