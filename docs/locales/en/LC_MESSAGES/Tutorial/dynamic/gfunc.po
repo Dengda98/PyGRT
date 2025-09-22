@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-22 13:40+0800\n"
+"POT-Creation-Date: 2025-09-22 20:10+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -128,8 +128,8 @@ msgstr ""
 #: ../../source/Tutorial/dynamic/gfunc.rst:44
 msgid ":doc:`/Module/travt` 模块可以显式地再计算初至波走时，"
 msgstr ""
-"The :doc:`/Module/travt` module can explicitly recalculate the travel times "
-"of the first waves."
+"The :doc:`/Module/travt` module can explicitly recalculate the travel "
+"times of the first waves."
 
 #: ../../source/Tutorial/dynamic/gfunc.rst:51
 msgid "走时结果会输出到终端，"
@@ -141,8 +141,8 @@ msgid ""
 "模块临时将SAC格式文件转为如下的文本文件："
 msgstr ""
 "If you have not installed the SAC software, you can use Python's ObsPy "
-"library to read the generated SAC data, or use the :doc:`/Module/sac2asc` "
-"module to temporarily convert SAC format files into the following text "
+"library to read the generated SAC data, or use the :doc:`/Module/sac2asc`"
+" module to temporarily convert SAC format files into the following text "
 "files:"
 
 #: ../../source/Tutorial/dynamic/gfunc.rst:63
@@ -166,11 +166,18 @@ msgstr ""
 ":class:`Trace.stats.sac` contains the SAC header variables, consistent "
 "with the output of the C program."
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:80
+#: ../../source/Tutorial/dynamic/gfunc.rst:77
+msgid "当时窗长度 nt\\*dt 太小“包不住”有效信号，或时窗长度足够但时延不合适，输出的波形会发生混叠， 此时需调整相关参数。"
+msgstr ""
+"When the window length nt\\*dt is too small to \"contain\" the effective signal, "
+"or when the window length is sufficient but the time delay is inappropriate, "
+"the output waveform will suffer from aliasing. At this point, the relevant parameters need to be adjusted."
+
+#: ../../source/Tutorial/dynamic/gfunc.rst:82
 msgid "格林函数计算结果的单位："
 msgstr "Units of the computed Green's function results:"
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:82
+#: ../../source/Tutorial/dynamic/gfunc.rst:84
 msgid ""
 "爆炸源：  :math:`10^{-20} \\, \\frac{\\text{cm}}{\\text{dyne} \\cdot "
 "\\text{cm}}`"
@@ -178,11 +185,11 @@ msgstr ""
 "Explosion:  :math:`10^{-20} \\, \\frac{\\text{cm}}{\\text{dyne} \\cdot "
 "\\text{cm}}`"
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:83
+#: ../../source/Tutorial/dynamic/gfunc.rst:85
 msgid "单力源：  :math:`10^{-15} \\, \\frac{\\text{cm}}{\\text{dyne}}`"
 msgstr "Single Force:  :math:`10^{-15} \\, \\frac{\\text{cm}}{\\text{dyne}}`"
 
-#: ../../source/Tutorial/dynamic/gfunc.rst:84
+#: ../../source/Tutorial/dynamic/gfunc.rst:86
 msgid ""
 "剪切源：  :math:`10^{-20} \\, \\frac{\\text{cm}}{\\text{dyne} \\cdot "
 "\\text{cm}}`"

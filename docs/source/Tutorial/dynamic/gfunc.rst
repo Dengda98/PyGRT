@@ -74,6 +74,8 @@ Python中计算动态格林函数的主函数为 :func:`compute_grn() <pygrt.pym
 
         多个震中距的格林函数以列表形式返回，其中每个元素为 |Stream| 类。:class:`Trace.stats.sac` 中保存了SAC头段变量，与C程序输出保持一致。
 
+当时窗长度 nt\*dt 太小“包不住”有效信号，或时窗长度足够但时延不合适，输出的波形会发生混叠，
+此时需调整相关参数。
 
 .. note:: 
    
@@ -82,8 +84,6 @@ Python中计算动态格林函数的主函数为 :func:`compute_grn() <pygrt.pym
    + 爆炸源：  :math:`10^{-20} \, \frac{\text{cm}}{\text{dyne} \cdot \text{cm}}`  
    + 单力源：  :math:`10^{-15} \, \frac{\text{cm}}{\text{dyne}}`
    + 剪切源：  :math:`10^{-20} \, \frac{\text{cm}}{\text{dyne} \cdot \text{cm}}`
-
-
 
 
 离散波数积分
