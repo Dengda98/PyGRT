@@ -23,8 +23,8 @@ grt static syn -S$S -M$stk/$dip/$rak -N -Gstgrn.nc -Ostsyn.nc
 gmt set FONT_TITLE 9p
 gmt begin disp_dc png E300
     gmt basemap -Baf -BWSen+t"Fault, $stk/$dip/$rak, $S" -JX5c/5c -R$y1/$y2/$x1/$x2
-    gmt grdimage stsyn.nc?DCZ
-    gmt grdvector stsyn.nc?DCE stsyn.nc?DCN -Q0.1c+e+jc+h1+gblack -Si0.3c
+    gmt grdimage stsyn.nc?Z
+    gmt grdvector stsyn.nc?E stsyn.nc?N -Q0.1c+e+jc+h1+gblack -Si0.3c
 
     gmt meca -Sa0.5c <<EOF
 0 0 $depsrc $stk $dip $rak 5
@@ -42,8 +42,8 @@ fz=0
 grt static syn -S$S -F$fn/$fe/$fz -N -Gstgrn.nc -Ostsyn.nc
 gmt begin disp_sf  png E300
     gmt basemap -Baf -BWSen+t"Force, $fn/$fe/$fz, $S" -JX5c/5c -R$y1/$y2/$x1/$x2
-    gmt grdimage stsyn.nc?SFZ
-    gmt grdvector stsyn.nc?SFE stsyn.nc?SFN -Q0.1c+e+jc+h1+gblack -Si0.5c
+    gmt grdimage stsyn.nc?Z
+    gmt grdvector stsyn.nc?E stsyn.nc?N -Q0.1c+e+jc+h1+gblack -Si0.5c
 
     gmt colorbar -Bx+l"Z (cm)"
 gmt end
@@ -53,8 +53,8 @@ S="1e23"
 grt static syn -S$S -N -Gstgrn.nc -Ostsyn.nc 
 gmt begin disp_exp  png E300
     gmt basemap -Baf -BWSen+t"Explosion, $S" -JX5c/5c -R$y1/$y2/$x1/$x2
-    gmt grdimage stsyn.nc?EXZ
-    gmt grdvector stsyn.nc?EXE stsyn.nc?EXN -Q0.1c+e+jc+h1+gblack -Si0.3c
+    gmt grdimage stsyn.nc?Z
+    gmt grdvector stsyn.nc?E stsyn.nc?N -Q0.1c+e+jc+h1+gblack -Si0.3c
 
     gmt colorbar -Bx+l"Z (cm)"
 gmt end
