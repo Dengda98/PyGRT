@@ -39,6 +39,8 @@
 
  + **PyGRT is still evolving**, and more features will be released in the future.
 
+ + **Surface wave** modules will be released soon.
+
 # Features
 
 - **Dual-Language**:  
