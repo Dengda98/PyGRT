@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-05 13:28+0800\n"
+"POT-Creation-Date: 2025-09-22 13:40+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -39,7 +39,7 @@ msgstr ""
 msgid "zhudengda@mail.iggcas.ac.cn"
 msgstr ""
 
-#: ../../source/Tutorial/dynamic/syn.rst:11
+#: ../../source/Tutorial/dynamic/syn.rst:12
 msgid "**震源机制参数中（如单力源、矩张量源）Z轴取向下为正。**"
 msgstr ""
 "**In the focal mechanism parameters (e.g., single force source, moment "
@@ -48,12 +48,12 @@ msgstr ""
 #: ../../source/Tutorial/dynamic/syn.rst:14
 msgid ""
 "Python中合成动态位移的主函数为 :func:`gen_syn_from_gf_*() "
-"<pygrt.utils.gen_syn_from_gf_DC>` （\\*表示对不同震源）  ，C模块为 :command:`syn`。"
+"<pygrt.utils.gen_syn_from_gf_DC>` （\\*表示对不同震源）  ，C模块为 :doc:`/Module/syn`。"
 msgstr ""
 "The main function in Python for synthesizing dynamic displacements is "
 ":func:`gen_syn_from_gf_*() <pygrt.utils.gen_syn_from_gf_DC>` (\\* "
 "represents different sources), and the corresponding C module is "
-":command:`syn`."
+":doc:`/Module/syn`."
 
 #: ../../source/Tutorial/dynamic/syn.rst:16
 msgid "使用上节计算的格林函数，合成动态位移（理论地震图）。方便起见，这里统一使用milrow模型，震源深度2km，场点位于地表，震中距10km的格林函数，方位角30°。"
@@ -200,13 +200,12 @@ msgstr ""
 
 #: ../../source/Tutorial/dynamic/syn.rst:196
 msgid ""
-"生成的时间函数会以SAC格式保存在对应路径中，文件名为 :file:`sig.sac`。 其它时间函数以及具体参数用法可使用 "
-":command:`grt syn -h` 查看说明。"
+"生成的时间函数会以SAC格式保存在对应路径中，文件名为 :file:`sig.sac`。 其它时间函数以及具体参数用法详见 "
+":doc:`/Module/syn` 模块。"
 msgstr ""
 "The generated time function will be saved in SAC format at the "
 "corresponding path, with the filename :file:`sig.sac`. For other time "
-"functions and specific parameter usage, refer to the instructions using "
-":command:`grt syn -h`."
+"functions and specific parameter usage, refer to the :doc:`/Module/syn` module. "
 
 #: ../../source/Tutorial/dynamic/syn.rst:205
 msgid "其它时间函数以及具体参数用法可在 :py:mod:`pygrt.signals` 模块中查看函数参数。"

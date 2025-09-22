@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-20 11:57+0800\n"
+"POT-Creation-Date: 2025-09-22 13:40+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -59,54 +59,20 @@ msgid ""
 "程序对多个计算功能使用模块化管理， 可使用类似于以下格式来运行程序。每个模块可使用 ``-h`` 查看帮助。"
 msgstr ""
 "In addition to Python script execution, PyGRT retains the traditional "
-"command-line C program :command:`grt`. Inspired by `GMT <https://www.generic-mapping-tools.org/>`_ , the :command:`grt` program "
-"adopts a modular approach for its computational functions and can be executed "
-"using a format similar to the following. Each module's help information can "
-"be viewed using -h."
+"command-line C program :command:`grt`. Inspired by `GMT <https://www"
+".generic-mapping-tools.org/>`_ , the :command:`grt` program adopts a "
+"modular approach for its computational functions and can be executed "
+"using a format similar to the following. Each module's help information "
+"can be viewed using -h."
 
 #: ../../source/Tutorial/prepare.rst:20
 msgid "**C程序的运行独立于Python，不需要Python环境，从而满足了更多计算场景。**"
 msgstr ""
-"**The execution of C programs is independent of Python and "
-"does not require a Python environment, thus enabling it to meet more computing scenarios.**"
+"**The execution of C programs is independent of Python and does not "
+"require a Python environment, thus enabling it to meet more computing "
+"scenarios.**"
 
 #: ../../source/Tutorial/prepare.rst:22
-msgid "计算 **动态解** 的主要计算流程如下："
-msgstr ""
-"The main computational process for calculating **dynamic solutions** is "
-"as follows:"
-
-#: ../../source/Tutorial/prepare.rst:24 ../../source/Tutorial/prepare.rst:125
-msgid "Python"
-msgstr ""
-
-#: ../../source/Tutorial/prepare.rst:54
-msgid "C (module name)"
-msgstr ""
-
-#: ../../source/Tutorial/prepare.rst:84
-msgid "计算 **静态解** 的过程相同，只是在名称上有如下区别："
-msgstr ""
-"The process for calculating **static solutions** is the same, only the "
-"function names and program names differ."
-
-#: ../../source/Tutorial/prepare.rst:86
-msgid ""
-"Python 函数名称增加 \"static\\_\" ，例如 :func:`compute_static_grn() "
-"<pygrt.pymod.PyModel1D.compute_static_grn>` 。"
-msgstr ""
-"Add \"static\\_\" in Python function names, e.g. :func:`compute_static_grn() <pygrt.pymod.PyModel1D.compute_static_grn>`."
-
-#: ../../source/Tutorial/prepare.rst:87
-msgid ""
-"C 程序模块名增加 \"static\\_\" 前缀，例如 :command:`static_greenfn` ；或者在 "
-":command:`grt` 与无 \"static\\_\" 前缀的模块名之间增加 \"static\" 命令， 即支持以下两种方式（以 "
-":command:`greenfn` 模块为例）："
-msgstr ""
-"Add \"static\\_\" at the beginning of C module names, e.g. :command:`static_greenfn` ;"
-"or replace the underline to a backspace, like the following."
-
-#: ../../source/Tutorial/prepare.rst:97
 msgid ""
 "入门部分包含一些示例与说明，可快速上手。Github主页的 :rst:dir:`example/` 文件夹中有更多示例，可在 `Github "
 "Releases <https://github.com/Dengda98/PyGRT/releases>`_ 中下载。"
@@ -114,50 +80,54 @@ msgstr ""
 "The following are some simple tutorials to help you get started quickly. "
 "More examples can be found in the :rst:dir:`example/` folder on the "
 "Github homepage, which can be downloaded from `Github Releases "
-"<https://github.com/Dengda98/PyGRT/releases>`_.
+"<https://github.com/Dengda98/PyGRT/releases>`_"
 
-#: ../../source/Tutorial/prepare.rst:101
+#: ../../source/Tutorial/prepare.rst:26
 msgid "建立模型文件"
 msgstr "Create model file"
 
-#: ../../source/Tutorial/prepare.rst:106
+#: ../../source/Tutorial/prepare.rst:31
 msgid "这里的选项卡 **C** 不代表内部是C语言代码，而是 **使用C程序** :command:`grt` 。后续的选项卡沿用此设定，不再解释。"
 msgstr ""
 "The tab **C** here does not represent C language code inside, but rather "
 "**an executable program :command:`grt` compiled using the C language** . "
 "Subsequent tabs follow this convention and will not be explained further."
 
-#: ../../source/Tutorial/prepare.rst:110
+#: ../../source/Tutorial/prepare.rst:35
 msgid "C"
 msgstr ""
 
-#: ../../source/Tutorial/prepare.rst:112
+#: ../../source/Tutorial/prepare.rst:37
 msgid "**PyGRT** 以如下自由格式定义模型中每层的物性参数，每列之间以空格隔开（最后两列的 Qp, Qs 可省略）"
 msgstr ""
 "**PyGRT** defines the physical parameters of each layer in the model "
-"using the following free format, with columns separated by spaces."
-"(The values of Qp and Qs in the last two columns can be omitted.)"
+"using the following free format, with columns separated by spaces.(The "
+"values of Qp and Qs in the last two columns can be omitted.)"
 
-#: ../../source/Tutorial/prepare.rst:119
+#: ../../source/Tutorial/prepare.rst:44
 msgid "例如 :file:`milrow` 模型（假设文本文件名为 `milrow` ）"
 msgstr ""
 "For example, the :file:`milrow` model (assuming the text file is named "
 "`milrow`)."
 
-#: ../../source/Tutorial/prepare.rst:127
+#: ../../source/Tutorial/prepare.rst:50
+msgid "Python"
+msgstr ""
+
+#: ../../source/Tutorial/prepare.rst:52
 msgid "模型格式与C一致，在Python中可以使用 :code:`np.loadtxt()` 导入文本文件，或者手动定义数组"
 msgstr ""
 "The model format is consistent with C, and in Python, you can use "
 ":code:`np.loadtxt()` to import the text file or manually define the "
 "array."
 
-#: ../../source/Tutorial/prepare.rst:137
+#: ../../source/Tutorial/prepare.rst:62
 msgid "最后一行表示半空间，对应厚度值不会被使用。"
 msgstr ""
 "The last line represents the half-space, and the corresponding thickness "
 "value will not be used."
 
-#: ../../source/Tutorial/prepare.rst:141
+#: ../../source/Tutorial/prepare.rst:66
 msgid "Vs 设置为 0 表示该层为液体层。"
 msgstr "Setting Vs to 0 indicates that this layer is a liquid layer."
 

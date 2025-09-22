@@ -39,7 +39,7 @@ C和Python导出的核函数文件是一致的，底层调用的是相同的函�
 
     .. group-tab:: C 
 
-        :command:`ker2asc` 模块可将单个核函数文件转为文本格式。
+        :doc:`/Module/ker2asc` 模块可将单个核函数文件转为文本格式。
 
         .. literalinclude:: run/run.sh
             :language: bash
@@ -143,7 +143,7 @@ C和Python导出的核函数文件是一致的，底层调用的是相同的函�
 
 .. note:: 
 
-    :command:`ker2asc` 模块也支持将 ``PTAM_{ir}_{dist}/PTAM_{iw}_{freq}`` 文件转为文本格式，
+    :doc:`/Module/ker2asc` 模块也支持将 ``PTAM_{ir}_{dist}/PTAM_{iw}_{freq}`` 文件转为文本格式，
 
     .. literalinclude:: run/run.sh
         :language: bash

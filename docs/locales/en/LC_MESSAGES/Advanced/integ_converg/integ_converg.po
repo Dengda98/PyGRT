@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-22 02:12+0800\n"
+"POT-Creation-Date: 2025-09-22 13:40+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -99,9 +99,9 @@ msgstr ""
 "provided."
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:42
-msgid ":command:`ker2asc` 模块可将单个核函数文件转为文本格式。"
+msgid ":doc:`/Module/ker2asc` 模块可将单个核函数文件转为文本格式。"
 msgstr ""
-"The :command:`ker2asc` module can convert a single kernel function file "
+"The :doc:`/Module/ker2asc` module can convert a single kernel function file "
 "into text format."
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:49
@@ -245,9 +245,11 @@ msgstr ""
 "records the peaks and troughs of the integral values."
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:146
-msgid ":command:`ker2asc` 模块也支持将 ``PTAM_{ir}_{dist}/PTAM_{iw}_{freq}`` 文件转为文本格式，"
+msgid ""
+":doc:`/Module/ker2asc` 模块也支持将 ``PTAM_{ir}_{dist}/PTAM_{iw}_{freq}`` "
+"文件转为文本格式，"
 msgstr ""
-"The :command:`ker2asc` module also supports converting the "
+"The :doc:`/Module/ker2asc` module also supports converting the "
 "``PTAM_{ir}_{dist}/PTAM_{iw}_{freq}`` file into text format."
 
 #: ../../source/Advanced/integ_converg/integ_converg.rst:158

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-22 02:12+0800\n"
+"POT-Creation-Date: 2025-09-22 13:40+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -42,11 +42,11 @@ msgstr ""
 #: ../../source/Tutorial/dynamic/gfunc.rst:10
 msgid ""
 "Python中计算动态格林函数的主函数为 :func:`compute_grn() "
-"<pygrt.pymod.PyModel1D.compute_grn>` ，C模块为 :command:`greenfn`。"
+"<pygrt.pymod.PyModel1D.compute_grn>` ，C模块为 :doc:`/Module/greenfn`。"
 msgstr ""
 "The main function for computing dynamic Green's functions in Python is "
 ":func:`compute_grn() <pygrt.pymod.PyModel1D.compute_grn>`, and the "
-"corresponding C module is :command:`greenfn`."
+"corresponding C module is :doc:`/Module/greenfn` ."
 
 #: ../../source/Tutorial/dynamic/gfunc.rst:12
 msgid ""
@@ -126,9 +126,9 @@ msgstr ""
 "travel times."
 
 #: ../../source/Tutorial/dynamic/gfunc.rst:44
-msgid ":command:`travt` 模块可以显式地再计算初至波走时，"
+msgid ":doc:`/Module/travt` 模块可以显式地再计算初至波走时，"
 msgstr ""
-"The :command:`travt` module can explicitly recalculate the travel times "
+"The :doc:`/Module/travt` module can explicitly recalculate the travel times "
 "of the first waves."
 
 #: ../../source/Tutorial/dynamic/gfunc.rst:51
@@ -137,11 +137,11 @@ msgstr "The travel time results will be output to the terminal."
 
 #: ../../source/Tutorial/dynamic/gfunc.rst:56
 msgid ""
-"如果你没有安装SAC软件，可以使用Python的ObsPy库读取生成的SAC数据，或者使用 :command:`sac2asc` "
+"如果你没有安装SAC软件，可以使用Python的ObsPy库读取生成的SAC数据，或者使用 :doc:`/Module/sac2asc` "
 "模块临时将SAC格式文件转为如下的文本文件："
 msgstr ""
 "If you have not installed the SAC software, you can use Python's ObsPy "
-"library to read the generated SAC data, or use the :command:`sac2asc` "
+"library to read the generated SAC data, or use the :doc:`/Module/sac2asc` "
 "module to temporarily convert SAC format files into the following text "
 "files:"
 

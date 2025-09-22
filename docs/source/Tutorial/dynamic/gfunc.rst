@@ -7,7 +7,7 @@
 -----------------------------------------------------------
 
 
-Python中计算动态格林函数的主函数为 :func:`compute_grn() <pygrt.pymod.PyModel1D.compute_grn>` ，C模块为 :command:`greenfn`。
+Python中计算动态格林函数的主函数为 :func:`compute_grn() <pygrt.pymod.PyModel1D.compute_grn>` ，C模块为 :doc:`/Module/greenfn`。
 
 核心计算逻辑来自  :ref:`初稿 <yao_init_manuscripts>` ，具体代码可见与C API中对应同名 :file:`*.c` 文件，其中计算格林函数频谱的主函数为 :file:`grn.c` 里的 :c:func:`integ_grn_spec`。输出结果的坐标系见下图。
 
@@ -41,7 +41,7 @@ Python中计算动态格林函数的主函数为 :func:`compute_grn() <pygrt.pym
 
         一些基本信息（包括源点和场点的物性参数）保存在SAC头段变量中，其中 :c:var:`t0` 和 :c:var:`t1` 分别代表初至P波和初至S波的到时。在不设定其它参数时，程序中使用0（发震时刻）作为参考时间，故其等价于走时。
 
-        + :command:`travt` 模块可以显式地再计算初至波走时，
+        + :doc:`/Module/travt` 模块可以显式地再计算初至波走时，
 
          .. literalinclude:: run/run.sh
             :language: bash
@@ -53,7 +53,7 @@ Python中计算动态格林函数的主函数为 :func:`compute_grn() <pygrt.pym
          .. literalinclude:: run/travt
             :language: text 
 
-        + 如果你没有安装SAC软件，可以使用Python的ObsPy库读取生成的SAC数据，或者使用 :command:`sac2asc` 模块临时将SAC格式文件转为如下的文本文件：
+        + 如果你没有安装SAC软件，可以使用Python的ObsPy库读取生成的SAC数据，或者使用 :doc:`/Module/sac2asc` 模块临时将SAC格式文件转为如下的文本文件：
 
          .. literalinclude:: run/run.sh
             :language: bash

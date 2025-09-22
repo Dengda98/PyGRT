@@ -121,3 +121,8 @@ figcaption {
     padding-top: 10px;
     font-style: italic;
 }
+
+.mermaid {
+    width: 70%;
+    overflow: auto;
+}
