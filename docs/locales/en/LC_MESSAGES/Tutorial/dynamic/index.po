@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGRT 0.10.1.dev40+g32a0bed\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-20 11:57+0800\n"
+"POT-Creation-Date: 2025-09-22 13:40+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -22,4 +22,16 @@ msgstr ""
 #: ../../source/Tutorial/dynamic/index.rst:2
 msgid "计算动态全波解"
 msgstr "Compute Dynamic Full-wave solution"
+
+#: ../../source/Tutorial/dynamic/index.rst:4
+msgid "计算 **动态全波解** 的主要计算流程如下："
+msgstr "Process diagram"
+
+#: ../../source/Tutorial/dynamic/index.rst:6
+msgid "Python"
+msgstr ""
+
+#: ../../source/Tutorial/dynamic/index.rst:35
+msgid "C (module name)"
+msgstr ""
 
