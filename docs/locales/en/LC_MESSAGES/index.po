@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-20 11:57+0800\n"
+"POT-Creation-Date: 2025-09-25 15:40+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -27,7 +27,7 @@ msgstr "GETTING STARTED"
 msgid "PyGRT 进阶"
 msgstr "ADVANCED"
 
-#: ../../source/index.rst:117
+#: ../../source/index.rst:118
 msgid "附录"
 msgstr "Appendix"
 
@@ -73,13 +73,14 @@ msgstr "What can **PyGRT** calculate?"
 #: ../../source/index.rst:15
 msgid ""
 "目前，**PyGRT** 可计算区域尺度内半无限水平分层均匀介质中的 **动态与静态的位移，以及应力、应变、旋转张量。** **PyGRT** "
-"将持续维护并扩展与之相关的计算功能。"
+"将持续维护并扩展与之相关的计算功能。 计算 **面波** 的模块即将发布。"
 msgstr ""
 "At present, **PyGRT** can calculate **the dynamic and static "
 "displacements, as well as stress, strain and rotational tensors in semi-"
 "infinite horizontally layered media within the regional scale.****PyGRT**"
 " will be continuously maintained and its related computing functions will"
-" be expanded."
+" be expanded. The modules of calculating **surface waves** will be "
+"released soon."
 
 #: ../../source/index.rst:19
 msgid "运行平台"
