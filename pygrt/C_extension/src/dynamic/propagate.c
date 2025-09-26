@@ -418,7 +418,7 @@ void grt_kernel(
 
     // 对一些特殊情况的修正
     // 当震源和场点均位于地表时，可理论验证DS分量恒为0，这里直接赋0以避免后续的精度干扰
-    if(mod1d->Dep[mod1d->isrc] == 0.0 && mod1d->Dep[mod1d->ircv] == 0.0)
+    if(mod1d->depsrc == 0.0 && mod1d->deprcv == 0.0)
     {
         for(MYINT c=0; c<GRT_QWV_NUM; ++c){
             QWV[GRT_SRC_M_DS_INDEX][c] = 0.0;
