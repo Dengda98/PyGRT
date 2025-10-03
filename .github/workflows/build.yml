@@ -16,9 +16,9 @@ jobs:
             arch: x86_64                  # windows x86_6
           - os: ubuntu-22.04
             arch: x86_64                  # Ubuntu x86_64
-          - os: macos-13
+          - os: macos-15-intel
             arch: x86_64                  # macOS Intel
-          - os: macos-14
+          - os: macos-15
             arch: arm64                   # macOS Apple Silicon
       
       fail-fast: true
@@ -283,9 +283,9 @@ jobs:
             arch: x86_64                  # windows x86_6
           - os: ubuntu-22.04
             arch: x86_64                  # Ubuntu x86_64
-          - os: macos-13
+          - os: macos-15-intel
             arch: x86_64                  # macOS Intel
-          - os: macos-14
+          - os: macos-15
             arch: arm64                   # macOS Apple Silicon
 
       fail-fast: true
