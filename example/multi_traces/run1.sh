@@ -1,7 +1,9 @@
 #!/bin/bash 
 
 # 震中距数组
-distarr=($(seq -f "%.2f" 0.5 0.01 1.5  | tr '\n' ','))
+# 输出到文件
+seq -f "%.2f" 0.5 0.01 1.5 > dists
+distarr=($(cat dists | tr '\n' ','))
 distarr=${distarr%,}  # 删除最后的逗号
 
 # 震源台站都在地表
@@ -16,4 +18,7 @@ modname="mod1"
 out="GRN"
 
 # compute Green's Functions
-grt greenfn -M${modname} -O${out} -N${nt}/${dt} -D${depsrc}/${deprcv} -R${distarr} -Gv  # 只生成垂直力源的格林函数
+# OPTION-1: input distances array
+# grt greenfn -M${modname} -O${out} -N${nt}/${dt} -D${depsrc}/${deprcv} -R${distarr} -Gv  # 只生成垂直力源的格林函数
+# OPTION-2: 
+grt greenfn -M${modname} -O${out} -N${nt}/${dt} -D${depsrc}/${deprcv} -Rdists -Gv  # 只生成垂直力源的格林函数
