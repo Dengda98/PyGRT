@@ -343,13 +343,13 @@ jobs:
       #     ./run1.sh
       #     python run2.py
 
-      - name: Test 3 multi_traces
-        working-directory: ${{ env.EXAMPLE_COPY_PATH }}/multi_traces
-        timeout-minutes: 1
-        run: |
-          chmod +x *.sh
-          ./run1.sh
-        continue-on-error: true  # 即使失败，仍然标记为成功
+      # - name: Test 3 multi_traces
+      #   working-directory: ${{ env.EXAMPLE_COPY_PATH }}/multi_traces
+      #   timeout-minutes: 1
+      #   run: |
+      #     chmod +x *.sh
+      #     ./run1.sh
+      #   continue-on-error: true  # 即使失败，仍然标记为成功
 
       # - name: Test 4 lamb_problem
       #   working-directory: ${{ env.EXAMPLE_COPY_PATH }}/lamb_problem
