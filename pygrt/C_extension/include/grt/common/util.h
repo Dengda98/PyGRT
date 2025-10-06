@@ -22,9 +22,30 @@
  * @param[in]     delim      分隔符
  * @param[out]    size       分割后的子字符串数组长度
  * 
- * @return   split    子字符串数组
+ * @return   子字符串数组
  */
 char ** grt_string_split(const char *string, const char *delim, int *size);
+
+/**
+ * 从文本文件中，将每行内容读入字符串数组
+ * 
+ * @param[in,out]     fp       文件指针
+ * @param[out]        size     读入的字符串数组长度
+ * 
+ * @return   字符串数组
+ * 
+ */
+char ** grt_string_from_file(FILE *fp, int *size);
+
+/**
+ * 判断字符串是否由特定的若个字符组成（充分条件）
+ * 
+ * @param[in]    str      待检查的字符串
+ * @param[in]    alws     允许的字符集合
+ * 
+ * @return  是否符合
+ */
+bool grt_string_composed_of(const char *str, const char *alws);
 
 /**
  * 指定分隔符，获得字符串的分割出的子字符串数。

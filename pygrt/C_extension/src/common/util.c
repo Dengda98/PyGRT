@@ -43,6 +43,42 @@ char ** grt_string_split(const char *string, const char *delim, int *size)
     return s_split;
 }
 
+char ** grt_string_from_file(FILE *fp, int *size){
+    char **s_split = NULL;
+    *size = 0;
+    s_split = (char**)realloc(s_split, sizeof(char*)*(*size+1));
+    s_split[*size] = NULL;
+
+    size_t len=0;
+    while(grt_getline(&s_split[*size], &len, fp) != -1){
+        s_split[*size][strlen(s_split[*size])-1] = '\0';  // 换行符换为终止符
+        (*size)++;
+        s_split = (char**)realloc(s_split, sizeof(char*)*(*size+1));
+        s_split[*size] = NULL;
+    }
+    return s_split;
+}
+
+bool grt_string_composed_of(const char *str, const char *alws){
+    bool allowed[256] = {false};  // 初始全为false（不允许）
+
+    // 标记允许的字符
+    for (int i = 0; alws[i] != '\0'; i++) {
+        unsigned char c = alws[i];  // 转为无符号避免负数索引
+        allowed[c] = true;
+    }
+
+    // 检查目标字符串中的每个字符
+    for (int i = 0; str[i] != '\0'; i++) {
+        unsigned char c = str[i];
+        if (!allowed[c]) {  // 若字符不在允许集合中
+            return false;
+        }
+    }
+
+    // 所有字符均在允许集合中
+    return true;
+}
 
 int grt_string_ncols(const char *string, const char* delim){
     int count = 0;
