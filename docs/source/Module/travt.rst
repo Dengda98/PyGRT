@@ -12,7 +12,7 @@ travt
 **grt travt**
 |-M|\ *model*
 |-D|\ *depsrc/deprcv*
-|-R|\ *r1,r2,...*
+|-R|\ *file*\|\ *r1,r2,...*
 
 
 描述

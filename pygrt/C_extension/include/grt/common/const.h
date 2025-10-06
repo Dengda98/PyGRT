@@ -80,6 +80,8 @@ typedef int MYINT;  ///< 整数
 
 #define GRT_COMMENT_HEAD  '#'   ///< # 号， 作为注释的字符
 
+#define GRT_NUM_STR "0123456789"   ///< 包括所有数字的字符串宏
+
 #define GRT_MAX(a, b) ((a) > (b) ? (a) : (b))  ///< 求两者较大值
 #define GRT_MIN(a, b) ((a) < (b) ? (a) : (b))  ///< 求两者较小值
 

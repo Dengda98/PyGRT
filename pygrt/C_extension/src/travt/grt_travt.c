@@ -492,7 +492,16 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             // 震中距数组，-Rr1,r2,r3,r4 ...
             case 'R':
                 Ctrl->R.active = true;
-                Ctrl->R.s_rs = grt_string_split(optarg, ",", &Ctrl->R.nr);
+                // 如果输入仅由数字、小数点和间隔符组成，则直接读取
+                if(grt_string_composed_of(optarg, GRT_NUM_STR ".,")){
+                    Ctrl->R.s_rs = grt_string_split(optarg, ",", &Ctrl->R.nr);
+                } 
+                // 否则从文件读取
+                else {
+                    FILE *fp = GRTCheckOpenFile(command, optarg, "r");
+                    Ctrl->R.s_rs = grt_string_from_file(fp, &Ctrl->R.nr);
+                    fclose(fp);
+                }
                 // 转为浮点数
                 Ctrl->R.rs = (MYREAL*)realloc(Ctrl->R.rs, sizeof(MYREAL)*(Ctrl->R.nr));
                 for(MYINT i=0; i<Ctrl->R.nr; ++i){
