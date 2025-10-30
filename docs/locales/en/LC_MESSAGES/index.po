@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGRT 0.6.1.dev1+g4641a40.d20250422\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-25 15:40+0800\n"
+"POT-Creation-Date: 2025-10-30 21:23+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -52,8 +52,9 @@ msgid "zhudengda@mail.iggcas.ac.cn"
 msgstr ""
 
 #: ../../source/index.rst:9
-msgid "**Github Homepage:** https://github.com/Dengda98/PyGRT"
+msgid "**Github Homepage:** https://github.com/Dengda98/PyGRT （欢迎点⭐关注）"
 msgstr ""
+"**Github Homepage:** https://github.com/Dengda98/PyGRT (Welcome to follow and star ⭐)"
 
 #: ../../source/index.rst:11
 msgid ""
