@@ -6,7 +6,7 @@
 
 -----------------------------------------------------------
 
-**Github Homepage:** https://github.com/Dengda98/PyGRT
+**Github Homepage:** https://github.com/Dengda98/PyGRT （欢迎点⭐关注）
 
 **PyGRT** : 一个用于计算在半无限水平分层均匀介质模型中的理论地震图的 **C/Python**\程序包，使用广义反射透射系数矩阵法(**G**\eneralized **R**\eflection-**T**\ransmission coefficient matrix) 以及离散波数法等方法计算。   
 
