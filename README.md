@@ -167,6 +167,6 @@ If you have any questions or suggestions, feel free to reach out:
 
 # Citation
 
-Comming soon.
+(Since PyGRT has been under continuous maintenance and expansion during the peer review, **its functions have exceeded the scope described in this paper.** For detailed usage of each function, please refer to the documentation.)
 
-<!-- > Zhu D., J. Wang*, J. Hao, S. Yao, Y. Xu, T. Xu and Z. Yao (2025). PyGRT: An Efficient and Integrated Python Package for Computing Synthetic Seismograms in a Layered Half-Space Model. Seismological Research Letters. (under review) -->
+> Zhu D., J. Wang*, J. Hao, S. Yao, Y. Xu, T. Xu and Z. Yao (2025). PyGRT: An Efficient and Integrated Python Package for Computing Synthetic Seismograms in a Layered Half-Space Model. Seismological Research Letters. (accepted)
