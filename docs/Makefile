@@ -13,8 +13,8 @@ help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
 clean:
-	rm $(BUILDDIR)/* -rf
-	rm doxygen_h/* -rf
+	rm $(BUILDDIR)/ -rf
+	rm doxygen_h/ -rf
 
 .PHONY: help Makefile clean
 

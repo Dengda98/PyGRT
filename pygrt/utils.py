@@ -8,12 +8,13 @@
         2、Stream类型的时域卷积、微分、积分 (基于numpy和scipy)    \n
         3、Stream类型写到本地sac文件，自定义名称    \n
         4、读取波数积分和峰谷平均法过程文件  \n
-
+        5、其它辅助函数  \n
 
 """
 
 
 import numpy as np
+import numpy.ctypeslib as npct
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
@@ -55,6 +56,8 @@ __all__ = [
     "read_statsfile_ptam",
     "plot_statsdata",
     "plot_statsdata_ptam",
+
+    "solve_lamb1"
 ]
 
 
@@ -1557,3 +1560,41 @@ def plot_statsdata_ptam(statsdata1:np.ndarray, statsdata2:np.ndarray, statsdata_
 
 
     return fig, (ax1, ax2, ax3)
+
+
+
+
+
+
+def solve_lamb1(alpha:float, beta:float, ts:np.ndarray, azimuth:float):
+    r"""
+        使用广义闭合解求解第一类 Lamb 问题，参考：
+
+            张海明, 冯禧 著. 2024. 地震学中的 Lamb 问题（下）. 科学出版社
+
+        :param      alpha:      P 波速度 
+        :param      beta:       S 波速度
+        :param      ts:         归一化时间序列 :math:`\bar{t}` ，:math:`\bar{t}=\dfrac{t}{r/\beta}`
+        :param      azimuth:    方位角，单位度
+
+        :return:    形状为 (nt, 3, 3) 的归一化解，距离物理解还需乘 :math:`\pi^2 \mu r`
+    """
+
+    # 检查数据
+    if alpha <= 0.0 or beta <= 0.0:
+        raise ValueError("alpha and beta should be positive.")
+    if np.any(ts < 0.0):
+        raise ValueError("ts should be nonnegative.")
+    if azimuth < 0.0 or azimuth > 360.0:
+        raise ValueError("azimuth should be in [0, 360].")
+    
+    ts = np.array(ts).astype(NPCT_REAL_TYPE)
+    
+    # 定义结果数组
+    nt = len(ts)
+    u = np.zeros((nt, 3, 3), dtype=NPCT_REAL_TYPE)
+
+    C_grt_solve_lamb1(alpha, beta, npct.as_ctypes(ts), nt, azimuth, npct.as_ctypes(u.ravel()))
+
+    return u
+

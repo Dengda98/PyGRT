@@ -13,6 +13,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <errno.h>
+#include <stdlib.h>
 
 #include "grt/common/colorstr.h"
 

@@ -41,9 +41,10 @@
     X(static_strain)       \
     X(static_stress)       \
     /* other */            \
-    X(ker2asc)                 \
-    X(sac2asc)                 \
+    X(ker2asc)             \
+    X(sac2asc)             \
     X(travt)               \
+    X(lamb1)               \
 // ------------------------------------------------------
 
 /** 子模块的函数指针类型 */

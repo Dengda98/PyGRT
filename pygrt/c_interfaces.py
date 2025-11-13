@@ -148,3 +148,16 @@ C_grt_py_attenuation_law = libgrt.grt_py_attenuation_law
 C_grt_py_attenuation_law.restype = None
 C_grt_py_attenuation_law.argtypes = [REAL, DPOINTER, DPOINTER]  # double, double[2], double[2]
 
+
+
+
+
+# -------------------------------------------------------------------
+#                      使用 C 函数求解 Lamb 问题
+# -------------------------------------------------------------------
+C_grt_solve_lamb1 = libgrt.grt_solve_lamb1
+"""使用广义闭合解求解第一类 Lamb 问题"""
+C_grt_solve_lamb1.restype = None
+C_grt_solve_lamb1.argtypes = [
+    REAL, REAL, PREAL, c_int, REAL, PREAL
+]
