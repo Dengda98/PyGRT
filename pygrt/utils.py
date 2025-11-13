@@ -1566,23 +1566,20 @@ def plot_statsdata_ptam(statsdata1:np.ndarray, statsdata2:np.ndarray, statsdata_
 
 
 
-def solve_lamb1(alpha:float, beta:float, ts:np.ndarray, azimuth:float):
+def solve_lamb1(nu:float, ts:np.ndarray, azimuth:float):
     r"""
         使用广义闭合解求解第一类 Lamb 问题，参考：
 
             张海明, 冯禧 著. 2024. 地震学中的 Lamb 问题（下）. 科学出版社
 
-        :param      alpha:      P 波速度 
-        :param      beta:       S 波速度
+        :param      nu:         泊松比， (0, 0.5)
         :param      ts:         归一化时间序列 :math:`\bar{t}` ，:math:`\bar{t}=\dfrac{t}{r/\beta}`
         :param      azimuth:    方位角，单位度
 
-        :return:    形状为 (nt, 3, 3) 的归一化解，距离物理解还需乘 :math:`\pi^2 \mu r`
+        :return:    形状为 (nt, 3, 3) 的归一化解，距离物理解还需除 :math:`\pi^2 \mu r`
     """
 
     # 检查数据
-    if alpha <= 0.0 or beta <= 0.0:
-        raise ValueError("alpha and beta should be positive.")
     if np.any(ts < 0.0):
         raise ValueError("ts should be nonnegative.")
     if azimuth < 0.0 or azimuth > 360.0:
@@ -1594,7 +1591,7 @@ def solve_lamb1(alpha:float, beta:float, ts:np.ndarray, azimuth:float):
     nt = len(ts)
     u = np.zeros((nt, 3, 3), dtype=NPCT_REAL_TYPE)
 
-    C_grt_solve_lamb1(alpha, beta, npct.as_ctypes(ts), nt, azimuth, npct.as_ctypes(u.ravel()))
+    C_grt_solve_lamb1(nu, npct.as_ctypes(ts), nt, azimuth, npct.as_ctypes(u.ravel()))
 
     return u
 

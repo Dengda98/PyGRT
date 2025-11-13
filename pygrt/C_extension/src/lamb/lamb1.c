@@ -19,8 +19,6 @@
 
 typedef struct {
     // 常量，不随时间变化
-    MYREAL alpha;
-    MYREAL beta;
     MYREAL nu;
     MYREAL k;      ///< k = beta/alpha;
     MYREAL kk;     ///< kk = k*k;
@@ -761,8 +759,13 @@ static void build_R(MYREAL tbar, VARS *V, MYREAL u[3][3])
 
 
 void grt_solve_lamb1(
-    const MYREAL alpha, const MYREAL beta, const MYREAL *ts, const int nt, const MYREAL azimuth, MYREAL (*u)[3][3])
+    const MYREAL nu, const MYREAL *ts, const int nt, const MYREAL azimuth, MYREAL (*u)[3][3])
 {
+    // 检查泊松比范围
+    if(nu <= 0.0 || nu >= 0.5){
+        GRTRaiseError("possion ratio (%lf) is out of bound.", nu);
+    }
+
     // 根据情况判断是打印在屏幕还是记录到内存中
     bool isprint = (u == NULL);
 
@@ -787,11 +790,9 @@ void grt_solve_lamb1(
     // 初始化相关变量
     VARS V0 = {0};
     VARS *V = &V0;
-    V0.alpha = alpha;
-    V0.beta = beta;
-    V0.k = beta/alpha;
-    V0.kk = V0.k*V0.k;
-    V0.nu = grt_possion_ratio(V0.k);
+    V0.kk = 0.5 * (1.0 - 2.0*nu)/(1.0 - nu);
+    V0.k = sqrt(V0.kk);
+    V0.nu = nu;
     V0.kpkp = 1.0 - V0.kk;
     V0.kp = sqrt(V0.kpkp);
     V0.h1 = 2.0 * V0.kk - 1.0;

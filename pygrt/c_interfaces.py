@@ -159,5 +159,5 @@ C_grt_solve_lamb1 = libgrt.grt_solve_lamb1
 """使用广义闭合解求解第一类 Lamb 问题"""
 C_grt_solve_lamb1.restype = None
 C_grt_solve_lamb1.argtypes = [
-    REAL, REAL, PREAL, c_int, REAL, PREAL
+    REAL, PREAL, c_int, REAL, PREAL
 ]

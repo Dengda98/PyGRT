@@ -47,8 +47,3 @@ MYCOMPLEX grt_evalpoly2(const MYCOMPLEX *C, const int n, const MYCOMPLEX y, cons
     }
     return res;
 }
-
-MYREAL grt_possion_ratio(const MYREAL k)
-{
-    return 0.5 * (1.0 - 2.0*k*k)/(1.0 - k*k);
-}

@@ -17,8 +17,7 @@
 /**
  * 使用广义闭合解求解第一类 Lamb 问题
  * 
- * @param[in]    alpha     P 波速度
- * @param[in]    beta      S 波速度
+ * @param[in]    nu        泊松比， (0, 0.5)
  * @param[in]    ts        归一化时间序列
  * @param[in]    nt        时间序列点数
  * @param[in]    azimuth   方位角，单位度
@@ -26,4 +25,4 @@
  * 
  */
 void grt_solve_lamb1(
-    const MYREAL alpha, const MYREAL beta, const MYREAL *ts, const int nt, const MYREAL azimuth, MYREAL (*u)[3][3]);
+    const MYREAL nu, const MYREAL *ts, const int nt, const MYREAL azimuth, MYREAL (*u)[3][3]);
