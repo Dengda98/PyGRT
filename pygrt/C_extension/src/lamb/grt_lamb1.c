@@ -21,9 +21,8 @@ typedef struct {
     /** 模型参数 */
     struct {
         bool active;
-        MYREAL alpha;   ///<  P 波速度 
-        MYREAL beta;    ///<  S 波速度 
-    } M;
+        MYREAL nu;    ///<  泊松比
+    } P;
 
     /** 归一化时间序列 */
     struct {
@@ -62,11 +61,11 @@ printf("\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
-"    grt lamb1 -M<Vp>/<Vs> -T<t1>/<t2>/<dt> -A<azimuth>\n"
+"    grt lamb1 -P<nu> -T<t1>/<t2>/<dt> -A<azimuth>\n"
 "\n\n"
 "Options:\n"
 "----------------------------------------------------------------\n"
-"    -M<Vp>/<Vs>    Vp and Vs of the halfspace.\n"
+"    -P<nu>         Possion ratio of the halfspace, (0, 0.5).\n"
 "\n"
 "    -T<t1>/<t2>/<dt>\n"
 "                   Dimensionless time.\n"
@@ -80,7 +79,7 @@ printf("\n"
 "\n\n"
 "Examples:\n"
 "----------------------------------------------------------------\n"
-"    grt lamb1 -M8.0/4.62 -T0/2/1e-3 -A30\n"
+"    grt lamb1 -P0.25 -T0/2/1e-3 -A30\n"
 "\n\n\n"
 );
 }
@@ -91,21 +90,16 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     char* command = Ctrl->name;
     int opt;
 
-    while ((opt = getopt(argc, argv, ":M:T:A:h")) != -1) {
+    while ((opt = getopt(argc, argv, ":P:T:A:h")) != -1) {
         switch (opt) {
-            // 模型参数， -Malpha/beta/rho
-            case 'M':
-                Ctrl->M.active = true;
-                if(2 != sscanf(optarg, "%lf/%lf", &Ctrl->M.alpha, &Ctrl->M.beta)){
-                    GRTBadOptionError(command, M, "");
+            // 模型参数， -P<nu>
+            case 'P':
+                Ctrl->P.active = true;
+                if(1 != sscanf(optarg, "%lf", &Ctrl->P.nu)){
+                    GRTBadOptionError(command, P, "");
                 }
-                if(Ctrl->M.alpha <= 0.0 || Ctrl->M.beta <= 0.0){
-                    GRTBadOptionError(command, M, "only support positive values.");
-                }
-                // 检查泊松比范围
-                MYREAL nu = grt_possion_ratio(Ctrl->M.beta/Ctrl->M.alpha);
-                if(nu >= 0.5 || nu <= 0.0){
-                    GRTBadOptionError(command, M, "possion ratio (%lf) is out of bound.", nu);
+                if(Ctrl->P.nu <= 0.0 || Ctrl->P.nu >= 0.5){
+                    GRTBadOptionError(command, P, "possion ratio (%lf) is out of bound.", Ctrl->P.nu);
                 }
                 break;
             
@@ -152,7 +146,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 
     // 检查必须设置的参数是否有设置
     GRTCheckOptionSet(command, argc > 1);
-    GRTCheckOptionActive(command, Ctrl, M);
+    GRTCheckOptionActive(command, Ctrl, P);
     GRTCheckOptionActive(command, Ctrl, T);
     GRTCheckOptionActive(command, Ctrl, A);
 }
@@ -170,7 +164,7 @@ int lamb1_main(int argc, char **argv){
     getopt_from_command(Ctrl, argc, argv);
 
     // 求解，输出到标准输出
-    grt_solve_lamb1(Ctrl->M.alpha, Ctrl->M.beta, Ctrl->T.ts, Ctrl->T.nt, Ctrl->A.azimuth, NULL);
+    grt_solve_lamb1(Ctrl->P.nu, Ctrl->T.ts, Ctrl->T.nt, Ctrl->A.azimuth, NULL);
 
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;

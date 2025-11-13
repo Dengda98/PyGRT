@@ -32,13 +32,3 @@ void grt_roots3(const MYREAL a, const MYREAL b, const MYREAL c, MYCOMPLEX y3[3])
  * 
  */
 MYCOMPLEX grt_evalpoly2(const MYCOMPLEX *C, const int n, const MYCOMPLEX y, const int offset);
-
-
-/**
- * 根据 Vs/Vp 比值，计算泊松比，  \f$ \nu = \dfrac{1}{2} \dfrac{1 - 2k^2}{1 - k^2},  k=\dfrac{V_S}{V_P} \f$
- * 
- * @param[in]    k    Vs/Vp
- * @return   泊松比
- */
-
-MYREAL grt_possion_ratio(const MYREAL k);
