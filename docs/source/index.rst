@@ -58,39 +58,43 @@
 
 .. _bouchon_1981: 
 
-.. [1] Michel Bouchon. 1981. A simple method to calculate Green's functions for elastic layered media. Bulletin of the Seismological Society of America. 71(4). 959–971. doi: `10.1785/BSSA0710040959 <https://doi.org/10.1785/BSSA0710040959>`_
+.. [#] Michel Bouchon. 1981. A simple method to calculate Green's functions for elastic layered media. Bulletin of the Seismological Society of America. 71(4). 959–971. doi: `10.1785/BSSA0710040959 <https://doi.org/10.1785/BSSA0710040959>`_
 
 .. _jichen_1995: 
 
-.. [2] 纪晨, 姚振兴, 1995. 区域地震范围的宽频带理论地震图算法研究[J]. 地球物理学报, 38(4): 460-468.
+.. [#] 纪晨, 姚振兴, 1995. 区域地震范围的宽频带理论地震图算法研究[J]. 地球物理学报, 38(4): 460-468.
 
 .. _xie&yao_1989:
 
-.. [3] 谢小碧, 姚振兴, 1989. 计算分层介质中位错点源静态位移场的广义反射、透射系数矩阵和离散波数方法[J]. 地球物理学报, 32(3): 270-280.
+.. [#] 谢小碧, 姚振兴, 1989. 计算分层介质中位错点源静态位移场的广义反射、透射系数矩阵和离散波数方法[J]. 地球物理学报, 32(3): 270-280.
 
 .. _yao_init_manuscripts:
 
-.. [4] 姚振兴, 谢小碧. 2022/03. 理论地震图及其应用（初稿）.  
+.. [#] 姚振兴, 谢小碧. 2022/03. 理论地震图及其应用（初稿）.  
 
 .. _yao&harkrider_1983:
 
-.. [5] Yao Z. X. and D. G. Harkrider. 1983. A generalized refelection-transmission coefficient matrix and discrete wavenumber method for synthetic seismograms. BSSA. 73(6). 1685-1699. doi: `10.1785/BSSA07306A1685 <https://doi.org/10.1785/BSSA07306A1685>`_ 
+.. [#] Yao Z. X. and D. G. Harkrider. 1983. A generalized refelection-transmission coefficient matrix and discrete wavenumber method for synthetic seismograms. BSSA. 73(6). 1685-1699. doi: `10.1785/BSSA07306A1685 <https://doi.org/10.1785/BSSA07306A1685>`_ 
 
 .. _zhang_book_2021: 
 
-.. [6] 张海明. 2021. 地震学中的Lamb问题（上）. 科学出版社.  
+.. [#] 张海明 著. 2021. 地震学中的Lamb问题（上）. 科学出版社.  
+
+.. _zhang_book_2024: 
+
+.. [#] 张海明, 冯禧 著. 2024. 地震学中的Lamb问题（下）. 科学出版社.  
 
 .. _zhang_2003: 
 
-.. [7] Zhang, H. M., Chen, X. F., and Chang, S. 2003. An efficient numerical method for computing synthetic seismograms for a layered half-space with sources and receivers at close or same depths. Seismic motion, lithospheric structures, earthquake and volcanic sources: The Keiiti Aki volume, 467-486. doi: `10.1007/978-3-0348-8010-7_3 <https://doi.org/10.1007/978-3-0348-8010-7_3>`_ 
+.. [#] Zhang, H. M., Chen, X. F., and Chang, S. 2003. An efficient numerical method for computing synthetic seismograms for a layered half-space with sources and receivers at close or same depths. Seismic motion, lithospheric structures, earthquake and volcanic sources: The Keiiti Aki volume, 467-486. doi: `10.1007/978-3-0348-8010-7_3 <https://doi.org/10.1007/978-3-0348-8010-7_3>`_ 
 
 .. _chen_2001:
 
-.. [8] Chen, X., Zhang, H., 2001. An Efficient Method for Computing Green’s Functions for a Layered Half-Space at Large Epicentral Distances. Bulletin of the Seismological Society of America 91, 858–869. doi: `10.1785/0120000113  <https://doi.org/10.1785/0120000113>`_ 
+.. [#] Chen, X., Zhang, H., 2001. An Efficient Method for Computing Green’s Functions for a Layered Half-Space at Large Epicentral Distances. Bulletin of the Seismological Society of America 91, 858–869. doi: `10.1785/0120000113  <https://doi.org/10.1785/0120000113>`_ 
 
 .. _kennett&kerry_1979:
 
-.. [9] Kennett, B. L. N., and N. J. Kerry, 1979. Seismic waves in a stratified half space, Geophysical Journal International, 57, no. 3, 557–583, doi: `10.1111/j.1365-246X.1979.tb06779.x <https://doi.org/10.1111/j.1365-246X.1979.tb06779.x>`_
+.. [#] Kennett, B. L. N., and N. J. Kerry, 1979. Seismic waves in a stratified half space, Geophysical Journal International, 57, no. 3, 557–583, doi: `10.1111/j.1365-246X.1979.tb06779.x <https://doi.org/10.1111/j.1365-246X.1979.tb06779.x>`_
 
 
 
