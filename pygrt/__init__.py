@@ -1,4 +1,6 @@
 
+# 版本号
+from ._version import __version__
 
 # 和C库交互的结构体类型 
 from .c_structures import *
