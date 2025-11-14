@@ -120,6 +120,7 @@
    :hidden:
    :maxdepth: 1
 
+   Lamb_problem/index
    API/api
    changelog
    copyright
