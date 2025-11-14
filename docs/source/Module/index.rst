@@ -95,6 +95,7 @@
     - :doc:`sac2asc`
     - :doc:`ker2asc`
     - :doc:`travt`
+    - :doc:`lamb1`
 
 
 .. toctree::
@@ -114,4 +115,5 @@
     sac2asc
     ker2asc
     travt
+    lamb1
 

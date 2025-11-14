@@ -61,3 +61,12 @@ if [[ $1 == '7' || $1 == '' ]]; then
     python plot.py
     cd -
 fi
+
+if [[ $1 == '8' || $1 == '' ]]; then
+    cd Lamb_problem/run
+    chmod +x *.sh
+    ./run.sh
+    python lamb1_plot_time.py
+    python lamb1_plot_freq_time.py
+    cd -
+fi
