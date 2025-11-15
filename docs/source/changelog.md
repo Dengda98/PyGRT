@@ -1,6 +1,78 @@
 Changelog
 ====================
 
+## PyGRT v0.12.0
+
++ Support inpute distance file, like `grt greenfn -R<file> ...`
++ Add the exact closed-form solution the first-kind Lamb problem.
++ Fix some typos in comments of test shell scripts.
++ Update documents, fix some typos.
+
+* CI: use macos-15 for intel and arm64 arch by [@Dengda98](https://github.com/Dengda98) in [#111](https://github.com/Dengda98/PyGRT/pull/111)
+* FEAT: support input distance file by [@Dengda98](https://github.com/Dengda98) in [#112](https://github.com/Dengda98/PyGRT/pull/112)
+* add citation in README.md by [@Dengda98](https://github.com/Dengda98) in [#116](https://github.com/Dengda98/PyGRT/pull/116)
+* FEAT: exact closed-form solution for the Lamb problem of the first kind by [@Dengda98](https://github.com/Dengda98) in [#117](https://github.com/Dengda98/PyGRT/pull/117)
+* FEAT: update lamb1 interfaces by [@Dengda98](https://github.com/Dengda98) in [#118](https://github.com/Dengda98/PyGRT/pull/118)
+* DOC: add lamb1 (the first-kind Lamb problem) by [@Dengda98](https://github.com/Dengda98) in [#119](https://github.com/Dengda98/PyGRT/pull/119)
+
+
+**Full Changelog**: [v0.11.0...v0.12.0](https://github.com/Dengda98/PyGRT/compare/v0.11.0...v0.12.0)
+
+
+## PyGRT v0.11.0
+
+In this version, I have made **lots of enhancements** for future developments. From the user's perspective, mainly including:
++ support 4-column model (ignore Qp and Qs).
++ save static results in [NetCDF](https://www.unidata.ucar.edu/software/netcdf) format.
++ remove argument `prefix` to simplify the I/O of `syn`, `strain`, `stress` and `rotation`.
++ update usage of `-L` and `-K`.
++ add modules manual in Chinese.
++ rearrange the core code of R/T matrix.
+
+* STYLE: add macro `GRT_SAFE_FREE_PTR(_ARRAY)` to safely free allocated memory by [@Dengda98](https://github.com/Dengda98) in [#63](https://github.com/Dengda98/PyGRT/pull/63)
+* FEAT: support 4-column model and use layer depth by [@Dengda98](https://github.com/Dengda98) in [#64](https://github.com/Dengda98/PyGRT/pull/64)
+* REFAC: split R/T functions into P-SV and SH by [@Dengda98](https://github.com/Dengda98) in [#65](https://github.com/Dengda98/PyGRT/pull/65)
+* DOC: fix some description typo in formula by [@Dengda98](https://github.com/Dengda98) in [#66](https://github.com/Dengda98/PyGRT/pull/66)
+* REFAC: Split source coefs into P-SV and SH by [@Dengda98](https://github.com/Dengda98) in [#67](https://github.com/Dengda98/PyGRT/pull/67)
+* FEAT: replace `sprintf` to `asprintf`, and define a macro by [@Dengda98](https://github.com/Dengda98) in [#68](https://github.com/Dengda98/PyGRT/pull/68)
+* REFAC: use struct and wrapped functions to organize FFTW behaviors by [@Dengda98](https://github.com/Dengda98) in [#69](https://github.com/Dengda98/PyGRT/pull/69)
+* FEAT: support upsampling factor in `greenfn -N` by [@Dengda98](https://github.com/Dengda98) in [#70](https://github.com/Dengda98/PyGRT/pull/70)
+* FEAT: support upsampling factor in `greenfn -N` (part 2) by [@Dengda98](https://github.com/Dengda98) in [#71](https://github.com/Dengda98/PyGRT/pull/71)
+* FIX: remove redundant process for last frequency point by [@Dengda98](https://github.com/Dengda98) in [#73](https://github.com/Dengda98/PyGRT/pull/73)
+* DOC: z by [@Dengda98](https://github.com/Dengda98) in [#75](https://github.com/Dengda98/PyGRT/pull/75)
+* REFAC: move headers to directory `include/grt/` and rename all public functions with prefix `grt` by [@Dengda98](https://github.com/Dengda98) in [#78](https://github.com/Dengda98/PyGRT/pull/78)
+* FEAT: remove struct `PYMODEL1D`, use struct `GRT_MODEL1D` globally by [@Dengda98](https://github.com/Dengda98) in [#79](https://github.com/Dengda98/PyGRT/pull/79)
+* REFAC: rename macros and global variables with prefix `GRT` by [@Dengda98](https://github.com/Dengda98) in [#80](https://github.com/Dengda98/PyGRT/pull/80)
+* REFAC: use macro for comment head '#', and add related helper function by [@Dengda98](https://github.com/Dengda98) in [#81](https://github.com/Dengda98/PyGRT/pull/81)
+* FEAT: rearange functions in `search.h/c` and `matrix.h`, with X macros by [@Dengda98](https://github.com/Dengda98) in [#82](https://github.com/Dengda98/PyGRT/pull/82)
+* REFAC: use macro `GRTRaiseError` by [@Dengda98](https://github.com/Dengda98) in [#83](https://github.com/Dengda98/PyGRT/pull/83)
+* FEAT: use `c` instead of `k` in definition of vertical wavenumber `a` and `b` by [@Dengda98](https://github.com/Dengda98) in [#84](https://github.com/Dengda98/PyGRT/pull/84)
+* DOC: add static R/T formula by [@Dengda98](https://github.com/Dengda98) in [#85](https://github.com/Dengda98/PyGRT/pull/85)
+* DOC: add SH wave R/T static formula by [@Dengda98](https://github.com/Dengda98) in [#86](https://github.com/Dengda98/PyGRT/pull/86)
+* DOC: fix static source coefficients by [@Dengda98](https://github.com/Dengda98) in [#87](https://github.com/Dengda98/PyGRT/pull/87)
+* FEAT: split delay matrix into a function by [@Dengda98](https://github.com/Dengda98) in [#88](https://github.com/Dengda98/PyGRT/pull/88)
+* FIX: fillup the elastic params before returning the reading model function by [@Dengda98](https://github.com/Dengda98) in [#89](https://github.com/Dengda98/PyGRT/pull/89)
+* FEAT: split delay matrix into a function (static) by [@Dengda98](https://github.com/Dengda98) in [#90](https://github.com/Dengda98/PyGRT/pull/90)
+* REFAC: rename some functions for better development by [@Dengda98](https://github.com/Dengda98) in [#92](https://github.com/Dengda98/PyGRT/pull/92)
+* STYLE: rename `b2a` and `k2a`, and move their `.c` files to `src/tools/` directory by [@Dengda98](https://github.com/Dengda98) in [#93](https://github.com/Dengda98/PyGRT/pull/93)
+* REFAC: update usage of `zeta` in `greenfn` by [@Dengda98](https://github.com/Dengda98) in [#94](https://github.com/Dengda98/PyGRT/pull/94)
+* FEAT: check unsorted layer depths by [@Dengda98](https://github.com/Dengda98) in [#95](https://github.com/Dengda98/PyGRT/pull/95)
+* FEAT: update usage of -K, -L, -G, remove -V by [@Dengda98](https://github.com/Dengda98) in [#97](https://github.com/Dengda98/PyGRT/pull/97)
+* FEAT: save static results in NetCDF format by [@Dengda98](https://github.com/Dengda98) in [#98](https://github.com/Dengda98/PyGRT/pull/98)
+* DOC: support 4-column model by [@Dengda98](https://github.com/Dengda98) in [#99](https://github.com/Dengda98/PyGRT/pull/99)
+* DOC: use term "pre-built" by [@Dengda98](https://github.com/Dengda98) in [#100](https://github.com/Dengda98/PyGRT/pull/100)
+* DOC: rearrange Tutorial toctree by [@Dengda98](https://github.com/Dengda98) in [#101](https://github.com/Dengda98/PyGRT/pull/101)
+* DOC: update English documents by [@Dengda98](https://github.com/Dengda98) in [#102](https://github.com/Dengda98/PyGRT/pull/102)
+* FEAT: remove `-P<prefix>`, and simplify the input argument of `strain`, `stress` and `rotation` by [@Dengda98](https://github.com/Dengda98) in [#103](https://github.com/Dengda98/PyGRT/pull/103)
+* FEAT: remove `-P<prefix>` (Part 2, static case) by [@Dengda98](https://github.com/Dengda98) in [#104](https://github.com/Dengda98/PyGRT/pull/104)
+* DOC: add modules manual by [@Dengda98](https://github.com/Dengda98) in [#105](https://github.com/Dengda98/PyGRT/pull/105)
+* DOC: update reference to module by [@Dengda98](https://github.com/Dengda98) in [#106](https://github.com/Dengda98/PyGRT/pull/106)
+* DOC: add annotation about narrow `nt*dt` by [@Dengda98](https://github.com/Dengda98) in [#107](https://github.com/Dengda98/PyGRT/pull/107)
+
+
+**Full Changelog**: [v0.10.0...v0.11.0](https://github.com/Dengda98/PyGRT/compare/v0.10.0...v0.11.0)
+
+
 ## PyGRT v0.10.0
 
 This is a **major update** before releasing a _stable version_, primarily concerning the execution style of the C program (the Python interface remains unaffected). Recognizing that compiling multiple executables would **significantly hinder future maintenance and feature expansion**, and considering the current early-stage program isn't too complex yet, I decided to implement this change promptly. 
