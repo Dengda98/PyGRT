@@ -8,8 +8,6 @@ rm *.nc -rf
 # static greenfn
 grt static greenfn -M../milrow -D2/0 -X-3/3/0.2 -Y-2/2/0.2 -e -Ostgrn.nc
 
-ncdump -h stgrn.nc
-
 # syn
 grt static syn -S1e20 -e -Gstgrn.nc -Ostsyn_ex.nc
 grt static syn -S1e20 -e -F2/-1/4    -Gstgrn.nc -Ostsyn_sf.nc
