@@ -55,7 +55,7 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
 static void print_help(){
 printf("\n"
 "[grt lamb1] %s\n\n", GRT_VERSION);printf(
-"    Compute the Lamb problem of the first-kind \n"
+"    Compute the exact closed-form solution for the first-kind Lamb problem\n"
 "    (both the source and receiver are on the surface).\n"
 "\n"
 "\n\n"
