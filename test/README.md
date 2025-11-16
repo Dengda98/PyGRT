@@ -1,0 +1,1 @@
+This directory contains a set of test scripts that are automatically triggered by GitHub Actions workflows.
