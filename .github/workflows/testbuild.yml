@@ -6,6 +6,7 @@ on:
     paths:
       - 'pygrt/**'  # 源码文件夹有提交才触发测试
       - '.github/workflows/testbuild.yml'
+      - 'test/**'   # 测试文件夹
     branches-ignore:
       - main    # 排除主分支
       - master  # 如果有 master 分支，也可以排除
