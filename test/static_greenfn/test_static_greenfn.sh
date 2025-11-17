@@ -13,4 +13,4 @@ grt static greenfn -M../milrow -D2/0 -X-3/3/0.2 -Y-2/2/0.2 -S -Ostgrn.nc
 
 python -u test_static_greenfn.py
 
-rm stgrt* *.nc -rf
+rm -rf stgrt* *.nc

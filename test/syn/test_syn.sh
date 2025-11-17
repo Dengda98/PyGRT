@@ -41,4 +41,4 @@ grt syn -GGRN/milrow_2_0_10 -A22 -S1e20 -N -e -Osyn
 python -u test_syn.py
 
 
-rm GRN syn -rf
+rm -rf GRN syn

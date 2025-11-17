@@ -19,4 +19,4 @@ grt rotation syn_ZNE
 
 python -u test_tensors.py
 
-rm GRN syn* -rf
+rm -rf GRN syn*

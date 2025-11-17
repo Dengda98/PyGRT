@@ -28,5 +28,5 @@ rm dists
 
 python -u test_greenfn.py
 
-rm GRN -rf
-rm GRN_grtstats -rf
+rm -rf GRN
+rm -rf GRN_grtstats

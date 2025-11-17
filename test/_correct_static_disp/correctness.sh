@@ -3,7 +3,7 @@
 
 set -euo pipefail
 
-rm *.nc -rf
+rm -rf *.nc
 
 # static greenfn
 grt static greenfn -M../milrow -D2/0 -X-3/3/0.2 -Y-2/2/0.2 -e -Ostgrn.nc
@@ -35,5 +35,5 @@ python ../compare_nc.py stsyn_dc.nc _Ref/stsyn_dc.nc
 python ../compare_nc.py stsyn_mt.nc _Ref/stsyn_mt.nc
 python ../compare_nc.py stsyn_mt_ZNE.nc _Ref/stsyn_mt_ZNE.nc
 
-rm *.nc -rf
+rm -rf *.nc
 

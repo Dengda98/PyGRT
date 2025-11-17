@@ -3,8 +3,8 @@
 
 set -euo pipefail
 
-rm GRN -rf 
-rm syn_* -rf 
+rm -rf GRN 
+rm -rf syn_* 
 
 # =========================================
 # greenfn
