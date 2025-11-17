@@ -6,7 +6,7 @@ set -euo pipefail
 rm -rf *.nc
 
 # static greenfn
-grt static greenfn -M../milrow -D2/3 -X-3/3/0.2 -Y-2/2/0.2 -e -Ostgrn.nc
+grt static greenfn -M../milrow -D2/3 -X-3.1/3.1/0.2 -Y-2.1/2.1/0.2 -e -Ostgrn.nc
 
 # syn
 grt static syn -S1e20 -e -Gstgrn.nc -Ostsyn_ex.nc
