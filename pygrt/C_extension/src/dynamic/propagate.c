@@ -43,11 +43,6 @@ void grt_kernel(
     MYINT imin, imax; // 相对浅层深层层位
     imin = GRT_MIN(mod1d->isrc, mod1d->ircv);
     imax = GRT_MAX(mod1d->isrc, mod1d->ircv);
-    // bool ircvup = true;
-    // MYINT isrc = 2;
-    // MYINT ircv = 1;
-    // MYINT imin=1, imax=2;
-    
 
     // 初始化广义反射透射系数矩阵
     // BL
