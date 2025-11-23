@@ -23,6 +23,10 @@ typedef struct {
     bool ircvup; ///< 接收点位于浅层, ircv < isrc
     bool io_depth; ///< 读取的模型首列为每层顶界面深度
 
+    MYCOMPLEX omega;   ///< 圆频率
+    MYREAL k;   ///< 波数
+    MYCOMPLEX c_phase;   ///< 当前相速度
+
     MYREAL *Thk; ///< Thk[n], 最后一层厚度不使用(当作正无穷), km
     MYREAL *Dep; ///< Dep[n], 每一层顶界面深度，第一层必须为 0.0
     MYREAL *Va;  ///< Va[n]   P波速度  km/s
@@ -38,6 +42,10 @@ typedef struct {
     MYCOMPLEX *delta;    ///< delta[n] \f$ (\lambda+\mu)/(\lambda+3*\mu) \f$
     MYCOMPLEX *atna;
     MYCOMPLEX *atnb;
+    MYCOMPLEX *xa;
+    MYCOMPLEX *xb;
+    MYCOMPLEX *caca;
+    MYCOMPLEX *cbcb;
 
 } GRT_MODEL1D;
 
@@ -85,19 +93,11 @@ GRT_MODEL1D * grt_copy_mod1d(const GRT_MODEL1D *mod1d1);
 void grt_attenuate_mod1d(GRT_MODEL1D *mod1d, MYCOMPLEX omega);
 
 /**
- * 根据相速度和层位，计算 iy 层的 (c/vp)^2, (c/vs)^2 以及归一化垂直波数
+ * 根据记录好的圆频率和波数，计算相速度和每层的 xa, xb, caca, cbcb
  * 
- * @param[in]      mod1d1       `GRT_MODEL1D` 结构体指针
- * @param[in]      iy           层位索引
- * @param[in]      c_phase      相速度
- * @param[out]     pt_caca      \f$ (\frac{c}{V_P})^2 \f$
- * @param[out]     pt_xa        \f$ \sqrt{1 - (\frac{c}{V_P})^2} \f$
- * @param[out]     pt_cbcb      \f$ (\frac{c}{V_S})^2 \f$
- * @param[out]     pt_xb        \f$ \sqrt{1 - (\frac{c}{V_S})^2} \f$
+ * @param[in]      mod1d         模型结构体指针
  */
-void grt_get_mod1d_xa_xb(
-    const GRT_MODEL1D *mod1d, const MYINT iy, const MYCOMPLEX c_phase, 
-    MYCOMPLEX *pt_caca, MYCOMPLEX *pt_xa, MYCOMPLEX *pt_cbcb, MYCOMPLEX *pt_xb);
+void grt_mod1d_xa_xb(GRT_MODEL1D *mod1d);
 
 
 /**

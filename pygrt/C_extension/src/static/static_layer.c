@@ -19,20 +19,29 @@
 #include "grt/common/model.h"
 #include "grt/common/matrix.h"
 
-void grt_static_topfree_RU_PSV(MYCOMPLEX delta1, MYCOMPLEX R_tilt[2][2]){
+/* 定义用于提取相邻两层物性参数的宏 */
+#define MODEL_2LAYS_ATTRIB(T, N) \
+    T N##1 = mod1d->N[iy-1];\
+    T N##2 = mod1d->N[iy];\
+
+
+void grt_static_topfree_RU(const GRT_MODEL1D *mod1d, RT_MATRIX *M)
+{
+    MYCOMPLEX delta1 = mod1d->delta[0];
     // 公式(6.3.12)
-    R_tilt[0][0] = R_tilt[1][1] = 0.0;
-    R_tilt[0][1] = -delta1;
-    R_tilt[1][0] = -1.0/delta1;
+    M->RU[0][0] = M->RU[1][1] = 0.0;
+    M->RU[0][1] = -delta1;
+    M->RU[1][0] = -1.0/delta1;
+    M->RUL = 1.0;
 }
 
-void grt_static_wave2qwv_REV_PSV(bool ircvup, const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2])
+void grt_static_wave2qwv_REV_PSV(const GRT_MODEL1D *mod1d, const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2])
 {
     MYCOMPLEX D11[2][2] = {{1.0, -1.0}, {1.0, 1.0}};
     MYCOMPLEX D12[2][2] = {{1.0, -1.0}, {-1.0, -1.0}};
 
     // 公式(6.3.35,37)
-    if(ircvup){// 震源更深
+    if(mod1d->ircvup){// 震源更深
         grt_cmat2x2_mul(D12, R, R_EV);
         grt_cmat2x2_add(D11, R_EV, R_EV);
     } else { // 接收点更深
@@ -47,14 +56,18 @@ void grt_static_wave2qwv_REV_SH(MYCOMPLEX RL, MYCOMPLEX *R_EVL)
 }
 
 void grt_static_wave2qwv_z_REV_PSV(
-    MYCOMPLEX delta1, bool ircvup, MYREAL k, 
+    const GRT_MODEL1D *mod1d, 
     const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2])
 {
+    MYREAL k = mod1d->k;
+    MYINT ircv = mod1d->ircv;
+    MYCOMPLEX delta1 = mod1d->delta[ircv];
+
     // 新推导公式
     MYCOMPLEX kd2 = 2.0*k*delta1;
     MYCOMPLEX D11[2][2] = {{k, -k-kd2}, {k, k-kd2}};
     MYCOMPLEX D12[2][2] = {{-k, k+kd2}, {k, k-kd2}};
-    if(ircvup){// 震源更深
+    if(mod1d->ircvup){// 震源更深
         grt_cmat2x2_mul(D12, R, R_EV);
         grt_cmat2x2_add(D11, R_EV, R_EV);
     } else { // 接收点更深
@@ -63,10 +76,11 @@ void grt_static_wave2qwv_z_REV_PSV(
     }
 }
 
-void grt_static_wave2qwv_z_REV_SH(bool ircvup, MYREAL k, MYCOMPLEX RL, MYCOMPLEX *R_EVL)
+void grt_static_wave2qwv_z_REV_SH(const GRT_MODEL1D *mod1d, MYCOMPLEX RL, MYCOMPLEX *R_EVL)
 {
+    MYREAL k = mod1d->k;
     // 新推导公式
-    if(ircvup){// 震源更深
+    if(mod1d->ircvup){// 震源更深
         *R_EVL = (1.0 - (RL))*k;
     } else { // 接收点更深
         *R_EVL = (RL - 1.0)*k;
@@ -74,12 +88,13 @@ void grt_static_wave2qwv_z_REV_SH(bool ircvup, MYREAL k, MYCOMPLEX RL, MYCOMPLEX
 }
 
 
-void grt_static_RT_matrix_PSV(
-    MYCOMPLEX delta1, MYCOMPLEX mu1, 
-    MYCOMPLEX delta2, MYCOMPLEX mu2, 
-    MYREAL thk, MYREAL k,
-    MYCOMPLEX RD[2][2], MYCOMPLEX RU[2][2], MYCOMPLEX TD[2][2], MYCOMPLEX TU[2][2])
+void grt_static_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M)
 {
+    MODEL_2LAYS_ATTRIB(MYCOMPLEX, mu);
+    MODEL_2LAYS_ATTRIB(MYCOMPLEX, delta);
+    MYREAL thk = mod1d->Thk[iy-1];
+    MYREAL k = mod1d->k;
+
     // 公式(6.3.18)
     MYCOMPLEX dmu = mu1 - mu2;
     MYCOMPLEX A112 = mu1*delta1 + mu2;
@@ -91,79 +106,67 @@ void grt_static_RT_matrix_PSV(
 
     // Reflection
     //------------------ RD -----------------------------------
-    RD[0][0] = -2.0*delta1*k*thk*dmu/A112;
-    RD[0][1] = - ( 4.0*del11*k2*thk2*A221*dmu + A112*B ) / (A221*A112);
-    RD[1][0] = - dmu/A112;
-    RD[1][1] = RD[0][0];
+    M->RD[0][0] = -2.0*delta1*k*thk*dmu/A112;
+    M->RD[0][1] = - ( 4.0*del11*k2*thk2*A221*dmu + A112*B ) / (A221*A112);
+    M->RD[1][0] = - dmu/A112;
+    M->RD[1][1] = M->RD[0][0];
     //------------------ RU -----------------------------------
-    RU[0][0] = 0.0;
-    RU[0][1] = B/A112;
-    RU[1][0] = dmu/A221;
-    RU[1][1] = 0.0;
+    M->RU[0][0] = 0.0;
+    M->RU[0][1] = B/A112;
+    M->RU[1][0] = dmu/A221;
+    M->RU[1][1] = 0.0;
 
     // Transmission
     //------------------ TD -----------------------------------
-    TD[0][0] = mu1*(1.0+delta1)/(A112);
-    TD[0][1] = 2.0*mu1*delta1*k*thk*(1.0+delta1)/(A112);
-    TD[1][0] = 0.0;
-    TD[1][1] = TD[0][0]*A112/A221;
+    M->TD[0][0] = mu1*(1.0+delta1)/(A112);
+    M->TD[0][1] = 2.0*mu1*delta1*k*thk*(1.0+delta1)/(A112);
+    M->TD[1][0] = 0.0;
+    M->TD[1][1] = M->TD[0][0]*A112/A221;
     //------------------ TU -----------------------------------
-    TU[0][0] = mu2*(1.0+delta2)/A221;
-    TU[0][1] = 2.0*delta1*k*thk*mu2*(1.0+delta2)/A112;
-    TU[1][0] = 0.0;
-    TU[1][1] = TU[0][0]*A221/A112;
+    M->TU[0][0] = mu2*(1.0+delta2)/A221;
+    M->TU[0][1] = 2.0*delta1*k*thk*mu2*(1.0+delta2)/A112;
+    M->TU[1][0] = 0.0;
+    M->TU[1][1] = M->TU[0][0]*A221/A112;
 }
 
 
-void grt_static_RT_matrix_SH(
-    MYCOMPLEX mu1, MYCOMPLEX mu2, 
-    MYREAL thk, MYREAL k,
-    MYCOMPLEX *RDL, MYCOMPLEX *RUL, MYCOMPLEX *TDL, MYCOMPLEX *TUL)
+void grt_static_RT_matrix_SH(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M)
 {
+    MODEL_2LAYS_ATTRIB(MYCOMPLEX, mu);
+    
     // 公式(6.3.18)
     MYCOMPLEX dmu = mu1 - mu2;
     MYCOMPLEX amu = mu1 + mu2;
 
     // Reflection
-    *RDL = dmu/amu;
-    *RUL = - dmu/amu;
+    M->RDL = dmu/amu;
+    M->RUL = - dmu/amu;
 
     // Transmission
-    *TDL = 2.0*mu1/amu;
-    *TUL = (*TDL)*mu2/mu1;
+    M->TDL = 2.0*mu1/amu;
+    M->TUL = (M->TDL)*mu2/mu1;
 }
 
 
-void grt_static_delay_RT_matrix_PSV(
-    MYREAL thk, MYREAL k,
-    MYCOMPLEX RD[2][2], MYCOMPLEX RU[2][2], 
-    MYCOMPLEX TD[2][2], MYCOMPLEX TU[2][2])
+void grt_static_delay_RT_matrix(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M)
 {
+    MYREAL thk = mod1d->Thk[iy-1];
+    MYREAL k = mod1d->k;
+    
     MYCOMPLEX ex, ex2;
     ex = exp(- k*thk);
     ex2 = ex * ex;
 
-    RD[0][0] *= ex2;   RD[0][1] *= ex2;
-    RD[1][0] *= ex2;   RD[1][1] *= ex2;
+    M->RD[0][0] *= ex2;   M->RD[0][1] *= ex2;
+    M->RD[1][0] *= ex2;   M->RD[1][1] *= ex2;
 
-    TD[0][0] *= ex;    TD[0][1] *= ex;
-    TD[1][0] *= ex;    TD[1][1] *= ex;
+    M->TD[0][0] *= ex;    M->TD[0][1] *= ex;
+    M->TD[1][0] *= ex;    M->TD[1][1] *= ex;
 
-    TU[0][0] *= ex;    TU[0][1] *= ex;
-    TU[1][0] *= ex;    TU[1][1] *= ex;
-}
+    M->TU[0][0] *= ex;    M->TU[0][1] *= ex;
+    M->TU[1][0] *= ex;    M->TU[1][1] *= ex;
 
-
-void grt_static_delay_RT_matrix_SH(
-    MYREAL thk, MYREAL k,
-    MYCOMPLEX *RDL, MYCOMPLEX *RUL, 
-    MYCOMPLEX *TDL, MYCOMPLEX *TUL)
-{
-    MYCOMPLEX ex, ex2;
-    ex = exp(- k*thk);
-    ex2 = ex * ex;
-
-    *RDL *= ex2;
-    *TDL *= ex;
-    *TUL *= ex;
+    M->RDL *= ex2;
+    M->TDL *= ex;
+    M->TUL *= ex;
 }

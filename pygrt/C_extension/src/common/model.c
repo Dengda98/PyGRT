@@ -36,6 +36,10 @@
     X(delta, MYCOMPLEX)\
     X(atna, MYCOMPLEX)\
     X(atnb, MYCOMPLEX)\
+    X(xa, MYCOMPLEX)\
+    X(xb, MYCOMPLEX)\
+    X(caca, MYCOMPLEX)\
+    X(cbcb, MYCOMPLEX)\
 
 
 void grt_print_mod1d(const GRT_MODEL1D *mod1d){
@@ -137,6 +141,10 @@ GRT_MODEL1D * grt_copy_mod1d(const GRT_MODEL1D *mod1d1){
     mod1d2->ircvup = mod1d1->ircvup;
     mod1d2->io_depth = mod1d1->io_depth;
 
+    mod1d2->omega = mod1d1->omega;
+    mod1d2->k = mod1d1->k;
+    mod1d2->c_phase = mod1d1->c_phase;
+
     #define X(P, T)  memcpy(mod1d2->P, mod1d1->P, sizeof(T)*n);
         GRT_FOR_EACH_MODEL_QUANTITY_ARRAY
     #undef X
@@ -171,30 +179,27 @@ void grt_attenuate_mod1d(GRT_MODEL1D *mod1d, MYCOMPLEX omega){
 }
 
 
-void grt_get_mod1d_xa_xb(
-    const GRT_MODEL1D *mod1d, const MYINT iy, const MYCOMPLEX c_phase, 
-    MYCOMPLEX *pt_caca, MYCOMPLEX *pt_xa, MYCOMPLEX *pt_cbcb, MYCOMPLEX *pt_xb)
+void grt_mod1d_xa_xb(GRT_MODEL1D *mod1d)
 {
-    MYREAL va, vb;
-    va = mod1d->Va[iy];
-    vb = mod1d->Vb[iy];
-    MYCOMPLEX atna, atnb;
-    atna = mod1d->atna[iy];
-    atnb = mod1d->atnb[iy];
+    mod1d->c_phase = mod1d->omega/mod1d->k;
+    for(MYINT i=0; i<mod1d->n; ++i){
+        MYREAL va, vb;
+        va = mod1d->Va[i];
+        vb = mod1d->Vb[i];
+        MYCOMPLEX atna, atnb;
+        atna = mod1d->atna[i];
+        atnb = mod1d->atnb[i];
 
-    MYCOMPLEX caca, cbcb;
-    if(pt_caca!=NULL && pt_xa!=NULL){
-        caca = c_phase / (va*atna); 
+        MYCOMPLEX caca, cbcb;
+        caca = mod1d->c_phase / (va*atna); 
         caca *= caca;
-        *pt_caca = caca;
-        *pt_xa = sqrt(1.0 - caca);
-    }
-    
-    if(pt_cbcb!=NULL && pt_xb!=NULL){
-        cbcb = (vb > 0.0)? c_phase / (vb*atnb) : 0.0;  // 考虑液体层
+        mod1d->caca[i] = caca;
+        mod1d->xa[i] = sqrt(1.0 - caca);
+        
+        cbcb = (vb > 0.0)? mod1d->c_phase / (vb*atnb) : 0.0;  // 考虑液体层
         cbcb *= cbcb;
-        *pt_cbcb = cbcb;
-        *pt_xb = sqrt(1.0 - cbcb);
+        mod1d->cbcb[i] = cbcb;
+        mod1d->xb[i] = sqrt(1.0 - cbcb);
     }
 }
 

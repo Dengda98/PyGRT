@@ -11,6 +11,7 @@
 #pragma once
 
 #include "grt/common/const.h"
+#include "grt/common/model.h"
  
 /**
  * 计算不同震源的静态震源系数，文献/书中仅提供剪切源的震源系数，其它震源系数重新推导
@@ -18,11 +19,10 @@
  * 数组形状代表在[i][j][p]时表示i类震源的
  * P(j=0),SV(j=1)的震源系数(分别对应q,w)，且分为下行波(p=0)和上行波(p=1). 
  * 
- * @param[in]     delta    震源层的\f$ \Delta \f$
- * @param[in]     k        波数
+ * @param[in]     mod1d    模型结构体指针
  * @param[out]    coef     震源系数 \f$ P_m, SV_m, SH_m \f$
  */
-void grt_static_source_coef_PSV(MYCOMPLEX delta, MYREAL k, MYCOMPLEX coef[GRT_SRC_M_NUM][GRT_QWV_NUM-1][2]);
+void grt_static_source_coef_PSV(const GRT_MODEL1D *mod1d, MYCOMPLEX coef[GRT_SRC_M_NUM][GRT_QWV_NUM-1][2]);
 
-/* SH 波的静态震源系数，参数见 static_source_coef_PSV */
-void grt_static_source_coef_SH(MYREAL k, MYCOMPLEX coef[GRT_SRC_M_NUM][2]);
+/* SH 波的静态震源系数 */
+void grt_static_source_coef_SH(const GRT_MODEL1D *mod1d, MYCOMPLEX coef[GRT_SRC_M_NUM][2]);

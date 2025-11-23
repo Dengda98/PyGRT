@@ -134,6 +134,9 @@ void grt_integ_grn_spec(
 
     // 每个频率的计算中是否有除0错误
     MYINT freq_invstats[nf2+1];
+    for(MYINT i=0; i < nf2+1; ++i){
+        freq_invstats[i] = GRT_INVERSE_SUCCESS;
+    }
 
     // 频率omega循环
     // schedule语句可以动态调度任务，最大程度地使用计算资源
@@ -159,6 +162,10 @@ void grt_integ_grn_spec(
     #else 
         local_mod1d = mod1d;
     #endif
+
+        // 将 omega 计入模型结构体
+        local_mod1d->omega = omega;
+
         grt_attenuate_mod1d(local_mod1d, omega);
 
         // 是否要输出积分过程文件

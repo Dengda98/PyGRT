@@ -69,6 +69,10 @@ class c_GRT_MODEL1D(Structure):
     :field ircvup:   台站层位是否高于震源 
     :field io_depth: 模型读入的第一列是否为每层顶界面深度
 
+    :field omega:    圆频率
+    :field omega:    波数
+    :field c_phase:  相速度
+
     :field thk:      数组, 每层层厚(km)
     :field dep:      数组, 每层顶界面深度(km)
     :field Va:       数组, 每层P波速度(km/s)
@@ -76,6 +80,18 @@ class c_GRT_MODEL1D(Structure):
     :field Rho:      数组, 每层密度(g/cm^3)
     :field Qa:       数组, 每层P波品质因子Q_P
     :field Qb:       数组, 每层S波品质因子Q_S
+    :field Qainv:
+    :field Qbinv:
+
+    :field mu:
+    :field lambda:
+    :field delta:
+    :field atna:
+    :field atnb:
+    :field xa:
+    :field xb:
+    :field caca:
+    :field cbcb:
 
     """
     _fields_ = [
@@ -86,6 +102,10 @@ class c_GRT_MODEL1D(Structure):
         ('ircv', c_int),
         ('ircvup', c_bool),
         ('io_depth', c_bool),
+
+        ('omega', CPLX),
+        ('k', REAL),
+        ('c_phase', CPLX),
 
         ('Thk', PREAL),
         ('Dep', PREAL),
@@ -102,4 +122,8 @@ class c_GRT_MODEL1D(Structure):
         ('delta', PCPLX),
         ('atna', PCPLX),
         ('atnb', PCPLX),
+        ('xa', PCPLX),
+        ('xb', PCPLX),
+        ('caca', PCPLX),
+        ('cbcb', PCPLX),
     ]

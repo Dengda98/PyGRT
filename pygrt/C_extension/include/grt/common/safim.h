@@ -29,7 +29,7 @@
  * 其中\f$x=kr\f$.
  * 
  * 
- * @param[in]      mod1d         `MODEL1D` 结构体指针
+ * @param[in,out]  mod1d         `GRT_MODEL1D` 结构体指针
  * @param[in]      vmin          最小速度，用于将k区间整体分为两段，在自适应过程中第二段使用更宽松的拟合规则
  * @param[in]      k0            前一部分的波数积分结束点k值
  * @param[in]      dk0           前一部分的波数积分间隔
@@ -52,7 +52,7 @@
  * @return  k        积分截至时的波数
  */
 MYREAL grt_sa_filon_integ(
-    const GRT_MODEL1D *mod1d, MYREAL vmin, MYREAL k0, MYREAL dk0, MYREAL tol, MYREAL kmax, MYCOMPLEX omega, 
+    GRT_MODEL1D *mod1d, MYREAL vmin, MYREAL k0, MYREAL dk0, MYREAL tol, MYREAL kmax, MYCOMPLEX omega, 
     MYINT nr, MYREAL *rs,
     MYCOMPLEX sum_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     bool calc_upar,

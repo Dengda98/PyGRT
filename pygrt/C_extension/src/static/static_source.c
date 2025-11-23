@@ -16,7 +16,7 @@
 #include "grt/static/static_source.h"
 #include "grt/common/const.h"
 
-void grt_static_source_coef_PSV(MYCOMPLEX delta, MYREAL k, MYCOMPLEX coef[GRT_SRC_M_NUM][GRT_QWV_NUM-1][2])
+void grt_static_source_coef_PSV(const GRT_MODEL1D *mod1d, MYCOMPLEX coef[GRT_SRC_M_NUM][GRT_QWV_NUM-1][2])
 {
     // 先全部赋0 
     for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
@@ -26,6 +26,10 @@ void grt_static_source_coef_PSV(MYCOMPLEX delta, MYREAL k, MYCOMPLEX coef[GRT_SR
             }
         }
     }
+
+    MYINT isrc = mod1d->isrc;
+    MYCOMPLEX delta = mod1d->delta[isrc];
+    MYREAL k = mod1d->k;
 
     MYCOMPLEX tmp;
     MYCOMPLEX A = 1.0+delta;
@@ -54,8 +58,10 @@ void grt_static_source_coef_PSV(MYCOMPLEX delta, MYREAL k, MYCOMPLEX coef[GRT_SR
 }
 
 
-void grt_static_source_coef_SH(MYREAL k, MYCOMPLEX coef[GRT_SRC_M_NUM][2])
+void grt_static_source_coef_SH(const GRT_MODEL1D *mod1d, MYCOMPLEX coef[GRT_SRC_M_NUM][2])
 {
+    MYREAL k = mod1d->k;
+    
     // 先全部赋0 
     for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
         for(MYINT p=0; p<2; ++p){

@@ -80,7 +80,6 @@
  *  计算相应的矩阵。  
  *
  *  @param[in]     mod1d           `MODEL1D` 结构体指针
- *  @param[in]     k               波数
  *  @param[out]    QWV             不同震源，不同阶数的核函数 \f$ q_m, w_m, v_m \f$
  *  @param[in]     calc_uiz        是否计算ui_z（位移u对坐标z的偏导）
  *  @param[out]    QWV_uiz         不同震源，不同阶数的核函数对z的偏导 \f$ \frac{\partial q_m}{\partial z}, \frac{\partial w_m}{\partial z}, \frac{\partial v_m}{\partial z} \f$
@@ -88,7 +87,7 @@
  * 
  */
 void grt_kernel(
-    const GRT_MODEL1D *mod1d, MYCOMPLEX omega, MYREAL k, MYCOMPLEX QWV[GRT_SRC_M_NUM][GRT_QWV_NUM],
+    const GRT_MODEL1D *mod1d, MYCOMPLEX QWV[GRT_SRC_M_NUM][GRT_QWV_NUM],
     bool calc_uiz, MYCOMPLEX QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM], MYINT *stats);
 
 
