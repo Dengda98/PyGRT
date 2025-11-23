@@ -117,7 +117,7 @@ static void ptam_once(
 
 
 void grt_PTA_method(
-    GRT_MODEL1D *mod1d, MYREAL k0, MYREAL predk, MYCOMPLEX omega, 
+    GRT_MODEL1D *mod1d, MYREAL k0, MYREAL predk,
     MYINT nr, MYREAL *rs,
     MYCOMPLEX sum_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     bool calc_upar,
@@ -217,8 +217,7 @@ void grt_PTA_method(
             k += dk;
 
             // 计算核函数 F(k, w)
-            mod1d->k = k;
-            grt_mod1d_xa_xb(mod1d);
+            grt_mod1d_xa_xb(mod1d, k);
             kerfunc(mod1d, QWV, calc_upar, QWV_uiz, stats); 
             if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
@@ -250,9 +249,6 @@ void grt_PTA_method(
             if(iendk0) break;
         }// end k loop
     }
-
-    // printf("w=%f, ik=%d\n", creal(omega), ik);
-
 
     // 做缩减序列，赋值最终解
     for(MYINT ir=0; ir<nr; ++ir){

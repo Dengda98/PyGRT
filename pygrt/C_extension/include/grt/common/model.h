@@ -95,9 +95,10 @@ void grt_attenuate_mod1d(GRT_MODEL1D *mod1d, MYCOMPLEX omega);
 /**
  * 根据记录好的圆频率和波数，计算相速度和每层的 xa, xb, caca, cbcb
  * 
- * @param[in]      mod1d         模型结构体指针
+ * @param[in,out]      mod1d    模型结构体指针
+ * @param[in]          k        波数
  */
-void grt_mod1d_xa_xb(GRT_MODEL1D *mod1d);
+void grt_mod1d_xa_xb(GRT_MODEL1D *mod1d, const MYREAL k);
 
 
 /**

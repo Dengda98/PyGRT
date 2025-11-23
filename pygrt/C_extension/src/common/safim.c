@@ -293,7 +293,7 @@ static void interv_integ(
 
 
 MYREAL grt_sa_filon_integ(
-    GRT_MODEL1D *mod1d, MYREAL vmin, MYREAL k0, MYREAL dk0, MYREAL tol, MYREAL kmax, MYCOMPLEX omega, 
+    GRT_MODEL1D *mod1d, MYREAL k0, MYREAL dk0, MYREAL tol, MYREAL kmax, MYREAL kref, 
     MYINT nr, MYREAL *rs,
     MYCOMPLEX sum_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     bool calc_upar,
@@ -301,9 +301,6 @@ MYREAL grt_sa_filon_integ(
     MYCOMPLEX sum_uir_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     FILE *fstats, GRT_KernelFunc kerfunc, MYINT *stats)
 {   
-    // 将k区间整体分为[dk0, kref]和[kref, kmax]，后一段使用更宽松的拟合规则
-    MYREAL kref = creal(omega)/fabs(vmin);
-
     // 从0开始，存储第二部分Filon积分的结果
     MYCOMPLEX (*sum_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (MYCOMPLEX(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_J));
     MYCOMPLEX (*sum_uiz_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (calc_upar)? (MYCOMPLEX(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_uiz_J)) : NULL;
@@ -326,8 +323,7 @@ MYREAL grt_sa_filon_integ(
         .F3_uiz = {{{0}}} 
     };
     for(MYINT i=0; i<3; ++i) {
-        mod1d->k = Kitv.k3[i];
-        grt_mod1d_xa_xb(mod1d);
+        grt_mod1d_xa_xb(mod1d, Kitv.k3[i]);
         kerfunc(mod1d, Kitv.F3[i], calc_upar, Kitv.F3_uiz[i], stats);
         if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
     }
@@ -375,13 +371,11 @@ MYREAL grt_sa_filon_integ(
             memcpy(Kitv_right.F3_uiz[0], Kitv.F3_uiz[1], sizeof(MYCOMPLEX)*GRT_SRC_M_NUM*GRT_QWV_NUM);
             memcpy(Kitv_right.F3_uiz[2], Kitv.F3_uiz[2], sizeof(MYCOMPLEX)*GRT_SRC_M_NUM*GRT_QWV_NUM);
         }
-        mod1d->k = Kitv_left.k3[1];
-        grt_mod1d_xa_xb(mod1d);
+        grt_mod1d_xa_xb(mod1d, Kitv_left.k3[1]);
         kerfunc(mod1d, Kitv_left.F3[1], calc_upar, Kitv_left.F3_uiz[1], stats);
         if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
-        mod1d->k = Kitv_right.k3[1];
-        grt_mod1d_xa_xb(mod1d);
+        grt_mod1d_xa_xb(mod1d, Kitv_right.k3[1]);
         kerfunc(mod1d, Kitv_right.F3[1], calc_upar, Kitv_right.F3_uiz[1], stats);
         if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
