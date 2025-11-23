@@ -216,7 +216,7 @@ void grt_integ_grn_spec(
 
         // 常规的波数积分
         k = grt_discrete_integ(
-            local_mod1d, dk, (useFIM)? filonK : kmax, keps, omega, nr, rs, 
+            local_mod1d, dk, (useFIM)? filonK : kmax, keps, nr, rs, 
             sum_J, calc_upar, sum_uiz_J, sum_uir_J,
             fstats, grt_kernel, &freq_invstats[iw]);
     
@@ -225,14 +225,14 @@ void grt_integ_grn_spec(
             if(filondk > 0.0){
                 // 基于线性插值的Filon积分，固定采样间隔
                 k = grt_linear_filon_integ(
-                    local_mod1d, k, dk, filondk, kmax, keps, omega, nr, rs, 
+                    local_mod1d, k, dk, filondk, kmax, keps, nr, rs, 
                     sum_J, calc_upar, sum_uiz_J, sum_uir_J,
                     fstats, grt_kernel, &freq_invstats[iw]);
             }
             else if(safilonTol > 0.0){
                 // 基于自适应采样的Filon积分
                 k = grt_sa_filon_integ(
-                    local_mod1d, fabs(vmin_ref)/ampk, k, dk, safilonTol, kmax, omega, nr, rs, 
+                    local_mod1d, k, dk, safilonTol, kmax, creal(omega)/fabs(vmin_ref)*ampk, nr, rs, 
                     sum_J, calc_upar, sum_uiz_J, sum_uir_J,
                     fstats, grt_kernel, &freq_invstats[iw]);
             }
@@ -241,7 +241,7 @@ void grt_integ_grn_spec(
         // k之后的部分使用峰谷平均法进行显式收敛，建议在浅源地震的时候使用   
         if(vmin_ref < 0.0 && freq_invstats[iw]==GRT_INVERSE_SUCCESS){
             grt_PTA_method(
-                local_mod1d, k, dk, omega, nr, rs, 
+                local_mod1d, k, dk, nr, rs, 
                 sum_J, calc_upar, sum_uiz_J, sum_uir_J,
                 ptam_fstatsnr, grt_kernel, &freq_invstats[iw]);
         }

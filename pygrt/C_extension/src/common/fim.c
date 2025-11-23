@@ -23,7 +23,7 @@
 
 
 MYREAL grt_linear_filon_integ(
-    GRT_MODEL1D *mod1d, MYREAL k0, MYREAL dk0, MYREAL dk, MYREAL kmax, MYREAL keps, MYCOMPLEX omega, 
+    GRT_MODEL1D *mod1d, MYREAL k0, MYREAL dk0, MYREAL dk, MYREAL kmax, MYREAL keps,
     MYINT nr, MYREAL *rs,
     MYCOMPLEX sum_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     bool calc_upar,
@@ -59,8 +59,7 @@ MYREAL grt_linear_filon_integ(
         k += dk; 
 
         // 计算核函数 F(k, w)
-        mod1d->k = k;
-        grt_mod1d_xa_xb(mod1d);
+        grt_mod1d_xa_xb(mod1d, k);
         kerfunc(mod1d, QWV, calc_upar, QWV_uiz, stats); 
         if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
@@ -175,8 +174,7 @@ MYREAL grt_linear_filon_integ(
         }
 
         // 计算核函数 F(k, w)
-        mod1d->k = k0N;
-        grt_mod1d_xa_xb(mod1d);
+        grt_mod1d_xa_xb(mod1d, k0N);
         kerfunc(mod1d, QWV, calc_upar, QWV_uiz, stats);
         if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN; 
 

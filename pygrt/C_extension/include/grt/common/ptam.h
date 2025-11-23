@@ -30,7 +30,6 @@
  * @param[in]     k0            先前的积分已经进行到了波数k0
  * @param[in]     predk         先前的积分使用的积分间隔dk，因为峰谷平均法使用的
  *                              积分间隔会和之前的不一致，这里传入该系数以做预先调整
- * @param[in]     omega         复数频率 
  * @param[in]     nr            震中距数量
  * @param[in]     rs            震中距数组  
  * 
@@ -47,7 +46,7 @@
  * 
  */
 void grt_PTA_method(
-    GRT_MODEL1D *mod1d, MYREAL k0, MYREAL predk, MYCOMPLEX omega, 
+    GRT_MODEL1D *mod1d, MYREAL k0, MYREAL predk,
     MYINT nr, MYREAL *rs,
     MYCOMPLEX sum_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     bool calc_upar,

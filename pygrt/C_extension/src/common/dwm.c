@@ -24,7 +24,7 @@
 
 
 MYREAL grt_discrete_integ(
-    GRT_MODEL1D *mod1d, MYREAL dk, MYREAL kmax, MYREAL keps, MYCOMPLEX omega, 
+    GRT_MODEL1D *mod1d, MYREAL dk, MYREAL kmax, MYREAL keps,
     MYINT nr, MYREAL *rs,
     MYCOMPLEX sum_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     bool calc_upar,
@@ -56,10 +56,8 @@ MYREAL grt_discrete_integ(
         if(k > kmax && ik > 2)  break;
         k += dk; 
 
-        // printf("w=%15.5e, ik=%d\n", creal(omega), ik);
         // 计算核函数 F(k, w)
-        mod1d->k = k;
-        grt_mod1d_xa_xb(mod1d);
+        grt_mod1d_xa_xb(mod1d, k);
         kerfunc(mod1d, QWV, calc_upar, QWV_uiz, stats); 
         if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
         
@@ -135,8 +133,6 @@ MYREAL grt_discrete_integ(
         if(iendk) break;
 
     } // END k loop
-
-    // printf("w=%15.5e, ik=%d\n", creal(omega), ik);
 
     BEFORE_RETURN:
     GRT_SAFE_FREE_PTR(iendkrs);

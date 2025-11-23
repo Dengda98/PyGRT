@@ -27,7 +27,6 @@
  * @param[in]     dk            波数积分间隔
  * @param[in]     kmax          波数积分的上限
  * @param[in]     keps          波数积分的收敛条件，要求在某震中距下所有格林函数都收敛，为负数代表不提前判断收敛，按照波数积分上限进行积分
- * @param[in]     omega         复数频率
  * @param[in]     nr            震中距数量
  * @param[in]     rs            震中距数组
  * 
@@ -44,7 +43,7 @@
  * @return  k        积分截至时的波数
  */
 MYREAL grt_discrete_integ(
-    GRT_MODEL1D *mod1d, MYREAL dk, MYREAL kmax, MYREAL keps, MYCOMPLEX omega, 
+    GRT_MODEL1D *mod1d, MYREAL dk, MYREAL kmax, MYREAL keps,
     MYINT nr, MYREAL *rs,
     MYCOMPLEX sum_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     bool calc_upar,
