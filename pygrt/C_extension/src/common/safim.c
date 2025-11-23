@@ -299,7 +299,7 @@ MYREAL grt_sa_filon_integ(
     bool calc_upar,
     MYCOMPLEX sum_uiz_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     MYCOMPLEX sum_uir_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
-    FILE *fstats, GRT_KernelFunc kerfunc, MYINT *stats)
+    FILE *fstats, GRT_KernelFunc kerfunc)
 {   
     // 从0开始，存储第二部分Filon积分的结果
     MYCOMPLEX (*sum_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (MYCOMPLEX(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_J));
@@ -324,8 +324,8 @@ MYREAL grt_sa_filon_integ(
     };
     for(MYINT i=0; i<3; ++i) {
         grt_mod1d_xa_xb(mod1d, Kitv.k3[i]);
-        kerfunc(mod1d, Kitv.F3[i], calc_upar, Kitv.F3_uiz[i], stats);
-        if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
+        kerfunc(mod1d, Kitv.F3[i], calc_upar, Kitv.F3_uiz[i]);
+        if(mod1d->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
     }
     stack_push(&stack, Kitv);
 
@@ -372,12 +372,12 @@ MYREAL grt_sa_filon_integ(
             memcpy(Kitv_right.F3_uiz[2], Kitv.F3_uiz[2], sizeof(MYCOMPLEX)*GRT_SRC_M_NUM*GRT_QWV_NUM);
         }
         grt_mod1d_xa_xb(mod1d, Kitv_left.k3[1]);
-        kerfunc(mod1d, Kitv_left.F3[1], calc_upar, Kitv_left.F3_uiz[1], stats);
-        if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
+        kerfunc(mod1d, Kitv_left.F3[1], calc_upar, Kitv_left.F3_uiz[1]);
+        if(mod1d->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
         grt_mod1d_xa_xb(mod1d, Kitv_right.k3[1]);
-        kerfunc(mod1d, Kitv_right.F3[1], calc_upar, Kitv_right.F3_uiz[1], stats);
-        if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
+        kerfunc(mod1d, Kitv_right.F3[1], calc_upar, Kitv_right.F3_uiz[1]);
+        if(mod1d->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
 
         // 增加新值，并比较QWV最大绝对值

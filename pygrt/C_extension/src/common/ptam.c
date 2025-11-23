@@ -123,7 +123,7 @@ void grt_PTA_method(
     bool calc_upar,
     MYCOMPLEX sum_uiz_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     MYCOMPLEX sum_uir_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
-    FILE *ptam_fstatsnr[nr][2], GRT_KernelFunc kerfunc, MYINT *stats)
+    FILE *ptam_fstatsnr[nr][2], GRT_KernelFunc kerfunc)
 {   
     // 需要兼容对正常收敛而不具有规律波峰波谷的序列
     // 有时序列收敛比较好，不表现为规律的波峰波谷，
@@ -218,8 +218,8 @@ void grt_PTA_method(
 
             // 计算核函数 F(k, w)
             grt_mod1d_xa_xb(mod1d, k);
-            kerfunc(mod1d, QWV, calc_upar, QWV_uiz, stats); 
-            if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
+            kerfunc(mod1d, QWV, calc_upar, QWV_uiz); 
+            if(mod1d->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
             // 记录核函数
             if(fstatsK!=NULL)  grt_write_stats(fstatsK, k, QWV);

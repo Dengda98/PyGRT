@@ -145,6 +145,8 @@ GRT_MODEL1D * grt_copy_mod1d(const GRT_MODEL1D *mod1d1){
     mod1d2->k = mod1d1->k;
     mod1d2->c_phase = mod1d1->c_phase;
 
+    mod1d2->stats = mod1d1->stats;
+
     #define X(P, T)  memcpy(mod1d2->P, mod1d1->P, sizeof(T)*n);
         GRT_FOR_EACH_MODEL_QUANTITY_ARRAY
     #undef X

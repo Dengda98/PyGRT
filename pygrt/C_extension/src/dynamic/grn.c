@@ -132,11 +132,8 @@ void grt_integ_grn_spec(
     // 进度条变量 
     MYINT progress=0;
 
-    // 每个频率的计算中是否有除0错误
-    MYINT freq_invstats[nf2+1];
-    for(MYINT i=0; i < nf2+1; ++i){
-        freq_invstats[i] = GRT_INVERSE_SUCCESS;
-    }
+    // 记录每个频率的计算中是否有除0错误
+    MYINT *freq_invstats = (MYINT *)calloc(nf2+1, sizeof(MYINT));
 
     // 频率omega循环
     // schedule语句可以动态调度任务，最大程度地使用计算资源
@@ -214,36 +211,42 @@ void grt_integ_grn_spec(
         // 计算核函数过程中是否有遇到除零错误
         freq_invstats[iw]=GRT_INVERSE_SUCCESS;
 
+
+        // ===================================================================================
+        //                          Wavenumber Integration
         // 常规的波数积分
         k = grt_discrete_integ(
             local_mod1d, dk, (useFIM)? filonK : kmax, keps, nr, rs, 
             sum_J, calc_upar, sum_uiz_J, sum_uir_J,
-            fstats, grt_kernel, &freq_invstats[iw]);
+            fstats, grt_kernel);
+        if(local_mod1d->stats==GRT_INVERSE_FAILURE)  goto NEXT_FREQ;
     
         // 使用Filon积分
-        if(useFIM && freq_invstats[iw]==GRT_INVERSE_SUCCESS){
+        if(useFIM){
             if(filondk > 0.0){
                 // 基于线性插值的Filon积分，固定采样间隔
                 k = grt_linear_filon_integ(
                     local_mod1d, k, dk, filondk, kmax, keps, nr, rs, 
                     sum_J, calc_upar, sum_uiz_J, sum_uir_J,
-                    fstats, grt_kernel, &freq_invstats[iw]);
+                    fstats, grt_kernel);
             }
             else if(safilonTol > 0.0){
                 // 基于自适应采样的Filon积分
                 k = grt_sa_filon_integ(
                     local_mod1d, k, dk, safilonTol, kmax, creal(omega)/fabs(vmin_ref)*ampk, nr, rs, 
                     sum_J, calc_upar, sum_uiz_J, sum_uir_J,
-                    fstats, grt_kernel, &freq_invstats[iw]);
+                    fstats, grt_kernel);
             }
+            if(local_mod1d->stats==GRT_INVERSE_FAILURE)  goto NEXT_FREQ;
         }
 
         // k之后的部分使用峰谷平均法进行显式收敛，建议在浅源地震的时候使用   
-        if(vmin_ref < 0.0 && freq_invstats[iw]==GRT_INVERSE_SUCCESS){
+        if(vmin_ref < 0.0){
             grt_PTA_method(
                 local_mod1d, k, dk, nr, rs, 
                 sum_J, calc_upar, sum_uiz_J, sum_uir_J,
-                ptam_fstatsnr, grt_kernel, &freq_invstats[iw]);
+                ptam_fstatsnr, grt_kernel);
+            if(local_mod1d->stats==GRT_INVERSE_FAILURE)  goto NEXT_FREQ;
         }
 
         // fprintf(stderr, "iw=%d, w=%.5e, k=%.5e, dk=%.5e, nk=%d\n", iw, w, k, dk, (int)(k/dk));
@@ -251,13 +254,17 @@ void grt_integ_grn_spec(
 
         // 记录到格林函数结构体内
         // 如果计算核函数过程中存在除零错误，则放弃该频率【通常在大震中距的低频段】
-        if(freq_invstats[iw]==GRT_INVERSE_SUCCESS){ 
-            recordin_GRN(iw, nr, coef, sum_J, grn);
-            if(calc_upar){
-                recordin_GRN(iw, nr, coef, sum_uiz_J, grn_uiz);
-                recordin_GRN(iw, nr, coef, sum_uir_J, grn_uir);
-            }
+        recordin_GRN(iw, nr, coef, sum_J, grn);
+        if(calc_upar){
+            recordin_GRN(iw, nr, coef, sum_uiz_J, grn_uiz);
+            recordin_GRN(iw, nr, coef, sum_uir_J, grn_uir);
         }
+        // ===================================================================================
+
+        // 如果有什么计算意外，从以上的波数积分部分跳至此处
+        NEXT_FREQ:
+        freq_invstats[iw] = local_mod1d->stats;
+
 
         if(fstats!=NULL) fclose(fstats);
         for(MYINT ir=0; ir<nr; ++ir){
@@ -292,12 +299,13 @@ void grt_integ_grn_spec(
 
     GRT_SAFE_FREE_PTR_ARRAY(ptam_fstatsdir, nr);
 
-    // 打印freq_invstats
+    // 打印 freq_invstats
     for(MYINT iw=nf1; iw<=nf2; ++iw){
         if(freq_invstats[iw]==GRT_INVERSE_FAILURE){
             fprintf(stderr, "iw=%d, freq=%e(Hz), meet Zero Divison Error, results are filled with 0.\n", iw, freqs[iw]);
         }
     }
+    GRT_SAFE_FREE_PTR(freq_invstats);
 
     // 程序运行结束时间
     struct timeval end_t;

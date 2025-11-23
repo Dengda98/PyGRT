@@ -41,7 +41,6 @@
  * 
  * @param[out]    ptam_fstatsnr      峰谷平均法过程文件指针数组
  * @param[in]     kerfunc            计算核函数的函数指针
- * @param[out]    stats              状态代码，是否有除零错误，非0为异常值
  * 
  * 
  */
@@ -52,7 +51,7 @@ void grt_PTA_method(
     bool calc_upar,
     MYCOMPLEX sum_uiz_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     MYCOMPLEX sum_uir_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
-    FILE *ptam_fstatsnr[nr][2], GRT_KernelFunc kerfunc, MYINT *stats);
+    FILE *ptam_fstatsnr[nr][2], GRT_KernelFunc kerfunc);
 
 
 

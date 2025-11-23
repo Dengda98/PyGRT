@@ -150,15 +150,12 @@ void grt_integ_static_grn(
         GRT_SAFE_FREE_PTR(fname);
     }
 
-    // 计算核函数过程中是否有遇到除零错误
-    //【静态解理论上不会有除零错误，这里是对应动态解的函数接口，作为一个占位符】
-    MYINT inv_stats=GRT_INVERSE_SUCCESS;
 
     // 常规的波数积分
     k = grt_discrete_integ(
         mod1d, dk, (useFIM)? filonK : kmax, keps, nr, rs, 
         sum_J, calc_upar, sum_uiz_J, sum_uir_J,
-        fstats, grt_static_kernel, &inv_stats);
+        fstats, grt_static_kernel);
     
     // 基于线性插值的Filon积分
     if(useFIM){
@@ -167,14 +164,14 @@ void grt_integ_static_grn(
             k = grt_linear_filon_integ(
                 mod1d, k, dk, filondk, kmax, keps, nr, rs, 
                 sum_J, calc_upar, sum_uiz_J, sum_uir_J,
-                fstats, grt_static_kernel, &inv_stats);
+                fstats, grt_static_kernel);
         }
         else if(safilonTol > 0.0){
             // 基于自适应采样的Filon积分
             k = grt_sa_filon_integ(
                 mod1d, k, dk, safilonTol, kmax, kmax, nr, rs, 
                 sum_J, calc_upar, sum_uiz_J, sum_uir_J,
-                fstats, grt_static_kernel, &inv_stats);
+                fstats, grt_static_kernel);
         }
     }
 
@@ -183,7 +180,7 @@ void grt_integ_static_grn(
         grt_PTA_method(
             mod1d, k, dk, nr, rs, 
             sum_J, calc_upar, sum_uiz_J, sum_uir_J,
-            ptam_fstatsnr, grt_static_kernel, &inv_stats);
+            ptam_fstatsnr, grt_static_kernel);
     }
 
 

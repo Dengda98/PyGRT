@@ -28,6 +28,9 @@ typedef struct {
     /* 一些辅助变量 */
     MYCOMPLEX invT[2][2];
     MYCOMPLEX invTL;
+
+    /* 状态变量 */
+    MYINT stats;   ///< 是否有除零错误，非0为异常值
 } RT_MATRIX;
 
 
@@ -51,62 +54,61 @@ typedef struct {
  * @param[in]      M1            上层 R/T 系数
  * @param[in]      M2            下层 R/T 系数
  * @param[out]     M2            合并 R/T 系数
- * @param[out]     stats         状态代码，是否有除零错误，非0为异常值
  * 
  */
-void grt_recursion_RD(const RT_MATRIX *M1, const RT_MATRIX *M2, RT_MATRIX *M, MYINT *stats);
+void grt_recursion_RD(const RT_MATRIX *M1, const RT_MATRIX *M2, RT_MATRIX *M);
 
 /** 根据公式(5.5.3(1))进行递推 P-SV ，仅计算RD */
-void grt_recursion_RD_PSV(const RT_MATRIX *M1, const RT_MATRIX *M2, RT_MATRIX *M, MYINT *stats);
+void grt_recursion_RD_PSV(const RT_MATRIX *M1, const RT_MATRIX *M2, RT_MATRIX *M);
 
 /** 根据公式(5.5.3(1))进行递推 SH ，仅计算RDL */
-void grt_recursion_RD_SH(const RT_MATRIX *M1, const RT_MATRIX *M2, RT_MATRIX *M, MYINT *stats);
+void grt_recursion_RD_SH(const RT_MATRIX *M1, const RT_MATRIX *M2, RT_MATRIX *M);
 
 
 /** 合并 recursion_TD_PSV(SH)，仅计算TD/TDL */
-void grt_recursion_TD(const RT_MATRIX *M1, const RT_MATRIX *M2, RT_MATRIX *M, MYINT *stats);
+void grt_recursion_TD(const RT_MATRIX *M1, const RT_MATRIX *M2, RT_MATRIX *M);
 
 /** 根据公式(5.5.3(2))进行递推 P-SV ，仅计算TD */
-void grt_recursion_TD_PSV(const RT_MATRIX *M1, const RT_MATRIX *M2, RT_MATRIX *M, MYINT *stats);
+void grt_recursion_TD_PSV(const RT_MATRIX *M1, const RT_MATRIX *M2, RT_MATRIX *M);
 
 /** 根据公式(5.5.3(2))进行递推 SH ，仅计算TDL */
-void grt_recursion_TD_SH(const RT_MATRIX *M1, const RT_MATRIX *M2, RT_MATRIX *M, MYINT *stats);
+void grt_recursion_TD_SH(const RT_MATRIX *M1, const RT_MATRIX *M2, RT_MATRIX *M);
 
 
 /** 合并 recursion_RU_PSV(SH)，仅计算RU/RUL */
-void grt_recursion_RU(const RT_MATRIX *M1, const RT_MATRIX *M2, RT_MATRIX *M, MYINT *stats);
+void grt_recursion_RU(const RT_MATRIX *M1, const RT_MATRIX *M2, RT_MATRIX *M);
 
 /** 根据公式(5.5.3(3))进行递推 P-SV ，仅计算RU */
-void grt_recursion_RU_PSV(const RT_MATRIX *M1, const RT_MATRIX *M2, RT_MATRIX *M, MYINT *stats);
+void grt_recursion_RU_PSV(const RT_MATRIX *M1, const RT_MATRIX *M2, RT_MATRIX *M);
 
 /** 根据公式(5.5.3(3))进行递推 SH ，仅计算RUL */
-void grt_recursion_RU_SH(const RT_MATRIX *M1, const RT_MATRIX *M2, RT_MATRIX *M, MYINT *stats);
+void grt_recursion_RU_SH(const RT_MATRIX *M1, const RT_MATRIX *M2, RT_MATRIX *M);
 
 
 /** 合并 recursion_TU_PSV(SH)，仅计算TU/TUL  */
-void grt_recursion_TU(const RT_MATRIX *M1, const RT_MATRIX *M2, RT_MATRIX *M, MYINT *stats);
+void grt_recursion_TU(const RT_MATRIX *M1, const RT_MATRIX *M2, RT_MATRIX *M);
 
 /** 根据公式(5.5.3(4))进行递推 P-SV ，仅计算TU */
-void grt_recursion_TU_PSV(const RT_MATRIX *M1, const RT_MATRIX *M2, RT_MATRIX *M, MYINT *stats);
+void grt_recursion_TU_PSV(const RT_MATRIX *M1, const RT_MATRIX *M2, RT_MATRIX *M);
 
 /** 根据公式(5.5.3(4))进行递推 SH ，仅计算TUL */
-void grt_recursion_TU_SH(const RT_MATRIX *M1, const RT_MATRIX *M2, RT_MATRIX *M, MYINT *stats);
+void grt_recursion_TU_SH(const RT_MATRIX *M1, const RT_MATRIX *M2, RT_MATRIX *M);
 
 
 /** 合并 recursion_RT_matrix_PSV(SH) */
-void grt_recursion_RT_matrix(const RT_MATRIX *M1, const RT_MATRIX *M2, RT_MATRIX *M, MYINT *stats);
+void grt_recursion_RT_matrix(const RT_MATRIX *M1, const RT_MATRIX *M2, RT_MATRIX *M);
 
 /**
  * 根据公式(5.5.3)进行递推 P-SV ，相当于对应四个函数合并，
  * 内部使用了共有变量防止重复计算
  */
-void grt_recursion_RT_matrix_PSV(const RT_MATRIX *M1, const RT_MATRIX *M2, RT_MATRIX *M, MYINT *stats);
+void grt_recursion_RT_matrix_PSV(const RT_MATRIX *M1, const RT_MATRIX *M2, RT_MATRIX *M);
 
 /**
  * 根据公式(5.5.3)进行递推 SH ，相当于对应四个函数合并，
  * 内部使用了共有变量防止重复计算
  */
-void grt_recursion_RT_matrix_SH(const RT_MATRIX *M1, const RT_MATRIX *M2, RT_MATRIX *M, MYINT *stats);
+void grt_recursion_RT_matrix_SH(const RT_MATRIX *M1, const RT_MATRIX *M2, RT_MATRIX *M);
 
 
 /** 打印 R/T 矩阵 */

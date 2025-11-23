@@ -30,7 +30,7 @@ MYREAL grt_discrete_integ(
     bool calc_upar,
     MYCOMPLEX sum_uiz_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     MYCOMPLEX sum_uir_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
-    FILE *fstats, GRT_KernelFunc kerfunc, MYINT *stats)
+    FILE *fstats, GRT_KernelFunc kerfunc)
 {
     MYCOMPLEX SUM[GRT_SRC_M_NUM][GRT_INTEG_NUM];
 
@@ -58,8 +58,8 @@ MYREAL grt_discrete_integ(
 
         // 计算核函数 F(k, w)
         grt_mod1d_xa_xb(mod1d, k);
-        kerfunc(mod1d, QWV, calc_upar, QWV_uiz, stats); 
-        if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
+        kerfunc(mod1d, QWV, calc_upar, QWV_uiz); 
+        if(mod1d->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
         
         // 记录积分核函数
         if(fstats!=NULL)  grt_write_stats(fstats, k, QWV);

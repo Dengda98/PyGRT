@@ -93,6 +93,8 @@ class c_GRT_MODEL1D(Structure):
     :field caca:
     :field cbcb:
 
+    :field stats:
+
     """
     _fields_ = [
         ('n', c_int), 
@@ -126,4 +128,6 @@ class c_GRT_MODEL1D(Structure):
         ('xb', PCPLX),
         ('caca', PCPLX),
         ('cbcb', PCPLX),
+
+        ('stats', c_int),
     ]
