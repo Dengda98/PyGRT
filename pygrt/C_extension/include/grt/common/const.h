@@ -59,9 +59,6 @@ typedef int MYINT;  ///< 整数
 #define DEG1 0.017453292519943295  ///< \f$ \frac{\pi}{180} \f$ 
 #define GOLDEN_RATIO 0.6180339887498949  ///< \f$ \frac{\sqrt{5}-1}{2} \f$
 
-#define GRT_INIT_ZERO_2x2_MATRIX {{0, 0}, {0, 0}}   ///< 初始化复数0矩阵
-#define GRT_INIT_IDENTITY_2x2_MATRIX {{1, 0}, {0, 1}}  ///< 初始化复数单位阵
-
 #define GRT_MIN_DEPTH_GAP_SRC_RCV  1.0  ///< 震源和台站的最小深度差（不做绝对限制，仅用于参考波数积分上限，以及判断是否需要其它收敛方法）
 #define GCC_ALWAYS_INLINE __attribute__((always_inline))  ///< gcc编译器不改动内联函数
 

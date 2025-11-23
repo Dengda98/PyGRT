@@ -10,6 +10,9 @@
 
 #include "grt/common/const.h"
 
+#define GRT_INIT_ZERO_2x2_MATRIX {{0, 0}, {0, 0}}   ///< 初始化复数0矩阵
+#define GRT_INIT_IDENTITY_2x2_MATRIX {{1, 0}, {0, 1}}  ///< 初始化复数单位阵
+
 /**
  * 计算2x2复矩阵的逆  
  * 
@@ -31,11 +34,12 @@ inline GCC_ALWAYS_INLINE void grt_cmat2x2_inv(const MYCOMPLEX M[2][2], MYCOMPLEX
         *stats = GRT_INVERSE_FAILURE;
         return;
     }
+    det = 1.0 / det;
 
-    invM[0][0] = M11 / det;
-    invM[0][1] = - M01 / det;
-    invM[1][0] = - M10 / det;
-    invM[1][1] = M00 / det;
+    invM[0][0] = M11 * det;
+    invM[0][1] = - M01 * det;
+    invM[1][0] = - M10 * det;
+    invM[1][1] = M00 * det;
     *stats = GRT_INVERSE_SUCCESS;
 }
 

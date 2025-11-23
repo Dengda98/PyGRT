@@ -117,7 +117,7 @@ static void ptam_once(
 
 
 void grt_PTA_method(
-    const GRT_MODEL1D *mod1d, MYREAL k0, MYREAL predk, MYCOMPLEX omega, 
+    GRT_MODEL1D *mod1d, MYREAL k0, MYREAL predk, MYCOMPLEX omega, 
     MYINT nr, MYREAL *rs,
     MYCOMPLEX sum_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     bool calc_upar,
@@ -217,7 +217,9 @@ void grt_PTA_method(
             k += dk;
 
             // 计算核函数 F(k, w)
-            kerfunc(mod1d, omega, k, QWV, calc_upar, QWV_uiz, stats); 
+            mod1d->k = k;
+            grt_mod1d_xa_xb(mod1d);
+            kerfunc(mod1d, QWV, calc_upar, QWV_uiz, stats); 
             if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
             // 记录核函数
