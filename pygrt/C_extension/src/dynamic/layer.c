@@ -29,7 +29,7 @@
     T N##2 = mod1d->N[iy];\
 
 
-void grt_topfree_RU(const GRT_MODEL1D *mod1d, RT_MATRIX *M, MYINT *stats)
+void grt_topfree_RU(const GRT_MODEL1D *mod1d, RT_MATRIX *M)
 {
     MYCOMPLEX cbcb0 = mod1d->cbcb[0];
     if(cbcb0 != 0.0){
@@ -44,7 +44,7 @@ void grt_topfree_RU(const GRT_MODEL1D *mod1d, RT_MATRIX *M, MYINT *stats)
         // 对公式(5.3.10-14)进行重新整理，对浮点数友好一些
         Delta = -1.0 + xa0*xb0 + cbcb0 - cbcb02;
         if(Delta == 0.0){
-            *stats = GRT_INVERSE_FAILURE;
+            M->stats = GRT_INVERSE_FAILURE;
             return;
         }
         Delta = 1.0 / Delta;
@@ -171,14 +171,14 @@ void grt_wave2qwv_z_REV_SH(const GRT_MODEL1D *mod1d, MYCOMPLEX RL, MYCOMPLEX *R_
 }    
 
 
-void grt_RT_matrix_ll_PSV(const GRT_MODEL1D *mod1d, MYINT iy, RT_MATRIX *M, MYINT *stats)
+void grt_RT_matrix_ll_PSV(const GRT_MODEL1D *mod1d, MYINT iy, RT_MATRIX *M)
 {
     MODEL_2LAYS_ATTRIB(MYCOMPLEX, xa);
     MODEL_2LAYS_ATTRIB(MYREAL, Rho);
 
     MYCOMPLEX A = xa1*Rho2 + xa2*Rho1;
     if(A==0.0){
-        *stats = GRT_INVERSE_FAILURE;
+        M->stats = GRT_INVERSE_FAILURE;
         return;
     }
 
@@ -206,7 +206,7 @@ void grt_RT_matrix_ll_SH(RT_MATRIX *M)
 
 
 
-void grt_RT_matrix_ls_PSV(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M, MYINT *stats)
+void grt_RT_matrix_ls_PSV(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M)
 {
     MODEL_2LAYS_ATTRIB(MYCOMPLEX, xa);
     MODEL_2LAYS_ATTRIB(MYCOMPLEX, xb);
@@ -253,7 +253,7 @@ void grt_RT_matrix_ls_PSV(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M
     MYCOMPLEX D = 2.0*Og2k2*xa1*mu2 - 0.5*lamka1k*kb2k*xa2 - 2.0*mu2*xa1*xa2*xb2;
 
     if(A == 0.0){
-        *stats = GRT_INVERSE_FAILURE;
+        M->stats = GRT_INVERSE_FAILURE;
         return;
     }
     
@@ -309,7 +309,7 @@ void grt_RT_matrix_ls_SH(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M)
 
 
 
-void grt_RT_matrix_ss_PSV(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M, MYINT *stats)
+void grt_RT_matrix_ss_PSV(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M)
 {
     MODEL_2LAYS_ATTRIB(MYCOMPLEX, xa);
     MODEL_2LAYS_ATTRIB(MYCOMPLEX, xb);
@@ -341,7 +341,7 @@ void grt_RT_matrix_ss_PSV(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M
 
     if( Delta == 0.0 ){
         // printf("# zero Delta_inv=%e+%eJ\n", creal(Delta_inv), cimag(Delta_inv));
-        *stats = GRT_INVERSE_FAILURE;
+        M->stats = GRT_INVERSE_FAILURE;
         return;
     } 
 
@@ -404,7 +404,7 @@ void grt_RT_matrix_ss_SH(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M)
 
 
 
-void grt_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M, MYINT *stats)
+void grt_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M)
 {
     // TEMPORARY!!!!!!
     // 之后不再使用mu或其它变量来判断是否为液体，直接定义一个新的数组
@@ -412,13 +412,13 @@ void grt_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M, M
     
     // 根据界面两侧的具体情况选择函数
     if(mu1 != 0.0 && mu2 != 0.0){
-        grt_RT_matrix_ss_PSV(mod1d, iy, M, stats);
+        grt_RT_matrix_ss_PSV(mod1d, iy, M);
     }
     else if(mu1 == 0.0 && mu2 == 0.0){
-        grt_RT_matrix_ll_PSV(mod1d, iy, M, stats);
+        grt_RT_matrix_ll_PSV(mod1d, iy, M);
     }
     else{
-        grt_RT_matrix_ls_PSV(mod1d, iy, M, stats);
+        grt_RT_matrix_ls_PSV(mod1d, iy, M);
     }
 }
 

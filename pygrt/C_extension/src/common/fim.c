@@ -29,7 +29,7 @@ MYREAL grt_linear_filon_integ(
     bool calc_upar,
     MYCOMPLEX sum_uiz_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     MYCOMPLEX sum_uir_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
-    FILE *fstats, GRT_KernelFunc kerfunc, MYINT *stats)
+    FILE *fstats, GRT_KernelFunc kerfunc)
 {   
     // 从0开始，存储第二部分Filon积分的结果
     MYCOMPLEX (*sum_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (MYCOMPLEX(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_J));
@@ -60,8 +60,8 @@ MYREAL grt_linear_filon_integ(
 
         // 计算核函数 F(k, w)
         grt_mod1d_xa_xb(mod1d, k);
-        kerfunc(mod1d, QWV, calc_upar, QWV_uiz, stats); 
-        if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
+        kerfunc(mod1d, QWV, calc_upar, QWV_uiz); 
+        if(mod1d->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
         // 记录积分结果
         if(fstats!=NULL)  grt_write_stats(fstats, k, QWV);
@@ -175,8 +175,8 @@ MYREAL grt_linear_filon_integ(
 
         // 计算核函数 F(k, w)
         grt_mod1d_xa_xb(mod1d, k0N);
-        kerfunc(mod1d, QWV, calc_upar, QWV_uiz, stats);
-        if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN; 
+        kerfunc(mod1d, QWV, calc_upar, QWV_uiz);
+        if(mod1d->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN; 
 
         for(MYINT ir=0; ir<nr; ++ir){
             // Gc

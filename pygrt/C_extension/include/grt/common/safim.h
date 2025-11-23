@@ -46,7 +46,6 @@
  * 
  * @param[out]    fstats         文件指针，保存不同k值的格林函数积分核函数
  * @param[in]     kerfunc        计算核函数的函数指针
- * @param[out]    stats          状态代码，是否有除零错误，非0为异常值
  * 
  * @return  k        积分截至时的波数
  */
@@ -57,6 +56,6 @@ MYREAL grt_sa_filon_integ(
     bool calc_upar,
     MYCOMPLEX sum_uiz_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     MYCOMPLEX sum_uir_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
-    FILE *fstats, GRT_KernelFunc kerfunc, MYINT *stats);
+    FILE *fstats, GRT_KernelFunc kerfunc);
 
 

@@ -83,12 +83,11 @@
  *  @param[out]    QWV             不同震源，不同阶数的核函数 \f$ q_m, w_m, v_m \f$
  *  @param[in]     calc_uiz        是否计算ui_z（位移u对坐标z的偏导）
  *  @param[out]    QWV_uiz         不同震源，不同阶数的核函数对z的偏导 \f$ \frac{\partial q_m}{\partial z}, \frac{\partial w_m}{\partial z}, \frac{\partial v_m}{\partial z} \f$
- *  @param[out]    stats           状态代码，是否有除零错误，非0为异常值
  * 
  */
 void grt_kernel(
     const GRT_MODEL1D *mod1d, MYCOMPLEX QWV[GRT_SRC_M_NUM][GRT_QWV_NUM],
-    bool calc_uiz, MYCOMPLEX QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM], MYINT *stats);
+    bool calc_uiz, MYCOMPLEX QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM]);
 
 
 

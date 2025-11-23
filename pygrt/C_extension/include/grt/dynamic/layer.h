@@ -22,10 +22,9 @@
  * 
  * @param[in]     mod1d          模型结构体指针
  * @param[out]    M              R/T矩阵，仅填充RU
- * @param[out]    stats          状态代码，是否有除零错误，非0为异常值
  * 
  */
-void grt_topfree_RU(const GRT_MODEL1D *mod1d, RT_MATRIX *M, MYINT *stats);
+void grt_topfree_RU(const GRT_MODEL1D *mod1d, RT_MATRIX *M);
 
 
 /**
@@ -82,10 +81,9 @@ void grt_wave2qwv_z_REV_SH(const GRT_MODEL1D *mod1d, MYCOMPLEX RL, MYCOMPLEX *R_
  * @param[in]      mod1d         模型结构体指针
  * @param[in]      iy            层位索引
  * @param[out]     M             R/T矩阵
- * @param[out]     stats         状态代码，是否有除零错误，非0为异常值
  * 
  */
-void grt_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M, MYINT *stats);
+void grt_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M);
 
 
 /**
@@ -100,19 +98,19 @@ void grt_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M, M
 void grt_RT_matrix_SH(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M);
 
 /** 液-液 界面 */
-void grt_RT_matrix_ll_PSV(const GRT_MODEL1D *mod1d, MYINT iy, RT_MATRIX *M, MYINT *stats);
+void grt_RT_matrix_ll_PSV(const GRT_MODEL1D *mod1d, MYINT iy, RT_MATRIX *M);
 
 /** 液-液 界面 */
 void grt_RT_matrix_ll_SH(RT_MATRIX *M);
 
 /** 液-固 界面 */
-void grt_RT_matrix_ls_PSV(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M, MYINT *stats);
+void grt_RT_matrix_ls_PSV(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M);
 
 /** 液-固 界面 */
 void grt_RT_matrix_ls_SH(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M);
 
 /** 固-固 界面 */
-void grt_RT_matrix_ss_PSV(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M, MYINT *stats);
+void grt_RT_matrix_ss_PSV(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M);
 
 /** 固-固 界面 */
 void grt_RT_matrix_ss_SH(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M);

@@ -29,7 +29,7 @@
 
 void grt_kernel(
     const GRT_MODEL1D *mod1d, MYCOMPLEX QWV[GRT_SRC_M_NUM][GRT_QWV_NUM],
-    bool calc_uiz, MYCOMPLEX QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM], MYINT *stats)
+    bool calc_uiz, MYCOMPLEX QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM])
 {
     // 初始化qwv为0
     for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
@@ -75,9 +75,9 @@ void grt_kernel(
 
         if(iy != isrc && iy != ircv){
             // 对第iy层的系数矩阵赋值，
-            grt_RT_matrix_PSV(mod1d, iy, M, stats);
+            grt_RT_matrix_PSV(mod1d, iy, M);
             grt_RT_matrix_SH(mod1d, iy, M);
-            if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
+            if(M->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
         }
 
         // 加入时间延迟因子(第iy-1界面与第iy界面之间)
@@ -88,8 +88,8 @@ void grt_kernel(
             if(iy == 1){ // 初始化FA
                 memcpy(M_FA, M, sizeof(*M));
             } else { // 递推FA
-                grt_recursion_RT_matrix(M_FA, M, M_FA, stats);  // 写入原地址
-                if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
+                grt_recursion_RT_matrix(M_FA, M, M_FA);  // 写入原地址
+                if(M_FA->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
             }
         } 
         // RS
@@ -97,8 +97,8 @@ void grt_kernel(
             if(iy == imin+1){// 初始化RS
                 memcpy(M_RS, M, sizeof(*M));
             } else { // 递推RS
-                grt_recursion_RT_matrix(M_RS, M, M_RS, stats);  // 写入原地址
-                if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
+                grt_recursion_RT_matrix(M_RS, M, M_RS);  // 写入原地址
+                if(M_RS->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
             }
         } 
         // BL
@@ -107,8 +107,8 @@ void grt_kernel(
                 memcpy(M_BL, M, sizeof(*M));
             } else { // 递推BL
                 // 只有 RD 矩阵最终会被使用到
-                grt_recursion_RT_matrix(M_BL, M, M_BL, stats);  // 写入原地址
-                if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
+                grt_recursion_RT_matrix(M_BL, M, M_BL);  // 写入原地址
+                if(M_BL->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
             }
         } // END if
 
@@ -129,10 +129,10 @@ void grt_kernel(
     MYCOMPLEX tmpR2[2][2], tmp2x2[2][2], tmpRL, tmp2x2_uiz[2][2], tmpRL2;
 
     // 递推RU_FA
-    grt_topfree_RU(mod1d, M_top, stats);
-    if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
-    grt_recursion_RU(M_top, M_FA, M_FA, stats);
-    if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
+    grt_topfree_RU(mod1d, M_top);
+    if(M_top->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
+    grt_recursion_RU(M_top, M_FA, M_FA);
+    if(M_FA->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
     
     // 根据震源和台站相对位置，计算最终的系数
     if(ircvup){ // A接收  B震源
@@ -142,14 +142,14 @@ void grt_kernel(
         grt_wave2qwv_REV_SH(mod1d, M_FA->RUL, &R_EVL);
 
         // 递推RU_FS
-        grt_recursion_RU(M_FA, M_RS, M_FB, stats); // 已从ZR变为FR，加入了自由表面的效应
-        if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
+        grt_recursion_RU(M_FA, M_RS, M_FB); // 已从ZR变为FR，加入了自由表面的效应
+        if(M_FB->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
         
         // 公式(5.7.12-14)
         grt_cmat2x2_mul(M_BL->RD, M_FB->RU, tmpR2);
         grt_cmat2x2_one_sub(tmpR2);
-        grt_cmat2x2_inv(tmpR2, tmpR2, stats);// (I - xx)^-1
-        if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
+        grt_cmat2x2_inv(tmpR2, tmpR2, &M_FB->stats);// (I - xx)^-1
+        if(M_FB->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
         grt_cmat2x2_mul(M_FB->invT, tmpR2, tmp2x2);
 
         if(calc_uiz) grt_cmat2x2_assign(tmp2x2, tmp2x2_uiz); // 为后续计算空间导数备份
@@ -181,14 +181,14 @@ void grt_kernel(
         grt_wave2qwv_REV_SH(mod1d, M_BL->RDL, &R_EVL);    
 
         // 递推RD_SL
-        grt_recursion_RD(M_RS, M_BL, M_AL, stats);
-        if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
+        grt_recursion_RD(M_RS, M_BL, M_AL);
+        if(M_AL->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
         
         // 公式(5.7.26-27)
         grt_cmat2x2_mul(M_FA->RU, M_AL->RD, tmpR2);
         grt_cmat2x2_one_sub(tmpR2);
-        grt_cmat2x2_inv(tmpR2, tmpR2, stats);// (I - xx)^-1
-        if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
+        grt_cmat2x2_inv(tmpR2, tmpR2, &M_AL->stats);// (I - xx)^-1
+        if(M_AL->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
         grt_cmat2x2_mul(M_AL->invT, tmpR2, tmp2x2);
 
         if(calc_uiz) grt_cmat2x2_assign(tmp2x2, tmp2x2_uiz); // 为后续计算空间导数备份

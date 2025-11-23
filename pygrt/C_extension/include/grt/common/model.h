@@ -47,6 +47,9 @@ typedef struct {
     MYCOMPLEX *caca;
     MYCOMPLEX *cbcb;
 
+    /* 状态变量，非 0 为异常值 */
+    MYINT stats;
+
 } GRT_MODEL1D;
 
 
