@@ -183,7 +183,7 @@ void grt_mod1d_xa_xb(GRT_MODEL1D *mod1d, const MYREAL k)
 {
     mod1d->k = k;
     // 完全为0，没有虚频率，这只可能是在计算静态解，此时不需要xa, xb等物理量
-    if(mod1d->c_phase == 0.0)  return;
+    if(mod1d->omega == 0.0)  return;
 
     mod1d->c_phase = mod1d->omega/k;
 
