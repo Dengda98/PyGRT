@@ -135,6 +135,9 @@ void grt_integ_grn_spec(
     // 记录每个频率的计算中是否有除0错误
     int *freq_invstats = (int *)calloc(nf2+1, sizeof(int));
 
+    // 实际计算的频点数
+    size_t nf_valid = nf2 - nf1 + 1;
+
     // 频率omega循环
     // schedule语句可以动态调度任务，最大程度地使用计算资源
     #pragma omp parallel for schedule(guided) default(shared) 
@@ -285,7 +288,7 @@ void grt_integ_grn_spec(
         #pragma omp critical
         {
             progress++;
-            if(print_progressbar) grt_printprogressBar("Computing Green Functions: ", progress*100/(nf2-nf1+1));
+            if(print_progressbar) grt_printprogressBar("Computing Green Functions: ", progress*100/nf_valid);
         } 
         
 

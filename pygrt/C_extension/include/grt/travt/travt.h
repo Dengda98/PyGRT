@@ -24,5 +24,5 @@
  * @param[in]    dist          震中距
  */
 real_t grt_compute_travt1d(
-    const real_t *Thk, const real_t *Vel0, const int nlay, 
-    const int isrc, const int ircv, const real_t dist);
+    const real_t *Thk, const real_t *Vel0, const size_t nlay, 
+    const size_t isrc, const size_t ircv, const real_t dist);

@@ -58,23 +58,23 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
 
 
 real_t grt_compute_travt1d(
-    const real_t *Thk, const real_t *Vel0, const int nlay, 
-    const int isrc, const int ircv, const real_t dist)
+    const real_t *Thk, const real_t *Vel0, const size_t nlay, 
+    const size_t isrc, const size_t ircv, const real_t dist)
 {
     // 以防速度数组中存在零速度的情况，这里新建数组以去除0速度
     real_t *Vel = (real_t*)malloc(sizeof(real_t)*nlay);
-    for(int i=0; i<nlay; ++i){
+    for(size_t i=0; i<nlay; ++i){
         Vel[i] = (Vel0[i] <= 0.0)? 1e-6 : Vel0[i];  // 给一个极慢值
     }
 
     // 根据互易原则，震源和场点可交换
-    int imin, imax;
-    imin = (isrc < ircv)? isrc : ircv;
-    imax = (isrc < ircv)? ircv : isrc;
+    size_t imin, imax;
+    imin = GRT_MIN(isrc, ircv);
+    imax = GRT_MAX(isrc, ircv);
 
     // 如果震源与台站之间存在零速度层，则此时单一震相类型的走时不必再计算，
     // 直接返回默认值
-    for(int i = imin; i <= imax; ++i){
+    for(size_t i = imin; i <= imax; ++i){
         if(Vel0[i] == 0.0){
             GRT_SAFE_FREE_PTR(Vel);
             return -12345.00;
@@ -89,8 +89,8 @@ real_t grt_compute_travt1d(
     real_t vmin = (vsrc < vrcv)? vsrc : vrcv;
     // 震源和场点深度
     real_t depsrc=0.0, deprcv=0.0;
-    for(int i=0; i<isrc; ++i) {depsrc += Thk[i];} 
-    for(int i=0; i<ircv; ++i) {deprcv += Thk[i];} 
+    for(size_t i = 0; i < isrc; ++i) {depsrc += Thk[i];} 
+    for(size_t i = 0; i < ircv; ++i) {deprcv += Thk[i];} 
     real_t depdif = fabs(depsrc - deprcv);
 
 
@@ -127,7 +127,7 @@ real_t grt_compute_travt1d(
     //
     // =========================================================
     // ------------------- 同层直达波 ----------------------
-    if(abs(isrc - ircv)==1){ // 位于同一物理层
+    if(imax - imin == 1){ // 位于同一物理层
         travt = sqrt(dist*dist + depdif*depdif) / vsrc;
         // printf("direct wave in same layer, travt=%f\n", travt);
     }
@@ -140,7 +140,7 @@ real_t grt_compute_travt1d(
         const real_t minX=1e-3;
         // 找到慢度上限，准确说是各层中最大慢度的最小值
         real_t pmax0=1.0/vmax;
-        for(int i=imin; i<=imax; ++i){
+        for(size_t i = imin; i <= imax; ++i){
             if(Thk[i] == 0.0) continue;
             if(pmax0 > 1.0/Vel[i])  pmax0 = 1.0/Vel[i];
         }
@@ -155,7 +155,7 @@ real_t grt_compute_travt1d(
         for(int iter=0; iter<nloop; ++iter){
             x = t = tint = dxdp = 0.0;
             p = (pmin+pmax)/2.0;
-            for(int i=imin; i<imax; ++i){
+            for(size_t i = imin; i < imax; ++i){
                 h = Thk[i];
                 if(h == 0.0) continue;
                 v = Vel[i];
@@ -218,7 +218,7 @@ real_t grt_compute_travt1d(
         real_t sumt, sumx;
         bool badrefrac = false;
         // 找到透射位置
-        for(int m=imin-1; m>=0; --m){
+        for(size_t m = imin; m-- > 0;){ // 这样写是为了无符号整数的判断
             h = Thk[m];
             if(h == 0.0) continue;
             v = Vel[m];
@@ -231,7 +231,7 @@ real_t grt_compute_travt1d(
 
             sumt = sumx = 0.0;
             // imax到imin的单边
-            for(int i=imin; i<imax; ++i){
+            for(size_t i = imin; i < imax; ++i){
                 if(Vel[i] > v) {
                     badrefrac = true;
                     break;
@@ -258,7 +258,7 @@ real_t grt_compute_travt1d(
             if(badrefrac) continue;
 
             // m到imin的双边
-            for(int i=m+1; i<imin; ++i){
+            for(size_t i = m+1; i < imin; ++i){
                 if(Vel[i] > v) {
                     badrefrac = true;
                     break;
@@ -295,7 +295,7 @@ real_t grt_compute_travt1d(
                 }
             }
 
-        }  // END 寻找投射位置
+        }  // END 寻找透射位置
 
     } // END 射线向上传的讨论
 
@@ -327,7 +327,7 @@ real_t grt_compute_travt1d(
     //===================================================================
     //------------------- 向下出射的射线，考虑透射 ----------------- 
     // 找到透射位置
-    for(int m=imax+1; m<nlay; ++m){
+    for(size_t m = imax+1; m < nlay; ++m){
         real_t v, p, h, c;
         real_t sumt, sumx;
         bool badrefrac = false;
@@ -343,7 +343,7 @@ real_t grt_compute_travt1d(
 
         sumt = sumx = 0.0;
         // imax到imin的单边
-        for(int i=imin; i<imax; ++i){
+        for(size_t i = imin; i < imax; ++i){
             if(Vel[i] > v) {
                 badrefrac = true;
                 break;
@@ -370,7 +370,7 @@ real_t grt_compute_travt1d(
         if(badrefrac) continue;
 
         // m到imin的双边
-        for(int i=imax; i<m; ++i){
+        for(size_t i = imax; i < m; ++i){
             if(Vel[i] > v) {
                 badrefrac = true;
                 break;
