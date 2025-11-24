@@ -285,7 +285,7 @@ printf("\n"
 "        [-L<length>]        [-E<t0>[/<v0>]] \n" 
 "        [-K[+k<k0>][+s<ampk>][+e<keps>][+v<vmin>]]\n"
 "        [-P<nthreads>] [-Ge|v|h|s] \n"
-"        [-S<i1>,<i2>[,...]] [-e] [-s]\n"
+"        [-S[<i1>,<i2>,...]] [-e] [-s]\n"
 "\n\n"
 "Options:\n"
 "----------------------------------------------------------------\n"
@@ -390,12 +390,12 @@ printf("\n"
 "                 <b3>: Horizontal Force (HF)\n"
 "                 <b4>: Shear (DC)\n"
 "\n"
-"    -S<i1>,<i2>[,...]\n"
+"    -S[<i1>,<i2>,...]\n"
 "                 Frequency (index) of statsfile in wavenumber\n"
 "                 integration to be output, require 0 <= i <= nf-1,\n"
 "                 where nf=nt/2+1. These option is designed to check\n"
 "                 the trend of kernel with wavenumber.\n"
-"                 -1 means all frequency index.\n"
+"                 Empty -S means all frequency index.\n"
 "\n"
 "    -e           Compute the spatial derivatives, ui_z and ui_r,\n"
 "                 of displacement u. In filenames, prefix \"r\" means \n"
@@ -437,7 +437,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     Ctrl->G.doDC = GRT_GREENFN_G_DC;
 
     int opt;
-    while ((opt = getopt(argc, argv, ":M:D:N:O:H:L:E:K:R:S:P:G:esh")) != -1) {
+    while ((opt = getopt(argc, argv, ":M:D:N:O:H:L:E:K:R:S::P:G:esh")) != -1) {
         switch (opt) {
             // 模型路径，其中每行分别为 
             //      厚度(km)  Vp(km/s)  Vs(km/s)  Rho(g/cm^3)  Qp   Qs
@@ -717,12 +717,20 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             // 输出波数积分中间文件， -Sidx1,idx2,idx3,...
             case 'S':
                 Ctrl->S.active = true;
-                Ctrl->S.s_raw = strdup(optarg);
-                Ctrl->S.s_statsidxs = grt_string_split(optarg, ",", &Ctrl->S.nstatsidxs);
-                // 转为浮点数
-                Ctrl->S.statsidxs = (size_t*)realloc(Ctrl->S.statsidxs, sizeof(size_t)*(Ctrl->S.nstatsidxs));
-                for(size_t i=0; i<Ctrl->S.nstatsidxs; ++i){
-                    Ctrl->S.statsidxs[i] = atof(Ctrl->S.s_statsidxs[i]);
+                // 如果非空，则读取对应索引，要求不能为负数；否则在 switch 外手动创建所有索引值
+                if(optarg != NULL){
+                    printf("yes?\n");
+                    Ctrl->S.s_raw = strdup(optarg);
+                    Ctrl->S.s_statsidxs = grt_string_split(optarg, ",", &Ctrl->S.nstatsidxs);
+                    // 转为浮点数
+                    Ctrl->S.statsidxs = (size_t*)realloc(Ctrl->S.statsidxs, sizeof(size_t)*(Ctrl->S.nstatsidxs));
+                    for(size_t i=0; i<Ctrl->S.nstatsidxs; ++i){
+                        size_t tmp = (size_t)atoi(Ctrl->S.s_statsidxs[i]);
+                        if(tmp < 0){
+                            GRTBadOptionError(command, S, "index (%zu) can't negative.", tmp);
+                        }
+                        Ctrl->S.statsidxs[i] = tmp;
+                    }
                 }
                 break;
 
@@ -757,6 +765,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     fprintf(fp, "\n");
     fclose(fp);
     GRT_SAFE_FREE_PTR(dummy);
+
 }
 
 
@@ -829,6 +838,16 @@ int greenfn_main(int argc, char **argv) {
         Ctrl->N.freqs[i] = i*Ctrl->N.df;
     }
 
+    // 如果只传入了 -S, 未指定索引，则默认所有频率索引
+    if(Ctrl->S.active && Ctrl->S.statsidxs == NULL){
+        // 另外两个字符相关的指针仍指向 NULL
+        Ctrl->S.nstatsidxs = Ctrl->N.nf;
+        Ctrl->S.statsidxs = (size_t*)realloc(Ctrl->S.statsidxs, sizeof(size_t)*(Ctrl->S.nstatsidxs));
+        for(size_t i=0; i < Ctrl->S.nstatsidxs; ++i){
+            Ctrl->S.statsidxs[i] = i;
+        }
+    }
+
     // 自定义频段
     Ctrl->H.nf1 = 0; Ctrl->H.nf2 = Ctrl->N.nf-1;
     if(Ctrl->H.freq1 > 0.0){
@@ -840,7 +859,7 @@ int greenfn_main(int argc, char **argv) {
     Ctrl->H.nf2 = GRT_MAX(Ctrl->H.nf1, Ctrl->H.nf2);
 
     // 波数积分中间文件输出目录
-    if(Ctrl->S.nstatsidxs > 0){
+    if(Ctrl->S.active){
         Ctrl->S.s_statsdir = NULL;
         GRT_SAFE_ASPRINTF(&Ctrl->S.s_statsdir, "%s_grtstats", Ctrl->O.s_output_dir);
         

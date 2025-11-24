@@ -166,7 +166,7 @@ void grt_integ_grn_spec(
         grt_attenuate_mod1d(local_mod1d, omega);
 
         // 是否要输出积分过程文件
-        bool needfstats = (statsstr!=NULL && ((grt_findElement_size_t(statsidxs, nstatsidxs, iw) >= 0) || (grt_findElement_size_t(statsidxs, nstatsidxs, -1) >= 0)));
+        bool needfstats = (statsstr!=NULL && (grt_findElement_size_t(statsidxs, nstatsidxs, iw) >= 0));
 
         // 为当前频率创建波数积分记录文件
         FILE *fstats = NULL;
