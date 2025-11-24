@@ -3,7 +3,7 @@
 
 set -euo pipefail
 
-dirs=$(find . -maxdepth 1 -mindepth 1 -type d)
+dirs=$(find . -maxdepth 1 -mindepth 1 -type d | sort)
 
 for dir in $dirs; do
     cd $dir > /dev/null

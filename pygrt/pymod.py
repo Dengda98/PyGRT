@@ -322,13 +322,20 @@ class PyModel1D:
             os.makedirs(statsfile, exist_ok=True)
             c_statsfile = c_char_p(statsfile.encode('utf-8'))
 
-        nstatsidxs = 0 
-        if statsidxs is None:
-            statsidxs = np.array([-1])
+            nstatsidxs = 0 
+            if statsidxs is None:
+                statsidxs = np.arange(nf)
 
-        statsidxs = np.array(statsidxs)
-        c_statsidxs = npct.as_ctypes(np.array(statsidxs).astype(np.uint64))   # size_t
-        nstatsidxs = len(statsidxs)
+            statsidxs = np.array(statsidxs)
+            # 不能有负数
+            if np.any(statsidxs < 0):
+                raise ValueError("negative value in statsidxs is not supported.")
+            
+            c_statsidxs = npct.as_ctypes(np.array(statsidxs).astype(np.uint64))   # size_t
+            nstatsidxs = len(statsidxs)
+        else:
+            c_statsfile = c_statsidxs = None
+            nstatsidxs = 0
 
 
         # ===========================================
