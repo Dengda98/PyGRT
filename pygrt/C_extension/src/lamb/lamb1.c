@@ -19,49 +19,49 @@
 
 typedef struct {
     // 常量，不随时间变化
-    MYREAL nu;
-    MYREAL k;      ///< k = beta/alpha;
-    MYREAL kk;     ///< kk = k*k;
-    MYREAL kp;     ///< kp = sqrt(1 - k^2);
-    MYREAL kpkp;   ///< kpkp = kp*kp;
-    MYREAL h1;     ///< h1 = 2 * kk - 1;
-    MYREAL h2;     ///< h2 = kk * kpkp;
-    MYREAL h3;     ///< h3 = kpkp * h1^2;
-    MYREAL b3;     ///< b3 = 3 * kp^2 - 1;
-    MYREAL b6;     ///< b6 = 6 * kp^2 - 1;
-    MYREAL c;      ///< c = 6 * h2 - 1;
-    MYREAL sf;     ///< sin(phi)
-    MYREAL cf;     ///< cos(phi)
+    real_t nu;
+    real_t k;      ///< k = beta/alpha;
+    real_t kk;     ///< kk = k*k;
+    real_t kp;     ///< kp = sqrt(1 - k^2);
+    real_t kpkp;   ///< kpkp = kp*kp;
+    real_t h1;     ///< h1 = 2 * kk - 1;
+    real_t h2;     ///< h2 = kk * kpkp;
+    real_t h3;     ///< h3 = kpkp * h1^2;
+    real_t b3;     ///< b3 = 3 * kp^2 - 1;
+    real_t b6;     ///< b6 = 6 * kp^2 - 1;
+    real_t c;      ///< c = 6 * h2 - 1;
+    real_t sf;     ///< sin(phi)
+    real_t cf;     ///< cos(phi)
 
     // 一元三次方程的三个根，其中 y30 为正根
-    MYCOMPLEX ys[3];
-    MYCOMPLEX ysp[3];
+    cplx_t ys[3];
+    cplx_t ysp[3];
 
     // Rayleigh 波项
-    MYREAL kpa;
-    MYREAL kpakpa;
-    MYREAL RaylR;
-    MYREAL RaylQ[3][3];
+    real_t kpa;
+    real_t kpakpa;
+    real_t RaylR;
+    real_t RaylQ[3][3];
 } VARS;
 
 
 
-static void ckim_P(MYREAL tbar, VARS *V, MYCOMPLEX ckim[3][6][10])
+static void ckim_P(real_t tbar, VARS *V, cplx_t ckim[3][6][10])
 {
-    MYREAL kk = V->kk;
-    MYREAL h1 = V->h1;
-    MYREAL h2 = V->h2;
-    MYREAL h3 = V->h3;
-    MYREAL b3 = V->b3;
-    MYREAL b6 = V->b6;
-    MYREAL c = V->c;
+    real_t kk = V->kk;
+    real_t h1 = V->h1;
+    real_t h2 = V->h2;
+    real_t h3 = V->h3;
+    real_t b3 = V->b3;
+    real_t b6 = V->b6;
+    real_t c = V->c;
 
-    MYREAL tbtb = tbar*tbar;
-    MYREAL A = 5.0 + 8.0*tbtb - 12.0*kk*tbtb - 24.0*h2;
-    MYREAL B = h1 * (1.0 + 5.0*tbtb - 6.0*kk*tbtb - 8.0*h2);
-    MYREAL d = 2.0*h1 - tbtb;
+    real_t tbtb = tbar*tbar;
+    real_t A = 5.0 + 8.0*tbtb - 12.0*kk*tbtb - 24.0*h2;
+    real_t B = h1 * (1.0 + 5.0*tbtb - 6.0*kk*tbtb - 8.0*h2);
+    real_t d = 2.0*h1 - tbtb;
 
-    MYREAL aa = tbtb - kk;
+    real_t aa = tbtb - kk;
 
     // 表 6.6.1
     // (ξ, i, m), ξ=1,2,  i=1...5,  m=0...9
@@ -117,19 +117,19 @@ static void ckim_P(MYREAL tbar, VARS *V, MYCOMPLEX ckim[3][6][10])
     ckim[2][5][3] = -4.0*I*h1*h2;
 }
 
-static void ckim_S1(MYREAL tbar, VARS *V, MYCOMPLEX ckim[3][6][10])
+static void ckim_S1(real_t tbar, VARS *V, cplx_t ckim[3][6][10])
 {
-    MYREAL kk = V->kk;
-    MYREAL kpkp = V->kpkp;
+    real_t kk = V->kk;
+    real_t kpkp = V->kpkp;
 
-    MYREAL tbtb = tbar*tbar;
-    MYREAL bb = tbtb - 1.0;
-    MYREAL A = 15.0 - 10.0*tbtb + 8.0*kk*tbtb - 16.0*kk;
-    MYREAL B = 9.0 - 10.0*tbtb + 16.0*kk*bb;
-    MYREAL C0 = 4.0 - 3.0*tbtb + 2.0*kk*tbtb - 3.0*kk;
+    real_t tbtb = tbar*tbar;
+    real_t bb = tbtb - 1.0;
+    real_t A = 15.0 - 10.0*tbtb + 8.0*kk*tbtb - 16.0*kk;
+    real_t B = 9.0 - 10.0*tbtb + 16.0*kk*bb;
+    real_t C0 = 4.0 - 3.0*tbtb + 2.0*kk*tbtb - 3.0*kk;
 
 
-    MYREAL h[6][10] = {0};
+    real_t h[6][10] = {0};
     for(int i=0; i<6; ++i){
         for(int j=0; j<10; ++j){
             h[i][j] = i + j*kpkp;
@@ -201,7 +201,7 @@ static void ckim_S1(MYREAL tbar, VARS *V, MYCOMPLEX ckim[3][6][10])
     ckim[2][5][1] = -2.0*kpkp;
 }
 
-static void ckim_S2(MYREAL tbar, VARS *V, MYCOMPLEX ckim[3][6][10])
+static void ckim_S2(real_t tbar, VARS *V, cplx_t ckim[3][6][10])
 {
     ckim_S1(tbar, V, ckim);
 
@@ -220,10 +220,10 @@ static void ckim_S2(MYREAL tbar, VARS *V, MYCOMPLEX ckim[3][6][10])
     }
 }
 
-static void Cmat(VARS *V, MYCOMPLEX ckim[3][6][10], MYCOMPLEX C[3][3][3][10])
+static void Cmat(VARS *V, cplx_t ckim[3][6][10], cplx_t C[3][3][3][10])
 {
-    MYREAL sf = V->sf;
-    MYREAL cf = V->cf;
+    real_t sf = V->sf;
+    real_t cf = V->cf;
     // 构建矩阵 C (3x3) 
     for(int k=1; k<=2; ++k){
         for(int m=0; m<=9; ++m){
@@ -242,16 +242,16 @@ static void Cmat(VARS *V, MYCOMPLEX ckim[3][6][10], MYCOMPLEX C[3][3][3][10])
     }
 }
 
-static void uv(int sgn, MYREAL kpkp, MYCOMPLEX ys[3], MYCOMPLEX C[3][3][3][10], MYCOMPLEX u[3][3][10], MYCOMPLEX v[3][3][11])
+static void uv(int sgn, real_t kpkp, cplx_t ys[3], cplx_t C[3][3][3][10], cplx_t u[3][3][10], cplx_t v[3][3][11])
 {
-    MYCOMPLEX y1, y2, y3;
+    cplx_t y1, y2, y3;
     y1 = ys[0]*sgn;
     y2 = ys[1]*sgn;
     y3 = ys[2]*sgn;
 
     // 构建系数 u_ij,m 和 v_ij,n
     // i,j = 1,2,3   m=1...9   n=1...10
-    MYCOMPLEX delta[4] = {0};
+    cplx_t delta[4] = {0};
     delta[1] = -16.0 * sgn * kpkp *(y1 - y2)*(y1 - y3);
     delta[2] = -16.0 * sgn * kpkp *(y2 - y1)*(y2 - y3);
     delta[3] = -16.0 * sgn * kpkp *(y3 - y1)*(y3 - y2);
@@ -283,14 +283,14 @@ static void uv(int sgn, MYREAL kpkp, MYCOMPLEX ys[3], MYCOMPLEX C[3][3][3][10], 
     }
 }
 
-static MYCOMPLEX U_P(int n, MYREAL tbar, MYCOMPLEX c, VARS *V)
+static cplx_t U_P(int n, real_t tbar, cplx_t c, VARS *V)
 {
-    MYREAL kk = V->kk;
-    MYREAL tbtb = tbar*tbar;
-    MYREAL aa = tbtb - kk;
-    MYREAL a = sqrt(aa);  // 要求 tbar >= k
+    real_t kk = V->kk;
+    real_t tbtb = tbar*tbar;
+    real_t aa = tbtb - kk;
+    real_t a = sqrt(aa);  // 要求 tbar >= k
 
-    MYCOMPLEX xi = sqrt(aa - c + 0*I);
+    cplx_t xi = sqrt(aa - c + 0*I);
 
     if(n==1){
         if(cimag(c) == 0.0 && creal(c) < aa){
@@ -318,23 +318,23 @@ static MYCOMPLEX U_P(int n, MYREAL tbar, MYCOMPLEX c, VARS *V)
     GRTRaiseError("Wrong execution in function %s.", __func__);
 }
 
-static MYCOMPLEX V_P(int n, MYREAL tbar, MYCOMPLEX c, VARS *V)
+static cplx_t V_P(int n, real_t tbar, cplx_t c, VARS *V)
 {
-    MYREAL kp = V->kp;
-    MYREAL kk = V->kk;
-    MYREAL kpkp = V->kpkp;
-    MYREAL tbtb = tbar*tbar;
-    MYREAL aa = tbtb - kk;
-    MYREAL a = sqrt(aa);  // 要求 tbar >= k
-    MYREAL bb = tbtb - 1.0;
+    real_t kp = V->kp;
+    real_t kk = V->kk;
+    real_t kpkp = V->kpkp;
+    real_t tbtb = tbar*tbar;
+    real_t aa = tbtb - kk;
+    real_t a = sqrt(aa);  // 要求 tbar >= k
+    real_t bb = tbtb - 1.0;
 
-    MYCOMPLEX xi = sqrt(aa - c + 0*I);
-    MYCOMPLEX et = sqrt(kpkp - c + 0*I);
+    cplx_t xi = sqrt(aa - c + 0*I);
+    cplx_t et = sqrt(kpkp - c + 0*I);
     
-    MYREAL m1 = aa/kpkp;
-    MYREAL m1p = kpkp/aa;
-    MYREAL m2 = bb/aa;
-    MYCOMPLEX n1 = bb/(xi*xi);
+    real_t m1 = aa/kpkp;
+    real_t m1p = kpkp/aa;
+    real_t m2 = bb/aa;
+    cplx_t n1 = bb/(xi*xi);
 
     if(tbar > 1.0){
         if(n == 1){
@@ -388,13 +388,13 @@ static MYCOMPLEX V_P(int n, MYREAL tbar, MYCOMPLEX c, VARS *V)
     GRTRaiseError("Wrong execution in function %s.", __func__);
 }
 
-static MYCOMPLEX U_S1(int n, MYREAL tbar, MYCOMPLEX c, VARS *V)
+static cplx_t U_S1(int n, real_t tbar, cplx_t c, VARS *V)
 {
-    MYREAL tbtb = tbar*tbar;
-    MYREAL bb = tbtb - 1.0;
-    MYREAL b = sqrt(bb);  // 要求 tbar >= 1.0
+    real_t tbtb = tbar*tbar;
+    real_t bb = tbtb - 1.0;
+    real_t b = sqrt(bb);  // 要求 tbar >= 1.0
 
-    MYCOMPLEX xip = sqrt(bb - c + 0*I);
+    cplx_t xip = sqrt(bb - c + 0*I);
 
     if(n==1){
         if(cimag(c) == 0.0 && creal(c) < bb){
@@ -422,22 +422,22 @@ static MYCOMPLEX U_S1(int n, MYREAL tbar, MYCOMPLEX c, VARS *V)
     GRTRaiseError("Wrong execution in function %s.", __func__);
 }
 
-static MYCOMPLEX V_S1(int n, MYREAL tbar, MYCOMPLEX c, VARS *V)
+static cplx_t V_S1(int n, real_t tbar, cplx_t c, VARS *V)
 {
-    MYREAL kp = V->kp;
-    MYREAL kk = V->kk;
-    MYREAL kpkp = V->kpkp;
-    MYREAL tbtb = tbar*tbar;
-    MYREAL aa = tbtb - kk;
-    MYREAL a = sqrt(aa);  // 要求 tbar >= k
-    MYREAL bb = tbtb - 1.0;
-    MYREAL b = sqrt(bb);  // 要求 tbar >= 1.0
+    real_t kp = V->kp;
+    real_t kk = V->kk;
+    real_t kpkp = V->kpkp;
+    real_t tbtb = tbar*tbar;
+    real_t aa = tbtb - kk;
+    real_t a = sqrt(aa);  // 要求 tbar >= k
+    real_t bb = tbtb - 1.0;
+    real_t b = sqrt(bb);  // 要求 tbar >= 1.0
 
-    MYCOMPLEX xip = sqrt(bb - c + 0*I);
-    MYCOMPLEX etp = sqrt(kpkp + c + 0*I);
+    cplx_t xip = sqrt(bb - c + 0*I);
+    cplx_t etp = sqrt(kpkp + c + 0*I);
     
-    MYREAL m2 = bb/aa;
-    MYCOMPLEX n2 = bb/(xip*xip);
+    real_t m2 = bb/aa;
+    cplx_t n2 = bb/(xip*xip);
 
     if(n==1){
         if(cimag(c) == 0.0 && creal(c) > - kpkp && creal(c) < bb){
@@ -464,19 +464,19 @@ static MYCOMPLEX V_S1(int n, MYREAL tbar, MYCOMPLEX c, VARS *V)
     GRTRaiseError("Wrong execution in function %s.", __func__);
 }
 
-static MYCOMPLEX U_S2(int n, MYREAL tbar, MYCOMPLEX c, VARS *V)
+static cplx_t U_S2(int n, real_t tbar, cplx_t c, VARS *V)
 {
-    MYREAL kp = V->kp;
-    MYREAL kk = V->kk;
-    MYREAL tbtb = tbar*tbar;
-    MYREAL aa = tbtb - kk;
-    MYREAL a = sqrt(aa);  // 要求 tbar >= k
-    MYREAL bb = tbtb - 1.0;
-    MYREAL b = sqrt(bb);  // 要求 tbar >= 1.0
-    MYREAL f = kp + a;
-    MYCOMPLEX d = sqrt(c*(bb - c));
+    real_t kp = V->kp;
+    real_t kk = V->kk;
+    real_t tbtb = tbar*tbar;
+    real_t aa = tbtb - kk;
+    real_t a = sqrt(aa);  // 要求 tbar >= k
+    real_t bb = tbtb - 1.0;
+    real_t b = sqrt(bb);  // 要求 tbar >= 1.0
+    real_t f = kp + a;
+    cplx_t d = sqrt(c*(bb - c));
 
-    MYCOMPLEX xip = sqrt(bb - c + 0*I);
+    cplx_t xip = sqrt(bb - c + 0*I);
 
     if(n == 1){
         return 1.0/(I*xip) * atan((a - b)*I*xip/(c + b*(a-b)));
@@ -491,29 +491,29 @@ static MYCOMPLEX U_S2(int n, MYREAL tbar, MYCOMPLEX c, VARS *V)
         return 0.5*(f-b)*(f-b)/f;
     }
     else if(n == 5){
-        MYREAL f4 = f*f*f*f;
-        MYREAL b4 = bb*bb;
+        real_t f4 = f*f*f*f;
+        real_t b4 = bb*bb;
         return 0.125*(f4 - b4)/(f*f) - 0.5*bb*log(f/b);
     }
     GRTRaiseError("Wrong execution in function %s.", __func__);
 }
 
-static MYCOMPLEX V_S2(int n, MYREAL tbar, MYCOMPLEX c, VARS *V)
+static cplx_t V_S2(int n, real_t tbar, cplx_t c, VARS *V)
 {
-    MYREAL kp = V->kp;
-    MYREAL kk = V->kk;
-    MYREAL kpkp = V->kpkp;
-    MYREAL tbtb = tbar*tbar;
-    MYREAL aa = tbtb - kk;
-    MYREAL a = sqrt(aa);  // 要求 tbar >= k
-    MYREAL bb = tbtb - 1.0;
-    MYREAL b = sqrt(bb);  // 要求 tbar >= 1.0
+    real_t kp = V->kp;
+    real_t kk = V->kk;
+    real_t kpkp = V->kpkp;
+    real_t tbtb = tbar*tbar;
+    real_t aa = tbtb - kk;
+    real_t a = sqrt(aa);  // 要求 tbar >= k
+    real_t bb = tbtb - 1.0;
+    real_t b = sqrt(bb);  // 要求 tbar >= 1.0
 
-    MYCOMPLEX xip = sqrt(bb - c + 0*I);
-    MYCOMPLEX etp = sqrt(kpkp + c + 0*I);
+    cplx_t xip = sqrt(bb - c + 0*I);
+    cplx_t etp = sqrt(kpkp + c + 0*I);
     
-    MYREAL m1p = kpkp/aa;
-    MYCOMPLEX n3 = kpkp/(etp*etp);
+    real_t m1p = kpkp/aa;
+    cplx_t n3 = kpkp/(etp*etp);
 
     if(n==1){
         if(cimag(c) == 0.0 && creal(c) > - kpkp && creal(c) < bb){
@@ -540,19 +540,19 @@ static MYCOMPLEX V_S2(int n, MYREAL tbar, MYCOMPLEX c, VARS *V)
     GRTRaiseError("Wrong execution in function %s.", __func__);
 }
 
-static MYCOMPLEX U_SP(int n, MYREAL tbar, MYCOMPLEX c, VARS *V)
+static cplx_t U_SP(int n, real_t tbar, cplx_t c, VARS *V)
 {
-    MYREAL kk = V->kk;
-    MYREAL kp = V->kp;
-    MYREAL tbtb = tbar*tbar;
-    MYREAL aa = tbtb - kk;
-    MYREAL a = sqrt(aa);  // 要求 tbar >= k
-    MYREAL bb = tbtb - 1.0;
-    MYREAL bp = sqrt(- bb);  // 要求 tbar <= 1.0
-    MYREAL f = kp + a;
-    MYCOMPLEX d = sqrt(c*(bb - c));
+    real_t kk = V->kk;
+    real_t kp = V->kp;
+    real_t tbtb = tbar*tbar;
+    real_t aa = tbtb - kk;
+    real_t a = sqrt(aa);  // 要求 tbar >= k
+    real_t bb = tbtb - 1.0;
+    real_t bp = sqrt(- bb);  // 要求 tbar <= 1.0
+    real_t f = kp + a;
+    cplx_t d = sqrt(c*(bb - c));
 
-    MYCOMPLEX xip = sqrt(bb - c + 0*I);
+    cplx_t xip = sqrt(bb - c + 0*I);
 
     if(n == 1){
         return - 1.0/(I*xip) * atan(a/(I*xip));
@@ -567,26 +567,26 @@ static MYCOMPLEX U_SP(int n, MYREAL tbar, MYCOMPLEX c, VARS *V)
         return 0.5*(f*f + bb)/f;
     }
     else if(n == 5){
-        MYREAL f4 = f*f*f*f;
-        MYREAL b4 = bb*bb;
+        real_t f4 = f*f*f*f;
+        real_t b4 = bb*bb;
         return 0.125*(f4 - b4)/(f*f) - 0.5*bb*log(f/bp);
     }
     GRTRaiseError("Wrong execution in function %s.", __func__);
 }
 
-static MYCOMPLEX V_SP(int n, MYREAL tbar, MYCOMPLEX c, VARS *V)
+static cplx_t V_SP(int n, real_t tbar, cplx_t c, VARS *V)
 {
-    MYREAL kk = V->kk;
-    MYREAL kp = V->kp;
-    MYREAL kpkp = V->kpkp;
-    MYREAL tbtb = tbar*tbar;
-    MYREAL aa = tbtb - kk;
-    MYREAL bb = tbtb - 1.0;
+    real_t kk = V->kk;
+    real_t kp = V->kp;
+    real_t kpkp = V->kpkp;
+    real_t tbtb = tbar*tbar;
+    real_t aa = tbtb - kk;
+    real_t bb = tbtb - 1.0;
 
-    MYCOMPLEX etp = sqrt(kpkp + c + 0*I);
+    cplx_t etp = sqrt(kpkp + c + 0*I);
     
-    MYREAL m1 = aa/kpkp;
-    MYCOMPLEX n4 = aa/(etp*etp);
+    real_t m1 = aa/kpkp;
+    cplx_t n4 = aa/(etp*etp);
 
     if(n==1){
         if(cimag(c) == 0.0 && creal(c) > - kpkp && creal(c) < bb){
@@ -614,24 +614,24 @@ static MYCOMPLEX V_SP(int n, MYREAL tbar, MYCOMPLEX c, VARS *V)
     GRTRaiseError("Wrong execution in function %s.", __func__);
 }
 
-static void build_raw(MYREAL tbar, VARS *V, MYCOMPLEX u[3][3], 
-    MYCOMPLEX C[3][3][3][10], 
-    MYCOMPLEX (*Ufunc)(int, MYREAL, MYCOMPLEX, VARS *), 
-    MYCOMPLEX (*Vfunc)(int, MYREAL, MYCOMPLEX, VARS *), 
-    int sgn, MYCOMPLEX ys[3])
+static void build_raw(real_t tbar, VARS *V, cplx_t u[3][3], 
+    cplx_t C[3][3][3][10], 
+    cplx_t (*Ufunc)(int, real_t, cplx_t, VARS *), 
+    cplx_t (*Vfunc)(int, real_t, cplx_t, VARS *), 
+    int sgn, cplx_t ys[3])
 {
     // 计算 u, v 系数
-    MYCOMPLEX uc[3][3][10] = {0};
-    MYCOMPLEX vc[3][3][11] = {0};
+    cplx_t uc[3][3][10] = {0};
+    cplx_t vc[3][3][11] = {0};
     uv(sgn, V->kpkp, ys, C, uc, vc);
 
-    MYCOMPLEX y1, y2, y3;
+    cplx_t y1, y2, y3;
     y1 = ys[0];
     y2 = ys[1];
     y3 = ys[2];
 
     // 计算 UP, VP 函数
-    MYCOMPLEX UF[6][4] = {0};
+    cplx_t UF[6][4] = {0};
     UF[1][1] = Ufunc(1, tbar, y1, V);
     UF[1][2] = Ufunc(1, tbar, y2, V);
     UF[1][3] = Ufunc(1, tbar, y3, V);
@@ -642,7 +642,7 @@ static void build_raw(MYREAL tbar, VARS *V, MYCOMPLEX u[3][3],
         UF[i][1] = Ufunc(i, tbar, y3, V);
     }
 
-    MYCOMPLEX VF[7][4] = {0};
+    cplx_t VF[7][4] = {0};
     VF[1][1] = Vfunc(1, tbar, y1, V);
     VF[1][2] = Vfunc(1, tbar, y2, V);
     VF[1][3] = Vfunc(1, tbar, y3, V);
@@ -656,7 +656,7 @@ static void build_raw(MYREAL tbar, VARS *V, MYCOMPLEX u[3][3],
     // 组合成 P 波项
     for(int i1=0; i1<3; ++i1){
         for(int i2=0; i2<3; ++i2){
-            MYCOMPLEX tmp = 0.0;
+            cplx_t tmp = 0.0;
             tmp +=  uc[i1][i2][1]*UF[1][1] + uc[i1][i2][2]*UF[2][1]
                   + uc[i1][i2][3]*UF[1][2] + uc[i1][i2][4]*UF[2][2]
                   + uc[i1][i2][5]*UF[1][3] + uc[i1][i2][6]*UF[2][3];
@@ -674,14 +674,14 @@ static void build_raw(MYREAL tbar, VARS *V, MYCOMPLEX u[3][3],
     }
 }
 
-static void build_P(MYREAL tbar, VARS *V, MYREAL u[3][3])
+static void build_P(real_t tbar, VARS *V, real_t u[3][3])
 {
-    MYREAL k = V->k;
+    real_t k = V->k;
     if(tbar < k) return;
 
-    MYCOMPLEX cu[3][3];
-    MYCOMPLEX ckim[3][6][10] = {0};
-    MYCOMPLEX C[3][3][3][10] = {0};
+    cplx_t cu[3][3];
+    cplx_t ckim[3][6][10] = {0};
+    cplx_t C[3][3][3][10] = {0};
     ckim_P(tbar, V, ckim);
     Cmat(V, ckim, C);
     build_raw(tbar, V, cu, C, U_P, V_P, 1, V->ys);
@@ -692,13 +692,13 @@ static void build_P(MYREAL tbar, VARS *V, MYREAL u[3][3])
     }
 }
 
-static void build_S1(MYREAL tbar, VARS *V, MYREAL u[3][3])
+static void build_S1(real_t tbar, VARS *V, real_t u[3][3])
 {
     if(tbar < 1.0) return;
 
-    MYCOMPLEX cu[3][3];
-    MYCOMPLEX ckim[3][6][10] = {0};
-    MYCOMPLEX C[3][3][3][10] = {0};
+    cplx_t cu[3][3];
+    cplx_t ckim[3][6][10] = {0};
+    cplx_t C[3][3][3][10] = {0};
     ckim_S1(tbar, V, ckim);
     Cmat(V, ckim, C);
     build_raw(tbar, V, cu, C, U_S1, V_S1, 1, V->ysp);
@@ -709,14 +709,14 @@ static void build_S1(MYREAL tbar, VARS *V, MYREAL u[3][3])
     }
 }
 
-static void build_S2_SP(MYREAL tbar, VARS *V, MYREAL us2[3][3], MYREAL usp[3][3])
+static void build_S2_SP(real_t tbar, VARS *V, real_t us2[3][3], real_t usp[3][3])
 {
-    MYREAL k = V->k;
+    real_t k = V->k;
     if(tbar < k) return;
     
-    MYCOMPLEX cu[3][3];
-    MYCOMPLEX ckim[3][6][10] = {0};
-    MYCOMPLEX C[3][3][3][10] = {0};
+    cplx_t cu[3][3];
+    cplx_t ckim[3][6][10] = {0};
+    cplx_t C[3][3][3][10] = {0};
     ckim_S2(tbar, V, ckim);
     Cmat(V, ckim, C);
 
@@ -739,13 +739,13 @@ static void build_S2_SP(MYREAL tbar, VARS *V, MYREAL us2[3][3], MYREAL usp[3][3]
    
 }
 
-static void build_R(MYREAL tbar, VARS *V, MYREAL u[3][3])
+static void build_R(real_t tbar, VARS *V, real_t u[3][3])
 {
-    MYREAL kpakpa = V->kpakpa;
-    MYREAL kpa = V->kpa;
+    real_t kpakpa = V->kpakpa;
+    real_t kpa = V->kpa;
     if(tbar < kpa)  return;
 
-    MYREAL coef = M_PI_4 * tbar * V->RaylR / sqrt(tbar*tbar - kpakpa);
+    real_t coef = M_PI_4 * tbar * V->RaylR / sqrt(tbar*tbar - kpakpa);
 
     for(int i1=0; i1<3; ++i1){
         for(int i2=0; i2<3; ++i2){
@@ -759,7 +759,7 @@ static void build_R(MYREAL tbar, VARS *V, MYREAL u[3][3])
 
 
 void grt_solve_lamb1(
-    const MYREAL nu, const MYREAL *ts, const int nt, const MYREAL azimuth, MYREAL (*u)[3][3])
+    const real_t nu, const real_t *ts, const int nt, const real_t azimuth, real_t (*u)[3][3])
 {
     // 检查泊松比范围
     if(nu <= 0.0 || nu >= 0.5){
@@ -783,9 +783,9 @@ void grt_solve_lamb1(
         printf("\n");
     }
 
-    MYREAL phi = azimuth * DEG1;
+    real_t phi = azimuth * DEG1;
     
-    MYREAL tbar_eps = GRT_MIN(1e-8, (ts[1]-ts[0]) * 1e-5);
+    real_t tbar_eps = GRT_MIN(1e-8, (ts[1]-ts[0]) * 1e-5);
 
     // 初始化相关变量
     VARS V0 = {0};
@@ -806,14 +806,14 @@ void grt_solve_lamb1(
 
     // 求一元三次方程的根
     {
-        MYREAL a, b, c;
-        MYREAL nu2, nu3, nu4;
+        real_t a, b, c;
+        real_t nu2, nu3, nu4;
         nu2 = V0.nu*V0.nu;
         nu3 = nu2*V0.nu;
         nu4 = nu3*V0.nu;
-        MYREAL snu = 1.0 - V0.nu;
-        MYREAL snu2 = snu*snu;
-        MYREAL snu3 = snu2*snu;
+        real_t snu = 1.0 - V0.nu;
+        real_t snu2 = snu*snu;
+        real_t snu3 = snu2*snu;
         a = -0.5 * (2.0*nu2 + 1.0)/snu;
         b = 0.25 * (4.0*nu3 - 4.0*nu2 + 4.0*V0.nu - 1.0)/snu2;
         c = -0.125*nu4/snu3;
@@ -825,9 +825,9 @@ void grt_solve_lamb1(
 
     // 另一种形式的Rayleigh波函数
     {   
-        MYCOMPLEX y3[3];
-        MYREAL a, b, c;
-        MYREAL m = V0.kk;
+        cplx_t y3[3];
+        real_t a, b, c;
+        real_t m = V0.kk;
         a = 0.5*(2.0*m - 3.0)/(1 - m);
         b = 0.5/(1 - m);
         c = - 0.0625/(1 - m);
@@ -841,22 +841,22 @@ void grt_solve_lamb1(
         V0.kpakpa = creal(y3[2]);
         V0.kpa = sqrt(V0.kpakpa);
 
-        MYREAL u0 = sqrt(V0.kpakpa - V0.kk);
-        MYREAL v0 = sqrt(V0.kpakpa - 1.0);
+        real_t u0 = sqrt(V0.kpakpa - V0.kk);
+        real_t v0 = sqrt(V0.kpakpa - 1.0);
 
-        MYREAL R1, R2;
+        real_t R1, R2;
         R1 = (1.0 - 2.0*V0.kpakpa)*u0*v0 + 2.0*u0*u0*v0*v0;
         R2 = 2.0*(1.0 - 2.0*V0.kpakpa)*u0*v0 + 2.0*u0*u0*v0*v0 + V0.kpakpa*(u0*u0 + v0*v0);
         V0.RaylR = R1 / R2;
     }
 
     for(int i=0; i < nt; ++i){
-        MYREAL up[3][3] = {0};
-        MYREAL us1[3][3] = {0};
-        MYREAL us2[3][3] = {0};
-        MYREAL usp[3][3] = {0};
-        MYREAL uR[3][3] = {0};
-        MYREAL tbar = ts[i];
+        real_t up[3][3] = {0};
+        real_t us1[3][3] = {0};
+        real_t us2[3][3] = {0};
+        real_t usp[3][3] = {0};
+        real_t uR[3][3] = {0};
+        real_t tbar = ts[i];
 
         // 跳过一些震相到时处的奇点
         if(tbar == 1.0 || tbar == V0.k || tbar == V0.kpa)   tbar += tbar_eps;

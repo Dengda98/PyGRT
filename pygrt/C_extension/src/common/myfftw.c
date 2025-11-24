@@ -12,7 +12,7 @@
 #include "grt/common/checkerror.h"
 
 #define X(T, s, S) \
-static GRT_FFTW##S##_HOLDER *  grt_init_fftw##s##_holder(const MYINT nt, const MYREAL dt, const MYINT nf_valid, const MYREAL df)\
+static GRT_FFTW##S##_HOLDER *  grt_init_fftw##s##_holder(const MYINT nt, const real_t dt, const MYINT nf_valid, const real_t df)\
 {\
     GRT_FFTW##S##_HOLDER *fh = (GRT_FFTW##S##_HOLDER*)calloc(1, sizeof(GRT_FFTW##S##_HOLDER));\
     if (!fh) {\
@@ -41,7 +41,7 @@ void grt_reset_fftw##s##_holder_zero(GRT_FFTW##S##_HOLDER *fh)\
 }\
 \
 \
-GRT_FFTW##S##_HOLDER * grt_create_fftw##s##_holder_C2R_1D(const MYINT nt, const MYREAL dt, const MYINT nf_valid, const MYREAL df)\
+GRT_FFTW##S##_HOLDER * grt_create_fftw##s##_holder_C2R_1D(const MYINT nt, const real_t dt, const MYINT nf_valid, const real_t df)\
 {\
     GRT_FFTW##S##_HOLDER * fh = grt_init_fftw##s##_holder(nt, dt, nf_valid, df);\
     fh->plan = fftw##s##_plan_dft_c2r_1d(nt, fh->W_f, fh->w_t, FFTW_ESTIMATE);\
@@ -49,7 +49,7 @@ GRT_FFTW##S##_HOLDER * grt_create_fftw##s##_holder_C2R_1D(const MYINT nt, const 
 }\
 \
 \
-GRT_FFTW##S##_HOLDER * grt_create_fftw##s##_holder_R2C_1D(const MYINT nt, const MYREAL dt, const MYINT nf_valid, const MYREAL df)\
+GRT_FFTW##S##_HOLDER * grt_create_fftw##s##_holder_R2C_1D(const MYINT nt, const real_t dt, const MYINT nf_valid, const real_t df)\
 {\
     GRT_FFTW##S##_HOLDER * fh = grt_init_fftw##s##_holder(nt, dt, nf_valid, df);\
     fh->plan = fftw##s##_plan_dft_r2c_1d(nt, fh->w_t, fh->W_f, FFTW_ESTIMATE);\

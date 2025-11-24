@@ -78,7 +78,7 @@ int static_rotation_main(int argc, char **argv){
     int out_varids[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
 
     // 打开 nc 文件
-    GRT_NC_CHECK(nc_open(s_ingrid, NC_WRITE, &in_ncid));
+    NC_CHECK(nc_open(s_ingrid, NC_WRITE, &in_ncid));
 
     // 输出分量格式，即是否需要旋转到ZNE
     bool rot2ZNE = false;
@@ -86,7 +86,7 @@ int static_rotation_main(int argc, char **argv){
     // 读入数据是否旋转到ZNE
     {
         MYINT rot2ZNE_int;
-        GRT_NC_CHECK(GRT_NC_FUNC_MYINT(nc_get_att) (in_ncid, NC_GLOBAL, "rot2ZNE", &rot2ZNE_int));
+        NC_CHECK(GRT_NC_FUNC_MYINT(nc_get_att) (in_ncid, NC_GLOBAL, "rot2ZNE", &rot2ZNE_int));
         rot2ZNE = !(rot2ZNE_int == 0);
     }
 
@@ -95,43 +95,43 @@ int static_rotation_main(int argc, char **argv){
 
     // 读入的数据是否有位移偏导
     MYINT calc_upar;
-    GRT_NC_CHECK(GRT_NC_FUNC_MYINT(nc_get_att) (in_ncid, NC_GLOBAL, "calc_upar", &calc_upar));
+    NC_CHECK(GRT_NC_FUNC_MYINT(nc_get_att) (in_ncid, NC_GLOBAL, "calc_upar", &calc_upar));
     if(calc_upar == 0){
         GRTRaiseError("[%s] Input grid didn't have displacement derivatives.", command);
     }
 
     // 读入坐标变量 dimid, varid
     size_t nx, ny;
-    GRT_NC_CHECK(nc_inq_dimid(in_ncid, "north", &in_x_dimid));
-    GRT_NC_CHECK(nc_inq_dimlen(in_ncid, in_x_dimid, &nx));
-    GRT_NC_CHECK(nc_inq_dimid(in_ncid, "east", &in_y_dimid));
-    GRT_NC_CHECK(nc_inq_dimlen(in_ncid, in_y_dimid, &ny));
+    NC_CHECK(nc_inq_dimid(in_ncid, "north", &in_x_dimid));
+    NC_CHECK(nc_inq_dimlen(in_ncid, in_x_dimid, &nx));
+    NC_CHECK(nc_inq_dimid(in_ncid, "east", &in_y_dimid));
+    NC_CHECK(nc_inq_dimlen(in_ncid, in_y_dimid, &ny));
     in_dimids[0] = in_x_dimid;
     in_dimids[1] = in_y_dimid;
 
     // 读取坐标变量
-    MYREAL *xs = (MYREAL *)calloc(nx, sizeof(MYREAL));
-    MYREAL *ys = (MYREAL *)calloc(ny, sizeof(MYREAL));
-    GRT_NC_CHECK(nc_inq_varid(in_ncid, "north", &in_x_varid));
-    GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_get_var) (in_ncid, in_x_varid, xs));
-    GRT_NC_CHECK(nc_inq_varid(in_ncid, "east", &in_y_varid));
-    GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_get_var) (in_ncid, in_y_varid, ys));
+    real_t *xs = (real_t *)calloc(nx, sizeof(real_t));
+    real_t *ys = (real_t *)calloc(ny, sizeof(real_t));
+    NC_CHECK(nc_inq_varid(in_ncid, "north", &in_x_varid));
+    NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_x_varid, xs));
+    NC_CHECK(nc_inq_varid(in_ncid, "east", &in_y_varid));
+    NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_y_varid, ys));
 
     // 读入合成位移偏导 varid
     for(int c=0; c<GRT_CHANNEL_NUM; ++c){
         char *s_title = NULL;
         GRT_SAFE_ASPRINTF(&s_title, "%c", toupper(chs[c]));
-        GRT_NC_CHECK(nc_inq_varid(in_ncid, s_title, &in_syn_varids[c]));
+        NC_CHECK(nc_inq_varid(in_ncid, s_title, &in_syn_varids[c]));
 
         for(int c2=0; c2<GRT_CHANNEL_NUM; ++c2){
             GRT_SAFE_ASPRINTF(&s_title, "%c%c", tolower(chs[c2]), toupper(chs[c]));
-            GRT_NC_CHECK(nc_inq_varid(in_ncid, s_title, &in_syn_upar_varids[c2][c]));
+            NC_CHECK(nc_inq_varid(in_ncid, s_title, &in_syn_upar_varids[c2][c]));
         }
         GRT_SAFE_FREE_PTR(s_title);
     }
 
     // 重新进入定义模式
-    GRT_NC_CHECK(nc_redef(in_ncid));
+    NC_CHECK(nc_redef(in_ncid));
 
     // 定义合成结果 varid
     for(int c=0; c<GRT_CHANNEL_NUM; ++c){
@@ -139,46 +139,46 @@ int static_rotation_main(int argc, char **argv){
         for(int c2=c+1; c2<GRT_CHANNEL_NUM; ++c2){
             // 这里命名顺序要注意，例如 ZR -> 0.5*(u_{z,r} - u_{r,z})
             GRT_SAFE_ASPRINTF(&s_title, "rotation_%c%c", toupper(chs[c]), toupper(chs[c2]));
-            GRT_NC_CHECK(nc_def_var(in_ncid, s_title, GRT_NC_MYREAL, ndims, in_dimids, &out_varids[c2][c]));
+            NC_CHECK(nc_def_var(in_ncid, s_title, NC_REAL, ndims, in_dimids, &out_varids[c2][c]));
         }
         GRT_SAFE_FREE_PTR(s_title);
     }
 
     // 结束定义模式
-    GRT_NC_CHECK(nc_enddef(in_ncid));
+    NC_CHECK(nc_enddef(in_ncid));
 
     // 总震中距数
     size_t nr = nx * ny;
 
     // 先读入内存，
-    MYREAL *u[GRT_CHANNEL_NUM];
-    MYREAL *upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
+    real_t *u[GRT_CHANNEL_NUM];
+    real_t *upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
     // 计算结果
-    MYREAL *res[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
+    real_t *res[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
     for(int c=0; c<GRT_CHANNEL_NUM; ++c){
-        u[c] = (MYREAL *)calloc(nr, sizeof(MYREAL));
-        GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_get_var) (in_ncid, in_syn_varids[c], u[c]));
+        u[c] = (real_t *)calloc(nr, sizeof(real_t));
+        NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_syn_varids[c], u[c]));
         for(int c2=0; c2<GRT_CHANNEL_NUM; ++c2){
-            res[c2][c] = (MYREAL *)calloc(nr, sizeof(MYREAL));
-            upar[c2][c] = (MYREAL *)calloc(nr, sizeof(MYREAL));
-            GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_get_var) (in_ncid, in_syn_upar_varids[c2][c], upar[c2][c]));
+            res[c2][c] = (real_t *)calloc(nr, sizeof(real_t));
+            upar[c2][c] = (real_t *)calloc(nr, sizeof(real_t));
+            NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_syn_upar_varids[c2][c], upar[c2][c]));
         }
     }
 
     // 每个点逐个处理
     for(size_t ix=0; ix < nx; ++ix){
-        MYREAL x = xs[ix];
+        real_t x = xs[ix];
         for(size_t iy=0; iy < ny; ++iy){
-            MYREAL y = ys[iy];
+            real_t y = ys[iy];
 
             size_t ir = iy + ix*ny;
 
             // 震中距
-            MYREAL dist = GRT_MAX(sqrt(x*x + y*y), GRT_MIN_DISTANCE);
+            real_t dist = GRT_MAX(sqrt(x*x + y*y), GRT_MIN_DISTANCE);
 
             for(int c=0; c<GRT_CHANNEL_NUM; ++c){
                 for(int c2=c+1; c2<GRT_CHANNEL_NUM; ++c2){
-                    MYREAL val = 0.5 * (upar[c2][c][ir] - upar[c][c2][ir]);
+                    real_t val = 0.5 * (upar[c2][c][ir] - upar[c][c2][ir]);
                     
                     // 特殊情况需加上协变导数，1e-5是因为km->cm
                     if(chs[c]=='R' && chs[c2]=='T'){
@@ -194,13 +194,13 @@ int static_rotation_main(int argc, char **argv){
     // 写入 nc 文件
     for(int c=0; c<GRT_CHANNEL_NUM; ++c){
         for(int c2=c+1; c2<GRT_CHANNEL_NUM; ++c2){
-            GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_put_var) (in_ncid, out_varids[c2][c], res[c2][c]));
+            NC_CHECK(NC_FUNC_REAL(nc_put_var) (in_ncid, out_varids[c2][c], res[c2][c]));
         }
     }
     
 
     // 关闭文件
-    GRT_NC_CHECK(nc_close(in_ncid));
+    NC_CHECK(nc_close(in_ncid));
 
     GRT_SAFE_FREE_PTR(s_ingrid);
     free_Ctrl(Ctrl);

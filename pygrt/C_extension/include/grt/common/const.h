@@ -32,19 +32,17 @@
 #endif
 
 
-
-// #define GRT_USE_FLOAT  ///< 是否使用单精度浮点数
-
 typedef int MYINT;  ///< 整数 
 
+typedef double real_t;
+typedef double complex cplx_t;
 
-#ifdef GRT_USE_FLOAT 
-    typedef float _Complex  MYCOMPLEX;   ///< 复数
-    typedef float MYREAL;   ///< 浮点数
-#else 
-    typedef double _Complex MYCOMPLEX;
-    typedef double MYREAL;
-#endif
+#define GRT_NC_MYINT  NC_INT
+#define GRT_NC_FUNC_MYINT(func)  func##_int
+
+#define NC_REAL  NC_DOUBLE
+#define NC_FUNC_REAL(func)  func##_double
+
 
 // 常数
 #define RTWOTHIRD 0.6666666666666667  ///< 2/3

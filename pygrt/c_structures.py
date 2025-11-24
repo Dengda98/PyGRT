@@ -13,7 +13,6 @@
 from ctypes import *
 
 __all__ = [
-    "USE_FLOAT",
     "CHANNEL_NUM",
     "QWV_NUM",
     "INTEG_NUM",
@@ -35,7 +34,6 @@ __all__ = [
 ]
 
 
-USE_FLOAT = False
 CHANNEL_NUM = 3
 QWV_NUM = 3
 INTEG_NUM = 4
@@ -47,12 +45,12 @@ ZNEchs = ['Z', 'N', 'E']
 qwvchs = ['q', 'w', 'v']
 
 
-NPCT_REAL_TYPE = 'f4' if USE_FLOAT else 'f8'
-NPCT_CMPLX_TYPE = f'c{int(NPCT_REAL_TYPE[1:])*2}'
+NPCT_REAL_TYPE = 'f8'
+NPCT_CMPLX_TYPE = 'c16'
 
 
 
-REAL = c_float if USE_FLOAT else c_double
+REAL = c_double
 CPLX = REAL*2
 PREAL = POINTER(REAL)
 PCPLX = POINTER(CPLX)

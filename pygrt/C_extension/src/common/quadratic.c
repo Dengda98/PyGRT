@@ -17,9 +17,9 @@
 
 
 
-void grt_quad_term(const MYREAL x[3], const MYCOMPLEX f[3], MYCOMPLEX *pa, MYCOMPLEX *pb, MYCOMPLEX *pc)
+void grt_quad_term(const real_t x[3], const cplx_t f[3], cplx_t *pa, cplx_t *pb, cplx_t *pc)
 {
-    MYREAL x1, x2, x3, w1, w2, w3;
+    real_t x1, x2, x3, w1, w2, w3;
     x1 = x[0];
     x2 = x[1];
     x3 = x[2];
@@ -28,12 +28,12 @@ void grt_quad_term(const MYREAL x[3], const MYCOMPLEX f[3], MYCOMPLEX *pa, MYCOM
     w2 = x2*x2;
     w3 = x3*x3;
 
-    MYCOMPLEX f1, f2, f3;
+    cplx_t f1, f2, f3;
     f1 = f[0];
     f2 = f[1];
     f3 = f[2];
 
-    MYCOMPLEX d;
+    cplx_t d;
     d = (x1-x2)*(x2-x3)*(x3-x1);
     *pa = - (f1*(x2-x3) + f2*(x3-x1) + f3*(x1-x2)) / d;
     *pb =   (f1*(w2-w3) + f2*(w3-w1) + f3*(w1-w2)) / d;
@@ -42,15 +42,15 @@ void grt_quad_term(const MYREAL x[3], const MYCOMPLEX f[3], MYCOMPLEX *pa, MYCOM
 
 
 
-MYCOMPLEX grt_quad_eval(MYREAL x, MYCOMPLEX a, MYCOMPLEX b, MYCOMPLEX c)
+cplx_t grt_quad_eval(real_t x, cplx_t a, cplx_t b, cplx_t c)
 {
     return a*x*x + b*x + c;
 }
 
 
-MYCOMPLEX grt_quad_integral(MYREAL x1, MYREAL x2, MYCOMPLEX a, MYCOMPLEX b, MYCOMPLEX c)
+cplx_t grt_quad_integral(real_t x1, real_t x2, cplx_t a, cplx_t b, cplx_t c)
 {
-    MYREAL xx1, xx2, xxx1, xxx2;
+    real_t xx1, xx2, xxx1, xxx2;
     xx1 = x1*x1;    xx2 = x2*x2;
     xxx1 = xx1*x1;  xxx2 = xx2*x2; 
     return a/3.0*(xxx2 - xxx1) + b/2.0*(xx2 - xx1) + c*(x2 - x1);

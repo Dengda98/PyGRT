@@ -26,8 +26,8 @@ typedef struct {
     /** 震源和接收器深度 */
     struct {
         bool active;
-        MYREAL depsrc;
-        MYREAL deprcv;
+        real_t depsrc;
+        real_t deprcv;
         char *s_depsrc;
         char *s_deprcv;
     } D;
@@ -35,7 +35,7 @@ typedef struct {
     struct {
         bool active;
         char **s_rs;
-        MYREAL *rs;
+        real_t *rs;
         MYINT nr;
     } R;
 } GRT_MODULE_CTRL;
@@ -57,12 +57,12 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
 
 
 
-MYREAL grt_compute_travt1d(
-    const MYREAL *Thk, const MYREAL *Vel0, const int nlay, 
-    const int isrc, const int ircv, const MYREAL dist)
+real_t grt_compute_travt1d(
+    const real_t *Thk, const real_t *Vel0, const int nlay, 
+    const int isrc, const int ircv, const real_t dist)
 {
     // 以防速度数组中存在零速度的情况，这里新建数组以去除0速度
-    MYREAL *Vel = (MYREAL*)malloc(sizeof(MYREAL)*nlay);
+    real_t *Vel = (real_t*)malloc(sizeof(real_t)*nlay);
     for(int i=0; i<nlay; ++i){
         Vel[i] = (Vel0[i] <= 0.0)? 1e-6 : Vel0[i];  // 给一个极慢值
     }
@@ -83,19 +83,19 @@ MYREAL grt_compute_travt1d(
     
 
     // 震源和场点速度
-    MYREAL vsrc = Vel[isrc];
-    MYREAL vrcv = Vel[ircv];
-    MYREAL vmax = (vsrc < vrcv)? vrcv : vsrc;
-    MYREAL vmin = (vsrc < vrcv)? vsrc : vrcv;
+    real_t vsrc = Vel[isrc];
+    real_t vrcv = Vel[ircv];
+    real_t vmax = (vsrc < vrcv)? vrcv : vsrc;
+    real_t vmin = (vsrc < vrcv)? vsrc : vrcv;
     // 震源和场点深度
-    MYREAL depsrc=0.0, deprcv=0.0;
+    real_t depsrc=0.0, deprcv=0.0;
     for(int i=0; i<isrc; ++i) {depsrc += Thk[i];} 
     for(int i=0; i<ircv; ++i) {deprcv += Thk[i];} 
-    MYREAL depdif = fabs(depsrc - deprcv);
+    real_t depdif = fabs(depsrc - deprcv);
 
 
     // 初始化走时
-    MYREAL travt = 9.0e30;
+    real_t travt = 9.0e30;
 
     //=====================================================    
     // 对于四种情况逐一讨论，取最小走时
@@ -139,19 +139,19 @@ MYREAL grt_compute_travt1d(
         // 最小震中距差
         const double minX=1e-3;
         // 找到慢度上限，准确说是各层中最大慢度的最小值
-        MYREAL pmax0=1.0/vmax;
+        real_t pmax0=1.0/vmax;
         for(int i=imin; i<=imax; ++i){
             if(Thk[i] == 0.0) continue;
             if(pmax0 > 1.0/Vel[i])  pmax0 = 1.0/Vel[i];
         }
         // 初始化一些迭代变量
-        MYREAL pmin=0.0, pmax=pmax0;
-        MYREAL p;
-        MYREAL s, c, v, h;
-        MYREAL x = 0.0;
-        MYREAL t = 0.0;
-        MYREAL tint = 0.0;
-        MYREAL dxdp = 0.0;
+        real_t pmin=0.0, pmax=pmax0;
+        real_t p;
+        real_t s, c, v, h;
+        real_t x = 0.0;
+        real_t t = 0.0;
+        real_t tint = 0.0;
+        real_t dxdp = 0.0;
         for(int iter=0; iter<nloop; ++iter){
             x = t = tint = dxdp = 0.0;
             p = (pmin+pmax)/2.0;
@@ -214,8 +214,8 @@ MYREAL grt_compute_travt1d(
     //=====================================================================
     //------------------- 向上出射的射线，考虑透射 -----------------
     if(Thk[0] > 0.0){  // 存在射线向上的基本条件
-        MYREAL v, p, h, c;
-        MYREAL sumt, sumx;
+        real_t v, p, h, c;
+        real_t sumt, sumx;
         bool badrefrac = false;
         // 找到透射位置
         for(int m=imin-1; m>=0; --m){
@@ -328,8 +328,8 @@ MYREAL grt_compute_travt1d(
     //------------------- 向下出射的射线，考虑透射 ----------------- 
     // 找到透射位置
     for(int m=imax+1; m<nlay; ++m){
-        MYREAL v, p, h, c;
-        MYREAL sumt, sumx;
+        real_t v, p, h, c;
+        real_t sumt, sumx;
         bool badrefrac = false;
         h = Thk[m];
         if(h == 0.0) continue;
@@ -503,7 +503,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     fclose(fp);
                 }
                 // 转为浮点数
-                Ctrl->R.rs = (MYREAL*)realloc(Ctrl->R.rs, sizeof(MYREAL)*(Ctrl->R.nr));
+                Ctrl->R.rs = (real_t*)realloc(Ctrl->R.rs, sizeof(real_t)*(Ctrl->R.nr));
                 for(MYINT i=0; i<Ctrl->R.nr; ++i){
                     Ctrl->R.rs[i] = atof(Ctrl->R.s_rs[i]);
                     if(Ctrl->R.rs[i] < 0.0){

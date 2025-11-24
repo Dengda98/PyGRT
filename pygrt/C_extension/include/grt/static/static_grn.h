@@ -42,15 +42,15 @@
  * 
  */
 void grt_integ_static_grn(
-    GRT_MODEL1D *mod1d, MYINT nr, MYREAL *rs, MYREAL vmin_ref, MYREAL keps, MYREAL k0, MYREAL Length,
-    MYREAL filonLength, MYREAL safilonTol, MYREAL filonCut, 
+    GRT_MODEL1D *mod1d, MYINT nr, real_t *rs, real_t vmin_ref, real_t keps, real_t k0, real_t Length,
+    real_t filonLength, real_t safilonTol, real_t filonCut, 
 
     // 返回值，代表Z、R、T分量
-    MYREAL grn[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
+    real_t grn[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
 
     bool calc_upar,
-    MYREAL grn_uiz[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
-    MYREAL grn_uir[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
+    real_t grn_uiz[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
+    real_t grn_uir[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
 
     const char *statsstr // 积分结果输出
 );

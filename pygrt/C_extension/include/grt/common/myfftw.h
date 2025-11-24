@@ -37,13 +37,13 @@ typedef struct {\
     /*时间序列长度*/ \
     MYINT nt; \
     /* 时间间隔 */ \
-    MYREAL dt; \
+    real_t dt; \
     /*有效频谱长度*/\
     MYINT nf_valid; \
     /*总频谱长度 nf = nt/2+1*/\
     MYINT nf; \
     /*频率间隔*/\
-    MYREAL df; \
+    real_t df; \
     /*时间域实序列*/\
     T *w_t; \
     /*频率域复序列*/\
@@ -52,7 +52,7 @@ typedef struct {\
     fftw##s##_plan plan; \
     /*为一些特殊情况而准备的变量*/ \
     /*发生频移*/\
-    MYREAL f0; \
+    real_t f0; \
     /*最终不执行FFTW而使用最朴素的傅里叶逆变换*/\
     bool naive_inv; \
 } GRT_FFTW##S##_HOLDER;\
@@ -68,9 +68,9 @@ typedef struct {\
  * @return    FFTW_HOLDER 结构体指针
  * 
  */\
-GRT_FFTW##S##_HOLDER * grt_create_fftw##s##_holder_C2R_1D(const MYINT nt, const MYREAL dt, const MYINT nf_valid, const MYREAL df); \
+GRT_FFTW##S##_HOLDER * grt_create_fftw##s##_holder_C2R_1D(const MYINT nt, const real_t dt, const MYINT nf_valid, const real_t df); \
 /** 初始化 FFTW_HOLDER 结构体指针，进行实数序列到复数频谱的正变换 */\
-GRT_FFTW##S##_HOLDER * grt_create_fftw##s##_holder_R2C_1D(const MYINT nt, const MYREAL dt, const MYINT nf_valid, const MYREAL df); \
+GRT_FFTW##S##_HOLDER * grt_create_fftw##s##_holder_R2C_1D(const MYINT nt, const real_t dt, const MYINT nf_valid, const real_t df); \
 \
 /** 将内部数据全部置零  */\
 void grt_reset_fftw##s##_holder_zero(GRT_FFTW##S##_HOLDER *fh);\

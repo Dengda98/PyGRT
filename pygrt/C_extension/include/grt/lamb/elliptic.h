@@ -24,7 +24,7 @@
  * @return    积分值
  * 
  */
-MYREAL grt_ellipticK(const MYREAL m);
+real_t grt_ellipticK(const real_t m);
 
 
 /**
@@ -37,7 +37,7 @@ MYREAL grt_ellipticK(const MYREAL m);
  * @return    积分值
  * 
  */
-MYREAL grt_ellipticE(const MYREAL m);
+real_t grt_ellipticE(const real_t m);
 
 
 /**
@@ -51,4 +51,4 @@ MYREAL grt_ellipticE(const MYREAL m);
  * @return    积分值
  * 
  */
-MYCOMPLEX grt_ellipticPi(const MYCOMPLEX n, const MYREAL m);
+cplx_t grt_ellipticPi(const cplx_t n, const real_t m);

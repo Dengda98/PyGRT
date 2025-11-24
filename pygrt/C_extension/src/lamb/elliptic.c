@@ -20,7 +20,7 @@
 #include "grt/common/checkerror.h"
 
 
-MYREAL grt_ellipticK(const MYREAL m)
+real_t grt_ellipticK(const real_t m)
 {   
     if(m <= 0.0 || m>= 1.0){
         GRTRaiseError("For the first complete elliptic integral, m should be in (0,1), but get %f.\n", m);
@@ -28,9 +28,9 @@ MYREAL grt_ellipticK(const MYREAL m)
 
     #define N 5
 
-    MYREAL m0 = 1 - m;
+    real_t m0 = 1 - m;
 
-    static const MYREAL a[N] = {
+    static const real_t a[N] = {
         1.38629436112,
         0.09666344259,
         0.03590092383,
@@ -38,7 +38,7 @@ MYREAL grt_ellipticK(const MYREAL m)
         0.01451196212,
     };
 
-    static const MYREAL b[N] = {
+    static const real_t b[N] = {
         0.50000000000,
         0.12498593597,
         0.06880248576,
@@ -46,8 +46,8 @@ MYREAL grt_ellipticK(const MYREAL m)
         0.00441787012,
     };
 
-    MYREAL K1 = 0.0, K2 = 0.0;
-    MYREAL p = 1.0;
+    real_t K1 = 0.0, K2 = 0.0;
+    real_t p = 1.0;
     K1 += a[0];
     K2 += b[0];
     for(int i = 1; i < N; ++i){
@@ -60,7 +60,7 @@ MYREAL grt_ellipticK(const MYREAL m)
     #undef N
 }
 
-MYREAL grt_ellipticE(const MYREAL m)
+real_t grt_ellipticE(const real_t m)
 {   
     if(m <= 0.0 || m>= 1.0){
         GRTRaiseError("For the second complete elliptic integral, m should be in (0,1), but get %f.\n", m);
@@ -68,9 +68,9 @@ MYREAL grt_ellipticE(const MYREAL m)
 
     #define N 5
 
-    MYREAL m0 = 1 - m;
+    real_t m0 = 1 - m;
 
-    static const MYREAL a[N] = {
+    static const real_t a[N] = {
         1.00000000000,
         0.44325141463,
         0.06260601220,
@@ -78,7 +78,7 @@ MYREAL grt_ellipticE(const MYREAL m)
         0.01736506451,
     };
 
-    static const MYREAL b[N] = {
+    static const real_t b[N] = {
         0.00000000000,
         0.24998368310,
         0.09200180037,
@@ -86,8 +86,8 @@ MYREAL grt_ellipticE(const MYREAL m)
         0.00526449639
     };
 
-    MYREAL K1 = 0.0, K2 = 0.0;
-    MYREAL p = 1.0;
+    real_t K1 = 0.0, K2 = 0.0;
+    real_t p = 1.0;
     K1 += a[0];
     K2 += b[0];
     for(int i = 1; i < N; ++i){
@@ -100,29 +100,29 @@ MYREAL grt_ellipticE(const MYREAL m)
     #undef N
 }
 
-static MYREAL MAX3(const MYREAL x, const MYREAL y, const MYREAL z)
+static real_t MAX3(const real_t x, const real_t y, const real_t z)
 {
-    MYREAL xy = ((x) > (y) ? (x) : (y));
+    real_t xy = ((x) > (y) ? (x) : (y));
     return ((xy) > (z) ? (xy) : (z));
 }
 
-static MYREAL MAX4(const MYREAL x, const MYREAL y, const MYREAL z, const MYREAL p)
+static real_t MAX4(const real_t x, const real_t y, const real_t z, const real_t p)
 {
-    MYREAL xy = ((x) > (y) ? (x) : (y));
-    MYREAL xyz = ((xy) > (z) ? (xy) : (z));
+    real_t xy = ((x) > (y) ? (x) : (y));
+    real_t xyz = ((xy) > (z) ? (xy) : (z));
     return ((xyz) > (p) ? (xyz) : (p));
 }
 
-static MYCOMPLEX grt_ellipticRF(const MYCOMPLEX x, const MYCOMPLEX y, const MYCOMPLEX z)
+static cplx_t grt_ellipticRF(const cplx_t x, const cplx_t y, const cplx_t z)
 {
-    MYREAL errtol = 0.001;
+    real_t errtol = 0.001;
     int nmax = 10000;
 
-    MYREAL eps;
-    MYCOMPLEX lam;
-    MYCOMPLEX X, Y, Z, An;
-    MYCOMPLEX xn, yn, zn;
-    MYCOMPLEX xr, yr, zr;
+    real_t eps;
+    cplx_t lam;
+    cplx_t X, Y, Z, An;
+    cplx_t xn, yn, zn;
+    cplx_t xr, yr, zr;
     int n = 0;
     xn = x;
     yn = y;
@@ -146,11 +146,11 @@ static MYCOMPLEX grt_ellipticRF(const MYCOMPLEX x, const MYCOMPLEX y, const MYCO
         if(n >= nmax)  break;
     }
 
-    MYCOMPLEX E2, E3;
+    cplx_t E2, E3;
     E2 = X*Y - Z*Z;
     E3 = X*Y*Z;
 
-    MYCOMPLEX R;
+    cplx_t R;
     R = 1.0 - 0.1*E2 + 1/14.0 * E3 + 1/24.0 * E2*E2 - 3/44.0 *E2*E3;
     R /= sqrt(An);
 
@@ -158,18 +158,18 @@ static MYCOMPLEX grt_ellipticRF(const MYCOMPLEX x, const MYCOMPLEX y, const MYCO
 }
 
 
-static MYCOMPLEX grt_ellipticRJ(const MYCOMPLEX x, const MYCOMPLEX y, const MYCOMPLEX z, const MYCOMPLEX p)
+static cplx_t grt_ellipticRJ(const cplx_t x, const cplx_t y, const cplx_t z, const cplx_t p)
 {
-    MYREAL errtol = 0.001;
+    real_t errtol = 0.001;
     int nmax = 10000;
 
-    MYREAL eps;
-    MYCOMPLEX lam, dm, em;
-    MYCOMPLEX X, Y, Z, P, An;
-    MYCOMPLEX xn, yn, zn, pn;
-    MYCOMPLEX xr, yr, zr, pr;
-    MYCOMPLEX sum1 = 0.0;
-    MYREAL pow4 = 1.0;
+    real_t eps;
+    cplx_t lam, dm, em;
+    cplx_t X, Y, Z, P, An;
+    cplx_t xn, yn, zn, pn;
+    cplx_t xr, yr, zr, pr;
+    cplx_t sum1 = 0.0;
+    real_t pow4 = 1.0;
     int n = 0;
     xn = x;
     yn = y;
@@ -203,14 +203,14 @@ static MYCOMPLEX grt_ellipticRJ(const MYCOMPLEX x, const MYCOMPLEX y, const MYCO
         if(n >= nmax)  break;
     }
 
-    MYCOMPLEX E2, E3, E4, E5;
-    MYCOMPLEX PPP = P*P*P;
+    cplx_t E2, E3, E4, E5;
+    cplx_t PPP = P*P*P;
     E2 = X*Y + Y*Z + X*Z - 3.0*P*P;
     E3 = X*Y*Z + 3.0*E2*P + 4.0*PPP;
     E4 = (2.0*X*Y*Z + E2*P + 3.0*PPP)*P;
     E5 = X*Y*Z*P*P;
 
-    MYCOMPLEX res = 0.0;
+    cplx_t res = 0.0;
     res = 1.0 - 3.0/14 * E2 + 1.0/6 * E3 + 9.0/88*E2*E2 - 3.0/22*E4 - 9.0/52*E2*E3 + 3.0/26*E5;
     res /= An * sqrt(An);
     res *= pow4;
@@ -221,7 +221,7 @@ static MYCOMPLEX grt_ellipticRJ(const MYCOMPLEX x, const MYCOMPLEX y, const MYCO
 }
 
 
-MYCOMPLEX grt_ellipticPi(const MYCOMPLEX n, const MYREAL m)
+cplx_t grt_ellipticPi(const cplx_t n, const real_t m)
 {
     if(m <= 0.0 || m>= 1.0){
         GRTRaiseError("For the third complete elliptic integral, m should be in (0,1), but get %f.\n", m);

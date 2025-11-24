@@ -41,11 +41,11 @@
  * @param[out]   grn            三分量结果，浮点数数组
  */
 static void recordin_GRN(
-    MYINT nr, MYCOMPLEX coef, MYCOMPLEX sum_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
-    MYREAL grn[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM]
+    MYINT nr, cplx_t coef, cplx_t sum_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    real_t grn[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM]
 ){
     // 局部变量，将某个频点的格林函数谱临时存放
-    MYCOMPLEX (*tmp_grn)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM] = (MYCOMPLEX(*)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM])calloc(nr, sizeof(*tmp_grn));
+    cplx_t (*tmp_grn)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM] = (cplx_t(*)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM])calloc(nr, sizeof(*tmp_grn));
 
     for(MYINT ir=0; ir<nr; ++ir){
         grt_merge_Pk(sum_J[ir], tmp_grn[ir]);
@@ -64,39 +64,39 @@ static void recordin_GRN(
 
 
 void grt_integ_static_grn(
-    GRT_MODEL1D *mod1d, MYINT nr, MYREAL *rs, MYREAL vmin_ref, MYREAL keps, MYREAL k0, MYREAL Length,
-    MYREAL filonLength, MYREAL safilonTol, MYREAL filonCut, 
+    GRT_MODEL1D *mod1d, MYINT nr, real_t *rs, real_t vmin_ref, real_t keps, real_t k0, real_t Length,
+    real_t filonLength, real_t safilonTol, real_t filonCut, 
 
     // 返回值，代表Z、R、T分量
-    MYREAL grn[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
+    real_t grn[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
 
     bool calc_upar,
-    MYREAL grn_uiz[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
-    MYREAL grn_uir[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
+    real_t grn_uiz[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
+    real_t grn_uir[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
 
     const char *statsstr // 积分结果输出
 ){
-    MYREAL rmax=rs[grt_findMax_MYREAL(rs, nr)];   // 最大震中距
+    real_t rmax=rs[grt_findMax_real_t(rs, nr)];   // 最大震中距
 
-    const MYREAL hs = GRT_MAX(fabs(mod1d->depsrc - mod1d->deprcv), GRT_MIN_DEPTH_GAP_SRC_RCV); // hs=max(震源和台站深度差,1.0)
+    const real_t hs = GRT_MAX(fabs(mod1d->depsrc - mod1d->deprcv), GRT_MIN_DEPTH_GAP_SRC_RCV); // hs=max(震源和台站深度差,1.0)
 
     // 乘相应系数
     k0 *= PI/hs;
 
     if(vmin_ref < 0.0)  keps = -1.0;  // 若使用峰谷平均法，则不使用keps进行收敛判断
 
-    MYREAL k=0.0;
+    real_t k=0.0;
     bool useFIM = (filonLength > 0.0) || (safilonTol > 0.0) ;    // 是否使用Filon积分（包括自适应Filon）
-    const MYREAL dk=fabs(PI2/(Length*rmax));     // 波数积分间隔
-    const MYREAL filondk = (filonLength > 0.0) ? PI2/(filonLength*rmax) : 0.0;  // Filon积分间隔
-    const MYREAL filonK = filonCut/rmax;  // 波数积分和Filon积分的分割点
+    const real_t dk=fabs(PI2/(Length*rmax));     // 波数积分间隔
+    const real_t filondk = (filonLength > 0.0) ? PI2/(filonLength*rmax) : 0.0;  // Filon积分间隔
+    const real_t filonK = filonCut/rmax;  // 波数积分和Filon积分的分割点
 
-    const MYREAL kmax = k0;
+    const real_t kmax = k0;
     // 求和 sum F(ki,w)Jm(ki*r)ki 
     // 关于形状详见int_Pk()函数内的注释
-    MYCOMPLEX (*sum_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (MYCOMPLEX(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_J));
-    MYCOMPLEX (*sum_uiz_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (calc_upar)? (MYCOMPLEX(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_uiz_J)) : NULL;
-    MYCOMPLEX (*sum_uir_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (calc_upar)? (MYCOMPLEX(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_uir_J)) : NULL;
+    cplx_t (*sum_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (cplx_t(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_J));
+    cplx_t (*sum_uiz_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (calc_upar)? (cplx_t(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_uiz_J)) : NULL;
+    cplx_t (*sum_uir_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (calc_upar)? (cplx_t(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_uir_J)) : NULL;
 
     // 是否要输出积分过程文件
     bool needfstats = (statsstr!=NULL);
@@ -185,8 +185,8 @@ void grt_integ_static_grn(
 
 
     
-    MYCOMPLEX src_mu = mod1d->mu[mod1d->isrc];
-    MYCOMPLEX fac = dk * 1.0/(4.0*PI * src_mu);
+    cplx_t src_mu = mod1d->mu[mod1d->isrc];
+    cplx_t fac = dk * 1.0/(4.0*PI * src_mu);
     
     // 将积分结果记录到浮点数数组中
     recordin_GRN(nr, fac, sum_J, grn);

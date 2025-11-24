@@ -125,12 +125,12 @@ ssize_t grt_getline(char **lineptr, size_t *n, FILE *stream);
 void grt_GF_freq2time_write_to_file(
     const char *command, const GRT_MODEL1D *mod1d, 
     const char *s_output_dir, const char *s_modelname, const char *s_depsrc, const char *s_deprcv,    
-    const MYREAL wI, GRT_FFTW_HOLDER *pt_fh,
-    const MYINT nr, char *s_dists[nr], const MYREAL dists[nr], MYREAL travtPS[nr][2],
-    const MYREAL depsrc, const MYREAL deprcv,
-    const MYREAL delayT0, const MYREAL delayV0, const bool calc_upar,
+    const real_t wI, GRT_FFTW_HOLDER *pt_fh,
+    const MYINT nr, char *s_dists[nr], const real_t dists[nr], real_t travtPS[nr][2],
+    const real_t depsrc, const real_t deprcv,
+    const real_t delayT0, const real_t delayV0, const bool calc_upar,
     const bool doEX, const bool doVF, const bool doHF, const bool doDC, 
     const char *chalst,
-    MYCOMPLEX *grn[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM], 
-    MYCOMPLEX *grn_uiz[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM], 
-    MYCOMPLEX *grn_uir[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM]);
+    cplx_t *grn[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM], 
+    cplx_t *grn_uiz[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM], 
+    cplx_t *grn_uir[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM]);

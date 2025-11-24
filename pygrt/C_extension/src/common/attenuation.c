@@ -12,15 +12,15 @@
 
 
 
-MYCOMPLEX grt_attenuation_law(MYREAL Qinv, MYCOMPLEX omega){
+cplx_t grt_attenuation_law(real_t Qinv, cplx_t omega){
     return 1.0 + Qinv/PI * log(omega/PI2) + 0.5*Qinv*I;
     // return 1.0;
 }
 
-void grt_py_attenuation_law(MYREAL Qinv, MYREAL omg[2], MYREAL atte[2]){
+void grt_py_attenuation_law(real_t Qinv, real_t omg[2], real_t atte[2]){
     // 用于在python中调用attenuation_law
-    MYCOMPLEX omega = omg[0] + I*omg[1];
-    MYCOMPLEX atte0 = grt_attenuation_law(Qinv, omega);
+    cplx_t omega = omg[0] + I*omg[1];
+    cplx_t atte0 = grt_attenuation_law(Qinv, omega);
     atte[0] = creal(atte0);
     atte[1] = cimag(atte0);
 }

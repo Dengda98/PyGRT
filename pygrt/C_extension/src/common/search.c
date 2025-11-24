@@ -15,7 +15,7 @@
 
 // 定义 X 宏，为多个类型定义查找函数
 #define __FOR_EACH_TYPE \
-    X(MYINT)  X(MYREAL)  X(float)  X(double)
+    X(MYINT)  X(real_t)  X(float)  X(double)
 
 
 #define X(T) \

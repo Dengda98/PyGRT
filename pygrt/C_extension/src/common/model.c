@@ -22,24 +22,24 @@
 
 // 定义宏，方便写代码
 #define GRT_FOR_EACH_MODEL_QUANTITY_ARRAY \
-    X(Thk, MYREAL)\
-    X(Dep, MYREAL)\
-    X(Va, MYREAL)\
-    X(Vb, MYREAL)\
-    X(Rho, MYREAL)\
-    X(Qa, MYREAL)\
-    X(Qb, MYREAL)\
-    X(Qainv, MYREAL)\
-    X(Qbinv, MYREAL)\
-    X(mu, MYCOMPLEX)\
-    X(lambda, MYCOMPLEX)\
-    X(delta, MYCOMPLEX)\
-    X(atna, MYCOMPLEX)\
-    X(atnb, MYCOMPLEX)\
-    X(xa, MYCOMPLEX)\
-    X(xb, MYCOMPLEX)\
-    X(caca, MYCOMPLEX)\
-    X(cbcb, MYCOMPLEX)\
+    X(Thk, real_t)\
+    X(Dep, real_t)\
+    X(Va, real_t)\
+    X(Vb, real_t)\
+    X(Rho, real_t)\
+    X(Qa, real_t)\
+    X(Qb, real_t)\
+    X(Qainv, real_t)\
+    X(Qbinv, real_t)\
+    X(mu, cplx_t)\
+    X(lambda, cplx_t)\
+    X(delta, cplx_t)\
+    X(atna, cplx_t)\
+    X(atnb, cplx_t)\
+    X(xa, cplx_t)\
+    X(xb, cplx_t)\
+    X(caca, cplx_t)\
+    X(cbcb, cplx_t)\
 
 
 void grt_print_mod1d(const GRT_MODEL1D *mod1d){
@@ -155,9 +155,9 @@ GRT_MODEL1D * grt_copy_mod1d(const GRT_MODEL1D *mod1d1){
 }
 
 
-void grt_attenuate_mod1d(GRT_MODEL1D *mod1d, MYCOMPLEX omega){
-    MYREAL Va0, Vb0;
-    MYCOMPLEX atna, atnb;
+void grt_attenuate_mod1d(GRT_MODEL1D *mod1d, cplx_t omega){
+    real_t Va0, Vb0;
+    cplx_t atna, atnb;
     for(MYINT i=0; i<mod1d->n; ++i){
         Va0 = mod1d->Va[i];
         Vb0 = mod1d->Vb[i];
@@ -181,7 +181,7 @@ void grt_attenuate_mod1d(GRT_MODEL1D *mod1d, MYCOMPLEX omega){
 }
 
 
-void grt_mod1d_xa_xb(GRT_MODEL1D *mod1d, const MYREAL k)
+void grt_mod1d_xa_xb(GRT_MODEL1D *mod1d, const real_t k)
 {
     mod1d->k = k;
     // 完全为0，没有虚频率，这只可能是在计算静态解，此时不需要xa, xb等物理量
@@ -190,14 +190,14 @@ void grt_mod1d_xa_xb(GRT_MODEL1D *mod1d, const MYREAL k)
     mod1d->c_phase = mod1d->omega/k;
 
     for(MYINT i=0; i<mod1d->n; ++i){
-        MYREAL va, vb;
+        real_t va, vb;
         va = mod1d->Va[i];
         vb = mod1d->Vb[i];
-        MYCOMPLEX atna, atnb;
+        cplx_t atna, atnb;
         atna = mod1d->atna[i];
         atnb = mod1d->atnb[i];
 
-        MYCOMPLEX caca, cbcb;
+        cplx_t caca, cbcb;
         caca = mod1d->c_phase / (va*atna); 
         caca *= caca;
         mod1d->caca[i] = caca;
@@ -437,7 +437,7 @@ void grt_get_model_diglen_from_file(const char *command, const char *modelpath, 
 }
 
 
-bool grt_check_vel_in_mod(const GRT_MODEL1D *mod1d, const MYREAL vel, const MYREAL tol){
+bool grt_check_vel_in_mod(const GRT_MODEL1D *mod1d, const real_t vel, const real_t tol){
     // 浮点数比较，检查是否存在该速度值
     for(MYINT i=0; i<mod1d->n; ++i){
         if(fabs(vel - mod1d->Va[i])<tol || fabs(vel - mod1d->Vb[i])<tol)  return true;
@@ -447,11 +447,11 @@ bool grt_check_vel_in_mod(const GRT_MODEL1D *mod1d, const MYREAL vel, const MYRE
 
 
 
-void grt_get_mod1d_vmin_vmax(const GRT_MODEL1D *mod1d, MYREAL *vmin, MYREAL *vmax){
+void grt_get_mod1d_vmin_vmax(const GRT_MODEL1D *mod1d, real_t *vmin, real_t *vmax){
     *vmin = 9.0e30;
     *vmax = 0.0;
-    const MYREAL *Va = mod1d->Va;
-    const MYREAL *Vb = mod1d->Vb;
+    const real_t *Va = mod1d->Va;
+    const real_t *Vb = mod1d->Vb;
     for(MYINT i=0; i<mod1d->n; ++i){
         if(Va[i] < *vmin) *vmin = Va[i];
         if(Va[i] > *vmax) *vmax = Va[i];

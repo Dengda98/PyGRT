@@ -13,23 +13,11 @@
 
 #include "grt/common/const.h"
 
-#define GRT_NC_CHECK(call) ({\
+#define NC_CHECK(call) ({\
     int status = (call); \
     if (status != NC_NOERR) { \
         GRTRaiseError("NetCDF error at %s:%d: %s\n", \
                 __FILE__, __LINE__, nc_strerror(status)); \
     } \
 })
-
-
-#define GRT_NC_MYINT  NC_INT
-#define GRT_NC_FUNC_MYINT(func)  func##_int
-
-#ifdef GRT_USE_FLOAT 
-    #define GRT_NC_MYREAL  NC_FLOAT
-    #define GRT_NC_FUNC_MYREAL(func)  func##_float
-#else 
-    #define GRT_NC_MYREAL  NC_DOUBLE
-    #define GRT_NC_FUNC_MYREAL(func)  func##_double
-#endif
 

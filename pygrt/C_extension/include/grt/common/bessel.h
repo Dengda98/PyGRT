@@ -19,7 +19,7 @@
  * @param[out]  bj2        \f$ J_2(x) \f$
  * 
  */
-void grt_bessel012(MYREAL x, MYREAL *bj0, MYREAL *bj1, MYREAL *bj2);
+void grt_bessel012(real_t x, real_t *bj0, real_t *bj1, real_t *bj2);
 
 
 /**
@@ -31,4 +31,4 @@ void grt_bessel012(MYREAL x, MYREAL *bj0, MYREAL *bj1, MYREAL *bj2);
  * @param[in,out]   bj2        传入 \f$ J_2(x) \f$, 返回\f$ J_2^{'}(x) \f$
  * 
  */
-void grt_besselp012(MYREAL x, MYREAL *bj0, MYREAL *bj1, MYREAL *bj2);
+void grt_besselp012(real_t x, real_t *bj0, real_t *bj1, real_t *bj2);

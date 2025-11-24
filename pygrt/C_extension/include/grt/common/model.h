@@ -16,36 +16,36 @@
 /** 1D 模型结构体，包括多个水平层，以及复数形式的弹性参数 */
 typedef struct {
     MYINT n;  ///< 层数，注意包括了震源和接收点的虚拟层，(n>=3)
-    MYREAL depsrc; ///< 震源深度 km
-    MYREAL deprcv; ///< 接收点深度 km
+    real_t depsrc; ///< 震源深度 km
+    real_t deprcv; ///< 接收点深度 km
     MYINT isrc; ///< 震源所在虚拟层位, isrc>=1
     MYINT ircv; ///< 接收点所在虚拟层位, ircv>=1, ircv != isrc
     bool ircvup; ///< 接收点位于浅层, ircv < isrc
     bool io_depth; ///< 读取的模型首列为每层顶界面深度
 
-    MYCOMPLEX omega;   ///< 圆频率
-    MYREAL k;   ///< 波数
-    MYCOMPLEX c_phase;   ///< 当前相速度
+    cplx_t omega;   ///< 圆频率
+    real_t k;   ///< 波数
+    cplx_t c_phase;   ///< 当前相速度
 
-    MYREAL *Thk; ///< Thk[n], 最后一层厚度不使用(当作正无穷), km
-    MYREAL *Dep; ///< Dep[n], 每一层顶界面深度，第一层必须为 0.0
-    MYREAL *Va;  ///< Va[n]   P波速度  km/s
-    MYREAL *Vb;  ///< Vb[n]   S波速度  km/s
-    MYREAL *Rho; ///< Rho[n]  密度  g/cm^3
-    MYREAL *Qa; ///< Qa[n]     P波Q值
-    MYREAL *Qb; ///< Qb[n]     S波Q值
-    MYREAL *Qainv; ///<   1/Q_p
-    MYREAL *Qbinv; ///<   1/Q_s
+    real_t *Thk; ///< Thk[n], 最后一层厚度不使用(当作正无穷), km
+    real_t *Dep; ///< Dep[n], 每一层顶界面深度，第一层必须为 0.0
+    real_t *Va;  ///< Va[n]   P波速度  km/s
+    real_t *Vb;  ///< Vb[n]   S波速度  km/s
+    real_t *Rho; ///< Rho[n]  密度  g/cm^3
+    real_t *Qa; ///< Qa[n]     P波Q值
+    real_t *Qb; ///< Qb[n]     S波Q值
+    real_t *Qainv; ///<   1/Q_p
+    real_t *Qbinv; ///<   1/Q_s
 
-    MYCOMPLEX *mu;       ///< mu[n] \f$ V_b^2 * \rho \f$
-    MYCOMPLEX *lambda;   ///< lambda[n] \f$ V_a^2 * \rho - 2*\mu \f$
-    MYCOMPLEX *delta;    ///< delta[n] \f$ (\lambda+\mu)/(\lambda+3*\mu) \f$
-    MYCOMPLEX *atna;
-    MYCOMPLEX *atnb;
-    MYCOMPLEX *xa;
-    MYCOMPLEX *xb;
-    MYCOMPLEX *caca;
-    MYCOMPLEX *cbcb;
+    cplx_t *mu;       ///< mu[n] \f$ V_b^2 * \rho \f$
+    cplx_t *lambda;   ///< lambda[n] \f$ V_a^2 * \rho - 2*\mu \f$
+    cplx_t *delta;    ///< delta[n] \f$ (\lambda+\mu)/(\lambda+3*\mu) \f$
+    cplx_t *atna;
+    cplx_t *atnb;
+    cplx_t *xa;
+    cplx_t *xb;
+    cplx_t *caca;
+    cplx_t *cbcb;
 
     /* 状态变量，非 0 为异常值 */
     MYINT stats;
@@ -93,7 +93,7 @@ GRT_MODEL1D * grt_copy_mod1d(const GRT_MODEL1D *mod1d1);
  * @param[in,out]     mod1d     `MODEL1D` 结构体指针
  * @param[in]         omega     复数频率
  */
-void grt_attenuate_mod1d(GRT_MODEL1D *mod1d, MYCOMPLEX omega);
+void grt_attenuate_mod1d(GRT_MODEL1D *mod1d, cplx_t omega);
 
 /**
  * 根据记录好的圆频率和波数，计算相速度和每层的 xa, xb, caca, cbcb
@@ -101,7 +101,7 @@ void grt_attenuate_mod1d(GRT_MODEL1D *mod1d, MYCOMPLEX omega);
  * @param[in,out]      mod1d    模型结构体指针
  * @param[in]          k        波数
  */
-void grt_mod1d_xa_xb(GRT_MODEL1D *mod1d, const MYREAL k);
+void grt_mod1d_xa_xb(GRT_MODEL1D *mod1d, const real_t k);
 
 
 /**
@@ -146,7 +146,7 @@ void grt_get_model_diglen_from_file(const char *command, const char *modelpath, 
  * 
  * @return    是否存在
  */
-bool grt_check_vel_in_mod(const GRT_MODEL1D *mod1d, const MYREAL vel, const MYREAL tol);
+bool grt_check_vel_in_mod(const GRT_MODEL1D *mod1d, const real_t vel, const real_t tol);
 
 /**
  * 计算最大最小速度（非零值）

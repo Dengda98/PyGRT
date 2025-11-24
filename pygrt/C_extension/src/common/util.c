@@ -214,10 +214,10 @@ ssize_t grt_getline(char **lineptr, size_t *n, FILE *stream){
  * 
  */
 static void write_one_to_sac(
-    const char *srcname, const char ch, const MYREAL delayT,
-    const MYREAL wI, GRT_FFTW_HOLDER *pt_fh,
+    const char *srcname, const char ch, const real_t delayT,
+    const real_t wI, GRT_FFTW_HOLDER *pt_fh,
     SACHEAD *pt_hd, const char *s_output_subdir, const char *s_prefix,
-    const int sgn, const MYCOMPLEX *grncplx)
+    const int sgn, const cplx_t *grncplx)
 {
     snprintf(pt_hd->kcmpnm, sizeof(pt_hd->kcmpnm), "%s%s%c", s_prefix, srcname, ch);
     
@@ -228,7 +228,7 @@ static void write_one_to_sac(
     grt_reset_fftw_holder_zero(pt_fh);
     
     // 赋值复数，包括时移
-    MYCOMPLEX cfac, ccoef;
+    cplx_t cfac, ccoef;
     cfac = exp(I*PI2*pt_fh->df*delayT);
     ccoef = sgn;
     // 只赋值有效长度，其余均为0
@@ -294,15 +294,15 @@ static void write_one_to_sac(
  */
 static void single_freq2time_write_to_file(
     const char *command, const GRT_MODEL1D *mod1d, const char *s_prefix, 
-    const MYREAL wI, GRT_FFTW_HOLDER *pt_fh,
-    const char *s_dist, const MYREAL dist,
-    const MYREAL depsrc, const MYREAL deprcv,
-    const MYREAL delayT0, const MYREAL delayV0, const bool calc_upar,
+    const real_t wI, GRT_FFTW_HOLDER *pt_fh,
+    const char *s_dist, const real_t dist,
+    const real_t depsrc, const real_t deprcv,
+    const real_t delayT0, const real_t delayV0, const bool calc_upar,
     const bool doEX, const bool doVF, const bool doHF, const bool doDC, 
     SACHEAD *pt_hd, const char *chalst,
-    MYCOMPLEX *grn[GRT_SRC_M_NUM][GRT_CHANNEL_NUM], 
-    MYCOMPLEX *grn_uiz[GRT_SRC_M_NUM][GRT_CHANNEL_NUM], 
-    MYCOMPLEX *grn_uir[GRT_SRC_M_NUM][GRT_CHANNEL_NUM])
+    cplx_t *grn[GRT_SRC_M_NUM][GRT_CHANNEL_NUM], 
+    cplx_t *grn_uiz[GRT_SRC_M_NUM][GRT_CHANNEL_NUM], 
+    cplx_t *grn_uir[GRT_SRC_M_NUM][GRT_CHANNEL_NUM])
 {
     // 文件保存子目录
     char *s_output_subdir = NULL;
@@ -311,7 +311,7 @@ static void single_freq2time_write_to_file(
     GRTCheckMakeDir(command, s_output_subdir);
 
     // 时间延迟 
-    MYREAL delayT = delayT0;
+    real_t delayT = delayT0;
     if(delayV0 > 0.0)   delayT += sqrt( GRT_SQUARE(dist) + GRT_SQUARE(deprcv - depsrc) ) / delayV0;
     // 修改SAC头段时间变量
     pt_hd->b = delayT;
@@ -371,15 +371,15 @@ static void single_freq2time_write_to_file(
 void grt_GF_freq2time_write_to_file(
     const char *command, const GRT_MODEL1D *mod1d, 
     const char *s_output_dir, const char *s_modelname, const char *s_depsrc, const char *s_deprcv,    
-    const MYREAL wI, GRT_FFTW_HOLDER *pt_fh,
-    const MYINT nr, char *s_dists[nr], const MYREAL dists[nr], MYREAL travtPS[nr][2],
-    const MYREAL depsrc, const MYREAL deprcv,
-    const MYREAL delayT0, const MYREAL delayV0, const bool calc_upar,
+    const real_t wI, GRT_FFTW_HOLDER *pt_fh,
+    const MYINT nr, char *s_dists[nr], const real_t dists[nr], real_t travtPS[nr][2],
+    const real_t depsrc, const real_t deprcv,
+    const real_t delayT0, const real_t delayV0, const bool calc_upar,
     const bool doEX, const bool doVF, const bool doHF, const bool doDC, 
     const char *chalst,
-    MYCOMPLEX *grn[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM], 
-    MYCOMPLEX *grn_uiz[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM], 
-    MYCOMPLEX *grn_uir[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM])
+    cplx_t *grn[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM], 
+    cplx_t *grn_uiz[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM], 
+    cplx_t *grn_uir[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM])
 {
     // 建立SAC头文件，包含必要的头变量
     SACHEAD hd = new_sac_head(pt_fh->dt, pt_fh->nt, delayT0);
