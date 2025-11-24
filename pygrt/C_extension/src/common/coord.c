@@ -12,11 +12,11 @@
 
 #include "grt/common/coord.h"
 
-void grt_rot_zxy2zrt_vec(double theta, double A[3]){
-    double s1, s2, s3;
+void grt_rot_zxy2zrt_vec(real_t theta, real_t A[3]){
+    real_t s1, s2, s3;
     s1 = A[0];  s2 = A[1];  s3 = A[2];
-    double st = sin(theta);
-    double ct = cos(theta);
+    real_t st = sin(theta);
+    real_t ct = cos(theta);
     A[0] = s1;
     A[1] = s2*ct + s3*st;
     A[2] = -s2*st + s3*ct;
@@ -24,16 +24,16 @@ void grt_rot_zxy2zrt_vec(double theta, double A[3]){
 
 
 
-void grt_rot_zxy2zrt_symtensor2odr(double theta, double A[6]) {
-    double s11, s12, s13, s22, s23, s33;
+void grt_rot_zxy2zrt_symtensor2odr(real_t theta, real_t A[6]) {
+    real_t s11, s12, s13, s22, s23, s33;
     s11 = A[0];   s12 = A[1];   s13 = A[2];
                   s22 = A[3];   s23 = A[4];
                                 s33 = A[5];
-    double st = sin(theta);
-    double ct = cos(theta);
-    double sst = st*st;
-    double cct = ct*ct;
-    double sct = st*ct;
+    real_t st = sin(theta);
+    real_t ct = cos(theta);
+    real_t sst = st*st;
+    real_t cct = ct*ct;
+    real_t sct = st*ct;
     A[0] = s11;
     A[1] = s12*ct + s13*st;
     A[2] = -s12*st + s13*ct;
@@ -45,10 +45,10 @@ void grt_rot_zxy2zrt_symtensor2odr(double theta, double A[6]) {
 
 
 
-void grt_rot_zrt2zxy_upar(const double theta, double u[3], double upar[3][3], const double r){
-    double s00, s01, s02;
-    double s10, s11, s12;
-    double s20, s21, s22;
+void grt_rot_zrt2zxy_upar(const real_t theta, real_t u[3], real_t upar[3][3], const real_t r){
+    real_t s00, s01, s02;
+    real_t s10, s11, s12;
+    real_t s20, s21, s22;
     //           uz       ur       ut
     //  ∂z
     //  ∂r
@@ -57,14 +57,14 @@ void grt_rot_zrt2zxy_upar(const double theta, double u[3], double upar[3][3], co
     s10 = upar[1][0]; s11 = upar[1][1]; s12 = upar[1][2];
     s20 = upar[2][0]; s21 = upar[2][1]; s22 = upar[2][2];
 
-    double u0, u1, u2;
+    real_t u0, u1, u2;
     u0 = u[0];  u1 = u[1];  u2 = u[2];
 
-    double st = sin(theta);
-    double ct = cos(theta);
-    double sst = st*st;
-    double cct = ct*ct;
-    double sct = st*ct;
+    real_t st = sin(theta);
+    real_t ct = cos(theta);
+    real_t sst = st*st;
+    real_t cct = ct*ct;
+    real_t sct = st*ct;
 
     //           uz       ux       uy
     //  ∂z

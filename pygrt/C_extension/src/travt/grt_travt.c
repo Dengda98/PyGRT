@@ -137,7 +137,7 @@ real_t grt_compute_travt1d(
         // 最大迭代次数
         const int nloop=50; 
         // 最小震中距差
-        const double minX=1e-3;
+        const real_t minX=1e-3;
         // 找到慢度上限，准确说是各层中最大慢度的最小值
         real_t pmax0=1.0/vmax;
         for(int i=imin; i<=imax; ++i){
@@ -540,7 +540,7 @@ int travt_main(int argc, char **argv){
 
     printf("------------------------------------------------\n");
     printf(" Distance(km)     Tp(secs)         Ts(secs)     \n");
-    double travtP=-1, travtS=-1;
+    real_t travtP=-1, travtS=-1;
     for(size_t i=0; i<Ctrl->R.nr; ++i){
         travtP = grt_compute_travt1d(
         mod1d->Thk, mod1d->Va, mod1d->n, mod1d->isrc, mod1d->ircv, Ctrl->R.rs[i]);

@@ -208,7 +208,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 Ctrl->M.active = true;
                 Ctrl->computeType = GRT_SYN_COMPUTE_DC;
                 {
-                    double strike, dip, rake;
+                    real_t strike, dip, rake;
                     sprintf(Ctrl->s_computeType, "%s", "DC");
                     if(3 != sscanf(optarg, "%lf/%lf/%lf", &strike, &dip, &rake)){
                         GRTBadOptionError(command, M, "");
@@ -233,7 +233,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 Ctrl->F.active = true;
                 Ctrl->computeType = GRT_SYN_COMPUTE_SF;
                 {
-                    double fn, fe, fz;
+                    real_t fn, fe, fz;
                     sprintf(Ctrl->s_computeType, "%s", "SF");
                     if(3 != sscanf(optarg, "%lf/%lf/%lf", &fn, &fe, &fz)){
                         GRTBadOptionError(command, F, "");
@@ -249,7 +249,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 Ctrl->T.active = true;
                 Ctrl->computeType = GRT_SYN_COMPUTE_MT;
                 {
-                    double Mxx, Mxy, Mxz, Myy, Myz, Mzz;
+                    real_t Mxx, Mxy, Mxz, Myy, Myz, Mzz;
                     sprintf(Ctrl->s_computeType, "%s", "MT");
                     if(6 != sscanf(optarg, "%lf/%lf/%lf/%lf/%lf/%lf", &Mxx, &Mxy, &Mxz, &Myy, &Myz, &Mzz)){
                         GRTBadOptionError(command, T, "");

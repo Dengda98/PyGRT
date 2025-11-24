@@ -13,17 +13,17 @@
 #include "grt/common/const.h"
 
 void grt_set_source_radiation(
-    double srcRadi[GRT_SRC_M_NUM][GRT_CHANNEL_NUM], const int computeType, const bool par_theta,
-    const double M0, const double coef, const double azrad, const double mchn[GRT_MECHANISM_NUM]
+    real_t srcRadi[GRT_SRC_M_NUM][GRT_CHANNEL_NUM], const int computeType, const bool par_theta,
+    const real_t M0, const real_t coef, const real_t azrad, const real_t mchn[GRT_MECHANISM_NUM]
 ){
-    double mult;
+    real_t mult;
     if(computeType == GRT_SYN_COMPUTE_SF){
         mult = 1e-15*M0*coef;
     } else {
         mult = 1e-20*M0*coef;
     }
 
-    double saz, caz;
+    real_t saz, caz;
     saz = sin(azrad);
     caz = cos(azrad);
 
@@ -32,8 +32,8 @@ void grt_set_source_radiation(
         srcRadi[0][2] = 0.0; // T
     }  
     else if(computeType == GRT_SYN_COMPUTE_SF){
-        double A0, A1, A4;
-        double fn, fe, fz;
+        real_t A0, A1, A4;
+        real_t fn, fe, fz;
         fn=mchn[0];   fe=mchn[1];  fz=mchn[2];   
         A0 = fz*mult;
         A1 = (fn*caz + fe*saz)*mult;
@@ -46,21 +46,21 @@ void grt_set_source_radiation(
         srcRadi[2][2] = (par_theta)? -A1 : A4; // HF, T
     }
     else if(computeType == GRT_SYN_COMPUTE_DC){
-        double strike, dip, rake;
+        real_t strike, dip, rake;
         strike=mchn[0];   dip=mchn[1];   rake=mchn[2];
         // 公式(4.8.35)
-        double stkrad = strike*DEG1;
-        double diprad = dip*DEG1;
-        double rakrad = rake*DEG1;
-        double therad = azrad - stkrad;
-        double srak, crak, sdip, cdip, sdip2, cdip2, sthe, cthe, sthe2, cthe2;
+        real_t stkrad = strike*DEG1;
+        real_t diprad = dip*DEG1;
+        real_t rakrad = rake*DEG1;
+        real_t therad = azrad - stkrad;
+        real_t srak, crak, sdip, cdip, sdip2, cdip2, sthe, cthe, sthe2, cthe2;
         srak = sin(rakrad);     crak = cos(rakrad);
         sdip = sin(diprad);     cdip = cos(diprad);
         sdip2 = 2.0*sdip*cdip;  cdip2 = 2.0*cdip*cdip - 1.0;
         sthe = sin(therad);     cthe = cos(therad);
         sthe2 = 2.0*sthe*cthe;  cthe2 = 2.0*cthe*cthe - 1.0;
 
-        double A0, A1, A2, A4, A5;
+        real_t A0, A1, A2, A4, A5;
         A0 = mult * (0.5*sdip2*srak);
         A1 = mult * (cdip*crak*cthe - cdip2*srak*sthe);
         A2 = mult * (0.5*sdip2*srak*cthe2 + sdip*crak*sthe2);
@@ -76,20 +76,20 @@ void grt_set_source_radiation(
     }
     else if(computeType == GRT_SYN_COMPUTE_MT){
         // 公式(4.9.7)但修改了各向同性的量
-        double M11, M12, M13, M22, M23, M33;
+        real_t M11, M12, M13, M22, M23, M33;
         M11 = mchn[0];   M12 = mchn[1];   M13 = mchn[2];
                          M22 = mchn[3];   M23 = mchn[4];
                                           M33 = mchn[5];
-        double Mexp = (M11 + M22 + M33)/3.0;
+        real_t Mexp = (M11 + M22 + M33)/3.0;
         M11 -= Mexp;
         M22 -= Mexp;
         M33 -= Mexp;
 
-        double saz2, caz2;
+        real_t saz2, caz2;
         saz2 = 2.0*saz*caz;
         caz2 = 2.0*caz*caz - 1.0;
 
-        double A0, A1, A2, A4, A5;
+        real_t A0, A1, A2, A4, A5;
         A0 = mult * ((2.0*M33 - M11 - M22)/6.0 );
         A1 = mult * (- (M13*caz + M23*saz));
         A2 = mult * (0.5*(M11 - M22)*caz2+ M12*saz2);

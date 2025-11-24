@@ -221,7 +221,7 @@ void grt_realloc_mod1d(GRT_MODEL1D *mod1d, size_t n){
 
 
 
-GRT_MODEL1D * grt_read_mod1d_from_file(const char *command, const char *modelpath, double depsrc, double deprcv, bool allowLiquid){
+GRT_MODEL1D * grt_read_mod1d_from_file(const char *command, const char *modelpath, real_t depsrc, real_t deprcv, bool allowLiquid){
     GRTCheckFileExist(command, modelpath);
     
     FILE *fp = GRTCheckOpenFile(command, modelpath, "r");
@@ -233,8 +233,8 @@ GRT_MODEL1D * grt_read_mod1d_from_file(const char *command, const char *modelpat
     const int ncols = 6; // 模型文件有6列，或除去qa qb有四列
     const int ncols_noQ = 4;
     size_t iline = 0;
-    double h, va, vb, rho, qa, qb;
-    double (*modarr)[ncols] = NULL;
+    real_t h, va, vb, rho, qa, qb;
+    real_t (*modarr)[ncols] = NULL;
     h = va = vb = rho = qa = qb = 0.0;
     size_t nlay = 0;
     mod1d->io_depth = false;
@@ -271,7 +271,7 @@ GRT_MODEL1D * grt_read_mod1d_from_file(const char *command, const char *modelpat
             GRTRaiseError("[%s] In model file, line %zu, Vs==0.0 is not supported.\n", command, iline);
         }
 
-        modarr = (double(*)[ncols])realloc(modarr, sizeof(double)*ncols*(nlay+1));
+        modarr = (real_t(*)[ncols])realloc(modarr, sizeof(real_t)*ncols*(nlay+1));
 
         modarr[nlay][0] = h;
         modarr[nlay][1] = va;
@@ -291,7 +291,7 @@ GRT_MODEL1D * grt_read_mod1d_from_file(const char *command, const char *modelpat
     if(mod1d->io_depth){
         for(size_t i=1; i<nlay; ++i){
             // 检查，若为负数，则表示输入的层顶深度非递增
-            double tmp = modarr[i][0] - modarr[i-1][0];
+            real_t tmp = modarr[i][0] - modarr[i-1][0];
             if(tmp < 0.0){
                 GRTRaiseError("[%s] In model file, negative thickness found in layer %zu.\n", command, i);
             }
@@ -302,7 +302,7 @@ GRT_MODEL1D * grt_read_mod1d_from_file(const char *command, const char *modelpat
 
     size_t isrc=0, ircv=0;
     size_t *pmin_idx, *pmax_idx, *pimg_idx;
-    double depth = 0.0, depmin, depmax, depimg;
+    real_t depth = 0.0, depmin, depmax, depimg;
     bool ircvup = (depsrc > deprcv);
     if(ircvup){
         pmin_idx = &ircv;

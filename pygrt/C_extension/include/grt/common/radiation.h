@@ -34,6 +34,6 @@
  *                                   对于张量源，mchn={Mxx, Mxy, Mxz, Myy, Myz, Mzz}
  */
 void grt_set_source_radiation(
-    double srcRadi[GRT_SRC_M_NUM][GRT_CHANNEL_NUM], const int computeType, const bool par_theta,
-    const double M0, const double coef, const double azrad, const double mchn[GRT_MECHANISM_NUM]
+    real_t srcRadi[GRT_SRC_M_NUM][GRT_CHANNEL_NUM], const int computeType, const bool par_theta,
+    const real_t M0, const real_t coef, const real_t azrad, const real_t mchn[GRT_MECHANISM_NUM]
 );

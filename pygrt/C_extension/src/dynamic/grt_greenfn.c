@@ -812,7 +812,7 @@ int greenfn_main(int argc, char **argv) {
     // 自动选择会给出很保守的值（较大的Length）
     if(Ctrl->L.Length == 0.0){
         Ctrl->L.Length = 15.0; 
-        double jus = GRT_SQUARE(vmax*tmax) - GRT_SQUARE(Ctrl->D.deprcv - Ctrl->D.depsrc);
+        real_t jus = GRT_SQUARE(vmax*tmax) - GRT_SQUARE(Ctrl->D.deprcv - Ctrl->D.depsrc);
         if(jus >= 0.0){
             Ctrl->L.Length = GRT_MAX(1.0 + sqrt(jus)/rmax + 0.5, Ctrl->L.Length); // +0.5为保守值
         }
