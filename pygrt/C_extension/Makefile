@@ -49,6 +49,7 @@ CFLAGS := -O3 -std=gnu99 \
 		  -fPIC -Wall -Wextra -I$(shell realpath $(INC_DIR)) $(CFLAGS2) \
 		  -DGRT_VERSION=\"$(VERSION)\" -D_GNU_SOURCE  $(ARCH)  $(FOMPFLAGS)
 #  -fdump-tree-all  -g -ffast-math -O3 -fno-associative-math  -march=native -mtune=native 
+#  -Wconversion -Wsign-conversion -Wfloat-conversion -Wcast-qual -Wcast-align
 
 
 # 获取所有源文件
