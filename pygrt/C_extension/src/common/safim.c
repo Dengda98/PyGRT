@@ -58,12 +58,12 @@ typedef struct {
 // 区间栈结构体
 typedef struct { 
     KInterval *data; 
-    int size; 
-    int capacity; 
+    size_t size; 
+    size_t capacity; 
 } KIntervalStack;
 
 /** 初始化区间栈 */
-static void stack_init(KIntervalStack *stack, int init_capacity) {
+static void stack_init(KIntervalStack *stack, size_t init_capacity) {
     stack->data = (KInterval*)malloc(init_capacity * sizeof(KInterval));
     stack->size = 0;
     stack->capacity = init_capacity;

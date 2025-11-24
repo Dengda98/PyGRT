@@ -124,7 +124,7 @@ typedef struct {
     /** 多线程 */
     struct {
         bool active;
-        size_t nthreads; ///< 线程数
+        int nthreads; ///< 线程数
     } P;
     /** 输出哪些震源的格林函数 */
     struct {
@@ -675,7 +675,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             // 多线程数 -Pnthreads
             case 'P':
                 Ctrl->P.active = true;
-                if(1 != sscanf(optarg, "%zu", &Ctrl->P.nthreads)){
+                if(1 != sscanf(optarg, "%d", &Ctrl->P.nthreads)){
                     GRTBadOptionError(command, P, "");
                 };
                 if(Ctrl->P.nthreads <= 0){
@@ -725,11 +725,11 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     // 转为浮点数
                     Ctrl->S.statsidxs = (size_t*)realloc(Ctrl->S.statsidxs, sizeof(size_t)*(Ctrl->S.nstatsidxs));
                     for(size_t i=0; i<Ctrl->S.nstatsidxs; ++i){
-                        size_t tmp = (size_t)atoi(Ctrl->S.s_statsidxs[i]);
+                        int tmp = atoi(Ctrl->S.s_statsidxs[i]);
                         if(tmp < 0){
-                            GRTBadOptionError(command, S, "index (%zu) can't negative.", tmp);
+                            GRTBadOptionError(command, S, "index (%d) can't negative.", tmp);
                         }
-                        Ctrl->S.statsidxs[i] = tmp;
+                        Ctrl->S.statsidxs[i] = (size_t)tmp;
                     }
                 }
                 break;
