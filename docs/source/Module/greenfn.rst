@@ -21,7 +21,7 @@ greenfn
 [ |-E|\ *t0*\ [/*v0*] ]
 [ |-P|\ *nthreads* ]
 [ |-G|\ **e|v|h|s** ]
-[ |-S|\ *i1,i2,...* ]
+[ |-S|\ [*i1,i2,...*] ]
 [ **-e** ]
 [ **-s** ]
 [ **-h** ]
@@ -108,9 +108,9 @@ greenfn
 
 .. _-S:
 
-**-S**\ *i1,i2,...*
+**-S**\ [*i1,i2,...*]
     指定频率索引值，输出对应频率下波数积分过程中的核函数文件，多个索引值用逗号分隔，文件保存目录为
-    ``{outdir}_grtstats`` 。若使用 **-S**\ *-1* 则保存所有频点。
+    ``{outdir}_grtstats`` 。若使用 **-S** 则保存所有频点。
     关于文件格式及其读取详见 :doc:`/Advanced/integ_converg/integ_converg` 。
 
 .. include:: explain_-egrn.rst_
