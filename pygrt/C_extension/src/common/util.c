@@ -21,7 +21,7 @@
 
 #include "grt/common/checkerror.h"
 
-char ** grt_string_split(const char *string, const char *delim, int *size)
+char ** grt_string_split(const char *string, const char *delim, size_t *size)
 {
     char *str_copy = strdup(string);  // 创建字符串副本，以免修改原始字符串
     char *token = strtok(str_copy, delim);
@@ -43,7 +43,7 @@ char ** grt_string_split(const char *string, const char *delim, int *size)
     return s_split;
 }
 
-char ** grt_string_from_file(FILE *fp, int *size){
+char ** grt_string_from_file(FILE *fp, size_t *size){
     char **s_split = NULL;
     *size = 0;
     s_split = (char**)realloc(s_split, sizeof(char*)*(*size+1));
@@ -232,7 +232,7 @@ static void write_one_to_sac(
     cfac = exp(I*PI2*pt_fh->df*delayT);
     ccoef = sgn;
     // 只赋值有效长度，其余均为0
-    for(int i=0; i<pt_fh->nf_valid; ++i){
+    for(size_t i=0; i<pt_fh->nf_valid; ++i){
         pt_fh->W_f[i] = grncplx[i] * ccoef;
         ccoef *= cfac;
     }
@@ -252,7 +252,7 @@ static void write_one_to_sac(
     double fac, coef;
     coef = pt_fh->df * exp(delayT*wI);
     fac = exp(wI*pt_fh->dt);
-    for(int i=0; i<pt_fh->nt; ++i){
+    for(size_t i=0; i<pt_fh->nt; ++i){
         float_arr[i] = pt_fh->w_t[i] * coef;
         coef *= fac;
     }
@@ -372,7 +372,7 @@ void grt_GF_freq2time_write_to_file(
     const char *command, const GRT_MODEL1D *mod1d, 
     const char *s_output_dir, const char *s_modelname, const char *s_depsrc, const char *s_deprcv,    
     const real_t wI, GRT_FFTW_HOLDER *pt_fh,
-    const MYINT nr, char *s_dists[nr], const real_t dists[nr], real_t travtPS[nr][2],
+    const size_t nr, char *s_dists[nr], const real_t dists[nr], real_t travtPS[nr][2],
     const real_t depsrc, const real_t deprcv,
     const real_t delayT0, const real_t delayV0, const bool calc_upar,
     const bool doEX, const bool doVF, const bool doHF, const bool doDC, 
@@ -406,7 +406,7 @@ void grt_GF_freq2time_write_to_file(
     GRT_SAFE_ASPRINTF(&s_output_dirprefx, "%s/%s_%s_%s", s_output_dir, s_modelname, s_depsrc, s_deprcv);
     
     // 做反傅里叶变换，保存SAC文件
-    for(int ir=0; ir<nr; ++ir){
+    for(size_t ir=0; ir<nr; ++ir){
         hd.dist = dists[ir];
 
         single_freq2time_write_to_file(

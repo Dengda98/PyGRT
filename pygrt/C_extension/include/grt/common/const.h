@@ -32,14 +32,9 @@
 #endif
 
 
-typedef int MYINT;  ///< 整数 
-
+// 使用双精度
 typedef double real_t;
 typedef double complex cplx_t;
-
-#define GRT_NC_MYINT  NC_INT
-#define GRT_NC_FUNC_MYINT(func)  func##_int
-
 #define NC_REAL  NC_DOUBLE
 #define NC_FUNC_REAL(func)  func##_double
 
@@ -94,7 +89,7 @@ typedef double complex cplx_t;
 // 释放指针数组
 #define GRT_SAFE_FREE_PTR_ARRAY(ptr, count) ({\
     if(ptr!=NULL){\
-        for(MYINT i=0; i<count; ++i){\
+        for(size_t i=0; i<count; ++i){\
             GRT_SAFE_FREE_PTR((ptr)[i]);\
             (ptr)[i] = NULL;\
         }\
@@ -139,10 +134,10 @@ enum {
 };
 
 /** 分别对应爆炸源(0阶)，垂直力源(0阶)，水平力源(1阶)，剪切源(0,1,2阶) */ 
-extern const MYINT GRT_SRC_M_ORDERS[GRT_SRC_M_NUM];
+extern const int GRT_SRC_M_ORDERS[GRT_SRC_M_NUM];
 
 /** 不同震源类型使用的格林函数类型，0为Gij，1为格林函数导数Gij,k */
-extern const MYINT GRT_SRC_M_GTYPES[GRT_SRC_M_NUM];
+extern const int GRT_SRC_M_GTYPES[GRT_SRC_M_NUM];
 
 /** 不同震源，不同阶数的名称简写，用于命名 */
 extern const char *GRT_SRC_M_NAME_ABBR[GRT_SRC_M_NUM];
@@ -158,7 +153,7 @@ extern const char GRT_ZNE_CODES[];
 
 
 /** 波数积分方法 */
-enum {
+enum GRT_K_INTEG_METHOD {
     GRT_K_INTEG_METHOD_DWM = 0,  // 离散波数法
     GRT_K_INTEG_METHOD_FIM,      // 固定间隔 Filon 积分
     GRT_K_INTEG_METHOD_SAFIM,    // 自适应 Filon 积分

@@ -60,7 +60,7 @@ void grt_static_wave2qwv_z_REV_PSV(
     const cplx_t R[2][2], cplx_t R_EV[2][2])
 {
     real_t k = mod1d->k;
-    MYINT ircv = mod1d->ircv;
+    size_t ircv = mod1d->ircv;
     cplx_t delta1 = mod1d->delta[ircv];
 
     // 新推导公式
@@ -88,7 +88,7 @@ void grt_static_wave2qwv_z_REV_SH(const GRT_MODEL1D *mod1d, cplx_t RL, cplx_t *R
 }
 
 
-void grt_static_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M)
+void grt_static_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
 {
     MODEL_2LAYS_ATTRIB(cplx_t, mu);
     MODEL_2LAYS_ATTRIB(cplx_t, delta);
@@ -130,7 +130,7 @@ void grt_static_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRI
 }
 
 
-void grt_static_RT_matrix_SH(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M)
+void grt_static_RT_matrix_SH(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
 {
     MODEL_2LAYS_ATTRIB(cplx_t, mu);
     
@@ -148,7 +148,7 @@ void grt_static_RT_matrix_SH(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX
 }
 
 
-void grt_static_delay_RT_matrix(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M)
+void grt_static_delay_RT_matrix(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
 {
     real_t thk = mod1d->Thk[iy-1];
     real_t k = mod1d->k;

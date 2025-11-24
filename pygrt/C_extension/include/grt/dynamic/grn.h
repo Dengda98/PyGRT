@@ -49,8 +49,8 @@
  * 
  */ 
 void grt_integ_grn_spec(
-    GRT_MODEL1D *mod1d, MYINT nf1, MYINT nf2, real_t *freqs,  
-    MYINT nr, real_t *rs, real_t wI, 
+    GRT_MODEL1D *mod1d, size_t nf1, size_t nf2, real_t *freqs,  
+    size_t nr, real_t *rs, real_t wI, 
     real_t vmin_ref, real_t keps, real_t ampk, real_t k0, real_t Length, real_t filonLength, real_t safilonTol, real_t filonCut,             
     bool print_progressbar, 
 
@@ -62,8 +62,8 @@ void grt_integ_grn_spec(
     cplx_t *grn_uir[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
 
     const char *statsstr, // 积分过程输出
-    MYINT  nstatsidxs, // 仅输出特定频点
-    MYINT *statsidxs
+    size_t  nstatsidxs, // 仅输出特定频点
+    size_t *statsidxs
 );
 
 

@@ -42,9 +42,9 @@
  * @param[in,out]       iendk0    一个布尔指针，用于指示是否满足结束条件 
  */
 static void process_peak_or_trough(
-    MYINT ir, MYINT im, MYINT v, real_t k, real_t dk, 
+    size_t ir, int im, int v, real_t k, real_t dk, 
     cplx_t (*J3)[GRT_PTAM_WINDOW_SIZE][GRT_SRC_M_NUM][GRT_INTEG_NUM], real_t (*Kpt)[GRT_SRC_M_NUM][GRT_INTEG_NUM][GRT_PTAM_PT_MAX], 
-    cplx_t (*Fpt)[GRT_SRC_M_NUM][GRT_INTEG_NUM][GRT_PTAM_PT_MAX], MYINT (*Ipt)[GRT_SRC_M_NUM][GRT_INTEG_NUM], MYINT (*Gpt)[GRT_SRC_M_NUM][GRT_INTEG_NUM], bool *iendk0)
+    cplx_t (*Fpt)[GRT_SRC_M_NUM][GRT_INTEG_NUM][GRT_PTAM_PT_MAX], size_t (*Ipt)[GRT_SRC_M_NUM][GRT_INTEG_NUM], size_t (*Gpt)[GRT_SRC_M_NUM][GRT_INTEG_NUM], bool *iendk0)
 {
     cplx_t tmp0;
     if (Gpt[ir][im][v] >= GRT_PTAM_WINDOW_SIZE-1 && Ipt[ir][im][v] < GRT_PTAM_PT_MAX) {
@@ -81,19 +81,19 @@ static void process_peak_or_trough(
  * 
  */
 static void ptam_once(
-    const MYINT ir, const MYINT nr, const real_t precoef, real_t k, real_t dk, 
+    const size_t ir, const size_t nr, const real_t precoef, real_t k, real_t dk, 
     cplx_t SUM3[nr][GRT_PTAM_WINDOW_SIZE][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     cplx_t sum_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     real_t Kpt[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM][GRT_PTAM_PT_MAX],
     cplx_t Fpt[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM][GRT_PTAM_PT_MAX],
-    MYINT Ipt[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
-    MYINT Gpt[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    size_t Ipt[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    size_t Gpt[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     bool *iendk0)
 {
     *iendk0 = true;
-    for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-        MYINT modr = GRT_SRC_M_ORDERS[i];
-        for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
+    for(int i=0; i<GRT_SRC_M_NUM; ++i){
+        int modr = GRT_SRC_M_ORDERS[i];
+        for(int v=0; v<GRT_INTEG_NUM; ++v){
             if(modr == 0 && v!=0 && v!= 2)  continue;
 
             // 赋更新量
@@ -105,7 +105,7 @@ static void ptam_once(
             process_peak_or_trough(ir, i, v, k, dk, SUM3, Kpt, Fpt, Ipt, Gpt, iendk0);
 
             // 左移动点, 
-            for(MYINT jj=0; jj<GRT_PTAM_WINDOW_SIZE-1; ++jj){
+            for(int jj=0; jj<GRT_PTAM_WINDOW_SIZE-1; ++jj){
                 SUM3[ir][jj][i][v] = SUM3[ir][jj+1][i][v];
             }
 
@@ -118,7 +118,7 @@ static void ptam_once(
 
 void grt_PTA_method(
     GRT_MODEL1D *mod1d, real_t k0, real_t predk,
-    MYINT nr, real_t *rs,
+    size_t nr, real_t *rs,
     cplx_t sum_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     bool calc_upar,
     cplx_t sum_uiz_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
@@ -169,21 +169,21 @@ void grt_PTA_method(
 
     #define __ARR [GRT_SRC_M_NUM][GRT_INTEG_NUM]
         // 存储波峰波谷的总个数
-        __CALLOC_ARRAY(Ipt, MYINT, __ARR);
-        __CALLOC_ARRAY(Ipt_uiz, MYINT, __ARR);
-        __CALLOC_ARRAY(Ipt_uir, MYINT, __ARR);
+        __CALLOC_ARRAY(Ipt, size_t, __ARR);
+        __CALLOC_ARRAY(Ipt_uiz, size_t, __ARR);
+        __CALLOC_ARRAY(Ipt_uir, size_t, __ARR);
 
         // 记录点数，当峰谷找到后，清零
-        __CALLOC_ARRAY(Gpt, MYINT, __ARR);
-        __CALLOC_ARRAY(Gpt_uiz, MYINT, __ARR);
-        __CALLOC_ARRAY(Gpt_uir, MYINT, __ARR);
+        __CALLOC_ARRAY(Gpt, size_t, __ARR);
+        __CALLOC_ARRAY(Gpt_uiz, size_t, __ARR);
+        __CALLOC_ARRAY(Gpt_uir, size_t, __ARR);
     #undef __ARR
     #undef __CALLOC_ARRAY
 
 
-    for(MYINT ir=0; ir<nr; ++ir){
-        for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-            for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
+    for(size_t ir=0; ir<nr; ++ir){
+        for(int i=0; i<GRT_SRC_M_NUM; ++i){
+            for(int v=0; v<GRT_INTEG_NUM; ++v){
                 sum_J[ir][i][v] = sum_J0[ir][i][v];
 
                 if(calc_upar){
@@ -200,7 +200,7 @@ void grt_PTA_method(
 
 
     // 对于PTAM，不同震中距使用不同dk
-    for(MYINT ir=0; ir<nr; ++ir){
+    for(size_t ir=0; ir<nr; ++ir){
         real_t dk = PI/((GRT_PTAM_WAITS_MAX-1)*rs[ir]); 
         real_t precoef = dk/predk; // 提前乘dk系数，以抵消格林函数主函数计算时最后乘dk
         // 根据波峰波谷的目标也给出一个kmax，+5以防万一 
@@ -251,13 +251,13 @@ void grt_PTA_method(
     }
 
     // 做缩减序列，赋值最终解
-    for(MYINT ir=0; ir<nr; ++ir){
+    for(size_t ir=0; ir<nr; ++ir){
         FILE *fstatsP = ptam_fstatsnr[ir][1];
         // 记录到文件
         if(fstatsP!=NULL)  grt_write_stats_ptam(fstatsP, Kpt[ir], Fpt[ir]);
 
-        for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-            for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
+        for(int i=0; i<GRT_SRC_M_NUM; ++i){
+            for(int v=0; v<GRT_INTEG_NUM; ++v){
                 grt_cplx_shrink(Ipt[ir][i][v], Fpt[ir][i][v]);  
                 sum_J0[ir][i][v] = Fpt[ir][i][v][0];
 
@@ -290,10 +290,10 @@ void grt_PTA_method(
 
 
 
-MYINT grt_cplx_peak_or_trough(MYINT idx1, MYINT idx2, const cplx_t arr[GRT_PTAM_WINDOW_SIZE][GRT_SRC_M_NUM][GRT_INTEG_NUM], real_t k, real_t dk, real_t *pk, cplx_t *value){
+int grt_cplx_peak_or_trough(int idx1, int idx2, const cplx_t arr[GRT_PTAM_WINDOW_SIZE][GRT_SRC_M_NUM][GRT_INTEG_NUM], real_t k, real_t dk, real_t *pk, cplx_t *value){
     cplx_t f1, f2, f3;
     real_t rf1, rf2, rf3;
-    MYINT stat=0;
+    int stat=0;
 
     f1 = arr[0][idx1][idx2];
     f2 = arr[1][idx1][idx2];
@@ -341,9 +341,9 @@ MYINT grt_cplx_peak_or_trough(MYINT idx1, MYINT idx2, const cplx_t arr[GRT_PTAM_
 }
 
 
-void grt_cplx_shrink(MYINT n1, cplx_t *arr){
-    for(MYINT n=n1; n>1; --n){
-        for(MYINT i=0; i<n-1; ++i){
+void grt_cplx_shrink(size_t n1, cplx_t *arr){
+    for(size_t n=n1; n>1; --n){
+        for(size_t i=0; i<n-1; ++i){
             arr[i] = 0.5*(arr[i] + arr[i+1]);
         }
     }

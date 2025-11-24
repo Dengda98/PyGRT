@@ -36,7 +36,7 @@ typedef struct {
         bool active;
         char **s_rs;
         real_t *rs;
-        MYINT nr;
+        size_t nr;
     } R;
 } GRT_MODULE_CTRL;
 
@@ -504,7 +504,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 }
                 // 转为浮点数
                 Ctrl->R.rs = (real_t*)realloc(Ctrl->R.rs, sizeof(real_t)*(Ctrl->R.nr));
-                for(MYINT i=0; i<Ctrl->R.nr; ++i){
+                for(size_t i=0; i<Ctrl->R.nr; ++i){
                     Ctrl->R.rs[i] = atof(Ctrl->R.s_rs[i]);
                     if(Ctrl->R.rs[i] < 0.0){
                         GRTBadOptionError(command, R, "Can't set negative epicentral distance(%f).", Ctrl->R.rs[i]);
@@ -541,7 +541,7 @@ int travt_main(int argc, char **argv){
     printf("------------------------------------------------\n");
     printf(" Distance(km)     Tp(secs)         Ts(secs)     \n");
     double travtP=-1, travtS=-1;
-    for(int i=0; i<Ctrl->R.nr; ++i){
+    for(size_t i=0; i<Ctrl->R.nr; ++i){
         travtP = grt_compute_travt1d(
         mod1d->Thk, mod1d->Va, mod1d->n, mod1d->isrc, mod1d->ircv, Ctrl->R.rs[i]);
         travtS = grt_compute_travt1d(

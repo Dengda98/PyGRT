@@ -12,9 +12,11 @@
 #include "grt/common/const.h"
 
 // 定义 X 宏，为多个类型定义查找函数
-#define __FOR_EACH_TYPE \
-    X(MYINT)  X(real_t)  X(float)  X(double)
+#define __FOR_EACH_REAL \
+    X(real_t)  X(float)  X(double)
 
+#define __FOR_EACH_INT \
+    X(size_t)
 
 /**
  * 该函数对输入数组进行线性搜索，找到目标值时返回其索引。
@@ -30,9 +32,10 @@
  * 
  */
 #define X(T) \
-MYINT grt_findElement_##T(const T *array, MYINT size, T target);
+ssize_t grt_findElement_##T(const T *array, size_t size, T target);
 
-__FOR_EACH_TYPE
+__FOR_EACH_REAL
+__FOR_EACH_INT
 #undef X
 
 
@@ -51,9 +54,9 @@ __FOR_EACH_TYPE
  * 
  */
 #define X(T) \
-MYINT grt_findLessEqualClosest_##T(const T *array, MYINT size, T target);
+ssize_t grt_findLessEqualClosest_##T(const T *array, size_t size, T target);
 
-__FOR_EACH_TYPE
+__FOR_EACH_REAL
 #undef X
 
 
@@ -71,9 +74,9 @@ __FOR_EACH_TYPE
  * 
  */
 #define X(T) \
-MYINT grt_findClosest_##T(const T *array, MYINT size, T target);
+size_t grt_findClosest_##T(const T *array, size_t size, T target);
 
-__FOR_EACH_TYPE
+__FOR_EACH_REAL
 #undef X
 
 
@@ -89,10 +92,11 @@ __FOR_EACH_TYPE
  * 
  */
 #define X(T) \
-MYINT grt_findMin_##T(const T *array, MYINT size);\
-MYINT grt_findMax_##T(const T *array, MYINT size);\
+size_t grt_findMin_##T(const T *array, size_t size);\
+size_t grt_findMax_##T(const T *array, size_t size);\
 
-__FOR_EACH_TYPE
+__FOR_EACH_REAL
+__FOR_EACH_INT
 #undef X
 
 
@@ -107,9 +111,11 @@ __FOR_EACH_TYPE
 #define X(T) \
 int grt_compare_##T(const void *a, const void *b);
 
-__FOR_EACH_TYPE
+__FOR_EACH_REAL
+__FOR_EACH_INT
 #undef X
-#undef __FOR_EACH_TYPE
+#undef __FOR_EACH_REAL
+#undef __FOR_EACH_INT
 
 
 
@@ -126,6 +132,6 @@ __FOR_EACH_TYPE
  * 
  * @return pos   插入位置的索引
  */
-MYINT grt_insertOrdered(
-    void *arr, MYINT *size, MYINT capacity, const void *target, size_t elementSize, bool ascending,
+ssize_t grt_insertOrdered(
+    void *arr, size_t *size, size_t capacity, const void *target, size_t elementSize, bool ascending,
     int (*compare)(const void *, const void *));

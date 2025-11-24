@@ -30,7 +30,7 @@ typedef struct {
     cplx_t invTL;
 
     /* 状态变量 */
-    MYINT stats;   ///< 是否有除零错误，非0为异常值
+    int stats;   ///< 是否有除零错误，非0为异常值
 } RT_MATRIX;
 
 

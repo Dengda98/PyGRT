@@ -81,13 +81,13 @@ void grt_print_mod1d(const GRT_MODEL1D *mod1d){
 
 
     char indexstr[nlens[0]-2+10];  // +10 以防止 -Wformat-truncation= 警告
-    for(MYINT i=0; i<mod1d->n; ++i){
+    for(size_t i=0; i<mod1d->n; ++i){
         if(i==mod1d->isrc){
-            snprintf(indexstr, sizeof(indexstr), "%d [src]", i+1);
+            snprintf(indexstr, sizeof(indexstr), "%zu [src]", i+1);
         } else if(i==mod1d->ircv){
-            snprintf(indexstr, sizeof(indexstr), "%d [rcv]", i+1);
+            snprintf(indexstr, sizeof(indexstr), "%zu [rcv]", i+1);
         } else {
-            snprintf(indexstr, sizeof(indexstr), "%d      ", i+1);
+            snprintf(indexstr, sizeof(indexstr), "%zu      ", i+1);
         }
 
         printf("| %*s ", nlens[0]-3, indexstr);
@@ -118,7 +118,7 @@ void grt_free_mod1d(GRT_MODEL1D *mod1d){
 }
 
 
-GRT_MODEL1D * grt_init_mod1d(MYINT n){
+GRT_MODEL1D * grt_init_mod1d(size_t n){
     GRT_MODEL1D *mod1d = (GRT_MODEL1D *)calloc(1, sizeof(GRT_MODEL1D));
     mod1d->n = n;
 
@@ -132,7 +132,7 @@ GRT_MODEL1D * grt_init_mod1d(MYINT n){
 
 GRT_MODEL1D * grt_copy_mod1d(const GRT_MODEL1D *mod1d1){
     GRT_MODEL1D *mod1d2 = grt_init_mod1d(mod1d1->n);
-    MYINT n = mod1d1->n;
+    size_t n = mod1d1->n;
     mod1d2->n = mod1d1->n;
     mod1d2->depsrc = mod1d1->depsrc;
     mod1d2->deprcv = mod1d1->deprcv;
@@ -158,7 +158,7 @@ GRT_MODEL1D * grt_copy_mod1d(const GRT_MODEL1D *mod1d1){
 void grt_attenuate_mod1d(GRT_MODEL1D *mod1d, cplx_t omega){
     real_t Va0, Vb0;
     cplx_t atna, atnb;
-    for(MYINT i=0; i<mod1d->n; ++i){
+    for(size_t i=0; i<mod1d->n; ++i){
         Va0 = mod1d->Va[i];
         Vb0 = mod1d->Vb[i];
 
@@ -184,12 +184,12 @@ void grt_attenuate_mod1d(GRT_MODEL1D *mod1d, cplx_t omega){
 void grt_mod1d_xa_xb(GRT_MODEL1D *mod1d, const real_t k)
 {
     mod1d->k = k;
-    // 完全为0，没有虚频率，这只可能是在计算静态解，此时不需要xa, xb等物理量
-    if(mod1d->omega == 0.0)  return;
+    // 不合理的频率值，只可能是在计算静态解，此时不需要xa, xb等物理量
+    if(creal(mod1d->omega) < 0.0)  return;
 
     mod1d->c_phase = mod1d->omega/k;
 
-    for(MYINT i=0; i<mod1d->n; ++i){
+    for(size_t i=0; i<mod1d->n; ++i){
         real_t va, vb;
         va = mod1d->Va[i];
         vb = mod1d->Vb[i];
@@ -211,7 +211,7 @@ void grt_mod1d_xa_xb(GRT_MODEL1D *mod1d, const real_t k)
 }
 
 
-void grt_realloc_mod1d(GRT_MODEL1D *mod1d, MYINT n){
+void grt_realloc_mod1d(GRT_MODEL1D *mod1d, size_t n){
     mod1d->n = n;
 
     #define X(P, T)  mod1d->P = (T*)realloc(mod1d->P, n*sizeof(T));
@@ -226,34 +226,17 @@ GRT_MODEL1D * grt_read_mod1d_from_file(const char *command, const char *modelpat
     
     FILE *fp = GRTCheckOpenFile(command, modelpath, "r");
 
-    MYINT isrc=-1, ircv=-1;
-    MYINT *pmin_idx, *pmax_idx, *pimg_idx;
-    double depth = 0.0, depmin, depmax, depimg;
-    bool ircvup = (depsrc > deprcv);
-    if(ircvup){
-        pmin_idx = &ircv;
-        pmax_idx = &isrc;
-        depmin = deprcv;
-        depmax = depsrc;
-    } else {
-        pmin_idx = &isrc;
-        pmax_idx = &ircv;
-        depmin = depsrc;
-        depmax = deprcv;
-    }
-    depimg = depmin;
-    pimg_idx = pmin_idx;
-
+    
     // 初始化
     GRT_MODEL1D *mod1d = grt_init_mod1d(1);
 
     const int ncols = 6; // 模型文件有6列，或除去qa qb有四列
     const int ncols_noQ = 4;
-    int iline = 0;
+    size_t iline = 0;
     double h, va, vb, rho, qa, qb;
     double (*modarr)[ncols] = NULL;
     h = va = vb = rho = qa = qb = 0.0;
-    int nlay = 0;
+    size_t nlay = 0;
     mod1d->io_depth = false;
 
     size_t len;
@@ -266,9 +249,9 @@ GRT_MODEL1D * grt_read_mod1d_from_file(const char *command, const char *modelpat
         if(grt_is_comment_or_empty(line))  continue;
 
         h = va = vb = rho = qa = qb = 0.0;
-        MYINT nscan = sscanf(line, "%lf %lf %lf %lf %lf %lf\n", &h, &va, &vb, &rho, &qa, &qb);
+        int nscan = sscanf(line, "%lf %lf %lf %lf %lf %lf\n", &h, &va, &vb, &rho, &qa, &qb);
         if(ncols != nscan && ncols_noQ != nscan){
-            GRTRaiseError("[%s] Model file read error in line %d.\n", command, iline);
+            GRTRaiseError("[%s] Model file read error in line %zu.\n", command, iline);
         };
 
         // 读取首行，如果首行首列为 0 ，则首列指示每层顶界面深度而非厚度
@@ -277,15 +260,15 @@ GRT_MODEL1D * grt_read_mod1d_from_file(const char *command, const char *modelpat
         }
 
         if(va <= 0.0 || rho <= 0.0 || (ncols == nscan && (qa <= 0.0 || qb <= 0.0))){
-            GRTRaiseError("[%s] In model file, line %d, nonpositive value is not supported.\n", command, iline);
+            GRTRaiseError("[%s] In model file, line %zu, nonpositive value is not supported.\n", command, iline);
         }
 
         if(vb < 0.0){
-            GRTRaiseError("[%s] In model file, line %d, negative Vs is not supported.\n", command, iline);
+            GRTRaiseError("[%s] In model file, line %zu, negative Vs is not supported.\n", command, iline);
         }
 
         if(!allowLiquid && vb == 0.0){
-            GRTRaiseError("[%s] In model file, line %d, Vs==0.0 is not supported.\n", command, iline);
+            GRTRaiseError("[%s] In model file, line %zu, Vs==0.0 is not supported.\n", command, iline);
         }
 
         modarr = (double(*)[ncols])realloc(modarr, sizeof(double)*ncols*(nlay+1));
@@ -306,22 +289,41 @@ GRT_MODEL1D * grt_read_mod1d_from_file(const char *command, const char *modelpat
 
     // 如果读取了深度，转为厚度
     if(mod1d->io_depth){
-        for(int i=1; i<nlay; ++i){
+        for(size_t i=1; i<nlay; ++i){
             // 检查，若为负数，则表示输入的层顶深度非递增
             double tmp = modarr[i][0] - modarr[i-1][0];
             if(tmp < 0.0){
-                GRTRaiseError("[%s] In model file, negative thickness found in layer %d.\n", command, i);
+                GRTRaiseError("[%s] In model file, negative thickness found in layer %zu.\n", command, i);
             }
             modarr[i-1][0] = tmp;
         }
     }
 
+
+    size_t isrc=0, ircv=0;
+    size_t *pmin_idx, *pmax_idx, *pimg_idx;
+    double depth = 0.0, depmin, depmax, depimg;
+    bool ircvup = (depsrc > deprcv);
+    if(ircvup){
+        pmin_idx = &ircv;
+        pmax_idx = &isrc;
+        depmin = deprcv;
+        depmax = depsrc;
+    } else {
+        pmin_idx = &isrc;
+        pmax_idx = &ircv;
+        depmin = depsrc;
+        depmax = deprcv;
+    }
+    depimg = depmin;
+    pimg_idx = pmin_idx;
+
     // 对最后一层的厚度做特殊处理
     modarr[nlay-1][0] = depmax + 1e30; // 保证够厚即可，用于下面定义虚拟层，实际计算不会用到最后一层厚度
     
-    int nlay0 = nlay;
+    size_t nlay0 = nlay;
     nlay = 0;
-    for(int i=0; i<nlay0; ++i){
+    for(size_t i=0; i<nlay0; ++i){
         h = modarr[i][0];
         va = modarr[i][1];
         vb = modarr[i][2];
@@ -331,14 +333,15 @@ GRT_MODEL1D * grt_read_mod1d_from_file(const char *command, const char *modelpat
 
         // 允许最后一层厚度为任意值
         if(h <= 0.0 && i < nlay0-1 ) {
-            GRTRaiseError("[%s] In line %d, nonpositive thickness (except last layer)"
+            GRTRaiseError("[%s] In line %zu, nonpositive thickness (except last layer)"
                     " is not supported.\n", command, i+1);
         }
 
         // 划分震源层和接收层
         for(int k=0; k<2; ++k){
-            // printf("%d, %d, %lf, %lf, %e ", i, k, depth+h, depimg, depth+h- depimg);
-            if(*pimg_idx < 0 && depth+h >= depimg && depsrc >= 0.0 && deprcv >= 0.0){
+            // 这里的判断设计使得 min(isrc, ircv) >= 1，即不可能为 0 层
+            // 这里不能改，否则会影响后续计算 R/T 矩阵的循环
+            if(*pimg_idx == 0 && depth+h >= depimg && depsrc >= 0.0 && deprcv >= 0.0){
                 grt_realloc_mod1d(mod1d, nlay+1);
                 mod1d->Thk[nlay] = depimg - depth;
                 mod1d->Va[nlay] = va;
@@ -400,7 +403,7 @@ GRT_MODEL1D * grt_read_mod1d_from_file(const char *command, const char *modelpat
 
     // 将每层顶界面深度写入数组
     depth = 0.0;
-    for(int iz=0; iz<mod1d->n; ++iz){
+    for(size_t iz=0; iz<mod1d->n; ++iz){
         mod1d->Dep[iz] = depth;
         depth += mod1d->Thk[iz];
     }
@@ -409,25 +412,25 @@ GRT_MODEL1D * grt_read_mod1d_from_file(const char *command, const char *modelpat
     GRT_SAFE_FREE_PTR(modarr);
     GRT_SAFE_FREE_PTR(line);
     
-    // 填充弹性模量
+    // 先指定负频率，仅填充弹性模量
     grt_attenuate_mod1d(mod1d, -1);
 
     return mod1d;
 }
 
 
-void grt_get_model_diglen_from_file(const char *command, const char *modelpath, MYINT diglen[6]){
+void grt_get_model_diglen_from_file(const char *command, const char *modelpath, size_t diglen[6]){
     FILE *fp = GRTCheckOpenFile(command, modelpath, "r");
     size_t len;
     char *line = NULL;
 
-    memset(diglen, 0, sizeof(MYINT)*6);
+    memset(diglen, 0, sizeof(size_t[6]));
 
     while(grt_getline(&line, &len, fp) != -1){
         char *token = strtok(line, " \n");
-        for(MYINT i=0; i<6; ++i){
+        for(int i=0; i<6; ++i){
             if(token == NULL) break;
-            diglen[i] = GRT_MAX(diglen[i], (MYINT)strlen(token));
+            diglen[i] = GRT_MAX(diglen[i], strlen(token));
             token = strtok(NULL, " \n");
         }
     }
@@ -439,7 +442,7 @@ void grt_get_model_diglen_from_file(const char *command, const char *modelpath, 
 
 bool grt_check_vel_in_mod(const GRT_MODEL1D *mod1d, const real_t vel, const real_t tol){
     // 浮点数比较，检查是否存在该速度值
-    for(MYINT i=0; i<mod1d->n; ++i){
+    for(size_t i=0; i<mod1d->n; ++i){
         if(fabs(vel - mod1d->Va[i])<tol || fabs(vel - mod1d->Vb[i])<tol)  return true;
     }
     return false;
@@ -452,7 +455,7 @@ void grt_get_mod1d_vmin_vmax(const GRT_MODEL1D *mod1d, real_t *vmin, real_t *vma
     *vmax = 0.0;
     const real_t *Va = mod1d->Va;
     const real_t *Vb = mod1d->Vb;
-    for(MYINT i=0; i<mod1d->n; ++i){
+    for(size_t i=0; i<mod1d->n; ++i){
         if(Va[i] < *vmin) *vmin = Va[i];
         if(Va[i] > *vmax) *vmax = Va[i];
         if(Vb[i] < *vmin && Vb[i] > 0.0) *vmin = Vb[i];

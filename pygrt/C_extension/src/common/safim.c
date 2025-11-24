@@ -101,14 +101,14 @@ static KInterval stack_pop(KIntervalStack *stack) {
  *    + stats = 4,   [a+h, a+2h]
  * 
  */
-static cplx_t simpson(const KInterval *item_pt, MYINT im, MYINT iqwv, bool isuiz, SIMPSON_INTV stats) {
+static cplx_t simpson(const KInterval *item_pt, int im, int iqwv, bool isuiz, SIMPSON_INTV stats) {
     cplx_t Fint = 0.0;
     real_t klen = item_pt->k3[2] -  item_pt->k3[0];
     const cplx_t (*F3)[GRT_SRC_M_NUM][GRT_QWV_NUM] = (isuiz)? item_pt->F3_uiz : item_pt->F3;
     
     // 使用F(k)*sqrt(k)来衡量积分值，这可以平衡后续计算F(k)*Jm(kr)k积分时的系数
     real_t sk[3];
-    for(MYINT i=0; i<3; ++i){
+    for(int i=0; i<3; ++i){
         sk[i] = sqrt(item_pt->k3[i]);
     }
 
@@ -138,8 +138,8 @@ static cplx_t simpson(const KInterval *item_pt, MYINT im, MYINT iqwv, bool isuiz
 /** 比较QWV的最大绝对值 */
 static void get_maxabsQWV(const cplx_t F[GRT_SRC_M_NUM][GRT_QWV_NUM], real_t maxabsF[GRT_GTYPES_MAX]){
     real_t tmp;
-    for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-        for(MYINT c=0; c<GRT_QWV_NUM; ++c){
+    for(int i=0; i<GRT_SRC_M_NUM; ++i){
+        for(int c=0; c<GRT_QWV_NUM; ++c){
             tmp = fabs(F[i][c]);
             if(tmp > maxabsF[GRT_SRC_M_GTYPES[i]]){
                 maxabsF[GRT_SRC_M_GTYPES[i]] = tmp;
@@ -168,9 +168,9 @@ static bool check_fit(
 
     real_t S_dif, S_ref;
     bool badtol = false;
-    for(MYINT im=0; im<GRT_SRC_M_NUM; ++im){
-        MYINT igtyp = GRT_SRC_M_GTYPES[im];
-        for(MYINT c=0; c<GRT_QWV_NUM; ++c){
+    for(int im=0; im<GRT_SRC_M_NUM; ++im){
+        int igtyp = GRT_SRC_M_GTYPES[im];
+        for(int c=0; c<GRT_QWV_NUM; ++c){
             if(GRT_SRC_M_ORDERS[im]==0 && GRT_QWV_CODES[c]=='v')  continue;
             // qw和v分开采样?
             // if(isqw && GRT_QWV_CODES[c]=='v')  continue;
@@ -187,7 +187,7 @@ static bool check_fit(
             bool islowamp = true;
             real_t ref_amp = REF_AMP_SCALE*maxabsQWV[igtyp];
             // 比较当前区间内5个核函数幅值，是否都低于参考值
-            for(MYINT d=0; d<3; ++d){
+            for(int d=0; d<3; ++d){
                 islowamp = islowamp && (fabs(F3L[d][im][c]) < ref_amp);
                 if(d>0){
                     islowamp = islowamp && (fabs(F3R[d][im][c]) < ref_amp);
@@ -238,7 +238,7 @@ static bool check_fit(
  */
 static void interv_integ(
     const KInterval *ptKitv,
-    MYINT nr, real_t *rs,
+    size_t nr, real_t *rs,
     cplx_t sum_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     bool calc_upar,
     cplx_t sum_uiz_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
@@ -247,18 +247,18 @@ static void interv_integ(
     cplx_t SUM[GRT_SRC_M_NUM][GRT_INTEG_NUM]={0};
 
     // 震中距rs循环
-    for(MYINT ir=0; ir<nr; ++ir){
-        for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-            for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
+    for(size_t ir=0; ir<nr; ++ir){
+        for(int i=0; i<GRT_SRC_M_NUM; ++i){
+            for(int v=0; v<GRT_INTEG_NUM; ++v){
                 SUM[i][v] = 0.0;
             }
         }
 
         // 该分段内的积分
         grt_int_Pk_sa_filon(ptKitv->k3, rs[ir], ptKitv->F3, false, SUM);
-        for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-            MYINT modr = GRT_SRC_M_ORDERS[i];
-            for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
+        for(int i=0; i<GRT_SRC_M_NUM; ++i){
+            int modr = GRT_SRC_M_ORDERS[i];
+            for(int v=0; v<GRT_INTEG_NUM; ++v){
                 if((modr==0 && v!=0 && v!=2))  continue;
                 sum_J[ir][i][v] += SUM[i][v];
             }
@@ -267,9 +267,9 @@ static void interv_integ(
         if(calc_upar){
             //----------------------------- ui_z --------------------------------------
             grt_int_Pk_sa_filon(ptKitv->k3, rs[ir], ptKitv->F3_uiz, false, SUM);
-            for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-                MYINT modr = GRT_SRC_M_ORDERS[i];
-                for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
+            for(int i=0; i<GRT_SRC_M_NUM; ++i){
+                int modr = GRT_SRC_M_ORDERS[i];
+                for(int v=0; v<GRT_INTEG_NUM; ++v){
                     if((modr==0 && v!=0 && v!=2))  continue;
                     sum_uiz_J[ir][i][v] += SUM[i][v];
                 }
@@ -277,9 +277,9 @@ static void interv_integ(
 
             //----------------------------- ui_r --------------------------------------
             grt_int_Pk_sa_filon(ptKitv->k3, rs[ir], ptKitv->F3, true, SUM);
-            for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-                MYINT modr = GRT_SRC_M_ORDERS[i];
-                for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
+            for(int i=0; i<GRT_SRC_M_NUM; ++i){
+                int modr = GRT_SRC_M_ORDERS[i];
+                for(int v=0; v<GRT_INTEG_NUM; ++v){
                     if((modr==0 && v!=0 && v!=2))  continue;
                     sum_uir_J[ir][i][v] += SUM[i][v];
                 }
@@ -294,7 +294,7 @@ static void interv_integ(
 
 real_t grt_sa_filon_integ(
     GRT_MODEL1D *mod1d, real_t k0, real_t dk0, real_t tol, real_t kmax, real_t kref, 
-    MYINT nr, real_t *rs,
+    size_t nr, real_t *rs,
     cplx_t sum_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     bool calc_upar,
     cplx_t sum_uiz_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
@@ -322,7 +322,7 @@ real_t grt_sa_filon_integ(
         .F3 = {{{0}}}, 
         .F3_uiz = {{{0}}} 
     };
-    for(MYINT i=0; i<3; ++i) {
+    for(int i=0; i<3; ++i) {
         grt_mod1d_xa_xb(mod1d, Kitv.k3[i]);
         kerfunc(mod1d, Kitv.F3[i], calc_upar, Kitv.F3_uiz[i]);
         if(mod1d->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
@@ -381,7 +381,7 @@ real_t grt_sa_filon_integ(
 
 
         // 增加新值，并比较QWV最大绝对值
-        for(MYINT i=0; i<3; ++i){
+        for(int i=0; i<3; ++i){
             get_maxabsQWV(Kitv_left.F3[i], maxabsQWV);
             if(calc_upar)  get_maxabsQWV(Kitv_left.F3_uiz[i], maxabsQWV_uiz);
             if(i>0){
@@ -406,10 +406,10 @@ real_t grt_sa_filon_integ(
             // 由于栈的特性，最终记录的k值采样是按顺序的
             // 记录后四个采样值
             if(fstats!=NULL){
-                for(MYINT i=1; i<3; ++i){
+                for(int i=1; i<3; ++i){
                     grt_write_stats(fstats, Kitv_left.k3[i], Kitv_left.F3[i]);
                 }
-                for(MYINT i=1; i<3; ++i){
+                for(int i=1; i<3; ++i){
                     grt_write_stats(fstats, Kitv_right.k3[i], Kitv_right.F3[i]);
                 }
             }
@@ -419,10 +419,10 @@ real_t grt_sa_filon_integ(
     } // END sampling
 
     // 乘上总系数 sqrt(2.0/(PI*r)) / dk0,  除dks0是在该函数外还会再乘dk0, 并将结果加到原数组中
-    for(MYINT ir=0; ir<nr; ++ir){
+    for(size_t ir=0; ir<nr; ++ir){
         real_t tmp = sqrt(2.0/(PI*rs[ir])) / dk0;
-        for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-            for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
+        for(int i=0; i<GRT_SRC_M_NUM; ++i){
+            for(int v=0; v<GRT_INTEG_NUM; ++v){
                 sum_J0[ir][i][v] += sum_J[ir][i][v] * tmp;
                 if(calc_upar){
                     sum_uiz_J0[ir][i][v] += sum_uiz_J[ir][i][v] * tmp;

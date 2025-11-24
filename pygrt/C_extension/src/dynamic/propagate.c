@@ -32,17 +32,17 @@ void grt_kernel(
     bool calc_uiz, cplx_t QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM])
 {
     // 初始化qwv为0
-    for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-        for(MYINT j=0; j<GRT_QWV_NUM; ++j){
+    for(int i=0; i<GRT_SRC_M_NUM; ++i){
+        for(int j=0; j<GRT_QWV_NUM; ++j){
             QWV[i][j] = 0.0;
             if(calc_uiz)  QWV_uiz[i][j] = 0.0;
         }
     }
 
     bool ircvup = mod1d->ircvup;
-    MYINT isrc = mod1d->isrc; // 震源所在虚拟层位, isrc>=1
-    MYINT ircv = mod1d->ircv; // 接收点所在虚拟层位, ircv>=1, ircv != isrc
-    MYINT imin, imax; // 相对浅层深层层位
+    size_t isrc = mod1d->isrc; // 震源所在虚拟层位, isrc>=1
+    size_t ircv = mod1d->ircv; // 接收点所在虚拟层位, ircv>=1, ircv != isrc
+    size_t imin, imax; // 相对浅层深层层位
     imin = GRT_MIN(mod1d->isrc, mod1d->ircv);
     imax = GRT_MAX(mod1d->isrc, mod1d->ircv);
 
@@ -68,7 +68,7 @@ void grt_kernel(
     cplx_t uiz_R_EV[2][2], uiz_R_EVL;
 
     // 从顶到底进行矩阵递推, 公式(5.5.3)
-    for(MYINT iy=1; iy<mod1d->n; ++iy){ // 因为n>=3, 故一定会进入该循环
+    for(size_t iy=1; iy<mod1d->n; ++iy){ // 因为n>=3, 故一定会进入该循环
 
         // 定义物理层内的反射透射系数矩阵
         grt_init_RT_matrix(M);
@@ -158,7 +158,7 @@ void grt_kernel(
         tmpRL = M_FB->invTL  / (1.0 - M_BL->RDL * M_FB->RUL);
         tmpRL2 = R_EVL * tmpRL;
 
-        for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
+        for(int i=0; i<GRT_SRC_M_NUM; ++i){
             grt_construct_qwv(ircvup, tmp2x2, tmpRL2, M_BL->RD, M_BL->RDL, src_coef_PSV[i], src_coef_SH[i], QWV[i]);
         }
 
@@ -169,7 +169,7 @@ void grt_kernel(
             grt_cmat2x2_mul(uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
             tmpRL2 = uiz_R_EVL * tmpRL;
 
-            for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
+            for(int i=0; i<GRT_SRC_M_NUM; ++i){
                 grt_construct_qwv(ircvup, tmp2x2_uiz, tmpRL2, M_BL->RD, M_BL->RDL, src_coef_PSV[i], src_coef_SH[i], QWV_uiz[i]);
             }    
         }
@@ -197,7 +197,7 @@ void grt_kernel(
         tmpRL = M_AL->invTL / (1.0 - M_FA->RUL * M_AL->RDL);
         tmpRL2 = R_EVL * tmpRL;
 
-        for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
+        for(int i=0; i<GRT_SRC_M_NUM; ++i){
             grt_construct_qwv(ircvup, tmp2x2, tmpRL2, M_FA->RU, M_FA->RUL, src_coef_PSV[i], src_coef_SH[i], QWV[i]);
         }
 
@@ -208,7 +208,7 @@ void grt_kernel(
             grt_cmat2x2_mul(uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
             tmpRL2 = uiz_R_EVL * tmpRL;
             
-            for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
+            for(int i=0; i<GRT_SRC_M_NUM; ++i){
                 grt_construct_qwv(ircvup, tmp2x2_uiz, tmpRL2, M_FA->RU, M_FA->RUL, src_coef_PSV[i], src_coef_SH[i], QWV_uiz[i]);
             }
         }
@@ -223,7 +223,7 @@ void grt_kernel(
     // 当震源和场点均位于地表时，可理论验证DS分量恒为0，这里直接赋0以避免后续的精度干扰
     if(mod1d->depsrc == 0.0 && mod1d->deprcv == 0.0)
     {
-        for(MYINT c=0; c<GRT_QWV_NUM; ++c){
+        for(int c=0; c<GRT_QWV_NUM; ++c){
             QWV[GRT_SRC_M_DS_INDEX][c] = 0.0;
             if(calc_uiz)  QWV_uiz[GRT_SRC_M_DS_INDEX][c] = 0.0;
         }

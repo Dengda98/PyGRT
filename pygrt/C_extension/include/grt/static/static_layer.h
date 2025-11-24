@@ -80,7 +80,7 @@ void grt_static_wave2qwv_z_REV_SH(const GRT_MODEL1D *mod1d, cplx_t RL, cplx_t *R
  * @param[out]     M             R/T矩阵
  * 
  */
-void grt_static_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M);
+void grt_static_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
 
 /**
  * 计算界面的 SH 波静态反射透射系数RDL/RUL/TDL/TUL
@@ -91,7 +91,7 @@ void grt_static_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRI
  * @param[out]     M             R/T矩阵
  * 
  */
-void grt_static_RT_matrix_SH(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M);
+void grt_static_RT_matrix_SH(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
 
 
 /**
@@ -102,4 +102,4 @@ void grt_static_RT_matrix_SH(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX
  * @param[out]     M             R/T矩阵
  * 
  */
-void grt_static_delay_RT_matrix(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M);
+void grt_static_delay_RT_matrix(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);

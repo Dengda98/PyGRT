@@ -50,7 +50,7 @@
  */
 real_t grt_linear_filon_integ(
     GRT_MODEL1D *mod1d, real_t k0, real_t dk0, real_t filondk, real_t kmax, real_t keps,
-    MYINT nr, real_t *rs,
+    size_t nr, real_t *rs,
     cplx_t sum_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     bool calc_upar,
     cplx_t sum_uiz_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],

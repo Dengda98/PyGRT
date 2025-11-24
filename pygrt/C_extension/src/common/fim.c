@@ -24,7 +24,7 @@
 
 real_t grt_linear_filon_integ(
     GRT_MODEL1D *mod1d, real_t k0, real_t dk0, real_t dk, real_t kmax, real_t keps,
-    MYINT nr, real_t *rs,
+    size_t nr, real_t *rs,
     cplx_t sum_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     bool calc_upar,
     cplx_t sum_uiz_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
@@ -43,13 +43,14 @@ real_t grt_linear_filon_integ(
     cplx_t QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM];
 
     real_t k=k0; 
-    MYINT ik=0;
+    size_t ik=0;
     
-    bool iendk, iendk0;
+    // 所有震中距的k循环是否结束
+    bool iendk = true;
 
     // 每个震中距的k循环是否结束
-    bool *iendkrs = (bool *)malloc(nr * sizeof(bool));
-    for(MYINT ir=0; ir<nr; ++ir) iendkrs[ir] = false;
+    bool *iendkrs = (bool *)calloc(nr, sizeof(bool)); // 自动初始化为 false
+    bool iendk0 = false;
 
     // k循环 
     ik = 0;
@@ -68,11 +69,11 @@ real_t grt_linear_filon_integ(
 
         // 震中距rs循环
         iendk = true;
-        for(MYINT ir=0; ir<nr; ++ir){
+        for(size_t ir=0; ir<nr; ++ir){
             if(iendkrs[ir]) continue; // 该震中距下的波数k积分已收敛
 
-            for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-                for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
+            for(int i=0; i<GRT_SRC_M_NUM; ++i){
+                for(int v=0; v<GRT_INTEG_NUM; ++v){
                     SUM[i][v] = 0.0;
                 }
             }
@@ -81,10 +82,10 @@ real_t grt_linear_filon_integ(
             grt_int_Pk_filon(k, rs[ir], true, QWV, false, SUM);
 
             iendk0 = true;
-            for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-                MYINT modr = GRT_SRC_M_ORDERS[i];
+            for(int i=0; i<GRT_SRC_M_NUM; ++i){
+                int modr = GRT_SRC_M_ORDERS[i];
 
-                for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
+                for(int v=0; v<GRT_INTEG_NUM; ++v){
                     sum_J[ir][i][v] += SUM[i][v];
                     
                     // 是否提前判断达到收敛
@@ -109,8 +110,8 @@ real_t grt_linear_filon_integ(
                 grt_int_Pk_filon(k, rs[ir], true, QWV_uiz, false, SUM);
                 
                 // keps不参与计算位移空间导数的积分，背后逻辑认为u收敛，则uiz也收敛
-                for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-                    for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
+                for(int i=0; i<GRT_SRC_M_NUM; ++i){
+                    for(int v=0; v<GRT_INTEG_NUM; ++v){
                         sum_uiz_J[ir][i][v] += SUM[i][v];
                     }
                 }
@@ -120,8 +121,8 @@ real_t grt_linear_filon_integ(
                 grt_int_Pk_filon(k, rs[ir], true, QWV, true, SUM);
                 
                 // keps不参与计算位移空间导数的积分，背后逻辑认为u收敛，则uir也收敛
-                for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-                    for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
+                for(int i=0; i<GRT_SRC_M_NUM; ++i){
+                    for(int v=0; v<GRT_INTEG_NUM; ++v){
                         sum_uir_J[ir][i][v] += SUM[i][v];
                     }
                 }
@@ -140,11 +141,11 @@ real_t grt_linear_filon_integ(
 
     // ------------------------------------------------------------------------------
     // 为累计项乘系数
-    for(MYINT ir=0; ir<nr; ++ir){
+    for(size_t ir=0; ir<nr; ++ir){
         real_t tmp = 2.0*(1.0 - cos(dk*rs[ir])) / (rs[ir]*rs[ir]*dk);
 
-        for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-            for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
+        for(int i=0; i<GRT_SRC_M_NUM; ++i){
+            for(int v=0; v<GRT_INTEG_NUM; ++v){
                 sum_J[ir][i][v] *= tmp;
 
                 if(calc_upar){
@@ -163,9 +164,9 @@ real_t grt_linear_filon_integ(
 
 
     // 计算来自第一个点和最后一个点的余项
-    for(MYINT iik=0; iik<2; ++iik){ 
+    for(int iik=0; iik<2; ++iik){ 
         real_t k0N;
-        MYINT sgn;
+        int sgn;
         if(0==iik)       {k0N = k0+dk; sgn =  1.0;}
         else if(1==iik)  {k0N = k;     sgn = -1.0;}
         else {
@@ -178,7 +179,7 @@ real_t grt_linear_filon_integ(
         kerfunc(mod1d, QWV, calc_upar, QWV_uiz);
         if(mod1d->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN; 
 
-        for(MYINT ir=0; ir<nr; ++ir){
+        for(size_t ir=0; ir<nr; ++ir){
             // Gc
             grt_int_Pk_filon(k0N, rs[ir], true, QWV, false, SUM_Gc[iik]);
             
@@ -190,8 +191,8 @@ real_t grt_linear_filon_integ(
             real_t tmpc = tmp * (1.0 - cos(dk*rs[ir]));
             real_t tmps = sgn * tmp * sin(dk*rs[ir]);
 
-            for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-                for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
+            for(int i=0; i<GRT_SRC_M_NUM; ++i){
+                for(int v=0; v<GRT_INTEG_NUM; ++v){
                     sum_J[ir][i][v] += (- tmpc*SUM_Gc[iik][i][v] + tmps*SUM_Gs[iik][i][v] - sgn*SUM_Gs[iik][i][v]/rs[ir]);
                 }
             }
@@ -206,8 +207,8 @@ real_t grt_linear_filon_integ(
                 // Gs
                 grt_int_Pk_filon(k0N, rs[ir], false, QWV_uiz, false, SUM_Gs[iik]);
 
-                for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-                    for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
+                for(int i=0; i<GRT_SRC_M_NUM; ++i){
+                    for(int v=0; v<GRT_INTEG_NUM; ++v){
                         sum_uiz_J[ir][i][v] += (- tmpc*SUM_Gc[iik][i][v] + tmps*SUM_Gs[iik][i][v] - sgn*SUM_Gs[iik][i][v]/rs[ir]);
                     }
                 }
@@ -221,8 +222,8 @@ real_t grt_linear_filon_integ(
                 // Gs
                 grt_int_Pk_filon(k0N, rs[ir], false, QWV, true, SUM_Gs[iik]);
 
-                for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-                    for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
+                for(int i=0; i<GRT_SRC_M_NUM; ++i){
+                    for(int v=0; v<GRT_INTEG_NUM; ++v){
                         sum_uir_J[ir][i][v] += (- tmpc*SUM_Gc[iik][i][v] + tmps*SUM_Gs[iik][i][v] - sgn*SUM_Gs[iik][i][v]/rs[ir]);
                     }
                 }
@@ -233,10 +234,10 @@ real_t grt_linear_filon_integ(
     }  // END k 2-points loop
 
     // 乘上总系数 sqrt(2.0/(PI*r)) / dk0,  除dks0是在该函数外还会再乘dk0, 并将结果加到原数组中
-    for(MYINT ir=0; ir<nr; ++ir){
+    for(size_t ir=0; ir<nr; ++ir){
         real_t tmp = sqrt(2.0/(PI*rs[ir])) / dk0;
-        for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-            for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
+        for(int i=0; i<GRT_SRC_M_NUM; ++i){
+            for(int v=0; v<GRT_INTEG_NUM; ++v){
                 sum_J0[ir][i][v] += sum_J[ir][i][v] * tmp;
 
                 if(calc_upar){

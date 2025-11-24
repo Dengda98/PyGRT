@@ -25,7 +25,7 @@
 
 real_t grt_discrete_integ(
     GRT_MODEL1D *mod1d, real_t dk, real_t kmax, real_t keps,
-    MYINT nr, real_t *rs,
+    size_t nr, real_t *rs,
     cplx_t sum_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     bool calc_upar,
     cplx_t sum_uiz_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
@@ -39,16 +39,14 @@ real_t grt_discrete_integ(
     cplx_t QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM];
     
     real_t k = 0.0;
-    MYINT ik = 0;
+    size_t ik = 0;
 
     // 所有震中距的k循环是否结束
     bool iendk = true;
 
     // 每个震中距的k循环是否结束
-    bool *iendkrs = (bool *)malloc(nr * sizeof(bool));
+    bool *iendkrs = (bool *)calloc(nr, sizeof(bool)); // 自动初始化为 false
     bool iendk0 = false;
-    for(MYINT ir=0; ir<nr; ++ir) iendkrs[ir] = false;
-    
 
     // 波数k循环 (5.9.2)
     while(true){
@@ -66,11 +64,11 @@ real_t grt_discrete_integ(
 
         // 震中距rs循环
         iendk = true;
-        for(MYINT ir=0; ir<nr; ++ir){
+        for(size_t ir=0; ir<nr; ++ir){
             if(iendkrs[ir]) continue; // 该震中距下的波数k积分已收敛
 
-            for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-                for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
+            for(int i=0; i<GRT_SRC_M_NUM; ++i){
+                for(int v=0; v<GRT_INTEG_NUM; ++v){
                     SUM[i][v] = 0.0;
                 }
             }
@@ -79,10 +77,10 @@ real_t grt_discrete_integ(
             grt_int_Pk(k, rs[ir], QWV, false, SUM);
             
             iendk0 = true;
-            for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-                MYINT modr = GRT_SRC_M_ORDERS[i];
+            for(int i=0; i<GRT_SRC_M_NUM; ++i){
+                int modr = GRT_SRC_M_ORDERS[i];
 
-                for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
+                for(int v=0; v<GRT_INTEG_NUM; ++v){
                     sum_J[ir][i][v] += SUM[i][v];
                     
                     // 是否提前判断达到收敛
@@ -107,8 +105,8 @@ real_t grt_discrete_integ(
                 grt_int_Pk(k, rs[ir], QWV_uiz, false, SUM);
                 
                 // keps不参与计算位移空间导数的积分，背后逻辑认为u收敛，则uiz也收敛
-                for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-                    for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
+                for(int i=0; i<GRT_SRC_M_NUM; ++i){
+                    for(int v=0; v<GRT_INTEG_NUM; ++v){
                         sum_uiz_J[ir][i][v] += SUM[i][v];
                     }
                 }
@@ -118,8 +116,8 @@ real_t grt_discrete_integ(
                 grt_int_Pk(k, rs[ir], QWV, true, SUM);
                 
                 // keps不参与计算位移空间导数的积分，背后逻辑认为u收敛，则uiz也收敛
-                for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-                    for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
+                for(int i=0; i<GRT_SRC_M_NUM; ++i){
+                    for(int v=0; v<GRT_INTEG_NUM; ++v){
                         sum_uir_J[ir][i][v] += SUM[i][v];
                     }
                 }

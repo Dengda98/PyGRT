@@ -41,17 +41,17 @@
  * @param[out]   grn            三分量结果，浮点数数组
  */
 static void recordin_GRN(
-    MYINT nr, cplx_t coef, cplx_t sum_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    size_t nr, cplx_t coef, cplx_t sum_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     real_t grn[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM]
 ){
     // 局部变量，将某个频点的格林函数谱临时存放
     cplx_t (*tmp_grn)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM] = (cplx_t(*)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM])calloc(nr, sizeof(*tmp_grn));
 
-    for(MYINT ir=0; ir<nr; ++ir){
+    for(size_t ir=0; ir<nr; ++ir){
         grt_merge_Pk(sum_J[ir], tmp_grn[ir]);
 
-        for(MYINT i=0; i<GRT_SRC_M_NUM; ++i) {
-            for(MYINT c=0; c<GRT_CHANNEL_NUM; ++c){
+        for(int i=0; i<GRT_SRC_M_NUM; ++i) {
+            for(int c=0; c<GRT_CHANNEL_NUM; ++c){
                 grn[ir][i][c] = creal(coef * tmp_grn[ir][i][c]);
             }
 
@@ -64,7 +64,7 @@ static void recordin_GRN(
 
 
 void grt_integ_static_grn(
-    GRT_MODEL1D *mod1d, MYINT nr, real_t *rs, real_t vmin_ref, real_t keps, real_t k0, real_t Length,
+    GRT_MODEL1D *mod1d, size_t nr, real_t *rs, real_t vmin_ref, real_t keps, real_t k0, real_t Length,
     real_t filonLength, real_t safilonTol, real_t filonCut, 
 
     // 返回值，代表Z、R、T分量
@@ -105,9 +105,9 @@ void grt_integ_static_grn(
     // 在文件名后加后缀，区分不同震中距
     char **ptam_fstatsdir = (char**)calloc(nr, sizeof(char*));
     if(needfstats && vmin_ref < 0.0){
-        for(MYINT ir=0; ir<nr; ++ir){
+        for(size_t ir=0; ir<nr; ++ir){
             // 新建文件夹目录 
-            GRT_SAFE_ASPRINTF(&ptam_fstatsdir[ir], "%s/PTAM_%04d_%.5e", statsstr, ir, rs[ir]);
+            GRT_SAFE_ASPRINTF(&ptam_fstatsdir[ir], "%s/PTAM_%04zu_%.5e", statsstr, ir, rs[ir]);
             if(mkdir(ptam_fstatsdir[ir], 0777) != 0){
                 if(errno != EEXIST){
                     printf("Unable to create folder %s. Error code: %d\n", ptam_fstatsdir[ir], errno);
@@ -127,9 +127,9 @@ void grt_integ_static_grn(
             GRT_SAFE_ASPRINTF(&fname, "%s/K", statsstr);
             fstats = fopen(fname, "wb");
         }
-        for(MYINT ir=0; ir<nr; ++ir){
-            for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-                for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
+        for(size_t ir=0; ir<nr; ++ir){
+            for(int i=0; i<GRT_SRC_M_NUM; ++i){
+                for(int v=0; v<GRT_INTEG_NUM; ++v){
                     sum_J[ir][i][v] = 0.0;
                     if(calc_upar){
                         sum_uiz_J[ir][i][v] = 0.0;
@@ -204,7 +204,7 @@ void grt_integ_static_grn(
     GRT_SAFE_FREE_PTR_ARRAY(ptam_fstatsdir, nr);
 
     if(fstats!=NULL) fclose(fstats);
-    for(MYINT ir=0; ir<nr; ++ir){
+    for(size_t ir=0; ir<nr; ++ir){
         if(ptam_fstatsnr[ir][0]!=NULL){
             fclose(ptam_fstatsnr[ir][0]);
         }

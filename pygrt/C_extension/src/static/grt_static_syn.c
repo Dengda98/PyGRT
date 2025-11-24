@@ -64,7 +64,7 @@ typedef struct {
     real_t srcRadi[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
 
     // 最终要计算的震源类型
-    MYINT computeType;
+    int computeType;
     char s_computeType[3];
 
 } GRT_MODULE_CTRL;
@@ -334,8 +334,8 @@ int static_syn_main(int argc, char **argv){
     if(Ctrl->S.mult_src_mu) Ctrl->S.M0 *= src_mu;
 
     // 读入的数据是否有位移偏导
-    MYINT calc_upar;
-    NC_CHECK(GRT_NC_FUNC_MYINT(nc_get_att) (in_ncid, NC_GLOBAL, "calc_upar", &calc_upar));
+    int calc_upar;
+    NC_CHECK(nc_get_att_int(in_ncid, NC_GLOBAL, "calc_upar", &calc_upar));
     if(Ctrl->e.active && calc_upar == 0){
         GRTRaiseError("[%s] Input grid didn't have displacement derivatives, you can't set -e.", command);
     }
@@ -344,7 +344,7 @@ int static_syn_main(int argc, char **argv){
     NC_CHECK(NC_FUNC_REAL(nc_put_att) (out_ncid, NC_GLOBAL, "src_va", NC_REAL, 1, &src_va));
     NC_CHECK(NC_FUNC_REAL(nc_put_att) (out_ncid, NC_GLOBAL, "src_vb", NC_REAL, 1, &src_vb));
     NC_CHECK(NC_FUNC_REAL(nc_put_att) (out_ncid, NC_GLOBAL, "src_rho", NC_REAL, 1, &src_rho));
-    NC_CHECK(GRT_NC_FUNC_MYINT(nc_put_att) (out_ncid, NC_GLOBAL, "calc_upar", GRT_NC_MYINT, 1, &calc_upar));
+    NC_CHECK(nc_put_att_int(out_ncid, NC_GLOBAL, "calc_upar", NC_INT, 1, &calc_upar));
     {
         real_t rcv_va=0.0, rcv_vb=0.0, rcv_rho=0.0;
         NC_CHECK(NC_FUNC_REAL(nc_get_att) (in_ncid, NC_GLOBAL, "rcv_va", &rcv_va));
@@ -357,8 +357,8 @@ int static_syn_main(int argc, char **argv){
 
     // 是否旋转到ZNE记录到全局属性
     {
-        MYINT rot2ZNE_int = rot2ZNE;
-        NC_CHECK(GRT_NC_FUNC_MYINT(nc_put_att) (out_ncid, NC_GLOBAL, "rot2ZNE", GRT_NC_MYINT, 1, &rot2ZNE_int));
+        int rot2ZNE_int = rot2ZNE;
+        NC_CHECK(nc_put_att_int(out_ncid, NC_GLOBAL, "rot2ZNE", NC_INT, 1, &rot2ZNE_int));
     }
 
     // 震源类型写入全局属性

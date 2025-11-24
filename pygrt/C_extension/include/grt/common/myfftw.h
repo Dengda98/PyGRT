@@ -35,13 +35,13 @@
 #define X(T, s, S) \
 typedef struct {\
     /*时间序列长度*/ \
-    MYINT nt; \
+    size_t nt; \
     /* 时间间隔 */ \
     real_t dt; \
     /*有效频谱长度*/\
-    MYINT nf_valid; \
+    size_t nf_valid; \
     /*总频谱长度 nf = nt/2+1*/\
-    MYINT nf; \
+    size_t nf; \
     /*频率间隔*/\
     real_t df; \
     /*时间域实序列*/\
@@ -68,9 +68,9 @@ typedef struct {\
  * @return    FFTW_HOLDER 结构体指针
  * 
  */\
-GRT_FFTW##S##_HOLDER * grt_create_fftw##s##_holder_C2R_1D(const MYINT nt, const real_t dt, const MYINT nf_valid, const real_t df); \
+GRT_FFTW##S##_HOLDER * grt_create_fftw##s##_holder_C2R_1D(const size_t nt, const real_t dt, const size_t nf_valid, const real_t df); \
 /** 初始化 FFTW_HOLDER 结构体指针，进行实数序列到复数频谱的正变换 */\
-GRT_FFTW##S##_HOLDER * grt_create_fftw##s##_holder_R2C_1D(const MYINT nt, const real_t dt, const MYINT nf_valid, const real_t df); \
+GRT_FFTW##S##_HOLDER * grt_create_fftw##s##_holder_R2C_1D(const size_t nt, const real_t dt, const size_t nf_valid, const real_t df); \
 \
 /** 将内部数据全部置零  */\
 void grt_reset_fftw##s##_holder_zero(GRT_FFTW##S##_HOLDER *fh);\
