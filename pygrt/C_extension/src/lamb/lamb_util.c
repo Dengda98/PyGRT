@@ -8,7 +8,7 @@
 
 #include "grt/lamb/lamb_util.h"
 
-void grt_roots3(double a, double b, double c, MYCOMPLEX y3[3])
+void grt_roots3(double a, double b, double c, cplx_t y3[3])
 {
     double Q, R;
     Q = (a*a - 3.0*b) / 9.0;
@@ -37,10 +37,10 @@ void grt_roots3(double a, double b, double c, MYCOMPLEX y3[3])
     }
 }
 
-MYCOMPLEX grt_evalpoly2(const MYCOMPLEX *C, const int n, const MYCOMPLEX y, const int offset)
+cplx_t grt_evalpoly2(const cplx_t *C, const int n, const cplx_t y, const int offset)
 {
-    MYCOMPLEX res = 0.0;
-    MYCOMPLEX p = 1.0;
+    cplx_t res = 0.0;
+    cplx_t p = 1.0;
     for(int i=0; i<=n; ++i){
         res += C[2*i+offset] * p;
         p *= y;

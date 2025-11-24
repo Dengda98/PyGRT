@@ -49,13 +49,13 @@
  * 
  * @return  k        积分截至时的波数
  */
-MYREAL grt_sa_filon_integ(
-    GRT_MODEL1D *mod1d, MYREAL k0, MYREAL dk0, MYREAL tol, MYREAL kmax, MYREAL kref, 
-    MYINT nr, MYREAL *rs,
-    MYCOMPLEX sum_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+real_t grt_sa_filon_integ(
+    GRT_MODEL1D *mod1d, real_t k0, real_t dk0, real_t tol, real_t kmax, real_t kref, 
+    MYINT nr, real_t *rs,
+    cplx_t sum_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     bool calc_upar,
-    MYCOMPLEX sum_uiz_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
-    MYCOMPLEX sum_uir_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    cplx_t sum_uiz_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    cplx_t sum_uir_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     FILE *fstats, GRT_KernelFunc kerfunc);
 
 

@@ -49,8 +49,8 @@ typedef struct {
     /** 震源和接收器深度 */
     struct {
         bool active;
-        MYREAL depsrc;
-        MYREAL deprcv;
+        real_t depsrc;
+        real_t deprcv;
         char *s_depsrc;
         char *s_deprcv;
     } D;
@@ -59,12 +59,12 @@ typedef struct {
         bool active;
         MYINT nt;
         MYINT nf;
-        MYREAL dt;
-        MYREAL df;
-        MYREAL winT;  ///< 时窗长度 
-        MYREAL zeta;  ///< 虚频率系数， w <- w - zeta*PI/r* 1j
-        MYREAL wI;    ///< 虚频率  zeta*PI/r
-        MYREAL *freqs;
+        real_t dt;
+        real_t df;
+        real_t winT;  ///< 时窗长度 
+        real_t zeta;  ///< 虚频率系数， w <- w - zeta*PI/r* 1j
+        real_t wI;    ///< 虚频率  zeta*PI/r
+        real_t *freqs;
         MYINT upsample_n;  ///< 升采样倍数
     } N;
     /** 输出目录 */
@@ -75,8 +75,8 @@ typedef struct {
     /** 频段 */
     struct {
         bool active;
-        MYREAL freq1;
-        MYREAL freq2;
+        real_t freq1;
+        real_t freq2;
         MYINT nf1;
         MYINT nf2;
     } H;
@@ -84,25 +84,25 @@ typedef struct {
     struct {
         bool active;
         MYINT method;
-        MYREAL Length;
-        MYREAL filonLength;
-        MYREAL safilonTol;
-        MYREAL filonCut;
+        real_t Length;
+        real_t filonLength;
+        real_t safilonTol;
+        real_t filonCut;
     } L;
     /** 波数积分上限 */
     struct {
         bool active;
-        MYREAL keps;
-        MYREAL ampk;
-        MYREAL k0;
-        MYREAL vmin;
+        real_t keps;
+        real_t ampk;
+        real_t k0;
+        real_t vmin;
         bool v_active;
     } K;
     /** 时间延迟 */
     struct {
         bool active;
-        MYREAL delayT0;
-        MYREAL delayV0;
+        real_t delayT0;
+        real_t delayV0;
     } E;
     /** 波数积分过程的核函数文件 */
     struct {
@@ -118,7 +118,7 @@ typedef struct {
         bool active;
         char *s_raw;
         char **s_rs;
-        MYREAL *rs;
+        real_t *rs;
         MYINT nr;
     } R;
     /** 多线程 */
@@ -663,7 +663,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     fclose(fp);
                 }
                 // 转为浮点数
-                Ctrl->R.rs = (MYREAL*)realloc(Ctrl->R.rs, sizeof(MYREAL)*(Ctrl->R.nr));
+                Ctrl->R.rs = (real_t*)realloc(Ctrl->R.rs, sizeof(real_t)*(Ctrl->R.nr));
                 for(MYINT i=0; i<Ctrl->R.nr; ++i){
                     Ctrl->R.rs[i] = atof(Ctrl->R.s_rs[i]);
                     if(Ctrl->R.rs[i] < 0.0){
@@ -785,7 +785,7 @@ int greenfn_main(int argc, char **argv) {
     }
 
     // 最大最小速度
-    MYREAL vmin, vmax;
+    real_t vmin, vmax;
     grt_get_mod1d_vmin_vmax(mod1d, &vmin, &vmax);
 
     // 参考最小速度
@@ -802,10 +802,10 @@ int greenfn_main(int argc, char **argv) {
     Ctrl->N.winT = Ctrl->N.nt*Ctrl->N.dt;
 
     // 最大震中距
-    MYREAL rmax = Ctrl->R.rs[grt_findMax_MYREAL(Ctrl->R.rs, Ctrl->R.nr)];   
+    real_t rmax = Ctrl->R.rs[grt_findMax_real_t(Ctrl->R.rs, Ctrl->R.nr)];   
 
     // 时窗最大截止时刻
-    MYREAL tmax = Ctrl->E.delayT0 + Ctrl->N.winT;
+    real_t tmax = Ctrl->E.delayT0 + Ctrl->N.winT;
     if(Ctrl->E.delayV0 > 0.0)   tmax += rmax/Ctrl->E.delayV0;
 
     // 自动选择积分间隔，默认使用传统离散波数积分
@@ -824,7 +824,7 @@ int greenfn_main(int argc, char **argv) {
     // 定义要计算的频率、时窗等
     Ctrl->N.nf = Ctrl->N.nt/2 + 1;
     Ctrl->N.df = 1.0/Ctrl->N.winT;
-    Ctrl->N.freqs = (MYREAL*)malloc(Ctrl->N.nf*sizeof(MYREAL));
+    Ctrl->N.freqs = (real_t*)malloc(Ctrl->N.nf*sizeof(real_t));
     for(int i=0; i<Ctrl->N.nf; ++i){
         Ctrl->N.freqs[i] = i*Ctrl->N.df;
     }
@@ -851,16 +851,16 @@ int greenfn_main(int argc, char **argv) {
     }
 
     // 建立格林函数的complex数组
-    MYCOMPLEX *(*grn)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM] = (MYCOMPLEX*(*)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM]) calloc(Ctrl->R.nr, sizeof(*grn));
-    MYCOMPLEX *(*grn_uiz)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM] = (Ctrl->e.active)? (MYCOMPLEX*(*)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM]) calloc(Ctrl->R.nr, sizeof(*grn_uiz)) : NULL;
-    MYCOMPLEX *(*grn_uir)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM] = (Ctrl->e.active)? (MYCOMPLEX*(*)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM]) calloc(Ctrl->R.nr, sizeof(*grn_uir)) : NULL;
+    cplx_t *(*grn)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM] = (cplx_t*(*)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM]) calloc(Ctrl->R.nr, sizeof(*grn));
+    cplx_t *(*grn_uiz)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM] = (Ctrl->e.active)? (cplx_t*(*)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM]) calloc(Ctrl->R.nr, sizeof(*grn_uiz)) : NULL;
+    cplx_t *(*grn_uir)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM] = (Ctrl->e.active)? (cplx_t*(*)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM]) calloc(Ctrl->R.nr, sizeof(*grn_uir)) : NULL;
 
     for(int ir=0; ir<Ctrl->R.nr; ++ir){
         for(int i=0; i<GRT_SRC_M_NUM; ++i){
             for(int c=0; c<GRT_CHANNEL_NUM; ++c){
-                grn[ir][i][c] = (MYCOMPLEX*)calloc(Ctrl->N.nf, sizeof(MYCOMPLEX));
-                if(grn_uiz)  grn_uiz[ir][i][c] = (MYCOMPLEX*)calloc(Ctrl->N.nf, sizeof(MYCOMPLEX));
-                if(grn_uir)  grn_uir[ir][i][c] = (MYCOMPLEX*)calloc(Ctrl->N.nf, sizeof(MYCOMPLEX));
+                grn[ir][i][c] = (cplx_t*)calloc(Ctrl->N.nf, sizeof(cplx_t));
+                if(grn_uiz)  grn_uiz[ir][i][c] = (cplx_t*)calloc(Ctrl->N.nf, sizeof(cplx_t));
+                if(grn_uir)  grn_uir[ir][i][c] = (cplx_t*)calloc(Ctrl->N.nf, sizeof(cplx_t));
             }
         }
     }
@@ -887,7 +887,7 @@ int greenfn_main(int argc, char **argv) {
     GRT_FFTW_HOLDER *fftw_holder = grt_create_fftw_holder_C2R_1D(
         Ctrl->N.nt*Ctrl->N.upsample_n, Ctrl->N.dt/Ctrl->N.upsample_n, Ctrl->N.nf, Ctrl->N.df);
 
-    MYREAL (* travtPS)[2] = (MYREAL (*)[2])calloc(Ctrl->R.nr, sizeof(MYREAL)*2);
+    real_t (* travtPS)[2] = (real_t (*)[2])calloc(Ctrl->R.nr, sizeof(real_t)*2);
     grt_GF_freq2time_write_to_file(
         command, mod1d, 
         Ctrl->O.s_output_dir, Ctrl->M.s_modelname, Ctrl->D.s_depsrc, Ctrl->D.s_deprcv,

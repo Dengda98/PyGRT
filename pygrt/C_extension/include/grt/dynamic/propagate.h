@@ -86,8 +86,8 @@
  * 
  */
 void grt_kernel(
-    const GRT_MODEL1D *mod1d, MYCOMPLEX QWV[GRT_SRC_M_NUM][GRT_QWV_NUM],
-    bool calc_uiz, MYCOMPLEX QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM]);
+    const GRT_MODEL1D *mod1d, cplx_t QWV[GRT_SRC_M_NUM][GRT_QWV_NUM],
+    bool calc_uiz, cplx_t QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM]);
 
 
 
@@ -126,7 +126,7 @@ void grt_kernel(
  */
 void grt_construct_qwv(
     bool ircvup, 
-    const MYCOMPLEX R1[2][2], MYCOMPLEX RL1, 
-    const MYCOMPLEX R2[2][2], MYCOMPLEX RL2, 
-    const MYCOMPLEX coef_PSV[GRT_QWV_NUM-1][2], const MYCOMPLEX coef_SH[2], 
-    MYCOMPLEX qwv[GRT_QWV_NUM]);
+    const cplx_t R1[2][2], cplx_t RL1, 
+    const cplx_t R2[2][2], cplx_t RL2, 
+    const cplx_t coef_PSV[GRT_QWV_NUM-1][2], const cplx_t coef_SH[2], 
+    cplx_t qwv[GRT_QWV_NUM]);

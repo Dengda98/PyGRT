@@ -26,8 +26,8 @@
 
 
 void grt_static_kernel(
-    const GRT_MODEL1D *mod1d, MYCOMPLEX QWV[GRT_SRC_M_NUM][GRT_QWV_NUM],
-    bool calc_uiz, MYCOMPLEX QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM])
+    const GRT_MODEL1D *mod1d, cplx_t QWV[GRT_SRC_M_NUM][GRT_QWV_NUM],
+    bool calc_uiz, cplx_t QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM])
 {   
     // 初始化qwv为0
     for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
@@ -61,10 +61,10 @@ void grt_static_kernel(
     grt_init_RT_matrix(M_top);
 
     // 接收点处的接收矩阵
-    MYCOMPLEX R_EV[2][2], R_EVL;
+    cplx_t R_EV[2][2], R_EVL;
     
     // 接收点处的接收矩阵(转为位移导数ui_z的(B_m, C_m, P_m)系分量)
-    MYCOMPLEX uiz_R_EV[2][2], uiz_R_EVL;
+    cplx_t uiz_R_EV[2][2], uiz_R_EVL;
 
     // 从顶到底进行矩阵递推, 公式(5.5.3)
     for(MYINT iy=1; iy<mod1d->n; ++iy){ // 因为n>=3, 故一定会进入该循环
@@ -111,13 +111,13 @@ void grt_static_kernel(
 
 
     // 计算震源系数
-    MYCOMPLEX src_coef_PSV[GRT_SRC_M_NUM][GRT_QWV_NUM-1][2] = {0};
-    MYCOMPLEX src_coef_SH[GRT_SRC_M_NUM][2] = {0};
+    cplx_t src_coef_PSV[GRT_SRC_M_NUM][GRT_QWV_NUM-1][2] = {0};
+    cplx_t src_coef_SH[GRT_SRC_M_NUM][2] = {0};
     grt_static_source_coef_PSV(mod1d, src_coef_PSV);
     grt_static_source_coef_SH(mod1d, src_coef_SH);
 
     // 临时中转矩阵 (temperary)
-    MYCOMPLEX tmpR2[2][2], tmp2x2[2][2], tmpRL, tmp2x2_uiz[2][2], tmpRL_uiz;
+    cplx_t tmpR2[2][2], tmp2x2[2][2], tmpRL, tmp2x2_uiz[2][2], tmpRL_uiz;
 
     // 递推RU_FA
     grt_static_topfree_RU(mod1d, M_top);

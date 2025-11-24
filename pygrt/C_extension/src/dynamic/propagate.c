@@ -28,8 +28,8 @@
 
 
 void grt_kernel(
-    const GRT_MODEL1D *mod1d, MYCOMPLEX QWV[GRT_SRC_M_NUM][GRT_QWV_NUM],
-    bool calc_uiz, MYCOMPLEX QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM])
+    const GRT_MODEL1D *mod1d, cplx_t QWV[GRT_SRC_M_NUM][GRT_QWV_NUM],
+    bool calc_uiz, cplx_t QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM])
 {
     // 初始化qwv为0
     for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
@@ -62,10 +62,10 @@ void grt_kernel(
     grt_init_RT_matrix(M_top);
 
     // 接收点处的接收矩阵(转为位移u的(B_m, C_m, P_m)系分量)
-    MYCOMPLEX R_EV[2][2], R_EVL;
+    cplx_t R_EV[2][2], R_EVL;
 
     // 接收点处的接收矩阵(转为位移导数ui_z的(B_m, C_m, P_m)系分量)
-    MYCOMPLEX uiz_R_EV[2][2], uiz_R_EVL;
+    cplx_t uiz_R_EV[2][2], uiz_R_EVL;
 
     // 从顶到底进行矩阵递推, 公式(5.5.3)
     for(MYINT iy=1; iy<mod1d->n; ++iy){ // 因为n>=3, 故一定会进入该循环
@@ -120,13 +120,13 @@ void grt_kernel(
 
 
     // 计算震源系数
-    MYCOMPLEX src_coef_PSV[GRT_SRC_M_NUM][GRT_QWV_NUM-1][2] = {0};
-    MYCOMPLEX src_coef_SH[GRT_SRC_M_NUM][2] = {0};
+    cplx_t src_coef_PSV[GRT_SRC_M_NUM][GRT_QWV_NUM-1][2] = {0};
+    cplx_t src_coef_SH[GRT_SRC_M_NUM][2] = {0};
     grt_source_coef_PSV(mod1d, src_coef_PSV);
     grt_source_coef_SH(mod1d, src_coef_SH);
 
     // 临时中转矩阵 (temperary)
-    MYCOMPLEX tmpR2[2][2], tmp2x2[2][2], tmpRL, tmp2x2_uiz[2][2], tmpRL2;
+    cplx_t tmpR2[2][2], tmp2x2[2][2], tmpRL, tmp2x2_uiz[2][2], tmpRL2;
 
     // 递推RU_FA
     grt_topfree_RU(mod1d, M_top);
@@ -238,14 +238,14 @@ void grt_kernel(
 
 void grt_construct_qwv(
     bool ircvup, 
-    const MYCOMPLEX R1[2][2], MYCOMPLEX RL1, 
-    const MYCOMPLEX R2[2][2], MYCOMPLEX RL2, 
-    const MYCOMPLEX coef_PSV[GRT_QWV_NUM-1][2], const MYCOMPLEX coef_SH[2], 
-    MYCOMPLEX qwv[GRT_QWV_NUM])
+    const cplx_t R1[2][2], cplx_t RL1, 
+    const cplx_t R2[2][2], cplx_t RL2, 
+    const cplx_t coef_PSV[GRT_QWV_NUM-1][2], const cplx_t coef_SH[2], 
+    cplx_t qwv[GRT_QWV_NUM])
 {
-    MYCOMPLEX qw0[2], qw1[2], v0;
-    MYCOMPLEX coefD[2] = {coef_PSV[0][0], coef_PSV[1][0]};
-    MYCOMPLEX coefU[2] = {coef_PSV[0][1], coef_PSV[1][1]};
+    cplx_t qw0[2], qw1[2], v0;
+    cplx_t coefD[2] = {coef_PSV[0][0], coef_PSV[1][0]};
+    cplx_t coefU[2] = {coef_PSV[0][1], coef_PSV[1][1]};
     if(ircvup){
         grt_cmat2x1_mul(R2, coefD, qw0);
         qw0[0] += coefU[0]; qw0[1] += coefU[1]; 

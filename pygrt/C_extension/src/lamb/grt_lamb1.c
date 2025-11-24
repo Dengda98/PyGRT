@@ -21,20 +21,20 @@ typedef struct {
     /** 模型参数 */
     struct {
         bool active;
-        MYREAL nu;    ///<  泊松比
+        real_t nu;    ///<  泊松比
     } P;
 
     /** 归一化时间序列 */
     struct {
         bool active;
-        MYREAL *ts;
+        real_t *ts;
         int nt;
     } T;
 
     /** 方位角 */
     struct {
         bool active;
-        MYREAL azimuth;  ///<  方位角，单位为度
+        real_t azimuth;  ///<  方位角，单位为度
     } A;
 
 } GRT_MODULE_CTRL;
@@ -107,7 +107,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             case 'T':
                 Ctrl->T.active = true;
                 {
-                    MYREAL a1, a2, delta;
+                    real_t a1, a2, delta;
                     if(3 != sscanf(optarg, "%lf/%lf/%lf", &a1, &a2, &delta)){
                         GRTBadOptionError(command, T, "");
                     };
@@ -122,7 +122,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     }
 
                     Ctrl->T.nt = floor((a2-a1)/delta) + 1;
-                    Ctrl->T.ts = (MYREAL*)calloc(Ctrl->T.nt, sizeof(MYREAL));
+                    Ctrl->T.ts = (real_t*)calloc(Ctrl->T.nt, sizeof(real_t));
                     for(int i=0; i<Ctrl->T.nt; ++i){
                         Ctrl->T.ts[i] = a1 + delta*i;
                     }

@@ -50,9 +50,9 @@ typedef enum {
 
 // 区间结构体
 typedef struct { 
-    MYREAL k3[3];
-    MYCOMPLEX F3[3][GRT_SRC_M_NUM][GRT_QWV_NUM]; 
-    MYCOMPLEX F3_uiz[3][GRT_SRC_M_NUM][GRT_QWV_NUM]; 
+    real_t k3[3];
+    cplx_t F3[3][GRT_SRC_M_NUM][GRT_QWV_NUM]; 
+    cplx_t F3_uiz[3][GRT_SRC_M_NUM][GRT_QWV_NUM]; 
 } KInterval;
 
 // 区间栈结构体
@@ -101,13 +101,13 @@ static KInterval stack_pop(KIntervalStack *stack) {
  *    + stats = 4,   [a+h, a+2h]
  * 
  */
-static MYCOMPLEX simpson(const KInterval *item_pt, MYINT im, MYINT iqwv, bool isuiz, SIMPSON_INTV stats) {
-    MYCOMPLEX Fint = 0.0;
-    MYREAL klen = item_pt->k3[2] -  item_pt->k3[0];
-    const MYCOMPLEX (*F3)[GRT_SRC_M_NUM][GRT_QWV_NUM] = (isuiz)? item_pt->F3_uiz : item_pt->F3;
+static cplx_t simpson(const KInterval *item_pt, MYINT im, MYINT iqwv, bool isuiz, SIMPSON_INTV stats) {
+    cplx_t Fint = 0.0;
+    real_t klen = item_pt->k3[2] -  item_pt->k3[0];
+    const cplx_t (*F3)[GRT_SRC_M_NUM][GRT_QWV_NUM] = (isuiz)? item_pt->F3_uiz : item_pt->F3;
     
     // 使用F(k)*sqrt(k)来衡量积分值，这可以平衡后续计算F(k)*Jm(kr)k积分时的系数
-    MYREAL sk[3];
+    real_t sk[3];
     for(MYINT i=0; i<3; ++i){
         sk[i] = sqrt(item_pt->k3[i]);
     }
@@ -136,8 +136,8 @@ static MYCOMPLEX simpson(const KInterval *item_pt, MYINT im, MYINT iqwv, bool is
 }
 
 /** 比较QWV的最大绝对值 */
-static void get_maxabsQWV(const MYCOMPLEX F[GRT_SRC_M_NUM][GRT_QWV_NUM], MYREAL maxabsF[GRT_GTYPES_MAX]){
-    MYREAL tmp;
+static void get_maxabsQWV(const cplx_t F[GRT_SRC_M_NUM][GRT_QWV_NUM], real_t maxabsF[GRT_GTYPES_MAX]){
+    real_t tmp;
     for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
         for(MYINT c=0; c<GRT_QWV_NUM; ++c){
             tmp = fabs(F[i][c]);
@@ -151,22 +151,22 @@ static void get_maxabsQWV(const MYCOMPLEX F[GRT_SRC_M_NUM][GRT_QWV_NUM], MYREAL 
 
 /** 检查区间是否符合要求，返回True表示通过 */
 static bool check_fit(
-    const KInterval *ptKitv, const KInterval *ptKitvL, const KInterval *ptKitvR, MYREAL kref,
-    bool isuiz, MYREAL maxabsQWV[GRT_GTYPES_MAX], MYREAL tol)
+    const KInterval *ptKitv, const KInterval *ptKitvL, const KInterval *ptKitvR, real_t kref,
+    bool isuiz, real_t maxabsQWV[GRT_GTYPES_MAX], real_t tol)
 {
     // 计算积分差异
-    MYCOMPLEX S11, S12, S21, S22;
+    cplx_t S11, S12, S21, S22;
 
     // 核函数
-    const MYCOMPLEX (*F3L)[GRT_SRC_M_NUM][GRT_QWV_NUM] = (isuiz)? ptKitvL->F3_uiz : ptKitvL->F3;
-    const MYCOMPLEX (*F3R)[GRT_SRC_M_NUM][GRT_QWV_NUM] = (isuiz)? ptKitvR->F3_uiz : ptKitvR->F3;
+    const cplx_t (*F3L)[GRT_SRC_M_NUM][GRT_QWV_NUM] = (isuiz)? ptKitvL->F3_uiz : ptKitvL->F3;
+    const cplx_t (*F3R)[GRT_SRC_M_NUM][GRT_QWV_NUM] = (isuiz)? ptKitvR->F3_uiz : ptKitvR->F3;
 
     // 取近似积分 \int_k1^k2 k^0.5 dk
-    MYREAL kcoef13 = RTWOTHIRD*( ptKitv->k3[2]*sqrt(ptKitv->k3[2]) - ptKitv->k3[0]*sqrt(ptKitv->k3[0]) );
-    MYREAL kcoef12 = RTWOTHIRD*( ptKitvL->k3[2]*sqrt(ptKitvL->k3[2]) - ptKitvL->k3[0]*sqrt(ptKitvL->k3[0]) );
-    MYREAL kcoef23 = RTWOTHIRD*( ptKitvR->k3[2]*sqrt(ptKitvR->k3[2]) - ptKitvR->k3[0]*sqrt(ptKitvR->k3[0]) );
+    real_t kcoef13 = RTWOTHIRD*( ptKitv->k3[2]*sqrt(ptKitv->k3[2]) - ptKitv->k3[0]*sqrt(ptKitv->k3[0]) );
+    real_t kcoef12 = RTWOTHIRD*( ptKitvL->k3[2]*sqrt(ptKitvL->k3[2]) - ptKitvL->k3[0]*sqrt(ptKitvL->k3[0]) );
+    real_t kcoef23 = RTWOTHIRD*( ptKitvR->k3[2]*sqrt(ptKitvR->k3[2]) - ptKitvR->k3[0]*sqrt(ptKitvR->k3[0]) );
 
-    MYREAL S_dif, S_ref;
+    real_t S_dif, S_ref;
     bool badtol = false;
     for(MYINT im=0; im<GRT_SRC_M_NUM; ++im){
         MYINT igtyp = GRT_SRC_M_GTYPES[im];
@@ -185,7 +185,7 @@ static bool check_fit(
             S22 = simpson(ptKitvR, im, c, isuiz, SIMPSON_A_Ap2H);
 
             bool islowamp = true;
-            MYREAL ref_amp = REF_AMP_SCALE*maxabsQWV[igtyp];
+            real_t ref_amp = REF_AMP_SCALE*maxabsQWV[igtyp];
             // 比较当前区间内5个核函数幅值，是否都低于参考值
             for(MYINT d=0; d<3; ++d){
                 islowamp = islowamp && (fabs(F3L[d][im][c]) < ref_amp);
@@ -238,13 +238,13 @@ static bool check_fit(
  */
 static void interv_integ(
     const KInterval *ptKitv,
-    MYINT nr, MYREAL *rs,
-    MYCOMPLEX sum_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    MYINT nr, real_t *rs,
+    cplx_t sum_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     bool calc_upar,
-    MYCOMPLEX sum_uiz_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
-    MYCOMPLEX sum_uir_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM])
+    cplx_t sum_uiz_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    cplx_t sum_uir_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM])
 {
-    MYCOMPLEX SUM[GRT_SRC_M_NUM][GRT_INTEG_NUM]={0};
+    cplx_t SUM[GRT_SRC_M_NUM][GRT_INTEG_NUM]={0};
 
     // 震中距rs循环
     for(MYINT ir=0; ir<nr; ++ir){
@@ -292,21 +292,21 @@ static void interv_integ(
 
 
 
-MYREAL grt_sa_filon_integ(
-    GRT_MODEL1D *mod1d, MYREAL k0, MYREAL dk0, MYREAL tol, MYREAL kmax, MYREAL kref, 
-    MYINT nr, MYREAL *rs,
-    MYCOMPLEX sum_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+real_t grt_sa_filon_integ(
+    GRT_MODEL1D *mod1d, real_t k0, real_t dk0, real_t tol, real_t kmax, real_t kref, 
+    MYINT nr, real_t *rs,
+    cplx_t sum_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     bool calc_upar,
-    MYCOMPLEX sum_uiz_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
-    MYCOMPLEX sum_uir_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    cplx_t sum_uiz_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    cplx_t sum_uir_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     FILE *fstats, GRT_KernelFunc kerfunc)
 {   
     // 从0开始，存储第二部分Filon积分的结果
-    MYCOMPLEX (*sum_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (MYCOMPLEX(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_J));
-    MYCOMPLEX (*sum_uiz_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (calc_upar)? (MYCOMPLEX(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_uiz_J)) : NULL;
-    MYCOMPLEX (*sum_uir_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (calc_upar)? (MYCOMPLEX(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_uir_J)) : NULL;
+    cplx_t (*sum_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (cplx_t(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_J));
+    cplx_t (*sum_uiz_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (calc_upar)? (cplx_t(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_uiz_J)) : NULL;
+    cplx_t (*sum_uir_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (calc_upar)? (cplx_t(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_uir_J)) : NULL;
 
-    MYREAL kmin = k0;
+    real_t kmin = k0;
     
     // 区间栈
     KIntervalStack stack;
@@ -332,8 +332,8 @@ MYREAL grt_sa_filon_integ(
     // 以下采样过程中的遇到的QWV最大绝对值，注意其会动态变化
     // 其中VF,HF使用一套，EX,DD,DS,SS使用一套，分别对应格林函数Gij和格林函数空间导数Gij,k
     // 仅用于对积分幅度进行参考
-    MYREAL maxabsQWV[GRT_GTYPES_MAX]={0};
-    MYREAL maxabsQWV_uiz[GRT_GTYPES_MAX]={0};
+    real_t maxabsQWV[GRT_GTYPES_MAX]={0};
+    real_t maxabsQWV_uiz[GRT_GTYPES_MAX]={0};
 
     // 记录第一个值
     if(fstats!=NULL)  grt_write_stats(fstats, Kitv.k3[0], Kitv.F3[0]);
@@ -361,15 +361,15 @@ MYREAL grt_sa_filon_integ(
             .F3 = {{{0}}}, 
             .F3_uiz = {{{0}}} 
         };
-        memcpy(Kitv_left.F3[0], Kitv.F3[0], sizeof(MYCOMPLEX)*GRT_SRC_M_NUM*GRT_QWV_NUM);
-        memcpy(Kitv_left.F3[2], Kitv.F3[1], sizeof(MYCOMPLEX)*GRT_SRC_M_NUM*GRT_QWV_NUM);
-        memcpy(Kitv_right.F3[0], Kitv.F3[1], sizeof(MYCOMPLEX)*GRT_SRC_M_NUM*GRT_QWV_NUM);
-        memcpy(Kitv_right.F3[2], Kitv.F3[2], sizeof(MYCOMPLEX)*GRT_SRC_M_NUM*GRT_QWV_NUM);
+        memcpy(Kitv_left.F3[0], Kitv.F3[0], sizeof(cplx_t)*GRT_SRC_M_NUM*GRT_QWV_NUM);
+        memcpy(Kitv_left.F3[2], Kitv.F3[1], sizeof(cplx_t)*GRT_SRC_M_NUM*GRT_QWV_NUM);
+        memcpy(Kitv_right.F3[0], Kitv.F3[1], sizeof(cplx_t)*GRT_SRC_M_NUM*GRT_QWV_NUM);
+        memcpy(Kitv_right.F3[2], Kitv.F3[2], sizeof(cplx_t)*GRT_SRC_M_NUM*GRT_QWV_NUM);
         if(calc_upar){
-            memcpy(Kitv_left.F3_uiz[0], Kitv.F3_uiz[0], sizeof(MYCOMPLEX)*GRT_SRC_M_NUM*GRT_QWV_NUM);
-            memcpy(Kitv_left.F3_uiz[2], Kitv.F3_uiz[1], sizeof(MYCOMPLEX)*GRT_SRC_M_NUM*GRT_QWV_NUM);
-            memcpy(Kitv_right.F3_uiz[0], Kitv.F3_uiz[1], sizeof(MYCOMPLEX)*GRT_SRC_M_NUM*GRT_QWV_NUM);
-            memcpy(Kitv_right.F3_uiz[2], Kitv.F3_uiz[2], sizeof(MYCOMPLEX)*GRT_SRC_M_NUM*GRT_QWV_NUM);
+            memcpy(Kitv_left.F3_uiz[0], Kitv.F3_uiz[0], sizeof(cplx_t)*GRT_SRC_M_NUM*GRT_QWV_NUM);
+            memcpy(Kitv_left.F3_uiz[2], Kitv.F3_uiz[1], sizeof(cplx_t)*GRT_SRC_M_NUM*GRT_QWV_NUM);
+            memcpy(Kitv_right.F3_uiz[0], Kitv.F3_uiz[1], sizeof(cplx_t)*GRT_SRC_M_NUM*GRT_QWV_NUM);
+            memcpy(Kitv_right.F3_uiz[2], Kitv.F3_uiz[2], sizeof(cplx_t)*GRT_SRC_M_NUM*GRT_QWV_NUM);
         }
         grt_mod1d_xa_xb(mod1d, Kitv_left.k3[1]);
         kerfunc(mod1d, Kitv_left.F3[1], calc_upar, Kitv_left.F3_uiz[1]);
@@ -391,7 +391,7 @@ MYREAL grt_sa_filon_integ(
         }
 
         // 检查区间是否符合要求
-        MYREAL goodtol = check_fit(&Kitv, &Kitv_left, &Kitv_right, kref, false, maxabsQWV, tol);
+        real_t goodtol = check_fit(&Kitv, &Kitv_left, &Kitv_right, kref, false, maxabsQWV, tol);
         if(calc_upar){
             goodtol = goodtol && check_fit(&Kitv, &Kitv_left, &Kitv_right, kref, true, maxabsQWV_uiz, tol);
         }
@@ -420,7 +420,7 @@ MYREAL grt_sa_filon_integ(
 
     // 乘上总系数 sqrt(2.0/(PI*r)) / dk0,  除dks0是在该函数外还会再乘dk0, 并将结果加到原数组中
     for(MYINT ir=0; ir<nr; ++ir){
-        MYREAL tmp = sqrt(2.0/(PI*rs[ir])) / dk0;
+        real_t tmp = sqrt(2.0/(PI*rs[ir])) / dk0;
         for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
             for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
                 sum_J0[ir][i][v] += sum_J[ir][i][v] * tmp;

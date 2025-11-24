@@ -35,7 +35,7 @@ void grt_topfree_RU(const GRT_MODEL1D *mod1d, RT_MATRIX *M);
  * @param[out]    R_EV            P-SV接收函数矩阵
  * 
  */
-void grt_wave2qwv_REV_PSV(const GRT_MODEL1D *mod1d, MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2]);
+void grt_wave2qwv_REV_PSV(const GRT_MODEL1D *mod1d, cplx_t R[2][2], cplx_t R_EV[2][2]);
 
 /**
  * 计算接收点位置的 SH 波接收矩阵，将波场转为位移，公式(5.2.19) + (5.7.7,25)
@@ -45,7 +45,7 @@ void grt_wave2qwv_REV_PSV(const GRT_MODEL1D *mod1d, MYCOMPLEX R[2][2], MYCOMPLEX
  * @param[out]    R_EVL           SH接收函数值
  * 
  */
-void grt_wave2qwv_REV_SH(const GRT_MODEL1D *mod1d, MYCOMPLEX RL, MYCOMPLEX *R_EVL);
+void grt_wave2qwv_REV_SH(const GRT_MODEL1D *mod1d, cplx_t RL, cplx_t *R_EVL);
 
 
 /**
@@ -57,7 +57,7 @@ void grt_wave2qwv_REV_SH(const GRT_MODEL1D *mod1d, MYCOMPLEX RL, MYCOMPLEX *R_EV
  * @param[out]    R_EV            P-SV接收函数矩阵
  * 
  */
-void grt_wave2qwv_z_REV_PSV(const GRT_MODEL1D *mod1d, const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2]);
+void grt_wave2qwv_z_REV_PSV(const GRT_MODEL1D *mod1d, const cplx_t R[2][2], cplx_t R_EV[2][2]);
 
 
 /**
@@ -69,7 +69,7 @@ void grt_wave2qwv_z_REV_PSV(const GRT_MODEL1D *mod1d, const MYCOMPLEX R[2][2], M
  * @param[out]    R_EVL           SH接收函数值
  * 
  */
-void grt_wave2qwv_z_REV_SH(const GRT_MODEL1D *mod1d, MYCOMPLEX RL, MYCOMPLEX *R_EVL);
+void grt_wave2qwv_z_REV_SH(const GRT_MODEL1D *mod1d, cplx_t RL, cplx_t *R_EVL);
 
 
 /**
@@ -147,34 +147,34 @@ void grt_delay_RT_matrix(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M)
  * 
  */
 void grt_get_layer_D(
-    MYCOMPLEX xa, MYCOMPLEX xb, MYCOMPLEX kbkb, MYCOMPLEX mu, 
-    MYCOMPLEX omega, MYREAL rho, MYREAL k, MYCOMPLEX D[4][4], bool inverse, MYINT liquid_invtype);
+    cplx_t xa, cplx_t xb, cplx_t kbkb, cplx_t mu, 
+    cplx_t omega, real_t rho, real_t k, cplx_t D[4][4], bool inverse, MYINT liquid_invtype);
 
 /** 子矩阵 D11，函数参数见 get_layer_D 函数 */
 void grt_get_layer_D11(
-    MYCOMPLEX xa, MYCOMPLEX xb, MYREAL k, MYCOMPLEX D[2][2]);
+    cplx_t xa, cplx_t xb, real_t k, cplx_t D[2][2]);
 
 /** 子矩阵 D12，函数参数见 get_layer_D 函数 */
 void grt_get_layer_D12(
-    MYCOMPLEX xa, MYCOMPLEX xb, MYREAL k, MYCOMPLEX D[2][2]);
+    cplx_t xa, cplx_t xb, real_t k, cplx_t D[2][2]);
 
 /** 子矩阵 D21，函数参数见 get_layer_D 函数 */
 void grt_get_layer_D21(
-    MYCOMPLEX xa, MYCOMPLEX xb, MYCOMPLEX kbkb, MYCOMPLEX mu,
-    MYCOMPLEX omega, MYREAL rho, MYREAL k, MYCOMPLEX D[2][2]);
+    cplx_t xa, cplx_t xb, cplx_t kbkb, cplx_t mu,
+    cplx_t omega, real_t rho, real_t k, cplx_t D[2][2]);
 
 /** 子矩阵 D22，函数参数见 get_layer_D 函数 */
 void grt_get_layer_D22(
-    MYCOMPLEX xa, MYCOMPLEX xb, MYCOMPLEX kbkb, MYCOMPLEX mu,
-    MYCOMPLEX omega, MYREAL rho, MYREAL k, MYCOMPLEX D[2][2]);
+    cplx_t xa, cplx_t xb, cplx_t kbkb, cplx_t mu,
+    cplx_t omega, real_t rho, real_t k, cplx_t D[2][2]);
 
 /** 子矩阵 D11_uiz，后缀uiz表示连接位移对z的偏导和垂直波函数，函数参数见 get_layer_D 函数 */
 void grt_get_layer_D11_uiz(
-    MYCOMPLEX xa, MYCOMPLEX xb, MYREAL k, MYCOMPLEX D[2][2]);
+    cplx_t xa, cplx_t xb, real_t k, cplx_t D[2][2]);
 
 /** 子矩阵 D12_uiz，函数参数见 get_layer_D 函数 */
 void grt_get_layer_D12_uiz(
-    MYCOMPLEX xa, MYCOMPLEX xb, MYREAL k, MYCOMPLEX D[2][2]);
+    cplx_t xa, cplx_t xb, real_t k, cplx_t D[2][2]);
 
 
 /**
@@ -190,14 +190,14 @@ void grt_get_layer_D12_uiz(
  * 
  */
 void grt_get_layer_T(
-    MYCOMPLEX xb, MYCOMPLEX mu,
-    MYCOMPLEX omega, MYREAL k, MYCOMPLEX T[2][2], bool inverse);
+    cplx_t xb, cplx_t mu,
+    cplx_t omega, real_t k, cplx_t T[2][2], bool inverse);
 
 /** 计算 P-SV 型垂直波函数的时间延迟矩阵，公式(5.2.27) */
-void grt_get_layer_E_Rayl(MYCOMPLEX xa1, MYCOMPLEX xb1, MYREAL thk, MYREAL k, MYCOMPLEX E[4][4], bool inverse);
+void grt_get_layer_E_Rayl(cplx_t xa1, cplx_t xb1, real_t thk, real_t k, cplx_t E[4][4], bool inverse);
 
 /** 计算 SH 型垂直波函数的时间延迟矩阵，公式(5.2.28) */
-void grt_get_layer_E_Love(MYCOMPLEX xb1, MYREAL thk, MYREAL k, MYCOMPLEX E[2][2], bool inverse);
+void grt_get_layer_E_Love(cplx_t xb1, real_t thk, real_t k, cplx_t E[2][2], bool inverse);
 
 
 
@@ -207,9 +207,9 @@ void grt_get_layer_E_Love(MYCOMPLEX xb1, MYREAL thk, MYREAL k, MYCOMPLEX E[2][2]
  *  函数接口也类似
  */
 void grt_RT_matrix_from_4x4(
-    MYCOMPLEX xa1, MYCOMPLEX xb1, MYCOMPLEX kbkb1, MYCOMPLEX mu1, MYREAL rho1, 
-    MYCOMPLEX xa2, MYCOMPLEX xb2, MYCOMPLEX kbkb2, MYCOMPLEX mu2, MYREAL rho2,
-    MYCOMPLEX omega, MYREAL thk,
-    MYREAL k, 
-    MYCOMPLEX RD[2][2], MYCOMPLEX *RDL, MYCOMPLEX RU[2][2], MYCOMPLEX *RUL, 
-    MYCOMPLEX TD[2][2], MYCOMPLEX *TDL, MYCOMPLEX TU[2][2], MYCOMPLEX *TUL, MYINT *stats);
+    cplx_t xa1, cplx_t xb1, cplx_t kbkb1, cplx_t mu1, real_t rho1, 
+    cplx_t xa2, cplx_t xb2, cplx_t kbkb2, cplx_t mu2, real_t rho2,
+    cplx_t omega, real_t thk,
+    real_t k, 
+    cplx_t RD[2][2], cplx_t *RDL, cplx_t RU[2][2], cplx_t *RUL, 
+    cplx_t TD[2][2], cplx_t *TDL, cplx_t TU[2][2], cplx_t *TUL, MYINT *stats);

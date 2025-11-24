@@ -18,7 +18,7 @@
  * @param[in]      c     系数 c
  * @param[out]     y3    三个根，其中 y3[2] 为正根
  */
-void grt_roots3(const MYREAL a, const MYREAL b, const MYREAL c, MYCOMPLEX y3[3]);
+void grt_roots3(const real_t a, const real_t b, const real_t c, cplx_t y3[3]);
 
 /**
  * 做如下多项式求值， \f$ \sum_{m=0}^n C_{2m+o} y^m \f$
@@ -31,4 +31,4 @@ void grt_roots3(const MYREAL a, const MYREAL b, const MYREAL c, MYCOMPLEX y3[3])
  * @return    多项式结果
  * 
  */
-MYCOMPLEX grt_evalpoly2(const MYCOMPLEX *C, const int n, const MYCOMPLEX y, const int offset);
+cplx_t grt_evalpoly2(const cplx_t *C, const int n, const cplx_t y, const int offset);

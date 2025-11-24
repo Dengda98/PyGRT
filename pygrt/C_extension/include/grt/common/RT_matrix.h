@@ -16,18 +16,18 @@
 
 /** 应该把 PSV 和 SH 的小矩阵统一放在一个结构体中管理 */
 typedef struct {
-    MYCOMPLEX RD[2][2];     ///< P-SV 下传反射系数矩阵
-    MYCOMPLEX RU[2][2];     ///< P-SV 上传反射系数矩阵
-    MYCOMPLEX TD[2][2];     ///< P-SV 下传透射系数矩阵
-    MYCOMPLEX TU[2][2];     ///< P-SV 上传透射系数矩阵
-    MYCOMPLEX RDL;          ///< SH 下传反射系数
-    MYCOMPLEX RUL;          ///< SH 上传反射系数
-    MYCOMPLEX TDL;          ///< SH 下传透射系数
-    MYCOMPLEX TUL;          ///< SH 上传透射系数
+    cplx_t RD[2][2];     ///< P-SV 下传反射系数矩阵
+    cplx_t RU[2][2];     ///< P-SV 上传反射系数矩阵
+    cplx_t TD[2][2];     ///< P-SV 下传透射系数矩阵
+    cplx_t TU[2][2];     ///< P-SV 上传透射系数矩阵
+    cplx_t RDL;          ///< SH 下传反射系数
+    cplx_t RUL;          ///< SH 上传反射系数
+    cplx_t TDL;          ///< SH 下传透射系数
+    cplx_t TUL;          ///< SH 上传透射系数
 
     /* 一些辅助变量 */
-    MYCOMPLEX invT[2][2];
-    MYCOMPLEX invTL;
+    cplx_t invT[2][2];
+    cplx_t invTL;
 
     /* 状态变量 */
     MYINT stats;   ///< 是否有除零错误，非0为异常值

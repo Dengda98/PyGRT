@@ -23,22 +23,22 @@
 #include "grt/common/const.h"
 
 
-MYREAL grt_discrete_integ(
-    GRT_MODEL1D *mod1d, MYREAL dk, MYREAL kmax, MYREAL keps,
-    MYINT nr, MYREAL *rs,
-    MYCOMPLEX sum_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+real_t grt_discrete_integ(
+    GRT_MODEL1D *mod1d, real_t dk, real_t kmax, real_t keps,
+    MYINT nr, real_t *rs,
+    cplx_t sum_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     bool calc_upar,
-    MYCOMPLEX sum_uiz_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
-    MYCOMPLEX sum_uir_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    cplx_t sum_uiz_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    cplx_t sum_uir_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     FILE *fstats, GRT_KernelFunc kerfunc)
 {
-    MYCOMPLEX SUM[GRT_SRC_M_NUM][GRT_INTEG_NUM];
+    cplx_t SUM[GRT_SRC_M_NUM][GRT_INTEG_NUM];
 
     // 不同震源不同阶数的核函数 F(k, w) 
-    MYCOMPLEX QWV[GRT_SRC_M_NUM][GRT_QWV_NUM];
-    MYCOMPLEX QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM];
+    cplx_t QWV[GRT_SRC_M_NUM][GRT_QWV_NUM];
+    cplx_t QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM];
     
-    MYREAL k = 0.0;
+    real_t k = 0.0;
     MYINT ik = 0;
 
     // 所有震中距的k循环是否结束

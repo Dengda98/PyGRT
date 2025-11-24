@@ -42,11 +42,11 @@
  * @param[in,out]       iendk0    一个布尔指针，用于指示是否满足结束条件 
  */
 static void process_peak_or_trough(
-    MYINT ir, MYINT im, MYINT v, MYREAL k, MYREAL dk, 
-    MYCOMPLEX (*J3)[GRT_PTAM_WINDOW_SIZE][GRT_SRC_M_NUM][GRT_INTEG_NUM], MYREAL (*Kpt)[GRT_SRC_M_NUM][GRT_INTEG_NUM][GRT_PTAM_PT_MAX], 
-    MYCOMPLEX (*Fpt)[GRT_SRC_M_NUM][GRT_INTEG_NUM][GRT_PTAM_PT_MAX], MYINT (*Ipt)[GRT_SRC_M_NUM][GRT_INTEG_NUM], MYINT (*Gpt)[GRT_SRC_M_NUM][GRT_INTEG_NUM], bool *iendk0)
+    MYINT ir, MYINT im, MYINT v, real_t k, real_t dk, 
+    cplx_t (*J3)[GRT_PTAM_WINDOW_SIZE][GRT_SRC_M_NUM][GRT_INTEG_NUM], real_t (*Kpt)[GRT_SRC_M_NUM][GRT_INTEG_NUM][GRT_PTAM_PT_MAX], 
+    cplx_t (*Fpt)[GRT_SRC_M_NUM][GRT_INTEG_NUM][GRT_PTAM_PT_MAX], MYINT (*Ipt)[GRT_SRC_M_NUM][GRT_INTEG_NUM], MYINT (*Gpt)[GRT_SRC_M_NUM][GRT_INTEG_NUM], bool *iendk0)
 {
-    MYCOMPLEX tmp0;
+    cplx_t tmp0;
     if (Gpt[ir][im][v] >= GRT_PTAM_WINDOW_SIZE-1 && Ipt[ir][im][v] < GRT_PTAM_PT_MAX) {
         if (grt_cplx_peak_or_trough(im, v, J3[ir], k, dk, &Kpt[ir][im][v][Ipt[ir][im][v]], &tmp0) != 0) {
             Fpt[ir][im][v][Ipt[ir][im][v]++] = tmp0;
@@ -81,11 +81,11 @@ static void process_peak_or_trough(
  * 
  */
 static void ptam_once(
-    const MYINT ir, const MYINT nr, const MYREAL precoef, MYREAL k, MYREAL dk, 
-    MYCOMPLEX SUM3[nr][GRT_PTAM_WINDOW_SIZE][GRT_SRC_M_NUM][GRT_INTEG_NUM],
-    MYCOMPLEX sum_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
-    MYREAL Kpt[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM][GRT_PTAM_PT_MAX],
-    MYCOMPLEX Fpt[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM][GRT_PTAM_PT_MAX],
+    const MYINT ir, const MYINT nr, const real_t precoef, real_t k, real_t dk, 
+    cplx_t SUM3[nr][GRT_PTAM_WINDOW_SIZE][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    cplx_t sum_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    real_t Kpt[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM][GRT_PTAM_PT_MAX],
+    cplx_t Fpt[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM][GRT_PTAM_PT_MAX],
     MYINT Ipt[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     MYINT Gpt[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     bool *iendk0)
@@ -117,23 +117,23 @@ static void ptam_once(
 
 
 void grt_PTA_method(
-    GRT_MODEL1D *mod1d, MYREAL k0, MYREAL predk,
-    MYINT nr, MYREAL *rs,
-    MYCOMPLEX sum_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    GRT_MODEL1D *mod1d, real_t k0, real_t predk,
+    MYINT nr, real_t *rs,
+    cplx_t sum_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     bool calc_upar,
-    MYCOMPLEX sum_uiz_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
-    MYCOMPLEX sum_uir_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    cplx_t sum_uiz_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    cplx_t sum_uir_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     FILE *ptam_fstatsnr[nr][2], GRT_KernelFunc kerfunc)
 {   
     // 需要兼容对正常收敛而不具有规律波峰波谷的序列
     // 有时序列收敛比较好，不表现为规律的波峰波谷，
     // 此时设置最大等待次数，超过直接设置为中间值
 
-    MYREAL k=0.0;
+    real_t k=0.0;
 
     // 不同震源不同阶数的核函数 F(k, w) 
-    MYCOMPLEX QWV[GRT_SRC_M_NUM][GRT_QWV_NUM];
-    MYCOMPLEX QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM];
+    cplx_t QWV[GRT_SRC_M_NUM][GRT_QWV_NUM];
+    cplx_t QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM];
 
     // 使用宏函数，方便定义
     #define __CALLOC_ARRAY(VAR, TYP, __ARR) \
@@ -143,28 +143,28 @@ void grt_PTA_method(
     // 存储采样的值，维度3表示通过连续3个点来判断波峰或波谷
     // 既用于存储被积函数，也最后用于存储求和的结果
     #define __ARR [GRT_PTAM_WINDOW_SIZE][GRT_SRC_M_NUM][GRT_INTEG_NUM]
-        __CALLOC_ARRAY(SUM3, MYCOMPLEX, __ARR);
-        __CALLOC_ARRAY(SUM3_uiz, MYCOMPLEX, __ARR);
-        __CALLOC_ARRAY(SUM3_uir, MYCOMPLEX, __ARR);
+        __CALLOC_ARRAY(SUM3, cplx_t, __ARR);
+        __CALLOC_ARRAY(SUM3_uiz, cplx_t, __ARR);
+        __CALLOC_ARRAY(SUM3_uir, cplx_t, __ARR);
     #undef __ARR
 
     // 之前求和的值
     #define __ARR [GRT_SRC_M_NUM][GRT_INTEG_NUM]
-        __CALLOC_ARRAY(sum_J, MYCOMPLEX, __ARR);
-        __CALLOC_ARRAY(sum_uiz_J, MYCOMPLEX, __ARR);
-        __CALLOC_ARRAY(sum_uir_J, MYCOMPLEX, __ARR);
+        __CALLOC_ARRAY(sum_J, cplx_t, __ARR);
+        __CALLOC_ARRAY(sum_uiz_J, cplx_t, __ARR);
+        __CALLOC_ARRAY(sum_uir_J, cplx_t, __ARR);
     #undef __ARR
 
     // 存储波峰波谷的位置和值
     #define __ARR [GRT_SRC_M_NUM][GRT_INTEG_NUM][GRT_PTAM_PT_MAX]
-        __CALLOC_ARRAY(Kpt, MYREAL, __ARR);
-        __CALLOC_ARRAY(Fpt, MYCOMPLEX, __ARR);
+        __CALLOC_ARRAY(Kpt, real_t, __ARR);
+        __CALLOC_ARRAY(Fpt, cplx_t, __ARR);
 
-        __CALLOC_ARRAY(Kpt_uiz, MYREAL, __ARR);
-        __CALLOC_ARRAY(Fpt_uiz, MYCOMPLEX, __ARR);
+        __CALLOC_ARRAY(Kpt_uiz, real_t, __ARR);
+        __CALLOC_ARRAY(Fpt_uiz, cplx_t, __ARR);
 
-        __CALLOC_ARRAY(Kpt_uir, MYREAL, __ARR);
-        __CALLOC_ARRAY(Fpt_uir, MYCOMPLEX, __ARR);
+        __CALLOC_ARRAY(Kpt_uir, real_t, __ARR);
+        __CALLOC_ARRAY(Fpt_uir, cplx_t, __ARR);
     #undef __ARR
 
     #define __ARR [GRT_SRC_M_NUM][GRT_INTEG_NUM]
@@ -201,10 +201,10 @@ void grt_PTA_method(
 
     // 对于PTAM，不同震中距使用不同dk
     for(MYINT ir=0; ir<nr; ++ir){
-        MYREAL dk = PI/((GRT_PTAM_WAITS_MAX-1)*rs[ir]); 
-        MYREAL precoef = dk/predk; // 提前乘dk系数，以抵消格林函数主函数计算时最后乘dk
+        real_t dk = PI/((GRT_PTAM_WAITS_MAX-1)*rs[ir]); 
+        real_t precoef = dk/predk; // 提前乘dk系数，以抵消格林函数主函数计算时最后乘dk
         // 根据波峰波谷的目标也给出一个kmax，+5以防万一 
-        MYREAL kmax = k0 + (GRT_PTAM_PT_MAX+5)*PI/rs[ir];
+        real_t kmax = k0 + (GRT_PTAM_PT_MAX+5)*PI/rs[ir];
 
         bool iendk0=false;
 
@@ -290,9 +290,9 @@ void grt_PTA_method(
 
 
 
-MYINT grt_cplx_peak_or_trough(MYINT idx1, MYINT idx2, const MYCOMPLEX arr[GRT_PTAM_WINDOW_SIZE][GRT_SRC_M_NUM][GRT_INTEG_NUM], MYREAL k, MYREAL dk, MYREAL *pk, MYCOMPLEX *value){
-    MYCOMPLEX f1, f2, f3;
-    MYREAL rf1, rf2, rf3;
+MYINT grt_cplx_peak_or_trough(MYINT idx1, MYINT idx2, const cplx_t arr[GRT_PTAM_WINDOW_SIZE][GRT_SRC_M_NUM][GRT_INTEG_NUM], real_t k, real_t dk, real_t *pk, cplx_t *value){
+    cplx_t f1, f2, f3;
+    real_t rf1, rf2, rf3;
     MYINT stat=0;
 
     f1 = arr[0][idx1][idx2];
@@ -308,19 +308,19 @@ MYINT grt_cplx_peak_or_trough(MYINT idx1, MYINT idx2, const MYCOMPLEX arr[GRT_PT
 
     if(stat==0)  return stat;
 
-    MYREAL x1, x2, x3; 
+    real_t x1, x2, x3; 
     x3 = k;
     x2 = x3-dk;
     x1 = x2-dk;
 
-    MYREAL xarr[3] = {x1, x2, x3};
-    MYCOMPLEX farr[3] = {f1, f2, f3};
+    real_t xarr[3] = {x1, x2, x3};
+    cplx_t farr[3] = {f1, f2, f3};
 
     // 二次多项式
-    MYCOMPLEX a, b, c;
+    cplx_t a, b, c;
     grt_quad_term(xarr, farr, &a, &b, &c);
 
-    MYREAL k0 = x2;
+    real_t k0 = x2;
     *pk = k0;
     *value = 0.0;
     if(a != 0.0+0.0*I){
@@ -341,7 +341,7 @@ MYINT grt_cplx_peak_or_trough(MYINT idx1, MYINT idx2, const MYCOMPLEX arr[GRT_PT
 }
 
 
-void grt_cplx_shrink(MYINT n1, MYCOMPLEX *arr){
+void grt_cplx_shrink(MYINT n1, cplx_t *arr){
     for(MYINT n=n1; n>1; --n){
         for(MYINT i=0; i<n-1; ++i){
             arr[i] = 0.5*(arr[i] + arr[i+1]);

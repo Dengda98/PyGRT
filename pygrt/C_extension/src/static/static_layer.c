@@ -27,7 +27,7 @@
 
 void grt_static_topfree_RU(const GRT_MODEL1D *mod1d, RT_MATRIX *M)
 {
-    MYCOMPLEX delta1 = mod1d->delta[0];
+    cplx_t delta1 = mod1d->delta[0];
     // 公式(6.3.12)
     M->RU[0][0] = M->RU[1][1] = 0.0;
     M->RU[0][1] = -delta1;
@@ -35,10 +35,10 @@ void grt_static_topfree_RU(const GRT_MODEL1D *mod1d, RT_MATRIX *M)
     M->RUL = 1.0;
 }
 
-void grt_static_wave2qwv_REV_PSV(const GRT_MODEL1D *mod1d, const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2])
+void grt_static_wave2qwv_REV_PSV(const GRT_MODEL1D *mod1d, const cplx_t R[2][2], cplx_t R_EV[2][2])
 {
-    MYCOMPLEX D11[2][2] = {{1.0, -1.0}, {1.0, 1.0}};
-    MYCOMPLEX D12[2][2] = {{1.0, -1.0}, {-1.0, -1.0}};
+    cplx_t D11[2][2] = {{1.0, -1.0}, {1.0, 1.0}};
+    cplx_t D12[2][2] = {{1.0, -1.0}, {-1.0, -1.0}};
 
     // 公式(6.3.35,37)
     if(mod1d->ircvup){// 震源更深
@@ -50,23 +50,23 @@ void grt_static_wave2qwv_REV_PSV(const GRT_MODEL1D *mod1d, const MYCOMPLEX R[2][
     }
 }
 
-void grt_static_wave2qwv_REV_SH(MYCOMPLEX RL, MYCOMPLEX *R_EVL)
+void grt_static_wave2qwv_REV_SH(cplx_t RL, cplx_t *R_EVL)
 {
     *R_EVL = (1.0 + (RL));
 }
 
 void grt_static_wave2qwv_z_REV_PSV(
     const GRT_MODEL1D *mod1d, 
-    const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2])
+    const cplx_t R[2][2], cplx_t R_EV[2][2])
 {
-    MYREAL k = mod1d->k;
+    real_t k = mod1d->k;
     MYINT ircv = mod1d->ircv;
-    MYCOMPLEX delta1 = mod1d->delta[ircv];
+    cplx_t delta1 = mod1d->delta[ircv];
 
     // 新推导公式
-    MYCOMPLEX kd2 = 2.0*k*delta1;
-    MYCOMPLEX D11[2][2] = {{k, -k-kd2}, {k, k-kd2}};
-    MYCOMPLEX D12[2][2] = {{-k, k+kd2}, {k, k-kd2}};
+    cplx_t kd2 = 2.0*k*delta1;
+    cplx_t D11[2][2] = {{k, -k-kd2}, {k, k-kd2}};
+    cplx_t D12[2][2] = {{-k, k+kd2}, {k, k-kd2}};
     if(mod1d->ircvup){// 震源更深
         grt_cmat2x2_mul(D12, R, R_EV);
         grt_cmat2x2_add(D11, R_EV, R_EV);
@@ -76,9 +76,9 @@ void grt_static_wave2qwv_z_REV_PSV(
     }
 }
 
-void grt_static_wave2qwv_z_REV_SH(const GRT_MODEL1D *mod1d, MYCOMPLEX RL, MYCOMPLEX *R_EVL)
+void grt_static_wave2qwv_z_REV_SH(const GRT_MODEL1D *mod1d, cplx_t RL, cplx_t *R_EVL)
 {
-    MYREAL k = mod1d->k;
+    real_t k = mod1d->k;
     // 新推导公式
     if(mod1d->ircvup){// 震源更深
         *R_EVL = (1.0 - (RL))*k;
@@ -90,19 +90,19 @@ void grt_static_wave2qwv_z_REV_SH(const GRT_MODEL1D *mod1d, MYCOMPLEX RL, MYCOMP
 
 void grt_static_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M)
 {
-    MODEL_2LAYS_ATTRIB(MYCOMPLEX, mu);
-    MODEL_2LAYS_ATTRIB(MYCOMPLEX, delta);
-    MYREAL thk = mod1d->Thk[iy-1];
-    MYREAL k = mod1d->k;
+    MODEL_2LAYS_ATTRIB(cplx_t, mu);
+    MODEL_2LAYS_ATTRIB(cplx_t, delta);
+    real_t thk = mod1d->Thk[iy-1];
+    real_t k = mod1d->k;
 
     // 公式(6.3.18)
-    MYCOMPLEX dmu = mu1 - mu2;
-    MYCOMPLEX A112 = mu1*delta1 + mu2;
-    MYCOMPLEX A221 = mu2*delta2 + mu1;
-    MYCOMPLEX B = mu1*delta1 - mu2*delta2;
-    MYCOMPLEX del11 = delta1*delta1;
-    MYREAL k2 = k*k;
-    MYREAL thk2 = thk*thk;
+    cplx_t dmu = mu1 - mu2;
+    cplx_t A112 = mu1*delta1 + mu2;
+    cplx_t A221 = mu2*delta2 + mu1;
+    cplx_t B = mu1*delta1 - mu2*delta2;
+    cplx_t del11 = delta1*delta1;
+    real_t k2 = k*k;
+    real_t thk2 = thk*thk;
 
     // Reflection
     //------------------ RD -----------------------------------
@@ -132,11 +132,11 @@ void grt_static_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRI
 
 void grt_static_RT_matrix_SH(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M)
 {
-    MODEL_2LAYS_ATTRIB(MYCOMPLEX, mu);
+    MODEL_2LAYS_ATTRIB(cplx_t, mu);
     
     // 公式(6.3.18)
-    MYCOMPLEX dmu = mu1 - mu2;
-    MYCOMPLEX amu = mu1 + mu2;
+    cplx_t dmu = mu1 - mu2;
+    cplx_t amu = mu1 + mu2;
 
     // Reflection
     M->RDL = dmu/amu;
@@ -150,10 +150,10 @@ void grt_static_RT_matrix_SH(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX
 
 void grt_static_delay_RT_matrix(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M)
 {
-    MYREAL thk = mod1d->Thk[iy-1];
-    MYREAL k = mod1d->k;
+    real_t thk = mod1d->Thk[iy-1];
+    real_t k = mod1d->k;
     
-    MYCOMPLEX ex, ex2;
+    cplx_t ex, ex2;
     ex = exp(- k*thk);
     ex2 = ex * ex;
 

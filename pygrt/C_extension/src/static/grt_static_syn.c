@@ -32,8 +32,8 @@ typedef struct {
     struct {
         bool active;
         bool mult_src_mu;
-        MYREAL M0;
-        MYREAL src_mu;
+        real_t M0;
+        real_t src_mu;
     } S;  
     /** 剪切源 */
     struct {
@@ -58,10 +58,10 @@ typedef struct {
     } e;
 
     // 存储不同震源的震源机制相关参数的数组
-    MYREAL mchn[GRT_MECHANISM_NUM];
+    real_t mchn[GRT_MECHANISM_NUM];
 
     // 方向因子数组
-    MYREAL srcRadi[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
+    real_t srcRadi[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
 
     // 最终要计算的震源类型
     MYINT computeType;
@@ -322,60 +322,60 @@ int static_syn_main(int argc, char **argv){
     int out_syn_upar_varids[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
     
     // 打开 nc 文件
-    GRT_NC_CHECK(nc_open(Ctrl->G.s_ingrid, NC_NOWRITE, &in_ncid));
-    GRT_NC_CHECK(nc_create(Ctrl->O.s_outgrid, NC_CLOBBER, &out_ncid));
+    NC_CHECK(nc_open(Ctrl->G.s_ingrid, NC_NOWRITE, &in_ncid));
+    NC_CHECK(nc_create(Ctrl->O.s_outgrid, NC_CLOBBER, &out_ncid));
 
     // 读取全局属性，视情况计算 src_mu
-    MYREAL src_va=0.0, src_vb=0.0, src_rho=0.0, src_mu=0.0;
-    GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_get_att) (in_ncid, NC_GLOBAL, "src_va", &src_va));
-    GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_get_att) (in_ncid, NC_GLOBAL, "src_vb", &src_vb));
-    GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_get_att) (in_ncid, NC_GLOBAL, "src_rho", &src_rho));
+    real_t src_va=0.0, src_vb=0.0, src_rho=0.0, src_mu=0.0;
+    NC_CHECK(NC_FUNC_REAL(nc_get_att) (in_ncid, NC_GLOBAL, "src_va", &src_va));
+    NC_CHECK(NC_FUNC_REAL(nc_get_att) (in_ncid, NC_GLOBAL, "src_vb", &src_vb));
+    NC_CHECK(NC_FUNC_REAL(nc_get_att) (in_ncid, NC_GLOBAL, "src_rho", &src_rho));
     src_mu = src_vb*src_vb*src_rho*1e10;
     if(Ctrl->S.mult_src_mu) Ctrl->S.M0 *= src_mu;
 
     // 读入的数据是否有位移偏导
     MYINT calc_upar;
-    GRT_NC_CHECK(GRT_NC_FUNC_MYINT(nc_get_att) (in_ncid, NC_GLOBAL, "calc_upar", &calc_upar));
+    NC_CHECK(GRT_NC_FUNC_MYINT(nc_get_att) (in_ncid, NC_GLOBAL, "calc_upar", &calc_upar));
     if(Ctrl->e.active && calc_upar == 0){
         GRTRaiseError("[%s] Input grid didn't have displacement derivatives, you can't set -e.", command);
     }
 
     // 复制属性
-    GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_put_att) (out_ncid, NC_GLOBAL, "src_va", GRT_NC_MYREAL, 1, &src_va));
-    GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_put_att) (out_ncid, NC_GLOBAL, "src_vb", GRT_NC_MYREAL, 1, &src_vb));
-    GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_put_att) (out_ncid, NC_GLOBAL, "src_rho", GRT_NC_MYREAL, 1, &src_rho));
-    GRT_NC_CHECK(GRT_NC_FUNC_MYINT(nc_put_att) (out_ncid, NC_GLOBAL, "calc_upar", GRT_NC_MYINT, 1, &calc_upar));
+    NC_CHECK(NC_FUNC_REAL(nc_put_att) (out_ncid, NC_GLOBAL, "src_va", NC_REAL, 1, &src_va));
+    NC_CHECK(NC_FUNC_REAL(nc_put_att) (out_ncid, NC_GLOBAL, "src_vb", NC_REAL, 1, &src_vb));
+    NC_CHECK(NC_FUNC_REAL(nc_put_att) (out_ncid, NC_GLOBAL, "src_rho", NC_REAL, 1, &src_rho));
+    NC_CHECK(GRT_NC_FUNC_MYINT(nc_put_att) (out_ncid, NC_GLOBAL, "calc_upar", GRT_NC_MYINT, 1, &calc_upar));
     {
-        MYREAL rcv_va=0.0, rcv_vb=0.0, rcv_rho=0.0;
-        GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_get_att) (in_ncid, NC_GLOBAL, "rcv_va", &rcv_va));
-        GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_get_att) (in_ncid, NC_GLOBAL, "rcv_vb", &rcv_vb));
-        GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_get_att) (in_ncid, NC_GLOBAL, "rcv_rho", &rcv_rho));
-        GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_put_att) (out_ncid, NC_GLOBAL, "rcv_va", GRT_NC_MYREAL, 1, &rcv_va));
-        GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_put_att) (out_ncid, NC_GLOBAL, "rcv_vb", GRT_NC_MYREAL, 1, &rcv_vb));
-        GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_put_att) (out_ncid, NC_GLOBAL, "rcv_rho", GRT_NC_MYREAL, 1, &rcv_rho)); 
+        real_t rcv_va=0.0, rcv_vb=0.0, rcv_rho=0.0;
+        NC_CHECK(NC_FUNC_REAL(nc_get_att) (in_ncid, NC_GLOBAL, "rcv_va", &rcv_va));
+        NC_CHECK(NC_FUNC_REAL(nc_get_att) (in_ncid, NC_GLOBAL, "rcv_vb", &rcv_vb));
+        NC_CHECK(NC_FUNC_REAL(nc_get_att) (in_ncid, NC_GLOBAL, "rcv_rho", &rcv_rho));
+        NC_CHECK(NC_FUNC_REAL(nc_put_att) (out_ncid, NC_GLOBAL, "rcv_va", NC_REAL, 1, &rcv_va));
+        NC_CHECK(NC_FUNC_REAL(nc_put_att) (out_ncid, NC_GLOBAL, "rcv_vb", NC_REAL, 1, &rcv_vb));
+        NC_CHECK(NC_FUNC_REAL(nc_put_att) (out_ncid, NC_GLOBAL, "rcv_rho", NC_REAL, 1, &rcv_rho)); 
     }
 
     // 是否旋转到ZNE记录到全局属性
     {
         MYINT rot2ZNE_int = rot2ZNE;
-        GRT_NC_CHECK(GRT_NC_FUNC_MYINT(nc_put_att) (out_ncid, NC_GLOBAL, "rot2ZNE", GRT_NC_MYINT, 1, &rot2ZNE_int));
+        NC_CHECK(GRT_NC_FUNC_MYINT(nc_put_att) (out_ncid, NC_GLOBAL, "rot2ZNE", GRT_NC_MYINT, 1, &rot2ZNE_int));
     }
 
     // 震源类型写入全局属性
-    GRT_NC_CHECK(nc_put_att_text(out_ncid, NC_GLOBAL, "computeType", strlen(Ctrl->s_computeType), Ctrl->s_computeType));
+    NC_CHECK(nc_put_att_text(out_ncid, NC_GLOBAL, "computeType", strlen(Ctrl->s_computeType), Ctrl->s_computeType));
     
     // 读入坐标变量 dimid, varid
     size_t nx, ny;
-    GRT_NC_CHECK(nc_inq_dimid(in_ncid, "north", &in_x_dimid));
-    GRT_NC_CHECK(nc_inq_dimlen(in_ncid, in_x_dimid, &nx));
-    GRT_NC_CHECK(nc_inq_dimid(in_ncid, "east", &in_y_dimid));
-    GRT_NC_CHECK(nc_inq_dimlen(in_ncid, in_y_dimid, &ny));
+    NC_CHECK(nc_inq_dimid(in_ncid, "north", &in_x_dimid));
+    NC_CHECK(nc_inq_dimlen(in_ncid, in_x_dimid, &nx));
+    NC_CHECK(nc_inq_dimid(in_ncid, "east", &in_y_dimid));
+    NC_CHECK(nc_inq_dimlen(in_ncid, in_y_dimid, &ny));
 
     // 写入坐标变量 dimid, varid
-    GRT_NC_CHECK(nc_def_dim(out_ncid, "north", nx, &out_x_dimid));
-    GRT_NC_CHECK(nc_def_dim(out_ncid, "east", ny, &out_y_dimid));
-    GRT_NC_CHECK(nc_def_var(out_ncid, "north", GRT_NC_MYREAL, 1, &out_x_dimid, &out_x_varid));
-    GRT_NC_CHECK(nc_def_var(out_ncid, "east",  GRT_NC_MYREAL, 1, &out_y_dimid, &out_y_varid));
+    NC_CHECK(nc_def_dim(out_ncid, "north", nx, &out_x_dimid));
+    NC_CHECK(nc_def_dim(out_ncid, "east", ny, &out_y_dimid));
+    NC_CHECK(nc_def_var(out_ncid, "north", NC_REAL, 1, &out_x_dimid, &out_x_varid));
+    NC_CHECK(nc_def_var(out_ncid, "east",  NC_REAL, 1, &out_y_dimid, &out_y_varid));
     out_dimids[0] = out_x_dimid;
     out_dimids[1] = out_y_dimid;
 
@@ -387,14 +387,14 @@ int static_syn_main(int argc, char **argv){
             if(modr==0 && GRT_ZRT_CODES[c]=='T')  continue;
 
             GRT_SAFE_ASPRINTF(&s_title, "%s%c", GRT_SRC_M_NAME_ABBR[i], GRT_ZRT_CODES[c]);
-            GRT_NC_CHECK(nc_inq_varid(in_ncid, s_title, &in_u_varids[i][c]));
+            NC_CHECK(nc_inq_varid(in_ncid, s_title, &in_u_varids[i][c]));
 
             // 位移偏导
             if(Ctrl->e.active){
                 GRT_SAFE_ASPRINTF(&s_title, "z%s%c", GRT_SRC_M_NAME_ABBR[i], GRT_ZRT_CODES[c]);
-                GRT_NC_CHECK(nc_inq_varid(in_ncid, s_title, &in_uiz_varids[i][c]));
+                NC_CHECK(nc_inq_varid(in_ncid, s_title, &in_uiz_varids[i][c]));
                 GRT_SAFE_ASPRINTF(&s_title, "r%s%c", GRT_SRC_M_NAME_ABBR[i], GRT_ZRT_CODES[c]);
-                GRT_NC_CHECK(nc_inq_varid(in_ncid, s_title, &in_uir_varids[i][c]));
+                NC_CHECK(nc_inq_varid(in_ncid, s_title, &in_uir_varids[i][c]));
             }
         }
         GRT_SAFE_FREE_PTR(s_title);
@@ -404,83 +404,83 @@ int static_syn_main(int argc, char **argv){
     for(int c=0; c<GRT_CHANNEL_NUM; ++c){
         char *s_title = NULL;
         GRT_SAFE_ASPRINTF(&s_title, "%c", toupper(chs[c]));
-        GRT_NC_CHECK(nc_def_var(out_ncid, s_title, GRT_NC_MYREAL, ndims, out_dimids, &out_syn_varids[c]));
+        NC_CHECK(nc_def_var(out_ncid, s_title, NC_REAL, ndims, out_dimids, &out_syn_varids[c]));
         // 位移偏导
         if(Ctrl->e.active){
             for(int c2=0; c2<GRT_CHANNEL_NUM; ++c2){
                 GRT_SAFE_ASPRINTF(&s_title, "%c%c", tolower(chs[c2]), toupper(chs[c]));
-                GRT_NC_CHECK(nc_def_var(out_ncid, s_title, GRT_NC_MYREAL, ndims, out_dimids, &out_syn_upar_varids[c2][c]));
+                NC_CHECK(nc_def_var(out_ncid, s_title, NC_REAL, ndims, out_dimids, &out_syn_upar_varids[c2][c]));
             }
         }
         GRT_SAFE_FREE_PTR(s_title);
     }
 
     // 结束定义模式
-    GRT_NC_CHECK(nc_enddef(out_ncid));
+    NC_CHECK(nc_enddef(out_ncid));
 
     // 读取坐标变量
-    MYREAL *xs = (MYREAL *)calloc(nx, sizeof(MYREAL));
-    MYREAL *ys = (MYREAL *)calloc(ny, sizeof(MYREAL));
-    GRT_NC_CHECK(nc_inq_varid(in_ncid, "north", &in_x_varid));
-    GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_get_var) (in_ncid, in_x_varid, xs));
-    GRT_NC_CHECK(nc_inq_varid(in_ncid, "east", &in_y_varid));
-    GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_get_var) (in_ncid, in_y_varid, ys));
+    real_t *xs = (real_t *)calloc(nx, sizeof(real_t));
+    real_t *ys = (real_t *)calloc(ny, sizeof(real_t));
+    NC_CHECK(nc_inq_varid(in_ncid, "north", &in_x_varid));
+    NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_x_varid, xs));
+    NC_CHECK(nc_inq_varid(in_ncid, "east", &in_y_varid));
+    NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_y_varid, ys));
 
     // 写入坐标变量
-    GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_put_var) (out_ncid, out_x_varid, xs));
-    GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_put_var) (out_ncid, out_y_varid, ys));
+    NC_CHECK(NC_FUNC_REAL(nc_put_var) (out_ncid, out_x_varid, xs));
+    NC_CHECK(NC_FUNC_REAL(nc_put_var) (out_ncid, out_y_varid, ys));
 
     // 总震中距数
     size_t nr = nx * ny;
 
     // 先将所有格林函数及其偏导读入内存，
     // 否则连续使用 nc_grt_var1 式读入效率太慢
-    MYREAL *u[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
-    MYREAL *uiz[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
-    MYREAL *uir[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
+    real_t *u[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
+    real_t *uiz[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
+    real_t *uir[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
     for(int i=0; i<GRT_SRC_M_NUM; ++i){
         int modr = GRT_SRC_M_ORDERS[i];
         for(int c=0; c<GRT_CHANNEL_NUM; ++c){
             // 先申请全 0 内存
-            u[i][c] = (MYREAL *)calloc(nr, sizeof(MYREAL));
-            uiz[i][c] = (MYREAL *)calloc(nr, sizeof(MYREAL));
-            uir[i][c] = (MYREAL *)calloc(nr, sizeof(MYREAL));
+            u[i][c] = (real_t *)calloc(nr, sizeof(real_t));
+            uiz[i][c] = (real_t *)calloc(nr, sizeof(real_t));
+            uir[i][c] = (real_t *)calloc(nr, sizeof(real_t));
 
             if(modr==0 && GRT_ZRT_CODES[c]=='T')  continue;
 
-            GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_get_var) (in_ncid, in_u_varids[i][c], u[i][c]));
+            NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_u_varids[i][c], u[i][c]));
 
             if(Ctrl->e.active){
-                GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_get_var) (in_ncid, in_uiz_varids[i][c], uiz[i][c]));
-                GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_get_var) (in_ncid, in_uir_varids[i][c], uir[i][c]));
+                NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_uiz_varids[i][c], uiz[i][c]));
+                NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_uir_varids[i][c], uir[i][c]));
             }
         }
     }
     
     // 最终计算的结果
-    MYREAL (*syn)[GRT_CHANNEL_NUM] = (MYREAL (*)[GRT_CHANNEL_NUM])calloc(nr, sizeof(MYREAL)*GRT_CHANNEL_NUM);
-    MYREAL (*syn_upar)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM] = (MYREAL (*)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])calloc(nr, sizeof(MYREAL)*GRT_CHANNEL_NUM*GRT_CHANNEL_NUM);
+    real_t (*syn)[GRT_CHANNEL_NUM] = (real_t (*)[GRT_CHANNEL_NUM])calloc(nr, sizeof(real_t)*GRT_CHANNEL_NUM);
+    real_t (*syn_upar)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM] = (real_t (*)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])calloc(nr, sizeof(real_t)*GRT_CHANNEL_NUM*GRT_CHANNEL_NUM);
     
     // 每个点逐个处理
     for(size_t ix=0; ix < nx; ++ix){
-        MYREAL x = xs[ix];
+        real_t x = xs[ix];
         for(size_t iy=0; iy < ny; ++iy){
-            MYREAL y = ys[iy];
+            real_t y = ys[iy];
 
             size_t ir = iy + ix*ny;
 
             // 方位角
-            MYREAL azrad = atan2(y, x);
+            real_t azrad = atan2(y, x);
 
             // 震中距
-            MYREAL dist = GRT_MAX(sqrt(x*x + y*y), GRT_MIN_DISTANCE);
+            real_t dist = GRT_MAX(sqrt(x*x + y*y), GRT_MIN_DISTANCE);
 
             // 计算和位移相关量的种类（1-位移，2-ui_z，3-ui_r，4-ui_t）
             int calcUTypes = (Ctrl->e.active)? 4 : 1;
-            MYREAL upar_scale = 1.0;
+            real_t upar_scale = 1.0;
 
-            MYREAL *(*up)[GRT_CHANNEL_NUM];  // 使用对应类型的格林函数
-            MYREAL tmpsyn[GRT_CHANNEL_NUM];
+            real_t *(*up)[GRT_CHANNEL_NUM];  // 使用对应类型的格林函数
+            real_t tmpsyn[GRT_CHANNEL_NUM];
 
             for(int ityp=0; ityp<calcUTypes; ++ityp){
 
@@ -506,7 +506,7 @@ int static_syn_main(int argc, char **argv){
                     up = u;
                 }
 
-                memset(tmpsyn, 0, sizeof(MYREAL)*GRT_CHANNEL_NUM);
+                memset(tmpsyn, 0, sizeof(real_t)*GRT_CHANNEL_NUM);
 
                 // 计算震源辐射因子
                 grt_set_source_radiation(Ctrl->srcRadi, Ctrl->computeType, (ityp > 0) && GRT_ZRT_CODES[ityp-1]=='T', Ctrl->S.M0, upar_scale, azrad, Ctrl->mchn);
@@ -545,12 +545,12 @@ int static_syn_main(int argc, char **argv){
     }
 
     // 写入 nc 文件
-    MYREAL *tmpdata = (MYREAL *)calloc(nr, sizeof(MYREAL));
+    real_t *tmpdata = (real_t *)calloc(nr, sizeof(real_t));
     for(int c=0; c<GRT_CHANNEL_NUM; ++c){
         for(size_t ir=0; ir < nr; ++ir){
             tmpdata[ir] = syn[ir][c];
         }
-        GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_put_var) (out_ncid, out_syn_varids[c], tmpdata));
+        NC_CHECK(NC_FUNC_REAL(nc_put_var) (out_ncid, out_syn_varids[c], tmpdata));
 
         // 位移偏导
         if(Ctrl->e.active){
@@ -558,7 +558,7 @@ int static_syn_main(int argc, char **argv){
                 for(size_t ir=0; ir < nr; ++ir){
                     tmpdata[ir] = syn_upar[ir][c2][c];
                 }
-                GRT_NC_CHECK(GRT_NC_FUNC_MYREAL(nc_put_var) (out_ncid, out_syn_upar_varids[c2][c], tmpdata));
+                NC_CHECK(NC_FUNC_REAL(nc_put_var) (out_ncid, out_syn_upar_varids[c2][c], tmpdata));
             }
         }
     }
@@ -566,8 +566,8 @@ int static_syn_main(int argc, char **argv){
     
 
     // 关闭文件
-    GRT_NC_CHECK(nc_close(in_ncid));
-    GRT_NC_CHECK(nc_close(out_ncid));
+    NC_CHECK(nc_close(in_ncid));
+    NC_CHECK(nc_close(out_ncid));
 
     // 释放内存
     for(int i=0; i<GRT_SRC_M_NUM; ++i){

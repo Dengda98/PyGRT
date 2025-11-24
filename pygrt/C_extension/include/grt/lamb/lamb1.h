@@ -25,4 +25,4 @@
  * 
  */
 void grt_solve_lamb1(
-    const MYREAL nu, const MYREAL *ts, const int nt, const MYREAL azimuth, MYREAL (*u)[3][3]);
+    const real_t nu, const real_t *ts, const int nt, const real_t azimuth, real_t (*u)[3][3]);

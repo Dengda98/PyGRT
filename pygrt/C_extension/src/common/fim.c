@@ -22,27 +22,27 @@
 
 
 
-MYREAL grt_linear_filon_integ(
-    GRT_MODEL1D *mod1d, MYREAL k0, MYREAL dk0, MYREAL dk, MYREAL kmax, MYREAL keps,
-    MYINT nr, MYREAL *rs,
-    MYCOMPLEX sum_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+real_t grt_linear_filon_integ(
+    GRT_MODEL1D *mod1d, real_t k0, real_t dk0, real_t dk, real_t kmax, real_t keps,
+    MYINT nr, real_t *rs,
+    cplx_t sum_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     bool calc_upar,
-    MYCOMPLEX sum_uiz_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
-    MYCOMPLEX sum_uir_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    cplx_t sum_uiz_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    cplx_t sum_uir_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     FILE *fstats, GRT_KernelFunc kerfunc)
 {   
     // 从0开始，存储第二部分Filon积分的结果
-    MYCOMPLEX (*sum_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (MYCOMPLEX(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_J));
-    MYCOMPLEX (*sum_uiz_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (calc_upar)? (MYCOMPLEX(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_uiz_J)) : NULL;
-    MYCOMPLEX (*sum_uir_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (calc_upar)? (MYCOMPLEX(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_uir_J)) : NULL;
+    cplx_t (*sum_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (cplx_t(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_J));
+    cplx_t (*sum_uiz_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (calc_upar)? (cplx_t(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_uiz_J)) : NULL;
+    cplx_t (*sum_uir_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (calc_upar)? (cplx_t(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_uir_J)) : NULL;
 
-    MYCOMPLEX SUM[GRT_SRC_M_NUM][GRT_INTEG_NUM];
+    cplx_t SUM[GRT_SRC_M_NUM][GRT_INTEG_NUM];
 
     // 不同震源不同阶数的核函数 F(k, w) 
-    MYCOMPLEX QWV[GRT_SRC_M_NUM][GRT_QWV_NUM];
-    MYCOMPLEX QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM];
+    cplx_t QWV[GRT_SRC_M_NUM][GRT_QWV_NUM];
+    cplx_t QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM];
 
-    MYREAL k=k0; 
+    real_t k=k0; 
     MYINT ik=0;
     
     bool iendk, iendk0;
@@ -141,7 +141,7 @@ MYREAL grt_linear_filon_integ(
     // ------------------------------------------------------------------------------
     // 为累计项乘系数
     for(MYINT ir=0; ir<nr; ++ir){
-        MYREAL tmp = 2.0*(1.0 - cos(dk*rs[ir])) / (rs[ir]*rs[ir]*dk);
+        real_t tmp = 2.0*(1.0 - cos(dk*rs[ir])) / (rs[ir]*rs[ir]*dk);
 
         for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
             for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
@@ -158,13 +158,13 @@ MYREAL grt_linear_filon_integ(
 
     // -------------------------------------------------------------------------------
     // 计算余项, [2]表示k积分的第一个点和最后一个点
-    MYCOMPLEX SUM_Gc[2][GRT_SRC_M_NUM][GRT_INTEG_NUM] = {0};
-    MYCOMPLEX SUM_Gs[2][GRT_SRC_M_NUM][GRT_INTEG_NUM] = {0};
+    cplx_t SUM_Gc[2][GRT_SRC_M_NUM][GRT_INTEG_NUM] = {0};
+    cplx_t SUM_Gs[2][GRT_SRC_M_NUM][GRT_INTEG_NUM] = {0};
 
 
     // 计算来自第一个点和最后一个点的余项
     for(MYINT iik=0; iik<2; ++iik){ 
-        MYREAL k0N;
+        real_t k0N;
         MYINT sgn;
         if(0==iik)       {k0N = k0+dk; sgn =  1.0;}
         else if(1==iik)  {k0N = k;     sgn = -1.0;}
@@ -186,9 +186,9 @@ MYREAL grt_linear_filon_integ(
             grt_int_Pk_filon(k0N, rs[ir], false, QWV, false, SUM_Gs[iik]);
 
             
-            MYREAL tmp = 1.0 / (rs[ir]*rs[ir]*dk);
-            MYREAL tmpc = tmp * (1.0 - cos(dk*rs[ir]));
-            MYREAL tmps = sgn * tmp * sin(dk*rs[ir]);
+            real_t tmp = 1.0 / (rs[ir]*rs[ir]*dk);
+            real_t tmpc = tmp * (1.0 - cos(dk*rs[ir]));
+            real_t tmps = sgn * tmp * sin(dk*rs[ir]);
 
             for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
                 for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
@@ -234,7 +234,7 @@ MYREAL grt_linear_filon_integ(
 
     // 乘上总系数 sqrt(2.0/(PI*r)) / dk0,  除dks0是在该函数外还会再乘dk0, 并将结果加到原数组中
     for(MYINT ir=0; ir<nr; ++ir){
-        MYREAL tmp = sqrt(2.0/(PI*rs[ir])) / dk0;
+        real_t tmp = sqrt(2.0/(PI*rs[ir])) / dk0;
         for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
             for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
                 sum_J0[ir][i][v] += sum_J[ir][i][v] * tmp;

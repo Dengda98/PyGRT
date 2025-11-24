@@ -37,7 +37,7 @@ void grt_static_topfree_RU(const GRT_MODEL1D *mod1d, RT_MATRIX *M);
  * @param[out]     R_EV            P-SV接收函数矩阵
  * 
  */
-void grt_static_wave2qwv_REV_PSV(const GRT_MODEL1D *mod1d, const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2]);
+void grt_static_wave2qwv_REV_PSV(const GRT_MODEL1D *mod1d, const cplx_t R[2][2], cplx_t R_EV[2][2]);
 
 /**
  * 计算接收点位置的 SH 静态接收矩阵，将波场转为位移，公式(6.3.37)
@@ -46,7 +46,7 @@ void grt_static_wave2qwv_REV_PSV(const GRT_MODEL1D *mod1d, const MYCOMPLEX R[2][
  * @param[out]     R_EVL           SH接收函数值
  * 
  */
-void grt_static_wave2qwv_REV_SH(MYCOMPLEX RL, MYCOMPLEX *R_EVL);
+void grt_static_wave2qwv_REV_SH(cplx_t RL, cplx_t *R_EVL);
 
 /**
  * 计算接收点位置的ui_z的 P-SV 静态接收矩阵，即将波场转为ui_z。
@@ -57,7 +57,7 @@ void grt_static_wave2qwv_REV_SH(MYCOMPLEX RL, MYCOMPLEX *R_EVL);
  * @param[out]     R_EV            P-SV接收函数矩阵
  * 
  */
-void grt_static_wave2qwv_z_REV_PSV(const GRT_MODEL1D *mod1d, const MYCOMPLEX R[2][2], MYCOMPLEX R_EV[2][2]);
+void grt_static_wave2qwv_z_REV_PSV(const GRT_MODEL1D *mod1d, const cplx_t R[2][2], cplx_t R_EV[2][2]);
 
 /**
  * 计算接收点位置的ui_z的 SH 静态接收矩阵，即将波场转为ui_z。
@@ -68,7 +68,7 @@ void grt_static_wave2qwv_z_REV_PSV(const GRT_MODEL1D *mod1d, const MYCOMPLEX R[2
  * @param[out]     R_EVL           SH接收函数值
  * 
  */
-void grt_static_wave2qwv_z_REV_SH(const GRT_MODEL1D *mod1d, MYCOMPLEX RL, MYCOMPLEX *R_EVL);
+void grt_static_wave2qwv_z_REV_SH(const GRT_MODEL1D *mod1d, cplx_t RL, cplx_t *R_EVL);
 
 
 /**

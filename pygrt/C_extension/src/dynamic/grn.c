@@ -44,12 +44,12 @@
  * @param[out]   grn            三分量频谱
  */
 static void recordin_GRN(
-    MYINT iw, MYINT nr, MYCOMPLEX coef, MYCOMPLEX sum_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
-    MYCOMPLEX *grn[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM]
+    MYINT iw, MYINT nr, cplx_t coef, cplx_t sum_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    cplx_t *grn[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM]
 )
 {
     // 局部变量，将某个频点的格林函数谱临时存放
-    MYCOMPLEX (*tmp_grn)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM] = (MYCOMPLEX(*)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM])calloc(nr, sizeof(*tmp_grn));
+    cplx_t (*tmp_grn)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM] = (cplx_t(*)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM])calloc(nr, sizeof(*tmp_grn));
 
     for(MYINT ir=0; ir<nr; ++ir){
         grt_merge_Pk(sum_J[ir], tmp_grn[ir]);
@@ -71,17 +71,17 @@ static void recordin_GRN(
 
 
 void grt_integ_grn_spec(
-    GRT_MODEL1D *mod1d, MYINT nf1, MYINT nf2, MYREAL *freqs,  
-    MYINT nr, MYREAL *rs, MYREAL wI, 
-    MYREAL vmin_ref, MYREAL keps, MYREAL ampk, MYREAL k0, MYREAL Length, MYREAL filonLength, MYREAL safilonTol, MYREAL filonCut,      
+    GRT_MODEL1D *mod1d, MYINT nf1, MYINT nf2, real_t *freqs,  
+    MYINT nr, real_t *rs, real_t wI, 
+    real_t vmin_ref, real_t keps, real_t ampk, real_t k0, real_t Length, real_t filonLength, real_t safilonTol, real_t filonCut,      
     bool print_progressbar, 
 
     // 返回值，代表Z、R、T分量
-    MYCOMPLEX *grn[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
+    cplx_t *grn[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
 
     bool calc_upar,
-    MYCOMPLEX *grn_uiz[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
-    MYCOMPLEX *grn_uir[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
+    cplx_t *grn_uiz[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
+    cplx_t *grn_uir[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
 
     const char *statsstr, // 积分结果输出
     MYINT  nstatsidxs, // 仅输出特定频点
@@ -92,24 +92,24 @@ void grt_integ_grn_spec(
     gettimeofday(&begin_t, NULL);
 
     // 最大震中距
-    MYINT irmax = grt_findMax_MYREAL(rs, nr);
-    MYREAL rmax=rs[irmax];   
+    MYINT irmax = grt_findMax_real_t(rs, nr);
+    real_t rmax=rs[irmax];   
 
-    const MYREAL Rho = mod1d->Rho[mod1d->isrc]; // 震源区密度
-    const MYREAL fac = 1.0/(4.0*PI*Rho);
-    const MYREAL hs = GRT_MAX(fabs(mod1d->depsrc - mod1d->deprcv), GRT_MIN_DEPTH_GAP_SRC_RCV); // hs=max(震源和台站深度差,1.0)
+    const real_t Rho = mod1d->Rho[mod1d->isrc]; // 震源区密度
+    const real_t fac = 1.0/(4.0*PI*Rho);
+    const real_t hs = GRT_MAX(fabs(mod1d->depsrc - mod1d->deprcv), GRT_MIN_DEPTH_GAP_SRC_RCV); // hs=max(震源和台站深度差,1.0)
 
     // 乘相应系数
     k0 *= PI/hs;
-    const MYREAL k02 = k0*k0;
-    const MYREAL ampk2 = ampk*ampk;
+    const real_t k02 = k0*k0;
+    const real_t ampk2 = ampk*ampk;
 
     if(vmin_ref < 0.0)  keps = 0.0;  // 若使用峰谷平均法，则不使用keps进行收敛判断
 
     bool useFIM = (filonLength > 0.0) || (safilonTol > 0.0) ;    // 是否使用Filon积分（包括自适应Filon）
-    const MYREAL dk=PI2/(Length*rmax);     // 波数积分间隔
-    const MYREAL filondk = (filonLength > 0.0) ? PI2/(filonLength*rmax) : 0.0;  // Filon积分间隔
-    const MYREAL filonK = filonCut/rmax;  // 波数积分和Filon积分的分割点
+    const real_t dk=PI2/(Length*rmax);     // 波数积分间隔
+    const real_t filondk = (filonLength > 0.0) ? PI2/(filonLength*rmax) : 0.0;  // Filon积分间隔
+    const real_t filonK = filonCut/rmax;  // 波数积分和Filon积分的分割点
 
 
     // PTAM的积分中间结果, 每个震中距两个文件，因为PTAM对不同震中距使用不同的dk
@@ -139,18 +139,18 @@ void grt_integ_grn_spec(
     // schedule语句可以动态调度任务，最大程度地使用计算资源
     #pragma omp parallel for schedule(guided) default(shared) 
     for(MYINT iw=nf1; iw<=nf2; ++iw){
-        MYREAL k=0.0;               // 波数
-        MYREAL w = freqs[iw]*PI2;     // 实频率
-        MYCOMPLEX omega = w - wI*I; // 复数频率 omega = w - i*wI
-        MYCOMPLEX omega2_inv = 1.0/omega; // 1/omega^2
+        real_t k=0.0;               // 波数
+        real_t w = freqs[iw]*PI2;     // 实频率
+        cplx_t omega = w - wI*I; // 复数频率 omega = w - i*wI
+        cplx_t omega2_inv = 1.0/omega; // 1/omega^2
         omega2_inv = omega2_inv*omega2_inv; 
-        MYCOMPLEX coef = -dk*fac*omega2_inv; // 最终要乘上的系数
+        cplx_t coef = -dk*fac*omega2_inv; // 最终要乘上的系数
 
         // 局部变量，用于求和 sum F(ki,w)Jm(ki*r)ki 
         // 关于形状详见int_Pk()函数内的注释
-        MYCOMPLEX (*sum_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (MYCOMPLEX(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_J));
-        MYCOMPLEX (*sum_uiz_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (calc_upar)? (MYCOMPLEX(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_uiz_J)) : NULL;
-        MYCOMPLEX (*sum_uir_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (calc_upar)? (MYCOMPLEX(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_uir_J)) : NULL;
+        cplx_t (*sum_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (cplx_t(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_J));
+        cplx_t (*sum_uiz_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (calc_upar)? (cplx_t(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_uiz_J)) : NULL;
+        cplx_t (*sum_uir_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (calc_upar)? (cplx_t(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_uir_J)) : NULL;
 
         GRT_MODEL1D *local_mod1d = NULL;
     #ifdef _OPENMP 
@@ -204,7 +204,7 @@ void grt_integ_grn_spec(
         
 
 
-        MYREAL kmax;
+        real_t kmax;
         // vmin_ref的正负性在这里不影响
         kmax = sqrt(k02 + ampk2*(w/vmin_ref)*(w/vmin_ref));
 

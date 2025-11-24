@@ -37,9 +37,9 @@ typedef struct {
     /** 方位角 */
     struct {
         bool active;
-        MYREAL azimuth;
-        MYREAL azrad;
-        MYREAL backazimuth;
+        real_t azimuth;
+        real_t azrad;
+        real_t backazimuth;
     } A;
     /** 旋转到 Z, N, E */
     struct {
@@ -49,8 +49,8 @@ typedef struct {
     struct {
         bool active;
         bool mult_src_mu;
-        MYREAL M0;
-        MYREAL src_mu;
+        real_t M0;
+        real_t src_mu;
     } S;  
     /** 剪切源 */
     struct {
@@ -92,10 +92,10 @@ typedef struct {
     } e;
 
     // 存储不同震源的震源机制相关参数的数组
-    MYREAL mchn[GRT_MECHANISM_NUM];
+    real_t mchn[GRT_MECHANISM_NUM];
 
     // 方向因子数组
-    MYREAL srcRadi[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
+    real_t srcRadi[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
 
     // 最终要计算的震源类型
     MYINT computeType;
