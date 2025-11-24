@@ -57,15 +57,15 @@ typedef struct {
     /** 波形时窗 */
     struct {
         bool active;
-        MYINT nt;
-        MYINT nf;
+        size_t nt;
+        size_t nf;
         real_t dt;
         real_t df;
         real_t winT;  ///< 时窗长度 
         real_t zeta;  ///< 虚频率系数， w <- w - zeta*PI/r* 1j
         real_t wI;    ///< 虚频率  zeta*PI/r
         real_t *freqs;
-        MYINT upsample_n;  ///< 升采样倍数
+        size_t upsample_n;  ///< 升采样倍数
     } N;
     /** 输出目录 */
     struct {
@@ -77,13 +77,13 @@ typedef struct {
         bool active;
         real_t freq1;
         real_t freq2;
-        MYINT nf1;
-        MYINT nf2;
+        size_t nf1;
+        size_t nf2;
     } H;
     /** 波数积分间隔 */
     struct {
         bool active;
-        MYINT method;
+        enum GRT_K_INTEG_METHOD method;
         real_t Length;
         real_t filonLength;
         real_t safilonTol;
@@ -109,8 +109,8 @@ typedef struct {
         bool active;
         char *s_raw;
         char **s_statsidxs;
-        MYINT *statsidxs;
-        MYINT nstatsidxs;
+        size_t *statsidxs;
+        size_t nstatsidxs;
         char *s_statsdir;  ///< 保存目录，和SAC文件目录同级
     } S;
     /** 震中距 */
@@ -119,12 +119,12 @@ typedef struct {
         char *s_raw;
         char **s_rs;
         real_t *rs;
-        MYINT nr;
+        size_t nr;
     } R;
     /** 多线程 */
     struct {
         bool active;
-        MYINT nthreads; ///< 线程数
+        size_t nthreads; ///< 线程数
     } P;
     /** 输出哪些震源的格林函数 */
     struct {
@@ -186,7 +186,7 @@ static void print_Ctrl(const GRT_MODULE_CTRL *Ctrl){
 
     const char format[]      = "   \%-20s  \%s\n";
     const char format_real[] = "   \%-20s  \%.3f\n";
-    const char format_int[]  = "   \%-20s  \%d\n";
+    const char format_size[]  = "   \%-20s  \%zu\n";
     char line[100];
     printf("------------------------------------------------\n");
     printf(format, "PARAMETER", "VALUE");
@@ -205,7 +205,7 @@ static void print_Ctrl(const GRT_MODULE_CTRL *Ctrl){
         snprintf(line, sizeof(line), "%.3f", Ctrl->L.Length);
     }
     printf(format, "Length", line);
-    printf(format_int, "nt", Ctrl->N.nt);
+    printf(format_size, "nt", Ctrl->N.nt);
     printf(format_real, "dt", Ctrl->N.dt);
     printf(format_real, "winT", Ctrl->N.winT);
     printf(format_real, "zeta", Ctrl->N.zeta);
@@ -473,7 +473,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 {
                     char *string = strdup(optarg);
                     char *token = strtok(string, "+");
-                    if(2 != sscanf(token, "%d/%lf", &Ctrl->N.nt, &Ctrl->N.dt)){
+                    if(2 != sscanf(token, "%zu/%lf", &Ctrl->N.nt, &Ctrl->N.dt)){
                         GRTBadOptionError(command, N, "");
                     };
                     if(Ctrl->N.nt <= 0 || Ctrl->N.dt <= 0.0){
@@ -485,11 +485,11 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     while(token != NULL){
                         switch (token[0]){
                             case 'n':
-                                if(1 != sscanf(token+1, "%d", &Ctrl->N.upsample_n)){
+                                if(1 != sscanf(token+1, "%zu", &Ctrl->N.upsample_n)){
                                     GRTBadOptionError(command, N, "");
                                 }
                                 if(Ctrl->N.upsample_n <= 0){
-                                    GRTBadOptionError(command, N, "+%s need positive integer, but get (%d).", token, Ctrl->N.upsample_n);
+                                    GRTBadOptionError(command, N, "+%s need positive integer, but get (%zu).", token, Ctrl->N.upsample_n);
                                 }
                                 break;
 
@@ -664,7 +664,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 }
                 // 转为浮点数
                 Ctrl->R.rs = (real_t*)realloc(Ctrl->R.rs, sizeof(real_t)*(Ctrl->R.nr));
-                for(MYINT i=0; i<Ctrl->R.nr; ++i){
+                for(size_t i=0; i<Ctrl->R.nr; ++i){
                     Ctrl->R.rs[i] = atof(Ctrl->R.s_rs[i]);
                     if(Ctrl->R.rs[i] < 0.0){
                         GRTBadOptionError(command, R, "Can't set negative epicentral distance(%f).", Ctrl->R.rs[i]);
@@ -675,7 +675,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             // 多线程数 -Pnthreads
             case 'P':
                 Ctrl->P.active = true;
-                if(1 != sscanf(optarg, "%d", &Ctrl->P.nthreads)){
+                if(1 != sscanf(optarg, "%zu", &Ctrl->P.nthreads)){
                     GRTBadOptionError(command, P, "");
                 };
                 if(Ctrl->P.nthreads <= 0){
@@ -720,8 +720,8 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 Ctrl->S.s_raw = strdup(optarg);
                 Ctrl->S.s_statsidxs = grt_string_split(optarg, ",", &Ctrl->S.nstatsidxs);
                 // 转为浮点数
-                Ctrl->S.statsidxs = (MYINT*)realloc(Ctrl->S.statsidxs, sizeof(MYINT)*(Ctrl->S.nstatsidxs));
-                for(MYINT i=0; i<Ctrl->S.nstatsidxs; ++i){
+                Ctrl->S.statsidxs = (size_t*)realloc(Ctrl->S.statsidxs, sizeof(size_t)*(Ctrl->S.nstatsidxs));
+                for(size_t i=0; i<Ctrl->S.nstatsidxs; ++i){
                     Ctrl->S.statsidxs[i] = atof(Ctrl->S.s_statsidxs[i]);
                 }
                 break;
@@ -825,7 +825,7 @@ int greenfn_main(int argc, char **argv) {
     Ctrl->N.nf = Ctrl->N.nt/2 + 1;
     Ctrl->N.df = 1.0/Ctrl->N.winT;
     Ctrl->N.freqs = (real_t*)malloc(Ctrl->N.nf*sizeof(real_t));
-    for(int i=0; i<Ctrl->N.nf; ++i){
+    for(size_t i=0; i<Ctrl->N.nf; ++i){
         Ctrl->N.freqs[i] = i*Ctrl->N.df;
     }
 
@@ -855,7 +855,7 @@ int greenfn_main(int argc, char **argv) {
     cplx_t *(*grn_uiz)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM] = (Ctrl->e.active)? (cplx_t*(*)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM]) calloc(Ctrl->R.nr, sizeof(*grn_uiz)) : NULL;
     cplx_t *(*grn_uir)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM] = (Ctrl->e.active)? (cplx_t*(*)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM]) calloc(Ctrl->R.nr, sizeof(*grn_uir)) : NULL;
 
-    for(int ir=0; ir<Ctrl->R.nr; ++ir){
+    for(size_t ir=0; ir<Ctrl->R.nr; ++ir){
         for(int i=0; i<GRT_SRC_M_NUM; ++i){
             for(int c=0; c<GRT_CHANNEL_NUM; ++c){
                 grn[ir][i][c] = (cplx_t*)calloc(Ctrl->N.nf, sizeof(cplx_t));
@@ -903,7 +903,7 @@ int greenfn_main(int argc, char **argv) {
         printf("\n\n");
         printf("------------------------------------------------\n");
         printf(" Distance(km)     Tp(secs)         Ts(secs)     \n");
-        for(int ir=0; ir<Ctrl->R.nr; ++ir){
+        for(size_t ir=0; ir<Ctrl->R.nr; ++ir){
             printf(" %-15s  %-15.3f  %-15.3f\n", Ctrl->R.s_rs[ir], travtPS[ir][0], travtPS[ir][1]);
         }
         printf("------------------------------------------------\n");
@@ -911,7 +911,7 @@ int greenfn_main(int argc, char **argv) {
     }
 
     // 释放内存
-    for(int ir=0; ir<Ctrl->R.nr; ++ir){
+    for(size_t ir=0; ir<Ctrl->R.nr; ++ir){
         for(int i=0; i<GRT_SRC_M_NUM; ++i){
             for(int c=0; c<GRT_CHANNEL_NUM; ++c){
                 GRT_SAFE_FREE_PTR(grn[ir][i][c]);

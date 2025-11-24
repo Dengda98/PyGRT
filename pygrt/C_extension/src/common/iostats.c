@@ -22,9 +22,9 @@ void grt_write_stats(
 {
     fwrite(&k, sizeof(real_t), 1, f0);
 
-    for(MYINT im=0; im<GRT_SRC_M_NUM; ++im){
-        MYINT modr = GRT_SRC_M_ORDERS[im];
-        for(MYINT c=0; c<GRT_QWV_NUM; ++c){
+    for(int im=0; im<GRT_SRC_M_NUM; ++im){
+        int modr = GRT_SRC_M_ORDERS[im];
+        for(int c=0; c<GRT_QWV_NUM; ++c){
             if(modr == 0 && GRT_QWV_CODES[c] == 'v')   continue;
 
             fwrite(&QWV[im][c], sizeof(cplx_t), 1, f0);
@@ -33,16 +33,16 @@ void grt_write_stats(
 }
 
 
-MYINT grt_extract_stats(FILE *bf0, FILE *af0){
+int grt_extract_stats(FILE *bf0, FILE *af0){
     // 打印标题
     if(bf0 == NULL){
         char K[20];
         snprintf(K, sizeof(K), GRT_STRING_FMT, "k");  K[0]=GRT_COMMENT_HEAD;
         fprintf(af0, "%s", K);
 
-        for(MYINT im=0; im<GRT_SRC_M_NUM; ++im){
-            MYINT modr = GRT_SRC_M_ORDERS[im];
-            for(MYINT c=0; c<GRT_QWV_NUM; ++c){
+        for(int im=0; im<GRT_SRC_M_NUM; ++im){
+            int modr = GRT_SRC_M_ORDERS[im];
+            for(int c=0; c<GRT_QWV_NUM; ++c){
                 if(modr == 0 && GRT_QWV_CODES[c] == 'v')   continue;
 
                 snprintf(K, sizeof(K), "%s_%c", GRT_SRC_M_NAME_ABBR[im], GRT_QWV_CODES[c]);
@@ -59,9 +59,9 @@ MYINT grt_extract_stats(FILE *bf0, FILE *af0){
     if(1 != fread(&k, sizeof(real_t), 1, bf0))  return -1;
     fprintf(af0, GRT_REAL_FMT, k);
 
-    for(MYINT im=0; im<GRT_SRC_M_NUM; ++im){
-        MYINT modr = GRT_SRC_M_ORDERS[im];
-        for(MYINT c=0; c<GRT_QWV_NUM; ++c){
+    for(int im=0; im<GRT_SRC_M_NUM; ++im){
+        int modr = GRT_SRC_M_ORDERS[im];
+        for(int c=0; c<GRT_QWV_NUM; ++c){
             if(modr == 0 && GRT_QWV_CODES[c] == 'v')   continue;
 
             if(1 != fread(&val, sizeof(cplx_t), 1, bf0))  return -1;
@@ -79,10 +79,10 @@ void grt_write_stats_ptam(
     cplx_t Fpt[GRT_SRC_M_NUM][GRT_INTEG_NUM][GRT_PTAM_PT_MAX]
 ){
 
-    for(MYINT i=0; i<GRT_PTAM_PT_MAX; ++i){
-        for(MYINT im=0; im<GRT_SRC_M_NUM; ++im){
-            MYINT modr = GRT_SRC_M_ORDERS[im];
-            for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
+    for(int i=0; i<GRT_PTAM_PT_MAX; ++i){
+        for(int im=0; im<GRT_SRC_M_NUM; ++im){
+            int modr = GRT_SRC_M_ORDERS[im];
+            for(int v=0; v<GRT_INTEG_NUM; ++v){
                 if(modr == 0 && v!=0 && v!=2)  continue;
                 
                 fwrite(&Kpt[im][v][i], sizeof(real_t),  1, f0);
@@ -94,15 +94,15 @@ void grt_write_stats_ptam(
 }
 
 
-MYINT grt_extract_stats_ptam(FILE *bf0, FILE *af0){
+int grt_extract_stats_ptam(FILE *bf0, FILE *af0){
     // 打印标题
     if(bf0 == NULL){
         char K[20], K2[20];
-        MYINT icol=0;
+        int icol=0;
 
-        for(MYINT im=0; im<GRT_SRC_M_NUM; ++im){
-            MYINT modr = GRT_SRC_M_ORDERS[im];
-            for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
+        for(int im=0; im<GRT_SRC_M_NUM; ++im){
+            int modr = GRT_SRC_M_ORDERS[im];
+            for(int v=0; v<GRT_INTEG_NUM; ++v){
                 if(modr == 0 && v!=0 && v!=2)  continue;
 
                 snprintf(K2, sizeof(K2), "sum_%s_%d_k", GRT_SRC_M_NAME_ABBR[im], v);
@@ -126,9 +126,9 @@ MYINT grt_extract_stats_ptam(FILE *bf0, FILE *af0){
     real_t k;
     cplx_t val;
 
-    for(MYINT im=0; im<GRT_SRC_M_NUM; ++im){
-        MYINT modr = GRT_SRC_M_ORDERS[im];
-        for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
+    for(int im=0; im<GRT_SRC_M_NUM; ++im){
+        int modr = GRT_SRC_M_ORDERS[im];
+        for(int v=0; v<GRT_INTEG_NUM; ++v){
             if(modr == 0 && v!=0 && v!=2)  continue;
 
             if(1 != fread(&k, sizeof(real_t), 1, bf0))  return -1;

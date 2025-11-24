@@ -83,8 +83,8 @@ int static_stress_main(int argc, char **argv){
 
     // 读入数据是否旋转到ZNE
     {
-        MYINT rot2ZNE_int;
-        NC_CHECK(GRT_NC_FUNC_MYINT(nc_get_att) (in_ncid, NC_GLOBAL, "rot2ZNE", &rot2ZNE_int));
+        int rot2ZNE_int;
+        NC_CHECK(nc_get_att_int(in_ncid, NC_GLOBAL, "rot2ZNE", &rot2ZNE_int));
         rot2ZNE = !(rot2ZNE_int == 0);
     }
 
@@ -92,8 +92,8 @@ int static_stress_main(int argc, char **argv){
     const char *chs = (rot2ZNE)? GRT_ZNE_CODES : GRT_ZRT_CODES;
 
     // 读入的数据是否有位移偏导
-    MYINT calc_upar;
-    NC_CHECK(GRT_NC_FUNC_MYINT(nc_get_att) (in_ncid, NC_GLOBAL, "calc_upar", &calc_upar));
+    int calc_upar;
+    NC_CHECK(nc_get_att_int(in_ncid, NC_GLOBAL, "calc_upar", &calc_upar));
     if(calc_upar == 0){
         GRTRaiseError("[%s] Input grid didn't have displacement derivatives.", command);
     }

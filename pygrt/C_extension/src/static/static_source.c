@@ -19,15 +19,15 @@
 void grt_static_source_coef_PSV(const GRT_MODEL1D *mod1d, cplx_t coef[GRT_SRC_M_NUM][GRT_QWV_NUM-1][2])
 {
     // 先全部赋0 
-    for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-        for(MYINT j=0; j<GRT_QWV_NUM-1; ++j){
-            for(MYINT p=0; p<2; ++p){
+    for(int i=0; i<GRT_SRC_M_NUM; ++i){
+        for(int j=0; j<GRT_QWV_NUM-1; ++j){
+            for(int p=0; p<2; ++p){
                 coef[i][j][p] = 0.0;
             }
         }
     }
 
-    MYINT isrc = mod1d->isrc;
+    size_t isrc = mod1d->isrc;
     cplx_t delta = mod1d->delta[isrc];
     real_t k = mod1d->k;
 
@@ -63,8 +63,8 @@ void grt_static_source_coef_SH(const GRT_MODEL1D *mod1d, cplx_t coef[GRT_SRC_M_N
     real_t k = mod1d->k;
     
     // 先全部赋0 
-    for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-        for(MYINT p=0; p<2; ++p){
+    for(int i=0; i<GRT_SRC_M_NUM; ++i){
+        for(int p=0; p<2; ++p){
             coef[i][p] = 0.0;
         }
     }

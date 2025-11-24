@@ -10,7 +10,7 @@
 
 import os
 from ctypes import \
-    c_double, c_float, c_int, c_bool, c_char_p, c_void_p,\
+    c_double, c_float, c_int, c_size_t, c_bool, c_char_p, c_void_p,\
     POINTER, cdll
 
 from .c_structures import * 
@@ -30,8 +30,8 @@ libgrt = cdll.LoadLibrary(
 C_grt_integ_grn_spec = libgrt.grt_integ_grn_spec
 """C库中计算格林函数的主函数 integ_grn_spec, 详见C API同名函数"""
 C_grt_integ_grn_spec.argtypes = [
-    POINTER(c_GRT_MODEL1D), c_int, c_int, PREAL,       
-    c_int, PREAL, REAL,
+    POINTER(c_GRT_MODEL1D), c_size_t, c_size_t, PREAL,       
+    c_size_t, PREAL, REAL,
     REAL, REAL, REAL, REAL, REAL, REAL, REAL, REAL,
     c_bool,
 
@@ -44,8 +44,8 @@ C_grt_integ_grn_spec.argtypes = [
     POINTER((PCPLX*CHANNEL_NUM)*SRC_M_NUM),
 
     c_char_p,
-    c_int, 
-    POINTER(c_int)
+    c_size_t, 
+    POINTER(c_size_t)
 ]
 
 
@@ -53,7 +53,7 @@ C_grt_integ_static_grn = libgrt.grt_integ_static_grn
 """计算静态格林函数"""
 C_grt_integ_static_grn.restype = None
 C_grt_integ_static_grn.argtypes = [
-    POINTER(c_GRT_MODEL1D), c_int, PREAL, REAL, REAL, REAL, REAL, 
+    POINTER(c_GRT_MODEL1D), c_size_t, PREAL, REAL, REAL, REAL, REAL, 
     REAL, REAL, REAL, 
     POINTER((REAL*CHANNEL_NUM)*SRC_M_NUM),
     c_bool,

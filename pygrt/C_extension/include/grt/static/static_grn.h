@@ -42,7 +42,7 @@
  * 
  */
 void grt_integ_static_grn(
-    GRT_MODEL1D *mod1d, MYINT nr, real_t *rs, real_t vmin_ref, real_t keps, real_t k0, real_t Length,
+    GRT_MODEL1D *mod1d, size_t nr, real_t *rs, real_t vmin_ref, real_t keps, real_t k0, real_t Length,
     real_t filonLength, real_t safilonTol, real_t filonCut, 
 
     // 返回值，代表Z、R、T分量

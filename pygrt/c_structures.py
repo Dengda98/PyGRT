@@ -95,11 +95,11 @@ class c_GRT_MODEL1D(Structure):
 
     """
     _fields_ = [
-        ('n', c_int), 
+        ('n', c_size_t), 
         ("depsrc", REAL),
         ("deprcv", REAL),
-        ('isrc', c_int),
-        ('ircv', c_int),
+        ('isrc', c_size_t),
+        ('ircv', c_size_t),
         ('ircvup', c_bool),
         ('io_depth', c_bool),
 

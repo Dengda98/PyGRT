@@ -19,4 +19,4 @@
  * @param[in]    prefix         进度条前缀字符串
  * @param[in]    percentage     百分比(整数)
  */
-void grt_printprogressBar(const char *prefix, MYINT percentage);
+void grt_printprogressBar(const char *prefix, int percentage);

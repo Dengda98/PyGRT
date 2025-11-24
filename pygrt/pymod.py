@@ -327,7 +327,7 @@ class PyModel1D:
             statsidxs = np.array([-1])
 
         statsidxs = np.array(statsidxs)
-        c_statsidxs = npct.as_ctypes(np.array(statsidxs).astype('i'))
+        c_statsidxs = npct.as_ctypes(np.array(statsidxs).astype(np.uint64))   # size_t
         nstatsidxs = len(statsidxs)
 
 

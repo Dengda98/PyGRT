@@ -24,7 +24,7 @@
  * 
  * @return   子字符串数组
  */
-char ** grt_string_split(const char *string, const char *delim, int *size);
+char ** grt_string_split(const char *string, const char *delim, size_t *size);
 
 /**
  * 从文本文件中，将每行内容读入字符串数组
@@ -35,7 +35,7 @@ char ** grt_string_split(const char *string, const char *delim, int *size);
  * @return   字符串数组
  * 
  */
-char ** grt_string_from_file(FILE *fp, int *size);
+char ** grt_string_from_file(FILE *fp, size_t *size);
 
 /**
  * 判断字符串是否由特定的若个字符组成（充分条件）
@@ -126,7 +126,7 @@ void grt_GF_freq2time_write_to_file(
     const char *command, const GRT_MODEL1D *mod1d, 
     const char *s_output_dir, const char *s_modelname, const char *s_depsrc, const char *s_deprcv,    
     const real_t wI, GRT_FFTW_HOLDER *pt_fh,
-    const MYINT nr, char *s_dists[nr], const real_t dists[nr], real_t travtPS[nr][2],
+    const size_t nr, char *s_dists[nr], const real_t dists[nr], real_t travtPS[nr][2],
     const real_t depsrc, const real_t deprcv,
     const real_t delayT0, const real_t delayV0, const bool calc_upar,
     const bool doEX, const bool doVF, const bool doHF, const bool doDC, 

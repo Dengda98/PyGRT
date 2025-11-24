@@ -83,7 +83,7 @@ void grt_wave2qwv_z_REV_SH(const GRT_MODEL1D *mod1d, cplx_t RL, cplx_t *R_EVL);
  * @param[out]     M             R/T矩阵
  * 
  */
-void grt_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M);
+void grt_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
 
 
 /**
@@ -95,25 +95,25 @@ void grt_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M);
  * @param[out]     M             R/T矩阵
  * 
  */
-void grt_RT_matrix_SH(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M);
+void grt_RT_matrix_SH(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
 
 /** 液-液 界面 */
-void grt_RT_matrix_ll_PSV(const GRT_MODEL1D *mod1d, MYINT iy, RT_MATRIX *M);
+void grt_RT_matrix_ll_PSV(const GRT_MODEL1D *mod1d, size_t iy, RT_MATRIX *M);
 
 /** 液-液 界面 */
 void grt_RT_matrix_ll_SH(RT_MATRIX *M);
 
 /** 液-固 界面 */
-void grt_RT_matrix_ls_PSV(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M);
+void grt_RT_matrix_ls_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
 
 /** 液-固 界面 */
-void grt_RT_matrix_ls_SH(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M);
+void grt_RT_matrix_ls_SH(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
 
 /** 固-固 界面 */
-void grt_RT_matrix_ss_PSV(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M);
+void grt_RT_matrix_ss_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
 
 /** 固-固 界面 */
-void grt_RT_matrix_ss_SH(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M);
+void grt_RT_matrix_ss_SH(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
 
 /**
  * 为 R/T 矩阵添加时间延迟因子
@@ -123,7 +123,7 @@ void grt_RT_matrix_ss_SH(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M)
  * @param[out]     M             R/T矩阵    
  * 
  */
-void grt_delay_RT_matrix(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M);
+void grt_delay_RT_matrix(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
 
 
 /**
@@ -148,7 +148,7 @@ void grt_delay_RT_matrix(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M)
  */
 void grt_get_layer_D(
     cplx_t xa, cplx_t xb, cplx_t kbkb, cplx_t mu, 
-    cplx_t omega, real_t rho, real_t k, cplx_t D[4][4], bool inverse, MYINT liquid_invtype);
+    cplx_t omega, real_t rho, real_t k, cplx_t D[4][4], bool inverse, int liquid_invtype);
 
 /** 子矩阵 D11，函数参数见 get_layer_D 函数 */
 void grt_get_layer_D11(
@@ -212,4 +212,4 @@ void grt_RT_matrix_from_4x4(
     cplx_t omega, real_t thk,
     real_t k, 
     cplx_t RD[2][2], cplx_t *RDL, cplx_t RU[2][2], cplx_t *RUL, 
-    cplx_t TD[2][2], cplx_t *TDL, cplx_t TU[2][2], cplx_t *TUL, MYINT *stats);
+    cplx_t TD[2][2], cplx_t *TDL, cplx_t TU[2][2], cplx_t *TUL, int *stats);

@@ -67,12 +67,12 @@ typedef struct {
     /** 积分次数 */
     struct {
         bool active;
-        MYINT int_times;
+        int int_times;
     } I;
     /** 求导次数 */
     struct {
         bool active;
-        MYINT dif_times;
+        int dif_times;
     } J;
     /** 时间函数 */
     struct {
@@ -98,7 +98,7 @@ typedef struct {
     real_t srcRadi[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
 
     // 最终要计算的震源类型
-    MYINT computeType;
+    int computeType;
     char s_computeType[3];
 
 } GRT_MODULE_CTRL;

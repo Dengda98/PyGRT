@@ -20,7 +20,7 @@
  * @param[out]     invM     逆矩阵
  * @param[out]     stats    状态代码，是否有除零错误，非0为异常值
  */ 
-inline GCC_ALWAYS_INLINE void grt_cmat2x2_inv(const cplx_t M[2][2], cplx_t invM[2][2], MYINT *stats) {
+inline GCC_ALWAYS_INLINE void grt_cmat2x2_inv(const cplx_t M[2][2], cplx_t invM[2][2], int *stats) {
     cplx_t M00 = M[0][0];
     cplx_t M01 = M[0][1];
     cplx_t M10 = M[1][0];
@@ -155,8 +155,8 @@ inline GCC_ALWAYS_INLINE void grt_cmat2x2_assign(const cplx_t M1[2][2], cplx_t M
  * @param[in]     M2            M2矩阵 
  * @param[out]    M             积矩阵 M1 * M2
  */
-inline GCC_ALWAYS_INLINE void grt_cmatmxn_mul(MYINT m1, MYINT n1, MYINT p1, const cplx_t M1[m1][n1], const cplx_t M2[n1][p1], cplx_t M[m1][p1]){
-    MYINT m, n, k;
+inline GCC_ALWAYS_INLINE void grt_cmatmxn_mul(size_t m1, size_t n1, size_t p1, const cplx_t M1[m1][n1], const cplx_t M2[n1][p1], cplx_t M[m1][p1]){
+    size_t m, n, k;
     cplx_t M0[m1][p1];
     for(m=0; m<m1; ++m){
         for(n=0; n<p1; ++n){
@@ -183,8 +183,8 @@ inline GCC_ALWAYS_INLINE void grt_cmatmxn_mul(MYINT m1, MYINT n1, MYINT p1, cons
  * @param[in]     M1            M1矩阵 
  * @param[out]    M2            M2矩阵 (M1^T)
  */
-inline GCC_ALWAYS_INLINE void grt_cmatmxn_transpose(MYINT m1, MYINT n1, const cplx_t M1[m1][n1], cplx_t M2[n1][m1]){
-    MYINT m, n;
+inline GCC_ALWAYS_INLINE void grt_cmatmxn_transpose(size_t m1, size_t n1, const cplx_t M1[m1][n1], cplx_t M2[n1][m1]){
+    size_t m, n;
     cplx_t M0[n1][m1];
     for(m=0; m<m1; ++m){
         for(n=0; n<n1; ++n){
@@ -212,9 +212,9 @@ inline GCC_ALWAYS_INLINE void grt_cmatmxn_transpose(MYINT m1, MYINT n1, const cp
  * @param[in]     ln           子矩阵列数
  * @param[out]    Q            子矩阵
  */
-inline GCC_ALWAYS_INLINE void grt_cmatmxn_block(MYINT m1, MYINT n1, const cplx_t M[m1][n1], MYINT im, MYINT in, MYINT lm, MYINT ln, cplx_t Q[lm][ln]){
-    for(MYINT m=0; m<lm; ++m){
-        for(MYINT n=0; n<ln; ++n){
+inline GCC_ALWAYS_INLINE void grt_cmatmxn_block(size_t m1, size_t n1, const cplx_t M[m1][n1], size_t im, size_t in, size_t lm, size_t ln, cplx_t Q[lm][ln]){
+    for(size_t m=0; m<lm; ++m){
+        for(size_t n=0; n<ln; ++n){
             Q[m][n] = M[im+m][in+n];
         }
     }
@@ -233,9 +233,9 @@ inline GCC_ALWAYS_INLINE void grt_cmatmxn_block(MYINT m1, MYINT n1, const cplx_t
  * @param[in]     ln           子矩阵列数
  * @param[out]    Q            子矩阵
  */
-inline GCC_ALWAYS_INLINE void grt_cmatmxn_block_assign(MYINT m1, MYINT n1, cplx_t M[m1][n1], MYINT im, MYINT in, MYINT lm, MYINT ln, const cplx_t Q[lm][ln]){
-    for(MYINT m=0; m<lm; ++m){
-        for(MYINT n=0; n<ln; ++n){
+inline GCC_ALWAYS_INLINE void grt_cmatmxn_block_assign(size_t m1, size_t n1, cplx_t M[m1][n1], size_t im, size_t in, size_t lm, size_t ln, const cplx_t Q[lm][ln]){
+    for(size_t m=0; m<lm; ++m){
+        for(size_t n=0; n<ln; ++n){
             M[im+m][in+n] = Q[m][n];
         }
     }
@@ -250,9 +250,9 @@ inline GCC_ALWAYS_INLINE void grt_cmatmxn_block_assign(MYINT m1, MYINT n1, cplx_
  * @param[in]     M1          M1矩阵 
  * 
  */
-inline GCC_ALWAYS_INLINE void grt_cmatmxn_print(MYINT m1, MYINT n1, const cplx_t M1[m1][n1]){
-    for(MYINT i=0; i<m1; ++i){
-        for(MYINT j=0; j<n1; ++j){
+inline GCC_ALWAYS_INLINE void grt_cmatmxn_print(size_t m1, size_t n1, const cplx_t M1[m1][n1]){
+    for(size_t i=0; i<m1; ++i){
+        for(size_t j=0; j<n1; ++j){
             fprintf(stderr, " %15.5e + J%-15.5e ", creal(M1[i][j]), cimag(M1[i][j]));
         }
         fprintf(stderr, "\n");
@@ -267,15 +267,15 @@ inline GCC_ALWAYS_INLINE void grt_cmatmxn_print(MYINT m1, MYINT n1, const cplx_t
  * @param[in]      M2     向量
  * @param[out]     M      积矩阵, M1 * M2
  */
-inline GCC_ALWAYS_INLINE void grt_cmatmx1_mul(MYINT m1, MYINT n1, const cplx_t M1[m1][n1], const cplx_t M2[n1], cplx_t M[n1]){
+inline GCC_ALWAYS_INLINE void grt_cmatmx1_mul(size_t m1, size_t n1, const cplx_t M1[m1][n1], const cplx_t M2[n1], cplx_t M[n1]){
     cplx_t M0[n1];
-    for(MYINT i=0; i<m1; ++i){
+    for(size_t i=0; i<m1; ++i){
         M0[i] = 0.0;
-        for(MYINT j=0; j<n1; ++j){
+        for(size_t j=0; j<n1; ++j){
             M0[i] += M1[i][j] * M2[j];
         }
     }
-    for(MYINT i=0; i<n1; ++i){
+    for(size_t i=0; i<n1; ++i){
         M[i] = M0[i];
     }
 }

@@ -38,7 +38,7 @@ void grt_write_stats(
  * 
  * @return   0表示读取成功，-1表示读取结果/失败
  */
-MYINT grt_extract_stats(FILE *bf0, FILE *af0);
+int grt_extract_stats(FILE *bf0, FILE *af0);
 
 
 
@@ -67,5 +67,5 @@ void grt_write_stats_ptam(
  * 
  * @return   0表示读取成功，-1表示读取结果/失败
  */
-MYINT grt_extract_stats_ptam(FILE *bf0, FILE *af0);
+int grt_extract_stats_ptam(FILE *bf0, FILE *af0);
 

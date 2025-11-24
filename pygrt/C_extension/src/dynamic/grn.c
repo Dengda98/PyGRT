@@ -44,19 +44,19 @@
  * @param[out]   grn            三分量频谱
  */
 static void recordin_GRN(
-    MYINT iw, MYINT nr, cplx_t coef, cplx_t sum_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    size_t iw, size_t nr, cplx_t coef, cplx_t sum_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     cplx_t *grn[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM]
 )
 {
     // 局部变量，将某个频点的格林函数谱临时存放
     cplx_t (*tmp_grn)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM] = (cplx_t(*)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM])calloc(nr, sizeof(*tmp_grn));
 
-    for(MYINT ir=0; ir<nr; ++ir){
+    for(size_t ir=0; ir<nr; ++ir){
         grt_merge_Pk(sum_J[ir], tmp_grn[ir]);
 
-        for(MYINT i=0; i<GRT_SRC_M_NUM; ++i) {
-            MYINT modr = GRT_SRC_M_ORDERS[i];
-            for(MYINT c=0; c<GRT_CHANNEL_NUM; ++c){
+        for(int i=0; i<GRT_SRC_M_NUM; ++i) {
+            int modr = GRT_SRC_M_ORDERS[i];
+            for(int c=0; c<GRT_CHANNEL_NUM; ++c){
                 if(modr == 0 && GRT_ZRT_CODES[c] == 'T')  continue;
 
                 grn[ir][i][c][iw] = coef * tmp_grn[ir][i][c];
@@ -71,8 +71,8 @@ static void recordin_GRN(
 
 
 void grt_integ_grn_spec(
-    GRT_MODEL1D *mod1d, MYINT nf1, MYINT nf2, real_t *freqs,  
-    MYINT nr, real_t *rs, real_t wI, 
+    GRT_MODEL1D *mod1d, size_t nf1, size_t nf2, real_t *freqs,  
+    size_t nr, real_t *rs, real_t wI, 
     real_t vmin_ref, real_t keps, real_t ampk, real_t k0, real_t Length, real_t filonLength, real_t safilonTol, real_t filonCut,      
     bool print_progressbar, 
 
@@ -84,15 +84,15 @@ void grt_integ_grn_spec(
     cplx_t *grn_uir[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
 
     const char *statsstr, // 积分结果输出
-    MYINT  nstatsidxs, // 仅输出特定频点
-    MYINT *statsidxs
+    size_t  nstatsidxs, // 仅输出特定频点
+    size_t *statsidxs
 ){
     // 程序运行开始时间
     struct timeval begin_t;
     gettimeofday(&begin_t, NULL);
 
     // 最大震中距
-    MYINT irmax = grt_findMax_real_t(rs, nr);
+    size_t irmax = grt_findMax_real_t(rs, nr);
     real_t rmax=rs[irmax];   
 
     const real_t Rho = mod1d->Rho[mod1d->isrc]; // 震源区密度
@@ -116,9 +116,9 @@ void grt_integ_grn_spec(
     // 在文件名后加后缀，区分不同震中距
     char **ptam_fstatsdir = (char**)calloc(nr, sizeof(char*));
     if(statsstr!=NULL && nstatsidxs > 0 && vmin_ref < 0.0){
-        for(MYINT ir=0; ir<nr; ++ir){
+        for(size_t ir=0; ir<nr; ++ir){
             // 新建文件夹目录 
-            GRT_SAFE_ASPRINTF(&ptam_fstatsdir[ir], "%s/PTAM_%04d_%.5e", statsstr, ir, rs[ir]);
+            GRT_SAFE_ASPRINTF(&ptam_fstatsdir[ir], "%s/PTAM_%04zu_%.5e", statsstr, ir, rs[ir]);
             if(mkdir(ptam_fstatsdir[ir], 0777) != 0){
                 if(errno != EEXIST){
                     printf("Unable to create folder %s. Error code: %d\n", ptam_fstatsdir[ir], errno);
@@ -130,15 +130,15 @@ void grt_integ_grn_spec(
 
 
     // 进度条变量 
-    MYINT progress=0;
+    int progress=0;
 
     // 记录每个频率的计算中是否有除0错误
-    MYINT *freq_invstats = (MYINT *)calloc(nf2+1, sizeof(MYINT));
+    int *freq_invstats = (int *)calloc(nf2+1, sizeof(int));
 
     // 频率omega循环
     // schedule语句可以动态调度任务，最大程度地使用计算资源
     #pragma omp parallel for schedule(guided) default(shared) 
-    for(MYINT iw=nf1; iw<=nf2; ++iw){
+    for(size_t iw=nf1; iw<=nf2; ++iw){
         real_t k=0.0;               // 波数
         real_t w = freqs[iw]*PI2;     // 实频率
         cplx_t omega = w - wI*I; // 复数频率 omega = w - i*wI
@@ -166,7 +166,7 @@ void grt_integ_grn_spec(
         grt_attenuate_mod1d(local_mod1d, omega);
 
         // 是否要输出积分过程文件
-        bool needfstats = (statsstr!=NULL && ((grt_findElement_MYINT(statsidxs, nstatsidxs, iw) >= 0) || (grt_findElement_MYINT(statsidxs, nstatsidxs, -1) >= 0)));
+        bool needfstats = (statsstr!=NULL && ((grt_findElement_size_t(statsidxs, nstatsidxs, iw) >= 0) || (grt_findElement_size_t(statsidxs, nstatsidxs, -1) >= 0)));
 
         // 为当前频率创建波数积分记录文件
         FILE *fstats = NULL;
@@ -175,12 +175,12 @@ void grt_integ_grn_spec(
         {
             char *fname = NULL;
             if(needfstats){
-                GRT_SAFE_ASPRINTF(&fname, "%s/K_%04d_%.5e", statsstr, iw, freqs[iw]);
+                GRT_SAFE_ASPRINTF(&fname, "%s/K_%04zu_%.5e", statsstr, iw, freqs[iw]);
                 fstats = fopen(fname, "wb");
             }
-            for(MYINT ir=0; ir<nr; ++ir){
-                for(MYINT i=0; i<GRT_SRC_M_NUM; ++i){
-                    for(MYINT v=0; v<GRT_INTEG_NUM; ++v){
+            for(size_t ir=0; ir<nr; ++ir){
+                for(int i=0; i<GRT_SRC_M_NUM; ++i){
+                    for(int v=0; v<GRT_INTEG_NUM; ++v){
                         sum_J[ir][i][v] = 0.0;
                         if(calc_upar){
                             sum_uiz_J[ir][i][v] = 0.0;
@@ -192,9 +192,9 @@ void grt_integ_grn_spec(
                 ptam_fstatsnr[ir][0] = ptam_fstatsnr[ir][1] = NULL;
                 if(needfstats && vmin_ref < 0.0){
                     // 峰谷平均法
-                    GRT_SAFE_ASPRINTF(&fname, "%s/K_%04d_%.5e", ptam_fstatsdir[ir], iw, freqs[iw]);
+                    GRT_SAFE_ASPRINTF(&fname, "%s/K_%04zu_%.5e", ptam_fstatsdir[ir], iw, freqs[iw]);
                     ptam_fstatsnr[ir][0] = fopen(fname, "wb");
-                    GRT_SAFE_ASPRINTF(&fname, "%s/PTAM_%04d_%.5e", ptam_fstatsdir[ir], iw, freqs[iw]);
+                    GRT_SAFE_ASPRINTF(&fname, "%s/PTAM_%04zu_%.5e", ptam_fstatsdir[ir], iw, freqs[iw]);
                     ptam_fstatsnr[ir][1] = fopen(fname, "wb");
                 }
             } // end init rs loop
@@ -267,7 +267,7 @@ void grt_integ_grn_spec(
 
 
         if(fstats!=NULL) fclose(fstats);
-        for(MYINT ir=0; ir<nr; ++ir){
+        for(size_t ir=0; ir<nr; ++ir){
             if(ptam_fstatsnr[ir][0]!=NULL){
                 fclose(ptam_fstatsnr[ir][0]);
             }
@@ -300,9 +300,9 @@ void grt_integ_grn_spec(
     GRT_SAFE_FREE_PTR_ARRAY(ptam_fstatsdir, nr);
 
     // 打印 freq_invstats
-    for(MYINT iw=nf1; iw<=nf2; ++iw){
+    for(size_t iw=nf1; iw<=nf2; ++iw){
         if(freq_invstats[iw]==GRT_INVERSE_FAILURE){
-            fprintf(stderr, "iw=%d, freq=%e(Hz), meet Zero Divison Error, results are filled with 0.\n", iw, freqs[iw]);
+            fprintf(stderr, "iw=%zu, freq=%e(Hz), meet Zero Divison Error, results are filled with 0.\n", iw, freqs[iw]);
         }
     }
     GRT_SAFE_FREE_PTR(freq_invstats);

@@ -65,7 +65,7 @@ void grt_topfree_RU(const GRT_MODEL1D *mod1d, RT_MATRIX *M)
 
 void grt_wave2qwv_REV_PSV(const GRT_MODEL1D *mod1d, cplx_t R[2][2], cplx_t R_EV[2][2])
 {
-    MYINT ircv = mod1d->ircv;
+    size_t ircv = mod1d->ircv;
     cplx_t xa = mod1d->xa[ircv];
     cplx_t xb = mod1d->xb[ircv];
     real_t k = mod1d->k;
@@ -99,7 +99,7 @@ void grt_wave2qwv_REV_PSV(const GRT_MODEL1D *mod1d, cplx_t R[2][2], cplx_t R_EV[
 
 void grt_wave2qwv_REV_SH(const GRT_MODEL1D *mod1d, cplx_t RL, cplx_t *R_EVL)
 {
-    MYINT ircv = mod1d->ircv;
+    size_t ircv = mod1d->ircv;
     cplx_t xb = mod1d->xb[ircv];
     real_t k = mod1d->k;
 
@@ -116,7 +116,7 @@ void grt_wave2qwv_REV_SH(const GRT_MODEL1D *mod1d, cplx_t RL, cplx_t *R_EVL)
 
 void grt_wave2qwv_z_REV_PSV(const GRT_MODEL1D *mod1d, const cplx_t R[2][2], cplx_t R_EV[2][2])
 {
-    MYINT ircv = mod1d->ircv;
+    size_t ircv = mod1d->ircv;
     cplx_t xa = mod1d->xa[ircv];
     cplx_t xb = mod1d->xb[ircv];
     real_t k = mod1d->k;
@@ -149,7 +149,7 @@ void grt_wave2qwv_z_REV_PSV(const GRT_MODEL1D *mod1d, const cplx_t R[2][2], cplx
 
 void grt_wave2qwv_z_REV_SH(const GRT_MODEL1D *mod1d, cplx_t RL, cplx_t *R_EVL)
 {
-    MYINT ircv = mod1d->ircv;
+    size_t ircv = mod1d->ircv;
     cplx_t xb = mod1d->xb[ircv];
     real_t k = mod1d->k;
     
@@ -171,7 +171,7 @@ void grt_wave2qwv_z_REV_SH(const GRT_MODEL1D *mod1d, cplx_t RL, cplx_t *R_EVL)
 }    
 
 
-void grt_RT_matrix_ll_PSV(const GRT_MODEL1D *mod1d, MYINT iy, RT_MATRIX *M)
+void grt_RT_matrix_ll_PSV(const GRT_MODEL1D *mod1d, size_t iy, RT_MATRIX *M)
 {
     MODEL_2LAYS_ATTRIB(cplx_t, xa);
     MODEL_2LAYS_ATTRIB(real_t, Rho);
@@ -206,7 +206,7 @@ void grt_RT_matrix_ll_SH(RT_MATRIX *M)
 
 
 
-void grt_RT_matrix_ls_PSV(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M)
+void grt_RT_matrix_ls_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
 {
     MODEL_2LAYS_ATTRIB(cplx_t, xa);
     MODEL_2LAYS_ATTRIB(cplx_t, xb);
@@ -219,7 +219,7 @@ void grt_RT_matrix_ls_PSV(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M
 
     // 讨论液-固 or 固-液
     bool isfluidUp = (mu1 == 0.0);  // 上层是否为液体
-    MYINT sgn = 1;
+    int sgn = 1;
     if(isfluidUp && mu2 == 0.0){
         GRTRaiseError("Error: fluid-fluid interface is not allowed in function %s\n", __func__);
     }
@@ -275,7 +275,7 @@ void grt_RT_matrix_ls_PSV(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M
 }
 
 
-void grt_RT_matrix_ls_SH(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M)
+void grt_RT_matrix_ls_SH(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
 {
     // TEMPORARY!!!!!!
     // 之后不再使用mu或其它变量来判断是否为液体，直接定义一个新的数组
@@ -309,7 +309,7 @@ void grt_RT_matrix_ls_SH(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M)
 
 
 
-void grt_RT_matrix_ss_PSV(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M)
+void grt_RT_matrix_ss_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
 {
     MODEL_2LAYS_ATTRIB(cplx_t, xa);
     MODEL_2LAYS_ATTRIB(cplx_t, xb);
@@ -386,7 +386,7 @@ void grt_RT_matrix_ss_PSV(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M
 }
 
 
-void grt_RT_matrix_ss_SH(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M)
+void grt_RT_matrix_ss_SH(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
 {
     MODEL_2LAYS_ATTRIB(cplx_t, xb);
     MODEL_2LAYS_ATTRIB(cplx_t, mu);
@@ -404,7 +404,7 @@ void grt_RT_matrix_ss_SH(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M)
 
 
 
-void grt_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M)
+void grt_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
 {
     // TEMPORARY!!!!!!
     // 之后不再使用mu或其它变量来判断是否为液体，直接定义一个新的数组
@@ -423,7 +423,7 @@ void grt_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M)
 }
 
 
-void grt_RT_matrix_SH(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M)
+void grt_RT_matrix_SH(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
 {
     // TEMPORARY!!!!!!
     // 之后不再使用mu或其它变量来判断是否为液体，直接定义一个新的数组
@@ -442,7 +442,7 @@ void grt_RT_matrix_SH(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M)
 }
 
 
-void grt_delay_RT_matrix(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M)
+void grt_delay_RT_matrix(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
 {
     real_t thk = mod1d->Thk[iy-1];
     cplx_t xa1 = mod1d->xa[iy-1];
@@ -475,7 +475,7 @@ void grt_delay_RT_matrix(const GRT_MODEL1D *mod1d, const MYINT iy, RT_MATRIX *M)
 
 void grt_get_layer_D(
     cplx_t xa, cplx_t xb, cplx_t kbkb, cplx_t mu,
-    cplx_t omega, real_t rho, real_t k, cplx_t D[4][4], bool inverse, MYINT liquid_invtype)
+    cplx_t omega, real_t rho, real_t k, cplx_t D[4][4], bool inverse, int liquid_invtype)
 {
     // 第iy层物理量
     cplx_t Omg;
@@ -491,8 +491,8 @@ void grt_get_layer_D(
             D[1][0] = 2*mu*Omg*k*xa;      D[1][1] = -2*k*mu*k*xa*k*xb;   D[1][2] = -k*k*xa;              D[1][3] = k*xa*k*xb;   
             D[2][0] = -2*k*mu*k*xa*k*xb;  D[2][1] = -2*mu*Omg*k*xb;      D[2][2] = k*xa*k*xb;            D[2][3] = k*k*xb;   
             D[3][0] = -2*mu*Omg*k*xa;     D[3][1] = -2*k*mu*k*xa*k*xb;   D[3][2] = k*k*xa;               D[3][3] = k*xa*k*xb;
-            for(MYINT i=0; i<4; ++i){
-                for(MYINT j=0; j<4; ++j){
+            for(int i=0; i<4; ++i){
+                for(int j=0; j<4; ++j){
                     D[i][j] /= - 2*mu*kbkb*k*xa*k*xb;
                 }
             }
@@ -510,8 +510,8 @@ void grt_get_layer_D(
                 D[1][0] = 0.0;                D[1][1] = 0.0;                 D[1][2] = 0.0;                  D[1][3] = 0.0;   
                 D[2][0] = xa;                 D[2][1] = - (1.0 + Omg*Omg);   D[2][2] = - xa * Omg;           D[2][3] = 0.0;   
                 D[3][0] = 0.0;                D[3][1] = 0.0;                 D[3][2] = 0.0;                  D[3][3] = 0.0;
-                for(MYINT i=0; i<4; ++i){
-                    for(MYINT j=0; j<4; ++j){
+                for(int i=0; i<4; ++i){
+                    for(int j=0; j<4; ++j){
                         D[i][j] /= 2*k*xa*(1.0 + Omg*Omg);
                     }
                 }
@@ -646,8 +646,8 @@ void grt_get_layer_T(
     } else{
         T[0][0] = mu*k*xb;      T[0][1] = 1;
         T[1][0] = mu*k*xb;      T[1][1] = - 1;
-        for(MYINT i=0; i<2; ++i){
-            for(MYINT j=0; j<2; ++j){
+        for(int i=0; i<2; ++i){
+            for(int j=0; j<2; ++j){
                 T[i][j] *= 1/(2*mu*k*k*xb);
             }
         }
@@ -698,7 +698,7 @@ void grt_RT_matrix_from_4x4(
     cplx_t omega, real_t thk,
     real_t k, 
     cplx_t RD[2][2], cplx_t *RDL, cplx_t RU[2][2], cplx_t *RUL, 
-    cplx_t TD[2][2], cplx_t *TDL, cplx_t TU[2][2], cplx_t *TUL, MYINT *stats)
+    cplx_t TD[2][2], cplx_t *TDL, cplx_t TU[2][2], cplx_t *TUL, int *stats)
 {
     cplx_t D1_inv[4][4], D2[4][4], Q[4][4];
 

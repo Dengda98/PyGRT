@@ -12,7 +12,7 @@
 #include "grt/common/checkerror.h"
 
 #define X(T, s, S) \
-static GRT_FFTW##S##_HOLDER *  grt_init_fftw##s##_holder(const MYINT nt, const real_t dt, const MYINT nf_valid, const real_t df)\
+static GRT_FFTW##S##_HOLDER *  grt_init_fftw##s##_holder(const size_t nt, const real_t dt, const size_t nf_valid, const real_t df)\
 {\
     GRT_FFTW##S##_HOLDER *fh = (GRT_FFTW##S##_HOLDER*)calloc(1, sizeof(GRT_FFTW##S##_HOLDER));\
     if (!fh) {\
@@ -41,7 +41,7 @@ void grt_reset_fftw##s##_holder_zero(GRT_FFTW##S##_HOLDER *fh)\
 }\
 \
 \
-GRT_FFTW##S##_HOLDER * grt_create_fftw##s##_holder_C2R_1D(const MYINT nt, const real_t dt, const MYINT nf_valid, const real_t df)\
+GRT_FFTW##S##_HOLDER * grt_create_fftw##s##_holder_C2R_1D(const size_t nt, const real_t dt, const size_t nf_valid, const real_t df)\
 {\
     GRT_FFTW##S##_HOLDER * fh = grt_init_fftw##s##_holder(nt, dt, nf_valid, df);\
     fh->plan = fftw##s##_plan_dft_c2r_1d(nt, fh->W_f, fh->w_t, FFTW_ESTIMATE);\
@@ -49,7 +49,7 @@ GRT_FFTW##S##_HOLDER * grt_create_fftw##s##_holder_C2R_1D(const MYINT nt, const 
 }\
 \
 \
-GRT_FFTW##S##_HOLDER * grt_create_fftw##s##_holder_R2C_1D(const MYINT nt, const real_t dt, const MYINT nf_valid, const real_t df)\
+GRT_FFTW##S##_HOLDER * grt_create_fftw##s##_holder_R2C_1D(const size_t nt, const real_t dt, const size_t nf_valid, const real_t df)\
 {\
     GRT_FFTW##S##_HOLDER * fh = grt_init_fftw##s##_holder(nt, dt, nf_valid, df);\
     fh->plan = fftw##s##_plan_dft_r2c_1d(nt, fh->w_t, fh->W_f, FFTW_ESTIMATE);\
@@ -70,17 +70,17 @@ void grt_destroy_fftw##s##_holder(GRT_FFTW##S##_HOLDER *fh)\
 \
 void grt_naive_inverse_transform_##T(GRT_FFTW##S##_HOLDER *fh)\
 {\
-    MYINT nt = fh->nt;\
-    MYINT nf = fh->nf;\
-    MYINT nf_valid = fh->nf_valid;\
+    size_t nt = fh->nt;\
+    size_t nf = fh->nf;\
+    size_t nf_valid = fh->nf_valid;\
     T f;\
-    for(MYINT i = 0; i < nt; i++) {\
+    for(size_t i = 0; i < nt; i++) {\
         T t = i*fh->dt;\
         fh->w_t[i] = 0.0;\
         /*单独处理零频*/\
         if(fh->f0 == 0.0)  fh->w_t[i] += creal(fh->W_f[0]); \
         /*对频率点进行求和（数值积分）*/\
-        for(MYINT k = 1; k < nf_valid-1; k++) {\
+        for(size_t k = 1; k < nf_valid-1; k++) {\
             f = k*fh->df + fh->f0;\
             fh->w_t[i] += 2.0*creal(fh->W_f[k] * exp(I * PI2 * f * t));\
         }\

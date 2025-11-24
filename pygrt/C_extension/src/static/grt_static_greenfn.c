@@ -46,7 +46,7 @@ typedef struct {
     /** 波数积分间隔 */
     struct {
         bool active;
-        MYINT method;
+        enum GRT_K_INTEG_METHOD method;
         real_t Length;
         real_t filonLength;
         real_t safilonTol;
@@ -68,13 +68,13 @@ typedef struct {
     /** X 坐标 */
     struct {
         bool active;
-        MYINT nx;
+        size_t nx;
         real_t *xs;
     } X;
     /** Y 坐标 */
     struct {
         bool active;
-        MYINT ny;
+        size_t ny;
         real_t *ys;
     } Y;
     /** 输出 nc 文件名 */
@@ -87,7 +87,7 @@ typedef struct {
         bool active;
     } e;
 
-    MYINT nr;
+    size_t nr;
     real_t *rs;
 } GRT_MODULE_CTRL;
 
@@ -382,7 +382,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 
                     Ctrl->X.nx = floor((a2-a1)/delta) + 1;
                     Ctrl->X.xs = (real_t*)calloc(Ctrl->X.nx, sizeof(real_t));
-                    for(int i=0; i<Ctrl->X.nx; ++i){
+                    for(size_t i=0; i<Ctrl->X.nx; ++i){
                         Ctrl->X.xs[i] = a1 + delta*i;
                     }
                 }
@@ -405,7 +405,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 
                     Ctrl->Y.ny = floor((a2-a1)/delta) + 1;
                     Ctrl->Y.ys = (real_t*)calloc(Ctrl->Y.ny, sizeof(real_t));
-                    for(int i=0; i<Ctrl->Y.ny; ++i){
+                    for(size_t i=0; i<Ctrl->Y.ny; ++i){
                         Ctrl->Y.ys[i] = a1 + delta*i;
                     }
                 }
@@ -442,8 +442,8 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     // 设置震中距数组
     Ctrl->nr = Ctrl->X.nx*Ctrl->Y.ny;
     Ctrl->rs = (real_t*)calloc(Ctrl->nr, sizeof(real_t));
-    for(int ix=0; ix<Ctrl->X.nx; ++ix){
-        for(int iy=0; iy<Ctrl->Y.ny; ++iy){
+    for(size_t ix=0; ix<Ctrl->X.nx; ++ix){
+        for(size_t iy=0; iy<Ctrl->Y.ny; ++iy){
             Ctrl->rs[iy + ix*Ctrl->Y.ny] = GRT_MAX(sqrt(GRT_SQUARE(Ctrl->X.xs[ix]) + GRT_SQUARE(Ctrl->Y.ys[iy])), GRT_MIN_DISTANCE);  // 避免0震中距
         }
     }
@@ -541,8 +541,8 @@ int static_greenfn_main(int argc, char **argv){
     NC_CHECK(NC_FUNC_REAL(nc_put_att) (ncid, NC_GLOBAL, "rcv_rho", NC_REAL, 1, &rcv_rho));
     // 是否计算了位移偏导也直接写到全局属性
     {
-        MYINT tmp = Ctrl->e.active;
-        NC_CHECK(GRT_NC_FUNC_MYINT(nc_put_att) (ncid, NC_GLOBAL, "calc_upar", GRT_NC_MYINT, 1, &tmp));
+        int tmp = Ctrl->e.active;
+        NC_CHECK(nc_put_att_int(ncid, NC_GLOBAL, "calc_upar", NC_INT, 1, &tmp));
     }
 
     // 定义维度
@@ -590,7 +590,7 @@ int static_greenfn_main(int argc, char **argv){
 
             int sgn0 = 1;
             sgn0 = (GRT_ZRT_CODES[c]=='Z')? -1 : 1;
-            for(int ir=0; ir < Ctrl->nr; ++ir){
+            for(size_t ir=0; ir < Ctrl->nr; ++ir){
                 tmpdata[ir] = sgn0 * grn[ir][i][c];
             }
 
@@ -598,11 +598,11 @@ int static_greenfn_main(int argc, char **argv){
 
             // 位移偏导
             if(Ctrl->e.active){
-                for(int ir=0; ir < Ctrl->nr; ++ir){
+                for(size_t ir=0; ir < Ctrl->nr; ++ir){
                     tmpdata[ir] = (-1) * sgn0 * grn_uiz[ir][i][c];  // 这里多乘的(-1)是因为对z的偏导，z需反向
                 }
                 NC_CHECK(NC_FUNC_REAL(nc_put_var) (ncid, uiz_varids[i][c], tmpdata));
-                for(int ir=0; ir < Ctrl->nr; ++ir){
+                for(size_t ir=0; ir < Ctrl->nr; ++ir){
                     tmpdata[ir] = sgn0 * grn_uir[ir][i][c];  // 这里多乘的(-1)是因为对z的偏导，z需反向
                 }
                 NC_CHECK(NC_FUNC_REAL(nc_put_var) (ncid, uir_varids[i][c], tmpdata));

@@ -56,7 +56,7 @@ printf("\n"
 "\n\n");
 printf("GRT supports the following modules:\n"
 "----------------------------------------------------------------\n");
-for (MYINT n = 0; GRT_Module_Names[n] != NULL; ++n) {
+for (size_t n = 0; GRT_Module_Names[n] != NULL; ++n) {
     const char *name = GRT_Module_Names[n];
     printf("    %-s\n", name);
 }

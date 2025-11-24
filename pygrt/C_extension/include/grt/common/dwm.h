@@ -43,7 +43,7 @@
  */
 real_t grt_discrete_integ(
     GRT_MODEL1D *mod1d, real_t dk, real_t kmax, real_t keps,
-    MYINT nr, real_t *rs,
+    size_t nr, real_t *rs,
     cplx_t sum_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     bool calc_upar,
     cplx_t sum_uiz_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
