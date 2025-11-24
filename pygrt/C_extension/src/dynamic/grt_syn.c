@@ -258,7 +258,7 @@ static void check_grn_exist(GRT_MODULE_CTRL *Ctrl, const char *name){
     if(Ctrl->S.src_mu == 0.0 && Ctrl->S.mult_src_mu){
         SACHEAD hd;
         grt_read_SAC_HEAD(command, buffer, &hd);
-        double va, vb, rho;
+        real_t va, vb, rho;
         va = hd.user6;
         vb = hd.user7;
         rho = hd.user8;
@@ -330,7 +330,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 Ctrl->M.active = true;
                 Ctrl->computeType = GRT_SYN_COMPUTE_DC;
                 {
-                    double strike, dip, rake;
+                    real_t strike, dip, rake;
                     sprintf(Ctrl->s_computeType, "%s", "DC");
                     if(3 != sscanf(optarg, "%lf/%lf/%lf", &strike, &dip, &rake)){
                         GRTBadOptionError(command, M, "");
@@ -355,7 +355,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 Ctrl->F.active = true;
                 Ctrl->computeType = GRT_SYN_COMPUTE_SF;
                 {
-                    double fn, fe, fz;
+                    real_t fn, fe, fz;
                     sprintf(Ctrl->s_computeType, "%s", "SF");
                     if(3 != sscanf(optarg, "%lf/%lf/%lf", &fn, &fe, &fz)){
                         GRTBadOptionError(command, F, "");
@@ -371,7 +371,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 Ctrl->T.active = true;
                 Ctrl->computeType = GRT_SYN_COMPUTE_MT;
                 {
-                    double Mxx, Mxy, Mxz, Myy, Myz, Mzz;
+                    real_t Mxx, Mxy, Mxz, Myy, Myz, Mzz;
                     sprintf(Ctrl->s_computeType, "%s", "MT");
                     if(6 != sscanf(optarg, "%lf/%lf/%lf/%lf/%lf/%lf", &Mxx, &Mxy, &Mxz, &Myy, &Myz, &Mzz)){
                         GRTBadOptionError(command, T, "");
@@ -570,9 +570,9 @@ static void save_tf_to_sac(GRT_MODULE_CTRL *Ctrl, float *tfarr, int tfnt, float 
  * @param    azrad     方位角弧度
  * @param    dist      震中距(km)
  */
-static void data_zrt2zne(float *syn[3], float *syn_upar[3][3], int nt, double azrad, double dist){
-    double dblsyn[3];
-    double dblupar[3][3];
+static void data_zrt2zne(float *syn[3], float *syn_upar[3][3], int nt, real_t azrad, real_t dist){
+    real_t dblsyn[3];
+    real_t dblupar[3][3];
 
     bool doupar = (syn_upar[0][0]!=NULL);
 
@@ -631,7 +631,7 @@ int syn_main(int argc, char **argv){
     float dt=0.0;
     float dist=-12345.0; // 震中距
 
-    double upar_scale=1.0;
+    real_t upar_scale=1.0;
 
     // 计算和位移相关量的种类（1-位移，2-ui_z，3-ui_r，4-ui_t）
     int calcUTypes = (Ctrl->e.active)? 4 : 1;

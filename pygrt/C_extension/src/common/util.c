@@ -249,7 +249,7 @@ static void write_one_to_sac(
     // 归一化，并处理虚频
     // 并转为 SAC 需要的单精度类型
     float *float_arr = (float*)malloc(sizeof(float)*pt_fh->nt);
-    double fac, coef;
+    real_t fac, coef;
     coef = pt_fh->df * exp(delayT*wI);
     fac = exp(wI*pt_fh->dt);
     for(size_t i=0; i<pt_fh->nt; ++i){

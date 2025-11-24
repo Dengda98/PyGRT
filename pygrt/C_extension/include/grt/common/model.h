@@ -124,7 +124,7 @@ void grt_realloc_mod1d(GRT_MODEL1D *mod1d, size_t n);
  * @return    `GRT_MODEL1D` 结构体指针
  * 
  */
-GRT_MODEL1D * grt_read_mod1d_from_file(const char *command, const char *modelpath, double depsrc, double deprcv, bool allowLiquid);
+GRT_MODEL1D * grt_read_mod1d_from_file(const char *command, const char *modelpath, real_t depsrc, real_t deprcv, bool allowLiquid);
 
 
 /**
@@ -156,4 +156,4 @@ bool grt_check_vel_in_mod(const GRT_MODEL1D *mod1d, const real_t vel, const real
  * @param    vmax    (out)最大速度
  * 
  */
-void grt_get_mod1d_vmin_vmax(const GRT_MODEL1D *mod1d, double *vmin, double *vmax);
+void grt_get_mod1d_vmin_vmax(const GRT_MODEL1D *mod1d, real_t *vmin, real_t *vmax);
