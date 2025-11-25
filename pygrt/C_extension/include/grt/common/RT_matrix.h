@@ -45,6 +45,9 @@ typedef struct {
         .RUL = 0.0,\
         .TDL = 1.0,\
         .TUL = 1.0,\
+        .invT = GRT_INIT_ZERO_2x2_MATRIX,\
+        .invTL = 0.0,\
+        .stats = GRT_INVERSE_SUCCESS \
     };\
 
 

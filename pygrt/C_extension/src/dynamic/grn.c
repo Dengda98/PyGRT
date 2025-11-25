@@ -19,8 +19,11 @@
 #include <string.h>
 #include <sys/time.h>
 
+#define __DYNAMIC_KERNEL__
+#include "grt/common/kernel.h"
+#undef __DYNAMIC_KERNEL__
+
 #include "grt/dynamic/grn.h"
-#include "grt/dynamic/propagate.h"
 #include "grt/common/ptam.h"
 #include "grt/common/fim.h"
 #include "grt/common/safim.h"
