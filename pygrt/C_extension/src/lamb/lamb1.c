@@ -805,33 +805,15 @@ void grt_solve_lamb1(
     V0.cf = cos(phi);
 
     // 求一元三次方程的根
-    {
-        real_t a, b, c;
-        real_t nu2, nu3, nu4;
-        nu2 = V0.nu*V0.nu;
-        nu3 = nu2*V0.nu;
-        nu4 = nu3*V0.nu;
-        real_t snu = 1.0 - V0.nu;
-        real_t snu2 = snu*snu;
-        real_t snu3 = snu2*snu;
-        a = -0.5 * (2.0*nu2 + 1.0)/snu;
-        b = 0.25 * (4.0*nu3 - 4.0*nu2 + 4.0*V0.nu - 1.0)/snu2;
-        c = -0.125*nu4/snu3;
-        grt_roots3(a, b, c, V0.ys);
-        for(int i=0; i<3; ++i){
-            V0.ysp[i] = V0.ys[i] - V0.kpkp;
-        }
+    grt_rayleigh1_roots(V0.nu, V0.ys);
+    for(int i=0; i<3; ++i){
+        V0.ysp[i] = V0.ys[i] - V0.kpkp;
     }
 
     // 另一种形式的Rayleigh波函数
     {   
         cplx_t y3[3];
-        real_t a, b, c;
-        real_t m = V0.kk;
-        a = 0.5*(2.0*m - 3.0)/(1 - m);
-        b = 0.5/(1 - m);
-        c = - 0.0625/(1 - m);
-        grt_roots3(a, b, c, y3);
+        grt_rayleigh2_roots(V0.kk, y3);
         
         V0.RaylQ[0][2] = V->cf;
         V0.RaylQ[1][2] = V->sf;

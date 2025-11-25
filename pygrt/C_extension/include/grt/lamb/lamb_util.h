@@ -11,14 +11,33 @@
 #include "grt/common/const.h"
 
 /**
- * 求解一元三次形式的 Rayleigh 方程的根,  \f$ x^3 + ax^2 + bx + c = 0 \f$
+ * 求解如下一元三次形式的 Rayleigh 方程的根,  其中 \f$ \nu \f$ 为泊松比
+ * \f[
+ *       x^3 - \dfrac{2\nu^2 + 1}{2(1 - \nu)} x^2
+ *     + \dfrac{4\nu^3 - 4\nu^2 + 4\nu - 1}{4(1 - \nu)^2} x 
+ *     - \dfrac{\nu^4}{8(1-\nu)^3} = 0
+ * \f]
  * 
- * @param[in]      a     系数 a
- * @param[in]      b     系数 b
- * @param[in]      c     系数 c
+ * 
+ * @param[in]      nu    泊松比， (0, 0.5)
  * @param[out]     y3    三个根，其中 y3[2] 为正根
  */
-void grt_roots3(const real_t a, const real_t b, const real_t c, cplx_t y3[3]);
+void grt_rayleigh1_roots(real_t nu, cplx_t y3[3]);
+
+
+/**
+ * 求解如下一元三次形式的 Rayleigh 方程的根,  其中 \f$ m=\dfrac{1}{2}\dfrac{1-2\nu}{1-\nu}, \nu \f$ 为泊松比
+ * \f[
+ *       x^3 + \dfrac{2m - 3}{2(1 - m)} x^2
+ *     + \dfrac{1}{2(1-m)} x
+ *     - \dfrac{1}{16(1-m)} = 0
+ * \f]
+ * 
+ * 
+ * @param[in]      m     系数 m
+ * @param[out]     y3    三个根，其中 y3[2] 为正根
+ */
+void grt_rayleigh2_roots(real_t m, cplx_t y3[3]);
 
 /**
  * 做如下多项式求值， \f$ \sum_{m=0}^n C_{2m+o} y^m \f$
