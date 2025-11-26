@@ -728,7 +728,7 @@ void grt_RT_matrix_from_4x4(
 
     // 计算反射透射系数 
     // TD
-    grt_cmat2x2_inv(Q22, TD, stats);
+    grt_cmat2x2_inv(Q22, TD);
     // RD
     grt_cmat2x2_mul(Q12, TD, RD); 
     // RU
