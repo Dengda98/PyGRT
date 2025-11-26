@@ -58,28 +58,26 @@
  * @param[in]     RL1           SH波，  \f$ R_1\f$
  * @param[in]     R2            P-SV波，\f$\mathbf{R_2}\f$矩阵
  * @param[in]     RL2           SH波，  \f$ R_2\f$
- * @param[in]     coef_PSV      P-SV 波震源系数，\f$ P_m, SV_m\f$ ，维度2表示下行波(p=0)和上行波(p=1)
- * @param[in]     coef_SH       SH 波震源系数，\f$ SH_m \f$ ，维度2表示下行波(p=0)和上行波(p=1)
+ * @param[in]     coef          震源系数，\f$ P_m, SV_m，SH_m\f$ ，维度2表示下行波(p=0)和上行波(p=1)
  * @param[out]    qwv           最终通过矩阵传播计算出的在台站位置的\f$ q_m,w_m,v_m\f$
  */
 inline void grt_construct_qwv(
     bool ircvup, 
     const cplx_t R1[2][2], cplx_t RL1, 
     const cplx_t R2[2][2], cplx_t RL2, 
-    const cplx_t coef_PSV[GRT_QWV_NUM-1][2], const cplx_t coef_SH[2], 
-    cplx_t qwv[GRT_QWV_NUM])
+    const cplx_t coef[GRT_QWV_NUM][2], cplx_t qwv[GRT_QWV_NUM])
 {
     cplx_t qw0[2], qw1[2], v0;
-    cplx_t coefD[2] = {coef_PSV[0][0], coef_PSV[1][0]};
-    cplx_t coefU[2] = {coef_PSV[0][1], coef_PSV[1][1]};
+    cplx_t coefD[2] = {coef[0][0], coef[1][0]};
+    cplx_t coefU[2] = {coef[0][1], coef[1][1]};
     if(ircvup){
         grt_cmat2x1_mul(R2, coefD, qw0);
         qw0[0] += coefU[0]; qw0[1] += coefU[1]; 
-        v0 = RL1 * (RL2*coef_SH[0] + coef_SH[1]);
+        v0 = RL1 * (RL2*coef[2][0] + coef[2][1]);
     } else {
         grt_cmat2x1_mul(R2, coefU, qw0);
         qw0[0] += coefD[0]; qw0[1] += coefD[1]; 
-        v0 = RL1 * (coef_SH[0] + RL2*coef_SH[1]);
+        v0 = RL1 * (coef[2][0] + RL2*coef[2][1]);
     }
     grt_cmat2x1_mul(R1, qw0, qw1);
 
@@ -256,10 +254,8 @@ static void __KERNEL_FUNC__(
 
 
     // 计算震源系数
-    cplx_t src_coef_PSV[GRT_SRC_M_NUM][GRT_QWV_NUM-1][2] = {0};
-    cplx_t src_coef_SH[GRT_SRC_M_NUM][2] = {0};
-    __grt_source_coef_PSV(mod1d, src_coef_PSV);
-    __grt_source_coef_SH(mod1d, src_coef_SH);
+    cplx_t src_coef[GRT_SRC_M_NUM][GRT_QWV_NUM][2] = {0};
+    __grt_source_coef(mod1d, src_coef);
 
     // 临时中转矩阵 (temperary)
     cplx_t tmpR2[2][2], tmp2x2[2][2], tmpRL, tmp2x2_uiz[2][2], tmpRL2;
@@ -295,7 +291,7 @@ static void __KERNEL_FUNC__(
         tmpRL2 = R_EVL * tmpRL;
 
         for(int i=0; i<GRT_SRC_M_NUM; ++i){
-            grt_construct_qwv(ircvup, tmp2x2, tmpRL2, M_BL->RD, M_BL->RDL, src_coef_PSV[i], src_coef_SH[i], QWV[i]);
+            grt_construct_qwv(ircvup, tmp2x2, tmpRL2, M_BL->RD, M_BL->RDL, src_coef[i], QWV[i]);
         }
 
 
@@ -306,7 +302,7 @@ static void __KERNEL_FUNC__(
             tmpRL2 = uiz_R_EVL * tmpRL;
 
             for(int i=0; i<GRT_SRC_M_NUM; ++i){
-                grt_construct_qwv(ircvup, tmp2x2_uiz, tmpRL2, M_BL->RD, M_BL->RDL, src_coef_PSV[i], src_coef_SH[i], QWV_uiz[i]);
+                grt_construct_qwv(ircvup, tmp2x2_uiz, tmpRL2, M_BL->RD, M_BL->RDL, src_coef[i], QWV_uiz[i]);
             }    
         }
     } 
@@ -334,7 +330,7 @@ static void __KERNEL_FUNC__(
         tmpRL2 = R_EVL * tmpRL;
 
         for(int i=0; i<GRT_SRC_M_NUM; ++i){
-            grt_construct_qwv(ircvup, tmp2x2, tmpRL2, M_FA->RU, M_FA->RUL, src_coef_PSV[i], src_coef_SH[i], QWV[i]);
+            grt_construct_qwv(ircvup, tmp2x2, tmpRL2, M_FA->RU, M_FA->RUL, src_coef[i], QWV[i]);
         }
 
 
@@ -345,7 +341,7 @@ static void __KERNEL_FUNC__(
             tmpRL2 = uiz_R_EVL * tmpRL;
             
             for(int i=0; i<GRT_SRC_M_NUM; ++i){
-                grt_construct_qwv(ircvup, tmp2x2_uiz, tmpRL2, M_FA->RU, M_FA->RUL, src_coef_PSV[i], src_coef_SH[i], QWV_uiz[i]);
+                grt_construct_qwv(ircvup, tmp2x2_uiz, tmpRL2, M_FA->RU, M_FA->RUL, src_coef[i], QWV_uiz[i]);
             }
         }
 
