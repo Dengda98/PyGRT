@@ -284,8 +284,7 @@ static void __KERNEL_FUNC__(
         // 公式(5.7.12-14)
         grt_cmat2x2_mul(M_BL->RD, M_FB->RU, tmpR2);
         grt_cmat2x2_one_sub(tmpR2);
-        grt_cmat2x2_inv(tmpR2, tmpR2, &M_FB->stats);// (I - xx)^-1
-        if(M_FB->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
+        if((M_FB->stats = grt_cmat2x2_inv(tmpR2, tmpR2)) == GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;// (I - xx)^-1
         grt_cmat2x2_mul(M_FB->invT, tmpR2, tmp2x2);
 
         if(calc_uiz) grt_cmat2x2_assign(tmp2x2, tmp2x2_uiz); // 为后续计算空间导数备份
@@ -323,8 +322,7 @@ static void __KERNEL_FUNC__(
         // 公式(5.7.26-27)
         grt_cmat2x2_mul(M_FA->RU, M_AL->RD, tmpR2);
         grt_cmat2x2_one_sub(tmpR2);
-        grt_cmat2x2_inv(tmpR2, tmpR2, &M_AL->stats);// (I - xx)^-1
-        if(M_AL->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
+        if((M_AL->stats = grt_cmat2x2_inv(tmpR2, tmpR2)) == GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;// (I - xx)^-1
         grt_cmat2x2_mul(M_AL->invT, tmpR2, tmp2x2);
 
         if(calc_uiz) grt_cmat2x2_assign(tmp2x2, tmp2x2_uiz); // 为后续计算空间导数备份

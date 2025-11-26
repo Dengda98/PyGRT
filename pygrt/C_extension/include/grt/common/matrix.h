@@ -18,9 +18,10 @@
  * 
  * @param[in]      M        原矩阵
  * @param[out]     invM     逆矩阵
- * @param[out]     stats    状态代码，是否有除零错误，非0为异常值
+ * 
+ * @return    状态代码，是否有除零错误，非0为异常值
  */ 
-inline GCC_ALWAYS_INLINE void grt_cmat2x2_inv(const cplx_t M[2][2], cplx_t invM[2][2], int *stats) {
+inline GCC_ALWAYS_INLINE int grt_cmat2x2_inv(const cplx_t M[2][2], cplx_t invM[2][2]) {
     cplx_t M00 = M[0][0];
     cplx_t M01 = M[0][1];
     cplx_t M10 = M[1][0];
@@ -31,8 +32,7 @@ inline GCC_ALWAYS_INLINE void grt_cmat2x2_inv(const cplx_t M[2][2], cplx_t invM[
         // fprintf(stderr, "%.5e+%.5ej %.5e+%.5ej \n", creal(M[1][0]), cimag(M[1][0]), creal(M[1][1]), cimag(M[1][1]));
         // fprintf(stderr, "matrix2x2 det=0.0, set matrix inv = 0.0.\n");
         // det = 0.0;
-        *stats = GRT_INVERSE_FAILURE;
-        return;
+        return GRT_INVERSE_FAILURE;
     }
     det = 1.0 / det;
 
@@ -40,7 +40,7 @@ inline GCC_ALWAYS_INLINE void grt_cmat2x2_inv(const cplx_t M[2][2], cplx_t invM[
     invM[0][1] = - M01 * det;
     invM[1][0] = - M10 * det;
     invM[1][1] = M00 * det;
-    *stats = GRT_INVERSE_SUCCESS;
+    return GRT_INVERSE_SUCCESS;
 }
 
 /**
