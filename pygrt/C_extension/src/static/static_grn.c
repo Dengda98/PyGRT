@@ -19,8 +19,11 @@
 #include <sys/stat.h>
 #include <errno.h>
 
+#define __STATIC_KERNEL__
+#include "grt/common/kernel.h"
+#undef __STATIC_KERNEL__
+
 #include "grt/static/static_grn.h"
-#include "grt/static/static_propagate.h"
 #include "grt/common/dwm.h"
 #include "grt/common/ptam.h"
 #include "grt/common/fim.h"
@@ -29,7 +32,6 @@
 #include "grt/common/model.h"
 #include "grt/common/integral.h"
 #include "grt/common/search.h"
-
 
 
 /**

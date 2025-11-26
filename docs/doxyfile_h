@@ -30,3 +30,8 @@ GENERATE_XML = YES
 USE_MATHJAX = YES
 
 MARKDOWN_SUPPORT = YES
+
+# 展开特定宏，使得介绍核函数的头文件（kernel_template.h）会被构建
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+PREDEFINED            = __DYNAMIC_KERNEL__ __STATIC_KERNEL__

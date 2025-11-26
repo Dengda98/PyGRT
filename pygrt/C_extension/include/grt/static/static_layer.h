@@ -42,11 +42,12 @@ void grt_static_wave2qwv_REV_PSV(const GRT_MODEL1D *mod1d, const cplx_t R[2][2],
 /**
  * 计算接收点位置的 SH 静态接收矩阵，将波场转为位移，公式(6.3.37)
  * 
+ * @param[in]      mod1d           模型结构体指针
  * @param[in]      RL              SH波场
  * @param[out]     R_EVL           SH接收函数值
  * 
  */
-void grt_static_wave2qwv_REV_SH(cplx_t RL, cplx_t *R_EVL);
+void grt_static_wave2qwv_REV_SH(const GRT_MODEL1D *mod1d, cplx_t RL, cplx_t *R_EVL);
 
 /**
  * 计算接收点位置的ui_z的 P-SV 静态接收矩阵，即将波场转为ui_z。
