@@ -132,7 +132,7 @@ jobs:
                 CC=gcc-14 \
                 LFFTW_FLAGS="$FFTW_LIB_PATH/libfftw3.a $FFTW_LIB_PATH/libfftw3f.a" \
                 LNETCDF_FLAGS="$NC_LIB_PATH/libnetcdf.a" \
-                CFLAGS2="-I$FFTW_INC_PATH -I$NC_INC_PATH"
+                CFLAGS2="-I$FFTW_INC_PATH -I$NC_INC_PATH" -j4
           make cleanbuild
           ls -l lib/
           ls -l bin/
@@ -146,7 +146,7 @@ jobs:
         run: |
           make \
             LNETCDF_FLAGS="$NC_LIB_PATH/libnetcdf.a" \
-            CFLAGS2="-I$NC_INC_PATH"
+            CFLAGS2="-I$NC_INC_PATH" -j4
 
           make cleanbuild
           ls -l lib/
@@ -164,7 +164,7 @@ jobs:
           make \
             LFFTW_FLAGS="$FFTW_LIB_PATH/libfftw3.a $FFTW_LIB_PATH/libfftw3f.a" \
             LNETCDF_FLAGS="$NC_LIB_PATH/libnetcdf.a" \
-            CFLAGS2="-I$FFTW_INC_PATH -I$NC_INC_PATH"
+            CFLAGS2="-I$FFTW_INC_PATH -I$NC_INC_PATH" -j4
           make cleanbuild
           cd -
           EOF
