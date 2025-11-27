@@ -60,8 +60,7 @@ real_t grt_linear_filon_integ(
         k += dk; 
 
         // 计算核函数 F(k, w)
-        grt_mod1d_xa_xb(mod1d, k);
-        kerfunc(mod1d, QWV, calc_upar, QWV_uiz); 
+        kerfunc(mod1d, k, QWV, calc_upar, QWV_uiz); 
         if(mod1d->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
         // 记录积分结果
@@ -175,8 +174,7 @@ real_t grt_linear_filon_integ(
         }
 
         // 计算核函数 F(k, w)
-        grt_mod1d_xa_xb(mod1d, k0N);
-        kerfunc(mod1d, QWV, calc_upar, QWV_uiz);
+        kerfunc(mod1d, k0N, QWV, calc_upar, QWV_uiz);
         if(mod1d->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN; 
 
         for(size_t ir=0; ir<nr; ++ir){

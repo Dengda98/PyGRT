@@ -63,17 +63,17 @@ inline void _source_SH(const cplx_t xb, const cplx_t cbcb, const real_t k, cplx_
 }
 
 
-void grt_source_coef(const GRT_MODEL1D *mod1d, cplx_t coef[GRT_SRC_M_NUM][GRT_QWV_NUM][2])
+void grt_source_coef(GRT_MODEL1D *mod1d)
 {
     // 先全部赋0 
-    memset(coef, 0, sizeof(cplx_t)*GRT_SRC_M_NUM*GRT_QWV_NUM*2);
+    memset(mod1d->src_coef, 0, sizeof(cplx_t)*GRT_SRC_M_NUM*GRT_QWV_NUM*2);
 
-    grt_source_coef_PSV(mod1d, coef);
-    grt_source_coef_SH(mod1d, coef);
+    grt_source_coef_PSV(mod1d);
+    grt_source_coef_SH(mod1d);
 }
 
 
-void grt_source_coef_PSV(const GRT_MODEL1D *mod1d, cplx_t coef[GRT_SRC_M_NUM][GRT_QWV_NUM][2])
+void grt_source_coef_PSV(GRT_MODEL1D *mod1d)
 {
     size_t isrc = mod1d->isrc;
     cplx_t xa = mod1d->xa[isrc];
@@ -82,18 +82,18 @@ void grt_source_coef_PSV(const GRT_MODEL1D *mod1d, cplx_t coef[GRT_SRC_M_NUM][GR
     cplx_t cbcb = mod1d->cbcb[isrc];
     real_t k = mod1d->k;
 
-    _source_PSV(xa, caca, xb, cbcb, k, coef);
+    _source_PSV(xa, caca, xb, cbcb, k, mod1d->src_coef);
 }
 
 
-void grt_source_coef_SH(const GRT_MODEL1D *mod1d, cplx_t coef[GRT_SRC_M_NUM][GRT_QWV_NUM][2])
+void grt_source_coef_SH(GRT_MODEL1D *mod1d)
 {
     size_t isrc = mod1d->isrc;
     cplx_t xb = mod1d->xb[isrc];
     cplx_t cbcb = mod1d->cbcb[isrc];
     real_t k = mod1d->k;
 
-    _source_SH(xb, cbcb, k, coef);
+    _source_SH(xb, cbcb, k, mod1d->src_coef);
 }
 
 

@@ -25,38 +25,41 @@
     T N##2 = mod1d->N[iy];\
 
 
-void grt_static_topfree_RU(const GRT_MODEL1D *mod1d, RT_MATRIX *M)
+void grt_static_topfree_RU(GRT_MODEL1D *mod1d)
 {
     cplx_t delta1 = mod1d->delta[0];
     // 公式(6.3.12)
-    M->RU[0][0] = M->RU[1][1] = 0.0;
-    M->RU[0][1] = -delta1;
-    M->RU[1][0] = -1.0/delta1;
-    M->RUL = 1.0;
+    mod1d->M_top.RU[0][0] = mod1d->M_top.RU[1][1] = 0.0;
+    mod1d->M_top.RU[0][1] = -delta1;
+    mod1d->M_top.RU[1][0] = -1.0/delta1;
+    mod1d->M_top.RUL = 1.0;
 }
 
-void grt_static_wave2qwv_REV_PSV(const GRT_MODEL1D *mod1d, const cplx_t R[2][2], cplx_t R_EV[2][2])
+void grt_static_wave2qwv_REV_PSV(GRT_MODEL1D *mod1d)
 {
     cplx_t D11[2][2] = {{1.0, -1.0}, {1.0, 1.0}};
     cplx_t D12[2][2] = {{1.0, -1.0}, {-1.0, -1.0}};
 
     // 公式(6.3.35,37)
     if(mod1d->ircvup){// 震源更深
-        grt_cmat2x2_mul(D12, R, R_EV);
-        grt_cmat2x2_add(D11, R_EV, R_EV);
+        grt_cmat2x2_mul(D12, mod1d->M_FA.RU, mod1d->R_EV);
+        grt_cmat2x2_add(D11, mod1d->R_EV, mod1d->R_EV);
     } else { // 接收点更深
-        grt_cmat2x2_mul(D11, R, R_EV);
-        grt_cmat2x2_add(D12, R_EV, R_EV);
+        grt_cmat2x2_mul(D11, mod1d->M_BL.RD, mod1d->R_EV);
+        grt_cmat2x2_add(D12, mod1d->R_EV, mod1d->R_EV);
     }
 }
 
-void grt_static_wave2qwv_REV_SH(const GRT_MODEL1D *mod1d, cplx_t RL, cplx_t *R_EVL)
+void grt_static_wave2qwv_REV_SH(GRT_MODEL1D *mod1d)
 {
-    (void)mod1d;  // 暂停该参数 -Wunused-parameter 警告
-    *R_EVL = (1.0 + (RL));
+    if(mod1d->ircvup){// 震源更深
+        mod1d->R_EVL = 1.0 + mod1d->M_FA.RUL;
+    } else {
+        mod1d->R_EVL = 1.0 + mod1d->M_BL.RDL;
+    }
 }
 
-void grt_static_wave2qwv_z_REV_PSV(const GRT_MODEL1D *mod1d, const cplx_t R[2][2], cplx_t R_EV[2][2])
+void grt_static_wave2qwv_z_REV_PSV(GRT_MODEL1D *mod1d)
 {
     real_t k = mod1d->k;
     size_t ircv = mod1d->ircv;
@@ -67,22 +70,22 @@ void grt_static_wave2qwv_z_REV_PSV(const GRT_MODEL1D *mod1d, const cplx_t R[2][2
     cplx_t D11[2][2] = {{k, -k-kd2}, {k, k-kd2}};
     cplx_t D12[2][2] = {{-k, k+kd2}, {k, k-kd2}};
     if(mod1d->ircvup){// 震源更深
-        grt_cmat2x2_mul(D12, R, R_EV);
-        grt_cmat2x2_add(D11, R_EV, R_EV);
+        grt_cmat2x2_mul(D12, mod1d->M_FA.RU, mod1d->uiz_R_EV);
+        grt_cmat2x2_add(D11, mod1d->uiz_R_EV, mod1d->uiz_R_EV);
     } else { // 接收点更深
-        grt_cmat2x2_mul(D11, R, R_EV);
-        grt_cmat2x2_add(D12, R_EV, R_EV);
+        grt_cmat2x2_mul(D11, mod1d->M_BL.RD, mod1d->uiz_R_EV);
+        grt_cmat2x2_add(D12, mod1d->uiz_R_EV, mod1d->uiz_R_EV);
     }
 }
 
-void grt_static_wave2qwv_z_REV_SH(const GRT_MODEL1D *mod1d, cplx_t RL, cplx_t *R_EVL)
+void grt_static_wave2qwv_z_REV_SH(GRT_MODEL1D *mod1d)
 {
     real_t k = mod1d->k;
     // 新推导公式
     if(mod1d->ircvup){// 震源更深
-        *R_EVL = (1.0 - (RL))*k;
+        mod1d->uiz_R_EVL = (1.0 - mod1d->M_FA.RUL)*k;
     } else { // 接收点更深
-        *R_EVL = (RL - 1.0)*k;
+        mod1d->uiz_R_EVL = (mod1d->M_BL.RDL - 1.0)*k;
     }
 }
 

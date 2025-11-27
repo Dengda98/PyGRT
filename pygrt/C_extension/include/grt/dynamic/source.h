@@ -20,14 +20,13 @@
  * 数组形状代表在[i][j][p]时表示i类震源的
  * P(j=0),SV(j=1)的震源系数(分别对应q,w)，且分为下行波(p=0)和上行波(p=1). 
  * 
- * @param[in]     mod1d        模型结构体指针
- * @param[out]    coef         震源系数 \f$ P_m, SV_m, SH_m \f$
+ * @param[in,out]     mod1d        模型结构体指针，结果保存在 src_coef
  * 
  */
-void grt_source_coef(const GRT_MODEL1D *mod1d, cplx_t coef[GRT_SRC_M_NUM][GRT_QWV_NUM][2]);
+void grt_source_coef(GRT_MODEL1D *mod1d);
 
 /* P-SV 波的震源系数  */
-void grt_source_coef_PSV(const GRT_MODEL1D *mod1d, cplx_t coef[GRT_SRC_M_NUM][GRT_QWV_NUM][2]);
+void grt_source_coef_PSV(GRT_MODEL1D *mod1d);
 
 /* SH 波的震源系数  */
-void grt_source_coef_SH(const GRT_MODEL1D *mod1d, cplx_t coef[GRT_SRC_M_NUM][GRT_QWV_NUM][2]);
+void grt_source_coef_SH(GRT_MODEL1D *mod1d);

@@ -323,8 +323,7 @@ real_t grt_sa_filon_integ(
         .F3_uiz = {{{0}}} 
     };
     for(int i=0; i<3; ++i) {
-        grt_mod1d_xa_xb(mod1d, Kitv.k3[i]);
-        kerfunc(mod1d, Kitv.F3[i], calc_upar, Kitv.F3_uiz[i]);
+        kerfunc(mod1d, Kitv.k3[i], Kitv.F3[i], calc_upar, Kitv.F3_uiz[i]);
         if(mod1d->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
     }
     stack_push(&stack, Kitv);
@@ -371,12 +370,11 @@ real_t grt_sa_filon_integ(
             memcpy(Kitv_right.F3_uiz[0], Kitv.F3_uiz[1], sizeof(cplx_t)*GRT_SRC_M_NUM*GRT_QWV_NUM);
             memcpy(Kitv_right.F3_uiz[2], Kitv.F3_uiz[2], sizeof(cplx_t)*GRT_SRC_M_NUM*GRT_QWV_NUM);
         }
-        grt_mod1d_xa_xb(mod1d, Kitv_left.k3[1]);
-        kerfunc(mod1d, Kitv_left.F3[1], calc_upar, Kitv_left.F3_uiz[1]);
+        
+        kerfunc(mod1d, Kitv_left.k3[1], Kitv_left.F3[1], calc_upar, Kitv_left.F3_uiz[1]);
         if(mod1d->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
-        grt_mod1d_xa_xb(mod1d, Kitv_right.k3[1]);
-        kerfunc(mod1d, Kitv_right.F3[1], calc_upar, Kitv_right.F3_uiz[1]);
+        kerfunc(mod1d, Kitv_right.k3[1], Kitv_right.F3[1], calc_upar, Kitv_right.F3_uiz[1]);
         if(mod1d->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
 

@@ -14,9 +14,15 @@
 
 
 // 注意这里不要使用 #pragma once
+
+
 // 只有定义了特定宏才可以被 include
 #if defined(__DYNAMIC_KERNEL__) || defined(__STATIC_KERNEL__)
 
+// 不可以同时定义
+#if defined(__DYNAMIC_KERNEL__) && defined(__STATIC_KERNEL__)
+#error "Cannot define both __DYNAMIC_KERNEL__ and __STATIC_KERNEL__ simultaneously"
+#endif
 
 #include <stdio.h>
 #include <complex.h>
@@ -149,14 +155,15 @@ inline void grt_construct_qwv(
  *  即空间划分为FA,AB,BL, 计算这三个广义层的系数矩阵，再讨论震源层和接收层的深浅，
  *  计算相应的矩阵。  
  *
- *  @param[in]     mod1d           `MODEL1D` 结构体指针
+ *  @param[in,out]     mod1d           `MODEL1D` 结构体指针
+ *  @param[in]     k               波数
  *  @param[out]    QWV             不同震源，不同阶数的核函数 \f$ q_m, w_m, v_m \f$
  *  @param[in]     calc_uiz        是否计算ui_z（位移u对坐标z的偏导）
  *  @param[out]    QWV_uiz         不同震源，不同阶数的核函数对z的偏导 \f$ \frac{\partial q_m}{\partial z}, \frac{\partial w_m}{\partial z}, \frac{\partial v_m}{\partial z} \f$
  * 
  */
 static void __KERNEL_FUNC__(
-    const GRT_MODEL1D *mod1d, cplx_t QWV[GRT_SRC_M_NUM][GRT_QWV_NUM],
+    GRT_MODEL1D *mod1d, const real_t k, cplx_t QWV[GRT_SRC_M_NUM][GRT_QWV_NUM],
     bool calc_uiz, cplx_t QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM])
 {
     // 初始化qwv为0
@@ -167,6 +174,12 @@ static void __KERNEL_FUNC__(
         }
     }
 
+    mod1d->k = k;
+    // 为动态解计算xa,xb,caca,cbcb
+    #if defined(__DYNAMIC_KERNEL__)
+        grt_mod1d_xa_xb(mod1d, k);
+    #endif
+
     bool ircvup = mod1d->ircvup;
     size_t isrc = mod1d->isrc; // 震源所在虚拟层位, isrc>=1
     size_t ircv = mod1d->ircv; // 接收点所在虚拟层位, ircv>=1, ircv != isrc
@@ -174,26 +187,14 @@ static void __KERNEL_FUNC__(
     imin = GRT_MIN(isrc, ircv);
     imax = GRT_MAX(isrc, ircv);
 
-    // 初始化广义反射透射系数矩阵
-    // BL
-    grt_init_RT_matrix(M_BL);
-    // AL
-    grt_init_RT_matrix(M_AL);
-    // RS
-    grt_init_RT_matrix(M_RS);
-    // FA (实际先计算ZA，再递推到FA)
-    grt_init_RT_matrix(M_FA);
-    // FB (实际先计算ZB，再递推到FB)
-    grt_init_RT_matrix(M_FB);
-
-    // 自由表面的反射系数
-    grt_init_RT_matrix(M_top);
-
-    // 接收点处的接收矩阵(转为位移u的(B_m, C_m, P_m)系分量)
-    cplx_t R_EV[2][2], R_EVL;
-
-    // 接收点处的接收矩阵(转为位移导数ui_z的(B_m, C_m, P_m)系分量)
-    cplx_t uiz_R_EV[2][2], uiz_R_EVL;
+    // 广义层的反射透射系数
+    RT_MATRIX *M_BL = &mod1d->M_BL;
+    RT_MATRIX *M_AL = &mod1d->M_AL;
+    RT_MATRIX *M_RS = &mod1d->M_RS;
+    RT_MATRIX *M_FA = &mod1d->M_FA;
+    RT_MATRIX *M_FB = &mod1d->M_FB;
+    // 自由表面
+    RT_MATRIX *M_top = &mod1d->M_top;
 
     // 从顶到底进行矩阵递推, 公式(5.5.3)
     for(size_t iy=1; iy<mod1d->n; ++iy){ // 因为n>=3, 故一定会进入该循环
@@ -254,14 +255,13 @@ static void __KERNEL_FUNC__(
 
 
     // 计算震源系数
-    cplx_t src_coef[GRT_SRC_M_NUM][GRT_QWV_NUM][2] = {0};
-    __grt_source_coef(mod1d, src_coef);
+    __grt_source_coef(mod1d);
 
     // 临时中转矩阵 (temperary)
     cplx_t tmpR2[2][2], tmp2x2[2][2], tmpRL, tmp2x2_uiz[2][2], tmpRL2;
 
     // 递推RU_FA
-    __grt_topfree_RU(mod1d, M_top);
+    __grt_topfree_RU(mod1d);
     if(M_top->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
     grt_recursion_RU(M_top, M_FA, M_FA);
     if(M_FA->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
@@ -270,8 +270,8 @@ static void __KERNEL_FUNC__(
     if(ircvup){ // A接收  B震源
 
         // 计算R_EV
-        __grt_wave2qwv_REV_PSV(mod1d, M_FA->RU, R_EV);
-        __grt_wave2qwv_REV_SH(mod1d, M_FA->RUL, &R_EVL);
+        __grt_wave2qwv_REV_PSV(mod1d);
+        __grt_wave2qwv_REV_SH(mod1d);
 
         // 递推RU_FS
         grt_recursion_RU(M_FA, M_RS, M_FB); // 已从ZR变为FR，加入了自由表面的效应
@@ -285,31 +285,31 @@ static void __KERNEL_FUNC__(
 
         if(calc_uiz) grt_cmat2x2_assign(tmp2x2, tmp2x2_uiz); // 为后续计算空间导数备份
 
-        grt_cmat2x2_mul(R_EV, tmp2x2, tmp2x2);
+        grt_cmat2x2_mul(mod1d->R_EV, tmp2x2, tmp2x2);
         tmpRL = M_FB->invTL  / (1.0 - M_BL->RDL * M_FB->RUL);
-        tmpRL2 = R_EVL * tmpRL;
+        tmpRL2 = mod1d->R_EVL * tmpRL;
 
         for(int i=0; i<GRT_SRC_M_NUM; ++i){
-            grt_construct_qwv(ircvup, tmp2x2, tmpRL2, M_BL->RD, M_BL->RDL, src_coef[i], QWV[i]);
+            grt_construct_qwv(ircvup, tmp2x2, tmpRL2, M_BL->RD, M_BL->RDL, mod1d->src_coef[i], QWV[i]);
         }
 
 
         if(calc_uiz){
-            __grt_wave2qwv_z_REV_PSV(mod1d, M_FA->RU, uiz_R_EV);
-            __grt_wave2qwv_z_REV_SH(mod1d, M_FA->RUL, &uiz_R_EVL);
-            grt_cmat2x2_mul(uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
-            tmpRL2 = uiz_R_EVL * tmpRL;
+            __grt_wave2qwv_z_REV_PSV(mod1d);
+            __grt_wave2qwv_z_REV_SH(mod1d);
+            grt_cmat2x2_mul(mod1d->uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
+            tmpRL2 = mod1d->uiz_R_EVL * tmpRL;
 
             for(int i=0; i<GRT_SRC_M_NUM; ++i){
-                grt_construct_qwv(ircvup, tmp2x2_uiz, tmpRL2, M_BL->RD, M_BL->RDL, src_coef[i], QWV_uiz[i]);
+                grt_construct_qwv(ircvup, tmp2x2_uiz, tmpRL2, M_BL->RD, M_BL->RDL, mod1d->src_coef[i], QWV_uiz[i]);
             }    
         }
     } 
     else { // A震源  B接收
 
         // 计算R_EV
-        __grt_wave2qwv_REV_PSV(mod1d, M_BL->RD, R_EV);    
-        __grt_wave2qwv_REV_SH(mod1d, M_BL->RDL, &R_EVL);    
+        __grt_wave2qwv_REV_PSV(mod1d);    
+        __grt_wave2qwv_REV_SH(mod1d);    
 
         // 递推RD_SL
         grt_recursion_RD(M_RS, M_BL, M_AL);
@@ -323,23 +323,23 @@ static void __KERNEL_FUNC__(
 
         if(calc_uiz) grt_cmat2x2_assign(tmp2x2, tmp2x2_uiz); // 为后续计算空间导数备份
 
-        grt_cmat2x2_mul(R_EV, tmp2x2, tmp2x2);
+        grt_cmat2x2_mul(mod1d->R_EV, tmp2x2, tmp2x2);
         tmpRL = M_AL->invTL / (1.0 - M_FA->RUL * M_AL->RDL);
-        tmpRL2 = R_EVL * tmpRL;
+        tmpRL2 = mod1d->R_EVL * tmpRL;
 
         for(int i=0; i<GRT_SRC_M_NUM; ++i){
-            grt_construct_qwv(ircvup, tmp2x2, tmpRL2, M_FA->RU, M_FA->RUL, src_coef[i], QWV[i]);
+            grt_construct_qwv(ircvup, tmp2x2, tmpRL2, M_FA->RU, M_FA->RUL, mod1d->src_coef[i], QWV[i]);
         }
 
 
         if(calc_uiz){
-            __grt_wave2qwv_z_REV_PSV(mod1d, M_BL->RD, uiz_R_EV);    
-            __grt_wave2qwv_z_REV_SH(mod1d, M_BL->RDL, &uiz_R_EVL);    
-            grt_cmat2x2_mul(uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
-            tmpRL2 = uiz_R_EVL * tmpRL;
+            __grt_wave2qwv_z_REV_PSV(mod1d);    
+            __grt_wave2qwv_z_REV_SH(mod1d);    
+            grt_cmat2x2_mul(mod1d->uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
+            tmpRL2 = mod1d->uiz_R_EVL * tmpRL;
             
             for(int i=0; i<GRT_SRC_M_NUM; ++i){
-                grt_construct_qwv(ircvup, tmp2x2_uiz, tmpRL2, M_FA->RU, M_FA->RUL, src_coef[i], QWV_uiz[i]);
+                grt_construct_qwv(ircvup, tmp2x2_uiz, tmpRL2, M_FA->RU, M_FA->RUL, mod1d->src_coef[i], QWV_uiz[i]);
             }
         }
 
