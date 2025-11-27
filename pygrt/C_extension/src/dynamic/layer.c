@@ -29,7 +29,7 @@
     T N##2 = mod1d->N[iy];\
 
 
-void grt_topfree_RU(const GRT_MODEL1D *mod1d, RT_MATRIX *M)
+void grt_topfree_RU(GRT_MODEL1D *mod1d)
 {
     cplx_t cbcb0 = mod1d->cbcb[0];
     if(cbcb0 != 0.0){
@@ -44,26 +44,26 @@ void grt_topfree_RU(const GRT_MODEL1D *mod1d, RT_MATRIX *M)
         // 对公式(5.3.10-14)进行重新整理，对浮点数友好一些
         Delta = -1.0 + xa0*xb0 + cbcb0 - cbcb02;
         if(Delta == 0.0){
-            M->stats = GRT_INVERSE_FAILURE;
+            mod1d->M_top.stats = GRT_INVERSE_FAILURE;
             return;
         }
         Delta = 1.0 / Delta;
-        M->RU[0][0] = (1.0 + xa0*xb0 - cbcb0 + cbcb02) * Delta;
-        M->RU[0][1] = 2.0 * xb0 * (1.0 - 0.5*cbcb0) * Delta;
-        M->RU[1][0] = 2.0 * xa0 * (1.0 - 0.5*cbcb0) * Delta;
-        M->RU[1][1] = M->RU[0][0];
-        M->RUL = 1.0;
+        mod1d->M_top.RU[0][0] = (1.0 + xa0*xb0 - cbcb0 + cbcb02) * Delta;
+        mod1d->M_top.RU[0][1] = 2.0 * xb0 * (1.0 - 0.5*cbcb0) * Delta;
+        mod1d->M_top.RU[1][0] = 2.0 * xa0 * (1.0 - 0.5*cbcb0) * Delta;
+        mod1d->M_top.RU[1][1] = mod1d->M_top.RU[0][0];
+        mod1d->M_top.RUL = 1.0;
     }
     else {
         // 液体表面
-        M->RU[0][0] = -1.0;
-        M->RU[1][1] = M->RU[0][1] = M->RU[1][0] = 0.0;
-        M->RUL = 0.0;
+        mod1d->M_top.RU[0][0] = -1.0;
+        mod1d->M_top.RU[1][1] = mod1d->M_top.RU[0][1] = mod1d->M_top.RU[1][0] = 0.0;
+        mod1d->M_top.RUL = 0.0;
     }
 }
 
 
-void grt_wave2qwv_REV_PSV(const GRT_MODEL1D *mod1d, cplx_t R[2][2], cplx_t R_EV[2][2])
+void grt_wave2qwv_REV_PSV(GRT_MODEL1D *mod1d)
 {
     size_t ircv = mod1d->ircv;
     cplx_t xa = mod1d->xa[ircv];
@@ -88,16 +88,16 @@ void grt_wave2qwv_REV_PSV(const GRT_MODEL1D *mod1d, cplx_t R[2][2], cplx_t R_EV[
 
     // 公式(5.7.7,25)
     if(mod1d->ircvup){// 震源更深
-        grt_cmat2x2_mul(D12, R, R_EV);
-        grt_cmat2x2_add(D11, R_EV, R_EV);
+        grt_cmat2x2_mul(D12, mod1d->M_FA.RU, mod1d->R_EV);
+        grt_cmat2x2_add(D11, mod1d->R_EV, mod1d->R_EV);
     } else { // 接收点更深
-        grt_cmat2x2_mul(D11, R, R_EV);
-        grt_cmat2x2_add(D12, R_EV, R_EV);
+        grt_cmat2x2_mul(D11, mod1d->M_BL.RD, mod1d->R_EV);
+        grt_cmat2x2_add(D12, mod1d->R_EV, mod1d->R_EV);
     }
 }
 
 
-void grt_wave2qwv_REV_SH(const GRT_MODEL1D *mod1d, cplx_t RL, cplx_t *R_EVL)
+void grt_wave2qwv_REV_SH(GRT_MODEL1D *mod1d)
 {
     size_t ircv = mod1d->ircv;
     cplx_t xb = mod1d->xb[ircv];
@@ -106,15 +106,19 @@ void grt_wave2qwv_REV_SH(const GRT_MODEL1D *mod1d, cplx_t RL, cplx_t *R_EVL)
     if(xb != 1.0){
         // 位于固体层
         // 公式(5.2.19)
-        *R_EVL = (1.0 + (RL))*k;
+        if(mod1d->ircvup){// 震源更深
+            mod1d->R_EVL = (1.0 + mod1d->M_FA.RUL)*k;
+        } else {
+            mod1d->R_EVL = (1.0 + mod1d->M_BL.RDL)*k;
+        }
     } else {
         // 位于液体层
-        *R_EVL = 0.0;
+        mod1d->R_EVL = 0.0;
     }
 }
 
 
-void grt_wave2qwv_z_REV_PSV(const GRT_MODEL1D *mod1d, const cplx_t R[2][2], cplx_t R_EV[2][2])
+void grt_wave2qwv_z_REV_PSV(GRT_MODEL1D *mod1d)
 {
     size_t ircv = mod1d->ircv;
     cplx_t xa = mod1d->xa[ircv];
@@ -138,16 +142,16 @@ void grt_wave2qwv_z_REV_PSV(const GRT_MODEL1D *mod1d, const cplx_t R[2][2], cplx
 
     // 公式(5.7.7,25)
     if(mod1d->ircvup){// 震源更深
-        grt_cmat2x2_mul(D12, R, R_EV);
-        grt_cmat2x2_add(D11, R_EV, R_EV);
+        grt_cmat2x2_mul(D12, mod1d->M_FA.RU, mod1d->uiz_R_EV);
+        grt_cmat2x2_add(D11, mod1d->uiz_R_EV, mod1d->uiz_R_EV);
     } else { // 接收点更深
-        grt_cmat2x2_mul(D11, R, R_EV);
-        grt_cmat2x2_add(D12, R_EV, R_EV);
+        grt_cmat2x2_mul(D11, mod1d->M_BL.RD, mod1d->uiz_R_EV);
+        grt_cmat2x2_add(D12, mod1d->uiz_R_EV, mod1d->uiz_R_EV);
     }
 }    
 
 
-void grt_wave2qwv_z_REV_SH(const GRT_MODEL1D *mod1d, cplx_t RL, cplx_t *R_EVL)
+void grt_wave2qwv_z_REV_SH(GRT_MODEL1D *mod1d)
 {
     size_t ircv = mod1d->ircv;
     cplx_t xb = mod1d->xb[ircv];
@@ -160,13 +164,13 @@ void grt_wave2qwv_z_REV_SH(const GRT_MODEL1D *mod1d, cplx_t RL, cplx_t *R_EVL)
     if(xb != 1.0){
         // 位于固体层
         if(mod1d->ircvup){// 震源更深
-            *R_EVL = (1.0 - (RL))*bk;
+            mod1d->uiz_R_EVL = (1.0 - mod1d->M_FA.RUL)*bk;
         } else { // 接收点更深
-            *R_EVL = (RL - 1.0)*bk;
+            mod1d->uiz_R_EVL = (mod1d->M_BL.RDL - 1.0)*bk;
         }
     } else {
         // 位于液体层
-        *R_EVL = 0.0;
+        mod1d->uiz_R_EVL = 0.0;
     }
 }    
 

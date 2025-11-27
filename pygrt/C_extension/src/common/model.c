@@ -131,23 +131,17 @@ GRT_MODEL1D * grt_init_mod1d(size_t n){
 
 
 GRT_MODEL1D * grt_copy_mod1d(const GRT_MODEL1D *mod1d1){
-    GRT_MODEL1D *mod1d2 = grt_init_mod1d(mod1d1->n);
+    GRT_MODEL1D *mod1d2 = (GRT_MODEL1D *)calloc(1, sizeof(GRT_MODEL1D));
+
+    // 先直接赋值，实现浅拷贝
+    *mod1d2 = *mod1d1;
+
+    // 对指针部分再重新申请内存并赋值，实现深拷贝
     size_t n = mod1d1->n;
-    mod1d2->n = mod1d1->n;
-    mod1d2->depsrc = mod1d1->depsrc;
-    mod1d2->deprcv = mod1d1->deprcv;
-    mod1d2->isrc = mod1d1->isrc;
-    mod1d2->ircv = mod1d1->ircv;
-    mod1d2->ircvup = mod1d1->ircvup;
-    mod1d2->io_depth = mod1d1->io_depth;
+    #define X(P, T)  \
+        mod1d2->P = (T*)calloc(n, sizeof(T));\
+        memcpy(mod1d2->P, mod1d1->P, sizeof(T)*n);\
 
-    mod1d2->omega = mod1d1->omega;
-    mod1d2->k = mod1d1->k;
-    mod1d2->c_phase = mod1d1->c_phase;
-
-    mod1d2->stats = mod1d1->stats;
-
-    #define X(P, T)  memcpy(mod1d2->P, mod1d1->P, sizeof(T)*n);
         GRT_FOR_EACH_MODEL_QUANTITY_ARRAY
     #undef X
 

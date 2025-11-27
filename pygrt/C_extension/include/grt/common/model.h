@@ -11,6 +11,7 @@
 #include <complex.h>
 #include <stdbool.h>
 #include "grt/common/const.h"
+#include "grt/common/RT_matrix.h"
 
 
 /** 1D 模型结构体，包括多个水平层，以及复数形式的弹性参数 */
@@ -49,6 +50,25 @@ typedef struct {
 
     /* 状态变量，非 0 为异常值 */
     int stats;
+
+    /* 根据震源和台站划分的广义 R/T 系数 */
+    RT_MATRIX M_AL;
+    RT_MATRIX M_BL;
+    RT_MATRIX M_RS;
+    RT_MATRIX M_FA;
+    RT_MATRIX M_FB;
+
+    /* 自由表面的反射系数矩阵，仅 RU, RUL 有用 */
+    RT_MATRIX M_top;
+
+    /* 接收点处的接收矩阵 (转为位移u和位移导数uiz的(B_m, C_m, P_m)系分量) */
+    cplx_t R_EV[2][2];
+    cplx_t R_EVL;
+    cplx_t uiz_R_EV[2][2];
+    cplx_t uiz_R_EVL;
+
+    /* 震源处的震源系数 */
+    cplx_t src_coef[GRT_SRC_M_NUM][GRT_QWV_NUM][2];  ///< 震源系数 \f$ P_m, SV_m, SH_m \f$
 
 } GRT_MODEL1D;
 

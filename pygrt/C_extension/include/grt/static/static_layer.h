@@ -22,54 +22,45 @@
 /**
  * 计算自由表面的静态反射系数，公式(6.3.12)
  * 
- * @param[in]     mod1d             模型结构体指针
- * @param[out]    R_tilt            R/T矩阵，仅填充RU
+ * @param[in,out]     mod1d             模型结构体指针，结果保存在 Mtop
  * 
  */
-void grt_static_topfree_RU(const GRT_MODEL1D *mod1d, RT_MATRIX *M);
+void grt_static_topfree_RU(GRT_MODEL1D *mod1d);
 
 
 /**
  * 计算接收点位置的 P-SV 静态接收矩阵，将波场转为位移，公式(6.3.35)
  * 
- * @param[in]      mod1d           模型结构体指针
- * @param[in]      R               P-SV波场
- * @param[out]     R_EV            P-SV接收函数矩阵
+ * @param[in,out]      mod1d           模型结构体指针，结果保存在 R_EV
  * 
  */
-void grt_static_wave2qwv_REV_PSV(const GRT_MODEL1D *mod1d, const cplx_t R[2][2], cplx_t R_EV[2][2]);
+void grt_static_wave2qwv_REV_PSV(GRT_MODEL1D *mod1d);
 
 /**
  * 计算接收点位置的 SH 静态接收矩阵，将波场转为位移，公式(6.3.37)
  * 
- * @param[in]      mod1d           模型结构体指针
- * @param[in]      RL              SH波场
- * @param[out]     R_EVL           SH接收函数值
+ * @param[in,out]      mod1d           模型结构体指针，结果保存在 R_EVL
  * 
  */
-void grt_static_wave2qwv_REV_SH(const GRT_MODEL1D *mod1d, cplx_t RL, cplx_t *R_EVL);
+void grt_static_wave2qwv_REV_SH(GRT_MODEL1D *mod1d);
 
 /**
  * 计算接收点位置的ui_z的 P-SV 静态接收矩阵，即将波场转为ui_z。
  * 公式本质是推导ui_z关于q_m, w_m, v_m的连接矩阵（就是应力推导过程的一部分）
  * 
- * @param[in]      mod1d           模型结构体指针
- * @param[in]      R               P-SV波场
- * @param[out]     R_EV            P-SV接收函数矩阵
+ * @param[in,out]      mod1d           模型结构体指针，结果保存在 uiz_R_EV
  * 
  */
-void grt_static_wave2qwv_z_REV_PSV(const GRT_MODEL1D *mod1d, const cplx_t R[2][2], cplx_t R_EV[2][2]);
+void grt_static_wave2qwv_z_REV_PSV(GRT_MODEL1D *mod1d);
 
 /**
  * 计算接收点位置的ui_z的 SH 静态接收矩阵，即将波场转为ui_z。
  * 公式本质是推导ui_z关于q_m, w_m, v_m的连接矩阵（就是应力推导过程的一部分）
  * 
- * @param[in]      mod1d           模型结构体指针
- * @param[in]      RL              SH波场
- * @param[out]     R_EVL           SH接收函数值
+ * @param[in,out]      mod1d           模型结构体指针，结果保存在 uiz_R_EVL
  * 
  */
-void grt_static_wave2qwv_z_REV_SH(const GRT_MODEL1D *mod1d, cplx_t RL, cplx_t *R_EVL);
+void grt_static_wave2qwv_z_REV_SH(GRT_MODEL1D *mod1d);
 
 
 /**

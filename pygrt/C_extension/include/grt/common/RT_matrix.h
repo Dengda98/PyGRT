@@ -13,8 +13,7 @@
 
 #include "grt/common/const.h"
 
-
-/** 应该把 PSV 和 SH 的小矩阵统一放在一个结构体中管理 */
+/* 使用结构体管理上行和下行的 R/T 矩阵 */
 typedef struct {
     cplx_t RD[2][2];     ///< P-SV 下传反射系数矩阵
     cplx_t RU[2][2];     ///< P-SV 上传反射系数矩阵

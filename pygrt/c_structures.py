@@ -55,45 +55,31 @@ CPLX = REAL*2
 PREAL = POINTER(REAL)
 PCPLX = POINTER(CPLX)
 
+class c_RT_MATRIX(Structure):
+    """
+    和C结构体 RT_MATRIX 匹配
+    """
+
+    _fields_ = [
+        ('RD', CPLX * 4),
+        ('RU', CPLX * 4),
+        ('TD', CPLX * 4),
+        ('TU', CPLX * 4),
+        ('RDL', CPLX),
+        ('RUL', CPLX),
+        ('TDL', CPLX),
+        ('TUL', CPLX),
+        ('invT', CPLX * 4),
+        ('invTL', CPLX),
+        ('stats', c_int)
+    ]
+
+
 class c_GRT_MODEL1D(Structure):
     """
     和C结构体 GRT_MODEL1D 作匹配
-
-    :field n:        层数
-    :filed depsrc:   震源深度 km
-    :filed deprcv:   接收点深度 km
-    :field isrc:     震源所在层位
-    :field ircv:     台站所在层位
-    :field ircvup:   台站层位是否高于震源 
-    :field io_depth: 模型读入的第一列是否为每层顶界面深度
-
-    :field omega:    圆频率
-    :field omega:    波数
-    :field c_phase:  相速度
-
-    :field thk:      数组, 每层层厚(km)
-    :field dep:      数组, 每层顶界面深度(km)
-    :field Va:       数组, 每层P波速度(km/s)
-    :field Vb:       数组, 每层S波速度(km/s)
-    :field Rho:      数组, 每层密度(g/cm^3)
-    :field Qa:       数组, 每层P波品质因子Q_P
-    :field Qb:       数组, 每层S波品质因子Q_S
-    :field Qainv:
-    :field Qbinv:
-
-    :field mu:
-    :field lambda:
-    :field delta:
-    :field atna:
-    :field atnb:
-    :field xa:
-    :field xb:
-    :field caca:
-    :field cbcb:
-
-    :field stats:
-
     """
+    
     _fields_ = [
         ('n', c_size_t), 
         ("depsrc", REAL),
@@ -128,4 +114,19 @@ class c_GRT_MODEL1D(Structure):
         ('cbcb', PCPLX),
 
         ('stats', c_int),
+
+        ('M_AL', c_RT_MATRIX),
+        ('M_BL', c_RT_MATRIX),
+        ('M_RS', c_RT_MATRIX),
+        ('M_FA', c_RT_MATRIX),
+        ('M_FB', c_RT_MATRIX),
+
+        ('M_top', c_RT_MATRIX),
+
+        ('R_EV', CPLX * 4),
+        ('R_EVL', CPLX),
+        ('uiz_R_EV', CPLX * 4),
+        ('uiz_R_EVL', CPLX),
+
+        ('src_coef', CPLX * SRC_M_NUM * QWV_NUM * 2)
     ]

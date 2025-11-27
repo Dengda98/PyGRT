@@ -55,8 +55,7 @@ real_t grt_discrete_integ(
         k += dk; 
 
         // 计算核函数 F(k, w)
-        grt_mod1d_xa_xb(mod1d, k);
-        kerfunc(mod1d, QWV, calc_upar, QWV_uiz); 
+        kerfunc(mod1d, k, QWV, calc_upar, QWV_uiz); 
         if(mod1d->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
         
         // 记录积分核函数
