@@ -24,7 +24,10 @@
  * @param[out]    coef         震源系数 \f$ P_m, SV_m, SH_m \f$
  * 
  */
-void grt_source_coef_PSV(const GRT_MODEL1D *mod1d, cplx_t coef[GRT_SRC_M_NUM][GRT_QWV_NUM-1][2]);
+void grt_source_coef(const GRT_MODEL1D *mod1d, cplx_t coef[GRT_SRC_M_NUM][GRT_QWV_NUM][2]);
+
+/* P-SV 波的震源系数  */
+void grt_source_coef_PSV(const GRT_MODEL1D *mod1d, cplx_t coef[GRT_SRC_M_NUM][GRT_QWV_NUM][2]);
 
 /* SH 波的震源系数  */
-void grt_source_coef_SH(const GRT_MODEL1D *mod1d, cplx_t coef[GRT_SRC_M_NUM][2]);
+void grt_source_coef_SH(const GRT_MODEL1D *mod1d, cplx_t coef[GRT_SRC_M_NUM][GRT_QWV_NUM][2]);

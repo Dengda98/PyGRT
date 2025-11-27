@@ -12,25 +12,13 @@
 
 #include <stdio.h>
 #include <complex.h>
+#include <string.h>
 
 #include "grt/static/static_source.h"
-#include "grt/common/const.h"
 
-void grt_static_source_coef_PSV(const GRT_MODEL1D *mod1d, cplx_t coef[GRT_SRC_M_NUM][GRT_QWV_NUM-1][2])
+
+inline void _source_PSV(const cplx_t delta, const real_t k, cplx_t coef[GRT_SRC_M_NUM][GRT_QWV_NUM][2])
 {
-    // 先全部赋0 
-    for(int i=0; i<GRT_SRC_M_NUM; ++i){
-        for(int j=0; j<GRT_QWV_NUM-1; ++j){
-            for(int p=0; p<2; ++p){
-                coef[i][j][p] = 0.0;
-            }
-        }
-    }
-
-    size_t isrc = mod1d->isrc;
-    cplx_t delta = mod1d->delta[isrc];
-    real_t k = mod1d->k;
-
     cplx_t tmp;
     cplx_t A = 1.0+delta;
 
@@ -39,10 +27,10 @@ void grt_static_source_coef_PSV(const GRT_MODEL1D *mod1d, cplx_t coef[GRT_SRC_M_
 
     // 垂直力源
     coef[1][0][0] = tmp = -1.0/(2.0*A*k);        coef[1][0][1] = - tmp;   
-    coef[1][1][0] = tmp;                           coef[1][1][1] = - tmp;
+    coef[1][1][0] = tmp;                         coef[1][1][1] = - tmp;
 
     // 水平力源
-    coef[2][0][0] = tmp = 1.0/(2.0*A*k);        coef[2][0][1] = tmp;   
+    coef[2][0][0] = tmp = 1.0/(2.0*A*k);          coef[2][0][1] = tmp;   
     coef[2][1][0] = - tmp;                        coef[2][1][1] = - tmp;
 
     // 剪切位错
@@ -50,7 +38,7 @@ void grt_static_source_coef_PSV(const GRT_MODEL1D *mod1d, cplx_t coef[GRT_SRC_M_
     coef[3][0][0] = tmp = (-1.0+4.0*delta)/(2.0*A);    coef[3][0][1] = tmp;
     coef[3][1][0] = tmp = -3.0/(2.0*A);                coef[3][1][1] = tmp;
     // m=1
-    coef[4][0][0] = tmp = -delta/A;                        coef[4][0][1] = -tmp;
+    coef[4][0][0] = tmp = -delta/A;                       coef[4][0][1] = -tmp;
     coef[4][1][0] = tmp = 1.0/A;                          coef[4][1][1] = -tmp;
     // m=2
     coef[5][0][0] = tmp = 1.0/(2.0*A);                   coef[5][0][1] = tmp;
@@ -58,27 +46,46 @@ void grt_static_source_coef_PSV(const GRT_MODEL1D *mod1d, cplx_t coef[GRT_SRC_M_
 }
 
 
-void grt_static_source_coef_SH(const GRT_MODEL1D *mod1d, cplx_t coef[GRT_SRC_M_NUM][2])
+inline void _source_SH(const real_t k, cplx_t coef[GRT_SRC_M_NUM][GRT_QWV_NUM][2])
 {
-    real_t k = mod1d->k;
-    
-    // 先全部赋0 
-    for(int i=0; i<GRT_SRC_M_NUM; ++i){
-        for(int p=0; p<2; ++p){
-            coef[i][p] = 0.0;
-        }
-    }
-
     cplx_t tmp;
 
     // 水平力源
-    coef[2][0] = tmp = -1.0/k;                coef[2][1] = tmp;
+    coef[2][2][0] = tmp = - 1.0/k;                 coef[2][2][1] = tmp;
 
     // 剪切位错
     // m=1
-    coef[4][0] = tmp = 1.0;                            coef[4][1] = -tmp;
+    coef[4][2][0] = tmp = 1.0;                     coef[4][2][1] = -tmp;
     // m=2
-    coef[5][0] = tmp = -1.0;                           coef[5][1] = tmp;
+    coef[5][2][0] = tmp = - 1.0;                   coef[5][2][1] = tmp;
+}
+
+
+void grt_static_source_coef(const GRT_MODEL1D *mod1d, cplx_t coef[GRT_SRC_M_NUM][GRT_QWV_NUM][2])
+{
+    // 先全部赋0 
+    memset(coef, 0, sizeof(cplx_t)*GRT_SRC_M_NUM*GRT_QWV_NUM*2);
+    
+    grt_static_source_coef_PSV(mod1d, coef);
+    grt_static_source_coef_SH(mod1d, coef);
+}
+
+
+void grt_static_source_coef_PSV(const GRT_MODEL1D *mod1d, cplx_t coef[GRT_SRC_M_NUM][GRT_QWV_NUM][2])
+{
+    size_t isrc = mod1d->isrc;
+    cplx_t delta = mod1d->delta[isrc];
+    real_t k = mod1d->k;
+
+    _source_PSV(delta, k, coef);
+}
+
+
+void grt_static_source_coef_SH(const GRT_MODEL1D *mod1d, cplx_t coef[GRT_SRC_M_NUM][GRT_QWV_NUM][2])
+{
+    real_t k = mod1d->k;
+    
+    _source_SH(k, coef);
 }
 
 

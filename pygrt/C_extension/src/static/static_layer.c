@@ -52,6 +52,7 @@ void grt_static_wave2qwv_REV_PSV(const GRT_MODEL1D *mod1d, const cplx_t R[2][2],
 
 void grt_static_wave2qwv_REV_SH(const GRT_MODEL1D *mod1d, cplx_t RL, cplx_t *R_EVL)
 {
+    (void)mod1d;  // 暂停该参数 -Wunused-parameter 警告
     *R_EVL = (1.0 + (RL));
 }
 
