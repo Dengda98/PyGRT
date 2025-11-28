@@ -11,10 +11,13 @@ rm -rf syn_*
 grt greenfn -M../milrow  -D2/3 -N600/0.02 -R10 -e -OGRN
 grt greenfn -M../killari -D3/0 -N300/0.01 -R3  -e -OGRN 
 grt greenfn -M../thin1   -D0/0 -N700/0.02 -R1  -e -OGRN
+# liquid model
+grt greenfn -M../seafloor -D5/1.1 -N500/0.4 -R100 -e -OGRN
 
 python ../compare_sac.py  "GRN/milrow_2_3_10/*"  "_Ref/milrow_2_3_10/*"
 python ../compare_sac.py  "GRN/killari_3_0_3/*"  "_Ref/killari_3_0_3/*"
 python ../compare_sac.py  "GRN/thin1_0_0_1/*"    "_Ref/thin1_0_0_1/*"
+python ../compare_sac.py  "GRN/seafloor_5_1.1_100/*"    "_Ref/seafloor_5_1.1_100/*"
 
 # =========================================
 # syn
