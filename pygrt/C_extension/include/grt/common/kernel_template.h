@@ -167,12 +167,8 @@ static void __KERNEL_FUNC__(
     bool calc_uiz, cplx_t QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM])
 {
     // 初始化qwv为0
-    for(int i=0; i<GRT_SRC_M_NUM; ++i){
-        for(int j=0; j<GRT_QWV_NUM; ++j){
-            QWV[i][j] = 0.0;
-            if(calc_uiz)  QWV_uiz[i][j] = 0.0;
-        }
-    }
+    memset(QWV, 0, sizeof(cplx_t)*GRT_SRC_M_NUM*GRT_QWV_NUM);
+    if(calc_uiz)  memset(QWV_uiz, 0, sizeof(cplx_t)*GRT_SRC_M_NUM*GRT_QWV_NUM);
 
     mod1d->k = k;
     // 为动态解计算xa,xb,caca,cbcb

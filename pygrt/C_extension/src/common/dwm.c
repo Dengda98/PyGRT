@@ -14,6 +14,7 @@
 
 #include <stdio.h> 
 #include <stdlib.h>
+#include <string.h>
 
 #include "grt/common/dwm.h"
 #include "grt/common/kernel.h"
@@ -32,11 +33,11 @@ real_t grt_discrete_integ(
     cplx_t sum_uir_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
     FILE *fstats, GRT_KernelFunc kerfunc)
 {
-    cplx_t SUM[GRT_SRC_M_NUM][GRT_INTEG_NUM];
+    cplx_t SUM[GRT_SRC_M_NUM][GRT_INTEG_NUM] = {0};
 
     // 不同震源不同阶数的核函数 F(k, w) 
-    cplx_t QWV[GRT_SRC_M_NUM][GRT_QWV_NUM];
-    cplx_t QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM];
+    cplx_t QWV[GRT_SRC_M_NUM][GRT_QWV_NUM] = {0};
+    cplx_t QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM] = {0};
     
     real_t k = 0.0;
     size_t ik = 0;
@@ -66,11 +67,7 @@ real_t grt_discrete_integ(
         for(size_t ir=0; ir<nr; ++ir){
             if(iendkrs[ir]) continue; // 该震中距下的波数k积分已收敛
 
-            for(int i=0; i<GRT_SRC_M_NUM; ++i){
-                for(int v=0; v<GRT_INTEG_NUM; ++v){
-                    SUM[i][v] = 0.0;
-                }
-            }
+            memset(SUM, 0, sizeof(cplx_t)*GRT_SRC_M_NUM*GRT_INTEG_NUM);
             
             // 计算被积函数一项 F(k,w)Jm(kr)k
             grt_int_Pk(k, rs[ir], QWV, false, SUM);
