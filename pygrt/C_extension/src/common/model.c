@@ -183,7 +183,18 @@ void grt_mod1d_xa_xb(GRT_MODEL1D *mod1d, const real_t k)
 
     mod1d->c_phase = mod1d->omega/k;
 
+    size_t isrc = mod1d->isrc;
+    size_t ircv = mod1d->ircv;
+
     for(size_t i=0; i<mod1d->n; ++i){
+        if( i == isrc || i == ircv ){
+            mod1d->xa[i] = mod1d->xa[i-1];
+            mod1d->caca[i] = mod1d->caca[i-1];
+            mod1d->xb[i] = mod1d->xb[i-1];
+            mod1d->cbcb[i] = mod1d->cbcb[i-1];
+            continue;
+        }
+
         real_t va, vb;
         va = mod1d->Va[i];
         vb = mod1d->Vb[i];
