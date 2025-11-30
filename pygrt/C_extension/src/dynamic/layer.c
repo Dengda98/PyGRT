@@ -480,6 +480,36 @@ void grt_delay_RT_matrix(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M
 }
 
 
+
+void grt_delay_GRT_matrix(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
+{
+    real_t thk = mod1d->Thk[iy-1];
+    cplx_t xa1 = mod1d->xa[iy-1];
+    cplx_t xb1 = mod1d->xb[iy-1];
+    real_t k = mod1d->k;
+    
+    cplx_t exa, exb, ex2a, ex2b, exab;
+    exa = exp(- k*thk*xa1);
+    exb = exp(- k*thk*xb1);
+    ex2a = exa * exa;
+    ex2b = exb * exb;
+    exab = exa * exb;
+
+    M->RU[0][0] *= ex2a;    M->RU[0][1] *= exab;  
+    M->RU[1][0] *= exab;    M->RU[1][1] *= ex2b;  
+    
+    M->TD[0][0] *= exa;     M->TD[0][1] *= exa; 
+    M->TD[1][0] *= exb;     M->TD[1][1] *= exb;
+
+    M->TU[0][0] *= exa;     M->TU[0][1] *= exb; 
+    M->TU[1][0] *= exa;     M->TU[1][1] *= exb;
+
+    M->RUL *= ex2b;
+    M->TDL *= exb;
+    M->TUL *= exb;
+}
+
+
 void grt_get_layer_D(
     cplx_t xa, cplx_t xb, cplx_t kbkb, cplx_t mu,
     cplx_t omega, real_t rho, real_t k, cplx_t D[4][4], bool inverse, int liquid_invtype)
