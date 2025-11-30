@@ -67,7 +67,7 @@
  * @param[in]     coef          震源系数，\f$ P_m, SV_m，SH_m\f$ ，维度2表示下行波(p=0)和上行波(p=1)
  * @param[out]    qwv           最终通过矩阵传播计算出的在台站位置的\f$ q_m,w_m,v_m\f$
  */
-inline void grt_construct_qwv(
+inline GCC_ALWAYS_INLINE void grt_construct_qwv(
     bool ircvup, 
     const cplx_t R1[2][2], cplx_t RL1, 
     const cplx_t R2[2][2], cplx_t RL2, 
