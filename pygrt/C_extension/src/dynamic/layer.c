@@ -351,16 +351,19 @@ void grt_RT_matrix_ss_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *
 
     Delta = 1.0 / Delta;
 
+    cplx_t tmp;
+
     // REFELCTION
     //------------------ RD -----------------------------------
     // rpp+
     M->RD[0][0] = ( - dmu2*(1.0+xa1*xb1)*(1.0-xa2*xb2) - mu1cbcb1*dmu*(rho21*(1.0+xa1*xb1) - (1.0-xa2*xb2))
                     - 0.25*mu1cbcb1*mu2cbcb2*(rho12*(1.0-xa2*xb2) + rho21*(1.0+xa1*xb1) - 2.0 + (xa1*xb2-xa2*xb1))) * Delta;
     // rsp+
-    M->RD[0][1] = ( - dmu2*(1.0-xa2*xb2) + 0.5*mu1cbcb1*dmu*((1.0-xa2*xb2) - 2.0*rho21) 
-                    + 0.25*mu1cbcb1*mu2cbcb2*(1.0-rho21)) * Delta * (-2.0*xb1);
+    tmp = ( - dmu2*(1.0-xa2*xb2) + 0.5*mu1cbcb1*dmu*((1.0-xa2*xb2) - 2.0*rho21) 
+                    + 0.25*mu1cbcb1*mu2cbcb2*(1.0-rho21)) * Delta * (-2.0);
+    M->RD[0][1] = xb1*tmp;
     // rps+
-    M->RD[1][0] = M->RD[0][1]*(xa1/xb1);
+    M->RD[1][0] = xa1*tmp;
     // rss+
     M->RD[1][1] = ( - dmu2*(1.0+xa1*xb1)*(1.0-xa2*xb2) - mu1cbcb1*dmu*(rho21*(1.0+xa1*xb1) - (1.0-xa2*xb2))
                     - 0.25*mu1cbcb1*mu2cbcb2*(rho12*(1.0-xa2*xb2) + rho21*(1.0+xa1*xb1) - 2.0 - (xa1*xb2-xa2*xb1))) * Delta;
@@ -369,24 +372,24 @@ void grt_RT_matrix_ss_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *
     M->RU[0][0] = ( - dmu2*(1.0-xa1*xb1)*(1.0+xa2*xb2) - mu1cbcb1*dmu*(rho21*(1.0-xa1*xb1) - (1.0+xa2*xb2))
                     - 0.25*mu1cbcb1*mu2cbcb2*(rho12*(1.0+xa2*xb2) + rho21*(1.0-xa1*xb1) - 2.0 - (xa1*xb2-xa2*xb1))) * Delta;
     // rsp-
-    M->RU[0][1] = ( - dmu2*(1.0-xa1*xb1) - 0.5*mu1cbcb1*dmu*(rho21*(1.0-xa1*xb1) - 2.0)
-                    + 0.25*mu1cbcb1*mu2cbcb2*(1.0-rho12)) * Delta * (2.0*xb2);
+    tmp = ( - dmu2*(1.0-xa1*xb1) - 0.5*mu1cbcb1*dmu*(rho21*(1.0-xa1*xb1) - 2.0)
+                    + 0.25*mu1cbcb1*mu2cbcb2*(1.0-rho12)) * Delta * (2.0);
+    M->RU[0][1] = xb2*tmp;
     // rps-
-    M->RU[1][0] = M->RU[0][1]*(xa2/xb2);
+    M->RU[1][0] = xa2*tmp;
     // rss-
     M->RU[1][1] = ( - dmu2*(1.0-xa1*xb1)*(1.0+xa2*xb2) - mu1cbcb1*dmu*(rho21*(1.0-xa1*xb1) - (1.0+xa2*xb2))
                     - 0.25*mu1cbcb1*mu2cbcb2*(rho12*(1.0+xa2*xb2) + rho21*(1.0-xa1*xb1) - 2.0 + (xa1*xb2-xa2*xb1))) * Delta;
 
     // REFRACTION
-    cplx_t tmp;
-    tmp = mu1cbcb1*xa1*(dmu*(xb2-xb1) - 0.5*mu1cbcb1*(rho21*xb1+xb2)) * Delta;
-    M->TD[0][0] = tmp;     M->TU[0][0] = (rho21*xa2/xa1) * tmp;
-    tmp = mu1cbcb1*xb1*(dmu*(1.0-xa1*xb2) - 0.5*mu1cbcb1*(1.0-rho21)) * Delta;
-    M->TD[0][1] = tmp;     M->TU[1][0] = (rho21*xa2/xb1) * tmp;
-    tmp = mu1cbcb1*xa1*(dmu*(1.0-xa2*xb1) - 0.5*mu1cbcb1*(1.0-rho21)) * Delta;
-    M->TD[1][0] = tmp;     M->TU[0][1] = (rho21*xb2/xa1) * tmp;
-    tmp = mu1cbcb1*xb1*(dmu*(xa2-xa1) - 0.5*mu1cbcb1*(rho21*xa1+xa2)) * Delta;
-    M->TD[1][1] = tmp;     M->TU[1][1] = (rho21*xb2/xb1) * tmp;
+    tmp = mu1cbcb1*(dmu*(xb2-xb1) - 0.5*mu1cbcb1*(rho21*xb1+xb2)) * Delta;
+    M->TD[0][0] = xa1*tmp;     M->TU[0][0] = (rho21*xa2) * tmp;
+    tmp = mu1cbcb1*(dmu*(1.0-xa1*xb2) - 0.5*mu1cbcb1*(1.0-rho21)) * Delta;
+    M->TD[0][1] = xb1*tmp;     M->TU[1][0] = (rho21*xa2) * tmp;
+    tmp = mu1cbcb1*(dmu*(1.0-xa2*xb1) - 0.5*mu1cbcb1*(1.0-rho21)) * Delta;
+    M->TD[1][0] = xa1*tmp;     M->TU[0][1] = (rho21*xb2) * tmp;
+    tmp = mu1cbcb1*(dmu*(xa2-xa1) - 0.5*mu1cbcb1*(rho21*xa1+xa2)) * Delta;
+    M->TD[1][1] = xb1*tmp;     M->TU[1][1] = (rho21*xb2) * tmp;
 }
 
 
