@@ -17,7 +17,7 @@
 #include "grt/static/static_source.h"
 
 
-inline void _source_PSV(const cplx_t delta, const real_t k, cplx_t coef[GRT_SRC_M_NUM][GRT_QWV_NUM][2])
+inline GCC_ALWAYS_INLINE void _source_PSV(const cplx_t delta, const real_t k, cplx_t coef[GRT_SRC_M_NUM][GRT_QWV_NUM][2])
 {
     cplx_t tmp;
     cplx_t A = 1.0+delta;
@@ -46,7 +46,7 @@ inline void _source_PSV(const cplx_t delta, const real_t k, cplx_t coef[GRT_SRC_
 }
 
 
-inline void _source_SH(const real_t k, cplx_t coef[GRT_SRC_M_NUM][GRT_QWV_NUM][2])
+inline GCC_ALWAYS_INLINE void _source_SH(const real_t k, cplx_t coef[GRT_SRC_M_NUM][GRT_QWV_NUM][2])
 {
     cplx_t tmp;
 

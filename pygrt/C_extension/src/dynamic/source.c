@@ -16,7 +16,7 @@
 #include "grt/dynamic/source.h"
 
 
-inline void _source_PSV(
+inline GCC_ALWAYS_INLINE void _source_PSV(
     const cplx_t xa, const cplx_t caca, 
     const cplx_t xb, const cplx_t cbcb, const real_t k, cplx_t coef[GRT_SRC_M_NUM][GRT_QWV_NUM][2])
 {
@@ -47,7 +47,7 @@ inline void _source_PSV(
 
 }
 
-inline void _source_SH(const cplx_t xb, const cplx_t cbcb, const real_t k, cplx_t coef[GRT_SRC_M_NUM][GRT_QWV_NUM][2])
+inline GCC_ALWAYS_INLINE void _source_SH(const cplx_t xb, const cplx_t cbcb, const real_t k, cplx_t coef[GRT_SRC_M_NUM][GRT_QWV_NUM][2])
 {
     cplx_t tmp;
 
