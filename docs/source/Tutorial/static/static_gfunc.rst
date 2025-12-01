@@ -1,10 +1,9 @@
+:author: 朱邓达
+:date: 2025-04-17
+:updated_date: 2025-09-22
+
 计算静态格林函数
 =================
-
-:Author: Zhu Dengda
-:Email:  zhudengda@mail.iggcas.ac.cn
-
------------------------------------------------------------
 
 Python中计算静态格林函数的主函数为 :func:`compute_static_grn() <pygrt.pymod.PyModel1D.compute_static_grn>` ，C模块为 :doc:`/Module/static_greenfn`。
 

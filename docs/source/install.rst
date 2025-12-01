@@ -1,12 +1,9 @@
+:author: 朱邓达
+:date: 2025-04-17
+:updated_date: 2025-09-22
 
 安装
 =============
-
-:Author: Zhu Dengda
-:Email:  zhudengda@mail.iggcas.ac.cn
-
------------------------------------------------------------
-
 
 .. |gr| replace:: `Github Releases <https://github.com/Dengda98/PyGRT/releases>`__
 

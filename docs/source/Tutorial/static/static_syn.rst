@@ -1,10 +1,9 @@
+:author: 朱邓达
+:date: 2025-04-17
+:updated_date: 2025-09-22
+
 合成静态位移
 =================
-
-:Author: Zhu Dengda
-:Email:  zhudengda@mail.iggcas.ac.cn
-
------------------------------------------------------------
 
 Python中合成静态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.utils.gen_syn_from_gf_DC>` （\*表示对不同震源）（与合成动态位移的函数共用）  ，C模块为 :doc:`/Module/static_syn`。
 

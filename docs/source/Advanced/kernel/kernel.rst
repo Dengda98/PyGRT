@@ -1,11 +1,9 @@
+:author: 朱邓达
+:date: 2025-04-20
+:updated_date: 2025-08-06
+
 核函数 :math:`f-v` 谱图 
 =========================
-
-:Author: Zhu Dengda
-:Email:  zhudengda@mail.iggcas.ac.cn
-
-
------------------------------------------------------------
 
 在 :doc:`/Advanced/integ_converg/integ_converg` 部分介绍了程序可以导出积分过程中不同频率的核函数值，这使得我们可以绘制核函数的 :math:`f-v` 谱图 [#]_ ，以观察其中的频散特征 。
 

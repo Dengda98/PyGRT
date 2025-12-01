@@ -1,10 +1,9 @@
+:author: 朱邓达
+:date: 2025-04-17
+:updated_date: 2025-09-19
+
 计算静态应变、旋转、应力张量
 =================================
-
-:Author: Zhu Dengda
-:Email:  zhudengda@mail.iggcas.ac.cn
-
------------------------------------------------------------
 
 除了使用不同的函数名/程序名，输出文件不同之外，流程基本和 :doc:`/Tutorial/dynamic/strain_stress` 类似。这里直接给出脚本。
 

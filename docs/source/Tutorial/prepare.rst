@@ -1,10 +1,9 @@
+:author: 朱邓达
+:date: 2025-04-17
+:updated_date: 2025-09-22
+
 准备工作
 =============
-
-:Author: Zhu Dengda
-:Email:  zhudengda@mail.iggcas.ac.cn
-
------------------------------------------------------------
 
 **PyGRT** 程序包由C和Python两个编程语言的代码组成，目的是兼并高效性和便捷性。
 底层复杂运算由C语言编写，编译链接成动态库 ``libgrt.so`` 供Python调用。Python通过 ``ctypes`` 库导入动态库以使用外部函数，以此兼并了C语言的高效和Python语言的便捷。
