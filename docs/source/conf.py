@@ -9,6 +9,7 @@
 import sys, os, pathlib
 import subprocess 
 import setuptools_scm
+import datetime
 sys.path.insert(0, os.path.abspath('../../'))  # 指向pygrt模块的根目录
 
 html_last_updated_fmt = '%b %d, %Y'
@@ -18,12 +19,9 @@ def setup(app):
     app.add_css_file('my_theme.css')  
 
 
-
-
-
 project = 'PyGRT'
-copyright = '2025, Zhu Dengda'
-author = 'Zhu Dengda'
+author = '朱邓达'
+copyright = "2024-{}, {}".format(datetime.date.today().year, author)
 # 引入版本信息
 version = setuptools_scm.get_version(root='../..', relative_to=__file__)
 release = version
@@ -116,10 +114,8 @@ html_js_files = [
 ]
 
 html_context = {
-    "versions": {
-        "latest": "dev",
-        "v0.9.2": "v0.9.2",
-        "v0.8.0": "v0.8.0"
+    "contributors": {
+        "朱邓达": "https://github.com/Dengda98",
     }
 }
 

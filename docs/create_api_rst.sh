@@ -16,11 +16,6 @@ cat > $c_api_rst <<EOF
 C API
 ===============================
 
-:Author: Zhu Dengda
-:Email:  zhudengda@mail.iggcas.ac.cn
-
------------------------------------------------------------
-
 .. toctree::
    :maxdepth: 2
 
@@ -111,11 +106,6 @@ py_api_rst="$APIDIR/py_api.rst"
 cat > $py_api_rst <<EOF
 Python API
 ========================
-
-:Author: Zhu Dengda
-:Email:  zhudengda@mail.iggcas.ac.cn
-
------------------------------------------------------------
 
 .. toctree::
    :maxdepth: 2

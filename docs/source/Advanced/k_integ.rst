@@ -1,10 +1,9 @@
+:author: 朱邓达
+:date: 2025-04-24
+:updated_date: 2025-09-22
+
 控制波数积分
 ===================
-
-:Author: Zhu Dengda
-:Email:  zhudengda@mail.iggcas.ac.cn
-
------------------------------------------------------------
 
 在 :doc:`/Tutorial/dynamic/gfunc` 部分介绍了程序将按以下形式从数值上计算波数积分，
 

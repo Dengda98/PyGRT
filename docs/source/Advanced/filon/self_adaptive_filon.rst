@@ -1,11 +1,9 @@
+:author: 朱邓达
+:date: 2025-05-05
+:updated_date: 2025-09-22
 
 自适应Filon积分法
 ===================
-
-:Author: Zhu Dengda
-:Email:  zhudengda@mail.iggcas.ac.cn
-
------------------------------------------------------------
 
 在 :doc:`/Advanced/filon/linear_filon` 部分简单介绍了Filon积分的过程与核心原理，即 **分段计算积分的解析解**，而以下介绍的 **自适应Filon积分法（SAFIM）** ，便是 **动态分段**，在核函数变化剧烈的部分多采样，在核函数变化平缓的部分少采样。具体原理详见 :ref:`(Chen and Zhang, 2001) <chen_2001>` :ref:`(张海明, 2021) <zhang_book_2021>` 。
 

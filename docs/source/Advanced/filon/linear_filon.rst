@@ -1,10 +1,9 @@
+:author: 朱邓达
+:date: 2025-04-24
+:updated_date: 2025-09-22
+
 固定间隔的Filon积分法
 =========================
-
-:Author: Zhu Dengda
-:Email:  zhudengda@mail.iggcas.ac.cn
-
------------------------------------------------------------
 
 .. warning:: 
 

@@ -1,11 +1,9 @@
+:author: 朱邓达
+:date: 2025-04-17
+:updated_date: 2025-09-21
+
 计算动态应变、旋转、应力张量
 =======================================
-
-:Author: Zhu Dengda
-:Email:  zhudengda@mail.iggcas.ac.cn
-
------------------------------------------------------------
-
 
 计算这些张量需要计算位移的空间导数 :math:`\partial z,\partial r,\partial \theta` [#partial]_ 。 从前文关于格林函数的计算 （ :doc:`/Tutorial/dynamic/gfunc` ） 和位移合成的公式 （ :doc:`/Tutorial/dynamic/syn` ） 出发，位移空间导数分两个步骤计算，再根据几何方程和本构方程合成应变、旋转和应力张量。
 
