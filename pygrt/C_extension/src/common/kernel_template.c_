@@ -41,6 +41,8 @@
 #endif
 
 #define __KERNEL_FUNC__           CONCAT_PREFIX(kernel)
+#define __GRT_MATRIX_FUNC__       CONCAT_PREFIX(GRT_matrix)
+#define __BUILD_QWV__             CONCAT_PREFIX(GRT_build_QWV)
 #define __grt_RT_matrix_PSV       CONCAT_PREFIX(RT_matrix_PSV)
 #define __grt_RT_matrix_SH        CONCAT_PREFIX(RT_matrix_SH)
 #define __grt_delay_RT_matrix     CONCAT_PREFIX(delay_RT_matrix)
@@ -52,14 +54,8 @@
 #define __grt_wave2qwv_z_REV_SH   CONCAT_PREFIX(wave2qwv_z_REV_SH)
 
 
-void __KERNEL_FUNC__(
-    GRT_MODEL1D *mod1d, const real_t k, cplx_t QWV[GRT_SRC_M_NUM][GRT_QWV_NUM],
-    bool calc_uiz, cplx_t QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM])
+void __GRT_MATRIX_FUNC__(GRT_MODEL1D *mod1d, const real_t k)
 {
-    // 初始化qwv为0
-    memset(QWV, 0, sizeof(cplx_t)*GRT_SRC_M_NUM*GRT_QWV_NUM);
-    if(calc_uiz)  memset(QWV_uiz, 0, sizeof(cplx_t)*GRT_SRC_M_NUM*GRT_QWV_NUM);
-
     mod1d->k = k;
     // 为动态解计算xa,xb,caca,cbcb
     #if defined(__DYNAMIC_KERNEL__)
@@ -149,20 +145,38 @@ void __KERNEL_FUNC__(
     } // END for loop 
     //===================================================================================
 
-    // return;
+    // 递推RU_FA
+    __grt_topfree_RU(mod1d);
+    if(M_top->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
+    grt_recursion_RU(M_top, M_FA, M_FA);
+    if(M_FA->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
+    BEFORE_RETURN:
+    return;
+}
+
+
+void __BUILD_QWV__(
+    GRT_MODEL1D *mod1d, cplx_t QWV[GRT_SRC_M_NUM][GRT_QWV_NUM],
+    bool calc_uiz, cplx_t QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM])
+{
+    // 初始化qwv为0
+    memset(QWV, 0, sizeof(cplx_t)*GRT_SRC_M_NUM*GRT_QWV_NUM);
+    if(calc_uiz)  memset(QWV_uiz, 0, sizeof(cplx_t)*GRT_SRC_M_NUM*GRT_QWV_NUM);
+
+    bool ircvup = mod1d->ircvup;
+    // 广义层的反射透射系数
+    RT_MATRIX *M_BL = &mod1d->M_BL;
+    RT_MATRIX *M_AL = &mod1d->M_AL;
+    RT_MATRIX *M_RS = &mod1d->M_RS;
+    RT_MATRIX *M_FA = &mod1d->M_FA;
+    RT_MATRIX *M_FB = &mod1d->M_FB;
 
     // 计算震源系数
     __grt_source_coef(mod1d);
 
     // 临时中转矩阵 (temperary)
     cplx_t tmpR2[2][2], tmp2x2[2][2], tmpRL, tmp2x2_uiz[2][2], tmpRL2;
-
-    // 递推RU_FA
-    __grt_topfree_RU(mod1d);
-    if(M_top->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
-    grt_recursion_RU(M_top, M_FA, M_FA);
-    if(M_FA->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
     
     // 根据震源和台站相对位置，计算最终的系数
     if(ircvup){ // A接收  B震源
@@ -256,12 +270,22 @@ void __KERNEL_FUNC__(
             if(calc_uiz)  QWV_uiz[GRT_SRC_M_DS_INDEX][c] = 0.0;
         }
     }
+}
 
+
+void __KERNEL_FUNC__(
+    GRT_MODEL1D *mod1d, const real_t k, cplx_t QWV[GRT_SRC_M_NUM][GRT_QWV_NUM],
+    bool calc_uiz, cplx_t QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM])
+{
+    __GRT_MATRIX_FUNC__(mod1d, k);
+    __BUILD_QWV__(mod1d, QWV, calc_uiz, QWV_uiz);
 }
 
 
 #undef CONCAT_PREFIX
 #undef __KERNEL_FUNC__
+#undef __GRT_MATRIX_FUNC__
+#undef __BUILD_QWV__
 #undef __grt_RT_matrix_PSV
 #undef __grt_RT_matrix_SH
 #undef __grt_delay_RT_matrix

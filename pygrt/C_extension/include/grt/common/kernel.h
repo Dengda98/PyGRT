@@ -92,7 +92,23 @@ void grt_kernel(
     GRT_MODEL1D *mod1d, const real_t k, cplx_t QWV[GRT_SRC_M_NUM][GRT_QWV_NUM],
     bool calc_uiz, cplx_t QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM]);
 
+/** 构建广义反射透射系数矩阵。作为 kernel 函数中的第一部分 */
+void grt_GRT_matrix(GRT_MODEL1D *mod1d, const real_t k);
+
+/** 从广义 R/T 矩阵出发，计算每个震源对应的核函数 QWV。 作为 kernel 函数中的第二部分 */
+void grt_GRT_build_QWV(
+    GRT_MODEL1D *mod1d, cplx_t QWV[GRT_SRC_M_NUM][GRT_QWV_NUM],
+    bool calc_uiz, cplx_t QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM]);
+
 /** 静态解的核函数 */
 void grt_static_kernel(
     GRT_MODEL1D *mod1d, const real_t k, cplx_t QWV[GRT_SRC_M_NUM][GRT_QWV_NUM],
+    bool calc_uiz, cplx_t QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM]);
+
+/** 静态广义反射透射系数矩阵 */
+void grt_static_GRT_matrix(GRT_MODEL1D *mod1d, const real_t k);
+
+/** 静态 QWV */
+void grt_static_GRT_build_QWV(
+    GRT_MODEL1D *mod1d, cplx_t QWV[GRT_SRC_M_NUM][GRT_QWV_NUM],
     bool calc_uiz, cplx_t QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM]);
