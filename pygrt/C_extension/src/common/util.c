@@ -17,7 +17,7 @@
 #include "grt/common/const.h"
 #include "grt/common/sacio.h"
 #include "grt/common/myfftw.h"
-#include "grt/travt/travt.h"
+#include "grt/common/travt.h"
 
 #include "grt/common/checkerror.h"
 
