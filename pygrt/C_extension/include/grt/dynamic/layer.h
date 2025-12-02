@@ -117,6 +117,15 @@ void grt_RT_matrix_ss_SH(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M
  */
 void grt_delay_RT_matrix(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
 
+/**
+ * 为虚拟层的广义 R/T 矩阵添加时间延迟因子
+ * 
+ * @param[in]      mod1d         模型结构体指针
+ * @param[in]      iy            层位索引
+ * @param[out]     M             R/T矩阵    
+ * 
+ */
+void grt_delay_GRT_matrix(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
 
 /**
  * 计算该层的连接 P-SV 应力位移矢量与垂直波函数的D矩阵(或其逆矩阵)，

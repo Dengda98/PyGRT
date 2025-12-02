@@ -192,12 +192,12 @@ static void __KERNEL_FUNC__(
     // 自由表面
     RT_MATRIX *M_top = &mod1d->M_top;
 
+    // 定义物理层内的反射透射系数矩阵
+    grt_init_RT_matrix(M);
+
     // 从顶到底进行矩阵递推, 公式(5.5.3)
     for(size_t iy=1; iy<mod1d->n; ++iy){ // 因为n>=3, 故一定会进入该循环
 
-        // 定义物理层内的反射透射系数矩阵
-        grt_init_RT_matrix(M);
-        
         // 只有动态解才可以使用这个 if 简化，
         // 对于静态解，即使是震源层、接收层这种虚拟层位也需要显式计算R/T矩阵
         #ifdef __DYNAMIC_KERNEL__
@@ -207,18 +207,24 @@ static void __KERNEL_FUNC__(
             __grt_RT_matrix_PSV(mod1d, iy, M);
             __grt_RT_matrix_SH(mod1d, iy, M);
             if(M->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
+
+            // 加入时间延迟因子(第iy-1界面与第iy界面之间)
+            __grt_delay_RT_matrix(mod1d, iy, M);
         #ifdef __DYNAMIC_KERNEL__
         }
         #endif
-
-        // 加入时间延迟因子(第iy-1界面与第iy界面之间)
-        __grt_delay_RT_matrix(mod1d, iy, M);
 
         // FA
         if(iy <= imin){ 
             if(iy == 1){ // 初始化FA
                 memcpy(M_FA, M, sizeof(*M));
-            } else { // 递推FA
+            }
+            #ifdef __DYNAMIC_KERNEL__
+            else if(iy == imin){
+                grt_delay_GRT_matrix(mod1d, iy, M_FA);
+            }
+            #endif
+            else { // 递推FA
                 grt_recursion_RT_matrix(M_FA, M, M_FA);  // 写入原地址
                 if(M_FA->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
             }
@@ -227,7 +233,13 @@ static void __KERNEL_FUNC__(
         else if(iy <= imax){
             if(iy == imin+1){// 初始化RS
                 memcpy(M_RS, M, sizeof(*M));
-            } else { // 递推RS
+            }
+            #ifdef __DYNAMIC_KERNEL__
+            else if(iy == imax){
+                grt_delay_GRT_matrix(mod1d, iy, M_RS);
+            }
+            #endif
+            else { // 递推RS
                 grt_recursion_RT_matrix(M_RS, M, M_RS);  // 写入原地址
                 if(M_RS->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
             }
