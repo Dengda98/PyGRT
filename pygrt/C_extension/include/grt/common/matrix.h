@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <stdio.h>
 #include "grt/common/const.h"
 
 #define GRT_INIT_ZERO_2x2_MATRIX {{0, 0}, {0, 0}}   ///< 初始化复数0矩阵
