@@ -9,7 +9,7 @@
    计算半无限水平层状介质中理论地震图的 **C/Python** 程序包
 
 
-.. grid:: 3
+.. grid:: 1 1 2 3
 
    .. grid-item-card::  PyGRT 入门
 
