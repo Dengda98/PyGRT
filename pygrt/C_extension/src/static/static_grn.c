@@ -19,10 +19,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 
-#define __STATIC_KERNEL__
 #include "grt/common/kernel.h"
-#undef __STATIC_KERNEL__
-
 #include "grt/static/static_grn.h"
 #include "grt/common/dwm.h"
 #include "grt/common/ptam.h"

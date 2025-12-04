@@ -31,8 +31,7 @@ USE_MATHJAX = YES
 
 MARKDOWN_SUPPORT = YES
 
-# 展开特定宏，使得介绍核函数的头文件（kernel_template.h）会被构建
 # 定义 GCC_ALWAYS_INLINE 宏，使在构建 matrix.h 时不警告
 ENABLE_PREPROCESSING   = YES
 MACRO_EXPANSION        = YES
-PREDEFINED            = __DYNAMIC_KERNEL__ __STATIC_KERNEL__ GCC_ALWAYS_INLINE
+PREDEFINED             = GCC_ALWAYS_INLINE

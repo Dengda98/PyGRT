@@ -62,7 +62,6 @@ void __GRT_MATRIX_FUNC__(GRT_MODEL1D *mod1d, const real_t k)
         grt_mod1d_xa_xb(mod1d, k);
     #endif
 
-    bool ircvup = mod1d->ircvup;
     size_t isrc = mod1d->isrc; // 震源所在虚拟层位, isrc>=1
     size_t ircv = mod1d->ircv; // 接收点所在虚拟层位, ircv>=1, ircv != isrc
     size_t imin, imax; // 相对浅层深层层位
@@ -71,10 +70,8 @@ void __GRT_MATRIX_FUNC__(GRT_MODEL1D *mod1d, const real_t k)
 
     // 广义层的反射透射系数
     RT_MATRIX *M_BL = &mod1d->M_BL;
-    RT_MATRIX *M_AL = &mod1d->M_AL;
     RT_MATRIX *M_RS = &mod1d->M_RS;
     RT_MATRIX *M_FA = &mod1d->M_FA;
-    RT_MATRIX *M_FB = &mod1d->M_FB;
     // 自由表面
     RT_MATRIX *M_top = &mod1d->M_top;
 
