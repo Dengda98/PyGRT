@@ -7,7 +7,7 @@ import pygrt
 
 modarr = np.loadtxt("mod1")
 
-pymod = pygrt.PyModel1D(modarr, depsrc=0.01, deprcv=0.0)
+pymod = pygrt.PyModel1D(modarr, depsrc=0.03, deprcv=0.0)
 
 # 不指定statsidx，默认输出全部频率点的积分过程文件
 # vmin_ref 显式给定参考速度（用于定义波数积分上限），避免使用PTAM
