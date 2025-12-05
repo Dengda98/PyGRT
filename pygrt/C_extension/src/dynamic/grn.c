@@ -72,7 +72,7 @@ static void recordin_GRN(
 
 void grt_integ_grn_spec(
     GRT_MODEL1D *mod1d, size_t nf1, size_t nf2, real_t *freqs,  
-    size_t nr, real_t *rs, real_t wI, 
+    size_t nr, real_t *rs, real_t wI, bool keepAllFreq,
     real_t vmin_ref, real_t keps, real_t ampk, real_t k0, real_t Length, real_t filonLength, real_t safilonTol, real_t filonCut,      
     bool print_progressbar, 
 
@@ -145,6 +145,24 @@ void grt_integ_grn_spec(
         real_t k=0.0;               // 波数
         real_t w = freqs[iw]*PI2;     // 实频率
         cplx_t omega = w - wI*I; // 复数频率 omega = w - i*wI
+
+        // 如果在虚频率的帮助下，频率仍然距离原点太近，
+        // 计算会有严重的数值问题，因此直接根据频率距离原点的距离，
+        // 跳过该频率，没有必要再计算
+        if( ! keepAllFreq )
+        {
+            real_t R = 0.1; // 完全经验性地设定，暂不必要暴露在用户可控层面
+            if(fabs(omega) < R){
+                #pragma omp critical
+                {
+                    GRTRaiseWarning("Skip low frequency (iw=%zu, freq=%.5e).", iw, freqs[iw]);
+                    nf_valid--;
+                }
+                if(nf_valid == 0)  GRTRaiseError("NO VALID FREQUENCIES.");
+                continue;
+            }
+        }
+
         cplx_t omega2_inv = 1.0/omega; // 1/omega^2
         omega2_inv = omega2_inv*omega2_inv; 
         cplx_t coef = -dk*fac*omega2_inv; // 最终要乘上的系数

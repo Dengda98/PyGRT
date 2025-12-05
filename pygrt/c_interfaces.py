@@ -31,7 +31,7 @@ C_grt_integ_grn_spec = libgrt.grt_integ_grn_spec
 """C库中计算格林函数的主函数 integ_grn_spec, 详见C API同名函数"""
 C_grt_integ_grn_spec.argtypes = [
     POINTER(c_GRT_MODEL1D), c_size_t, c_size_t, PREAL,       
-    c_size_t, PREAL, REAL,
+    c_size_t, PREAL, REAL, c_bool,
     REAL, REAL, REAL, REAL, REAL, REAL, REAL, REAL,
     c_bool,
 

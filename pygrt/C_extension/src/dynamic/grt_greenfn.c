@@ -66,6 +66,7 @@ typedef struct {
         real_t wI;    ///< 虚频率  zeta*PI/r
         real_t *freqs;
         size_t upsample_n;  ///< 升采样倍数
+        bool keepAllFreq;
     } N;
     /** 输出目录 */
     struct {
@@ -302,16 +303,18 @@ printf("\n"
 "                 <depsrc>: source depth (km).\n"
 "                 <deprcv>: receiver depth (km).\n"
 "\n"
-"    -N<nt>/<dt>[+w<zeta>][+n<fac>] \n"
+"    -N<nt>/<dt>[+w<zeta>][+n<fac>][+a] \n"
 "                 <nt>:   number of points. (NOT requires 2^n).\n"
 "                 <dt>:   time interval (secs). \n"
-"                 <zeta>: define the coefficient of imaginary \n"
-"                         frequency wI=zeta*PI/T, where T=nt*dt.\n"
-"                         Default zeta=%.1f.\n", GRT_GREENFN_N_ZETA); printf(
-"                 <fac>:  upsampling factor (integer)\n"
-"                         i.e.  nt <-- nt * <fac>\n"
-"                               dt <-- dt / <fac>\n"
-"                         and calculated frequencies stay unchanged.\n"
+"                 +w<zeta>: define the coefficient of imaginary \n"
+"                           frequency wI=zeta*PI/T, where T=nt*dt.\n"
+"                           Default zeta=%.1f.\n", GRT_GREENFN_N_ZETA); printf(
+"                 +n<fac>:  upsampling factor (integer)\n"
+"                           i.e.  nt <-- nt * <fac>\n"
+"                                 dt <-- dt / <fac>\n"
+"                           and calculated frequencies stay unchanged.\n"
+"                 +a:       All frequencies are calculated regardless of\n"
+"                           how low the frequency is.\n"
 "\n"
 "    -R<r1>,<r2>[,...]\n"
 "                 Multiple epicentral distance (km), \n"
@@ -467,7 +470,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 }
                 break;
 
-            // 点数,采样间隔,虚频率 -Nnt/dt[+w<zeta>][+n<scale>]
+            // 点数,采样间隔,虚频率 -Nnt/dt[+w<zeta>][+n<scale>][+a]
             case 'N':
                 Ctrl->N.active = true;
                 {
@@ -500,6 +503,10 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                                 if(Ctrl->N.zeta <= 0.0){
                                     GRTBadOptionError(command, N, "+%s need positive float, but get (%lf).", token, Ctrl->N.zeta);
                                 }
+                                break;
+
+                            case 'a':
+                                Ctrl->N.keepAllFreq = true;
                                 break;
                             
                             default:
@@ -719,7 +726,6 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 Ctrl->S.active = true;
                 // 如果非空，则读取对应索引，要求不能为负数；否则在 switch 外手动创建所有索引值
                 if(optarg != NULL){
-                    printf("yes?\n");
                     Ctrl->S.s_raw = strdup(optarg);
                     Ctrl->S.s_statsidxs = grt_string_split(optarg, ",", &Ctrl->S.nstatsidxs);
                     // 转为浮点数
@@ -894,7 +900,7 @@ int greenfn_main(int argc, char **argv) {
     //==============================================================================
     // 计算格林函数
     grt_integ_grn_spec(
-        mod1d, Ctrl->H.nf1, Ctrl->H.nf2, Ctrl->N.freqs, Ctrl->R.nr, Ctrl->R.rs, Ctrl->N.wI,
+        mod1d, Ctrl->H.nf1, Ctrl->H.nf2, Ctrl->N.freqs, Ctrl->R.nr, Ctrl->R.rs, Ctrl->N.wI, Ctrl->N.keepAllFreq,
         Ctrl->K.vmin, Ctrl->K.keps, Ctrl->K.ampk, Ctrl->K.k0, Ctrl->L.Length, Ctrl->L.filonLength, Ctrl->L.safilonTol, Ctrl->L.filonCut, !Ctrl->s.active,
         grn, Ctrl->e.active, grn_uiz, grn_uir,
         Ctrl->S.s_statsdir, Ctrl->S.nstatsidxs, Ctrl->S.statsidxs
