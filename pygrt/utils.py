@@ -1169,6 +1169,7 @@ def read_statsfile(statsfile:str):
     if len(Lst) != 1:
         raise OSError(f"{statsfile} should only match one file, but {len(Lst)} matched.")
     statsfile = Lst[0]
+    print(f"raed in {statsfile}.")
 
     # 确定自定义数据类型  EX_q, EX_w, VF_q, ...
     dtype = [('k', NPCT_REAL_TYPE)]

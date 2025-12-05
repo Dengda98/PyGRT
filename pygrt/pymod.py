@@ -147,6 +147,7 @@ class PyModel1D:
         upsampling_n:int = 1,
         freqband:Union[np.ndarray,List[float]]=[-1,-1],
         zeta:float=0.8, 
+        keepAllFreq:bool=False,
         vmin_ref:float=0.0,
         keps:float=-1.0,  
         ampk:float=1.15,
@@ -176,6 +177,7 @@ class PyModel1D:
             :param    zeta:          定义虚频率的系数 :math:`\zeta` ， 虚频率 :math:`\tilde{\omega} = \omega - j*w_I, w_I = \zeta*\pi/T, T=nt*dt` , T为时窗长度。
                                      使用离散波数积分时为了避开附加源以及奇点的影响， :ref:`(Bouchon, 1981) <bouchon_1981>`  在频率上添加微小虚部，
                                      更多测试见 :ref:`(张海明, 2021) <zhang_book_2021>`
+            :param    keepAllFreq    计算所有频点，不论频率多低
             :param    vmin_ref:      最小参考速度，默认vmin=max(minimum velocity, 0.1)，用于定义波数积分上限，小于0则在达到积分上限后使用峰谷平均法
                                     （默认当震源和场点深度差<=1km时自动使用峰谷平均法）
             :param    keps:          波数k积分收敛条件，见 :ref:`(Yao and Harkrider, 1983) <yao&harkrider_1983>`  :ref:`(初稿) <yao_init_manuscripts>`，
@@ -382,7 +384,7 @@ class PyModel1D:
         #     剪切源 DD[ZR],DS[ZRT],SS[ZRT]          1e-20 cm/(dyne*cm)
         #=================================================================================
         C_grt_integ_grn_spec(
-            self.c_mod1d, nf1, nf2, c_freqs, nrs, c_rs, wI, 
+            self.c_mod1d, nf1, nf2, c_freqs, nrs, c_rs, wI, keepAllFreq,
             vmin_ref, keps, ampk, k0, Length, filonLength, safilonTol, filonCut, print_runtime,
             c_grnArr, calc_upar, c_grnArr_uiz, c_grnArr_uir,
             c_statsfile, nstatsidxs, c_statsidxs

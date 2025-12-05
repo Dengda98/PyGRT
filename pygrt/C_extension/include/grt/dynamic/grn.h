@@ -27,6 +27,7 @@
  * @param[in]      nr               震中距数量
  * @param[in]      rs               震中距数组 
  * @param[in]      wI               虚频率, \f$ \tilde{\omega} =\omega - i \omega_I  \f$ 
+ * @param[in]      keepAllFreq      计算所有频点，不论频率多低
  * @param[in]      vmin_ref         参考最小速度，用于定义波数积分的上限
  * @param[in]      keps             波数积分的收敛条件，要求在某震中距下所有格林函数都收敛，为负数代表不提前判断收敛，按照波数积分上限进行积分 
  * @param[in]      ampk             影响波数k积分上限的系数，见下方
@@ -50,7 +51,7 @@
  */ 
 void grt_integ_grn_spec(
     GRT_MODEL1D *mod1d, size_t nf1, size_t nf2, real_t *freqs,  
-    size_t nr, real_t *rs, real_t wI, 
+    size_t nr, real_t *rs, real_t wI, bool keepAllFreq,
     real_t vmin_ref, real_t keps, real_t ampk, real_t k0, real_t Length, real_t filonLength, real_t safilonTol, real_t filonCut,             
     bool print_progressbar, 
 
