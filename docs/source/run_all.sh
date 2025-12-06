@@ -70,3 +70,9 @@ if [[ $1 == '8' || $1 == '' ]]; then
     python lamb1_plot_freq_time.py
     cd -
 fi
+
+if [[ $1 == '9' || $1 == '' ]]; then
+    cd Advanced/waveform_drift/run
+    python run.py
+    cd -
+fi

@@ -1,6 +1,6 @@
 :author: 朱邓达
 :date: 2025-09-22
-:updated_date: 2025-11-24
+:updated_date: 2025-12-05
 
 .. include:: common_OPTs.rst_
 
@@ -16,7 +16,7 @@ greenfn
 **grt greenfn** 
 |-M|\ *model*
 |-D|\ *depsrc/deprcv*
-|-N|\ *nt/dt*\ [**+w**\ *zeta*][**+n**\ *fac*]
+|-N|\ *nt/dt*\ [**+w**\ *zeta*][**+n**\ *fac*][**+a**]
 |-R|\ *file*\|\ *r1,r2,...*
 |-O|\ *outdir*
 [ |-H|\ *f1/f2* ]
@@ -56,7 +56,7 @@ greenfn
 
 .. _-N:
 
-**-N**\ *nt/dt*\ [**+w**\ *zeta*][**+n**\ *fac*]
+**-N**\ *nt/dt*\ [**+w**\ *zeta*][**+n**\ *fac*][**+a**]
     采样点数 *nt* 和采样时间间隔 *dt* (secs) ，这将决定计算的最高频。还可设置：
 
     + **+w**\ *zeta* - 虚频率系数 :math:`\zeta` [0.8]。Bouchon (1981) 提出在频率上添加一个虚频率偏移， 
@@ -65,6 +65,10 @@ greenfn
     
     + **+n**\ *fac* - 频率域插值倍数[1]。即在做逆傅里叶变换时，在频域上最高频后补零，
       相当于 *nt* ← *nt* \* *fac* , *dt* ← *dt* / *fac* ，使计算的波形更平滑。
+
+    + **+a** - 计算所有频点，不论频率多低。除非做数值实验，否则不建议使用该选项。
+      默认情况下，程序会跳过非常低频的几个点以避免引入误差，
+      详见 :doc:`/Advanced/waveform_drift/waveform_drift` 的介绍。
 
     当时窗长度 nt\*dt 太小“包不住”有效信号，或时窗长度足够但时延(|-E|)不合适，输出的波形会发生混叠，
     此时需调整 |-N| 和 |-E| 。
