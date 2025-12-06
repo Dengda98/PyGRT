@@ -1,6 +1,6 @@
 :author: 朱邓达
 :date: 2025-04-23
-:updated_date: 2025-05-05
+:updated_date: 2025-12-05
 
 进阶教程
 =============
@@ -15,3 +15,4 @@
     filon/self_adaptive_filon
     integ_converg/integ_converg
     kernel/kernel
+    waveform_drift/waveform_drift
