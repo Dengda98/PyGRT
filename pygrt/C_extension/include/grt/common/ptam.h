@@ -47,43 +47,9 @@
 void grt_PTA_method(
     GRT_MODEL1D *mod1d, real_t k0, real_t predk,
     size_t nr, real_t *rs,
-    cplx_t sum_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    INTEGgrid sum_J0[nr],
     bool calc_upar,
-    cplx_t sum_uiz_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
-    cplx_t sum_uir_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    INTEGgrid sum_uiz_J0[nr],
+    INTEGgrid sum_uir_J0[nr],
     FILE *ptam_fstatsnr[nr][2], GRT_KernelFunc kerfunc);
 
-
-
-
-
-/**
- * 观察连续3个点的函数值的实部变化，判断是波峰(1)还是波谷(-1), 并计算对应值。
- * 
- * @param[in]     idx1        阶数索引
- * @param[in]     idx2        积分类型索引 
- * @param[in]     arr         存有连续三个点的函数值的数组 
- * @param[in]     k           三个点的起始波数
- * @param[in]     dk          三个点的波数间隔，这样使用k和dk定义了三个点的位置
- * @param[out]    pk          估计的波峰或波谷处的波数
- * @param[out]    value       估计的波峰或波谷处的函数值
- * 
- * @return    波峰(1)，波谷(-1)，其它(0)
- *  
- */
-int grt_cplx_peak_or_trough(
-    int idx1, int idx2, const cplx_t arr[GRT_PTAM_WINDOW_SIZE][GRT_SRC_M_NUM][GRT_INTEG_NUM], 
-    real_t k, real_t dk, real_t *pk, cplx_t *value);
-
-
-/**
- * 递归式地计算缩减序列的值，
- * \f[
- * M_i = 0.5\times (M_i + M_{i+1})
- * \f]
- * 
- * @param[in]         n1          数组长度 
- * @param[in,out]     arr         振荡的数组，最终收敛值在第一个，arr[0] 
- * 
- */
-void grt_cplx_shrink(size_t n1, cplx_t *arr);

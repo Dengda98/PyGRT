@@ -54,8 +54,8 @@ int grt_extract_stats(FILE *bf0, FILE *af0);
  */
 void grt_write_stats_ptam(
     FILE *f0, 
-    real_t Kpt[GRT_SRC_M_NUM][GRT_INTEG_NUM][GRT_PTAM_PT_MAX],
-    cplx_t Fpt[GRT_SRC_M_NUM][GRT_INTEG_NUM][GRT_PTAM_PT_MAX]);
+    r_INTEGgrid Kpt[GRT_PTAM_PT_MAX],
+    INTEGgrid Fpt[GRT_PTAM_PT_MAX]);
 
 
 /**

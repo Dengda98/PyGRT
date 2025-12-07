@@ -44,8 +44,8 @@
 real_t grt_discrete_integ(
     GRT_MODEL1D *mod1d, real_t dk, real_t kmax, real_t keps,
     size_t nr, real_t *rs,
-    cplx_t sum_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    INTEGgrid sum_J[nr],
     bool calc_upar,
-    cplx_t sum_uiz_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
-    cplx_t sum_uir_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    INTEGgrid sum_uiz_J[nr],
+    INTEGgrid sum_uir_J[nr],
     FILE *fstats, GRT_KernelFunc kerfunc);

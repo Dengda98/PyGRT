@@ -24,11 +24,7 @@
  * @param[out]    SUM            该dk区间内的积分值
  * 
  */
-void grt_int_Pk(
-    real_t k, real_t r, 
-    const QWVgrid QWV,
-    bool calc_uir,
-    cplx_t SUM[GRT_SRC_M_NUM][GRT_INTEG_NUM]);
+void grt_int_Pk(real_t k, real_t r, const QWVgrid QWV, bool calc_uir, INTEGgrid SUM);
 
 
 
@@ -39,8 +35,7 @@ void grt_int_Pk(
  * @param[in]     sum_J           积分结果
  * @param[out]    tol             Z、R、T分量结果
  */
-void grt_merge_Pk(
-    const cplx_t sum_J[GRT_SRC_M_NUM][GRT_INTEG_NUM], cplx_t tol[GRT_SRC_M_NUM][GRT_CHANNEL_NUM]);
+void grt_merge_Pk(const INTEGgrid sum_J, cplx_t tol[GRT_SRC_M_NUM][GRT_CHANNEL_NUM]);
 
 
 
@@ -58,11 +53,7 @@ void grt_merge_Pk(
  * @param[out]    SUM            该dk区间内的积分值
  *  
  */
-void grt_int_Pk_filon(
-    real_t k, real_t r, bool iscos,
-    const QWVgrid QWV,
-    bool calc_uir,
-    cplx_t SUM[GRT_SRC_M_NUM][GRT_INTEG_NUM]);
+void grt_int_Pk_filon(real_t k, real_t r, bool iscos, const QWVgrid QWV, bool calc_uir, INTEGgrid SUM);
 
 
 /**
@@ -77,8 +68,4 @@ void grt_int_Pk_filon(
  * @param[out]    SUM           该三点区间内的积分值
  * 
  */
-void grt_int_Pk_sa_filon(
-    const real_t k3[3], real_t r, 
-    const QWVgrid QWV3[3],
-    bool calc_uir,
-    cplx_t SUM[GRT_SRC_M_NUM][GRT_INTEG_NUM]);
+void grt_int_Pk_sa_filon(const real_t k3[3], real_t r, const QWVgrid QWV3[3], bool calc_uir, INTEGgrid SUM);

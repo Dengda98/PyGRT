@@ -239,12 +239,12 @@ static bool check_fit(
 static void interv_integ(
     const KInterval *ptKitv,
     size_t nr, real_t *rs,
-    cplx_t sum_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    INTEGgrid sum_J[nr],
     bool calc_upar,
-    cplx_t sum_uiz_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
-    cplx_t sum_uir_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM])
+    INTEGgrid sum_uiz_J[nr],
+    INTEGgrid sum_uir_J[nr])
 {
-    cplx_t SUM[GRT_SRC_M_NUM][GRT_INTEG_NUM]={0};
+    INTEGgrid SUM={0};
 
     // 震中距rs循环
     for(size_t ir=0; ir<nr; ++ir){
@@ -295,16 +295,16 @@ static void interv_integ(
 real_t grt_sa_filon_integ(
     GRT_MODEL1D *mod1d, real_t k0, real_t dk0, real_t tol, real_t kmax, real_t kref, 
     size_t nr, real_t *rs,
-    cplx_t sum_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    INTEGgrid sum_J0[nr],
     bool calc_upar,
-    cplx_t sum_uiz_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
-    cplx_t sum_uir_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    INTEGgrid sum_uiz_J0[nr],
+    INTEGgrid sum_uir_J0[nr],
     FILE *fstats, GRT_KernelFunc kerfunc)
 {   
     // 从0开始，存储第二部分Filon积分的结果
-    cplx_t (*sum_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (cplx_t(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_J));
-    cplx_t (*sum_uiz_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (calc_upar)? (cplx_t(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_uiz_J)) : NULL;
-    cplx_t (*sum_uir_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (calc_upar)? (cplx_t(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_uir_J)) : NULL;
+    INTEGgrid *sum_J = (INTEGgrid *)calloc(nr, sizeof(*sum_J));
+    INTEGgrid *sum_uiz_J = (calc_upar)? (INTEGgrid *)calloc(nr, sizeof(*sum_uiz_J)) : NULL;
+    INTEGgrid *sum_uir_J = (calc_upar)? (INTEGgrid *)calloc(nr, sizeof(*sum_uir_J)) : NULL;
 
     real_t kmin = k0;
     

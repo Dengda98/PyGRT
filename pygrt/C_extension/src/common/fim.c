@@ -25,18 +25,18 @@
 real_t grt_linear_filon_integ(
     GRT_MODEL1D *mod1d, real_t k0, real_t dk0, real_t dk, real_t kmax, real_t keps,
     size_t nr, real_t *rs,
-    cplx_t sum_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    INTEGgrid sum_J0[nr],
     bool calc_upar,
-    cplx_t sum_uiz_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
-    cplx_t sum_uir_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    INTEGgrid sum_uiz_J0[nr],
+    INTEGgrid sum_uir_J0[nr],
     FILE *fstats, GRT_KernelFunc kerfunc)
 {   
     // 从0开始，存储第二部分Filon积分的结果
-    cplx_t (*sum_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (cplx_t(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_J));
-    cplx_t (*sum_uiz_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (calc_upar)? (cplx_t(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_uiz_J)) : NULL;
-    cplx_t (*sum_uir_J)[GRT_SRC_M_NUM][GRT_INTEG_NUM] = (calc_upar)? (cplx_t(*)[GRT_SRC_M_NUM][GRT_INTEG_NUM])calloc(nr, sizeof(*sum_uir_J)) : NULL;
+    INTEGgrid *sum_J = (INTEGgrid *)calloc(nr, sizeof(*sum_J));
+    INTEGgrid *sum_uiz_J = (calc_upar)? (INTEGgrid *)calloc(nr, sizeof(*sum_uiz_J)) : NULL;
+    INTEGgrid *sum_uir_J = (calc_upar)? (INTEGgrid *)calloc(nr, sizeof(*sum_uir_J)) : NULL;
 
-    cplx_t SUM[GRT_SRC_M_NUM][GRT_INTEG_NUM];
+    INTEGgrid SUM;
 
     // 不同震源不同阶数的核函数 F(k, w) 
     QWVgrid QWV = {0};
@@ -158,8 +158,8 @@ real_t grt_linear_filon_integ(
 
     // -------------------------------------------------------------------------------
     // 计算余项, [2]表示k积分的第一个点和最后一个点
-    cplx_t SUM_Gc[2][GRT_SRC_M_NUM][GRT_INTEG_NUM] = {0};
-    cplx_t SUM_Gs[2][GRT_SRC_M_NUM][GRT_INTEG_NUM] = {0};
+    INTEGgrid SUM_Gc[2] = {0};
+    INTEGgrid SUM_Gs[2] = {0};
 
 
     // 计算来自第一个点和最后一个点的余项
