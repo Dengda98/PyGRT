@@ -125,6 +125,8 @@ typedef double complex cplx_t;
 
 typedef cplx_t QWVgrid[GRT_SRC_M_NUM][GRT_QWV_NUM];
 typedef cplx_t INTEGgrid[GRT_SRC_M_NUM][GRT_INTEG_NUM];
+typedef real_t r_INTEGgrid[GRT_SRC_M_NUM][GRT_INTEG_NUM];
+typedef size_t s_INTEGgrid[GRT_SRC_M_NUM][GRT_INTEG_NUM];
 
 /** 不同震源类型在大小为 GRT_SRC_M_NUM 的数组中的索引 */
 enum {

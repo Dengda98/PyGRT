@@ -19,13 +19,7 @@
 
 
 
-void grt_int_Pk(
-    real_t k, real_t r, 
-    // F(ki,w)， 第一个维度表示不同震源，不同阶数，第二个维度3代表三类系数qm,wm,vm 
-    const QWVgrid QWV,
-    // F(ki,w)Jm(ki*r)ki，第一个维度表示不同震源，不同阶数，第二个维度代表4种类型的F(k,w)Jm(kr)k的类型
-    bool calc_uir,
-    cplx_t SUM[GRT_SRC_M_NUM][GRT_INTEG_NUM])
+void grt_int_Pk(real_t k, real_t r, const QWVgrid QWV, bool calc_uir, INTEGgrid SUM)
 {
     real_t bjmk[GRT_MORDER_MAX+1] = {0};
     real_t kr = k*r;
@@ -70,11 +64,7 @@ void grt_int_Pk(
 }
 
 
-void grt_int_Pk_filon(
-    real_t k, real_t r, bool iscos,
-    const QWVgrid QWV,
-    bool calc_uir,
-    cplx_t SUM[GRT_SRC_M_NUM][GRT_INTEG_NUM])
+void grt_int_Pk_filon(real_t k, real_t r, bool iscos, const QWVgrid QWV, bool calc_uir, INTEGgrid SUM)
 {
     real_t phi0 = 0.0;
     if(! iscos)  phi0 = - HALFPI;  // 在cos函数中添加的相位差，用于计算sin函数
@@ -159,11 +149,7 @@ static cplx_t interg_quad_cos(
 
 
 
-void grt_int_Pk_sa_filon(
-    const real_t k3[3], real_t r, 
-    const QWVgrid QWV3[3],
-    bool calc_uir,
-    cplx_t SUM[GRT_SRC_M_NUM][GRT_INTEG_NUM])
+void grt_int_Pk_sa_filon(const real_t k3[3], real_t r, const QWVgrid QWV3[3], bool calc_uir, INTEGgrid SUM)
 {
     // 使用bessel递推公式 Jm'(x) = m/x * Jm(x) - J_{m+1}(x)
     // 考虑大震中距，忽略第一项，再使用bessel渐近公式
@@ -208,11 +194,7 @@ void grt_int_Pk_sa_filon(
 
 
 
-void grt_merge_Pk(
-    // F(ki,w)Jm(ki*r)ki，
-    const cplx_t sum_J[GRT_SRC_M_NUM][GRT_INTEG_NUM], 
-    // 累积求和，Z、R、T分量 
-    cplx_t tol[GRT_SRC_M_NUM][GRT_CHANNEL_NUM])
+void grt_merge_Pk(const INTEGgrid sum_J, cplx_t tol[GRT_SRC_M_NUM][GRT_CHANNEL_NUM])
 {   
     for(int i=0; i<GRT_SRC_M_NUM; ++i){
         int modr = GRT_SRC_M_ORDERS[i];

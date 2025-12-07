@@ -52,10 +52,10 @@
 real_t grt_sa_filon_integ(
     GRT_MODEL1D *mod1d, real_t k0, real_t dk0, real_t tol, real_t kmax, real_t kref, 
     size_t nr, real_t *rs,
-    cplx_t sum_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    INTEGgrid sum_J0[nr],
     bool calc_upar,
-    cplx_t sum_uiz_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
-    cplx_t sum_uir_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    INTEGgrid sum_uiz_J0[nr],
+    INTEGgrid sum_uir_J0[nr],
     FILE *fstats, GRT_KernelFunc kerfunc);
 
 

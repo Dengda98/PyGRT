@@ -26,6 +26,76 @@
 #include "grt/common/model.h"
 
 
+
+
+/**
+ * 观察连续3个点的函数值的实部变化，判断是波峰(1)还是波谷(-1), 并计算对应值。
+ * 
+ * @param[in]     idx1        阶数索引
+ * @param[in]     idx2        积分类型索引 
+ * @param[in]     arr         存有连续三个点的函数值的数组 
+ * @param[in]     k           三个点的起始波数
+ * @param[in]     dk          三个点的波数间隔，这样使用k和dk定义了三个点的位置
+ * @param[out]    pk          估计的波峰或波谷处的波数
+ * @param[out]    value       估计的波峰或波谷处的函数值
+ * 
+ * @return    波峰(1)，波谷(-1)，其它(0)
+ *  
+ */
+static int _cplx_peak_or_trough(
+    int idx1, int idx2, const INTEGgrid arr[GRT_PTAM_WINDOW_SIZE], 
+    real_t k, real_t dk, real_t *pk, cplx_t *value)
+{
+    cplx_t f1, f2, f3;
+    real_t rf1, rf2, rf3;
+    int stat=0;
+
+    f1 = arr[0][idx1][idx2];
+    f2 = arr[1][idx1][idx2];
+    f3 = arr[2][idx1][idx2];
+
+    rf1 = creal(f1);
+    rf2 = creal(f2);
+    rf3 = creal(f3);
+    if     ( (rf1 <= rf2) && (rf2 >= rf3) )  stat = 1;
+    else if( (rf1 >= rf2) && (rf2 <= rf3) )  stat = -1;
+    else                                     stat =  0;
+
+    if(stat==0)  return stat;
+
+    real_t x1, x2, x3; 
+    x3 = k;
+    x2 = x3-dk;
+    x1 = x2-dk;
+
+    real_t xarr[3] = {x1, x2, x3};
+    cplx_t farr[3] = {f1, f2, f3};
+
+    // 二次多项式
+    cplx_t a, b, c;
+    grt_quad_term(xarr, farr, &a, &b, &c);
+
+    real_t k0 = x2;
+    *pk = k0;
+    *value = 0.0;
+    if(a != 0.0+0.0*I){
+        k0 = - b / (2*a);
+
+        // 拟合二次多项式可能会有各种潜在问题，例如f1,f2,f3几乎相同，此时a,b很小，k0值非常不稳定
+        // 这里暂且使用范围来框定，如果在范围外，就直接使用x2的值
+        if(k0 < x3 && k0 > x1){
+            // printf("a=%f%+fI, b=%f%+fI, c=%f%+fI, xarr=(%f,%f,%f), yarr=(%f%+fI, %f%+fI, %f%+fI)\n", 
+            //         creal(a),cimag(a),creal(b),cimag(b),creal(c),cimag(c),x1,x2,x3,creal(f1),cimag(f1),creal(f2),cimag(f2),creal(f3),cimag(f3));
+            *pk = k0;
+            *value = a*k0*k0 + b*k0;
+        }
+    } 
+    *value += c;
+    
+    return stat;
+}
+
+
 /**
  * 处理并确定波峰或波谷                                    
  * 
@@ -43,17 +113,17 @@
  */
 static void process_peak_or_trough(
     size_t ir, int im, int v, real_t k, real_t dk, 
-    cplx_t (*J3)[GRT_PTAM_WINDOW_SIZE][GRT_SRC_M_NUM][GRT_INTEG_NUM], real_t (*Kpt)[GRT_SRC_M_NUM][GRT_INTEG_NUM][GRT_PTAM_PT_MAX], 
-    cplx_t (*Fpt)[GRT_SRC_M_NUM][GRT_INTEG_NUM][GRT_PTAM_PT_MAX], size_t (*Ipt)[GRT_SRC_M_NUM][GRT_INTEG_NUM], size_t (*Gpt)[GRT_SRC_M_NUM][GRT_INTEG_NUM], bool *iendk0)
+    INTEGgrid (*J3)[GRT_PTAM_WINDOW_SIZE], r_INTEGgrid (*Kpt)[GRT_PTAM_PT_MAX], 
+    INTEGgrid (*Fpt)[GRT_PTAM_PT_MAX], s_INTEGgrid (*Ipt), s_INTEGgrid (*Gpt), bool *iendk0)
 {
     cplx_t tmp0;
     if (Gpt[ir][im][v] >= GRT_PTAM_WINDOW_SIZE-1 && Ipt[ir][im][v] < GRT_PTAM_PT_MAX) {
-        if (grt_cplx_peak_or_trough(im, v, J3[ir], k, dk, &Kpt[ir][im][v][Ipt[ir][im][v]], &tmp0) != 0) {
-            Fpt[ir][im][v][Ipt[ir][im][v]++] = tmp0;
+        if (_cplx_peak_or_trough(im, v, J3[ir], k, dk, &Kpt[ir][Ipt[ir][im][v]][im][v], &tmp0) != 0) {
+            Fpt[ir][Ipt[ir][im][v]++][im][v] = tmp0;
             Gpt[ir][im][v] = 0;
         } else if (Gpt[ir][im][v] >= GRT_PTAM_WAITS_MAX) {  // 不再等待，直接取中点作为波峰波谷
-            Kpt[ir][im][v][Ipt[ir][im][v]] = k - dk;
-            Fpt[ir][im][v][Ipt[ir][im][v]++] = J3[ir][1][im][v];
+            Kpt[ir][Ipt[ir][im][v]][im][v] = k - dk;
+            Fpt[ir][Ipt[ir][im][v]++][im][v] = J3[ir][1][im][v];
             Gpt[ir][im][v] = 0;
         }
     }
@@ -82,12 +152,12 @@ static void process_peak_or_trough(
  */
 static void ptam_once(
     const size_t ir, const size_t nr, const real_t precoef, real_t k, real_t dk, 
-    cplx_t SUM3[nr][GRT_PTAM_WINDOW_SIZE][GRT_SRC_M_NUM][GRT_INTEG_NUM],
-    cplx_t sum_J[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
-    real_t Kpt[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM][GRT_PTAM_PT_MAX],
-    cplx_t Fpt[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM][GRT_PTAM_PT_MAX],
-    size_t Ipt[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
-    size_t Gpt[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    INTEGgrid SUM3[nr][GRT_PTAM_WINDOW_SIZE],
+    INTEGgrid sum_J[nr],
+    r_INTEGgrid Kpt[nr][GRT_PTAM_PT_MAX],
+    INTEGgrid Fpt[nr][GRT_PTAM_PT_MAX],
+    s_INTEGgrid Ipt[nr],
+    s_INTEGgrid Gpt[nr],
     bool *iendk0)
 {
     *iendk0 = true;
@@ -116,13 +186,38 @@ static void ptam_once(
 }
 
 
+
+
+/**
+ * 递归式地计算缩减序列的值，
+ * \f[
+ * M_i = 0.5\times (M_i + M_{i+1})
+ * \f]
+ * 
+ * @param[in]         n1          数组长度 
+ * @param[in]         ir          震中距索引                          
+ * @param[in]         im          不同震源不同阶数的索引              
+ * @param[in]         v           积分形式索引  
+ * @param[in,out]     Fpt         用于存储波峰/波谷点的幅值数组，最终收敛值在第一个 
+ * 
+ */
+static void _cplx_shrink(size_t n1, size_t ir,  int im, int v, INTEGgrid (*Fpt)[GRT_PTAM_PT_MAX]){
+    for(size_t n=n1; n>1; --n){
+        for(size_t i=0; i<n-1; ++i){
+            Fpt[ir][i][im][v] = 0.5*(Fpt[ir][i][im][v] + Fpt[ir][i+1][im][v]);
+        }
+    }
+}
+
+
+
 void grt_PTA_method(
     GRT_MODEL1D *mod1d, real_t k0, real_t predk,
     size_t nr, real_t *rs,
-    cplx_t sum_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    INTEGgrid sum_J0[nr],
     bool calc_upar,
-    cplx_t sum_uiz_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
-    cplx_t sum_uir_J0[nr][GRT_SRC_M_NUM][GRT_INTEG_NUM],
+    INTEGgrid sum_uiz_J0[nr],
+    INTEGgrid sum_uir_J0[nr],
     FILE *ptam_fstatsnr[nr][2], GRT_KernelFunc kerfunc)
 {   
     // 需要兼容对正常收敛而不具有规律波峰波谷的序列
@@ -142,41 +237,41 @@ void grt_PTA_method(
     // 用于接收F(ki,w)Jm(ki*r)ki
     // 存储采样的值，维度3表示通过连续3个点来判断波峰或波谷
     // 既用于存储被积函数，也最后用于存储求和的结果
-    #define __ARR [GRT_PTAM_WINDOW_SIZE][GRT_SRC_M_NUM][GRT_INTEG_NUM]
-        __CALLOC_ARRAY(SUM3, cplx_t, __ARR);
-        __CALLOC_ARRAY(SUM3_uiz, cplx_t, __ARR);
-        __CALLOC_ARRAY(SUM3_uir, cplx_t, __ARR);
+    #define __ARR [GRT_PTAM_WINDOW_SIZE]
+        __CALLOC_ARRAY(SUM3, INTEGgrid, __ARR);
+        __CALLOC_ARRAY(SUM3_uiz, INTEGgrid, __ARR);
+        __CALLOC_ARRAY(SUM3_uir, INTEGgrid, __ARR);
     #undef __ARR
 
     // 之前求和的值
-    #define __ARR [GRT_SRC_M_NUM][GRT_INTEG_NUM]
-        __CALLOC_ARRAY(sum_J, cplx_t, __ARR);
-        __CALLOC_ARRAY(sum_uiz_J, cplx_t, __ARR);
-        __CALLOC_ARRAY(sum_uir_J, cplx_t, __ARR);
+    #define __ARR
+        __CALLOC_ARRAY(sum_J, INTEGgrid, __ARR);
+        __CALLOC_ARRAY(sum_uiz_J, INTEGgrid, __ARR);
+        __CALLOC_ARRAY(sum_uir_J, INTEGgrid, __ARR);
     #undef __ARR
 
     // 存储波峰波谷的位置和值
-    #define __ARR [GRT_SRC_M_NUM][GRT_INTEG_NUM][GRT_PTAM_PT_MAX]
-        __CALLOC_ARRAY(Kpt, real_t, __ARR);
-        __CALLOC_ARRAY(Fpt, cplx_t, __ARR);
+    #define __ARR [GRT_PTAM_PT_MAX]
+        __CALLOC_ARRAY(Kpt, r_INTEGgrid, __ARR);
+        __CALLOC_ARRAY(Fpt, INTEGgrid, __ARR);
 
-        __CALLOC_ARRAY(Kpt_uiz, real_t, __ARR);
-        __CALLOC_ARRAY(Fpt_uiz, cplx_t, __ARR);
+        __CALLOC_ARRAY(Kpt_uiz, r_INTEGgrid, __ARR);
+        __CALLOC_ARRAY(Fpt_uiz, INTEGgrid, __ARR);
 
-        __CALLOC_ARRAY(Kpt_uir, real_t, __ARR);
-        __CALLOC_ARRAY(Fpt_uir, cplx_t, __ARR);
+        __CALLOC_ARRAY(Kpt_uir, r_INTEGgrid, __ARR);
+        __CALLOC_ARRAY(Fpt_uir, INTEGgrid, __ARR);
     #undef __ARR
 
-    #define __ARR [GRT_SRC_M_NUM][GRT_INTEG_NUM]
+    #define __ARR
         // 存储波峰波谷的总个数
-        __CALLOC_ARRAY(Ipt, size_t, __ARR);
-        __CALLOC_ARRAY(Ipt_uiz, size_t, __ARR);
-        __CALLOC_ARRAY(Ipt_uir, size_t, __ARR);
+        __CALLOC_ARRAY(Ipt,     s_INTEGgrid, __ARR);
+        __CALLOC_ARRAY(Ipt_uiz, s_INTEGgrid, __ARR);
+        __CALLOC_ARRAY(Ipt_uir, s_INTEGgrid, __ARR);
 
         // 记录点数，当峰谷找到后，清零
-        __CALLOC_ARRAY(Gpt, size_t, __ARR);
-        __CALLOC_ARRAY(Gpt_uiz, size_t, __ARR);
-        __CALLOC_ARRAY(Gpt_uir, size_t, __ARR);
+        __CALLOC_ARRAY(Gpt,     s_INTEGgrid, __ARR);
+        __CALLOC_ARRAY(Gpt_uiz, s_INTEGgrid, __ARR);
+        __CALLOC_ARRAY(Gpt_uir, s_INTEGgrid, __ARR);
     #undef __ARR
     #undef __CALLOC_ARRAY
 
@@ -255,17 +350,17 @@ void grt_PTA_method(
         // 记录到文件
         if(fstatsP!=NULL)  grt_write_stats_ptam(fstatsP, Kpt[ir], Fpt[ir]);
 
-        for(int i=0; i<GRT_SRC_M_NUM; ++i){
+        for(int im=0; im<GRT_SRC_M_NUM; ++im){
             for(int v=0; v<GRT_INTEG_NUM; ++v){
-                grt_cplx_shrink(Ipt[ir][i][v], Fpt[ir][i][v]);  
-                sum_J0[ir][i][v] = Fpt[ir][i][v][0];
+                _cplx_shrink(Ipt[ir][im][v], ir, im, v, Fpt);  
+                sum_J0[ir][im][v] = Fpt[ir][0][im][v];
 
                 if(calc_upar){
-                    grt_cplx_shrink(Ipt_uiz[ir][i][v], Fpt_uiz[ir][i][v]);  
-                    sum_uiz_J0[ir][i][v] = Fpt_uiz[ir][i][v][0];
+                    _cplx_shrink(Ipt_uiz[ir][im][v], ir, im, v, Fpt_uiz);  
+                    sum_uiz_J0[ir][im][v] = Fpt_uiz[ir][0][im][v];
                 
-                    grt_cplx_shrink(Ipt_uir[ir][i][v], Fpt_uir[ir][i][v]);  
-                    sum_uir_J0[ir][i][v] = Fpt_uir[ir][i][v][0];
+                    _cplx_shrink(Ipt_uir[ir][im][v], ir, im, v, Fpt_uir);  
+                    sum_uir_J0[ir][im][v] = Fpt_uir[ir][0][im][v];
                 }
             }
         }
@@ -284,66 +379,4 @@ void grt_PTA_method(
         __FREE_ALL_ARRAY
     #undef X
     #undef __FREE_ALL_ARRAY
-}
-
-
-
-
-int grt_cplx_peak_or_trough(int idx1, int idx2, const cplx_t arr[GRT_PTAM_WINDOW_SIZE][GRT_SRC_M_NUM][GRT_INTEG_NUM], real_t k, real_t dk, real_t *pk, cplx_t *value){
-    cplx_t f1, f2, f3;
-    real_t rf1, rf2, rf3;
-    int stat=0;
-
-    f1 = arr[0][idx1][idx2];
-    f2 = arr[1][idx1][idx2];
-    f3 = arr[2][idx1][idx2];
-
-    rf1 = creal(f1);
-    rf2 = creal(f2);
-    rf3 = creal(f3);
-    if     ( (rf1 <= rf2) && (rf2 >= rf3) )  stat = 1;
-    else if( (rf1 >= rf2) && (rf2 <= rf3) )  stat = -1;
-    else                                     stat =  0;
-
-    if(stat==0)  return stat;
-
-    real_t x1, x2, x3; 
-    x3 = k;
-    x2 = x3-dk;
-    x1 = x2-dk;
-
-    real_t xarr[3] = {x1, x2, x3};
-    cplx_t farr[3] = {f1, f2, f3};
-
-    // 二次多项式
-    cplx_t a, b, c;
-    grt_quad_term(xarr, farr, &a, &b, &c);
-
-    real_t k0 = x2;
-    *pk = k0;
-    *value = 0.0;
-    if(a != 0.0+0.0*I){
-        k0 = - b / (2*a);
-
-        // 拟合二次多项式可能会有各种潜在问题，例如f1,f2,f3几乎相同，此时a,b很小，k0值非常不稳定
-        // 这里暂且使用范围来框定，如果在范围外，就直接使用x2的值
-        if(k0 < x3 && k0 > x1){
-            // printf("a=%f%+fI, b=%f%+fI, c=%f%+fI, xarr=(%f,%f,%f), yarr=(%f%+fI, %f%+fI, %f%+fI)\n", 
-            //         creal(a),cimag(a),creal(b),cimag(b),creal(c),cimag(c),x1,x2,x3,creal(f1),cimag(f1),creal(f2),cimag(f2),creal(f3),cimag(f3));
-            *pk = k0;
-            *value = a*k0*k0 + b*k0;
-        }
-    } 
-    *value += c;
-    
-    return stat;
-}
-
-
-void grt_cplx_shrink(size_t n1, cplx_t *arr){
-    for(size_t n=n1; n>1; --n){
-        for(size_t i=0; i<n-1; ++i){
-            arr[i] = 0.5*(arr[i] + arr[i+1]);
-        }
-    }
 }
