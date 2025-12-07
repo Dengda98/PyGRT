@@ -51,8 +51,8 @@ typedef enum {
 // 区间结构体
 typedef struct { 
     real_t k3[3];
-    cplx_t F3[3][GRT_SRC_M_NUM][GRT_QWV_NUM]; 
-    cplx_t F3_uiz[3][GRT_SRC_M_NUM][GRT_QWV_NUM]; 
+    QWVgrid F3[3]; 
+    QWVgrid F3_uiz[3]; 
 } KInterval;
 
 // 区间栈结构体
@@ -104,7 +104,7 @@ static KInterval stack_pop(KIntervalStack *stack) {
 static cplx_t simpson(const KInterval *item_pt, int im, int iqwv, bool isuiz, SIMPSON_INTV stats) {
     cplx_t Fint = 0.0;
     real_t klen = item_pt->k3[2] -  item_pt->k3[0];
-    const cplx_t (*F3)[GRT_SRC_M_NUM][GRT_QWV_NUM] = (isuiz)? item_pt->F3_uiz : item_pt->F3;
+    const QWVgrid *F3 = (isuiz)? item_pt->F3_uiz : item_pt->F3;
     
     // 使用F(k)*sqrt(k)来衡量积分值，这可以平衡后续计算F(k)*Jm(kr)k积分时的系数
     real_t sk[3];
@@ -136,7 +136,7 @@ static cplx_t simpson(const KInterval *item_pt, int im, int iqwv, bool isuiz, SI
 }
 
 /** 比较QWV的最大绝对值 */
-static void get_maxabsQWV(const cplx_t F[GRT_SRC_M_NUM][GRT_QWV_NUM], real_t maxabsF[GRT_GTYPES_MAX]){
+static void get_maxabsQWV(const QWVgrid F, real_t maxabsF[GRT_GTYPES_MAX]){
     real_t tmp;
     for(int i=0; i<GRT_SRC_M_NUM; ++i){
         for(int c=0; c<GRT_QWV_NUM; ++c){
@@ -158,8 +158,8 @@ static bool check_fit(
     cplx_t S11, S12, S21, S22;
 
     // 核函数
-    const cplx_t (*F3L)[GRT_SRC_M_NUM][GRT_QWV_NUM] = (isuiz)? ptKitvL->F3_uiz : ptKitvL->F3;
-    const cplx_t (*F3R)[GRT_SRC_M_NUM][GRT_QWV_NUM] = (isuiz)? ptKitvR->F3_uiz : ptKitvR->F3;
+    const QWVgrid *F3L = (isuiz)? ptKitvL->F3_uiz : ptKitvL->F3;
+    const QWVgrid *F3R = (isuiz)? ptKitvR->F3_uiz : ptKitvR->F3;
 
     // 取近似积分 \int_k1^k2 k^0.5 dk
     real_t kcoef13 = RTWOTHIRD*( ptKitv->k3[2]*sqrt(ptKitv->k3[2]) - ptKitv->k3[0]*sqrt(ptKitv->k3[0]) );

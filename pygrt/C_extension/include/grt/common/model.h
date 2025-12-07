@@ -67,8 +67,9 @@ typedef struct {
     cplx_t uiz_R_EV[2][2];
     cplx_t uiz_R_EVL;
 
-    /* 震源处的震源系数 */
-    cplx_t src_coef[GRT_SRC_M_NUM][GRT_QWV_NUM][2];  ///< 震源系数 \f$ P_m, SV_m, SH_m \f$
+    /* 震源处的震源系数 \f$ P_m, SV_m, SH_m  */
+    QWVgrid src_coefD;
+    QWVgrid src_coefU;
 
 } GRT_MODEL1D;
 
