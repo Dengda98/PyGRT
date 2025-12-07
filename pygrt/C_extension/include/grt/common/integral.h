@@ -26,7 +26,7 @@
  */
 void grt_int_Pk(
     real_t k, real_t r, 
-    const cplx_t QWV[GRT_SRC_M_NUM][GRT_QWV_NUM],
+    const QWVgrid QWV,
     bool calc_uir,
     cplx_t SUM[GRT_SRC_M_NUM][GRT_INTEG_NUM]);
 
@@ -60,7 +60,7 @@ void grt_merge_Pk(
  */
 void grt_int_Pk_filon(
     real_t k, real_t r, bool iscos,
-    const cplx_t QWV[GRT_SRC_M_NUM][GRT_QWV_NUM],
+    const QWVgrid QWV,
     bool calc_uir,
     cplx_t SUM[GRT_SRC_M_NUM][GRT_INTEG_NUM]);
 
@@ -79,6 +79,6 @@ void grt_int_Pk_filon(
  */
 void grt_int_Pk_sa_filon(
     const real_t k3[3], real_t r, 
-    const cplx_t QWV3[3][GRT_SRC_M_NUM][GRT_QWV_NUM],
+    const QWVgrid QWV3[3],
     bool calc_uir,
     cplx_t SUM[GRT_SRC_M_NUM][GRT_INTEG_NUM]);

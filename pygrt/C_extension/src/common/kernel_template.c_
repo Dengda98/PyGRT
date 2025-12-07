@@ -154,8 +154,8 @@ void __GRT_MATRIX_FUNC__(GRT_MODEL1D *mod1d, const real_t k)
 
 
 void __BUILD_QWV__(
-    GRT_MODEL1D *mod1d, cplx_t QWV[GRT_SRC_M_NUM][GRT_QWV_NUM],
-    bool calc_uiz, cplx_t QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM])
+    GRT_MODEL1D *mod1d, QWVgrid QWV,
+    bool calc_uiz, QWVgrid QWV_uiz)
 {
     // 初始化qwv为0
     memset(QWV, 0, sizeof(cplx_t)*GRT_SRC_M_NUM*GRT_QWV_NUM);
@@ -198,9 +198,7 @@ void __BUILD_QWV__(
         tmpRL = M_FB->invTL  / (1.0 - M_BL->RDL * M_FB->RUL);
         tmpRL2 = mod1d->R_EVL * tmpRL;
 
-        for(int i=0; i<GRT_SRC_M_NUM; ++i){
-            grt_construct_qwv(ircvup, tmp2x2, tmpRL2, M_BL->RD, M_BL->RDL, mod1d->src_coef[i], QWV[i]);
-        }
+        grt_construct_qwv(ircvup, tmp2x2, tmpRL2, M_BL->RD, M_BL->RDL, mod1d->src_coefD, mod1d->src_coefU, QWV);
 
 
         if(calc_uiz){
@@ -209,9 +207,7 @@ void __BUILD_QWV__(
             grt_cmat2x2_mul(mod1d->uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
             tmpRL2 = mod1d->uiz_R_EVL * tmpRL;
 
-            for(int i=0; i<GRT_SRC_M_NUM; ++i){
-                grt_construct_qwv(ircvup, tmp2x2_uiz, tmpRL2, M_BL->RD, M_BL->RDL, mod1d->src_coef[i], QWV_uiz[i]);
-            }    
+            grt_construct_qwv(ircvup, tmp2x2_uiz, tmpRL2, M_BL->RD, M_BL->RDL, mod1d->src_coefD, mod1d->src_coefU, QWV_uiz);
         }
     } 
     else { // A震源  B接收
@@ -236,9 +232,7 @@ void __BUILD_QWV__(
         tmpRL = M_AL->invTL / (1.0 - M_FA->RUL * M_AL->RDL);
         tmpRL2 = mod1d->R_EVL * tmpRL;
 
-        for(int i=0; i<GRT_SRC_M_NUM; ++i){
-            grt_construct_qwv(ircvup, tmp2x2, tmpRL2, M_FA->RU, M_FA->RUL, mod1d->src_coef[i], QWV[i]);
-        }
+        grt_construct_qwv(ircvup, tmp2x2, tmpRL2, M_FA->RU, M_FA->RUL, mod1d->src_coefD, mod1d->src_coefU, QWV);
 
 
         if(calc_uiz){
@@ -247,9 +241,7 @@ void __BUILD_QWV__(
             grt_cmat2x2_mul(mod1d->uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
             tmpRL2 = mod1d->uiz_R_EVL * tmpRL;
             
-            for(int i=0; i<GRT_SRC_M_NUM; ++i){
-                grt_construct_qwv(ircvup, tmp2x2_uiz, tmpRL2, M_FA->RU, M_FA->RUL, mod1d->src_coef[i], QWV_uiz[i]);
-            }
+            grt_construct_qwv(ircvup, tmp2x2_uiz, tmpRL2, M_FA->RU, M_FA->RUL, mod1d->src_coefD, mod1d->src_coefU, QWV_uiz);
         }
 
     } // END if
@@ -271,8 +263,8 @@ void __BUILD_QWV__(
 
 
 void __KERNEL_FUNC__(
-    GRT_MODEL1D *mod1d, const real_t k, cplx_t QWV[GRT_SRC_M_NUM][GRT_QWV_NUM],
-    bool calc_uiz, cplx_t QWV_uiz[GRT_SRC_M_NUM][GRT_QWV_NUM])
+    GRT_MODEL1D *mod1d, const real_t k, QWVgrid QWV,
+    bool calc_uiz, QWVgrid QWV_uiz)
 {
     __GRT_MATRIX_FUNC__(mod1d, k);
     __BUILD_QWV__(mod1d, QWV, calc_uiz, QWV_uiz);

@@ -17,8 +17,7 @@
 
 
 
-void grt_write_stats(
-    FILE *f0, real_t k, const cplx_t QWV[GRT_SRC_M_NUM][GRT_QWV_NUM])
+void grt_write_stats(FILE *f0, real_t k, const QWVgrid QWV)
 {
     fwrite(&k, sizeof(real_t), 1, f0);
 

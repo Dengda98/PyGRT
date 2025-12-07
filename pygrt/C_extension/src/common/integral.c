@@ -22,7 +22,7 @@
 void grt_int_Pk(
     real_t k, real_t r, 
     // F(ki,w)， 第一个维度表示不同震源，不同阶数，第二个维度3代表三类系数qm,wm,vm 
-    const cplx_t QWV[GRT_SRC_M_NUM][GRT_QWV_NUM],
+    const QWVgrid QWV,
     // F(ki,w)Jm(ki*r)ki，第一个维度表示不同震源，不同阶数，第二个维度代表4种类型的F(k,w)Jm(kr)k的类型
     bool calc_uir,
     cplx_t SUM[GRT_SRC_M_NUM][GRT_INTEG_NUM])
@@ -72,7 +72,7 @@ void grt_int_Pk(
 
 void grt_int_Pk_filon(
     real_t k, real_t r, bool iscos,
-    const cplx_t QWV[GRT_SRC_M_NUM][GRT_QWV_NUM],
+    const QWVgrid QWV,
     bool calc_uir,
     cplx_t SUM[GRT_SRC_M_NUM][GRT_INTEG_NUM])
 {
@@ -161,7 +161,7 @@ static cplx_t interg_quad_cos(
 
 void grt_int_Pk_sa_filon(
     const real_t k3[3], real_t r, 
-    const cplx_t QWV3[3][GRT_SRC_M_NUM][GRT_QWV_NUM],
+    const QWVgrid QWV3[3],
     bool calc_uir,
     cplx_t SUM[GRT_SRC_M_NUM][GRT_INTEG_NUM])
 {
@@ -173,9 +173,9 @@ void grt_int_Pk_sa_filon(
 
     // 对sqrt(k)*F(k,w)进行二次曲线拟合，再计算 (a*k^2 + b*k + c) * cos(kr - (2m+1)/4) 的积分
     // 拟合二次函数的参数
-    cplx_t quad_a[GRT_SRC_M_NUM][GRT_QWV_NUM]={0};
-    cplx_t quad_b[GRT_SRC_M_NUM][GRT_QWV_NUM]={0};
-    cplx_t quad_c[GRT_SRC_M_NUM][GRT_QWV_NUM]={0};
+    QWVgrid quad_a={0};
+    QWVgrid quad_b={0};
+    QWVgrid quad_c={0};
     for(int im=0; im<GRT_SRC_M_NUM; ++im){
         int modr = GRT_SRC_M_ORDERS[im];
         for(int c=0; c<GRT_QWV_NUM; ++c){

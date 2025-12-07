@@ -40,33 +40,34 @@
  * @param[in]     RL1           SH波，  \f$ R_1\f$
  * @param[in]     R2            P-SV波，\f$\mathbf{R_2}\f$矩阵
  * @param[in]     RL2           SH波，  \f$ R_2\f$
- * @param[in]     coef          震源系数，\f$ P_m, SV_m，SH_m\f$ ，维度2表示下行波(p=0)和上行波(p=1)
- * @param[out]    qwv           最终通过矩阵传播计算出的在台站位置的\f$ q_m,w_m,v_m\f$
+ * @param[in]     coefD         下行震源系数，\f$ P_m, SV_m，SH_m\f$
+ * @param[in]     coefU         上行震源系数，\f$ P_m, SV_m，SH_m\f$
+ * @param[out]    QWV           最终通过矩阵传播计算出的在台站位置的\f$ q_m,w_m,v_m\f$
  */
 inline GCC_ALWAYS_INLINE void grt_construct_qwv(
     bool ircvup, 
     const cplx_t R1[2][2], cplx_t RL1, 
     const cplx_t R2[2][2], cplx_t RL2, 
-    const cplx_t coef[GRT_QWV_NUM][2], cplx_t qwv[GRT_QWV_NUM])
+    const QWVgrid coefD, const QWVgrid coefU, QWVgrid QWV)
 {
-    cplx_t qw0[2], qw1[2], v0;
-    cplx_t coefD[2] = {coef[0][0], coef[1][0]};
-    cplx_t coefU[2] = {coef[0][1], coef[1][1]};
-    if(ircvup){
-        grt_cmat2x1_mul(R2, coefD, qw0);
-        qw0[0] += coefU[0]; qw0[1] += coefU[1]; 
-        v0 = RL1 * (RL2*coef[2][0] + coef[2][1]);
-    } else {
-        grt_cmat2x1_mul(R2, coefU, qw0);
-        qw0[0] += coefD[0]; qw0[1] += coefD[1]; 
-        v0 = RL1 * (coef[2][0] + RL2*coef[2][1]);
+    for(int i = 0; i < GRT_SRC_M_NUM; ++i)
+    {
+        if(ircvup){
+            grt_cmat2x1_mul(R2, coefD[i], QWV[i]);
+            QWV[i][0] += coefU[i][0];
+            QWV[i][1] += coefU[i][1]; 
+            QWV[i][2] = RL1 * (RL2*coefD[i][2] + coefU[i][2]);
+        } else {
+            grt_cmat2x1_mul(R2, coefU[i], QWV[i]);
+            QWV[i][0] += coefD[i][0];
+            QWV[i][1] += coefD[i][1]; 
+            QWV[i][2] = RL1 * (coefD[i][2] + RL2*coefU[i][2]);
+        }
+        grt_cmat2x1_mul(R1, QWV[i], QWV[i]);
     }
-    grt_cmat2x1_mul(R1, qw0, qw1);
-
-    qwv[0] = qw1[0];
-    qwv[1] = qw1[1];
-    qwv[2] = v0;
 }
+
+
 
 
 // ================ 动态解 =====================
