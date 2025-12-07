@@ -27,17 +27,17 @@
 real_t grt_discrete_integ(
     GRT_MODEL1D *mod1d, real_t dk, real_t kmax, real_t keps,
     size_t nr, real_t *rs,
-    INTEGgrid sum_J[nr],
+    cplxIntegGrid sum_J[nr],
     bool calc_upar,
-    INTEGgrid sum_uiz_J[nr],
-    INTEGgrid sum_uir_J[nr],
+    cplxIntegGrid sum_uiz_J[nr],
+    cplxIntegGrid sum_uir_J[nr],
     FILE *fstats, GRT_KernelFunc kerfunc)
 {
-    INTEGgrid SUM = {0};
+    cplxIntegGrid SUM = {0};
 
     // 不同震源不同阶数的核函数 F(k, w) 
-    QWVgrid QWV = {0};
-    QWVgrid QWV_uiz = {0};
+    cplxQWVGrid QWV = {0};
+    cplxQWVGrid QWV_uiz = {0};
     
     real_t k = 0.0;
     size_t ik = 0;

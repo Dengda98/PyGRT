@@ -43,7 +43,7 @@
  *  
  */
 static int _cplx_peak_or_trough(
-    int idx1, int idx2, const INTEGgrid arr[GRT_PTAM_WINDOW_SIZE], 
+    int idx1, int idx2, const cplxIntegGrid arr[GRT_PTAM_WINDOW_SIZE], 
     real_t k, real_t dk, real_t *pk, cplx_t *value)
 {
     cplx_t f1, f2, f3;
@@ -113,8 +113,8 @@ static int _cplx_peak_or_trough(
  */
 static void process_peak_or_trough(
     size_t ir, int im, int v, real_t k, real_t dk, 
-    INTEGgrid (*J3)[GRT_PTAM_WINDOW_SIZE], r_INTEGgrid (*Kpt)[GRT_PTAM_PT_MAX], 
-    INTEGgrid (*Fpt)[GRT_PTAM_PT_MAX], s_INTEGgrid (*Ipt), s_INTEGgrid (*Gpt), bool *iendk0)
+    cplxIntegGrid (*J3)[GRT_PTAM_WINDOW_SIZE], realIntegGrid (*Kpt)[GRT_PTAM_PT_MAX], 
+    cplxIntegGrid (*Fpt)[GRT_PTAM_PT_MAX], sizeIntegGrid (*Ipt), sizeIntegGrid (*Gpt), bool *iendk0)
 {
     cplx_t tmp0;
     if (Gpt[ir][im][v] >= GRT_PTAM_WINDOW_SIZE-1 && Ipt[ir][im][v] < GRT_PTAM_PT_MAX) {
@@ -152,12 +152,12 @@ static void process_peak_or_trough(
  */
 static void ptam_once(
     const size_t ir, const size_t nr, const real_t precoef, real_t k, real_t dk, 
-    INTEGgrid SUM3[nr][GRT_PTAM_WINDOW_SIZE],
-    INTEGgrid sum_J[nr],
-    r_INTEGgrid Kpt[nr][GRT_PTAM_PT_MAX],
-    INTEGgrid Fpt[nr][GRT_PTAM_PT_MAX],
-    s_INTEGgrid Ipt[nr],
-    s_INTEGgrid Gpt[nr],
+    cplxIntegGrid SUM3[nr][GRT_PTAM_WINDOW_SIZE],
+    cplxIntegGrid sum_J[nr],
+    realIntegGrid Kpt[nr][GRT_PTAM_PT_MAX],
+    cplxIntegGrid Fpt[nr][GRT_PTAM_PT_MAX],
+    sizeIntegGrid Ipt[nr],
+    sizeIntegGrid Gpt[nr],
     bool *iendk0)
 {
     *iendk0 = true;
@@ -201,7 +201,7 @@ static void ptam_once(
  * @param[in,out]     Fpt         用于存储波峰/波谷点的幅值数组，最终收敛值在第一个 
  * 
  */
-static void _cplx_shrink(size_t n1, size_t ir,  int im, int v, INTEGgrid (*Fpt)[GRT_PTAM_PT_MAX]){
+static void _cplx_shrink(size_t n1, size_t ir,  int im, int v, cplxIntegGrid (*Fpt)[GRT_PTAM_PT_MAX]){
     for(size_t n=n1; n>1; --n){
         for(size_t i=0; i<n-1; ++i){
             Fpt[ir][i][im][v] = 0.5*(Fpt[ir][i][im][v] + Fpt[ir][i+1][im][v]);
@@ -214,10 +214,10 @@ static void _cplx_shrink(size_t n1, size_t ir,  int im, int v, INTEGgrid (*Fpt)[
 void grt_PTA_method(
     GRT_MODEL1D *mod1d, real_t k0, real_t predk,
     size_t nr, real_t *rs,
-    INTEGgrid sum_J0[nr],
+    cplxIntegGrid sum_J0[nr],
     bool calc_upar,
-    INTEGgrid sum_uiz_J0[nr],
-    INTEGgrid sum_uir_J0[nr],
+    cplxIntegGrid sum_uiz_J0[nr],
+    cplxIntegGrid sum_uir_J0[nr],
     FILE *ptam_fstatsnr[nr][2], GRT_KernelFunc kerfunc)
 {   
     // 需要兼容对正常收敛而不具有规律波峰波谷的序列
@@ -227,8 +227,8 @@ void grt_PTA_method(
     real_t k=0.0;
 
     // 不同震源不同阶数的核函数 F(k, w) 
-    QWVgrid QWV = {0};
-    QWVgrid QWV_uiz = {0};
+    cplxQWVGrid QWV = {0};
+    cplxQWVGrid QWV_uiz = {0};
 
     // 使用宏函数，方便定义
     #define __CALLOC_ARRAY(VAR, TYP, __ARR) \
@@ -238,40 +238,40 @@ void grt_PTA_method(
     // 存储采样的值，维度3表示通过连续3个点来判断波峰或波谷
     // 既用于存储被积函数，也最后用于存储求和的结果
     #define __ARR [GRT_PTAM_WINDOW_SIZE]
-        __CALLOC_ARRAY(SUM3, INTEGgrid, __ARR);
-        __CALLOC_ARRAY(SUM3_uiz, INTEGgrid, __ARR);
-        __CALLOC_ARRAY(SUM3_uir, INTEGgrid, __ARR);
+        __CALLOC_ARRAY(SUM3, cplxIntegGrid, __ARR);
+        __CALLOC_ARRAY(SUM3_uiz, cplxIntegGrid, __ARR);
+        __CALLOC_ARRAY(SUM3_uir, cplxIntegGrid, __ARR);
     #undef __ARR
 
     // 之前求和的值
     #define __ARR
-        __CALLOC_ARRAY(sum_J, INTEGgrid, __ARR);
-        __CALLOC_ARRAY(sum_uiz_J, INTEGgrid, __ARR);
-        __CALLOC_ARRAY(sum_uir_J, INTEGgrid, __ARR);
+        __CALLOC_ARRAY(sum_J, cplxIntegGrid, __ARR);
+        __CALLOC_ARRAY(sum_uiz_J, cplxIntegGrid, __ARR);
+        __CALLOC_ARRAY(sum_uir_J, cplxIntegGrid, __ARR);
     #undef __ARR
 
     // 存储波峰波谷的位置和值
     #define __ARR [GRT_PTAM_PT_MAX]
-        __CALLOC_ARRAY(Kpt, r_INTEGgrid, __ARR);
-        __CALLOC_ARRAY(Fpt, INTEGgrid, __ARR);
+        __CALLOC_ARRAY(Kpt, realIntegGrid, __ARR);
+        __CALLOC_ARRAY(Fpt, cplxIntegGrid, __ARR);
 
-        __CALLOC_ARRAY(Kpt_uiz, r_INTEGgrid, __ARR);
-        __CALLOC_ARRAY(Fpt_uiz, INTEGgrid, __ARR);
+        __CALLOC_ARRAY(Kpt_uiz, realIntegGrid, __ARR);
+        __CALLOC_ARRAY(Fpt_uiz, cplxIntegGrid, __ARR);
 
-        __CALLOC_ARRAY(Kpt_uir, r_INTEGgrid, __ARR);
-        __CALLOC_ARRAY(Fpt_uir, INTEGgrid, __ARR);
+        __CALLOC_ARRAY(Kpt_uir, realIntegGrid, __ARR);
+        __CALLOC_ARRAY(Fpt_uir, cplxIntegGrid, __ARR);
     #undef __ARR
 
     #define __ARR
         // 存储波峰波谷的总个数
-        __CALLOC_ARRAY(Ipt,     s_INTEGgrid, __ARR);
-        __CALLOC_ARRAY(Ipt_uiz, s_INTEGgrid, __ARR);
-        __CALLOC_ARRAY(Ipt_uir, s_INTEGgrid, __ARR);
+        __CALLOC_ARRAY(Ipt,     sizeIntegGrid, __ARR);
+        __CALLOC_ARRAY(Ipt_uiz, sizeIntegGrid, __ARR);
+        __CALLOC_ARRAY(Ipt_uir, sizeIntegGrid, __ARR);
 
         // 记录点数，当峰谷找到后，清零
-        __CALLOC_ARRAY(Gpt,     s_INTEGgrid, __ARR);
-        __CALLOC_ARRAY(Gpt_uiz, s_INTEGgrid, __ARR);
-        __CALLOC_ARRAY(Gpt_uir, s_INTEGgrid, __ARR);
+        __CALLOC_ARRAY(Gpt,     sizeIntegGrid, __ARR);
+        __CALLOC_ARRAY(Gpt_uiz, sizeIntegGrid, __ARR);
+        __CALLOC_ARRAY(Gpt_uir, sizeIntegGrid, __ARR);
     #undef __ARR
     #undef __CALLOC_ARRAY
 

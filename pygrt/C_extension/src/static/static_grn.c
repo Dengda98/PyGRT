@@ -40,7 +40,7 @@
  * @param[out]   grn            三分量结果，浮点数数组
  */
 static void recordin_GRN(
-    size_t nr, cplx_t coef, INTEGgrid sum_J[nr],
+    size_t nr, cplx_t coef, cplxIntegGrid sum_J[nr],
     real_t grn[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM]
 ){
     // 局部变量，将某个频点的格林函数谱临时存放
@@ -93,9 +93,9 @@ void grt_integ_static_grn(
     const real_t kmax = k0;
     // 求和 sum F(ki,w)Jm(ki*r)ki 
     // 关于形状详见int_Pk()函数内的注释
-    INTEGgrid *sum_J = (INTEGgrid *)calloc(nr, sizeof(*sum_J));
-    INTEGgrid *sum_uiz_J = (calc_upar)? (INTEGgrid *)calloc(nr, sizeof(*sum_uiz_J)) : NULL;
-    INTEGgrid *sum_uir_J = (calc_upar)? (INTEGgrid *)calloc(nr, sizeof(*sum_uir_J)) : NULL;
+    cplxIntegGrid *sum_J = (cplxIntegGrid *)calloc(nr, sizeof(*sum_J));
+    cplxIntegGrid *sum_uiz_J = (calc_upar)? (cplxIntegGrid *)calloc(nr, sizeof(*sum_uiz_J)) : NULL;
+    cplxIntegGrid *sum_uir_J = (calc_upar)? (cplxIntegGrid *)calloc(nr, sizeof(*sum_uir_J)) : NULL;
 
     // 是否要输出积分过程文件
     bool needfstats = (statsstr!=NULL);

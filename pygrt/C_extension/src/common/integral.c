@@ -19,7 +19,7 @@
 
 
 
-void grt_int_Pk(real_t k, real_t r, const QWVgrid QWV, bool calc_uir, INTEGgrid SUM)
+void grt_int_Pk(real_t k, real_t r, const cplxQWVGrid QWV, bool calc_uir, cplxIntegGrid SUM)
 {
     real_t bjmk[GRT_MORDER_MAX+1] = {0};
     real_t kr = k*r;
@@ -64,7 +64,7 @@ void grt_int_Pk(real_t k, real_t r, const QWVgrid QWV, bool calc_uir, INTEGgrid 
 }
 
 
-void grt_int_Pk_filon(real_t k, real_t r, bool iscos, const QWVgrid QWV, bool calc_uir, INTEGgrid SUM)
+void grt_int_Pk_filon(real_t k, real_t r, bool iscos, const cplxQWVGrid QWV, bool calc_uir, cplxIntegGrid SUM)
 {
     real_t phi0 = 0.0;
     if(! iscos)  phi0 = - HALFPI;  // 在cos函数中添加的相位差，用于计算sin函数
@@ -149,7 +149,7 @@ static cplx_t interg_quad_cos(
 
 
 
-void grt_int_Pk_sa_filon(const real_t k3[3], real_t r, const QWVgrid QWV3[3], bool calc_uir, INTEGgrid SUM)
+void grt_int_Pk_sa_filon(const real_t k3[3], real_t r, const cplxQWVGrid QWV3[3], bool calc_uir, cplxIntegGrid SUM)
 {
     // 使用bessel递推公式 Jm'(x) = m/x * Jm(x) - J_{m+1}(x)
     // 考虑大震中距，忽略第一项，再使用bessel渐近公式
@@ -159,9 +159,9 @@ void grt_int_Pk_sa_filon(const real_t k3[3], real_t r, const QWVgrid QWV3[3], bo
 
     // 对sqrt(k)*F(k,w)进行二次曲线拟合，再计算 (a*k^2 + b*k + c) * cos(kr - (2m+1)/4) 的积分
     // 拟合二次函数的参数
-    QWVgrid quad_a={0};
-    QWVgrid quad_b={0};
-    QWVgrid quad_c={0};
+    cplxQWVGrid quad_a={0};
+    cplxQWVGrid quad_b={0};
+    cplxQWVGrid quad_c={0};
     for(int im=0; im<GRT_SRC_M_NUM; ++im){
         int modr = GRT_SRC_M_ORDERS[im];
         for(int c=0; c<GRT_QWV_NUM; ++c){
@@ -194,7 +194,7 @@ void grt_int_Pk_sa_filon(const real_t k3[3], real_t r, const QWVgrid QWV3[3], bo
 
 
 
-void grt_merge_Pk(const INTEGgrid sum_J, cplx_t tol[GRT_SRC_M_NUM][GRT_CHANNEL_NUM])
+void grt_merge_Pk(const cplxIntegGrid sum_J, cplx_t tol[GRT_SRC_M_NUM][GRT_CHANNEL_NUM])
 {   
     for(int i=0; i<GRT_SRC_M_NUM; ++i){
         int modr = GRT_SRC_M_ORDERS[i];
