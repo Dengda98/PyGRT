@@ -47,9 +47,9 @@
 void grt_PTA_method(
     GRT_MODEL1D *mod1d, real_t k0, real_t predk,
     size_t nr, real_t *rs,
-    INTEGgrid sum_J0[nr],
+    cplxIntegGrid sum_J0[nr],
     bool calc_upar,
-    INTEGgrid sum_uiz_J0[nr],
-    INTEGgrid sum_uir_J0[nr],
+    cplxIntegGrid sum_uiz_J0[nr],
+    cplxIntegGrid sum_uir_J0[nr],
     FILE *ptam_fstatsnr[nr][2], GRT_KernelFunc kerfunc);
 

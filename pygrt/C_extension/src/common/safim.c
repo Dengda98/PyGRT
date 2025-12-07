@@ -51,8 +51,8 @@ typedef enum {
 // 区间结构体
 typedef struct { 
     real_t k3[3];
-    QWVgrid F3[3]; 
-    QWVgrid F3_uiz[3]; 
+    cplxQWVGrid F3[3]; 
+    cplxQWVGrid F3_uiz[3]; 
 } KInterval;
 
 // 区间栈结构体
@@ -104,7 +104,7 @@ static KInterval stack_pop(KIntervalStack *stack) {
 static cplx_t simpson(const KInterval *item_pt, int im, int iqwv, bool isuiz, SIMPSON_INTV stats) {
     cplx_t Fint = 0.0;
     real_t klen = item_pt->k3[2] -  item_pt->k3[0];
-    const QWVgrid *F3 = (isuiz)? item_pt->F3_uiz : item_pt->F3;
+    const cplxQWVGrid *F3 = (isuiz)? item_pt->F3_uiz : item_pt->F3;
     
     // 使用F(k)*sqrt(k)来衡量积分值，这可以平衡后续计算F(k)*Jm(kr)k积分时的系数
     real_t sk[3];
@@ -136,7 +136,7 @@ static cplx_t simpson(const KInterval *item_pt, int im, int iqwv, bool isuiz, SI
 }
 
 /** 比较QWV的最大绝对值 */
-static void get_maxabsQWV(const QWVgrid F, real_t maxabsF[GRT_GTYPES_MAX]){
+static void get_maxabsQWV(const cplxQWVGrid F, real_t maxabsF[GRT_GTYPES_MAX]){
     real_t tmp;
     for(int i=0; i<GRT_SRC_M_NUM; ++i){
         for(int c=0; c<GRT_QWV_NUM; ++c){
@@ -158,8 +158,8 @@ static bool check_fit(
     cplx_t S11, S12, S21, S22;
 
     // 核函数
-    const QWVgrid *F3L = (isuiz)? ptKitvL->F3_uiz : ptKitvL->F3;
-    const QWVgrid *F3R = (isuiz)? ptKitvR->F3_uiz : ptKitvR->F3;
+    const cplxQWVGrid *F3L = (isuiz)? ptKitvL->F3_uiz : ptKitvL->F3;
+    const cplxQWVGrid *F3R = (isuiz)? ptKitvR->F3_uiz : ptKitvR->F3;
 
     // 取近似积分 \int_k1^k2 k^0.5 dk
     real_t kcoef13 = RTWOTHIRD*( ptKitv->k3[2]*sqrt(ptKitv->k3[2]) - ptKitv->k3[0]*sqrt(ptKitv->k3[0]) );
@@ -239,12 +239,12 @@ static bool check_fit(
 static void interv_integ(
     const KInterval *ptKitv,
     size_t nr, real_t *rs,
-    INTEGgrid sum_J[nr],
+    cplxIntegGrid sum_J[nr],
     bool calc_upar,
-    INTEGgrid sum_uiz_J[nr],
-    INTEGgrid sum_uir_J[nr])
+    cplxIntegGrid sum_uiz_J[nr],
+    cplxIntegGrid sum_uir_J[nr])
 {
-    INTEGgrid SUM={0};
+    cplxIntegGrid SUM={0};
 
     // 震中距rs循环
     for(size_t ir=0; ir<nr; ++ir){
@@ -295,16 +295,16 @@ static void interv_integ(
 real_t grt_sa_filon_integ(
     GRT_MODEL1D *mod1d, real_t k0, real_t dk0, real_t tol, real_t kmax, real_t kref, 
     size_t nr, real_t *rs,
-    INTEGgrid sum_J0[nr],
+    cplxIntegGrid sum_J0[nr],
     bool calc_upar,
-    INTEGgrid sum_uiz_J0[nr],
-    INTEGgrid sum_uir_J0[nr],
+    cplxIntegGrid sum_uiz_J0[nr],
+    cplxIntegGrid sum_uir_J0[nr],
     FILE *fstats, GRT_KernelFunc kerfunc)
 {   
     // 从0开始，存储第二部分Filon积分的结果
-    INTEGgrid *sum_J = (INTEGgrid *)calloc(nr, sizeof(*sum_J));
-    INTEGgrid *sum_uiz_J = (calc_upar)? (INTEGgrid *)calloc(nr, sizeof(*sum_uiz_J)) : NULL;
-    INTEGgrid *sum_uir_J = (calc_upar)? (INTEGgrid *)calloc(nr, sizeof(*sum_uir_J)) : NULL;
+    cplxIntegGrid *sum_J = (cplxIntegGrid *)calloc(nr, sizeof(*sum_J));
+    cplxIntegGrid *sum_uiz_J = (calc_upar)? (cplxIntegGrid *)calloc(nr, sizeof(*sum_uiz_J)) : NULL;
+    cplxIntegGrid *sum_uir_J = (calc_upar)? (cplxIntegGrid *)calloc(nr, sizeof(*sum_uir_J)) : NULL;
 
     real_t kmin = k0;
     

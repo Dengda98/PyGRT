@@ -154,8 +154,8 @@ void __GRT_MATRIX_FUNC__(GRT_MODEL1D *mod1d, const real_t k)
 
 
 void __BUILD_QWV__(
-    GRT_MODEL1D *mod1d, QWVgrid QWV,
-    bool calc_uiz, QWVgrid QWV_uiz)
+    GRT_MODEL1D *mod1d, cplxQWVGrid QWV,
+    bool calc_uiz, cplxQWVGrid QWV_uiz)
 {
     // 初始化qwv为0
     memset(QWV, 0, sizeof(cplx_t)*GRT_SRC_M_NUM*GRT_QWV_NUM);
@@ -263,8 +263,8 @@ void __BUILD_QWV__(
 
 
 void __KERNEL_FUNC__(
-    GRT_MODEL1D *mod1d, const real_t k, QWVgrid QWV,
-    bool calc_uiz, QWVgrid QWV_uiz)
+    GRT_MODEL1D *mod1d, const real_t k, cplxQWVGrid QWV,
+    bool calc_uiz, cplxQWVGrid QWV_uiz)
 {
     __GRT_MATRIX_FUNC__(mod1d, k);
     __BUILD_QWV__(mod1d, QWV, calc_uiz, QWV_uiz);

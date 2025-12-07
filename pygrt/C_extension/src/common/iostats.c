@@ -17,7 +17,7 @@
 
 
 
-void grt_write_stats(FILE *f0, real_t k, const QWVgrid QWV)
+void grt_write_stats(FILE *f0, real_t k, const cplxQWVGrid QWV)
 {
     fwrite(&k, sizeof(real_t), 1, f0);
 
@@ -74,8 +74,8 @@ int grt_extract_stats(FILE *bf0, FILE *af0){
 
 void grt_write_stats_ptam(
     FILE *f0, 
-    r_INTEGgrid Kpt[GRT_PTAM_PT_MAX],
-    INTEGgrid Fpt[GRT_PTAM_PT_MAX]
+    realIntegGrid Kpt[GRT_PTAM_PT_MAX],
+    cplxIntegGrid Fpt[GRT_PTAM_PT_MAX]
 ){
 
     for(int i=0; i<GRT_PTAM_PT_MAX; ++i){

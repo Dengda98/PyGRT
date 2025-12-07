@@ -68,8 +68,8 @@ typedef struct {
     cplx_t uiz_R_EVL;
 
     /* 震源处的震源系数 \f$ P_m, SV_m, SH_m  */
-    QWVgrid src_coefD;
-    QWVgrid src_coefU;
+    cplxQWVGrid src_coefD;
+    cplxQWVGrid src_coefU;
 
 } GRT_MODEL1D;
 

@@ -123,10 +123,11 @@ typedef double complex cplx_t;
 
 #define GRT_GTYPES_MAX   2      ///< 2, 所有震源根据是否使用格林函数导数分为两类
 
-typedef cplx_t QWVgrid[GRT_SRC_M_NUM][GRT_QWV_NUM];
-typedef cplx_t INTEGgrid[GRT_SRC_M_NUM][GRT_INTEG_NUM];
-typedef real_t r_INTEGgrid[GRT_SRC_M_NUM][GRT_INTEG_NUM];
-typedef size_t s_INTEGgrid[GRT_SRC_M_NUM][GRT_INTEG_NUM];
+typedef cplx_t cplxQWVGrid[GRT_SRC_M_NUM][GRT_QWV_NUM];
+
+typedef cplx_t cplxIntegGrid[GRT_SRC_M_NUM][GRT_INTEG_NUM];
+typedef real_t realIntegGrid[GRT_SRC_M_NUM][GRT_INTEG_NUM];
+typedef size_t sizeIntegGrid[GRT_SRC_M_NUM][GRT_INTEG_NUM];
 
 /** 不同震源类型在大小为 GRT_SRC_M_NUM 的数组中的索引 */
 enum {

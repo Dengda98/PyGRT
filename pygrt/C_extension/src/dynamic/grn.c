@@ -44,7 +44,7 @@
  * @param[out]   grn            三分量频谱
  */
 static void recordin_GRN(
-    size_t iw, size_t nr, cplx_t coef, INTEGgrid sum_J[nr],
+    size_t iw, size_t nr, cplx_t coef, cplxIntegGrid sum_J[nr],
     cplx_t *grn[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM]
 )
 {
@@ -169,9 +169,9 @@ void grt_integ_grn_spec(
 
         // 局部变量，用于求和 sum F(ki,w)Jm(ki*r)ki 
         // 关于形状详见int_Pk()函数内的注释
-        INTEGgrid *sum_J = (INTEGgrid *)calloc(nr, sizeof(*sum_J));
-        INTEGgrid *sum_uiz_J = (calc_upar)? (INTEGgrid *)calloc(nr, sizeof(*sum_uiz_J)) : NULL;
-        INTEGgrid *sum_uir_J = (calc_upar)? (INTEGgrid *)calloc(nr, sizeof(*sum_uir_J)) : NULL;
+        cplxIntegGrid *sum_J = (cplxIntegGrid *)calloc(nr, sizeof(*sum_J));
+        cplxIntegGrid *sum_uiz_J = (calc_upar)? (cplxIntegGrid *)calloc(nr, sizeof(*sum_uiz_J)) : NULL;
+        cplxIntegGrid *sum_uir_J = (calc_upar)? (cplxIntegGrid *)calloc(nr, sizeof(*sum_uir_J)) : NULL;
 
         GRT_MODEL1D *local_mod1d = NULL;
     #ifdef _OPENMP 
