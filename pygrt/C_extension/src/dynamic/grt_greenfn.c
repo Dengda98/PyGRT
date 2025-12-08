@@ -881,12 +881,10 @@ int greenfn_main(int argc, char **argv) {
     pt_cplxChnlGrid *grn_uir = (Ctrl->e.active)? (pt_cplxChnlGrid *) calloc(Ctrl->R.nr, sizeof(*grn_uir)) : NULL;
 
     for(size_t ir=0; ir<Ctrl->R.nr; ++ir){
-        for(int i=0; i<GRT_SRC_M_NUM; ++i){
-            for(int c=0; c<GRT_CHANNEL_NUM; ++c){
-                grn[ir][i][c] = (cplx_t*)calloc(Ctrl->N.nf, sizeof(cplx_t));
-                if(grn_uiz)  grn_uiz[ir][i][c] = (cplx_t*)calloc(Ctrl->N.nf, sizeof(cplx_t));
-                if(grn_uir)  grn_uir[ir][i][c] = (cplx_t*)calloc(Ctrl->N.nf, sizeof(cplx_t));
-            }
+        GRT_LOOP_ChnlGrid(im, c){
+            grn[ir][im][c] = (cplx_t*)calloc(Ctrl->N.nf, sizeof(cplx_t));
+            if(grn_uiz)  grn_uiz[ir][im][c] = (cplx_t*)calloc(Ctrl->N.nf, sizeof(cplx_t));
+            if(grn_uir)  grn_uir[ir][im][c] = (cplx_t*)calloc(Ctrl->N.nf, sizeof(cplx_t));
         }
     }
 
@@ -937,12 +935,10 @@ int greenfn_main(int argc, char **argv) {
 
     // 释放内存
     for(size_t ir=0; ir<Ctrl->R.nr; ++ir){
-        for(int i=0; i<GRT_SRC_M_NUM; ++i){
-            for(int c=0; c<GRT_CHANNEL_NUM; ++c){
-                GRT_SAFE_FREE_PTR(grn[ir][i][c]);
-                if(grn_uiz) GRT_SAFE_FREE_PTR(grn_uiz[ir][i][c]);
-                if(grn_uir) GRT_SAFE_FREE_PTR(grn_uir[ir][i][c]);
-            }
+        GRT_LOOP_ChnlGrid(im, c){
+            GRT_SAFE_FREE_PTR(grn[ir][im][c]);
+            if(grn_uiz) GRT_SAFE_FREE_PTR(grn_uiz[ir][im][c]);
+            if(grn_uir) GRT_SAFE_FREE_PTR(grn_uir[ir][im][c]);
         }
     }
     GRT_SAFE_FREE_PTR(grn);

@@ -161,28 +161,27 @@ static void ptam_once(
     bool *iendk0)
 {
     *iendk0 = true;
-    for(int i=0; i<GRT_SRC_M_NUM; ++i){
-        int modr = GRT_SRC_M_ORDERS[i];
-        for(int v=0; v<GRT_INTEG_NUM; ++v){
-            if(modr == 0 && v!=0 && v!= 2)  continue;
 
-            // 赋更新量
-            // SUM3转为求和结果
-            sum_J[ir][i][v] += SUM3[ir][GRT_PTAM_WINDOW_SIZE-1][i][v] * precoef;
-            SUM3[ir][GRT_PTAM_WINDOW_SIZE-1][i][v] = sum_J[ir][i][v];         
-            
-            // 3点以上，判断波峰波谷 
-            process_peak_or_trough(ir, i, v, k, dk, SUM3, Kpt, Fpt, Ipt, Gpt, iendk0);
+    GRT_LOOP_IntegGrid(im, v){
+        int modr = GRT_SRC_M_ORDERS[im];
+        if(modr == 0 && v!=0 && v!= 2)  continue;
 
-            // 左移动点, 
-            for(int jj=0; jj<GRT_PTAM_WINDOW_SIZE-1; ++jj){
-                SUM3[ir][jj][i][v] = SUM3[ir][jj+1][i][v];
-            }
+        // 赋更新量
+        // SUM3转为求和结果
+        sum_J[ir][im][v] += SUM3[ir][GRT_PTAM_WINDOW_SIZE-1][im][v] * precoef;
+        SUM3[ir][GRT_PTAM_WINDOW_SIZE-1][im][v] = sum_J[ir][im][v];         
+        
+        // 3点以上，判断波峰波谷 
+        process_peak_or_trough(ir, im, v, k, dk, SUM3, Kpt, Fpt, Ipt, Gpt, iendk0);
 
-            // 点数+1
-            Gpt[ir][i][v]++;
+        // 左移动点, 
+        for(int jj=0; jj<GRT_PTAM_WINDOW_SIZE-1; ++jj){
+            SUM3[ir][jj][im][v] = SUM3[ir][jj+1][im][v];
         }
-    } 
+
+        // 点数+1
+        Gpt[ir][im][v]++;
+    }
 }
 
 
@@ -277,19 +276,18 @@ void grt_PTA_method(
 
 
     for(size_t ir=0; ir<nr; ++ir){
-        for(int i=0; i<GRT_SRC_M_NUM; ++i){
-            for(int v=0; v<GRT_INTEG_NUM; ++v){
-                sum_J[ir][i][v] = sum_J0[ir][i][v];
 
-                if(calc_upar){
-                    sum_uiz_J[ir][i][v] = sum_uiz_J0[ir][i][v];
-                    sum_uir_J[ir][i][v] = sum_uir_J0[ir][i][v];
-                }
+        GRT_LOOP_IntegGrid(im, v){
+            sum_J[ir][im][v] = sum_J0[ir][im][v];
 
-                Ipt[ir][i][v] = Gpt[ir][i][v] = 0;
-                Ipt_uiz[ir][i][v] = Gpt_uiz[ir][i][v] = 0;
-                Ipt_uir[ir][i][v] = Gpt_uir[ir][i][v] = 0;
+            if(calc_upar){
+                sum_uiz_J[ir][im][v] = sum_uiz_J0[ir][im][v];
+                sum_uir_J[ir][im][v] = sum_uir_J0[ir][im][v];
             }
+
+            Ipt[ir][im][v] = Gpt[ir][im][v] = 0;
+            Ipt_uiz[ir][im][v] = Gpt_uiz[ir][im][v] = 0;
+            Ipt_uir[ir][im][v] = Gpt_uir[ir][im][v] = 0;
         }
     }
 
@@ -350,18 +348,16 @@ void grt_PTA_method(
         // 记录到文件
         if(fstatsP!=NULL)  grt_write_stats_ptam(fstatsP, Kpt[ir], Fpt[ir]);
 
-        for(int im=0; im<GRT_SRC_M_NUM; ++im){
-            for(int v=0; v<GRT_INTEG_NUM; ++v){
-                _cplx_shrink(Ipt[ir][im][v], ir, im, v, Fpt);  
-                sum_J0[ir][im][v] = Fpt[ir][0][im][v];
+        GRT_LOOP_IntegGrid(im, v){
+            _cplx_shrink(Ipt[ir][im][v], ir, im, v, Fpt);  
+            sum_J0[ir][im][v] = Fpt[ir][0][im][v];
 
-                if(calc_upar){
-                    _cplx_shrink(Ipt_uiz[ir][im][v], ir, im, v, Fpt_uiz);  
-                    sum_uiz_J0[ir][im][v] = Fpt_uiz[ir][0][im][v];
-                
-                    _cplx_shrink(Ipt_uir[ir][im][v], ir, im, v, Fpt_uir);  
-                    sum_uir_J0[ir][im][v] = Fpt_uir[ir][0][im][v];
-                }
+            if(calc_upar){
+                _cplx_shrink(Ipt_uiz[ir][im][v], ir, im, v, Fpt_uiz);  
+                sum_uiz_J0[ir][im][v] = Fpt_uiz[ir][0][im][v];
+            
+                _cplx_shrink(Ipt_uir[ir][im][v], ir, im, v, Fpt_uir);  
+                sum_uir_J0[ir][im][v] = Fpt_uir[ir][0][im][v];
             }
         }
     }

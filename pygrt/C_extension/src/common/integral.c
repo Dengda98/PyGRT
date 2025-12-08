@@ -162,17 +162,14 @@ void grt_int_Pk_sa_filon(const real_t k3[3], real_t r, const cplxChnlGrid QWV3[3
     cplxChnlGrid quad_a={0};
     cplxChnlGrid quad_b={0};
     cplxChnlGrid quad_c={0};
-    for(int im=0; im<GRT_SRC_M_NUM; ++im){
+    GRT_LOOP_ChnlGrid(im, c){
         int modr = GRT_SRC_M_ORDERS[im];
-        for(int c=0; c<GRT_CHANNEL_NUM; ++c){
-            if(modr==0 && GRT_QWV_CODES[c] == 'v')  continue;
+        if(modr==0 && GRT_QWV_CODES[c] == 'v')  continue;
+        cplx_t F3[3];
+        for(int d=0; d<3; ++d)  F3[d] = QWV3[d][im][c] * sqrt(k3[d]) * sgn;
 
-            cplx_t F3[3];
-            for(int d=0; d<3; ++d)  F3[d] = QWV3[d][im][c] * sqrt(k3[d]) * sgn;
-
-            // 拟合参数
-            grt_quad_term(k3, F3, &quad_a[im][c], &quad_b[im][c], &quad_c[im][c]);
-        }
+        // 拟合参数
+        grt_quad_term(k3, F3, &quad_a[im][c], &quad_b[im][c], &quad_c[im][c]);
     }
 
     real_t kmin = k3[0], kmax = k3[2];

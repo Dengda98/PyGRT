@@ -380,22 +380,20 @@ int static_syn_main(int argc, char **argv){
     out_dimids[1] = out_y_dimid;
 
     // 读入格林函数 varid
-    for(int i=0; i<GRT_SRC_M_NUM; ++i){
-        int modr = GRT_SRC_M_ORDERS[i];
+    GRT_LOOP_ChnlGrid(im, c){
+        int modr = GRT_SRC_M_ORDERS[im];
         char *s_title = NULL;
-        for(int c=0; c<GRT_CHANNEL_NUM; ++c){
-            if(modr==0 && GRT_ZRT_CODES[c]=='T')  continue;
+        if(modr==0 && GRT_ZRT_CODES[c]=='T')  continue;
 
-            GRT_SAFE_ASPRINTF(&s_title, "%s%c", GRT_SRC_M_NAME_ABBR[i], GRT_ZRT_CODES[c]);
-            NC_CHECK(nc_inq_varid(in_ncid, s_title, &in_u_varids[i][c]));
+        GRT_SAFE_ASPRINTF(&s_title, "%s%c", GRT_SRC_M_NAME_ABBR[im], GRT_ZRT_CODES[c]);
+        NC_CHECK(nc_inq_varid(in_ncid, s_title, &in_u_varids[im][c]));
 
-            // 位移偏导
-            if(Ctrl->e.active){
-                GRT_SAFE_ASPRINTF(&s_title, "z%s%c", GRT_SRC_M_NAME_ABBR[i], GRT_ZRT_CODES[c]);
-                NC_CHECK(nc_inq_varid(in_ncid, s_title, &in_uiz_varids[i][c]));
-                GRT_SAFE_ASPRINTF(&s_title, "r%s%c", GRT_SRC_M_NAME_ABBR[i], GRT_ZRT_CODES[c]);
-                NC_CHECK(nc_inq_varid(in_ncid, s_title, &in_uir_varids[i][c]));
-            }
+        // 位移偏导
+        if(Ctrl->e.active){
+            GRT_SAFE_ASPRINTF(&s_title, "z%s%c", GRT_SRC_M_NAME_ABBR[im], GRT_ZRT_CODES[c]);
+            NC_CHECK(nc_inq_varid(in_ncid, s_title, &in_uiz_varids[im][c]));
+            GRT_SAFE_ASPRINTF(&s_title, "r%s%c", GRT_SRC_M_NAME_ABBR[im], GRT_ZRT_CODES[c]);
+            NC_CHECK(nc_inq_varid(in_ncid, s_title, &in_uir_varids[im][c]));
         }
         GRT_SAFE_FREE_PTR(s_title);
     }
@@ -438,22 +436,20 @@ int static_syn_main(int argc, char **argv){
     pt_realChnlGrid u;
     pt_realChnlGrid uiz;
     pt_realChnlGrid uir;
-    for(int i=0; i<GRT_SRC_M_NUM; ++i){
-        int modr = GRT_SRC_M_ORDERS[i];
-        for(int c=0; c<GRT_CHANNEL_NUM; ++c){
-            // 先申请全 0 内存
-            u[i][c] = (real_t *)calloc(nr, sizeof(real_t));
-            uiz[i][c] = (real_t *)calloc(nr, sizeof(real_t));
-            uir[i][c] = (real_t *)calloc(nr, sizeof(real_t));
+    GRT_LOOP_ChnlGrid(im, c){
+        int modr = GRT_SRC_M_ORDERS[im];
+        // 先申请全 0 内存
+        u[im][c] = (real_t *)calloc(nr, sizeof(real_t));
+        uiz[im][c] = (real_t *)calloc(nr, sizeof(real_t));
+        uir[im][c] = (real_t *)calloc(nr, sizeof(real_t));
 
-            if(modr==0 && GRT_ZRT_CODES[c]=='T')  continue;
+        if(modr==0 && GRT_ZRT_CODES[c]=='T')  continue;
 
-            NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_u_varids[i][c], u[i][c]));
+        NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_u_varids[im][c], u[im][c]));
 
-            if(Ctrl->e.active){
-                NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_uiz_varids[i][c], uiz[i][c]));
-                NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_uir_varids[i][c], uir[i][c]));
-            }
+        if(Ctrl->e.active){
+            NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_uiz_varids[im][c], uiz[im][c]));
+            NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_uir_varids[im][c], uir[im][c]));
         }
     }
     
@@ -512,13 +508,10 @@ int static_syn_main(int argc, char **argv){
                 grt_set_source_radiation(Ctrl->srcRadi, Ctrl->computeType, (ityp > 0) && GRT_ZRT_CODES[ityp-1]=='T', Ctrl->S.M0, upar_scale, azrad, Ctrl->mchn);
 
                 // 合成
-                for(int i=0; i<GRT_SRC_M_NUM; ++i){
-                    int modr = GRT_SRC_M_ORDERS[i];
-                    for(int c=0; c<GRT_CHANNEL_NUM; ++c){
-                        if(modr==0 && GRT_ZRT_CODES[c]=='T')  continue;
-
-                        tmpsyn[c] += up[i][c][ir] * Ctrl->srcRadi[i][c];
-                    }
+                GRT_LOOP_ChnlGrid(im, c){
+                    int modr = GRT_SRC_M_ORDERS[im];
+                    if(modr==0 && GRT_ZRT_CODES[c]=='T')  continue;
+                    tmpsyn[c] += up[im][c][ir] * Ctrl->srcRadi[im][c];
                 }
 
                 // 记录数据
@@ -570,12 +563,10 @@ int static_syn_main(int argc, char **argv){
     NC_CHECK(nc_close(out_ncid));
 
     // 释放内存
-    for(int i=0; i<GRT_SRC_M_NUM; ++i){
-        for(int c=0; c<GRT_CHANNEL_NUM; ++c){
-            GRT_SAFE_FREE_PTR(u[i][c]);
-            GRT_SAFE_FREE_PTR(uiz[i][c]);
-            GRT_SAFE_FREE_PTR(uir[i][c]);
-        }
+    GRT_LOOP_ChnlGrid(im, c){
+        GRT_SAFE_FREE_PTR(u[im][c]);
+        GRT_SAFE_FREE_PTR(uiz[im][c]);
+        GRT_SAFE_FREE_PTR(uir[im][c]);
     }
     GRT_SAFE_FREE_PTR(syn);
     GRT_SAFE_FREE_PTR(syn_upar);

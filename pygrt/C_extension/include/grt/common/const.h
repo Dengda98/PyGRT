@@ -132,6 +132,16 @@ typedef cplx_t cplxIntegGrid[GRT_SRC_M_NUM][GRT_INTEG_NUM];
 typedef real_t realIntegGrid[GRT_SRC_M_NUM][GRT_INTEG_NUM];
 typedef size_t sizeIntegGrid[GRT_SRC_M_NUM][GRT_INTEG_NUM];
 
+// 为以上静态多维数组的循环创建宏，谨慎使用，留意作用域
+#define GRT_LOOP_ChnlGrid(im, c) \
+    for(int im = 0; im < GRT_SRC_M_NUM; ++im) \
+        for(int c = 0; c < GRT_CHANNEL_NUM; ++c)
+
+#define GRT_LOOP_IntegGrid(im, v) \
+    for(int im = 0; im < GRT_SRC_M_NUM; ++im) \
+        for(int v = 0; v < GRT_INTEG_NUM; ++v)
+
+
 /** 不同震源类型在大小为 GRT_SRC_M_NUM 的数组中的索引 */
 enum {
     GRT_SRC_M_EX_INDEX = 0,
