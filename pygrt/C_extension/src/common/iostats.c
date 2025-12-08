@@ -17,13 +17,13 @@
 
 
 
-void grt_write_stats(FILE *f0, real_t k, const cplxQWVGrid QWV)
+void grt_write_stats(FILE *f0, real_t k, const cplxChnlGrid QWV)
 {
     fwrite(&k, sizeof(real_t), 1, f0);
 
     for(int im=0; im<GRT_SRC_M_NUM; ++im){
         int modr = GRT_SRC_M_ORDERS[im];
-        for(int c=0; c<GRT_QWV_NUM; ++c){
+        for(int c=0; c<GRT_CHANNEL_NUM; ++c){
             if(modr == 0 && GRT_QWV_CODES[c] == 'v')   continue;
 
             fwrite(&QWV[im][c], sizeof(cplx_t), 1, f0);
@@ -41,7 +41,7 @@ int grt_extract_stats(FILE *bf0, FILE *af0){
 
         for(int im=0; im<GRT_SRC_M_NUM; ++im){
             int modr = GRT_SRC_M_ORDERS[im];
-            for(int c=0; c<GRT_QWV_NUM; ++c){
+            for(int c=0; c<GRT_CHANNEL_NUM; ++c){
                 if(modr == 0 && GRT_QWV_CODES[c] == 'v')   continue;
 
                 snprintf(K, sizeof(K), "%s_%c", GRT_SRC_M_NAME_ABBR[im], GRT_QWV_CODES[c]);
@@ -60,7 +60,7 @@ int grt_extract_stats(FILE *bf0, FILE *af0){
 
     for(int im=0; im<GRT_SRC_M_NUM; ++im){
         int modr = GRT_SRC_M_ORDERS[im];
-        for(int c=0; c<GRT_QWV_NUM; ++c){
+        for(int c=0; c<GRT_CHANNEL_NUM; ++c){
             if(modr == 0 && GRT_QWV_CODES[c] == 'v')   continue;
 
             if(1 != fread(&val, sizeof(cplx_t), 1, bf0))  return -1;

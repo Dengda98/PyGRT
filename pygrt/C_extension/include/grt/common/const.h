@@ -106,9 +106,8 @@ typedef double complex cplx_t;
 })
 
 // -----------------------------------------------------------------------------
-#define GRT_CHANNEL_NUM    3     ///< 3, 代码中分量个数（ZRT，ZNE）
+#define GRT_CHANNEL_NUM    3     ///< 3, 代码中分量个数（ZRT，ZNE），也是核函数类型个数(q, w, v)
 
-#define GRT_QWV_NUM     3   ///< 3, 代码中核函数类型个数(q, w, v)
 #define GRT_INTEG_NUM   4    ///< 4, 代码中积分类型个数
 #define GRT_MORDER_MAX   2    ///< 2, 代码中阶数m的最大值
 #define GRT_SRC_M_NUM    6   ///< 6, 代码中不同震源、不同阶数的个数
@@ -123,7 +122,11 @@ typedef double complex cplx_t;
 
 #define GRT_GTYPES_MAX   2      ///< 2, 所有震源根据是否使用格林函数导数分为两类
 
-typedef cplx_t cplxQWVGrid[GRT_SRC_M_NUM][GRT_QWV_NUM];
+typedef cplx_t     cplxChnlGrid[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
+typedef cplx_t *pt_cplxChnlGrid[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
+typedef real_t     realChnlGrid[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
+typedef real_t *pt_realChnlGrid[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
+typedef int        intChnlGrid [GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
 
 typedef cplx_t cplxIntegGrid[GRT_SRC_M_NUM][GRT_INTEG_NUM];
 typedef real_t realIntegGrid[GRT_SRC_M_NUM][GRT_INTEG_NUM];

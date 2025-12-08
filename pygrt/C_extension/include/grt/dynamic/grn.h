@@ -56,11 +56,11 @@ void grt_integ_grn_spec(
     bool print_progressbar, 
 
     // 返回值，代表Z、R、T分量
-    cplx_t *grn[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
+    pt_cplxChnlGrid grn[nr],
 
     bool calc_upar,
-    cplx_t *grn_uiz[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
-    cplx_t *grn_uir[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
+    pt_cplxChnlGrid grn_uiz[nr],
+    pt_cplxChnlGrid grn_uir[nr],
 
     const char *statsstr, // 积分过程输出
     size_t  nstatsidxs, // 仅输出特定频点

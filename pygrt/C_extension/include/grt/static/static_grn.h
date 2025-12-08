@@ -46,11 +46,11 @@ void grt_integ_static_grn(
     real_t filonLength, real_t safilonTol, real_t filonCut, 
 
     // 返回值，代表Z、R、T分量
-    real_t grn[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
+    realChnlGrid grn[nr],
 
     bool calc_upar,
-    real_t grn_uiz[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
-    real_t grn_uir[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
+    realChnlGrid grn_uiz[nr],
+    realChnlGrid grn_uir[nr],
 
     const char *statsstr // 积分结果输出
 );

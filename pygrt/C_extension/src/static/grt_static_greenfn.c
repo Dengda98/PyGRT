@@ -496,9 +496,9 @@ int static_greenfn_main(int argc, char **argv){
     }
 
     // 建立格林函数的浮点数
-    real_t (*grn)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM] = (real_t (*)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM]) calloc(Ctrl->nr, sizeof(*grn));
-    real_t (*grn_uiz)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM] = (Ctrl->e.active)? (real_t (*)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM]) calloc(Ctrl->nr, sizeof(*grn_uiz)) : NULL;
-    real_t (*grn_uir)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM] = (Ctrl->e.active)? (real_t (*)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM]) calloc(Ctrl->nr, sizeof(*grn_uir)) : NULL;
+    realChnlGrid *grn = (realChnlGrid *) calloc(Ctrl->nr, sizeof(*grn));
+    realChnlGrid *grn_uiz = (Ctrl->e.active)? (realChnlGrid *) calloc(Ctrl->nr, sizeof(*grn_uiz)) : NULL;
+    realChnlGrid *grn_uir = (Ctrl->e.active)? (realChnlGrid *) calloc(Ctrl->nr, sizeof(*grn_uir)) : NULL;
 
 
     //==============================================================================
@@ -525,9 +525,9 @@ int static_greenfn_main(int argc, char **argv){
     const int ndims = 2;
     int dimids[ndims];
     int x_varid, y_varid;
-    int u_varids[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
-    int uiz_varids[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
-    int uir_varids[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
+    intChnlGrid u_varids;
+    intChnlGrid uiz_varids;
+    intChnlGrid uir_varids;
 
     // 创建 NC 文件
     NC_CHECK(nc_create(Ctrl->O.s_outgrid, NC_CLOBBER, &ncid));

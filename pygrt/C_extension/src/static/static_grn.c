@@ -41,10 +41,10 @@
  */
 static void recordin_GRN(
     size_t nr, cplx_t coef, cplxIntegGrid sum_J[nr],
-    real_t grn[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM]
-){
+    realChnlGrid grn[nr])
+{
     // 局部变量，将某个频点的格林函数谱临时存放
-    cplx_t (*tmp_grn)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM] = (cplx_t(*)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM])calloc(nr, sizeof(*tmp_grn));
+    cplxChnlGrid *tmp_grn = (cplxChnlGrid *)calloc(nr, sizeof(*tmp_grn));
 
     for(size_t ir=0; ir<nr; ++ir){
         grt_merge_Pk(sum_J[ir], tmp_grn[ir]);
@@ -67,11 +67,11 @@ void grt_integ_static_grn(
     real_t filonLength, real_t safilonTol, real_t filonCut, 
 
     // 返回值，代表Z、R、T分量
-    real_t grn[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
+    realChnlGrid grn[nr],
 
     bool calc_upar,
-    real_t grn_uiz[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
-    real_t grn_uir[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
+    realChnlGrid grn_uiz[nr],
+    realChnlGrid grn_uir[nr],
 
     const char *statsstr // 积分结果输出
 ){

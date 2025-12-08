@@ -45,11 +45,10 @@
  */
 static void recordin_GRN(
     size_t iw, size_t nr, cplx_t coef, cplxIntegGrid sum_J[nr],
-    cplx_t *grn[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM]
-)
+    pt_cplxChnlGrid grn[nr])
 {
     // 局部变量，将某个频点的格林函数谱临时存放
-    cplx_t (*tmp_grn)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM] = (cplx_t(*)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM])calloc(nr, sizeof(*tmp_grn));
+    cplxChnlGrid *tmp_grn = (cplxChnlGrid *)calloc(nr, sizeof(*tmp_grn));
 
     for(size_t ir=0; ir<nr; ++ir){
         grt_merge_Pk(sum_J[ir], tmp_grn[ir]);
@@ -77,11 +76,11 @@ void grt_integ_grn_spec(
     bool print_progressbar, 
 
     // 返回值，代表Z、R、T分量
-    cplx_t *grn[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
+    pt_cplxChnlGrid grn[nr],
 
     bool calc_upar,
-    cplx_t *grn_uiz[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
-    cplx_t *grn_uir[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM],
+    pt_cplxChnlGrid grn_uiz[nr],
+    pt_cplxChnlGrid grn_uir[nr],
 
     const char *statsstr, // 积分结果输出
     size_t  nstatsidxs, // 仅输出特定频点

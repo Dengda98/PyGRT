@@ -51,8 +51,8 @@ typedef enum {
 // 区间结构体
 typedef struct { 
     real_t k3[3];
-    cplxQWVGrid F3[3]; 
-    cplxQWVGrid F3_uiz[3]; 
+    cplxChnlGrid F3[3]; 
+    cplxChnlGrid F3_uiz[3]; 
 } KInterval;
 
 // 区间栈结构体
@@ -104,7 +104,7 @@ static KInterval stack_pop(KIntervalStack *stack) {
 static cplx_t simpson(const KInterval *item_pt, int im, int iqwv, bool isuiz, SIMPSON_INTV stats) {
     cplx_t Fint = 0.0;
     real_t klen = item_pt->k3[2] -  item_pt->k3[0];
-    const cplxQWVGrid *F3 = (isuiz)? item_pt->F3_uiz : item_pt->F3;
+    const cplxChnlGrid *F3 = (isuiz)? item_pt->F3_uiz : item_pt->F3;
     
     // 使用F(k)*sqrt(k)来衡量积分值，这可以平衡后续计算F(k)*Jm(kr)k积分时的系数
     real_t sk[3];
@@ -136,10 +136,10 @@ static cplx_t simpson(const KInterval *item_pt, int im, int iqwv, bool isuiz, SI
 }
 
 /** 比较QWV的最大绝对值 */
-static void get_maxabsQWV(const cplxQWVGrid F, real_t maxabsF[GRT_GTYPES_MAX]){
+static void get_maxabsQWV(const cplxChnlGrid F, real_t maxabsF[GRT_GTYPES_MAX]){
     real_t tmp;
     for(int i=0; i<GRT_SRC_M_NUM; ++i){
-        for(int c=0; c<GRT_QWV_NUM; ++c){
+        for(int c=0; c<GRT_CHANNEL_NUM; ++c){
             tmp = fabs(F[i][c]);
             if(tmp > maxabsF[GRT_SRC_M_GTYPES[i]]){
                 maxabsF[GRT_SRC_M_GTYPES[i]] = tmp;
@@ -158,8 +158,8 @@ static bool check_fit(
     cplx_t S11, S12, S21, S22;
 
     // 核函数
-    const cplxQWVGrid *F3L = (isuiz)? ptKitvL->F3_uiz : ptKitvL->F3;
-    const cplxQWVGrid *F3R = (isuiz)? ptKitvR->F3_uiz : ptKitvR->F3;
+    const cplxChnlGrid *F3L = (isuiz)? ptKitvL->F3_uiz : ptKitvL->F3;
+    const cplxChnlGrid *F3R = (isuiz)? ptKitvR->F3_uiz : ptKitvR->F3;
 
     // 取近似积分 \int_k1^k2 k^0.5 dk
     real_t kcoef13 = RTWOTHIRD*( ptKitv->k3[2]*sqrt(ptKitv->k3[2]) - ptKitv->k3[0]*sqrt(ptKitv->k3[0]) );
@@ -170,7 +170,7 @@ static bool check_fit(
     bool badtol = false;
     for(int im=0; im<GRT_SRC_M_NUM; ++im){
         int igtyp = GRT_SRC_M_GTYPES[im];
-        for(int c=0; c<GRT_QWV_NUM; ++c){
+        for(int c=0; c<GRT_CHANNEL_NUM; ++c){
             if(GRT_SRC_M_ORDERS[im]==0 && GRT_QWV_CODES[c]=='v')  continue;
             // qw和v分开采样?
             // if(isqw && GRT_QWV_CODES[c]=='v')  continue;
@@ -360,15 +360,15 @@ real_t grt_sa_filon_integ(
             .F3 = {{{0}}}, 
             .F3_uiz = {{{0}}} 
         };
-        memcpy(Kitv_left.F3[0], Kitv.F3[0], sizeof(cplx_t)*GRT_SRC_M_NUM*GRT_QWV_NUM);
-        memcpy(Kitv_left.F3[2], Kitv.F3[1], sizeof(cplx_t)*GRT_SRC_M_NUM*GRT_QWV_NUM);
-        memcpy(Kitv_right.F3[0], Kitv.F3[1], sizeof(cplx_t)*GRT_SRC_M_NUM*GRT_QWV_NUM);
-        memcpy(Kitv_right.F3[2], Kitv.F3[2], sizeof(cplx_t)*GRT_SRC_M_NUM*GRT_QWV_NUM);
+        memcpy(Kitv_left.F3[0], Kitv.F3[0], sizeof(cplxChnlGrid));
+        memcpy(Kitv_left.F3[2], Kitv.F3[1], sizeof(cplxChnlGrid));
+        memcpy(Kitv_right.F3[0], Kitv.F3[1], sizeof(cplxChnlGrid));
+        memcpy(Kitv_right.F3[2], Kitv.F3[2], sizeof(cplxChnlGrid));
         if(calc_upar){
-            memcpy(Kitv_left.F3_uiz[0], Kitv.F3_uiz[0], sizeof(cplx_t)*GRT_SRC_M_NUM*GRT_QWV_NUM);
-            memcpy(Kitv_left.F3_uiz[2], Kitv.F3_uiz[1], sizeof(cplx_t)*GRT_SRC_M_NUM*GRT_QWV_NUM);
-            memcpy(Kitv_right.F3_uiz[0], Kitv.F3_uiz[1], sizeof(cplx_t)*GRT_SRC_M_NUM*GRT_QWV_NUM);
-            memcpy(Kitv_right.F3_uiz[2], Kitv.F3_uiz[2], sizeof(cplx_t)*GRT_SRC_M_NUM*GRT_QWV_NUM);
+            memcpy(Kitv_left.F3_uiz[0], Kitv.F3_uiz[0], sizeof(cplxChnlGrid));
+            memcpy(Kitv_left.F3_uiz[2], Kitv.F3_uiz[1], sizeof(cplxChnlGrid));
+            memcpy(Kitv_right.F3_uiz[0], Kitv.F3_uiz[1], sizeof(cplxChnlGrid));
+            memcpy(Kitv_right.F3_uiz[2], Kitv.F3_uiz[2], sizeof(cplxChnlGrid));
         }
         
         kerfunc(mod1d, Kitv_left.k3[1], Kitv_left.F3[1], calc_upar, Kitv_left.F3_uiz[1]);
