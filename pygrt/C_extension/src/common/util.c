@@ -322,7 +322,7 @@ static void single_freq2time_write_to_file(
     pt_hd->t1 = grt_compute_travt1d(mod1d->Thk, mod1d->Vb, mod1d->n, mod1d->isrc, mod1d->ircv, dist);
     strcpy(pt_hd->kt1, "S");
 
-    for(int im=0; im<GRT_SRC_M_NUM; ++im){
+    GRT_LOOP_ChnlGrid(im, c){
         if(! doEX  && im==0)  continue;
         if(! doVF  && im==1)  continue;
         if(! doHF  && im==2)  continue;
@@ -330,35 +330,33 @@ static void single_freq2time_write_to_file(
 
         int modr = GRT_SRC_M_ORDERS[im];
         int sgn=1;  // 用于反转Z分量
-        for(int c=0; c<GRT_CHANNEL_NUM; ++c){
-            if(modr==0 && GRT_ZRT_CODES[c]=='T')  continue;  // 跳过输出0阶的T分量
 
-            // 判断是否为所需的分量
-            if(strchr(chalst, GRT_ZRT_CODES[c]) == NULL)  continue;
+        if(modr==0 && GRT_ZRT_CODES[c]=='T')  continue;  // 跳过输出0阶的T分量
 
-            // Z分量反转
-            sgn = (GRT_ZRT_CODES[c]=='Z') ? -1 : 1;
+        // 判断是否为所需的分量
+        if(strchr(chalst, GRT_ZRT_CODES[c]) == NULL)  continue;
+
+        // Z分量反转
+        sgn = (GRT_ZRT_CODES[c]=='Z') ? -1 : 1;
+
+        write_one_to_sac(
+            GRT_SRC_M_NAME_ABBR[im], GRT_ZRT_CODES[c], delayT, 
+            wI, pt_fh,
+            pt_hd, s_output_subdir, "", sgn, 
+            grn[im][c]);
+
+        if(calc_upar){
+            write_one_to_sac(
+                GRT_SRC_M_NAME_ABBR[im], GRT_ZRT_CODES[c], delayT, 
+                wI, pt_fh,
+                pt_hd, s_output_subdir, "z", sgn*(-1), 
+                grn_uiz[im][c]);
 
             write_one_to_sac(
                 GRT_SRC_M_NAME_ABBR[im], GRT_ZRT_CODES[c], delayT, 
                 wI, pt_fh,
-                pt_hd, s_output_subdir, "", sgn, 
-                grn[im][c]);
-
-            if(calc_upar){
-                write_one_to_sac(
-                    GRT_SRC_M_NAME_ABBR[im], GRT_ZRT_CODES[c], delayT, 
-                    wI, pt_fh,
-                    pt_hd, s_output_subdir, "z", sgn*(-1), 
-                    grn_uiz[im][c]);
-
-                write_one_to_sac(
-                    GRT_SRC_M_NAME_ABBR[im], GRT_ZRT_CODES[c], delayT, 
-                    wI, pt_fh,
-                    pt_hd, s_output_subdir, "r", sgn, 
-                    grn_uir[im][c]);
-            }
-
+                pt_hd, s_output_subdir, "r", sgn, 
+                grn_uir[im][c]);
         }
     }
 

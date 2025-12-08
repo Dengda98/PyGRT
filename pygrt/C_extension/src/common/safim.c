@@ -138,12 +138,10 @@ static cplx_t simpson(const KInterval *item_pt, int im, int iqwv, bool isuiz, SI
 /** 比较QWV的最大绝对值 */
 static void get_maxabsQWV(const cplxChnlGrid F, real_t maxabsF[GRT_GTYPES_MAX]){
     real_t tmp;
-    for(int i=0; i<GRT_SRC_M_NUM; ++i){
-        for(int c=0; c<GRT_CHANNEL_NUM; ++c){
-            tmp = fabs(F[i][c]);
-            if(tmp > maxabsF[GRT_SRC_M_GTYPES[i]]){
-                maxabsF[GRT_SRC_M_GTYPES[i]] = tmp;
-            }
+    GRT_LOOP_ChnlGrid(im, c){
+        tmp = fabs(F[im][c]);
+        if(tmp > maxabsF[GRT_SRC_M_GTYPES[im]]){
+            maxabsF[GRT_SRC_M_GTYPES[im]] = tmp;
         }
     }
 }
@@ -168,62 +166,60 @@ static bool check_fit(
 
     real_t S_dif, S_ref;
     bool badtol = false;
-    for(int im=0; im<GRT_SRC_M_NUM; ++im){
+
+    GRT_LOOP_ChnlGrid(im, c){
         int igtyp = GRT_SRC_M_GTYPES[im];
-        for(int c=0; c<GRT_CHANNEL_NUM; ++c){
-            if(GRT_SRC_M_ORDERS[im]==0 && GRT_QWV_CODES[c]=='v')  continue;
-            // qw和v分开采样?
-            // if(isqw && GRT_QWV_CODES[c]=='v')  continue;
-            // if(!isqw && GRT_QWV_CODES[c]!='v') continue;
+        if(GRT_SRC_M_ORDERS[im]==0 && GRT_QWV_CODES[c]=='v')  continue;
+        // qw和v分开采样?
+        // if(isqw && GRT_QWV_CODES[c]=='v')  continue;
+        // if(!isqw && GRT_QWV_CODES[c]!='v') continue;
 
-            // k值在后段，只根据数值稳定的v分量判断是否拟合好
-            if(ptKitv->k3[0] > kref && GRT_QWV_CODES[c]!='v')  continue;
+        // k值在后段，只根据数值稳定的v分量判断是否拟合好
+        if(ptKitv->k3[0] > kref && GRT_QWV_CODES[c]!='v')  continue;
 
-            S11 = simpson(ptKitv, im, c, isuiz, SIMPSON_A_ApH);
-            S12 = simpson(ptKitv, im, c, isuiz, SIMPSON_ApH_Ap2H);
-            S21 = simpson(ptKitvL, im, c, isuiz, SIMPSON_A_Ap2H);
-            S22 = simpson(ptKitvR, im, c, isuiz, SIMPSON_A_Ap2H);
+        S11 = simpson(ptKitv, im, c, isuiz, SIMPSON_A_ApH);
+        S12 = simpson(ptKitv, im, c, isuiz, SIMPSON_ApH_Ap2H);
+        S21 = simpson(ptKitvL, im, c, isuiz, SIMPSON_A_Ap2H);
+        S22 = simpson(ptKitvR, im, c, isuiz, SIMPSON_A_Ap2H);
 
-            bool islowamp = true;
-            real_t ref_amp = REF_AMP_SCALE*maxabsQWV[igtyp];
-            // 比较当前区间内5个核函数幅值，是否都低于参考值
-            for(int d=0; d<3; ++d){
-                islowamp = islowamp && (fabs(F3L[d][im][c]) < ref_amp);
-                if(d>0){
-                    islowamp = islowamp && (fabs(F3R[d][im][c]) < ref_amp);
-                }
+        bool islowamp = true;
+        real_t ref_amp = REF_AMP_SCALE*maxabsQWV[igtyp];
+        // 比较当前区间内5个核函数幅值，是否都低于参考值
+        for(int d=0; d<3; ++d){
+            islowamp = islowamp && (fabs(F3L[d][im][c]) < ref_amp);
+            if(d>0){
+                islowamp = islowamp && (fabs(F3R[d][im][c]) < ref_amp);
             }
-            // 如果核函数幅值确实较低，则限制S_ref，此时正负号不重要
-            // 三个拟合规则(a,b,c)
-            // (a)
-            if(islowamp){
-                S_ref = ref_amp * kcoef13;
-            } else {
-                S_ref = fabs(S11 + S12 + S21 + S22);
-            }
-            S_dif = fabs(S11 + S12 - S21 - S22);
-            badtol = badtol || (S_dif/S_ref > tol);  // 有一个不合格就继续采样
-            if(badtol)  goto BEFORE_RETURN;
-            // (b)
-            if(islowamp){
-                S_ref = ref_amp * kcoef12;
-            } else {
-                S_ref = fabs(S11 + S21);
-            }
-            S_dif = fabs(S11 - S21);
-            badtol = badtol || (S_dif/S_ref > tol);  // 有一个不合格就继续采样
-            if(badtol)  goto BEFORE_RETURN;
-            // (c)
-            if(islowamp){
-                S_ref = ref_amp * kcoef23;
-            } else {
-                S_ref = fabs(S12 + S22);
-            }
-            S_dif = fabs(S12 - S22);
-            badtol = badtol || (S_dif/S_ref > tol);  // 有一个不合格就继续采样
-            if(badtol)  goto BEFORE_RETURN;
-
         }
+        // 如果核函数幅值确实较低，则限制S_ref，此时正负号不重要
+        // 三个拟合规则(a,b,c)
+        // (a)
+        if(islowamp){
+            S_ref = ref_amp * kcoef13;
+        } else {
+            S_ref = fabs(S11 + S12 + S21 + S22);
+        }
+        S_dif = fabs(S11 + S12 - S21 - S22);
+        badtol = badtol || (S_dif/S_ref > tol);  // 有一个不合格就继续采样
+        if(badtol)  goto BEFORE_RETURN;
+        // (b)
+        if(islowamp){
+            S_ref = ref_amp * kcoef12;
+        } else {
+            S_ref = fabs(S11 + S21);
+        }
+        S_dif = fabs(S11 - S21);
+        badtol = badtol || (S_dif/S_ref > tol);  // 有一个不合格就继续采样
+        if(badtol)  goto BEFORE_RETURN;
+        // (c)
+        if(islowamp){
+            S_ref = ref_amp * kcoef23;
+        } else {
+            S_ref = fabs(S12 + S22);
+        }
+        S_dif = fabs(S12 - S22);
+        badtol = badtol || (S_dif/S_ref > tol);  // 有一个不合格就继续采样
+        if(badtol)  goto BEFORE_RETURN;
     }
 
     BEFORE_RETURN:
@@ -248,41 +244,38 @@ static void interv_integ(
 
     // 震中距rs循环
     for(size_t ir=0; ir<nr; ++ir){
-        for(int i=0; i<GRT_SRC_M_NUM; ++i){
-            for(int v=0; v<GRT_INTEG_NUM; ++v){
-                SUM[i][v] = 0.0;
-            }
-        }
+
+        memset(SUM, 0, sizeof(cplxIntegGrid));
 
         // 该分段内的积分
         grt_int_Pk_sa_filon(ptKitv->k3, rs[ir], ptKitv->F3, false, SUM);
-        for(int i=0; i<GRT_SRC_M_NUM; ++i){
-            int modr = GRT_SRC_M_ORDERS[i];
-            for(int v=0; v<GRT_INTEG_NUM; ++v){
-                if((modr==0 && v!=0 && v!=2))  continue;
-                sum_J[ir][i][v] += SUM[i][v];
-            }
+
+        GRT_LOOP_IntegGrid(im, v){
+            int modr = GRT_SRC_M_ORDERS[im];
+            if((modr==0 && v!=0 && v!=2))  continue;
+
+            sum_J[ir][im][v] += SUM[im][v];
         }
 
         if(calc_upar){
             //----------------------------- ui_z --------------------------------------
             grt_int_Pk_sa_filon(ptKitv->k3, rs[ir], ptKitv->F3_uiz, false, SUM);
-            for(int i=0; i<GRT_SRC_M_NUM; ++i){
-                int modr = GRT_SRC_M_ORDERS[i];
-                for(int v=0; v<GRT_INTEG_NUM; ++v){
-                    if((modr==0 && v!=0 && v!=2))  continue;
-                    sum_uiz_J[ir][i][v] += SUM[i][v];
-                }
+
+            GRT_LOOP_IntegGrid(im, v){
+                int modr = GRT_SRC_M_ORDERS[im];
+                if((modr==0 && v!=0 && v!=2))  continue;
+
+                sum_uiz_J[ir][im][v] += SUM[im][v];
             }
 
             //----------------------------- ui_r --------------------------------------
             grt_int_Pk_sa_filon(ptKitv->k3, rs[ir], ptKitv->F3, true, SUM);
-            for(int i=0; i<GRT_SRC_M_NUM; ++i){
-                int modr = GRT_SRC_M_ORDERS[i];
-                for(int v=0; v<GRT_INTEG_NUM; ++v){
-                    if((modr==0 && v!=0 && v!=2))  continue;
-                    sum_uir_J[ir][i][v] += SUM[i][v];
-                }
+            
+            GRT_LOOP_IntegGrid(im, v){
+                int modr = GRT_SRC_M_ORDERS[im];
+                if((modr==0 && v!=0 && v!=2))  continue;
+
+                sum_uir_J[ir][im][v] += SUM[im][v];
             }
 
         }
@@ -419,13 +412,12 @@ real_t grt_sa_filon_integ(
     // 乘上总系数 sqrt(2.0/(PI*r)) / dk0,  除dks0是在该函数外还会再乘dk0, 并将结果加到原数组中
     for(size_t ir=0; ir<nr; ++ir){
         real_t tmp = sqrt(2.0/(PI*rs[ir])) / dk0;
-        for(int i=0; i<GRT_SRC_M_NUM; ++i){
-            for(int v=0; v<GRT_INTEG_NUM; ++v){
-                sum_J0[ir][i][v] += sum_J[ir][i][v] * tmp;
-                if(calc_upar){
-                    sum_uiz_J0[ir][i][v] += sum_uiz_J[ir][i][v] * tmp;
-                    sum_uir_J0[ir][i][v] += sum_uir_J[ir][i][v] * tmp;
-                }
+
+        GRT_LOOP_IntegGrid(im, v){
+            sum_J0[ir][im][v] += sum_J[ir][im][v] * tmp;
+            if(calc_upar){
+                sum_uiz_J0[ir][im][v] += sum_uiz_J[ir][im][v] * tmp;
+                sum_uir_J0[ir][im][v] += sum_uir_J[ir][im][v] * tmp;
             }
         }
     }

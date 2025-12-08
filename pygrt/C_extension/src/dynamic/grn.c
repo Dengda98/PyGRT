@@ -53,14 +53,11 @@ static void recordin_GRN(
     for(size_t ir=0; ir<nr; ++ir){
         grt_merge_Pk(sum_J[ir], tmp_grn[ir]);
 
-        for(int i=0; i<GRT_SRC_M_NUM; ++i) {
-            int modr = GRT_SRC_M_ORDERS[i];
-            for(int c=0; c<GRT_CHANNEL_NUM; ++c){
-                if(modr == 0 && GRT_ZRT_CODES[c] == 'T')  continue;
+        GRT_LOOP_ChnlGrid(im, c){
+            int modr = GRT_SRC_M_ORDERS[im];
+            if(modr == 0 && GRT_ZRT_CODES[c] == 'T')  continue;
 
-                grn[ir][i][c][iw] = coef * tmp_grn[ir][i][c];
-            }
-
+            grn[ir][im][c][iw] = coef * tmp_grn[ir][im][c];
         }
     }
 
@@ -199,16 +196,6 @@ void grt_integ_grn_spec(
                 fstats = fopen(fname, "wb");
             }
             for(size_t ir=0; ir<nr; ++ir){
-                for(int i=0; i<GRT_SRC_M_NUM; ++i){
-                    for(int v=0; v<GRT_INTEG_NUM; ++v){
-                        sum_J[ir][i][v] = 0.0;
-                        if(calc_upar){
-                            sum_uiz_J[ir][i][v] = 0.0;
-                            sum_uir_J[ir][i][v] = 0.0;
-                        }
-                    }
-                }
-    
                 ptam_fstatsnr[ir][0] = ptam_fstatsnr[ir][1] = NULL;
                 if(needfstats && vmin_ref < 0.0){
                     // 峰谷平均法
@@ -217,7 +204,7 @@ void grt_integ_grn_spec(
                     GRT_SAFE_ASPRINTF(&fname, "%s/PTAM_%04zu_%.5e", ptam_fstatsdir[ir], iw, freqs[iw]);
                     ptam_fstatsnr[ir][1] = fopen(fname, "wb");
                 }
-            } // end init rs loop
+            }
             GRT_SAFE_FREE_PTR(fname);
         }
 

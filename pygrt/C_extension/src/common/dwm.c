@@ -67,23 +67,21 @@ real_t grt_discrete_integ(
         for(size_t ir=0; ir<nr; ++ir){
             if(iendkrs[ir]) continue; // 该震中距下的波数k积分已收敛
 
-            memset(SUM, 0, sizeof(cplx_t)*GRT_SRC_M_NUM*GRT_INTEG_NUM);
+            memset(SUM, 0, sizeof(cplxIntegGrid));
             
             // 计算被积函数一项 F(k,w)Jm(kr)k
             grt_int_Pk(k, rs[ir], QWV, false, SUM);
             
             iendk0 = true;
-            for(int i=0; i<GRT_SRC_M_NUM; ++i){
-                int modr = GRT_SRC_M_ORDERS[i];
 
-                for(int v=0; v<GRT_INTEG_NUM; ++v){
-                    sum_J[ir][i][v] += SUM[i][v];
+            GRT_LOOP_IntegGrid(im, v){
+                int modr = GRT_SRC_M_ORDERS[im];
+                sum_J[ir][im][v] += SUM[im][v];
                     
-                    // 是否提前判断达到收敛
-                    if(keps <= 0.0 || (modr==0 && v!=0 && v!=2))  continue;
-                    
-                    iendk0 = iendk0 && (fabs(SUM[i][v])/ fabs(sum_J[ir][i][v]) <= keps);
-                }
+                // 是否提前判断达到收敛
+                if(keps <= 0.0 || (modr==0 && v!=0 && v!=2))  continue;
+                
+                iendk0 = iendk0 && (fabs(SUM[im][v])/ fabs(sum_J[ir][im][v]) <= keps);
             }
             
             if(keps > 0.0){
@@ -101,10 +99,8 @@ real_t grt_discrete_integ(
                 grt_int_Pk(k, rs[ir], QWV_uiz, false, SUM);
                 
                 // keps不参与计算位移空间导数的积分，背后逻辑认为u收敛，则uiz也收敛
-                for(int i=0; i<GRT_SRC_M_NUM; ++i){
-                    for(int v=0; v<GRT_INTEG_NUM; ++v){
-                        sum_uiz_J[ir][i][v] += SUM[i][v];
-                    }
+                GRT_LOOP_IntegGrid(im, v){
+                    sum_uiz_J[ir][im][v] += SUM[im][v];
                 }
 
                 // ------------------------------- ui_r -----------------------------------
@@ -112,10 +108,8 @@ real_t grt_discrete_integ(
                 grt_int_Pk(k, rs[ir], QWV, true, SUM);
                 
                 // keps不参与计算位移空间导数的积分，背后逻辑认为u收敛，则uiz也收敛
-                for(int i=0; i<GRT_SRC_M_NUM; ++i){
-                    for(int v=0; v<GRT_INTEG_NUM; ++v){
-                        sum_uir_J[ir][i][v] += SUM[i][v];
-                    }
+                GRT_LOOP_IntegGrid(im, v){
+                    sum_uir_J[ir][im][v] += SUM[im][v];
                 }
             } // END if calc_upar
 

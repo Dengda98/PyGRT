@@ -556,22 +556,21 @@ int static_greenfn_main(int argc, char **argv){
     NC_CHECK(nc_def_var(ncid, "east", NC_REAL, 1, &y_dimid, &y_varid));
 
     // 定义不同震源不同分量的格林函数数组
-    for(int i=0; i<GRT_SRC_M_NUM; ++i){
-        int modr = GRT_SRC_M_ORDERS[i];
+    GRT_LOOP_ChnlGrid(im, c){
+        int modr = GRT_SRC_M_ORDERS[im];
         char *s_title = NULL;
-        for(int c=0; c<GRT_CHANNEL_NUM; ++c){
-            if(modr==0 && GRT_ZRT_CODES[c]=='T')  continue;
 
-            GRT_SAFE_ASPRINTF(&s_title, "%s%c", GRT_SRC_M_NAME_ABBR[i], GRT_ZRT_CODES[c]);
-            NC_CHECK(nc_def_var(ncid, s_title, NC_REAL, ndims, dimids, &u_varids[i][c]));
+        if(modr==0 && GRT_ZRT_CODES[c]=='T')  continue;
 
-            // 位移偏导
-            if(Ctrl->e.active){
-                GRT_SAFE_ASPRINTF(&s_title, "z%s%c", GRT_SRC_M_NAME_ABBR[i], GRT_ZRT_CODES[c]);
-                NC_CHECK(nc_def_var(ncid, s_title, NC_REAL, ndims, dimids, &uiz_varids[i][c]));
-                GRT_SAFE_ASPRINTF(&s_title, "r%s%c", GRT_SRC_M_NAME_ABBR[i], GRT_ZRT_CODES[c]);
-                NC_CHECK(nc_def_var(ncid, s_title, NC_REAL, ndims, dimids, &uir_varids[i][c]));
-            }
+        GRT_SAFE_ASPRINTF(&s_title, "%s%c", GRT_SRC_M_NAME_ABBR[im], GRT_ZRT_CODES[c]);
+        NC_CHECK(nc_def_var(ncid, s_title, NC_REAL, ndims, dimids, &u_varids[im][c]));
+
+        // 位移偏导
+        if(Ctrl->e.active){
+            GRT_SAFE_ASPRINTF(&s_title, "z%s%c", GRT_SRC_M_NAME_ABBR[im], GRT_ZRT_CODES[c]);
+            NC_CHECK(nc_def_var(ncid, s_title, NC_REAL, ndims, dimids, &uiz_varids[im][c]));
+            GRT_SAFE_ASPRINTF(&s_title, "r%s%c", GRT_SRC_M_NAME_ABBR[im], GRT_ZRT_CODES[c]);
+            NC_CHECK(nc_def_var(ncid, s_title, NC_REAL, ndims, dimids, &uir_varids[im][c]));
         }
         GRT_SAFE_FREE_PTR(s_title);
     }
@@ -583,30 +582,29 @@ int static_greenfn_main(int argc, char **argv){
     NC_CHECK(NC_FUNC_REAL(nc_put_var) (ncid, x_varid, Ctrl->X.xs));
     NC_CHECK(NC_FUNC_REAL(nc_put_var) (ncid, y_varid, Ctrl->Y.ys));
     real_t *tmpdata = (real_t *)calloc(Ctrl->nr, sizeof(real_t));
-    for(int i=0; i<GRT_SRC_M_NUM; ++i){
-        int modr = GRT_SRC_M_ORDERS[i];
-        for(int c=0; c<GRT_CHANNEL_NUM; ++c){
-            if(modr==0 && GRT_ZRT_CODES[c]=='T')  continue;
+    GRT_LOOP_ChnlGrid(im, c){
+        int modr = GRT_SRC_M_ORDERS[im];
 
-            int sgn0 = 1;
-            sgn0 = (GRT_ZRT_CODES[c]=='Z')? -1 : 1;
+        if(modr==0 && GRT_ZRT_CODES[c]=='T')  continue;
+
+        int sgn0 = 1;
+        sgn0 = (GRT_ZRT_CODES[c]=='Z')? -1 : 1;
+        for(size_t ir=0; ir < Ctrl->nr; ++ir){
+            tmpdata[ir] = sgn0 * grn[ir][im][c];
+        }
+
+        NC_CHECK(NC_FUNC_REAL(nc_put_var) (ncid, u_varids[im][c], tmpdata));
+
+        // 位移偏导
+        if(Ctrl->e.active){
             for(size_t ir=0; ir < Ctrl->nr; ++ir){
-                tmpdata[ir] = sgn0 * grn[ir][i][c];
+                tmpdata[ir] = (-1) * sgn0 * grn_uiz[ir][im][c];  // 这里多乘的(-1)是因为对z的偏导，z需反向
             }
-
-            NC_CHECK(NC_FUNC_REAL(nc_put_var) (ncid, u_varids[i][c], tmpdata));
-
-            // 位移偏导
-            if(Ctrl->e.active){
-                for(size_t ir=0; ir < Ctrl->nr; ++ir){
-                    tmpdata[ir] = (-1) * sgn0 * grn_uiz[ir][i][c];  // 这里多乘的(-1)是因为对z的偏导，z需反向
-                }
-                NC_CHECK(NC_FUNC_REAL(nc_put_var) (ncid, uiz_varids[i][c], tmpdata));
-                for(size_t ir=0; ir < Ctrl->nr; ++ir){
-                    tmpdata[ir] = sgn0 * grn_uir[ir][i][c];  // 这里多乘的(-1)是因为对z的偏导，z需反向
-                }
-                NC_CHECK(NC_FUNC_REAL(nc_put_var) (ncid, uir_varids[i][c], tmpdata));
+            NC_CHECK(NC_FUNC_REAL(nc_put_var) (ncid, uiz_varids[im][c], tmpdata));
+            for(size_t ir=0; ir < Ctrl->nr; ++ir){
+                tmpdata[ir] = sgn0 * grn_uir[ir][im][c];  // 这里多乘的(-1)是因为对z的偏导，z需反向
             }
+            NC_CHECK(NC_FUNC_REAL(nc_put_var) (ncid, uir_varids[im][c], tmpdata));
         }
     }
     GRT_SAFE_FREE_PTR(tmpdata);
