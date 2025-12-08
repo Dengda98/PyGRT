@@ -26,7 +26,7 @@
  * @note     文件记录的值均为波数积分的中间结果，与最终的结果还差一系列的系数，
  *           记录其值主要用于参考其变化趋势。
  */
-void grt_write_stats(FILE *f0, real_t k, const cplxQWVGrid QWV);
+void grt_write_stats(FILE *f0, real_t k, const cplxChnlGrid QWV);
 
 
 /**

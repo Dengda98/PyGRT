@@ -61,7 +61,7 @@ typedef struct {
     real_t mchn[GRT_MECHANISM_NUM];
 
     // 方向因子数组
-    real_t srcRadi[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
+    realChnlGrid srcRadi;
 
     // 最终要计算的震源类型
     int computeType;
@@ -311,9 +311,9 @@ int static_syn_main(int argc, char **argv){
     int in_x_dimid, in_y_dimid;
     int in_x_varid, in_y_varid;
     const int ndims = 2;
-    int in_u_varids[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
-    int in_uiz_varids[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
-    int in_uir_varids[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
+    intChnlGrid in_u_varids;
+    intChnlGrid in_uiz_varids;
+    intChnlGrid in_uir_varids;
     int out_ncid;
     int out_x_dimid, out_y_dimid;
     int out_x_varid, out_y_varid;
@@ -435,9 +435,9 @@ int static_syn_main(int argc, char **argv){
 
     // 先将所有格林函数及其偏导读入内存，
     // 否则连续使用 nc_grt_var1 式读入效率太慢
-    real_t *u[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
-    real_t *uiz[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
-    real_t *uir[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
+    pt_realChnlGrid u;
+    pt_realChnlGrid uiz;
+    pt_realChnlGrid uir;
     for(int i=0; i<GRT_SRC_M_NUM; ++i){
         int modr = GRT_SRC_M_ORDERS[i];
         for(int c=0; c<GRT_CHANNEL_NUM; ++c){

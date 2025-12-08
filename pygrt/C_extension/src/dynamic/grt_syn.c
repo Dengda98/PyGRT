@@ -95,7 +95,7 @@ typedef struct {
     real_t mchn[GRT_MECHANISM_NUM];
 
     // 方向因子数组
-    real_t srcRadi[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
+    realChnlGrid srcRadi;
 
     // 最终要计算的震源类型
     int computeType;

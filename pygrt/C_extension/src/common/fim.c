@@ -39,8 +39,8 @@ real_t grt_linear_filon_integ(
     cplxIntegGrid SUM;
 
     // 不同震源不同阶数的核函数 F(k, w) 
-    cplxQWVGrid QWV = {0};
-    cplxQWVGrid QWV_uiz = {0};
+    cplxChnlGrid QWV = {0};
+    cplxChnlGrid QWV_uiz = {0};
 
     real_t k=k0; 
     size_t ik=0;

@@ -36,8 +36,8 @@ real_t grt_discrete_integ(
     cplxIntegGrid SUM = {0};
 
     // 不同震源不同阶数的核函数 F(k, w) 
-    cplxQWVGrid QWV = {0};
-    cplxQWVGrid QWV_uiz = {0};
+    cplxChnlGrid QWV = {0};
+    cplxChnlGrid QWV_uiz = {0};
     
     real_t k = 0.0;
     size_t ik = 0;

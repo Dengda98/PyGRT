@@ -876,9 +876,9 @@ int greenfn_main(int argc, char **argv) {
     }
 
     // 建立格林函数的complex数组
-    cplx_t *(*grn)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM] = (cplx_t*(*)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM]) calloc(Ctrl->R.nr, sizeof(*grn));
-    cplx_t *(*grn_uiz)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM] = (Ctrl->e.active)? (cplx_t*(*)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM]) calloc(Ctrl->R.nr, sizeof(*grn_uiz)) : NULL;
-    cplx_t *(*grn_uir)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM] = (Ctrl->e.active)? (cplx_t*(*)[GRT_SRC_M_NUM][GRT_CHANNEL_NUM]) calloc(Ctrl->R.nr, sizeof(*grn_uir)) : NULL;
+    pt_cplxChnlGrid *grn = (pt_cplxChnlGrid *) calloc(Ctrl->R.nr, sizeof(*grn));
+    pt_cplxChnlGrid *grn_uiz = (Ctrl->e.active)? (pt_cplxChnlGrid *) calloc(Ctrl->R.nr, sizeof(*grn_uiz)) : NULL;
+    pt_cplxChnlGrid *grn_uir = (Ctrl->e.active)? (pt_cplxChnlGrid *) calloc(Ctrl->R.nr, sizeof(*grn_uir)) : NULL;
 
     for(size_t ir=0; ir<Ctrl->R.nr; ++ir){
         for(int i=0; i<GRT_SRC_M_NUM; ++i){

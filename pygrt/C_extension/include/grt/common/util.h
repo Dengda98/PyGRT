@@ -131,6 +131,6 @@ void grt_GF_freq2time_write_to_file(
     const real_t delayT0, const real_t delayV0, const bool calc_upar,
     const bool doEX, const bool doVF, const bool doHF, const bool doDC, 
     const char *chalst,
-    cplx_t *grn[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM], 
-    cplx_t *grn_uiz[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM], 
-    cplx_t *grn_uir[nr][GRT_SRC_M_NUM][GRT_CHANNEL_NUM]);
+    pt_cplxChnlGrid grn[nr], 
+    pt_cplxChnlGrid grn_uiz[nr], 
+    pt_cplxChnlGrid grn_uir[nr]);

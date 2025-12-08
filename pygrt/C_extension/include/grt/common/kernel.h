@@ -16,8 +16,8 @@
  * 计算核函数的函数指针，动态与静态的接口一致
  */
 typedef void (*GRT_KernelFunc) (
-    GRT_MODEL1D *mod1d, const real_t k, cplxQWVGrid QWV,
-    bool calc_uiz, cplxQWVGrid QWV_uiz);
+    GRT_MODEL1D *mod1d, const real_t k, cplxChnlGrid QWV,
+    bool calc_uiz, cplxChnlGrid QWV_uiz);
 
 
 /**
@@ -89,26 +89,26 @@ typedef void (*GRT_KernelFunc) (
  * 
  */
 void grt_kernel(
-    GRT_MODEL1D *mod1d, const real_t k, cplxQWVGrid QWV,
-    bool calc_uiz, cplxQWVGrid QWV_uiz);
+    GRT_MODEL1D *mod1d, const real_t k, cplxChnlGrid QWV,
+    bool calc_uiz, cplxChnlGrid QWV_uiz);
 
 /** 构建广义反射透射系数矩阵。作为 kernel 函数中的第一部分 */
 void grt_GRT_matrix(GRT_MODEL1D *mod1d, const real_t k);
 
 /** 从广义 R/T 矩阵出发，计算每个震源对应的核函数 QWV。 作为 kernel 函数中的第二部分 */
 void grt_GRT_build_QWV(
-    GRT_MODEL1D *mod1d, cplxQWVGrid QWV,
-    bool calc_uiz, cplxQWVGrid QWV_uiz);
+    GRT_MODEL1D *mod1d, cplxChnlGrid QWV,
+    bool calc_uiz, cplxChnlGrid QWV_uiz);
 
 /** 静态解的核函数 */
 void grt_static_kernel(
-    GRT_MODEL1D *mod1d, const real_t k, cplxQWVGrid QWV,
-    bool calc_uiz, cplxQWVGrid QWV_uiz);
+    GRT_MODEL1D *mod1d, const real_t k, cplxChnlGrid QWV,
+    bool calc_uiz, cplxChnlGrid QWV_uiz);
 
 /** 静态广义反射透射系数矩阵 */
 void grt_static_GRT_matrix(GRT_MODEL1D *mod1d, const real_t k);
 
 /** 静态 QWV */
 void grt_static_GRT_build_QWV(
-    GRT_MODEL1D *mod1d, cplxQWVGrid QWV,
-    bool calc_uiz, cplxQWVGrid QWV_uiz);
+    GRT_MODEL1D *mod1d, cplxChnlGrid QWV,
+    bool calc_uiz, cplxChnlGrid QWV_uiz);

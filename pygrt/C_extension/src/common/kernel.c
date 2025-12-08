@@ -48,7 +48,7 @@ inline GCC_ALWAYS_INLINE void grt_construct_qwv(
     bool ircvup, 
     const cplx_t R1[2][2], cplx_t RL1, 
     const cplx_t R2[2][2], cplx_t RL2, 
-    const cplxQWVGrid coefD, const cplxQWVGrid coefU, cplxQWVGrid QWV)
+    const cplxChnlGrid coefD, const cplxChnlGrid coefU, cplxChnlGrid QWV)
 {
     for(int i = 0; i < GRT_SRC_M_NUM; ++i)
     {

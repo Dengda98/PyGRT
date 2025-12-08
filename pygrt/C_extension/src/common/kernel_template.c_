@@ -154,12 +154,12 @@ void __GRT_MATRIX_FUNC__(GRT_MODEL1D *mod1d, const real_t k)
 
 
 void __BUILD_QWV__(
-    GRT_MODEL1D *mod1d, cplxQWVGrid QWV,
-    bool calc_uiz, cplxQWVGrid QWV_uiz)
+    GRT_MODEL1D *mod1d, cplxChnlGrid QWV,
+    bool calc_uiz, cplxChnlGrid QWV_uiz)
 {
     // 初始化qwv为0
-    memset(QWV, 0, sizeof(cplx_t)*GRT_SRC_M_NUM*GRT_QWV_NUM);
-    if(calc_uiz)  memset(QWV_uiz, 0, sizeof(cplx_t)*GRT_SRC_M_NUM*GRT_QWV_NUM);
+    memset(QWV, 0, sizeof(cplxChnlGrid));
+    if(calc_uiz)  memset(QWV_uiz, 0, sizeof(cplxChnlGrid));
 
     bool ircvup = mod1d->ircvup;
     // 广义层的反射透射系数
@@ -254,7 +254,7 @@ void __BUILD_QWV__(
     // 当震源和场点均位于地表时，可理论验证DS分量恒为0，这里直接赋0以避免后续的精度干扰
     if(mod1d->depsrc == 0.0 && mod1d->deprcv == 0.0)
     {
-        for(int c=0; c<GRT_QWV_NUM; ++c){
+        for(int c=0; c<GRT_CHANNEL_NUM; ++c){
             QWV[GRT_SRC_M_DS_INDEX][c] = 0.0;
             if(calc_uiz)  QWV_uiz[GRT_SRC_M_DS_INDEX][c] = 0.0;
         }
@@ -263,8 +263,8 @@ void __BUILD_QWV__(
 
 
 void __KERNEL_FUNC__(
-    GRT_MODEL1D *mod1d, const real_t k, cplxQWVGrid QWV,
-    bool calc_uiz, cplxQWVGrid QWV_uiz)
+    GRT_MODEL1D *mod1d, const real_t k, cplxChnlGrid QWV,
+    bool calc_uiz, cplxChnlGrid QWV_uiz)
 {
     __GRT_MATRIX_FUNC__(mod1d, k);
     __BUILD_QWV__(mod1d, QWV, calc_uiz, QWV_uiz);

@@ -227,8 +227,8 @@ void grt_PTA_method(
     real_t k=0.0;
 
     // 不同震源不同阶数的核函数 F(k, w) 
-    cplxQWVGrid QWV = {0};
-    cplxQWVGrid QWV_uiz = {0};
+    cplxChnlGrid QWV = {0};
+    cplxChnlGrid QWV_uiz = {0};
 
     // 使用宏函数，方便定义
     #define __CALLOC_ARRAY(VAR, TYP, __ARR) \
