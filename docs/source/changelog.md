@@ -1,6 +1,64 @@
 Changelog
 ====================
 
+## PyGRT v0.13.0
+
+I've made **lots of enhancements (e.g. refactoring codes)** for future. 
+
+For users' perspective, following mainly improvements were made:
+
++ discard usage `-S-1` in `greenfn` module, simplify `-S` can represent all indexes. Same as Python.
++ add `lamb1` module for solving the first-kind Lamb's problem using Feng and Zhang's solution, and add a [brief document](https://pygrt.readthedocs.io/zh-cn/latest/Lamb_problem/index.html) to show how to use it.
++ supplement the formulas in document, see [new formula](https://pygrt.readthedocs.io/zh-cn/latest/Formula/DS_zero.html).
++ add an automatic scheme to avoid waveform drifting, see [new document](https://pygrt.readthedocs.io/zh-cn/latest/Advanced/waveform_drift/waveform_drift.html).
+
+* FIX: import  __version__ by [@Dengda98](https://github.com/Dengda98) in [#120](https://github.com/Dengda98/PyGRT/pull/120)
+* DOC: Fix typo (custom time function option) `-D0/file` by [@Dengda98](https://github.com/Dengda98) in [#121](https://github.com/Dengda98/PyGRT/pull/121)
+* DOC: update help message of `lamb1` module by [@Dengda98](https://github.com/Dengda98) in [#123](https://github.com/Dengda98/PyGRT/pull/123)
+* TEST: create `/test`, specifically for the testing in Github Actions by [@Dengda98](https://github.com/Dengda98) in [#122](https://github.com/Dengda98/PyGRT/pull/122)
+* CI: simplify test_project by [@Dengda98](https://github.com/Dengda98) in [#124](https://github.com/Dengda98/PyGRT/pull/124)
+* TEST: avoid ZeroError in static test by [@Dengda98](https://github.com/Dengda98) in [#125](https://github.com/Dengda98/PyGRT/pull/125)
+* REFAC: use struct `RT_MATRIX` to manage the R/T coefficent matrices, and simplify function arguments by [@Dengda98](https://github.com/Dengda98) in [#127](https://github.com/Dengda98/PyGRT/pull/127)
+* REFAC: add argument `k` in function `grt_mod1d_xa_xb`, and remove extra `omega` in functions about dwm, fim, safim and ptam by [@Dengda98](https://github.com/Dengda98) in [#128](https://github.com/Dengda98/PyGRT/pull/128)
+* REFAC: remove function argument `stats`, move it to the struct by [@Dengda98](https://github.com/Dengda98) in [#129](https://github.com/Dengda98/PyGRT/pull/129)
+* REFAC: rename type, use `real_t` and `cplx_t` by [@Dengda98](https://github.com/Dengda98) in [#131](https://github.com/Dengda98/PyGRT/pull/131)
+* REFAC: remove type `MYINT`, use `int` and `size_t` by [@Dengda98](https://github.com/Dengda98) in [#132](https://github.com/Dengda98/PyGRT/pull/132)
+* REFAC: replace remained `double` with `real_t` by [@Dengda98](https://github.com/Dengda98) in [#133](https://github.com/Dengda98/PyGRT/pull/133)
+* FIX: in greenfn, update usage `-S-1` to `-S` by [@Dengda98](https://github.com/Dengda98) in [#134](https://github.com/Dengda98/PyGRT/pull/134)
+* FIX: integer type conversion between `int` and `size_t` by [@Dengda98](https://github.com/Dengda98) in [#135](https://github.com/Dengda98/PyGRT/pull/135)
+* FEAT: in `lamb1`, add two functions to solve two-type Rayleigh equations by [@Dengda98](https://github.com/Dengda98) in [#136](https://github.com/Dengda98/PyGRT/pull/136)
+* BUILD: multi-threads building via `make -j4` by [@Dengda98](https://github.com/Dengda98) in [#137](https://github.com/Dengda98/PyGRT/pull/137)
+* REFAC: create a kernel template for dynamic and static kernel by [@Dengda98](https://github.com/Dengda98) in [#139](https://github.com/Dengda98/PyGRT/pull/139)
+* DOC: ——DS0 by [@Dengda98](https://github.com/Dengda98) in [#141](https://github.com/Dengda98/PyGRT/pull/141)
+* FEAT: adjust function `grt_cmat2x2_inv`, move argument `stats` to the returned value by [@Dengda98](https://github.com/Dengda98) in [#144](https://github.com/Dengda98/PyGRT/pull/144)
+* REFAC: assemble source coefficients functions of P-SV and SH by [@Dengda98](https://github.com/Dengda98) in [#140](https://github.com/Dengda98/PyGRT/pull/140)
+* REFAC: move Generalized R/T matrix to struct `GRT_MODEL1D` by [@Dengda98](https://github.com/Dengda98) in [#146](https://github.com/Dengda98/PyGRT/pull/146)
+* TEST: add ocean-earth model test by [@Dengda98](https://github.com/Dengda98) in [#143](https://github.com/Dengda98/PyGRT/pull/143)
+* REFAC: optimize memory initialization by replacing the loop-based zeroing with `memset` by [@Dengda98](https://github.com/Dengda98) in [#148](https://github.com/Dengda98/PyGRT/pull/148)
+* REFAC: add GCC_ALWAYS_INLINE qualifier to inline functions by [@Dengda98](https://github.com/Dengda98) in [#149](https://github.com/Dengda98/PyGRT/pull/149)
+* REFAC: avoid repeated `_divdc` in grt_RT_matrix_ss_PSV by [@Dengda98](https://github.com/Dengda98) in [#150](https://github.com/Dengda98/PyGRT/pull/150)
+* DOC: add an intro and simplify the homepage by [@Dengda98](https://github.com/Dengda98) in [#152](https://github.com/Dengda98/PyGRT/pull/152)
+* DOC: new style for displaying the author and date by [@Dengda98](https://github.com/Dengda98) in [#153](https://github.com/Dengda98/PyGRT/pull/153)
+* FEAT: add function `grt_delay_GRT_matrix` to avoid repeated recursion in dynamic case by [@Dengda98](https://github.com/Dengda98) in [#151](https://github.com/Dengda98/PyGRT/pull/151)
+* REFAC: adjust the file locations of the "travt" module by [@Dengda98](https://github.com/Dengda98) in [#154](https://github.com/Dengda98/PyGRT/pull/154)
+* REFAC: rearrange kernel template by [@Dengda98](https://github.com/Dengda98) in [#155](https://github.com/Dengda98/PyGRT/pull/155)
+* FEAT: split the original kernel function into functions `GRT_matrix` and `GRT_build_QWV` by [@Dengda98](https://github.com/Dengda98) in [#156](https://github.com/Dengda98/PyGRT/pull/156)
+* REFAC: remove obsolete macros in kernel definition by [@Dengda98](https://github.com/Dengda98) in [#157](https://github.com/Dengda98/PyGRT/pull/157)
+* FIX: skip the complex frequency points with lower amplitudes by [@Dengda98](https://github.com/Dengda98) in [#158](https://github.com/Dengda98/PyGRT/pull/158)
+* FIX: MILROW model thickness by [@Dengda98](https://github.com/Dengda98) in [#159](https://github.com/Dengda98/PyGRT/pull/159)
+* DOC: set more suitable parameters for f-v spectra visualization by [@Dengda98](https://github.com/Dengda98) in [#160](https://github.com/Dengda98/PyGRT/pull/160)
+* FIX: re-initiate R/T in every layer and add delay outside the macro "if" by [@Dengda98](https://github.com/Dengda98) in [#161](https://github.com/Dengda98/PyGRT/pull/161)
+* DOC: “” by [@Dengda98](https://github.com/Dengda98) in [#162](https://github.com/Dengda98/PyGRT/pull/162)
+* REFAC: define the data type of the QWV-related arrays by [@Dengda98](https://github.com/Dengda98) in [#164](https://github.com/Dengda98/PyGRT/pull/164)
+* REFAC: define the data type of the INTEG-related arrays by [@Dengda98](https://github.com/Dengda98) in [#165](https://github.com/Dengda98/PyGRT/pull/165)
+* REFAC: rename data type `QWVgrid` and `INTEGgrid` by [@Dengda98](https://github.com/Dengda98) in [#166](https://github.com/Dengda98/PyGRT/pull/166)
+* REFAC:  remove macro `GRT_QWV_NUM`, and some adjustments to the related date types. by [@Dengda98](https://github.com/Dengda98) in [#168](https://github.com/Dengda98/PyGRT/pull/168)
+* REFAC: use macro to manage static loop of ChnlGrid and IntegGrid by [@Dengda98](https://github.com/Dengda98) in [#169](https://github.com/Dengda98/PyGRT/pull/169)
+
+
+**Full Changelog**: [v0.12.0...v0.13.0](https://github.com/Dengda98/PyGRT/compare/v0.12.0...v0.13.0)
+
+
 ## PyGRT v0.12.0
 
 + Support inpute distance file, like `grt greenfn -R<file> ...`
