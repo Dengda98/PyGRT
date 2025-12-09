@@ -54,3 +54,5 @@ grt ker2asc stgrtstats/milrow_0.1_0/K > static_stats
 # 绘制图像部分见Python
 # END SGRN
 # -------------------------------------------------------------------
+
+python run.py

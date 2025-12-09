@@ -46,3 +46,5 @@ grt rotation syn_dc_zne
 grt stress syn_dc_zne
 # END STRESS
 # --------------------------------------------------------------------------------------
+
+python run.py
