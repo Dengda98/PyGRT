@@ -40,18 +40,18 @@
  * @param[in]    iw             当前频率索引值
  * @param[in]    nr             震中距个数
  * @param[in]    coef           统一系数
- * @param[in]    sum_J          积分结果
+ * @param[in]    sumJ            积分结果
  * @param[out]   grn            三分量频谱
  */
 static void recordin_GRN(
-    size_t iw, size_t nr, cplx_t coef, cplxIntegGrid sum_J[nr],
+    size_t iw, size_t nr, cplx_t coef, cplxIntegGrid sumJ[nr],
     pt_cplxChnlGrid grn[nr])
 {
     // 局部变量，将某个频点的格林函数谱临时存放
     cplxChnlGrid *tmp_grn = (cplxChnlGrid *)calloc(nr, sizeof(*tmp_grn));
 
     for(size_t ir=0; ir<nr; ++ir){
-        grt_merge_Pk(sum_J[ir], tmp_grn[ir]);
+        grt_merge_Pk(sumJ[ir], tmp_grn[ir]);
 
         GRT_LOOP_ChnlGrid(im, c){
             int modr = GRT_SRC_M_ORDERS[im];
@@ -164,10 +164,7 @@ void grt_integ_grn_spec(
         cplx_t coef = -dk*fac*omega2_inv; // 最终要乘上的系数
 
         // 局部变量，用于求和 sum F(ki,w)Jm(ki*r)ki 
-        // 关于形状详见int_Pk()函数内的注释
-        cplxIntegGrid *sum_J = (cplxIntegGrid *)calloc(nr, sizeof(*sum_J));
-        cplxIntegGrid *sum_uiz_J = (calc_upar)? (cplxIntegGrid *)calloc(nr, sizeof(*sum_uiz_J)) : NULL;
-        cplxIntegGrid *sum_uir_J = (calc_upar)? (cplxIntegGrid *)calloc(nr, sizeof(*sum_uir_J)) : NULL;
+        K_INTEG *Kint = grt_init_K_INTEG(calc_upar, nr);
 
         GRT_MODEL1D *local_mod1d = NULL;
     #ifdef _OPENMP 
@@ -224,8 +221,7 @@ void grt_integ_grn_spec(
         // 常规的波数积分
         k = grt_discrete_integ(
             local_mod1d, dk, (useFIM)? filonK : kmax, keps, nr, rs, 
-            sum_J, calc_upar, sum_uiz_J, sum_uir_J,
-            fstats, grt_kernel);
+            Kint, fstats, grt_kernel);
         if(local_mod1d->stats==GRT_INVERSE_FAILURE)  goto NEXT_FREQ;
     
         // 使用Filon积分
@@ -234,15 +230,13 @@ void grt_integ_grn_spec(
                 // 基于线性插值的Filon积分，固定采样间隔
                 k = grt_linear_filon_integ(
                     local_mod1d, k, dk, filondk, kmax, keps, nr, rs, 
-                    sum_J, calc_upar, sum_uiz_J, sum_uir_J,
-                    fstats, grt_kernel);
+                    Kint, fstats, grt_kernel);
             }
             else if(safilonTol > 0.0){
                 // 基于自适应采样的Filon积分
                 k = grt_sa_filon_integ(
                     local_mod1d, k, dk, safilonTol, kmax, creal(omega)/fabs(vmin_ref)*ampk, nr, rs, 
-                    sum_J, calc_upar, sum_uiz_J, sum_uir_J,
-                    fstats, grt_kernel);
+                    Kint, fstats, grt_kernel);
             }
             if(local_mod1d->stats==GRT_INVERSE_FAILURE)  goto NEXT_FREQ;
         }
@@ -251,8 +245,7 @@ void grt_integ_grn_spec(
         if(vmin_ref < 0.0){
             grt_PTA_method(
                 local_mod1d, k, dk, nr, rs, 
-                sum_J, calc_upar, sum_uiz_J, sum_uir_J,
-                ptam_fstatsnr, grt_kernel);
+                Kint, ptam_fstatsnr, grt_kernel);
             if(local_mod1d->stats==GRT_INVERSE_FAILURE)  goto NEXT_FREQ;
         }
 
@@ -261,10 +254,10 @@ void grt_integ_grn_spec(
 
         // 记录到格林函数结构体内
         // 如果计算核函数过程中存在除零错误，则放弃该频率【通常在大震中距的低频段】
-        recordin_GRN(iw, nr, coef, sum_J, grn);
+        recordin_GRN(iw, nr, coef, Kint->sumJ, grn);
         if(calc_upar){
-            recordin_GRN(iw, nr, coef, sum_uiz_J, grn_uiz);
-            recordin_GRN(iw, nr, coef, sum_uir_J, grn_uir);
+            recordin_GRN(iw, nr, coef, Kint->sumJz, grn_uiz);
+            recordin_GRN(iw, nr, coef, Kint->sumJr, grn_uir);
         }
         // ===================================================================================
 
@@ -297,9 +290,7 @@ void grt_integ_grn_spec(
         
 
         // Free allocated memory for temporary variables
-        GRT_SAFE_FREE_PTR(sum_J);
-        GRT_SAFE_FREE_PTR(sum_uiz_J);
-        GRT_SAFE_FREE_PTR(sum_uir_J);
+        grt_free_K_INTEG(Kint);
 
     } // END omega loop
 

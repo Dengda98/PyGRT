@@ -15,9 +15,9 @@ for tr1 in st1:
     tr2 = st2.select(channel=ch)[0]
 
     if tr1.stats.delta != tr2.stats.delta:
-        raise ValueError(f"Different delta in {tr1} and {tr2}!")
+        raise ValueError(f"Different delta in {tr1} and {tr2} from {sacpath1} and {sacpath2}!")
     if tr1.stats.npts != tr2.stats.npts:
-        raise ValueError(f"Different npts in {tr1} and {tr2}!")
+        raise ValueError(f"Different npts in {tr1} and {tr2} from {sacpath1} and {sacpath2}!")
     
     data1 = tr1.data.copy()
     data2 = tr2.data.copy()
@@ -29,6 +29,6 @@ for tr1 in st1:
     tol = 0.01
     err = np.sum(np.abs(data2 - data1))/np.mean(np.abs(data1))
     if err > tol:
-        raise ValueError(f"Error({err}) > {tol} in {tr1} and {tr2}!!")
+        raise ValueError(f"Error({err}) > {tol} in {tr1} and {tr2} from {sacpath1} and {sacpath2}!!")
     
         

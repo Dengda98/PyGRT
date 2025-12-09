@@ -17,7 +17,7 @@
 #include "grt/common/const.h"
 #include "grt/common/model.h"
 #include "grt/common/kernel.h"
-
+#include "grt/common/integral.h"
 
 
 /**
@@ -37,11 +37,7 @@
  * @param[in]      nr            震中距数量
  * @param[in]      rs            震中距数组
  *
- * @param[out]    sum_J          积分值
- * 
- * @param[in]     calc_upar      是否计算位移u的空间导数
- * @param[out]    sum_uiz_J      uiz的积分值
- * @param[out]    sum_uir_J      uir的积分值
+ * @param[in,out]  K0            用于存储积分的结构体
  * 
  * @param[out]    fstats         文件指针，保存不同k值的格林函数积分核函数
  * @param[in]     kerfunc        计算核函数的函数指针
@@ -49,12 +45,7 @@
  * @return  k        积分截至时的波数
  */
 real_t grt_linear_filon_integ(
-    GRT_MODEL1D *mod1d, real_t k0, real_t dk0, real_t filondk, real_t kmax, real_t keps,
-    size_t nr, real_t *rs,
-    cplxIntegGrid sum_J[nr],
-    bool calc_upar,
-    cplxIntegGrid sum_uiz_J[nr],
-    cplxIntegGrid sum_uir_J[nr],
-    FILE *fstats, GRT_KernelFunc kerfunc);
+    GRT_MODEL1D *mod1d, real_t k0, real_t dk0, real_t dk, real_t kmax, real_t keps,
+    size_t nr, real_t *rs, K_INTEG *K0, FILE *fstats, GRT_KernelFunc kerfunc);
 
 

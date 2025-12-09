@@ -36,18 +36,18 @@
  * 
  * @param[in]    nr             震中距个数
  * @param[in]    coef           统一系数
- * @param[in]    sum_J          积分结果
+ * @param[in]    sumJ           积分结果
  * @param[out]   grn            三分量结果，浮点数数组
  */
 static void recordin_GRN(
-    size_t nr, cplx_t coef, cplxIntegGrid sum_J[nr],
+    size_t nr, cplx_t coef, cplxIntegGrid sumJ[nr],
     realChnlGrid grn[nr])
 {
     // 局部变量，将某个频点的格林函数谱临时存放
     cplxChnlGrid *tmp_grn = (cplxChnlGrid *)calloc(nr, sizeof(*tmp_grn));
 
     for(size_t ir=0; ir<nr; ++ir){
-        grt_merge_Pk(sum_J[ir], tmp_grn[ir]);
+        grt_merge_Pk(sumJ[ir], tmp_grn[ir]);
 
         GRT_LOOP_ChnlGrid(im, c){
             int modr = GRT_SRC_M_ORDERS[im];
@@ -93,10 +93,7 @@ void grt_integ_static_grn(
 
     const real_t kmax = k0;
     // 求和 sum F(ki,w)Jm(ki*r)ki 
-    // 关于形状详见int_Pk()函数内的注释
-    cplxIntegGrid *sum_J = (cplxIntegGrid *)calloc(nr, sizeof(*sum_J));
-    cplxIntegGrid *sum_uiz_J = (calc_upar)? (cplxIntegGrid *)calloc(nr, sizeof(*sum_uiz_J)) : NULL;
-    cplxIntegGrid *sum_uir_J = (calc_upar)? (cplxIntegGrid *)calloc(nr, sizeof(*sum_uir_J)) : NULL;
+    K_INTEG *Kint = grt_init_K_INTEG(calc_upar, nr);
 
     // 是否要输出积分过程文件
     bool needfstats = (statsstr!=NULL);
@@ -144,8 +141,7 @@ void grt_integ_static_grn(
     // 常规的波数积分
     k = grt_discrete_integ(
         mod1d, dk, (useFIM)? filonK : kmax, keps, nr, rs, 
-        sum_J, calc_upar, sum_uiz_J, sum_uir_J,
-        fstats, grt_static_kernel);
+        Kint, fstats, grt_static_kernel);
     
     // 基于线性插值的Filon积分
     if(useFIM){
@@ -153,15 +149,13 @@ void grt_integ_static_grn(
             // 基于线性插值的Filon积分，固定采样间隔
             k = grt_linear_filon_integ(
                 mod1d, k, dk, filondk, kmax, keps, nr, rs, 
-                sum_J, calc_upar, sum_uiz_J, sum_uir_J,
-                fstats, grt_static_kernel);
+                Kint, fstats, grt_static_kernel);
         }
         else if(safilonTol > 0.0){
             // 基于自适应采样的Filon积分
             k = grt_sa_filon_integ(
                 mod1d, k, dk, safilonTol, kmax, kmax, nr, rs, 
-                sum_J, calc_upar, sum_uiz_J, sum_uir_J,
-                fstats, grt_static_kernel);
+                Kint, fstats, grt_static_kernel);
         }
     }
 
@@ -169,8 +163,7 @@ void grt_integ_static_grn(
     if(vmin_ref < 0.0){
         grt_PTA_method(
             mod1d, k, dk, nr, rs, 
-            sum_J, calc_upar, sum_uiz_J, sum_uir_J,
-            ptam_fstatsnr, grt_static_kernel);
+            Kint, ptam_fstatsnr, grt_static_kernel);
     }
 
 
@@ -179,17 +172,15 @@ void grt_integ_static_grn(
     cplx_t fac = dk * 1.0/(4.0*PI * src_mu);
     
     // 将积分结果记录到浮点数数组中
-    recordin_GRN(nr, fac, sum_J, grn);
+    recordin_GRN(nr, fac, Kint->sumJ, grn);
     if(calc_upar){
-        recordin_GRN(nr, fac, sum_uiz_J, grn_uiz);
-        recordin_GRN(nr, fac, sum_uir_J, grn_uir);
+        recordin_GRN(nr, fac, Kint->sumJz, grn_uiz);
+        recordin_GRN(nr, fac, Kint->sumJr, grn_uir);
     }
 
 
     // Free allocated memory for temporary variables
-    GRT_SAFE_FREE_PTR(sum_J);
-    GRT_SAFE_FREE_PTR(sum_uiz_J);
-    GRT_SAFE_FREE_PTR(sum_uir_J);
+    grt_free_K_INTEG(Kint);
 
     GRT_SAFE_FREE_PTR_ARRAY(ptam_fstatsdir, nr);
 
