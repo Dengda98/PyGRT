@@ -140,7 +140,7 @@ static void process_peak_or_trough(
  * @param[in]           k                   波数                             
  * @param[in]           dk                  波数步长       
  * @param[in,out]       SUM3                被积函数的幅值数组 
- * @param[in,out]       sum_J               积分值数组 
+ * @param[in,out]       sumJ                积分值数组 
  * 
  * @param[in,out]       Kpt                 积分值峰谷的波数数组     
  * @param[in,out]       Fpt                 用于存储波峰/波谷点的幅值数组 
@@ -153,7 +153,7 @@ static void process_peak_or_trough(
 static void ptam_once(
     const size_t ir, const size_t nr, const real_t precoef, real_t k, real_t dk, 
     cplxIntegGrid SUM3[nr][GRT_PTAM_WINDOW_SIZE],
-    cplxIntegGrid sum_J[nr],
+    cplxIntegGrid sumJ[nr],
     realIntegGrid Kpt[nr][GRT_PTAM_PT_MAX],
     cplxIntegGrid Fpt[nr][GRT_PTAM_PT_MAX],
     sizeIntegGrid Ipt[nr],
@@ -168,8 +168,8 @@ static void ptam_once(
 
         // 赋更新量
         // SUM3转为求和结果
-        sum_J[ir][im][v] += SUM3[ir][GRT_PTAM_WINDOW_SIZE-1][im][v] * precoef;
-        SUM3[ir][GRT_PTAM_WINDOW_SIZE-1][im][v] = sum_J[ir][im][v];         
+        sumJ[ir][im][v] += SUM3[ir][GRT_PTAM_WINDOW_SIZE-1][im][v] * precoef;
+        SUM3[ir][GRT_PTAM_WINDOW_SIZE-1][im][v] = sumJ[ir][im][v];         
         
         // 3点以上，判断波峰波谷 
         process_peak_or_trough(ir, im, v, k, dk, SUM3, Kpt, Fpt, Ipt, Gpt, iendk0);
@@ -212,16 +212,13 @@ static void _cplx_shrink(size_t n1, size_t ir,  int im, int v, cplxIntegGrid (*F
 
 void grt_PTA_method(
     GRT_MODEL1D *mod1d, real_t k0, real_t predk,
-    size_t nr, real_t *rs,
-    cplxIntegGrid sum_J0[nr],
-    bool calc_upar,
-    cplxIntegGrid sum_uiz_J0[nr],
-    cplxIntegGrid sum_uir_J0[nr],
-    FILE *ptam_fstatsnr[nr][2], GRT_KernelFunc kerfunc)
+    size_t nr, real_t *rs, K_INTEG *K0, FILE *ptam_fstatsnr[nr][2], GRT_KernelFunc kerfunc)
 {   
     // 需要兼容对正常收敛而不具有规律波峰波谷的序列
     // 有时序列收敛比较好，不表现为规律的波峰波谷，
     // 此时设置最大等待次数，超过直接设置为中间值
+
+    K_INTEG *K = grt_copy_K_INTEG(K0);
 
     real_t k=0.0;
 
@@ -240,13 +237,6 @@ void grt_PTA_method(
         __CALLOC_ARRAY(SUM3, cplxIntegGrid, __ARR);
         __CALLOC_ARRAY(SUM3_uiz, cplxIntegGrid, __ARR);
         __CALLOC_ARRAY(SUM3_uir, cplxIntegGrid, __ARR);
-    #undef __ARR
-
-    // 之前求和的值
-    #define __ARR
-        __CALLOC_ARRAY(sum_J, cplxIntegGrid, __ARR);
-        __CALLOC_ARRAY(sum_uiz_J, cplxIntegGrid, __ARR);
-        __CALLOC_ARRAY(sum_uir_J, cplxIntegGrid, __ARR);
     #undef __ARR
 
     // 存储波峰波谷的位置和值
@@ -275,23 +265,6 @@ void grt_PTA_method(
     #undef __CALLOC_ARRAY
 
 
-    for(size_t ir=0; ir<nr; ++ir){
-
-        GRT_LOOP_IntegGrid(im, v){
-            sum_J[ir][im][v] = sum_J0[ir][im][v];
-
-            if(calc_upar){
-                sum_uiz_J[ir][im][v] = sum_uiz_J0[ir][im][v];
-                sum_uir_J[ir][im][v] = sum_uir_J0[ir][im][v];
-            }
-
-            Ipt[ir][im][v] = Gpt[ir][im][v] = 0;
-            Ipt_uiz[ir][im][v] = Gpt_uiz[ir][im][v] = 0;
-            Ipt_uir[ir][im][v] = Gpt_uir[ir][im][v] = 0;
-        }
-    }
-
-
     // 对于PTAM，不同震中距使用不同dk
     for(size_t ir=0; ir<nr; ++ir){
         real_t dk = PI/((GRT_PTAM_WAITS_MAX-1)*rs[ir]); 
@@ -310,7 +283,7 @@ void grt_PTA_method(
             k += dk;
 
             // 计算核函数 F(k, w)
-            kerfunc(mod1d, k, QWV, calc_upar, QWV_uiz); 
+            kerfunc(mod1d, k, QWV, K->calc_upar, QWV_uiz); 
             if(mod1d->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
             // 记录核函数
@@ -319,21 +292,21 @@ void grt_PTA_method(
             // 计算被积函数一项 F(k,w)Jm(kr)k
             grt_int_Pk(k, rs[ir], QWV, false, SUM3[ir][GRT_PTAM_WINDOW_SIZE-1]);  // [GRT_PTAM_WINDOW_SIZE-1]表示把新点值放在最后
             // 判断和记录波峰波谷
-            ptam_once( ir, nr, precoef, k, dk,  SUM3, sum_J, Kpt, Fpt, Ipt, Gpt, &iendk0);
+            ptam_once(ir, nr, precoef, k, dk, SUM3, K->sumJ, Kpt, Fpt, Ipt, Gpt, &iendk0);
             
             // -------------------------- 位移空间导数 ------------------------------------
-            if(calc_upar){
+            if(K->calc_upar){
                 // ------------------------------- ui_z -----------------------------------
                 // 计算被积函数一项 F(k,w)Jm(kr)k
                 grt_int_Pk(k, rs[ir], QWV_uiz, false, SUM3_uiz[ir][GRT_PTAM_WINDOW_SIZE-1]);  // [GRT_PTAM_WINDOW_SIZE-1]表示把新点值放在最后
                 // 判断和记录波峰波谷
-                ptam_once(ir, nr, precoef, k, dk, SUM3_uiz, sum_uiz_J, Kpt_uiz, Fpt_uiz, Ipt_uiz, Gpt_uiz, &iendk0);
+                ptam_once(ir, nr, precoef, k, dk, SUM3_uiz, K->sumJz, Kpt_uiz, Fpt_uiz, Ipt_uiz, Gpt_uiz, &iendk0);
 
                 // ------------------------------- ui_r -----------------------------------
                 // 计算被积函数一项 F(k,w)Jm(kr)k
                 grt_int_Pk(k, rs[ir], QWV, true, SUM3_uir[ir][GRT_PTAM_WINDOW_SIZE-1]);  // [GRT_PTAM_WINDOW_SIZE-1]表示把新点值放在最后
                 // 判断和记录波峰波谷
-                ptam_once(ir, nr, precoef, k, dk, SUM3_uir, sum_uir_J, Kpt_uir, Fpt_uir, Ipt_uir, Gpt_uir, &iendk0);
+                ptam_once(ir, nr, precoef, k, dk, SUM3_uir, K->sumJr, Kpt_uir, Fpt_uir, Ipt_uir, Gpt_uir, &iendk0);
             
             } // END if calc_upar
 
@@ -350,23 +323,24 @@ void grt_PTA_method(
 
         GRT_LOOP_IntegGrid(im, v){
             _cplx_shrink(Ipt[ir][im][v], ir, im, v, Fpt);  
-            sum_J0[ir][im][v] = Fpt[ir][0][im][v];
+            K0->sumJ[ir][im][v] = Fpt[ir][0][im][v];
 
-            if(calc_upar){
+            if(K->calc_upar){
                 _cplx_shrink(Ipt_uiz[ir][im][v], ir, im, v, Fpt_uiz);  
-                sum_uiz_J0[ir][im][v] = Fpt_uiz[ir][0][im][v];
+                K0->sumJz[ir][im][v] = Fpt_uiz[ir][0][im][v];
             
                 _cplx_shrink(Ipt_uir[ir][im][v], ir, im, v, Fpt_uir);  
-                sum_uir_J0[ir][im][v] = Fpt_uir[ir][0][im][v];
+                K0->sumJr[ir][im][v] = Fpt_uir[ir][0][im][v];
             }
         }
     }
 
     BEFORE_RETURN:
 
+    grt_free_K_INTEG(K);
+
     #define __FREE_ALL_ARRAY \
         X(SUM3)    X(SUM3_uiz)    X(SUM3_uir) \
-        X(sum_J)   X(sum_uiz_J)   X(sum_uir_J) \
         X(Kpt)     X(Fpt)         X(Ipt)       X(Gpt) \
         X(Kpt_uiz)     X(Fpt_uiz)         X(Ipt_uiz)       X(Gpt_uiz) \
         X(Kpt_uir)     X(Fpt_uir)         X(Ipt_uir)       X(Gpt_uir) \

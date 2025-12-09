@@ -25,19 +25,10 @@
 
 real_t grt_linear_filon_integ(
     GRT_MODEL1D *mod1d, real_t k0, real_t dk0, real_t dk, real_t kmax, real_t keps,
-    size_t nr, real_t *rs,
-    cplxIntegGrid sum_J0[nr],
-    bool calc_upar,
-    cplxIntegGrid sum_uiz_J0[nr],
-    cplxIntegGrid sum_uir_J0[nr],
-    FILE *fstats, GRT_KernelFunc kerfunc)
+    size_t nr, real_t *rs, K_INTEG *K0, FILE *fstats, GRT_KernelFunc kerfunc)
 {   
     // 从0开始，存储第二部分Filon积分的结果
-    cplxIntegGrid *sum_J = (cplxIntegGrid *)calloc(nr, sizeof(*sum_J));
-    cplxIntegGrid *sum_uiz_J = (calc_upar)? (cplxIntegGrid *)calloc(nr, sizeof(*sum_uiz_J)) : NULL;
-    cplxIntegGrid *sum_uir_J = (calc_upar)? (cplxIntegGrid *)calloc(nr, sizeof(*sum_uir_J)) : NULL;
-
-    cplxIntegGrid SUM;
+    K_INTEG *K = grt_copy_K_INTEG(K0);
 
     // 不同震源不同阶数的核函数 F(k, w) 
     cplxChnlGrid QWV = {0};
@@ -61,7 +52,7 @@ real_t grt_linear_filon_integ(
         k += dk; 
 
         // 计算核函数 F(k, w)
-        kerfunc(mod1d, k, QWV, calc_upar, QWV_uiz); 
+        kerfunc(mod1d, k, QWV, K->calc_upar, QWV_uiz); 
         if(mod1d->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
         // 记录积分结果
@@ -72,21 +63,21 @@ real_t grt_linear_filon_integ(
         for(size_t ir=0; ir<nr; ++ir){
             if(iendkrs[ir]) continue; // 该震中距下的波数k积分已收敛
 
-            memset(SUM, 0, sizeof(cplxIntegGrid));
+            memset(K->SUM, 0, sizeof(cplxIntegGrid));
             
             // F(k, w)*Jm(kr)k 的近似公式, sqrt(k) * F(k,w) * cos
-            grt_int_Pk_filon(k, rs[ir], true, QWV, false, SUM);
+            grt_int_Pk_filon(k, rs[ir], true, QWV, false, K->SUM);
 
             iendk0 = true;
 
             GRT_LOOP_IntegGrid(im, v){
                 int modr = GRT_SRC_M_ORDERS[im];
-                sum_J[ir][im][v] += SUM[im][v];
+                K->sumJ[ir][im][v] += K->SUM[im][v];
                     
                 // 是否提前判断达到收敛
                 if(keps <= 0.0 || (modr==0 && v!=0 && v!=2))  continue;
                 
-                iendk0 = iendk0 && (fabs(SUM[im][v])/ fabs(sum_J[ir][im][v]) <= keps);
+                iendk0 = iendk0 && (fabs(K->SUM[im][v])/ fabs(K->sumJ[ir][im][v]) <= keps);
             }
             
             if(keps > 0.0){
@@ -98,23 +89,23 @@ real_t grt_linear_filon_integ(
             
 
             // ---------------- 位移空间导数，SUM数组重复利用 --------------------------
-            if(calc_upar){
+            if(K->calc_upar){
                 // ------------------------------- ui_z -----------------------------------
                 // 计算被积函数一项 F(k,w)Jm(kr)k
-                grt_int_Pk_filon(k, rs[ir], true, QWV_uiz, false, SUM);
+                grt_int_Pk_filon(k, rs[ir], true, QWV_uiz, false, K->SUM);
                 
                 // keps不参与计算位移空间导数的积分，背后逻辑认为u收敛，则uiz也收敛
                 GRT_LOOP_IntegGrid(im, v){
-                    sum_uiz_J[ir][im][v] += SUM[im][v];
+                    K->sumJz[ir][im][v] += K->SUM[im][v];
                 }
 
                 // ------------------------------- ui_r -----------------------------------
                 // 计算被积函数一项 F(k,w)Jm(kr)k
-                grt_int_Pk_filon(k, rs[ir], true, QWV, true, SUM);
+                grt_int_Pk_filon(k, rs[ir], true, QWV, true, K->SUM);
                 
                 // keps不参与计算位移空间导数的积分，背后逻辑认为u收敛，则uir也收敛
                 GRT_LOOP_IntegGrid(im, v){
-                    sum_uir_J[ir][im][v] += SUM[im][v];
+                    K->sumJr[ir][im][v] += K->SUM[im][v];
                 }
             } // END if calc_upar
 
@@ -135,11 +126,11 @@ real_t grt_linear_filon_integ(
         real_t tmp = 2.0*(1.0 - cos(dk*rs[ir])) / (rs[ir]*rs[ir]*dk);
 
         GRT_LOOP_IntegGrid(im, v){
-            sum_J[ir][im][v] *= tmp;
+            K->sumJ[ir][im][v] *= tmp;
 
-            if(calc_upar){
-                sum_uiz_J[ir][im][v] *= tmp;
-                sum_uir_J[ir][im][v] *= tmp;
+            if(K->calc_upar){
+                K->sumJz[ir][im][v] *= tmp;
+                K->sumJr[ir][im][v] *= tmp;
             }
         }
     }
@@ -163,7 +154,7 @@ real_t grt_linear_filon_integ(
         }
 
         // 计算核函数 F(k, w)
-        kerfunc(mod1d, k0N, QWV, calc_upar, QWV_uiz);
+        kerfunc(mod1d, k0N, QWV, K->calc_upar, QWV_uiz);
         if(mod1d->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN; 
 
         for(size_t ir=0; ir<nr; ++ir){
@@ -179,11 +170,11 @@ real_t grt_linear_filon_integ(
             real_t tmps = sgn * tmp * sin(dk*rs[ir]);
 
             GRT_LOOP_IntegGrid(im, v){
-                sum_J[ir][im][v] += (- tmpc*SUM_Gc[iik][im][v] + tmps*SUM_Gs[iik][im][v] - sgn*SUM_Gs[iik][im][v]/rs[ir]);
+                K->sumJ[ir][im][v] += (- tmpc*SUM_Gc[iik][im][v] + tmps*SUM_Gs[iik][im][v] - sgn*SUM_Gs[iik][im][v]/rs[ir]);
             }
 
             // ---------------- 位移空间导数，SUM_Gc/s数组重复利用 --------------------------
-            if(calc_upar){
+            if(K->calc_upar){
                 // ------------------------------- ui_z -----------------------------------
                 // 计算被积函数一项 F(k,w)Jm(kr)k
                 // Gc
@@ -193,7 +184,7 @@ real_t grt_linear_filon_integ(
                 grt_int_Pk_filon(k0N, rs[ir], false, QWV_uiz, false, SUM_Gs[iik]);
 
                 GRT_LOOP_IntegGrid(im, v){
-                        sum_uiz_J[ir][im][v] += (- tmpc*SUM_Gc[iik][im][v] + tmps*SUM_Gs[iik][im][v] - sgn*SUM_Gs[iik][im][v]/rs[ir]);
+                    K->sumJz[ir][im][v] += (- tmpc*SUM_Gc[iik][im][v] + tmps*SUM_Gs[iik][im][v] - sgn*SUM_Gs[iik][im][v]/rs[ir]);
                 }
 
                 // ------------------------------- ui_r -----------------------------------
@@ -205,7 +196,7 @@ real_t grt_linear_filon_integ(
                 grt_int_Pk_filon(k0N, rs[ir], false, QWV, true, SUM_Gs[iik]);
 
                 GRT_LOOP_IntegGrid(im, v){
-                    sum_uir_J[ir][im][v] += (- tmpc*SUM_Gc[iik][im][v] + tmps*SUM_Gs[iik][im][v] - sgn*SUM_Gs[iik][im][v]/rs[ir]);
+                    K->sumJr[ir][im][v] += (- tmpc*SUM_Gc[iik][im][v] + tmps*SUM_Gs[iik][im][v] - sgn*SUM_Gs[iik][im][v]/rs[ir]);
                 }
             } // END if calc_upar
           
@@ -218,21 +209,18 @@ real_t grt_linear_filon_integ(
         real_t tmp = sqrt(2.0/(PI*rs[ir])) / dk0;
 
         GRT_LOOP_IntegGrid(im, v){
-            sum_J0[ir][im][v] += sum_J[ir][im][v] * tmp;
+            K0->sumJ[ir][im][v] += K->sumJ[ir][im][v] * tmp;
 
-            if(calc_upar){
-                sum_uiz_J0[ir][im][v] += sum_uiz_J[ir][im][v] * tmp;
-                sum_uir_J0[ir][im][v] += sum_uir_J[ir][im][v] * tmp;
+            if(K->calc_upar){
+                K0->sumJz[ir][im][v] += K->sumJz[ir][im][v] * tmp;
+                K0->sumJr[ir][im][v] += K->sumJr[ir][im][v] * tmp;
             }
         }
     }
 
 
     BEFORE_RETURN:
-    GRT_SAFE_FREE_PTR(sum_J);
-    GRT_SAFE_FREE_PTR(sum_uiz_J);
-    GRT_SAFE_FREE_PTR(sum_uir_J);
-
+    grt_free_K_INTEG(K);
 
     GRT_SAFE_FREE_PTR(iendkrs);
 

@@ -232,13 +232,7 @@ static bool check_fit(
  * 以下实际拟合的二次函数是 sqrt(k)*F(k,w), 这样积分时可以避免计算超越函数
  * 
  */
-static void interv_integ(
-    const KInterval *ptKitv,
-    size_t nr, real_t *rs,
-    cplxIntegGrid sum_J[nr],
-    bool calc_upar,
-    cplxIntegGrid sum_uiz_J[nr],
-    cplxIntegGrid sum_uir_J[nr])
+static void interv_integ(const KInterval *ptKitv, size_t nr, real_t *rs, K_INTEG *K)
 {
     cplxIntegGrid SUM={0};
 
@@ -254,10 +248,10 @@ static void interv_integ(
             int modr = GRT_SRC_M_ORDERS[im];
             if((modr==0 && v!=0 && v!=2))  continue;
 
-            sum_J[ir][im][v] += SUM[im][v];
+            K->sumJ[ir][im][v] += SUM[im][v];
         }
 
-        if(calc_upar){
+        if(K->calc_upar){
             //----------------------------- ui_z --------------------------------------
             grt_int_Pk_sa_filon(ptKitv->k3, rs[ir], ptKitv->F3_uiz, false, SUM);
 
@@ -265,7 +259,7 @@ static void interv_integ(
                 int modr = GRT_SRC_M_ORDERS[im];
                 if((modr==0 && v!=0 && v!=2))  continue;
 
-                sum_uiz_J[ir][im][v] += SUM[im][v];
+                K->sumJz[ir][im][v] += SUM[im][v];
             }
 
             //----------------------------- ui_r --------------------------------------
@@ -275,7 +269,7 @@ static void interv_integ(
                 int modr = GRT_SRC_M_ORDERS[im];
                 if((modr==0 && v!=0 && v!=2))  continue;
 
-                sum_uir_J[ir][im][v] += SUM[im][v];
+                K->sumJr[ir][im][v] += SUM[im][v];
             }
 
         }
@@ -287,17 +281,10 @@ static void interv_integ(
 
 real_t grt_sa_filon_integ(
     GRT_MODEL1D *mod1d, real_t k0, real_t dk0, real_t tol, real_t kmax, real_t kref, 
-    size_t nr, real_t *rs,
-    cplxIntegGrid sum_J0[nr],
-    bool calc_upar,
-    cplxIntegGrid sum_uiz_J0[nr],
-    cplxIntegGrid sum_uir_J0[nr],
-    FILE *fstats, GRT_KernelFunc kerfunc)
+    size_t nr, real_t *rs, K_INTEG *K0, FILE *fstats, GRT_KernelFunc kerfunc)
 {   
     // 从0开始，存储第二部分Filon积分的结果
-    cplxIntegGrid *sum_J = (cplxIntegGrid *)calloc(nr, sizeof(*sum_J));
-    cplxIntegGrid *sum_uiz_J = (calc_upar)? (cplxIntegGrid *)calloc(nr, sizeof(*sum_uiz_J)) : NULL;
-    cplxIntegGrid *sum_uir_J = (calc_upar)? (cplxIntegGrid *)calloc(nr, sizeof(*sum_uir_J)) : NULL;
+    K_INTEG *K = grt_copy_K_INTEG(K0);
 
     real_t kmin = k0;
     
@@ -316,7 +303,7 @@ real_t grt_sa_filon_integ(
         .F3_uiz = {{{0}}} 
     };
     for(int i=0; i<3; ++i) {
-        kerfunc(mod1d, Kitv.k3[i], Kitv.F3[i], calc_upar, Kitv.F3_uiz[i]);
+        kerfunc(mod1d, Kitv.k3[i], Kitv.F3[i], K->calc_upar, Kitv.F3_uiz[i]);
         if(mod1d->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
     }
     stack_push(&stack, Kitv);
@@ -357,33 +344,33 @@ real_t grt_sa_filon_integ(
         memcpy(Kitv_left.F3[2], Kitv.F3[1], sizeof(cplxChnlGrid));
         memcpy(Kitv_right.F3[0], Kitv.F3[1], sizeof(cplxChnlGrid));
         memcpy(Kitv_right.F3[2], Kitv.F3[2], sizeof(cplxChnlGrid));
-        if(calc_upar){
+        if(K->calc_upar){
             memcpy(Kitv_left.F3_uiz[0], Kitv.F3_uiz[0], sizeof(cplxChnlGrid));
             memcpy(Kitv_left.F3_uiz[2], Kitv.F3_uiz[1], sizeof(cplxChnlGrid));
             memcpy(Kitv_right.F3_uiz[0], Kitv.F3_uiz[1], sizeof(cplxChnlGrid));
             memcpy(Kitv_right.F3_uiz[2], Kitv.F3_uiz[2], sizeof(cplxChnlGrid));
         }
         
-        kerfunc(mod1d, Kitv_left.k3[1], Kitv_left.F3[1], calc_upar, Kitv_left.F3_uiz[1]);
+        kerfunc(mod1d, Kitv_left.k3[1], Kitv_left.F3[1], K->calc_upar, Kitv_left.F3_uiz[1]);
         if(mod1d->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
-        kerfunc(mod1d, Kitv_right.k3[1], Kitv_right.F3[1], calc_upar, Kitv_right.F3_uiz[1]);
+        kerfunc(mod1d, Kitv_right.k3[1], Kitv_right.F3[1], K->calc_upar, Kitv_right.F3_uiz[1]);
         if(mod1d->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
 
         // 增加新值，并比较QWV最大绝对值
         for(int i=0; i<3; ++i){
             get_maxabsQWV(Kitv_left.F3[i], maxabsQWV);
-            if(calc_upar)  get_maxabsQWV(Kitv_left.F3_uiz[i], maxabsQWV_uiz);
+            if(K->calc_upar)  get_maxabsQWV(Kitv_left.F3_uiz[i], maxabsQWV_uiz);
             if(i>0){
                 get_maxabsQWV(Kitv_right.F3[i], maxabsQWV);
-                if(calc_upar)  get_maxabsQWV(Kitv_right.F3_uiz[i], maxabsQWV_uiz);
+                if(K->calc_upar)  get_maxabsQWV(Kitv_right.F3_uiz[i], maxabsQWV_uiz);
             }  
         }
 
         // 检查区间是否符合要求
         real_t goodtol = check_fit(&Kitv, &Kitv_left, &Kitv_right, kref, false, maxabsQWV, tol);
-        if(calc_upar){
+        if(K->calc_upar){
             goodtol = goodtol && check_fit(&Kitv, &Kitv_left, &Kitv_right, kref, true, maxabsQWV_uiz, tol);
         }
         
@@ -405,7 +392,7 @@ real_t grt_sa_filon_integ(
                 }
             }
             // 计算积分
-            interv_integ(&Kitv, nr, rs, sum_J, calc_upar, sum_uiz_J, sum_uir_J);
+            interv_integ(&Kitv, nr, rs, K);
         }
     } // END sampling
 
@@ -414,10 +401,10 @@ real_t grt_sa_filon_integ(
         real_t tmp = sqrt(2.0/(PI*rs[ir])) / dk0;
 
         GRT_LOOP_IntegGrid(im, v){
-            sum_J0[ir][im][v] += sum_J[ir][im][v] * tmp;
-            if(calc_upar){
-                sum_uiz_J0[ir][im][v] += sum_uiz_J[ir][im][v] * tmp;
-                sum_uir_J0[ir][im][v] += sum_uir_J[ir][im][v] * tmp;
+            K0->sumJ[ir][im][v] += K->sumJ[ir][im][v] * tmp;
+            if(K->calc_upar){
+                K->sumJz[ir][im][v] += K->sumJz[ir][im][v] * tmp;
+                K->sumJr[ir][im][v] += K->sumJr[ir][im][v] * tmp;
             }
         }
     }
@@ -425,11 +412,7 @@ real_t grt_sa_filon_integ(
 
     BEFORE_RETURN:
     GRT_SAFE_FREE_PTR(stack.data);
-
-    GRT_SAFE_FREE_PTR(sum_J);
-    GRT_SAFE_FREE_PTR(sum_uiz_J);
-    GRT_SAFE_FREE_PTR(sum_uir_J);
-
+    grt_free_K_INTEG(K);
 
     return Kitv.k3[2]; // 最后k值
 }

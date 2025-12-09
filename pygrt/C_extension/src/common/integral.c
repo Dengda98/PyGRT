@@ -11,12 +11,55 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "grt/common/integral.h"
 #include "grt/common/const.h"
 #include "grt/common/bessel.h"
 #include "grt/common/quadratic.h"
 
+
+K_INTEG * grt_init_K_INTEG(const bool calc_upar, const size_t nr)
+{
+    K_INTEG *K = (K_INTEG *)calloc(1, sizeof(K_INTEG));
+    K->calc_upar = calc_upar;
+    K->nr = nr;
+    K->sumJ  = (cplxIntegGrid *)calloc(nr, sizeof(cplxIntegGrid));
+    K->sumJz = K->sumJr = NULL;
+    if(calc_upar){
+        K->sumJz = (cplxIntegGrid *)calloc(nr, sizeof(cplxIntegGrid));
+        K->sumJr = (cplxIntegGrid *)calloc(nr, sizeof(cplxIntegGrid));
+    }
+    return K;
+}
+
+K_INTEG * grt_copy_K_INTEG(const K_INTEG *K)
+{
+    K_INTEG *K0 = (K_INTEG *)calloc(1, sizeof(K_INTEG));
+    // 先直接赋值，实现浅拷贝
+    *K0 = *K;
+
+    // 对指针部分再重新申请内存并赋值，实现深拷贝
+    size_t nr = K->nr;
+    K0->sumJ  = (cplxIntegGrid *)calloc(nr, sizeof(cplxIntegGrid));
+    memcpy(K0->sumJ, K->sumJ, sizeof(cplxIntegGrid)*nr);
+    K0->sumJz = K0->sumJr = NULL;
+    if(K->calc_upar){
+        K0->sumJz = (cplxIntegGrid *)calloc(nr, sizeof(cplxIntegGrid));
+        memcpy(K0->sumJz, K->sumJz, sizeof(cplxIntegGrid)*nr);
+        K0->sumJr = (cplxIntegGrid *)calloc(nr, sizeof(cplxIntegGrid));
+        memcpy(K0->sumJr, K->sumJr, sizeof(cplxIntegGrid)*nr);
+    }
+    return K0;
+}
+
+void grt_free_K_INTEG(K_INTEG *K)
+{
+    GRT_SAFE_FREE_PTR(K->sumJ);
+    GRT_SAFE_FREE_PTR(K->sumJz);
+    GRT_SAFE_FREE_PTR(K->sumJr);
+    GRT_SAFE_FREE_PTR(K);
+}
 
 
 void grt_int_Pk(real_t k, real_t r, const cplxChnlGrid QWV, bool calc_uir, cplxIntegGrid SUM)
@@ -191,18 +234,18 @@ void grt_int_Pk_sa_filon(const real_t k3[3], real_t r, const cplxChnlGrid QWV3[3
 
 
 
-void grt_merge_Pk(const cplxIntegGrid sum_J, cplxChnlGrid tol)
+void grt_merge_Pk(const cplxIntegGrid sumJ, cplxChnlGrid tol)
 {   
     for(int i=0; i<GRT_SRC_M_NUM; ++i){
         int modr = GRT_SRC_M_ORDERS[i];
         if(modr==0){
-            tol[i][0] = sum_J[i][2];
-            tol[i][1] = sum_J[i][0];
+            tol[i][0] = sumJ[i][2];
+            tol[i][1] = sumJ[i][0];
         }
         else {
-            tol[i][0] = sum_J[i][2];
-            tol[i][1] = sum_J[i][0] + sum_J[i][1];
-            tol[i][2] = - sum_J[i][1] + sum_J[i][3];
+            tol[i][0] = sumJ[i][2];
+            tol[i][1] = sumJ[i][0] + sumJ[i][1];
+            tol[i][2] = - sumJ[i][1] + sumJ[i][3];
         }
     }
 }
