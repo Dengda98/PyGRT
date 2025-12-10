@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 # 根据源代码中include/路径下的.h文件，自动在source/API/C_extension文件夹下生成.rst文件
 
 APIDIR="source/API"

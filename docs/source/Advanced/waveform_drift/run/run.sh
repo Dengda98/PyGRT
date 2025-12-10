@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 rm GRN* pygrtstats -rf
 
 # 没必要执行，故改为如下
