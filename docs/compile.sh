@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 chmod +x *.sh
 
 # 先在线构建PyGRT
