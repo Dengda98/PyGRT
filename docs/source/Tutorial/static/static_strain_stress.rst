@@ -16,6 +16,8 @@
         
         .. literalinclude:: run_upar/run.sh
             :language: bash
+            :start-after: BEGIN
+            :end-before: END
 
 
     .. group-tab:: Python

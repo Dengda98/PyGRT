@@ -1,4 +1,6 @@
 #!/bin/bash
+
+# BEGIN
 set -eu
 
 rm -rf stgrn* stsyn* *.png
@@ -27,3 +29,6 @@ grt static rotation stsyn_dc_zne.nc
 
 # 计算应力
 grt static stress stsyn_dc_zne.nc
+# END
+
+python run.py

@@ -10,3 +10,5 @@ rm -rf GRN* syn* pygrtstats* *.png
 grt greenfn -Mmod1 -D0.03/0 -N500/0.02 -OGRN -R1 -K+v0.1 -S -L20
 # END GRN
 # -----------------------------------------------------------------
+
+python run.py

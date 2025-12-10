@@ -1,78 +1,17 @@
 #!/bin/bash
-set -e
+
+set -euo pipefail
 
 # 运行教程中所有示例的脚本，方便将成图过程放在readthedocs服务器上
+# 为方便统一发起任务，本脚本将在本目录下寻找所有名字为 run.sh 的脚本，
+# 切换到对应目录下，执行 bash run.sh
 
 
-if [[ $1 == '1' || $1 == '' ]]; then
-    cd Tutorial/dynamic/run
-    chmod +x *.sh
-    ./run.sh
-    python run.py
+fname="run.sh"
+for path in $(find -type f -name "$fname"); do
+    cd $(dirname $path)
+    chmod +x $fname
+    echo "--------------------------- $fname -----------------------------"
+    bash $fname 
     cd -
-fi
-
-
-if [[ $1 == '2' || $1 == '' ]]; then
-    cd Tutorial/static/run
-    chmod +x *.sh
-    ./run.sh
-    # python run.py
-    cd -
-fi
-
-if [[ $1 == '3' || $1 == '' ]]; then
-    cd Tutorial/dynamic/run_upar
-    chmod +x *.sh
-    ./run.sh
-    python run.py
-    cd -
-fi
-
-if [[ $1 == '4' || $1 == '' ]]; then
-    cd Tutorial/static/run_upar
-    chmod +x *.sh
-    ./run.sh
-    python run.py
-    cd -
-fi
-
-if [[ $1 == '5' || $1 == '' ]]; then
-    cd Advanced/integ_converg/run
-    chmod +x *.sh
-    ./run.sh
-    python run.py
-    cd -
-fi
-
-if [[ $1 == '6' || $1 == '' ]]; then
-    cd Advanced/kernel/run
-    chmod +x *.sh
-    ./run.sh
-    python run.py
-    cd -
-fi
-
-if [[ $1 == '7' || $1 == '' ]]; then
-    cd Advanced/filon/run
-    chmod +x *.sh
-    ./run.sh
-    python run.py
-    python plot.py
-    cd -
-fi
-
-if [[ $1 == '8' || $1 == '' ]]; then
-    cd Lamb_problem/run
-    chmod +x *.sh
-    ./run.sh
-    python lamb1_plot_time.py
-    python lamb1_plot_freq_time.py
-    cd -
-fi
-
-if [[ $1 == '9' || $1 == '' ]]; then
-    cd Advanced/waveform_drift/run
-    python run.py
-    cd -
-fi
+done
