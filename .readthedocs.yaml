@@ -26,6 +26,10 @@ build:
   ]
 
   jobs:
+    post_checkout:
+      # 深拷贝以记录完整 git 历史
+      - git fetch --unshallow || true
+    
     pre_build:
       # 由于此处多个命令之间隔离，只能写成一个脚本
       - cd docs && ./compile.sh && cd -
