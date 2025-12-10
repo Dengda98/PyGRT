@@ -1,16 +1,37 @@
 # -----------------------------------------------------------------
-# BEGIN plot
+# BEGIN GRN
 import numpy as np
 import matplotlib.pyplot as plt
 from typing import Union
 import pygrt 
 
-# 读取所有频率的核函数
+modarr = np.loadtxt("mod1")
+
+pymod = pygrt.PyModel1D(modarr, depsrc=0.03, deprcv=0.0)
+
+# 不指定statsidx，默认输出全部频率点的积分过程文件
+# vmin_ref 显式给定参考速度（用于定义波数积分上限），避免使用PTAM
+# Length 给定波数积分间隔dk
+_ = pymod.compute_grn(distarr=[1], nt=500, dt=0.02, vmin_ref=0.1, Length=20, statsfile="pygrtstats")
+# END GRN
+# -----------------------------------------------------------------
+
+# -----------------------------------------------------------------
+# BEGIN read
+# 指定待采样的速度数组
+vels = np.arange(0.1, 0.6, 0.001)
+
+# 读取所有频率的核函数，并插值到vels
 # 不指定ktypes，默认返回全部核函数，均以2D数组的形式保存，shape=(nfreqs, nvels)
-kerDct = pygrt.utils.read_kernels_freqs("KERNEL/mod1_0.03_0")
+kerDct = pygrt.utils.read_kernels_freqs("pygrtstats", vels)
 print(kerDct.keys())
 # dict_keys(['_vels', '_freqs', 'EX_q', 'EX_w', 'VF_q', 'VF_w', 'HF_q', 'HF_w', 'HF_v', 'DD_q', 'DD_w', 'DS_q', 'DS_w', 'DS_v', 'SS_q', 'SS_w', 'SS_v'])
+# END read
+# -----------------------------------------------------------------
 
+
+# -----------------------------------------------------------------
+# BEGIN plot
 # 绘制图像
 def plot_kernel(kerDct:dict, RorI:bool, out:Union[str,None]=None):
     funcRorI = np.real if RorI else np.imag
