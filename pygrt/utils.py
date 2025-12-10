@@ -1171,8 +1171,10 @@ def read_statsfile(statsfile:str):
     statsfile = Lst[0]
     print(f"raed in {statsfile}.")
 
+    basename = os.path.basename(statsfile)
+
     # 确定自定义数据类型  EX_q, EX_w, VF_q, ...
-    dtype = [('k', NPCT_REAL_TYPE)]
+    dtype = [('k' if basename[0] == 'K' else 'c', NPCT_REAL_TYPE)]
     for im in range(SRC_M_NUM):
         modr = SRC_M_ORDERS[im]
         for c in range(QWV_NUM):
@@ -1187,22 +1189,35 @@ def read_statsfile(statsfile:str):
     return data
 
 
-def read_kernels_freqs(statsdir:str, vels:np.ndarray, ktypes:Union[List[str],None]=None):
+def read_kernels_freqs(statsdir:str, vels:Union[np.ndarray,None]=None, ktypes:Union[List[str],None]=None):
     r"""
-        读取statsdir目录下所有频率（除了零频）的积分过程文件（K_开头），再将核函数线性插值到指定的速度数组vels
+        读取statsdir目录下所有频率（除了零频）的积分过程文件，如果采样点是波数则插值到相速度。
 
         :param        statsdir:     存储积分过程文件的目录
-        :param        vels:         待插值的速度数组(km/s)，必须正序
+        :param        vels:         指定正序的速度数组(km/s)则读取 K_ 开头的文件，并做从波数到相速度的线性插值；
+                                    如果不指定则读取 C_ 开头的文件。
         :param        ktype:        指定返回一系列的核函数名称，如EX_q，DS_w等，默认返回全部
 
         :return:
             - **kerDct**  -   字典格式的核函数插值结果
     """
 
-    if not np.all(np.diff(vels) > 0):
-        raise ValueError("vels must be in ascending order.")
+    dointerp = vels is not None
 
-    KLst = np.array(glob.glob(os.path.join(statsdir, "K_*")))
+    if (dointerp) and not np.all(np.diff(vels) > 0):
+        raise ValueError("vels must be in ascending order.")
+    
+    K_statspaths = glob.glob(os.path.join(statsdir, "K_*"))
+    if len(K_statspaths) == 0 and dointerp:
+        raise ValueError("You want to interpolate from k to c, but found 0 statsfiles recording k.")
+    
+    C_statspaths = glob.glob(os.path.join(statsdir, "C_*"))
+    if len(C_statspaths) == 0 and not dointerp:
+        raise ValueError("Found 0 statsfiles directly recording c.")
+    
+    statspaths = K_statspaths if dointerp else C_statspaths
+
+    KLst = np.array(statspaths)
     freqs = np.array([float(s.split("_")[-1]) for s in KLst])
     # 根据freqs排序
     _idx = np.argsort(freqs)
@@ -1216,7 +1231,7 @@ def read_kernels_freqs(statsdir:str, vels:np.ndarray, ktypes:Union[List[str],Non
         KLst = KLst[1:]
 
     kerDct = {}
-    kerDct['_vels'] = vels.copy()
+    kerDct['_vels'] = vels.copy() if dointerp else []
     kerDct['_freqs'] = freqs.copy()
 
     for i in range(len(freqs)):
@@ -1225,17 +1240,22 @@ def read_kernels_freqs(statsdir:str, vels:np.ndarray, ktypes:Union[List[str],Non
         w = 2*np.pi*freq
 
         data = read_statsfile(Kpath)
-        v = w/data['k']
+        
+        if dointerp:
+            v = w/data['k']
 
-        # 检查v范围
-        v1 = np.min(v)
-        v2 = np.max(v)
-        if v1 > vels[0] or v2 < vels[-1]:
-            raise ValueError(f"In freq={freq:.5e}, minV={v1:.5e}, maxV={v2:.5e}, insufficient wavenumber samples"
-                              " to interpolate on vels.")
+            # 检查v范围
+            v1 = np.min(v)
+            v2 = np.max(v)
+            if v1 > vels[0] or v2 < vels[-1]:
+                raise ValueError(f"In freq={freq:.5e}, minV={v1:.5e}, maxV={v2:.5e}, insufficient wavenumber samples"
+                                " to interpolate on vels.")
+        else:
+            if len(kerDct['_vels']) == 0:
+                kerDct['_vels'] = data['c'].copy()
 
         for key in data.dtype.names:
-            if key == 'k':
+            if key == 'k' or key == 'c':
                 continue 
             if (ktypes is not None) and (key not in ktypes):
                 continue 
@@ -1243,9 +1263,12 @@ def read_kernels_freqs(statsdir:str, vels:np.ndarray, ktypes:Union[List[str],Non
             if key not in kerDct.keys():
                 kerDct[key] = []
 
-            # 如果越界会报错
-            F = interpn((v,), data[key], vels)
-            kerDct[key].append(F)
+            if dointerp:
+                # 如果越界会报错
+                F = interpn((v,), data[key], vels)
+                kerDct[key].append(F)
+            else:
+                kerDct[key].append(data[key])
 
     # 将每个核函数结果拼成2D数组
     for key in kerDct.keys():

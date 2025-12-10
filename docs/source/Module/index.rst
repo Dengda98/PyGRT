@@ -47,6 +47,7 @@
         - :doc:`strain`
         - :doc:`stress`
         - :doc:`rotation`
+        - :doc:`kernel`
 
 + *面波解* （模态叠加, Modal Summation）
 
@@ -112,6 +113,7 @@
     strain
     stress
     rotation
+    kernel
     static_greenfn
     static_syn
     static_strain

@@ -34,6 +34,7 @@
     X(rotation)            \
     X(strain)              \
     X(stress)              \
+    X(kernel)              \
     /* static */           \
     X(static_greenfn)      \
     X(static_syn)          \

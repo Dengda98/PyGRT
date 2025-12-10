@@ -34,10 +34,11 @@ void grt_write_stats(FILE *f0, real_t k, const cplxChnlGrid QWV);
  * 
  * @param[in,out]     bf0    二进制文件指针，如果为NULL则打印标题
  * @param[out]        af0    文本文件指针
+ * @param[in]         col0_name    第一列名称，一般为 k 或 c
  * 
  * @return   0表示读取成功，-1表示读取结果/失败
  */
-int grt_extract_stats(FILE *bf0, FILE *af0);
+int grt_extract_stats(FILE *bf0, FILE *af0, const char *col0_name);
 
 
 

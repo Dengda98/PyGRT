@@ -30,11 +30,11 @@ void grt_write_stats(FILE *f0, real_t k, const cplxChnlGrid QWV)
 }
 
 
-int grt_extract_stats(FILE *bf0, FILE *af0){
+int grt_extract_stats(FILE *bf0, FILE *af0, const char *col0_name){
     // 打印标题
     if(bf0 == NULL){
         char K[20];
-        snprintf(K, sizeof(K), GRT_STRING_FMT, "k");  K[0]=GRT_COMMENT_HEAD;
+        snprintf(K, sizeof(K), GRT_STRING_FMT, col0_name);  K[0]=GRT_COMMENT_HEAD;
         fprintf(af0, "%s", K);
 
         GRT_LOOP_ChnlGrid(im, c){
