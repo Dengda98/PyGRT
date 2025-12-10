@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # BEGIN
-set -eu
+set -euo pipefail
 
 rm -rf stgrn* stsyn* *.png
 

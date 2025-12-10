@@ -1,5 +1,7 @@
 #!/bin/bash
 # BEGIN
+set -euo pipefail
+
 rm -rf GRN*
 
 # method 1: DWM

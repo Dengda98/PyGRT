@@ -1,14 +1,14 @@
 #!/bin/bash 
 
-rm -rf GRN* syn* pygrtstats* *.png
+set -euo pipefail
+
+rm -rf KERNEL *.png
 
 # -----------------------------------------------------------------
-# BEGIN GRN
-# -S 后不指定索引表示输出所有频率点的核函数
-# -K+v0.1 显式给定参考速度（用于定义波数积分上限），避免使用PTAM
-# -L20 定义波数积分间隔dk
-grt greenfn -Mmod1 -D0.03/0 -N500/0.02 -OGRN -R1 -K+v0.1 -S -L20
-# END GRN
+# BEGIN KERNEL
+# +w 控制虚频率，从而调整谱图中高亮部分的粗细
+grt kernel -Mmod1 -D0.03/0 -F0/25/0.1+w2 -C0.1/0.6/5e-3 -OKERNEL
+# END KERNEL
 # -----------------------------------------------------------------
 
 python run.py

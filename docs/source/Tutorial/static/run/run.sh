@@ -1,5 +1,5 @@
 #!/bin/bash
-set -eu
+set -euo pipefail
 
 rm -rf stgrn* stsyn* *.png
 

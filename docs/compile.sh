@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 chmod +x *.sh
 
 # 先在线构建PyGRT
@@ -36,8 +38,4 @@ make clean
 # 执行doxygen
 doxygen doxyfile_h
 
-# 构建
-if [[ $1 == '1' ]]; then
-make html
-fi
 # sphinx-autobuild -j auto --port 8000 source build
