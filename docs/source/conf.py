@@ -45,6 +45,7 @@ extensions = [
     'sphinxcontrib.mermaid',
     'sphinx.ext.imgconverter',
     'sphinx_design',
+    'sphinx_last_updated_by_git',
     "gmtplot",
 ] 
 

@@ -14,4 +14,5 @@ graphviz
 sphinx-tabs
 setuptools-scm  # 自动从git tag中构建版本
 sphinx-design==0.5.0
+sphinx-last-updated-by-git
 -e .  # 包本身

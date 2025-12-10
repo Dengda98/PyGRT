@@ -6,7 +6,7 @@ chmod +x *.sh
 
 # 先在线构建PyGRT
 cd ../pygrt/C_extension 
-make
+make clean && make -j
 cd -
 
 # 添加到环境变量
