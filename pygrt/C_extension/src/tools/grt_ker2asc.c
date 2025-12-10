@@ -64,14 +64,14 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
  * 
  * @param     fp       文件指针
  */
-static void print_K(FILE *fp){
+static void print_K(FILE *fp, const char *col0_name){
     // 打印标题
-    grt_extract_stats(NULL, stdout);
+    grt_extract_stats(NULL, stdout, col0_name);
     fprintf(stdout, "\n");
     
     // 读取数据    
     while (true) {
-        if(0 != grt_extract_stats(fp, stdout))  break;
+        if(0 != grt_extract_stats(fp, stdout, col0_name))  break;
 
         fprintf(stdout, "\n");
     }
@@ -84,7 +84,7 @@ static void print_K(FILE *fp){
  */
 static void print_PTAM(FILE *fp){
     // 打印标题
-    grt_extract_stats(NULL, stdout);
+    grt_extract_stats(NULL, stdout, "k");
     fprintf(stdout, "\n");
     
     // 读取数据    
@@ -117,7 +117,9 @@ int ker2asc_main(int argc, char **argv){
     if(strncmp(basename, "PTAM", 4) == 0) {
         print_PTAM(fp);
     } else if(strncmp(basename, "K", 1) == 0) {
-        print_K(fp);
+        print_K(fp, "k");
+    } else if(strncmp(basename, "C", 1) == 0) {
+        print_K(fp, "c");
     } else {
         // 文件名不符合要求
         GRTRaiseError("[%s] Error! Unsupported File \"%s\".\n", Ctrl->name, Ctrl->s_filepath);
