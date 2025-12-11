@@ -9,11 +9,11 @@
 
 #pragma once 
 
+#include <stdio.h>
 #include <stdbool.h>
 
 #include "grt/common/const.h"
 #include "grt/common/model.h"
-#include "grt/common/myfftw.h"
 
 /**
  * 指定分隔符，从一串字符串中分割出子字符串数组
@@ -89,48 +89,3 @@ bool grt_is_comment_or_empty(const char* line);
  * 所以这里需要使用自定义的 getline 函数，参数与 POSIX 定义相同
  */
 ssize_t grt_getline(char **lineptr, size_t *n, FILE *stream);
-
-
-/**
- * 处理单个震中距对应的数据逆变换和SAC保存
- * 
- * @param[in]         command       模块名
- * @param[in]         mod1d         模型结构体指针
- * @param[in]         s_output_dir  保存目录（调用前已创建）
- * @param[in]         s_modelname   模型名称
- * @param[in]         s_depsrc      震源深度字符串
- * @param[in]         s_deprcv      接收深度字符串
- * @param[in]         wI            虚频率
- * @param[in,out]     pt_fh         FFTW结构体
- * @param[in]         nr            震中距数量
- * @param[in]         s_dists       输入的震中距字符串数组
- * @param[in]         dists         震中距数组
- * @param[out]        travtPS       保存不同震中距的初至P、S
- * @param[in]         depsrc        震源深度
- * @param[in]         deprcv        接收深度
- * @param[in]         delayT0       延迟时间
- * @param[in]         delayV0       参考速度
- * @param[in]         calc_upar     是否计算位移偏导
- * @param[in]         doEX          是否保存爆炸源结果
- * @param[in]         doVF          是否保存垂直力源结果
- * @param[in]         doHF          是否保存水平力源结果
- * @param[in]         doDC          是否保存剪切力源结果
- * @param[in]         doDC          是否保存剪切力源结果
- * @param[in]         chalst        要保存的分量字符串
- * @param[in]         grn           格林函数频谱结果
- * @param[in]         grn_uiz       格林函数对z偏导频谱结果
- * @param[in]         grn_uir       格林函数对r偏导频谱结果
- * 
- */
-void grt_GF_freq2time_write_to_file(
-    const char *command, const GRT_MODEL1D *mod1d, 
-    const char *s_output_dir, const char *s_modelname, const char *s_depsrc, const char *s_deprcv,    
-    const real_t wI, GRT_FFTW_HOLDER *pt_fh,
-    const size_t nr, char *s_dists[nr], const real_t dists[nr], real_t travtPS[nr][2],
-    const real_t depsrc, const real_t deprcv,
-    const real_t delayT0, const real_t delayV0, const bool calc_upar,
-    const bool doEX, const bool doVF, const bool doHF, const bool doDC, 
-    const char *chalst,
-    pt_cplxChnlGrid grn[nr], 
-    pt_cplxChnlGrid grn_uiz[nr], 
-    pt_cplxChnlGrid grn_uir[nr]);
