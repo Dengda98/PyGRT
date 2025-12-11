@@ -59,7 +59,7 @@
 
 + 如果是从 |gr| 上直接下载的压缩包，则只需将解压后的 :rst:dir:`bin/` 路径添加到环境变量 :envvar:`PATH` 中即可。
 
-C程序 :command:`grt` 的运行独立于Python，每个C程序可使用 ``-h`` 查看帮助。
+C程序 :command:`grt` 的运行独立于Python， :command:`grt` 的每个模块可使用 ``-h`` 查看帮助， 例如 :command:`grt greenfn -h` 。
 
 
 从源码构建安装
