@@ -9,6 +9,7 @@
 
 #pragma once 
 
+#include <stdio.h>
 #include <stdbool.h>
 
 #include "grt/common/const.h"
