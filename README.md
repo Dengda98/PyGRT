@@ -13,9 +13,6 @@
   <img src="./figs/example_ZRT.png" alt="Image 1" width="80%" />
 </p>
 
-
-> ⭐ **Like this project? Give it a Star!** ⭐
-
 [**Chinese Document**](https://pygrt.readthedocs.io/zh-cn/)  |  ~~English Document (no longer maintained)~~
 
 **[PyGRT](https://github.com/Dengda98/PyGRT)** : An Efficient and Integrated C/Python Package for Computing Synthetic Seismograms, Strain, Rotation and Stress Tensor in a Layered Half-Space Model (Dynamic & Static Cases)
@@ -60,3 +57,9 @@ Since PyGRT has been under continuous maintenance and extension during the peer 
 
 > Zhu, D., T. Xu, J. Hao, and Z. Yao (2026). A Direct Convergence Method for Computing Synthetic Seismograms for a Layered Half-space with Sources and Receivers at Close Depths, Bulletin of the Seismological Society of America. (accepted)
 
+---------------
+⭐ **Like this project? Give it a Star!** ⭐
+<p align="center">
+  <img src="https://api.star-history.com/svg?repos=Dengda98/PyGRT&type=date&legend=top-left" 
+    alt="Star History Chart" width="80%" />
+</p>
