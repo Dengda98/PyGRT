@@ -18,6 +18,14 @@ html_last_updated_fmt = '%b %d, %Y'
 def setup(app):
     app.add_css_file('my_theme.css')  
 
+# 获取全局最新时间函数
+def get_global_last_updated():
+    try:
+        cmd = ['git', 'log', '-1', '--format=%ad', f'--date=format:{html_last_updated_fmt}', '--all']
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        return result.stdout.strip() if result.returncode == 0 else None
+    except:
+        return None
 
 project = 'PyGRT'
 author = '朱邓达'
@@ -117,7 +125,9 @@ html_js_files = [
 html_context = {
     "contributors": {
         "朱邓达": "https://github.com/Dengda98",
-    }
+    },
+    'global_last_updated': get_global_last_updated(),
+    'master_doc': 'index'
 }
 
 autodoc_default_options = {

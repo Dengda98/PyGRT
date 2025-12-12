@@ -37,8 +37,12 @@
       </span>
     {%- endif %}
     {%- if last_updated %}
-      <span class="lastupdated">
-        {%- trans last_updated=last_updated|e %}Last updated on {{ last_updated }}.{% endtrans %}
+      <span class="last-updated">
+        {% if pagename == master_doc %}
+          {%- trans global_last_updated=global_last_updated|e %}Document Last updated on {{ global_last_updated }}.{% endtrans %}
+        {% else %}
+          {%- trans last_updated=last_updated|e %}Page Last updated on {{ last_updated }}.{% endtrans %}
+        {% endif %}
       </span>
     {%- endif -%}
 
