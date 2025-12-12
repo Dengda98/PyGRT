@@ -28,7 +28,7 @@ real_t grt_linear_filon_integ(
     size_t nr, real_t *rs, K_INTEG *K0, FILE *fstats, GRT_KernelFunc kerfunc)
 {   
     // 从0开始，存储第二部分Filon积分的结果
-    K_INTEG *K = grt_copy_K_INTEG(K0);
+    K_INTEG *K = grt_init_K_INTEG(K0->calc_upar, nr);
 
     // 不同震源不同阶数的核函数 F(k, w) 
     cplxChnlGrid QWV = {0};
