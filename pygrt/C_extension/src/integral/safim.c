@@ -17,9 +17,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "grt/common/safim.h"
-#include "grt/common/integral.h"
-#include "grt/common/iostats.h"
+#include "grt/integral/safim.h"
+#include "grt/integral/k_integ.h"
+#include "grt/integral/iostats.h"
 #include "grt/common/const.h"
 #include "grt/common/model.h"
 
@@ -283,11 +283,12 @@ real_t grt_sa_filon_integ(
     GRT_MODEL1D *mod1d, real_t k0, real_t dk0, real_t tol, real_t kmax, real_t kref, 
     size_t nr, real_t *rs, K_INTEG *K0, FILE *fstats, GRT_KernelFunc kerfunc)
 {   
-    // 从0开始，存储第二部分Filon积分的结果
-    K_INTEG *K = grt_copy_K_INTEG(K0);
+    real_t kmin = k0 + dk0;
+    if(kmin >= kmax)  return k0;
 
-    real_t kmin = k0;
-    
+    // 从0开始，存储第二部分Filon积分的结果
+    K_INTEG *K = grt_init_K_INTEG(K0->calc_upar, nr);
+
     // 区间栈
     KIntervalStack stack;
     stack_init(&stack, 64);

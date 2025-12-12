@@ -9,7 +9,7 @@
 
 #include <stdbool.h>
 #include "grt/common/matrix.h"
-#include "grt/common/kernel.h"
+#include "grt/integral/kernel.h"
 
 /**
  * 最终公式(5.7.12,13,26,27)简化为 (P-SV波) :

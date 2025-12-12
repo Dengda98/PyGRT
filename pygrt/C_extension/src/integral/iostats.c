@@ -12,7 +12,7 @@
 #include <stdbool.h>
 #include <complex.h>
 
-#include "grt/common/iostats.h"
+#include "grt/integral/iostats.h"
 #include "grt/common/const.h"
 
 

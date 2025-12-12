@@ -9,6 +9,8 @@
 
 #pragma once 
 
+#include <stdbool.h>
+
 #include "grt/common/const.h"
 
 typedef struct {

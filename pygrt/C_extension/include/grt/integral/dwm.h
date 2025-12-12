@@ -16,8 +16,8 @@
 #include <stdio.h>
 
 #include "grt/common/model.h"
-#include "grt/common/kernel.h"
-#include "grt/common/integral.h"
+#include "grt/integral/kernel.h"
+#include "grt/integral/k_integ.h"
 
 
 /**

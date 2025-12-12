@@ -18,10 +18,10 @@
 #include <complex.h>
 #include <stdlib.h>
 
-#include "grt/common/ptam.h"
-#include "grt/common/quadratic.h"
-#include "grt/common/integral.h"
-#include "grt/common/iostats.h"
+#include "grt/integral/ptam.h"
+#include "grt/integral/quadratic.h"
+#include "grt/integral/k_integ.h"
+#include "grt/integral/iostats.h"
 #include "grt/common/const.h"
 #include "grt/common/model.h"
 
