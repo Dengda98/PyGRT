@@ -284,7 +284,7 @@ real_t grt_sa_filon_integ(
     size_t nr, real_t *rs, K_INTEG *K0, FILE *fstats, GRT_KernelFunc kerfunc)
 {   
     // 从0开始，存储第二部分Filon积分的结果
-    K_INTEG *K = grt_copy_K_INTEG(K0);
+    K_INTEG *K = grt_init_K_INTEG(K0->calc_upar, nr);
 
     real_t kmin = k0;
     
