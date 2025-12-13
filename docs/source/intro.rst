@@ -86,13 +86,14 @@
 
 + **PyGRT** 程序包。 由于审稿过程中程序在不断扩展完善，目前程序的功能已超过该文章的叙述范围，具体功能详见本文档。
 
-  Zhu, D., J. Wang, J. Hao, S. Yao, Y. Xu, T. Xu, and Z. Yao (in press). 
+  Zhu, D., J. Wang, J. Hao, S. Yao, Y. Xu, T. Xu, and Z. Yao (2026). 
   PyGRT: An Efficient and Integrated Python Package for Computing Synthetic 
   Seismograms in a Layered Half-Space Model, Seismological Research Letters.
+  doi: `10.1785/0220250057 <https://doi.org/10.1785/0220250057>`_
 
 + **直接收敛法**
   
-  Zhu, D., T. Xu, J. Hao, and Z. Yao (in press). A Direct Convergence Method 
+  Zhu, D., T. Xu, J. Hao, and Z. Yao (2026). A Direct Convergence Method 
   for Computing Synthetic Seismograms for a Layered Half-space with Sources and 
   Receivers at Close Depths, Bulletin of the Seismological Society of America.
 
