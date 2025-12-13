@@ -9,8 +9,8 @@
 
 #include "grt/common/const.h"
 #include "grt/common/model.h"
-#include "grt/common/kernel.h"
-#include "grt/common/iostats.h"
+#include "grt/integral/kernel.h"
+#include "grt/integral/iostats.h"
 #include "grt/common/util.h"
 #include "grt/common/progressbar.h"
 
