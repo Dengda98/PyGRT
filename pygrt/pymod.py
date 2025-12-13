@@ -156,6 +156,7 @@ class PyModel1D:
         filonLength:float=0.0,
         safilonTol:float=0.0,
         filonCut:float=0.0,
+        converg_method:Union[str,None]=None,
         delayT0:float=0.0,
         delayV0:float=0.0,
         calc_upar:bool=False,
@@ -178,8 +179,7 @@ class PyModel1D:
                                      使用离散波数积分时为了避开附加源以及奇点的影响， :ref:`(Bouchon, 1981) <bouchon_1981>`  在频率上添加微小虚部，
                                      更多测试见 :ref:`(张海明, 2021) <zhang_book_2021>`
             :param    keepAllFreq    计算所有频点，不论频率多低
-            :param    vmin_ref:      最小参考速度，默认vmin=max(minimum velocity, 0.1)，用于定义波数积分上限，小于0则在达到积分上限后使用峰谷平均法
-                                    （默认当震源和场点深度差<=1km时自动使用峰谷平均法）
+            :param    vmin_ref:      最小参考速度，默认vmin=max(minimum velocity, 0.1)，用于定义波数积分上限
             :param    keps:          波数k积分收敛条件，见 :ref:`(Yao and Harkrider, 1983) <yao&harkrider_1983>`  :ref:`(初稿) <yao_init_manuscripts>`，
                                      为负数代表不提前判断收敛，按照波数积分上限进行积分
             :param    ampk:          影响波数k积分上限的系数，见下方
@@ -189,6 +189,7 @@ class PyModel1D:
             :param    filonLength:   Filon积分的间隔
             :param    safilonTol:    自适应Filon积分采样精度
             :param    filonCut:      波数积分和Filon积分的分割点filonCut, k*=<filonCut>/rmax
+            :param    converg_method:   显式收敛的方法，可指定 "DCM", "PTAM" 和 "none", 默认当震源和场点深度差<=1km时自动使用峰谷平均法
             :param    calc_upar:     是否计算位移u的空间导数
             :param    gf_source:     待计算的震源类型
             :param    statsfile:     波数k积分（包括Filon积分和峰谷平均法）的过程记录文件，常用于debug或者观察积分过程中 :math:`F(k,\omega)` 和  :math:`F(k,\omega)J_m(kr)k` 的变化    
@@ -224,6 +225,8 @@ class PyModel1D:
             raise ValueError(f"zeta ({zeta}) < 0")
         if k0 < 0:
             raise ValueError(f"k0 ({k0}) < 0")
+        if vmin_ref < 0:
+            raise ValueError(f"vmin_ref ({vmin_ref}) < 0")
         
         if Length < 0.0:
             raise ValueError(f"Length ({Length}) < 0")
@@ -237,6 +240,10 @@ class PyModel1D:
         # 只能设置一种filon积分方法
         if safilonTol > 0.0 and filonLength > 0.0:
             raise ValueError(f"You should only set one of filonLength and safilonTol.")
+        
+        # 只能设置规定的收敛方法
+        if converg_method is not None and converg_method not in ['DCM', 'PTAM', 'none']:
+            raise ValueError(f'Wrong converg_method ({converg_method})')
         
         nf = nt//2+1 
         df = 1/(nt*dt)
@@ -282,9 +289,10 @@ class PyModel1D:
         # 参考最小速度
         if vmin_ref == 0.0:
             vmin_ref = max(self.vmin, 0.1)
-            if abs(depsrc - deprcv) <= 1.0:
-                vmin_ref = - abs(vmin_ref)  # 自动使用PTAM
 
+        # 若不指定显式收敛方法，则根据情况自动使用PTAM
+        if converg_method is None and abs(depsrc - deprcv) <= 1.0:
+            converg_method = 'PTAM'
 
         # 时窗长度
         winT = nt*dt 
@@ -303,9 +311,6 @@ class PyModel1D:
                 Length = 1.0 + np.sqrt(jus)/rmax + 0.5  # 0.5作保守值
                 if Length < 15.0:
                     Length = 15.0
-
-            print(f"Length={Length:.2f}")
-
 
         # 初始化格林函数
         pygrnLst, c_grnArr = self._init_grn(distarr, nt, dt, upsampling_n, freqs, wI, '')
@@ -343,20 +348,16 @@ class PyModel1D:
         # ===========================================
         # 打印参数设置 
         if print_runtime:
-            print(f"vmin={self.vmin}")
-            print(f"vmax={self.vmax}")
-            print(f"vmin_ref={abs(vmin_ref)}", end="")
-            if vmin_ref < 0.0:
-                print(", using PTAM.")
-            else:
-                print("")
-            print(f"Length={abs(Length)}", end="")
-            if filonLength > 0.0:
-                print(f",{filonLength},{filonCut}, using FIM.")
-            elif safilonTol > 0.0:
-                print(f",{safilonTol},{filonCut}, using SAFIM.")
-            else:
-                print("")
+            print(f"k0={k0}")
+            print(f"ampk={ampk}")
+            print(f"keps={keps}")
+            print(f"vmin={vmin_ref}")
+            print(f"Length={Length}")
+            print(f"kcut={filonCut}")
+            print(f"filonLength={filonLength}")
+            print(f"safilonTol={safilonTol}")
+            print(f'converg_method={converg_method}')
+            
             print(f"nt={nt}")
             print(f"dt={dt}")
             print(f"winT={winT}")
@@ -364,9 +365,7 @@ class PyModel1D:
             print(f"delayT0={delayT0}")
             print(f"delayV0={delayV0}")
             print(f"tmax={tmax}")
-            print(f"k0={k0}")
-            print(f"ampk={ampk}")
-            print(f"keps={keps}")
+            
             print(f"maxfreq(Hz)={freqs[nf-1]}")
             print(f"f1(Hz)={freqs[nf1]}")
             print(f"f2(Hz)={freqs[nf2]}")
@@ -376,6 +375,27 @@ class PyModel1D:
 
 
 
+        KMET = c_K_INTEG_METHOD()
+
+        hs = max(abs(depsrc - deprcv), 1.0)
+        KMET.k0 = k0 * np.pi / hs
+        KMET.ampk = ampk
+        KMET.keps = keps if converg_method == 'none' else 0.0
+        KMET.vmin = vmin_ref
+
+        KMET.kcut = filonCut / rmax
+        
+        KMET.dk = 2.0*np.pi / (Length * rmax)
+        
+        KMET.applyFIM = filonLength > 0.0
+        KMET.filondk = 2.0*np.pi / (filonLength * rmax) if filonLength > 0.0 else 0.0
+        
+        KMET.applySAFIM = safilonTol > 0.0
+        KMET.sa_tol = safilonTol
+
+        KMET.applyDCM = converg_method == 'DCM'
+        KMET.applyPTAM = converg_method == 'PTAM'
+
         # 运行C库函数
         #/////////////////////////////////////////////////////////////////////////////////
         # 计算得到的格林函数的单位：
@@ -384,9 +404,9 @@ class PyModel1D:
         #     剪切源 DD[ZR],DS[ZRT],SS[ZRT]          1e-20 cm/(dyne*cm)
         #=================================================================================
         C_grt_integ_grn_spec(
-            self.c_mod1d, nf1, nf2, c_freqs, nrs, c_rs, wI, keepAllFreq,
-            vmin_ref, keps, ampk, k0, Length, filonLength, safilonTol, filonCut, print_runtime,
-            c_grnArr, calc_upar, c_grnArr_uiz, c_grnArr_uir,
+            self.c_mod1d, nf1, nf2, c_freqs, nrs, c_rs, wI, keepAllFreq, pointer(KMET),
+            print_runtime, calc_upar, 
+            c_grnArr, c_grnArr_uiz, c_grnArr_uir,
             c_statsfile, nstatsidxs, c_statsidxs
         )
         #=================================================================================
@@ -461,13 +481,13 @@ class PyModel1D:
         self,
         xarr:Union[np.ndarray,List[float],float], 
         yarr:Union[np.ndarray,List[float],float], 
-        vmin_ref:float=0.0,
         keps:float=-1.0,  
         k0:float=5.0, 
         Length:float=15.0, 
         filonLength:float=0.0,
         safilonTol:float=0.0,
         filonCut:float=0.0,
+        converg_method:Union[str,None]=None,
         calc_upar:bool=False,
         statsfile:Union[str,None]=None):
 
@@ -476,8 +496,6 @@ class PyModel1D:
 
             :param       xarr:          北向坐标数组，或单个浮点数
             :param       yarr:          东向坐标数组，或单个浮点数
-            :param       vmin_ref:      最小参考速度（具体数值不使用），小于0则在达到积分上限后使用峰谷平均法
-                                       （默认当震源和场点深度差<=0.5km时自动使用峰谷平均法）
             :param       keps:          波数k积分收敛条件，见 :ref:`(Yao and Harkrider, 1983) <yao&harkrider_1983>`  :ref:`(初稿) <yao_init_manuscripts>`，
                                         为负数代表不提前判断收敛，按照波数积分上限进行积分
             :param       k0:            波数k积分的上限 :math:`\tilde{k_{max}}=(k_{0}*\pi/hs)^2` , 波数k积分循环必须退出, hs=max(震源和台站深度差,1.0)
@@ -485,6 +503,7 @@ class PyModel1D:
             :param       filonLength:   Filon积分的间隔
             :param       safilonTol:    自适应Filon积分采样精度
             :param       filonCut:      波数积分和Filon积分的分割点filonCut, k*=<filonCut>/rmax
+            :param    converg_method:   显式收敛的方法，可指定 "DCM", "PTAM" 和 "none", 默认当震源和场点深度差<=1km时自动使用峰谷平均法
             :param       calc_upar:     是否计算位移u的空间导数
             :param       statsfile:     波数k积分（包括Filon积分和峰谷平均法）的过程记录文件，常用于debug或者观察积分过程中 :math:`F(k,\omega)` 和  :math:`F(k,\omega)J_m(kr)k` 的变化    
 
@@ -511,6 +530,9 @@ class PyModel1D:
         if safilonTol > 0.0 and filonLength > 0.0:
             raise ValueError(f"You should only set one of filonLength and safilonTol.")
         
+        # 只能设置规定的收敛方法
+        if converg_method is not None and converg_method not in ['DCM', 'PTAM', 'none']:
+            raise ValueError(f'Wrong converg_method ({converg_method})')
 
         depsrc = self.depsrc
         deprcv = self.deprcv
@@ -531,16 +553,14 @@ class PyModel1D:
             for ix in range(nx):
                 rs[ix + iy*nx] = max(np.sqrt(xarr[ix]**2 + yarr[iy]**2), 1e-5)
         c_rs = npct.as_ctypes(rs)
-
-        # 参考最小速度
-        if vmin_ref == 0.0:
-            vmin_ref = max(self.vmin, 0.1)
-            if abs(depsrc - deprcv) <= 1.0:
-                vmin_ref = - abs(vmin_ref)  # 自动使用PTAM
         
         # 设置波数积分间隔
         if Length == 0.0:
             Length = 15.0
+
+        # 若不指定显式收敛方法，则根据情况自动使用PTAM
+        if converg_method is None and abs(depsrc - deprcv) <= 1.0:
+            converg_method = 'PTAM'
 
         # 积分状态文件
         c_statsfile = None 
@@ -555,7 +575,29 @@ class PyModel1D:
 
         if not calc_upar:
             c_pygrn_uiz = c_pygrn_uir = None
+        
 
+        KMET = c_K_INTEG_METHOD()
+
+        hs = max(abs(depsrc - deprcv), 1.0)
+        KMET.k0 = k0 * np.pi / hs
+        KMET.keps = keps if converg_method == 'none' else 0.0
+
+        # 最大震中距
+        rmax = np.max(rs)
+
+        KMET.kcut = filonCut / rmax
+        
+        KMET.dk = 2.0*np.pi / (Length * rmax)
+        
+        KMET.applyFIM = filonLength > 0.0
+        KMET.filondk = 2.0*np.pi / (filonLength * rmax) if filonLength > 0.0 else 0.0
+        
+        KMET.applySAFIM = safilonTol > 0.0
+        KMET.sa_tol = safilonTol
+
+        KMET.applyDCM = converg_method == 'DCM'
+        KMET.applyPTAM = converg_method == 'PTAM'
 
         # 运行C库函数
         #/////////////////////////////////////////////////////////////////////////////////
@@ -565,8 +607,8 @@ class PyModel1D:
         #     剪切源 DD[ZR],DS[ZRT],SS[ZRT]          1e-20 cm/(dyne*cm)
         #=================================================================================
         C_grt_integ_static_grn(
-            self.c_mod1d, nr, c_rs, vmin_ref, keps, k0, Length, filonLength, safilonTol, filonCut, 
-            c_pygrn, calc_upar, c_pygrn_uiz, c_pygrn_uir,
+            self.c_mod1d, nr, c_rs, pointer(KMET),
+            calc_upar, c_pygrn, c_pygrn_uiz, c_pygrn_uir,
             c_statsfile
         )
         #=================================================================================

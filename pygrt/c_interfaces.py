@@ -31,16 +31,10 @@ C_grt_integ_grn_spec = libgrt.grt_integ_grn_spec
 """C库中计算格林函数的主函数 integ_grn_spec, 详见C API同名函数"""
 C_grt_integ_grn_spec.argtypes = [
     POINTER(c_GRT_MODEL1D), c_size_t, c_size_t, PREAL,       
-    c_size_t, PREAL, REAL, c_bool,
-    REAL, REAL, REAL, REAL, REAL, REAL, REAL, REAL,
-    c_bool,
-
+    c_size_t, PREAL, REAL, c_bool, POINTER(c_K_INTEG_METHOD),
+    c_bool, c_bool,
     POINTER((PCPLX*CHANNEL_NUM)*SRC_M_NUM),
-
-    c_bool,
-    # uiz
     POINTER((PCPLX*CHANNEL_NUM)*SRC_M_NUM),
-    # uir
     POINTER((PCPLX*CHANNEL_NUM)*SRC_M_NUM),
 
     c_char_p,
@@ -53,10 +47,9 @@ C_grt_integ_static_grn = libgrt.grt_integ_static_grn
 """计算静态格林函数"""
 C_grt_integ_static_grn.restype = None
 C_grt_integ_static_grn.argtypes = [
-    POINTER(c_GRT_MODEL1D), c_size_t, PREAL, REAL, REAL, REAL, REAL, 
-    REAL, REAL, REAL, 
-    POINTER((REAL*CHANNEL_NUM)*SRC_M_NUM),
+    POINTER(c_GRT_MODEL1D), c_size_t, PREAL, POINTER(c_K_INTEG_METHOD),
     c_bool,
+    POINTER((REAL*CHANNEL_NUM)*SRC_M_NUM),
     POINTER((REAL*CHANNEL_NUM)*SRC_M_NUM),
     POINTER((REAL*CHANNEL_NUM)*SRC_M_NUM),
     c_char_p
