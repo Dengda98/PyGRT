@@ -23,8 +23,8 @@ stgrn = pymod.compute_grn(dist, nt, dt, Length=20)[0]
 
 stgrn = pymod.compute_grn(dist, nt, dt, k0=4, ampk=1.2, keps=1e-3, vmin_ref=1.5)[0]
 
-stgrn = pymod.compute_grn(2000, 1400, 1.0, Length=20, safilonTol=1e-3)[0]
-stgrn = pymod.compute_grn(2000, 1400, 1.0, Length=20, safilonTol=1e-3, keepAllFreq=True)[0]
+stgrn = pymod.compute_grn(2000, 1400, 1.0, safilonTol=1e-3)[0]
+stgrn = pymod.compute_grn(2000, 1400, 1.0, safilonTol=1e-3, keepAllFreq=True)[0]
 
 stgrn = pymod.compute_grn(dist, nt, dt, Length=20, statsfile="GRN_grtstats")[0]
 stgrn = pymod.compute_grn(dist, nt, dt, Length=20, statsfile="GRN_grtstats", statsidxs=[1,10,20])[0]
