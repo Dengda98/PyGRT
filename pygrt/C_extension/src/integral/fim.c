@@ -15,9 +15,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "grt/common/fim.h"
-#include "grt/common/integral.h"
-#include "grt/common/iostats.h"
+#include "grt/integral/fim.h"
+#include "grt/integral/k_integ.h"
+#include "grt/integral/iostats.h"
 #include "grt/common/const.h"
 #include "grt/common/model.h"
 
@@ -48,7 +48,7 @@ real_t grt_linear_filon_integ(
     ik = 0;
     while(true){
         
-        if(k > kmax && ik > 2) break;
+        if(k > kmax) break;
         k += dk; 
 
         // 计算核函数 F(k, w)

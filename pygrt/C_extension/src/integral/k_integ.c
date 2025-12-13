@@ -13,10 +13,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "grt/common/integral.h"
 #include "grt/common/const.h"
 #include "grt/common/bessel.h"
-#include "grt/common/quadratic.h"
+#include "grt/integral/quadratic.h"
+#include "grt/integral/k_integ.h"
 
 
 K_INTEG * grt_init_K_INTEG(const bool calc_upar, const size_t nr)

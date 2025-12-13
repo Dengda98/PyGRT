@@ -19,14 +19,9 @@
 #include <string.h>
 #include <sys/time.h>
 
-#include "grt/common/kernel.h"
 #include "grt/dynamic/grn.h"
-#include "grt/common/ptam.h"
-#include "grt/common/fim.h"
-#include "grt/common/safim.h"
-#include "grt/common/dwm.h"
-#include "grt/common/integral.h"
-#include "grt/common/iostats.h"
+#include "grt/integral/integ_method.h"
+
 #include "grt/common/const.h"
 #include "grt/common/model.h"
 #include "grt/common/prtdbg.h"
@@ -68,62 +63,23 @@ static void recordin_GRN(
 
 void grt_integ_grn_spec(
     GRT_MODEL1D *mod1d, size_t nf1, size_t nf2, real_t *freqs,  
-    size_t nr, real_t *rs, real_t wI, bool keepAllFreq,
-    real_t vmin_ref, real_t keps, real_t ampk, real_t k0, real_t Length, real_t filonLength, real_t safilonTol, real_t filonCut,      
-    bool print_progressbar, 
-
-    // 返回值，代表Z、R、T分量
+    size_t nr, real_t *rs, real_t wI, bool keepAllFreq, K_INTEG_METHOD *Kmet,    
+    bool print_progressbar, bool calc_upar,
     pt_cplxChnlGrid grn[nr],
-
-    bool calc_upar,
     pt_cplxChnlGrid grn_uiz[nr],
     pt_cplxChnlGrid grn_uir[nr],
 
     const char *statsstr, // 积分结果输出
     size_t  nstatsidxs, // 仅输出特定频点
-    size_t *statsidxs
-){
+    size_t *statsidxs)
+{
     // 程序运行开始时间
     struct timeval begin_t;
     gettimeofday(&begin_t, NULL);
 
-    // 最大震中距
-    size_t irmax = grt_findMax_real_t(rs, nr);
-    real_t rmax=rs[irmax];   
-
     const real_t Rho = mod1d->Rho[mod1d->isrc]; // 震源区密度
     const real_t fac = 1.0/(4.0*PI*Rho);
-    const real_t hs = GRT_MAX(fabs(mod1d->depsrc - mod1d->deprcv), GRT_MIN_DEPTH_GAP_SRC_RCV); // hs=max(震源和台站深度差,1.0)
-
-    // 乘相应系数
-    k0 *= PI/hs;
-    const real_t k02 = k0*k0;
-    const real_t ampk2 = ampk*ampk;
-
-    if(vmin_ref < 0.0)  keps = 0.0;  // 若使用峰谷平均法，则不使用keps进行收敛判断
-
-    bool useFIM = (filonLength > 0.0) || (safilonTol > 0.0) ;    // 是否使用Filon积分（包括自适应Filon）
-    const real_t dk=PI2/(Length*rmax);     // 波数积分间隔
-    const real_t filondk = (filonLength > 0.0) ? PI2/(filonLength*rmax) : 0.0;  // Filon积分间隔
-    const real_t filonK = filonCut/rmax;  // 波数积分和Filon积分的分割点
-
-
-    // PTAM的积分中间结果, 每个震中距两个文件，因为PTAM对不同震中距使用不同的dk
-    // 在文件名后加后缀，区分不同震中距
-    char **ptam_fstatsdir = (char**)calloc(nr, sizeof(char*));
-    if(statsstr!=NULL && nstatsidxs > 0 && vmin_ref < 0.0){
-        for(size_t ir=0; ir<nr; ++ir){
-            // 新建文件夹目录 
-            GRT_SAFE_ASPRINTF(&ptam_fstatsdir[ir], "%s/PTAM_%04zu_%.5e", statsstr, ir, rs[ir]);
-            if(mkdir(ptam_fstatsdir[ir], 0777) != 0){
-                if(errno != EEXIST){
-                    printf("Unable to create folder %s. Error code: %d\n", ptam_fstatsdir[ir], errno);
-                    exit(EXIT_FAILURE);
-                }
-            }
-        }
-    }
-
+    const real_t dk = Kmet->dk;
 
     // 进度条变量 
     int progress=0;
@@ -138,7 +94,6 @@ void grt_integ_grn_spec(
     // schedule语句可以动态调度任务，最大程度地使用计算资源
     #pragma omp parallel for schedule(guided) default(shared) 
     for(size_t iw=nf1; iw<=nf2; ++iw){
-        real_t k=0.0;               // 波数
         real_t w = freqs[iw]*PI2;     // 实频率
         cplx_t omega = w - wI*I; // 复数频率 omega = w - i*wI
 
@@ -159,19 +114,18 @@ void grt_integ_grn_spec(
             }
         }
 
-        cplx_t omega2_inv = 1.0/omega; // 1/omega^2
-        omega2_inv = omega2_inv*omega2_inv; 
-        cplx_t coef = -dk*fac*omega2_inv; // 最终要乘上的系数
-
-        // 局部变量，用于求和 sum F(ki,w)Jm(ki*r)ki 
-        K_INTEG *Kint = grt_init_K_INTEG(calc_upar, nr);
+        cplx_t coef = - dk*fac / GRT_SQUARE(omega); // 最终要乘上的系数
 
         GRT_MODEL1D *local_mod1d = NULL;
+        K_INTEG_METHOD *local_Kmet = NULL;
     #ifdef _OPENMP 
         // 定义局部模型对象
         local_mod1d = grt_copy_mod1d(mod1d);
+        K_INTEG_METHOD __KMET = *Kmet;  // 只需浅拷贝
+        local_Kmet = &__KMET;
     #else 
         local_mod1d = mod1d;
+        local_Kmet = Kmet;
     #endif
 
         // 将 omega 计入模型结构体
@@ -183,74 +137,22 @@ void grt_integ_grn_spec(
         bool needfstats = (statsstr!=NULL && (grt_findElement_size_t(statsidxs, nstatsidxs, iw) >= 0));
 
         // 为当前频率创建波数积分记录文件
-        FILE *fstats = NULL;
-        // PTAM为每个震中距都创建波数积分记录文件
-        FILE *(*ptam_fstatsnr)[2] = (FILE *(*)[2])malloc(nr * sizeof(*ptam_fstatsnr));
-        {
-            char *fname = NULL;
-            if(needfstats){
-                GRT_SAFE_ASPRINTF(&fname, "%s/K_%04zu_%.5e", statsstr, iw, freqs[iw]);
-                fstats = fopen(fname, "wb");
-            }
-            for(size_t ir=0; ir<nr; ++ir){
-                ptam_fstatsnr[ir][0] = ptam_fstatsnr[ir][1] = NULL;
-                if(needfstats && vmin_ref < 0.0){
-                    // 峰谷平均法
-                    GRT_SAFE_ASPRINTF(&fname, "%s/K_%04zu_%.5e", ptam_fstatsdir[ir], iw, freqs[iw]);
-                    ptam_fstatsnr[ir][0] = fopen(fname, "wb");
-                    GRT_SAFE_ASPRINTF(&fname, "%s/PTAM_%04zu_%.5e", ptam_fstatsdir[ir], iw, freqs[iw]);
-                    ptam_fstatsnr[ir][1] = fopen(fname, "wb");
-                }
-            }
-            GRT_SAFE_FREE_PTR(fname);
+        if(needfstats){
+            char *suffix = NULL;
+            GRT_SAFE_ASPRINTF(&suffix, "_%04zu_%.5e", iw, freqs[iw]);
+            grt_KMET_init_fstats(nr, rs, statsstr, suffix, local_Kmet);
+            GRT_SAFE_FREE_PTR(suffix);
         }
-
         
-
-
-        real_t kmax;
-        // vmin_ref的正负性在这里不影响
-        kmax = sqrt(k02 + ampk2*(w/vmin_ref)*(w/vmin_ref));
-
         // 计算核函数过程中是否有遇到除零错误
         freq_invstats[iw]=GRT_INVERSE_SUCCESS;
 
 
         // ===================================================================================
         //                          Wavenumber Integration
-        // 常规的波数积分
-        k = grt_discrete_integ(
-            local_mod1d, dk, (useFIM)? filonK : kmax, keps, nr, rs, 
-            Kint, fstats, grt_kernel);
-        if(local_mod1d->stats==GRT_INVERSE_FAILURE)  goto NEXT_FREQ;
-    
-        // 使用Filon积分
-        if(useFIM){
-            if(filondk > 0.0){
-                // 基于线性插值的Filon积分，固定采样间隔
-                k = grt_linear_filon_integ(
-                    local_mod1d, k, dk, filondk, kmax, keps, nr, rs, 
-                    Kint, fstats, grt_kernel);
-            }
-            else if(safilonTol > 0.0){
-                // 基于自适应采样的Filon积分
-                k = grt_sa_filon_integ(
-                    local_mod1d, k, dk, safilonTol, kmax, creal(omega)/fabs(vmin_ref)*ampk, nr, rs, 
-                    Kint, fstats, grt_kernel);
-            }
-            if(local_mod1d->stats==GRT_INVERSE_FAILURE)  goto NEXT_FREQ;
-        }
-
-        // k之后的部分使用峰谷平均法进行显式收敛，建议在浅源地震的时候使用   
-        if(vmin_ref < 0.0){
-            grt_PTA_method(
-                local_mod1d, k, dk, nr, rs, 
-                Kint, ptam_fstatsnr, grt_kernel);
-            if(local_mod1d->stats==GRT_INVERSE_FAILURE)  goto NEXT_FREQ;
-        }
-
-        // fprintf(stderr, "iw=%d, w=%.5e, k=%.5e, dk=%.5e, nk=%d\n", iw, w, k, dk, (int)(k/dk));
-        // fflush(stderr);
+        // 波数积分上限
+        local_Kmet->kmax = hypot(local_Kmet->k0, local_Kmet->ampk * w / local_Kmet->vmin);
+        K_INTEG *Kint = grt_wavenumber_integral(local_mod1d, nr, rs, local_Kmet, calc_upar, grt_kernel);
 
         // 记录到格林函数结构体内
         // 如果计算核函数过程中存在除零错误，则放弃该频率【通常在大震中距的低频段】
@@ -261,21 +163,9 @@ void grt_integ_grn_spec(
         }
         // ===================================================================================
 
-        // 如果有什么计算意外，从以上的波数积分部分跳至此处
-        NEXT_FREQ:
         freq_invstats[iw] = local_mod1d->stats;
 
-
-        if(fstats!=NULL) fclose(fstats);
-        for(size_t ir=0; ir<nr; ++ir){
-            if(ptam_fstatsnr[ir][0]!=NULL){
-                fclose(ptam_fstatsnr[ir][0]);
-            }
-            if(ptam_fstatsnr[ir][1]!=NULL){
-                fclose(ptam_fstatsnr[ir][1]);
-            }
-        }
-        GRT_SAFE_FREE_PTR(ptam_fstatsnr);
+        if(needfstats)  grt_KMET_destroy_fstats(nr, local_Kmet);
 
     #ifdef _OPENMP
         grt_free_mod1d(local_mod1d);
@@ -288,14 +178,10 @@ void grt_integ_grn_spec(
             if(print_progressbar) grt_printprogressBar("Computing Green Functions: ", progress*100/nf_valid);
         } 
         
-
         // Free allocated memory for temporary variables
         grt_free_K_INTEG(Kint);
 
     } // END omega loop
-
-
-    GRT_SAFE_FREE_PTR_ARRAY(ptam_fstatsdir, nr);
 
     // 打印 freq_invstats
     for(size_t iw=nf1; iw<=nf2; ++iw){

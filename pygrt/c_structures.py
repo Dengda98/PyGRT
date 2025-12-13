@@ -31,6 +31,7 @@ __all__ = [
     "PCPLX",
 
     "c_GRT_MODEL1D",
+    "c_K_INTEG_METHOD"
 ]
 
 
@@ -129,4 +130,34 @@ class c_GRT_MODEL1D(Structure):
         ('uiz_R_EVL', CPLX),
 
         ('src_coef', CPLX * SRC_M_NUM * QWV_NUM * 2)
+    ]
+
+
+class c_K_INTEG_METHOD(Structure):
+    """
+    和C结构体 K_INTEG_METHOD 作匹配
+    """
+
+    _fields_ = [
+        ('k0', REAL),
+        ('ampk', REAL),
+        ('keps', REAL),
+        ('vmin', REAL),
+
+        ('kcut', REAL),
+        ('kmax', REAL),
+
+        ('dk', REAL),
+
+        ('applyFIM', c_bool),
+        ('filondk', REAL),
+        
+        ('applySAFIM', c_bool),
+        ('sa_tol', REAL),
+
+        ('applyDCM', c_bool),
+        ('applyPTAM', c_bool),
+
+        ('fstats', c_void_p),
+        ('ptam_fstatsnr', c_void_p),
     ]

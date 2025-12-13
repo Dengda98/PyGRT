@@ -11,7 +11,7 @@ fname="run.sh"
 for path in $(find -type f -name "$fname"); do
     cd $(dirname $path)
     chmod +x $fname
-    echo "--------------------------- $fname -----------------------------"
+    echo "--------------------------- $path -----------------------------"
     bash $fname 
     cd -
 done

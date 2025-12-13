@@ -12,7 +12,7 @@
 
 #include <stdio.h>
 
-#include "grt/common/quadratic.h"
+#include "grt/integral/quadratic.h"
 #include "grt/common/const.h"
 
 

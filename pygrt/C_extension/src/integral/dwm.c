@@ -16,10 +16,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "grt/common/dwm.h"
-#include "grt/common/kernel.h"
-#include "grt/common/integral.h"
-#include "grt/common/iostats.h"
+#include "grt/integral/dwm.h"
+#include "grt/integral/kernel.h"
+#include "grt/integral/k_integ.h"
+#include "grt/integral/iostats.h"
 #include "grt/common/model.h"
 #include "grt/common/const.h"
 
@@ -28,6 +28,8 @@ real_t grt_discrete_integ(
     GRT_MODEL1D *mod1d, real_t dk, real_t kmax, real_t keps,
     size_t nr, real_t *rs, K_INTEG *K, FILE *fstats, GRT_KernelFunc kerfunc)
 {
+    if(kmax == 0.0)  return 0.0;
+
     // 不同震源不同阶数的核函数 F(k, w) 
     cplxChnlGrid QWV = {0};
     cplxChnlGrid QWV_uiz = {0};
@@ -45,7 +47,7 @@ real_t grt_discrete_integ(
     // 波数k循环 (5.9.2)
     while(true){
         
-        if(k > kmax && ik > 2)  break;
+        if(k > kmax)  break;
         k += dk; 
 
         // 计算核函数 F(k, w)

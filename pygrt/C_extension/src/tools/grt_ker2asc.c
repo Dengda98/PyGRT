@@ -9,7 +9,7 @@
  */
 
 #include "grt/common/const.h"
-#include "grt/common/iostats.h"
+#include "grt/integral/iostats.h"
 #include "grt/common/util.h"
 
 #include "grt.h"
