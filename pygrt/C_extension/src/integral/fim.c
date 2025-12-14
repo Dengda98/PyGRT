@@ -24,18 +24,22 @@
 
 
 real_t grt_linear_filon_integ(
-    GRT_MODEL1D *mod1d, real_t k0, real_t dk0, real_t dk, real_t kmax, real_t keps,
+    GRT_MODEL1D *mod1d, real_t k0, real_t dk0, real_t dk, real_t kmax, real_t keps, bool applyDCM,
     size_t nr, real_t *rs, K_INTEG *K0, FILE *fstats, GRT_KernelFunc kerfunc)
 {   
+    if(k0 + dk0 >= kmax)  return k0;
+    
     // 从0开始，存储第二部分Filon积分的结果
     K_INTEG *K = grt_init_K_INTEG(K0->calc_upar, nr);
 
     // 不同震源不同阶数的核函数 F(k, w) 
     cplxChnlGrid QWV = {0};
-    cplxChnlGrid QWV_uiz = {0};
+    cplxChnlGrid QWVz = {0};
+
+    cplxChnlGrid QWV_kmax = {0};
+    cplxChnlGrid QWVz_kmax = {0};
 
     real_t k=k0; 
-    size_t ik=0;
     
     // 所有震中距的k循环是否结束
     bool iendk = true;
@@ -44,16 +48,27 @@ real_t grt_linear_filon_integ(
     bool *iendkrs = (bool *)calloc(nr, sizeof(bool)); // 自动初始化为 false
     bool iendk0 = false;
 
+    size_t nk = floor((kmax - k0) / dk) + 1L;
+
+    if(applyDCM){
+        kerfunc(mod1d, nk*dk, QWV_kmax, K->calc_upar, QWVz_kmax); 
+    }
+
     // k循环 
-    ik = 0;
-    while(true){
+    for(size_t ik = 0; ik < nk; ++ik){
         
-        if(k > kmax) break;
         k += dk; 
 
         // 计算核函数 F(k, w)
-        kerfunc(mod1d, k, QWV, K->calc_upar, QWV_uiz); 
+        kerfunc(mod1d, k, QWV, K->calc_upar, QWVz); 
         if(mod1d->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
+
+        if(applyDCM){
+            GRT_LOOP_ChnlGrid(im, c){
+                QWV[im][c] -= QWV_kmax[im][c];
+                if(K->calc_upar) QWVz[im][c] -= QWVz_kmax[im][c];
+            }
+        }
 
         // 记录积分结果
         if(fstats!=NULL)  grt_write_stats(fstats, k, QWV);
@@ -92,7 +107,7 @@ real_t grt_linear_filon_integ(
             if(K->calc_upar){
                 // ------------------------------- ui_z -----------------------------------
                 // 计算被积函数一项 F(k,w)Jm(kr)k
-                grt_int_Pk_filon(k, rs[ir], true, QWV_uiz, false, K->SUM);
+                grt_int_Pk_filon(k, rs[ir], true, QWVz, false, K->SUM);
                 
                 // keps不参与计算位移空间导数的积分，背后逻辑认为u收敛，则uiz也收敛
                 GRT_LOOP_IntegGrid(im, v){
@@ -112,7 +127,6 @@ real_t grt_linear_filon_integ(
             
         }  // end rs loop 
         
-        ++ik;
         // 所有震中距的格林函数都已收敛
         if(iendk) break;
 
@@ -154,8 +168,15 @@ real_t grt_linear_filon_integ(
         }
 
         // 计算核函数 F(k, w)
-        kerfunc(mod1d, k0N, QWV, K->calc_upar, QWV_uiz);
+        kerfunc(mod1d, k0N, QWV, K->calc_upar, QWVz);
         if(mod1d->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN; 
+
+        if(applyDCM){
+            GRT_LOOP_ChnlGrid(im, c){
+                QWV[im][c] -= QWV_kmax[im][c];
+                if(K->calc_upar) QWVz[im][c] -= QWVz_kmax[im][c];
+            }
+        }
 
         for(size_t ir=0; ir<nr; ++ir){
             // Gc
@@ -178,10 +199,10 @@ real_t grt_linear_filon_integ(
                 // ------------------------------- ui_z -----------------------------------
                 // 计算被积函数一项 F(k,w)Jm(kr)k
                 // Gc
-                grt_int_Pk_filon(k0N, rs[ir], true, QWV_uiz, false, SUM_Gc[iik]);
+                grt_int_Pk_filon(k0N, rs[ir], true, QWVz, false, SUM_Gc[iik]);
                 
                 // Gs
-                grt_int_Pk_filon(k0N, rs[ir], false, QWV_uiz, false, SUM_Gs[iik]);
+                grt_int_Pk_filon(k0N, rs[ir], false, QWVz, false, SUM_Gs[iik]);
 
                 GRT_LOOP_IntegGrid(im, v){
                     K->sumJz[ir][im][v] += (- tmpc*SUM_Gc[iik][im][v] + tmps*SUM_Gs[iik][im][v] - sgn*SUM_Gs[iik][im][v]/rs[ir]);

@@ -28,6 +28,7 @@
  * @param[in]     dk            波数积分间隔
  * @param[in]     kmax          波数积分的上限
  * @param[in]     keps          波数积分的收敛条件，要求在某震中距下所有格林函数都收敛，为负数代表不提前判断收敛，按照波数积分上限进行积分
+ * @param[in]     applyDCM      使用 DCM
  * @param[in]     nr            震中距数量
  * @param[in]     rs            震中距数组
  * 
@@ -39,5 +40,5 @@
  * @return  k        积分截至时的波数
  */
 real_t grt_discrete_integ(
-    GRT_MODEL1D *mod1d, real_t dk, real_t kmax, real_t keps,
+    GRT_MODEL1D *mod1d, real_t dk, real_t kmax, real_t keps, bool applyDCM,
     size_t nr, real_t *rs, K_INTEG *K, FILE *fstats, GRT_KernelFunc kerfunc);

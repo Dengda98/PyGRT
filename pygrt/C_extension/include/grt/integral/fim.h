@@ -34,6 +34,7 @@
  * @param[in]      filondk       filon积分间隔
  * @param[in]      kmax          波数积分的上限
  * @param[in]      keps          波数积分的收敛条件，要求在某震中距下所有格林函数都收敛
+ * @param[in]      applyDCM      使用 DCM
  * @param[in]      nr            震中距数量
  * @param[in]      rs            震中距数组
  *
@@ -45,7 +46,7 @@
  * @return  k        积分截至时的波数
  */
 real_t grt_linear_filon_integ(
-    GRT_MODEL1D *mod1d, real_t k0, real_t dk0, real_t dk, real_t kmax, real_t keps,
+    GRT_MODEL1D *mod1d, real_t k0, real_t dk0, real_t dk, real_t kmax, real_t keps, bool applyDCM,
     size_t nr, real_t *rs, K_INTEG *K0, FILE *fstats, GRT_KernelFunc kerfunc);
 
 

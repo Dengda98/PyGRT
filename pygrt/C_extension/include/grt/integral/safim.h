@@ -36,6 +36,7 @@
  * @param[in]      tol           自适应Filon积分的采样精度
  * @param[in]      kmax          波数积分的上限
  * @param[in]      kref          将k区间整体分为[dk0, kref]和[kref, kmax]，后一段使用更宽松的拟合规则
+ * @param[in]      applyDCM      使用 DCM
  * @param[in]      nr            震中距数量
  * @param[in]      rs            震中距数组
  *
@@ -47,7 +48,7 @@
  * @return  k        积分截至时的波数
  */
 real_t grt_sa_filon_integ(
-    GRT_MODEL1D *mod1d, real_t k0, real_t dk0, real_t tol, real_t kmax, real_t kref, 
+    GRT_MODEL1D *mod1d, real_t k0, real_t dk0, real_t tol, real_t kmax, real_t kref, bool applyDCM,
     size_t nr, real_t *rs, K_INTEG *K0, FILE *fstats, GRT_KernelFunc kerfunc);
 
 

@@ -25,17 +25,19 @@
 
 
 real_t grt_discrete_integ(
-    GRT_MODEL1D *mod1d, real_t dk, real_t kmax, real_t keps,
+    GRT_MODEL1D *mod1d, real_t dk, real_t kmax, real_t keps, bool applyDCM,
     size_t nr, real_t *rs, K_INTEG *K, FILE *fstats, GRT_KernelFunc kerfunc)
 {
     if(kmax == 0.0)  return 0.0;
 
     // 不同震源不同阶数的核函数 F(k, w) 
     cplxChnlGrid QWV = {0};
-    cplxChnlGrid QWV_uiz = {0};
+    cplxChnlGrid QWVz = {0};
+
+    cplxChnlGrid QWV_kmax = {0};
+    cplxChnlGrid QWVz_kmax = {0};
     
     real_t k = 0.0;
-    size_t ik = 0;
 
     // 所有震中距的k循环是否结束
     bool iendk = true;
@@ -44,16 +46,28 @@ real_t grt_discrete_integ(
     bool *iendkrs = (bool *)calloc(nr, sizeof(bool)); // 自动初始化为 false
     bool iendk0 = false;
 
+    size_t nk = floor(kmax / dk) + 1L;
+
+    if(applyDCM){
+        kerfunc(mod1d, nk*dk, QWV_kmax, K->calc_upar, QWVz_kmax); 
+    }
+
     // 波数k循环 (5.9.2)
-    while(true){
+    for(size_t ik = 0; ik < nk; ++ik){
         
-        if(k > kmax)  break;
         k += dk; 
 
         // 计算核函数 F(k, w)
-        kerfunc(mod1d, k, QWV, K->calc_upar, QWV_uiz); 
+        kerfunc(mod1d, k, QWV, K->calc_upar, QWVz); 
         if(mod1d->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
-        
+
+        if(applyDCM){
+            GRT_LOOP_ChnlGrid(im, c){
+                QWV[im][c] -= QWV_kmax[im][c];
+                if(K->calc_upar) QWVz[im][c] -= QWVz_kmax[im][c];
+            }
+        }
+
         // 记录积分核函数
         if(fstats!=NULL)  grt_write_stats(fstats, k, QWV);
 
@@ -91,7 +105,7 @@ real_t grt_discrete_integ(
             if(K->calc_upar){
                 // ------------------------------- ui_z -----------------------------------
                 // 计算被积函数一项 F(k,w)Jm(kr)k
-                grt_int_Pk(k, rs[ir], QWV_uiz, false, K->SUM);
+                grt_int_Pk(k, rs[ir], QWVz, false, K->SUM);
                 
                 // keps不参与计算位移空间导数的积分，背后逻辑认为u收敛，则uiz也收敛
                 GRT_LOOP_IntegGrid(im, v){
@@ -109,8 +123,6 @@ real_t grt_discrete_integ(
             } // END if calc_upar
 
         } // END rs loop
-
-        ++ik;
 
         // 所有震中距的格林函数都已收敛
         if(iendk) break;
