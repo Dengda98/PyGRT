@@ -284,7 +284,7 @@ void grt_PTA_method(
             if(mod1d->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
             // 记录核函数
-            if(ptam_fstatsnr != NULL)  grt_write_stats(ptam_fstatsnr[ir][0], k, QWV);
+            if(ptam_fstatsnr != NULL)  grt_write_stats(ptam_fstatsnr[ir][0], k, (K->calc_upar)? QWV_uiz : QWV);
 
             // 计算被积函数一项 F(k,w)Jm(kr)k
             grt_int_Pk(k, rs[ir], QWV, false, SUM3[ir][GRT_PTAM_WINDOW_SIZE-1]);  // [GRT_PTAM_WINDOW_SIZE-1]表示把新点值放在最后
@@ -315,7 +315,7 @@ void grt_PTA_method(
     // 做缩减序列，赋值最终解
     for(size_t ir=0; ir<nr; ++ir){
         // 记录到文件
-        if(ptam_fstatsnr != NULL)  grt_write_stats_ptam(ptam_fstatsnr[ir][1], Kpt[ir], Fpt[ir]);
+        if(ptam_fstatsnr != NULL)  grt_write_stats_ptam(ptam_fstatsnr[ir][1], Kpt[ir], (K->calc_upar)? Fpt_uiz[ir] : Fpt[ir]);
 
         GRT_LOOP_IntegGrid(im, v){
             _cplx_shrink(Ipt[ir][im][v], ir, im, v, Fpt);  
