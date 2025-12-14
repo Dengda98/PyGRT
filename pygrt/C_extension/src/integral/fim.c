@@ -71,7 +71,7 @@ real_t grt_linear_filon_integ(
         }
 
         // 记录积分结果
-        if(fstats!=NULL)  grt_write_stats(fstats, k, QWV);
+        if(fstats!=NULL)  grt_write_stats(fstats, k, (K->calc_upar)? QWV_uiz : QWV);
 
         // 震中距rs循环
         iendk = true;

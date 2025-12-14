@@ -330,7 +330,7 @@ real_t grt_sa_filon_integ(
     real_t maxabsQWV_uiz[GRT_GTYPES_MAX]={0};
 
     // 记录第一个值
-    if(fstats!=NULL)  grt_write_stats(fstats, Kitv.k3[0], Kitv.F3[0]);
+    if(fstats!=NULL)  grt_write_stats(fstats, Kitv.k3[0], (K->calc_upar)? Kitv.F3_uiz[0] : Kitv.F3[0]);
 
     // 自适应采样
     while(stack.size > 0) {
@@ -410,10 +410,10 @@ real_t grt_sa_filon_integ(
             // 记录后四个采样值
             if(fstats!=NULL){
                 for(int i=1; i<3; ++i){
-                    grt_write_stats(fstats, Kitv_left.k3[i], Kitv_left.F3[i]);
+                    grt_write_stats(fstats, Kitv_left.k3[i], (K->calc_upar)? Kitv_left.F3_uiz[i] : Kitv_left.F3[i]);
                 }
                 for(int i=1; i<3; ++i){
-                    grt_write_stats(fstats, Kitv_right.k3[i], Kitv_right.F3[i]);
+                    grt_write_stats(fstats, Kitv_right.k3[i], (K->calc_upar)? Kitv_right.F3_uiz[i] : Kitv_right.F3[i]);
                 }
             }
             // 计算积分
