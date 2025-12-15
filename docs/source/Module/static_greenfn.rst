@@ -67,7 +67,7 @@ static_greenfn
 
     + **+k**\ *k0* - 控制零频的积分上限 [5.0]，其中深度差 :math:`\Delta h = \max(|z_s - z_r|, 1.0)` 。
     + **+e**\ *keps* - 用于判断提前结束波数积分的收敛精度[0.0, 默认不使用]，详见
-      Yao and Harkrider (1983) 和 :doc:`/Advanced/k_integ` 。
+      Yao and Harkrider (1983) 和 :doc:`/Advanced/k_integ/kmax` 。
     + **+v**\ *vmin* - 参考最小速度，默认 :math:`\max{(\min\limits_{i} (\alpha_i \cup \beta_i), 0.1)}` 。 
      
       + 只要设置了 *vmin* ，不论正负， 是否启用快速收敛算法不再受 :math:`\Delta h` 控制 （见 |-D| ），

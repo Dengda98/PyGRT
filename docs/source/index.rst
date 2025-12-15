@@ -22,7 +22,9 @@
 
    .. grid-item-card::  PyGRT 进阶
 
-      - :doc:`Advanced/index`
+      - :doc:`Advanced/k_integ/index`
+      - :doc:`Advanced/integ_converg/index`
+      - :doc:`Advanced/kernel/kernel`
       - :doc:`Formula/index`
       - :doc:`Module/index`
    
@@ -52,7 +54,9 @@
    :hidden:
    :maxdepth: 1
 
-   Advanced/index 
+   Advanced/k_integ/index
+   Advanced/integ_converg/index
+   Advanced/kernel/kernel
    Formula/index
    Module/index
 
