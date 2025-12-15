@@ -67,7 +67,7 @@ greenfn
 
     + **+a** - 计算所有频点，不论频率多低。除非做数值实验，否则不建议使用该选项。
       默认情况下，程序会跳过非常低频的几个点以避免引入误差，
-      详见 :doc:`/Advanced/waveform_drift/waveform_drift` 的介绍。
+      详见 :doc:`/Advanced/k_integ/drift/waveform_drift` 的介绍。
 
     当时窗长度 nt\*dt 太小“包不住”有效信号，或时窗长度足够但时延(|-E|)不合适，输出的波形会发生混叠，
     此时需调整 |-N| 和 |-E| 。
@@ -100,7 +100,7 @@ greenfn
     + **+k**\ *k0* - 控制零频的积分上限 [5.0]，其中深度差 :math:`\Delta h = \max(|z_s - z_r|, 1.0)` 。
     + **+s**\ *ampk* - 放大倍数 [1.15] 。
     + **+e**\ *keps* - 用于判断提前结束波数积分的收敛精度[0.0, 默认不使用]，详见
-      Yao and Harkrider (1983) 和 :doc:`/Advanced/k_integ` 。
+      Yao and Harkrider (1983) 和 :doc:`/Advanced/k_integ/kmax` 。
     + **+v**\ *vmin* - 参考最小速度，默认 :math:`\max{(\min\limits_{i} (\alpha_i \cup \beta_i), 0.1)}` 。  
       
       + 只要设置了 *vmin* ，不论正负， 是否启用快速收敛算法不再受 :math:`\Delta h` 控制 （见 |-D| ），
