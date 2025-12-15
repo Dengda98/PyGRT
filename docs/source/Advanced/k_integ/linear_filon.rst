@@ -6,7 +6,8 @@
 
 .. warning:: 
 
-    谨慎使用固定间隔的Filon积分法，除非你很清楚原理以及误差来源。推荐使用 :doc:`/Advanced/filon/self_adaptive_filon` 以减少固定积分间隔的影响。 
+    谨慎使用固定间隔的Filon积分法，除非你很清楚原理以及误差来源。
+    推荐使用 :doc:`safim/self_adaptive_filon` 以减少固定积分间隔的影响。 
 
 
 以下介绍程序中使用的 **基于两点线性插值的Filon积分** :ref:`(纪晨, 姚振兴, 1995) <jichen_1995>`  :ref:`(初稿) <yao_init_manuscripts>` ，主要介绍思路，具体公式推导详见对应论文。
@@ -23,7 +24,7 @@
 
     P_m(\omega,r) = \int_0^{k^*} F_m(k, \omega)J_m(kr)kdk + \int_{k^*}^{k_{\text{max}}} F_m(k, \omega)J_m(kr)kdk 
 
-其中积分第一部分仍然使用离散波数积分求解 （见 :doc:`/Advanced/k_integ` 部分），积分第二部分将Bessel函数取渐近表达式，可将其转为以下形式
+其中积分第一部分仍然使用离散波数积分求解 （见 :doc:`kmax` 部分），积分第二部分将Bessel函数取渐近表达式，可将其转为以下形式
 
 .. math:: 
 
@@ -62,9 +63,11 @@
          
     .. group-tab:: Python
 
-        :func:`compute_grn() <pygrt.pymod.PyModel1D.compute_grn>` 函数和 :func:`compute_static_grn() <pygrt.pymod.PyModel1D.compute_static_grn>` 函数支持以下可选参数来使用Filon积分，具体说明详见API。
+        :func:`compute_grn() <pygrt.pymod.PyModel1D.compute_grn>` 函数和 
+        :func:`compute_static_grn() <pygrt.pymod.PyModel1D.compute_static_grn>` 
+        函数支持以下可选参数来使用Filon积分，具体说明详见API。
 
-        + ``Length:float``  定义离散波数积分的积分间隔 （见 :doc:`/Advanced/k_integ` 部分）
+        + ``Length:float``  定义离散波数积分的积分间隔 （见 :doc:`kmax` 部分）
         + ``filonLength:float`` 定义Filon积分间隔，公式和离散波数积分使用的一致。
         + ``filonCut:float`` 定义了两个积分的分割点， :math:`k^*=` ``<filonCut>`` :math:`/r_{\text{max}}`
 
