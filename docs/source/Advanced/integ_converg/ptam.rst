@@ -58,7 +58,7 @@
 
     输出的文件如下，
 
-    .. literalinclude:: rrun_ptamun/ptam_stats_head
+    .. literalinclude:: run_ptam/ptam_stats_head
         :language: text
 
     记录了不同震源、不同积分类型的峰谷位置。
