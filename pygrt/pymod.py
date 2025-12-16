@@ -178,7 +178,7 @@ class PyModel1D:
             :param    zeta:          定义虚频率的系数 :math:`\zeta` ， 虚频率 :math:`\tilde{\omega} = \omega - j*w_I, w_I = \zeta*\pi/T, T=nt*dt` , T为时窗长度。
                                      使用离散波数积分时为了避开附加源以及奇点的影响， :ref:`(Bouchon, 1981) <bouchon_1981>`  在频率上添加微小虚部，
                                      更多测试见 :ref:`(张海明, 2021) <zhang_book_2021>`
-            :param    keepAllFreq    计算所有频点，不论频率多低
+            :param    keepAllFreq:   计算所有频点，不论频率多低
             :param    vmin_ref:      最小参考速度，默认vmin=max(minimum velocity, 0.1)，用于定义波数积分上限
             :param    keps:          波数k积分收敛条件，见 :ref:`(Yao and Harkrider, 1983) <yao&harkrider_1983>`  :ref:`(初稿) <yao_init_manuscripts>`，
                                      为负数代表不提前判断收敛，按照波数积分上限进行积分
