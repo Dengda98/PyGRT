@@ -17,6 +17,7 @@
 #include <stdio.h> 
 #include <complex.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "grt/integral/ptam.h"
 #include "grt/integral/quadratic.h"
@@ -212,19 +213,13 @@ static void _cplx_shrink(size_t n1, size_t ir,  int im, int v, cplxIntegGrid (*F
 
 void grt_PTA_method(
     GRT_MODEL1D *mod1d, real_t k0, real_t predk,
-    size_t nr, real_t *rs, K_INTEG *K0, FILE *ptam_fstatsnr[nr][2], GRT_KernelFunc kerfunc)
+    size_t nr, real_t *rs, K_INTEG *K, FILE *ptam_fstatsnr[nr][2], GRT_KernelFunc kerfunc)
 {   
     // 需要兼容对正常收敛而不具有规律波峰波谷的序列
     // 有时序列收敛比较好，不表现为规律的波峰波谷，
     // 此时设置最大等待次数，超过直接设置为中间值
 
-    K_INTEG *K = grt_copy_K_INTEG(K0);
-
     real_t k=0.0;
-
-    // 不同震源不同阶数的核函数 F(k, w) 
-    cplxChnlGrid QWV = {0};
-    cplxChnlGrid QWV_uiz = {0};
 
     // 使用宏函数，方便定义
     #define __CALLOC_ARRAY(VAR, TYP, __ARR) \
@@ -280,14 +275,14 @@ void grt_PTA_method(
             k += dk;
 
             // 计算核函数 F(k, w)
-            kerfunc(mod1d, k, QWV, K->calc_upar, QWV_uiz); 
+            kerfunc(mod1d, k, K->QWV, K->calc_upar, K->QWVz); 
             if(mod1d->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
             // 记录核函数
-            if(ptam_fstatsnr != NULL)  grt_write_stats(ptam_fstatsnr[ir][0], k, (K->calc_upar)? QWV_uiz : QWV);
+            if(ptam_fstatsnr != NULL)  grt_write_stats(ptam_fstatsnr[ir][0], k, (K->calc_upar)? K->QWVz : K->QWV);
 
             // 计算被积函数一项 F(k,w)Jm(kr)k
-            grt_int_Pk(k, rs[ir], QWV, false, SUM3[ir][GRT_PTAM_WINDOW_SIZE-1]);  // [GRT_PTAM_WINDOW_SIZE-1]表示把新点值放在最后
+            grt_int_Pk(k, rs[ir], K->QWV, false, SUM3[ir][GRT_PTAM_WINDOW_SIZE-1]);  // [GRT_PTAM_WINDOW_SIZE-1]表示把新点值放在最后
             // 判断和记录波峰波谷
             ptam_once(ir, nr, precoef, k, dk, SUM3, K->sumJ, Kpt, Fpt, Ipt, Gpt, &iendk0);
             
@@ -295,13 +290,13 @@ void grt_PTA_method(
             if(K->calc_upar){
                 // ------------------------------- ui_z -----------------------------------
                 // 计算被积函数一项 F(k,w)Jm(kr)k
-                grt_int_Pk(k, rs[ir], QWV_uiz, false, SUM3_uiz[ir][GRT_PTAM_WINDOW_SIZE-1]);  // [GRT_PTAM_WINDOW_SIZE-1]表示把新点值放在最后
+                grt_int_Pk(k, rs[ir], K->QWVz, false, SUM3_uiz[ir][GRT_PTAM_WINDOW_SIZE-1]);  // [GRT_PTAM_WINDOW_SIZE-1]表示把新点值放在最后
                 // 判断和记录波峰波谷
                 ptam_once(ir, nr, precoef, k, dk, SUM3_uiz, K->sumJz, Kpt_uiz, Fpt_uiz, Ipt_uiz, Gpt_uiz, &iendk0);
 
                 // ------------------------------- ui_r -----------------------------------
                 // 计算被积函数一项 F(k,w)Jm(kr)k
-                grt_int_Pk(k, rs[ir], QWV, true, SUM3_uir[ir][GRT_PTAM_WINDOW_SIZE-1]);  // [GRT_PTAM_WINDOW_SIZE-1]表示把新点值放在最后
+                grt_int_Pk(k, rs[ir], K->QWV, true, SUM3_uir[ir][GRT_PTAM_WINDOW_SIZE-1]);  // [GRT_PTAM_WINDOW_SIZE-1]表示把新点值放在最后
                 // 判断和记录波峰波谷
                 ptam_once(ir, nr, precoef, k, dk, SUM3_uir, K->sumJr, Kpt_uir, Fpt_uir, Ipt_uir, Gpt_uir, &iendk0);
             
@@ -319,21 +314,19 @@ void grt_PTA_method(
 
         GRT_LOOP_IntegGrid(im, v){
             _cplx_shrink(Ipt[ir][im][v], ir, im, v, Fpt);  
-            K0->sumJ[ir][im][v] = Fpt[ir][0][im][v];
+            K->sumJ[ir][im][v] = Fpt[ir][0][im][v];
 
             if(K->calc_upar){
                 _cplx_shrink(Ipt_uiz[ir][im][v], ir, im, v, Fpt_uiz);  
-                K0->sumJz[ir][im][v] = Fpt_uiz[ir][0][im][v];
+                K->sumJz[ir][im][v] = Fpt_uiz[ir][0][im][v];
             
                 _cplx_shrink(Ipt_uir[ir][im][v], ir, im, v, Fpt_uir);  
-                K0->sumJr[ir][im][v] = Fpt_uir[ir][0][im][v];
+                K->sumJr[ir][im][v] = Fpt_uir[ir][0][im][v];
             }
         }
     }
 
     BEFORE_RETURN:
-
-    grt_free_K_INTEG(K);
 
     #define __FREE_ALL_ARRAY \
         X(SUM3)    X(SUM3_uiz)    X(SUM3_uir) \

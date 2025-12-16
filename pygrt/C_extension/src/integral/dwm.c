@@ -25,17 +25,10 @@
 
 
 real_t grt_discrete_integ(
-    GRT_MODEL1D *mod1d, real_t dk, real_t kmax, real_t keps, bool applyDCM,
+    GRT_MODEL1D *mod1d, real_t dk, real_t kmax, real_t keps,
     size_t nr, real_t *rs, K_INTEG *K, FILE *fstats, GRT_KernelFunc kerfunc)
 {
     if(kmax == 0.0)  return 0.0;
-
-    // 不同震源不同阶数的核函数 F(k, w) 
-    cplxChnlGrid QWV = {0};
-    cplxChnlGrid QWVz = {0};
-
-    cplxChnlGrid QWV_kmax = {0};
-    cplxChnlGrid QWVz_kmax = {0};
     
     real_t k = 0.0;
 
@@ -48,28 +41,24 @@ real_t grt_discrete_integ(
 
     size_t nk = floor(kmax / dk) + 1L;
 
-    if(applyDCM){
-        kerfunc(mod1d, nk*dk, QWV_kmax, K->calc_upar, QWVz_kmax); 
-    }
-
     // 波数k循环 (5.9.2)
     for(size_t ik = 0; ik < nk; ++ik){
         
         k += dk; 
 
         // 计算核函数 F(k, w)
-        kerfunc(mod1d, k, QWV, K->calc_upar, QWVz); 
+        kerfunc(mod1d, k, K->QWV, K->calc_upar, K->QWVz); 
         if(mod1d->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
-        if(applyDCM){
+        if(K->applyDCM){
             GRT_LOOP_ChnlGrid(im, c){
-                QWV[im][c] -= QWV_kmax[im][c];
-                if(K->calc_upar) QWVz[im][c] -= QWVz_kmax[im][c];
+                K->QWV[im][c] -= K->QWV_kmax[im][c];
+                if(K->calc_upar) K->QWVz[im][c] -= K->QWVz_kmax[im][c];
             }
         }
 
         // 记录积分核函数
-        if(fstats!=NULL)  grt_write_stats(fstats, k, (K->calc_upar)? QWV_uiz : QWV);
+        if(fstats!=NULL)  grt_write_stats(fstats, k, (K->calc_upar)? K->QWVz : K->QWV);
 
         // 震中距rs循环
         iendk = true;
@@ -79,7 +68,7 @@ real_t grt_discrete_integ(
             memset(K->SUM, 0, sizeof(cplxIntegGrid));
             
             // 计算被积函数一项 F(k,w)Jm(kr)k
-            grt_int_Pk(k, rs[ir], QWV, false, K->SUM);
+            grt_int_Pk(k, rs[ir], K->QWV, false, K->SUM);
             
             iendk0 = true;
 
@@ -105,7 +94,7 @@ real_t grt_discrete_integ(
             if(K->calc_upar){
                 // ------------------------------- ui_z -----------------------------------
                 // 计算被积函数一项 F(k,w)Jm(kr)k
-                grt_int_Pk(k, rs[ir], QWVz, false, K->SUM);
+                grt_int_Pk(k, rs[ir], K->QWVz, false, K->SUM);
                 
                 // keps不参与计算位移空间导数的积分，背后逻辑认为u收敛，则uiz也收敛
                 GRT_LOOP_IntegGrid(im, v){
@@ -114,7 +103,7 @@ real_t grt_discrete_integ(
 
                 // ------------------------------- ui_r -----------------------------------
                 // 计算被积函数一项 F(k,w)Jm(kr)k
-                grt_int_Pk(k, rs[ir], QWV, true, K->SUM);
+                grt_int_Pk(k, rs[ir], K->QWV, true, K->SUM);
                 
                 // keps不参与计算位移空间导数的积分，背后逻辑认为u收敛，则uiz也收敛
                 GRT_LOOP_IntegGrid(im, v){

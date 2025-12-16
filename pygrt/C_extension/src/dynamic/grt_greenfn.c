@@ -95,10 +95,14 @@ typedef struct {
             bool active;
             real_t tol;
         } SAFIM;
+    } L;
+    /** 波数积分收敛方法 */
+    struct {
+        bool active;
         bool applyDCM;
         bool applyPTAM;
         bool applyNoConverg;
-    } L;
+    } C;
     /** 波数积分上限 */
     struct {
         bool active;
@@ -208,8 +212,8 @@ static void print_Ctrl(const GRT_MODULE_CTRL *Ctrl){
     printf(format_real, "kcut",   Ctrl->L.kcut);
     printf(format_real, "filonLength",   Ctrl->L.FIM.Length);
     printf(format_real, "safilonTol",   Ctrl->L.SAFIM.tol);
-    printf(format, "applyDCM", (Ctrl->L.applyDCM)? "true" : "false");
-    printf(format, "applyPTAM", (Ctrl->L.applyPTAM)? "true" : "false");
+    printf(format, "applyDCM", (Ctrl->C.applyDCM)? "true" : "false");
+    printf(format, "applyPTAM", (Ctrl->C.applyPTAM)? "true" : "false");
 
     printf(format_size, "nt", Ctrl->N.nt);
     printf(format_real, "dt", Ctrl->N.dt);
@@ -286,7 +290,7 @@ printf("\n"
 "    grt greenfn -M<model> -D<depsrc>/<deprcv> \n"
 "        -N<nt>/<dt>[+w<zeta>][+n<fac>][+a] \n"
 "        -R<r1>,<r2>[,...]     -O<outdir>     [-H<f1>/<f2>] \n"
-"        [-L<length>]        [-E<t0>[/<v0>]] \n" 
+"        [-L<length>] [-C[d|p|n]] [-E<t0>[/<v0>]] \n" 
 "        [-K[+k<k0>][+s<ampk>][+e<keps>][+v<vmin>]]\n"
 "        [-P<nthreads>] [-Ge|v|h|s] \n"
 "        [-S[<i1>,<i2>,...]] [-e] [-s]\n"
@@ -330,7 +334,7 @@ printf("\n"
 "                 <f1>: lower frequency (Hz), %.1f means low pass.\n", GRT_GREENFN_H_FREQ1); printf(
 "                 <f2>: upper frequency (Hz), %.1f means high pass.\n", GRT_GREENFN_H_FREQ2); printf(
 "\n"
-"    -L[<length>][+l<Flength>][+a<Ftol>][+o<offset>][+c[d|p|n]]\n"
+"    -L[<length>][+l<Flength>][+a<Ftol>][+o<offset>]\n"
 "                 Define the wavenumber integration interval\n"
 "                 dk=(2*PI)/(<length>*rmax) and methods. \n"
 "                 rmax is the maximum epicentral distance. \n"
@@ -346,8 +350,12 @@ printf("\n"
 "                 + +o<offset> split the integration into two parts,\n"
 "                   [0, k*] and [k*, kmax], in which k*=<offset>/rmax,\n"
 "                   the former uses DWM and the latter uses FIM/SAFIM.\n"
-"                 For convergence method:\n"
-"                 + +c[d|p|n] choose DCM(d), PTAM(p) or none(n).\n"
+"\n"
+"    -C[d|p|n]    Set convergence method,\n"
+"                 + d: Direct Convergence Method (DCM).\n"
+"                 + p: Peak-Trough Averaging Method (PTAM).\n"
+"                 + n: None.\n"
+"                 Default use +cd when fabs(depsrc-deprcv) <= %.1f.\n", GRT_MIN_DEPTH_GAP_SRC_RCV); printf(
 "\n"
 "    -E<t0>[/<v0>]\n"
 "                 Introduce the time delay in results. The total \n"
@@ -438,7 +446,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     Ctrl->G.doDC = GRT_GREENFN_G_DC;
 
     int opt;
-    while ((opt = getopt(argc, argv, ":M:D:N:O:H:L:E:K:R:S::P:G:esh")) != -1) {
+    while ((opt = getopt(argc, argv, ":M:D:N:O:H:L:C:E:K:R:S::P:G:esh")) != -1) {
         switch (opt) {
             // 模型路径，其中每行分别为 
             //      厚度(km)  Vp(km/s)  Vs(km/s)  Rho(g/cm^3)  Qp   Qs
@@ -537,7 +545,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 }
                 break;
 
-            // 波数积分间隔 -L[<length>][+l<Flength>][+a<Ftol>][+o<offset>][+c[d|p|n]]
+            // 波数积分间隔 -L[<length>][+l<Flength>][+a<Ftol>][+o<offset>]
             case 'L':
                 Ctrl->L.active = true;
                 {
@@ -573,19 +581,6 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                                 }
                                 break;
 
-                            case 'c':
-                                if(token[1] == 'p'){
-                                    Ctrl->L.applyPTAM = true;
-                                } else if(token[1] == 'd'){
-                                    Ctrl->L.applyDCM = true;
-                                } else if(token[1] == 'n'){
-                                    Ctrl->L.applyNoConverg = true;
-                                    Ctrl->L.applyPTAM = Ctrl->L.applyDCM = false;
-                                } else {
-                                    GRTBadOptionError(command, L+c, "");
-                                }
-                                break;
-
                             default:
                                 GRTBadOptionError(command, L, "-L+%s is not supported.", token);
                                 break;
@@ -597,12 +592,33 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     if(Ctrl->L.FIM.active && Ctrl->L.SAFIM.active){
                         GRTBadOptionError(command, L, "You can't set -L+a and -L+l both.");
                     }
-
-                    if(Ctrl->L.applyPTAM && Ctrl->L.applyDCM){
-                        GRTBadOptionError(command, L, "You can't set -L+cd and -L+cp both.");
-                    }
                     
                     GRT_SAFE_FREE_PTR(string);
+                }
+                break;
+
+            // 波数积分收敛方法
+            case 'C':
+                Ctrl->C.active = true;
+                if(strlen(optarg) == 0){
+                    GRTBadOptionError(command, C, "");
+                }
+                switch (optarg[0]){
+                    case 'p':
+                        Ctrl->C.applyPTAM = true;
+                        break;
+                    case 'd':
+                        Ctrl->C.applyDCM = true;
+                        break;
+                    case 'n':
+                        Ctrl->C.applyNoConverg = true;
+                        break;
+                    default:
+                        GRTBadOptionError(command, C, "-C+%s is not supported.", optarg);
+                        break;
+                }
+                if(Ctrl->C.applyPTAM && Ctrl->C.applyDCM){
+                    GRTBadOptionError(command, C, "You can't set -Cd and -Cp both.");
                 }
                 break;
 
@@ -1098,9 +1114,8 @@ int greenfn_main(int argc, char **argv) {
     } 
 
     // 判断是否要自动使用收敛方法
-    if( ! Ctrl->L.applyNoConverg && fabs(Ctrl->D.deprcv - Ctrl->D.depsrc) <= GRT_MIN_DEPTH_GAP_SRC_RCV) {
-        // TODO!!! 下次PR全面使用DCM
-        Ctrl->L.applyPTAM = true;
+    if( ! Ctrl->C.active && fabs(Ctrl->D.deprcv - Ctrl->D.depsrc) <= GRT_MIN_DEPTH_GAP_SRC_RCV) {
+        Ctrl->C.applyDCM = true;
     }
 
     // 时窗长度 
@@ -1187,7 +1202,7 @@ int greenfn_main(int argc, char **argv) {
         real_t hs = GRT_MAX(fabs(mod1d->depsrc - mod1d->deprcv), GRT_MIN_DEPTH_GAP_SRC_RCV);
         KMET.k0 = Ctrl->K.k0 * PI / hs;
         KMET.ampk = Ctrl->K.ampk;
-        KMET.keps = (Ctrl->L.applyPTAM || Ctrl->L.applyDCM)? 0.0 : Ctrl->K.keps;  // 如果使用了显式收敛方法，则不使用keps进行收敛判断
+        KMET.keps = (Ctrl->C.applyPTAM || Ctrl->C.applyDCM)? 0.0 : Ctrl->K.keps;  // 如果使用了显式收敛方法，则不使用keps进行收敛判断
         KMET.vmin = Ctrl->K.vmin;
         
         KMET.kcut = Ctrl->L.kcut / rmax;
@@ -1200,8 +1215,8 @@ int greenfn_main(int argc, char **argv) {
         KMET.applySAFIM = Ctrl->L.SAFIM.active;
         KMET.sa_tol = Ctrl->L.SAFIM.tol;
         
-        KMET.applyDCM = Ctrl->L.applyDCM;
-        KMET.applyPTAM = Ctrl->L.applyPTAM;
+        KMET.applyDCM = Ctrl->C.applyDCM;
+        KMET.applyPTAM = Ctrl->C.applyPTAM;
     }
 
     // 在计算前打印所有参数

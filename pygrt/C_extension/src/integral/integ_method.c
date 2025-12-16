@@ -12,6 +12,7 @@
 #include "grt/integral/fim.h"
 #include "grt/integral/safim.h"
 #include "grt/integral/dwm.h"
+#include "grt/integral/dcm.h"
 #include "grt/integral/integ_method.h"
 
 
@@ -82,12 +83,22 @@ K_INTEG * grt_wavenumber_integral(
     real_t k = 0.0;
 
     real_t kcut = Kmet->kmax;
-    if(Kmet->applyFIM || Kmet->applySAFIM){
+
+    bool isFilon = Kmet->applyFIM || Kmet->applySAFIM;
+
+    if(isFilon){
         kcut = GRT_MIN(Kmet->kcut, Kmet->kmax);
     }
 
     // 求和 sum F(ki,w)Jm(ki*r)ki 
     K_INTEG *Kint = grt_init_K_INTEG(calc_upar, nr);
+    Kint->applyDCM = Kmet->applyDCM;
+    Kint->kmax = Kmet->kmax;
+
+    // 准备 DCM，计算波数上限处的核函数
+    if(Kint->applyDCM){
+        kerfunc(mod1d, Kint->kmax, Kint->QWV_kmax, Kint->calc_upar, Kint->QWVz_kmax);
+    }
     
     // DWM
     k = grt_discrete_integ(
@@ -95,17 +106,15 @@ K_INTEG * grt_wavenumber_integral(
         Kint, Kmet->fstats, kerfunc);
     if(mod1d->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
-    if(Kmet->applyFIM)
-    {
-        // 基于线性插值的Filon积分，固定采样间隔
+    // 基于线性插值的Filon积分，固定采样间隔
+    if(Kmet->applyFIM){
         k = grt_linear_filon_integ(
             mod1d, k, Kmet->dk, Kmet->filondk, Kmet->kmax, Kmet->keps, nr, rs, 
             Kint, Kmet->fstats, kerfunc);
         if(mod1d->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
     }
-    else if(Kmet->applySAFIM)
-    {
-        // 基于自适应采样的Filon积分
+    // 基于自适应采样的Filon积分
+    else if(Kmet->applySAFIM){
         real_t kref = (creal(mod1d->omega) > 0.0) ? creal(mod1d->omega) / Kmet->vmin * Kmet->ampk : 0.0; // 静态解中频率位置给了负值
         k = grt_sa_filon_integ(
             mod1d, k, Kmet->dk, Kmet->sa_tol, Kmet->kmax, kref, nr, rs, 
@@ -114,13 +123,14 @@ K_INTEG * grt_wavenumber_integral(
     }
 
     // 显式收敛
-    if(Kmet->applyPTAM)
-    {
+    if(Kmet->applyPTAM){
         grt_PTA_method(
             mod1d, k, Kmet->dk, nr, rs, 
             Kint, Kmet->ptam_fstatsnr, kerfunc);
         if(mod1d->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
-
+    }
+    else if(Kmet->applyDCM){
+        grt_dcm_correction(nr, rs, Kint, !isFilon);
     }
 
 

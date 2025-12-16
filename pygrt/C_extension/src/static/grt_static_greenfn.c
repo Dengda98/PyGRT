@@ -55,10 +55,14 @@ typedef struct {
             bool active;
             real_t tol;
         } SAFIM;
+    } L;
+    /** 波数积分收敛方法 */
+    struct {
+        bool active;
         bool applyDCM;
         bool applyPTAM;
         bool applyNoConverg;
-    } L;
+    } C;
     /** 波数积分上限 */
     struct {
         bool active;
@@ -143,7 +147,7 @@ printf("\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
 "    grt static greenfn -M<model> -D<depsrc>/<deprcv> -X<x1>/<x2>/<dx> \n"
-"          -Y<y1>/<y2>/<dy>  -O<outgrid>  [-L<length>]  \n" 
+"          -Y<y1>/<y2>/<dy>  -O<outgrid>  [-L<length>] [-C[d|p|n]] \n" 
 "          [-K[+k<k0>][+e<keps>]] [-S]  [-e]\n"
 "\n\n"
 "Options:\n"
@@ -175,7 +179,7 @@ printf("\n"
 "\n"
 "    -O<outgrid>  Filepath to output nc grid.\n"
 "\n"
-"    -L[<length>][+l<Flength>][+a<Ftol>][+o<offset>][+c[d|p|n]]\n"
+"    -L[<length>][+l<Flength>][+a<Ftol>][+o<offset>]\n"
 "                 Define the wavenumber integration interval\n"
 "                 dk=(2*PI)/(<length>*rmax) and methods. \n"
 "                 rmax is the maximum epicentral distance. \n"
@@ -190,8 +194,12 @@ printf("\n"
 "                 + +o<offset> split the integration into two parts,\n"
 "                   [0, k*] and [k*, kmax], in which k*=<offset>/rmax,\n"
 "                   the former uses DWM and the latter uses FIM/SAFIM.\n"
-"                 For convergence method:\n"
-"                 + +c[d|p|n] choose DCM(d), PTAM(p) or none(n).\n"
+"\n"
+"    -C[d|p|n]    Set convergence method,\n"
+"                 + d: Direct Convergence Method (DCM).\n"
+"                 + p: Peak-Trough Averaging Method (PTAM).\n"
+"                 + n: None.\n"
+"                 Default use +cd when fabs(depsrc-deprcv) <= %.1f.\n", GRT_MIN_DEPTH_GAP_SRC_RCV); printf(
 "\n"
 "    -K[+k<k0>][+e<keps>]\n"
 "                 Several parameters designed to define the\n"
@@ -237,7 +245,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 
     int opt;
 
-    while ((opt = getopt(argc, argv, ":M:D:L:K:X:Y:O:Seh")) != -1) {
+    while ((opt = getopt(argc, argv, ":M:D:L:C:K:X:Y:O:Seh")) != -1) {
         switch (opt) {
             // 模型路径，其中每行分别为 
             //      厚度(km)  Vp(km/s)  Vs(km/s)  Rho(g/cm^3)  Qp   Qs
@@ -267,7 +275,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 }
                 break;
 
-            // 波数积分间隔 -L[<length>][+l<Flength>][+a<Ftol>][+o<offset>][+c[d|p|n]]
+            // 波数积分间隔 -L[<length>][+l<Flength>][+a<Ftol>][+o<offset>]
             case 'L':
                 Ctrl->L.active = true;
                 {
@@ -303,19 +311,6 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                                 }
                                 break;
 
-                            case 'c':
-                                if(token[1] == 'p'){
-                                    Ctrl->L.applyPTAM = true;
-                                } else if(token[1] == 'd'){
-                                    Ctrl->L.applyDCM = true;
-                                } else if(token[1] == 'n'){
-                                    Ctrl->L.applyNoConverg = true;
-                                    Ctrl->L.applyPTAM = Ctrl->L.applyDCM = false;
-                                } else {
-                                    GRTBadOptionError(command, L+c, "");
-                                }
-                                break;
-
                             default:
                                 GRTBadOptionError(command, L, "-L+%s is not supported.", token);
                                 break;
@@ -328,11 +323,32 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                         GRTBadOptionError(command, L, "You can't set -L+a and -L+l both.");
                     }
 
-                    if(Ctrl->L.applyPTAM && Ctrl->L.applyDCM){
-                        GRTBadOptionError(command, L, "You can't set -L+cd and -L+cp both.");
-                    }
-                    
                     GRT_SAFE_FREE_PTR(string);
+                }
+                break;
+
+            // 波数积分收敛方法
+            case 'C':
+                Ctrl->C.active = true;
+                if(strlen(optarg) == 0){
+                    GRTBadOptionError(command, C, "");
+                }
+                switch (optarg[0]){
+                    case 'p':
+                        Ctrl->C.applyPTAM = true;
+                        break;
+                    case 'd':
+                        Ctrl->C.applyDCM = true;
+                        break;
+                    case 'n':
+                        Ctrl->C.applyNoConverg = true;
+                        break;
+                    default:
+                        GRTBadOptionError(command, C, "-C+%s is not supported.", optarg);
+                        break;
+                }
+                if(Ctrl->C.applyPTAM && Ctrl->C.applyDCM){
+                    GRTBadOptionError(command, C, "You can't set -Cd and -Cp both.");
                 }
                 break;
 
@@ -475,8 +491,8 @@ int static_greenfn_main(int argc, char **argv){
     GRT_MODEL1D *mod1d = Ctrl->M.mod1d;
 
     // 判断是否要自动使用收敛方法
-    if( ! Ctrl->L.applyNoConverg && fabs(Ctrl->D.deprcv - Ctrl->D.depsrc) <= GRT_MIN_DEPTH_GAP_SRC_RCV) {
-        Ctrl->L.applyPTAM = true;
+    if( ! Ctrl->C.active && fabs(Ctrl->D.deprcv - Ctrl->D.depsrc) <= GRT_MIN_DEPTH_GAP_SRC_RCV) {
+        Ctrl->C.applyDCM = true;
     }
     
     // 设置积分间隔默认值
@@ -502,7 +518,7 @@ int static_greenfn_main(int argc, char **argv){
     {   
         real_t hs = GRT_MAX(fabs(mod1d->depsrc - mod1d->deprcv), GRT_MIN_DEPTH_GAP_SRC_RCV);
         KMET.k0 = Ctrl->K.k0 * PI / hs;
-        KMET.keps = (Ctrl->L.applyPTAM || Ctrl->L.applyDCM)? 0.0 : Ctrl->K.keps;  // 如果使用了显式收敛方法，则不使用keps进行收敛判断
+        KMET.keps = (Ctrl->C.applyPTAM || Ctrl->C.applyDCM)? 0.0 : Ctrl->K.keps;  // 如果使用了显式收敛方法，则不使用keps进行收敛判断
 
         // 最大震中距
         real_t rmax = Ctrl->rs[grt_findMax_real_t(Ctrl->rs, Ctrl->nr)];   
@@ -517,8 +533,8 @@ int static_greenfn_main(int argc, char **argv){
         KMET.applySAFIM = Ctrl->L.SAFIM.active;
         KMET.sa_tol = Ctrl->L.SAFIM.tol;
         
-        KMET.applyDCM = Ctrl->L.applyDCM;
-        KMET.applyPTAM = Ctrl->L.applyPTAM;
+        KMET.applyDCM = Ctrl->C.applyDCM;
+        KMET.applyPTAM = Ctrl->C.applyPTAM;
     }
 
     //==============================================================================
