@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-rm -rf GRN* syn* stats* ptam* pygrtstats* static* *.png
+rm -rf GRN* syn* ptam* pygrtstats* static* stgrtstats *.nc *.png
 
 # -------------------------------------------------------------------
 # BEGIN DEPSRC 0.0 DGRN
@@ -36,3 +36,5 @@ grt ker2asc stgrtstats/milrow_0.1_0/K > static_stats
 # -------------------------------------------------------------------
 
 python run.py
+
+rm -rf GRN* syn* pygrtstats* static* stgrtstats *.nc

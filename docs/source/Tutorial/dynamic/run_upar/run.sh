@@ -48,3 +48,5 @@ grt stress syn_dc_zne
 # --------------------------------------------------------------------------------------
 
 python run.py
+
+find . \( -name "syn*" -o -name "GRN*" \) -type d -exec rm -rf {} \+

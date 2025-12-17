@@ -138,3 +138,5 @@ EOF
     gmt colorbar -Bx+l"Z (cm)"
 gmt end
 
+
+rm -rf stgrn* stsyn*
