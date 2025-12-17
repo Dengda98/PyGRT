@@ -84,7 +84,7 @@ static void print_K(FILE *fp, const char *col0_name){
  */
 static void print_PTAM(FILE *fp){
     // 打印标题
-    grt_extract_stats(NULL, stdout, "k");
+    grt_extract_stats_ptam(NULL, stdout);
     fprintf(stdout, "\n");
     
     // 读取数据    

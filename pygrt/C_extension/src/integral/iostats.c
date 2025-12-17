@@ -33,17 +33,18 @@ void grt_write_stats(FILE *f0, real_t k, const cplxChnlGrid QWV)
 int grt_extract_stats(FILE *bf0, FILE *af0, const char *col0_name){
     // 打印标题
     if(bf0 == NULL){
-        char K[20];
-        snprintf(K, sizeof(K), GRT_STRING_FMT, col0_name);  K[0]=GRT_COMMENT_HEAD;
+        char *K = NULL;
+        GRT_SAFE_ASPRINTF(&K, GRT_STRING_FMT, col0_name);  K[0]=GRT_COMMENT_HEAD;
         fprintf(af0, "%s", K);
 
         GRT_LOOP_ChnlGrid(im, c){
             int modr = GRT_SRC_M_ORDERS[im];
             if(modr == 0 && GRT_QWV_CODES[c] == 'v')   continue;
 
-            snprintf(K, sizeof(K), "%s_%c", GRT_SRC_M_NAME_ABBR[im], GRT_QWV_CODES[c]);
+            GRT_SAFE_ASPRINTF(&K, "%s_%c", GRT_SRC_M_NAME_ABBR[im], GRT_QWV_CODES[c]);
             fprintf(af0, GRT_STR_CMPLX_FMT, K);
         }
+        GRT_SAFE_FREE_PTR(K);
 
         return 0;
     }
@@ -87,25 +88,28 @@ void grt_write_stats_ptam(
 int grt_extract_stats_ptam(FILE *bf0, FILE *af0){
     // 打印标题
     if(bf0 == NULL){
-        char K[20], K2[20];
+        char *K = NULL;
         int icol=0;
 
         GRT_LOOP_IntegGrid(im, v){
             int modr = GRT_SRC_M_ORDERS[im];
             if(modr == 0 && v!=0 && v!=2)  continue;
 
-            snprintf(K2, sizeof(K2), "sum_%s_%d_k", GRT_SRC_M_NAME_ABBR[im], v);
+            GRT_SAFE_ASPRINTF(&K, "sum_%s_%d_k", GRT_SRC_M_NAME_ABBR[im], v);
             if(icol==0){
-                snprintf(K, sizeof(K), GRT_STRING_FMT, K2);  K2[0]=GRT_COMMENT_HEAD;
-                fprintf(af0, "%s", K);
+                char *K2 = NULL;
+                GRT_SAFE_ASPRINTF(&K2, GRT_STRING_FMT, K);  K2[0]=GRT_COMMENT_HEAD;
+                fprintf(af0, "%s", K2);
+                GRT_SAFE_FREE_PTR(K2);
             } else {
-                fprintf(af0, GRT_STRING_FMT, K2);
+                fprintf(af0, GRT_STRING_FMT, K);
             }
-            snprintf(K2, sizeof(K2), "sum_%s_%d", GRT_SRC_M_NAME_ABBR[im], v);
-            fprintf(af0, GRT_STR_CMPLX_FMT, K2);
+            GRT_SAFE_ASPRINTF(&K, "sum_%s_%d", GRT_SRC_M_NAME_ABBR[im], v);
+            fprintf(af0, GRT_STR_CMPLX_FMT, K);
             
             icol++;
         }
+        GRT_SAFE_FREE_PTR(K);
 
         return 0;
     }

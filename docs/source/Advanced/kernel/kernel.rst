@@ -31,7 +31,8 @@
     :end-before: END KERNEL
 
 得到的每个频率的核函数文件名开头为 ``C`` ，表示采样位置直接记录的相速度，
-且 :doc:`/Advanced/integ_converg/integ_converg` 介绍的核函数文件的读取方法依然适用。
+且 :doc:`/Advanced/integ_converg/integ_converg` 介绍的核函数文件的读取方法依然适用，
+只是对应波数的列名会使用 “c” 表示。
 
 
 .. note::
