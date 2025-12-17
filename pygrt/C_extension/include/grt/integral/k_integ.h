@@ -1,5 +1,5 @@
 /**
- * @file   integral.h
+ * @file   k_integ.h
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2025-04-03
  * 
@@ -15,6 +15,17 @@
 
 typedef struct {
     bool calc_upar;
+
+    // 不同震源不同阶数的核函数 F(k, w) 
+    cplxChnlGrid QWV;
+    cplxChnlGrid QWVz;
+
+    // 最大波数时的核函数，用于 DCM
+    bool applyDCM;
+    real_t kmax;
+    cplxChnlGrid QWV_kmax;
+    cplxChnlGrid QWVz_kmax;
+
     size_t nr;
     cplxIntegGrid SUM;     ///< 被积函数，用于临时存储
     cplxIntegGrid *sumJ;   ///< 积分值

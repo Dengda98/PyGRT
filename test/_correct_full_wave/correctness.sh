@@ -8,9 +8,9 @@ rm -rf syn_*
 
 # =========================================
 # greenfn
-grt greenfn -M../milrow  -D2/3 -N600/0.02 -R10 -e -OGRN
+grt greenfn -M../milrow  -D2/3 -N600/0.02 -R10 -Cp -e -OGRN
 grt greenfn -M../killari -D3/0 -N300/0.01 -R3  -e -OGRN 
-grt greenfn -M../thin1   -D0/0 -N700/0.02 -R1  -e -OGRN
+grt greenfn -M../thin1   -D0/0 -N700/0.02 -R1  -Cp -e -OGRN
 # liquid model
 grt greenfn -M../seafloor -D5/1.1 -N500/0.4+a -R100 -e -OGRN
 

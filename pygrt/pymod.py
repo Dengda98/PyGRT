@@ -178,7 +178,7 @@ class PyModel1D:
             :param    zeta:          定义虚频率的系数 :math:`\zeta` ， 虚频率 :math:`\tilde{\omega} = \omega - j*w_I, w_I = \zeta*\pi/T, T=nt*dt` , T为时窗长度。
                                      使用离散波数积分时为了避开附加源以及奇点的影响， :ref:`(Bouchon, 1981) <bouchon_1981>`  在频率上添加微小虚部，
                                      更多测试见 :ref:`(张海明, 2021) <zhang_book_2021>`
-            :param    keepAllFreq    计算所有频点，不论频率多低
+            :param    keepAllFreq:   计算所有频点，不论频率多低
             :param    vmin_ref:      最小参考速度，默认vmin=max(minimum velocity, 0.1)，用于定义波数积分上限
             :param    keps:          波数k积分收敛条件，见 :ref:`(Yao and Harkrider, 1983) <yao&harkrider_1983>`  :ref:`(初稿) <yao_init_manuscripts>`，
                                      为负数代表不提前判断收敛，按照波数积分上限进行积分
@@ -189,7 +189,7 @@ class PyModel1D:
             :param    filonLength:   Filon积分的间隔
             :param    safilonTol:    自适应Filon积分采样精度
             :param    filonCut:      波数积分和Filon积分的分割点filonCut, k*=<filonCut>/rmax
-            :param    converg_method:   显式收敛的方法，可指定 "DCM", "PTAM" 和 "none", 默认当震源和场点深度差<=1km时自动使用峰谷平均法
+            :param    converg_method:   显式收敛的方法，可指定 "DCM", "PTAM" 和 "none", 默认当震源和场点深度差<=1km时自动使用 DCM
             :param    calc_upar:     是否计算位移u的空间导数
             :param    gf_source:     待计算的震源类型
             :param    statsfile:     波数k积分（包括Filon积分和峰谷平均法）的过程记录文件，常用于debug或者观察积分过程中 :math:`F(k,\omega)` 和  :math:`F(k,\omega)J_m(kr)k` 的变化    
@@ -292,7 +292,7 @@ class PyModel1D:
 
         # 若不指定显式收敛方法，则根据情况自动使用PTAM
         if converg_method is None and abs(depsrc - deprcv) <= 1.0:
-            converg_method = 'PTAM'
+            converg_method = 'DCM'
 
         # 时窗长度
         winT = nt*dt 

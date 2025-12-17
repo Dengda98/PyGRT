@@ -33,7 +33,7 @@
  * @param[in]     nr            震中距数量
  * @param[in]     rs            震中距数组  
  * 
- * @param[in,out]  K0           用于存储积分的结构体
+ * @param[in,out]  K            用于存储积分的结构体
  * 
  * @param[out]    ptam_fstatsnr      峰谷平均法过程文件指针数组
  * @param[in]     kerfunc            计算核函数的函数指针
@@ -42,5 +42,5 @@
  */
 void grt_PTA_method(
     GRT_MODEL1D *mod1d, real_t k0, real_t predk,
-    size_t nr, real_t *rs, K_INTEG *K0, FILE *ptam_fstatsnr[nr][2], GRT_KernelFunc kerfunc);
+    size_t nr, real_t *rs, K_INTEG *K, FILE *ptam_fstatsnr[nr][2], GRT_KernelFunc kerfunc);
 

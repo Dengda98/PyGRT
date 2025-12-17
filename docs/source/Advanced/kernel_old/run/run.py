@@ -12,7 +12,7 @@ pymod = pygrt.PyModel1D(modarr, depsrc=0.03, deprcv=0.0)
 # 不指定statsidx，默认输出全部频率点的积分过程文件
 # vmin_ref 显式给定参考速度（用于定义波数积分上限），避免使用PTAM
 # Length 给定波数积分间隔dk
-_ = pymod.compute_grn(distarr=[1], nt=500, dt=0.02, vmin_ref=0.1, Length=20, statsfile="pygrtstats")
+_ = pymod.compute_grn(distarr=[1], nt=500, dt=0.02, vmin_ref=0.1, Length=20, converg_method='none', statsfile="pygrtstats")
 # END GRN
 # -----------------------------------------------------------------
 

@@ -1,5 +1,5 @@
 /**
- * @file   integral.c
+ * @file   k_integ.c
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2025-04-03
  * 

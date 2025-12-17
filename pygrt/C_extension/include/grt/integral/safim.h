@@ -39,7 +39,7 @@
  * @param[in]      nr            震中距数量
  * @param[in]      rs            震中距数组
  *
- * @param[in,out]  K0            用于存储积分的结构体
+ * @param[in,out]  K             用于存储积分的结构体
  * 
  * @param[out]    fstats         文件指针，保存不同k值的格林函数积分核函数
  * @param[in]     kerfunc        计算核函数的函数指针
@@ -47,7 +47,7 @@
  * @return  k        积分截至时的波数
  */
 real_t grt_sa_filon_integ(
-    GRT_MODEL1D *mod1d, real_t k0, real_t dk0, real_t tol, real_t kmax, real_t kref, 
-    size_t nr, real_t *rs, K_INTEG *K0, FILE *fstats, GRT_KernelFunc kerfunc);
+    GRT_MODEL1D *mod1d, real_t k0, real_t dk0, real_t tol, real_t kmax, real_t kref,
+    size_t nr, real_t *rs, K_INTEG *K, FILE *fstats, GRT_KernelFunc kerfunc);
 
 
