@@ -21,7 +21,7 @@ def setup(app):
 # 获取全局最新时间函数
 def get_global_last_updated():
     try:
-        cmd = ['git', 'log', '-1', '--format=%ad', f'--date=format:{html_last_updated_fmt}', '--all']
+        cmd = ['git', 'log', '-1', '--format=%ad', f'--date=format:{html_last_updated_fmt}', '--all', '--', '.']
         result = subprocess.run(cmd, capture_output=True, text=True)
         return result.stdout.strip() if result.returncode == 0 else None
     except:
