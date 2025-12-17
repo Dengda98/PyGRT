@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-rm -rf GRN* syn* stats* ptam* pygrtstats* static* *.png
+rm -rf GRN* syn* stats* pygrtstats* *.png
 
 # -------------------------------------------------------------------
 # BEGIN DGRN
@@ -30,3 +30,5 @@ grt ker2asc GRN_grtstats/milrow_0_0/K_0050_5.00000e+00 > stats
 # -------------------------------------------------------------------
 
 python run.py
+
+rm -rf GRN* syn* pygrtstats*

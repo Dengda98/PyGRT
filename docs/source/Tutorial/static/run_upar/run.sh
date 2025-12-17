@@ -32,3 +32,5 @@ grt static stress stsyn_dc_zne.nc
 # END
 
 python run.py
+
+rm -rf stgrn* stsyn*

@@ -2,7 +2,7 @@
 # BEGIN
 set -euo pipefail
 
-rm -rf GRN*
+rm -rf GRN* *.png
 
 # method 1: DWM
 # 使用-H来节省一些时间，只输出单个频率以作示例
@@ -15,3 +15,5 @@ grt greenfn -Mmilrow -OGRN2 -N2000/1 -D5/0 -R2500 -L+a1e-2 -S500
 
 python run.py
 python plot.py
+
+rm -rf GRN*
