@@ -63,7 +63,7 @@ C和Python导出的核函数文件是一致的，底层调用的是相同的函�
 
 .. note:: 
 
-    核函数文件中记录的值非最终核函数值。对于动态解，还需乘 :math:`\left(-\dfrac{\Delta k}{4\pi\rho\omega^2}\right)`。
+    核函数文件中记录的值非理论核函数值。对于动态解，还需乘 :math:`\left(-\dfrac{1}{4\pi\rho\omega^2}\right)`。
 
 可视化
 -------------

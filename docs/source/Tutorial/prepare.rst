@@ -17,14 +17,14 @@
 
 **C程序的运行独立于Python，不需要Python环境，从而满足了更多计算场景。** 
 
-入门部分包含一些示例与说明，可快速上手。Github主页的 :rst:dir:`example/` 文件夹中有更多示例，可在 `Github Releases <https://github.com/Dengda98/PyGRT/releases>`_ 中下载。
-
 
 建立模型文件
 --------------------
 
-.. image:: mod.svg
+.. figure:: mod.svg
    :align: center
+
+   一维层状模型示意图， :math:`z_S` 为震源层， :math:`z_R` 为接收层
 
 这里的选项卡 **C** 不代表内部是C语言代码，而是 **使用C程序** :command:`grt` 。后续的选项卡沿用此设定，不再解释。
 

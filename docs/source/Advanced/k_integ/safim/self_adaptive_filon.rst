@@ -24,8 +24,8 @@
         :func:`compute_static_grn() <pygrt.pymod.PyModel1D.compute_static_grn>` 
         函数支持以下可选参数来使用自适应Filon积分，具体说明详见API。
 
-        + ``Length:float``  定义离散波数积分的积分间隔 （见 :doc:`kmax` 部分, :doc:`../linear_filon` 部分）
-        + ``safilonTol:float`` 定义自适应采样精度，见 :ref:`(Chen and Zhang, 2001) <chen_2001>`  :ref:`(张海明, 2021) <zhang_book_2021>`，通常1e-2即可。
+        + ``Length:float``  定义离散波数积分的积分间隔 （见 :doc:`../kmax` 部分）
+        + ``safilonTol:float`` 定义自适应采样精度，见 :ref:`(Chen and Zhang, 2001) <chen_2001>`  :ref:`(张海明, 2021) <zhang_book_2021>`，通常取 1e-2 即可。
         + ``filonCut:float`` 定义了两个积分的分割点， :math:`k^*=` ``<filonCut>`` :math:`/r_{\text{max}}` （见 :doc:`../linear_filon` 部分）
 
 

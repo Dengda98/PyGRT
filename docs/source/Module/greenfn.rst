@@ -19,7 +19,8 @@ greenfn
 |-R|\ *file*\|\ *r1,r2,...*
 |-O|\ *outdir*
 [ |-H|\ *f1/f2* ]
-[ |-L|\ *args* ]
+[ |-L|\ *length*\ [**+l**\ *Flength*][**+a**\ *Ftol*][**+o**\ *offset*] ]
+[ |-C|\ **d|p|n** ]
 [ |-K|\ [**+k**\ *k0*][**+s**\ *ampk*][**+e**\ *keps*][**+v**\ *vmin*] ]
 [ |-E|\ *t0*\ [/*v0*] ]
 [ |-P|\ *nthreads* ]
@@ -101,11 +102,9 @@ greenfn
     + **+s**\ *ampk* - 放大倍数 [1.15] 。
     + **+e**\ *keps* - 用于判断提前结束波数积分的收敛精度[0.0, 默认不使用]，详见
       Yao and Harkrider (1983) 和 :doc:`/Advanced/k_integ/kmax` 。
-    + **+v**\ *vmin* - 参考最小速度，默认 :math:`\max{(\min\limits_{i} (\alpha_i \cup \beta_i), 0.1)}` 。  
-      
-      + 只要设置了 *vmin* ，不论正负， 是否启用快速收敛算法不再受 :math:`\Delta h` 控制 （见 |-D| ），
-        相当于改为由 **+v**\ *vmin* 手动控制。
-      + 当 *vmin* 为负数时，使用快速收敛算法（这个用法更多是用于 debug 测试）。
+    + **+v**\ *vmin* - 参考最小速度，默认 :math:`\max{(\min\limits_{i} (\alpha_i \cup \beta_i), 0.1)}` 。
+
+.. include:: explain_-Cconverg.rst_
 
 .. include:: explain_-E.rst_
 
@@ -119,6 +118,8 @@ greenfn
     指定频率索引值，输出对应频率下波数积分过程中的核函数文件，多个索引值用逗号分隔，文件保存目录为
     ``{outdir}_grtstats`` 。若使用 **-S** 则保存所有频点。
     关于文件格式及其读取详见 :doc:`/Advanced/integ_converg/integ_converg` 。
+
+    .. include:: explain_-Sstats.rst_
 
 .. include:: explain_-egrn.rst_
 

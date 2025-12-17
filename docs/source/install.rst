@@ -73,7 +73,7 @@ C程序 :command:`grt` 的运行独立于Python， :command:`grt` 的每个模�
 
 3. 安装 `FFTW <https://www.fftw.org/>`_ 。
 
-  要求安装双精度和单精度两个版本，且要求编译出静态库，并要求在环境变量 :envvar:`LIBRARY_PATH` 中配置静态库路径。如果从源码编译安装 FFTW ，通常在其目录下运行以下命令即可安装+配置路径成功（以 Ubuntu 系统为例）：
+  要求安装双精度和单精度两个版本的 FFTW，且要求编译出静态库，并要求在环境变量 :envvar:`LIBRARY_PATH` 中配置静态库路径。如果从源码编译安装 FFTW ，通常在其目录下运行以下命令即可安装+配置路径成功（以 Ubuntu 系统为例）：
 
   .. code-block:: bash
       
