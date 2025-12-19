@@ -67,6 +67,7 @@
    Advanced/kernel/kernel
    Formula/index
    Module/index
+   Gallery/gallery
 
 
 .. toctree::
