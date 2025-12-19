@@ -308,7 +308,7 @@ GRT_MODEL1D * grt_read_mod1d_from_file(const char *command, const char *modelpat
     size_t isrc=0, ircv=0;
     size_t *pmin_idx, *pmax_idx, *pimg_idx;
     real_t depth = 0.0, depmin, depmax, depimg;
-    bool ircvup = (depsrc > deprcv);
+    bool ircvup = (depsrc >= deprcv);
     if(ircvup){
         pmin_idx = &ircv;
         pmax_idx = &isrc;

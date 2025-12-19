@@ -36,6 +36,14 @@
       - :doc:`copyright`
 
 
+.. note::
+
+   This documentation is currently available only in Chinese. 
+   To read it in your preferred language, 
+   you can use your browser’s built-in **AI translation** feature (such as Google Translate or Microsoft Translator).
+
+   I'm sorry for the inconvenience. Thank you for your understanding.
+
 
 .. toctree::
    :caption: PyGRT 入门

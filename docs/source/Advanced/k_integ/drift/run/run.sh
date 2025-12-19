@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-rm GRN* pygrtstats -rf
+rm -rf GRN* pygrtstats *.png
 
 # 没必要执行，故改为如下
 cat > /dev/null <<EOF
@@ -12,3 +12,5 @@ grt greenfn -Mmilrow -D10/0 -N500/10+a -R5000 -OGRN -S
 EOF
 
 python run.py
+
+rm -rf pygrtstats
