@@ -18,8 +18,9 @@ static_greenfn
 |-X|\ *x1/x2/dx*
 |-Y|\ *y1/y2/dy*
 |-O|\ *outdir*
-[ |-L|\ *args* ]
-[ |-K|\ [**+k**\ *k0*][**+e**\ *keps*][**+v**\ *vmin*] ]
+[ |-L|\ *length*\ [**+l**\ *Flength*][**+a**\ *Ftol*][**+o**\ *offset*] ]
+[ |-C|\ **d|p|n** ]
+[ |-K|\ [**+k**\ *k0*][**+e**\ *keps*] ]
 [ |-S| ]
 [ **-e** ]
 [ **-h** ]
@@ -62,23 +63,22 @@ static_greenfn
 
 .. _-K:
 
-**-K**\ [**+k**\ *k0*][**+e**\ *keps*][**+v**\ *vmin*]
+**-K**\ [**+k**\ *k0*][**+e**\ *keps*]
     控制波数积分上限 :math:`k_0 \cdot \dfrac{\pi}{\Delta h}`
 
     + **+k**\ *k0* - 控制零频的积分上限 [5.0]，其中深度差 :math:`\Delta h = \max(|z_s - z_r|, 1.0)` 。
     + **+e**\ *keps* - 用于判断提前结束波数积分的收敛精度[0.0, 默认不使用]，详见
       Yao and Harkrider (1983) 和 :doc:`/Advanced/k_integ/kmax` 。
-    + **+v**\ *vmin* - 参考最小速度，默认 :math:`\max{(\min\limits_{i} (\alpha_i \cup \beta_i), 0.1)}` 。 
-     
-      + 只要设置了 *vmin* ，不论正负， 是否启用快速收敛算法不再受 :math:`\Delta h` 控制 （见 |-D| ），
-        相当于改为由 **+v**\ *vmin* 手动控制。
-      + 当 *vmin* 为负数时，使用快速收敛算法（这个用法更多是用于 debug 测试）。
+
+.. include:: explain_-Cconverg.rst_
 
 .. _-S:
 
 **-S**
     输出波数积分过程中的核函数文件，保存目录为 ``stgrtstats`` 。
     关于文件格式及其读取详见 :doc:`/Advanced/integ_converg/integ_converg` 。
+
+    .. include:: explain_-Sstats.rst_
 
 .. include:: explain_-egrn.rst_
 

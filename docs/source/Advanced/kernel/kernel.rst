@@ -34,6 +34,11 @@
 且 :doc:`/Advanced/integ_converg/integ_converg` 介绍的核函数文件的读取方法依然适用，
 只是对应波数的列会改为等距的相速度，列名用 “c” 表示。
 
+.. note:: 
+
+    :doc:`/Module/kernel` 模块保存的核函数是理论核函数值，
+    这与 :doc:`/Advanced/integ_converg/integ_converg` 中介绍的在计算格林函数过程中保存的核函数有幅值差异。
+
 
 .. note::
 

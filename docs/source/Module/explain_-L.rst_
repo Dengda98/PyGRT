@@ -1,25 +1,28 @@
 .. _-L:
 
-**-L**\ *args*
-    控制波数积分步长 :math:`\Delta k =\frac{2\pi}{\textit{<length>}\cdot R_{\text{max}}}` 。
+**-L**\ *length*\ [**+l**\ *Flength*][**+a**\ *Ftol*][**+o**\ *offset*]
+    控制波数积分间隔。默认使用传统的离散波数积分，自动确定 *length* ，
+    准则详见 Bouchon (1981) 或代码源文件，
+    对应波数间隔  :math:`\Delta k =\frac{2\pi}{\textit{<length>}\cdot R_{\text{max}}}` ，
     其中 :math:`R_{\text{max}}` 为多个震中距的最大值。
-    具体设置有以下几种情况：
-
-    + 若不使用 |-L| ，则积分步长中的 *length* 参数自动确定，其准则详见 Bouchon (1981) 或代码源文件 。
-
-    + **-L**\ *length* ，手动设置 *length* ，例如 **-L**\ *20* 。
     
-    + **-Ll**\ *length/Flength/Fcut* ，手动设置三个参数， 例如 **-Ll**\ *20/10/10* 。
-      此时原本波数积分区间 :math:`[0, k_{\text{max}}]`
-      被划分为两段， :math:`[0, k^*]` 和 :math:`[k^*, k_{\text{max}}]` ，
-      其中 :math:`k^*=\frac{\textit{<Fcut>}}{R_{\text{max}}}` 。
-      前段仍使用离散波数法求解积分，步长由 *length* 控制，
-      后段则使用 :doc:`/Advanced/filon/linear_filon` , 对应步长由 *Flength* 控制 （仍为上述 :math:`\Delta k` 公式）。
+    支持以下子选项：
     
-    + **-La**\ *length/Ftol/Fcut* ，手动设置三个参数，例如 **-La**\ *20/1e-3/0* 。
-      与上个情况类似，但后段使用 :doc:`/Advanced/filon/self_adaptive_filon` 。
-      这在大震中距情况下能显著减少计算时间。
+    + **+l**\ *Flength* - 使用 :doc:`/Advanced/k_integ/linear_filon` ，间隔由 *Flength* 按相同公式给定。
+    + **+a**\ *Ftol* - 使用 :doc:`/Advanced/k_integ/safim/self_adaptive_filon` ，
+      收敛精度 *Ftol* 一般取 1e-2 即可。
+    + **+o**\ *offset* - 将积分区间 :math:`[0, k_{\text{max}}]` 划分为两段， 
+      :math:`[0, k^*]` 和 :math:`[k^*, k_{\text{max}}]` ，
+      其中 :math:`k^*=\frac{\text{<offset>}}{R_{\text{max}}}` 
+      前段仍使用离散波数法求解积分，间隔由 *length* 控制， 
+      后段则使用以上用户设置的方法。默认 *offset* 为0。
+    
+    例如：
 
+    + **-L**\ 20 - 手动设置离散波数积分间隔。
+    + **-L**\ +a1e-2 - 在全区间 :math:`[0, k_{\text{max}}]` 使用自适应Filon积分。
+    + **-L**\ 20+a1e-2+o10 - 分两段计算积分。
+    
     .. note::
 
         固定间隔和自适应 Filon 积分不计算近场项，即 :doc:`/Tutorial/dynamic/gfunc` 中介绍的 :math:`p=1` 对应的积分项。

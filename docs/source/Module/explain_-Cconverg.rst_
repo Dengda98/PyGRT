@@ -1,0 +1,9 @@
+.. _-C:
+
+**-C**\ **d|p|n**
+    设置波数积分收敛方法。默认当 :math:`|z_s - z_r| <= 1.0` km 时，自动使用直接收敛法。
+    支持以下子选项：
+
+    + **d** - :doc:`/Advanced/integ_converg/dcm` 
+    + **p** - :doc:`/Advanced/integ_converg/ptam` 
+    + **n** - 强制禁用任何收敛方法。

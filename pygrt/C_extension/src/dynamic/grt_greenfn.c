@@ -351,7 +351,7 @@ printf("\n"
 "                   [0, k*] and [k*, kmax], in which k*=<offset>/rmax,\n"
 "                   the former uses DWM and the latter uses FIM/SAFIM.\n"
 "\n"
-"    -C[d|p|n]    Set convergence method,\n"
+"    -Cd|p|n      Set convergence method,\n"
 "                 + d: Direct Convergence Method (DCM).\n"
 "                 + p: Peak-Trough Averaging Method (PTAM).\n"
 "                 + n: None.\n"
@@ -597,7 +597,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 }
                 break;
 
-            // 波数积分收敛方法
+            // 波数积分收敛方法  -Cd|p|n
             case 'C':
                 Ctrl->C.active = true;
                 if(strlen(optarg) == 0){
