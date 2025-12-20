@@ -8,7 +8,7 @@
 `Matplotlib <https://matplotlib.org/>`_ 或 `GMT <https://www.generic-mapping-tools.org/>`_ 。
 计算部分使用 PyGRT 的 Python 接口或可执行文件 :command:`grt` 。
 
-.. grid:: 1 2 3 3
+.. grid:: 1 1 2 3
 
     .. jinja::
 
