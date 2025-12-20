@@ -4,6 +4,7 @@ set -euo pipefail
 
 rm -rf GRN* milrow_sdep*
 
+# 程序受限，这里暂且上传静态图片
 # bash run_milrow_grt.sh_
 # bash run_milrow_cps.sh_
 # python plot_cps_grt.py
