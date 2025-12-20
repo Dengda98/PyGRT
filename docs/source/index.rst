@@ -27,6 +27,7 @@
       - :doc:`Advanced/kernel/kernel`
       - :doc:`Formula/index`
       - :doc:`Module/index`
+      - :doc:`Gallery/gallery`
    
    .. grid-item-card::  附录
 
