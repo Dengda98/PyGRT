@@ -14,3 +14,18 @@
    integ_converg
    ptam
    dcm
+
+
+可设置相应参数来指定收敛方法：
+
+.. tabs:: 
+
+   .. group-tab:: C 
+
+      详见 :doc:`/Module/greenfn` 和 :doc:`/Module/static_greenfn` 模块的 **-C** 选项。
+
+   .. group-tab:: Python
+
+      :func:`compute_grn() <pygrt.pymod.PyModel1D.compute_grn>` 
+      函数和 :func:`compute_static_grn() <pygrt.pymod.PyModel1D.compute_static_grn>` 
+      函数支持设置 ``converg_method:str`` 来指定收敛方法（"DCM", "PTAM", "none"）。
