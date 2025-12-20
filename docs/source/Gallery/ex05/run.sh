@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+rm -rf *.tar.gz *.svg
+
 python run.py
 
 cp trig.svg cover.svg

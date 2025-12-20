@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-rm -rf GRN* syn* *.svg
+rm -rf GRN* syn* *.svg *.tar.gz
 
 dist=10
 depsrc=2

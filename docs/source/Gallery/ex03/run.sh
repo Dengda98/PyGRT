@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-rm -rf GRN* milrow_sdep*
+rm -rf GRN* milrow_sdep* *.tar.gz
 
 # 程序受限，这里暂且上传静态图片
 # bash run_milrow_grt.sh_
