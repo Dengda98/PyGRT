@@ -18,7 +18,7 @@
       - :doc:`Tutorial/prepare` 
       - :doc:`Tutorial/dynamic/index`
       - :doc:`Tutorial/static/index`
-
+      - :doc:`Gallery/gallery`
 
    .. grid-item-card::  PyGRT 进阶
 
@@ -27,7 +27,6 @@
       - :doc:`Advanced/kernel/kernel`
       - :doc:`Formula/index`
       - :doc:`Module/index`
-      - :doc:`Gallery/gallery`
    
    .. grid-item-card::  附录
 
@@ -56,7 +55,7 @@
    Tutorial/prepare 
    Tutorial/dynamic/index
    Tutorial/static/index 
-
+   Gallery/gallery
 
 .. toctree::
    :caption: PyGRT 进阶
@@ -68,7 +67,6 @@
    Advanced/kernel/kernel
    Formula/index
    Module/index
-   Gallery/gallery
 
 
 .. toctree::

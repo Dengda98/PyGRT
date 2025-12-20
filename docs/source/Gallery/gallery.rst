@@ -12,7 +12,7 @@
 
     .. jinja::
 
-        {% for i in range(1, 3) %}
+        {% for i in range(1, 10) %}
         {% set i = '%02d' % i %}
         .. grid-item-card:: :doc:`ex{{i}}/ex{{i}}`
             :padding: 1

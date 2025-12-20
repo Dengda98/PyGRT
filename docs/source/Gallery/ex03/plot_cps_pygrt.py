@@ -31,6 +31,6 @@ try:
     st_cps = read("milrow_sdep2_rdep0/GRN/*")
 
     from plot_cps_grt import plot
-    plot(st_grt, st_cps, "compare_cps_pygrt.pdf")
+    plot(st_grt, st_cps, "compare_cps_pygrt.svg")
 except Exception as e:
     print(str(e))

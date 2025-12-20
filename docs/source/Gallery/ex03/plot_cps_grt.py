@@ -62,7 +62,7 @@ def plot(st_grt:Stream, st_cps:Stream, out:str):
         ax.set_xticks([2, 3, 4, 5, 6, 7])
         ax.set_xlabel('Time (s)', fontsize=12)
 
-    fig.savefig(out)
+    fig.savefig(out, bbox_inches='tight')
 
 
 
@@ -71,4 +71,4 @@ if __name__=='__main__':
     st_grt = read("GRN/milrow_2_0_10/*")
     st_cps = read("milrow_sdep2_rdep0/GRN/*")
 
-    plot(st_grt, st_cps, "compare_cps_grt.pdf")
+    plot(st_grt, st_cps, "compare_cps_grt.svg")
