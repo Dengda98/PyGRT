@@ -1,0 +1,24 @@
+:author: 朱邓达
+:date: 2025-12-19
+
+(12) 静态位移解示例
+------------------------------------
+
+下载示例： :download:`ex12.tar.gz`
+
+.. grid:: 3
+
+    .. grid-item::
+
+        .. figure:: disp_dc.svg
+            :align: center
+
+    .. grid-item::
+
+        .. figure:: disp_sf.svg
+            :align: center
+
+    .. grid-item::
+
+        .. figure:: disp_ex.svg
+            :align: center
