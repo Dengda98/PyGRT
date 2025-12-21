@@ -23,7 +23,8 @@ build:
     "netcdf-bin",
     "nco",
     "gmt",
-    "pdf2svg"
+    "pdf2svg",
+    "bc"
   ]
 
   jobs:
