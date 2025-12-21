@@ -1,0 +1,18 @@
+:author: 朱邓达
+:date: 2025-12-19
+
+(11) 液体层中的声波解
+------------------------------------
+
+下载示例： :download:`ex11.tar.gz`
+
+在每层均为液体的模型中，原弹性波方程退化为声波方程。
+
+.. literalinclude:: water
+    :language: text
+
+液体层中仅支持输出爆炸源的解。
+
+.. figure:: disp.svg
+    :align: center
+

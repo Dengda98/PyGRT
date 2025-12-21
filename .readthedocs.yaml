@@ -22,7 +22,9 @@ build:
     "libnetcdf-dev", 
     "netcdf-bin",
     "nco",
-    "gmt"
+    "gmt",
+    "pdf2svg",
+    "bc"
   ]
 
   jobs:

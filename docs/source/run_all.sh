@@ -8,7 +8,7 @@ set -euo pipefail
 
 
 fname="run.sh"
-for path in $(find -type f -name "$fname"); do
+for path in $(find -type f -name "$fname" | sort); do
     cd $(dirname $path)
     chmod +x $fname
     echo "--------------------------- $path -----------------------------"

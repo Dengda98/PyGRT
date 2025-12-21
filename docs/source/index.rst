@@ -18,7 +18,7 @@
       - :doc:`Tutorial/prepare` 
       - :doc:`Tutorial/dynamic/index`
       - :doc:`Tutorial/static/index`
-
+      - :doc:`Gallery/gallery`
 
    .. grid-item-card::  PyGRT 进阶
 
@@ -55,7 +55,7 @@
    Tutorial/prepare 
    Tutorial/dynamic/index
    Tutorial/static/index 
-
+   Gallery/gallery
 
 .. toctree::
    :caption: PyGRT 进阶

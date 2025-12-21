@@ -1,0 +1,17 @@
+:author: 朱邓达
+:date: 2025-12-19
+
+(7) 计算多道记录
+----------------------------------
+
+下载示例： :download:`ex07.tar.gz`
+
+在如下薄层模型中，计算地表垂直力源激发的多道记录。
+
+薄层模型：
+
+.. literalinclude:: mod
+    :language: text
+
+.. figure:: multi_traces.svg
+    :align: center
