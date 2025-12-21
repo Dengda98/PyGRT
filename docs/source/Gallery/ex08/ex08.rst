@@ -1,0 +1,26 @@
+:author: 朱邓达
+:date: 2025-12-19
+
+(8) 模拟场地效应
+----------------------------------
+
+下载示例： :download:`ex08.tar.gz`
+
+在如下两个模型中计算地表位移，观察地表低速薄层对波形的影响。震源深度 3 km，震中距 3 km。
+
+.. grid:: 2
+    
+    .. grid-item::
+        
+        .. literalinclude:: killari
+            :language: text
+    
+    .. grid-item::
+        
+        .. literalinclude:: killari_nosoil
+            :language: text
+
+.. figure:: compare.svg
+    :align: center
+
+    所有波形使用相同的归一化
