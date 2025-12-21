@@ -1,0 +1,15 @@
+:author: 朱邓达
+:date: 2025-12-19
+
+(10) 对动态解做频率域升采样
+------------------------------------
+
+下载示例： :download:`ex10.tar.gz`
+
+频率域升采样即在频谱后补零，在有限频段下使时域波形更加光滑，这在前期测试阶段可省不少时间。
+:doc:`/Module/greenfn` 模块的 **-N+n** 和 
+:func:`compute_grn() <pygrt.pymod.PyModel1D.compute_grn>` 函数中的 **upsampling_n** 
+参数可启用这一功能。
+
+.. figure:: upsampling.svg
+    :align: center
