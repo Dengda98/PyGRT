@@ -1,0 +1,33 @@
+:author: 朱邓达
+:date: 2025-12-19
+
+(9) 计算海底模型中的动态位移和应力
+------------------------------------
+
+下载示例： :download:`ex09.tar.gz`
+
+海底模型中存在固液界面，相关公式见 :doc:`/Formula/RT_liquid` 。
+
+示例海底模型如下：
+
+.. literalinclude:: mod_sea
+    :language: text
+
+Shell 脚本如下。其中有必要说明的是，固液边界处仅有垂向位移和垂向应力连续，
+其余分量不连续，此时若将震源或台站正好放置在固液边界处则会产生歧义，程序会警告并退出。
+因此对于此情况需适当在深度上设置一个极小量的偏离，以明确表明其所处层位。
+
+.. literalinclude:: run.sh
+    :language: bash
+    :start-after: BEGIN
+    :end-before: END
+
++ 位移
+
+.. figure:: disp.svg
+    :align: center
+
++ 应力张量（由于接收点位于液体层，仅有完全相同的 ZZ、RR、TT 分量，即液体压强）
+  
+.. figure:: stress.svg
+    :align: center
