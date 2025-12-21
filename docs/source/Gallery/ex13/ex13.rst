@@ -1,0 +1,42 @@
+:author: 朱邓达
+:date: 2025-12-19
+
+(13) 静态位移/应力（文献结果复现）
+-------------------------------------
+
+下载示例： :download:`ex13.tar.gz`
+
+以下复现 `郝金来和姚振兴（2012） <http://www.geophy.cn/article/doi/10.6038/j.issn.0001-5733.2012.05.025>`_ [#]_
+中计算的同震位移、应力的测试结果，以下简称为“原文”。
+
+.. [#] 郝金来, 姚振兴, 2012. 均匀弹性分层介质模型中的同震位移、应变以及应力[J]. 地球物理学报, 55(5): 1682-1694.
+
++ 位移结果 1 （原文图 4(a)）
+
+.. figure:: disp1.svg
+    :align: center
+
++ 应力结果 1 （原文图 4(b)）
+
+.. figure:: stress1.svg
+    :align: center
+
++ 位移结果 2 （原文图 5(a)）
+
+.. figure:: disp2.svg
+    :align: center
+
++ 应力结果 2 （原文图 5(b)）
+
+.. figure:: stress2.svg
+    :align: center
+
++ 位移结果 3 （原文图 6(a)）
+
+.. figure:: disp3.svg
+    :align: center
+
++ 应力结果 3 （原文图 6(b)）
+
+.. figure:: stress3.svg
+    :align: center
