@@ -74,7 +74,6 @@ int rotation_main(int argc, char **argv){
 
     // ----------------------------------------------------------------------------------
     // 开始读取计算，输出3个量
-    float *arrin = NULL;
     char c1, c2;
     char *s_filepath = NULL;
 
@@ -92,12 +91,12 @@ int rotation_main(int argc, char **argv){
 
 
     // 读取一个头段变量，获得基本参数，分配数组内存
-    SACHEAD hd;
     GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%c.sac", Ctrl->s_synpath, tolower(chs[0]), chs[0]);
-    grt_read_SAC_HEAD(command, s_filepath, &hd);
-    int npts=hd.npts;
-    float dist=hd.dist;
-    float *arrout = (float*)calloc(npts, sizeof(float));
+    SACTRACE *insac = grt_read_SACTRACE(s_filepath, true);
+    int npts = insac->hd.npts;
+    float dist = insac->hd.dist;
+    SACTRACE *outsac = grt_copy_SACTRACE(insac, true);
+    grt_free_SACTRACE(insac);
 
     // ----------------------------------------------------------------------------------
     // 循环3个分量
@@ -108,38 +107,38 @@ int rotation_main(int argc, char **argv){
 
             // 读取数据 u_{i,j}
             GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%c.sac", Ctrl->s_synpath, tolower(c2), c1);
-            arrin = grt_read_SAC(command, s_filepath, &hd, arrin);
+            insac = grt_read_SACTRACE(s_filepath, false);
 
             // 累加
-            for(int i=0; i<npts; ++i)  arrout[i] += arrin[i];
+            for(int i=0; i<npts; ++i)  outsac->data[i] += insac->data[i];
 
             // 读取数据 u_{j,i}
             GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%c.sac", Ctrl->s_synpath, tolower(c1), c2);
-            arrin = grt_read_SAC(command, s_filepath, &hd, arrin);
+            insac = grt_read_SACTRACE(s_filepath, false);
 
             // 累加
-            for(int i=0; i<npts; ++i)  arrout[i] = (arrout[i] - arrin[i]) * 0.5f;
+            for(int i=0; i<npts; ++i)  outsac->data[i] = (outsac->data[i] - insac->data[i]) * 0.5f;
 
             // 特殊情况需加上协变导数，1e-5是因为km->cm
             if(c1=='R' && c2=='T'){
                 // 读取数据 u_T
                 GRT_SAFE_ASPRINTF(&s_filepath, "%s/T.sac", Ctrl->s_synpath);
-                arrin = grt_read_SAC(command, s_filepath, &hd, arrin);
-                for(int i=0; i<npts; ++i)  arrout[i] -= 0.5f * arrin[i] / dist * 1e-5;
+                insac = grt_read_SACTRACE(s_filepath, false);
+                for(int i=0; i<npts; ++i)  outsac->data[i] -= 0.5f * insac->data[i] / dist * 1e-5;
             }
 
             // 保存到SAC
-            sprintf(hd.kcmpnm, "%c%c", c1, c2);
+            sprintf(outsac->hd.kcmpnm, "%c%c", c1, c2);
             GRT_SAFE_ASPRINTF(&s_filepath, "%s/rotation_%c%c.sac", Ctrl->s_synpath, c1, c2);
-            write_sac(s_filepath, hd, arrout);
+            grt_write_SACTRACE(s_filepath, outsac);
 
             // 置零
-            for(int i=0; i<npts; ++i)  arrout[i] = 0.0f;
+            for(int i=0; i<npts; ++i)  outsac->data[i] = 0.0f;
         }
     }
 
-    GRT_SAFE_FREE_PTR(arrin);
-    GRT_SAFE_FREE_PTR(arrout);
+    grt_free_SACTRACE(insac);
+    grt_free_SACTRACE(outsac);
     GRT_SAFE_FREE_PTR(s_filepath);
 
     free_Ctrl(Ctrl);

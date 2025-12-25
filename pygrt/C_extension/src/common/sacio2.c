@@ -5,36 +5,61 @@
  * 
  */
 
-
-
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "grt/common/sacio2.h"
-#include "grt/common/sacio.h"
-
+#include "grt/common/const.h"
 #include "grt/common/checkerror.h"
 
 
-void grt_read_SAC_HEAD(const char *command, const char *name, SACHEAD *hd){
-    int lswap = read_sac_head(name, hd);
-    if(lswap == -1){
-        GRTRaiseError("[%s] read %s head failed.\n", command, name);
+SACTRACE * grt_read_SACTRACE(const char *name, const bool headonly)
+{
+    GRTCheckFileExist("TO_BE_FILLED", name);
+
+    SACTRACE *sac = (SACTRACE *)calloc(1, sizeof(SACTRACE));
+
+    if (headonly) {
+        if(read_sac_head(name, &sac->hd) == -1){
+            GRTRaiseError("[%s] read %s head failed.\n", "TO_BE_FILLED", name);
+        }
+        return sac;
     }
+    
+    if ((sac->data = read_sac(name, &sac->hd)) == NULL){
+        GRTRaiseError("[%s] read %s failed.\n", "TO_BE_FILLED", name);
+    }
+    
+    return sac;
+}
+
+SACTRACE * grt_copy_SACTRACE(SACTRACE *sac, bool zero_value)
+{
+    SACTRACE *sac2 = (SACTRACE *)calloc(1, sizeof(SACTRACE));
+    *sac2 = *sac;
+    sac2->data = (float *)calloc(sac->hd.npts, sizeof(float));
+    if(!zero_value) memcpy(sac2->data, sac->data, sizeof(float)*sac->hd.npts);
+    return sac2;
+}
+
+SACTRACE * grt_new_SACTRACE(float dt, int nt, float b0)
+{
+    SACTRACE *sac = (SACTRACE *)calloc(1, sizeof(SACTRACE));
+    sac->hd = new_sac_head(dt, nt, b0);
+    sac->data = (float *)calloc(nt, sizeof(float));
+    return sac;
+}
+
+int grt_write_SACTRACE(const char *name, SACTRACE *sac)
+{
+    return write_sac(name, sac->hd, sac->data);
 }
 
 
-float * grt_read_SAC(const char *command, const char *name, SACHEAD *hd, float *arrout){
-    float *arrin=NULL;
-    if((arrin = read_sac(name, hd)) == NULL){
-        GRTRaiseError("[%s] read %s failed.\n", command, name);
-    }
-
-    if(arrout!=NULL){
-        for(int i=0; i<hd->npts; ++i)  arrout[i] = arrin[i];
-        free(arrin);
-        arrin = arrout;
-    }
-    
-    return arrin;
+void grt_free_SACTRACE(SACTRACE *sac)
+{
+    if (sac == NULL)  return;
+    GRT_SAFE_FREE_PTR(sac->data);
+    GRT_SAFE_FREE_PTR(sac);
 }
