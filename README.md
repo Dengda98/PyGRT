@@ -55,7 +55,7 @@ Since PyGRT has been under continuous maintenance and extension during the peer 
 
 > Zhu D., J. Wang, J. Hao, S. Yao, Y. Xu, T. Xu and Z. Yao (2026). PyGRT: An Efficient and Integrated Python Package for Computing Synthetic Seismograms in a Layered Half-Space Model. Seismological Research Letters. doi: [10.1785/0220250057](https://doi.org/10.1785/0220250057)
 
-> Zhu, D., T. Xu, J. Hao, and Z. Yao (2026). A Direct Convergence Method for Computing Synthetic Seismograms for a Layered Half-space with Sources and Receivers at Close Depths, Bulletin of the Seismological Society of America. (accepted)
+> Zhu, D., T. Xu, J. Hao, and Z. Yao (2026). A Direct Convergence Method for Computing Synthetic Seismograms for a Layered Half-space with Sources and Receivers at Close Depths, Bulletin of the Seismological Society of America. doi: [10.1785/0120250190](https://doi.org/10.1785/0120250190)
 
 ---------------
 ⭐ **Like this project? Give it a Star!** ⭐

@@ -98,6 +98,7 @@
   Zhu, D., T. Xu, J. Hao, and Z. Yao (2026). A Direct Convergence Method 
   for Computing Synthetic Seismograms for a Layered Half-space with Sources and 
   Receivers at Close Depths, Bulletin of the Seismological Society of America.
+  doi: `10.1785/0120250190 <https://doi.org/10.1785/0120250190>`_
 
 
 主要参考
