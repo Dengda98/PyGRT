@@ -10,12 +10,25 @@
 #include <stdio.h>
 #include <string.h>
 #include "grt/dynamic/syn.h"
+#include "grt/common/radiation.h"
 
-void grt_syn(const realChnlGrid srcRadi, const char *dirpath, const char *prefix, SACTRACE *synsac[GRT_CHANNEL_NUM])
+void grt_syn(const realChnlGrid srcRadi, const int computeType, const char *dirpath, const char *prefix, SACTRACE *synsac[GRT_CHANNEL_NUM])
 {
     GRT_LOOP_ChnlGrid(im, c) {
         int modr = GRT_SRC_M_ORDERS[im];
         if(modr == 0 && GRT_QWV_CODES[c] == 'v')   continue;
+
+        if (computeType == GRT_SYN_COMPUTE_EX) {
+            if (im != GRT_SRC_M_EX_INDEX) continue;
+        } else if (computeType == GRT_SYN_COMPUTE_SF) {
+            if (im != GRT_SRC_M_VF_INDEX && im != GRT_SRC_M_HF_INDEX) continue;
+        } else if (computeType == GRT_SYN_COMPUTE_DC) {
+            if (im < GRT_SRC_M_DD_INDEX) continue;
+        } else if (computeType == GRT_SYN_COMPUTE_MT) {
+            if (im < GRT_SRC_M_DD_INDEX && im != GRT_SRC_M_EX_INDEX) continue;
+        } else {
+            GRTRaiseError("Not Supported.");
+        }
 
         const real_t coef = srcRadi[im][c];
         const char ch = GRT_ZRT_CODES[c];

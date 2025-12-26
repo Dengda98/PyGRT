@@ -16,8 +16,9 @@
  * 根据已有系数（方向因子）合成理论地震图
  * 
  * @param[in]      srcRadi    不同震源不同分量的系数
+ * @param[in]      computeType   要计算的震源类型，使用宏定义
  * @param[in]      dirpath    格林函数所在目录路径
  * @param[in]      prefix     格林函数文件名前缀
  * @param[out]     synsac     三分量 SACTRACE
  */
-void grt_syn(const realChnlGrid srcRadi, const char *dirpath, const char *prefix, SACTRACE *synsac[GRT_CHANNEL_NUM]);
+void grt_syn(const realChnlGrid srcRadi, const int computeType, const char *dirpath, const char *prefix, SACTRACE *synsac[GRT_CHANNEL_NUM]);

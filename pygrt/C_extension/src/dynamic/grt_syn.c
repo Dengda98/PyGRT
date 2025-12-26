@@ -443,26 +443,31 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             GRT_SAFE_ASPRINTF(&s_filepath, "%s/%s", Ctrl->G.s_grnpath, entry->d_name);
             SACTRACE *sac = grt_read_SACTRACE(s_filepath, true);
             GRT_SAFE_FREE_PTR(s_filepath);
-            float va, vb, rho;  
-            va  = sac->hd.user6;
-            vb  = sac->hd.user7;
-            rho = sac->hd.user8;
-            if(va <= 0.0 || vb < 0.0 || rho <= 0.0){
-                GRTRaiseError("[%s] Error! Bad src_va, src_vb or src_rho in \"%s\" header.\n", "TO_BE_FILLED", entry->d_name);
-            }
-            if(vb == 0.0){
-                GRTRaiseError("[%s] Error! Zero src_vb in \"%s\" header. "
-                    "Maybe you try to use -Su<scale> but the source is in the liquid. "
-                    "Use -S<scale> instead.\n" , "TO_BE_FILLED", entry->d_name);
-            }
+
             Ctrl->dist = sac->hd.dist;
-            if (Ctrl->S.mult_src_mu) Ctrl->S.src_mu = vb*vb*rho*1e10;
+
+            if (Ctrl->S.mult_src_mu) {
+                float va, vb, rho;  
+                va  = sac->hd.user6;
+                vb  = sac->hd.user7;
+                rho = sac->hd.user8;
+                if(va <= 0.0 || vb < 0.0 || rho <= 0.0){
+                    GRTRaiseError("Error! Bad src_va, src_vb or src_rho in \"%s\" header.\n", entry->d_name);
+                }
+                if(vb == 0.0){
+                    GRTRaiseError("Error! Zero src_vb in \"%s\" header. "
+                        "Maybe you try to use -Su<scale> but the source is in the liquid. "
+                        "Use -S<scale> instead.\n" , entry->d_name);
+                }
+                Ctrl->S.src_mu = vb*vb*rho*1e10;
+                Ctrl->S.M0 *= Ctrl->S.src_mu;
+            }
+            
             grt_free_SACTRACE(sac);
             
             break;
         }
 
-        if (Ctrl->S.mult_src_mu) Ctrl->S.M0 *= Ctrl->S.src_mu;
         closedir(dp);
     }
 }
@@ -577,10 +582,10 @@ int syn_main(int argc, char **argv){
 
         // 合成地震图
         if (ityp==0 || ityp==3) {
-            grt_syn(Ctrl->srcRadi, Ctrl->G.s_grnpath, "", sacs);
+            grt_syn(Ctrl->srcRadi, Ctrl->computeType, Ctrl->G.s_grnpath, "", sacs);
         } else {
             char prefix[] = {tolower(GRT_ZRT_CODES[ityp-1]), '\0'};
-            grt_syn(Ctrl->srcRadi, Ctrl->G.s_grnpath, prefix, sacs);
+            grt_syn(Ctrl->srcRadi, Ctrl->computeType, Ctrl->G.s_grnpath, prefix, sacs);
         }        
 
         // 首次读取获得时间函数 
