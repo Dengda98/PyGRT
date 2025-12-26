@@ -41,18 +41,15 @@ class PyGreenFunction:
             depsrc:float, 
             deprcv:float):
         ''' 
-            Python端使用的格林函数类
-
-            :param    name:          格林函数名称，震源类型(EX,VF,HF,DD,DS,SS)+三分量(Z,R,T)
-            :param    nt:            时间点数  
-            :param    dt:            采样间隔(s)  
-            :param    upsampling_n:  升采样倍数 
-            :param    freqs:         频率数组(Hz)
-            :param    wI:          定义虚频率，omega = w - j*wI, wI = wI  
-            :param    dist:          震中距(km)
-            :param    depsrc:        震源深度(km)
-            :param    deprcv:        台站深度(km)
-
+            :param    name:          source-type (EX,VF,HF,DD,DS,SS) + component (Z,R,T)
+            :param    nt:            number of time points
+            :param    dt:            time interval (s)  
+            :param    upsampling_n:  upsampling factor 
+            :param    freqs:         frequency array (Hz)
+            :param    wI:            imaginary angular frequency `wI`，omega = w - j*wI
+            :param    dist:          epicentral distance (km)
+            :param    depsrc:        source depth (km)
+            :param    deprcv:        receiver depth (km)
         '''
         
         # 频率点
@@ -89,7 +86,7 @@ class PyGreenFunction:
 
     def plot_response(self):
         '''
-            绘制频率响应图，包括幅度响应和相位响应
+            plot the frequency response, including amplitude response and phase response
         '''
         amp = np.abs(self.cmplx_grn)
         phi = np.angle(self.cmplx_grn)
@@ -114,12 +111,14 @@ class PyGreenFunction:
         
     def freq2time(self, T0:float, travtP:float, travtS:float, mult:float=1.0):
         '''
-            将格林函数从频域转为时域，以 :class:`obspy.Trace` 的形式返回  
+            Convert the Green's function from the frequency domain to the time domain 
+            and return it in the form of :class:`obspy.Trace`
 
-            :param    T0:      时域信号的起始时刻相对发震时刻的偏移量(s)，例如T0=5表示发震后5s开始记录波形 
+            :param    T0:      The offset (secs) of the starttime w.r.t the event origin,
+                               for example, T0=5 denotes recording began 5 seconds after the origin.
 
             :return:
-                - **tr**:      :class:`obspy.Trace` 类型的格林函数时间序列  
+                - **tr**:      :class:`obspy.Trace` Green's function
         '''
 
         self.cmplx_grn[:] *= mult
