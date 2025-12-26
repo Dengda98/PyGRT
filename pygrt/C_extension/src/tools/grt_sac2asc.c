@@ -72,18 +72,17 @@ int sac2asc_main(int argc, char **argv){
     GRTCheckFileExist(Ctrl->name, Ctrl->s_filepath);
 
     // 读入SAC文件
-    SACHEAD hd;
-    float *arr = grt_read_SAC(Ctrl->name, Ctrl->s_filepath, &hd, NULL);
+    SACTRACE *insac = grt_read_SACTRACE(Ctrl->s_filepath, false);
 
     // 将波形写入标准输出，第一列时间，第二列振幅
-    float begt = hd.b;
-    float dt = hd.delta;
-    int npts = hd.npts;
+    float begt = insac->hd.b;
+    float dt = insac->hd.delta;
+    int npts = insac->hd.npts;
     for(int i=0; i<npts; ++i){
-        printf("%13.7e  %13.7e\n", begt+dt*i, arr[i]);
+        printf("%13.7e  %13.7e\n", begt+dt*i, insac->data[i]);
     }
 
-    GRT_SAFE_FREE_PTR(arr);
+    grt_free_SACTRACE(insac);
 
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;

@@ -7,11 +7,14 @@
  * 
  */
 
+#include <dirent.h>
+
 #include "grt/dynamic/signals.h"
 #include "grt/common/sacio2.h"
 #include "grt/common/const.h"
 #include "grt/common/radiation.h"
 #include "grt/common/coord.h"
+#include "grt/dynamic/syn.h"
 
 #include "grt.h"
 
@@ -79,8 +82,6 @@ typedef struct {
         bool active;
         char tftype;
         char *tfparams;
-        int tfnt;
-        float *tfarr;
     } D;
     /** 静默输出 */
     struct {
@@ -93,6 +94,9 @@ typedef struct {
 
     // 存储不同震源的震源机制相关参数的数组
     real_t mchn[GRT_MECHANISM_NUM];
+
+    // 震中距
+    real_t dist;
 
     // 方向因子数组
     realChnlGrid srcRadi;
@@ -113,7 +117,6 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
     GRT_SAFE_FREE_PTR(Ctrl->O.s_output_dir);
     // D
     GRT_SAFE_FREE_PTR(Ctrl->D.tfparams);
-    GRT_SAFE_FREE_PTR(Ctrl->D.tfarr);
     GRT_SAFE_FREE_PTR(Ctrl);
 }
 
@@ -240,39 +243,6 @@ printf("\n"
 "        grt syn -Gres/milrow_2_0_10 -Osyn_mt -A30 -S1e24 -T2.3/0.2/-4.0/0.3/0.5/1.2\n"
 "\n\n\n"
 );
-}
-
-
-/**
- * 检查格林函数文件是否存在
- * 
- * @param    name    格林函数文件名（不含父级目录）
- */
-static void check_grn_exist(GRT_MODULE_CTRL *Ctrl, const char *name){
-    const char *command = Ctrl->name;
-    char *buffer = NULL;
-    GRT_SAFE_ASPRINTF(&buffer, "%s/%s", Ctrl->G.s_grnpath, name);
-    GRTCheckFileExist(command, buffer);
-
-    // 检查文件的同时将src_mu计算出来
-    if(Ctrl->S.src_mu == 0.0 && Ctrl->S.mult_src_mu){
-        SACHEAD hd;
-        grt_read_SAC_HEAD(command, buffer, &hd);
-        real_t va, vb, rho;
-        va = hd.user6;
-        vb = hd.user7;
-        rho = hd.user8;
-        if(va <= 0.0 || vb < 0.0 || rho <= 0.0){
-            GRTRaiseError("[%s] Error! Bad src_va, src_vb or src_rho in \"%s\" header.\n", command, buffer);
-        }
-        if(vb == 0.0){
-            GRTRaiseError("[%s] Error! Zero src_vb in \"%s\" header. "
-                "Maybe you try to use -Su<scale> but the source is in the liquid. "
-                "Use -S<scale> instead.\n" , command, buffer);
-        }
-        Ctrl->S.src_mu = vb*vb*rho*1e10;
-    }
-    GRT_SAFE_FREE_PTR(buffer);
 }
 
 
@@ -458,146 +428,94 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
         GRTRaiseError("[%s] Error! Only support at most one of \"-M\", \"-F\" and \"-T\". Use \"-h\" for help.\n", command);
     }
 
-    #define EX_GRN_List \
-        X(EXR.sac)   \
-        X(EXZ.sac)   \
-
-    #define SF_GRN_List \
-        X(VFR.sac)   \
-        X(VFZ.sac)   \
-        X(HFR.sac)   \
-        X(HFT.sac)   \
-        X(HFZ.sac)   \
-
-    #define DC_GRN_List \
-        X(DDR.sac)   \
-        X(DDZ.sac)   \
-        X(DSR.sac)   \
-        X(DST.sac)   \
-        X(DSZ.sac)   \
-        X(SSR.sac)   \
-        X(SST.sac)   \
-        X(SSZ.sac)   \
-
-    // 检查对应震源的格林函数文件在不在
-    if( (!Ctrl->M.active && !Ctrl->F.active && !Ctrl->T.active) || Ctrl->T.active){
-        #define X(name)  check_grn_exist(Ctrl, #name);
-            EX_GRN_List
-        #undef X
-        if(Ctrl->e.active) {
-            #define X(name)  check_grn_exist(Ctrl, "z" #name);
-                EX_GRN_List
-            #undef X
-            #define X(name)  check_grn_exist(Ctrl, "r" #name);
-                EX_GRN_List
-            #undef X
-        }
-    }
-    if(Ctrl->M.active){
-        #define X(name)  check_grn_exist(Ctrl, #name);
-            DC_GRN_List
-        #undef X
-        if(Ctrl->e.active) {
-            #define X(name)  check_grn_exist(Ctrl, "z" #name);
-                DC_GRN_List
-            #undef X
-            #define X(name)  check_grn_exist(Ctrl, "r" #name);
-                DC_GRN_List
-            #undef X
-        }
-    }
-    if(Ctrl->F.active){
-        #define X(name)  check_grn_exist(Ctrl, #name);
-            SF_GRN_List
-        #undef X
-        if(Ctrl->e.active) {
-            #define X(name)  check_grn_exist(Ctrl, "z" #name);
-                SF_GRN_List
-            #undef X
-            #define X(name)  check_grn_exist(Ctrl, "r" #name);
-                SF_GRN_List
-            #undef X
-        }
-    }
-
     // 建立保存目录
     GRTCheckMakeDir(command, Ctrl->O.s_output_dir);
 
-    if(Ctrl->S.mult_src_mu)  Ctrl->S.M0 *= Ctrl->S.src_mu;
+    // 随机读取一个 sac，确定 dist 和 src_mu
+    {
+        struct dirent *entry;
+        DIR *dp = opendir(Ctrl->G.s_grnpath);
+        while ((entry = readdir(dp))) {
+            if (strlen(entry->d_name) <= 4)  continue;
+            if (strcmp(entry->d_name + strlen(entry->d_name) - 3, "sac") != 0)  continue;
+
+            char *s_filepath = NULL;
+            GRT_SAFE_ASPRINTF(&s_filepath, "%s/%s", Ctrl->G.s_grnpath, entry->d_name);
+            SACTRACE *sac = grt_read_SACTRACE(s_filepath, true);
+            GRT_SAFE_FREE_PTR(s_filepath);
+
+            Ctrl->dist = sac->hd.dist;
+
+            if (Ctrl->S.mult_src_mu) {
+                float va, vb, rho;  
+                va  = sac->hd.user6;
+                vb  = sac->hd.user7;
+                rho = sac->hd.user8;
+                if(va <= 0.0 || vb < 0.0 || rho <= 0.0){
+                    GRTRaiseError("Error! Bad src_va, src_vb or src_rho in \"%s\" header.\n", entry->d_name);
+                }
+                if(vb == 0.0){
+                    GRTRaiseError("Error! Zero src_vb in \"%s\" header. "
+                        "Maybe you try to use -Su<scale> but the source is in the liquid. "
+                        "Use -S<scale> instead.\n" , entry->d_name);
+                }
+                Ctrl->S.src_mu = vb*vb*rho*1e10;
+                Ctrl->S.M0 *= Ctrl->S.src_mu;
+            }
+            
+            grt_free_SACTRACE(sac);
+            
+            break;
+        }
+
+        closedir(dp);
+    }
 }
 
 
-/**
- * 将某一道合成地震图保存到sac文件
- * 
- * @param      pfx         通道名前缀
- * @param      ch          分量名， Z/R/T
- * @param      arr         数据指针
- * @param      hd          SAC头段变量
- */
-static void save_to_sac(GRT_MODULE_CTRL *Ctrl, const char *pfx, const char ch, float *arr, SACHEAD hd){
-    hd.az = Ctrl->A.azimuth;
-    hd.baz = Ctrl->A.backazimuth;
+/** 将某一道合成地震图保存到sac文件 */
+static void save_to_sac(GRT_MODULE_CTRL *Ctrl, const char *pfx, const char ch, SACTRACE *sac){
+    sac->hd.az = Ctrl->A.azimuth;
+    sac->hd.baz = Ctrl->A.backazimuth;
     char *buffer = NULL;
-    snprintf(hd.kcmpnm, sizeof(hd.kcmpnm), "%s%c", pfx, ch);
+    snprintf(sac->hd.kcmpnm, sizeof(sac->hd.kcmpnm), "%s%c", pfx, ch);
     GRT_SAFE_ASPRINTF(&buffer, "%s/%s%c.sac", Ctrl->O.s_output_dir, pfx, ch);
-    write_sac(buffer, hd, arr);
-    GRT_SAFE_FREE_PTR(buffer);
-}
-
-/**
- * 将时间函数保存到sac文件
- * 
- * @param      tfarr       时间函数数据指针
- * @param      tfnt        点数
- * @param      dt          采样间隔
- */
-static void save_tf_to_sac(GRT_MODULE_CTRL *Ctrl, float *tfarr, int tfnt, float dt){
-    char *buffer = NULL;
-    SACHEAD hd = new_sac_head(dt, tfnt, 0.0);
-    GRT_SAFE_ASPRINTF(&buffer, "%s/sig.sac", Ctrl->O.s_output_dir);
-    write_sac(buffer, hd, tfarr);
+    grt_write_SACTRACE(buffer, sac);
     GRT_SAFE_FREE_PTR(buffer);
 }
 
 
-/**
- * 将不同ZRT分量的位移以及位移空间导数旋转到ZNE分量
- * 
- * @param    syn       位移
- * @param    syn_upar  位移空间导数
- * @param    nt        时间点数
- * @param    azrad     方位角弧度
- * @param    dist      震中距(km)
- */
-static void data_zrt2zne(float *syn[3], float *syn_upar[3][3], int nt, real_t azrad, real_t dist){
-    real_t dblsyn[3];
-    real_t dblupar[3][3];
+static void data_zrt2zne(SACTRACE *synsac[3], SACTRACE *synparsac[3][3], real_t azrad)
+{
+    real_t dblsyn[3] = {0};
+    real_t dblupar[3][3] = {0};
 
-    bool doupar = (syn_upar[0][0]!=NULL);
+    bool doupar = (synparsac[0][0]!=NULL);
+
+    float dist = synsac[0]->hd.dist;
+    int nt = synsac[0]->hd.npts;
 
     // 对每一个时间点
-    for(int n=0; n<nt; ++n){
+    for(int n = 0; n < nt; ++n){
         // 复制数据，以调用函数
         for(int i1=0; i1<3; ++i1){
-            dblsyn[i1] = syn[i1][n];
+            dblsyn[i1] = synsac[i1]->data[n];
             for(int i2=0; i2<3; ++i2){
-                if(doupar) dblupar[i1][i2] = syn_upar[i1][i2][n];
+                if(doupar) dblupar[i1][i2] = synparsac[i1][i2]->data[n];
             }
         }
 
         if(doupar) {
-            grt_rot_zrt2zxy_upar(azrad, dblsyn, dblupar, dist*1e5);
+            grt_rot_zrt2zxy_upar(azrad, dblsyn, dblupar, dist*1e5);   // 1e5 km 转为 cm
         } else {
             grt_rot_zxy2zrt_vec(-azrad, dblsyn);
         }
-        
 
         // 将结果写入原数组
         for(int i1=0; i1<3; ++i1){
-            syn[i1][n] = dblsyn[i1];
+            synsac[i1]->data[n] = dblsyn[i1];
             for(int i2=0; i2<3; ++i2){
-                if(doupar)  syn_upar[i1][i2][n] = dblupar[i1][i2];
+                if(doupar)  synparsac[i1][i2]->data[n] = dblupar[i1][i2];
             }
         }
     }
@@ -619,17 +537,10 @@ int syn_main(int argc, char **argv){
     // 根据参数设置，选择分量名
     const char *chs = (rot2ZNE)? GRT_ZNE_CODES : GRT_ZRT_CODES;
 
-    float **ptarrout=NULL, *arrout=NULL;
-    float *arrsyn[3] = {NULL, NULL, NULL};
-    float *arrsyn_upar[3][3] = {NULL};
-    SACHEAD hdsyn[3], hdsyn_upar[3][3], hd0;
-    SACHEAD *pthd=NULL;
-    char ch;
-    float coef=0.0, fac=0.0, dfac=0.0;
-    float wI=0.0; // 虚频率
-    int nt=0;
-    float dt=0.0;
-    float dist=-12345.0; // 震中距
+    SACTRACE *synsac[GRT_CHANNEL_NUM] = {0};
+    SACTRACE *synparsac[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM] = {0};
+    SACTRACE **sacs = NULL;
+    SACTRACE *tfsac = NULL;
 
     real_t upar_scale=1.0;
 
@@ -651,162 +562,121 @@ int syn_main(int argc, char **argv){
                 upar_scale=1e-5;
                 break;
 
-            // 合成ui_t，其中dist会在ityp<3之前从sac文件中读出
+            // 合成ui_t
             case 3:
-                upar_scale=1e-5 / dist;
+                upar_scale=1e-5 / Ctrl->dist;
                 break;
                 
             default:
                 break;
         }
-        
+
+        if (ityp == 0) {
+            sacs = &synsac[0];
+        } else {
+            sacs = &synparsac[ityp-1][0];
+        }
+
         // 重新计算方向因子
         grt_set_source_radiation(Ctrl->srcRadi, Ctrl->computeType, (ityp==3), Ctrl->S.M0, upar_scale, Ctrl->A.azrad, Ctrl->mchn);
 
-        for(int c=0; c<GRT_CHANNEL_NUM; ++c){
-            ch = GRT_ZRT_CODES[c];
-            
-            // 定义SACHEAD指针
-            if(ityp==0){
-                pthd = &hdsyn[c];
-                ptarrout = &arrsyn[c];
-            } else {
-                pthd = &hdsyn_upar[ityp-1][c];
-                ptarrout = &arrsyn_upar[ityp-1][c];
+        // 合成地震图
+        if (ityp==0 || ityp==3) {
+            grt_syn(Ctrl->srcRadi, Ctrl->computeType, Ctrl->G.s_grnpath, "", sacs);
+        } else {
+            char prefix[] = {tolower(GRT_ZRT_CODES[ityp-1]), '\0'};
+            grt_syn(Ctrl->srcRadi, Ctrl->computeType, Ctrl->G.s_grnpath, prefix, sacs);
+        }        
+
+        // 首次读取获得时间函数 
+        if(Ctrl->D.active && tfsac == NULL){
+            int tfnt;
+            float *tfarr = grt_get_time_function(&tfnt, sacs[0]->hd.delta, Ctrl->D.tftype, Ctrl->D.tfparams);
+            if(tfarr == NULL){
+                GRTRaiseError("[%s] get time function error.\n", command);
             }
-            arrout = *ptarrout;
+            tfsac = grt_new_SACTRACE(sacs[0]->hd.delta, tfnt, 0.0);
+            memcpy(tfsac->data, tfarr, sizeof(float)*tfnt);
+            GRT_SAFE_FREE_PTR(tfarr);
+        } 
 
-            for(int k=0; k<GRT_SRC_M_NUM; ++k){
-                coef = Ctrl->srcRadi[k][c];
-                if(coef == 0.0) continue;
+        for(int c = 0; c < GRT_CHANNEL_NUM; ++c){
+            float dt = sacs[0]->hd.delta;
+            int nt = sacs[0]->hd.npts;
 
-                char *buffer = NULL;
-                if(ityp==0 || ityp==3){
-                    GRT_SAFE_ASPRINTF(&buffer, "%s/%s%c.sac", Ctrl->G.s_grnpath, GRT_SRC_M_NAME_ABBR[k], ch);
-                } else {
-                    GRT_SAFE_ASPRINTF(&buffer, "%s/%c%s%c.sac", Ctrl->G.s_grnpath, tolower(GRT_ZRT_CODES[ityp-1]), GRT_SRC_M_NAME_ABBR[k], ch);
-                }
-                
-                float *arr = grt_read_SAC(command, buffer, pthd, NULL);
-                hd0 = *pthd; // 备份一份
-
-                nt = pthd->npts;
-                dt = pthd->delta;
-                dist = pthd->dist;
-                // dw = PI2/(nt*dt);
-
-                // 第一次读入元信息，申请数组内存
-                if(arrout==NULL){
-                    arrout = *ptarrout = (float*)calloc(nt, sizeof(float));
-                }    
-    
-                // 使用虚频率将序列压制，卷积才会稳定
-                // 读入虚频率 
-                wI = pthd->user0;
-                fac = 1.0;
-                dfac = expf(-wI*dt);
-                for(int n=0; n<nt; ++n){
-                    arrout[n] += arr[n]*coef * fac;
-                    fac *= dfac;
-                }
-    
-                GRT_SAFE_FREE_PTR(arr);
-                GRT_SAFE_FREE_PTR(buffer);
-            } // ENDFOR 不同震源
-            
-            // 再次检查内存，例如爆炸源的T分量，不会进入上述for循环，导致arrout没有分配内存
-            if(arrout==NULL){
-                arrout = *ptarrout = (float*)calloc(nt, sizeof(float));
-                *pthd = hd0;
-                continue;  // 直接跳过，认为这一分量全为0
-            }
-    
-            if(Ctrl->D.active && Ctrl->D.tfarr==NULL){
-                // 获得时间函数 
-                Ctrl->D.tfarr = grt_get_time_function(&Ctrl->D.tfnt, dt, Ctrl->D.tftype, Ctrl->D.tfparams);
-                if(Ctrl->D.tfarr==NULL){
-                    GRTRaiseError("[%s] get time function error.\n", command);
-                }
-                fac = 1.0;
-                dfac = expf(-wI*dt);
-                for(int i=0; i<Ctrl->D.tfnt; ++i){
-                    Ctrl->D.tfarr[i] = Ctrl->D.tfarr[i]*fac;
-                    fac *= dfac;
-                }
-            } 
-
-    
             // 时域循环卷积
-            if(Ctrl->D.tfarr!=NULL){
-                float *convarr = (float*)calloc(nt, sizeof(float));
-                grt_oaconvolve(arrout, nt, Ctrl->D.tfarr, Ctrl->D.tfnt, convarr, nt, true);
-                for(int i=0; i<nt; ++i){
-                    arrout[i] = convarr[i] * dt; // dt是连续卷积的系数
+            if(tfsac != NULL){
+                float wI;
+                float fac, dfac;
+                // 虚频率幅值压制
+                wI = sacs[0]->hd.user0;
+                fac = 1.0;
+                dfac = expf(- wI*dt);
+                for(int n = 0; n < nt; ++n){
+                    sacs[c]->data[n] *= fac;
+                    if (n < tfsac->hd.npts)  tfsac->data[n] *= fac;
+                    fac *= dfac;
+                }
+
+                float *convarr = (float *)calloc(nt, sizeof(float));
+                grt_oaconvolve(sacs[c]->data, nt, tfsac->data, tfsac->hd.npts, convarr, nt, true);
+                // 虚频率振幅恢复
+                fac = 1.0;
+                dfac = expf(wI*dt);
+                for(int n = 0; n < nt; ++n){
+                    sacs[c]->data[n] = convarr[n] * fac * dt; // dt是连续卷积的系数
+                    if (n < tfsac->hd.npts)  tfsac->data[n] *= fac;
+                    fac *= dfac;
                 }
                 GRT_SAFE_FREE_PTR(convarr);
             }
-    
-            // 处理虚频率
-            fac = 1.0;
-            dfac = expf(wI*dt);
-            for(int i=0; i<nt; ++i){
-                arrout[i] *= fac;
-                fac *= dfac;
-            }
-    
+
             // 时域积分或求导
             for(int i=0; i<Ctrl->I.int_times; ++i){
-                grt_trap_integral(arrout, nt, dt);
+                grt_trap_integral(sacs[c]->data, nt, dt);
             }
             for(int i=0; i<Ctrl->J.dif_times; ++i){
-                grt_differential(arrout, nt, dt);
+                grt_differential(sacs[c]->data, nt, dt);
             }
-    
-        } // ENDFOR 三分量
+        }
     }
-    
 
     // 是否需要旋转
     if(rot2ZNE){
-        data_zrt2zne(arrsyn, arrsyn_upar, nt, Ctrl->A.azrad, dist);
+        data_zrt2zne(synsac, synparsac, Ctrl->A.azrad);
     }
 
     // 保存到SAC文件
     for(int i1=0; i1<GRT_CHANNEL_NUM; ++i1){
         char pfx[20]="";
-        save_to_sac(Ctrl, pfx, chs[i1], arrsyn[i1], hdsyn[i1]);
+        save_to_sac(Ctrl, pfx, chs[i1], synsac[i1]);
         if(Ctrl->e.active){
             for(int i2=0; i2<GRT_CHANNEL_NUM; ++i2){
                 sprintf(pfx, "%c", tolower(chs[i1]));
-                save_to_sac(Ctrl, pfx, chs[i2], arrsyn_upar[i1][i2], hdsyn_upar[i1][i2]);
+                save_to_sac(Ctrl, pfx, chs[i2], synparsac[i1][i2]);
             }
         }
     }
 
     // 保存时间函数
-    if(Ctrl->D.tfnt > 0){
-        // 处理虚频率
-        // 保存前恢复幅值
-        fac = 1.0;
-        dfac = expf(wI*dt);
-        for(int i=0; i<Ctrl->D.tfnt; ++i){
-            Ctrl->D.tfarr[i] *= fac;
-            fac *= dfac;
-        }
-        save_tf_to_sac(Ctrl, Ctrl->D.tfarr, Ctrl->D.tfnt, dt);
-    }  
-    
+    if(tfsac != NULL){
+        char *buffer = NULL;
+        GRT_SAFE_ASPRINTF(&buffer, "%s/sig.sac", Ctrl->O.s_output_dir);
+        grt_write_SACTRACE(buffer, tfsac);
+        GRT_SAFE_FREE_PTR(buffer);
+    }
+        
     if(! Ctrl->s.active) {
         printf("[%s] Under \"%s\"\n", command, Ctrl->O.s_output_dir);
         printf("[%s] Synthetic Seismograms of %-13s source done.\n", command, sourceTypeFullName[Ctrl->computeType]);
-        if(Ctrl->D.tfarr!=NULL) printf("[%s] Time Function saved.\n", command);
+        if(tfsac != NULL) printf("[%s] Time Function saved.\n", command);
     }
-    
-    
+
+    if(tfsac != NULL) grt_free_SACTRACE(tfsac);
     for(int i=0; i<3; ++i){
-        GRT_SAFE_FREE_PTR(arrsyn[i]);
+        grt_free_SACTRACE(synsac[i]);
         for(int j=0; j<3; ++j){
-            GRT_SAFE_FREE_PTR(arrsyn_upar[i][j]);
+            grt_free_SACTRACE(synparsac[i][j]);
         }
     }
 
