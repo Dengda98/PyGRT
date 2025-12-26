@@ -23,3 +23,5 @@
 #define BOLD_MAGENTA     "\033[1;35m"
 #define REGULAR_CYAN     "\033[0;36m"
 #define BOLD_CYAN        "\033[1;36m"
+#define REGULAR_WHITE    "\033[0;37m"
+#define BOLD_WHITE       "\033[1;37m"

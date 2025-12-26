@@ -8,6 +8,10 @@
 
 #include "grt/common/const.h"
 
+/** 当前模块名，根据所调用模块进行切换 */
+const char *GRT_MODULE_NAME = "grt";
+
+
 
 /** 分别对应爆炸源(0阶)，垂直力源(0阶)，水平力源(1阶)，剪切源(0,1,2阶) */ 
 const int GRT_SRC_M_ORDERS[GRT_SRC_M_NUM] = {0, 0, 1, 0, 1, 2};

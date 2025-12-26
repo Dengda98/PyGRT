@@ -21,7 +21,6 @@
 
 /** 该子模块的参数控制结构体 */
 typedef struct {
-    char *name;
     /** 输入模型 */
     struct {
         bool active;
@@ -75,8 +74,6 @@ typedef struct {
 /** 释放结构体的内存 */
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl)
 {
-    GRT_SAFE_FREE_PTR(Ctrl->name);
-
     // M
     GRT_SAFE_FREE_PTR(Ctrl->M.s_modelpath);
     grt_free_mod1d(Ctrl->M.mod1d);
@@ -159,8 +156,6 @@ printf("\n"
 /** 从命令行中读取选项，处理后记录到全局变量中 */
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
 {
-    char* command = Ctrl->name;
-
     // 先为个别参数设置非0初始值
     Ctrl->F.zeta = GRT_GREENFN_F_ZETA;
 
@@ -184,16 +179,16 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 Ctrl->D.s_depsrc = (char*)malloc(sizeof(char)*(strlen(optarg)+1));
                 Ctrl->D.s_deprcv = (char*)malloc(sizeof(char)*(strlen(optarg)+1));
                 if(2 != sscanf(optarg, "%[^/]/%s", Ctrl->D.s_depsrc, Ctrl->D.s_deprcv)){
-                    GRTBadOptionError(command, D, "");
+                    GRTBadOptionError(D, "");
                 };
                 if(1 != sscanf(Ctrl->D.s_depsrc, "%lf", &Ctrl->D.depsrc)){
-                    GRTBadOptionError(command, D, "");
+                    GRTBadOptionError(D, "");
                 }
                 if(1 != sscanf(Ctrl->D.s_deprcv, "%lf", &Ctrl->D.deprcv)){
-                    GRTBadOptionError(command, D, "");
+                    GRTBadOptionError(D, "");
                 }
                 if(Ctrl->D.depsrc < 0.0 || Ctrl->D.deprcv < 0.0){
-                    GRTBadOptionError(command, D, "Negative value in -D is not supported.");
+                    GRTBadOptionError(D, "Negative value in -D is not supported.");
                 }
                 break;
 
@@ -206,16 +201,16 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                     real_t a1, a2, df;
                     a1 = a2 = df = 0;
                     if(3 != sscanf(token, "%lf/%lf/%lf", &a1, &a2, &df)){
-                        GRTBadOptionError(command, F, "");
+                        GRTBadOptionError(F, "");
                     };
                     if(df <= 0){
-                        GRTBadOptionError(command, F, "Can't set nonpositive df(%lf).", df);
+                        GRTBadOptionError(F, "Can't set nonpositive df(%lf).", df);
                     }
                     if(a1 < 0.0 || a2 <= 0.0){
-                        GRTBadOptionError(command, F, "Can't set nonpositive f1(%lf), f2(%lf).", a1, a2);
+                        GRTBadOptionError(F, "Can't set nonpositive f1(%lf), f2(%lf).", a1, a2);
                     }
                     if(a1 > a2){
-                        GRTBadOptionError(command, F, "f1(%lf) > f2(%lf).", a1, a2);
+                        GRTBadOptionError(F, "f1(%lf) > f2(%lf).", a1, a2);
                     }
 
                     // 跳过零频
@@ -228,14 +223,14 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                         switch (token[0]){
                             case 'w':
                                 if(1 != sscanf(token+1, "%lf", &Ctrl->F.zeta)){
-                                    GRTBadOptionError(command, F, "");
+                                    GRTBadOptionError(F, "");
                                 }
                                 if(Ctrl->F.zeta <= 0.0){
-                                    GRTBadOptionError(command, F, "+%s need positive float, but get (%lf).", token, Ctrl->F.zeta);
+                                    GRTBadOptionError(F, "+%s need positive float, but get (%lf).", token, Ctrl->F.zeta);
                                 }
                                 break;
                             default:
-                                GRTBadOptionError(command, F, "+%s is not supported.", token);
+                                GRTBadOptionError(F, "+%s is not supported.", token);
                                 break;
                         }
                     }
@@ -243,7 +238,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                     Ctrl->F.nf = floor((a2-a1)/df) + 1;
                     // 至少要有两个频率点，才能在程序中用差分计算 df
                     if(Ctrl->F.nf < 2){
-                        GRTBadOptionError(command, F, "Too few frequency points, only %zu.", Ctrl->F.nf);
+                        GRTBadOptionError(F, "Too few frequency points, only %zu.", Ctrl->F.nf);
                     }
                     Ctrl->F.freqs = (real_t *)calloc(Ctrl->F.nf, sizeof(real_t));
                     for(size_t i=0; i<Ctrl->F.nf; ++i){
@@ -268,10 +263,10 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                     a1 = a2 = df = 0;
                     int nscan = sscanf(optarg, "%lf/%lf/%lf", &a1, &a2, &df);
                     if( !(nscan == 1 || nscan == 3)){
-                        GRTBadOptionError(command, C, "");
+                        GRTBadOptionError(C, "");
                     };
                     if(nscan == 1 && a1 <= 0.0){
-                        GRTBadOptionError(command, C, "Can't set a single nonpositive value.");
+                        GRTBadOptionError(C, "Can't set a single nonpositive value.");
                     }
                     if(nscan == 1){
                         Ctrl->C.dc = a1;
@@ -283,10 +278,10 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                         Ctrl->C.cmax = a2;
                         Ctrl->C.dc = df;
                         if(Ctrl->C.cmin <= 0.0 || Ctrl->C.cmax <= 0.0){
-                            GRTBadOptionError(command, C, "Can't set nonpositive cmin(%lf), cmax(%lf).", Ctrl->C.cmin, Ctrl->C.cmax);
+                            GRTBadOptionError(C, "Can't set nonpositive cmin(%lf), cmax(%lf).", Ctrl->C.cmin, Ctrl->C.cmax);
                         }
                         if(Ctrl->C.cmin >= Ctrl->C.cmax){
-                            GRTBadOptionError(command, C, "cmin(%lf) >= cmax(%lf).", Ctrl->C.cmin, Ctrl->C.cmax);
+                            GRTBadOptionError(C, "cmin(%lf) >= cmax(%lf).", Ctrl->C.cmin, Ctrl->C.cmax);
                         }
 
                         Ctrl->C.nc = floor((a2-a1)/df) + 1;
@@ -302,10 +297,10 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
             case 'P':
                 Ctrl->P.active = true;
                 if(1 != sscanf(optarg, "%d", &Ctrl->P.nthreads)){
-                    GRTBadOptionError(command, P, "");
+                    GRTBadOptionError(P, "");
                 };
                 if(Ctrl->P.nthreads <= 0){
-                    GRTBadOptionError(command, P, "Nonpositive value is not supported.");
+                    GRTBadOptionError(P, "Nonpositive value is not supported.");
                 }
                 grt_set_num_threads(Ctrl->P.nthreads);
                 break;
@@ -315,25 +310,25 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 Ctrl->e.active = true;
                 break;
 
-            GRT_Common_Options_in_Switch(command, (char)(optopt));
+            GRT_Common_Options_in_Switch((char)(optopt));
         }
     }
 
     // 检查必须设置的参数是否有设置
-    GRTCheckOptionSet(command, argc > 1);
-    GRTCheckOptionActive(command, Ctrl, M);
-    GRTCheckOptionActive(command, Ctrl, D);
-    GRTCheckOptionActive(command, Ctrl, F);
-    GRTCheckOptionActive(command, Ctrl, C);
-    GRTCheckOptionActive(command, Ctrl, O);
+    GRTCheckOptionSet(argc > 1);
+    GRTCheckOptionActive(Ctrl, M);
+    GRTCheckOptionActive(Ctrl, D);
+    GRTCheckOptionActive(Ctrl, F);
+    GRTCheckOptionActive(Ctrl, C);
+    GRTCheckOptionActive(Ctrl, O);
 
     // 建立保存目录
-    GRTCheckMakeDir(command, Ctrl->O.s_output_dir);
+    GRTCheckMakeDir(Ctrl->O.s_output_dir);
 
     // 在目录中保留命令
     char *dummy = NULL;
     GRT_SAFE_ASPRINTF(&dummy, "%s/command", Ctrl->O.s_output_dir);
-    FILE *fp = GRTCheckOpenFile(command, dummy, "a");
+    FILE *fp = GRTCheckOpenFile(dummy, "a");
     fprintf(fp, GRT_MAIN_COMMAND " ");  // 主程序名
     for(int i=0; i<argc; ++i){
         fprintf(fp, "%s ", argv[i]);
@@ -349,14 +344,12 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
 int kernel_main(int argc, char **argv)
 {
     GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
-    Ctrl->name = strdup(argv[0]);
-    const char *command = Ctrl->name;
 
     // 传入参数 
     getopt_from_command(Ctrl, argc, argv);
 
     // 读入模型文件
-    if((Ctrl->M.mod1d = grt_read_mod1d_from_file(command, Ctrl->M.s_modelpath, Ctrl->D.depsrc, Ctrl->D.deprcv, true)) == NULL){
+    if((Ctrl->M.mod1d = grt_read_mod1d_from_file(Ctrl->M.s_modelpath, Ctrl->D.depsrc, Ctrl->D.deprcv, true)) == NULL){
         exit(EXIT_FAILURE);
     }
     GRT_MODEL1D *mod1d = Ctrl->M.mod1d;
@@ -381,7 +374,7 @@ int kernel_main(int argc, char **argv)
     // 保存目录
     char *s_output_dir = NULL;
     GRT_SAFE_ASPRINTF(&s_output_dir, "%s/%s_%s_%s", Ctrl->O.s_output_dir, Ctrl->M.s_modelname, Ctrl->D.s_depsrc, Ctrl->D.s_deprcv);
-    GRTCheckMakeDir(command, s_output_dir);
+    GRTCheckMakeDir(s_output_dir);
 
     const real_t Rho = mod1d->Rho[mod1d->isrc]; // 震源区密度
     const real_t fac = 1.0/(4.0*PI*Rho);

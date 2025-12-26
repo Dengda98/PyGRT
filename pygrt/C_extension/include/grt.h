@@ -74,7 +74,7 @@ extern const char *GRT_Module_Names[];
 
 
 /** 共有的命令行处理语句 */ 
-#define GRT_Common_Options_in_Switch(name, X) \
+#define GRT_Common_Options_in_Switch(X) \
     /** 帮助 */  \
     case 'h': \
         print_help(); \
@@ -82,11 +82,11 @@ extern const char *GRT_Module_Names[];
         break; \
     /** 参数缺失 */  \
     case ':': \
-        GRTMissArgsError(name, X, ""); \
+        GRTMissArgsError(X, ""); \
         break; \
     /** 非法选项 */  \
     case '?': \
     default: \
-        GRTInvalidOptionError(name, X, ""); \
+        GRTInvalidOptionError(X, ""); \
         break; \
 

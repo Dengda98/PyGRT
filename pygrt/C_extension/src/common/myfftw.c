@@ -16,7 +16,7 @@ static GRT_FFTW##S##_HOLDER *  grt_init_fftw##s##_holder(const size_t nt, const 
 {\
     GRT_FFTW##S##_HOLDER *fh = (GRT_FFTW##S##_HOLDER*)calloc(1, sizeof(GRT_FFTW##S##_HOLDER));\
     if (!fh) {\
-        GRTRaiseError("Failed to allocate memory in function %s\n.", __func__);\
+        GRTRaiseError("Failed to allocate memory.\n");\
     }\
     fh->nt = nt;\
     fh->dt = dt;\
@@ -28,7 +28,7 @@ static GRT_FFTW##S##_HOLDER *  grt_init_fftw##s##_holder(const size_t nt, const 
     memset(fh->w_t, 0, sizeof(T)*nt);\
     memset(fh->W_f, 0, sizeof(fftw##s##_complex)*fh->nf);\
     if (!fh->w_t || !fh->W_f) {\
-        GRTRaiseError("Failed to allocate arrays in function %s\n.", __func__);\
+        GRTRaiseError("Failed to allocate arrays.\n");\
     }\
     return fh;\
 }\

@@ -226,10 +226,10 @@ void grt_realloc_mod1d(GRT_MODEL1D *mod1d, size_t n){
 
 
 
-GRT_MODEL1D * grt_read_mod1d_from_file(const char *command, const char *modelpath, real_t depsrc, real_t deprcv, bool allowLiquid){
-    GRTCheckFileExist(command, modelpath);
+GRT_MODEL1D * grt_read_mod1d_from_file(const char *modelpath, real_t depsrc, real_t deprcv, bool allowLiquid){
+    GRTCheckFileExist(modelpath);
     
-    FILE *fp = GRTCheckOpenFile(command, modelpath, "r");
+    FILE *fp = GRTCheckOpenFile(modelpath, "r");
 
     
     // 初始化
@@ -256,7 +256,7 @@ GRT_MODEL1D * grt_read_mod1d_from_file(const char *command, const char *modelpat
         h = va = vb = rho = qa = qb = 0.0;
         int nscan = sscanf(line, "%lf %lf %lf %lf %lf %lf\n", &h, &va, &vb, &rho, &qa, &qb);
         if(ncols != nscan && ncols_noQ != nscan){
-            GRTRaiseError("[%s] Model file read error in line %zu.\n", command, iline);
+            GRTRaiseError("Model file read error in line %zu.\n", iline);
         };
 
         // 读取首行，如果首行首列为 0 ，则首列指示每层顶界面深度而非厚度
@@ -265,15 +265,15 @@ GRT_MODEL1D * grt_read_mod1d_from_file(const char *command, const char *modelpat
         }
 
         if(va <= 0.0 || rho <= 0.0 || (ncols == nscan && (qa <= 0.0 || qb <= 0.0))){
-            GRTRaiseError("[%s] In model file, line %zu, nonpositive value is not supported.\n", command, iline);
+            GRTRaiseError("In model file, line %zu, nonpositive value is not supported.\n", iline);
         }
 
         if(vb < 0.0){
-            GRTRaiseError("[%s] In model file, line %zu, negative Vs is not supported.\n", command, iline);
+            GRTRaiseError("In model file, line %zu, negative Vs is not supported.\n", iline);
         }
 
         if(!allowLiquid && vb == 0.0){
-            GRTRaiseError("[%s] In model file, line %zu, Vs==0.0 is not supported.\n", command, iline);
+            GRTRaiseError("In model file, line %zu, Vs==0.0 is not supported.\n", iline);
         }
 
         modarr = (real_t(*)[ncols])realloc(modarr, sizeof(real_t)*ncols*(nlay+1));
@@ -289,7 +289,7 @@ GRT_MODEL1D * grt_read_mod1d_from_file(const char *command, const char *modelpat
     }
 
     if(iline==0 || modarr==NULL){
-        GRTRaiseError("[%s] Model file %s read error.\n", command, modelpath);
+        GRTRaiseError("Model file %s read error.\n", modelpath);
     }
 
     // 如果读取了深度，转为厚度
@@ -298,7 +298,7 @@ GRT_MODEL1D * grt_read_mod1d_from_file(const char *command, const char *modelpat
             // 检查，若为负数，则表示输入的层顶深度非递增
             real_t tmp = modarr[i][0] - modarr[i-1][0];
             if(tmp < 0.0){
-                GRTRaiseError("[%s] In model file, negative thickness found in layer %zu.\n", command, i);
+                GRTRaiseError("In model file, negative thickness found in layer %zu.\n", i);
             }
             modarr[i-1][0] = tmp;
         }
@@ -338,8 +338,9 @@ GRT_MODEL1D * grt_read_mod1d_from_file(const char *command, const char *modelpat
 
         // 允许最后一层厚度为任意值
         if(h <= 0.0 && i < nlay0-1 ) {
-            GRTRaiseError("[%s] In line %zu, nonpositive thickness (except last layer)"
-                    " is not supported.\n", command, i+1);
+            GRTRaiseError(
+                "In line %zu, nonpositive thickness (except last layer) "
+                "is not supported.\n", i+1);
         }
 
         // 划分震源层和接收层
@@ -391,19 +392,19 @@ GRT_MODEL1D * grt_read_mod1d_from_file(const char *command, const char *modelpat
     // 检查，接收点不能位于液-液、固-液界面
     if(ircv < nlay-1 && mod1d->Thk[ircv] == 0.0 && mod1d->Vb[ircv]*mod1d->Vb[ircv+1] == 0.0){
         GRTRaiseError( 
-            "[%s] The receiver is located on the interface where there is liquid on one side. "
+            "The receiver is located on the interface where there is liquid on one side. "
             "Due to the discontinuity of the tangential displacement on this interface, "
             "to reduce ambiguity, you should add a small offset to the receiver depth, "
-            "thereby explicitly placing it within a specific layer. \n", command);
+            "thereby explicitly placing it within a specific layer. \n");
     }
 
     // 检查 --> 源点不能位于液-液、固-液界面
     if(isrc < nlay-1 && mod1d->Thk[isrc] == 0.0 && mod1d->Vb[isrc]*mod1d->Vb[isrc+1] == 0.0){
         GRTRaiseError(
-            "[%s] The source is located on the interface where there is liquid on one side. "
+            "The source is located on the interface where there is liquid on one side. "
             "Due to the discontinuity of the tangential displacement on this interface, "
             "to reduce ambiguity, you should add a small offset to the source depth, "
-            "thereby explicitly placing it within a specific layer. \n", command);
+            "thereby explicitly placing it within a specific layer. \n");
     }
 
     // 将每层顶界面深度写入数组
@@ -424,8 +425,8 @@ GRT_MODEL1D * grt_read_mod1d_from_file(const char *command, const char *modelpat
 }
 
 
-void grt_get_model_diglen_from_file(const char *command, const char *modelpath, size_t diglen[6]){
-    FILE *fp = GRTCheckOpenFile(command, modelpath, "r");
+void grt_get_model_diglen_from_file(const char *modelpath, size_t diglen[6]){
+    FILE *fp = GRTCheckOpenFile(modelpath, "r");
     size_t len;
     char *line = NULL;
 

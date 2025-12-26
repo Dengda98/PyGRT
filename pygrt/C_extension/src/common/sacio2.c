@@ -14,21 +14,21 @@
 #include "grt/common/checkerror.h"
 
 
-SACTRACE * grt_read_SACTRACE(const char *name, const bool headonly)
+SACTRACE * grt_read_SACTRACE(const char *path, const bool headonly)
 {
-    GRTCheckFileExist("TO_BE_FILLED", name);
+    GRTCheckFileExist(path);
 
     SACTRACE *sac = (SACTRACE *)calloc(1, sizeof(SACTRACE));
 
     if (headonly) {
-        if(read_sac_head(name, &sac->hd) == -1){
-            GRTRaiseError("[%s] read %s head failed.\n", "TO_BE_FILLED", name);
+        if(read_sac_head(path, &sac->hd) != 0){
+            GRTRaiseError("read %s head failed.\n", path);
         }
         return sac;
     }
     
-    if ((sac->data = read_sac(name, &sac->hd)) == NULL){
-        GRTRaiseError("[%s] read %s failed.\n", "TO_BE_FILLED", name);
+    if ((sac->data = read_sac(path, &sac->hd)) == NULL){
+        GRTRaiseError("read %s failed.\n", path);
     }
     
     return sac;
@@ -51,9 +51,9 @@ SACTRACE * grt_new_SACTRACE(float dt, int nt, float b0)
     return sac;
 }
 
-int grt_write_SACTRACE(const char *name, SACTRACE *sac)
+int grt_write_SACTRACE(const char *path, SACTRACE *sac)
 {
-    return write_sac(name, sac->hd, sac->data);
+    return write_sac(path, sac->hd, sac->data);
 }
 
 

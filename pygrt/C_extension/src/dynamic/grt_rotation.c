@@ -15,14 +15,12 @@
 
 /** 该子模块的参数控制结构体 */
 typedef struct {
-    char *name;
     char *s_synpath;
 } GRT_MODULE_CTRL;
 
 
 /** 释放结构体的内存 */
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
-    GRT_SAFE_FREE_PTR(Ctrl->name);
     GRT_SAFE_FREE_PTR(Ctrl->s_synpath);
     GRT_SAFE_FREE_PTR(Ctrl);
 }
@@ -45,24 +43,22 @@ printf("\n"
 
 /** 从命令行中读取选项，处理后记录到全局变量中 */
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
-    char* command = Ctrl->name;
+    (void)Ctrl;
     int opt;
     while ((opt = getopt(argc, argv, ":h")) != -1) {
         switch (opt) {
-            GRT_Common_Options_in_Switch(command, (char)(optopt));
+            GRT_Common_Options_in_Switch((char)(optopt));
         }
     }
 
     // 检查必选项有没有设置
-    GRTCheckOptionSet(command, argc > 1);
+    GRTCheckOptionSet(argc > 1);
 }
 
 
 /** 子模块主函数 */
 int rotation_main(int argc, char **argv){
     GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
-    Ctrl->name = strdup(argv[0]);
-    const char *command = Ctrl->name;
 
     getopt_from_command(Ctrl, argc, argv);
     
@@ -70,7 +66,7 @@ int rotation_main(int argc, char **argv){
     Ctrl->s_synpath = strdup(argv[1]);
 
     // 检查是否存在该目录
-    GRTCheckDirExist(command, Ctrl->s_synpath);
+    GRTCheckDirExist(Ctrl->s_synpath);
 
     // ----------------------------------------------------------------------------------
     // 开始读取计算，输出3个量

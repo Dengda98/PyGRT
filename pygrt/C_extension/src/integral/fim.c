@@ -152,8 +152,7 @@ real_t grt_linear_filon_integ(
         if(0==iik)       {k0N = k0+dk; sgn =  1.0;}
         else if(1==iik)  {k0N = k;     sgn = -1.0;}
         else {
-            fprintf(stderr, "Filon error.\n");
-            exit(EXIT_FAILURE);
+            GRTRaiseError("Filon error.\n");
         }
 
         // 计算核函数 F(k, w)

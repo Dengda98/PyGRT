@@ -136,7 +136,6 @@ void grt_realloc_mod1d(GRT_MODEL1D *mod1d, size_t n);
 /**
  * 从文件中读取模型文件
  * 
- * @param[in]    command        命令名称
  * @param[in]    modelpath      模型文件路径
  * @param[in]    depsrc         震源深度
  * @param[in]    deprcv         接收深度
@@ -145,18 +144,17 @@ void grt_realloc_mod1d(GRT_MODEL1D *mod1d, size_t n);
  * @return    `GRT_MODEL1D` 结构体指针
  * 
  */
-GRT_MODEL1D * grt_read_mod1d_from_file(const char *command, const char *modelpath, real_t depsrc, real_t deprcv, bool allowLiquid);
+GRT_MODEL1D * grt_read_mod1d_from_file(const char *modelpath, real_t depsrc, real_t deprcv, bool allowLiquid);
 
 
 /**
  * 从模型文件中判断各个量的大致精度（字符串长度），以确定浮点数输出位数
  * 
- * @param[in]    command        命令名称
  * @param[in]    modelpath      模型文件路径
  * @param[out]   diglen         每一列的最大字符串长度
  * 
  */
-void grt_get_model_diglen_from_file(const char *command, const char *modelpath, size_t diglen[6]);
+void grt_get_model_diglen_from_file(const char *modelpath, size_t diglen[6]);
 
 /**
  * 浮点数比较，检查模型中是否存在该速度（不论Vp,Vs）

@@ -225,7 +225,7 @@ void grt_RT_matrix_ls_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *
     bool isfluidUp = (mu1 == 0.0);  // 上层是否为液体
     int sgn = 1;
     if(isfluidUp && mu2 == 0.0){
-        GRTRaiseError("Error: fluid-fluid interface is not allowed in function %s\n", __func__);
+        GRTRaiseError("fluid-fluid interface is not allowed.\n");
     }
 
     // 使用指针
@@ -291,7 +291,7 @@ void grt_RT_matrix_ls_SH(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M
     // 讨论液-固 or 固-液
     bool isfluidUp = (mu1 == 0.0);  // 上层是否为液体
     if(isfluidUp && mu2 == 0.0){
-        GRTRaiseError("Error: fluid-fluid interface is not allowed in function %s\n", __func__);
+        GRTRaiseError("fluid-fluid interface is not allowed.\n");
     }
 
     // 使用指针
@@ -569,7 +569,7 @@ void grt_get_layer_D(
             }
         }
         else {
-            GRTRaiseError("Wrong execution of function %s.", __func__);
+            GRTRaiseError("Wrong execution.");
         }
     }
     
@@ -674,7 +674,7 @@ void grt_get_layer_T(
 {
     // 液体层不应该使用该函数
     if(xb == 1.0){
-        GRTRaiseError("Wrong execution of function %s.", __func__);
+        GRTRaiseError("Wrong execution.");
     }
 
     if( ! inverse ){

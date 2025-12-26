@@ -15,7 +15,6 @@
 
 /** 该子模块的参数控制结构体 */
 typedef struct {
-    char *name;
     /** 输入文件路径 */
     char *s_filepath;
 } GRT_MODULE_CTRL;
@@ -23,7 +22,6 @@ typedef struct {
 
 /** 释放结构体的内存 */
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
-    GRT_SAFE_FREE_PTR(Ctrl->name);
     GRT_SAFE_FREE_PTR(Ctrl->s_filepath);
     GRT_SAFE_FREE_PTR(Ctrl);
 }
@@ -46,30 +44,29 @@ printf("\n"
 
 /** 从命令行中读取选项，处理后记录到全局变量中 */
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
-    char* command = Ctrl->name;
+    (void)Ctrl;
     int opt;
     while ((opt = getopt(argc, argv, ":h")) != -1) {
         switch (opt) {
-            GRT_Common_Options_in_Switch(command, (char)(optopt));
+            GRT_Common_Options_in_Switch((char)(optopt));
         }
     }
 
     // 检查必选项有没有设置
-    GRTCheckOptionSet(command, argc > 1);
+    GRTCheckOptionSet(argc > 1);
 }
 
 
 /** 子模块主函数 */
 int sac2asc_main(int argc, char **argv){
     GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
-    Ctrl->name = strdup(argv[0]);
 
     getopt_from_command(Ctrl, argc, argv);
 
     Ctrl->s_filepath = strdup(argv[1]);
     
     // 检查文件名是否存在
-    GRTCheckFileExist(Ctrl->name, Ctrl->s_filepath);
+    GRTCheckFileExist(Ctrl->s_filepath);
 
     // 读入SAC文件
     SACTRACE *insac = grt_read_SACTRACE(Ctrl->s_filepath, false);
