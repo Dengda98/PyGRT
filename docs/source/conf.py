@@ -142,10 +142,15 @@ intersphinx_mapping = {
     'numpy': ('https://numpy.org/doc/stable/', None)
 }
 
+def get_version_from_file():
+    with open("../../pygrt/C_extension/version", "r") as f:
+        return f.readline()
+
 # 别名
 rst_epilog = f"""
 .. |Stream| replace:: :class:`~obspy.core.stream.Stream`
 .. |Trace| replace:: :class:`~obspy.core.trace.Trace`
+.. |GRT_VERSION| replace:: {get_version_from_file()}
 """
 
  
