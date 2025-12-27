@@ -1,4 +1,4 @@
-**PyGRT** 文档
+**PyGRT** 文档 (|GRT_VERSION|)
 =====================
 
 .. figure:: _static/logo.png
