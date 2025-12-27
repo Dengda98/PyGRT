@@ -101,7 +101,7 @@ typedef double complex cplx_t;
 #define GRT_SAFE_ASPRINTF(ptr, fmt, ...) ({\
     int res;\
     if((res = asprintf(ptr, fmt, ##__VA_ARGS__)) == -1){\
-        GRTRaiseError("Abnormal Error in asprintf from function %s.\n", __func__);\
+        GRTRaiseError("Abnormal Error in function ‘asprintf’.\n");\
     };\
 })
 
@@ -151,6 +151,10 @@ enum {
     GRT_SRC_M_DS_INDEX = 4,
     GRT_SRC_M_SS_INDEX = 5,
 };
+
+/** 当前模块名，根据所调用模块进行切换 */
+extern const char *GRT_MODULE_NAME;
+
 
 /** 分别对应爆炸源(0阶)，垂直力源(0阶)，水平力源(1阶)，剪切源(0,1,2阶) */ 
 extern const int GRT_SRC_M_ORDERS[GRT_SRC_M_NUM];

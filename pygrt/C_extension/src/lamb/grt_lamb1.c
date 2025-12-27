@@ -16,8 +16,6 @@
 
 /** 该子模块的参数控制结构体 */
 typedef struct {
-    char *name;
-
     /** 模型参数 */
     struct {
         bool active;
@@ -43,7 +41,6 @@ typedef struct {
 
 /** 释放结构体的内存 */
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
-    GRT_SAFE_FREE_PTR(Ctrl->name);
     GRT_SAFE_FREE_PTR(Ctrl->T.ts);
     GRT_SAFE_FREE_PTR(Ctrl);
 }
@@ -87,7 +84,6 @@ printf("\n"
 
 /** 从命令行中读取选项，处理后记录到全局变量中 */
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
-    char* command = Ctrl->name;
     int opt;
 
     while ((opt = getopt(argc, argv, ":P:T:A:h")) != -1) {
@@ -96,10 +92,10 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             case 'P':
                 Ctrl->P.active = true;
                 if(1 != sscanf(optarg, "%lf", &Ctrl->P.nu)){
-                    GRTBadOptionError(command, P, "");
+                    GRTBadOptionError(P, "");
                 }
                 if(Ctrl->P.nu <= 0.0 || Ctrl->P.nu >= 0.5){
-                    GRTBadOptionError(command, P, "possion ratio (%lf) is out of bound.", Ctrl->P.nu);
+                    GRTBadOptionError(P, "possion ratio (%lf) is out of bound.", Ctrl->P.nu);
                 }
                 break;
             
@@ -109,16 +105,16 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 {
                     real_t a1, a2, delta;
                     if(3 != sscanf(optarg, "%lf/%lf/%lf", &a1, &a2, &delta)){
-                        GRTBadOptionError(command, T, "");
+                        GRTBadOptionError(T, "");
                     };
                     if(a1 < 0.0 || a2 < 0.0){
-                        GRTBadOptionError(command, T, "t1 < 0.0 or t2 < 0.0.");
+                        GRTBadOptionError(T, "t1 < 0.0 or t2 < 0.0.");
                     }
                     if(delta <= 0.0){
-                        GRTBadOptionError(command, T, "dt <= 0.0.");
+                        GRTBadOptionError(T, "dt <= 0.0.");
                     }
                     if(a1 > a2){
-                        GRTBadOptionError(command, T, "t1(%f) > t2(%f).", a1, a2);
+                        GRTBadOptionError(T, "t1(%f) > t2(%f).", a1, a2);
                     }
 
                     Ctrl->T.nt = floor((a2-a1)/delta) + 1;
@@ -133,22 +129,22 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             case 'A':
                 Ctrl->A.active = true;
                 if(1 != sscanf(optarg, "%lf", &Ctrl->A.azimuth)){
-                    GRTBadOptionError(command, A, "");
+                    GRTBadOptionError(A, "");
                 }
                 if(Ctrl->A.azimuth < 0.0 || Ctrl->A.azimuth > 360){
-                    GRTBadOptionError(command, A, "azimuth should be in [0, 360].");
+                    GRTBadOptionError(A, "azimuth should be in [0, 360].");
                 }
                 break;
             
-            GRT_Common_Options_in_Switch(command, (char)(optopt)); 
+            GRT_Common_Options_in_Switch((char)(optopt)); 
         }
     }
 
     // 检查必须设置的参数是否有设置
-    GRTCheckOptionSet(command, argc > 1);
-    GRTCheckOptionActive(command, Ctrl, P);
-    GRTCheckOptionActive(command, Ctrl, T);
-    GRTCheckOptionActive(command, Ctrl, A);
+    GRTCheckOptionSet(argc > 1);
+    GRTCheckOptionActive(Ctrl, P);
+    GRTCheckOptionActive(Ctrl, T);
+    GRTCheckOptionActive(Ctrl, A);
 }
 
 
@@ -156,9 +152,6 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 /** 模块主函数 */
 int lamb1_main(int argc, char **argv){
     GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
-    Ctrl->name = strdup(argv[0]);
-    
-    const char *command = Ctrl->name;
 
     // 传入参数 
     getopt_from_command(Ctrl, argc, argv);

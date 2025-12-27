@@ -15,12 +15,11 @@
 
 /** 该子模块的参数控制结构体 */
 typedef struct {
-    char *name;
+    int dummy;
 } GRT_MODULE_CTRL;
 
 /** 释放结构体的内存 */
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
-    GRT_SAFE_FREE_PTR(Ctrl->name);
     GRT_SAFE_FREE_PTR(Ctrl);
 }
 
@@ -42,11 +41,11 @@ printf("\n"
 
 /** 从命令行中读取选项，处理后记录到全局变量中 */
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
-    char* command = Ctrl->name;
+    (void)Ctrl;
     int opt;
     while ((opt = getopt(argc, argv, ":h")) != -1) {
         switch (opt) {
-            GRT_Common_Options_in_Switch(command, (char)(optopt));
+            GRT_Common_Options_in_Switch((char)(optopt));
         }
     }
 
@@ -57,8 +56,6 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 /** 子模块主函数 */
 int static_stress_main(int argc, char **argv){
     GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
-    Ctrl->name = strdup(argv[0]);
-    const char *command = Ctrl->name;
 
     getopt_from_command(Ctrl, argc, argv);
 
@@ -76,6 +73,7 @@ int static_stress_main(int argc, char **argv){
     int out_varids[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
 
     // 打开 nc 文件
+    GRTCheckFileExist(s_ingrid);
     NC_CHECK(nc_open(s_ingrid, NC_WRITE, &in_ncid));
 
     // 输出分量格式，即是否需要旋转到ZNE
@@ -95,7 +93,7 @@ int static_stress_main(int argc, char **argv){
     int calc_upar;
     NC_CHECK(nc_get_att_int(in_ncid, NC_GLOBAL, "calc_upar", &calc_upar));
     if(calc_upar == 0){
-        GRTRaiseError("[%s] Input grid didn't have displacement derivatives.", command);
+        GRTRaiseError("Input grid didn't have displacement derivatives.");
     }
 
     // 读入接收点的物性参数，计算 rcv_mu 和 rcv_lambda

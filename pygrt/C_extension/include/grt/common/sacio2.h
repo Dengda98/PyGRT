@@ -21,12 +21,12 @@ typedef struct {
 /**
  * 读取SAC文件
  * 
- * @param[in]       name          SAC文件路径
+ * @param[in]       path          SAC文件路径
  * @param[in]       headonly      是否只读取头段变量
  * 
  * @return     SACTRACE 指针
  */
-SACTRACE * grt_read_SACTRACE(const char *name, const bool headonly);
+SACTRACE * grt_read_SACTRACE(const char *path, const bool headonly);
 
 /**
  * 复制 SACTRACE
@@ -49,7 +49,7 @@ SACTRACE * grt_copy_SACTRACE(SACTRACE *sac, bool zero_value);
 SACTRACE * grt_new_SACTRACE(float dt, int nt, float b0);
 
 /** 将 SACTRACE 保存到本地 */
-int grt_write_SACTRACE(const char *name, SACTRACE *sac);
+int grt_write_SACTRACE(const char *path, SACTRACE *sac);
 
 /** 释放 SACTRACE 指针 */
 void grt_free_SACTRACE(SACTRACE *sac);

@@ -16,8 +16,7 @@
 #define NC_CHECK(call) ({\
     int status = (call); \
     if (status != NC_NOERR) { \
-        GRTRaiseError("NetCDF error at %s:%d: %s\n", \
-                __FILE__, __LINE__, nc_strerror(status)); \
+        GRTRaiseError("NetCDF error: %s\n", nc_strerror(status)); \
     } \
 })
 

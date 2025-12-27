@@ -82,8 +82,7 @@ static void stack_push(KIntervalStack *stack, KInterval item) {
 /** 从栈顶部拿走元素 */
 static KInterval stack_pop(KIntervalStack *stack) {
     if(stack->size == 0) {
-        fprintf(stderr, "Pop from empty stack\n");
-        exit(EXIT_FAILURE);
+        GRTRaiseError("Pop from empty stack\n");
     }
     return stack->data[--stack->size];
 }
@@ -128,8 +127,7 @@ static cplx_t simpson(const KInterval *item_pt, int im, int iqwv, bool isuiz, SI
         Fint = klen * ( - F3[0][im][iqwv]*sk[0] + 8.0*F3[1][im][iqwv]*sk[1] + 5.0*F3[2][im][iqwv]*sk[2]) / 24.0;
     }
     else{
-        fprintf(stderr, "wrong simpson stats (%d).\n", stats);
-        exit(EXIT_FAILURE);
+        GRTRaiseError("wrong simpson stats (%d).\n", stats);
     }
 
     return Fint;

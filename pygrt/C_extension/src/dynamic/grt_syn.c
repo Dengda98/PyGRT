@@ -26,7 +26,6 @@ static const char *sourceTypeFullName[] = {"Explosion", "Single Force", "Shear",
 
 /** 该子模块的参数控制结构体 */
 typedef struct {
-    char *name;
     /** 格林函数路径 */
     struct {
         bool active;
@@ -110,7 +109,6 @@ typedef struct {
 
 /** 释放结构体的内存 */
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
-    GRT_SAFE_FREE_PTR(Ctrl->name);
     // G
     GRT_SAFE_FREE_PTR(Ctrl->G.s_grnpath);
     // O
@@ -248,8 +246,6 @@ printf("\n"
 
 /** 从命令行中读取选项，处理后记录到全局变量中 */
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
-    const char *command = Ctrl->name;
-
     // 先为个别参数设置非0初始值
     Ctrl->computeType = GRT_SYN_COMPUTE_EX;
     sprintf(Ctrl->s_computeType, "%s", "EX");
@@ -262,17 +258,17 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 Ctrl->G.active = true;
                 Ctrl->G.s_grnpath = strdup(optarg);
                 // 检查是否存在该目录
-                GRTCheckDirExist(command, Ctrl->G.s_grnpath);
+                GRTCheckDirExist(Ctrl->G.s_grnpath);
                 break;
 
             // 方位角
             case 'A':
                 Ctrl->A.active = true;
                 if(0 == sscanf(optarg, "%lf", &Ctrl->A.azimuth)){
-                    GRTBadOptionError(command, A, "");
+                    GRTBadOptionError(A, "");
                 };
                 if(Ctrl->A.azimuth < 0.0 || Ctrl->A.azimuth > 360.0){
-                    GRTBadOptionError(command, A, "Azimuth must be in [0, 360].");
+                    GRTBadOptionError(A, "Azimuth must be in [0, 360].");
                 }
                 Ctrl->A.backazimuth = 180.0 + Ctrl->A.azimuth;
                 if(Ctrl->A.backazimuth >= 360.0)   Ctrl->A.backazimuth -= 360.0;
@@ -291,7 +287,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     }
                 }
                 if(0 == sscanf(optarg, "%lf", &Ctrl->S.M0)){
-                    GRTBadOptionError(command, S, "");
+                    GRTBadOptionError(S, "");
                 };
                 break;
             
@@ -303,16 +299,16 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     real_t strike, dip, rake;
                     sprintf(Ctrl->s_computeType, "%s", "DC");
                     if(3 != sscanf(optarg, "%lf/%lf/%lf", &strike, &dip, &rake)){
-                        GRTBadOptionError(command, M, "");
+                        GRTBadOptionError(M, "");
                     };
                     if(strike < 0.0 || strike > 360.0){
-                        GRTBadOptionError(command, M, "Strike must be in [0, 360].");
+                        GRTBadOptionError(M, "Strike must be in [0, 360].");
                     }
                     if(dip < 0.0 || dip > 90.0){
-                        GRTBadOptionError(command, M, "Dip must be in [0, 90].");
+                        GRTBadOptionError(M, "Dip must be in [0, 90].");
                     }
                     if(rake < -180.0 || rake > 180.0){
-                        GRTBadOptionError(command, M, "Rake must be in [-180, 180].");
+                        GRTBadOptionError(M, "Rake must be in [-180, 180].");
                     }
                     Ctrl->mchn[0] = strike;
                     Ctrl->mchn[1] = dip;
@@ -328,7 +324,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     real_t fn, fe, fz;
                     sprintf(Ctrl->s_computeType, "%s", "SF");
                     if(3 != sscanf(optarg, "%lf/%lf/%lf", &fn, &fe, &fz)){
-                        GRTBadOptionError(command, F, "");
+                        GRTBadOptionError(F, "");
                     };
                     Ctrl->mchn[0] = fn;
                     Ctrl->mchn[1] = fe;
@@ -344,7 +340,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     real_t Mxx, Mxy, Mxz, Myy, Myz, Mzz;
                     sprintf(Ctrl->s_computeType, "%s", "MT");
                     if(6 != sscanf(optarg, "%lf/%lf/%lf/%lf/%lf/%lf", &Mxx, &Mxy, &Mxz, &Myy, &Myz, &Mzz)){
-                        GRTBadOptionError(command, T, "");
+                        GRTBadOptionError(T, "");
                     };
                     Ctrl->mchn[0] = Mxx;
                     Ctrl->mchn[1] = Mxy;
@@ -366,11 +362,11 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 Ctrl->D.active = true;
                 Ctrl->D.tfparams = (char*)malloc(sizeof(char)*strlen(optarg));
                 if(optarg[1] != '/' || 1 != sscanf(optarg, "%c", &Ctrl->D.tftype) || 1 != sscanf(optarg+2, "%s", Ctrl->D.tfparams)){
-                    GRTBadOptionError(command, D, "");
+                    GRTBadOptionError(D, "");
                 }
                 // 检查测试
                 if(! grt_check_tftype_tfparams(Ctrl->D.tftype, Ctrl->D.tfparams)){
-                    GRTBadOptionError(command, D, "");
+                    GRTBadOptionError(D, "");
                 }
                 break;
 
@@ -378,10 +374,10 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             case 'I':
                 Ctrl->I.active = true;
                 if(1 != sscanf(optarg, "%d", &Ctrl->I.int_times)){
-                    GRTBadOptionError(command, I, "");
+                    GRTBadOptionError(I, "");
                 }
                 if(Ctrl->I.int_times <= 0){
-                    GRTBadOptionError(command, I, "Order should be positive.");
+                    GRTBadOptionError(I, "Order should be positive.");
                 }
                 break;
 
@@ -389,10 +385,10 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             case 'J':
                 Ctrl->J.active = true;
                 if(1 != sscanf(optarg, "%d", &Ctrl->J.dif_times)){
-                    GRTBadOptionError(command, J, "");
+                    GRTBadOptionError(J, "");
                 }
                 if(Ctrl->J.dif_times <= 0){
-                    GRTBadOptionError(command, J, "Order should be positive.");
+                    GRTBadOptionError(J, "Order should be positive.");
                 }
                 break;
 
@@ -411,25 +407,25 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 Ctrl->s.active = true;
                 break;
 
-            GRT_Common_Options_in_Switch(command, (char)(optopt));
+            GRT_Common_Options_in_Switch((char)(optopt));
         }
 
     }
 
     // 检查必选项有没有设置
-    GRTCheckOptionSet(command, argc > 1);
-    GRTCheckOptionActive(command, Ctrl, G);
-    GRTCheckOptionActive(command, Ctrl, A);
-    GRTCheckOptionActive(command, Ctrl, S);
-    GRTCheckOptionActive(command, Ctrl, O);
+    GRTCheckOptionSet(argc > 1);
+    GRTCheckOptionActive(Ctrl, G);
+    GRTCheckOptionActive(Ctrl, A);
+    GRTCheckOptionActive(Ctrl, S);
+    GRTCheckOptionActive(Ctrl, O);
 
     // 只能使用一种震源
     if(Ctrl->M.active + Ctrl->F.active + Ctrl->T.active > 1){
-        GRTRaiseError("[%s] Error! Only support at most one of \"-M\", \"-F\" and \"-T\". Use \"-h\" for help.\n", command);
+        GRTRaiseError("Only support at most one of \"-M\", \"-F\" and \"-T\". Use \"-h\" for help.\n");
     }
 
     // 建立保存目录
-    GRTCheckMakeDir(command, Ctrl->O.s_output_dir);
+    GRTCheckMakeDir(Ctrl->O.s_output_dir);
 
     // 随机读取一个 sac，确定 dist 和 src_mu
     {
@@ -452,10 +448,10 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 vb  = sac->hd.user7;
                 rho = sac->hd.user8;
                 if(va <= 0.0 || vb < 0.0 || rho <= 0.0){
-                    GRTRaiseError("Error! Bad src_va, src_vb or src_rho in \"%s\" header.\n", entry->d_name);
+                    GRTRaiseError("Bad src_va, src_vb or src_rho in \"%s\" header.\n", entry->d_name);
                 }
                 if(vb == 0.0){
-                    GRTRaiseError("Error! Zero src_vb in \"%s\" header. "
+                    GRTRaiseError("Zero src_vb in \"%s\" header. "
                         "Maybe you try to use -Su<scale> but the source is in the liquid. "
                         "Use -S<scale> instead.\n" , entry->d_name);
                 }
@@ -526,8 +522,6 @@ static void data_zrt2zne(SACTRACE *synsac[3], SACTRACE *synparsac[3][3], real_t 
 /** 子模块主函数 */
 int syn_main(int argc, char **argv){
     GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
-    Ctrl->name = strdup(argv[0]);
-    const char *command = Ctrl->name;
 
     getopt_from_command(Ctrl, argc, argv);
 
@@ -593,7 +587,7 @@ int syn_main(int argc, char **argv){
             int tfnt;
             float *tfarr = grt_get_time_function(&tfnt, sacs[0]->hd.delta, Ctrl->D.tftype, Ctrl->D.tfparams);
             if(tfarr == NULL){
-                GRTRaiseError("[%s] get time function error.\n", command);
+                GRTRaiseError("get time function error.\n");
             }
             tfsac = grt_new_SACTRACE(sacs[0]->hd.delta, tfnt, 0.0);
             memcpy(tfsac->data, tfarr, sizeof(float)*tfnt);
@@ -667,9 +661,9 @@ int syn_main(int argc, char **argv){
     }
         
     if(! Ctrl->s.active) {
-        printf("[%s] Under \"%s\"\n", command, Ctrl->O.s_output_dir);
-        printf("[%s] Synthetic Seismograms of %-13s source done.\n", command, sourceTypeFullName[Ctrl->computeType]);
-        if(tfsac != NULL) printf("[%s] Time Function saved.\n", command);
+        GRTRaiseInfo("Under \"%s\"", Ctrl->O.s_output_dir);
+        GRTRaiseInfo("Synthetic Seismograms of %-13s source done.", sourceTypeFullName[Ctrl->computeType]);
+        if(tfsac != NULL) GRTRaiseInfo("Time Function saved.");
     }
 
     if(tfsac != NULL) grt_free_SACTRACE(tfsac);
