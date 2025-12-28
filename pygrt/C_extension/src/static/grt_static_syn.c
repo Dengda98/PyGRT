@@ -18,7 +18,6 @@
 
 /** 该子模块的参数控制结构体 */
 typedef struct {
-    char *name;
     /** 输入 nc 格式的格林函数 */
     struct {
         bool active;
@@ -77,7 +76,6 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
     // O
     GRT_SAFE_FREE_PTR(Ctrl->O.s_outgrid);
 
-    GRT_SAFE_FREE_PTR(Ctrl->name);
     GRT_SAFE_FREE_PTR(Ctrl);
 }
 
@@ -166,8 +164,6 @@ printf("\n"
 
 /** 从命令行中读取选项，处理后记录到全局变量中 */
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
-    const char *command = Ctrl->name;
-
     // 先为个别参数设置非0初始值
     Ctrl->computeType = GRT_SYN_COMPUTE_EX;
     sprintf(Ctrl->s_computeType, "%s", "EX");
@@ -199,7 +195,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     }
                 }
                 if(0 == sscanf(optarg, "%lf", &Ctrl->S.M0)){
-                    GRTBadOptionError(command, S, "");
+                    GRTBadOptionError(S, "");
                 };
                 break;
 
@@ -211,16 +207,16 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     real_t strike, dip, rake;
                     sprintf(Ctrl->s_computeType, "%s", "DC");
                     if(3 != sscanf(optarg, "%lf/%lf/%lf", &strike, &dip, &rake)){
-                        GRTBadOptionError(command, M, "");
+                        GRTBadOptionError(M, "");
                     };
                     if(strike < 0.0 || strike > 360.0){
-                        GRTBadOptionError(command, M, "Strike must be in [0, 360].");
+                        GRTBadOptionError(M, "Strike must be in [0, 360].");
                     }
                     if(dip < 0.0 || dip > 90.0){
-                        GRTBadOptionError(command, M, "Dip must be in [0, 90].");
+                        GRTBadOptionError(M, "Dip must be in [0, 90].");
                     }
                     if(rake < -180.0 || rake > 180.0){
-                        GRTBadOptionError(command, M, "Rake must be in [-180, 180].");
+                        GRTBadOptionError(M, "Rake must be in [-180, 180].");
                     }
                     Ctrl->mchn[0] = strike;
                     Ctrl->mchn[1] = dip;
@@ -236,7 +232,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     real_t fn, fe, fz;
                     sprintf(Ctrl->s_computeType, "%s", "SF");
                     if(3 != sscanf(optarg, "%lf/%lf/%lf", &fn, &fe, &fz)){
-                        GRTBadOptionError(command, F, "");
+                        GRTBadOptionError(F, "");
                     };
                     Ctrl->mchn[0] = fn;
                     Ctrl->mchn[1] = fe;
@@ -252,7 +248,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     real_t Mxx, Mxy, Mxz, Myy, Myz, Mzz;
                     sprintf(Ctrl->s_computeType, "%s", "MT");
                     if(6 != sscanf(optarg, "%lf/%lf/%lf/%lf/%lf/%lf", &Mxx, &Mxy, &Mxz, &Myy, &Myz, &Mzz)){
-                        GRTBadOptionError(command, T, "");
+                        GRTBadOptionError(T, "");
                     };
                     Ctrl->mchn[0] = Mxx;
                     Ctrl->mchn[1] = Mxy;
@@ -273,19 +269,19 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 Ctrl->N.active = true;
                 break;
 
-            GRT_Common_Options_in_Switch(command, (char)(optopt));
+            GRT_Common_Options_in_Switch((char)(optopt));
         }
     }
 
     // 检查必选项有没有设置
-    GRTCheckOptionSet(command, argc > 1);
-    GRTCheckOptionActive(command, Ctrl, G);
-    GRTCheckOptionActive(command, Ctrl, O);
-    GRTCheckOptionActive(command, Ctrl, S);
+    GRTCheckOptionSet(argc > 1);
+    GRTCheckOptionActive(Ctrl, G);
+    GRTCheckOptionActive(Ctrl, O);
+    GRTCheckOptionActive(Ctrl, S);
 
     // 只能使用一种震源
     if(Ctrl->M.active + Ctrl->F.active + Ctrl->T.active > 1){
-        GRTRaiseError("[%s] Error! Only support at most one of \"-M\", \"-F\" and \"-T\". Use \"-h\" for help.\n", command);
+        GRTRaiseError("Only support at most one of \"-M\", \"-F\" and \"-T\". Use \"-h\" for help.\n");
     }
 }
 
@@ -295,8 +291,6 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 /** 子模块主函数 */
 int static_syn_main(int argc, char **argv){
     GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
-    Ctrl->name = strdup(argv[0]);
-    const char *command = Ctrl->name;
 
     getopt_from_command(Ctrl, argc, argv);
 
@@ -322,6 +316,7 @@ int static_syn_main(int argc, char **argv){
     int out_syn_upar_varids[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
     
     // 打开 nc 文件
+    GRTCheckFileExist(Ctrl->G.s_ingrid);
     NC_CHECK(nc_open(Ctrl->G.s_ingrid, NC_NOWRITE, &in_ncid));
     NC_CHECK(nc_create(Ctrl->O.s_outgrid, NC_CLOBBER, &out_ncid));
 
@@ -337,7 +332,7 @@ int static_syn_main(int argc, char **argv){
     int calc_upar;
     NC_CHECK(nc_get_att_int(in_ncid, NC_GLOBAL, "calc_upar", &calc_upar));
     if(Ctrl->e.active && calc_upar == 0){
-        GRTRaiseError("[%s] Input grid didn't have displacement derivatives, you can't set -e.", command);
+        GRTRaiseError("Input grid didn't have displacement derivatives, you can't set -e.");
     }
 
     // 复制属性

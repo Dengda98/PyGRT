@@ -33,7 +33,7 @@ bool grt_check_tftype_tfparams(const char tftype, const char *tfparams){
         float t0=0.0;
         if(1 != sscanf(tfparams, "%f", &t0))  return false;
         if(t0 <= 0){
-            GRTRaiseError("Error! t0(%s) should be larger than 0.\n", tfparams);
+            GRTRaiseError("t0(%s) should be larger than 0.\n", tfparams);
         }
     }
     // 梯形波
@@ -41,10 +41,10 @@ bool grt_check_tftype_tfparams(const char tftype, const char *tfparams){
         float t1=0.0, t2=0.0, t3=0.0;
         if(3 != sscanf(tfparams, "%f/%f/%f", &t1, &t2, &t3))   return false;
         if(t1 < 0.0 || t2 < 0.0 || t3 <= 0.0){
-            GRTRaiseError("Error! It should be t1>=0.0, t2>=0.0 and t3>0.0 (%s).\n", tfparams);
+            GRTRaiseError("It should be t1>=0.0, t2>=0.0 and t3>0.0 (%s).\n", tfparams);
         }
         if(! (t1 <= t2 && t2 < t3)){
-            GRTRaiseError("Error! It should be t1<=t2<t3 (%s).\n", tfparams);
+            GRTRaiseError("It should be t1<=t2<t3 (%s).\n", tfparams);
         }
     }
     // 雷克子波
@@ -52,7 +52,7 @@ bool grt_check_tftype_tfparams(const char tftype, const char *tfparams){
         float f0;
         if(1 != sscanf(tfparams, "%f", &f0))  return false;
         if(f0 <= 0){
-            GRTRaiseError("Error! f0(%s) should be larger than 0.\n", tfparams);
+            GRTRaiseError("f0(%s) should be larger than 0.\n", tfparams);
         }
     }
     // 自定义时间函数
@@ -60,12 +60,12 @@ bool grt_check_tftype_tfparams(const char tftype, const char *tfparams){
         // tfparams为存储自定义时间函数的文件名
         // 检查文件是否存在
         if(access(tfparams, F_OK) != 0){
-            GRTRaiseError("Error! (%s) not exists.\n", tfparams);
+            GRTRaiseError("(%s) not exists.\n", tfparams);
         }
     }
     // 不符合要求
     else{
-        GRTRaiseError("Error! Unsupported time function type '%c'.\n", tftype);
+        GRTRaiseError("Unsupported time function type '%c'.\n", tftype);
     }
 
     return true;
@@ -199,7 +199,7 @@ float * grt_get_parabola_wave(float dt, float *Tlen, int *Nt){
     int nt = floorf(tlen/dt);
     if(fabsf(tlen - nt*dt) <= 1e-6) nt--;
     if(nt==0) {
-        GRTRaiseError("Error! window length of time function is too short.\n");
+        GRTRaiseError("window length of time function is too short.\n");
     }
     nt += 2;
     tlen = (nt-1)*dt;
@@ -286,7 +286,7 @@ float * grt_get_trap_wave(float dt, float *T1, float *T2, float *T3, int *Nt){
 
 float * grt_get_ricker_wave(float dt, float f0, int *Nt){
     if(1.0/dt <= 2.0*f0) { // 在当前采样率下，主频f0过高
-        GRTRaiseError("Error! Compare to sampling freq (%.3f), dominant freq (%.3f) is too high.\n", 1.0/dt, f0);
+        GRTRaiseError("Compare to sampling freq (%.3f), dominant freq (%.3f) is too high.\n", 1.0/dt, f0);
     }
 
     float t0 = 1.0/f0;

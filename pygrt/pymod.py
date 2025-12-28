@@ -54,7 +54,7 @@ class PyModel1D:
             tmp_path = tmpfile.name  # 获取临时文件路径
 
         try:
-            c_mod1d_ptr = C_grt_read_mod1d_from_file("pygrt".encode("utf-8"), tmp_path.encode("utf-8"), depsrc, deprcv, allowLiquid)
+            c_mod1d_ptr = C_grt_read_mod1d_from_file(tmp_path.encode("utf-8"), depsrc, deprcv, allowLiquid)
             self.c_mod1d = c_mod1d_ptr.contents  # 这部分内存在C中申请，需由C函数释放。占用不多，这里跳过
         finally:
             if os.path.exists(tmp_path):

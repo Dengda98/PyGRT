@@ -186,7 +186,7 @@ void grt_integ_grn_spec(
     // 打印 freq_invstats
     for(size_t iw=nf1; iw<=nf2; ++iw){
         if(freq_invstats[iw]==GRT_INVERSE_FAILURE){
-            fprintf(stderr, "iw=%zu, freq=%e(Hz), meet Zero Divison Error, results are filled with 0.\n", iw, freqs[iw]);
+            GRTRaiseWarning("iw=%zu, freq=%e(Hz), meet Zero Divison Error, results are filled with 0.\n", iw, freqs[iw]);
         }
     }
     GRT_SAFE_FREE_PTR(freq_invstats);

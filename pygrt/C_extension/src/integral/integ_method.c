@@ -24,7 +24,7 @@ void grt_KMET_init_fstats(
     if(statsstr == NULL)  return;
 
     if(Kmet->fstats != NULL){
-        GRTRaiseError("fstats != NULL in K_INTEG_METHOD in function %s.", __func__);
+        GRTRaiseError("fstats != NULL in K_INTEG_METHOD.");
     }
 
     // 为当前频率创建波数积分记录文件
@@ -41,7 +41,7 @@ void grt_KMET_init_fstats(
         for(size_t ir = 0; ir < nr; ++ir){
             // 新建文件夹目录 
             GRT_SAFE_ASPRINTF(&ptam_dirname, "%s/PTAM_%04zu_%.5e", statsstr, ir, rs[ir]);
-            GRTCheckMakeDir(__func__, ptam_dirname);
+            GRTCheckMakeDir(ptam_dirname);
 
             Kmet->ptam_fstatsnr[ir][0] = Kmet->ptam_fstatsnr[ir][1] = NULL;
             GRT_SAFE_ASPRINTF(&fname, "%s/K%s", ptam_dirname, suffix);

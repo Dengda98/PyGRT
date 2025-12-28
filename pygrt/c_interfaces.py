@@ -83,7 +83,7 @@ C_grt_compute_travt1d.argtypes = [
 C_grt_read_mod1d_from_file = libgrt.grt_read_mod1d_from_file
 """读取模型文件并进行预处理"""
 C_grt_read_mod1d_from_file.restype = POINTER(c_GRT_MODEL1D)
-C_grt_read_mod1d_from_file.argtypes = [c_char_p, c_char_p, c_double, c_double, c_bool]
+C_grt_read_mod1d_from_file.argtypes = [c_char_p, c_double, c_double, c_bool]
 
 C_grt_free_mod1d = libgrt.grt_free_mod1d
 """释放C程序中申请的 GRT_MODEL1D 结构体内存"""

@@ -16,7 +16,6 @@
 
 /** 该子模块的参数控制结构体 */
 typedef struct {
-    char *name;
     /** 输入模型 */
     struct {
         bool active;
@@ -43,7 +42,6 @@ typedef struct {
 
 /** 释放结构体的内存 */
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
-    GRT_SAFE_FREE_PTR(Ctrl->name);
     GRT_SAFE_FREE_PTR(Ctrl->M.s_modelpath);
     grt_free_mod1d(Ctrl->M.mod1d);
     GRT_SAFE_FREE_PTR(Ctrl->D.s_depsrc);
@@ -100,7 +98,6 @@ printf("\n"
 
 /** 从命令行中读取选项，处理后记录到全局变量中 */
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
-    char* command = Ctrl->name;
     int opt;
     while ((opt = getopt(argc, argv, ":M:D:R:h")) != -1) {
         switch (opt) {
@@ -118,16 +115,16 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 Ctrl->D.s_depsrc = (char*)malloc(sizeof(char)*(strlen(optarg)+1));
                 Ctrl->D.s_deprcv = (char*)malloc(sizeof(char)*(strlen(optarg)+1));
                 if(2 != sscanf(optarg, "%[^/]/%s", Ctrl->D.s_depsrc, Ctrl->D.s_deprcv)){
-                    GRTBadOptionError(command, D, "");
+                    GRTBadOptionError(D, "");
                 };
                 if(1 != sscanf(Ctrl->D.s_depsrc, "%lf", &Ctrl->D.depsrc)){
-                    GRTBadOptionError(command, D, "");
+                    GRTBadOptionError(D, "");
                 }
                 if(1 != sscanf(Ctrl->D.s_deprcv, "%lf", &Ctrl->D.deprcv)){
-                    GRTBadOptionError(command, D, "");
+                    GRTBadOptionError(D, "");
                 }
                 if(Ctrl->D.depsrc < 0.0 || Ctrl->D.deprcv < 0.0){
-                    GRTBadOptionError(command, D, "Negative value in -D is not supported.");
+                    GRTBadOptionError(D, "Negative value in -D is not supported.");
                 }
                 break;
 
@@ -140,7 +137,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 } 
                 // 否则从文件读取
                 else {
-                    FILE *fp = GRTCheckOpenFile(command, optarg, "r");
+                    FILE *fp = GRTCheckOpenFile(optarg, "r");
                     Ctrl->R.s_rs = grt_string_from_file(fp, &Ctrl->R.nr);
                     fclose(fp);
                 }
@@ -149,20 +146,20 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 for(size_t i=0; i<Ctrl->R.nr; ++i){
                     Ctrl->R.rs[i] = atof(Ctrl->R.s_rs[i]);
                     if(Ctrl->R.rs[i] < 0.0){
-                        GRTBadOptionError(command, R, "Can't set negative epicentral distance(%f).", Ctrl->R.rs[i]);
+                        GRTBadOptionError(R, "Can't set negative epicentral distance(%f).", Ctrl->R.rs[i]);
                     }
                 }
                 break;
 
-            GRT_Common_Options_in_Switch(command, (char)(optopt));
+            GRT_Common_Options_in_Switch((char)(optopt));
         }
     }
 
     // 检查必须设置的参数是否有设置
-    GRTCheckOptionSet(command, argc > 1);
-    GRTCheckOptionActive(command, Ctrl, M);
-    GRTCheckOptionActive(command, Ctrl, D);
-    GRTCheckOptionActive(command, Ctrl, R);
+    GRTCheckOptionSet(argc > 1);
+    GRTCheckOptionActive(Ctrl, M);
+    GRTCheckOptionActive(Ctrl, D);
+    GRTCheckOptionActive(Ctrl, R);
 
 }
 
@@ -170,12 +167,11 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 /** 子模块主函数 */
 int travt_main(int argc, char **argv){
     GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
-    Ctrl->name = strdup(argv[0]);
 
     getopt_from_command(Ctrl, argc, argv);
 
     // 读入模型文件
-    if((Ctrl->M.mod1d = grt_read_mod1d_from_file(Ctrl->name, Ctrl->M.s_modelpath, Ctrl->D.depsrc, Ctrl->D.deprcv, true)) == NULL){
+    if((Ctrl->M.mod1d = grt_read_mod1d_from_file(Ctrl->M.s_modelpath, Ctrl->D.depsrc, Ctrl->D.deprcv, true)) == NULL){
         exit(EXIT_FAILURE);
     }
     GRT_MODEL1D *mod1d = Ctrl->M.mod1d;

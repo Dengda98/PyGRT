@@ -16,7 +16,6 @@
 
 /** 该子模块的参数控制结构体 */
 typedef struct {
-    char *name;
     /** 输入文件路径 */
     char *s_filepath;
 } GRT_MODULE_CTRL;
@@ -24,7 +23,6 @@ typedef struct {
 
 /** 释放结构体的内存 */
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
-    GRT_SAFE_FREE_PTR(Ctrl->name);
     GRT_SAFE_FREE_PTR(Ctrl->s_filepath);
     GRT_SAFE_FREE_PTR(Ctrl);
 }
@@ -46,16 +44,16 @@ printf("\n"
 
 /** 从命令行中读取选项，处理后记录到全局变量中 */
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
-    char* command = Ctrl->name;
+    (void)Ctrl;
     int opt;
     while ((opt = getopt(argc, argv, ":h")) != -1) {
         switch (opt) {
-            GRT_Common_Options_in_Switch(command, (char)(optopt));
+            GRT_Common_Options_in_Switch((char)(optopt));
         }
     }
 
     // 检查必选项有没有设置
-    GRTCheckOptionSet(command, argc > 1);
+    GRTCheckOptionSet(argc > 1);
 }
 
 
@@ -100,17 +98,16 @@ static void print_PTAM(FILE *fp){
 /** 子模块主函数 */
 int ker2asc_main(int argc, char **argv){
     GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
-    Ctrl->name = strdup(argv[0]);
 
     getopt_from_command(Ctrl, argc, argv);
 
     Ctrl->s_filepath = strdup(argv[1]);
 
     // 检查文件名是否存在
-    GRTCheckFileExist(Ctrl->name, Ctrl->s_filepath);
+    GRTCheckFileExist(Ctrl->s_filepath);
 
     // 打开stats
-    FILE *fp = GRTCheckOpenFile(Ctrl->name, Ctrl->s_filepath, "rb");
+    FILE *fp = GRTCheckOpenFile(Ctrl->s_filepath, "rb");
 
     // 根据文件名确定函数
     const char *basename = grt_get_basename(Ctrl->s_filepath);
@@ -122,13 +119,13 @@ int ker2asc_main(int argc, char **argv){
         print_K(fp, "c");
     } else {
         // 文件名不符合要求
-        GRTRaiseError("[%s] Error! Unsupported File \"%s\".\n", Ctrl->name, Ctrl->s_filepath);
+        GRTRaiseError("Unsupported File \"%s\".\n", Ctrl->s_filepath);
     }
 
     // 未知错误导致文件提前结束
     if (ferror(fp)) {
-        GRTRaiseError("[%s] Error! An unknown error caused the premature termination "
-                      "of reading the file \"%s\".\n", Ctrl->name, Ctrl->s_filepath);
+        GRTRaiseError("An unknown error caused the premature termination "
+                      "of reading the file \"%s\".\n", Ctrl->s_filepath);
     }
     fclose(fp);
 

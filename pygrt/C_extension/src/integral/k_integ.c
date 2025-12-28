@@ -183,8 +183,7 @@ static cplx_t interg_quad_cos(
               + 2.0*( 3.0*a*k1*s1 - 3.0*a*k2*s2 + b*s1 - b*s2 ) / rrr;
     }
     else{
-        fprintf(stderr, "WRONG kodr0 in interg_quad_cos().\n");
-        exit(EXIT_FAILURE);
+        GRTRaiseError("WRONG kodr0 in interg_quad_cos().\n");
     }
 
     return res;                

@@ -315,7 +315,7 @@ static cplx_t U_P(int n, real_t tbar, cplx_t c, VARS *V)
     else if(n == 5){
         return M_PI*aa*0.25;
     }
-    GRTRaiseError("Wrong execution in function %s.", __func__);
+    GRTRaiseError("Wrong execution.");
 }
 
 static cplx_t V_P(int n, real_t tbar, cplx_t c, VARS *V)
@@ -385,11 +385,12 @@ static cplx_t V_P(int n, real_t tbar, cplx_t c, VARS *V)
         }
     }
 
-    GRTRaiseError("Wrong execution in function %s.", __func__);
+    GRTRaiseError("Wrong execution.");
 }
 
 static cplx_t U_S1(int n, real_t tbar, cplx_t c, VARS *V)
 {
+    (void)V;
     real_t tbtb = tbar*tbar;
     real_t bb = tbtb - 1.0;
     real_t b = sqrt(bb);  // 要求 tbar >= 1.0
@@ -419,7 +420,7 @@ static cplx_t U_S1(int n, real_t tbar, cplx_t c, VARS *V)
     else if(n == 5){
         return M_PI*bb*0.25;
     }
-    GRTRaiseError("Wrong execution in function %s.", __func__);
+    GRTRaiseError("Wrong execution.");
 }
 
 static cplx_t V_S1(int n, real_t tbar, cplx_t c, VARS *V)
@@ -461,7 +462,7 @@ static cplx_t V_S1(int n, real_t tbar, cplx_t c, VARS *V)
     else if(n == 6){
         return 0.5*(b*kp + (bb - kpkp)*atan(b/kp));
     }
-    GRTRaiseError("Wrong execution in function %s.", __func__);
+    GRTRaiseError("Wrong execution.");
 }
 
 static cplx_t U_S2(int n, real_t tbar, cplx_t c, VARS *V)
@@ -495,7 +496,7 @@ static cplx_t U_S2(int n, real_t tbar, cplx_t c, VARS *V)
         real_t b4 = bb*bb;
         return 0.125*(f4 - b4)/(f*f) - 0.5*bb*log(f/b);
     }
-    GRTRaiseError("Wrong execution in function %s.", __func__);
+    GRTRaiseError("Wrong execution.");
 }
 
 static cplx_t V_S2(int n, real_t tbar, cplx_t c, VARS *V)
@@ -537,7 +538,7 @@ static cplx_t V_S2(int n, real_t tbar, cplx_t c, VARS *V)
     else if(n == 6){
         return 0.5*(b*kp + (kpkp - bb)*atan(kp/b));
     }
-    GRTRaiseError("Wrong execution in function %s.", __func__);
+    GRTRaiseError("Wrong execution.");
 }
 
 static cplx_t U_SP(int n, real_t tbar, cplx_t c, VARS *V)
@@ -571,7 +572,7 @@ static cplx_t U_SP(int n, real_t tbar, cplx_t c, VARS *V)
         real_t b4 = bb*bb;
         return 0.125*(f4 - b4)/(f*f) - 0.5*bb*log(f/bp);
     }
-    GRTRaiseError("Wrong execution in function %s.", __func__);
+    GRTRaiseError("Wrong execution.");
 }
 
 static cplx_t V_SP(int n, real_t tbar, cplx_t c, VARS *V)
@@ -611,7 +612,7 @@ static cplx_t V_SP(int n, real_t tbar, cplx_t c, VARS *V)
     else if(n == 6){
         return M_PI_4 * (kpkp - bb);
     }
-    GRTRaiseError("Wrong execution in function %s.", __func__);
+    GRTRaiseError("Wrong execution.");
 }
 
 static void build_raw(real_t tbar, VARS *V, cplx_t u[3][3], 

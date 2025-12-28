@@ -29,14 +29,12 @@ const char *GRT_Module_Names[] = {
 
 /** 参数控制结构体 */
 typedef struct {
-    char *name;
-    
+    int dummy;
 } GRT_MAIN_CTRL;
 
 
 /** 释放结构体的内存 */
 static void free_Ctrl(GRT_MAIN_CTRL *Ctrl){
-    GRT_SAFE_FREE_PTR(Ctrl->name);
     GRT_SAFE_FREE_PTR(Ctrl);
 }
 
@@ -68,7 +66,7 @@ printf("\n"
 
 /** 从命令行中读取选项，处理后记录到参数控制结构体 */
 static void getopt_from_command(GRT_MAIN_CTRL *Ctrl, int argc, char **argv){
-    char* command = Ctrl->name;
+    (void)Ctrl;
     int opt;
     while ((opt = getopt(argc, argv, ":vh")) != -1) {
         switch (opt) {
@@ -78,17 +76,18 @@ static void getopt_from_command(GRT_MAIN_CTRL *Ctrl, int argc, char **argv){
                 exit(EXIT_SUCCESS);
                 break;
 
-            GRT_Common_Options_in_Switch(command, optopt);
+            GRT_Common_Options_in_Switch(optopt);
         }
     }
 
     // 必须有输入
-    GRTCheckOptionSet(command, argc > 1);
+    GRTCheckOptionSet(argc > 1);
 }
 
 
 /** 查找并执行子模块 */
 int dispatch_command(GRT_MAIN_CTRL *Ctrl, int argc, char **argv) {
+    (void)Ctrl;
     char *entry_name = strdup(argv[1]);
 
     // 是否单独传入“static”以计算静态解
@@ -109,6 +108,7 @@ int dispatch_command(GRT_MAIN_CTRL *Ctrl, int argc, char **argv) {
     bool valid_entry_name = false;
     for (const GRT_MODULE_ENTRY *entry = GRT_Modules_Entry; entry->name != NULL; entry++) {
         if (strcmp(entry_name, entry->name) == 0) {
+            GRT_MODULE_NAME = entry_name;
             return_code = entry->func(argc - 1 - (int)is_single_static, argv + 1 + (int)is_single_static);
             valid_entry_name = true;
             break;
@@ -117,7 +117,7 @@ int dispatch_command(GRT_MAIN_CTRL *Ctrl, int argc, char **argv) {
     
     // 未知子模块
     if( ! valid_entry_name){
-        GRTRaiseError("[%s] Error! Unknown module %s. Use \"-h\" for help.\n", Ctrl->name, entry_name);
+        GRTRaiseError("Unknown module %s. Use \"-h\" for help.\n", entry_name);
     }
 
     if(is_single_static)  GRT_SAFE_FREE_PTR(argv[2]);
@@ -128,8 +128,8 @@ int dispatch_command(GRT_MAIN_CTRL *Ctrl, int argc, char **argv) {
 
 /** 主函数 */
 int main(int argc, char **argv) {
+    GRT_MODULE_NAME = GRT_MAIN_COMMAND;
     GRT_MAIN_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
-    Ctrl->name = strdup(argv[0]);
 
     if(argc <= 2){
         getopt_from_command(Ctrl, argc, argv);
