@@ -438,19 +438,19 @@ def _set_source_radi(
 
 def gen_syn_from_gf_DC(st:Union[Stream,dict], M0:float, strike:float, dip:float, rake:float, az:float=-999, ZNE=False, calc_upar:bool=False):
     '''
-        剪切源，角度单位均为度   
+        Shear source, the unit of angles is all degrees(°)
 
-        :param    st:       计算好的时域格林函数, :class:`obspy.Stream` 类型，或者静态格林函数（字典类型）
-        :param    M0:       标量地震矩, 单位dyne*cm
-        :param    strike:   走向，以北顺时针为正，0<=strike<=360
-        :param    dip:      倾角，以水平面往下为正，0<=dip<=90
-        :param    rake:     滑动角，在断层面相对于走向方向逆时针为正，-180<=rake<=180
-        :param    az:       台站方位角，以北顺时针为正，0<=az<=360（静态情况不需要）
-        :param    ZNE:             是否以ZNE分量输出?
-        :param    calc_upar:     是否计算位移u的空间导数
+        :param    st:       Green's functions in a :class:`obspy.Stream` (dynamic-case) or a dict (static-case)
+        :param    M0:       scalar seismic moment (dyne*cm)
+        :param    strike:   0 <= strike <= 360 (north=0, clockwise as positive)
+        :param    dip:      0 <= dip <= 90
+        :param    rake:     -180 <= rake <= 180 (on the fault plane, counterclockwise as positive)
+        :param    az:       azimuth, 0 <= az <= 360 (not used for static case)
+        :param    ZNE:          whether output in 'ZNE'-coord, default is 'ZRT'
+        :param    calc_upar:    whether calculate the spatial derivatives of displacements.
 
         :return:
-            - **stream** -  三分量地震图, :class:`obspy.Stream` 类型
+            - **stream** -  :class:`obspy.Stream`
     '''
     if isinstance(st, Stream):
         if az > 360 or az < -360:
@@ -464,19 +464,19 @@ def gen_syn_from_gf_DC(st:Union[Stream,dict], M0:float, strike:float, dip:float,
 
 def gen_syn_from_gf_SF(st:Union[Stream,dict], S:float, fN:float, fE:float, fZ:float, az:float=-999, ZNE=False, calc_upar:bool=False):
     '''
-        单力源，力分量单位均为dyne   
+        Single-force source (dyne)  
 
-        :param    st:    计算好的时域格林函数, :class:`obspy.Stream` 类型，或者静态格林函数（字典类型）
-        :param     S:    力的放大系数
-        :param    fN:    北向力，向北为正  
-        :param    fE:    东向力，向东为正  
-        :param    fZ:    垂向力，向下为正  
-        :param    az:    台站方位角，以北顺时针为正，0<=az<=360 （静态情况不需要）  
-        :param    ZNE:             是否以ZNE分量输出?
-        :param    calc_upar:     是否计算位移u的空间导数
+        :param    st:    Green's functions in a :class:`obspy.Stream` (dynamic-case) or a dict (static-case)
+        :param     S:    scaling factor (dyne)
+        :param    fN:    coefficient of Northward force   
+        :param    fE:    coefficient of Eastward force
+        :param    fZ:    coefficient of Vertical(Downward) force 
+        :param    az:    azimuth, 0 <= az <= 360 (not used for static case)
+        :param    ZNE:          whether output in 'ZNE'-coord, default is 'ZRT'
+        :param    calc_upar:    whether calculate the spatial derivatives of displacements.
 
         :return:
-            - **stream** - 三分量地震图, :class:`obspy.Stream` 类型
+            - **stream** - :class:`obspy.Stream`
     '''
     if isinstance(st, Stream):
         if az > 360 or az < -360:
@@ -490,16 +490,16 @@ def gen_syn_from_gf_SF(st:Union[Stream,dict], S:float, fN:float, fE:float, fZ:fl
 
 def gen_syn_from_gf_EX(st:Union[Stream,dict], M0:float, az:float=-999, ZNE=False, calc_upar:bool=False):
     '''
-        爆炸源
+        Explosion
 
-        :param    st:          计算好的时域格林函数, :class:`obspy.Stream` 类型，或者静态格林函数（字典类型）
-        :param    M0:          标量地震矩, 单位dyne*cm  
-        :param    az:          台站方位角，以北顺时针为正，0<=az<=360 [不用于计算] （静态情况不需要） 
-        :param    ZNE:             是否以ZNE分量输出?
-        :param    calc_upar:     是否计算位移u的空间导数
+        :param    st:          Green's functions in a :class:`obspy.Stream` (dynamic-case) or a dict (static-case)
+        :param    M0:          scalar seismic moment (dyne*cm)
+        :param    az:          azimuth, 0 <= az <= 360 (not used for static case)
+        :param    ZNE:          whether output in 'ZNE'-coord, default is 'ZRT'
+        :param    calc_upar:    whether calculate the spatial derivatives of displacements.
 
         :return:
-            - **stream** -       三分量地震图, :class:`obspy.Stream` 类型
+            - **stream** -       :class:`obspy.Stream`
     '''
     if isinstance(st, Stream):
         if az > 360 or az < -360:
@@ -513,17 +513,17 @@ def gen_syn_from_gf_EX(st:Union[Stream,dict], M0:float, az:float=-999, ZNE=False
 
 def gen_syn_from_gf_MT(st:Union[Stream,dict], M0:float, MT:ArrayLike, az:float=-999, ZNE=False, calc_upar:bool=False):
     ''' 
-        矩张量源，单位为dyne*cm
+        Moment tensor
 
-        :param    st:          计算好的时域格林函数, :class:`obspy.Stream` 类型，或者静态格林函数（字典类型）
-        :param    M0:          标量地震矩
-        :param    MT:          矩张量 (M11, M12, M13, M22, M23, M33),下标1,2,3分别代表北向，东向，垂直向下  
-        :param    az:          台站方位角，以北顺时针为正，0<=az<=360 （静态情况不需要）  
-        :param    ZNE:             是否以ZNE分量输出?
-        :param    calc_upar:     是否计算位移u的空间导数
+        :param    st:          Green's functions in a :class:`obspy.Stream` (dynamic-case) or a dict (static-case)
+        :param    M0:          scalar seismic moment (dyne*cm)
+        :param    MT:          coefficient of Moment tensor (M11, M12, M13, M22, M23, M33), subscripts 1,2,3 denote Northward,Eastward,Downward
+        :param    az:          azimuth, 0 <= az <= 360 (not used for static case)
+        :param    ZNE:          whether output in 'ZNE'-coord, default is 'ZRT'
+        :param    calc_upar:    whether calculate the spatial derivatives of displacements.
 
         :return:
-            - **stream** -       三分量地震图, :class:`obspy.Stream` 类型
+            - **stream** -     :class:`obspy.Stream`
     '''
     if isinstance(st, Stream):
         if az > 360 or az < -360:
@@ -1048,14 +1048,14 @@ def __check_trace_attr_sac(tr:Trace, **kwargs):
 
 def stream_convolve(st0:Stream, signal0:np.ndarray, inplace=True):
     '''
-        对stream中每一道信号做线性卷积  
+        convolve each trace with a signal
 
-        :param    st0:        记录多个Trace的 :class:`obspy.Stream` 类型
-        :param    signal0:    卷积信号
-        :param    inplace:    是否做原地更改  
+        :param    st0:        :class:`obspy.Stream`
+        :param    signal0:    convolution signal
+        :param    inplace:    whether change in-place  
 
         :return:
-            - **stream** -    处理后的结果, :class:`obspy.Stream` 类型
+            - **stream** -    convolution result, :class:`obspy.Stream`
     '''
     st = st0 if inplace else deepcopy(st0)
     signal = deepcopy(signal0)
@@ -1087,13 +1087,13 @@ def stream_convolve(st0:Stream, signal0:np.ndarray, inplace=True):
 
 def stream_integral(st0:Stream, inplace=True):
     '''
-        对stream中每一道信号做梯形积分
+        Perform integration on each trace
         
-        :param    st0:        记录多个Trace的 :class:`obspy.Stream` 类型
-        :param    inplace:    是否做原地更改  
+        :param    st0:        :class:`obspy.Stream`
+        :param    inplace:    whether change in-place  
 
         :return:
-            - **stream** -    处理后的结果, :class:`obspy.Stream` 类型
+            - **stream** -    integration result, :class:`obspy.Stream`
     '''
     st = st0 if inplace else deepcopy(st0)
     for tr in st:
@@ -1112,13 +1112,13 @@ def stream_integral(st0:Stream, inplace=True):
 
 def stream_diff(st0:Stream, inplace=True):
     '''
-        对stream中每一道信号做中心差分
+        Perform central difference on each trace
 
-        :param    st0:        记录多个Trace的 :class:`obspy.Stream` 类型
-        :param    inplace:    是否做原地更改  
+        :param    st0:        :class:`obspy.Stream`
+        :param    inplace:    whether change in-place  
 
         :return:
-            - **stream** -    处理后的结果, :class:`obspy.Stream` 类型
+            - **stream** -    difference result, :class:`obspy.Stream`
     '''
     st = st0 if inplace else deepcopy(st0)
     
@@ -1131,10 +1131,10 @@ def stream_diff(st0:Stream, inplace=True):
 
 def stream_write_sac(st:Stream, dir:str):
     '''
-        将一系列Trace以SAC形式保存到本地，以发震时刻作为参考0时刻
+        save each trace to "dir/{channel}.sac"
 
-        :param    st:         记录多个Trace的 :class:`obspy.Stream` 类型
-        :param    dir:        保存目录
+        :param    st:         :class:`obspy.Stream`
+        :param    dir:        saving directory
 
     '''
     # 新建对应文件夹
@@ -1158,12 +1158,12 @@ def stream_write_sac(st:Stream, dir:str):
 
 def read_statsfile(statsfile:str):
     '''
-        读取单个频率下波数积分(或Filon积分)的记录文件  
+        read a statsfile  
 
-        :param    statsfile:       文件路径(可使用通配符简化输入)
+        :param    statsfile:       File path (Wildcards can be used to simplify input)
 
         :return:
-            - **data** -     `numpy.ndarray <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_ 自定义类型数组 
+            - **data** -     `numpy.ndarray <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_ custom type array 
     '''
     Lst = glob.glob(statsfile)
     if len(Lst) != 1:
@@ -1191,15 +1191,18 @@ def read_statsfile(statsfile:str):
 
 def read_kernels_freqs(statsdir:str, vels:Union[np.ndarray,None]=None, ktypes:Union[List[str],None]=None):
     r"""
-        读取statsdir目录下所有频率（除了零频）的积分过程文件，如果采样点是波数则插值到相速度。
+        read all statsfiles in statsdir (except that of 0 frequency).
+        If record wavenumber, interpolate to the phase velocity.
 
-        :param        statsdir:     存储积分过程文件的目录
-        :param        vels:         指定正序的速度数组(km/s)则读取 K_ 开头的文件，并做从波数到相速度的线性插值；
-                                    如果不指定则读取 C_ 开头的文件。
-        :param        ktype:        指定返回一系列的核函数名称，如EX_q，DS_w等，默认返回全部
+        :param        statsdir:     directory path
+        :param        vels:         When a positive-order vels (km/s) is specified, files starting with `K_` are read 
+                                    and linear interpolation from wavenumber to phase velocity is performed.
+                                    Otherwise read the files starting with `C_`
+        :param        ktype:        Specify the return of a series of kernel function names, 
+                                    such as `EX_q`, `DS_w`, etc. By default, all are returned
 
         :return:
-            - **kerDct**  -   字典格式的核函数插值结果
+            - **kerDct**  -   kernel functions in a dict
     """
 
     dointerp = vels is not None
@@ -1281,15 +1284,15 @@ def read_kernels_freqs(statsdir:str, vels:Union[np.ndarray,None]=None, ktypes:Un
 
 def read_statsfile_ptam(statsfile:str):
     '''
-        读取单个频率下峰谷平均法的记录文件  
+        read a statsfile from PTAM process  
 
-        :param    statsfile:       PTAM文件路径(可使用通配符简化输入)
+        :param    statsfile:       File path (Wildcards can be used to simplify input)
 
         :return:
-            - **data1** -     `numpy.ndarray <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_ 自定义类型数组，DWM或FIM过程中的积分过程数据 
-            - **data2** -     `numpy.ndarray <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_ 自定义类型数组，PTAM过程中的积分过程数据
-            - **ptam_data** -     `numpy.ndarray <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_ 自定义类型数组，PTAM的峰谷位置及幅值
-            - **dist** -      文件对应的震中距(km)
+            - **data1** -     `numpy.ndarray <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_ custom type array, during DCM or (SA)FIM
+            - **data2** -     `numpy.ndarray <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_ custom type array, during PTAM
+            - **ptam_data** -   `numpy.ndarray <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_ custom type array, record the peak/trough from PTAM
+            - **dist** -      epicentral distance from the filename (km)
     '''
     Lst = glob.glob(statsfile)
     if len(Lst) != 1:
@@ -1391,22 +1394,23 @@ def _get_stats_Fname(statsdata:np.ndarray, karr:np.ndarray, dist:float, srctype:
 def plot_statsdata(statsdata:np.ndarray, dist:float, srctype:str, ptype:str, RorI:Union[bool,int]=True,
                    fig:Union[Figure,None]=None, axs:Union[Axes,None]=None):
     r'''
-        根据 :func:`read_statsfile <pygrt.utils.read_statsfile>` 函数函数读取的数据，
-        绘制核函数 :math:`F(k,\omega)`、被积函数 :math:`F(k,\omega)J_m(kr)k`，以及简单计算累积积分 :math:`\sum F(k,\omega)J_m(kr)k` 并绘制。
+        Based on the data read by the :func:`read_statsfile <pygrt.utils.read_statsfile>` function,
+        plot the kernel function :math:`F(k,\omega)`, the integrand :math:`F(k,\omega)J_m(kr)k`, 
+        and calculate the cumulative integral :math:`\sum F(k,\omega)J_m(kr)k` .
 
-        .. note:: 并不是每个震源类型对应的每一阶每种积分类型都存在，详见 :ref:`grn_types`。
+        .. note:: Not every source type corresponds to every order and every integration type, see :ref:`grn_types` for details.
 
-        :param    statsdata:         :func:`read_statsfile <pygrt.utils.read_statsfile>` 函数返回值 
-        :param    dist:              震中距(km)
-        :param    srctype:           震源类型的缩写，包括EX、VF、HF、DD、DS、SS  
-        :param    ptype:             积分类型(0,1,2,3) 
-        :param    RorI:              绘制实部还是虚部，默认实部，传入2表示实部虚部都绘制
-        :param    fig:               传入自定义的matplotlib.Figure对象，默认为None
-        :param    axs:               传入自定义的matplotlib.Axes对象数组（三个），默认为None
+        :param    statsdata:         return value of :func:`read_statsfile <pygrt.utils.read_statsfile>` function
+        :param    dist:              epicentral distance (km)
+        :param    srctype:           abbreviation of source type, including EX, VF, HF, DD, DS, SS
+        :param    ptype:             integration type (0,1,2,3)
+        :param    RorI:              whether to plot real or imaginary part, default is real part, pass 2 to plot both
+        :param    fig:               user-defined matplotlib.Figure object, default is None
+        :param    axs:               user-defined matplotlib.Axes object array (three elements), default is None
 
-        :return:  
-                - **fig** -                        matplotlib.Figure对象   
-                - **(ax1,ax2,ax3)** -              matplotlib.Axes对象数组
+        :return:
+                - **fig** -                        matplotlib.Figure object
+                - **(ax1,ax2,ax3)** -              matplotlib.Axes object array
     '''
 
     ptype = str(ptype)
@@ -1481,23 +1485,24 @@ def plot_statsdata_ptam(statsdata1:np.ndarray, statsdata2:np.ndarray, statsdata_
                         dist:float, srctype:str, ptype:str, RorI:Union[bool,int]=True,
                         fig:Union[Figure,None]=None, axs:Union[Axes,None]=None):
     r'''
-        根据 :func:`read_statsfile_ptam <pygrt.utils.read_statsfile_ptam>` 函数读取的数据，
-        简单计算并绘制累积积分以及峰谷平均法使用的波峰波谷的位置。
+        Based on data read by the :func:`read_statsfile_ptam <pygrt.utils.read_statsfile_ptam>` function,
+        simply calculate and plot the cumulative integral as well as the peak/trough positions used by PTAM.
 
-        .. note:: 并不是每个震源类型对应的每一阶每种积分类型都存在，详见 :ref:`grn_types`。
+        .. note:: Not every source type corresponds to every order and every integration type, see :ref:`grn_types` for details.
 
-        :param    statsdata1:        DWM或FIM过程中的积分过程数据
-        :param    statsdata2:        PTAM过程中的积分过程数据
-        :param    statsdata_ptam:    PTAM的峰谷位置及幅值
-        :param    srctype:           震源类型的缩写，包括EX、VF、HF、DD、DS、SS  
-        :param    ptype:             积分类型(0,1,2,3) 
-        :param    RorI:              绘制实部还是虚部，默认实部，传入2表示实部虚部都绘制
-        :param    fig:               传入自定义的matplotlib.Figure对象，默认为None
-        :param    axs:               传入自定义的matplotlib.Axes对象数组（三个），默认为None
+        :param    statsdata1:        integral process data during DWM or FIM
+        :param    statsdata2:        integral process data during PTAM
+        :param    statsdata_ptam:    peak/trough positions and amplitudes from PTAM
+        :param    dist:              epicentral distance (km)
+        :param    srctype:           abbreviation of source type, including EX, VF, HF, DD, DS, SS  
+        :param    ptype:             integration type (0, 1, 2, 3)
+        :param    RorI:              whether to plot real or imaginary part, default is real part, pass 2 to plot both
+        :param    fig:               user-defined matplotlib.Figure object, default is None
+        :param    axs:               user-defined matplotlib.Axes object array (three elements), default is None
 
         :return:  
-                - **fig** -                        matplotlib.Figure对象   
-                - **(ax1,ax2,ax3)** -              matplotlib.Axes对象数组
+                - **fig** -                        matplotlib.Figure object   
+                - **(ax1, ax2, ax3)** -            matplotlib.Axes object array
     '''
 
     ptype = str(ptype)
@@ -1592,15 +1597,16 @@ def plot_statsdata_ptam(statsdata1:np.ndarray, statsdata2:np.ndarray, statsdata_
 
 def solve_lamb1(nu:float, ts:np.ndarray, azimuth:float):
     r"""
-        使用广义闭合解求解第一类 Lamb 问题，参考：
+        solve the first-kind Lamb's problem using the generalized closed-form solution, see：
 
             张海明, 冯禧 著. 2024. 地震学中的 Lamb 问题（下）. 科学出版社
 
-        :param      nu:         泊松比， (0, 0.5)
-        :param      ts:         归一化时间序列 :math:`\bar{t}` ，:math:`\bar{t}=\dfrac{t}{r/\beta}`
-        :param      azimuth:    方位角，单位度
+        :param      nu:         possion ratio in (0, 0.5)
+        :param      ts:         dimensionless time :math:`\bar{t}` ，:math:`\bar{t}=\dfrac{t}{r/\beta}`
+        :param      azimuth:    azimuth in degree
 
-        :return:    形状为 (nt, 3, 3) 的归一化解，距离物理解还需除 :math:`\pi^2 \mu r`
+        :return:    Normalized solution with shape (nt, 3, 3). To get the physical solution, 
+                    divide by :math:`\pi^2 \mu r`
     """
 
     # 检查数据

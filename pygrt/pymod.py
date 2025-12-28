@@ -33,20 +33,20 @@ __all__ = [
 
 
 class PyModel1D:
-    def __init__(self, modarr0:np.ndarray, depsrc:float, deprcv:float):
+    def __init__(self, modarr0:np.ndarray, depsrc:float, deprcv:float, allowLiquid:bool=False):
         '''
-            将震源和台站插入定义模型的数组，转为 :class:`PyModel1D <pygrt.pymod.PyModel1D>` 实例的形式  
+            Create 1D model instance, and insert the imaginary layer of source and receiver.
 
-            :param    modarr0:    模型数组，每行格式为[thickness(km), Vp(km/s), Vs(km/s), Rho(g/cm^3), Qp, Qs]  
-            :param    depsrc:     震源深度(km)  
-            :param    deprcv:     台站深度(km)  
-            :param    allowLiquid:    是否允许液体层
+            :param    modarr0:    model array, in the format of [thickness(km), Vp(km/s), Vs(km/s), Rho(g/cm^3), Qp, Qs]  
+            :param    depsrc:     source depth (km)  
+            :param    deprcv:     receiver depth (km)  
+            :param    allowLiquid:    whether liquid layers are allowed
 
         '''
         self.depsrc:float = depsrc 
         self.deprcv:float = deprcv 
         self.c_mod1d:c_GRT_MODEL1D 
-        self.hasLiquid:bool = False  # 传入的模型是否有液体层
+        self.hasLiquid:bool = allowLiquid  # 传入的模型是否有液体层
 
         # 将modarr写入临时数组
         with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmpfile:
@@ -54,7 +54,7 @@ class PyModel1D:
             tmp_path = tmpfile.name  # 获取临时文件路径
 
         try:
-            c_mod1d_ptr = C_grt_read_mod1d_from_file(tmp_path.encode("utf-8"), depsrc, deprcv, True)
+            c_mod1d_ptr = C_grt_read_mod1d_from_file(tmp_path.encode("utf-8"), depsrc, deprcv, allowLiquid)
             self.c_mod1d = c_mod1d_ptr.contents  # 这部分内存在C中申请，需由C函数释放。占用不多，这里跳过
         finally:
             if os.path.exists(tmp_path):
@@ -77,13 +77,13 @@ class PyModel1D:
     
     def compute_travt1d(self, dist:float):
         r"""
-            调用C程序，计算初至P波和S波的走时
+            Call the C function to calculate the travel time of the first P-wave and S-wave
 
-            :param       dist:    震中距
+            :param       dist:    epicentral distance (km)
 
             :return:
-              - **travtP**  -  初至P波走时(s)
-              - **travtS**  -  初至S波走时(s)
+              - **travtP**  -  first P-wave arrival (s)
+              - **travtS**  -  first S-wave arrival (s)
         """
         travtP = C_grt_compute_travt1d(
             self.c_mod1d.Thk,
@@ -136,7 +136,6 @@ class PyModel1D:
     
 
     def gen_gf_spectra(self, *args, **kwargs):
-        r"Bad function name, has already been removed. Use 'compute_grn' instead."
         raise NameError("Function 'gen_gf_spectra()' has been removed, use 'compute_grn' instead.")
 
     def compute_grn(
@@ -166,38 +165,38 @@ class PyModel1D:
         print_runtime:bool=True):
         
         r'''
-            
-            调用C库计算格林函数的主函数，以列表的形式返回，其中每个元素为对应震中距的格林函数 :class:`obspy.Stream` 类型。
-            
+            Call the C function to calculate the Green's functions at multiple distances and return them in a list, 
+            where each element is in the form of :class: 'obspy.Stream' type.
 
-            :param    distarr:       多个震中距(km) 的数组, 或单个震中距的浮点数
-            :param    nt:            时间点数，借助于 `SciPy`，nt不再要求是2的幂次
-            :param    dt:            采样间隔(s)  
-            :param    upsampling_n:  升采样倍数
-            :param    freqband:      频率范围(Hz)，以此确定待计算的离散频率点
-            :param    zeta:          定义虚频率的系数 :math:`\zeta` ， 虚频率 :math:`\tilde{\omega} = \omega - j*w_I, w_I = \zeta*\pi/T, T=nt*dt` , T为时窗长度。
-                                     使用离散波数积分时为了避开附加源以及奇点的影响， :ref:`(Bouchon, 1981) <bouchon_1981>`  在频率上添加微小虚部，
-                                     更多测试见 :ref:`(张海明, 2021) <zhang_book_2021>`
-            :param    keepAllFreq:   计算所有频点，不论频率多低
-            :param    vmin_ref:      最小参考速度，默认vmin=max(minimum velocity, 0.1)，用于定义波数积分上限
-            :param    keps:          波数k积分收敛条件，见 :ref:`(Yao and Harkrider, 1983) <yao&harkrider_1983>`  :ref:`(初稿) <yao_init_manuscripts>`，
-                                     为负数代表不提前判断收敛，按照波数积分上限进行积分
-            :param    ampk:          影响波数k积分上限的系数，见下方
-            :param    k0:            波数k积分的上限 :math:`\tilde{k_{max}}=\sqrt{(k_{0}*\pi/hs)^2 + (ampk*w/vmin_{ref})^2}` , 波数k积分循环必须退出, hs=max(震源和台站深度差,1.0)
-            :param    Length:        定义波数k积分的间隔 `dk=2\pi / (L*rmax)`, 选取要求见 :ref:`(Bouchon, 1981) <bouchon_1981>` 
-                                     :ref:`(张海明, 2021) <zhang_book_2021>`，默认自动选择
-            :param    filonLength:   Filon积分的间隔
-            :param    safilonTol:    自适应Filon积分采样精度
-            :param    filonCut:      波数积分和Filon积分的分割点filonCut, k*=<filonCut>/rmax
-            :param    converg_method:   显式收敛的方法，可指定 "DCM", "PTAM" 和 "none", 默认当震源和场点深度差<=1km时自动使用 DCM
-            :param    calc_upar:     是否计算位移u的空间导数
-            :param    gf_source:     待计算的震源类型
-            :param    statsfile:     波数k积分（包括Filon积分和峰谷平均法）的过程记录文件，常用于debug或者观察积分过程中 :math:`F(k,\omega)` 和  :math:`F(k,\omega)J_m(kr)k` 的变化    
-            :param    statsidxs:     仅输出特定频点的过程记录文件，建议给定频点，否则默认所有频率点的记录文件都输出，很占空间
-            :param    print_runtime: 是否打印运行时间
+            :param    distarr:       array of epicentral distances (km), or a single float
+            :param    nt:            number of time points. with the help of `SciPy`, nt no longer needs to be a power of 2
+            :param    dt:            time interval (s)  
+            :param    upsampling_n:  upsampling factor 
+            :param    freqband:      frequency range (Hz)
+            :param    zeta:          zeta is used to define the imaginary angular frequency, 
+                                     :math:`\tilde{\omega} = \omega - j*w_I, w_I = \zeta*\pi/T, T=nt*dt` .
+                                     see :ref:`(Bouchon, 1981) <bouchon_1981>` , :ref:`(张海明, 2021) <zhang_book_2021>` for more details and tests.
+            :param    keepAllFreq:   calculate all frequency points, no matter how low the frequency is
+            :param    vmin_ref:      minimum reference velocity (km/s). the default vmin=max(minimum velocity, 0.1), used to define the upper limit of k integral
+            :param    keps:          automatic convergence condition, see :ref:`(Yao and Harkrider, 1983) <yao&harkrider_1983>` and :ref:`(初稿) <yao_init_manuscripts>` for more details.
+                                     negative value denotes not use.
+            :param    ampk:          The factor that affect the upper limit of the k integral, see below.
+            :param    k0:            k0 used to define the upper limit :math:`\tilde{k_{max}}=\sqrt{(k_{0}*\pi/hs)^2 + (ampk*w/vmin_{ref})^2}` , hs=max(|depsrc-deprcv|,1.0)
+            :param    Length:        integration step `dk=2\pi / (L*rmax)`, see :ref:`(Bouchon, 1981) <bouchon_1981>` and
+                                     :ref:`(张海明, 2021) <zhang_book_2021>` for the criterion, default set automatically.
+            :param    filonLength:   integration step of Fixed-Interval Filon's Integration Method
+            :param    safilonTol:    precision of Self-Adaptive Filon's Integration Method
+            :param    filonCut:      The splitting point of DWM and (SA)FIM, k*=<filonCut>/rmax, default is 0
+            :param    converg_method:   The method of explicit convergence, you can set "DCM", "PTAM" or "none". Default use "DCM" when |depsrc-deprcv| <= 1.0 km
+            :param    calc_upar:     whether calculate the spatial derivatives of displacements.
+            :param    gf_source:     The source type to be calculated
+            :param    statsfile:     directory path for saving the statsfile during k integral, used to debug or observe the variations of :math:`F(k,\omega)` and :math:`F(k,\omega)J_m(kr)k`    
+            :param    statsidxs:     only output the statsfile at specific frequency indexes. It is recommended to specify the indexes; 
+                                     otherwise, by default, statsfiles of all frequency will be output, which probably occupy a lot of disk space
+            :param    print_runtime: whether print runtime and some other infomation.
 
             :return:
-                - **dataLst** -   列表，每个元素为 :class:`obspy.Stream` 类型 )
+                - **dataLst** -   Green's Functions at multiple distances, in a list of :class:`obspy.Stream`
                 
         '''
 
@@ -492,23 +491,23 @@ class PyModel1D:
         statsfile:Union[str,None]=None):
 
         r"""
-            调用C库计算静态格林函数，以字典的形式返回
+            Call the C function to calculate the static Green's functions and return them in a dict
 
-            :param       xarr:          北向坐标数组，或单个浮点数
-            :param       yarr:          东向坐标数组，或单个浮点数
-            :param       keps:          波数k积分收敛条件，见 :ref:`(Yao and Harkrider, 1983) <yao&harkrider_1983>`  :ref:`(初稿) <yao_init_manuscripts>`，
-                                        为负数代表不提前判断收敛，按照波数积分上限进行积分
-            :param       k0:            波数k积分的上限 :math:`\tilde{k_{max}}=(k_{0}*\pi/hs)^2` , 波数k积分循环必须退出, hs=max(震源和台站深度差,1.0)
-            :param       Length:        定义波数k积分的间隔 `dk=2\pi / (L*rmax)`, 默认15；负数表示使用Filon积分
-            :param       filonLength:   Filon积分的间隔
-            :param       safilonTol:    自适应Filon积分采样精度
-            :param       filonCut:      波数积分和Filon积分的分割点filonCut, k*=<filonCut>/rmax
-            :param    converg_method:   显式收敛的方法，可指定 "DCM", "PTAM" 和 "none", 默认当震源和场点深度差<=1km时自动使用峰谷平均法
-            :param       calc_upar:     是否计算位移u的空间导数
-            :param       statsfile:     波数k积分（包括Filon积分和峰谷平均法）的过程记录文件，常用于debug或者观察积分过程中 :math:`F(k,\omega)` 和  :math:`F(k,\omega)J_m(kr)k` 的变化    
-
+            :param       xarr:          coordinate array in the north direction (km), or a single float.
+            :param       yarr:          coordinate array in the east direction (km), or a single float.
+            :param       keps:          automatic convergence condition, see :ref:`(Yao and Harkrider, 1983) <yao&harkrider_1983>` and :ref:`(初稿) <yao_init_manuscripts>` for more details.
+                                        negative value denotes not use.
+            :param       k0:            k0 used to define the upper limit :math:`\tilde{k_{max}}=(k_{0}*\pi/hs)^2`, hs=max(|depsrc-deprcv|,1.0)
+            :param       Length:        integration step `dk=2\pi / (L*rmax)`, default L=15
+            :param       filonLength:   integration step of Fixed-Interval Filon's Integration Method
+            :param       safilonTol:    precision of Self-Adaptive Filon's Integration Method
+            :param       filonCut:      The splitting point of DWM and (SA)FIM, k*=<filonCut>/rmax, default is 0
+            :param    converg_method:   The method of explicit convergence, you can set "DCM", "PTAM" or "none". Default use "DCM" when |depsrc-deprcv| <= 1.0 km
+            :param       calc_upar:     whether calculate the spatial derivatives of displacements.
+            :param       statsfile:     directory path for saving the statsfile during k integral, used to debug or observe the variations of :math:`F(k,\omega)` and :math:`F(k,\omega)J_m(kr)k` 
+            
             :return:
-                - **dataDct** -   字典形式的格林函数
+                - **dataDct** -   static Green's function in a dict
         """
 
         if self.hasLiquid:
@@ -560,7 +559,7 @@ class PyModel1D:
 
         # 若不指定显式收敛方法，则根据情况自动使用PTAM
         if converg_method is None and abs(depsrc - deprcv) <= 1.0:
-            converg_method = 'PTAM'
+            converg_method = 'DCM'
 
         # 积分状态文件
         c_statsfile = None 

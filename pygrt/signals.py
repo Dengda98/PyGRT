@@ -24,26 +24,26 @@ __all__ = [
 
 def gen_triangle_wave(vlen, dt):
     '''
-        生成三角信号  
+        generate triangle-shape wave  
 
-        :param    vlen:    信号时长(s)  
-        :param    dt:      采样间隔(s)   
+        :param    vlen:    signal length (s)  
+        :param    dt:      time interval (s)   
 
         :return: 
-            - **wave** -    波形幅值序列
+            - **wave** -    amplitude sequence
     '''
     return gen_trap_wave(vlen/2.0, vlen/2.0, vlen, dt)
 
 
 def gen_parabola_wave(vlen, dt):
     '''
-        生成抛物线信号  
+        generate parabola-shape wave    
 
-        :param    vlen:    信号时长(s)  
-        :param    dt:      采样间隔(s)   
+        :param    vlen:    signal length (s)  
+        :param    dt:      time interval (s)   
         
         :return: 
-            - **wave** -    波形幅值序列
+            - **wave** -    amplitude sequence
     '''
     ct1 = c_float(vlen)
     cnt = c_int(0)
@@ -57,15 +57,15 @@ def gen_parabola_wave(vlen, dt):
 
 def gen_trap_wave(t1, t2, t3, dt):
     '''
-        生成梯形信号  
+        generate trapezoid-shape wave  
 
-        :param    t1:      上坡截止时刻(s)  
-        :param    t2:      平台截止时刻(s)  
-        :param    t3:      下坡截止时刻(s)  
-        :param    dt:      采样间隔(s)   
+        :param    t1:      ramp-up cutoff time (s)  
+        :param    t2:      plateau cutoff time (s)  
+        :param    t3:      ramp-down cutoff time (s)  
+        :param    dt:      time interval (s)   
 
         :return: 
-            - **wave** -    波形幅值序列
+            - **wave** -    amplitude sequence
     '''
     ct1 = c_float(t1)
     ct2 = c_float(t2)
@@ -81,14 +81,14 @@ def gen_trap_wave(t1, t2, t3, dt):
 
 
 def gen_ricker_wave(f0:float, dt:float):
-    ''' 
-        生成Ricker子波   
+    '''
+        generate Ricker wavelet
 
-        :param    f0:      中心频率(Hz)  
-        :param    dt:      采样间隔(s)   
+        :param    f0:      center frequency (Hz)
+        :param    dt:      time interval (s)
 
-        :return: 
-            - **wave** -    波形幅值序列
+        :return:
+            - **wave** -    amplitude sequence
     '''
     cnt = c_int(0)
 
