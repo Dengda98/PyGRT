@@ -38,7 +38,7 @@ t = np.arange(0, nt)*dt * Vs/r
 
 
 pymod = pygrt.PyModel1D(modarr, depsrc, deprcv)  # 整理好的模型对象
-# 计算格林函数频谱
+# 计算格林函数
 st = pymod.compute_grn(
     distarr=rs, 
     nt=nt, 
