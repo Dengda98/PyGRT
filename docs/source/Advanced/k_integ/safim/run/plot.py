@@ -13,7 +13,7 @@ karr = statsdata1['k']
 _filt = np.logical_and(karr <= xlim[1], karr >= xlim[0])
 karr = karr[_filt]
 Farr = statsdata1[srctype][_filt]
-ax1.vlines(karr, -1, 1, lw=0.1)
+ax1.vlines(karr, -1, 1, lw=0.1, rasterized=True)
 ax1.plot(karr, np.real(Farr)/np.max(np.real(Farr)), 'o-', ms=0.5, mec='r', mfc='r', c='k', lw=0.5)
 ax1.grid()
 ax1.set_xlim(xlim)
@@ -23,11 +23,11 @@ karr = statsdata2['k']
 _filt = np.logical_and(karr <= xlim[1], karr >= xlim[0])
 karr = karr[_filt]
 Farr = statsdata2[srctype][_filt]
-ax2.vlines(karr, -1, 1, lw=0.1)
+ax2.vlines(karr, -1, 1, lw=0.1, rasterized=True)
 ax2.plot(karr, np.real(Farr)/np.max(np.real(Farr)), 'o-', ms=0.5, mec='r', mfc='r', c='k', lw=0.5)
 ax2.grid()
 ax2.set_xlim(xlim)
 ax2.set_title(f"Self-Adaptive Interval (npts={len(karr)})")
 
 fig.tight_layout()
-fig.savefig("safim.png", dpi=300, bbox_inches='tight')
+fig.savefig("safim.svg", bbox_inches='tight')

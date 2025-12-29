@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-rm -rf GRN* syn* *.png
+rm -rf GRN* syn* *.svg
 
 # --------------------------------------------------------------------------------------
 # BEGIN GRN

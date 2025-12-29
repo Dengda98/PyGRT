@@ -55,7 +55,7 @@
     :language: python 
 
 
-.. image:: run/safim.png
+.. figure:: run/safim.svg
     :align: center
 
 

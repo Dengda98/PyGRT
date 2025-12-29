@@ -81,4 +81,4 @@ cbar = fig.colorbar(sc, cax=cax, orientation='horizontal',
 cbar.ax.text(-0.02, 0.5, 'Shallow', transform=cbar.ax.transAxes, ha='right', va='center', fontsize=14)
 cbar.ax.text(1.02, 0.5, 'Deep', transform=cbar.ax.transAxes, ha='left', va='center', fontsize=14)
 
-fig.savefig("deep_shallow_kernel.png", dpi=600, bbox_inches='tight')
+fig.savefig("deep_shallow_kernel.svg", bbox_inches='tight')

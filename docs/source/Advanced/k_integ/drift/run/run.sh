@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-rm -rf GRN* pygrtstats *.png
+rm -rf GRN* pygrtstats *.svg
 
 # 没必要执行，故改为如下
 cat > /dev/null <<EOF

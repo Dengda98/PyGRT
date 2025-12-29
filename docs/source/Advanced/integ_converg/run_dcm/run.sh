@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-rm -rf GRN*
+rm -rf GRN* *.svg
 
 modname="mod"
 
@@ -30,3 +30,5 @@ for depsrc in $(seq 0 0.02 0.4); do
 done
 
 python plot_depth_kernel.py
+
+rm -rf GRN*

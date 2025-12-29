@@ -86,8 +86,7 @@ def plot_syn(stsyn:Stream, out:Union[str,None]=None, sigs:Union[np.ndarray,None]
         ax.set_ylim(np.array(ylims)*1.2)
 
     if out is not None:
-        fig.tight_layout()
-        fig.savefig(out, dpi=100)
+        fig.savefig(out, bbox_inches='tight')
 
 def plot_int_dif(stsyn:Stream, stsyn_int:Stream, stsyn_dif:Stream, comp:str, out:Union[str,None]=None):
     nt = stsyn[0].stats.npts
@@ -116,8 +115,7 @@ def plot_int_dif(stsyn:Stream, stsyn_int:Stream, stsyn_dif:Stream, comp:str, out
         ax.set_ylim(np.array(ylims)*1.2)
 
         if out is not None:
-            fig.tight_layout()
-            fig.savefig(out, dpi=100)
+            fig.savefig(out, bbox_inches='tight')
 
 # END plot func
 # -----------------------------------------------------------------------------------
@@ -135,7 +133,7 @@ print(stsyn)
 # .SYN..Z | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
 # .SYN..R | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
 # .SYN..T | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-plot_syn(stsyn, "syn_ex.png")
+plot_syn(stsyn, "syn_ex.svg")
 # END SYN EX
 # -----------------------------------------------------------------------------------
 
@@ -151,7 +149,7 @@ print(stsyn)
 # .SYN..Z | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
 # .SYN..R | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
 # .SYN..T | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-plot_syn(stsyn, "syn_sf.png")
+plot_syn(stsyn, "syn_sf.svg")
 # END SYN SF
 # -----------------------------------------------------------------------------------
 
@@ -168,7 +166,7 @@ print(stsyn)
 # .SYN..Z | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
 # .SYN..R | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
 # .SYN..T | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-plot_syn(stsyn, "syn_dc.png")
+plot_syn(stsyn, "syn_dc.svg")
 # END SYN DC
 # -----------------------------------------------------------------------------------
 
@@ -184,7 +182,7 @@ print(stsyn)
 # .SYN..Z | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
 # .SYN..R | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
 # .SYN..T | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-plot_syn(stsyn, "syn_mt.png")
+plot_syn(stsyn, "syn_mt.svg")
 # END SYN MT
 # -----------------------------------------------------------------------------------
 
@@ -202,7 +200,7 @@ print(stsyn)
 # .SYN..Z | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
 # .SYN..N | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
 # .SYN..E | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-plot_syn(stsyn, "syn_dc_zne.png")
+plot_syn(stsyn, "syn_dc_zne.svg")
 # END ZNE
 # -----------------------------------------------------------------------------------
 
@@ -218,7 +216,7 @@ stsyn = pygrt.utils.gen_syn_from_gf_SF(stgrn, S=1e16, fN=1, fE=-0.5, fZ=2, az=30
 trig = pygrt.sigs.gen_triangle_wave(0.6, 0.02)
 # 卷积，原地修改
 pygrt.utils.stream_convolve(stsyn, trig)
-plot_syn(stsyn, "syn_sf_trig.png", trig)
+plot_syn(stsyn, "syn_sf_trig.svg", trig)
 # END TIME FUNC
 # -----------------------------------------------------------------------------------
 
@@ -236,6 +234,6 @@ stsyn_int = pygrt.utils.stream_integral(stsyn, inplace=False)
 stsyn_dif = pygrt.utils.stream_diff(stsyn, inplace=False)
 
 for ch in ['Z', 'R', 'T']:
-    plot_int_dif(stsyn, stsyn_int, stsyn_dif, ch, f"syn_mt_intdif_{ch}.png")
+    plot_int_dif(stsyn, stsyn_int, stsyn_dif, ch, f"syn_mt_intdif_{ch}.svg")
 # END INT DIF
 # -----------------------------------------------------------------------------------

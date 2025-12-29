@@ -1,3 +1,5 @@
+:orphan:
+
 :author: 朱邓达
 :date: 2025-04-20
 
@@ -63,14 +65,14 @@ Python端提供了 :py:func:`pygrt.utils.read_kernels_freqs` 函数来完成所�
 
 + **虚部**
 
-.. image:: run/imag.png
+.. figure:: run/imag.svg
     :align: center
 
 ----------------------------------
 
 + **实部**
 
-.. image:: run/real.png
+.. figure:: run/real.svg
     :align: center
 
 

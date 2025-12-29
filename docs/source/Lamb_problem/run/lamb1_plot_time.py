@@ -18,4 +18,4 @@ for i in range(3):
 
         ax.text(0.1, 0.9, rf"$\bar{{G}}^H_{{{i+1}{j+1}}}$", transform=ax.transAxes, ha='left', va='top', fontsize=12)
 
-fig.savefig("lamb1_time.png", dpi=100, bbox_inches='tight')
+fig.savefig("lamb1_time.svg", bbox_inches='tight')

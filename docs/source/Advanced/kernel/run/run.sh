@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-rm -rf KERNEL *.png
+rm -rf KERNEL *.svg
 
 # -----------------------------------------------------------------
 # BEGIN KERNEL

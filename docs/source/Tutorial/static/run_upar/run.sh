@@ -3,7 +3,7 @@
 # BEGIN
 set -euo pipefail
 
-rm -rf stgrn* stsyn* *.png
+rm -rf stgrn* stsyn* *.svg
 
 depsrc=2
 deprcv=0

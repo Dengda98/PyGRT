@@ -1,7 +1,7 @@
 #!/bin/bash 
 set -euo pipefail
 
-rm -rf GRN* syn* HFZ HFZ_head travt *.png
+rm -rf GRN* syn* HFZ HFZ_head travt *.svg
 
 # -----------------------------------------------------------------------------------
 # BEGIN GRN
