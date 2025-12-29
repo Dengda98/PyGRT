@@ -59,7 +59,7 @@ greenfn
 **-N**\ *nt/dt*\ [**+w**\ *zeta*][**+n**\ *fac*][**+a**]
     采样点数 *nt* 和采样时间间隔 *dt* (secs) ，这将决定计算的最高频。还可设置：
 
-    + **+w**\ *zeta* - 虚频率系数 :math:`\zeta` [0.8]。Bouchon (1981) 提出在频率上添加一个虚频率偏移， 
+    + **+w**\ *zeta* - 虚频率系数 :math:`\zeta` [0.8]。 |bouchon1981| 提出在频率上添加一个虚频率偏移， 
       :math:`\omega \leftarrow \omega - i \zeta \dfrac{\pi}{T}` ，
       其中 :math:`T` 为时窗长度 nt\*dt，以使波数积分适当偏移实轴上的极点。
     

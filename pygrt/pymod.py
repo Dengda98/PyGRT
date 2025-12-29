@@ -175,19 +175,18 @@ class PyModel1D:
             :param    freqband:      frequency range (Hz)
             :param    zeta:          zeta is used to define the imaginary angular frequency, 
                                      :math:`\tilde{\omega} = \omega - j*w_I, w_I = \zeta*\pi/T, T=nt*dt` .
-                                     see :ref:`(Bouchon, 1981) <bouchon_1981>` , :ref:`(张海明, 2021) <zhang_book_2021>` for more details and tests.
+                                     see Bouchon (1981) and 张海明 (2021) for more details and tests.
             :param    keepAllFreq:   calculate all frequency points, no matter how low the frequency is
             :param    vmin_ref:      minimum reference velocity (km/s). the default vmin=max(minimum velocity, 0.1), used to define the upper limit of k integral
-            :param    keps:          automatic convergence condition, see :ref:`(Yao and Harkrider, 1983) <yao&harkrider_1983>` and :ref:`(初稿) <yao_init_manuscripts>` for more details.
+            :param    keps:          automatic convergence condition, see Yao and Harkrider (1983) for more details.
                                      negative value denotes not use.
             :param    ampk:          The factor that affect the upper limit of the k integral, see below.
-            :param    k0:            k0 used to define the upper limit :math:`\tilde{k_{max}}=\sqrt{(k_{0}*\pi/hs)^2 + (ampk*w/vmin_{ref})^2}` , hs=max(|depsrc-deprcv|,1.0)
-            :param    Length:        integration step `dk=2\pi / (L*rmax)`, see :ref:`(Bouchon, 1981) <bouchon_1981>` and
-                                     :ref:`(张海明, 2021) <zhang_book_2021>` for the criterion, default set automatically.
+            :param    k0:            k0 used to define the upper limit :math:`\tilde{k_{max}}=\sqrt{(k_{0}*\pi/hs)^2 + (ampk*w/vmin_{ref})^2}` , hs=max(abs(depsrc-deprcv),1.0)
+            :param    Length:        integration step `dk=2\pi / (L*rmax)`, see Bouchon (1981) and 张海明 (2021) for the criterion, default set automatically.
             :param    filonLength:   integration step of Fixed-Interval Filon's Integration Method
             :param    safilonTol:    precision of Self-Adaptive Filon's Integration Method
             :param    filonCut:      The splitting point of DWM and (SA)FIM, k*=<filonCut>/rmax, default is 0
-            :param    converg_method:   The method of explicit convergence, you can set "DCM", "PTAM" or "none". Default use "DCM" when |depsrc-deprcv| <= 1.0 km
+            :param    converg_method:   The method of explicit convergence, you can set "DCM", "PTAM" or "none". Default use "DCM" when abs(depsrc-deprcv) <= 1.0 km
             :param    calc_upar:     whether calculate the spatial derivatives of displacements.
             :param    gf_source:     The source type to be calculated
             :param    statsfile:     directory path for saving the statsfile during k integral, used to debug or observe the variations of :math:`F(k,\omega)` and :math:`F(k,\omega)J_m(kr)k`    
@@ -495,14 +494,14 @@ class PyModel1D:
 
             :param       xarr:          coordinate array in the north direction (km), or a single float.
             :param       yarr:          coordinate array in the east direction (km), or a single float.
-            :param       keps:          automatic convergence condition, see :ref:`(Yao and Harkrider, 1983) <yao&harkrider_1983>` and :ref:`(初稿) <yao_init_manuscripts>` for more details.
+            :param       keps:          automatic convergence condition, see (Yao and Harkrider (1983) for more details.
                                         negative value denotes not use.
-            :param       k0:            k0 used to define the upper limit :math:`\tilde{k_{max}}=(k_{0}*\pi/hs)^2`, hs=max(|depsrc-deprcv|,1.0)
+            :param       k0:            k0 used to define the upper limit :math:`\tilde{k_{max}}=(k_{0}*\pi/hs)^2`, hs=max(abs(depsrc-deprcv),1.0)
             :param       Length:        integration step `dk=2\pi / (L*rmax)`, default L=15
             :param       filonLength:   integration step of Fixed-Interval Filon's Integration Method
             :param       safilonTol:    precision of Self-Adaptive Filon's Integration Method
             :param       filonCut:      The splitting point of DWM and (SA)FIM, k*=<filonCut>/rmax, default is 0
-            :param    converg_method:   The method of explicit convergence, you can set "DCM", "PTAM" or "none". Default use "DCM" when |depsrc-deprcv| <= 1.0 km
+            :param    converg_method:   The method of explicit convergence, you can set "DCM", "PTAM" or "none". Default use "DCM" when abs(depsrc-deprcv) <= 1.0 km
             :param       calc_upar:     whether calculate the spatial derivatives of displacements.
             :param       statsfile:     directory path for saving the statsfile during k integral, used to debug or observe the variations of :math:`F(k,\omega)` and :math:`F(k,\omega)J_m(kr)k` 
             

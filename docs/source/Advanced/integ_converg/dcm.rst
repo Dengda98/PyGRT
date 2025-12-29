@@ -4,7 +4,7 @@
 直接收敛法（Direct Convergence Method, DCM）
 ==========================================================
 
-DCM 的想法非常简单（Zhu et al., 2026, BSSA），使用以下一个式子即可说明。
+DCM 的想法非常简单 |dcm2026| ，使用以下一个式子即可说明。
 DCM 将原积分拆分为：
 
 .. math::
@@ -12,7 +12,7 @@ DCM 将原积分拆分为：
     \int_0^\infty F(k) J_m(kr) k dk = \int_0^\infty \left[F(k) - F(k_\text{max}) \right] J_m(kr) k dk + F(k_\text{max}) \int_0^\infty J_m(kr) k dk
 
 :math:`k_\text{max}` 即为数值方法的积分上限，而上式第二项积分有如下解析解
-，推导见 Zhu et al. (2026) 文章附录，
+，推导见 |dcm2026| 文章附录，
 
 .. math::
 

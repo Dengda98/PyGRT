@@ -151,6 +151,18 @@ rst_epilog = f"""
 .. |Stream| replace:: :class:`~obspy.core.stream.Stream`
 .. |Trace| replace:: :class:`~obspy.core.trace.Trace`
 .. |GRT_VERSION| replace:: {get_version_from_file()}
+.. |bouchon1981| replace:: :ref:`(Bouchon, 1981) <reference>`
+.. |ji1995| replace:: :ref:`(纪晨和姚振兴, 1995) <reference>`
+.. |xie1989| replace:: :ref:`(谢小碧和姚振兴, 1989) <reference>`
+.. |yao2026| replace:: :ref:`(姚振兴和谢小碧, in press) <reference>`
+.. |yao1983| replace:: :ref:`(Yao and Harkrider, 1983) <reference>`
+.. |zhang2021| replace:: :ref:`(张海明, 2021) <reference>`
+.. |zhang2024| replace:: :ref:`(张海明和冯禧, 2024) <reference>`
+.. |zhang2003| replace:: :ref:`(Zhang et al., 2003) <reference>`
+.. |chen2001| replace:: :ref:`(Chen and Zhang, 2001) <reference>`
+.. |kennett1979| replace:: :ref:`(Kennett and Kerry, 1979) <reference>`
+.. |pygrt2026| replace:: :ref:`(Zhu et al., 2026a) <reference>`
+.. |dcm2026| replace:: :ref:`(Zhu et al., 2026b) <reference>`
 """
 
  
