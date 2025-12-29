@@ -40,7 +40,7 @@ MILROW 模型定义如下，与文档中其它部分一致，
 
 绘制 SSR 波形如下，发现整个波形发生“漂移”。事实上如果绘制所有格林函数会发现它们都发生了不同程度的漂移。
 
-.. figure:: run/grn.png
+.. figure:: run/grn.svg
    :align: center
    :width: 100%
    
@@ -54,7 +54,7 @@ MILROW 模型定义如下，与文档中其它部分一致，
 我们可以将以上波形再乘以 :math:`e^{-\omega_I t}` 以回退虚频率的补偿，观察以下波形形态，
 发现整体发生了偏移，即零频结果不准。
 
-.. figure:: run/grn2.png
+.. figure:: run/grn2.svg
    :align: center
    :width: 100%
 
@@ -65,13 +65,13 @@ MILROW 模型定义如下，与文档中其它部分一致，
 
 + **虚频率补偿前**
 
-.. figure:: run/grn2_freqs.png
+.. figure:: run/grn2_freqs.svg
    :align: center
    :width: 100%
 
 + **虚频率补偿后**
 
-.. figure:: run/grn_freqs.png
+.. figure:: run/grn_freqs.svg
    :align: center
    :width: 100%
 
@@ -80,7 +80,7 @@ MILROW 模型定义如下，与文档中其它部分一致，
 低频段计算发生偏差，显然问题出在核函数。上述在计算格林函数时已经指定了相应的参数以保存核函数。
 如下，我们可以绘制几个低频段的核函数，发现核函数曲线存在很多毛刺，这就导致了积分结果发生偏差。
 
-.. figure:: run/kernels.png
+.. figure:: run/kernels.svg
    :align: center
    :width: 100%
 
@@ -112,6 +112,6 @@ MILROW 模型定义如下，与文档中其它部分一致，
 
 以下是跳过这些频段后的波形（计算时不使用 ``-N+a`` 和 ``keepAllFreq`` ）。
 
-.. figure:: run/grn3.png
+.. figure:: run/grn3.svg
    :align: center
    :width: 100%

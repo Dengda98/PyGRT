@@ -27,8 +27,7 @@ statsdata1, statsdata2, ptamdata, dist = pygrt.utils.read_statsfile_ptam(f"pygrt
 srctype="SS"
 ptype="0"
 fig, ax = pygrt.utils.plot_statsdata_ptam(statsdata1, statsdata2, ptamdata, dist=dist, srctype=srctype, ptype=ptype, RorI=2)
-fig.tight_layout()
-fig.savefig(f"{srctype}_{ptype}_{depsrc}_ptam_RI.png", dpi=100)
+fig.savefig(f"{srctype}_{ptype}_{depsrc}_ptam_RI.svg", bbox_inches='tight')
 # END plot ptam
 # -------------------------------------------------------------------
 
@@ -57,12 +56,12 @@ ptype="0"
 # 只使用离散波数积分的积分变化
 fig, ax = pygrt.utils.plot_statsdata(statsdata1, dist=dist, srctype=srctype, ptype=ptype, RorI=True)
 fig.tight_layout()
-fig.savefig(f"{srctype}_{ptype}_{depsrc}_static.png", dpi=100)
+fig.savefig(f"{srctype}_{ptype}_{depsrc}_static.svg", bbox_inches='tight')
 
 # 使用了峰谷平均法的积分变化
 fig, ax = pygrt.utils.plot_statsdata_ptam(statsdata1, statsdata2, ptamdata, dist=dist, srctype=srctype, ptype=ptype, RorI=True)
 fig.tight_layout()
-fig.savefig(f"{srctype}_{ptype}_{depsrc}_ptam_static.png", dpi=100)
+fig.savefig(f"{srctype}_{ptype}_{depsrc}_ptam_static.svg", bbox_inches='tight')
 
 # END SGRN
 # -------------------------------------------------------------------

@@ -35,7 +35,7 @@ DCM 旨在解决核函数在源点场点深度接近时衰减慢的问题，这�
 计算 Bash 脚本: :download:`run.sh <run_dcm/run.sh>` | 
 绘图 Python 脚本: :download:`plot_depth_kernel.py <run_dcm/plot_depth_kernel.py>`
 
-.. figure:: run_dcm/deep_shallow_kernel.png
+.. figure:: run_dcm/deep_shallow_kernel.svg
     :align: center
 
     归一化到 [-1e8, 1e8] 范围内， 使用对称对数轴

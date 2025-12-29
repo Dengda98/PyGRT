@@ -25,7 +25,7 @@ def plot6(data:dict, title:str, out:str|None=None):
             vmin = -1
             vmax = 1
 
-        pcm = ax.pcolormesh(yarr, xarr, data[ch], shading='nearest', vmin=vmin, vmax=vmax)
+        pcm = ax.pcolormesh(yarr, xarr, data[ch], shading='nearest', vmin=vmin, vmax=vmax, rasterized=True)
         ax.set_aspect('equal')
         ax.set_title(ch)
         cbar = fig.colorbar(pcm, ax=ax)
@@ -35,8 +35,7 @@ def plot6(data:dict, title:str, out:str|None=None):
     fig.suptitle(title)
 
     if out is not None:
-        fig.tight_layout()
-        fig.savefig(out, dpi=100)
+        fig.savefig(out, bbox_inches='tight')
 
 
 modarr = np.loadtxt("milrow")
@@ -61,6 +60,6 @@ static_rotation = pygrt.utils.compute_rotation(static_syn)
 # 计算应力
 static_stress = pygrt.utils.compute_stress(static_syn)
 
-plot6(static_strain, "Strain", 'static_strain.png')
-plot6(static_rotation, "Rotation", 'static_rotation.png')
-plot6(static_stress, "Stress", 'static_stress.png')
+plot6(static_strain, "Strain", 'static_strain.svg')
+plot6(static_rotation, "Rotation", 'static_rotation.svg')
+plot6(static_stress, "Stress", 'static_stress.svg')

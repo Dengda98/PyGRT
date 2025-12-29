@@ -35,7 +35,7 @@
 
 :download:`lamb1_plot_time.py <run/lamb1_plot_time.py>`
 
-.. image:: run/lamb1_time.png
+.. figure:: run/lamb1_time.svg
    :align: center
 
 
@@ -46,7 +46,7 @@
 
 :download:`lamb1_plot_freq_time.py <run/lamb1_plot_freq_time.py>`
 
-.. image:: run/lamb1_compare_freq_time.png
+.. figure:: run/lamb1_compare_freq_time.svg
    :align: center
 
 

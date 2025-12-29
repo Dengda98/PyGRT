@@ -8,7 +8,7 @@ Python中计算动态格林函数的主函数为 :func:`compute_grn() <pygrt.pym
 
 核心计算逻辑来自  |yao2026| ，具体代码可见与C API中对应同名 :file:`*.c` 文件，其中计算格林函数频谱的主函数为 :file:`grn.c` 里的 :c:func:`integ_grn_spec`。输出结果的坐标系见下图。
 
-.. image:: ../coord.svg
+.. figure:: ../coord.svg
    :align: center
 
 .. _warning_C_python_Z_direction:

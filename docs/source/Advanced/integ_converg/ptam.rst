@@ -71,7 +71,7 @@
     :start-after: BEGIN plot ptam
     :end-before: END plot ptam
 
-.. image:: run_ptam/SS_0_0.0_ptam_RI.png
+.. figure:: run_ptam/SS_0_0.0_ptam_RI.svg
     :align: center
 
 
@@ -109,7 +109,7 @@
 
 + **只使用离散波数积分**
 
-.. image:: run_ptam/SS_0_0.1_static.png
+.. figure:: run_ptam/SS_0_0.1_static.svg
     :align: center
 
 ----------------------------------
@@ -117,7 +117,7 @@
 
 + **使用峰谷平均法**
   
-.. image:: run_ptam/SS_0_0.1_ptam_static.png
+.. figure:: run_ptam/SS_0_0.1_ptam_static.svg
     :align: center
 
 

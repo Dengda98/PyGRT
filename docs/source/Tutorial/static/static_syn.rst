@@ -38,7 +38,7 @@ Python中合成静态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.uti
             :end-before: END SYN EX
 
 
-.. image:: run/syn_ex.png
+.. figure:: run/syn_ex.svg
     :width: 500px
     :align: center
 
@@ -64,7 +64,7 @@ Python中合成静态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.uti
             :end-before: END SYN SF
 
 
-.. image:: run/syn_sf.png
+.. figure:: run/syn_sf.svg
     :width: 500px
     :align: center
 
@@ -90,7 +90,7 @@ Python中合成静态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.uti
             :end-before: END SYN DC
 
 
-.. image:: run/syn_dc.png
+.. figure:: run/syn_dc.svg
     :width: 500px
     :align: center
 
@@ -113,7 +113,7 @@ Python中合成静态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.uti
             :end-before: END SYN DC2
 
 
-.. image:: run/syn_dc2.png
+.. figure:: run/syn_dc2.svg
     :width: 500px
     :align: center
 
@@ -142,7 +142,7 @@ Python中合成静态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.uti
             :end-before: END SYN MT
 
 
-.. image:: run/syn_mt.png
+.. figure:: run/syn_mt.svg
     :width: 500px
     :align: center
 
@@ -166,6 +166,6 @@ Python中合成静态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.uti
             :end-before: END SYN MT2
 
 
-.. image:: run/syn_mt2.png
+.. figure:: run/syn_mt2.svg
     :width: 500px
     :align: center

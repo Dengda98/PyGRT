@@ -2,7 +2,7 @@
 # BEGIN
 set -euo pipefail
 
-rm -rf GRN* *.png
+rm -rf GRN* *.svg
 
 # method 1: DWM
 # 使用-H来节省一些时间，只输出单个频率以作示例

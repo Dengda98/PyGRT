@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-rm -rf GRN* pygrtstats* *.png
+rm -rf GRN* pygrtstats* *.svg
 
 # -----------------------------------------------------------------
 # BEGIN GRN

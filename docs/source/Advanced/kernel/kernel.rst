@@ -59,14 +59,14 @@
 
 + **虚部**
 
-.. image:: run/imag.png
+.. figure:: run/imag.svg
     :align: center
 
 ----------------------------------
 
 + **实部**
 
-.. image:: run/real.png
+.. figure:: run/real.svg
     :align: center
 
 

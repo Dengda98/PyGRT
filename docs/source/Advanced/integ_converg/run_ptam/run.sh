@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-rm -rf GRN* syn* ptam* pygrtstats* static* stgrtstats *.nc *.png
+rm -rf GRN* syn* ptam* pygrtstats* static* stgrtstats *.nc *.svg
 
 # -------------------------------------------------------------------
 # BEGIN DEPSRC 0.0 DGRN

@@ -26,17 +26,17 @@
 
 -------------
 
-.. image:: run_upar/static_strain.png
+.. figure:: run_upar/static_strain.svg
     :align: center 
 
 -------------
 
-.. image:: run_upar/static_rotation.png
+.. figure:: run_upar/static_rotation.svg
     :align: center 
 
 -------------
 
-.. image:: run_upar/static_stress.png
+.. figure:: run_upar/static_stress.svg
     :align: center 
 
 

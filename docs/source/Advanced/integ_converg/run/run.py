@@ -38,8 +38,7 @@ dist=distarr[ir]
 srctype="SS"
 ptype="0"
 fig, ax = pygrt.utils.plot_statsdata(statsdata, dist=dist, srctype=srctype, ptype=ptype)
-fig.tight_layout()
-fig.savefig(f"{srctype}_{ptype}.png", dpi=100)
+fig.savefig(f"{srctype}_{ptype}.svg", bbox_inches='tight')
 # END plot stats
 # -------------------------------------------------------------------
 
@@ -50,8 +49,7 @@ dist=distarr[ir]
 srctype="SS"
 ptype="0"
 fig, ax = pygrt.utils.plot_statsdata(statsdata, dist=dist, srctype=srctype, ptype=ptype, RorI=2)
-fig.tight_layout()
-fig.savefig(f"{srctype}_{ptype}_RI.png", dpi=100)
+fig.savefig(f"{srctype}_{ptype}_RI.svg", bbox_inches='tight')
 # END plot stats RI
 # -------------------------------------------------------------------
 
@@ -74,8 +72,7 @@ dist=10
 srctype="SS"
 ptype="0"
 fig, ax = pygrt.utils.plot_statsdata(statsdata, dist=dist, srctype=srctype, ptype=ptype, RorI=2)
-fig.tight_layout()
-fig.savefig(f"{srctype}_{ptype}_{depsrc}_RI.png", dpi=100)
+fig.savefig(f"{srctype}_{ptype}_{depsrc}_RI.svg", bbox_inches='tight')
 # END DEPSRC 0.0 DGRN
 # -------------------------------------------------------------------
 

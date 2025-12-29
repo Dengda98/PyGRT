@@ -146,7 +146,7 @@
 
         返回的 |Stream| 通道名即为分量名，如ZZ、ZN等。
 
-.. image:: run_upar/strain.png
+.. figure:: run_upar/strain.svg
     :align: center
 
 
@@ -178,7 +178,7 @@
 
         返回的 |Stream| 通道名即为分量名，如ZN，ZE，NE。
 
-.. image:: run_upar/rotation.png
+.. figure:: run_upar/rotation.svg
     :align: center
 
 
@@ -212,7 +212,7 @@
 
         返回的 |Stream| 通道名即为分量名，如ZZ、ZN等。
 
-.. image:: run_upar/stress.png
+.. figure:: run_upar/stress.svg
     :align: center
 
 

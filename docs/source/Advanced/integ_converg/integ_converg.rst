@@ -74,7 +74,7 @@ C和Python导出的核函数文件是一致的，底层调用的是相同的函�
     :start-after: BEGIN plot stats
     :end-before: END plot stats
 
-.. image:: run/SS_0.png
+.. figure:: run/SS_0.svg
     :align: center
 
 
@@ -85,7 +85,7 @@ C和Python导出的核函数文件是一致的，底层调用的是相同的函�
     :start-after: BEGIN plot stats RI
     :end-before: END plot stats RI
 
-.. image:: run/SS_0_RI.png
+.. figure:: run/SS_0_RI.svg
     :align: center
 
 
@@ -115,7 +115,7 @@ C和Python导出的核函数文件是一致的，底层调用的是相同的函�
             :end-before: END DEPSRC 0.0 DGRN
 
 
-.. image:: run/SS_0_0.0_RI.png
+.. figure:: run/SS_0_0.0_RI.svg
     :align: center
 
 从图中可以清晰地看到，相比震源深度2km时，积分收敛速度明显变慢，积分值振荡，这要求增加波数积分上限，但这必然降低计算效率。

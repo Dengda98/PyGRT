@@ -71,7 +71,7 @@ Python中合成动态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.uti
             :end-before: END SYN EX
 
 
-.. image:: run/syn_ex.png
+.. figure:: run/syn_ex.svg
    :align: center
 
 
@@ -97,7 +97,7 @@ Python中合成动态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.uti
             :end-before: END SYN SF
 
 
-.. image:: run/syn_sf.png
+.. figure:: run/syn_sf.svg
    :align: center
 
 
@@ -122,7 +122,7 @@ Python中合成动态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.uti
             :end-before: END SYN DC
 
 
-.. image:: run/syn_dc.png
+.. figure:: run/syn_dc.svg
    :align: center
 
 
@@ -147,7 +147,7 @@ Python中合成动态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.uti
             :end-before: END SYN MT
 
 
-.. image:: run/syn_mt.png
+.. figure:: run/syn_mt.svg
    :align: center
 
 
@@ -173,7 +173,7 @@ Python中合成动态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.uti
             :end-before: END ZNE
 
 
-.. image:: run/syn_dc_zne.png
+.. figure:: run/syn_dc_zne.svg
    :align: center
 
 
@@ -202,7 +202,7 @@ Python中合成动态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.uti
 
         其它时间函数以及具体参数用法可在 :py:mod:`pygrt.signals` 模块中查看函数参数。
 
-.. image:: run/syn_sf_trig.png
+.. figure:: run/syn_sf_trig.svg
    :align: center
 
 
@@ -229,11 +229,11 @@ Python中合成动态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.uti
             :end-before: END INT DIF
 
 
-.. image:: run/syn_mt_intdif_Z.png
+.. figure:: run/syn_mt_intdif_Z.svg
    :align: center
 
-.. image:: run/syn_mt_intdif_R.png
+.. figure:: run/syn_mt_intdif_R.svg
    :align: center
 
-.. image:: run/syn_mt_intdif_T.png
+.. figure:: run/syn_mt_intdif_T.svg
    :align: center

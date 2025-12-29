@@ -34,8 +34,7 @@ def plot_static(static_syn:dict, out:Union[str,None]=None):
     cbar.formatter.set_powerlimits((0, 0))
 
     if out is not None:
-        fig.tight_layout()
-        fig.savefig(out, dpi=100)
+        fig.savefig(out, bbox_inches='tight')
 # END plot func
 # ---------------------------------------------------------------------------------
 
@@ -45,7 +44,7 @@ def plot_static(static_syn:dict, out:Union[str,None]=None):
 static_syn = pygrt.utils.gen_syn_from_gf_EX(static_grn, M0=1e24, ZNE=True)
 print(static_syn.keys())
 # dict_keys(['_xarr', '_yarr', '_src_va', '_src_vb', '_src_rho', '_rcv_va', '_rcv_vb', '_rcv_rho', 'Z', 'N', 'E'])
-plot_static(static_syn, "syn_ex.png")
+plot_static(static_syn, "syn_ex.svg")
 # END SYN EX
 # ---------------------------------------------------------------------------------
 
@@ -55,7 +54,7 @@ plot_static(static_syn, "syn_ex.png")
 static_syn = pygrt.utils.gen_syn_from_gf_SF(static_grn, S=1e16, fN=1, fE=-0.5, fZ=2, ZNE=True)
 print(static_syn.keys())
 # dict_keys(['_xarr', '_yarr', '_src_va', '_src_vb', '_src_rho', '_rcv_va', '_rcv_vb', '_rcv_rho', 'Z', 'N', 'E'])
-plot_static(static_syn, "syn_sf.png")
+plot_static(static_syn, "syn_sf.svg")
 # END SYN SF
 # ---------------------------------------------------------------------------------
 
@@ -65,7 +64,7 @@ plot_static(static_syn, "syn_sf.png")
 static_syn = pygrt.utils.gen_syn_from_gf_DC(static_grn, M0=1e24, strike=33, dip=50, rake=120, ZNE=True)
 print(static_syn.keys())
 # dict_keys(['_xarr', '_yarr', '_src_va', '_src_vb', '_src_rho', '_rcv_va', '_rcv_vb', '_rcv_rho', 'Z', 'N', 'E'])
-plot_static(static_syn, "syn_dc.png")
+plot_static(static_syn, "syn_dc.svg")
 # END SYN DC
 # ---------------------------------------------------------------------------------
 
@@ -74,7 +73,7 @@ plot_static(static_syn, "syn_dc.png")
 static_syn = pygrt.utils.gen_syn_from_gf_DC(static_grn, M0=1e24, strike=33, dip=90, rake=0, ZNE=True)
 print(static_syn.keys())
 # dict_keys(['_xarr', '_yarr', '_src_va', '_src_vb', '_src_rho', '_rcv_va', '_rcv_vb', '_rcv_rho', 'Z', 'N', 'E'])
-plot_static(static_syn, "syn_dc2.png")
+plot_static(static_syn, "syn_dc2.svg")
 # END SYN DC2
 # ---------------------------------------------------------------------------------
 
@@ -85,7 +84,7 @@ plot_static(static_syn, "syn_dc2.png")
 static_syn = pygrt.utils.gen_syn_from_gf_MT(static_grn, M0=1e24, MT=[0.1,-0.2,1.0,0.3,-0.5,-2.0], ZNE=True)
 print(static_syn.keys())
 # dict_keys(['_xarr', '_yarr', '_src_va', '_src_vb', '_src_rho', '_rcv_va', '_rcv_vb', '_rcv_rho', 'Z', 'N', 'E'])
-plot_static(static_syn, "syn_mt.png")
+plot_static(static_syn, "syn_mt.svg")
 # END SYN MT
 # ---------------------------------------------------------------------------------
 
@@ -94,6 +93,6 @@ plot_static(static_syn, "syn_mt.png")
 static_syn = pygrt.utils.gen_syn_from_gf_MT(static_grn, M0=1e24, MT=[0,-0.2,0,0,0,0], ZNE=True)
 print(static_syn.keys())
 # dict_keys(['_xarr', '_yarr', '_src_va', '_src_vb', '_src_rho', '_rcv_va', '_rcv_vb', '_rcv_rho', 'Z', 'N', 'E'])
-plot_static(static_syn, "syn_mt2.png")
+plot_static(static_syn, "syn_mt2.svg")
 # END SYN MT2
 # ---------------------------------------------------------------------------------

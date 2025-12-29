@@ -38,7 +38,7 @@ def plot_kernel(kerDct:dict, RorI:bool, out:Union[str,None]=None):
         data = kerDct[key].copy()
         data[...] = data/np.max(np.abs(data), axis=1)[:,None]
 
-        pcm = ax.pcolormesh(freqs, vels, np.abs(funcRorI(data)).T, vmin=0, vmax=1, shading='nearest')
+        pcm = ax.pcolormesh(freqs, vels, np.abs(funcRorI(data)).T, vmin=0, vmax=1, shading='nearest', rasterized=True)
         ax.set_xlabel("Frequency (Hz)")
         ax.set_ylabel("Velocity (km/s)")
         ax.set_title(key)
@@ -50,11 +50,10 @@ def plot_kernel(kerDct:dict, RorI:bool, out:Union[str,None]=None):
         fig.suptitle("Imag parts of Kernels", fontsize=20, x=0.5, y=0.99)
 
     if out is not None:
-        fig.tight_layout()
-        fig.savefig(out, dpi=100)
+        fig.savefig(out, bbox_inches='tight')
 
 
-plot_kernel(kerDct, False, "imag.png")
-plot_kernel(kerDct, True, "real.png")
+plot_kernel(kerDct, False, "imag.svg")
+plot_kernel(kerDct, True, "real.svg")
 # END plot
 # -----------------------------------------------------------------

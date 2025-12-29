@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-rm -rf GRN* syn* stats* pygrtstats* *.png
+rm -rf GRN* syn* stats* pygrtstats* *.svg
 
 # -------------------------------------------------------------------
 # BEGIN DGRN

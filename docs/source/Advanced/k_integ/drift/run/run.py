@@ -38,7 +38,7 @@ def plot_waves(tr:Trace):
     return fig, ax
 
 fig, ax = plot_waves(st_grn.select(channel=CHANNEL)[0])
-fig.savefig("grn.png", dpi=300, bbox_inches='tight')
+fig.savefig("grn.svg", bbox_inches='tight')
 # =================================================================
 
 # =================================================================
@@ -49,7 +49,7 @@ for tr in st_grn2:
     tr.data[:] *= np.exp(-t*wI)
 
 fig, ax = plot_waves(st_grn2.select(channel=CHANNEL)[0])
-fig.savefig("grn2.png", dpi=300, bbox_inches='tight')
+fig.savefig("grn2.svg", bbox_inches='tight')
 # =================================================================
 
 
@@ -76,9 +76,9 @@ def plot_freqs(tr:Trace):
     return fig, ax
 
 fig, ax = plot_freqs(st_grn.select(channel=CHANNEL)[0])
-fig.savefig("grn_freqs.png", dpi=300, bbox_inches='tight')
+fig.savefig("grn_freqs.svg", bbox_inches='tight')
 fig, ax = plot_freqs(st_grn2.select(channel=CHANNEL)[0])
-fig.savefig("grn2_freqs.png", dpi=300, bbox_inches='tight')
+fig.savefig("grn2_freqs.svg", bbox_inches='tight')
 # =================================================================
 
 
@@ -103,7 +103,7 @@ for i in range(len(paths)):
     if i == 0:
         ax.legend(loc='lower center', ncols=2, bbox_to_anchor=(0.5, 1.05))
 
-fig.savefig("kernels.png", dpi=300, bbox_inches='tight')
+fig.savefig("kernels.svg", bbox_inches='tight')
 # =================================================================
 
 
@@ -135,5 +135,5 @@ def plot_all_waves(st_grn:Stream):
     return fig
 
 fig = plot_all_waves(st_grn3.copy())
-fig.savefig("grn3.png", dpi=100, bbox_inches='tight')
+fig.savefig("grn3.svg", bbox_inches='tight')
 # =================================================================

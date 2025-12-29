@@ -150,8 +150,7 @@ def plot6(st6:Stream, title:str, out:str|None=None):
     fig.suptitle(title)
 
     if out is not None:
-        fig.tight_layout()
-        fig.savefig(out, dpi=100)
+        fig.savefig(out, bbox_inches='tight')
 # END plot func
 # --------------------------------------------------------------------------------------
     
@@ -168,7 +167,7 @@ print(st_strain)
 # .SYN..NN | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
 # .SYN..NE | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
 # .SYN..EE | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-plot6(st_strain, "Strain", "strain.png")
+plot6(st_strain, "Strain", "strain.svg")
 # END STRAIN
 # --------------------------------------------------------------------------------------
 
@@ -180,7 +179,7 @@ print(st_rotation)
 # .SYN..ZN | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
 # .SYN..ZE | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
 # .SYN..NE | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-plot6(st_rotation, "Rotation", "rotation.png")
+plot6(st_rotation, "Rotation", "rotation.svg")
 # END ROTATION
 # --------------------------------------------------------------------------------------
 
@@ -196,6 +195,6 @@ print(st_stress)
 # .SYN..NN | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
 # .SYN..NE | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
 # .SYN..EE | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-plot6(st_stress, "Stress", "stress.png")
+plot6(st_stress, "Stress", "stress.svg")
 # END STRESS
 # --------------------------------------------------------------------------------------

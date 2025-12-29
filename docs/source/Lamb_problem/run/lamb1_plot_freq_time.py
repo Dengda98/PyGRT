@@ -83,4 +83,4 @@ for i in range(5):
 axs[0,0].set_title("From Time-Domain")
 axs[0,1].set_title("From Frequency-Domain")
 
-fig.savefig("lamb1_compare_freq_time.png", dpi=100, bbox_inches='tight')
+fig.savefig("lamb1_compare_freq_time.svg", bbox_inches='tight')
