@@ -1,0 +1,18 @@
+:author: 朱邓达
+:date: 2025-12-29
+
+(14) 计算浅源的理论地震图
+-------------------------------------
+
+下载示例： :download:`ex14.tar.gz`
+
+浅源和地表台站的深度很接近，导致积分难以收敛。
+:command:`grt` 程序和 Python 函数都提供了相应参数来设置显式收敛方法，详见 :doc:`/Advanced/integ_converg/index` 。
+
+有的示例其实已经涉及了这一问题，例如 :doc:`../ex07/ex07` ，程序会自动应用 DCM 进行收敛。
+
+这里以半空间模型作为简单示例，计算地表的单力源在地表的响应，即第一类 Lamb 问题，并比较不做显式收敛、应用 DCM 和应用 PTAM 的结果。
+|zhang2024| 推导的时间域广义闭合解能为 Lamb 问题提供精确的 benchmark，详见 :doc:`/Lamb_problem/index` 。
+
+.. figure:: lamb1_compare.svg
+    :align: center

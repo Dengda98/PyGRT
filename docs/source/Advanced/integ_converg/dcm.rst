@@ -32,7 +32,7 @@ DCM 旨在解决核函数在源点场点深度接近时衰减慢的问题，这�
 以下以半空间模型为例，绘制了场点位于地表时不同震源深度（0 ~ 0.4 km）的 5 Hz 的核函数，
 可见浅源的核函数衰减很慢，这是造成积分持续震荡难以收敛的根本原因。
 
-计算 Bash 脚本: :download:`run.sh <run_dcm/run.sh>`
+计算 Bash 脚本: :download:`run.sh <run_dcm/run.sh>` | 
 绘图 Python 脚本: :download:`plot_depth_kernel.py <run_dcm/plot_depth_kernel.py>`
 
 .. figure:: run_dcm/deep_shallow_kernel.png

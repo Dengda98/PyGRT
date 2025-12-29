@@ -14,5 +14,10 @@ pymod = pygrt.PyModel1D(modarr, depsrc, deprcv)
 stgrn = pymod.compute_static_grn(xarr, yarr)
 stgrn = pymod.compute_static_grn(xarr, yarr, calc_upar=True)
 stgrn = pymod.compute_static_grn(xarr, yarr, Length=20)
+
+stgrn = pymod.compute_static_grn(xarr, yarr, Length=20, converg_method='DCM')
+stgrn = pymod.compute_static_grn(xarr, yarr, Length=20, converg_method='PTAM')
+stgrn = pymod.compute_static_grn(xarr, yarr, Length=20, converg_method='none')
+
 stgrn = pymod.compute_static_grn(xarr, yarr, k0=4, keps=1e-3)
 stgrn = pymod.compute_static_grn(xarr, yarr, k0=4, statsfile="stgrt_stats")
