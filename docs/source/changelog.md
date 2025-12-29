@@ -1,6 +1,48 @@
 Changelog
 ====================
 
+## PyGRT v0.14.0
+
++ add new module `kernel`
++ support "Direct Convergence Method" proposed by Zhu et al. (2026)
++ a more clearer way to select integration method and convergence method, see document about `-L` and `-C` in `greenfn` module
++ rearrange documents and add gallery
++ fix column name from `ker2asc` module
++ save z-derivative kernels when set `-e` or `calc_upar=True`
+
+### Pull requests
+* REFAC: add struct `K_INTEG` by [@Dengda98](https://github.com/Dengda98) in [#170](https://github.com/Dengda98/PyGRT/pull/170)
+* DOC: a consistent way to run all scripts for document building by [@Dengda98](https://github.com/Dengda98) in [#171](https://github.com/Dengda98/PyGRT/pull/171)
+* FEAT: add module `kernel` by [@Dengda98](https://github.com/Dengda98) in [#172](https://github.com/Dengda98/PyGRT/pull/172)
+* DOC: update document for new module `kernel` by [@Dengda98](https://github.com/Dengda98) in [#173](https://github.com/Dengda98/PyGRT/pull/173)
+* DOC: add extension "sphinx_last_updated_by_git" by [@Dengda98](https://github.com/Dengda98) in [#174](https://github.com/Dengda98/PyGRT/pull/174)
+* REFAC: move some functions from `util.c` to `grt_greenfn.c` as static functions by [@Dengda98](https://github.com/Dengda98) in [#176](https://github.com/Dengda98/PyGRT/pull/176)
+* DOC: remove ":updated_date:" in each .rst files by [@Dengda98](https://github.com/Dengda98) in [#177](https://github.com/Dengda98/PyGRT/pull/177)
+* DOC: global last-updated date for homepage by [@Dengda98](https://github.com/Dengda98) in [#175](https://github.com/Dengda98/PyGRT/pull/175)
+* FIX: initialize instead of copy K_INTEG in fim.c and safim.c by [@Dengda98](https://github.com/Dengda98) in [#178](https://github.com/Dengda98/PyGRT/pull/178)
+* FEAT: a more convenient way to choose k-integral method by [@Dengda98](https://github.com/Dengda98) in [#179](https://github.com/Dengda98/PyGRT/pull/179)
+* FEAT: save z-derivative kernels when set `-e` or `calc_upar=True` by [@Dengda98](https://github.com/Dengda98) in [#180](https://github.com/Dengda98/PyGRT/pull/180)
+* DOC: rearrange "Advanced" documents by [@Dengda98](https://github.com/Dengda98) in [#183](https://github.com/Dengda98/PyGRT/pull/183)
+* FIX: in ker2asc, wrong column names of PTAM's statsfile by [@Dengda98](https://github.com/Dengda98) in [#186](https://github.com/Dengda98/PyGRT/pull/186)
+* FEAT: support Direct Convergence Method by [@Dengda98](https://github.com/Dengda98) in [#185](https://github.com/Dengda98/PyGRT/pull/185)
+* DOC: clean outputs of scripts and fix some typos by [@Dengda98](https://github.com/Dengda98) in [#187](https://github.com/Dengda98/PyGRT/pull/187)
+* FIX: keep receiver upward when source and receiver are at the same depth by [@Dengda98](https://github.com/Dengda98) in [#188](https://github.com/Dengda98/PyGRT/pull/188)
+* DOC: update document to clarify the options for the convergence method and provide relevant explanations by [@Dengda98](https://github.com/Dengda98) in [#189](https://github.com/Dengda98/PyGRT/pull/189)
+* DOC: add DCM document by [@Dengda98](https://github.com/Dengda98) in [#191](https://github.com/Dengda98/PyGRT/pull/191)
+* DOC: build Gallery by [@Dengda98](https://github.com/Dengda98) in [#192](https://github.com/Dengda98/PyGRT/pull/192)
+* DOC: add k_integ chart by [@Dengda98](https://github.com/Dengda98) in [#193](https://github.com/Dengda98/PyGRT/pull/193)
+* REFAC: rearrange SACIO in `greenfn` and `syn` by [@Dengda98](https://github.com/Dengda98) in [#195](https://github.com/Dengda98/PyGRT/pull/195)
+* REFAC: some macros about error checking by [@Dengda98](https://github.com/Dengda98) in [#197](https://github.com/Dengda98/PyGRT/pull/197)
+* DOC: show version in the title of ducument homepage by [@Dengda98](https://github.com/Dengda98) in [#198](https://github.com/Dengda98/PyGRT/pull/198)
+* REFAC: use English in Python functions document by [@Dengda98](https://github.com/Dengda98) in [#199](https://github.com/Dengda98/PyGRT/pull/199)
+* DOC: update citation and reference link by [@Dengda98](https://github.com/Dengda98) in [#200](https://github.com/Dengda98/PyGRT/pull/200)
+* TEST: add shallow source test for DCM and PTAM by [@Dengda98](https://github.com/Dengda98) in [#201](https://github.com/Dengda98/PyGRT/pull/201)
+* DOC: display SVG-format figures by [@Dengda98](https://github.com/Dengda98) in [#202](https://github.com/Dengda98/PyGRT/pull/202)
+
+
+**Full Changelog**: [v0.13.0...v0.14.0](https://github.com/Dengda98/PyGRT/compare/v0.13.0...v0.14.0)
+
+
 ## PyGRT v0.13.0
 
 I've made **lots of enhancements (e.g. refactoring codes)** for future. 
@@ -12,6 +54,7 @@ For users' perspective, following mainly improvements were made:
 + supplement the formulas in document, see [new formula](https://pygrt.readthedocs.io/zh-cn/latest/Formula/DS_zero.html).
 + add an automatic scheme to avoid waveform drifting, see [new document](https://pygrt.readthedocs.io/zh-cn/latest/Advanced/waveform_drift/waveform_drift.html).
 
+### Pull requests
 * FIX: import  __version__ by [@Dengda98](https://github.com/Dengda98) in [#120](https://github.com/Dengda98/PyGRT/pull/120)
 * DOC: Fix typo (custom time function option) `-D0/file` by [@Dengda98](https://github.com/Dengda98) in [#121](https://github.com/Dengda98/PyGRT/pull/121)
 * DOC: update help message of `lamb1` module by [@Dengda98](https://github.com/Dengda98) in [#123](https://github.com/Dengda98/PyGRT/pull/123)
@@ -66,6 +109,7 @@ For users' perspective, following mainly improvements were made:
 + Fix some typos in comments of test shell scripts.
 + Update documents, fix some typos.
 
+### Pull requests
 * CI: use macos-15 for intel and arm64 arch by [@Dengda98](https://github.com/Dengda98) in [#111](https://github.com/Dengda98/PyGRT/pull/111)
 * FEAT: support input distance file by [@Dengda98](https://github.com/Dengda98) in [#112](https://github.com/Dengda98/PyGRT/pull/112)
 * add citation in README.md by [@Dengda98](https://github.com/Dengda98) in [#116](https://github.com/Dengda98/PyGRT/pull/116)
@@ -87,6 +131,7 @@ In this version, I have made **lots of enhancements** for future developments. F
 + add modules manual in Chinese.
 + rearrange the core code of R/T matrix.
 
+### Pull requests
 * STYLE: add macro `GRT_SAFE_FREE_PTR(_ARRAY)` to safely free allocated memory by [@Dengda98](https://github.com/Dengda98) in [#63](https://github.com/Dengda98/PyGRT/pull/63)
 * FEAT: support 4-column model and use layer depth by [@Dengda98](https://github.com/Dengda98) in [#64](https://github.com/Dengda98/PyGRT/pull/64)
 * REFAC: split R/T functions into P-SV and SH by [@Dengda98](https://github.com/Dengda98) in [#65](https://github.com/Dengda98/PyGRT/pull/65)
@@ -150,6 +195,7 @@ grt static greenfn [arg1] [arg2] ...
 **`grt`** and each module's help documentation can be printed using `-h`. The [online documentation](https://pygrt.readthedocs.io/) has been updated accordingly, and all example scripts have been modified to reflect these changes.
 
 
+### Pull requests
 * DOC: update installation and remove some unused `*.po` files by [@Dengda98](https://github.com/Dengda98) in [#52](https://github.com/Dengda98/PyGRT/pull/52)
 * FIX: allow zero Q^-1, and relevant attenuation scale equals 1.0 by [@Dengda98](https://github.com/Dengda98) in [#53](https://github.com/Dengda98/PyGRT/pull/53)
 * Run C-command `grt` like GMT-style by [@Dengda98](https://github.com/Dengda98) in [#55](https://github.com/Dengda98/PyGRT/pull/55)
@@ -169,6 +215,7 @@ grt static greenfn [arg1] [arg2] ...
 
 In Github Actions, use CentOS 7 docker to compile PyGRT, to support `glibc` >= 2.17 (ensure compatibility as much as possible).
 
+### Pull requests
 * REFAC: some tiny change for downward compatibility by [@Dengda98](https://github.com/Dengda98) in [#50]([#50](https://github.com/Dengda98/PyGRT/pull/50))
 * Bump to PyGRT v0.9.2 by [@Dengda98](https://github.com/Dengda98) in [#51](https://github.com/Dengda98/PyGRT/pull/51)
 
@@ -180,6 +227,7 @@ In Github Actions, use CentOS 7 docker to compile PyGRT, to support `glibc` >= 2
 
 Bugfix release addressing issues in **v0.9.0**'s source located in liquid. Update recommended: `pip install --upgrade pygrt-kit`
 
+### Pull requests
 * DOC: add note about near-field in FIM and SAFIM by [@Dengda98](https://github.com/Dengda98) in [#46](https://github.com/Dengda98/PyGRT/pull/46)
 * FEAT: update colorstr by [@Dengda98](https://github.com/Dengda98) in [#47](https://github.com/Dengda98/PyGRT/pull/47)
 * FIX: add some warning about source in liquid by [@Dengda98](https://github.com/Dengda98) in [#48](https://github.com/Dengda98/PyGRT/pull/48)
@@ -197,6 +245,7 @@ Upgrade via `pip install --upgrade pygrt-kit`.
 
 
 
+### Pull requests
 *  by [@Dengda98](https://github.com/Dengda98) in [#29](https://github.com/Dengda98/PyGRT/pull/29)
 * BUILD: fix makefile by [@Dengda98](https://github.com/Dengda98) in [#30](https://github.com/Dengda98/PyGRT/pull/30)
 * REFAC: update temp var for `R_EVL` to improve code readability by [@Dengda98](https://github.com/Dengda98) in [#31](https://github.com/Dengda98/PyGRT/pull/31)
@@ -224,6 +273,7 @@ I'm excited to announce that **now PyGRT supports Self-Adaptive Filon's Integrat
 
 ![image](https://pygrt.readthedocs.io/zh-cn/v0.8.0/_images/safim.png)
 
+### Pull requests
 * Refactor codes, and support Self-Adaptive Filon's Integration Method (SAFIM) by [@Dengda98](https://github.com/Dengda98) in [#27](https://github.com/Dengda98/PyGRT/pull/27)
 * DOC: add SAFIM by [@Dengda98](https://github.com/Dengda98) in [#28](https://github.com/Dengda98/PyGRT/pull/28)
 
@@ -234,6 +284,7 @@ I'm excited to announce that **now PyGRT supports Self-Adaptive Filon's Integrat
 ##  PyGRT v0.7.0
 
 
+### Pull requests
 * add English docs by [@Dengda98](https://github.com/Dengda98) in [#24](https://github.com/Dengda98/PyGRT/pull/24)
 * REMOVE: remove `iwk0` parameter by [@Dengda98](https://github.com/Dengda98) in [#25](https://github.com/Dengda98/PyGRT/pull/25)
 * update FIM (code and doc), add warning about `dk` in FIM by [@Dengda98](https://github.com/Dengda98) in [#26](https://github.com/Dengda98/PyGRT/pull/26)
@@ -244,6 +295,7 @@ I'm excited to announce that **now PyGRT supports Self-Adaptive Filon's Integrat
 
 ##  PyGRT v0.6.0
 
+### Pull requests
 * DOC: add "strain and stress calculation" in Tutorial, and fix some typos by [@Dengda98](https://github.com/Dengda98) in [#16](https://github.com/Dengda98/PyGRT/pull/16)
 * Update stats file (kernel functions value in integration ) format, python reading functions, add `grt.k2a` command by [@Dengda98](https://github.com/Dengda98) [#17](https://github.com/Dengda98/PyGRT/pull/17)
 * DOC: add `integ_converg` in Toturial by [@Dengda98](https://github.com/Dengda98) [#18](https://github.com/Dengda98/PyGRT/pull/18)
@@ -266,6 +318,7 @@ I'm excited to announce that **now PyGRT supports Self-Adaptive Filon's Integrat
 + **Chinese document is available**, see [here](https://pygrt.readthedocs.io/zh-cn/). Thanks @xichaoqiang for revision.
 
 
+### Pull requests
 * Support static displacements, strain and stress calculations in Python by [@Dengda98](https://github.com/Dengda98) in [#14](https://github.com/Dengda98/PyGRT/pull/14)
 * Build online docs, and upload to ReadtheDocs by [@Dengda98](https://github.com/Dengda98) in [#15](https://github.com/Dengda98/PyGRT/pull/15)
 > `docs/` folder has been removed from the following `*.tar.gz`
@@ -278,6 +331,7 @@ I'm excited to announce that **now PyGRT supports Self-Adaptive Filon's Integrat
 
 Now in C-level, **PyGRT** can compute **displacements, strain and stress in both dynamic and static case.** Python-level will follow up in later minor version.
 
+### Pull requests
 * Rearrange directory of C source files by [@Dengda98](https://github.com/Dengda98) in [#6](https://github.com/Dengda98/PyGRT/pull/6)
 * FIX: segfault when call `write_stats` in `ptam.c` by [@Dengda98](https://github.com/Dengda98) in [#7](https://github.com/Dengda98/PyGRT/pull/7)
 * FEAT: support spatial derivatives of displacements by [@Dengda98](https://github.com/Dengda98) in [#9](https://github.com/Dengda98/PyGRT/pull/9)
@@ -298,6 +352,7 @@ Support Linux, MacOS and Windows
 - [x] MacOS 
 - [x] **Windows**
 
+### Pull requests
 * Pre-compiled binary programs and Libraries on Linux, MacOS and **Windows**. You can simply run `pip install pygrt-kit` to install the new version.
   - Linux and MacOS. 
     Dynamic library of `OpenMP` is needed, while in general it has already been included in `GNU` compiler. So if program complain that "libgomp.so not found" or python said "you may need other dependency", just add one step to install `OpenMP`.
