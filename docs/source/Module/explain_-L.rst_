@@ -2,7 +2,7 @@
 
 **-L**\ *length*\ [**+l**\ *Flength*][**+a**\ *Ftol*][**+o**\ *offset*]
     控制波数积分间隔。默认使用传统的离散波数积分，自动确定 *length* ，
-    准则详见 Bouchon (1981) 或代码源文件，
+    准则详见 |bouchon1981| 或代码源文件，
     对应波数间隔  :math:`\Delta k =\frac{2\pi}{\textit{<length>}\cdot R_{\text{max}}}` ，
     其中 :math:`R_{\text{max}}` 为多个震中距的最大值。
     

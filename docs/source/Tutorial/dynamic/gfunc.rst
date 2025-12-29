@@ -6,7 +6,7 @@
 
 Python中计算动态格林函数的主函数为 :func:`compute_grn() <pygrt.pymod.PyModel1D.compute_grn>` ，C模块为 :doc:`/Module/greenfn`。
 
-核心计算逻辑来自  :ref:`初稿 <yao_init_manuscripts>` ，具体代码可见与C API中对应同名 :file:`*.c` 文件，其中计算格林函数频谱的主函数为 :file:`grn.c` 里的 :c:func:`integ_grn_spec`。输出结果的坐标系见下图。
+核心计算逻辑来自  |yao2026| ，具体代码可见与C API中对应同名 :file:`*.c` 文件，其中计算格林函数频谱的主函数为 :file:`grn.c` 里的 :c:func:`integ_grn_spec`。输出结果的坐标系见下图。
 
 .. image:: ../coord.svg
    :align: center
@@ -92,7 +92,8 @@ Python中计算动态格林函数的主函数为 :func:`compute_grn() <pygrt.pym
 
    P_m(\omega) = \int_0^\infty F_m(k, \omega)J_m(kr)kdk 
 
-其中 :math:`F_m(k,\omega)` 称为核函数，它是和介质属性相关的量，与震中距无关。我们可以使用离散波数积分法 :ref:`(Bouchon, 1981) <bouchon_1981>` 将上式积分转变为求和:
+其中 :math:`F_m(k,\omega)` 称为核函数，它是和介质属性相关的量，与震中距无关。
+我们可以使用离散波数积分法 |bouchon1981| 将上式积分转变为求和:
 
 .. math:: 
 
@@ -109,7 +110,8 @@ Python中计算动态格林函数的主函数为 :func:`compute_grn() <pygrt.pym
    \end{aligned}
    \right.
 
-其中 :math:`\alpha` 为参考P波速度， :math:`T` 为所需计算的理论地震图的总时间长度。常见的保守经验值为 :math:`L=20r` ，但也应依具体情况而定 。为了避开附加源以及奇点的影响，:ref:`(Bouchon, 1981) <bouchon_1981>`  在频率上添加微小虚部，具体推导过程详见 :ref:`(Bouchon, 1981) <bouchon_1981>` 和 :ref:`(张海明, 2021) <zhang_book_2021>`。
+其中 :math:`\alpha` 为参考P波速度， :math:`T` 为所需计算的理论地震图的总时间长度。
+常见的保守经验值为 :math:`L=20r` ，但也应依具体情况而定 。为了避开附加源以及奇点的影响， |bouchon1981| 在频率上添加微小虚部，具体推导过程详见 |bouchon1981| 和 |zhang2021| 。
 
 
 
@@ -134,7 +136,7 @@ Python中计算动态格林函数的主函数为 :func:`compute_grn() <pygrt.pym
     初次推导该公式可能会对虚数 :math:`i` 及公式中的正负号感到疑惑，但其实这里的设计是将虚数 :math:`i` 和方向因子 :math:`e^{im\theta}` 合并，所以在后续合成理论地震图时你会发现，:math:`m=0,1,2` 阶的 :math:`W_m, Q_m` 的方向因子对 :math:`(m\theta)` 的偏导就是 :math:`V_m` 的方向因子。
 
 
-公式来自 :ref:`初稿 <yao_init_manuscripts>` (5.6.22)式，其中阶数 :math:`m=0,1,2`。核函数 :math:`q_m,w_m,v_m` 根据广义反射透射系数矩阵法(**GRTM**)求得，当震源比场点深时，有如下公式（震源浅于场点时有类似公式，这里不再展示）。
+公式来自 |yao2026| (5.6.22)式，其中阶数 :math:`m=0,1,2`。核函数 :math:`q_m,w_m,v_m` 根据广义反射透射系数矩阵法(**GRTM**)求得，当震源比场点深时，有如下公式（震源浅于场点时有类似公式，这里不再展示）。
 
 .. math:: 
    \begin{aligned}
