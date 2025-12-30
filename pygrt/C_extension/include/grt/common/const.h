@@ -123,10 +123,10 @@ typedef double complex cplx_t;
 #define GRT_GTYPES_MAX   2      ///< 2, 所有震源根据是否使用格林函数导数分为两类
 
 typedef cplx_t     cplxChnlGrid[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
-typedef cplx_t *pt_cplxChnlGrid[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
+typedef cplx_t*   pcplxChnlGrid[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
 typedef real_t     realChnlGrid[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
-typedef real_t *pt_realChnlGrid[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
-typedef int        intChnlGrid [GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
+typedef real_t*   prealChnlGrid[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
+typedef int         intChnlGrid[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
 
 typedef cplx_t cplxIntegGrid[GRT_SRC_M_NUM][GRT_INTEG_NUM];
 typedef real_t realIntegGrid[GRT_SRC_M_NUM][GRT_INTEG_NUM];

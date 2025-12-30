@@ -40,7 +40,7 @@
  */
 static void recordin_GRN(
     size_t iw, size_t nr, cplx_t coef, cplxIntegGrid sumJ[nr],
-    pt_cplxChnlGrid grn[nr])
+    pcplxChnlGrid grn[nr])
 {
     // 局部变量，将某个频点的格林函数谱临时存放
     cplxChnlGrid *tmp_grn = (cplxChnlGrid *)calloc(nr, sizeof(*tmp_grn));
@@ -65,9 +65,9 @@ void grt_integ_grn_spec(
     GRT_MODEL1D *mod1d, size_t nf1, size_t nf2, real_t *freqs,  
     size_t nr, real_t *rs, real_t wI, bool keepAllFreq, K_INTEG_METHOD *Kmet,    
     bool print_progressbar, bool calc_upar,
-    pt_cplxChnlGrid grn[nr],
-    pt_cplxChnlGrid grn_uiz[nr],
-    pt_cplxChnlGrid grn_uir[nr],
+    pcplxChnlGrid grn[nr],
+    pcplxChnlGrid grn_uiz[nr],
+    pcplxChnlGrid grn_uir[nr],
 
     const char *statsstr, // 积分结果输出
     size_t  nstatsidxs, // 仅输出特定频点

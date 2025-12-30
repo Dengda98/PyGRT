@@ -44,9 +44,9 @@ void grt_integ_grn_spec(
     GRT_MODEL1D *mod1d, size_t nf1, size_t nf2, real_t *freqs,  
     size_t nr, real_t *rs, real_t wI, bool keepAllFreq, K_INTEG_METHOD *Kmet,         
     bool print_progressbar, bool calc_upar,
-    pt_cplxChnlGrid grn[nr],
-    pt_cplxChnlGrid grn_uiz[nr],
-    pt_cplxChnlGrid grn_uir[nr],
+    pcplxChnlGrid grn[nr],
+    pcplxChnlGrid grn_uiz[nr],
+    pcplxChnlGrid grn_uir[nr],
 
     const char *statsstr, // 积分过程输出
     size_t  nstatsidxs, // 仅输出特定频点

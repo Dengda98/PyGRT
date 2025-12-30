@@ -955,9 +955,9 @@ int greenfn_main(int argc, char **argv) {
     }
 
     // 建立格林函数的complex数组
-    pt_cplxChnlGrid *grn = (pt_cplxChnlGrid *) calloc(Ctrl->R.nr, sizeof(*grn));
-    pt_cplxChnlGrid *grn_uiz = (Ctrl->e.active)? (pt_cplxChnlGrid *) calloc(Ctrl->R.nr, sizeof(*grn_uiz)) : NULL;
-    pt_cplxChnlGrid *grn_uir = (Ctrl->e.active)? (pt_cplxChnlGrid *) calloc(Ctrl->R.nr, sizeof(*grn_uir)) : NULL;
+    pcplxChnlGrid *grn = (pcplxChnlGrid *) calloc(Ctrl->R.nr, sizeof(*grn));
+    pcplxChnlGrid *grn_uiz = (Ctrl->e.active)? (pcplxChnlGrid *) calloc(Ctrl->R.nr, sizeof(*grn_uiz)) : NULL;
+    pcplxChnlGrid *grn_uir = (Ctrl->e.active)? (pcplxChnlGrid *) calloc(Ctrl->R.nr, sizeof(*grn_uir)) : NULL;
 
     for(size_t ir=0; ir<Ctrl->R.nr; ++ir){
         GRT_LOOP_ChnlGrid(im, c){

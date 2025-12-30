@@ -428,9 +428,9 @@ int static_syn_main(int argc, char **argv){
 
     // 先将所有格林函数及其偏导读入内存，
     // 否则连续使用 nc_grt_var1 式读入效率太慢
-    pt_realChnlGrid u;
-    pt_realChnlGrid uiz;
-    pt_realChnlGrid uir;
+    prealChnlGrid u;
+    prealChnlGrid uiz;
+    prealChnlGrid uir;
     GRT_LOOP_ChnlGrid(im, c){
         int modr = GRT_SRC_M_ORDERS[im];
         // 先申请全 0 内存
