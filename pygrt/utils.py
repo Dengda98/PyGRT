@@ -98,7 +98,7 @@ def _gen_syn_from_gf(st:Stream, calc_upar:bool, compute_type:GRT_SYN_TYPE, M0:fl
 
     # 为张位错计算 Vp/Vs
     src_va = st[0].stats.sac['user6']
-    src_vb = st[0].stats.sac['user6']
+    src_vb = st[0].stats.sac['user7']
     VpVs_ratio = src_va / src_vb
 
     baz = 180 + az
