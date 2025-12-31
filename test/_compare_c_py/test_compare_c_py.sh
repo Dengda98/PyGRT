@@ -45,6 +45,11 @@ grt strain syn_dc$N
 grt rotation syn_dc$N
 grt stress syn_dc$N
 
+grt syn -G$G -Osyn_ts$N -A$az -S$S -M$stk/$dip -Dp/0.6 -e $N
+grt strain syn_ts$N
+grt rotation syn_ts$N
+grt stress syn_ts$N
+
 M11=1
 M12=-2
 M13=-5
@@ -88,6 +93,11 @@ grt static syn -S$S -M$stk/$dip/$rak -e $N -Gstgrn.nc -Ostsyn_dc$N.nc
 grt static strain stsyn_dc$N.nc
 grt static rotation stsyn_dc$N.nc
 grt static stress stsyn_dc$N.nc
+
+grt static syn -S$S -M$stk/$dip -e $N -Gstgrn.nc -Ostsyn_ts$N.nc
+grt static strain stsyn_ts$N.nc
+grt static rotation stsyn_ts$N.nc
+grt static stress stsyn_ts$N.nc
 
 grt static syn -S$S -T$M11/$M12/$M13/$M22/$M23/$M33 -e $N -Gstgrn.nc -Ostsyn_mt$N.nc
 grt static strain stsyn_mt$N.nc

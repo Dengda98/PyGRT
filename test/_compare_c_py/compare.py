@@ -198,6 +198,17 @@ for ZNE in [False, True]:
     AVGRERR.append(compare3(strotation, f"syn_dc{suffix}/rotation_", ZNE=ZNE, dim2=True))
     AVGRERR.append(compare3(ststress, f"syn_dc{suffix}/stress_", ZNE=ZNE, dim2=True))
 
+    st = pygrt.utils.gen_syn_from_gf_TS(st_grn, S, stk, dip, az, ZNE=ZNE, calc_upar=True)
+    sigs = pygrt.sigs.gen_parabola_wave(0.6, dt)
+    pygrt.utils.stream_convolve(st, sigs)
+    AVGRERR.append(compare3(st, f"syn_ts{suffix}/", ZNE=ZNE))
+    ststrain = pygrt.utils.compute_strain(st)
+    strotation = pygrt.utils.compute_rotation(st)
+    ststress = pygrt.utils.compute_stress(st)
+    AVGRERR.append(compare3(ststrain, f"syn_ts{suffix}/strain_", ZNE=ZNE, dim2=True))
+    AVGRERR.append(compare3(strotation, f"syn_ts{suffix}/rotation_", ZNE=ZNE, dim2=True))
+    AVGRERR.append(compare3(ststress, f"syn_ts{suffix}/stress_", ZNE=ZNE, dim2=True))
+
     st = pygrt.utils.gen_syn_from_gf_MT(st_grn, S, [M11,M12,M13,M22,M23,M33], az, ZNE=ZNE, calc_upar=True)
     sigs = pygrt.sigs.gen_ricker_wave(3, dt)
     pygrt.utils.stream_convolve(st, sigs)
@@ -247,6 +258,15 @@ for ZNE in [False, True]:
     update_dict(static_syn, ststress, "stress_")
     update_dict(static_syn, strotation, "rotation_")
     AVGRERR2.append(static_compare3(static_syn, f"static/stsyn_dc{suffix}.nc"))
+
+    static_syn = pygrt.utils.gen_syn_from_gf_TS(static_grn, S, stk, dip, ZNE=ZNE, calc_upar=True)
+    ststrain = pygrt.utils.compute_strain(static_syn)
+    strotation = pygrt.utils.compute_rotation(static_syn)
+    ststress = pygrt.utils.compute_stress(static_syn)
+    update_dict(static_syn, ststrain, "strain_")
+    update_dict(static_syn, ststress, "stress_")
+    update_dict(static_syn, strotation, "rotation_")
+    AVGRERR2.append(static_compare3(static_syn, f"static/stsyn_ts{suffix}.nc"))
 
     static_syn = pygrt.utils.gen_syn_from_gf_MT(static_grn, S, [M11,M12,M13,M22,M23,M33], ZNE=ZNE, calc_upar=True)
     ststrain = pygrt.utils.compute_strain(static_syn)
