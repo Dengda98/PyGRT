@@ -118,7 +118,7 @@ Python中合成静态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.uti
     :align: center
 
 
-张位错源
+张裂源
 ~~~~~~~~~~~~~~
 断层走向33°，倾角50°，标量矩 1e24 dyne·cm。
 
@@ -143,7 +143,7 @@ Python中合成静态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.uti
     :width: 500px
     :align: center
 
-    沙滩球仅绘制了张位错源中的 DC+CLVD 分量
+    沙滩球仅绘制了张裂源中的 DC+CLVD 分量
 
 
 这里如果改变倾角为90°，就可以看到清晰的对称辐射花样。
@@ -169,7 +169,7 @@ Python中合成静态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.uti
     :width: 500px
     :align: center
 
-    沙滩球仅绘制了张位错源中的 DC+CLVD 分量
+    沙滩球仅绘制了张裂源中的 DC+CLVD 分量
 
 
 矩张量源

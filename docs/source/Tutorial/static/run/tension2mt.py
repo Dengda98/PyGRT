@@ -1,7 +1,7 @@
 """
     Zhu Dengda
     
-    将张位错转为矩张量表示
+    将张裂转为矩张量表示
 """
 from math import *
 import numpy as np

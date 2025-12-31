@@ -111,7 +111,7 @@ grt static syn -S1e24 -M33/50 -N -Gstgrn.nc -Ostsyn_ts.nc
 # END SYN TS
 # ---------------------------------------------------------------------------------
 
-# 计算张位错的矩张量表示，仅绘制其中的 DC+CLVD 分量
+# 计算张裂的矩张量表示，仅绘制其中的 DC+CLVD 分量
 gmt begin syn_ts pdf
     gmtplot_static stsyn_ts.nc -Si0.03c
     gmt meca -Sz0.5c <<EOF
@@ -127,7 +127,7 @@ grt static syn -S1e24 -M33/90 -N -Gstgrn.nc -Ostsyn_ts2.nc
 # END SYN TS2
 # ---------------------------------------------------------------------------------
 
-# 计算张位错的矩张量表示，仅绘制其中的 DC+CLVD 分量
+# 计算张裂的矩张量表示，仅绘制其中的 DC+CLVD 分量
 gmt begin syn_ts2 pdf
     gmtplot_static stsyn_ts2.nc -Si0.03c
     gmt meca -Sz0.5c <<EOF

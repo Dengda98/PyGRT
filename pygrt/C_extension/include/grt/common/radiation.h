@@ -17,7 +17,7 @@
     X(GRT_SYN_EX, "Explosion") \
     X(GRT_SYN_SF, "Single Force") \
     X(GRT_SYN_DC, "Shear") \
-    X(GRT_SYN_TS, "Tensile") \
+    X(GRT_SYN_TS, "Tension") \
     X(GRT_SYN_MT, "Moment Tensor") \
 
 
@@ -44,7 +44,7 @@ static const char *srcTypeFullName[] = {
  * @param[in]       par_theta        方向因子中是否对theta(az)求导
  * @param[in]       M0               放大系数，对于剪切源、爆炸源、张量震源，M0是标量地震矩；对于单力源，M0是放大系数
  * @param[in]       coef             放大系数，用于位移空间导数的计算
- * @param[in]       VpVs_ratio       震源层的 Vp/Vs 比值，用于张位错源
+ * @param[in]       VpVs_ratio       震源层的 Vp/Vs 比值，用于张裂源
  * @param[in]       azrad            弧度制的方位角
  * @param[in]       mchn             震源机制参数，
  *                                   对于单力源，mchn={fn, fe, fz}，

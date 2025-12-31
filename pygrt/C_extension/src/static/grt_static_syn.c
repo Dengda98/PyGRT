@@ -209,7 +209,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 };
                 break;
 
-            // 剪切震源， 张位错源
+            // 剪切震源， 张裂源
             case 'M':
                 Ctrl->M.active = true;
                 {
