@@ -461,15 +461,15 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             if(va <= 0.0 || vb < 0.0 || rho <= 0.0){
                 GRTRaiseError("Bad src_va, src_vb or src_rho in \"%s\" header.\n", entry->d_name);
             }
-            if(vb == 0.0){
-                GRTRaiseError("Zero src_vb in \"%s\" header. "
-                    "Maybe you try to use -Su<scale> but the source is in the liquid. "
-                    "Use -S<scale> instead.\n" , entry->d_name);
-            }
 
-            Ctrl->VpVs_ratio = ((real_t)va)/vb;
+            Ctrl->VpVs_ratio = (vb == 0.0)? 0.0 : ((real_t)va)/vb;
 
             if (Ctrl->S.mult_src_mu) {
+                if(vb == 0.0){
+                    GRTRaiseError("Zero src_vb in \"%s\" header. "
+                        "Maybe you try to use -Su<scale> but the source is in the liquid. "
+                        "Use -S<scale> instead.\n" , entry->d_name);
+                }
                 Ctrl->S.src_mu = vb*vb*rho*1e10;
                 Ctrl->S.M0 *= Ctrl->S.src_mu;
             }
