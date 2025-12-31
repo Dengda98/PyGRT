@@ -126,6 +126,31 @@ Python中合成动态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.uti
    :align: center
 
 
+张位错源
+~~~~~~~~~~~~~~
+断层走向33°，倾角50°，标量矩 1e24 dyne·cm。
+
+.. tabs::  
+
+    .. group-tab:: C 
+
+        .. literalinclude:: run/run.sh
+            :language: bash
+            :start-after: BEGIN SYN TS
+            :end-before: END SYN TS
+
+    .. group-tab:: Python 
+
+        .. literalinclude:: run/run.py
+            :language: python
+            :start-after: BEGIN SYN TS
+            :end-before: END SYN TS
+
+
+.. figure:: run/syn_ts.svg
+   :align: center
+
+
 矩张量源
 ~~~~~~~~~~~~~~
 :math:`M_{xx}=0.1, M_{xy}=-0.2, M_{xz}=1.0, M_{yy}=0.3, M_{yz}=-0.5, M_{zz}=-2.0`，单位 1e24 dyne·cm， **其中X为北向，Y为东向，Z为垂直向下**。
