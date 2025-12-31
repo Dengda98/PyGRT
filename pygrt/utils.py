@@ -4,7 +4,7 @@
     :date:     2024-07-24  
 
     该文件包含一些数据处理操作上的补充:   
-        1、剪切源、单力源、爆炸源、矩张量源 通过格林函数合成理论地震图的函数\n
+        1、剪切源、张位错源、单力源、爆炸源、矩张量源 通过格林函数合成理论地震图的函数\n
         2、Stream类型的时域卷积、微分、积分 (基于numpy和scipy)    \n
         3、Stream类型写到本地sac文件，自定义名称    \n
         4、读取波数积分和峰谷平均法过程文件  \n
@@ -34,6 +34,17 @@ from copy import deepcopy
 from numpy.typing import ArrayLike
 
 from .c_interfaces import *
+
+from enum import Enum, unique
+
+@unique
+class GRT_SYN_TYPE(Enum):
+    GRT_SYN_EX = 0
+    GRT_SYN_SF = 1
+    GRT_SYN_DC = 2
+    GRT_SYN_TS = 3
+    GRT_SYN_MT = 4
+
 
 
 __all__ = [
@@ -67,15 +78,13 @@ __all__ = [
 #
 #=================================================================================================================
 
-def _gen_syn_from_gf(st:Stream, calc_upar:bool, compute_type:str, M0:float, az:float, ZNE=False, **kwargs):
+def _gen_syn_from_gf(st:Stream, calc_upar:bool, compute_type:GRT_SYN_TYPE, M0:float, az:float, ZNE=False, **kwargs):
     r"""
         一个发起函数，根据不同震源参数，从格林函数中合成理论地震图
 
         :param    st:              计算好的时域格林函数, :class:`obspy.Stream` 类型
         :param    calc_upar:       是否计算位移u的空间导数
-        :param    compute_type:    计算类型，应为以下之一: 
-                                    'COMPUTE_EX'(爆炸源), 'COMPUTE_SF'(单力源),
-                                    'COMPUTE_DC'(剪切源), 'COMPUTE_MT'(矩张量源)
+        :param    compute_type:    计算震源类型
         :param    M0:              标量地震矩, 单位dyne*cm
         :param    az:              方位角(度)
         :param    ZNE:             是否以ZNE分量输出?
@@ -86,6 +95,11 @@ def _gen_syn_from_gf(st:Stream, calc_upar:bool, compute_type:str, M0:float, az:f
     sacout_prefixes = ["", "z", "r", "t"]   # 输出通道名
     srcName = ["EX", "VF", "HF", "DD", "DS", "SS"]
     allchs = [tr.stats.channel for tr in st]
+
+    # 为张位错计算 Vp/Vs
+    src_va = st[0].stats.sac['user6']
+    src_vb = st[0].stats.sac['user6']
+    VpVs_ratio = src_va / src_vb
 
     baz = 180 + az
     if baz > 360:
@@ -105,7 +119,7 @@ def _gen_syn_from_gf(st:Stream, calc_upar:bool, compute_type:str, M0:float, az:f
         if ityp == 3:
             upar_scale /= dist
 
-        srcRadi = _set_source_radi(ityp==3, upar_scale, compute_type, M0, azrad, **kwargs)
+        srcRadi = _set_source_radi(ityp==3, upar_scale, compute_type, M0, azrad, VpVs_ratio=VpVs_ratio, **kwargs)
 
         inpref = sacin_prefixes[ityp]
         outpref = sacout_prefixes[ityp]
@@ -138,15 +152,13 @@ def _gen_syn_from_gf(st:Stream, calc_upar:bool, compute_type:str, M0:float, az:f
     return stall
 
 
-def _gen_syn_from_static_gf(grn:dict, calc_upar:bool, compute_type:str, M0:float, ZNE=False, **kwargs):
+def _gen_syn_from_static_gf(grn:dict, calc_upar:bool, compute_type:GRT_SYN_TYPE, M0:float, ZNE=False, **kwargs):
     r"""
         一个发起函数，根据不同震源参数，从静态格林函数中合成理论静态场
 
         :param    grn:             计算好的静态格林函数, 字典类型
         :param    calc_upar:       是否计算位移u的空间导数
-        :param    compute_type:    计算类型，应为以下之一: 
-                                    'COMPUTE_EX'(爆炸源), 'COMPUTE_SF'(单力源),
-                                    'COMPUTE_DC'(剪切源), 'COMPUTE_MT'(矩张量源)
+        :param    compute_type:    计算震源类型
         :param    M0:              标量地震矩, 单位dyne*cm
         :param    ZNE:             是否以ZNE分量输出?
             
@@ -155,6 +167,11 @@ def _gen_syn_from_static_gf(grn:dict, calc_upar:bool, compute_type:str, M0:float
     sacin_prefixes = ["", "z", "r", ""]   # 输入通道名
     srcName = ["EX", "VF", "HF", "DD", "DS", "SS"]
     allchs = list(grn.keys())
+
+    # 为张位错计算 Vp/Vs
+    src_va = grn['_src_va']
+    src_vb = grn['_src_vb']
+    VpVs_ratio = src_va / src_vb
 
     calcUTypes = 4 if calc_upar else 1
 
@@ -189,7 +206,7 @@ def _gen_syn_from_static_gf(grn:dict, calc_upar:bool, compute_type:str, M0:float
                 if ityp == 3:
                     upar_scale /= dist
 
-                srcRadi = _set_source_radi(ityp==3, upar_scale, compute_type, M0, azrad, **kwargs)
+                srcRadi = _set_source_radi(ityp==3, upar_scale, compute_type, M0, azrad, VpVs_ratio=VpVs_ratio, **kwargs)
 
                 inpref = sacin_prefixes[ityp]
 
@@ -319,18 +336,16 @@ def _data_zrt2zne(stall:Stream):
 
 
 def _set_source_radi(
-    par_theta:bool, coef:float, compute_type:str, M0:float, azrad:float,
+    par_theta:bool, coef:float, compute_type:GRT_SYN_TYPE, M0:float, azrad:float,
     fZ=None, fN=None, fE=None, 
     strike=None, dip=None, rake=None, 
     MT=None, **kwargs):
     r"""
-        设置不同震源的方向因子矩阵
+        使用 C 函数计算不同震源的方向因子矩阵
 
         :param    par_theta:       是否求对theta的偏导
         :param    coef:            比例系数
-        :param    compute_type:    计算类型，应为以下之一: 
-                                    'COMPUTE_EX'(爆炸源), 'COMPUTE_SF'(单力源),
-                                    'COMPUTE_DC'(剪切源), 'COMPUTE_MT'(矩张量源)
+        :param    compute_type:    计算震源类型
         :param    M0:              地震矩
         :param    azrad:           方位角(弧度)
 
@@ -339,100 +354,24 @@ def _set_source_radi(
             - 剪切源需要: strike, dip, rake
             - 矩张量源需要: MT=(Mxx, Mxy, Mxz, Myy, Myz, Mzz)
     """
-    
-    caz = np.cos(azrad)
-    saz = np.sin(azrad)
 
-    src_coef = np.zeros((SRC_M_NUM, CHANNEL_NUM), dtype='f8')
-    
-    # 计算乘法因子
-    if compute_type == 'COMPUTE_SF':
-        mult = 1e-15 * M0 * coef 
+    src_coef = np.zeros((SRC_M_NUM, CHANNEL_NUM), dtype=NPCT_REAL_TYPE)
+    mchn = np.zeros((MECHANISM_NUM,), dtype=NPCT_REAL_TYPE)
+    if compute_type == GRT_SYN_TYPE.GRT_SYN_SF:
+        mchn[:3] = [fN, fE, fZ]
+    elif compute_type == GRT_SYN_TYPE.GRT_SYN_DC:
+        mchn[:3] = [strike, dip, rake]
+    elif compute_type == GRT_SYN_TYPE.GRT_SYN_TS:
+        mchn[:2] = [strike, dip]
+    elif compute_type == GRT_SYN_TYPE.GRT_SYN_MT:
+        mchn[:] = MT[:]
     else:
-        mult = 1e-20 * M0 * coef 
-
-    # 根据不同计算类型处理
-    if compute_type == 'COMPUTE_EX':
-        # 爆炸源情况
-        src_coef[0, 0] = src_coef[0, 1] = 0.0 if par_theta else mult  # Z/R分量
-        src_coef[0, 2] = 0.0  # T分量
+        raise ValueError("Unsupported source type.")
     
-    elif compute_type == 'COMPUTE_SF':
-        # 单力源情况
-        # 计算各向异性系数
-        A0 = fZ * mult
-        A1 = (fN * caz + fE * saz) * mult
-        A4 = (-fN * saz + fE * caz) * mult
-
-        # 设置震源系数矩阵 (公式4.6.20)
-        src_coef[1, 0] = src_coef[1, 1] = 0.0 if par_theta else A0  # VF, Z/R
-        src_coef[2, 0] = src_coef[2, 1] = A4 if par_theta else A1  # HF, Z/R
-        src_coef[1, 2] = 0.0  # VF, T
-        src_coef[2, 2] = -A1 if par_theta else A4  # HF, T
+    C_grt_set_source_radiation(
+        src_coef, compute_type.value, par_theta, 
+        M0, coef, kwargs['VpVs_ratio'], azrad, mchn)
     
-    elif compute_type == 'COMPUTE_DC':
-        # 剪切源情况 (公式4.8.35)
-        # 计算各种角度值(转为弧度)
-        stkrad = np.deg2rad(strike)  # 走向角
-        diprad = np.deg2rad(dip)    # 倾角
-        rakrad = np.deg2rad(rake)   # 滑动角
-        therad = azrad - stkrad  # 方位角与走向角差
-        
-        # 计算各种三角函数值
-        srak = np.sin(rakrad);      crak = np.cos(rakrad)
-        sdip = np.sin(diprad);      cdip = np.cos(diprad)
-        sdip2 = 2.0 * sdip * cdip;  cdip2 = 2.0 * cdip**2 - 1.0
-        sthe = np.sin(therad);      cthe = np.cos(therad)
-        sthe2 = 2.0 * sthe * cthe;  cthe2 = 2.0 * cthe**2 - 1.0
-
-        # 计算各向异性系数
-        A0 = mult * (0.5 * sdip2 * srak)
-        A1 = mult * (cdip * crak * cthe - cdip2 * srak * sthe)
-        A2 = mult * (0.5 * sdip2 * srak * cthe2 + sdip * crak * sthe2)
-        A4 = mult * (-cdip2 * srak * cthe - cdip * crak * sthe)
-        A5 = mult * (sdip * crak * cthe2 - 0.5 * sdip2 * srak * sthe2)
-
-        # 设置震源系数矩阵
-        src_coef[3, 0] = src_coef[3, 1] = 0.0 if par_theta else A0  # DD, Z/R
-        src_coef[4, 0] = src_coef[4, 1] = A4 if par_theta else A1  # DS, Z/R
-        src_coef[5, 0] = src_coef[5, 1] = 2.0 * A5 if par_theta else A2  # SS, Z/R
-        src_coef[3, 2] = 0.0  # DD, T
-        src_coef[4, 2] = -A1 if par_theta else A4  # DS, T
-        src_coef[5, 2] = -2.0 * A2 if par_theta else A5  # DS, T
-    
-    elif compute_type == 'COMPUTE_MT':
-        # 矩张量源情况 (公式4.9.7，修改了各向同性项)
-        # 初始化矩张量分量
-        M11, M12, M13, M22, M23, M33 = MT
-        
-        # 计算各向同性部分并减去
-        Mexp = (M11 + M22 + M33) / 3.0
-        M11 -= Mexp
-        M22 -= Mexp
-        M33 -= Mexp
-        
-        # 计算方位角的2倍角三角函数
-        caz2 = np.cos(2 * azrad)
-        saz2 = np.sin(2 * azrad)
-        
-        # 计算各向异性系数
-        A0 = mult * ((2.0 * M33 - M11 - M22) / 6.0)
-        A1 = mult * (- (M13 * caz + M23 * saz))
-        A2 = mult * (0.5 * (M11 - M22) * caz2 + M12 * saz2)
-        A4 = mult * (M13 * saz - M23 * caz)
-        A5 = mult * (-0.5 * (M11 - M22) * saz2 + M12 * caz2)
-
-        # 设置震源系数矩阵
-        src_coef[0, 0] = src_coef[0, 1] = 0.0 if par_theta else mult * Mexp  # EX, Z/R
-        src_coef[3, 0] = src_coef[3, 1] = 0.0 if par_theta else A0  # DD, Z/R
-        src_coef[4, 0] = src_coef[4, 1] = A4 if par_theta else A1  # DS, Z/R
-        src_coef[5, 0] = src_coef[5, 1] = 2.0 * A5 if par_theta else A2  # SS, Z/R
-        src_coef[0, 2] = 0.0  # EX, T
-        src_coef[3, 2] = 0.0  # DD, T
-        src_coef[4, 2] = -A1 if par_theta else A4  # DS, T
-        src_coef[5, 2] = -2.0 * A2 if par_theta else A5  # DS, T
-
-
     return src_coef
 
 
@@ -455,9 +394,33 @@ def gen_syn_from_gf_DC(st:Union[Stream,dict], M0:float, strike:float, dip:float,
     if isinstance(st, Stream):
         if az > 360 or az < -360:
             raise ValueError(f"WRONG azimuth ({az})")
-        return _gen_syn_from_gf(st, calc_upar, "COMPUTE_DC", M0, az, ZNE, strike=strike, dip=dip, rake=rake)
+        return _gen_syn_from_gf(st, calc_upar, GRT_SYN_TYPE.GRT_SYN_DC, M0, az, ZNE, strike=strike, dip=dip, rake=rake)
     elif isinstance(st, dict):
-        return _gen_syn_from_static_gf(st, calc_upar, "COMPUTE_DC", M0, ZNE, strike=strike, dip=dip, rake=rake)
+        return _gen_syn_from_static_gf(st, calc_upar, GRT_SYN_TYPE.GRT_SYN_DC, M0, ZNE, strike=strike, dip=dip, rake=rake)
+    else:
+        raise NotImplementedError
+
+def gen_syn_from_gf_TS(st:Union[Stream,dict], M0:float, strike:float, dip:float, az:float=-999, ZNE=False, calc_upar:bool=False):
+    '''
+        Tension source, the unit of angles is all degrees(°)
+
+        :param    st:       Green's functions in a :class:`obspy.Stream` (dynamic-case) or a dict (static-case)
+        :param    M0:       scalar seismic moment (dyne*cm)
+        :param    strike:   0 <= strike <= 360 (north=0, clockwise as positive)
+        :param    dip:      0 <= dip <= 90
+        :param    az:       azimuth, 0 <= az <= 360 (not used for static case)
+        :param    ZNE:          whether output in 'ZNE'-coord, default is 'ZRT'
+        :param    calc_upar:    whether calculate the spatial derivatives of displacements.
+
+        :return:
+            - **stream** -  :class:`obspy.Stream`
+    '''
+    if isinstance(st, Stream):
+        if az > 360 or az < -360:
+            raise ValueError(f"WRONG azimuth ({az})")
+        return _gen_syn_from_gf(st, calc_upar, GRT_SYN_TYPE.GRT_SYN_TS, M0, az, ZNE, strike=strike, dip=dip)
+    elif isinstance(st, dict):
+        return _gen_syn_from_static_gf(st, calc_upar, GRT_SYN_TYPE.GRT_SYN_TS, M0, ZNE, strike=strike, dip=dip)
     else:
         raise NotImplementedError
 
@@ -481,9 +444,9 @@ def gen_syn_from_gf_SF(st:Union[Stream,dict], S:float, fN:float, fE:float, fZ:fl
     if isinstance(st, Stream):
         if az > 360 or az < -360:
             raise ValueError(f"WRONG azimuth ({az})")
-        return _gen_syn_from_gf(st, calc_upar, "COMPUTE_SF", S, az, ZNE, fN=fN, fE=fE, fZ=fZ)
+        return _gen_syn_from_gf(st, calc_upar, GRT_SYN_TYPE.GRT_SYN_SF, S, az, ZNE, fN=fN, fE=fE, fZ=fZ)
     elif isinstance(st, dict):
-        return _gen_syn_from_static_gf(st, calc_upar, "COMPUTE_SF", S, ZNE, fN=fN, fE=fE, fZ=fZ)
+        return _gen_syn_from_static_gf(st, calc_upar, GRT_SYN_TYPE.GRT_SYN_SF, S, ZNE, fN=fN, fE=fE, fZ=fZ)
     else:
         raise NotImplementedError
 
@@ -504,9 +467,9 @@ def gen_syn_from_gf_EX(st:Union[Stream,dict], M0:float, az:float=-999, ZNE=False
     if isinstance(st, Stream):
         if az > 360 or az < -360:
             raise ValueError(f"WRONG azimuth ({az})")
-        return _gen_syn_from_gf(st, calc_upar, "COMPUTE_EX", M0, az, ZNE)
+        return _gen_syn_from_gf(st, calc_upar, GRT_SYN_TYPE.GRT_SYN_EX, M0, az, ZNE)
     elif isinstance(st, dict):
-        return _gen_syn_from_static_gf(st, calc_upar, "COMPUTE_EX", M0, ZNE)
+        return _gen_syn_from_static_gf(st, calc_upar, GRT_SYN_TYPE.GRT_SYN_EX, M0, ZNE)
     else:
         raise NotImplementedError
     
@@ -528,9 +491,9 @@ def gen_syn_from_gf_MT(st:Union[Stream,dict], M0:float, MT:ArrayLike, az:float=-
     if isinstance(st, Stream):
         if az > 360 or az < -360:
             raise ValueError(f"WRONG azimuth ({az})")
-        return _gen_syn_from_gf(st, calc_upar, "COMPUTE_MT", M0, az, ZNE, MT=MT)
+        return _gen_syn_from_gf(st, calc_upar, GRT_SYN_TYPE.GRT_SYN_MT, M0, az, ZNE, MT=MT)
     elif isinstance(st, dict):
-        return _gen_syn_from_static_gf(st, calc_upar, "COMPUTE_MT", M0, ZNE, MT=MT)
+        return _gen_syn_from_static_gf(st, calc_upar, GRT_SYN_TYPE.GRT_SYN_MT, M0, ZNE, MT=MT)
     else:
         raise NotImplementedError
 

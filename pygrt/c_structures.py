@@ -22,6 +22,7 @@ __all__ = [
     "ZRTchs",
     "ZNEchs",
     "qwvchs",
+    "MECHANISM_NUM",
 
     "NPCT_REAL_TYPE",
     "NPCT_CMPLX_TYPE",
@@ -44,7 +45,7 @@ SRC_M_NAME_ABBR = ["EX", "VF", "HF", "DD", "DS", "SS"]
 ZRTchs = ['Z', 'R', 'T']
 ZNEchs = ['Z', 'N', 'E']
 qwvchs = ['q', 'w', 'v']
-
+MECHANISM_NUM = 6
 
 NPCT_REAL_TYPE = 'f8'
 NPCT_CMPLX_TYPE = 'c16'
