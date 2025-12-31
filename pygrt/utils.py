@@ -355,9 +355,13 @@ def _set_source_radi(
             - 矩张量源需要: MT=(Mxx, Mxy, Mxz, Myy, Myz, Mzz)
     """
 
+    VpVs_ratio = kwargs['VpVs_ratio'] if 'VpVs_ratio' in kwargs else 0.0
+
     src_coef = np.zeros((SRC_M_NUM, CHANNEL_NUM), dtype=NPCT_REAL_TYPE)
     mchn = np.zeros((MECHANISM_NUM,), dtype=NPCT_REAL_TYPE)
-    if compute_type == GRT_SYN_TYPE.GRT_SYN_SF:
+    if compute_type == GRT_SYN_TYPE.GRT_SYN_EX:
+        pass
+    elif compute_type == GRT_SYN_TYPE.GRT_SYN_SF:
         mchn[:3] = [fN, fE, fZ]
     elif compute_type == GRT_SYN_TYPE.GRT_SYN_DC:
         mchn[:3] = [strike, dip, rake]
@@ -369,8 +373,8 @@ def _set_source_radi(
         raise ValueError("Unsupported source type.")
     
     C_grt_set_source_radiation(
-        src_coef, compute_type.value, par_theta, 
-        M0, coef, kwargs['VpVs_ratio'], azrad, mchn)
+        npct.as_ctypes(src_coef), compute_type.value, par_theta, 
+        M0, coef, VpVs_ratio, azrad, npct.as_ctypes(mchn))
     
     return src_coef
 
