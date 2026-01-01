@@ -21,9 +21,6 @@
 // 防止被替换为虚数单位
 #undef I
 
-// 和宏命令对应的震源类型全称
-static const char *sourceTypeFullName[] = {"Explosion", "Single Force", "Shear", "Moment Tensor"};
-
 /** 该子模块的参数控制结构体 */
 typedef struct {
     /** 格林函数路径 */
@@ -97,11 +94,14 @@ typedef struct {
     // 震中距
     real_t dist;
 
+    // 震源层 Vp/Vs
+    real_t VpVs_ratio;
+
     // 方向因子数组
     realChnlGrid srcRadi;
 
     // 最终要计算的震源类型
-    int computeType;
+    GRT_SYN_TYPE computeType;
     char s_computeType[3];
 
 } GRT_MODULE_CTRL;
@@ -137,7 +137,7 @@ printf("\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
 "    grt syn -G<grn_path> -A<azimuth> -S[u]<scale> -O<outdir> \n"
-"            [-M<strike>/<dip>/<rake>]\n"
+"            [-M<strike>/<dip>[/<rake>]]\n"
 "            [-T<Mxx>/<Mxy>/<Mxz>/<Myy>/<Myz>/<Mzz>]\n"
 "            [-F<fn>/<fe>/<fz>] \n"
 "            [-D<tftype>/<tfparams>] [-I<odr>] [-J<odr>]\n" 
@@ -162,9 +162,10 @@ printf("\n"
 "    For source type, you can only set at most one of\n"
 "    '-M', '-T' and '-F'. If none, an Explosion is used.\n"
 "\n"
-"    -M<strike>/<dip>/<rake>\n"
-"                  Three angles to define a fault. \n"
+"    -M<strike>/<dip>[/<rake>]\n"
+"                  Three angles to define a shear fault. \n"
 "                  The angles are in degree.\n"
+"                  If <rake> not set, then define a tensile fault.\n"
 "\n"
 "    -T<Mxx>/<Mxy>/<Mxz>/<Myy>/<Myz>/<Mzz>\n"
 "                  Six elements of Moment Tensor. \n"
@@ -234,6 +235,9 @@ printf("\n"
 "    or Shear\n"
 "        grt syn -Gres/milrow_2_0_10 -Osyn_dc -A30 -S1e24 -M100/20/80\n"
 "\n"
+"    or Tension\n"
+"        grt syn -Gres/milrow_2_0_10 -Osyn_dc -A30 -S1e24 -M100/20\n"
+"\n"
 "    or Single Force\n"
 "        grt syn -Gres/milrow_2_0_10 -Osyn_sf -A30 -S1e24 -F0.5/-1.2/3.3\n"
 "\n"
@@ -247,7 +251,7 @@ printf("\n"
 /** 从命令行中读取选项，处理后记录到全局变量中 */
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     // 先为个别参数设置非0初始值
-    Ctrl->computeType = GRT_SYN_COMPUTE_EX;
+    Ctrl->computeType = GRT_SYN_EX;
     sprintf(Ctrl->s_computeType, "%s", "EX");
 
     int opt;
@@ -291,25 +295,33 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 };
                 break;
             
-            // 剪切震源
+            // 剪切震源， 张位错源
             case 'M':
                 Ctrl->M.active = true;
-                Ctrl->computeType = GRT_SYN_COMPUTE_DC;
                 {
-                    real_t strike, dip, rake;
-                    sprintf(Ctrl->s_computeType, "%s", "DC");
-                    if(3 != sscanf(optarg, "%lf/%lf/%lf", &strike, &dip, &rake)){
+                    real_t strike=0.0, dip=0.0, rake=0.0;
+                    int nscan = sscanf(optarg, "%lf/%lf/%lf", &strike, &dip, &rake);
+                    if(nscan >= 2){
+                        Ctrl->computeType = GRT_SYN_TS;
+                        sprintf(Ctrl->s_computeType, "%s", "TS");
+                        if(strike < 0.0 || strike > 360.0){
+                            GRTBadOptionError(M, "Strike must be in [0, 360].");
+                        }
+                        if(dip < 0.0 || dip > 90.0){
+                            GRTBadOptionError(M, "Dip must be in [0, 90].");
+                        }
+                        if(nscan == 3){
+                            Ctrl->computeType = GRT_SYN_DC;
+                            sprintf(Ctrl->s_computeType, "%s", "DC");
+                            if(rake < -180.0 || rake > 180.0){
+                                GRTBadOptionError(M, "Rake must be in [-180, 180].");
+                            }
+                        }
+                    } else {
                         GRTBadOptionError(M, "");
                     };
-                    if(strike < 0.0 || strike > 360.0){
-                        GRTBadOptionError(M, "Strike must be in [0, 360].");
-                    }
-                    if(dip < 0.0 || dip > 90.0){
-                        GRTBadOptionError(M, "Dip must be in [0, 90].");
-                    }
-                    if(rake < -180.0 || rake > 180.0){
-                        GRTBadOptionError(M, "Rake must be in [-180, 180].");
-                    }
+                    
+                    
                     Ctrl->mchn[0] = strike;
                     Ctrl->mchn[1] = dip;
                     Ctrl->mchn[2] = rake;
@@ -319,7 +331,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             // 单力源
             case 'F':
                 Ctrl->F.active = true;
-                Ctrl->computeType = GRT_SYN_COMPUTE_SF;
+                Ctrl->computeType = GRT_SYN_SF;
                 {
                     real_t fn, fe, fz;
                     sprintf(Ctrl->s_computeType, "%s", "SF");
@@ -335,7 +347,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             // 张量震源
             case 'T':
                 Ctrl->T.active = true;
-                Ctrl->computeType = GRT_SYN_COMPUTE_MT;
+                Ctrl->computeType = GRT_SYN_MT;
                 {
                     real_t Mxx, Mxy, Mxz, Myy, Myz, Mzz;
                     sprintf(Ctrl->s_computeType, "%s", "MT");
@@ -442,14 +454,17 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 
             Ctrl->dist = sac->hd.dist;
 
+            float va, vb, rho;  
+            va  = sac->hd.user6;
+            vb  = sac->hd.user7;
+            rho = sac->hd.user8;
+            if(va <= 0.0 || vb < 0.0 || rho <= 0.0){
+                GRTRaiseError("Bad src_va, src_vb or src_rho in \"%s\" header.\n", entry->d_name);
+            }
+
+            Ctrl->VpVs_ratio = (vb == 0.0)? 0.0 : ((real_t)va)/vb;
+
             if (Ctrl->S.mult_src_mu) {
-                float va, vb, rho;  
-                va  = sac->hd.user6;
-                vb  = sac->hd.user7;
-                rho = sac->hd.user8;
-                if(va <= 0.0 || vb < 0.0 || rho <= 0.0){
-                    GRTRaiseError("Bad src_va, src_vb or src_rho in \"%s\" header.\n", entry->d_name);
-                }
                 if(vb == 0.0){
                     GRTRaiseError("Zero src_vb in \"%s\" header. "
                         "Maybe you try to use -Su<scale> but the source is in the liquid. "
@@ -572,7 +587,7 @@ int syn_main(int argc, char **argv){
         }
 
         // 重新计算方向因子
-        grt_set_source_radiation(Ctrl->srcRadi, Ctrl->computeType, (ityp==3), Ctrl->S.M0, upar_scale, Ctrl->A.azrad, Ctrl->mchn);
+        grt_set_source_radiation(Ctrl->srcRadi, Ctrl->computeType, (ityp==3), Ctrl->S.M0, upar_scale, Ctrl->VpVs_ratio, Ctrl->A.azrad, Ctrl->mchn);
 
         // 合成地震图
         if (ityp==0 || ityp==3) {
@@ -662,7 +677,7 @@ int syn_main(int argc, char **argv){
         
     if(! Ctrl->s.active) {
         GRTRaiseInfo("Under \"%s\"", Ctrl->O.s_output_dir);
-        GRTRaiseInfo("Synthetic Seismograms of %-13s source done.", sourceTypeFullName[Ctrl->computeType]);
+        GRTRaiseInfo("Synthetic Seismograms of %-13s source done.", srcTypeFullName[Ctrl->computeType]);
         if(tfsac != NULL) GRTRaiseInfo("Time Function saved.");
     }
 

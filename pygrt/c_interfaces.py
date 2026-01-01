@@ -142,6 +142,15 @@ C_grt_py_attenuation_law.restype = None
 C_grt_py_attenuation_law.argtypes = [REAL, DPOINTER, DPOINTER]  # double, double[2], double[2]
 
 
+# -------------------------------------------------------------------
+#                      C 函数定义的方向因子
+# -------------------------------------------------------------------
+C_grt_set_source_radiation = libgrt.grt_set_source_radiation
+C_grt_set_source_radiation.restype = None
+C_grt_set_source_radiation.argtypes = [
+    (REAL*CHANNEL_NUM)*SRC_M_NUM, c_int, c_bool,
+    REAL, REAL, REAL, REAL, REAL*MECHANISM_NUM
+]
 
 
 

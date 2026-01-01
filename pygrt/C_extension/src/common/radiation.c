@@ -11,13 +11,14 @@
 
 #include "grt/common/radiation.h"
 #include "grt/common/const.h"
+#include "grt/common/checkerror.h"
 
 void grt_set_source_radiation(
-    realChnlGrid srcRadi, const int computeType, const bool par_theta,
-    const real_t M0, const real_t coef, const real_t azrad, const real_t mchn[GRT_MECHANISM_NUM]
+    realChnlGrid srcRadi, const GRT_SYN_TYPE computeType, const bool par_theta,
+    const real_t M0, const real_t coef, const real_t VpVs_ratio, const real_t azrad, const real_t mchn[GRT_MECHANISM_NUM]
 ){
     real_t mult;
-    if(computeType == GRT_SYN_COMPUTE_SF){
+    if(computeType == GRT_SYN_SF){
         mult = 1e-15*M0*coef;
     } else {
         mult = 1e-20*M0*coef;
@@ -27,11 +28,11 @@ void grt_set_source_radiation(
     saz = sin(azrad);
     caz = cos(azrad);
 
-    if(computeType == GRT_SYN_COMPUTE_EX){
+    if(computeType == GRT_SYN_EX){
         srcRadi[0][0] = srcRadi[0][1] = (par_theta)? 0.0 : mult; // Z/R
         srcRadi[0][2] = 0.0; // T
     }  
-    else if(computeType == GRT_SYN_COMPUTE_SF){
+    else if(computeType == GRT_SYN_SF){
         real_t A0, A1, A4;
         real_t fn, fe, fz;
         fn=mchn[0];   fe=mchn[1];  fz=mchn[2];   
@@ -45,7 +46,7 @@ void grt_set_source_radiation(
         srcRadi[1][2] = 0.0; // VF, T
         srcRadi[2][2] = (par_theta)? -A1 : A4; // HF, T
     }
-    else if(computeType == GRT_SYN_COMPUTE_DC){
+    else if(computeType == GRT_SYN_DC){
         real_t strike, dip, rake;
         strike=mchn[0];   dip=mchn[1];   rake=mchn[2];
         // 公式(4.8.35)
@@ -74,7 +75,36 @@ void grt_set_source_radiation(
         srcRadi[4][2] = (par_theta)? -A1 : A4;  // DS, T
         srcRadi[5][2] = (par_theta)? -2.0*A2 : A5;  // DS, T
     }
-    else if(computeType == GRT_SYN_COMPUTE_MT){
+    else if(computeType == GRT_SYN_TS){
+        real_t strike, dip;
+        strike=mchn[0];   dip=mchn[1];
+        // 公式(4.8.35)
+        real_t stkrad = strike*DEG1;
+        real_t diprad = dip*DEG1;
+        real_t therad = azrad - stkrad;
+        real_t sdip, cdip, sdip2, sthe, cthe, sthe2, cthe2;
+        sdip = sin(diprad);     cdip = cos(diprad);
+        sdip2 = 2.0*sdip*cdip;
+        sthe = sin(therad);     cthe = cos(therad);
+        sthe2 = 2.0*sthe*cthe;  cthe2 = 2.0*cthe*cthe - 1.0;
+
+        real_t A0, A1, A2, A4, A5;
+        A0 = mult * (2.0/3.0 - sdip*sdip);
+        A1 = mult * sdip2*sthe;
+        A2 = mult * ( - sdip*sdip*cthe2);
+        A4 = mult * sdip2*cthe;
+        A5 = mult * sdip*sdip*sthe2;
+
+        srcRadi[0][0] = srcRadi[0][1] = (par_theta)? 0.0 : mult * (GRT_SQUARE(VpVs_ratio) - 4.0/3.0); // EX, Z/R
+        srcRadi[3][0] = srcRadi[3][1] = (par_theta)? 0.0 : A0; // DD, Z/R
+        srcRadi[4][0] = srcRadi[4][1] = (par_theta)? A4 : A1; // DS, Z/R
+        srcRadi[5][0] = srcRadi[5][1] = (par_theta)? 2.0*A5 : A2; // SS, Z/R
+        srcRadi[0][2] = 0.0; // EX, T
+        srcRadi[3][2] = 0.0; // DD, T
+        srcRadi[4][2] = (par_theta)? -A1 : A4;  // DS, T
+        srcRadi[5][2] = (par_theta)? -2.0*A2 : A5;  // DS, T
+    }
+    else if(computeType == GRT_SYN_MT){
         // 公式(4.9.7)但修改了各向同性的量
         real_t M11, M12, M13, M22, M23, M33;
         M11 = mchn[0];   M12 = mchn[1];   M13 = mchn[2];
@@ -104,5 +134,8 @@ void grt_set_source_radiation(
         srcRadi[3][2] = 0.0; // DD, T
         srcRadi[4][2] = (par_theta)? -A1 : A4;  // DS, T
         srcRadi[5][2] = (par_theta)? -2.0*A2 : A5;  // DS, T
+    }
+    else {
+        GRTRaiseError("Unsupported source type.");
     }
 }
