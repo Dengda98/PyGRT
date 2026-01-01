@@ -178,4 +178,4 @@ for pdfname in $(ls *.pdf); do
     rm -r $pdfname
 done
 
-# rm -rf stgrn* stsyn*
+rm -rf stgrn* stsyn*
