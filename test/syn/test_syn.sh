@@ -10,6 +10,7 @@ grt syn -GGRN/milrow_2_0_10 -A22 -S1e20 -Osyn
 grt syn -GGRN/milrow_2_0_10 -A22 -S1e16 -F-1/2/-4 -Osyn 
 grt syn -GGRN/milrow_2_0_10 -A22 -S1e20 -M33/44/55 -Osyn 
 grt syn -GGRN/milrow_2_0_10 -A22 -Su1e10 -M33/44/55 -Osyn 
+grt syn -GGRN/milrow_2_0_10 -A22 -Su1e10 -M33/44 -Osyn 
 grt syn -GGRN/milrow_2_0_10 -A22 -S1e20  -T1/-2/-5/0.5/3/1.2 -Osyn 
 
 grt syn -GGRN/milrow_2_0_10 -A22 -S1e20 -Dp/0.6 -Osyn 

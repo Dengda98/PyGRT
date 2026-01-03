@@ -105,6 +105,39 @@ EOF
 gmt end
 
 # ---------------------------------------------------------------------------------
+# BEGIN SYN TS
+# 从网格文件中读取格林函数，再将合成结果写入新网格
+grt static syn -S1e24 -M33/50 -N -Gstgrn.nc -Ostsyn_ts.nc
+# END SYN TS
+# ---------------------------------------------------------------------------------
+
+# 计算张裂的矩张量表示，仅绘制其中的 DC+CLVD 分量
+gmt begin syn_ts pdf
+    gmtplot_static stsyn_ts.nc -Si0.03c
+    gmt meca -Sz0.5c <<EOF
+0 0 2 $(python tension2mt.py 33 50 stsyn_ts.nc) 24
+EOF
+    gmt colorbar -Bx+l"Z (cm)"
+gmt end
+
+# ---------------------------------------------------------------------------------
+# BEGIN SYN TS2
+# 从网格文件中读取格林函数，再将合成结果写入新网格
+grt static syn -S1e24 -M33/90 -N -Gstgrn.nc -Ostsyn_ts2.nc
+# END SYN TS2
+# ---------------------------------------------------------------------------------
+
+# 计算张裂的矩张量表示，仅绘制其中的 DC+CLVD 分量
+gmt begin syn_ts2 pdf
+    gmtplot_static stsyn_ts2.nc -Si0.03c
+    gmt meca -Sz0.5c <<EOF
+0 0 2 $(python tension2mt.py 33 90 stsyn_ts2.nc) 24
+EOF
+    gmt colorbar -Bx+l"Z (cm)"
+gmt end
+
+
+# ---------------------------------------------------------------------------------
 # BEGIN SYN MT
 # 从网格文件中读取格林函数，再将合成结果写入新网格
 grt static syn -S1e24 -T0.1/-0.2/1.0/0.3/-0.5/-2.0 -N -Gstgrn.nc -Ostsyn_mt.nc

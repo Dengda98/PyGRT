@@ -77,6 +77,24 @@ plot_static(static_syn, "syn_dc2.svg")
 # END SYN DC2
 # ---------------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------------
+# BEGIN SYN TS
+static_syn = pygrt.utils.gen_syn_from_gf_TS(static_grn, M0=1e24, strike=33, dip=50, ZNE=True)
+print(static_syn.keys())
+# dict_keys(['_xarr', '_yarr', '_src_va', '_src_vb', '_src_rho', '_rcv_va', '_rcv_vb', '_rcv_rho', 'Z', 'N', 'E'])
+plot_static(static_syn, "syn_ts.svg")
+# END SYN TS
+# ---------------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------------
+# BEGIN SYN TS2
+static_syn = pygrt.utils.gen_syn_from_gf_TS(static_grn, M0=1e24, strike=33, dip=90, ZNE=True)
+print(static_syn.keys())
+# dict_keys(['_xarr', '_yarr', '_src_va', '_src_vb', '_src_rho', '_rcv_va', '_rcv_vb', '_rcv_rho', 'Z', 'N', 'E'])
+plot_static(static_syn, "syn_ts2.svg")
+# END SYN TS2
+# ---------------------------------------------------------------------------------
 
 
 # ---------------------------------------------------------------------------------

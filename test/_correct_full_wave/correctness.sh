@@ -24,12 +24,14 @@ python ../compare_sac.py  "GRN/seafloor_5_1.1_100/*"    "_Ref/seafloor_5_1.1_100
 grt syn -GGRN/milrow_2_3_10 -A22 -S1e20 -Dt/0.2/0.2/0.4 -e -Osyn_ex
 grt syn -GGRN/milrow_2_3_10 -A22 -S1e20 -F2/-1/4 -Dt/0.1/0.3/0.6 -e -Osyn_sf
 grt syn -GGRN/milrow_2_3_10 -A22 -S1e20 -M77/88/111 -Dp/0.6 -e -Osyn_dc
+grt syn -GGRN/milrow_2_3_10 -A22 -S1e20 -M77/88 -Dp/0.6 -e -Osyn_ts
 grt syn -GGRN/milrow_2_3_10 -A22 -S1e20 -T1/-2/-5/0.5/3/1.2 -Dr/3 -e -Osyn_mt
 
 # also check the time functions
 python ../compare_sac.py  "syn_ex/*"  "_Ref/syn_ex/*"
 python ../compare_sac.py  "syn_sf/*"  "_Ref/syn_sf/*"
 python ../compare_sac.py  "syn_dc/*"  "_Ref/syn_dc/*"
+python ../compare_sac.py  "syn_ts/*"  "_Ref/syn_ts/*"
 python ../compare_sac.py  "syn_mt/*"  "_Ref/syn_mt/*"
 
 # rotate to ZNE

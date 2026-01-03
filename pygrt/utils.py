@@ -4,7 +4,7 @@
     :date:     2024-07-24  
 
     该文件包含一些数据处理操作上的补充:   
-        1、剪切源、张位错源、单力源、爆炸源、矩张量源 通过格林函数合成理论地震图的函数\n
+        1、剪切源、张裂源、单力源、爆炸源、矩张量源 通过格林函数合成理论地震图的函数\n
         2、Stream类型的时域卷积、微分、积分 (基于numpy和scipy)    \n
         3、Stream类型写到本地sac文件，自定义名称    \n
         4、读取波数积分和峰谷平均法过程文件  \n
@@ -96,7 +96,7 @@ def _gen_syn_from_gf(st:Stream, calc_upar:bool, compute_type:GRT_SYN_TYPE, M0:fl
     srcName = ["EX", "VF", "HF", "DD", "DS", "SS"]
     allchs = [tr.stats.channel for tr in st]
 
-    # 为张位错计算 Vp/Vs
+    # 为张裂计算 Vp/Vs
     src_va = st[0].stats.sac['user6']
     src_vb = st[0].stats.sac['user7']
     VpVs_ratio = src_va / src_vb
@@ -168,7 +168,7 @@ def _gen_syn_from_static_gf(grn:dict, calc_upar:bool, compute_type:GRT_SYN_TYPE,
     srcName = ["EX", "VF", "HF", "DD", "DS", "SS"]
     allchs = list(grn.keys())
 
-    # 为张位错计算 Vp/Vs
+    # 为张裂计算 Vp/Vs
     src_va = grn['_src_va']
     src_vb = grn['_src_vb']
     VpVs_ratio = src_va / src_vb

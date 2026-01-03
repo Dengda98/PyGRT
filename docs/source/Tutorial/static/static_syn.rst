@@ -118,6 +118,58 @@ Python中合成静态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.uti
     :align: center
 
 
+张裂源
+~~~~~~~~~~~~~~
+断层走向33°，倾角50°，标量矩 1e24 dyne·cm。
+
+.. tabs::  
+
+    .. group-tab:: C 
+
+        .. literalinclude:: run/run.sh
+            :language: bash
+            :start-after: BEGIN SYN TS
+            :end-before: END SYN TS
+
+    .. group-tab:: Python 
+
+        .. literalinclude:: run/run.py
+            :language: python
+            :start-after: BEGIN SYN TS
+            :end-before: END SYN TS
+
+
+.. figure:: run/syn_ts.svg
+    :width: 500px
+    :align: center
+
+    沙滩球仅绘制了张裂源中的 DC+CLVD 分量
+
+
+这里如果改变倾角为90°，就可以看到清晰的对称辐射花样。
+
+.. tabs::  
+
+    .. group-tab:: C 
+
+        .. literalinclude:: run/run.sh
+            :language: bash
+            :start-after: BEGIN SYN TS2
+            :end-before: END SYN TS2
+
+    .. group-tab:: Python 
+
+        .. literalinclude:: run/run.py
+            :language: python
+            :start-after: BEGIN SYN TS2
+            :end-before: END SYN TS2
+
+
+.. figure:: run/syn_ts2.svg
+    :width: 500px
+    :align: center
+
+    沙滩球仅绘制了张裂源中的 DC+CLVD 分量
 
 
 矩张量源
