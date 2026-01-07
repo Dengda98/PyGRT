@@ -5,7 +5,8 @@ set -euo pipefail
 rm -rf *.svg *.tar.gz
 
 python plot.py halfspace
-python plot.py milrow
+python plot_all.py halfspace
+python plot_all.py milrow
 
 cp halfspace.svg cover.svg
 

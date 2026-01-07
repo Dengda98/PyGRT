@@ -22,11 +22,18 @@
 .. figure:: halfspace.svg
     :align: center
 
+以上仅比较了爆炸源的结果，进一步地，我们可以将六种震源的结果都进行比较。
+从下图可看出，这种近似方法对部分震源而言误差还是比较明显的，
+或者说，要求更小的虚频率。但虚频率过小会引入数值不稳定的问题。
+
+.. figure:: halfspace_all.svg
+    :align: center
+
 层状模型
 ~~~~~~~~~~~~~~
 
 仅更换模型，其它参数设置与以上一致。
 
-.. figure:: milrow.svg
+.. figure:: milrow_all.svg
     :align: center
 
