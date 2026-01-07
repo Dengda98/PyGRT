@@ -50,7 +50,8 @@ class PyModel1D:
 
         # 将modarr写入临时数组
         with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmpfile:
-            np.savetxt(tmpfile, modarr0, "%.15e")
+            ncol = modarr0.shape[-1]
+            np.savetxt(tmpfile, modarr0.reshape(-1, ncol), "%.15e")
             tmp_path = tmpfile.name  # 获取临时文件路径
 
         try:
@@ -137,10 +138,10 @@ class PyModel1D:
 
     def gen_gf_spectra(self, *args, **kwargs):
         raise NameError("Function 'gen_gf_spectra()' has been removed, use 'compute_grn' instead.")
-
-    def compute_grn(
+    
+    def _get_grn_spectra(
         self, 
-        distarr:Union[np.ndarray,List[float],float], 
+        distarr:np.ndarray, 
         nt:int, 
         dt:float, 
         upsampling_n:int = 1,
@@ -162,56 +163,11 @@ class PyModel1D:
         gf_source=['EX', 'VF', 'HF', 'DC'],
         statsfile:Union[str,None]=None, 
         statsidxs:Union[np.ndarray,List[int],None]=None, 
-        print_runtime:bool=True):
+        print_runtime:bool=True
+    ):
         
-        r'''
-            Call the C function to calculate the Green's functions at multiple distances and return them in a list, 
-            where each element is in the form of :class: 'obspy.Stream' type.
-
-            :param    distarr:       array of epicentral distances (km), or a single float
-            :param    nt:            number of time points. with the help of `SciPy`, nt no longer needs to be a power of 2
-            :param    dt:            time interval (s)  
-            :param    upsampling_n:  upsampling factor 
-            :param    freqband:      frequency range (Hz)
-            :param    zeta:          zeta is used to define the imaginary angular frequency, 
-                                     :math:`\tilde{\omega} = \omega - j*w_I, w_I = \zeta*\pi/T, T=nt*dt` .
-                                     see Bouchon (1981) and 张海明 (2021) for more details and tests.
-            :param    keepAllFreq:   calculate all frequency points, no matter how low the frequency is
-            :param    vmin_ref:      minimum reference velocity (km/s). the default vmin=max(minimum velocity, 0.1), used to define the upper limit of k integral
-            :param    keps:          automatic convergence condition, see Yao and Harkrider (1983) for more details.
-                                     negative value denotes not use.
-            :param    ampk:          The factor that affect the upper limit of the k integral, see below.
-            :param    k0:            k0 used to define the upper limit :math:`\tilde{k_{max}}=\sqrt{(k_{0}*\pi/hs)^2 + (ampk*w/vmin_{ref})^2}` , hs=max(abs(depsrc-deprcv),1.0)
-            :param    Length:        integration step `dk=2\pi / (L*rmax)`, see Bouchon (1981) and 张海明 (2021) for the criterion, default set automatically.
-            :param    filonLength:   integration step of Fixed-Interval Filon's Integration Method
-            :param    safilonTol:    precision of Self-Adaptive Filon's Integration Method
-            :param    filonCut:      The splitting point of DWM and (SA)FIM, k*=<filonCut>/rmax, default is 0
-            :param    converg_method:   The method of explicit convergence, you can set "DCM", "PTAM" or "none". Default use "DCM" when abs(depsrc-deprcv) <= 1.0 km
-            :param    calc_upar:     whether calculate the spatial derivatives of displacements.
-            :param    gf_source:     The source type to be calculated
-            :param    statsfile:     directory path for saving the statsfile during k integral, used to debug or observe the variations of :math:`F(k,\omega)` and :math:`F(k,\omega)J_m(kr)k`    
-            :param    statsidxs:     only output the statsfile at specific frequency indexes. It is recommended to specify the indexes; 
-                                     otherwise, by default, statsfiles of all frequency will be output, which probably occupy a lot of disk space
-            :param    print_runtime: whether print runtime and some other infomation.
-
-            :return:
-                - **dataLst** -   Green's Functions at multiple distances, in a list of :class:`obspy.Stream`
-                
-        '''
-
         depsrc = self.depsrc
         deprcv = self.deprcv
-
-        calc_EX:bool = 'EX' in gf_source
-        calc_VF:bool = 'VF' in gf_source
-        calc_HF:bool = 'HF' in gf_source
-        calc_DC:bool = 'DC' in gf_source
-
-        if isinstance(distarr, float) or isinstance(distarr, int):
-            distarr = np.array([distarr*1.0]) 
-
-        distarr = np.array(distarr)
-        distarr = distarr.copy().astype(NPCT_REAL_TYPE)
 
         if np.any(distarr < 0):
             raise ValueError(f"distarr < 0")
@@ -410,6 +366,91 @@ class PyModel1D:
         #=================================================================================
         #/////////////////////////////////////////////////////////////////////////////////
 
+        return pygrnLst, pygrnLst_uiz, pygrnLst_uir
+
+
+    def compute_grn(
+        self, 
+        distarr:Union[np.ndarray,List[float],float], 
+        nt:int, 
+        dt:float, 
+        upsampling_n:int = 1,
+        freqband:Union[np.ndarray,List[float]]=[-1,-1],
+        zeta:float=0.8, 
+        keepAllFreq:bool=False,
+        vmin_ref:float=0.0,
+        keps:float=-1.0,  
+        ampk:float=1.15,
+        k0:float=5.0, 
+        Length:float=0.0, 
+        filonLength:float=0.0,
+        safilonTol:float=0.0,
+        filonCut:float=0.0,
+        converg_method:Union[str,None]=None,
+        delayT0:float=0.0,
+        delayV0:float=0.0,
+        calc_upar:bool=False,
+        gf_source=['EX', 'VF', 'HF', 'DC'],
+        statsfile:Union[str,None]=None, 
+        statsidxs:Union[np.ndarray,List[int],None]=None, 
+        print_runtime:bool=True):
+        
+        r'''
+            Call the C function to calculate the Green's functions at multiple distances and return them in a list, 
+            where each element is in the form of :class: 'obspy.Stream' type.
+
+            :param    distarr:       array of epicentral distances (km), or a single float
+            :param    nt:            number of time points. with the help of `SciPy`, nt no longer needs to be a power of 2
+            :param    dt:            time interval (s)  
+            :param    upsampling_n:  upsampling factor 
+            :param    freqband:      frequency range (Hz)
+            :param    zeta:          zeta is used to define the imaginary angular frequency, 
+                                     :math:`\tilde{\omega} = \omega - j*w_I, w_I = \zeta*\pi/T, T=nt*dt` .
+                                     see Bouchon (1981) and 张海明 (2021) for more details and tests.
+            :param    keepAllFreq:   calculate all frequency points, no matter how low the frequency is
+            :param    vmin_ref:      minimum reference velocity (km/s). the default vmin=max(minimum velocity, 0.1), used to define the upper limit of k integral
+            :param    keps:          automatic convergence condition, see Yao and Harkrider (1983) for more details.
+                                     negative value denotes not use.
+            :param    ampk:          The factor that affect the upper limit of the k integral, see below.
+            :param    k0:            k0 used to define the upper limit :math:`\tilde{k_{max}}=\sqrt{(k_{0}*\pi/hs)^2 + (ampk*w/vmin_{ref})^2}` , hs=max(abs(depsrc-deprcv),1.0)
+            :param    Length:        integration step `dk=2\pi / (L*rmax)`, see Bouchon (1981) and 张海明 (2021) for the criterion, default set automatically.
+            :param    filonLength:   integration step of Fixed-Interval Filon's Integration Method
+            :param    safilonTol:    precision of Self-Adaptive Filon's Integration Method
+            :param    filonCut:      The splitting point of DWM and (SA)FIM, k*=<filonCut>/rmax, default is 0
+            :param    converg_method:   The method of explicit convergence, you can set "DCM", "PTAM" or "none". Default use "DCM" when abs(depsrc-deprcv) <= 1.0 km
+            :param    calc_upar:     whether calculate the spatial derivatives of displacements.
+            :param    gf_source:     The source type to be calculated
+            :param    statsfile:     directory path for saving the statsfile during k integral, used to debug or observe the variations of :math:`F(k,\omega)` and :math:`F(k,\omega)J_m(kr)k`    
+            :param    statsidxs:     only output the statsfile at specific frequency indexes. It is recommended to specify the indexes; 
+                                     otherwise, by default, statsfiles of all frequency will be output, which probably occupy a lot of disk space
+            :param    print_runtime: whether print runtime and some other infomation.
+
+            :return:
+                - **dataLst** -   Green's Functions at multiple distances, in a list of :class:`obspy.Stream`
+                
+        '''
+
+        if isinstance(distarr, float) or isinstance(distarr, int):
+            distarr = np.array([distarr*1.0]) 
+
+        distarr = np.array(distarr)
+        distarr = distarr.copy().astype(NPCT_REAL_TYPE)
+
+        pygrnLst, pygrnLst_uiz, pygrnLst_uir = self._get_grn_spectra(
+            distarr, nt, dt, upsampling_n, freqband, zeta, keepAllFreq, 
+            vmin_ref, keps, ampk, k0, Length, filonLength, safilonTol, filonCut, converg_method,
+            delayT0, delayV0, calc_upar, gf_source, 
+            statsfile, statsidxs, print_runtime
+        )
+
+        depsrc = self.depsrc
+        deprcv = self.deprcv
+        
+        calc_EX:bool = 'EX' in gf_source
+        calc_VF:bool = 'VF' in gf_source
+        calc_HF:bool = 'HF' in gf_source
+        calc_DC:bool = 'DC' in gf_source
+
         # 震源和场点层的物性，写入sac头段变量
         rcv_va = self.c_mod1d.Va[self.ircv]
         rcv_vb = self.c_mod1d.Vb[self.ircv]
@@ -422,7 +463,7 @@ class PyModel1D:
         
         # 对应实际采集的地震信号，取向上为正(和理论推导使用的方向相反)
         dataLst = []
-        for ir in range(nrs):
+        for ir in range(len(distarr)):
             stream = Stream()
             dist = distarr[ir]
 
