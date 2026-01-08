@@ -29,37 +29,118 @@
     T N##2 = mod1d->N[iy];\
 
 
-void grt_topfree_RU(GRT_MODEL1D *mod1d)
+static int __freeBound_R(cplx_t cbcb0, cplx_t xa0, cplx_t xb0, real_t adsgn, cplx_t M[2][2], cplx_t *ML)
 {
-    cplx_t cbcb0 = mod1d->cbcb[0];
     if(cbcb0 != 0.0){
         // 固体表面
         // 公式(5.3.10-14)
         cplx_t Delta = 0.0;
         cplx_t cbcb02 = 0.25*cbcb0*cbcb0;
 
-        cplx_t xa0 = mod1d->xa[0];
-        cplx_t xb0 = mod1d->xb[0];
-
         // 对公式(5.3.10-14)进行重新整理，对浮点数友好一些
         Delta = -1.0 + xa0*xb0 + cbcb0 - cbcb02;
         if(Delta == 0.0){
-            mod1d->M_top.stats = GRT_INVERSE_FAILURE;
-            return;
+            return GRT_INVERSE_FAILURE;
         }
         Delta = 1.0 / Delta;
-        mod1d->M_top.RU[0][0] = (1.0 + xa0*xb0 - cbcb0 + cbcb02) * Delta;
-        mod1d->M_top.RU[0][1] = 2.0 * xb0 * (1.0 - 0.5*cbcb0) * Delta;
-        mod1d->M_top.RU[1][0] = 2.0 * xa0 * (1.0 - 0.5*cbcb0) * Delta;
-        mod1d->M_top.RU[1][1] = mod1d->M_top.RU[0][0];
-        mod1d->M_top.RUL = 1.0;
+        M[0][0] = (1.0 + xa0*xb0 - cbcb0 + cbcb02) * Delta;
+        M[0][1] = 2.0 * xb0 * (1.0 - 0.5*cbcb0) * Delta * adsgn;
+        M[1][0] = 2.0 * xa0 * (1.0 - 0.5*cbcb0) * Delta * adsgn;
+        M[1][1] = M[0][0];
+        *ML = 1.0;
     }
     else {
         // 液体表面
-        mod1d->M_top.RU[0][0] = -1.0;
-        mod1d->M_top.RU[1][1] = mod1d->M_top.RU[0][1] = mod1d->M_top.RU[1][0] = 0.0;
-        mod1d->M_top.RUL = 0.0;
+        M[0][0] = -1.0;
+        M[1][1] = M[0][1] = M[1][0] = 0.0;
+        *ML = 0.0;
     }
+    return GRT_INVERSE_SUCCESS;
+}
+
+static int __rigidBound_R(cplx_t cbcb0, cplx_t xa0, cplx_t xb0, real_t adsgn, cplx_t M[2][2], cplx_t *ML)
+{
+    if(cbcb0 != 0.0){
+        // 固体表面
+        cplx_t Delta = 0.0;
+
+        Delta = xa0*xb0 - 1.0;
+        if(Delta == 0.0){
+            return GRT_INVERSE_FAILURE;
+        }
+        Delta = 1.0 / Delta;
+        M[0][0] = (xa0*xb0 + 1.0) * Delta;
+        M[0][1] = 2.0 * xb0 * Delta * adsgn;
+        M[1][0] = 2.0 * xa0 * Delta * adsgn;
+        M[1][1] = M[0][0];
+        *ML = - 1.0;
+    }
+    else {
+        // 液体表面
+        M[0][0] = 1.0;
+        M[1][1] = M[0][1] = M[1][0] = 0.0;
+        *ML = 0.0;
+    }
+    return GRT_INVERSE_SUCCESS;
+}
+
+void grt_topbound_RU(GRT_MODEL1D *mod1d)
+{
+    cplx_t cbcb = mod1d->cbcb[0];
+    cplx_t xa = mod1d->xa[0];
+    cplx_t xb = mod1d->xb[0];
+    if(mod1d->topbound == GRT_BOUND_FREE){
+        mod1d->M_top.stats = __freeBound_R(cbcb, xa, xb, 1.0, mod1d->M_top.RU, &mod1d->M_top.RUL);
+    }
+    else if(mod1d->topbound == GRT_BOUND_RIGID){
+        mod1d->M_top.stats = __rigidBound_R(cbcb, xa, xb, 1.0, mod1d->M_top.RU, &mod1d->M_top.RUL);
+    }
+    else if(mod1d->topbound == GRT_BOUND_HALFSPACE){
+        memset(mod1d->M_top.RU, 0, sizeof(cplx_t)*4);
+        mod1d->M_top.RUL = 0.0;
+        mod1d->M_top.stats = GRT_INVERSE_SUCCESS;
+    }
+    else{
+        GRTRaiseError("Wrong execution.");
+    }
+    // RU 不需要时延
+}
+
+void grt_botbound_RD(GRT_MODEL1D *mod1d)
+{
+    size_t nlay = mod1d->n;
+    cplx_t cbcb = mod1d->cbcb[nlay-2];
+    cplx_t xa = mod1d->xa[nlay-2];
+    cplx_t xb = mod1d->xb[nlay-2];
+    if(mod1d->botbound == GRT_BOUND_FREE){
+        mod1d->M_bot.stats = __freeBound_R(cbcb, xa, xb, -1.0, mod1d->M_bot.RD, &mod1d->M_bot.RDL);
+    }
+    else if(mod1d->botbound == GRT_BOUND_RIGID){
+        mod1d->M_bot.stats = __rigidBound_R(cbcb, xa, xb, -1.0, mod1d->M_bot.RD, &mod1d->M_bot.RDL);
+    }
+    else if(mod1d->botbound == GRT_BOUND_HALFSPACE){
+        grt_RT_matrix_PSV(mod1d, nlay-1, &mod1d->M_bot);
+        grt_RT_matrix_SH(mod1d, nlay-1, &mod1d->M_bot);
+    }
+    else{
+        GRTRaiseError("Wrong execution.");
+    }
+
+    // 时延 RD
+    real_t k = mod1d->k;
+    real_t thk = mod1d->Thk[nlay-2];
+
+    cplx_t exa, exb, ex2a, ex2b, exab;
+    exa = exp(- k*thk*xa);
+    exb = exp(- k*thk*xb);
+    ex2a = exa * exa;
+    ex2b = exb * exb;
+    exab = exa * exb;
+
+    mod1d->M_bot.RD[0][0] *= ex2a;   mod1d->M_bot.RD[0][1] *= exab;
+    mod1d->M_bot.RD[1][0] *= exab;   mod1d->M_bot.RD[1][1] *= ex2b;
+
+    mod1d->M_bot.RDL *= ex2b;
 }
 
 

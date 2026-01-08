@@ -141,6 +141,12 @@ typedef size_t sizeIntegGrid[GRT_SRC_M_NUM][GRT_INTEG_NUM];
     for(int im = 0; im < GRT_SRC_M_NUM; ++im) \
         for(int v = 0; v < GRT_INTEG_NUM; ++v)
 
+/** 边界条件 */
+typedef enum {
+    GRT_BOUND_FREE = 0, 
+    GRT_BOUND_RIGID,
+    GRT_BOUND_HALFSPACE,
+} GRT_BOUND_TYPE;
 
 /** 不同震源类型在大小为 GRT_SRC_M_NUM 的数组中的索引 */
 enum {

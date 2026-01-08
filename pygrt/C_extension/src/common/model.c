@@ -421,7 +421,27 @@ GRT_MODEL1D * grt_read_mod1d_from_file(const char *modelpath, real_t depsrc, rea
     // 先指定负频率，仅填充弹性模量
     grt_attenuate_mod1d(mod1d, -1);
 
+    // 设置一个默认边界条件
+    mod1d->topbound = GRT_BOUND_FREE;
+    mod1d->botbound = GRT_BOUND_HALFSPACE;
+
     return mod1d;
+}
+
+
+void grt_set_mod1d_boundary(GRT_MODEL1D *mod1d, GRT_BOUND_TYPE topbound, GRT_BOUND_TYPE botbound)
+{
+    mod1d->topbound = topbound;
+    mod1d->botbound = botbound;
+
+    size_t n = mod1d->n;
+    bool atBottom = mod1d->isrc+1 == n || mod1d->ircv+1 == n;
+    if (atBottom && botbound != GRT_BOUND_HALFSPACE){
+        GRTRaiseError(
+            "When source/recevier is at the bottom, the bottom layer must be a halfspace. "
+            "Please check your boundary condition setting."
+        );
+    }
 }
 
 

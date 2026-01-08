@@ -41,6 +41,12 @@ typedef struct {
         char *s_depsrc;
         char *s_deprcv;
     } D;
+    /** 顶层和底层的边界条件 */
+    struct {
+        bool active;
+        GRT_BOUND_TYPE topbound;
+        GRT_BOUND_TYPE botbound;
+    } B;
     /** 波数积分间隔以及方法 */
     struct {
         bool active;
@@ -143,9 +149,9 @@ printf("\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
-"    grt static greenfn -M<model> -D<depsrc>/<deprcv> -X<x1>/<x2>/<dx> \n"
+"    grt static greenfn -M<model> -D<depsrc>/<deprcv>  -X<x1>/<x2>/<dx> \n"
 "          -Y<y1>/<y2>/<dy>  -O<outgrid>  [-L<length>] [-C[d|p|n]] \n" 
-"          [-K[+k<k0>][+e<keps>]] [-S]  [-e]\n"
+"           [-Bf|F|r|R|h|H] [-K[+k<k0>][+e<keps>]] [-S]  [-e]\n"
 "\n\n"
 "Options:\n"
 "----------------------------------------------------------------\n"
@@ -198,6 +204,13 @@ printf("\n"
 "                 + n: None.\n"
 "                 Default use +cd when fabs(depsrc-deprcv) <= %.1f.\n", GRT_MIN_DEPTH_GAP_SRC_RCV); printf(
 "\n"
+"    -Bf|F|r|R|h|H\n"
+"                 Boundary condition of top layer (lowercase) and\n"
+"                 bottom layer (uppercase).\n"
+"                 f|F: Free boundary.\n"
+"                 r|R: Rigid boundary.\n"
+"                 h|H: Halfspace.\n"
+"\n"
 "    -K[+k<k0>][+e<keps>]\n"
 "                 Several parameters designed to define the\n"
 "                 behavior in wavenumber integration. The upper\n"
@@ -236,11 +249,14 @@ printf("\n"
 /** 从命令行中读取选项，处理后记录到全局变量中 */
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     // 先为个别参数设置非0初始值
+    Ctrl->B.topbound = GRT_BOUND_FREE;
+    Ctrl->B.botbound = GRT_BOUND_HALFSPACE;
+
     Ctrl->K.k0 = GRT_GREENFN_K_K0;
 
     int opt;
 
-    while ((opt = getopt(argc, argv, ":M:D:L:C:K:X:Y:O:Seh")) != -1) {
+    while ((opt = getopt(argc, argv, ":M:D:B:L:C:K:X:Y:O:Seh")) != -1) {
         switch (opt) {
             // 模型路径，其中每行分别为 
             //      厚度(km)  Vp(km/s)  Vs(km/s)  Rho(g/cm^3)  Qp   Qs
@@ -267,6 +283,24 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 }
                 if(Ctrl->D.depsrc < 0.0 || Ctrl->D.deprcv < 0.0){
                     GRTBadOptionError(D, "Negative value in -D is not supported.");
+                }
+                break;
+
+            // 顶层和底层的边界条件  -Bf|F|r|R|h|H
+            case 'B':
+                Ctrl->B.active = true;
+                if(strlen(optarg) == 0 || strlen(optarg) > 2)  GRTBadOptionError(B, "");
+                for(size_t i = 0; i < strlen(optarg); ++i) {
+                    switch(optarg[i]) {
+                        case 'f': Ctrl->B.topbound = GRT_BOUND_FREE; break;
+                        case 'r': Ctrl->B.topbound = GRT_BOUND_RIGID; break;
+                        case 'h': Ctrl->B.topbound = GRT_BOUND_HALFSPACE; break;
+                        case 'F': Ctrl->B.botbound = GRT_BOUND_FREE; break;
+                        case 'R': Ctrl->B.botbound = GRT_BOUND_RIGID; break;
+                        case 'H': Ctrl->B.botbound = GRT_BOUND_HALFSPACE; break;
+                        default:
+                            GRTBadOptionError(B, "unsupported -B%s.", optarg);
+                    }
                 }
                 break;
 
@@ -481,6 +515,9 @@ int static_greenfn_main(int argc, char **argv){
         exit(EXIT_FAILURE);
     }
     GRT_MODEL1D *mod1d = Ctrl->M.mod1d;
+
+    // 边界条件
+    grt_set_mod1d_boundary(mod1d, Ctrl->B.topbound, Ctrl->B.botbound);
 
     // 判断是否要自动使用收敛方法
     if( ! Ctrl->C.active && fabs(Ctrl->D.deprcv - Ctrl->D.depsrc) <= GRT_MIN_DEPTH_GAP_SRC_RCV) {

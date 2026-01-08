@@ -54,6 +54,12 @@ typedef struct {
         char *s_depsrc;
         char *s_deprcv;
     } D;
+    /** 顶层和底层的边界条件 */
+    struct {
+        bool active;
+        GRT_BOUND_TYPE topbound;
+        GRT_BOUND_TYPE botbound;
+    } B;
     /** 波形时窗 */
     struct {
         bool active;
@@ -212,6 +218,9 @@ static void print_Ctrl(const GRT_MODULE_CTRL *Ctrl){
     printf(format, "applyDCM", (Ctrl->C.applyDCM)? "true" : "false");
     printf(format, "applyPTAM", (Ctrl->C.applyPTAM)? "true" : "false");
 
+    printf(format_size, "topbound", (size_t)Ctrl->B.topbound);
+    printf(format_size, "botbound", (size_t)Ctrl->B.botbound);
+
     printf(format_size, "nt", Ctrl->N.nt);
     printf(format_real, "dt", Ctrl->N.dt);
     printf(format_real, "winT", Ctrl->N.winT);
@@ -289,7 +298,7 @@ printf("\n"
 "        -R<r1>,<r2>[,...]     -O<outdir>     [-H<f1>/<f2>] \n"
 "        [-L<length>] [-C[d|p|n]] [-E<t0>[/<v0>]] \n" 
 "        [-K[+k<k0>][+s<ampk>][+e<keps>][+v<vmin>]]\n"
-"        [-P<nthreads>] [-Ge|v|h|s] \n"
+"        [-P<nthreads>] [-Ge|v|h|s]  [-Bf|F|r|R|h|H]\n"
 "        [-S[<i1>,<i2>,...]] [-e] [-s]\n"
 "\n\n"
 "Options:\n"
@@ -397,6 +406,13 @@ printf("\n"
 "                 <b3>: Horizontal Force (HF)\n"
 "                 <b4>: Shear (DC)\n"
 "\n"
+"    -Bf|F|r|R|h|H\n"
+"                 Boundary condition of top layer (lowercase) and\n"
+"                 bottom layer (uppercase).\n"
+"                 f|F: Free boundary.\n"
+"                 r|R: Rigid boundary.\n"
+"                 h|H: Halfspace.\n"
+"\n"
 "    -S[<i1>,<i2>,...]\n"
 "                 Frequency (index) of statsfile in wavenumber\n"
 "                 integration to be output, require 0 <= i <= nf-1,\n"
@@ -429,6 +445,9 @@ printf("\n"
 /** 从命令行中读取选项，处理后记录到全局变量中 */
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     // 先为个别参数设置非0初始值
+    Ctrl->B.topbound = GRT_BOUND_FREE;
+    Ctrl->B.botbound = GRT_BOUND_HALFSPACE;
+
     Ctrl->N.zeta = GRT_GREENFN_N_ZETA;
     Ctrl->N.upsample_n = GRT_GREENFN_N_UPSAMPLE;
     Ctrl->H.freq1 = GRT_GREENFN_H_FREQ1;
@@ -441,7 +460,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     Ctrl->G.doDC = GRT_GREENFN_G_DC;
 
     int opt;
-    while ((opt = getopt(argc, argv, ":M:D:N:O:H:L:C:E:K:R:S::P:G:esh")) != -1) {
+    while ((opt = getopt(argc, argv, ":M:D:B:N:O:H:L:C:E:K:R:S::P:G:esh")) != -1) {
         switch (opt) {
             // 模型路径，其中每行分别为 
             //      厚度(km)  Vp(km/s)  Vs(km/s)  Rho(g/cm^3)  Qp   Qs
@@ -468,6 +487,24 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 }
                 if(Ctrl->D.depsrc < 0.0 || Ctrl->D.deprcv < 0.0){
                     GRTBadOptionError(D, "Negative value in -D is not supported.");
+                }
+                break;
+
+            // 顶层和底层的边界条件  -Bf|F|r|R|h|H
+            case 'B':
+                Ctrl->B.active = true;
+                if(strlen(optarg) == 0 || strlen(optarg) > 2)  GRTBadOptionError(B, "");
+                for(size_t i = 0; i < strlen(optarg); ++i) {
+                    switch(optarg[i]) {
+                        case 'f': Ctrl->B.topbound = GRT_BOUND_FREE; break;
+                        case 'r': Ctrl->B.topbound = GRT_BOUND_RIGID; break;
+                        case 'h': Ctrl->B.topbound = GRT_BOUND_HALFSPACE; break;
+                        case 'F': Ctrl->B.botbound = GRT_BOUND_FREE; break;
+                        case 'R': Ctrl->B.botbound = GRT_BOUND_RIGID; break;
+                        case 'H': Ctrl->B.botbound = GRT_BOUND_HALFSPACE; break;
+                        default:
+                            GRTBadOptionError(B, "unsupported -B%s.", optarg);
+                    }
                 }
                 break;
 
@@ -869,6 +906,9 @@ int greenfn_main(int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
     GRT_MODEL1D *mod1d = Ctrl->M.mod1d;
+
+    // 边界条件
+    grt_set_mod1d_boundary(mod1d, Ctrl->B.topbound, Ctrl->B.botbound);
 
     // 当震源位于液体层中时，仅允许计算爆炸源对应的格林函数
     // 程序结束前会输出对应警告

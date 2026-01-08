@@ -33,22 +33,12 @@ typedef struct {
 } RT_MATRIX;
 
 
-/** 初始化 R/T 矩阵 */
-#define grt_init_RT_matrix(M) \
-    RT_MATRIX *M = &(RT_MATRIX){\
-        .RD = GRT_INIT_ZERO_2x2_MATRIX,\
-        .RU = GRT_INIT_ZERO_2x2_MATRIX,\
-        .TD = GRT_INIT_IDENTITY_2x2_MATRIX,\
-        .TU = GRT_INIT_IDENTITY_2x2_MATRIX,\
-        .RDL = 0.0,\
-        .RUL = 0.0,\
-        .TDL = 1.0,\
-        .TUL = 1.0,\
-        .invT = GRT_INIT_ZERO_2x2_MATRIX,\
-        .invTL = 0.0,\
-        .stats = GRT_INVERSE_SUCCESS \
-    };\
-
+/** 
+ * 重新设置 R/T 矩阵为默认值
+ * 
+ * @param[out]   M    RT_MATRIX 指针
+ */
+void grt_reset_RT_matrix(RT_MATRIX *M);
 
 /** 
  * 合并 recursion_RD_PSV(SH) ，仅计算RD/RDL
