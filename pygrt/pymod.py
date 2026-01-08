@@ -15,7 +15,7 @@ import numpy.ctypeslib as npct
 from obspy import read, Stream, Trace, UTCDateTime
 from scipy.fft import irfft, ifft
 from obspy.core import AttribDict
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Literal
 import tempfile
 
 from time import time
@@ -33,7 +33,9 @@ __all__ = [
 
 
 class PyModel1D:
-    def __init__(self, modarr0:np.ndarray, depsrc:float, deprcv:float, allowLiquid:bool=False):
+    def __init__(self, modarr0:np.ndarray, depsrc:float, deprcv:float, allowLiquid:bool=False, 
+                 topbound:Literal['free', 'rigid', 'halfspace']='free', 
+                 botbound:Literal['free', 'rigid', 'halfspace']='halfspace'):
         '''
             Create 1D model instance, and insert the imaginary layer of source and receiver.
 
@@ -41,12 +43,27 @@ class PyModel1D:
             :param    depsrc:     source depth (km)  
             :param    deprcv:     receiver depth (km)  
             :param    allowLiquid:    whether liquid layers are allowed
+            :param    topbound:       boundary condition of the top layer
+            :param    botbound:       boundary condition of the bottom layer
 
         '''
         self.depsrc:float = depsrc 
         self.deprcv:float = deprcv 
         self.c_mod1d:c_GRT_MODEL1D 
         self.hasLiquid:bool = allowLiquid  # 传入的模型是否有液体层
+        self.topbound:str = topbound
+        self.botbound:str = botbound
+
+        boundDct = {
+            'free': 0,
+            'rigid': 1,
+            'halfspace': 2
+        }
+
+        if topbound not in boundDct:
+            raise ValueError(f"Unsupported topbound={topbound}.")
+        if botbound not in boundDct:
+            raise ValueError(f"Unsupported botbound={botbound}.")
 
         # 将modarr写入临时数组
         with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmpfile:
@@ -57,9 +74,14 @@ class PyModel1D:
         try:
             c_mod1d_ptr = C_grt_read_mod1d_from_file(tmp_path.encode("utf-8"), depsrc, deprcv, allowLiquid)
             self.c_mod1d = c_mod1d_ptr.contents  # 这部分内存在C中申请，需由C函数释放。占用不多，这里跳过
+            C_grt_set_mod1d_boundary(self.c_mod1d, boundDct[topbound], boundDct[botbound])
         finally:
             if os.path.exists(tmp_path):
                 os.unlink(tmp_path)
+        
+        # 设置边界条件
+        self.c_mod1d.topbound = boundDct[topbound]
+        self.c_mod1d.botbound = boundDct[botbound]
         
         self.isrc = self.c_mod1d.isrc
         self.ircv = self.c_mod1d.ircv

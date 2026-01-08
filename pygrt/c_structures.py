@@ -123,7 +123,10 @@ class c_GRT_MODEL1D(Structure):
         ('M_FA', c_RT_MATRIX),
         ('M_FB', c_RT_MATRIX),
 
+        ('topbound', c_int),
         ('M_top', c_RT_MATRIX),
+        ('botbound', c_int),
+        ('M_bot', c_RT_MATRIX),
 
         ('R_EV', CPLX * 4),
         ('R_EVL', CPLX),

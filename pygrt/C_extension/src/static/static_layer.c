@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <complex.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "grt/static/static_layer.h"
 #include "grt/common/model.h"
@@ -25,14 +26,87 @@
     T N##2 = mod1d->N[iy];\
 
 
-void grt_static_topfree_RU(GRT_MODEL1D *mod1d)
+static int __freeBound_R(real_t d, real_t k, cplx_t delta1, cplx_t M[2][2], cplx_t *ML)
 {
-    cplx_t delta1 = mod1d->delta[0];
-    // 公式(6.3.12)
-    mod1d->M_top.RU[0][0] = mod1d->M_top.RU[1][1] = 0.0;
-    mod1d->M_top.RU[0][1] = -delta1;
-    mod1d->M_top.RU[1][0] = -1.0/delta1;
-    mod1d->M_top.RUL = 1.0;
+    if(d <= 0.0){
+        // 公式(6.3.12)
+        M[0][0] = M[1][1] = 0.0;
+        M[0][1] = -delta1;
+        M[1][0] = -1.0/delta1;
+    } else {
+        M[0][0] = M[1][1] = -2.0*d*k;
+        M[0][1] = delta1 * (-4.0*d*d*k*k - 1.0);
+        M[1][0] = -1.0/delta1;
+    }
+    *ML = 1.0;
+    return GRT_INVERSE_SUCCESS;
+}
+
+static int __rigidBound_R(real_t d, real_t k, cplx_t delta1, cplx_t M[2][2], cplx_t *ML)
+{
+    if(d <= 0.0){
+        // 公式(6.3.12)
+        M[0][0] = M[1][1] = 0.0;
+        M[0][1] = M[1][0] = 1.0;
+    } else {
+        M[0][0] = M[1][1] = 2.0*delta1*d*k;
+        M[0][1] = (4.0*GRT_SQUARE(delta1*d*k) + 1.0);
+        M[1][0] = 1.0;
+    }
+    *ML = -1.0;
+    return GRT_INVERSE_SUCCESS;
+}
+
+void grt_static_topbound_RU(GRT_MODEL1D *mod1d)
+{
+    cplx_t delta = mod1d->delta[0];
+    real_t k = mod1d->k;
+    if(mod1d->topbound == GRT_BOUND_FREE){
+        mod1d->M_top.stats = __freeBound_R(0.0, k, delta, mod1d->M_top.RU, &mod1d->M_top.RUL);
+    }
+    else if(mod1d->topbound == GRT_BOUND_RIGID){
+        mod1d->M_top.stats = __rigidBound_R(0.0, k, delta, mod1d->M_top.RU, &mod1d->M_top.RUL);
+    }
+    else if(mod1d->topbound == GRT_BOUND_HALFSPACE){
+        memset(mod1d->M_top.RU, 0, sizeof(cplx_t)*4);
+        mod1d->M_top.RUL = 0.0;
+        mod1d->M_top.stats = GRT_INVERSE_SUCCESS;
+    }
+    else{
+        GRTRaiseError("Wrong execution.");
+    }
+    // RU 不需要时延
+}
+
+void grt_static_botbound_RD(GRT_MODEL1D *mod1d)
+{
+    size_t nlay = mod1d->n;
+    cplx_t delta = mod1d->delta[nlay-2];
+    real_t thk = mod1d->Thk[nlay-2];
+    real_t k = mod1d->k;
+    if(mod1d->botbound == GRT_BOUND_FREE){
+        mod1d->M_bot.stats = __freeBound_R(thk, k, delta, mod1d->M_bot.RD, &mod1d->M_bot.RDL);
+    }
+    else if(mod1d->botbound == GRT_BOUND_RIGID){
+        mod1d->M_bot.stats = __rigidBound_R(thk, k, delta, mod1d->M_bot.RD, &mod1d->M_bot.RDL);
+    }
+    else if(mod1d->botbound == GRT_BOUND_HALFSPACE){
+        grt_static_RT_matrix_PSV(mod1d, nlay-1, &mod1d->M_bot);
+        grt_static_RT_matrix_SH(mod1d, nlay-1, &mod1d->M_bot);
+    }
+    else{
+        GRTRaiseError("Wrong execution.");
+    }
+
+    // 时延 RD
+    cplx_t ex, ex2;
+    ex = exp(- k*thk);
+    ex2 = ex * ex;
+
+    mod1d->M_bot.RD[0][0] *= ex2;   mod1d->M_bot.RD[0][1] *= ex2;
+    mod1d->M_bot.RD[1][0] *= ex2;   mod1d->M_bot.RD[1][1] *= ex2;
+
+    mod1d->M_bot.RDL *= ex2;
 }
 
 void grt_static_wave2qwv_REV_PSV(GRT_MODEL1D *mod1d)
