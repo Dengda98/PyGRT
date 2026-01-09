@@ -182,7 +182,6 @@ class PyModel1D:
         delayT0:float=0.0,
         delayV0:float=0.0,
         calc_upar:bool=False,
-        gf_source=['EX', 'VF', 'HF', 'DC'],
         statsfile:Union[str,None]=None, 
         statsidxs:Union[np.ndarray,List[int],None]=None, 
         print_runtime:bool=True
@@ -461,7 +460,7 @@ class PyModel1D:
         pygrnLst, pygrnLst_uiz, pygrnLst_uir = self._get_grn_spectra(
             distarr, nt, dt, upsampling_n, freqband, zeta, keepAllFreq, 
             vmin_ref, keps, ampk, k0, Length, filonLength, safilonTol, filonCut, converg_method,
-            delayT0, delayV0, calc_upar, gf_source, 
+            delayT0, delayV0, calc_upar,
             statsfile, statsidxs, print_runtime
         )
 
