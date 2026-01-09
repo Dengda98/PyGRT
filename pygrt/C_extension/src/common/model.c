@@ -435,7 +435,7 @@ void grt_set_mod1d_boundary(GRT_MODEL1D *mod1d, GRT_BOUND_TYPE topbound, GRT_BOU
     mod1d->botbound = botbound;
 
     size_t n = mod1d->n;
-    bool atBottom = mod1d->isrc+1 == n || mod1d->ircv+1 == n;
+    bool atBottom = mod1d->isrc+1 >= n || mod1d->ircv+1 >= n;
     if (atBottom && botbound != GRT_BOUND_HALFSPACE){
         GRTRaiseError(
             "When source/recevier is at the bottom, the bottom layer must be a halfspace. "
