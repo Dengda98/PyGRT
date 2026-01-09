@@ -84,8 +84,9 @@ void __GRT_MATRIX_FUNC__(GRT_MODEL1D *mod1d, const real_t k)
     grt_reset_RT_matrix(M_bot);
 
     // 从顶到底进行矩阵递推, 公式(5.5.3)
-    for(size_t iy = 1; iy < mod1d->n - 1; ++iy){ // 因为n>=3, 故一定会进入该循环
-        
+    size_t maxidx = (imax+1 == mod1d->n)? mod1d->n : mod1d->n - 1;
+    for(size_t iy = 1; iy < maxidx; ++iy) // 因为n>=3, 故一定会进入该循环
+    {   
         // 定义物理层内的反射透射系数矩阵
         RT_MATRIX *M = &(RT_MATRIX){};
         grt_reset_RT_matrix(M);
@@ -157,11 +158,13 @@ void __GRT_MATRIX_FUNC__(GRT_MODEL1D *mod1d, const real_t k)
     grt_recursion_RU(M_top, M_FA, M_FA);
     if(M_FA->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
-    // 递推RD_BL, 在模型定义阶段已检查震源/台站位于底层时的底层边界条件
-    __grt_botbound_RD(mod1d);
-    if(M_bot->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
-    grt_recursion_RD(M_BL, M_bot, M_BL);
-    if(M_BL->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
+    // 递推RD_BL, 在模型定义阶段已检查震源/台站的虚拟层成为底层时，只能是半无限空间
+    if(imax+1 < mod1d->n){ // 此 if 仅减少不必要的计算
+        __grt_botbound_RD(mod1d);
+        if(M_bot->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
+        grt_recursion_RD(M_BL, M_bot, M_BL);
+        if(M_BL->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
+    }
     
     
     BEFORE_RETURN:
