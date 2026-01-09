@@ -22,7 +22,7 @@
     - :doc:`RT_liquid`
     - :doc:`uiz`
     - :doc:`DS_zero`
-    - :doc:`bound`
+    - :doc:`boundary`
 
 **静力学震源参数**
 
@@ -43,7 +43,7 @@
     RT_liquid
     uiz
     DS_zero
-    bound
+    boundary
     static_uniform
     static_source
     
