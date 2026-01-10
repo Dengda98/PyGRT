@@ -25,6 +25,7 @@
       - :doc:`Advanced/k_integ/index`
       - :doc:`Advanced/integ_converg/index`
       - :doc:`Advanced/kernel/kernel`
+      - :doc:`Advanced/boundary/boundary`
       - :doc:`Formula/index`
       - :doc:`Module/index`
    
@@ -65,6 +66,7 @@
    Advanced/k_integ/index
    Advanced/integ_converg/index
    Advanced/kernel/kernel
+   Advanced/boundary/boundary
    Formula/index
    Module/index
 
