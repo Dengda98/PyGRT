@@ -58,8 +58,13 @@ typedef struct {
     RT_MATRIX M_FA;
     RT_MATRIX M_FB;
 
-    /* 自由表面的反射系数矩阵，仅 RU, RUL 有用 */
+
+    /* 顶界面的反射系数矩阵，仅 RU, RUL 有用 */
+    GRT_BOUND_TYPE topbound;
     RT_MATRIX M_top;
+    /* 底界面的反射系数矩阵，仅 RD, RDL 有用 */
+    GRT_BOUND_TYPE botbound;
+    RT_MATRIX M_bot;
 
     /* 接收点处的接收矩阵 (转为位移u和位移导数uiz的(B_m, C_m, P_m)系分量) */
     cplx_t R_EV[2][2];
@@ -146,6 +151,14 @@ void grt_realloc_mod1d(GRT_MODEL1D *mod1d, size_t n);
  */
 GRT_MODEL1D * grt_read_mod1d_from_file(const char *modelpath, real_t depsrc, real_t deprcv, bool allowLiquid);
 
+/**
+ * 设置模型的边界条件，并对底界面做检查
+ * 
+ * @param[in,out]       mod1d      `MODEL1D` 结构体指针
+ * @param[in]           topbound   顶层边界条件
+ * @param[in]           botbound   底层边界条件
+ */
+void grt_set_mod1d_boundary(GRT_MODEL1D *mod1d, GRT_BOUND_TYPE topbound, GRT_BOUND_TYPE botbound);
 
 /**
  * 从模型文件中判断各个量的大致精度（字符串长度），以确定浮点数输出位数

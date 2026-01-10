@@ -85,6 +85,11 @@ C_grt_read_mod1d_from_file = libgrt.grt_read_mod1d_from_file
 C_grt_read_mod1d_from_file.restype = POINTER(c_GRT_MODEL1D)
 C_grt_read_mod1d_from_file.argtypes = [c_char_p, c_double, c_double, c_bool]
 
+C_grt_set_mod1d_boundary = libgrt.grt_set_mod1d_boundary
+"""设置模型边界条件并检查底界面"""
+C_grt_set_mod1d_boundary.restype = None
+C_grt_set_mod1d_boundary.argtypes = [POINTER(c_GRT_MODEL1D), c_int, c_int]
+
 C_grt_free_mod1d = libgrt.grt_free_mod1d
 """释放C程序中申请的 GRT_MODEL1D 结构体内存"""
 C_grt_free_mod1d.restype = None
