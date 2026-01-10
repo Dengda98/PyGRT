@@ -21,3 +21,11 @@ stgrn = pymod.compute_static_grn(xarr, yarr, Length=20, converg_method='none')
 
 stgrn = pymod.compute_static_grn(xarr, yarr, k0=4, keps=1e-3)
 stgrn = pymod.compute_static_grn(xarr, yarr, k0=4, statsfile="stgrt_stats")
+
+# boundary condition
+pymod = pygrt.PyModel1D(modarr, depsrc, deprcv, topbound='free', botbound='free')
+stgrn = pymod.compute_static_grn(xarr, yarr)
+pymod = pygrt.PyModel1D(modarr, depsrc, deprcv, topbound='halfspace', botbound='free')
+stgrn = pymod.compute_static_grn(xarr, yarr)
+pymod = pygrt.PyModel1D(modarr, depsrc, deprcv, topbound='rigid', botbound='rigid')
+stgrn = pymod.compute_static_grn(xarr, yarr)
