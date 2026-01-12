@@ -72,7 +72,8 @@ typedef struct {
         real_t wI;    ///< 虚频率  zeta*PI/r
         real_t *freqs;
         size_t upsample_n;  ///< 升采样倍数
-        bool keepAllFreq;
+        bool keepAllFreq;    ///< 计算所有频率，不论频率多低
+        bool skipImagComps;  ///< 跳过虚频率的补偿
     } N;
     /** 输出目录 */
     struct {
@@ -316,7 +317,7 @@ printf("\n"
 "                 <depsrc>: source depth (km).\n"
 "                 <deprcv>: receiver depth (km).\n"
 "\n"
-"    -N<nt>/<dt>[+w<zeta>][+n<fac>][+a] \n"
+"    -N<nt>/<dt>[+w<zeta>][+n<fac>][+a][+f] \n"
 "                 <nt>:   number of points. (NOT requires 2^n).\n"
 "                 <dt>:   time interval (secs). \n"
 "                 +w<zeta>: define the coefficient of imaginary \n"
@@ -328,6 +329,8 @@ printf("\n"
 "                           and calculated frequencies stay unchanged.\n"
 "                 +a:       All frequencies are calculated regardless of\n"
 "                           how low the frequency is.\n"
+"                 +f:       skip the amplitude compensation from \n"
+"                           imaginary frequency.\n"
 "\n"
 "    -R<r1>,<r2>[,...]\n"
 "                 Multiple epicentral distance (km), \n"
@@ -508,7 +511,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 }
                 break;
 
-            // 点数,采样间隔,虚频率 -Nnt/dt[+w<zeta>][+n<scale>][+a]
+            // 点数,采样间隔,虚频率 -Nnt/dt[+w<zeta>][+n<scale>][+a][+f]
             case 'N':
                 Ctrl->N.active = true;
                 {
@@ -545,6 +548,10 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 
                             case 'a':
                                 Ctrl->N.keepAllFreq = true;
+                                break;
+
+                            case 'f':
+                                Ctrl->N.skipImagComps = true;
                                 break;
                             
                             default:
@@ -848,7 +855,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 static void write_one_to_sac(
     const char *srcname, const char ch, GRT_FFTW_HOLDER *fh, const real_t wI, 
     SACTRACE *sac, const char *s_output_subdir, const char *s_prefix,
-    const int sgn, const cplx_t *grncplx)
+    const int sgn, bool skipImagComps, const cplx_t *grncplx)
 {
     snprintf(sac->hd.kcmpnm, sizeof(sac->hd.kcmpnm), "%s%s%c", s_prefix, srcname, ch);
     
@@ -879,12 +886,17 @@ static void write_one_to_sac(
     // 归一化，并处理虚频
     // 并转为 SAC 需要的单精度类型
     real_t fac, coef;
-    coef = fh->df * exp(sac->hd.b * wI);
-    fac = exp(wI*fh->dt);
+    coef = fh->df;
+    fac = 1.0;
+    if (! skipImagComps) {
+        coef *= exp(sac->hd.b * wI);
+        fac = exp(wI*fh->dt);
+    }
     for(size_t i = 0; i < fh->nt; ++i){
         sac->data[i] = fh->w_t[i] * coef;
         coef *= fac;
     }
+    
 
     // 以sac文件保存到本地
     grt_write_SACTRACE(s_outpath, sac);
@@ -1117,11 +1129,11 @@ int greenfn_main(int argc, char **argv) {
 
             char ch = GRT_ZRT_CODES[c];
 
-            write_one_to_sac(GRT_SRC_M_NAME_ABBR[im], ch, fh, Ctrl->N.wI, sac, s_output_subdir, "", sgn, grn[ir][im][c]);
+            write_one_to_sac(GRT_SRC_M_NAME_ABBR[im], ch, fh, Ctrl->N.wI, sac, s_output_subdir, "", sgn, Ctrl->N.skipImagComps, grn[ir][im][c]);
 
             if(Ctrl->e.active){
-                write_one_to_sac(GRT_SRC_M_NAME_ABBR[im], ch, fh, Ctrl->N.wI, sac, s_output_subdir, "z", sgn*(-1), grn_uiz[ir][im][c]);
-                write_one_to_sac(GRT_SRC_M_NAME_ABBR[im], ch, fh, Ctrl->N.wI, sac, s_output_subdir, "r", sgn,      grn_uir[ir][im][c]);
+                write_one_to_sac(GRT_SRC_M_NAME_ABBR[im], ch, fh, Ctrl->N.wI, sac, s_output_subdir, "z", sgn*(-1), Ctrl->N.skipImagComps, grn_uiz[ir][im][c]);
+                write_one_to_sac(GRT_SRC_M_NAME_ABBR[im], ch, fh, Ctrl->N.wI, sac, s_output_subdir, "r", sgn     , Ctrl->N.skipImagComps, grn_uir[ir][im][c]);
             }
         }
 

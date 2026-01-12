@@ -410,6 +410,7 @@ class PyModel1D:
         converg_method:Union[str,None]=None,
         delayT0:float=0.0,
         delayV0:float=0.0,
+        skipImagComps:bool=False,
         calc_upar:bool=False,
         gf_source=['EX', 'VF', 'HF', 'DC'],
         statsfile:Union[str,None]=None, 
@@ -439,6 +440,7 @@ class PyModel1D:
             :param    safilonTol:    precision of Self-Adaptive Filon's Integration Method
             :param    filonCut:      The splitting point of DWM and (SA)FIM, k*=<filonCut>/rmax, default is 0
             :param    converg_method:   The method of explicit convergence, you can set "DCM", "PTAM" or "none". Default use "DCM" when abs(depsrc-deprcv) <= 1.0 km
+            :param    skipImagComps:    skip the amplitude compensation from imaginary frequency.
             :param    calc_upar:     whether calculate the spatial derivatives of displacements.
             :param    gf_source:     The source type to be calculated
             :param    statsfile:     directory path for saving the statsfile during k integral, used to debug or observe the variations of :math:`F(k,\omega)` and :math:`F(k,\omega)J_m(kr)k`    
@@ -513,10 +515,10 @@ class PyModel1D:
                         continue
                     
                     sgn = -1 if ZRTchs[c]=='Z'=='Z' else 1
-                    stream.append(pygrnLst[ir][im][c].freq2time(delayT, travtP, travtS, sgn ))
+                    stream.append(pygrnLst[ir][im][c].freq2time(delayT, travtP, travtS, sgn, skipImagComps))
                     if(calc_upar):
-                        stream.append(pygrnLst_uiz[ir][im][c].freq2time(delayT, travtP, travtS, sgn*(-1) ))
-                        stream.append(pygrnLst_uir[ir][im][c].freq2time(delayT, travtP, travtS, sgn  ))
+                        stream.append(pygrnLst_uiz[ir][im][c].freq2time(delayT, travtP, travtS, sgn*(-1), skipImagComps))
+                        stream.append(pygrnLst_uir[ir][im][c].freq2time(delayT, travtP, travtS, sgn     , skipImagComps))
 
 
             # 在sac头段变量部分
