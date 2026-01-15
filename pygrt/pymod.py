@@ -33,7 +33,7 @@ __all__ = [
 
 
 class PyModel1D:
-    def __init__(self, modarr0:np.ndarray, depsrc:float, deprcv:float,
+    def __init__(self, modarr0:np.ndarray, depsrc:float, deprcv:float, allowLiquid:bool=True,
                  topbound:Literal['free', 'rigid', 'halfspace']='free', 
                  botbound:Literal['free', 'rigid', 'halfspace']='halfspace'):
         '''
@@ -42,6 +42,7 @@ class PyModel1D:
             :param    modarr0:    model array, in the format of [thickness(km), Vp(km/s), Vs(km/s), Rho(g/cm^3), Qp, Qs]  
             :param    depsrc:     source depth (km)  
             :param    deprcv:     receiver depth (km)  
+            :param    allowLiquid:    (deprecated) unused argument
             :param    topbound:       boundary condition of the top layer
             :param    botbound:       boundary condition of the bottom layer
 
