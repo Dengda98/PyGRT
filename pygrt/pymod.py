@@ -33,7 +33,7 @@ __all__ = [
 
 
 class PyModel1D:
-    def __init__(self, modarr0:np.ndarray, depsrc:float, deprcv:float, allowLiquid:bool=False, 
+    def __init__(self, modarr0:np.ndarray, depsrc:float, deprcv:float, allowLiquid:bool=True,
                  topbound:Literal['free', 'rigid', 'halfspace']='free', 
                  botbound:Literal['free', 'rigid', 'halfspace']='halfspace'):
         '''
@@ -42,7 +42,7 @@ class PyModel1D:
             :param    modarr0:    model array, in the format of [thickness(km), Vp(km/s), Vs(km/s), Rho(g/cm^3), Qp, Qs]  
             :param    depsrc:     source depth (km)  
             :param    deprcv:     receiver depth (km)  
-            :param    allowLiquid:    whether liquid layers are allowed
+            :param    allowLiquid:    (deprecated) unused argument
             :param    topbound:       boundary condition of the top layer
             :param    botbound:       boundary condition of the bottom layer
 
@@ -50,9 +50,9 @@ class PyModel1D:
         self.depsrc:float = depsrc 
         self.deprcv:float = deprcv 
         self.c_mod1d:c_GRT_MODEL1D 
-        self.hasLiquid:bool = allowLiquid  # 传入的模型是否有液体层
         self.topbound:str = topbound
         self.botbound:str = botbound
+        self.hasLiquid = False
 
         boundDct = {
             'free': 0,
@@ -72,7 +72,7 @@ class PyModel1D:
             tmp_path = tmpfile.name  # 获取临时文件路径
 
         try:
-            c_mod1d_ptr = C_grt_read_mod1d_from_file(tmp_path.encode("utf-8"), depsrc, deprcv, allowLiquid)
+            c_mod1d_ptr = C_grt_read_mod1d_from_file(tmp_path.encode("utf-8"), depsrc, deprcv, True)
             self.c_mod1d = c_mod1d_ptr.contents  # 这部分内存在C中申请，需由C函数释放。占用不多，这里跳过
             C_grt_set_mod1d_boundary(self.c_mod1d, boundDct[topbound], boundDct[botbound])
         finally:
