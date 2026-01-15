@@ -33,7 +33,7 @@ __all__ = [
 
 
 class PyModel1D:
-    def __init__(self, modarr0:np.ndarray, depsrc:float, deprcv:float, allowLiquid:bool=False, 
+    def __init__(self, modarr0:np.ndarray, depsrc:float, deprcv:float, allowLiquid:bool=True, 
                  topbound:Literal['free', 'rigid', 'halfspace']='free', 
                  botbound:Literal['free', 'rigid', 'halfspace']='halfspace'):
         '''
