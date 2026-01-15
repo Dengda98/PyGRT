@@ -22,6 +22,12 @@ grt greenfn -M../milrow -D0.1/0 -N600/0.02 -R10 -OGRN -Cn
 grt greenfn -M../milrow -D2/3 -N600/0.02 -L20 -R10 -S -OGRN
 grt greenfn -M../milrow -D2/3 -N600/0.02 -L20 -R10 -S1,10,20 -OGRN
 
+# boundary
+grt greenfn -M../milrow -D2/3 -N600/0.02 -R10 -BrF -OGRN
+grt greenfn -M../milrow -D2/3 -N600/0.02 -R10 -BhR -OGRN
+grt greenfn -M../milrow -D2/3 -N600/0.02 -R10 -BrH -OGRN
+
+
 # multi distance
 grt greenfn -M../milrow -D2/0 -N600/0.02 -R6,8,10 -OGRN
 cat > dists <<EOF

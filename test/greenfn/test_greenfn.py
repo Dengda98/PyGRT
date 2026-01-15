@@ -35,3 +35,12 @@ stgrn = pymod.compute_grn(dist, nt, dt, Length=20, statsfile="GRN_grtstats", sta
 
 # multi distances
 stgrn = pymod.compute_grn([6, 8, 10], nt, dt)[0]
+
+
+# boundary condition
+pymod = pygrt.PyModel1D(modarr, depsrc, deprcv, topbound='free', botbound='free')
+stgrn = pymod.compute_grn(dist, nt, dt)[0]
+pymod = pygrt.PyModel1D(modarr, depsrc, deprcv, topbound='halfspace', botbound='free')
+stgrn = pymod.compute_grn(dist, nt, dt)[0]
+pymod = pygrt.PyModel1D(modarr, depsrc, deprcv, topbound='rigid', botbound='rigid')
+stgrn = pymod.compute_grn(dist, nt, dt)[0]
