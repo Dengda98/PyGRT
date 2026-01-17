@@ -109,7 +109,7 @@ class PyGreenFunction:
         return fig, (ax1, ax2)
 
         
-    def freq2time(self, T0:float, travtP:float, travtS:float, mult:float=1.0):
+    def freq2time(self, T0:float, travtP:float, travtS:float, mult:float=1.0, skipImagComps:bool=False):
         '''
             Convert the Green's function from the frequency domain to the time domain 
             and return it in the form of :class:`obspy.Trace`
@@ -142,7 +142,8 @@ class PyGreenFunction:
         # 实序列的傅里叶变换 
         data = irfft(cmlx_grn, nt, norm='backward') * (1/dt)  # *(1/dt)和连续傅里叶变换幅值保持一致
         # 抵消虚频率的影响
-        data *= np.exp((np.arange(0,nt)*dt + T0)*wI)
+        if not skipImagComps:
+            data *= np.exp((np.arange(0,nt)*dt + T0)*wI)
 
         # 保存sac头段变量
         sac.o = 0.0
