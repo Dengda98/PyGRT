@@ -665,7 +665,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 }
                 break;
 
-            // 时间延迟 -E[p]<v0>[/<v0>]
+            // 时间延迟 -E[p]<t0>[/<v0>]
             case 'E':
                 Ctrl->E.active = true;
                 if(optarg[0] == 'p'){
