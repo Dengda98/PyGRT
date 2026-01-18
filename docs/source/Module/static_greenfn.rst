@@ -18,6 +18,7 @@ static_greenfn
 |-X|\ *x1/x2/dx*
 |-Y|\ *y1/y2/dy*
 |-O|\ *outdir*
+[ |-B|\ **f|F|r|R|h|H** ]
 [ |-L|\ *length*\ [**+l**\ *Flength*][**+a**\ *Ftol*][**+o**\ *offset*] ]
 [ |-C|\ **d|p|n** ]
 [ |-K|\ [**+k**\ *k0*][**+e**\ *keps*] ]
@@ -58,6 +59,8 @@ static_greenfn
 
 可选选项
 --------
+
+.. include:: explain_-Bbound.rst_
 
 .. include:: explain_-L.rst_
 

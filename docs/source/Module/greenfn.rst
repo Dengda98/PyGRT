@@ -18,6 +18,7 @@ greenfn
 |-N|\ *nt/dt*\ [**+w**\ *zeta*][**+n**\ *fac*][**+a**][**+f**]
 |-R|\ *file*\|\ *r1,r2,...*
 |-O|\ *outdir*
+[ |-B|\ **f|F|r|R|h|H** ]
 [ |-H|\ *f1/f2* ]
 [ |-L|\ *length*\ [**+l**\ *Flength*][**+a**\ *Ftol*][**+o**\ *offset*] ]
 [ |-C|\ **d|p|n** ]
@@ -84,6 +85,8 @@ greenfn
 
 可选选项
 --------
+
+.. include:: explain_-Bbound.rst_
 
 .. _-H:
 
