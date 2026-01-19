@@ -122,6 +122,7 @@ typedef struct {
         bool active;
         real_t delayT0;
         real_t delayV0;
+        bool refFirstP;  ///< 是否参考初至P
     } E;
     /** 波数积分过程的核函数文件 */
     struct {
@@ -297,7 +298,7 @@ printf("\n"
 "    grt greenfn -M<model> -D<depsrc>/<deprcv> \n"
 "        -N<nt>/<dt>[+w<zeta>][+n<fac>][+a] \n"
 "        -R<r1>,<r2>[,...]     -O<outdir>     [-H<f1>/<f2>] \n"
-"        [-L<length>] [-C[d|p|n]] [-E<t0>[/<v0>]] \n" 
+"        [-L<length>] [-C[d|p|n]] [-E[p]<t0>[/<v0>]] \n" 
 "        [-K[+k<k0>][+s<ampk>][+e<keps>][+v<vmin>]]\n"
 "        [-P<nthreads>] [-Ge|v|h|s]  [-Bf|F|r|R|h|H]\n"
 "        [-S[<i1>,<i2>,...]] [-e] [-s]\n"
@@ -366,14 +367,17 @@ printf("\n"
 "                 + n: None.\n"
 "                 Default use +cd when fabs(depsrc-deprcv) <= %.1f.\n", GRT_MIN_DEPTH_GAP_SRC_RCV); printf(
 "\n"
-"    -E<t0>[/<v0>]\n"
+"    -E[p]<t0>[/<v0>]\n"
 "                 Introduce the time delay in results. The total \n"
 "                 delay = <t0> + dist/<v0>, dist is the\n"
 "                 straight-line distance between source and \n"
 "                 receiver.\n"
 "                 <t0>: reference delay (s), default t0=0.0\n"); printf(
 "                 <v0>: reference velocity (km/s), \n"
-"                       default 0.0 not use.\n"); printf(
+"                       default 0.0 not use. \n"
+"                 -Ep<t0>: \n"
+"                       the delay (the begining time) will be <t0> + first P, \n"
+"                       e.g., -Ep-10.\n"
 "\n"
 "    -K[+k<k0>][+s<ampk>][+e<keps>][+v<vmin>]\n"
 "                 Several parameters designed to define the\n"
@@ -661,14 +665,24 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 }
                 break;
 
-            // 时间延迟 -ET0/V0
+            // 时间延迟 -E[p]<t0>[/<v0>]
             case 'E':
                 Ctrl->E.active = true;
-                if(0 == sscanf(optarg, "%lf/%lf", &Ctrl->E.delayT0, &Ctrl->E.delayV0)){
-                    GRTBadOptionError(E, "");
-                };
-                if(Ctrl->E.delayV0 < 0.0){
-                    GRTBadOptionError(E, "Can't set negative v0(%f) in -E.", Ctrl->E.delayV0);
+                if(optarg[0] == 'p'){
+                    if(1 != sscanf(optarg+1, "%lf", &Ctrl->E.delayT0)){
+                        GRTBadOptionError(E, "");
+                    };
+                    if(Ctrl->E.delayT0 >= 0.0){
+                        GRTBadOptionError(E, "Can't set positive t0(%f) in -Ep.", Ctrl->E.delayT0);
+                    }
+                    Ctrl->E.refFirstP = true;
+                } else {
+                    if(0 == sscanf(optarg+1, "%lf/%lf", &Ctrl->E.delayT0, &Ctrl->E.delayV0)){
+                        GRTBadOptionError(E, "");
+                    };
+                    if(Ctrl->E.delayV0 < 0.0){
+                        GRTBadOptionError(E, "Can't set negative v0(%f) in -E.", Ctrl->E.delayV0);
+                    }
                 }
                 break;
 
@@ -949,8 +963,16 @@ int greenfn_main(int argc, char **argv) {
     real_t rmax = Ctrl->R.rs[grt_findMax_real_t(Ctrl->R.rs, Ctrl->R.nr)];   
 
     // 时窗最大截止时刻
-    real_t tmax = Ctrl->E.delayT0 + Ctrl->N.winT;
-    if(Ctrl->E.delayV0 > 0.0)   tmax += rmax/Ctrl->E.delayV0;
+    real_t tmax = 0.0;
+    {
+        if (! Ctrl->E.refFirstP){
+            tmax = Ctrl->E.delayT0 + Ctrl->N.winT;
+            if(Ctrl->E.delayV0 > 0.0)   tmax += rmax/Ctrl->E.delayV0;
+        } else {
+            real_t maxP = grt_compute_travt1d(mod1d->Thk, mod1d->Va, mod1d->n, mod1d->isrc, mod1d->ircv, rmax);
+            tmax = Ctrl->E.delayT0 + maxP + Ctrl->N.winT;
+        }
+    }
 
     // 自动选择积分间隔，默认使用传统离散波数积分
     // 自动选择会给出很保守的值（较大的Length）
@@ -1070,7 +1092,7 @@ int greenfn_main(int argc, char **argv) {
     GRT_SAFE_ASPRINTF(&s_output_dirprefx, "%s/%s_%s_%s", Ctrl->O.s_output_dir, Ctrl->M.s_modelname, Ctrl->D.s_depsrc, Ctrl->D.s_deprcv);
     
     // 建立SAC头文件，包含必要的头变量
-    SACTRACE *sac = grt_new_SACTRACE(fh->dt, fh->nt, Ctrl->E.delayT0);
+    SACTRACE *sac = grt_new_SACTRACE(fh->dt, fh->nt, 0.0);
     // 发震时刻作为参考时刻
     sac->hd.o = 0.0; 
     sac->hd.iztype = IO; 
@@ -1101,17 +1123,24 @@ int greenfn_main(int argc, char **argv) {
         GRT_SAFE_ASPRINTF(&s_output_subdir, "%s_%s", s_output_dirprefx, Ctrl->R.s_rs[ir]);
         GRTCheckMakeDir(s_output_subdir);
 
-        // 时间延迟 
-        real_t delayT = Ctrl->E.delayT0;
-        if(Ctrl->E.delayV0 > 0.0)   delayT += sqrt( GRT_SQUARE(dist) + GRT_SQUARE(Ctrl->D.deprcv - Ctrl->D.depsrc) ) / Ctrl->E.delayV0;
-        // 修改SAC头段时间变量
-        sac->hd.b = delayT;
-
         // 计算理论走时
         sac->hd.t0 = grt_compute_travt1d(mod1d->Thk, mod1d->Va, mod1d->n, mod1d->isrc, mod1d->ircv, dist);
         strcpy(sac->hd.kt0, "P");
         sac->hd.t1 = grt_compute_travt1d(mod1d->Thk, mod1d->Vb, mod1d->n, mod1d->isrc, mod1d->ircv, dist);
         strcpy(sac->hd.kt1, "S");
+
+        // 时间延迟
+        {
+            real_t delayT = 0.0;
+            if (! Ctrl->E.refFirstP){
+                delayT = Ctrl->E.delayT0;
+                if(Ctrl->E.delayV0 > 0.0)   delayT += sqrt( GRT_SQUARE(dist) + GRT_SQUARE(Ctrl->D.deprcv - Ctrl->D.depsrc) ) / Ctrl->E.delayV0;
+            } else {
+                delayT = Ctrl->E.delayT0 + sac->hd.t0;
+            }
+            // 修改SAC头段时间变量
+            sac->hd.b = delayT;
+        }
 
         GRT_LOOP_ChnlGrid(im, c){
             if(! Ctrl->G.doEX  && im==GRT_SRC_M_EX_INDEX)  continue;
