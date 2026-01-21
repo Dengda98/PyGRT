@@ -66,32 +66,68 @@ void grt_integ_static_grn(
     realChnlGrid grn_uir[nr],
     const char *statsstr) 
 {
+    // 根据静态解传入的震中距形式，有必要对震中距去重，从而减少不必要的计算量
+    size_t uniq_nr = nr;
+    real_t *uniq_rs = (real_t *)calloc(nr, sizeof(real_t));
+    size_t *rs_refidx = (size_t *)calloc(nr, sizeof(size_t));
+    memcpy(uniq_rs, rs, sizeof(real_t)*nr);
+    uniq_nr = 1;
+    for(size_t ir = 1; ir < nr; ++ir){
+        size_t jr = 0;
+        for( ; jr < uniq_nr; ++jr){
+            // 找到重复，跳过
+            if(fabs(uniq_rs[jr] - rs[ir]) < 1e-8) break;
+        }
+        // 无重复
+        if(jr == uniq_nr){
+            uniq_rs[uniq_nr++] = rs[ir];
+        }
+        rs_refidx[ir] = jr;
+    }
+
     // 是否要输出积分过程文件
     bool needfstats = (statsstr!=NULL);
 
     // 输出积分过程文件
-    if(needfstats) grt_KMET_init_fstats(nr, rs, statsstr, "", Kmet);
+    if(needfstats) grt_KMET_init_fstats(uniq_nr, uniq_rs, statsstr, "", Kmet);
 
     // ===================================================================================
     //                          Wavenumber Integration
     // 波数积分上限
     Kmet->kmax = Kmet->k0;
-    K_INTEG *Kint = grt_wavenumber_integral(mod1d, nr, rs, Kmet, calc_upar, grt_static_kernel);
+    K_INTEG *Kint = grt_wavenumber_integral(mod1d, uniq_nr, uniq_rs, Kmet, calc_upar, grt_static_kernel);
     
     cplx_t src_mu = mod1d->mu[mod1d->isrc];
     cplx_t fac = Kmet->dk * 1.0/(4.0*PI * src_mu);
     
     // 将积分结果记录到浮点数数组中
-    recordin_GRN(nr, fac, Kint->sumJ, grn);
+    recordin_GRN(uniq_nr, fac, Kint->sumJ, grn);
     if(calc_upar){
-        recordin_GRN(nr, fac, Kint->sumJz, grn_uiz);
-        recordin_GRN(nr, fac, Kint->sumJr, grn_uir);
+        recordin_GRN(uniq_nr, fac, Kint->sumJz, grn_uiz);
+        recordin_GRN(uniq_nr, fac, Kint->sumJr, grn_uir);
     }
     // ===================================================================================
+
+    // 从去重震中距恢复结果
+    if(nr != uniq_nr){
+        for(size_t ir = 0; ir < nr; ++ir){
+            size_t ir_inv = nr-ir-1;
+            size_t idx = rs_refidx[ir_inv];
+            GRT_LOOP_ChnlGrid(im, c){
+                grn[ir_inv][im][c] = grn[idx][im][c];
+                if(calc_upar){
+                    grn_uiz[ir_inv][im][c] = grn_uiz[idx][im][c];
+                    grn_uir[ir_inv][im][c] = grn_uir[idx][im][c];
+                }
+            }
+        }
+    }
 
     // Free allocated memory for temporary variables
     grt_free_K_INTEG(Kint);
 
-    if(needfstats)  grt_KMET_destroy_fstats(nr, Kmet);
+    if(needfstats)  grt_KMET_destroy_fstats(uniq_nr, Kmet);
 
+    GRT_SAFE_FREE_PTR(uniq_rs);
+    GRT_SAFE_FREE_PTR(rs_refidx);
 }
