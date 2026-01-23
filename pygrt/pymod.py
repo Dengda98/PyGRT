@@ -389,6 +389,85 @@ class PyModel1D:
 
         return pygrnLst, pygrnLst_uiz, pygrnLst_uir
 
+    def _get_stream_from_grn_spectra(
+        self, distarr, pygrnLst, pygrnLst_uiz, pygrnLst_uir, 
+        delayT0:float=0.0,
+        delayV0:float=0.0,
+        skipImagComps:bool=False,
+        calc_upar:bool=False,
+        gf_source=['EX', 'VF', 'HF', 'DC']
+    ):
+        depsrc = self.depsrc
+        deprcv = self.deprcv
+        
+        calc_EX:bool = 'EX' in gf_source
+        calc_VF:bool = 'VF' in gf_source
+        calc_HF:bool = 'HF' in gf_source
+        calc_DC:bool = 'DC' in gf_source
+
+        # 震源和场点层的物性，写入sac头段变量
+        rcv_va = self.c_mod1d.Va[self.ircv]
+        rcv_vb = self.c_mod1d.Vb[self.ircv]
+        rcv_rho = self.c_mod1d.Rho[self.ircv]
+        rcv_qainv = self.c_mod1d.Qainv[self.ircv]
+        rcv_qbinv = self.c_mod1d.Qbinv[self.ircv]
+        src_va = self.c_mod1d.Va[self.isrc]
+        src_vb = self.c_mod1d.Vb[self.isrc]
+        src_rho = self.c_mod1d.Rho[self.isrc]
+        
+        # 对应实际采集的地震信号，取向上为正(和理论推导使用的方向相反)
+        dataLst = []
+        for ir in range(len(distarr)):
+            stream = Stream()
+            dist = distarr[ir]
+
+            # 计算延迟
+            delayT = delayT0 
+            if delayV0 > 0.0:
+                delayT += np.sqrt(dist**2 + (deprcv-depsrc)**2)/delayV0
+
+            # 计算走时
+            travtP, travtS = self.compute_travt1d(dist)
+
+            for im in range(SRC_M_NUM):
+                if(not calc_EX and im==0):
+                    continue
+                if(not calc_VF and im==1):
+                    continue
+                if(not calc_HF and im==2):
+                    continue
+                if(not calc_DC and im>=3):
+                    continue
+
+                modr = SRC_M_ORDERS[im]
+                sgn = 1
+                for c in range(CHANNEL_NUM):
+                    if(modr==0 and ZRTchs[c]=='T'):
+                        continue
+                    
+                    sgn = -1 if ZRTchs[c]=='Z'=='Z' else 1
+                    stream.append(pygrnLst[ir][im][c].freq2time(delayT, travtP, travtS, sgn, skipImagComps))
+                    if(calc_upar):
+                        stream.append(pygrnLst_uiz[ir][im][c].freq2time(delayT, travtP, travtS, sgn*(-1), skipImagComps))
+                        stream.append(pygrnLst_uir[ir][im][c].freq2time(delayT, travtP, travtS, sgn     , skipImagComps))
+
+
+            # 在sac头段变量部分
+            for tr in stream:
+                SAC = tr.stats.sac
+                SAC['user1'] = rcv_va
+                SAC['user2'] = rcv_vb
+                SAC['user3'] = rcv_rho
+                SAC['user4'] = rcv_qainv
+                SAC['user5'] = rcv_qbinv
+                SAC['user6'] = src_va
+                SAC['user7'] = src_vb
+                SAC['user8'] = src_rho
+
+            dataLst.append(stream)
+
+        return dataLst
+
 
     def compute_grn(
         self, 
@@ -466,75 +545,11 @@ class PyModel1D:
             statsfile, statsidxs, print_runtime
         )
 
-        depsrc = self.depsrc
-        deprcv = self.deprcv
+        dataLst = self._get_stream_from_grn_spectra(
+            distarr, pygrnLst, pygrnLst_uiz, pygrnLst_uir,
+            delayT0, delayV0, skipImagComps, calc_upar, gf_source
+        )
         
-        calc_EX:bool = 'EX' in gf_source
-        calc_VF:bool = 'VF' in gf_source
-        calc_HF:bool = 'HF' in gf_source
-        calc_DC:bool = 'DC' in gf_source
-
-        # 震源和场点层的物性，写入sac头段变量
-        rcv_va = self.c_mod1d.Va[self.ircv]
-        rcv_vb = self.c_mod1d.Vb[self.ircv]
-        rcv_rho = self.c_mod1d.Rho[self.ircv]
-        rcv_qainv = self.c_mod1d.Qainv[self.ircv]
-        rcv_qbinv = self.c_mod1d.Qbinv[self.ircv]
-        src_va = self.c_mod1d.Va[self.isrc]
-        src_vb = self.c_mod1d.Vb[self.isrc]
-        src_rho = self.c_mod1d.Rho[self.isrc]
-        
-        # 对应实际采集的地震信号，取向上为正(和理论推导使用的方向相反)
-        dataLst = []
-        for ir in range(len(distarr)):
-            stream = Stream()
-            dist = distarr[ir]
-
-            # 计算延迟
-            delayT = delayT0 
-            if delayV0 > 0.0:
-                delayT += np.sqrt(dist**2 + (deprcv-depsrc)**2)/delayV0
-
-            # 计算走时
-            travtP, travtS = self.compute_travt1d(dist)
-
-            for im in range(SRC_M_NUM):
-                if(not calc_EX and im==0):
-                    continue
-                if(not calc_VF and im==1):
-                    continue
-                if(not calc_HF and im==2):
-                    continue
-                if(not calc_DC and im>=3):
-                    continue
-
-                modr = SRC_M_ORDERS[im]
-                sgn = 1
-                for c in range(CHANNEL_NUM):
-                    if(modr==0 and ZRTchs[c]=='T'):
-                        continue
-                    
-                    sgn = -1 if ZRTchs[c]=='Z'=='Z' else 1
-                    stream.append(pygrnLst[ir][im][c].freq2time(delayT, travtP, travtS, sgn, skipImagComps))
-                    if(calc_upar):
-                        stream.append(pygrnLst_uiz[ir][im][c].freq2time(delayT, travtP, travtS, sgn*(-1), skipImagComps))
-                        stream.append(pygrnLst_uir[ir][im][c].freq2time(delayT, travtP, travtS, sgn     , skipImagComps))
-
-
-            # 在sac头段变量部分
-            for tr in stream:
-                SAC = tr.stats.sac
-                SAC['user1'] = rcv_va
-                SAC['user2'] = rcv_vb
-                SAC['user3'] = rcv_rho
-                SAC['user4'] = rcv_qainv
-                SAC['user5'] = rcv_qbinv
-                SAC['user6'] = src_va
-                SAC['user7'] = src_vb
-                SAC['user8'] = src_rho
-
-            dataLst.append(stream)
-
         return dataLst  
 
     
