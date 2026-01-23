@@ -19,13 +19,9 @@
  * 其中虚数部分的正负号和书中不同，是因为书中使用的傅里叶变换的e指数符号和我们通常使用的相反。
  * 
  * @param[in]    Qinv     1/Q
- * @param[in]    omega    复数频率\f$ \tilde{\omega} =\omega - i\zeta \f$ 
+ * @param[in]    omgref   参考圆频率；原公式默认使用 1Hz 为参考频率
+ * @param[in]    omega    复数圆频率\f$ \tilde{\omega} =\omega - i\zeta \f$ 
  * 
  * @return atncoef 系数因子，作用在 \f$ k=\omega / c(\omega)\f$的计算
  */
-cplx_t grt_attenuation_law(real_t Qinv, cplx_t omega);
-
-/**
- * attenuation_law函数在python中被调用的版本，长度2的数组分别表示复数的实部和虚部
- */
-void grt_py_attenuation_law(real_t Qinv, real_t omg[2], real_t atte[2]);
+cplx_t grt_attenuation_law(real_t Qinv, cplx_t omgref, cplx_t omega);

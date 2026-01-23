@@ -141,10 +141,10 @@ C_grt_rot_zrt2zxy_upar.argtypes = [c_double, DPOINTER, DPOINTER, c_double]  # do
 # -------------------------------------------------------------------
 #                      C函数定义的衰减函数
 # -------------------------------------------------------------------
-C_grt_py_attenuation_law = libgrt.grt_py_attenuation_law
+C_grt_attenuation_law = libgrt.grt_attenuation_law
 """品质因子Q 对 波速的影响"""
-C_grt_py_attenuation_law.restype = None
-C_grt_py_attenuation_law.argtypes = [REAL, DPOINTER, DPOINTER]  # double, double[2], double[2]
+C_grt_attenuation_law.restype = CPLX
+C_grt_attenuation_law.argtypes = [REAL, CPLX, CPLX]  # double, cplx, cplx
 
 
 # -------------------------------------------------------------------

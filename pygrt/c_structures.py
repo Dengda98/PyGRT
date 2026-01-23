@@ -29,6 +29,7 @@ __all__ = [
 
     "REAL",
     "PREAL",
+    "CPLX",
     "PCPLX",
 
     "c_GRT_MODEL1D",
@@ -51,9 +52,14 @@ NPCT_REAL_TYPE = 'f8'
 NPCT_CMPLX_TYPE = 'c16'
 
 
+class CPLX(Structure):
+    _fields_ = [
+        ('real', c_double),
+        ('imag', c_double),
+    ]
+
 
 REAL = c_double
-CPLX = REAL*2
 PREAL = POINTER(REAL)
 PCPLX = POINTER(CPLX)
 
@@ -91,6 +97,7 @@ class c_GRT_MODEL1D(Structure):
         ('ircvup', c_bool),
         ('io_depth', c_bool),
 
+        ('omgref', CPLX),
         ('omega', CPLX),
         ('k', REAL),
         ('c_phase', CPLX),

@@ -125,8 +125,8 @@ int stress_main(int argc, char **argv){
         freq = (i==0) ? 0.01f : df*i; // 计算衰减因子不能为0频
         w = PI2 * freq;
         fftwf_complex atta, attb;
-        atta = grt_attenuation_law(Qainv, w);
-        attb = grt_attenuation_law(Qbinv, w);
+        atta = grt_attenuation_law(Qainv, PI2*(nf-1)*df, w);
+        attb = grt_attenuation_law(Qbinv, PI2*(nf-1)*df, w);
         // 乘上1e10，转为dyne/(cm^2)
         mus[i] = vb*vb*attb*attb*rho*1e10;
         lams[i] = va*va*atta*atta*rho*1e10 - 2.0*mus[i];
