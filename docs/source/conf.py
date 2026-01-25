@@ -87,6 +87,11 @@ breathe_projects = {
     "h_PyGRT": "../doxygen_h/xml",
 }
 breathe_default_project = "h_PyGRT"
+breathe_domain_by_extension = {
+    'h': 'c',  # 将所有.h文件视为C语言
+    'c': 'c',
+}
+breathe_default_domain = 'c'  # 或者明确设置默认域
 
 templates_path = ['_templates']
 exclude_patterns = []
