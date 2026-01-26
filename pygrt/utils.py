@@ -737,17 +737,18 @@ def _compute_stress(st_syn:Stream):
     # 计算不同频率下的拉梅系数
     mus = np.zeros((nf,), dtype='c16')
     lams = np.zeros((nf,), dtype='c16')
-    omega = (REAL*2)(0.0, 0.0)
-    atte = (REAL*2)(0.0, 0.0)
+    omega = CPLX(0.0, 0.0)
+    atte = CPLX(0.0, 0.0)
+    omgref = CPLX(2.0*np.pi*(nf-1)*df, 0.0)
     for i in range(nf):
         freq = 0.01 if i==0 else df*i 
         w = 2.0*np.pi*freq 
-        omega[0] = w
-        C_grt_py_attenuation_law(Qbinv, omega, atte)
-        attb = atte[0] + atte[1]*1j
+        omega.real = w
+        atte = C_grt_attenuation_law(Qbinv, omgref, omega)
+        attb = atte.real + atte.imag*1j
         mus[i] = vb*vb*attb*attb*rho*1e10
-        C_grt_py_attenuation_law(Qainv, omega, atte)
-        atta = atte[0] + atte[1]*1j
+        atte = C_grt_attenuation_law(Qainv, omgref, omega)
+        atta = atte.real + atte.imag*1j
         lams[i] = va*va*atta*atta*rho*1e10 - 2.0*mus[i]
     
     del omega, atte

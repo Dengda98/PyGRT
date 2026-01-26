@@ -24,6 +24,7 @@ typedef struct {
     bool ircvup; ///< 接收点位于浅层, ircv < isrc
     bool io_depth; ///< 读取的模型首列为每层顶界面深度
 
+    cplx_t omgref;   ///< 参考圆频率, 用于计算衰减
     cplx_t omega;   ///< 圆频率
     real_t k;   ///< 波数
     cplx_t c_phase;   ///< 当前相速度

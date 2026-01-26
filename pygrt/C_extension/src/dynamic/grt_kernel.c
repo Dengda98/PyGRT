@@ -379,6 +379,8 @@ int kernel_main(int argc, char **argv)
     const real_t Rho = mod1d->Rho[mod1d->isrc]; // 震源区密度
     const real_t fac = 1.0/(4.0*PI*Rho);
 
+    mod1d->omgref = PI2*Ctrl->F.freqs[Ctrl->F.nf-1];
+
     // 频率循环
     #pragma omp parallel for schedule(guided) default(shared) 
     for(size_t iw = 0; iw < Ctrl->F.nf; ++iw)

@@ -90,6 +90,8 @@ void grt_integ_grn_spec(
     // 实际计算的频点数
     size_t nf_valid = nf2 - nf1 + 1;
 
+    mod1d->omgref = PI2*freqs[nf2];
+
     // 频率omega循环
     // schedule语句可以动态调度任务，最大程度地使用计算资源
     #pragma omp parallel for schedule(guided) default(shared) 
