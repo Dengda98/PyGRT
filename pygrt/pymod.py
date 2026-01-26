@@ -54,6 +54,9 @@ class PyModel1D:
         self.botbound:str = botbound
         self.hasLiquid = False
 
+        if depsrc < 0.0 or deprcv < 0.0:
+            raise ValueError("Negative source depth or receiver depth is not supported.")
+
         boundDct = {
             'free': 0,
             'rigid': 1,
