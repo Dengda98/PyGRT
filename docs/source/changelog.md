@@ -1,6 +1,39 @@
 Changelog
 ====================
 
+## PyGRT v0.15.0
+
+- support Tension source
+- support Free, Rigid and Halfspace boundary condition
+- support skip amplitude compensation from imaginary frequency
+- support set delay time related to the first P arrival
+- avoid repetitive computation due to the same epicentral distances in static solution
+- set the max frequency as the attenuation reference frequency
+- support set new XY grid for static results
+- update -R in module `(static_)greenfn` : **-R***r1/r2/dr*|*r1,r2,...*|*file*
+- fix some typos and add some tests in documents
+- fix some bugs
+
+### Pull requests
+* FEAT: support Tension source by [@Dengda98](https://github.com/Dengda98) in [#204](https://github.com/Dengda98/PyGRT/pull/204)
+* TEST: tension source by [@Dengda98](https://github.com/Dengda98) in [#205](https://github.com/Dengda98/PyGRT/pull/205)
+* DOC: tension source in module `(static_)syn` by [@Dengda98](https://github.com/Dengda98) in [#206](https://github.com/Dengda98/PyGRT/pull/206)
+* TEST: add ex15, compare static soultion and 0-freq dynamic solution by [@Dengda98](https://github.com/Dengda98) in [#209](https://github.com/Dengda98/PyGRT/pull/209)
+* FEAT: support Free, Rigid and Halfspace boundary condition by [@Dengda98](https://github.com/Dengda98) in [#212](https://github.com/Dengda98/PyGRT/pull/212)
+* DOC: formula for Free, Rigid and Halfspace boundary condition by [@Dengda98](https://github.com/Dengda98) in [#213](https://github.com/Dengda98/PyGRT/pull/213)
+* DOC: description and test for boundary condition by [@Dengda98](https://github.com/Dengda98) in [#214](https://github.com/Dengda98/PyGRT/pull/214)
+* FIX: discard argument `allowLiquid` in function `PyModel1D.__init__()` by [@Dengda98](https://github.com/Dengda98) in [#218](https://github.com/Dengda98/PyGRT/pull/218)
+* FEAT: support skip amplitude compensation from imaginary frequency by [@Dengda98](https://github.com/Dengda98) in [#219](https://github.com/Dengda98/PyGRT/pull/219)
+* FEAT: support set delay time related to the first P arrival by [@Dengda98](https://github.com/Dengda98) in [#220](https://github.com/Dengda98/PyGRT/pull/220)
+* FEAT: avoid repetitive computation due to the same epicentral distances in static solution by [@Dengda98](https://github.com/Dengda98) in [#221](https://github.com/Dengda98/PyGRT/pull/221)
+* DOC: update Doxygen configuration to treat `.h` files as C language and set default domain by [@Dengda98](https://github.com/Dengda98) in [#223](https://github.com/Dengda98/PyGRT/pull/223)
+* FEAT: set the max frequency as the attenuation reference frequency  by [@Dengda98](https://github.com/Dengda98) in [#224](https://github.com/Dengda98/PyGRT/pull/224)
+* FEAT: support set new XY grid for static results by [@Dengda98](https://github.com/Dengda98) in [#225](https://github.com/Dengda98/PyGRT/pull/225)
+* FEAT: update -R in module `(static_)greenfn` by [@Dengda98](https://github.com/Dengda98) in [#226](https://github.com/Dengda98/PyGRT/pull/226)
+
+
+**Full Changelog**: [v0.14.0...v0.15.0](https://github.com/Dengda98/PyGRT/compare/v0.14.0...v0.15.0)
+
 ## PyGRT v0.14.0
 
 + add new module `kernel`
