@@ -625,10 +625,12 @@ class PyModel1D:
         if distarr is not None:
             if isinstance(distarr, float) or isinstance(distarr, int):
                 distarr = np.array([distarr*1.0])
-                xarr = np.array([0.0])
-                yarr = distarr.copy()
-                if np.any(yarr < 0.0):
-                    raise ValueError("distances can't be negative.")
+            distarr = np.array(distarr)
+    
+            xarr = np.array([0.0])
+            yarr = distarr.copy()
+            if np.any(yarr < 0.0):
+                raise ValueError("distances can't be negative.")
         
         if xarr is None or yarr is None:
             raise ValueError("you need to set xarr and yarr or distarr.")
