@@ -65,7 +65,8 @@ printf("\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
-"    grt travt -M<model> -D<depsrc>/<deprcv> -R<r1>,<r2>[,...]\n"
+"    grt travt -M<model> -D<depsrc>/<deprcv> \n"
+"              -R<r1>,<r2>[,...]|<r1>/<r2>/<dr>|<file>\n"
 "\n\n"
 "Options:\n"
 "----------------------------------------------------------------\n"
@@ -86,15 +87,18 @@ printf("\n"
 "                 <depsrc>: source depth (km).\n"
 "                 <deprcv>: receiver depth (km).\n"
 "\n"
-"    -R<r1>,<r2>[,...]\n"
-"                 Multiple epicentral distance (km), \n"
-"                 seperated by comma.\n"
+"    -R<r1>,<r2>[,...]|<r1>/<r2>/<dr>|<file>\n"
+"                 Multiple epicentral distances (km), support three ways:\n"
+"                 + <r1>,<r2>[,...]: seperated by comma.\n"
+"                 + <r1>/<r2>/<dr>:  equal distance <dr> within [r1,r2].\n"
+"                 + <file>: each line contains a distance value.\n"
 "\n"
 "    -h           Display this help message.\n"
 "\n\n"
 "Examples:\n"
 "----------------------------------------------------------------\n"
 "    grt travt -Mmilrow -D2/0 -R10,20,30,40,50\n"
+"    grt travt -Mmilrow -D2/0 -R10/50/5\n"
 "\n\n\n"
 );
 }
@@ -132,28 +136,69 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 }
                 break;
 
-            // 震中距数组，-Rr1,r2,r3,r4 ...
+            // 震中距数组，-R<r1>,<r2>[,...]|<r1>/<r2>/<dr>|<file>
             case 'R':
                 Ctrl->R.active = true;
-                // 如果输入仅由数字、小数点和间隔符组成，则直接读取
-                if(grt_string_composed_of(optarg, GRT_NUM_STR ".,")){
-                    Ctrl->R.s_rs = grt_string_split(optarg, ",", &Ctrl->R.nr);
-                } 
-                // 否则从文件读取
-                else {
-                    FILE *fp = GRTCheckOpenFile(optarg, "r");
-                    Ctrl->R.s_rs = grt_string_from_file(fp, &Ctrl->R.nr);
-                    fclose(fp);
-                }
-                // 转为浮点数
-                Ctrl->R.rs = (real_t*)realloc(Ctrl->R.rs, sizeof(real_t)*(Ctrl->R.nr));
-                for(size_t i=0; i<Ctrl->R.nr; ++i){
-                    Ctrl->R.rs[i] = atof(Ctrl->R.s_rs[i]);
-                    if(Ctrl->R.rs[i] < 0.0){
-                        GRTBadOptionError(R, "Can't set negative epicentral distance(%f).", Ctrl->R.rs[i]);
+                {
+                    real_t a1, a2, delta;
+                    
+                    // 如果输入仅由数字、小数点和间隔符组成，则直接读取
+                    if(grt_string_composed_of(optarg, GRT_NUM_STR "eE+-" ".,")){
+                        Ctrl->R.s_rs = grt_string_split(optarg, ",", &Ctrl->R.nr);
+                    }
+                    // 尝试按照 <r1>/<r2>/<dr> 读取
+                    else if(3 == sscanf(optarg, "%lf/%lf/%lf", &a1, &a2, &delta)){
+                        if(delta <= 0){
+                            GRTBadOptionError(R, "Can't set nonpositive dr(%f)", delta);
+                        }
+                        if(a1 > a2){
+                            GRTBadOptionError(R, "r1(%f) > r2(%f).", a1, a2);
+                        }
+
+                        // 根据最大的小数位数来设置 s_rs
+                        int place = 0;
+                        real_t test[3] = {0};
+                        test[0] = a1;
+                        test[1] = a2;
+                        test[2] = delta;
+                        do {
+                            bool agree = true;
+                            for(size_t i = 0; i < 3; ++i)  {
+                                real_t new_frac = test[i] - (int)test[i];
+                                test[i] *= 10.0;
+                                // 如果乘以10后变成整数（或非常接近整数）
+                                if (fabs(new_frac) > 1e-8) {
+                                    agree = false;
+                                }
+                            }
+                            if(agree) break;
+                            place++;
+                        } while (place < 8);  // 最多小数点后 8 位
+
+                        Ctrl->R.nr = floor((a2-a1)/delta) + 1;
+                        Ctrl->R.s_rs = (char **)calloc(Ctrl->R.nr, sizeof(char*) * Ctrl->R.nr);
+                        for(size_t ir = 0; ir < Ctrl->R.nr; ++ir){
+                            GRT_SAFE_ASPRINTF(&Ctrl->R.s_rs[ir], "%.*f", place, a1 + delta*ir);
+                        }
+                    }
+                    // 否则从文件读取
+                    else {
+                        FILE *fp = GRTCheckOpenFile(optarg, "r");
+                        Ctrl->R.s_rs = grt_string_from_file(fp, &Ctrl->R.nr);
+                        fclose(fp);
+                    }
+                        
+                    // 转为浮点数
+                    Ctrl->R.rs = (real_t*)realloc(Ctrl->R.rs, sizeof(real_t)*(Ctrl->R.nr));
+                    for(size_t i=0; i<Ctrl->R.nr; ++i){
+                        Ctrl->R.rs[i] = atof(Ctrl->R.s_rs[i]);
+                        if(Ctrl->R.rs[i] < 0.0){
+                            GRTBadOptionError(R, "Can't set negative epicentral distance(%f).", Ctrl->R.rs[i]);
+                        }
                     }
                 }
                 break;
+
 
             GRT_Common_Options_in_Switch((char)(optopt));
         }
