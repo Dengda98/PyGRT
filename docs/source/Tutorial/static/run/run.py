@@ -9,7 +9,10 @@ pymod = pygrt.PyModel1D(modarr, depsrc=2.0, deprcv=0.0)
 
 xarr = np.linspace(-3, 3, 41)
 yarr = np.linspace(-2.5, 2.5, 33)
-static_grn = pymod.compute_static_grn(xarr, yarr)
+# 可以设置 distarr 来指定震中距序列
+# static_grn = pymod.compute_static_grn(distarr=np.arange(0,10+1e-8,0.1))
+# 也可以设置 xarr 和 yarr 来指定 XY 网格
+static_grn = pymod.compute_static_grn(xarr=xarr, yarr=yarr)
 print(static_grn.keys())
 # dict_keys(['_xarr', '_yarr', '_src_va', '_src_vb', '_src_rho', '_rcv_va', '_rcv_vb', '_rcv_rho', 'EXZ', 'VFZ', 'DDZ', 'HFZ', 'DSZ', 'SSZ', 'EXR', 'VFR', 'DDR', 'HFR', 'DSR', 'SSR', 'HFT', 'DST', 'SST'])
 # END GRN
@@ -113,4 +116,16 @@ print(static_syn.keys())
 # dict_keys(['_xarr', '_yarr', '_src_va', '_src_vb', '_src_rho', '_rcv_va', '_rcv_vb', '_rcv_rho', 'Z', 'N', 'E'])
 plot_static(static_syn, "syn_mt2.svg")
 # END SYN MT2
+# ---------------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------------
+# BEGIN NEW XY
+xarr2 = np.arange(-3, 3+1e-8, 0.2)
+yarr2 = np.arange(-2.5, 2.5+1e-8, 0.25)
+static_syn = pygrt.utils.gen_syn_from_gf_DC(static_grn, M0=1e24, strike=33, dip=90, rake=0, ZNE=True, xarr=xarr2, yarr=yarr2)
+print(static_syn.keys())
+# dict_keys(['_xarr', '_yarr', '_src_va', '_src_vb', '_src_rho', '_rcv_va', '_rcv_vb', '_rcv_rho', 'Z', 'N', 'E'])
+plot_static(static_syn, "synXY_dc2.svg")
+# END NEW XY
 # ---------------------------------------------------------------------------------
