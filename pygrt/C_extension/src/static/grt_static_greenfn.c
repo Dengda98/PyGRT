@@ -150,13 +150,14 @@ printf("\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
 "    grt static greenfn -M<model> -D<depsrc>/<deprcv>  -O<outgrid>  \n"
-"           [-X<x1>/<x2>/<dx>] [-Y<y1>/<y2>/<dy>] [-R<r1>/<r2>/<dr>]\n" 
+"           [-X<x1>/<x2>/<dx>] [-Y<y1>/<y2>/<dy>] \n"
+"           [-R<r1>,<r2>[,...]|<r1>/<r2>/<dr>|<file>]\n" 
 "           [-L<length>]   [-C[d|p|n]]  [-Bf|F|r|R|h|H] \n"
 "           [-K[+k<k0>][+e<keps>]] [-S]  [-e]\n"
 "\n"
 "    There're two ways to define the \"epicentral distances\":\n"
 "    1. set both -X and -Y to define a XY grid in advance.\n"
-"    2. simply set -R, which equal to \"-X0/0/1 -Y<r1>/<r2>/<nr>\".\n"
+"    2. simply set -R, which equal to set the Y-coord with X=0.0.\n"
 "\n\n"
 "Options:\n"
 "----------------------------------------------------------------\n"
@@ -189,8 +190,11 @@ printf("\n"
 "                 <y2>: end coordinate (km).\n"
 "                 <dy>: sampling interval (km).\n"
 "\n"
-"    -R<r1>/<r2>/<dr>\n"
-"                 equal to \"-X0/0/1 -Y<r1>/<r2>/<nr>\". \n"
+"    -R<r1>,<r2>[,...]|<r1>/<r2>/<dr>|<file>\n"
+"                 Multiple epicentral distances (km), support three ways:\n"
+"                 + <r1>,<r2>[,...]: seperated by comma.\n"
+"                 + <r1>/<r2>/<dr>:  equal distance <dr> within [r1,r2].\n"
+"                 + <file>: each line contains a distance value.\n"
 "\n"
 "    -O<outgrid>  Filepath to output nc grid.\n"
 "\n"
@@ -476,29 +480,48 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 break;
 
             // -R 算是别名，相当于 -X0/0/1, -Yy1/y2/dy, 以此方式指定一维震中距序列
+            // -R<r1>,<r2>[,...]|<r1>/<r2>/<dr>|<file>
             case 'R':
                 Ctrl->X.active = Ctrl->Y.active = true;
                 {
                     real_t a1, a2, delta;
-                    if(3 != sscanf(optarg, "%lf/%lf/%lf", &a1, &a2, &delta)){
-                        GRTBadOptionError(R, "");
-                    };
-                    if(delta <= 0){
-                        GRTBadOptionError(R, "Can't set nonpositive dr(%f)", delta);
+                    char **s_ys = NULL;
+                    
+                    // 如果输入仅由数字、小数点和间隔符组成，则直接读取
+                    if(grt_string_composed_of(optarg, GRT_NUM_STR "eE+-" ".,")){
+                        s_ys = grt_string_split(optarg, ",", &Ctrl->Y.ny);
                     }
-                    // 特别检查 ys 不能是负数
-                    if(a1 < 0.0){
-                        GRTBadOptionError(R, "Can't set nonpositive r1(%f)", a1);
+                    // 尝试按照 <r1>/<r2>/<dr> 读取
+                    else if(3 == sscanf(optarg, "%lf/%lf/%lf", &a1, &a2, &delta)){
+                        if(delta <= 0){
+                            GRTBadOptionError(R, "Can't set nonpositive dr(%f)", delta);
+                        }
+                        if(a1 > a2){
+                            GRTBadOptionError(R, "r1(%f) > r2(%f).", a1, a2);
+                        }
+
+                        Ctrl->Y.ny = floor((a2-a1)/delta) + 1;
+                        s_ys = (char **)calloc(Ctrl->Y.ny, sizeof(char*) * Ctrl->Y.ny);
+                        for(size_t ir = 0; ir < Ctrl->Y.ny; ++ir){
+                            GRT_SAFE_ASPRINTF(&s_ys[ir], "%.*f", 8, a1 + delta*ir);
+                        }
                     }
-                    if(a1 > a2){
-                        GRTBadOptionError(R, "r1(%f) > r2(%f).", a1, a2);
+                    // 否则从文件读取
+                    else {
+                        FILE *fp = GRTCheckOpenFile(optarg, "r");
+                        s_ys = grt_string_from_file(fp, &Ctrl->Y.ny);
+                        fclose(fp);
                     }
 
-                    Ctrl->Y.ny = floor((a2-a1)/delta) + 1;
-                    Ctrl->Y.ys = (real_t*)calloc(Ctrl->Y.ny, sizeof(real_t));
-                    for(size_t i=0; i<Ctrl->Y.ny; ++i){
-                        Ctrl->Y.ys[i] = a1 + delta*i;
+                    // 转为浮点数
+                    Ctrl->Y.ys = (real_t*)realloc(Ctrl->Y.ys, sizeof(real_t)*(Ctrl->Y.ny));
+                    for(size_t i=0; i < Ctrl->Y.ny; ++i){
+                        Ctrl->Y.ys[i] = atof(s_ys[i]);
+                        if(Ctrl->Y.ys[i] < 0.0){
+                            GRTBadOptionError(R, "Can't set negative epicentral distance(%f).", Ctrl->Y.ys[i]);
+                        }
                     }
+                    GRT_SAFE_FREE_PTR_ARRAY(s_ys, Ctrl->Y.ny);
 
                     Ctrl->X.nx = 1;
                     Ctrl->X.xs = (real_t*)calloc(Ctrl->X.nx, sizeof(real_t));
