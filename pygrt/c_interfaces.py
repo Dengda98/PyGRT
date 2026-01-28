@@ -55,6 +55,20 @@ C_grt_integ_static_grn.argtypes = [
     c_char_p
 ]
 
+C_grt_static_syn_new_xy = libgrt.grt_static_syn_new_xy
+"""合成新网格下的静态位移场"""
+C_grt_static_syn_new_xy.restype = None
+C_grt_static_syn_new_xy.argtypes = [
+    c_size_t, PREAL, c_size_t, PREAL, 
+    c_size_t, PREAL, c_size_t, PREAL, 
+    POINTER((REAL*CHANNEL_NUM)*SRC_M_NUM), 
+    POINTER((REAL*CHANNEL_NUM)*SRC_M_NUM), 
+    POINTER((REAL*CHANNEL_NUM)*SRC_M_NUM),
+    c_int, REAL, REAL, REAL*MECHANISM_NUM,
+    c_bool, c_bool,
+    POINTER(REAL*CHANNEL_NUM), POINTER((REAL*CHANNEL_NUM)*CHANNEL_NUM), 
+]
+
 
 C_grt_set_num_threads = libgrt.grt_set_num_threads
 """设置多线程数"""

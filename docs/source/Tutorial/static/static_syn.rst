@@ -221,3 +221,47 @@ Python中合成静态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.uti
 .. figure:: run/syn_mt2.svg
     :width: 500px
     :align: center
+
+
+指定新的 XY 网格
+---------------------
+
+以上示例结果中， XY 网格位置都沿用了静态格林函数计算时传入的 XY 网格。
+
+程序也支持在合成阶段指定新的 XY 网格，此时每个节点将使用最近震中距的格林函数来进行合成，
+因此这是一种近似方法，程序会打印震中距之差的统计信息，以方便评估近似效果。
+但近似好处是一旦静态格林函数计算好，合成阶段使用新的网格也可以复用格林函数，无需再计算。
+
+以下以一个与上面相同的走滑断层作为示例进行计算，选取了间隔稍大的网格。
+
+.. tabs::  
+
+    .. group-tab:: C 
+
+        .. literalinclude:: run/run.sh
+            :language: bash
+            :start-after: BEGIN NEW XY
+            :end-before: END NEW XY
+
+    .. group-tab:: Python 
+
+        .. literalinclude:: run/run.py
+            :language: python
+            :start-after: BEGIN NEW XY
+            :end-before: END NEW XY
+
+.. grid:: 2
+
+    .. grid-item::
+
+        .. figure:: run/syn_dc2.svg
+            :width: 400px
+            :align: center
+
+    .. grid-item::
+
+        .. figure:: run/synXY_dc2.svg
+            :width: 400px
+            :align: center
+
+

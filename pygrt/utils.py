@@ -152,105 +152,94 @@ def _gen_syn_from_gf(st:Stream, calc_upar:bool, compute_type:GRT_SYN_TYPE, M0:fl
     return stall
 
 
-def _gen_syn_from_static_gf(grn:dict, calc_upar:bool, compute_type:GRT_SYN_TYPE, M0:float, ZNE=False, **kwargs):
+def _gen_syn_from_static_gf(grnDct:dict, calc_upar:bool, compute_type:GRT_SYN_TYPE, M0:float, ZNE=False, **kwargs):
     r"""
         一个发起函数，根据不同震源参数，从静态格林函数中合成理论静态场
 
-        :param    grn:             计算好的静态格林函数, 字典类型
+        :param    grnDct:          计算好的静态格林函数, 字典类型
         :param    calc_upar:       是否计算位移u的空间导数
         :param    compute_type:    计算震源类型
         :param    M0:              标量地震矩, 单位dyne*cm
         :param    ZNE:             是否以ZNE分量输出?
+        :param    kwargs:          其它各种参数，包括震源参数，新网格参数等
             
     """
     chs = ZRTchs
-    sacin_prefixes = ["", "z", "r", ""]   # 输入通道名
-    srcName = ["EX", "VF", "HF", "DD", "DS", "SS"]
-    allchs = list(grn.keys())
+
+    mechn = _set_source_mechanism(compute_type, **kwargs)
 
     # 为张裂计算 Vp/Vs
-    src_va = grn['_src_va']
-    src_vb = grn['_src_vb']
+    src_va = grnDct['_src_va']
+    src_vb = grnDct['_src_vb']
     VpVs_ratio = src_va / src_vb
 
-    calcUTypes = 4 if calc_upar else 1
+    xarr0:np.ndarray = grnDct['_xarr']
+    yarr0:np.ndarray = grnDct['_yarr']
+    nx0 = len(xarr0)
+    ny0 = len(yarr0)
+    nr0 = nx0 * ny0
 
-    xarr:np.ndarray = grn['_xarr']
-    yarr:np.ndarray = grn['_yarr']
+    if "xarr" in kwargs and "yarr" in kwargs:
+        xarr:np.ndarray = kwargs['xarr']
+        yarr:np.ndarray = kwargs['yarr']
+    else:
+        xarr:np.ndarray = grnDct['_xarr']
+        yarr:np.ndarray = grnDct['_yarr']
+
+    nx = len(xarr)
+    ny = len(yarr)
+    nr = nx * ny
+    
+    # 格林函数字典转为三个数组
+    pygrn = np.zeros((nr0, SRC_M_NUM, CHANNEL_NUM), dtype=NPCT_REAL_TYPE, order='C');       c_pygrn = npct.as_ctypes(pygrn)
+    pygrn_uiz = np.zeros((nr0, SRC_M_NUM, CHANNEL_NUM), dtype=NPCT_REAL_TYPE, order='C');   c_pygrn_uiz = npct.as_ctypes(pygrn_uiz)
+    pygrn_uir = np.zeros((nr0, SRC_M_NUM, CHANNEL_NUM), dtype=NPCT_REAL_TYPE, order='C');   c_pygrn_uir = npct.as_ctypes(pygrn_uir)
+    if not calc_upar:
+        c_pygrn_uiz = c_pygrn_uir = None
+    for isrc in range(SRC_M_NUM):
+        src_name = SRC_M_NAME_ABBR[isrc]
+        for ic, comp in enumerate(ZRTchs):
+            pygrn[:,isrc,ic] = grnDct[f'{src_name}{comp}'].ravel()
+            if calc_upar:
+                pygrn_uiz[:,isrc,ic] = grnDct[f'z{src_name}{comp}'].ravel()
+                pygrn_uir[:,isrc,ic] = grnDct[f'r{src_name}{comp}'].ravel()
+    
+    # 结果数组
+    syn = np.zeros((nr, CHANNEL_NUM), dtype=NPCT_REAL_TYPE, order='C');        c_syn = npct.as_ctypes(syn)
+    syn_upar = np.zeros((nr, CHANNEL_NUM, CHANNEL_NUM), dtype=NPCT_REAL_TYPE, order='C');        c_syn_upar = npct.as_ctypes(syn_upar)
+
+    C_grt_static_syn_new_xy(
+        nx0, npct.as_ctypes(xarr0), ny0, npct.as_ctypes(yarr0),
+        nx, npct.as_ctypes(xarr), ny, npct.as_ctypes(yarr),
+        c_pygrn, c_pygrn_uiz, c_pygrn_uir,
+        compute_type.value, M0, VpVs_ratio, npct.as_ctypes(mechn),
+        ZNE, calc_upar,
+        c_syn, c_syn_upar, 
+    )
 
     # 结果字典
     resDct = {}
 
     # 基本数据拷贝
-    for k in grn.keys():
+    for k in grnDct.keys():
         if k[0] != '_':
             continue 
-        resDct[k] = deepcopy(grn[k])
+        resDct[k] = deepcopy(grnDct[k])
 
-    XX = np.zeros((calcUTypes, 3, len(xarr), len(yarr)), dtype='f8')
-    dblsyn = (c_double*3)()
-    dblupar = (c_double*9)()
+    resDct['_xarr'] = xarr
+    resDct['_yarr'] = yarr
 
-    for iy in range(len(yarr)):
-        for ix in range(len(xarr)):
-            # 震中距
-            dist = max(np.sqrt(xarr[ix]**2 + yarr[iy]**2), 1e-5)
-
-            # 方位角
-            azrad = np.arctan2(yarr[iy], xarr[ix])
-
-            upar_scale:float = 1.0
-            for ityp in range(calcUTypes):
-                if ityp > 0:
-                    upar_scale = 1e-5
-                if ityp == 3:
-                    upar_scale /= dist
-
-                srcRadi = _set_source_radi(ityp==3, upar_scale, compute_type, M0, azrad, VpVs_ratio=VpVs_ratio, **kwargs)
-
-                inpref = sacin_prefixes[ityp]
-
-                for c in range(CHANNEL_NUM):
-                    ch = chs[c]
-                    for k in range(SRC_M_NUM):
-                        coef = srcRadi[k, c]
-                        if coef==0.0:
-                            continue
-
-                        # 读入数据
-                        channel = f'{inpref}{srcName[k]}{ch}'
-                        if channel not in allchs:
-                            raise ValueError(f"Failed, channel=\"{channel}\" not exists.")
-                            
-                        XX[ityp, c, ix, iy] += coef*grn[channel][ix, iy]
-
-            if ZNE:
-                for i in range(3):
-                    dblsyn[i] = XX[0, i, ix, iy]
-                    if calc_upar:
-                        for k in range(3):
-                            dblupar[k + i*3] = XX[i+1, k, ix, iy]
-                if calc_upar:
-                    C_grt_rot_zrt2zxy_upar(azrad, dblsyn, dblupar, dist*1e5)
-                else:
-                    C_grt_rot_zxy2zrt_vec(-azrad, dblsyn)
-
-                for i in range(3):
-                    XX[0, i, ix, iy] = dblsyn[i]
-                    if calc_upar:
-                        for k in range(3):
-                            XX[i+1, k, ix, iy] = dblupar[k + i*3]
-
-
-    # 将XX数组分到字典中
     if ZNE:
         chs = ZNEchs
 
-    for ityp in range(calcUTypes):
-        c1 = '' if ityp==0 else chs[ityp-1].lower()
-        for c in range(3):
-            resDct[f"{c1}{chs[c]}"] = XX[ityp, c].copy()
-                
+    for i1 in range(CHANNEL_NUM):
+        c1 = chs[i1]
+        resDct[c1] = syn[:, i1].reshape((nx, ny))
+        if calc_upar:
+            for i2 in range(CHANNEL_NUM):
+                c2 = chs[i2]
+                resDct[f'{c2.lower()}{c1}'] = syn_upar[:, i2, i1].reshape((nx, ny))
+
     return resDct
 
 
@@ -335,11 +324,34 @@ def _data_zrt2zne(stall:Stream):
     return stres
 
 
-def _set_source_radi(
-    par_theta:bool, coef:float, compute_type:GRT_SYN_TYPE, M0:float, azrad:float,
+def _set_source_mechanism(
+    compute_type:GRT_SYN_TYPE, 
     fZ=None, fN=None, fE=None, 
     strike=None, dip=None, rake=None, 
     MT=None, **kwargs):
+    r"""
+        整理 C 函数需要的震源机制数组
+    """
+
+    mchn = np.zeros((MECHANISM_NUM,), dtype=NPCT_REAL_TYPE)
+    if compute_type == GRT_SYN_TYPE.GRT_SYN_EX:
+        pass
+    elif compute_type == GRT_SYN_TYPE.GRT_SYN_SF:
+        mchn[:3] = [fN, fE, fZ]
+    elif compute_type == GRT_SYN_TYPE.GRT_SYN_DC:
+        mchn[:3] = [strike, dip, rake]
+    elif compute_type == GRT_SYN_TYPE.GRT_SYN_TS:
+        mchn[:2] = [strike, dip]
+    elif compute_type == GRT_SYN_TYPE.GRT_SYN_MT:
+        mchn[:] = MT[:]
+    else:
+        raise ValueError("Unsupported source type.")
+    
+    return mchn
+
+
+def _set_source_radi(
+    par_theta:bool, coef:float, compute_type:GRT_SYN_TYPE, M0:float, azrad:float, **kwargs):
     r"""
         使用 C 函数计算不同震源的方向因子矩阵
 
@@ -358,20 +370,8 @@ def _set_source_radi(
     VpVs_ratio = kwargs['VpVs_ratio'] if 'VpVs_ratio' in kwargs else 0.0
 
     src_coef = np.zeros((SRC_M_NUM, CHANNEL_NUM), dtype=NPCT_REAL_TYPE)
-    mchn = np.zeros((MECHANISM_NUM,), dtype=NPCT_REAL_TYPE)
-    if compute_type == GRT_SYN_TYPE.GRT_SYN_EX:
-        pass
-    elif compute_type == GRT_SYN_TYPE.GRT_SYN_SF:
-        mchn[:3] = [fN, fE, fZ]
-    elif compute_type == GRT_SYN_TYPE.GRT_SYN_DC:
-        mchn[:3] = [strike, dip, rake]
-    elif compute_type == GRT_SYN_TYPE.GRT_SYN_TS:
-        mchn[:2] = [strike, dip]
-    elif compute_type == GRT_SYN_TYPE.GRT_SYN_MT:
-        mchn[:] = MT[:]
-    else:
-        raise ValueError("Unsupported source type.")
-    
+    mchn = _set_source_mechanism(compute_type, **kwargs)
+
     C_grt_set_source_radiation(
         npct.as_ctypes(src_coef), compute_type.value, par_theta, 
         M0, coef, VpVs_ratio, azrad, npct.as_ctypes(mchn))
@@ -379,7 +379,7 @@ def _set_source_radi(
     return src_coef
 
 
-def gen_syn_from_gf_DC(st:Union[Stream,dict], M0:float, strike:float, dip:float, rake:float, az:float=-999, ZNE=False, calc_upar:bool=False):
+def gen_syn_from_gf_DC(st:Union[Stream,dict], M0:float, strike:float, dip:float, rake:float, az:float=-999, ZNE=False, calc_upar:bool=False, **kwargs):
     '''
         Shear source, the unit of angles is all degrees(°)
 
@@ -391,6 +391,8 @@ def gen_syn_from_gf_DC(st:Union[Stream,dict], M0:float, strike:float, dip:float,
         :param    az:       azimuth, 0 <= az <= 360 (not used for static case)
         :param    ZNE:          whether output in 'ZNE'-coord, default is 'ZRT'
         :param    calc_upar:    whether calculate the spatial derivatives of displacements.
+        :param    kwargs:       For static rsults, you can set "xarr" and "yarr" to define a new XY grid, 
+                                the program will automatically find the nearest Green's functions for each node.
 
         :return:
             - **stream** -  :class:`obspy.Stream`
@@ -400,11 +402,11 @@ def gen_syn_from_gf_DC(st:Union[Stream,dict], M0:float, strike:float, dip:float,
             raise ValueError(f"WRONG azimuth ({az})")
         return _gen_syn_from_gf(st, calc_upar, GRT_SYN_TYPE.GRT_SYN_DC, M0, az, ZNE, strike=strike, dip=dip, rake=rake)
     elif isinstance(st, dict):
-        return _gen_syn_from_static_gf(st, calc_upar, GRT_SYN_TYPE.GRT_SYN_DC, M0, ZNE, strike=strike, dip=dip, rake=rake)
+        return _gen_syn_from_static_gf(st, calc_upar, GRT_SYN_TYPE.GRT_SYN_DC, M0, ZNE, strike=strike, dip=dip, rake=rake, **kwargs)
     else:
         raise NotImplementedError
 
-def gen_syn_from_gf_TS(st:Union[Stream,dict], M0:float, strike:float, dip:float, az:float=-999, ZNE=False, calc_upar:bool=False):
+def gen_syn_from_gf_TS(st:Union[Stream,dict], M0:float, strike:float, dip:float, az:float=-999, ZNE=False, calc_upar:bool=False, **kwargs):
     '''
         Tension source, the unit of angles is all degrees(°)
 
@@ -415,6 +417,8 @@ def gen_syn_from_gf_TS(st:Union[Stream,dict], M0:float, strike:float, dip:float,
         :param    az:       azimuth, 0 <= az <= 360 (not used for static case)
         :param    ZNE:          whether output in 'ZNE'-coord, default is 'ZRT'
         :param    calc_upar:    whether calculate the spatial derivatives of displacements.
+        :param    kwargs:       For static rsults, you can set "xarr" and "yarr" to define a new XY grid, 
+                                the program will automatically find the nearest Green's functions for each node.
 
         :return:
             - **stream** -  :class:`obspy.Stream`
@@ -424,12 +428,12 @@ def gen_syn_from_gf_TS(st:Union[Stream,dict], M0:float, strike:float, dip:float,
             raise ValueError(f"WRONG azimuth ({az})")
         return _gen_syn_from_gf(st, calc_upar, GRT_SYN_TYPE.GRT_SYN_TS, M0, az, ZNE, strike=strike, dip=dip)
     elif isinstance(st, dict):
-        return _gen_syn_from_static_gf(st, calc_upar, GRT_SYN_TYPE.GRT_SYN_TS, M0, ZNE, strike=strike, dip=dip)
+        return _gen_syn_from_static_gf(st, calc_upar, GRT_SYN_TYPE.GRT_SYN_TS, M0, ZNE, strike=strike, dip=dip, **kwargs)
     else:
         raise NotImplementedError
 
 
-def gen_syn_from_gf_SF(st:Union[Stream,dict], S:float, fN:float, fE:float, fZ:float, az:float=-999, ZNE=False, calc_upar:bool=False):
+def gen_syn_from_gf_SF(st:Union[Stream,dict], S:float, fN:float, fE:float, fZ:float, az:float=-999, ZNE=False, calc_upar:bool=False, **kwargs):
     '''
         Single-force source (dyne)  
 
@@ -441,6 +445,8 @@ def gen_syn_from_gf_SF(st:Union[Stream,dict], S:float, fN:float, fE:float, fZ:fl
         :param    az:    azimuth, 0 <= az <= 360 (not used for static case)
         :param    ZNE:          whether output in 'ZNE'-coord, default is 'ZRT'
         :param    calc_upar:    whether calculate the spatial derivatives of displacements.
+        :param    kwargs:       For static rsults, you can set "xarr" and "yarr" to define a new XY grid, 
+                                the program will automatically find the nearest Green's functions for each node.
 
         :return:
             - **stream** - :class:`obspy.Stream`
@@ -450,12 +456,12 @@ def gen_syn_from_gf_SF(st:Union[Stream,dict], S:float, fN:float, fE:float, fZ:fl
             raise ValueError(f"WRONG azimuth ({az})")
         return _gen_syn_from_gf(st, calc_upar, GRT_SYN_TYPE.GRT_SYN_SF, S, az, ZNE, fN=fN, fE=fE, fZ=fZ)
     elif isinstance(st, dict):
-        return _gen_syn_from_static_gf(st, calc_upar, GRT_SYN_TYPE.GRT_SYN_SF, S, ZNE, fN=fN, fE=fE, fZ=fZ)
+        return _gen_syn_from_static_gf(st, calc_upar, GRT_SYN_TYPE.GRT_SYN_SF, S, ZNE, fN=fN, fE=fE, fZ=fZ, **kwargs)
     else:
         raise NotImplementedError
 
 
-def gen_syn_from_gf_EX(st:Union[Stream,dict], M0:float, az:float=-999, ZNE=False, calc_upar:bool=False):
+def gen_syn_from_gf_EX(st:Union[Stream,dict], M0:float, az:float=-999, ZNE=False, calc_upar:bool=False, **kwargs):
     '''
         Explosion
 
@@ -464,6 +470,8 @@ def gen_syn_from_gf_EX(st:Union[Stream,dict], M0:float, az:float=-999, ZNE=False
         :param    az:          azimuth, 0 <= az <= 360 (not used for static case)
         :param    ZNE:          whether output in 'ZNE'-coord, default is 'ZRT'
         :param    calc_upar:    whether calculate the spatial derivatives of displacements.
+        :param    kwargs:       For static rsults, you can set "xarr" and "yarr" to define a new XY grid, 
+                                the program will automatically find the nearest Green's functions for each node.
 
         :return:
             - **stream** -       :class:`obspy.Stream`
@@ -473,12 +481,12 @@ def gen_syn_from_gf_EX(st:Union[Stream,dict], M0:float, az:float=-999, ZNE=False
             raise ValueError(f"WRONG azimuth ({az})")
         return _gen_syn_from_gf(st, calc_upar, GRT_SYN_TYPE.GRT_SYN_EX, M0, az, ZNE)
     elif isinstance(st, dict):
-        return _gen_syn_from_static_gf(st, calc_upar, GRT_SYN_TYPE.GRT_SYN_EX, M0, ZNE)
+        return _gen_syn_from_static_gf(st, calc_upar, GRT_SYN_TYPE.GRT_SYN_EX, M0, ZNE, **kwargs)
     else:
         raise NotImplementedError
     
 
-def gen_syn_from_gf_MT(st:Union[Stream,dict], M0:float, MT:ArrayLike, az:float=-999, ZNE=False, calc_upar:bool=False):
+def gen_syn_from_gf_MT(st:Union[Stream,dict], M0:float, MT:ArrayLike, az:float=-999, ZNE=False, calc_upar:bool=False, **kwargs):
     ''' 
         Moment tensor
 
@@ -488,6 +496,8 @@ def gen_syn_from_gf_MT(st:Union[Stream,dict], M0:float, MT:ArrayLike, az:float=-
         :param    az:          azimuth, 0 <= az <= 360 (not used for static case)
         :param    ZNE:          whether output in 'ZNE'-coord, default is 'ZRT'
         :param    calc_upar:    whether calculate the spatial derivatives of displacements.
+        :param    kwargs:       For static rsults, you can set "xarr" and "yarr" to define a new XY grid, 
+                                the program will automatically find the nearest Green's functions for each node.
 
         :return:
             - **stream** -     :class:`obspy.Stream`
@@ -497,7 +507,7 @@ def gen_syn_from_gf_MT(st:Union[Stream,dict], M0:float, MT:ArrayLike, az:float=-
             raise ValueError(f"WRONG azimuth ({az})")
         return _gen_syn_from_gf(st, calc_upar, GRT_SYN_TYPE.GRT_SYN_MT, M0, az, ZNE, MT=MT)
     elif isinstance(st, dict):
-        return _gen_syn_from_static_gf(st, calc_upar, GRT_SYN_TYPE.GRT_SYN_MT, M0, ZNE, MT=MT)
+        return _gen_syn_from_static_gf(st, calc_upar, GRT_SYN_TYPE.GRT_SYN_MT, M0, ZNE, MT=MT, **kwargs)
     else:
         raise NotImplementedError
 

@@ -41,6 +41,9 @@ y1=-2.5
 y2=2.5
 dy=0.15
 # 输出到NetCDF网格文件
+# 可以使用 -R 来指定震中距序列
+# grt static greenfn -Mmilrow -D${depsrc}/${deprcv} -R0/10/0.1 -Ostgrn.nc
+# 也可以使用 -X 和 -Y 来指定 XY 网格
 grt static greenfn -Mmilrow -D${depsrc}/${deprcv} -X$x1/$x2/$dx -Y$y1/$y2/$dy -Ostgrn.nc
 # END GRN
 # ---------------------------------------------------------------------------------
@@ -160,7 +163,6 @@ grt static syn -S1e24 -T0/-0.2/0/0/0/0 -N -Gstgrn.nc -Ostsyn_mt2.nc
 # END SYN MT2
 # ---------------------------------------------------------------------------------
 
-
 # X Y depth mrr   mtt   mff   mrt   mrf   mtf   exp
 #           mzz   mxx   myy   mxz  -myz  -mxy
 gmt begin syn_mt2 pdf
@@ -170,6 +172,23 @@ gmt begin syn_mt2 pdf
 EOF
     gmt colorbar -Bx+l"Z (cm)"
 gmt end
+
+
+# ---------------------------------------------------------------------------------
+# BEGIN NEW XY
+# 从网格文件中读取格林函数，再将合成结果写入新网格
+grt static syn -S1e24 -M33/90/0 -N -Gstgrn.nc -OstsynXY_dc2.nc -X-3/3/0.2 -Y-2.5/2.5/0.25
+# END NEW XY
+# ---------------------------------------------------------------------------------
+
+gmt begin synXY_dc2 pdf
+    gmtplot_static stsynXY_dc2.nc -Si0.03c
+    gmt meca -Sa0.5c <<EOF
+0 0 2 33 90 0 5
+EOF
+    gmt colorbar -Bx+l"Z (cm)"
+gmt end
+
 
 # 统一转为 svg
 for pdfname in $(ls *.pdf); do

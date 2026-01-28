@@ -6,6 +6,7 @@ set -euo pipefail
 rm -rf *.nc
 
 # static greenfn
+grt static greenfn -M../milrow -D2/3 -R0/6/0.2 -Cp -e -Ostgrn.nc
 grt static greenfn -M../milrow -D2/3 -X-3.1/3.1/0.2 -Y-2.1/2.1/0.2 -Cp -e -Ostgrn.nc
 
 # syn
@@ -13,6 +14,7 @@ grt static syn -S1e20 -e -Gstgrn.nc -Ostsyn_ex.nc
 grt static syn -S1e20 -e -F2/-1/4    -Gstgrn.nc -Ostsyn_sf.nc
 grt static syn -S1e20 -e -M77/88/111 -Gstgrn.nc -Ostsyn_dc.nc
 grt static syn -S1e20 -e -M77/88 -Gstgrn.nc -Ostsyn_ts.nc
+grt static syn -S1e20 -e -T1/-2/-5/0.5/3/1.2 -X-3.1/3.1/0.3 -Y-2.1/2.1/0.3 -Gstgrn.nc -Ostsyn_mt.nc # new XY grid
 grt static syn -S1e20 -e -T1/-2/-5/0.5/3/1.2 -Gstgrn.nc -Ostsyn_mt.nc
 
 # rotate to ZNE
