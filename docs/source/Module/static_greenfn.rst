@@ -15,9 +15,10 @@ static_greenfn
 **grt static greenfn** 
 |-M|\ *model*
 |-D|\ *depsrc/deprcv*
-|-X|\ *x1/x2/dx*
-|-Y|\ *y1/y2/dy*
 |-O|\ *outdir*
+[ |-X|\ *x1/x2/dx* ]
+[ |-Y|\ *y1/y2/dy* ]
+[ |-R|\ *r1/r2/dr*\|\ *r1,r2,...*\|\ *file* ]
 [ |-B|\ **f|F|r|R|h|H** ]
 [ |-L|\ *length*\ [**+l**\ *Flength*][**+a**\ *Ftol*][**+o**\ *offset*] ]
 [ |-C|\ **d|p|n** ]
@@ -30,10 +31,16 @@ static_greenfn
 描述
 --------
 
-**static greenfn** 模块将震源置于原点 *(0,0)* ，计算由 |-X| （北向）和 |-Y| （东向）
-定义的 2D 网格点上的静态格林函数。与动态情况的 :doc:`greenfn` 模块指定 1D 的震中距数组不同，
-这里使用 2D 网格可能会在某些特殊的对称情况下增加重复计算，但会方便其它模块的数据交互。
-输出结果使用 NetCDF 网格保存，其中变量命名方法与 :doc:`greenfn` 模块一致。
+**static greenfn** 模块计算多个震中距对应的静态格林函数。
+但考虑到静态解的普遍应用场景，模块在计算静态格林函数时有两种传入震中距的方式：
+
++ 设置 |-X| 和 |-Y| 来指定二维 XY 网格。 
+  坐标 (0,0) 为源点的水平投影，每个节点的震中距为 :math:`r_{ij} = \sqrt{x_i^2 + y_j^2}` 。
+  实际计算中会对震中距自动去重以减少计算量。
++ 设置 |-R| 来指定多个震中距。为了兼容性，在计算和结果保存上等同于指定从原点 
+  (X=0.0) 沿东向 (Y/km) 指定对应的震中距。
+
+结果使用 NetCDF 网格保存，其中变量命名方法与 :doc:`greenfn` 模块一致。
 
 
 必选选项
@@ -43,22 +50,15 @@ static_greenfn
 
 .. include:: explain_-D.rst_
 
-.. _-X:
-
-**-X**\ *x1/x2/dx*
-    指定北向等距网格点。 *x1,x2* 分别为最小、最大值， *dx* 为间隔。
-
-.. _-Y:
-
-**-Y**\ *y1/y2/dy*
-    指定东向等距网格点。 *y1,y2* 分别为最小、最大值， *dy* 为间隔。
-
 .. include:: explain_-Ogrid.rst_
-
 
 
 可选选项
 --------
+
+.. include:: explain_-XYgrid.rst_
+
+.. include:: explain_-R.rst_
 
 .. include:: explain_-Bbound.rst_
 

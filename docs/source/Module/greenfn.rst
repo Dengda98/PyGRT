@@ -16,7 +16,7 @@ greenfn
 |-M|\ *model*
 |-D|\ *depsrc/deprcv*
 |-N|\ *nt/dt*\ [**+w**\ *zeta*][**+n**\ *fac*][**+a**][**+f**]
-|-R|\ *file*\|\ *r1,r2,...*
+|-R|\ *r1/r2/dr*\|\ *r1,r2,...*\|\ *file*
 |-O|\ *outdir*
 [ |-B|\ **f|F|r|R|h|H** ]
 [ |-H|\ *f1/f2* ]
