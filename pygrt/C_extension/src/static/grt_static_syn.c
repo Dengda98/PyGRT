@@ -408,6 +408,7 @@ void grt_static_syn_new_xy(
     real_t (*syn)[GRT_CHANNEL_NUM], real_t (*syn_upar)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])
 {
     size_t nr0 = nx0 * ny0;
+    size_t nr = nx * ny;
 
     // 原网格震中距序列
     real_t *rs0 = (real_t *)calloc(nr0, sizeof(real_t));
@@ -416,6 +417,12 @@ void grt_static_syn_new_xy(
             rs0[iy + ix*ny0] = GRT_MAX(hypot(xs0[ix], ys0[iy]), GRT_MIN_DISTANCE);
         }
     }
+
+    // 统计选取的最近震中距的绝对距离差的均值与标准差
+    real_t mean_distDiff = 0.0;
+    real_t std_distDiff = 0.0;
+    real_t min_distDiff = __DBL_MAX__;
+    real_t max_distDiff = 0.0;
 
     realChnlGrid srcRadi = {0};
 
@@ -433,6 +440,11 @@ void grt_static_syn_new_xy(
 
             // 从原震中距序列中找到最接近的
             size_t ir_pick = grt_findClosest_real_t(rs0, nr0, dist);
+            real_t distDiff = fabs(rs0[ir_pick] - dist);
+            mean_distDiff += distDiff;
+            std_distDiff += GRT_SQUARE(distDiff);
+            min_distDiff = GRT_MIN(min_distDiff, distDiff);
+            max_distDiff = GRT_MAX(max_distDiff, distDiff);
 
             size_t ir = iy + ix * ny;
 
@@ -498,6 +510,17 @@ void grt_static_syn_new_xy(
                 }
             }
         }
+    }
+
+    mean_distDiff = mean_distDiff / nr;
+    std_distDiff = (std_distDiff - GRT_SQUARE(mean_distDiff) / nr) / nr;
+
+    if(mean_distDiff != 0.0){
+        GRTRaiseInfo("Distance gap between the GFs and the new XY grid:");
+        GRTRaiseInfo("MIN: %.5e km", min_distDiff);
+        GRTRaiseInfo("MAX: %.5e km", max_distDiff);
+        GRTRaiseInfo("MEAN: %.5e km", mean_distDiff);
+        GRTRaiseInfo("STD: %.5e km", std_distDiff);
     }
 
     GRT_SAFE_FREE_PTR(rs0);
