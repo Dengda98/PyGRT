@@ -12,6 +12,7 @@
 #include "grt/common/radiation.h"
 #include "grt/common/coord.h"
 #include "grt/common/util.h"
+#include "grt/common/search.h"
 #include "grt/common/mynetcdf.h"
 
 #include "grt.h"
@@ -46,6 +47,18 @@ typedef struct {
     struct {
         bool active;
     } T;
+    /** X 坐标 */
+    struct {
+        bool active;
+        size_t nx;
+        real_t *xs;
+    } X;
+    /** Y 坐标 */
+    struct {
+        bool active;
+        size_t ny;
+        real_t *ys;
+    } Y;
     /** 输出 nc 文件名 */
     struct {
         bool active;
@@ -60,11 +73,11 @@ typedef struct {
         bool active;
     } e;
 
+    // 是否使用新网格
+    bool isnewXYgrid;
+
     // 存储不同震源的震源机制相关参数的数组
     real_t mchn[GRT_MECHANISM_NUM];
-
-    // 方向因子数组
-    realChnlGrid srcRadi;
 
     // 最终要计算的震源类型
     GRT_SYN_TYPE computeType;
@@ -76,6 +89,12 @@ typedef struct {
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
     // G
     GRT_SAFE_FREE_PTR(Ctrl->G.s_ingrid);
+
+    // X
+    GRT_SAFE_FREE_PTR(Ctrl->X.xs);
+
+    // Y
+    GRT_SAFE_FREE_PTR(Ctrl->Y.ys);
 
     // O
     GRT_SAFE_FREE_PTR(Ctrl->O.s_outgrid);
@@ -94,15 +113,18 @@ printf("\n"
 "       + Radial Outward (R),\n"
 "       + Transverse Clockwise (T),\n"
 "    and the units are cm. You can add -N to rotate ZRT to ZNE.\n"
+"\n"
+"    You can also set -X and -Y to define a new XY grid, the program \n"
+"    will automatically find the nearest Green's functions for each node.\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
-"    grt static syn -G<ingrid> -S[u]<scale> \n"
+"    grt static syn -G<ingrid> -S[u]<scale> -O<outgrid> \n"
 "              [-M<strike>/<dip>[/<rake>]]\n"
 "              [-T<Mxx>/<Mxy>/<Mxz>/<Myy>/<Myz>/<Mzz>]\n"
 "              [-F<fn>/<fe>/<fz>] \n"
+"              [-X<x1>/<x2>/<dx>] [-Y<y1>/<y2>/<dy>]\n"
 "              [-N] [-e] [-s]\n"
-"              -O<outgrid> \n"
 "\n"
 "\n\n"
 "Options:\n"
@@ -137,6 +159,18 @@ printf("\n"
 "                  North, East and Vertical(Downward) Forces.\n"
 "                  Notice they will be scaled by <scale>.\n"
 "\n"
+"    -X<x1>/<x2>/<dx>\n"
+"                 Set the equidistant points in the north direction.\n"
+"                 <x1>: start coordinate (km).\n"
+"                 <x2>: end coordinate (km).\n"
+"                 <dx>: sampling interval (km).\n"
+"\n"
+"    -Y<y1>/<y2>/<dy>\n"
+"                 Set the equidistant points in the east direction.\n"
+"                 <y1>: start coordinate (km).\n"
+"                 <y2>: end coordinate (km).\n"
+"                 <dy>: sampling interval (km).\n"
+"\n"
 "    -N            Components of results will be Z, N, E.\n"
 "\n"
 "    -e            Compute the spatial derivatives, ui_z and ui_r,\n"
@@ -150,7 +184,7 @@ printf("\n"
 "Examples:\n"
 "----------------------------------------------------------------\n"
 "    Say you have computed Static Green's functions with following command:\n"
-"        grt static greenfn -Mmilrow -D2/0 -X-5/5/10 -Y-5/5/10 -Ostgrn.nc\n"
+"        grt static greenfn -Mmilrow -D2/0 -X-5/5/1 -Y-5/5/1 -Ostgrn.nc\n"
 "\n"
 "    Then you can get static displacement of Explosion\n"
 "        grt static syn -Gstgrn.nc -Su1e16 -Ostsyn_ex.nc\n"
@@ -166,6 +200,9 @@ printf("\n"
 "\n"
 "    or Moment Tensor\n"
 "        grt static syn -Gstgrn.nc -Su1e16 -T2.3/0.2/-4.0/0.3/0.5/1.2 -Ostsyn_mt.nc\n"
+"\n"
+"    You can also set a new XY grid, for example\n"
+"        grt static syn -Gstgrn.nc -Su1e16 -Ostsyn_ex.nc -X-5/5/0.5 -Y-5/5/0.5\n"
 "\n\n\n"
 "\n"
 );
@@ -179,7 +216,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     sprintf(Ctrl->s_computeType, "%s", "EX");
 
     int opt;
-    while ((opt = getopt(argc, argv, ":G:O:S:M:F:T:Nesh")) != -1) {
+    while ((opt = getopt(argc, argv, ":G:O:S:M:F:T:X:Y:Nesh")) != -1) {
         switch (opt) {
             // 输入 nc 文件名
             case 'G':
@@ -277,6 +314,52 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 }
                 break;
 
+            // X坐标数组，-Xx1/x2/dx
+            case 'X':
+                Ctrl->X.active = true;
+                {
+                    real_t a1, a2, delta;
+                    if(3 != sscanf(optarg, "%lf/%lf/%lf", &a1, &a2, &delta)){
+                        GRTBadOptionError(X, "");
+                    };
+                    if(delta <= 0){
+                        GRTBadOptionError(X, "Can't set nonpositive dx(%f)", delta);
+                    }
+                    if(a1 > a2){
+                        GRTBadOptionError(X, "x1(%f) > x2(%f).", a1, a2);
+                    }
+
+                    Ctrl->X.nx = floor((a2-a1)/delta) + 1;
+                    Ctrl->X.xs = (real_t*)calloc(Ctrl->X.nx, sizeof(real_t));
+                    for(size_t i=0; i<Ctrl->X.nx; ++i){
+                        Ctrl->X.xs[i] = a1 + delta*i;
+                    }
+                }
+                break;
+
+            // Y坐标数组，-Yy1/y2/dy
+            case 'Y':
+                Ctrl->Y.active = true;
+                {
+                    real_t a1, a2, delta;
+                    if(3 != sscanf(optarg, "%lf/%lf/%lf", &a1, &a2, &delta)){
+                        GRTBadOptionError(Y, "");
+                    };
+                    if(delta <= 0){
+                        GRTBadOptionError(Y, "Can't set nonpositive dy(%f)", delta);
+                    }
+                    if(a1 > a2){
+                        GRTBadOptionError(Y, "y1(%f) > y2(%f).", a1, a2);
+                    }
+
+                    Ctrl->Y.ny = floor((a2-a1)/delta) + 1;
+                    Ctrl->Y.ys = (real_t*)calloc(Ctrl->Y.ny, sizeof(real_t));
+                    for(size_t i=0; i<Ctrl->Y.ny; ++i){
+                        Ctrl->Y.ys[i] = a1 + delta*i;
+                    }
+                }
+                break;
+
             // 是否计算位移空间导数, 影响 calcUTypes 变量
             case 'e':
                 Ctrl->e.active = true;
@@ -306,9 +389,119 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     if(Ctrl->M.active + Ctrl->F.active + Ctrl->T.active > 1){
         GRTRaiseError("Only support at most one of \"-M\", \"-F\" and \"-T\". Use \"-h\" for help.\n");
     }
+
+    // 指定新网格时必须同时指定 -X 和 -Y
+    if(Ctrl->X.active ^ Ctrl->Y.active){
+        GRTRaiseError("If you want to set a new grid, you need set \"-X\" and \"-Y\" both.\n");
+    }
+    Ctrl->isnewXYgrid = Ctrl->X.active;
 }
 
 
+/** 选取震中距最近的点的格林函数计算新网格点的静态位移 */
+void grt_static_syn_new_xy(
+    size_t nx0, real_t *xs0, size_t ny0, real_t *ys0,
+    size_t nx, real_t *xs, size_t ny, real_t *ys,
+    realChnlGrid *u, realChnlGrid *uiz, realChnlGrid *uir, 
+    GRT_SYN_TYPE computeType, real_t M0, real_t VpVs_ratio, real_t mchn[GRT_MECHANISM_NUM],
+    bool rot2ZNE, bool calc_upar,
+    real_t (*syn)[GRT_CHANNEL_NUM], real_t (*syn_upar)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])
+{
+    size_t nr0 = nx0 * ny0;
+
+    // 原网格震中距序列
+    real_t *rs0 = (real_t *)calloc(nr0, sizeof(real_t));
+    for(size_t ix = 0; ix < nx0; ++ix){
+        for(size_t iy = 0; iy < ny0; ++iy){
+            rs0[iy + ix*ny0] = GRT_MAX(hypot(xs0[ix], ys0[iy]), GRT_MIN_DISTANCE);
+        }
+    }
+
+    realChnlGrid srcRadi = {0};
+
+    // 每个点逐个处理
+    for(size_t ix = 0; ix < nx; ++ix){
+        real_t x = xs[ix];
+        for(size_t iy = 0; iy < ny; ++iy){
+            real_t y = ys[iy];
+
+            // 震中距
+            real_t dist = GRT_MAX(hypot(x, y), GRT_MIN_DISTANCE);
+
+            // 方位角
+            real_t azrad = atan2(y, x);
+
+            // 从原震中距序列中找到最接近的
+            size_t ir_pick = grt_findClosest_real_t(rs0, nr0, dist);
+
+            size_t ir = iy + ix * ny;
+
+            // 计算和位移相关量的种类（1-位移，2-ui_z，3-ui_r，4-ui_t）
+            int calcUTypes = (calc_upar)? 4 : 1;
+            real_t upar_scale = 1.0;
+
+            realChnlGrid *up;  // 使用对应类型的格林函数
+            real_t tmpsyn[GRT_CHANNEL_NUM];
+
+            for(int ityp=0; ityp<calcUTypes; ++ityp){
+
+                upar_scale=1.0;
+
+                // 求位移空间导数时，需调整比例系数
+                if(ityp > 0){
+                    switch (GRT_ZRT_CODES[ityp-1]){
+                        // 合成 ui_z, uir
+                        case 'Z': case 'R': upar_scale = 1e-5; break;
+                        // 合成 ui_t
+                        case 'T': upar_scale = 1e-5 / dist; break;
+                        default: break;
+                    }
+                }
+
+                if(ityp==1){
+                    up = uiz;
+                } else if(ityp==2){
+                    up = uir;
+                } else {
+                    up = u;
+                }
+
+                memset(tmpsyn, 0, sizeof(real_t)*GRT_CHANNEL_NUM);
+
+                // 计算震源辐射因子
+                grt_set_source_radiation(srcRadi, computeType, (ityp > 0) && GRT_ZRT_CODES[ityp-1]=='T', M0, upar_scale, VpVs_ratio, azrad, mchn);
+
+                // 合成
+                GRT_LOOP_ChnlGrid(im, c){
+                    int modr = GRT_SRC_M_ORDERS[im];
+                    if(modr==0 && GRT_ZRT_CODES[c]=='T')  continue;
+                    tmpsyn[c] += up[ir_pick][im][c] * srcRadi[im][c];
+                }
+
+                // 记录数据
+                for(int i=0; i<GRT_CHANNEL_NUM; ++i){
+                    if(ityp == 0){
+                        syn[ir][i] = tmpsyn[i];
+                    } else {
+                        syn_upar[ir][ityp-1][i] = tmpsyn[i];
+                    }
+                }
+
+            } // END loop calcUTypes
+
+            // 是否要转到ZNE
+            if(rot2ZNE){
+                if(calc_upar){
+                    grt_rot_zrt2zxy_upar(azrad, syn[ir], syn_upar[ir], dist*1e5);
+                } else {
+                    grt_rot_zxy2zrt_vec(-azrad, syn[ir]);
+                }
+            }
+        }
+    }
+
+    GRT_SAFE_FREE_PTR(rs0);
+}
 
 
 /** 子模块主函数 */
@@ -337,6 +530,10 @@ int static_syn_main(int argc, char **argv){
     int out_dimids[ndims];
     int out_syn_varids[GRT_CHANNEL_NUM];
     int out_syn_upar_varids[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
+
+    size_t nx, ny, nx0, ny0;
+    real_t *xs, *ys, *xs0, *ys0;
+    size_t nr, nr0;
     
     // 打开 nc 文件
     GRTCheckFileExist(Ctrl->G.s_ingrid);
@@ -383,11 +580,18 @@ int static_syn_main(int argc, char **argv){
     NC_CHECK(nc_put_att_text(out_ncid, NC_GLOBAL, "computeType", strlen(Ctrl->s_computeType), Ctrl->s_computeType));
     
     // 读入坐标变量 dimid, varid
-    size_t nx, ny;
     NC_CHECK(nc_inq_dimid(in_ncid, "north", &in_x_dimid));
-    NC_CHECK(nc_inq_dimlen(in_ncid, in_x_dimid, &nx));
+    NC_CHECK(nc_inq_dimlen(in_ncid, in_x_dimid, &nx0));
     NC_CHECK(nc_inq_dimid(in_ncid, "east", &in_y_dimid));
-    NC_CHECK(nc_inq_dimlen(in_ncid, in_y_dimid, &ny));
+    NC_CHECK(nc_inq_dimlen(in_ncid, in_y_dimid, &ny0));
+    xs0 = (real_t *)calloc(nx0, sizeof(real_t));
+    ys0 = (real_t *)calloc(ny0, sizeof(real_t));
+
+    // 根据情况使用新网格
+    nx = (Ctrl->isnewXYgrid)? Ctrl->X.nx : nx0;
+    ny = (Ctrl->isnewXYgrid)? Ctrl->Y.ny : ny0;
+    xs = (Ctrl->isnewXYgrid)? Ctrl->X.xs : xs0;
+    ys = (Ctrl->isnewXYgrid)? Ctrl->Y.ys : ys0;
 
     // 写入坐标变量 dimid, varid
     NC_CHECK(nc_def_dim(out_ncid, "north", nx, &out_x_dimid));
@@ -435,125 +639,64 @@ int static_syn_main(int argc, char **argv){
     NC_CHECK(nc_enddef(out_ncid));
 
     // 读取坐标变量
-    real_t *xs = (real_t *)calloc(nx, sizeof(real_t));
-    real_t *ys = (real_t *)calloc(ny, sizeof(real_t));
     NC_CHECK(nc_inq_varid(in_ncid, "north", &in_x_varid));
-    NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_x_varid, xs));
+    NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_x_varid, xs0));
     NC_CHECK(nc_inq_varid(in_ncid, "east", &in_y_varid));
-    NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_y_varid, ys));
+    NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_y_varid, ys0));
 
     // 写入坐标变量
     NC_CHECK(NC_FUNC_REAL(nc_put_var) (out_ncid, out_x_varid, xs));
     NC_CHECK(NC_FUNC_REAL(nc_put_var) (out_ncid, out_y_varid, ys));
 
     // 总震中距数
-    size_t nr = nx * ny;
+    nr0 = nx0 * ny0;
 
     // 先将所有格林函数及其偏导读入内存，
     // 否则连续使用 nc_grt_var1 式读入效率太慢
-    prealChnlGrid u;
-    prealChnlGrid uiz;
-    prealChnlGrid uir;
-    GRT_LOOP_ChnlGrid(im, c){
-        int modr = GRT_SRC_M_ORDERS[im];
-        // 先申请全 0 内存
-        u[im][c] = (real_t *)calloc(nr, sizeof(real_t));
-        uiz[im][c] = (real_t *)calloc(nr, sizeof(real_t));
-        uir[im][c] = (real_t *)calloc(nr, sizeof(real_t));
+    realChnlGrid *grn = (realChnlGrid *) calloc(nr0, sizeof(*grn));
+    realChnlGrid *grn_uiz = (Ctrl->e.active)? (realChnlGrid *) calloc(nr0, sizeof(*grn_uiz)) : NULL;
+    realChnlGrid *grn_uir = (Ctrl->e.active)? (realChnlGrid *) calloc(nr0, sizeof(*grn_uir)) : NULL;
+    {
+        real_t *u = (real_t *)calloc(nr0, sizeof(real_t));
+        GRT_LOOP_ChnlGrid(im, c){
+            int modr = GRT_SRC_M_ORDERS[im];
+            if(modr==0 && GRT_ZRT_CODES[c]=='T')  continue;
 
-        if(modr==0 && GRT_ZRT_CODES[c]=='T')  continue;
+            NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_u_varids[im][c], u));
+            for(size_t ir = 0; ir < nr0; ++ir){
+                grn[ir][im][c] = u[ir];
+            }
 
-        NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_u_varids[im][c], u[im][c]));
+            if(Ctrl->e.active){
+                NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_uiz_varids[im][c], u));
+                for(size_t ir = 0; ir < nr0; ++ir){
+                    grn_uiz[ir][im][c] = u[ir];
+                }
+                NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_uir_varids[im][c], u));
+                for(size_t ir = 0; ir < nr0; ++ir){
+                    grn_uir[ir][im][c] = u[ir];
+                }
+            }
 
-        if(Ctrl->e.active){
-            NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_uiz_varids[im][c], uiz[im][c]));
-            NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_uir_varids[im][c], uir[im][c]));
         }
+        GRT_SAFE_FREE_PTR(u);
     }
+
+    // 新网格总震中距数
+    nr = nx * ny;
     
     // 最终计算的结果
     real_t (*syn)[GRT_CHANNEL_NUM] = (real_t (*)[GRT_CHANNEL_NUM])calloc(nr, sizeof(real_t)*GRT_CHANNEL_NUM);
     real_t (*syn_upar)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM] = (real_t (*)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])calloc(nr, sizeof(real_t)*GRT_CHANNEL_NUM*GRT_CHANNEL_NUM);
     
-    // 每个点逐个处理
-    for(size_t ix=0; ix < nx; ++ix){
-        real_t x = xs[ix];
-        for(size_t iy=0; iy < ny; ++iy){
-            real_t y = ys[iy];
-
-            size_t ir = iy + ix*ny;
-
-            // 方位角
-            real_t azrad = atan2(y, x);
-
-            // 震中距
-            real_t dist = GRT_MAX(sqrt(x*x + y*y), GRT_MIN_DISTANCE);
-
-            // 计算和位移相关量的种类（1-位移，2-ui_z，3-ui_r，4-ui_t）
-            int calcUTypes = (Ctrl->e.active)? 4 : 1;
-            real_t upar_scale = 1.0;
-
-            real_t *(*up)[GRT_CHANNEL_NUM];  // 使用对应类型的格林函数
-            real_t tmpsyn[GRT_CHANNEL_NUM];
-
-            for(int ityp=0; ityp<calcUTypes; ++ityp){
-
-                upar_scale=1.0;
-
-                // 求位移空间导数时，需调整比例系数
-                if(ityp > 0){
-                    switch (GRT_ZRT_CODES[ityp-1]){
-                        // 合成 ui_z, uir
-                        case 'Z': case 'R': upar_scale = 1e-5; break;
-                        // 合成 ui_t
-                        case 'T': upar_scale = 1e-5 / dist; break;
-                        default: break;
-                    }
-                }
-                
-
-                if(ityp==1){
-                    up = uiz;
-                } else if(ityp==2){
-                    up = uir;
-                } else {
-                    up = u;
-                }
-
-                memset(tmpsyn, 0, sizeof(real_t)*GRT_CHANNEL_NUM);
-
-                // 计算震源辐射因子
-                grt_set_source_radiation(Ctrl->srcRadi, Ctrl->computeType, (ityp > 0) && GRT_ZRT_CODES[ityp-1]=='T', Ctrl->S.M0, upar_scale, src_va/src_vb, azrad, Ctrl->mchn);
-
-                // 合成
-                GRT_LOOP_ChnlGrid(im, c){
-                    int modr = GRT_SRC_M_ORDERS[im];
-                    if(modr==0 && GRT_ZRT_CODES[c]=='T')  continue;
-                    tmpsyn[c] += up[im][c][ir] * Ctrl->srcRadi[im][c];
-                }
-
-                // 记录数据
-                for(int i=0; i<GRT_CHANNEL_NUM; ++i){
-                    if(ityp == 0){
-                        syn[ir][i] = tmpsyn[i];
-                    } else {
-                        syn_upar[ir][ityp-1][i] = tmpsyn[i];
-                    }
-                }
-
-            } // END loop calcUTypes
-
-            // 是否要转到ZNE
-            if(rot2ZNE){
-                if(Ctrl->e.active){
-                    grt_rot_zrt2zxy_upar(azrad, syn[ir], syn_upar[ir], dist*1e5);
-                } else {
-                    grt_rot_zxy2zrt_vec(-azrad, syn[ir]);
-                }
-            }
-
-        }
-    }
+    grt_static_syn_new_xy(
+        nx0, xs0, ny0, ys0, 
+        nx, xs, ny, ys, 
+        grn, grn_uiz, grn_uir, 
+        Ctrl->computeType, Ctrl->S.M0, src_va/src_vb, Ctrl->mchn, 
+        rot2ZNE, Ctrl->e.active, 
+        syn, syn_upar
+    );
 
     // 写入 nc 文件
     real_t *tmpdata = (real_t *)calloc(nr, sizeof(real_t));
@@ -585,11 +728,12 @@ int static_syn_main(int argc, char **argv){
     }
 
     // 释放内存
-    GRT_LOOP_ChnlGrid(im, c){
-        GRT_SAFE_FREE_PTR(u[im][c]);
-        GRT_SAFE_FREE_PTR(uiz[im][c]);
-        GRT_SAFE_FREE_PTR(uir[im][c]);
-    }
+    GRT_SAFE_FREE_PTR(xs0);
+    GRT_SAFE_FREE_PTR(ys0);
+
+    GRT_SAFE_FREE_PTR(grn);
+    GRT_SAFE_FREE_PTR(grn_uiz);
+    GRT_SAFE_FREE_PTR(grn_uir);
     GRT_SAFE_FREE_PTR(syn);
     GRT_SAFE_FREE_PTR(syn_upar);
 

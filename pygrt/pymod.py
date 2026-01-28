@@ -559,8 +559,9 @@ class PyModel1D:
 
     def compute_static_grn(
         self,
-        xarr:Union[np.ndarray,List[float],float], 
-        yarr:Union[np.ndarray,List[float],float], 
+        xarr:Union[np.ndarray,List[float],float,None]=None, 
+        yarr:Union[np.ndarray,List[float],float,None]=None, 
+        distarr:Union[np.ndarray,List[float],float,None]=None, 
         keps:float=-1.0,  
         k0:float=5.0, 
         Length:float=15.0, 
@@ -572,10 +573,14 @@ class PyModel1D:
         statsfile:Union[str,None]=None):
 
         r"""
-            Call the C function to calculate the static Green's functions and return them in a dict
+            Call the C function to calculate the static Green's functions and return them in a dict.
+            There're two ways to define the "epicentral distances":
+            1. set both "xarr" and "yarr" to define a XY grid in advance.
+            2. simply set "distarr", which equal to "xarr=[0.0], yarr=distarr".
 
             :param       xarr:          coordinate array in the north direction (km), or a single float.
             :param       yarr:          coordinate array in the east direction (km), or a single float.
+            :param    distarr:          equal to "xarr=[0.0], yarr=distarr"
             :param       keps:          automatic convergence condition, see (Yao and Harkrider (1983) for more details.
                                         negative value denotes not use.
             :param       k0:            k0 used to define the upper limit :math:`\tilde{k_{max}}=(k_{0}*\pi/hs)^2`, hs=max(abs(depsrc-deprcv),1.0)
@@ -616,6 +621,17 @@ class PyModel1D:
 
         depsrc = self.depsrc
         deprcv = self.deprcv
+
+        if distarr is not None:
+            if isinstance(distarr, float) or isinstance(distarr, int):
+                distarr = np.array([distarr*1.0])
+                xarr = np.array([0.0])
+                yarr = distarr.copy()
+                if np.any(yarr < 0.0):
+                    raise ValueError("distances can't be negative.")
+        
+        if xarr is None or yarr is None:
+            raise ValueError("you need to set xarr and yarr or distarr.")
 
         if isinstance(xarr, float) or isinstance(xarr, int):
             xarr = np.array([xarr*1.0]) 
