@@ -111,6 +111,7 @@ class c_GRT_MODEL1D(Structure):
         ('Qb', PREAL),
         ('Qainv', PREAL),
         ('Qbinv', PREAL),
+        ('isLiquid', c_bool),
 
         ('mu', PCPLX),
         ('lambda', PCPLX),

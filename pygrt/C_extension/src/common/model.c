@@ -31,6 +31,7 @@
     X(Qb, real_t)\
     X(Qainv, real_t)\
     X(Qbinv, real_t)\
+    X(isLiquid, bool)\
     X(mu, cplx_t)\
     X(lambda, cplx_t)\
     X(delta, cplx_t)\
@@ -209,7 +210,7 @@ void grt_mod1d_xa_xb(GRT_MODEL1D *mod1d, const real_t k)
         mod1d->caca[i] = caca;
         mod1d->xa[i] = sqrt(1.0 - caca);
         
-        cbcb = (vb > 0.0)? mod1d->c_phase / (vb*atnb) : 0.0;  // 考虑液体层
+        cbcb = (mod1d->isLiquid[i])? 0.0 : mod1d->c_phase / (vb*atnb);  // 考虑液体层
         cbcb *= cbcb;
         mod1d->cbcb[i] = cbcb;
         mod1d->xb[i] = sqrt(1.0 - cbcb);
@@ -389,6 +390,11 @@ GRT_MODEL1D * grt_read_mod1d_from_file(const char *modelpath, real_t depsrc, rea
     mod1d->n = nlay;
     mod1d->depsrc = depsrc;
     mod1d->deprcv = deprcv;
+
+    // 记录每层是否为液体层
+    for(size_t i = 0; i < mod1d->n; ++i){
+        mod1d->isLiquid[i] = (mod1d->Vb[i] == 0.0);
+    }
 
     // 检查，接收点不能位于液-液、固-液界面
     if(ircv < nlay-1 && mod1d->Thk[ircv] == 0.0 && mod1d->Vb[ircv]*mod1d->Vb[ircv+1] == 0.0){

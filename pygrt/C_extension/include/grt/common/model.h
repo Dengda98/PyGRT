@@ -38,6 +38,7 @@ typedef struct {
     real_t *Qb; ///< Qb[n]     S波Q值
     real_t *Qainv; ///<   1/Q_p
     real_t *Qbinv; ///<   1/Q_s
+    bool   *isLiquid;   ///< 每层是否为液体层
 
     cplx_t *mu;       ///< mu[n] \f$ V_b^2 * \rho \f$
     cplx_t *lambda;   ///< lambda[n] \f$ V_a^2 * \rho - 2*\mu \f$
