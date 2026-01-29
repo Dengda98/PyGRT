@@ -29,9 +29,9 @@
     T N##2 = mod1d->N[iy];\
 
 
-static int __freeBound_R(cplx_t cbcb0, cplx_t xa0, cplx_t xb0, real_t adsgn, cplx_t M[2][2], cplx_t *ML)
+static int __freeBound_R(bool isLiquid, cplx_t cbcb0, cplx_t xa0, cplx_t xb0, real_t adsgn, cplx_t M[2][2], cplx_t *ML)
 {
-    if(cbcb0 != 0.0){
+    if( ! isLiquid){
         // 固体表面
         // 公式(5.3.10-14)
         cplx_t Delta = 0.0;
@@ -58,9 +58,9 @@ static int __freeBound_R(cplx_t cbcb0, cplx_t xa0, cplx_t xb0, real_t adsgn, cpl
     return GRT_INVERSE_SUCCESS;
 }
 
-static int __rigidBound_R(cplx_t cbcb0, cplx_t xa0, cplx_t xb0, real_t adsgn, cplx_t M[2][2], cplx_t *ML)
+static int __rigidBound_R(bool isLiquid, cplx_t xa0, cplx_t xb0, real_t adsgn, cplx_t M[2][2], cplx_t *ML)
 {
-    if(cbcb0 != 0.0){
+    if( ! isLiquid){
         // 固体表面
         cplx_t Delta = 0.0;
 
@@ -89,11 +89,12 @@ void grt_topbound_RU(GRT_MODEL1D *mod1d)
     cplx_t cbcb = mod1d->cbcb[0];
     cplx_t xa = mod1d->xa[0];
     cplx_t xb = mod1d->xb[0];
+    bool   isLiquid = mod1d->isLiquid[0];
     if(mod1d->topbound == GRT_BOUND_FREE){
-        mod1d->M_top.stats = __freeBound_R(cbcb, xa, xb, 1.0, mod1d->M_top.RU, &mod1d->M_top.RUL);
+        mod1d->M_top.stats = __freeBound_R(isLiquid, cbcb, xa, xb, 1.0, mod1d->M_top.RU, &mod1d->M_top.RUL);
     }
     else if(mod1d->topbound == GRT_BOUND_RIGID){
-        mod1d->M_top.stats = __rigidBound_R(cbcb, xa, xb, 1.0, mod1d->M_top.RU, &mod1d->M_top.RUL);
+        mod1d->M_top.stats = __rigidBound_R(isLiquid, xa, xb, 1.0, mod1d->M_top.RU, &mod1d->M_top.RUL);
     }
     else if(mod1d->topbound == GRT_BOUND_HALFSPACE){
         memset(mod1d->M_top.RU, 0, sizeof(cplx_t)*4);
@@ -112,8 +113,9 @@ void grt_botbound_RD(GRT_MODEL1D *mod1d)
     cplx_t cbcb = mod1d->cbcb[nlay-2];
     cplx_t xa = mod1d->xa[nlay-2];
     cplx_t xb = mod1d->xb[nlay-2];
+    cplx_t isLiquid = mod1d->isLiquid[nlay-2];
     if(mod1d->botbound == GRT_BOUND_FREE){
-        mod1d->M_bot.stats = __freeBound_R(cbcb, xa, xb, -1.0, mod1d->M_bot.RD, &mod1d->M_bot.RDL);
+        mod1d->M_bot.stats = __freeBound_R(isLiquid, cbcb, xa, xb, -1.0, mod1d->M_bot.RD, &mod1d->M_bot.RDL);
     }
     else if(mod1d->botbound == GRT_BOUND_RIGID){
         mod1d->M_bot.stats = __rigidBound_R(cbcb, xa, xb, -1.0, mod1d->M_bot.RD, &mod1d->M_bot.RDL);
@@ -149,10 +151,11 @@ void grt_wave2qwv_REV_PSV(GRT_MODEL1D *mod1d)
     size_t ircv = mod1d->ircv;
     cplx_t xa = mod1d->xa[ircv];
     cplx_t xb = mod1d->xb[ircv];
+    bool   isLiquid = mod1d->isLiquid[ircv];
     real_t k = mod1d->k;
 
     cplx_t D11[2][2], D12[2][2];
-    if(xb != 1.0){
+    if( ! isLiquid){
         // 位于固体层
         // 公式(5.2.19)
         D11[0][0] = k;         D11[0][1] = k*xb;
@@ -181,10 +184,10 @@ void grt_wave2qwv_REV_PSV(GRT_MODEL1D *mod1d)
 void grt_wave2qwv_REV_SH(GRT_MODEL1D *mod1d)
 {
     size_t ircv = mod1d->ircv;
-    cplx_t xb = mod1d->xb[ircv];
+    bool   isLiquid = mod1d->isLiquid[ircv];
     real_t k = mod1d->k;
 
-    if(xb != 1.0){
+    if( ! isLiquid){
         // 位于固体层
         // 公式(5.2.19)
         if(mod1d->ircvup){// 震源更深
@@ -204,6 +207,7 @@ void grt_wave2qwv_z_REV_PSV(GRT_MODEL1D *mod1d)
     size_t ircv = mod1d->ircv;
     cplx_t xa = mod1d->xa[ircv];
     cplx_t xb = mod1d->xb[ircv];
+    bool   isLiquid = mod1d->isLiquid[ircv];
     real_t k = mod1d->k;
 
 
@@ -217,7 +221,7 @@ void grt_wave2qwv_z_REV_PSV(GRT_MODEL1D *mod1d)
     cplx_t D12[2][2] = {{-ak, bb}, {aa, -bk}};
 
     // 位于液体层
-    if(xb == 1.0){
+    if(isLiquid){
         D11[0][1] = D11[1][1] = D12[0][1] = D12[1][1] = 0.0;
     }
 
@@ -236,13 +240,14 @@ void grt_wave2qwv_z_REV_SH(GRT_MODEL1D *mod1d)
 {
     size_t ircv = mod1d->ircv;
     cplx_t xb = mod1d->xb[ircv];
+    bool   isLiquid = mod1d->isLiquid[ircv];
     real_t k = mod1d->k;
     
     // 将垂直波函数转为ui,z在(B_m, P_m, C_m)系下的分量
     // 新推导的公式
     cplx_t bk = k*k*xb;
 
-    if(xb != 1.0){
+    if( ! isLiquid){
         // 位于固体层
         if(mod1d->ircvup){// 震源更深
             mod1d->uiz_R_EVL = (1.0 - mod1d->M_FA.RUL)*bk;
@@ -298,21 +303,21 @@ void grt_RT_matrix_ls_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *
     MODEL_2LAYS_ATTRIB(cplx_t, mu);
     MODEL_2LAYS_ATTRIB(cplx_t, cbcb);
     MODEL_2LAYS_ATTRIB(real_t, Rho);
+    MODEL_2LAYS_ATTRIB(bool, isLiquid);
 
     // 后缀1表示上层的液体的物理参数，后缀2表示下层的固体的物理参数
     // 若mu2==0, 则下层为液体，参数需相互交换 
 
     // 讨论液-固 or 固-液
-    bool isfluidUp = (mu1 == 0.0);  // 上层是否为液体
     int sgn = 1;
-    if(isfluidUp && mu2 == 0.0){
+    if(isLiquid1 && isLiquid2){
         GRTRaiseError("fluid-fluid interface is not allowed.\n");
     }
 
     // 使用指针
     cplx_t (*pRD)[2], (*pRU)[2];
     cplx_t (*pTD)[2], (*pTU)[2];
-    if(isfluidUp){
+    if(isLiquid1){
         pRD = M->RD; pRU = M->RU; 
         pTD = M->TD; pTU = M->TU; 
     } else {
@@ -362,23 +367,20 @@ void grt_RT_matrix_ls_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *
 
 void grt_RT_matrix_ls_SH(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
 {
-    // TEMPORARY!!!!!!
-    // 之后不再使用mu或其它变量来判断是否为液体，直接定义一个新的数组
-    MODEL_2LAYS_ATTRIB(cplx_t, mu);
+    MODEL_2LAYS_ATTRIB(bool, isLiquid);
     
     // 后缀1表示上层的液体的物理参数，后缀2表示下层的固体的物理参数
     // 若mu2==0, 则下层为液体，参数需相互交换 
 
     // 讨论液-固 or 固-液
-    bool isfluidUp = (mu1 == 0.0);  // 上层是否为液体
-    if(isfluidUp && mu2 == 0.0){
+    if(isLiquid1 && isLiquid2){
         GRTRaiseError("fluid-fluid interface is not allowed.\n");
     }
 
     // 使用指针
     cplx_t *pRDL, *pRUL;
     cplx_t *pTDL, *pTUL;
-    if(isfluidUp){
+    if(isLiquid1){
         pRDL = &M->RDL; pRUL = &M->RUL;
         pTDL = &M->TDL; pTUL = &M->TUL;
     } else {
@@ -494,15 +496,13 @@ void grt_RT_matrix_ss_SH(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M
 
 void grt_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
 {
-    // TEMPORARY!!!!!!
-    // 之后不再使用mu或其它变量来判断是否为液体，直接定义一个新的数组
-    MODEL_2LAYS_ATTRIB(cplx_t, mu);
+    MODEL_2LAYS_ATTRIB(bool, isLiquid);
     
     // 根据界面两侧的具体情况选择函数
-    if(mu1 != 0.0 && mu2 != 0.0){
+    if(!isLiquid1 && !isLiquid2){
         grt_RT_matrix_ss_PSV(mod1d, iy, M);
     }
-    else if(mu1 == 0.0 && mu2 == 0.0){
+    else if(isLiquid1 && isLiquid2){
         grt_RT_matrix_ll_PSV(mod1d, iy, M);
     }
     else{
@@ -513,15 +513,13 @@ void grt_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
 
 void grt_RT_matrix_SH(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
 {
-    // TEMPORARY!!!!!!
-    // 之后不再使用mu或其它变量来判断是否为液体，直接定义一个新的数组
-    MODEL_2LAYS_ATTRIB(cplx_t, mu);
+    MODEL_2LAYS_ATTRIB(bool, isLiquid);
     
     // 根据界面两侧的具体情况选择函数
-    if(mu1 != 0.0 && mu2 != 0.0){
+    if(!isLiquid1 && !isLiquid2){
         grt_RT_matrix_ss_SH(mod1d, iy, M);
     }
-    else if(mu1 == 0.0 && mu2 == 0.0){
+    else if(isLiquid1 && isLiquid2){
         grt_RT_matrix_ll_SH(M);
     }
     else{

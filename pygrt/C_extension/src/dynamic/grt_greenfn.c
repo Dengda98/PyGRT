@@ -985,7 +985,7 @@ int greenfn_main(int argc, char **argv) {
 
     // 当震源位于液体层中时，仅允许计算爆炸源对应的格林函数
     // 程序结束前会输出对应警告
-    if(mod1d->Vb[mod1d->isrc]==0.0){
+    if(mod1d->isLiquid[mod1d->isrc]){
         Ctrl->G.doHF = Ctrl->G.doVF = Ctrl->G.doDC = false;
     }
 
@@ -1223,7 +1223,7 @@ int greenfn_main(int argc, char **argv) {
     }
 
     // 输出警告：当震源位于液体层中时，仅允许计算爆炸源对应的格林函数
-    if(mod1d->Vb[mod1d->isrc]==0.0){
+    if(mod1d->isLiquid[mod1d->isrc]){
         GRTRaiseWarning(
             "The source is located in the liquid layer, "
             "therefore only the Green's Funtions for the Explosion source will be computed.\n");
