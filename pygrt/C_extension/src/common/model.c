@@ -384,8 +384,8 @@ GRT_MODEL1D * grt_read_mod1d_from_file(const char *modelpath, real_t depsrc, rea
         nlay++;
     }
 
-    mod1d->isrc = isrc;
-    mod1d->ircv = ircv;
+    mod1d->isrc = (depsrc >= 0.0)? isrc : nlay; // 使用明显越界的索引，表明没有插入震源层或台站层
+    mod1d->ircv = (deprcv >= 0.0)? ircv : nlay;
     mod1d->ircvup = ircvup;
     mod1d->n = nlay;
     mod1d->depsrc = depsrc;

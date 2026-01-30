@@ -24,7 +24,8 @@
  * @param[in,out]     mod1d          模型结构体指针，结果保存在 M_top
  * 
  */
-void grt_topbound_RU(GRT_MODEL1D *mod1d);
+void grt_topbound_RU_PSV(GRT_MODEL1D *mod1d);
+void grt_topbound_RU_SH(GRT_MODEL1D *mod1d);
 
 /**
  * 计算不同边界条件下底界面的反射系数RD，其中自由表面的公式见(5.3.10-14) 
@@ -33,7 +34,8 @@ void grt_topbound_RU(GRT_MODEL1D *mod1d);
  * @param[in,out]     mod1d          模型结构体指针，结果保存在 M_bot
  * 
  */
-void grt_botbound_RD(GRT_MODEL1D *mod1d);
+void grt_botbound_RD_PSV(GRT_MODEL1D *mod1d);
+void grt_botbound_RD_SH(GRT_MODEL1D *mod1d);
 
 
 /**
@@ -125,6 +127,8 @@ void grt_RT_matrix_ss_SH(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M
  * 
  */
 void grt_delay_RT_matrix(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
+void grt_delay_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
+void grt_delay_RT_matrix_SH(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
 
 /**
  * 为虚拟层的广义 R/T 矩阵添加时间延迟因子

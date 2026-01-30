@@ -25,7 +25,8 @@
  * @param[in,out]     mod1d             模型结构体指针，结果保存在 M_top
  * 
  */
-void grt_static_topbound_RU(GRT_MODEL1D *mod1d);
+void grt_static_topbound_RU_PSV(GRT_MODEL1D *mod1d);
+void grt_static_topbound_RU_SH(GRT_MODEL1D *mod1d);
 
 /**
  * 计算不同边界条件下底界面的静态反射系数RD，其中自由表面的公式见(6.3.12)
@@ -33,7 +34,8 @@ void grt_static_topbound_RU(GRT_MODEL1D *mod1d);
  * @param[in,out]     mod1d             模型结构体指针，结果保存在 M_bot
  * 
  */
-void grt_static_botbound_RD(GRT_MODEL1D *mod1d);
+void grt_static_botbound_RD_PSV(GRT_MODEL1D *mod1d);
+void grt_static_botbound_RD_SH(GRT_MODEL1D *mod1d);
 
 /**
  * 计算接收点位置的 P-SV 静态接收矩阵，将波场转为位移，公式(6.3.35)

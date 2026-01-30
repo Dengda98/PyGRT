@@ -47,8 +47,10 @@
 #define __grt_RT_matrix_SH        CONCAT_PREFIX(RT_matrix_SH)
 #define __grt_delay_RT_matrix     CONCAT_PREFIX(delay_RT_matrix)
 #define __grt_source_coef         CONCAT_PREFIX(source_coef)
-#define __grt_topbound_RU         CONCAT_PREFIX(topbound_RU)
-#define __grt_botbound_RD         CONCAT_PREFIX(botbound_RD)
+#define __grt_topbound_RU_PSV     CONCAT_PREFIX(topbound_RU_PSV)
+#define __grt_topbound_RU_SH      CONCAT_PREFIX(topbound_RU_SH)
+#define __grt_botbound_RD_PSV     CONCAT_PREFIX(botbound_RD_PSV)
+#define __grt_botbound_RD_SH      CONCAT_PREFIX(botbound_RD_SH)
 #define __grt_wave2qwv_REV_PSV    CONCAT_PREFIX(wave2qwv_REV_PSV)
 #define __grt_wave2qwv_REV_SH     CONCAT_PREFIX(wave2qwv_REV_SH)
 #define __grt_wave2qwv_z_REV_PSV  CONCAT_PREFIX(wave2qwv_z_REV_PSV)
@@ -153,14 +155,16 @@ void __GRT_MATRIX_FUNC__(GRT_MODEL1D *mod1d, const real_t k)
     //===================================================================================
 
     // 递推RU_FA
-    __grt_topbound_RU(mod1d);
+    __grt_topbound_RU_PSV(mod1d);
+    __grt_topbound_RU_SH(mod1d);
     if(M_top->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
     grt_recursion_RU(M_top, M_FA, M_FA);
     if(M_FA->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
     // 递推RD_BL, 在模型定义阶段已检查震源/台站的虚拟层成为底层时，只能是半无限空间
     if(imax+1 < mod1d->n){ // 此 if 仅减少不必要的计算
-        __grt_botbound_RD(mod1d);
+        __grt_botbound_RD_PSV(mod1d);
+        __grt_botbound_RD_SH(mod1d);
         if(M_bot->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
         grt_recursion_RD(M_BL, M_bot, M_BL);
         if(M_BL->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
