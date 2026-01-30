@@ -22,20 +22,26 @@
 
 void grt_reset_RT_matrix(RT_MATRIX *M)
 {
-    RT_MATRIX *M0 = &(RT_MATRIX){
-        .RD = GRT_INIT_ZERO_2x2_MATRIX,
-        .RU = GRT_INIT_ZERO_2x2_MATRIX,
-        .TD = GRT_INIT_IDENTITY_2x2_MATRIX,
-        .TU = GRT_INIT_IDENTITY_2x2_MATRIX,
-        .RDL = 0.0,
-        .RUL = 0.0,
-        .TDL = 1.0,
-        .TUL = 1.0,
-        .invT = GRT_INIT_ZERO_2x2_MATRIX,
-        .invTL = 0.0,
-        .stats = GRT_INVERSE_SUCCESS 
-    };
-    memcpy(M, M0, sizeof(*M));
+    memset(M, 0, sizeof(*M));
+    M->TD[0][0] = M->TD[1][1] = 
+    M->TU[0][0] = M->TU[1][1] = 
+    M->TDL = M->TUL = 1.0;
+    M->stats = GRT_INVERSE_SUCCESS;
+}
+
+void grt_reset_RT_matrix_PSV(RT_MATRIX *M)
+{
+    memset(M, 0, sizeof(*M));
+    M->TD[0][0] = M->TD[1][1] = 
+    M->TU[0][0] = M->TU[1][1] = 1.0;
+    M->stats = GRT_INVERSE_SUCCESS;
+}
+
+void grt_reset_RT_matrix_SH(RT_MATRIX *M)
+{
+    M->RDL = M->RUL = M->invTL = 0.0;
+    M->TDL = M->TUL = 1.0;
+    M->stats = GRT_INVERSE_SUCCESS;
 }
 
 void grt_recursion_RD(const RT_MATRIX *M1, const RT_MATRIX *M2, RT_MATRIX *M)

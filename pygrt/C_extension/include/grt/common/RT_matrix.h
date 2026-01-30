@@ -39,6 +39,8 @@ typedef struct {
  * @param[out]   M    RT_MATRIX 指针
  */
 void grt_reset_RT_matrix(RT_MATRIX *M);
+void grt_reset_RT_matrix_PSV(RT_MATRIX *M);
+void grt_reset_RT_matrix_SH(RT_MATRIX *M);
 
 /** 
  * 合并 recursion_RD_PSV(SH) ，仅计算RD/RDL

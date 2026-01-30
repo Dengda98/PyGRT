@@ -29,7 +29,7 @@
     T N##2 = mod1d->N[iy];\
 
 
-static int __freeBound_R(bool isLiquid, cplx_t cbcb0, cplx_t xa0, cplx_t xb0, real_t adsgn, cplx_t M[2][2], cplx_t *ML)
+static int __freeBound_R_PSV(bool isLiquid, cplx_t cbcb0, cplx_t xa0, cplx_t xb0, real_t adsgn, cplx_t M[2][2])
 {
     if( ! isLiquid){
         // 固体表面
@@ -47,18 +47,29 @@ static int __freeBound_R(bool isLiquid, cplx_t cbcb0, cplx_t xa0, cplx_t xb0, re
         M[0][1] = 2.0 * xb0 * (1.0 - 0.5*cbcb0) * Delta * adsgn;
         M[1][0] = 2.0 * xa0 * (1.0 - 0.5*cbcb0) * Delta * adsgn;
         M[1][1] = M[0][0];
-        *ML = 1.0;
     }
     else {
         // 液体表面
         M[0][0] = -1.0;
         M[1][1] = M[0][1] = M[1][0] = 0.0;
+    }
+    return GRT_INVERSE_SUCCESS;
+}
+
+static int __freeBound_R_SH(bool isLiquid, cplx_t *ML)
+{
+    if( ! isLiquid){
+        // 固体表面
+        *ML = 1.0;
+    }
+    else {
+        // 液体表面
         *ML = 0.0;
     }
     return GRT_INVERSE_SUCCESS;
 }
 
-static int __rigidBound_R(bool isLiquid, cplx_t xa0, cplx_t xb0, real_t adsgn, cplx_t M[2][2], cplx_t *ML)
+static int __rigidBound_R_PSV(bool isLiquid, cplx_t xa0, cplx_t xb0, real_t adsgn, cplx_t M[2][2])
 {
     if( ! isLiquid){
         // 固体表面
@@ -73,31 +84,60 @@ static int __rigidBound_R(bool isLiquid, cplx_t xa0, cplx_t xb0, real_t adsgn, c
         M[0][1] = 2.0 * xb0 * Delta * adsgn;
         M[1][0] = 2.0 * xa0 * Delta * adsgn;
         M[1][1] = M[0][0];
-        *ML = - 1.0;
     }
     else {
         // 液体表面
         M[0][0] = 1.0;
         M[1][1] = M[0][1] = M[1][0] = 0.0;
+    }
+    return GRT_INVERSE_SUCCESS;
+}
+
+static int __rigidBound_R_SH(bool isLiquid, cplx_t *ML)
+{
+    if( ! isLiquid){
+        // 固体表面
+        *ML = - 1.0;
+    }
+    else {
+        // 液体表面
         *ML = 0.0;
     }
     return GRT_INVERSE_SUCCESS;
 }
 
-void grt_topbound_RU(GRT_MODEL1D *mod1d)
+void grt_topbound_RU_PSV(GRT_MODEL1D *mod1d)
 {
     cplx_t cbcb = mod1d->cbcb[0];
     cplx_t xa = mod1d->xa[0];
     cplx_t xb = mod1d->xb[0];
     bool   isLiquid = mod1d->isLiquid[0];
     if(mod1d->topbound == GRT_BOUND_FREE){
-        mod1d->M_top.stats = __freeBound_R(isLiquid, cbcb, xa, xb, 1.0, mod1d->M_top.RU, &mod1d->M_top.RUL);
+        mod1d->M_top.stats = __freeBound_R_PSV(isLiquid, cbcb, xa, xb, 1.0, mod1d->M_top.RU);
     }
     else if(mod1d->topbound == GRT_BOUND_RIGID){
-        mod1d->M_top.stats = __rigidBound_R(isLiquid, xa, xb, 1.0, mod1d->M_top.RU, &mod1d->M_top.RUL);
+        mod1d->M_top.stats = __rigidBound_R_PSV(isLiquid, xa, xb, 1.0, mod1d->M_top.RU);
     }
     else if(mod1d->topbound == GRT_BOUND_HALFSPACE){
         memset(mod1d->M_top.RU, 0, sizeof(cplx_t)*4);
+        mod1d->M_top.stats = GRT_INVERSE_SUCCESS;
+    }
+    else{
+        GRTRaiseError("Wrong execution.");
+    }
+    // RU 不需要时延
+}
+
+void grt_topbound_RU_SH(GRT_MODEL1D *mod1d)
+{
+    bool isLiquid = mod1d->isLiquid[0];
+    if(mod1d->topbound == GRT_BOUND_FREE){
+        mod1d->M_top.stats = __freeBound_R_SH(isLiquid, &mod1d->M_top.RUL);
+    }
+    else if(mod1d->topbound == GRT_BOUND_RIGID){
+        mod1d->M_top.stats = __rigidBound_R_SH(isLiquid, &mod1d->M_top.RUL);
+    }
+    else if(mod1d->topbound == GRT_BOUND_HALFSPACE){
         mod1d->M_top.RUL = 0.0;
         mod1d->M_top.stats = GRT_INVERSE_SUCCESS;
     }
@@ -107,22 +147,21 @@ void grt_topbound_RU(GRT_MODEL1D *mod1d)
     // RU 不需要时延
 }
 
-void grt_botbound_RD(GRT_MODEL1D *mod1d)
+void grt_botbound_RD_PSV(GRT_MODEL1D *mod1d)
 {
     size_t nlay = mod1d->n;
     cplx_t cbcb = mod1d->cbcb[nlay-2];
     cplx_t xa = mod1d->xa[nlay-2];
     cplx_t xb = mod1d->xb[nlay-2];
-    cplx_t isLiquid = mod1d->isLiquid[nlay-2];
+    bool isLiquid = mod1d->isLiquid[nlay-2];
     if(mod1d->botbound == GRT_BOUND_FREE){
-        mod1d->M_bot.stats = __freeBound_R(isLiquid, cbcb, xa, xb, -1.0, mod1d->M_bot.RD, &mod1d->M_bot.RDL);
+        mod1d->M_bot.stats = __freeBound_R_PSV(isLiquid, cbcb, xa, xb, -1.0, mod1d->M_bot.RD);
     }
     else if(mod1d->botbound == GRT_BOUND_RIGID){
-        mod1d->M_bot.stats = __rigidBound_R(cbcb, xa, xb, -1.0, mod1d->M_bot.RD, &mod1d->M_bot.RDL);
+        mod1d->M_bot.stats = __rigidBound_R_PSV(isLiquid, xa, xb, -1.0, mod1d->M_bot.RD);
     }
     else if(mod1d->botbound == GRT_BOUND_HALFSPACE){
         grt_RT_matrix_PSV(mod1d, nlay-1, &mod1d->M_bot);
-        grt_RT_matrix_SH(mod1d, nlay-1, &mod1d->M_bot);
     }
     else{
         GRTRaiseError("Wrong execution.");
@@ -141,6 +180,33 @@ void grt_botbound_RD(GRT_MODEL1D *mod1d)
 
     mod1d->M_bot.RD[0][0] *= ex2a;   mod1d->M_bot.RD[0][1] *= exab;
     mod1d->M_bot.RD[1][0] *= exab;   mod1d->M_bot.RD[1][1] *= ex2b;
+}
+
+void grt_botbound_RD_SH(GRT_MODEL1D *mod1d)
+{
+    size_t nlay = mod1d->n;
+    cplx_t xb = mod1d->xb[nlay-2];
+    bool isLiquid = mod1d->isLiquid[nlay-2];
+    if(mod1d->botbound == GRT_BOUND_FREE){
+        mod1d->M_bot.stats = __freeBound_R_SH(isLiquid, &mod1d->M_bot.RDL);
+    }
+    else if(mod1d->botbound == GRT_BOUND_RIGID){
+        mod1d->M_bot.stats = __rigidBound_R_SH(isLiquid, &mod1d->M_bot.RDL);
+    }
+    else if(mod1d->botbound == GRT_BOUND_HALFSPACE){
+        grt_RT_matrix_SH(mod1d, nlay-1, &mod1d->M_bot);
+    }
+    else{
+        GRTRaiseError("Wrong execution.");
+    }
+
+    // 时延 RD
+    real_t k = mod1d->k;
+    real_t thk = mod1d->Thk[nlay-2];
+
+    cplx_t exb, ex2b;
+    exb = exp(- k*thk*xb);
+    ex2b = exb * exb;
 
     mod1d->M_bot.RDL *= ex2b;
 }
@@ -552,6 +618,45 @@ void grt_delay_RT_matrix(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M
 
     M->TU[0][0] *= exa;    M->TU[0][1] *= exa;
     M->TU[1][0] *= exb;    M->TU[1][1] *= exb;
+
+    M->RDL *= ex2b;
+    M->TDL *= exb;
+    M->TUL *= exb;
+}
+
+void grt_delay_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
+{
+    real_t thk = mod1d->Thk[iy-1];
+    cplx_t xa1 = mod1d->xa[iy-1];
+    cplx_t xb1 = mod1d->xb[iy-1];
+    real_t k = mod1d->k;
+
+    cplx_t exa, exb, ex2a, ex2b, exab;
+    exa = exp(- k*thk*xa1);
+    exb = exp(- k*thk*xb1);
+    ex2a = exa * exa;
+    ex2b = exb * exb;
+    exab = exa * exb;
+
+    M->RD[0][0] *= ex2a;   M->RD[0][1] *= exab;
+    M->RD[1][0] *= exab;   M->RD[1][1] *= ex2b;
+
+    M->TD[0][0] *= exa;    M->TD[0][1] *= exb;
+    M->TD[1][0] *= exa;    M->TD[1][1] *= exb;
+
+    M->TU[0][0] *= exa;    M->TU[0][1] *= exa;
+    M->TU[1][0] *= exb;    M->TU[1][1] *= exb;
+}
+
+void grt_delay_RT_matrix_SH(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
+{
+    real_t thk = mod1d->Thk[iy-1];
+    cplx_t xb1 = mod1d->xb[iy-1];
+    real_t k = mod1d->k;
+
+    cplx_t exb, ex2b;
+    exb = exp(- k*thk*xb1);
+    ex2b = exb * exb;
 
     M->RDL *= ex2b;
     M->TDL *= exb;
