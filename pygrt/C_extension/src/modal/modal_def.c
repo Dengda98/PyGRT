@@ -21,6 +21,7 @@ void grt_free_eigenv_method(EIGENV_METHOD *eigmet)
         grt_free_eigenv(eigmet->eigv + i);
     }
     GRT_SAFE_FREE_PTR(eigmet->eigv);
+    GRT_SAFE_FREE_PTR(eigmet);
 }
 
 
