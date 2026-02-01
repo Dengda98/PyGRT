@@ -23,7 +23,6 @@ typedef struct {
 
 /** 与频散计算方法相关的参数 */
 typedef struct {
-    bool io_period;
     size_t nf;
     real_t *freqs;
     size_t nmode;    ///< 最高阶数，例如最高为2阶， 则 nmode=3 (基阶，1阶，2阶)

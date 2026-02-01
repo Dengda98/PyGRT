@@ -53,7 +53,6 @@ typedef struct {
         bool active;
         real_t *freqs;
         size_t nf;
-        bool io_period;  ///< 以周期的形式输入输出
     } F;
     /** 输出久期函数 */
     struct {
@@ -250,7 +249,6 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                             Ctrl->F.freqs[i] = a1 + df*i;
                         }
                     }
-                    Ctrl->F.io_period = isperiod;
 
                     GRT_SAFE_FREE_PTR(string);
                 }

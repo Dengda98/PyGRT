@@ -48,8 +48,7 @@ void grt_output_cdisp(const char *filepath, const char *full_command, const char
     }
 
     // 定义维度
-    const char *fname = (eigmet->io_period)? "period" : "freq";
-    NC_CHECK(nc_def_dim(ncid, fname, eigmet->nf, &f_dimid));
+    NC_CHECK(nc_def_dim(ncid, "freq", eigmet->nf, &f_dimid));
     NC_CHECK(nc_def_dim(ncid, "mode", max_nroots, &n_dimid));
 
     // 定义变量维度数组
@@ -57,8 +56,8 @@ void grt_output_cdisp(const char *filepath, const char *full_command, const char
     dimids[1] = n_dimid;
 
     // 定义维度数组
-    NC_CHECK(nc_def_var(ncid, fname, NC_REAL, 1, &f_dimid, &f_varid));
-    NC_CHECK(nc_def_var(ncid, "mode", NC_INT, 1, &n_dimid, &n_varid));
+    NC_CHECK(nc_def_var(ncid, "freq", NC_REAL, 1, &f_dimid, &f_varid));
+    NC_CHECK(nc_def_var(ncid, "mode", NC_INT,  1, &n_dimid, &n_varid));
 
     // 定义频散数组
     NC_CHECK(nc_def_var(ncid, "cnum", NC_INT, 1, &f_dimid, &cnum_varid));
@@ -72,9 +71,6 @@ void grt_output_cdisp(const char *filepath, const char *full_command, const char
     NC_CHECK(NC_FUNC_INT(nc_put_att)  (ncid, ciref_varid, "_FillValue", NC_INT, 1, &fill_value_MYINT));
 
     // 其它属性
-    // freqs or periods
-    int io_period_int = (int)eigmet->io_period;
-    NC_CHECK(NC_FUNC_INT(nc_put_att) (ncid, NC_GLOBAL, "io_period", NC_INT, 1, &io_period_int));
     // Rayleigh or Love
     int isRayl_int = (int)(eigmet->wtype==GRT_DISPERSION_RAYL);
     NC_CHECK(NC_FUNC_INT(nc_put_att) (ncid, NC_GLOBAL, "isRayl", NC_INT, 1, &isRayl_int));
@@ -83,17 +79,15 @@ void grt_output_cdisp(const char *filepath, const char *full_command, const char
     NC_CHECK(nc_enddef(ncid));
 
     // 写入数据
-    real_t *freqsOrperiods = (real_t *)calloc(eigmet->nf, sizeof(real_t));
-    for(size_t iw = 0; iw < eigmet->nf; ++iw){
-        freqsOrperiods[iw] = (eigmet->io_period)? 1.0/eigmet->freqs[iw] : eigmet->freqs[iw];
+    NC_CHECK(NC_FUNC_REAL(nc_put_var) (ncid, f_varid, eigmet->freqs));
+    {
+        int *modes = (int *)calloc(max_nroots, sizeof(int));
+        for(size_t i=0; i<max_nroots; ++i){
+            modes[i] = i;
+        } 
+        NC_CHECK(NC_FUNC_INT(nc_put_var) (ncid, n_varid, modes));
+        GRT_SAFE_FREE_PTR(modes);
     }
-    int *modes = (int *)calloc(max_nroots, sizeof(int));
-    for(size_t i=0; i<max_nroots; ++i){
-        modes[i] = i;
-    } 
-
-    NC_CHECK(NC_FUNC_REAL(nc_put_var) (ncid, f_varid, freqsOrperiods));
-    NC_CHECK(NC_FUNC_INT(nc_put_var) (ncid, n_varid, modes));
     {
         // size_t 数组转为 int 数组保存
         int *tmp = (int *)calloc(eigmet->nf, sizeof(int));
@@ -128,8 +122,6 @@ void grt_output_cdisp(const char *filepath, const char *full_command, const char
     // 关闭文件
     NC_CHECK(nc_close(ncid));
 
-    GRT_SAFE_FREE_PTR(freqsOrperiods);
-    GRT_SAFE_FREE_PTR(modes);
 }
 
 
