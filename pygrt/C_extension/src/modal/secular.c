@@ -23,7 +23,7 @@
 #include "grt/modal/secular.h"
 
 
-#define __DEBUG_SECULAR__  1
+#define __DEBUG_SECULAR__  0
 
 
 // void grt_get_mod_all_RD_RU_Rayl(
