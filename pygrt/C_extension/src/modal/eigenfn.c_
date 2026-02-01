@@ -1,0 +1,505 @@
+/**
+ * @file   eigenfn.c
+ * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
+ * @date   2025-07
+ * 
+ * 使用 广义反射透射系数矩阵 将某层的垂直波函数传播到整个模型的物理层上下两侧，
+ * 再计算任意深度的本征函数
+ * 
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "grt/dynamic/layer.h"
+
+#include "grt/common/matrix.h"
+#include "grt/common/model.h"
+#include "grt/common/const.h"
+
+#include "grt/modal/secular.h"
+#include "grt/modal/eigenfn.h"
+
+
+void grt_potential_propagate_UpDown_Rayl(
+    const GRT_MODEL1D *mod1d, const real_t omega, const real_t eigenK, const size_t iy, const cplx_t RD_RL[2][2],
+    const cplx_t potRaylLove1[GRT_RAYL_DIM], cplx_t potRaylLove2[GRT_RAYL_DIM], cplx_t potRaylLove2_Up[GRT_RAYL_DIM], int *stats)
+{
+    cplx_t RD[2][2], RU[2][2]; 
+    cplx_t TD[2][2], TU[2][2];
+
+    cplx_t xa0, xb0, caca0, cbcb0, mu0;
+    cplx_t xa1, xb1, caca1, cbcb1, mu1;
+    real_t Rho0, Rho1;
+
+    real_t eigenC = omega / eigenK;
+
+    real_t thk0 = mod1d->Thk[iy-1];
+    grt_get_mod1d_xa_xb__(mod1d, iy-1, eigenC, &caca0, &xa0, &cbcb0, &xb0);
+    mu0 = mod1d->mu[iy-1];
+    Rho0 = mod1d->Rho[iy-1];
+
+    grt_get_mod1d_xa_xb__(mod1d, iy, eigenC, &caca1, &xa1, &cbcb1, &xb1);
+    mu1 = mod1d->mu[iy];
+    Rho1 = mod1d->Rho[iy];
+
+    grt_RT_matrix_PSV(
+        Rho0, xa0, xb0, cbcb0, mu0, 
+        Rho1, xa1, xb1, cbcb1, mu1, 
+        omega, eigenK,
+        RD, RU, TD, TU, stats);
+
+    cplx_t exa, exb;
+    cplx_t E[2][2] = GRT_INIT_ZERO_2x2_MATRIX; 
+    
+    exa = exp(- eigenK*thk0*xa0);
+    exb = exp(- eigenK*thk0*xb0);
+    E[0][0] = exa;
+    E[1][1] = exb;
+    
+    // 先延时得到 \phi+_{j-}
+    grt_cmat2x1_mul(E, potRaylLove1 + 2, potRaylLove2_Up + 2);
+
+    // \phi+_{j+}
+    cplx_t tmp[2][2];
+    grt_cmat2x2_mul(RU, RD_RL, tmp);
+    grt_cmat2x2_one_sub(tmp);
+    grt_cmat2x2_inv(tmp, tmp, stats);
+    grt_cmat2x2_mul(tmp, TD, tmp);
+    grt_cmat2x1_mul(tmp,   potRaylLove2_Up + 2, potRaylLove2 + 2);
+    // \phi-_{j+}
+    grt_cmat2x1_mul(RD_RL, potRaylLove2 + 2, potRaylLove2);
+
+    // \phi-_{j-}
+    cplx_t tmp1[2];
+    grt_cmat2x1_mul(RD, potRaylLove2_Up + 2, tmp1);
+    potRaylLove2_Up[0] = tmp1[0];
+    potRaylLove2_Up[1] = tmp1[1];
+    grt_cmat2x1_mul(TU, potRaylLove2, tmp1);
+    potRaylLove2_Up[0] += tmp1[0];
+    potRaylLove2_Up[1] += tmp1[1];
+
+}
+
+
+void grt_potential_propagate_UpDown_Love(
+    const GRT_MODEL1D *mod1d, const real_t omega, const real_t eigenK, const size_t iy, const cplx_t RDL_RL, 
+    const cplx_t potRaylLove1[GRT_LOVE_DIM], cplx_t potRaylLove2[GRT_LOVE_DIM], cplx_t potRaylLove2_Up[GRT_LOVE_DIM])
+{
+    cplx_t RDL, RUL; 
+    cplx_t TDL, TUL;
+
+    cplx_t xb0, cbcb0, mu0;
+    cplx_t xb1, cbcb1, mu1;
+
+    real_t eigenC = omega / eigenK;
+
+    real_t thk0 = mod1d->Thk[iy-1];
+    grt_get_mod1d_xa_xb__(mod1d, iy-1, eigenC, NULL, NULL, &cbcb0, &xb0);
+    mu0 = mod1d->mu[iy-1];
+
+    grt_get_mod1d_xa_xb__(mod1d, iy, eigenC, NULL, NULL, &cbcb1, &xb1);
+    mu1 = mod1d->mu[iy];
+
+    cplx_t exb = exp(- eigenK*thk0*xb0);
+        
+    // 先延时得到 \phi+_{j-}
+    // 如果上层为液体
+    if(xb0 == 1.0){
+        potRaylLove2_Up[0] = potRaylLove2_Up[1] = 0.0;
+    } else {
+        potRaylLove2_Up[1] = potRaylLove1[1] * exb;
+    }
+
+    // \phi+_{j+}, \phi-_{j+}, 
+    // 如果下层为液体
+    if(xb1 == 1.0){
+        potRaylLove2[0] = potRaylLove2[1] = 0.0;
+    } else {
+        grt_RT_matrix_SH(
+            xb0, mu0, xb1, mu1, 
+            omega, eigenK,
+            &RDL, &RUL, &TDL, &TUL);
+        potRaylLove2[1] = TDL*potRaylLove2_Up[1] / (1.0 - RUL*RDL_RL);
+        potRaylLove2[0] = RDL_RL * potRaylLove2[1];
+    }
+
+    // \phi-_{j-}
+    // 如果上层为液体
+    if(xb0 == 1.0){
+        potRaylLove2_Up[0] = potRaylLove2_Up[1] = 0.0;
+    } else {
+        potRaylLove2_Up[0] = RDL * potRaylLove2_Up[1] + TUL * potRaylLove2[0];
+    }
+    
+}
+
+
+void grt_potential_propagate_DownUp_Rayl(
+    const GRT_MODEL1D *mod1d, const real_t omega, const real_t eigenK, const size_t iy, const cplx_t RU_FR[2][2],
+    cplx_t potRaylLove1[GRT_RAYL_DIM], const cplx_t potRaylLove2[GRT_RAYL_DIM], cplx_t potRaylLove2_Up[GRT_RAYL_DIM], int *stats)
+{
+    real_t thk0 = mod1d->Thk[iy];
+    cplx_t xa0, xb0, caca0, cbcb0, mu0;
+    cplx_t xa1, xb1, caca1, cbcb1, mu1;
+    real_t Rho0, Rho1;
+    
+    real_t eigenC = omega / eigenK;
+    
+    grt_get_mod1d_xa_xb__(mod1d, iy, eigenC, &caca0, &xa0, &cbcb0, &xb0);
+    mu0 = mod1d->mu[iy];
+    Rho0 = mod1d->Rho[iy];
+    
+    grt_get_mod1d_xa_xb__(mod1d, iy+1, eigenC, &caca1, &xa1, &cbcb1, &xb1);
+    mu1 = mod1d->mu[iy+1];
+    Rho1 = mod1d->Rho[iy+1];
+
+    // ============================================================
+    cplx_t RD[2][2], RU[2][2]; 
+    cplx_t TD[2][2], TU[2][2];
+    grt_RT_matrix_PSV(
+        Rho0, xa0, xb0, cbcb0, mu0, 
+        Rho1, xa1, xb1, cbcb1, mu1, 
+        omega, eigenK,
+        RD, RU, TD, TU, stats);
+
+    cplx_t exa, exb;
+    cplx_t E[2][2] = GRT_INIT_ZERO_2x2_MATRIX; 
+
+    exa = exp(- eigenK*thk0*xa0);
+    exb = exp(- eigenK*thk0*xb0);
+    E[0][0] = exa;
+    E[1][1] = exb;
+
+    cplx_t RU_FR_delay[2][2] = {0};
+    memcpy(RU_FR_delay, RU_FR, sizeof(cplx_t)*4);
+    grt_cmat2x2_mul(RU_FR_delay, E, RU_FR_delay);
+    grt_cmat2x2_mul(E, RU_FR_delay, RU_FR_delay);
+
+    // \phi-_{j+1}-
+    cplx_t tmp[2][2];
+    grt_cmat2x2_mul(RD, RU_FR_delay, tmp);
+    grt_cmat2x2_one_sub(tmp);
+    grt_cmat2x2_inv(tmp, tmp, stats);
+    grt_cmat2x2_mul(tmp, TU, tmp);
+    grt_cmat2x1_mul(tmp, potRaylLove2, potRaylLove2_Up);
+    // \phi+_{j+1}-
+    grt_cmat2x1_mul(RU_FR_delay, potRaylLove2_Up, potRaylLove2_Up + 2);
+
+    // \phi-_{j}+
+    grt_cmat2x1_mul(E, potRaylLove2_Up, potRaylLove1);
+    // \phi+_{j}+
+    grt_cmat2x1_mul(RU_FR, potRaylLove1, potRaylLove1 + 2);
+
+}
+
+
+void grt_potential_propagate_DownUp_Love(
+    const GRT_MODEL1D *mod1d, const real_t omega, const real_t eigenK, const size_t iy, const cplx_t RUL_FR, 
+    cplx_t potRaylLove1[GRT_LOVE_DIM], const cplx_t potRaylLove2[GRT_LOVE_DIM], cplx_t potRaylLove2_Up[GRT_LOVE_DIM])
+{
+    cplx_t RDL, RUL; 
+    cplx_t TDL, TUL;
+
+    cplx_t xb0, cbcb0, mu0;
+    cplx_t xb1, cbcb1, mu1;
+    
+    real_t eigenC = omega / eigenK;
+    
+    real_t thk0 = mod1d->Thk[iy];
+    grt_get_mod1d_xa_xb__(mod1d, iy, eigenC, NULL, NULL, &cbcb0, &xb0);
+    mu0 = mod1d->mu[iy];
+    
+    grt_get_mod1d_xa_xb__(mod1d, iy+1, eigenC, NULL, NULL, &cbcb1, &xb1);
+    mu1 = mod1d->mu[iy+1];
+    
+    // 如果上层为液体层
+    if(xb0 == 1.0){
+        potRaylLove1[0]    = potRaylLove1[1]    = 0.0;
+        potRaylLove2_Up[0] = potRaylLove2_Up[1] = 0.0;
+        return;  // 直接返回
+    }
+
+    grt_RT_matrix_SH(
+        xb0, mu0, xb1, mu1, 
+        omega, eigenK,
+        &RDL, &RUL, &TDL, &TUL);
+
+    cplx_t exb = exp(- eigenK*thk0*xb0);
+    cplx_t RUL_FR_delay = RUL_FR * exb;
+    // \phi-_{j+1}-
+    potRaylLove2_Up[0] = TUL * potRaylLove2[0] / (1.0 - RDL*RUL_FR_delay);
+    // \phi+_{j+1}-
+    potRaylLove2_Up[1] = RUL_FR_delay * potRaylLove2_Up[0];
+    
+    // \phi-_{j}+
+    potRaylLove1[0] = potRaylLove2_Up[0] * exb;
+    // \phi+_{j}+
+    potRaylLove1[1] = potRaylLove1[0] * RUL_FR;
+}
+
+
+void grt_get_mod_potential_Up_Down_Rayl(
+    const GRT_MODEL1D *mod1d, const real_t omega, const real_t eigenK,
+    cplx_t (*mod_potRaylLove_Down)[GRT_RAYL_DIM], cplx_t (*mod_potRaylLove_Up)[GRT_RAYL_DIM],
+    const size_t iref, const cplx_t potRaylLove[GRT_RAYL_DIM], int *stats)
+{
+    // 先置零
+    memset(mod_potRaylLove_Down, 0, sizeof(cplx_t)*GRT_RAYL_DIM*mod1d->n);
+    memset(mod_potRaylLove_Up, 0, sizeof(cplx_t)*GRT_RAYL_DIM*mod1d->n);
+
+    // 赋值 iref 层的垂直波函数
+    memcpy(&mod_potRaylLove_Down[iref][0], potRaylLove, sizeof(cplx_t)*GRT_RAYL_DIM);
+
+    // 计算 RD_RL, RU_FR 矩阵
+    cplx_t (*RD_RLs)[2][2] = (cplx_t (*)[2][2])calloc(mod1d->n, sizeof(cplx_t[2][2]));
+    cplx_t (*RU_FRs)[2][2] = (cplx_t (*)[2][2])calloc(mod1d->n, sizeof(cplx_t[2][2]));
+    grt_get_mod_all_RD_RU_Rayl(mod1d, omega, eigenK, RD_RLs, RU_FRs, stats);
+
+    // 向下传播
+    for(size_t iy=iref+1; iy<mod1d->n; ++iy){
+        // TEMP!!
+        // 打印液体层内的 RD_RL, RU_FR
+        // if(mod1d->Vb[iy] == 0.0){
+        //     fprintf(stderr, "----------- f=%f, iy=%d, RD_RL ------------\n", omega/PI2, iy);
+        //     grt_cmatmxn_print(2, 2, RD_RL);
+        //     fprintf(stderr, "----------- f=%f, iy=%d, RU_FR ------------\n", omega/PI2, iy);
+        //     grt_cmatmxn_print(2, 2, RU_FR);
+        // }
+
+        grt_potential_propagate_UpDown_Rayl(
+            mod1d, omega, eigenK, iy, RD_RLs[iy], 
+            mod_potRaylLove_Down[iy-1], mod_potRaylLove_Down[iy], mod_potRaylLove_Up[iy], stats);
+    }
+
+    // 向上传播
+    for(size_t iy=iref; iy-- >0;){
+        grt_potential_propagate_DownUp_Rayl(
+            mod1d, omega, eigenK, iy, RU_FRs[iy], 
+            mod_potRaylLove_Down[iy], mod_potRaylLove_Down[iy+1], mod_potRaylLove_Up[iy+1], stats);
+    }
+
+    GRT_SAFE_FREE_PTR(RD_RLs);
+    GRT_SAFE_FREE_PTR(RU_FRs);
+}
+
+
+void grt_get_mod_potential_Up_Down_Love(
+    const GRT_MODEL1D *mod1d, const real_t omega, const real_t eigenK,
+    cplx_t (*mod_potRaylLove_Down)[GRT_LOVE_DIM], cplx_t (*mod_potRaylLove_Up)[GRT_LOVE_DIM],
+    const size_t iref, const cplx_t potRaylLove[GRT_LOVE_DIM], int *stats)
+{
+    // 先置零
+    memset(mod_potRaylLove_Down, 0, sizeof(cplx_t)*GRT_LOVE_DIM*mod1d->n);
+    memset(mod_potRaylLove_Up, 0, sizeof(cplx_t)*GRT_LOVE_DIM*mod1d->n);
+
+    // 赋值 iref 层的垂直波函数
+    memcpy(&mod_potRaylLove_Down[iref][0], potRaylLove, sizeof(cplx_t)*GRT_LOVE_DIM);
+
+    // 计算 RDL_RL, RUL_FR
+    cplx_t *RDL_RLs = (cplx_t *)calloc(mod1d->n, sizeof(cplx_t));
+    cplx_t *RUL_FRs = (cplx_t *)calloc(mod1d->n, sizeof(cplx_t));
+    grt_get_mod_all_RD_RU_Love(mod1d, omega, eigenK, RDL_RLs, RUL_FRs, stats);
+
+    // 向下传播
+    for(size_t iy=iref+1; iy<mod1d->n; ++iy){
+        grt_potential_propagate_UpDown_Love(
+            mod1d, omega, eigenK, iy, RDL_RLs[iy], 
+            mod_potRaylLove_Down[iy-1], mod_potRaylLove_Down[iy], mod_potRaylLove_Up[iy]);
+    }
+
+    // 向上传播
+    for(size_t iy=iref; iy-- >0;){
+        grt_potential_propagate_DownUp_Love(
+            mod1d, omega, eigenK, iy, RUL_FRs[iy], 
+            mod_potRaylLove_Down[iy], mod_potRaylLove_Down[iy+1], mod_potRaylLove_Up[iy+1]);
+    }
+
+    GRT_SAFE_FREE_PTR(RDL_RLs);
+    GRT_SAFE_FREE_PTR(RUL_FRs);
+}
+
+
+
+void grt_get_mod_potential_Up_Down(
+    GRT_MODEL1D *mod1d, real_t omega, real_t eigenK, size_t ncols, 
+    cplx_t (*mod_potRaylLove_Down)[ncols], cplx_t (*mod_potRaylLove_Up)[ncols],
+    size_t iref, cplx_t potRaylLove[ncols], bool isRayl, int *stats)
+{
+    if(isRayl && ncols == GRT_RAYL_DIM){
+        grt_get_mod_potential_Up_Down_Rayl(mod1d, omega, eigenK, mod_potRaylLove_Down, mod_potRaylLove_Up, iref, potRaylLove, stats);
+    } 
+    else if(!isRayl && ncols == GRT_LOVE_DIM) {
+        grt_get_mod_potential_Up_Down_Love(mod1d, omega, eigenK, mod_potRaylLove_Down, mod_potRaylLove_Up, iref, potRaylLove, stats);
+    }
+    else {
+        GRTRaiseError("Abnormal Error in function %s, isRayl=%i, ncols=%d.\n", __func__, isRayl, ncols);
+    }
+}
+
+
+void grt_get_eigenfn_single_depth_Rayl(
+    const GRT_MODEL1D *mod1d, const real_t omega, const real_t eigenK, const real_t eigenC, 
+    const cplx_t (*mod_potRaylLove_Down)[GRT_RAYL_DIM], const cplx_t (*mod_potRaylLove_Up)[GRT_RAYL_DIM],
+    cplx_t T0[GRT_RAYL_DIM][GRT_RAYL_DIM], const bool reuseT, const real_t zsamp, const size_t ziref, 
+    cplx_t eigenfn[GRT_RAYL_DIM])
+{
+    real_t dz = zsamp - mod1d->Dep[ziref];
+    real_t thk = mod1d->Thk[ziref];
+    cplx_t xa=0.0, xb=0.0, caca=0.0, cbcb=0.0, mu=0.0;
+    real_t rho;
+    memset(eigenfn, 0, sizeof(cplx_t)*GRT_RAYL_DIM);
+
+    grt_get_mod1d_xa_xb__(mod1d, ziref, eigenC, &caca, &xa, &cbcb, &xb);
+    mu = mod1d->mu[ziref];
+    rho = mod1d->Rho[ziref];
+
+    if(! reuseT){
+        grt_get_layer_D(xa, xb, GRT_SQUARE(eigenK)*cbcb, mu, omega, rho, eigenK, T0, false,  1);
+    }
+    
+    // 计算该点的垂直波函数，再得到本征函数
+    // 复制 z_{j+1}- 侧的上传波场
+    memcpy(eigenfn, &mod_potRaylLove_Up[ziref+1][0], sizeof(cplx_t)*2);
+    // 复制 z_{j}+ 侧的下传波场
+    memcpy(eigenfn + 2, &mod_potRaylLove_Down[ziref][0] + 2, sizeof(cplx_t)*2);
+
+    cplx_t E[2][2] = GRT_INIT_ZERO_2x2_MATRIX;
+    E[0][0] = exp(- eigenK * xa * dz);
+    E[1][1] = exp(- eigenK * xb * dz);
+
+    // 向下传播 \phi+
+    grt_cmat2x1_mul(E, eigenfn + 2, eigenfn + 2);
+    // 向上传播 \phi-
+    E[0][0] = exp(- eigenK * xa * (thk - dz));
+    E[1][1] = exp(- eigenK * xb * (thk - dz));
+    grt_cmat2x1_mul(E, eigenfn, eigenfn);
+
+    // 本征函数
+    grt_cmatmx1_mul(GRT_RAYL_DIM, GRT_RAYL_DIM, T0, eigenfn, eigenfn);  
+
+}
+
+
+void grt_get_eigenfn_single_depth_Love(
+    const GRT_MODEL1D *mod1d, const real_t omega, const real_t eigenK, const real_t eigenC, 
+    const cplx_t (*mod_potRaylLove_Down)[GRT_LOVE_DIM], const cplx_t (*mod_potRaylLove_Up)[GRT_LOVE_DIM],
+    cplx_t T0[GRT_LOVE_DIM][GRT_LOVE_DIM], const bool reuseT, const real_t zsamp, const size_t ziref, 
+    cplx_t eigenfn[GRT_LOVE_DIM])
+{
+    real_t dz = zsamp - mod1d->Dep[ziref];
+    real_t thk = mod1d->Thk[ziref];
+    cplx_t xb=0.0, cbcb=0.0, mu=0.0;
+    memset(eigenfn, 0, sizeof(cplx_t)*GRT_LOVE_DIM);
+
+    grt_get_mod1d_xa_xb__(mod1d, ziref, eigenC, NULL, NULL, &cbcb, &xb);
+    mu = mod1d->mu[ziref];
+
+    // 直接跳过液体层
+    if(xb == 1.0)  return;
+
+    if(! reuseT){
+        grt_get_layer_T(xb, mu, omega, eigenK, T0, false);
+    }
+    
+    // 计算该点的垂直波函数，再得到本征函数
+    // 复制 z_{j+1}- 侧的上传波场
+    eigenfn[0] = mod_potRaylLove_Up[ziref+1][0];
+    // 复制 z_{j}+ 侧的下传波场
+    eigenfn[1] = mod_potRaylLove_Down[ziref][1];
+
+    cplx_t E = exp(- eigenK * xb * dz);
+
+    // 向下传播 \phi+
+    eigenfn[1] *= E;
+    // 向上传播 \phi-
+    E = exp(- eigenK * xb * (thk - dz));
+    eigenfn[0] *= E;
+
+    // 本征函数
+    grt_cmat2x1_mul(T0, eigenfn, eigenfn);  
+
+}
+
+
+void grt_get_eigenfn_depths_Rayl(
+    const GRT_MODEL1D *mod1d, const real_t omega, const real_t eigenK,
+    const cplx_t (*mod_potRaylLove_Down)[GRT_RAYL_DIM], const cplx_t (*mod_potRaylLove_Up)[GRT_RAYL_DIM],
+    const size_t nz, const real_t zsamps[nz], const size_t z_irefs[nz], cplx_t eigenfns[nz][GRT_RAYL_DIM])
+{
+    memset(eigenfns, 0, sizeof(cplx_t)*GRT_RAYL_DIM*nz);
+
+    // 逐个循环处理采样点
+    size_t last_ziref = -1;
+    cplx_t T0[GRT_RAYL_DIM][GRT_RAYL_DIM];
+
+    real_t eigenC = omega / eigenK;
+
+    for(size_t iz=0; iz<nz; ++iz){
+        real_t zsamp = zsamps[iz];
+
+        // 判断层位
+        size_t ziref = z_irefs[iz];
+        
+        // 利用了 zsamp 有序的性质计算本征函数
+        grt_get_eigenfn_single_depth_Rayl(
+            mod1d, omega, eigenK, eigenC,
+            mod_potRaylLove_Down, mod_potRaylLove_Up, 
+            T0, (last_ziref==ziref), zsamp, ziref, eigenfns[iz]);
+        
+        last_ziref = ziref;
+    }
+}
+
+
+void grt_get_eigenfn_depths_Love(
+    const GRT_MODEL1D *mod1d, const real_t omega, const real_t eigenK,
+    const cplx_t (*mod_potRaylLove_Down)[GRT_LOVE_DIM], const cplx_t (*mod_potRaylLove_Up)[GRT_LOVE_DIM],
+    const size_t nz, const real_t zsamps[nz], const size_t z_irefs[nz], cplx_t eigenfns[nz][GRT_LOVE_DIM])
+{
+    memset(eigenfns, 0, sizeof(cplx_t)*GRT_LOVE_DIM*nz);
+
+    // 逐个循环处理采样点
+    size_t last_ziref = -1;
+    cplx_t T0[GRT_LOVE_DIM][GRT_LOVE_DIM];
+
+    real_t eigenC = omega / eigenK;
+
+    for(size_t iz=0; iz<nz; ++iz){
+        real_t zsamp = zsamps[iz];
+
+        // 判断层位
+        size_t ziref = z_irefs[iz];
+        
+        // 利用了 zsamp 有序的性质计算本征函数
+        grt_get_eigenfn_single_depth_Love(
+            mod1d, omega, eigenK, eigenC,
+            mod_potRaylLove_Down, mod_potRaylLove_Up, 
+            T0, (last_ziref==ziref), zsamp, ziref, eigenfns[iz]);
+        
+        last_ziref = ziref;
+    }
+}
+
+
+void grt_get_eigenfn_depths(
+    const GRT_MODEL1D *mod1d, const real_t omega, const real_t eigenK, const size_t ncols, 
+    const cplx_t (*mod_potRaylLove_Down)[ncols], const cplx_t (*mod_potRaylLove_Up)[ncols],
+    const size_t nz, const real_t zsamps[nz], const size_t z_irefs[nz], cplx_t eigenfns[nz][ncols], const bool isRayl)
+{
+    if(isRayl && ncols == GRT_RAYL_DIM){
+        grt_get_eigenfn_depths_Rayl(
+            mod1d, omega, eigenK, 
+            mod_potRaylLove_Down, mod_potRaylLove_Up, nz, zsamps, z_irefs, eigenfns);
+    } 
+    else if(!isRayl && ncols == GRT_LOVE_DIM) {
+        grt_get_eigenfn_depths_Love(
+            mod1d, omega, eigenK, 
+            mod_potRaylLove_Down, mod_potRaylLove_Up, nz, zsamps, z_irefs, eigenfns);
+    }
+    else {
+        GRTRaiseError("Abnormal Error in function %s, isRayl=%i, ncols=%d.\n", __func__, isRayl, ncols);
+    }
+};
+

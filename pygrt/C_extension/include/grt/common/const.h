@@ -39,6 +39,7 @@ typedef double real_t;
 typedef double complex cplx_t;
 #define NC_REAL  NC_DOUBLE
 #define NC_FUNC_REAL(func)  func##_double
+#define NC_FUNC_INT(func)  func##_int
 
 
 // 常数
@@ -108,6 +109,12 @@ typedef double complex cplx_t;
 })
 
 // -----------------------------------------------------------------------------
+#define GRT_RAYL_DIM   4     ///< 矩阵传播中与 Rayleigh 波相关的维度
+#define GRT_LOVE_DIM   2     ///< 矩阵传播中与 Love 波相关的项的维度
+
+#define GRT_EGYINTS_MAX    4    ///< 能量积分最大数量
+#define GRT_SNSTVTY_MAX    3    ///< 敏感核类型最大数量（alpha, beta, rho）
+
 #define GRT_CHANNEL_NUM    3     ///< 3, 代码中分量个数（ZRT，ZNE），也是核函数类型个数(q, w, v)
 
 #define GRT_INTEG_NUM   4    ///< 4, 代码中积分类型个数
@@ -214,6 +221,12 @@ extern const char *srcTypeFullName[];
 /** 在矩阵计算中是否使用高精度计算的一些技巧 */
 extern bool GRT_USE_HIGH_PRECISION;
 #pragma omp threadprivate(GRT_USE_HIGH_PRECISION)
+
+/** 频散类型 */
+typedef enum {
+    GRT_DISPERSION_RAYL = 0, 
+    GRT_DISPERSION_LOVE,
+} DISPER_TYPE;
 
 /**
  * 设置OpenMP多线程数
