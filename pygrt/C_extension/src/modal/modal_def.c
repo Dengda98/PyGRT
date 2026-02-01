@@ -14,7 +14,7 @@ void grt_free_eigenv(EIGENV *eigv)
     GRT_SAFE_FREE_PTR(eigv->c_roots_iref);
 }
 
-void grt_free_eigenv_method(EIGENV_METHOD *eigmet)
+void grt_free_eigenv_method(EIGENV_INFO *eigmet)
 {
     GRT_SAFE_FREE_PTR(eigmet->freqs);
     for(size_t i = 0; i < eigmet->nf; ++i){

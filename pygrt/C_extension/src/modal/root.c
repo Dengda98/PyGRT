@@ -43,7 +43,7 @@ static void get_dc_min_max(GRT_MODEL1D *mod1d, const real_t freq, const real_t c
 }
 
 /** 将对单个频率的处理包装成函数，方便被其它函数并行调用 */
-static void get_secular_roots_single_freq(GRT_MODEL1D *mod1d, EIGENV_METHOD *eigmet, EIGENV *eigv)
+static void get_secular_roots_single_freq(GRT_MODEL1D *mod1d, EIGENV_INFO *eigmet, EIGENV *eigv)
 {
     get_dc_min_max(mod1d, mod1d->omega/PI2, eigmet->cmin, eigmet->cmax, &eigv->dcmin, &eigv->dcmax);
 
@@ -89,7 +89,7 @@ static void get_secular_roots_single_freq(GRT_MODEL1D *mod1d, EIGENV_METHOD *eig
 }
 
 
-void grt_get_secular_roots(GRT_MODEL1D *mod1d, EIGENV_METHOD *eigmet, const bool print_progressbar)
+void grt_get_secular_roots(GRT_MODEL1D *mod1d, EIGENV_INFO *eigmet, const bool print_progressbar)
 {
     real_t *freqs = eigmet->freqs;
     size_t nf = eigmet->nf;

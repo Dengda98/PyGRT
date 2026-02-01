@@ -23,7 +23,7 @@
 
 #include "grt/common/checkerror.h"
 
-void grt_output_cdisp(const char *filepath, const char *full_command, const char *modelpath, EIGENV_METHOD *eigmet)
+void grt_output_cdisp(const char *filepath, const char *full_command, const char *modelpath, EIGENV_INFO *eigmet)
 {
     int ncid, f_dimid, n_dimid;
     const int ndims = 2;

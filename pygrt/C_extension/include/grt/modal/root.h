@@ -31,7 +31,7 @@
  * @param[out]     c_roots_num  不同频率的零点数量
  * 
  */
-void grt_get_secular_roots(GRT_MODEL1D *mod1d, EIGENV_METHOD *eigmet, const bool print_progressbar);
+void grt_get_secular_roots(GRT_MODEL1D *mod1d, EIGENV_INFO *eigmet, const bool print_progressbar);
 // void grt_get_secular_roots(
-//     GRT_MODEL1D *mod1d, EIGENV_METHOD *eigmet,
+//     GRT_MODEL1D *mod1d, EIGENV_INFO *eigmet,
 //     const bool print_progressbar, const size_t secfreq_idx);

@@ -380,7 +380,7 @@ int eigenv_main(int argc, char **argv){
     GRT_MODEL1D *mod1d = Ctrl->M.mod1d;
 
     // 将信息转入结构体
-    EIGENV_METHOD *eigmet = (EIGENV_METHOD *)calloc(1, sizeof(EIGENV_METHOD));
+    EIGENV_INFO *eigmet = (EIGENV_INFO *)calloc(1, sizeof(EIGENV_INFO));
     eigmet->nf = Ctrl->F.nf;
     eigmet->freqs = (real_t *)calloc(eigmet->nf, sizeof(real_t));
     memcpy(eigmet->freqs, Ctrl->F.freqs, sizeof(real_t)*eigmet->nf);

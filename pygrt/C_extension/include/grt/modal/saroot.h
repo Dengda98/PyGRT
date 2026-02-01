@@ -34,4 +34,4 @@
  * @param[out]     Nroot        最终零点数量
  * 
  */
-void grt_sa_secular_roots(GRT_MODEL1D *mod1d, EIGENV_METHOD *eigmet, EIGENV *eigv, const int secRaylType, const size_t iref);
+void grt_sa_secular_roots(GRT_MODEL1D *mod1d, EIGENV_INFO *eigmet, EIGENV *eigv, const int secRaylType, const size_t iref);
