@@ -262,7 +262,7 @@
 // }
 
 
-void grt_kernel_Rayl(GRT_MODEL1D *mod1d, const real_t k, const size_t iref)
+void grt_GRT_matrix_Rayl(GRT_MODEL1D *mod1d, const real_t k, const size_t iref)
 {
     mod1d->k = k;
     grt_mod1d_xa_xb(mod1d, k);
@@ -334,7 +334,7 @@ void grt_kernel_Rayl(GRT_MODEL1D *mod1d, const real_t k, const size_t iref)
 }
 
 
-void grt_kernel_Love(GRT_MODEL1D *mod1d, const real_t k, const size_t iref)
+void grt_GRT_matrix_Love(GRT_MODEL1D *mod1d, const real_t k, const size_t iref)
 {
     mod1d->k = k;
     grt_mod1d_xa_xb(mod1d, k);
@@ -425,12 +425,16 @@ void grt_secular_function_potential_Rayl(
     }
 
     real_t k = mod1d->omega/cphase;
-    grt_kernel_Rayl(mod1d, k, iref);
+    grt_GRT_matrix_Rayl(mod1d, k, iref);
 
     cplx_t tmp1[2][2] = GRT_INIT_ZERO_2x2_MATRIX;
     cplx_t tmp2[2][2] = GRT_INIT_ZERO_2x2_MATRIX;
 
     if(secRaylType==0) {
+        // !! WARNING
+        // 这里这种改写仅适用于顶层为自由表面边界条件的情况
+        // 例如对于刚性条件就需要使用 D11 和 D12 矩阵
+
         // 对于首层，改为 D21*RD_RL + D22
         // 计算顶层的D22 
         cplx_t D22[2][2], D21[2][2];
@@ -514,7 +518,7 @@ void grt_secular_function_potential_Love(
     const size_t iref, cplx_t *psec, cplx_t *ppot)
 {
     real_t k = mod1d->omega/cphase;
-    grt_kernel_Love(mod1d, k, iref);
+    grt_GRT_matrix_Love(mod1d, k, iref);
     
     // 1 - RUL_FR*RDL_RL
     // 对于首层，1 - RDL_RL

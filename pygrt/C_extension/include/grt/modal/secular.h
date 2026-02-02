@@ -43,10 +43,10 @@
 //  * @param[out]     RUL_FR0      RUL_FR 值
 //  * @param[out]     stats        状态代码，是否有除零错误，非0为异常值
 //  */
-void grt_kernel_Rayl(GRT_MODEL1D *mod1d, const real_t k, const size_t iref);
+void grt_GRT_matrix_Rayl(GRT_MODEL1D *mod1d, const real_t k, const size_t iref);
 
 /** 计算所有层位的两个 SH 广义矩阵(标量)： RDL_RL, RUL_FR   */
-void grt_kernel_Love(GRT_MODEL1D *mod1d, const real_t k, const size_t iref);
+void grt_GRT_matrix_Love(GRT_MODEL1D *mod1d, const real_t k, const size_t iref);
 
 /**
  * 计算 Rayleigh 波的久期函数

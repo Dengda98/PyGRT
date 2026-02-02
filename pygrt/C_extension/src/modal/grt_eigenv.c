@@ -379,6 +379,11 @@ int eigenv_main(int argc, char **argv){
     }
     GRT_MODEL1D *mod1d = Ctrl->M.mod1d;
 
+    // 目前边界条件暂有限制
+    if( ! (mod1d->topbound==GRT_BOUND_FREE && mod1d->botbound==GRT_BOUND_HALFSPACE)){
+        GRTRaiseError("Currently only support top-free and bottom-halfspace in Surface wave problem.");
+    }
+
     // 将信息转入结构体
     EIGENV_INFO *eigmet = (EIGENV_INFO *)calloc(1, sizeof(EIGENV_INFO));
     eigmet->nf = Ctrl->F.nf;
@@ -454,7 +459,7 @@ int eigenv_main(int argc, char **argv){
     grt_output_cdisp(Ctrl->C.s_phasepath, full_command, Ctrl->M.s_modelpath, eigmet);
     GRT_SAFE_FREE_PTR(full_command);
     
-    grt_free_eigenv_method(eigmet);
+    grt_free_eigenv_info(eigmet);
 
 FINISH:
     free_Ctrl(Ctrl);
