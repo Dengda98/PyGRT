@@ -26,241 +26,127 @@
 #define __DEBUG_SECULAR__  0
 
 
-// void grt_get_mod_all_RD_RU_Rayl(
-//     const GRT_MODEL1D *mod1d, const cplx_t omega, const real_t k,
-//     cplx_t RD_RL0[mod1d->n][2][2], cplx_t RU_FR0[mod1d->n][2][2], int *stats)
-// {
-//     // 先置零
-//     if(RD_RL0!=NULL) memset(RD_RL0, 0, sizeof(cplx_t)*mod1d->n*4); 
-//     if(RU_FR0!=NULL) memset(RU_FR0, 0, sizeof(cplx_t)*mod1d->n*4); 
+void grt_GRT_matrix_allLayer_Rayl(GRT_MODEL1D *mod1d, const real_t k, RT_MATRIX *Mall_RL, RT_MATRIX *Mall_FR)
+{
+    mod1d->k = k;
+    grt_mod1d_xa_xb(mod1d, k);
 
-// #define X(F) cplx_t (*F)[2][2] = (cplx_t (*)[2][2])calloc(mod1d->n, sizeof(cplx_t[2][2]));
-//     /* RD_RL */ \
-//     X(RD_RLs)  X(RU_RLs)  X(TD_RLs)  X(TU_RLs) \
-//     /* FR (实际先计算ZR，再递推到FR) */ \
-//     X(RD_FRs)  X(RU_FRs)  X(TD_FRs)  X(TU_FRs) 
-// #undef X
+    // 顶底界面
+    RT_MATRIX *M_top = &mod1d->M_top;
+    RT_MATRIX *M_bot = &mod1d->M_bot;
 
-//     // 初始化透射矩阵
-//     for(size_t iy=0; iy<mod1d->n; ++iy){
-//     #define X(F) F[iy][0][0] = F[iy][1][1] = 1.0;
-//         X(TD_RLs)  X(TU_RLs)  X(TD_FRs)  X(TU_FRs)  
-//     #undef X
-//     }
+    for(size_t iy = 0; iy < mod1d->n; ++iy){
+        grt_reset_RT_matrix_PSV(&Mall_RL[iy]);
+        grt_reset_RT_matrix_PSV(&Mall_FR[iy]);
+    }
 
-//     // 自由表面的反射系数
-//     cplx_t R_tilt[2][2]; // SH波在自由表面的反射系数为1，不必定义变量
-    
-//     // 定义物理层内的反射透射系数矩阵，相对于界面上的系数矩阵增加了时间延迟因子
-//     cplx_t RD[2][2] = GRT_INIT_ZERO_2x2_MATRIX;
-//     cplx_t RU[2][2] = GRT_INIT_ZERO_2x2_MATRIX;
-//     cplx_t TD[2][2] = GRT_INIT_IDENTITY_2x2_MATRIX;
-//     cplx_t TU[2][2] = GRT_INIT_IDENTITY_2x2_MATRIX;
+    // 循环每一层
+    for(size_t iy = 1; iy < mod1d->n-1; ++iy)
+    {
+        // 定义物理层内的反射透射系数矩阵
+        RT_MATRIX *M = &(RT_MATRIX){};
+        grt_reset_RT_matrix_PSV(M);
 
-//     // 模型参数
-//     // 后缀0，1分别代表上层和下层
-//     real_t thk0, thk1, Rho0, Rho1;
-//     cplx_t mu0, mu1;
-//     cplx_t xa0=0.0, xb0=0.0, xa1=0.0, xb1=0.0;
-//     cplx_t cbcb0=0.0, cbcb1=0.0;
-//     cplx_t caca1=0.0;
-//     cplx_t top_xa=0.0, top_xb=0.0;
-//     cplx_t top_cbcb=0.0;
-
-//     // 相速度
-//     cplx_t c_phase = omega / k;
-
-//     // 循环每一层
-//     for(size_t iy=0; iy<mod1d->n; ++iy){
-//         // 赋值上层 
-//         thk0 = thk1;
-//         Rho0 = Rho1;
-//         mu0 = mu1;
-//         xa0 = xa1;
-//         xb0 = xb1;
-//         cbcb0 = cbcb1;
-
-//         // 更新模型参数
-//         thk1 = mod1d->Thk[iy];
-//         Rho1 = mod1d->Rho[iy];
-//         mu1 = mod1d->mu[iy];
-//         grt_get_mod1d_xa_xb(mod1d, iy, c_phase, &caca1, &xa1, &cbcb1, &xb1);
-
-//         if(0==iy){
-//             top_xa = xa1;
-//             top_xb = xb1;
-//             top_cbcb = cbcb1;
-//             continue;
-//         }
-
-//         // 计算该层的反射透射系数
-//         // 对第iy层的系数矩阵赋值，加入时间延迟因子(第iy-1界面与第iy界面之间)
-//         grt_RT_matrix_PSV(
-//             Rho0, xa0, xb0, cbcb0, mu0, 
-//             Rho1, xa1, xb1, cbcb1, mu1, 
-//             omega, k, 
-//             RD, RU, TD, TU, stats);
-//         grt_delay_RT_matrix_PSV(xa0, xb0, thk0, k, RD, RU, TD, TU);
-//         if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
+        // 对第iy层的系数矩阵赋值
+        grt_RT_matrix_PSV(mod1d, iy, M);
         
-//         // FR
-//         if(iy == 1){
-//             GRT_RT_PSV_ASSIGN(FRs[iy]);
-//         }
-//         else{
-//             grt_recursion_RT_matrix_PSV(
-//                 RD_FRs[iy-1], RU_FRs[iy-1], TD_FRs[iy-1], TU_FRs[iy-1],
-//                 RD, RU, TD, TU,
-//                 RD_FRs[iy], RU_FRs[iy], TD_FRs[iy], TU_FRs[iy], stats);
-//         }
+        // 加入时间延迟因子(第iy-1界面与第iy界面之间)
+        grt_delay_RT_matrix_PSV(mod1d, iy, M);
         
-//         // RL
-//         GRT_RT_PSV_ASSIGN(RLs[iy-1]);
-//         for(size_t my=0; my<iy-1; ++my){
-//             grt_recursion_RT_matrix_PSV(
-//                 RD_RLs[my], RU_RLs[my], TD_RLs[my], TU_RLs[my],
-//                 RD, RU, TD, TU,
-//                 RD_RLs[my], RU_RLs[my], TD_RLs[my], TU_RLs[my], stats);
-//             if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
-//         }
-//     } // END for loop 
-//     //===================================================================================
+        // FR
+        if(iy == 1){
+            memcpy(&Mall_FR[iy], M, sizeof(*M));
+        }
+        else{
+            grt_recursion_RT_matrix_PSV(&Mall_FR[iy-1], M, &Mall_FR[iy]);
+        }
+        
+        // RL
+        memcpy(&Mall_RL[iy-1], M, sizeof(*M));
+        for(size_t my = 0; my < iy-1; ++my){
+            grt_recursion_RT_matrix_PSV(&Mall_RL[my], M, &Mall_RL[my]);
+        }
+    } // END for loop 
+    //===================================================================================
 
-//     // 递推 RU_FR
-//     grt_topfree_RU_PSV(top_xa, top_xb, top_cbcb, k, R_tilt, stats);
-//     if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
-//     for(size_t iy=0; iy<mod1d->n; ++iy){
-//         grt_recursion_RU_PSV(
-//             R_tilt, RD_FRs[iy], RU_FRs[iy], TD_FRs[iy],
-//             TU_FRs[iy],
-//             RU_FRs[iy], NULL, stats);
-//         if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
-//     }
+    // 递推 RU_FR
+    grt_topbound_RU_PSV(mod1d);
+    for(size_t iy = 0; iy < mod1d->n; ++iy){
+        grt_recursion_RU_PSV(M_top, &Mall_FR[iy], &Mall_FR[iy]);
+    }
+
+    // ---------- 只算到 n-1 层 --------------
+    // 递推 RU_FR
+    grt_topbound_RU_PSV(mod1d);
+    for(size_t iy = 0; iy < mod1d->n-1; ++iy){
+        grt_recursion_RU_PSV(M_top, &Mall_FR[iy], &Mall_FR[iy]);
+    }
+
+    // 递推 RD_RL
+    grt_botbound_RD_PSV(mod1d);
+    for(size_t iy = 0; iy < mod1d->n-1; ++iy){
+        grt_recursion_RD_PSV(&Mall_RL[iy], M_bot, &Mall_RL[iy]);
+    }
     
-//     // 赋值
-//     memcpy(RD_RL0, RD_RLs, sizeof(cplx_t)*mod1d->n*4);
-//     memcpy(RU_FR0, RU_FRs, sizeof(cplx_t)*mod1d->n*4);
-
-//     BEFORE_RETURN:
-
-// #define X(F) GRT_SAFE_FREE_PTR(F);
-//     X(RD_RLs)  X(RU_RLs)  X(TD_RLs)  X(TU_RLs) \
-//     X(RD_FRs)  X(RU_FRs)  X(TD_FRs)  X(TU_FRs) 
-// #undef X
-
-//     return;
-// }
+}
 
 
-// void grt_get_mod_all_RD_RU_Love(
-//     const GRT_MODEL1D *mod1d, cplx_t omega, real_t k,
-//     cplx_t RDL_RL0[mod1d->n], cplx_t RUL_FR0[mod1d->n], int *stats)
-// {
-//     // 先置零
-//     if(RDL_RL0!=NULL) memset(RDL_RL0, 0, sizeof(cplx_t)*mod1d->n); 
-//     if(RUL_FR0!=NULL) memset(RUL_FR0, 0, sizeof(cplx_t)*mod1d->n); 
+void grt_GRT_matrix_allLayer_Love(GRT_MODEL1D *mod1d, const real_t k, RT_MATRIX *Mall_RL, RT_MATRIX *Mall_FR)
+{
+    mod1d->k = k;
+    grt_mod1d_xa_xb(mod1d, k);
 
-// #define X(F) cplx_t *F = (cplx_t *)calloc(mod1d->n, sizeof(cplx_t));
-//     /* RDL_RL */ \
-//     X(RDL_RLs)  X(RUL_RLs)  X(TDL_RLs)  X(TUL_RLs) \
-//     /* FR (实际先计算ZR，再递推到FR) */ \
-//     X(RDL_FRs)  X(RUL_FRs)  X(TDL_FRs)  X(TUL_FRs) 
-// #undef X
+    // 顶底界面
+    RT_MATRIX *M_top = &mod1d->M_top;
+    RT_MATRIX *M_bot = &mod1d->M_bot;
 
-//     // 初始化透射矩阵
-//     for(size_t iy=0; iy<mod1d->n; ++iy){
-//     #define X(F) F[iy] = 1.0;
-//         X(TDL_RLs)  X(TUL_RLs)  X(TDL_FRs)  X(TUL_FRs)  
-//     #undef X
-//     }
+    for(size_t iy = 0; iy < mod1d->n; ++iy){
+        grt_reset_RT_matrix_SH(&Mall_RL[iy]);
+        grt_reset_RT_matrix_SH(&Mall_FR[iy]);
+    }
 
-//     // 定义物理层内的反射透射系数矩阵，相对于界面上的系数矩阵增加了时间延迟因子
-//     cplx_t RDL = 0.0;
-//     cplx_t RUL = 0.0;
-//     cplx_t TDL = 1.0;
-//     cplx_t TUL = 1.0;
+    // 循环每一层
+    for(size_t iy = 1; iy < mod1d->n-1; ++iy)
+    {
+        // 定义物理层内的反射透射系数矩阵
+        RT_MATRIX *M = &(RT_MATRIX){};
+        grt_reset_RT_matrix_SH(M);
 
-//     // 模型参数
-//     // 后缀0，1分别代表上层和下层
-//     real_t thk0, thk1;
-//     cplx_t mu0, mu1;
-//     cplx_t cbcb1;
-//     cplx_t xb0, xb1;
+        // 对第iy层的系数矩阵赋值
+        grt_RT_matrix_SH(mod1d, iy, M);
+        
+        // 加入时间延迟因子(第iy-1界面与第iy界面之间)
+        grt_delay_RT_matrix_SH(mod1d, iy, M);
+        
+        // FR
+        if(iy == 1){
+            memcpy(&Mall_FR[iy], M, sizeof(*M));
+        }
+        else{
+            grt_recursion_RT_matrix_SH(&Mall_FR[iy-1], M, &Mall_FR[iy]);
+        }
+        
+        // RL
+        memcpy(&Mall_RL[iy-1], M, sizeof(*M));
+        for(size_t my = 0; my < iy-1; ++my){
+            grt_recursion_RT_matrix_SH(&Mall_RL[my], M, &Mall_RL[my]);
+        }
+    } // END for loop 
+    //===================================================================================
 
-//     // 相速度
-//     cplx_t c_phase = omega / k;
+    // ---------- 只算到 n-1 层 --------------
+    // 递推 RU_FR
+    grt_topbound_RU_SH(mod1d);
+    for(size_t iy = 0; iy < mod1d->n-1; ++iy){
+        grt_recursion_RU_SH(M_top, &Mall_FR[iy], &Mall_FR[iy]);
+    }
 
-//     for(size_t iy=0; iy<mod1d->n; ++iy){
-//         // 赋值上层 
-//         thk0 = thk1;
-//         mu0 = mu1;
-//         xb0 = xb1;
-
-//         // 更新模型参数
-//         thk1 = mod1d->Thk[iy];
-//         mu1 = mod1d->mu[iy];
-//         grt_get_mod1d_xa_xb(mod1d, iy, c_phase, NULL, NULL, &cbcb1, &xb1);
-
-//         if(0==iy){
-//             continue;
-//         }
-
-//         // 计算该层的反射透射系数
-//         // 对第iy层的系数矩阵赋值，加入时间延迟因子(第iy-1界面与第iy界面之间)
-//         grt_RT_matrix_SH(
-//             xb0, mu0, 
-//             xb1, mu1, 
-//             omega, k, 
-//             &RDL, &RUL, &TDL, &TUL);
-//         grt_delay_RT_matrix_SH(xb0, thk0, k, &RDL, &RUL, &TDL, &TUL);
-
-//         // FR
-//         if(iy == 1){
-//             GRT_RT_SH_ASSIGN(FRs[iy]);
-//         }
-//         else{
-//             grt_recursion_RT_matrix_SH(
-//                 RDL_FRs[iy-1], RUL_FRs[iy-1], TDL_FRs[iy-1], TUL_FRs[iy-1],
-//                 RDL, RUL, TDL, TUL,
-//                 &RDL_FRs[iy], &RUL_FRs[iy], &TDL_FRs[iy], &TUL_FRs[iy], stats);
-//         }
-
-//         // RL
-//         GRT_RT_SH_ASSIGN(RLs[iy-1]);
-//         for(size_t my=0; my<iy-1; ++my){
-//             grt_recursion_RT_matrix_SH(
-//                 RDL_RLs[my], RUL_RLs[my], TDL_RLs[my], TUL_RLs[my],
-//                 RDL, RUL, TDL, TUL,
-//                 &RDL_RLs[my], &RUL_RLs[my], &TDL_RLs[my], &TUL_RLs[my], stats);
-//             if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
-//         }
-
-//     } // END for loop 
-//     //===================================================================================
-
-//     // 递推 RU_FR
-//     for(size_t iy=0; iy<mod1d->n; ++iy){
-//         grt_recursion_RU_SH(
-//             1.0, RDL_FRs[iy], RUL_FRs[iy], TDL_FRs[iy],
-//             TUL_FRs[iy],
-//             &RUL_FRs[iy], NULL, stats);
-//         if(*stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
-//     }
-
-//     // 赋值
-//     memcpy(RDL_RL0, RDL_RLs, sizeof(cplx_t)*mod1d->n);
-//     memcpy(RUL_FR0, RUL_FRs, sizeof(cplx_t)*mod1d->n);
-
-//     BEFORE_RETURN:
-
-// #define X(F) GRT_SAFE_FREE_PTR(F);
-//     X(RDL_RLs)  X(RUL_RLs)  X(TDL_RLs)  X(TUL_RLs) \
-//     X(RDL_FRs)  X(RUL_FRs)  X(TDL_FRs)  X(TUL_FRs) 
-// #undef X
-
-//     return;
-// }
-
+    // 递推 RD_RL
+    grt_botbound_RD_SH(mod1d);
+    for(size_t iy = 0; iy < mod1d->n-1; ++iy){
+        grt_recursion_RD_SH(&Mall_RL[iy], M_bot, &Mall_RL[iy]);
+    }
+}
 
 void grt_GRT_matrix_Rayl(GRT_MODEL1D *mod1d, const real_t k, const size_t iref)
 {
@@ -292,7 +178,6 @@ void grt_GRT_matrix_Rayl(GRT_MODEL1D *mod1d, const real_t k, const size_t iref)
         grt_RT_matrix_PSV(mod1d, iy, M);
         if(M->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
-        // TEMP!! 可以再划分为 PSV 和 SH
         // 加入时间延迟因子(第iy-1界面与第iy界面之间)
         grt_delay_RT_matrix_PSV(mod1d, iy, M);
 
@@ -369,7 +254,6 @@ void grt_GRT_matrix_Love(GRT_MODEL1D *mod1d, const real_t k, const size_t iref)
         // fprintf(stderr, "TUL="GRT_CMPLX_FMT"\n", GRT_CMPLX_SPLIT(M->TUL));
         if(M->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
-        // TEMP!! 可以再划分为 PSV 和 SH
         // 加入时间延迟因子(第iy-1界面与第iy界面之间)
         grt_delay_RT_matrix_SH(mod1d, iy, M);
 

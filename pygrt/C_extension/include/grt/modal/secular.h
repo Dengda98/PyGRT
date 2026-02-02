@@ -12,37 +12,33 @@
 #include "grt/common/const.h"
 #include "grt/common/model.h"
 
-// /** 
-//  * 计算指定层位 iref 处的两个 P-SV 广义矩阵： RD_RL, RU_FR 
-//  * 
-//  * @param[in]      mod1d        模型结构体指针
-//  * @param[in]      omega        圆频率
-//  * @param[in]      k            本征波数
-//  * @param[in]      iref         当前层位
-//  * @param[out]     RD_RL0       RD_RL 矩阵
-//  * @param[out]     RU_FR0       RU_FR 矩阵
-//  * @param[out]     stats        状态代码，是否有除零错误，非0为异常值
-//  */
-// void grt_get_mod_iref_RD_RU_Rayl(
-//     const GRT_MODEL1D *mod1d, const cplx_t omega, const real_t k, const size_t iref, 
-//     cplx_t RD_RL0[2][2], cplx_t RU_FR0[2][2], int *stats);
+/** 
+ * 计算指定层位 iref 处的两个 P-SV 广义矩阵： RD_RL, RU_FR 
+ * 
+ * @param[in]      mod1d        模型结构体指针
+ * @param[in]      omega        圆频率
+ * @param[in]      k            本征波数
+ * @param[in]      iref         当前层位
+ * @param[out]     RD_RL0       RD_RL 矩阵
+ * @param[out]     RU_FR0       RU_FR 矩阵
+ * @param[out]     stats        状态代码，是否有除零错误，非0为异常值
+ */
+void grt_GRT_matrix_allLayer_Rayl(GRT_MODEL1D *mod1d, const real_t k, RT_MATRIX *Mall_RL, RT_MATRIX *Mall_FR);
 
-// /** 计算所有层位的两个  P-SV 广义矩阵： RD_RL, RU_FR  */
-// void grt_get_mod_all_RD_RU_Rayl(
-//     const GRT_MODEL1D *mod1d, const cplx_t omega, const real_t k,
-//     cplx_t RD_RL0[mod1d->n][2][2], cplx_t RU_FR0[mod1d->n][2][2], int *stats);
+/** 计算所有层位的两个  P-SV 广义矩阵： RD_RL, RU_FR  */
+void grt_GRT_matrix_allLayer_Love(GRT_MODEL1D *mod1d, const real_t k, RT_MATRIX *Mall_RL, RT_MATRIX *Mall_FR);
 
-// /** 
-//  * 计算指定层位 iref 处的两个 SH 广义矩阵(标量)： RDL_RL, RUL_FR 
-//  * 
-//  * @param[in]      mod1d        模型结构体指针
-//  * @param[in]      omega        圆频率
-//  * @param[in]      k            本征波数
-//  * @param[in]      iref         当前层位
-//  * @param[out]     RDL_RL0      RDL_RL 值
-//  * @param[out]     RUL_FR0      RUL_FR 值
-//  * @param[out]     stats        状态代码，是否有除零错误，非0为异常值
-//  */
+/** 
+ * 计算指定层位 iref 处的两个 SH 广义矩阵(标量)： RDL_RL, RUL_FR 
+ * 
+ * @param[in]      mod1d        模型结构体指针
+ * @param[in]      omega        圆频率
+ * @param[in]      k            本征波数
+ * @param[in]      iref         当前层位
+ * @param[out]     RDL_RL0      RDL_RL 值
+ * @param[out]     RUL_FR0      RUL_FR 值
+ * @param[out]     stats        状态代码，是否有除零错误，非0为异常值
+ */
 void grt_GRT_matrix_Rayl(GRT_MODEL1D *mod1d, const real_t k, const size_t iref);
 
 /** 计算所有层位的两个 SH 广义矩阵(标量)： RDL_RL, RUL_FR   */

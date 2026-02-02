@@ -327,16 +327,14 @@ static void phase_sensitivity_numerator_single_layer_Rayl(
 
 
 void grt_energy_integrals_Rayl(
-    const GRT_MODEL1D *mod1d, const real_t omega, const real_t eigenK,
-    const cplx_t (*mod_potRaylLove_Down)[GRT_RAYL_DIM], const cplx_t (*mod_potRaylLove_Up)[GRT_RAYL_DIM], 
-    cplx_t *EgyInt, const size_t cpar_nz, const real_t *cpar_zs, const size_t *cpar_z_irefs, cplx_t phase_K[cpar_nz][GRT_SNSTVTY_MAX])
+    const GRT_MODEL1D *mod1d, const cplx_t (*mod_potRaylLove_Down)[GRT_RAYL_DIM], const cplx_t (*mod_potRaylLove_Up)[GRT_RAYL_DIM], 
+    const EIGENFN_INFO *eigfnmet, EIGENFN *eigfn)
 {
     // 先置零
-    memset(EgyInt, 0, sizeof(cplx_t)*GRT_EGYINTS_MAX);
-    if(phase_K != NULL)  memset(phase_K, 0, sizeof(cplx_t)*cpar_nz*GRT_SNSTVTY_MAX);
+    memset(eigfn->egyint, 0, sizeof(cplx_t)*GRT_EGYINTS_MAX);
 
     cplx_t potRaylLove[GRT_RAYL_DIM], potRaylLove_bak[GRT_RAYL_DIM] = {0};
-    cplx_t xa=0.0, xb=0.0, caca=0.0, cbcb=0.0, mu=0.0, lambda=0.0;
+    cplx_t xa=0.0, xb=0.0, mu=0.0, lambda=0.0;
     real_t thk=0.0, rho=0.0;
 
     // 将每层的能量积分结果累加
@@ -344,20 +342,22 @@ void grt_energy_integrals_Rayl(
     ziref = last_ziref = -1;
     real_t dz=0.0, h=0.0;
 
-    real_t eigenC = omega / eigenK;
+    real_t eigenK = mod1d->k;
+    size_t cpar_nz = eigfnmet->cpar_nz;
 
     // 如果没有定义cpar系列数组，则表示使用模型数组，
     // 此时要求 cpar_nz == mod1d->n
-    if((cpar_zs==NULL || cpar_z_irefs==NULL) && cpar_nz != mod1d->n){
-        GRTRaiseError("Error! In function %s, cpar_xx variables error.\n", __func__);
+    if((eigfnmet->cpar_zs==NULL || eigfnmet->cpar_z_irefs==NULL) && eigfnmet->cpar_nz != mod1d->n){
+        GRTRaiseError("cpar_xx variables error.\n");
     }
 
     for(size_t iz = 0; iz < cpar_nz; ++iz){
-        ziref = (cpar_z_irefs!=NULL)? cpar_z_irefs[iz] : iz;
+        ziref = (eigfnmet->cpar_z_irefs!=NULL)? eigfnmet->cpar_z_irefs[iz] : iz;
 
         // 应用深度有序的性质
         if(ziref != last_ziref){
-            grt_get_mod1d_xa_xb__(mod1d, ziref, eigenC, &caca, &xa, &cbcb, &xb);
+            xa = mod1d->xa[ziref];
+            xb = mod1d->xb[ziref];
             lambda = mod1d->lambda[ziref];
             mu = mod1d->mu[ziref];
             thk = mod1d->Thk[ziref];  
@@ -366,13 +366,11 @@ void grt_energy_integrals_Rayl(
             // 构造垂直波函数
             memcpy(potRaylLove_bak, &mod_potRaylLove_Up[ziref+1][0], sizeof(cplx_t)*2);
             memcpy(potRaylLove_bak+2, &mod_potRaylLove_Down[ziref][0]+2, sizeof(cplx_t)*2);
-
-            // 为液体层修改垂直波函数
         }
 
-        if(cpar_zs!=NULL){
-            dz = (iz < cpar_nz-1)? cpar_zs[iz+1] - cpar_zs[iz] : -1.0;   // 这里负厚度用于表示正无穷
-            h = cpar_zs[iz] - mod1d->Dep[ziref];
+        if(eigfnmet->cpar_zs!=NULL){
+            dz = (iz < cpar_nz-1)? eigfnmet->cpar_zs[iz+1] - eigfnmet->cpar_zs[iz] : -1.0;   // 这里负厚度用于表示正无穷
+            h = eigfnmet->cpar_zs[iz] - mod1d->Dep[ziref];
         } else {
             // 模型物理层
             dz = (iz < cpar_nz-1)? mod1d->Thk[ziref] : -1.0;
@@ -392,35 +390,35 @@ void grt_energy_integrals_Rayl(
         energy_integrals_single_layer_Rayl(dz, xa, xb, eigenK, potRaylLove, sub_egyint);
 
         // I1
-        EgyInt[0] += 0.5 * rho * (sub_egyint[0] + sub_egyint[1]);
+        eigfn->egyint[0] += 0.5 * rho * (sub_egyint[0] + sub_egyint[1]);
         // I2
-        EgyInt[1] += 0.5 * ((lambda+2.0*mu)*sub_egyint[0] + mu*sub_egyint[1]);
+        eigfn->egyint[1] += 0.5 * ((lambda+2.0*mu)*sub_egyint[0] + mu*sub_egyint[1]);
         // I3
-        EgyInt[2] += lambda*sub_egyint[2] - mu*sub_egyint[3];
+        eigfn->egyint[2] += lambda*sub_egyint[2] - mu*sub_egyint[3];
         // I4
-        EgyInt[3] += 0.5 * (mu*sub_egyint[4] + (lambda+2.0*mu)*sub_egyint[5]);
+        eigfn->egyint[3] += 0.5 * (mu*sub_egyint[4] + (lambda+2.0*mu)*sub_egyint[5]);
 
         // 计算相速度敏感核
-        if(phase_K!=NULL){
-            phase_sensitivity_numerator_single_layer_Rayl(rho, omega, eigenK, lambda, mu, sub_egyint, phase_K[iz]);
+        if(eigfn->csens!=NULL){
+            phase_sensitivity_numerator_single_layer_Rayl(rho, mod1d->omega, eigenK, lambda, mu, sub_egyint, eigfn->csens[iz]);
             // 去掉系数
-            phase_K[iz][0] /= mod1d->Va[ziref]/eigenC;
-            phase_K[iz][1] /= mod1d->Vb[ziref]/eigenC;
-            phase_K[iz][2] /= rho/eigenC;
+            eigfn->csens[iz][0] /= mod1d->Va[ziref]/mod1d->c_phase;
+            eigfn->csens[iz][1] /= mod1d->Vb[ziref]/mod1d->c_phase;
+            eigfn->csens[iz][2] /= rho/mod1d->c_phase;
         }
 
         last_ziref = ziref;
     }
 
     // 修正敏感核系数
-    if(phase_K!=NULL){
-        cplx_t dom = 4.0*GRT_SQUARE(eigenK)*EgyInt[1] - 2.0*eigenK*EgyInt[2];
+    if(eigfn->csens!=NULL){
+        cplx_t dom = 4.0*GRT_SQUARE(eigenK)*eigfn->egyint[1] - 2.0*eigenK*eigfn->egyint[2];
         if(dom == 0.0){
-            GRTRaiseError("Wrong execution of function %s.", __func__);
+            GRTRaiseError("Wrong execution.");
         }
-        for(size_t iz=0; iz<cpar_nz; ++iz){
-            for(int j=0; j<GRT_SNSTVTY_MAX; ++j){
-                phase_K[iz][j] /= dom;
+        for(size_t iz = 0; iz < cpar_nz; ++iz){
+            for(int j = 0; j < GRT_SNSTVTY_MAX; ++j){
+                eigfn->csens[iz][j] /= dom;
             }
         }
     }
@@ -430,16 +428,14 @@ void grt_energy_integrals_Rayl(
 
 
 void grt_energy_integrals_Love(
-    const GRT_MODEL1D *mod1d, const real_t omega, const real_t eigenK,
-    const cplx_t (*mod_potRaylLove_Down)[GRT_LOVE_DIM], const cplx_t (*mod_potRaylLove_Up)[GRT_LOVE_DIM], 
-    cplx_t *EgyInt, const size_t cpar_nz, const real_t *cpar_zs, const size_t *cpar_z_irefs, cplx_t phase_K[cpar_nz][GRT_SNSTVTY_MAX])
+    const GRT_MODEL1D *mod1d, const cplx_t (*mod_potRaylLove_Down)[GRT_LOVE_DIM], const cplx_t (*mod_potRaylLove_Up)[GRT_LOVE_DIM], 
+    const EIGENFN_INFO *eigfnmet, EIGENFN *eigfn)
 {
     // 先置零
-    memset(EgyInt, 0, sizeof(cplx_t)*GRT_EGYINTS_MAX);
-    if(phase_K != NULL)  memset(phase_K, 0, sizeof(cplx_t)*cpar_nz*GRT_SNSTVTY_MAX);
+    memset(eigfn->egyint, 0, sizeof(cplx_t)*GRT_EGYINTS_MAX);
 
     cplx_t potRaylLove[2], potRaylLove_bak[2] = {0};
-    cplx_t xb=0.0, cbcb=0.0, mu=0.0;
+    cplx_t xb=0.0, mu=0.0;
     real_t thk=0.0, rho=0.0;
     
     // 将每层的能量积分结果累加
@@ -447,20 +443,21 @@ void grt_energy_integrals_Love(
     ziref = last_ziref = -1;
     real_t dz=0.0, h=0.0;
 
-    real_t eigenC = omega / eigenK;
+    real_t eigenK = mod1d->k;
+    size_t cpar_nz = eigfnmet->cpar_nz;
 
     // 如果没有定义cpar系列数组，则表示使用模型数组，
     // 此时要求 cpar_nz == mod1d->n
-    if((cpar_zs==NULL || cpar_z_irefs==NULL) && cpar_nz != mod1d->n){
-        GRTRaiseError("Error! In function %s, cpar_xx variables error.\n", __func__);
+    if((eigfnmet->cpar_zs==NULL || eigfnmet->cpar_z_irefs==NULL) && eigfnmet->cpar_nz != mod1d->n){
+        GRTRaiseError("cpar_xx variables error.\n");
     }
 
     for(size_t iz=0; iz<cpar_nz; ++iz){
-        ziref = (cpar_z_irefs!=NULL)? cpar_z_irefs[iz] : iz;
+        ziref = (eigfnmet->cpar_z_irefs!=NULL)? eigfnmet->cpar_z_irefs[iz] : iz;
 
         // 应用深度有序的性质
         if(ziref != last_ziref){
-            grt_get_mod1d_xa_xb__(mod1d, ziref, eigenC, NULL, NULL, &cbcb, &xb);
+            xb = mod1d->xb[ziref];
             mu = mod1d->mu[ziref];
             thk = mod1d->Thk[ziref];  
             rho = mod1d->Rho[ziref];
@@ -471,11 +468,11 @@ void grt_energy_integrals_Love(
         }
 
         // 跳过液体层， Love 波无位移应力，不会为能量积分和敏感核有贡献
-        if(xb == 1.0)  continue;
+        if(mod1d->isLiquid[ziref])  continue;
 
-        if(cpar_zs!=NULL){
-            dz = (iz < cpar_nz-1)? cpar_zs[iz+1] - cpar_zs[iz] : -1.0;   // 这里负厚度用于表示正无穷
-            h = cpar_zs[iz] - mod1d->Dep[ziref];
+        if(eigfnmet->cpar_zs!=NULL){
+            dz = (iz < cpar_nz-1)? eigfnmet->cpar_zs[iz+1] - eigfnmet->cpar_zs[iz] : -1.0;   // 这里负厚度用于表示正无穷
+            h = eigfnmet->cpar_zs[iz] - mod1d->Dep[ziref];
         } else {
             // 模型物理层
             dz = (iz < cpar_nz-1)? mod1d->Thk[ziref] : -1.0;
@@ -494,36 +491,36 @@ void grt_energy_integrals_Love(
         energy_integrals_single_layer_Love(dz, xb, eigenK, potRaylLove, sub_egyint);
 
         // I1
-        EgyInt[0] += 0.5 * rho * sub_egyint[0];
+        eigfn->egyint[0] += 0.5 * rho * sub_egyint[0];
 
         // I2
-        EgyInt[1] += 0.5 * mu * sub_egyint[0];
+        eigfn->egyint[1] += 0.5 * mu * sub_egyint[0];
 
         // 位移和位移偏导的交叉项为0
-        EgyInt[2] += 0.0;
+        eigfn->egyint[2] += 0.0;
 
         // I3
-        EgyInt[3] += 0.5 * mu * sub_egyint[1];
+        eigfn->egyint[3] += 0.5 * mu * sub_egyint[1];
 
         // 计算相速度敏感核
-        if(phase_K!=NULL){
-            phase_sensitivity_numerator_single_layer_Love(rho, omega, eigenK, mu, sub_egyint, phase_K[iz]);
+        if(eigfn->csens!=NULL){
+            phase_sensitivity_numerator_single_layer_Love(rho, mod1d->omega, eigenK, mu, sub_egyint, eigfn->csens[iz]);
             // 去掉系数
-            phase_K[iz][1] /= mod1d->Vb[ziref]/eigenC;
-            phase_K[iz][2] /= rho/eigenC;
+            eigfn->csens[iz][1] /= mod1d->Vb[ziref]/mod1d->c_phase;
+            eigfn->csens[iz][2] /= rho/mod1d->c_phase;
         }
 
     }
     
     // 修正敏感核系数
-    if(phase_K!=NULL){
-        cplx_t dom = 4.0*GRT_SQUARE(eigenK)*EgyInt[1];
+    if(eigfn->csens!=NULL){
+        cplx_t dom = 4.0*GRT_SQUARE(eigenK)*eigfn->egyint[1];
         if(dom == 0.0){
-            GRTRaiseError("Wrong execution of function %s.", __func__);
+            GRTRaiseError("Wrong execution.");
         }
-        for(size_t iz=0; iz<cpar_nz; ++iz){
-            for(int j=0; j<GRT_SNSTVTY_MAX; ++j){
-                phase_K[iz][j] /= dom;
+        for(size_t iz = 0; iz < cpar_nz; ++iz){
+            for(int j = 0; j < GRT_SNSTVTY_MAX; ++j){
+                eigfn->csens[iz][j] /= dom;
             }
         }
     }
@@ -533,30 +530,19 @@ void grt_energy_integrals_Love(
 
 
 void grt_energy_integrals(
-    const GRT_MODEL1D *mod1d, const real_t omega, const real_t eigenK, const size_t ncols, 
+    const GRT_MODEL1D *mod1d, const DISPER_TYPE wtype, const size_t ncols, 
     const cplx_t (*mod_potRaylLove_Down)[ncols], const cplx_t (*mod_potRaylLove_Up)[ncols], 
-    cplx_t *EgyInt, const size_t cpar_nz, const real_t *cpar_zs, const size_t *cpar_z_irefs, cplx_t phase_K[cpar_nz][GRT_SNSTVTY_MAX], const bool isRayl)
+    const EIGENFN_INFO *eigfnmet, EIGENFN *eigfn)
 {
-    if(isRayl){
-        grt_energy_integrals_Rayl(mod1d, omega, eigenK, mod_potRaylLove_Down, mod_potRaylLove_Up, EgyInt, cpar_nz, cpar_zs, cpar_z_irefs, phase_K);
+    if(wtype == GRT_DISPERSION_RAYL && ncols == GRT_RAYL_DIM){
+        grt_energy_integrals_Rayl(mod1d, mod_potRaylLove_Down, mod_potRaylLove_Up, eigfnmet, eigfn);
+    }
+    else if(wtype == GRT_DISPERSION_LOVE && ncols == GRT_LOVE_DIM) {
+        grt_energy_integrals_Love(mod1d, mod_potRaylLove_Down, mod_potRaylLove_Up, eigfnmet, eigfn);
     }
     else {
-        grt_energy_integrals_Love(mod1d, omega, eigenK, mod_potRaylLove_Down, mod_potRaylLove_Up, EgyInt, cpar_nz, cpar_zs, cpar_z_irefs, phase_K);
+        GRTRaiseError("Wrong execution.");
     }
 }
 
-
-
-real_t grt_get_group_velocity(const real_t omega, const real_t eigenK, const cplx_t EgyInt[GRT_EGYINTS_MAX], const bool isRayl)
-{
-    cplx_t root_c = omega/eigenK;
-    cplx_t res;
-    if(isRayl){
-        res = (EgyInt[1] - EgyInt[2]/(2*eigenK)) / (root_c * EgyInt[0]);
-    }
-    else {
-        res = EgyInt[1] / (root_c * EgyInt[0]);
-    }
-    return creal(res);
-}
 
