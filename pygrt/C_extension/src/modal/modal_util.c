@@ -128,7 +128,7 @@ void grt_output_cdisp(const char *filepath, const char *full_command, const char
 }
 
 
-void grt_read_mod1d_cdisp(const char *s_filepath, EIGENV_INFO *eigmet, const real_t depsrc, const real_t deprcv, GRT_MODEL1D *mod1d)
+void grt_read_cdisp(const char *s_filepath, EIGENV_INFO *eigmet, char **pt_modelpath)
 {  
     int ncid;
     int f_dimid, n_dimid;
@@ -146,12 +146,7 @@ void grt_read_mod1d_cdisp(const char *s_filepath, EIGENV_INFO *eigmet, const rea
         char *modelpath = (char *)calloc(m_len+1, sizeof(char));
         NC_CHECK(nc_get_att_text(ncid, NC_GLOBAL, "model", modelpath));
         modelpath[m_len] = '\0';
-
-        GRT_MODEL1D *modtmp;
-        if((modtmp = grt_read_mod1d_from_file(modelpath, depsrc, deprcv, true)) ==NULL){
-            exit(EXIT_FAILURE);
-        }
-        *mod1d = *modtmp;
+        if(pt_modelpath != NULL)  *pt_modelpath = modelpath;
     }
     // Rayleigh or Love
     {

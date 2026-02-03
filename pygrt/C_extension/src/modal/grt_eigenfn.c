@@ -455,11 +455,17 @@ int eigenfn_main(int argc, char **argv){
     // 传入参数 
     getopt_from_command(Ctrl, argc, argv);
 
-    GRT_MODEL1D *mod1d = (GRT_MODEL1D *)calloc(1, sizeof(GRT_MODEL1D));
+    // 读取频散
+    char *modelpath = NULL;
     EIGENV_INFO *eigmet = (EIGENV_INFO *)calloc(1, sizeof(EIGENV_INFO));
+    grt_read_cdisp(Ctrl->C.s_filepath, eigmet, &modelpath);
 
-    // 读取频散和模型
-    grt_read_mod1d_cdisp(Ctrl->C.s_filepath, eigmet, -1.0, -1.0, mod1d);
+    // 读取模型（不插入震源和台站的虚拟层）
+    GRT_MODEL1D *mod1d = NULL;
+    if((mod1d = grt_read_mod1d_from_file(modelpath, -1.0, -1.0, true)) ==NULL){
+        exit(EXIT_FAILURE);
+    }
+    GRT_SAFE_FREE_PTR(modelpath);
 
     // 根据命令行参数确定出所需的部分频散信息
     EIGENFN_INFO *eigfnmet = (EIGENFN_INFO *)calloc(1, sizeof(EIGENFN_INFO));

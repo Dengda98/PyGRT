@@ -21,7 +21,7 @@ void grt_output_cdisp(const char *filepath, const char *full_command, const char
 void grt_output_gdisp(const char *filepath, EIGENFN_INFO *eigfnmet);
 
 /** 读取频散文件 */
-void grt_read_mod1d_cdisp(const char *s_filepath, EIGENV_INFO *eigmet, const real_t depsrc, const real_t deprcv, GRT_MODEL1D *mod1d);
+void grt_read_cdisp(const char *s_filepath, EIGENV_INFO *eigmet, char **pt_modelpath);
 
 /* 输出本征函数结果 */
 void grt_output_eigenfns(const char *filepath, const int ncols, EIGENFN_INFO *eigfnmet);
