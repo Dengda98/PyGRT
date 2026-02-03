@@ -192,8 +192,10 @@ void __BUILD_QWV__(
     RT_MATRIX *M_FA = &mod1d->M_FA;
     RT_MATRIX *M_FB = &mod1d->M_FB;
 
-    // 计算震源系数
-    __grt_source_coef(mod1d);
+    // 计算震源系数 P_m, SV_m, SH_m 
+    cplxChnlGrid src_coefD;
+    cplxChnlGrid src_coefU;
+    __grt_source_coef(mod1d, src_coefD, src_coefU);
 
     // 临时中转矩阵 (temperary)
     cplx_t tmpR2[2][2], tmp2x2[2][2], tmpRL, tmp2x2_uiz[2][2], tmpRL2;
@@ -221,7 +223,7 @@ void __BUILD_QWV__(
         tmpRL = M_FB->invTL  / (1.0 - M_BL->RDL * M_FB->RUL);
         tmpRL2 = mod1d->R_EVL * tmpRL;
 
-        grt_construct_qwv(ircvup, tmp2x2, tmpRL2, M_BL->RD, M_BL->RDL, mod1d->src_coefD, mod1d->src_coefU, QWV);
+        grt_construct_qwv(ircvup, tmp2x2, tmpRL2, M_BL->RD, M_BL->RDL, src_coefD, src_coefU, QWV);
 
 
         if(calc_uiz){
@@ -230,7 +232,7 @@ void __BUILD_QWV__(
             grt_cmat2x2_mul(mod1d->uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
             tmpRL2 = mod1d->uiz_R_EVL * tmpRL;
 
-            grt_construct_qwv(ircvup, tmp2x2_uiz, tmpRL2, M_BL->RD, M_BL->RDL, mod1d->src_coefD, mod1d->src_coefU, QWV_uiz);
+            grt_construct_qwv(ircvup, tmp2x2_uiz, tmpRL2, M_BL->RD, M_BL->RDL, src_coefD, src_coefU, QWV_uiz);
         }
     } 
     else { // A震源  B接收
@@ -255,7 +257,7 @@ void __BUILD_QWV__(
         tmpRL = M_AL->invTL / (1.0 - M_FA->RUL * M_AL->RDL);
         tmpRL2 = mod1d->R_EVL * tmpRL;
 
-        grt_construct_qwv(ircvup, tmp2x2, tmpRL2, M_FA->RU, M_FA->RUL, mod1d->src_coefD, mod1d->src_coefU, QWV);
+        grt_construct_qwv(ircvup, tmp2x2, tmpRL2, M_FA->RU, M_FA->RUL, src_coefD, src_coefU, QWV);
 
 
         if(calc_uiz){
@@ -264,7 +266,7 @@ void __BUILD_QWV__(
             grt_cmat2x2_mul(mod1d->uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
             tmpRL2 = mod1d->uiz_R_EVL * tmpRL;
             
-            grt_construct_qwv(ircvup, tmp2x2_uiz, tmpRL2, M_FA->RU, M_FA->RUL, mod1d->src_coefD, mod1d->src_coefU, QWV_uiz);
+            grt_construct_qwv(ircvup, tmp2x2_uiz, tmpRL2, M_FA->RU, M_FA->RUL, src_coefD, src_coefU, QWV_uiz);
         }
 
     } // END if

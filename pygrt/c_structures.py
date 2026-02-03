@@ -140,8 +140,6 @@ class c_GRT_MODEL1D(Structure):
         ('R_EVL', CPLX),
         ('uiz_R_EV', CPLX * 4),
         ('uiz_R_EVL', CPLX),
-
-        ('src_coef', CPLX * SRC_M_NUM * QWV_NUM * 2)
     ]
 
 
