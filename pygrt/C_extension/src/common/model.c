@@ -189,7 +189,7 @@ void grt_mod1d_xa_xb(GRT_MODEL1D *mod1d, const real_t k)
     size_t ircv = mod1d->ircv;
 
     for(size_t i=0; i<mod1d->n; ++i){
-        if( i == isrc || i == ircv ){
+        if( mod1d->srcrcv_isInserted && (i == isrc || i == ircv) ){
             mod1d->xa[i] = mod1d->xa[i-1];
             mod1d->caca[i] = mod1d->caca[i-1];
             mod1d->xb[i] = mod1d->xb[i-1];
@@ -230,6 +230,10 @@ void grt_realloc_mod1d(GRT_MODEL1D *mod1d, size_t n){
 
 GRT_MODEL1D * grt_read_mod1d_from_file(const char *modelpath, real_t depsrc, real_t deprcv, bool allowLiquid){
     GRTCheckFileExist(modelpath);
+
+    if(depsrc * deprcv < 0.0){
+        GRTRaiseError("depsrc and deprcv should have the same sign.");
+    }
     
     FILE *fp = GRTCheckOpenFile(modelpath, "r");
 
@@ -390,6 +394,7 @@ GRT_MODEL1D * grt_read_mod1d_from_file(const char *modelpath, real_t depsrc, rea
     mod1d->n = nlay;
     mod1d->depsrc = depsrc;
     mod1d->deprcv = deprcv;
+    mod1d->srcrcv_isInserted = (depsrc >= 0.0 && deprcv >= 0.0)? true : false;
 
     // 记录每层是否为液体层
     for(size_t i = 0; i < mod1d->n; ++i){

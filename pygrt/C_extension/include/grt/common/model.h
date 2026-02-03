@@ -23,6 +23,7 @@ typedef struct {
     size_t ircv; ///< 接收点所在虚拟层位, ircv>=1, ircv != isrc
     bool ircvup; ///< 接收点位于浅层, ircv < isrc
     bool io_depth; ///< 读取的模型首列为每层顶界面深度
+    bool srcrcv_isInserted;  ///< 震源和台站是否已经以虚拟层的形式插入
 
     cplx_t omgref;   ///< 参考圆频率, 用于计算衰减
     cplx_t omega;   ///< 圆频率

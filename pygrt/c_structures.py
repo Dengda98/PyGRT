@@ -96,6 +96,7 @@ class c_GRT_MODEL1D(Structure):
         ('ircv', c_size_t),
         ('ircvup', c_bool),
         ('io_depth', c_bool),
+        ('srcrcv_isInserted', c_bool),
 
         ('omgref', CPLX),
         ('omega', CPLX),
