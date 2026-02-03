@@ -405,7 +405,7 @@ static void grt_eigenfn_egy_gdisp_phaseK_util(
             
             local_mod1d->c_phase = cphase;
             local_mod1d->k = omega/cphase;
-            grt_mod1d_xa_xb(mod1d, local_mod1d->k);
+            grt_mod1d_xa_xb(local_mod1d, local_mod1d->k);
 
             size_t iref = eigv->c_roots_iref[ic];
 

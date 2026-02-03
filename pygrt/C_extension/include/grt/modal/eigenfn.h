@@ -45,6 +45,29 @@ void grt_get_mod_potential_Up_Down(
 
 
 /**
+ * 计算某个深度处的本征函数 P-SV
+ * 
+ * @param[in]      mod1d                模型结构体指针
+ * @param[in]      omega                圆频率
+ * @param[in]      eigenK               本征波数
+ * @param[in]      mod_potRaylLove_Down 每层 z_j+ 的垂直波函数
+ * @param[in]      mod_potRaylLove_Up   每层 z_j- 的垂直波函数
+ * @param[in,out]  T0                   介质层矩阵
+ * @param[in]      reuseT               是否可直接使用传入的 T0
+ * @param[in]      zsamp                采样点深度
+ * @param[in]      ziref                采样点层位
+ * @param[out]     eigenfn              采样点本征函数
+ * 
+ */
+void grt_get_eigenfn_single_depth_Rayl(
+    const GRT_MODEL1D *mod1d, const cplx_t (*mod_potRaylLove_Down)[GRT_RAYL_DIM], const cplx_t (*mod_potRaylLove_Up)[GRT_RAYL_DIM],
+    cplx_t T0[GRT_RAYL_DIM][GRT_RAYL_DIM], const bool reuseT, const real_t zsamp, const size_t ziref, cplx_t eigenfn[4]);
+
+void grt_get_eigenfn_single_depth_Love(
+    const GRT_MODEL1D *mod1d, const cplx_t (*mod_potRaylLove_Down)[GRT_LOVE_DIM], const cplx_t (*mod_potRaylLove_Up)[GRT_LOVE_DIM],
+    cplx_t T0[GRT_LOVE_DIM][GRT_LOVE_DIM], const bool reuseT, const real_t zsamp, const size_t ziref, cplx_t eigenfn[4]);
+
+/**
  * 计算多个深度处的本征函数 P-SV
  * 
  * @param[in]      mod1d                模型结构体指针

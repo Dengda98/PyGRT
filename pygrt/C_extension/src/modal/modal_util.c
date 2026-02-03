@@ -311,7 +311,7 @@ void grt_output_gdisp(const char *filepath, EIGENFN_INFO *eigfnmet)
     // 分批次写入数据
     size_t startp[ndims];
     size_t countp[ndims];
-    for(int iw = 0; iw < eigfnmet->nf; ++iw){
+    for(size_t iw = 0; iw < eigfnmet->nf; ++iw){
         startp[0] = iw;
         startp[1] = 0;
         countp[0] = 1;
