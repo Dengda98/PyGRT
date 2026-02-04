@@ -694,32 +694,38 @@ void grt_delay_GRT_matrix(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *
 }
 
 
-void grt_get_layer_D(
-    cplx_t xa, cplx_t xb, cplx_t kbkb, cplx_t mu,
-    cplx_t omega, real_t rho, real_t k, cplx_t D[4][4], bool inverse, int liquid_invtype)
+void grt_get_layer_D(const GRT_MODEL1D *mod1d, const size_t iy, bool inverse, int liquid_invtype, cplx_t D[4][4])
 {
     // 第iy层物理量
-    cplx_t Omg;
-    if(xb != 1.0){
-        Omg = k*k - 0.5*kbkb;
+    real_t k = mod1d->k;
+    real_t kk = k*k;
+    cplx_t xa = mod1d->xa[iy];
+    cplx_t xb = mod1d->xb[iy];
+    cplx_t mu = mod1d->mu[iy];
+    cplx_t cbcb = mod1d->cbcb[iy];
+    real_t rho = mod1d->Rho[iy];
+    cplx_t Omgn, Omg;
+    if(! mod1d->isLiquid[iy]){
+        Omgn = 1.0 - 0.5*cbcb;
+        Omg = Omgn*kk;
         if( ! inverse ){
             D[0][0] = k;               D[0][1] = k*xb;             D[0][2] = k;               D[0][3] = -k*xb;     
             D[1][0] = k*xa;            D[1][1] = k;                D[1][2] = -k*xa;           D[1][3] = k;   
             D[2][0] = 2*mu*Omg;        D[2][1] = 2*k*mu*k*xb;      D[2][2] = 2*mu*Omg;        D[2][3] = -2*k*mu*k*xb;   
             D[3][0] = 2*k*mu*k*xa;     D[3][1] = 2*mu*Omg;         D[3][2] = -2*k*mu*k*xa;    D[3][3] = 2*mu*Omg;   
         } else {
-            D[0][0] = -2*k*mu*k*xa*k*xb;  D[0][1] = 2*mu*Omg*k*xb;       D[0][2] = k*xa*k*xb;            D[0][3] = -k*k*xb;     
-            D[1][0] = 2*mu*Omg*k*xa;      D[1][1] = -2*k*mu*k*xa*k*xb;   D[1][2] = -k*k*xa;              D[1][3] = k*xa*k*xb;   
-            D[2][0] = -2*k*mu*k*xa*k*xb;  D[2][1] = -2*mu*Omg*k*xb;      D[2][2] = k*xa*k*xb;            D[2][3] = k*k*xb;   
-            D[3][0] = -2*mu*Omg*k*xa;     D[3][1] = -2*k*mu*k*xa*k*xb;   D[3][2] = k*k*xa;               D[3][3] = k*xa*k*xb;
+            D[0][0] = -2*k*mu*xa*xb;    D[0][1] = 2*mu*Omgn*k*xb;   D[0][2] = xa*xb;       D[0][3] = - xb;     
+            D[1][0] = 2*mu*Omgn*k*xa;   D[1][1] = -2*k*mu*xa*xb;    D[1][2] = - xa;        D[1][3] = xa*xb;   
+            D[2][0] = -2*k*mu*xa*xb;    D[2][1] = -2*mu*Omgn*k*xb;  D[2][2] = xa*xb;       D[2][3] = xb;   
+            D[3][0] = -2*mu*Omgn*k*xa;  D[3][1] = -2*k*mu*xa*xb;    D[3][2] = xa;          D[3][3] = xa*xb;
             for(int i=0; i<4; ++i){
                 for(int j=0; j<4; ++j){
-                    D[i][j] /= - 2*mu*kbkb*k*xa*k*xb;
+                    D[i][j] /= - 2*mu*cbcb*k*xa*k*xb;
                 }
             }
         }
     } else {
-        Omg = rho * GRT_SQUARE(omega) / k;
+        Omg = rho * GRT_SQUARE(mod1d->omega) / k;
         if(liquid_invtype == 1){
             if( ! inverse ){
                 D[0][0] = k;            D[0][1] = 0.0;      D[0][2] = k;               D[0][3] = 0.0;     
@@ -759,11 +765,12 @@ void grt_get_layer_D(
     
 }
 
-void grt_get_layer_D11(
-    cplx_t xa, cplx_t xb, real_t k, cplx_t D[2][2])
+void grt_get_layer_D11(const GRT_MODEL1D *mod1d, const size_t iy, cplx_t D[2][2])
 {
-    // 第iy层物理量
-    if(xb != 1.0){
+    real_t k = mod1d->k;
+    cplx_t xa = mod1d->xa[iy];
+    cplx_t xb = mod1d->xb[iy];
+    if(! mod1d->isLiquid[iy]){
         D[0][0] = k;        D[0][1] = k*xb;
         D[1][0] = k*xa;     D[1][1] = k;   
     } else {
@@ -773,28 +780,29 @@ void grt_get_layer_D11(
     
 }
 
-void grt_get_layer_D12(
-    cplx_t xa, cplx_t xb, real_t k, cplx_t D[2][2])
+void grt_get_layer_D12(const GRT_MODEL1D *mod1d, const size_t iy, cplx_t D[2][2])
 {
-    // 第iy层物理量
-    if(xb != 1.0){
+    real_t k = mod1d->k;
+    cplx_t xa = mod1d->xa[iy];
+    cplx_t xb = mod1d->xb[iy];
+    if(! mod1d->isLiquid[iy]){
         D[0][0] = k;        D[0][1] = -k*xb;
         D[1][0] = -k*xa;    D[1][1] = k;   
     } else {
         D[0][0] = k;        D[0][1] = 0.0;
         D[1][0] = -k*xa;    D[1][1] = 0.0;   
     }
-    
 }
 
-void grt_get_layer_D11_uiz(
-    cplx_t xa, cplx_t xb, real_t k, cplx_t D[2][2])
+void grt_get_layer_D11_uiz(const GRT_MODEL1D *mod1d, const size_t iy, cplx_t D[2][2])
 {
-    // 第iy层物理量
+    real_t k = mod1d->k;
+    cplx_t xa = mod1d->xa[iy];
+    cplx_t xb = mod1d->xb[iy];
     cplx_t a = k*xa;
     cplx_t b = k*xb;
 
-    if(xb != 1.0){
+    if(! mod1d->isLiquid[iy]){
         D[0][0] = a*k;     D[0][1] = b*b;
         D[1][0] = a*a;     D[1][1] = b*k;   
     } else {
@@ -803,14 +811,15 @@ void grt_get_layer_D11_uiz(
     }
 }
 
-void grt_get_layer_D12_uiz(
-    cplx_t xa, cplx_t xb, real_t k, cplx_t D[2][2])
+void grt_get_layer_D12_uiz(const GRT_MODEL1D *mod1d, const size_t iy, cplx_t D[2][2])
 {
-    // 第iy层物理量
+    real_t k = mod1d->k;
+    cplx_t xa = mod1d->xa[iy];
+    cplx_t xb = mod1d->xb[iy];
     cplx_t a = k*xa;
     cplx_t b = k*xb;
 
-    if(xb != 1.0){
+    if(! mod1d->isLiquid[iy]){
         D[0][0] = - a*k;     D[0][1] = b*b;
         D[1][0] = a*a;       D[1][1] = - b*k;   
     } else {
@@ -819,47 +828,55 @@ void grt_get_layer_D12_uiz(
     }
 }
 
-void grt_get_layer_D21(
-    cplx_t xa, cplx_t xb, cplx_t kbkb, cplx_t mu,
-    cplx_t omega, real_t rho, real_t k, cplx_t D[2][2])
+void grt_get_layer_D21(const GRT_MODEL1D *mod1d, const size_t iy, cplx_t D[2][2])
 {
-    // 第iy层物理量
+    real_t k = mod1d->k;
+    cplx_t xa = mod1d->xa[iy];
+    cplx_t xb = mod1d->xb[iy];
+    cplx_t mu = mod1d->mu[iy];
+    cplx_t cbcb = mod1d->cbcb[iy];
+    real_t rho = mod1d->Rho[iy];
     cplx_t Omg;
-    if(xb != 1.0){
-        Omg = k*k - 0.5*kbkb;
+    if(! mod1d->isLiquid[iy]){
+        Omg = k*k*(1.0 - 0.5*cbcb);
         D[0][0] = 2*mu*Omg;        D[0][1] = 2*k*mu*k*xb;
         D[1][0] = 2*k*mu*k*xa;     D[1][1] = 2*mu*Omg;   
     } else {
-        D[0][0] = - rho * GRT_SQUARE(omega);        D[0][1] = 0.0;
-        D[1][0] = 0.0;                              D[1][1] = 0.0;   
+        D[0][0] = - rho * GRT_SQUARE(mod1d->omega);    D[0][1] = 0.0;
+        D[1][0] = 0.0;                                 D[1][1] = 0.0;   
     }
     
 }
 
-void grt_get_layer_D22(
-    cplx_t xa, cplx_t xb, cplx_t kbkb, cplx_t mu,
-    cplx_t omega, real_t rho, real_t k, cplx_t D[2][2])
+void grt_get_layer_D22(const GRT_MODEL1D *mod1d, const size_t iy, cplx_t D[2][2])
 {
-    // 第iy层物理量
+    real_t k = mod1d->k;
+    cplx_t xa = mod1d->xa[iy];
+    cplx_t xb = mod1d->xb[iy];
+    cplx_t mu = mod1d->mu[iy];
+    cplx_t cbcb = mod1d->cbcb[iy];
+    real_t rho = mod1d->Rho[iy];
     cplx_t Omg;
-    if(xb != 1.0){
-        Omg = k*k - 0.5*kbkb;
+    if(! mod1d->isLiquid[iy]){
+        Omg = k*k*(1.0 - 0.5*cbcb);
         D[0][0] = 2*mu*Omg;        D[0][1] = -2*k*mu*k*xb;
         D[1][0] = -2*k*mu*k*xa;    D[1][1] = 2*mu*Omg;   
     } else {
-        D[0][0] = - rho * GRT_SQUARE(omega);        D[0][1] = 0.0;
-        D[1][0] = 0.0;                              D[1][1] = 0.0;   
+        D[0][0] = - rho * GRT_SQUARE(mod1d->omega);    D[0][1] = 0.0;
+        D[1][0] = 0.0;                                 D[1][1] = 0.0;   
     }
 }
 
-void grt_get_layer_T(
-    cplx_t xb, cplx_t mu,
-    cplx_t omega, real_t k, cplx_t T[2][2], bool inverse)
+void grt_get_layer_T(const GRT_MODEL1D *mod1d, const size_t iy, bool inverse, cplx_t T[2][2])
 {
     // 液体层不应该使用该函数
-    if(xb == 1.0){
+    if(mod1d->isLiquid[iy]){
         GRTRaiseError("Wrong execution.");
     }
+
+    real_t k = mod1d->k;
+    cplx_t xb = mod1d->xb[iy];
+    cplx_t mu = mod1d->mu[iy];
 
     if( ! inverse ){
         T[0][0] = k;              T[0][1] = k;
@@ -875,94 +892,57 @@ void grt_get_layer_T(
     }
 }
 
-void grt_get_layer_E_Love(cplx_t xb1, real_t thk, real_t k, cplx_t E[2][2], bool inverse)
-{
-    cplx_t exb = exp(k*thk*xb1); 
 
-    memset(E, 0, sizeof(cplx_t) * 4);
-    if(! inverse){
-        E[0][0] = exb;
-        E[1][1] = 1.0/exb;
-    } else {
-        E[0][0] = 1.0/exb;
-        E[1][1] = exb;
-    }
-    
-}
+// void grt_RT_matrix_from_4x4(
+//     cplx_t xa1, cplx_t xb1, cplx_t kbkb1, cplx_t mu1, real_t rho1, 
+//     cplx_t xa2, cplx_t xb2, cplx_t kbkb2, cplx_t mu2, real_t rho2,
+//     cplx_t omega, real_t thk,
+//     real_t k, 
+//     cplx_t RD[2][2], cplx_t *RDL, cplx_t RU[2][2], cplx_t *RUL, 
+//     cplx_t TD[2][2], cplx_t *TDL, cplx_t TU[2][2], cplx_t *TUL, int *stats)
+// {
+//     cplx_t D1_inv[4][4], D2[4][4], Q[4][4];
 
-void grt_get_layer_E_Rayl(
-    cplx_t xa1, cplx_t xb1, real_t thk, real_t k, cplx_t E[4][4], bool inverse)
-{
-    cplx_t exa, exb; 
+//     grt_get_layer_D(xa1, xb1, kbkb1, mu1, omega, rho1, k, D1_inv, true, 2);
+//     grt_get_layer_D(xa2, xb2, kbkb2, mu2, omega, rho2, k, D2,    false, 2);
 
-    exa = exp(k*thk*xa1);
-    exb = exp(k*thk*xb1);
+//     grt_cmatmxn_mul(4, 4, 4, D1_inv, D2, Q);
 
-    memset(E, 0, sizeof(cplx_t) * 16);
+//     cplx_t exa, exb; 
 
-    if( ! inverse){
-        E[0][0] = exa;
-        E[1][1] = exb;
-        E[2][2] = 1.0/exa;
-        E[3][3] = 1.0/exb;
-    } else {
-        E[0][0] = 1.0/exa;
-        E[1][1] = 1.0/exb;
-        E[2][2] = exa;
-        E[3][3] = exb;
-    }
-}
+//     exa = exp(-k*thk*xa1);
+//     exb = exp(-k*thk*xb1);
 
-void grt_RT_matrix_from_4x4(
-    cplx_t xa1, cplx_t xb1, cplx_t kbkb1, cplx_t mu1, real_t rho1, 
-    cplx_t xa2, cplx_t xb2, cplx_t kbkb2, cplx_t mu2, real_t rho2,
-    cplx_t omega, real_t thk,
-    real_t k, 
-    cplx_t RD[2][2], cplx_t *RDL, cplx_t RU[2][2], cplx_t *RUL, 
-    cplx_t TD[2][2], cplx_t *TDL, cplx_t TU[2][2], cplx_t *TUL, int *stats)
-{
-    cplx_t D1_inv[4][4], D2[4][4], Q[4][4];
+//     cplx_t E[4][4] = {0};
+//     E[0][0] = exa;
+//     E[1][1] = exb;
+//     E[2][2] = 1/exa;
+//     E[3][3] = 1/exb;
+//     grt_cmatmxn_mul(4, 4, 4, E, Q, Q);
 
-    grt_get_layer_D(xa1, xb1, kbkb1, mu1, omega, rho1, k, D1_inv, true, 2);
-    grt_get_layer_D(xa2, xb2, kbkb2, mu2, omega, rho2, k, D2,    false, 2);
+//     // 对Q矩阵划分子矩阵 
+//     cplx_t Q11[2][2], Q12[2][2], Q21[2][2], Q22[2][2];
+//     grt_cmatmxn_block(4, 4, Q, 0, 0, 2, 2, Q11);
+//     grt_cmatmxn_block(4, 4, Q, 0, 2, 2, 2, Q12);
+//     grt_cmatmxn_block(4, 4, Q, 2, 0, 2, 2, Q21);
+//     grt_cmatmxn_block(4, 4, Q, 2, 2, 2, 2, Q22);
 
-    grt_cmatmxn_mul(4, 4, 4, D1_inv, D2, Q);
+//     // 计算反射透射系数 
+//     // TD
+//     grt_cmat2x2_inv(Q22, TD);
+//     // RD
+//     grt_cmat2x2_mul(Q12, TD, RD); 
+//     // RU
+//     grt_cmat2x2_mul(TD, Q21, RU);
+//     grt_cmat2x2_k(RU, -1, RU);
+//     // TU
+//     grt_cmat2x2_mul(Q12, RU, TU);
+//     grt_cmat2x2_add(Q11, TU, TU);
 
-    cplx_t exa, exb; 
-
-    exa = exp(-k*thk*xa1);
-    exb = exp(-k*thk*xb1);
-
-    cplx_t E[4][4] = {0};
-    E[0][0] = exa;
-    E[1][1] = exb;
-    E[2][2] = 1/exa;
-    E[3][3] = 1/exb;
-    grt_cmatmxn_mul(4, 4, 4, E, Q, Q);
-
-    // 对Q矩阵划分子矩阵 
-    cplx_t Q11[2][2], Q12[2][2], Q21[2][2], Q22[2][2];
-    grt_cmatmxn_block(4, 4, Q, 0, 0, 2, 2, Q11);
-    grt_cmatmxn_block(4, 4, Q, 0, 2, 2, 2, Q12);
-    grt_cmatmxn_block(4, 4, Q, 2, 0, 2, 2, Q21);
-    grt_cmatmxn_block(4, 4, Q, 2, 2, 2, 2, Q22);
-
-    // 计算反射透射系数 
-    // TD
-    grt_cmat2x2_inv(Q22, TD);
-    // RD
-    grt_cmat2x2_mul(Q12, TD, RD); 
-    // RU
-    grt_cmat2x2_mul(TD, Q21, RU);
-    grt_cmat2x2_k(RU, -1, RU);
-    // TU
-    grt_cmat2x2_mul(Q12, RU, TU);
-    grt_cmat2x2_add(Q11, TU, TU);
-
-    *RDL = (mu1*xb1 - mu2*xb2) / (mu1*xb1 + mu2*xb2) * exa*exa;
-    *RUL = - (*RDL);
-    *TDL = 2.0*mu1*xb1/(mu1*xb1 + mu2*xb2) * exb;
-    *TUL = 2.0*mu2*xb2/(mu1*xb1 + mu2*xb2) * exb;
+//     *RDL = (mu1*xb1 - mu2*xb2) / (mu1*xb1 + mu2*xb2) * exa*exa;
+//     *RUL = - (*RDL);
+//     *TDL = 2.0*mu1*xb1/(mu1*xb1 + mu2*xb2) * exb;
+//     *TUL = 2.0*mu2*xb2/(mu1*xb1 + mu2*xb2) * exb;
 
     
-}
+// }
