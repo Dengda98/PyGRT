@@ -151,17 +151,15 @@ static cplx_t _solve_typical_integral_Love(
  *     5. (dq/dz)^2
  *     6. (dw/dz)^2
  * 
+ * @param[in]     mod1d        模型结构体指针
+ * @param[in]     iy           层位索引
  * @param[in]     H            层厚
- * @param[in]     xa           P波归一化垂直波数 \f$ \sqrt{1 - (k_a/k)^2} \f$
- * @param[in]     xb           S波归一化垂直波数 \f$ \sqrt{1 - (k_a/k)^2} \f$
- * @param[in]     k            本征波数
  * @param[in]     potRaylLove  垂直波函数
  * @param[out]    sub_egyint   6 个积分子项结果
  * 
  */
 static void energy_integrals_single_layer_Rayl(
-    const real_t H, const cplx_t xa, const cplx_t xb, 
-    const real_t k, const cplx_t potRaylLove[GRT_RAYL_DIM], cplx_t sub_egyint[6])
+    const GRT_MODEL1D *mod1d, const size_t iy, const real_t H, const cplx_t potRaylLove[GRT_RAYL_DIM], cplx_t sub_egyint[6])
 {
     cplx_t M[GRT_RAYL_DIM][GRT_RAYL_DIM] = {0};
     cplx_t D11[2][2] = {0}, D12[2][2] = {0};
@@ -172,10 +170,10 @@ static void energy_integrals_single_layer_Rayl(
     cplx_t tmp4x2[4][2] = {0};
 
     // 构造 M 矩阵
-    grt_get_layer_D11(xa, xb, k, D11);
-    grt_get_layer_D12(xa, xb, k, D12);
-    grt_get_layer_D11_uiz(xa, xb, k, D11_uiz);
-    grt_get_layer_D12_uiz(xa, xb, k, D12_uiz);
+    grt_get_layer_D11(mod1d, iy, D11);
+    grt_get_layer_D12(mod1d, iy, D12);
+    grt_get_layer_D11_uiz(mod1d, iy, D11_uiz);
+    grt_get_layer_D12_uiz(mod1d, iy, D12_uiz);
 
     grt_cmatmxn_block_assign(2, 4, D2x4, 0, 0, 2, 2, D11);
     grt_cmatmxn_block_assign(2, 4, D2x4, 0, 2, 2, 2, D12);
@@ -184,6 +182,10 @@ static void energy_integrals_single_layer_Rayl(
     grt_cmatmxn_block_assign(2, 4, D2x4_uiz, 0, 0, 2, 2, D11_uiz);
     grt_cmatmxn_block_assign(2, 4, D2x4_uiz, 0, 2, 2, 2, D12_uiz);
     grt_cmatmxn_transpose(2, 4, D2x4_uiz, D4x2_uiz);
+    
+    real_t k  = mod1d->k;
+    cplx_t xa = mod1d->xa[iy];
+    cplx_t xb = mod1d->xb[iy];
 
     // 1. (q)^2
     memset(Diag, 0, sizeof(cplx_t)*4);
@@ -236,18 +238,20 @@ static void energy_integrals_single_layer_Rayl(
  *     1. (v)^2
  *     2. (dv/dz)^2
  * 
+ * @param[in]     mod1d        模型结构体指针
+ * @param[in]     iy           层位索引
  * @param[in]     H            层厚
- * @param[in]     xb           S波归一化垂直波数 \f$ \sqrt{1 - (k_a/k)^2} \f$
- * @param[in]     k            本征波数
  * @param[in]     potRaylLove  垂直波函数
  * @param[out]    sub_egyint   2 个积分子项结果
  * 
  */
 static void energy_integrals_single_layer_Love(
-    const real_t H, const cplx_t xb, 
-    const real_t k, const cplx_t potRaylLove[GRT_LOVE_DIM], cplx_t sub_egyint[2])
+    const GRT_MODEL1D *mod1d, const size_t iy, const real_t H, const cplx_t potRaylLove[GRT_LOVE_DIM], cplx_t sub_egyint[2])
 {
     cplx_t M[2][2] = {0};
+
+    real_t k  = mod1d->k;
+    cplx_t xb = mod1d->xb[iy];
 
     // 1. (v)^2
     memset(M, 0, sizeof(cplx_t)*4);
@@ -387,7 +391,7 @@ void grt_energy_integrals_Rayl(
 
         // 计算能量积分所需的子项, 这里负厚度用于表示正无穷
         cplx_t sub_egyint[6];
-        energy_integrals_single_layer_Rayl(dz, xa, xb, eigenK, potRaylLove, sub_egyint);
+        energy_integrals_single_layer_Rayl(mod1d, ziref, dz, potRaylLove, sub_egyint);
 
         // I1
         eigfn->egyint[0] += 0.5 * rho * (sub_egyint[0] + sub_egyint[1]);
@@ -488,7 +492,7 @@ void grt_energy_integrals_Love(
 
         // 计算能量积分所需的子项
         cplx_t sub_egyint[2] = {0};
-        energy_integrals_single_layer_Love(dz, xb, eigenK, potRaylLove, sub_egyint);
+        energy_integrals_single_layer_Love(mod1d, ziref, dz, potRaylLove, sub_egyint);
 
         // I1
         eigfn->egyint[0] += 0.5 * rho * sub_egyint[0];

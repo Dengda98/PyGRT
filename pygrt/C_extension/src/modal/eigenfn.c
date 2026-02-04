@@ -311,19 +311,15 @@ void grt_get_eigenfn_single_depth_Rayl(
 {
     real_t dz = zsamp - mod1d->Dep[ziref];
     real_t thk = mod1d->Thk[ziref];
-    cplx_t xa=0.0, xb=0.0, cbcb=0.0, mu=0.0;
-    real_t rho;
+    cplx_t xa=0.0, xb=0.0;
     memset(eigenfn, 0, sizeof(cplx_t)*4);
 
     real_t eigenK = mod1d->k;
     xa = mod1d->xa[ziref];
     xb = mod1d->xb[ziref];
-    mu = mod1d->mu[ziref];
-    cbcb = mod1d->cbcb[ziref];
-    rho = mod1d->Rho[ziref];
 
     if(! reuseT){
-        grt_get_layer_D(xa, xb, GRT_SQUARE(eigenK)*cbcb, mu, mod1d->omega, rho, eigenK, T0, false,  1);
+        grt_get_layer_D(mod1d, ziref, false, 1, T0);
     }
     
     // 计算该点的垂直波函数，再得到本征函数
@@ -355,18 +351,17 @@ void grt_get_eigenfn_single_depth_Love(
 {
     real_t dz = zsamp - mod1d->Dep[ziref];
     real_t thk = mod1d->Thk[ziref];
-    cplx_t xb=0.0, mu=0.0;
+    cplx_t xb=0.0;
     memset(eigenfn, 0, sizeof(cplx_t)*4);
 
     real_t eigenK = mod1d->k;
     xb = mod1d->xb[ziref];
-    mu = mod1d->mu[ziref];
 
     // 直接跳过液体层
     if(mod1d->isLiquid[ziref])  return;
 
     if(! reuseT){
-        grt_get_layer_T(xb, mu, mod1d->omega, eigenK, T0, false);
+        grt_get_layer_T(mod1d, ziref, false, T0);
     }
     
     // 计算该点的垂直波函数，再得到本征函数
