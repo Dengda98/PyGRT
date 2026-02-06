@@ -30,6 +30,7 @@ typedef struct {
     DISPER_TYPE wtype;
     bool print_sec;  ///< 仅打印单一频率的久期函数，不搜根
 
+    bool custom_crange;   ///< 自定义速度范围
     real_t cmin;   ///< 搜根范围，若为负数则由程序自行确定
     real_t cmax;
     

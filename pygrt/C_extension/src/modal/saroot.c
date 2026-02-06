@@ -169,6 +169,8 @@ void grt_sa_secular_roots(GRT_MODEL1D *mod1d, EIGENV_INFO *eigmet, EIGENV *eigv,
     {
         real_t cmin=eigmet->cmin + eigmet->vgap;
         real_t cmax=eigmet->cmax - eigmet->vgap;
+        if(secRaylType == 0 && eigmet->wtype == GRT_DISPERSION_RAYL && !eigmet->custom_crange) cmin *= 0.9;
+
         size_t N = 61; // 要求是奇数
         real_t dc = (cmax - cmin)/(N - 1);
         for(size_t i = 0; i < N-2; i+=2){
@@ -271,13 +273,13 @@ void grt_sa_secular_roots(GRT_MODEL1D *mod1d, EIGENV_INFO *eigmet, EIGENV *eigv,
             
             // 检查零点，久期函数绝对值是否形成波谷
             // 假设6点中仅含有一个波谷
-            bool hasroot = false;
+            bool isTrough = false;
             for(int i=2; i<6; ++i){
                 if(cCheck[i] < 0.0)  continue;  // 未初始化的右边界点
                 if(cCheck[i] < root_c)  continue;  // 该零点已搜索过
 
-                hasroot = secAbsCheck[i-2] >= secAbsCheck[i-1] && secAbsCheck[i-1] <= secAbsCheck[i];
-                if(!hasroot)  continue;
+                isTrough = secAbsCheck[i-2] >= secAbsCheck[i-1] && secAbsCheck[i-1] <= secAbsCheck[i];
+                if(!isTrough)  continue;
 
                 // real_t dk0 = 4.0*(kCheck[5] - kCheck[4]);
                 // if(dk0 > dk)  dk0 = dk;

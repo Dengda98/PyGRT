@@ -117,9 +117,6 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     Ctrl->T.rtol = 1e-6;
     Ctrl->T.vgap = 1e-7;
 
-    Ctrl->V.cmin = -1.0;
-    Ctrl->V.cmax = -1.0;
-
     int opt;
     while ((opt = getopt(argc, argv, ":M:V:C:S:N::F:X:T:P:sh")) != -1) {
         switch(opt) {
@@ -392,6 +389,7 @@ int eigenv_main(int argc, char **argv){
     eigmet->nmode = Ctrl->N.nmode;
     eigmet->wtype = Ctrl->S.wtype;
     eigmet->print_sec = Ctrl->X.active;
+    eigmet->custom_crange = Ctrl->V.active;
     eigmet->cmin = Ctrl->V.cmin;
     eigmet->cmax = Ctrl->V.cmax;
     eigmet->satol = Ctrl->T.satol;
@@ -402,7 +400,7 @@ int eigenv_main(int argc, char **argv){
     eigmet->eigv = (EIGENV *)calloc(eigmet->nf, sizeof(EIGENV));
 
     // 自动取 S 波速度范围为搜索范围
-    if(eigmet->cmin < 0.0 || eigmet->cmax < 0.0){
+    if(! eigmet->custom_crange){
         real_t vbmin = mod1d->Vb[0];  // 最小 S 波速度
         for(size_t i = 0; i < mod1d->n; ++i){
             vbmin = GRT_MIN(vbmin, mod1d->Vb[i]);
@@ -418,7 +416,6 @@ int eigenv_main(int argc, char **argv){
 
         eigmet->cmin = vbmin;
         eigmet->cmax = vbn;
-        if(eigmet->wtype == GRT_DISPERSION_RAYL)  eigmet->cmin *= 0.9;
     }
     
     // 寻找久期函数零点
