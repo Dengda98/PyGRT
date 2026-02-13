@@ -33,6 +33,15 @@ const char GRT_ZRT_CODES[] = {'Z', 'R', 'T'};
 /** ZNE三分量代号 */
 const char GRT_ZNE_CODES[] = {'Z', 'N', 'E'};
 
+/** 合成时可选的震源类型全称, 与 GRT_SYN_TYPE 一一对应 */
+const char *srcTypeFullName[] = {
+    "Explosion", 
+    "Single Force", 
+    "Shear", 
+    "Tension", 
+    "Moment Tensor", 
+};
+
 /** 在矩阵计算中是否使用高精度计算的一些技巧 */
 bool GRT_USE_HIGH_PRECISION = false;
 

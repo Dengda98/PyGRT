@@ -13,29 +13,6 @@
 
 #include "grt/common/const.h"
 
-#define __FOR_ALL_SYN_TYPE \
-    X(GRT_SYN_EX, "Explosion") \
-    X(GRT_SYN_SF, "Single Force") \
-    X(GRT_SYN_DC, "Shear") \
-    X(GRT_SYN_TS, "Tension") \
-    X(GRT_SYN_MT, "Moment Tensor") \
-
-
-// 要合成的震源类型
-typedef enum {
-    #define X(f, name) f,
-    __FOR_ALL_SYN_TYPE
-    #undef X
-} GRT_SYN_TYPE;
-
-// 对应的震源类型全称
-static const char *srcTypeFullName[] = {
-    #define X(f, name) name,
-    __FOR_ALL_SYN_TYPE
-    #undef X
-};
-#undef __FOR_ALL_SYN_TYPE
-
 /**
  * 设置每个震源的方向因子
  * 

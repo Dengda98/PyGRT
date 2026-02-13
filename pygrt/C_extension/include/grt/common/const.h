@@ -181,6 +181,18 @@ extern const char GRT_ZRT_CODES[];
 /** ZNE三分量代号 */
 extern const char GRT_ZNE_CODES[];
 
+/** 合成时可选的震源类型 */
+typedef enum {
+    GRT_SYN_EX = 0,
+    GRT_SYN_SF,
+    GRT_SYN_DC,
+    GRT_SYN_TS,
+    GRT_SYN_MT,
+} GRT_SYN_TYPE;
+
+/** 合成时可选的震源类型全称, 与 GRT_SYN_TYPE 一一对应 */
+extern const char *srcTypeFullName[];
+
 /** 在矩阵计算中是否使用高精度计算的一些技巧 */
 extern bool GRT_USE_HIGH_PRECISION;
 #pragma omp threadprivate(GRT_USE_HIGH_PRECISION)
