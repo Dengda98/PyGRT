@@ -14,8 +14,6 @@
 
 /** 某频率的频散值 */
 typedef struct {
-    real_t dcmin;   ///< 设定搜根间隔的范围
-    real_t dcmax;
     real_t *c_roots;       ///< 本征值， 两个维度分别为频率和根数
     real_t *g_roots;
     size_t *c_roots_iref;  ///< 每个本征值来自哪层的久期函数
@@ -30,11 +28,13 @@ typedef struct {
     DISPER_TYPE wtype;
     bool print_sec;  ///< 仅打印单一频率的久期函数，不搜根
 
-    bool custom_crange;   ///< 自定义速度范围
-    real_t cmin;   ///< 搜根范围，若为负数则由程序自行确定
+    real_t cmin;   ///< 搜根范围
     real_t cmax;
     
+    // 两个搜根方法的参数
     real_t satol;  ///< 自适应方法的精度
+    real_t uniform_dc;  ///< 固定间隔方法的搜索间隔
+
     real_t cgap;   ///< 搜根时限制不同阶之间相速度最小间隔
     real_t rtol;   ///< 极小值处判断为零点的久期函数幅值的阈值
     real_t vgap;   ///< 零点与模型速度值之间的最小间隔

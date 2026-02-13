@@ -27,12 +27,6 @@ typedef struct {
         const char *s_modelname;  ///< 模型名称
         GRT_MODEL1D *mod1d;         ///< 模型结构体指针
     } M;
-    /* 相速度搜索范围 */
-    struct {
-        bool active;
-        real_t cmin;
-        real_t cmax;
-    } V;
     /* 相速度频散结果输出路径 */
     struct {
         bool active;
@@ -62,6 +56,7 @@ typedef struct {
     struct {
         bool active;
         real_t satol;
+        real_t uniform_dc;
         real_t cgap;
         real_t rtol;
         real_t vgap;
@@ -113,12 +108,12 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     Ctrl->T.satol = 1e-3;
 
     // 以下浮点数不易过大或过小
-    Ctrl->T.cgap = 1e-8;
-    Ctrl->T.rtol = 1e-6;
+    Ctrl->T.cgap = 1e-7;
+    Ctrl->T.rtol = 1e-4;
     Ctrl->T.vgap = 1e-7;
 
     int opt;
-    while ((opt = getopt(argc, argv, ":M:V:C:S:N::F:X:T:P:sh")) != -1) {
+    while ((opt = getopt(argc, argv, ":M:C:S:N::F:X:T:P:sh")) != -1) {
         switch(opt) {
             // 模型路径，其中每行分别为 
             //      厚度(km)  Vp(km/s)  Vs(km/s)  Rho(g/cm^3)  Qp   Qs
@@ -127,20 +122,6 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 Ctrl->M.active = true;
                 Ctrl->M.s_modelpath = strdup(optarg);
                 Ctrl->M.s_modelname = grt_get_basename(Ctrl->M.s_modelpath);
-                break;
-
-            // -V<cmin>/<cmax>
-            case 'V':
-                Ctrl->V.active = true;
-                if(2 != sscanf(optarg, "%lf/%lf", &Ctrl->V.cmin, &Ctrl->V.cmax)){
-                    GRTBadOptionError(V, "");
-                }
-                if(Ctrl->V.cmin <= 0.0 || Ctrl->V.cmax <= 0.0){
-                    GRTBadOptionError(V, "Can't set nonpositive cmin(%lf), cmax(%lf).", Ctrl->V.cmin, Ctrl->V.cmax);
-                }
-                if(Ctrl->V.cmin >= Ctrl->V.cmax){
-                    GRTBadOptionError(V, "cmin(%lf) >= cmax(%lf).", Ctrl->V.cmin, Ctrl->V.cmax);
-                }
                 break;
 
             // -C<path>
@@ -272,7 +253,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 }
                 break;
 
-            // -T+t<tol>+c<cgap>+r<tol2>+v<vgap>
+            // -T+t<tol>+c<cgap>+r<tol2>+v<vgap>+u<dc>
             case 'T':
                 Ctrl->T.active = true;
                 {
@@ -304,6 +285,12 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                                     GRTBadOptionError(T+v, "");
                                 }
                                 Ctrl->T.vgap = pow(10, -p);
+                                break;
+                            case 'u':
+                                if(1 != sscanf(token+1, "%lf", &p)){
+                                    GRTBadOptionError(T+v, "");
+                                }
+                                Ctrl->T.uniform_dc = pow(10, -p);
                                 break;
                             default:
                                 GRTBadOptionError(T, "-T+%s is not supported.", token);
@@ -389,30 +376,24 @@ int eigenv_main(int argc, char **argv){
     eigmet->nmode = Ctrl->N.nmode;
     eigmet->wtype = Ctrl->S.wtype;
     eigmet->print_sec = Ctrl->X.active;
-    eigmet->custom_crange = Ctrl->V.active;
-    eigmet->cmin = Ctrl->V.cmin;
-    eigmet->cmax = Ctrl->V.cmax;
     eigmet->satol = Ctrl->T.satol;
+    eigmet->uniform_dc = Ctrl->T.uniform_dc;
     eigmet->cgap = Ctrl->T.cgap;
     eigmet->rtol = Ctrl->T.rtol;
     eigmet->vgap = Ctrl->T.vgap;
     // 存储频散值的结构体
     eigmet->eigv = (EIGENV *)calloc(eigmet->nf, sizeof(EIGENV));
 
-    // 自动取 S 波速度范围为搜索范围
-    if(! eigmet->custom_crange){
+    // 取 S 波速度范围为搜索范围
+    {
         real_t vbmin = mod1d->Vb[0];  // 最小 S 波速度
         for(size_t i = 0; i < mod1d->n; ++i){
-            vbmin = GRT_MIN(vbmin, mod1d->Vb[i]);
+            real_t va = mod1d->Va[i];
+            real_t vb = mod1d->Vb[i];
+            vbmin = GRT_MIN(vbmin, (vb > 0.0)? vb : va);
         }
-        real_t vbn = mod1d->Vb[mod1d->n-1];  // 半空间的 S 波速度
-        
-        if(vbmin >= vbn){
-            GRTRaiseError("minimum Vs(%f) >= halfspace Vs(%f), you should set -C manually.", vbmin, vbn);
-        }
-        if(vbmin == 0.0){
-            GRTRaiseError("minimum Vs == 0.0 , you should set -C manually.");
-        }
+        real_t vbn = mod1d->Vb[mod1d->n-1];  // 半空间速度
+        if(vbn == 0.0) vbn = mod1d->Va[mod1d->n-1];
 
         eigmet->cmin = vbmin;
         eigmet->cmax = vbn;
