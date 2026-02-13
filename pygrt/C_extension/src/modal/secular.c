@@ -308,7 +308,7 @@ void grt_secular_function_potential_Rayl(
         exit(EXIT_FAILURE);
     }
 
-    real_t k = mod1d->omega/cphase;
+    real_t k = creal(mod1d->omega)/cphase;
     grt_GRT_matrix_Rayl(mod1d, k, iref);
 
     cplx_t tmp1[2][2] = GRT_INIT_ZERO_2x2_MATRIX;
@@ -401,7 +401,7 @@ void grt_secular_function_potential_Love(
     GRT_MODEL1D *mod1d, const real_t cphase,
     const size_t iref, cplx_t *psec, cplx_t *ppot)
 {
-    real_t k = mod1d->omega/cphase;
+    real_t k = creal(mod1d->omega)/cphase;
     grt_GRT_matrix_Love(mod1d, k, iref);
     
     // 1 - RUL_FR*RDL_RL

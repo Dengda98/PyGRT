@@ -404,7 +404,7 @@ void grt_energy_integrals_Rayl(
 
         // 计算相速度敏感核
         if(eigfn->csens!=NULL){
-            phase_sensitivity_numerator_single_layer_Rayl(rho, mod1d->omega, eigenK, lambda, mu, sub_egyint, eigfn->csens[iz]);
+            phase_sensitivity_numerator_single_layer_Rayl(rho, creal(mod1d->omega), eigenK, lambda, mu, sub_egyint, eigfn->csens[iz]);
             // 去掉系数
             eigfn->csens[iz][0] /= mod1d->Va[ziref]/mod1d->c_phase;
             eigfn->csens[iz][1] /= mod1d->Vb[ziref]/mod1d->c_phase;
@@ -508,7 +508,7 @@ void grt_energy_integrals_Love(
 
         // 计算相速度敏感核
         if(eigfn->csens!=NULL){
-            phase_sensitivity_numerator_single_layer_Love(rho, mod1d->omega, eigenK, mu, sub_egyint, eigfn->csens[iz]);
+            phase_sensitivity_numerator_single_layer_Love(rho, creal(mod1d->omega), eigenK, mu, sub_egyint, eigfn->csens[iz]);
             // 去掉系数
             eigfn->csens[iz][1] /= mod1d->Vb[ziref]/mod1d->c_phase;
             eigfn->csens[iz][2] /= rho/mod1d->c_phase;
