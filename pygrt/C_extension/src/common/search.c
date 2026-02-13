@@ -117,6 +117,20 @@ int grt_compare_##T(const void *a, const void *b) {\
         return 0;\
     }\
 }\
+int grt_argcompare_##T(const void *a, const void *b, void *arr) {\
+    size_t i1 = *(size_t *)a;\
+    size_t i2 = *(size_t *)b;\
+    T vala = ((T *)arr)[i1];\
+    T valb = ((T *)arr)[i2];\
+    if(vala > valb){\
+        return 1;\
+    } else if (vala < valb){\
+        return -1;\
+    } else {\
+        return 0;\
+    }\
+}
+
 
 __FOR_EACH_REAL
 __FOR_EACH_INT

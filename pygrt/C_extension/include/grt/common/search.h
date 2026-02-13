@@ -109,7 +109,8 @@ __FOR_EACH_INT
  * @return flag   比较结果，(1) a > b, (0) a == b, (-1) a < b
  */
 #define X(T) \
-int grt_compare_##T(const void *a, const void *b);
+int grt_compare_##T(const void *a, const void *b);\
+int grt_argcompare_##T(const void *a, const void *b, void *arr);\
 
 __FOR_EACH_REAL
 __FOR_EACH_INT
