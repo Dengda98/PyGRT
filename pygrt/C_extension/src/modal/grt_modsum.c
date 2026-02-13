@@ -93,6 +93,10 @@ typedef struct {
         bool doHF;
         bool doDC;
     } G;
+    /** 是否计算空间导数 */
+    struct {
+        bool active;
+    } e;
     /* 升采样倍数 */
     struct {
         bool active;
@@ -139,7 +143,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     Ctrl->G.doDC = GRT_GREENFN_G_DC;
 
     int opt;
-    while ((opt = getopt(argc, argv, ":C:N::F:D:O:E:R:G:W:P:sh" )) != -1) {
+    while ((opt = getopt(argc, argv, ":C:N::F:D:O:E:R:G:W:P:esh" )) != -1) {
         switch (opt) {
             // 频散文件
             case 'C':
@@ -368,6 +372,11 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 grt_set_num_threads(Ctrl->P.nthreads);
                 break;
 
+            // 是否计算位移空间导数
+            case 'e':
+                Ctrl->e.active = true;
+                break;
+
             GRT_Common_Options_in_Switch((char)(optopt));
 
         }
@@ -408,7 +417,8 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 
 static void grt_modsum_grn_Rayl(
     const GRT_MODEL1D *mod1d, const cplx_t (*mod_potRaylLove_Down)[GRT_RAYL_DIM], const cplx_t (*mod_potRaylLove_Up)[GRT_RAYL_DIM],
-    const cplx_t *egyint, const size_t nr, const real_t *rs, const size_t iw, pcplxChnlGrid *grn)
+    const cplx_t *egyint, const size_t nr, const real_t *rs, const size_t iw, 
+    bool calc_upar, pcplxChnlGrid *grn, pcplxChnlGrid *grn_uiz, pcplxChnlGrid *grn_uir)
 {
     // 注意模型中并未插入震源层和接收层
     size_t isrc = mod1d->isrc;
@@ -451,11 +461,33 @@ static void grt_modsum_grn_Rayl(
 
     // 计算接收处的本征函数
     cplx_t rcv_eigenfn[4] = {0};
+    cplx_t rcv_eigenfn_z[4] = {0};
     grt_get_eigenfn_single_depth_Rayl(mod1d, mod_potRaylLove_Down, mod_potRaylLove_Up, T0, false, mod1d->deprcv, ircv, rcv_eigenfn);
+    if(calc_upar){
+        cplx_t xa = mod1d->xa[ircv];
+        cplx_t xb = mod1d->xb[ircv];
+        bool   isLiquid = mod1d->isLiquid[ircv];
+        real_t k = mod1d->k;
+
+        cplx_t ak = k*k*xa;
+        cplx_t bk = k*k*xb;
+        cplx_t bb = xb*bk;
+        cplx_t aa = xa*ak;
+        cplx_t T0_z[GRT_RAYL_DIM][GRT_RAYL_DIM] = {
+            {ak, bb, -ak, bb},
+            {aa, bk, aa, -bk}
+        };
+
+        if(! isLiquid){
+            grt_get_eigenfn_single_depth_Rayl(mod1d, mod_potRaylLove_Down, mod_potRaylLove_Up, T0_z, true, mod1d->deprcv, ircv, rcv_eigenfn_z);
+        }
+    }
 
     // 计算该频点、该本征值下的频谱
     cplx_t i_m[GRT_MORDER_MAX+1] = {1.0, I, -1.0};
     cplx_t dom = 4.0*egyint[1] - 2.0*egyint[2]/eigenK;
+    cplx_t wcoef, qcoef;
+    cplx_t wcoefz, qcoefz;
     for(int im = 0; im < GRT_SRC_M_NUM; ++im){
         int modr = GRT_SRC_M_ORDERS[im];
         // Rayleigh 波仅考虑 q, w 项
@@ -463,15 +495,21 @@ static void grt_modsum_grn_Rayl(
         cplx_t aa = - 1.0/(4.0*src_rho*GRT_SQUARE(mod1d->omega));
 
         // Z  
-        cplx_t wcoef = rcv_eigenfn[1] * i_m[modr] * F_item[im] / dom * aa;
+        wcoef = rcv_eigenfn[1] * i_m[modr] * F_item[im] / dom * aa;
+        wcoefz = rcv_eigenfn_z[1] * i_m[modr] * F_item[im] / dom * aa;
         // R
-        cplx_t qcoef = I * rcv_eigenfn[0] * i_m[modr] * F_item[im] / dom * aa;
+        qcoef = I * rcv_eigenfn[0] * i_m[modr] * F_item[im] / dom * aa;
+        qcoefz = I * rcv_eigenfn_z[0] * i_m[modr] * F_item[im] / dom * aa;
 
         for(size_t ir = 0; ir < nr; ++ir){
             // 草稿推导有误？似乎应该使用 H^(2)(kr)
             cplx_t ekr = sqrt(2.0 / (PI*eigenK*rs[ir])) * exp( - I * (eigenK*rs[ir] + QUARTERPI));
             grn[ir][im][0][iw] += wcoef * ekr;
             grn[ir][im][1][iw] += - qcoef * ekr;
+            if(calc_upar){
+                grn_uiz[ir][im][0][iw] += wcoefz * ekr;
+                grn_uiz[ir][im][1][iw] += - qcoefz * ekr;
+            }
         }
     }
 
@@ -481,7 +519,8 @@ static void grt_modsum_grn_Rayl(
 
 static void grt_modsum_grn_Love(
     const GRT_MODEL1D *mod1d, const cplx_t (*mod_potRaylLove_Down)[GRT_LOVE_DIM], const cplx_t (*mod_potRaylLove_Up)[GRT_LOVE_DIM],
-    const cplx_t *egyint, const size_t nr, const real_t *rs, const size_t iw, pcplxChnlGrid *grn)
+    const cplx_t *egyint, const size_t nr, const real_t *rs, const size_t iw, 
+    bool calc_upar, pcplxChnlGrid *grn, pcplxChnlGrid *grn_uiz, pcplxChnlGrid *grn_uir)
 {
     // 注意模型中并未插入震源层和接收层
     size_t isrc = mod1d->isrc;
@@ -519,11 +558,26 @@ static void grt_modsum_grn_Love(
 
     // 计算接收处的本征函数
     cplx_t rcv_eigenfn[4] = {0};
+    cplx_t rcv_eigenfn_z[4] = {0};
     grt_get_eigenfn_single_depth_Love(mod1d, mod_potRaylLove_Down, mod_potRaylLove_Up, T0, false, mod1d->deprcv, ircv, rcv_eigenfn);
+    if(calc_upar){
+        cplx_t xb = mod1d->xb[ircv];
+        bool   isLiquid = mod1d->isLiquid[ircv];
+        real_t k = mod1d->k;
+
+        cplx_t bk = k*k*xb;
+        cplx_t T0_z[GRT_LOVE_DIM][GRT_LOVE_DIM] = {{bk, -bk}};
+
+        if(! isLiquid){
+            grt_get_eigenfn_single_depth_Love(mod1d, mod_potRaylLove_Down, mod_potRaylLove_Up, T0_z, true, mod1d->deprcv, ircv, rcv_eigenfn_z);
+        }
+    }
 
     // 计算该频点、该本征值下的频谱
     cplx_t i_m[GRT_MORDER_MAX+1] = {1.0, I, -1.0};
     cplx_t dom = 4.0*egyint[1];
+    cplx_t vcoef;
+    cplx_t vcoefz;
     for(int im = 0; im < GRT_SRC_M_NUM; ++im){
         int modr = GRT_SRC_M_ORDERS[im];
         // Love 波仅考虑 v 项
@@ -532,12 +586,16 @@ static void grt_modsum_grn_Love(
         cplx_t aa = - 1.0/(4.0*src_rho*GRT_SQUARE(mod1d->omega));
 
         // T
-        cplx_t vcoef = I * rcv_eigenfn[0] * i_m[modr] * F_item[im] / dom * aa;
+        vcoef = I * rcv_eigenfn[0] * i_m[modr] * F_item[im] / dom * aa;
+        vcoefz = I * rcv_eigenfn_z[0] * i_m[modr] * F_item[im] / dom * aa;
 
         for(size_t ir = 0; ir < nr; ++ir){
             // 草稿推导有误？似乎应该使用 H^(2)(kr)
             cplx_t ekr = sqrt(2.0 / (PI*eigenK*rs[ir])) * exp( - I * (eigenK*rs[ir] + QUARTERPI));
             grn[ir][im][2][iw] += vcoef * ekr;
+            if(calc_upar){
+                grn_uiz[ir][im][2][iw] += vcoefz * ekr;
+            }
         }
     }
 
@@ -546,13 +604,14 @@ static void grt_modsum_grn_Love(
 static void grt_modsum_grn(
     const GRT_MODEL1D *mod1d, const DISPER_TYPE wtype, const size_t ncols, 
     const cplx_t (*mod_potRaylLove_Down)[ncols], const cplx_t (*mod_potRaylLove_Up)[ncols],
-    const cplx_t *egyint, const size_t nr, const real_t *rs, const size_t iw, pcplxChnlGrid *grn)
+    const cplx_t *egyint, const size_t nr, const real_t *rs, const size_t iw, 
+    bool calc_upar, pcplxChnlGrid *grn, pcplxChnlGrid *grn_uiz, pcplxChnlGrid *grn_uir)
 {
     if(wtype == GRT_DISPERSION_RAYL && ncols == GRT_RAYL_DIM){
-        grt_modsum_grn_Rayl(mod1d, mod_potRaylLove_Down, mod_potRaylLove_Up, egyint, nr, rs, iw, grn);
+        grt_modsum_grn_Rayl(mod1d, mod_potRaylLove_Down, mod_potRaylLove_Up, egyint, nr, rs, iw, calc_upar, grn, grn_uiz, grn_uir);
     } 
     else if(wtype == GRT_DISPERSION_LOVE && ncols == GRT_LOVE_DIM) {
-        grt_modsum_grn_Love(mod1d, mod_potRaylLove_Down, mod_potRaylLove_Up, egyint, nr, rs, iw, grn);
+        grt_modsum_grn_Love(mod1d, mod_potRaylLove_Down, mod_potRaylLove_Up, egyint, nr, rs, iw, calc_upar, grn, grn_uiz, grn_uir);
     }
     else {
         GRTRaiseError("Wrong execution.");
@@ -654,6 +713,7 @@ int modsum_main(int argc, char **argv){
     // 不再插入虚拟层，直接记录震源和台站所在的真实层位
     mod1d->depsrc = Ctrl->D.depsrc;
     mod1d->deprcv = Ctrl->D.deprcv;
+    mod1d->ircvup = (Ctrl->D.depsrc >= Ctrl->D.deprcv);
     for(mod1d->isrc=0; mod1d->isrc < mod1d->n-1; ++mod1d->isrc){
         if(mod1d->Dep[mod1d->isrc+1] >= Ctrl->D.depsrc)  break; 
     }
@@ -695,9 +755,13 @@ int modsum_main(int argc, char **argv){
 
     // 计算的面波格林函数
     pcplxChnlGrid *grn = (pcplxChnlGrid *) calloc(Ctrl->R.nr, sizeof(*grn));
-    for(size_t ir = 0; ir < Ctrl->R.nr; ++ir){
+    pcplxChnlGrid *grn_uiz = (Ctrl->e.active)? (pcplxChnlGrid *) calloc(Ctrl->R.nr, sizeof(*grn_uiz)) : NULL;
+    pcplxChnlGrid *grn_uir = (Ctrl->e.active)? (pcplxChnlGrid *) calloc(Ctrl->R.nr, sizeof(*grn_uir)) : NULL;
+    for(size_t ir=0; ir<Ctrl->R.nr; ++ir){
         GRT_LOOP_ChnlGrid(im, c){
             grn[ir][im][c] = (cplx_t*)calloc(fft_nf, sizeof(cplx_t));
+            if(grn_uiz)  grn_uiz[ir][im][c] = (cplx_t*)calloc(fft_nf, sizeof(cplx_t));
+            if(grn_uir)  grn_uir[ir][im][c] = (cplx_t*)calloc(fft_nf, sizeof(cplx_t));
         }
     }
 
@@ -721,7 +785,7 @@ int modsum_main(int argc, char **argv){
             real_t cphase = eigv->c_roots[ic];
             
             local_mod1d->c_phase = cphase;
-            local_mod1d->k = omega/cphase;
+            local_mod1d->k = creal(omega)/cphase;
             grt_mod1d_xa_xb(local_mod1d, local_mod1d->k);
 
             size_t iref = eigv->c_roots_iref[ic];
@@ -747,7 +811,8 @@ int modsum_main(int argc, char **argv){
             grt_modsum_grn(
                 local_mod1d, eigfnmet->wtype, ncols, 
                 mod_potRaylLove_Down, mod_potRaylLove_Up, eigfnmet->eigfn[iw][ic].egyint,
-                Ctrl->R.nr, Ctrl->R.rs, iw + fft_offset, grn);
+                Ctrl->R.nr, Ctrl->R.rs, iw + fft_offset, 
+                Ctrl->e.active, grn, grn_uiz, grn_uir);
             
             GRT_SAFE_FREE_PTR(mod_potRaylLove_Down);
             GRT_SAFE_FREE_PTR(mod_potRaylLove_Up);
@@ -837,10 +902,10 @@ int modsum_main(int argc, char **argv){
 
             write_one_to_sac(GRT_SRC_M_NAME_ABBR[im], ch, fh, 0.0, sac, s_output_subdir, "", sgn, false, grn[ir][im][c]);
 
-            // if(Ctrl->e.active){
-            //     write_one_to_sac(GRT_SRC_M_NAME_ABBR[im], ch, fh, 0.0, sac, s_output_subdir, "z", sgn*(-1), false, grn_uiz[ir][im][c]);
-            //     write_one_to_sac(GRT_SRC_M_NAME_ABBR[im], ch, fh, 0.0, sac, s_output_subdir, "r", sgn     , false, grn_uir[ir][im][c]);
-            // }
+            if(Ctrl->e.active){
+                write_one_to_sac(GRT_SRC_M_NAME_ABBR[im], ch, fh, 0.0, sac, s_output_subdir, "z", sgn*(-1), false, grn_uiz[ir][im][c]);
+                write_one_to_sac(GRT_SRC_M_NAME_ABBR[im], ch, fh, 0.0, sac, s_output_subdir, "r", sgn     , false, grn_uir[ir][im][c]);
+            }
         }
 
         GRT_SAFE_FREE_PTR(s_output_subdir);
