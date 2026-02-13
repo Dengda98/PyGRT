@@ -6,6 +6,8 @@
  * 将全局变量放在该文件中
  */
 
+#include <stdbool.h>
+
 #include "grt/common/const.h"
 
 /** 当前模块名，根据所调用模块进行切换 */
@@ -31,7 +33,8 @@ const char GRT_ZRT_CODES[] = {'Z', 'R', 'T'};
 /** ZNE三分量代号 */
 const char GRT_ZNE_CODES[] = {'Z', 'N', 'E'};
 
-
+/** 在矩阵计算中是否使用高精度计算的一些技巧 */
+bool GRT_USE_HIGH_PRECISION = false;
 
 void grt_set_num_threads(int num_threads){
 #ifdef _OPENMP

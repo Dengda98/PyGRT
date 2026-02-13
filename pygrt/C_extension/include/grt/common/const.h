@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <stdbool.h> 
 #include <complex.h> 
 #include <tgmath.h>
 #include <omp.h>
@@ -179,6 +180,10 @@ extern const char GRT_ZRT_CODES[];
 
 /** ZNE三分量代号 */
 extern const char GRT_ZNE_CODES[];
+
+/** 在矩阵计算中是否使用高精度计算的一些技巧 */
+extern bool GRT_USE_HIGH_PRECISION;
+#pragma omp threadprivate(GRT_USE_HIGH_PRECISION)
 
 /**
  * 设置OpenMP多线程数

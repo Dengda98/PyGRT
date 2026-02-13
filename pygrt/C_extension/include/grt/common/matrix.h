@@ -84,14 +84,20 @@ inline GCC_ALWAYS_INLINE void grt_cmat2x2_one_sub(cplx_t M[2][2]){
     M[1][1] = 1.0 - M[1][1];
 }
 
-/**
- * 计算2x2复矩阵的积(矩阵相乘)  
- * 
- * @param[in]      M1     矩阵1
- * @param[in]      M2     矩阵2
- * @param[out]     M      积矩阵, M1 * M2
- */ 
-inline GCC_ALWAYS_INLINE void grt_cmat2x2_mul(const cplx_t M1[2][2], const cplx_t M2[2][2], cplx_t M[2][2]){
+inline GCC_ALWAYS_INLINE void grt_cmat2x2_mul_highprec(const cplx_t M1[2][2], const cplx_t M2[2][2], cplx_t M[2][2]){
+    long double complex M011, M012, M021, M022;
+    long double complex M111, M112, M121, M122;
+    M011 = M1[0][0]; M012 = M1[0][1]; 
+    M021 = M1[1][0]; M022 = M1[1][1]; 
+    M111 = M2[0][0]; M112 = M2[0][1]; 
+    M121 = M2[1][0]; M122 = M2[1][1]; 
+    M[0][0] = M011 * M111 + M012 * M121;
+    M[0][1] = M011 * M112 + M012 * M122;
+    M[1][0] = M021 * M111 + M022 * M121;
+    M[1][1] = M021 * M112 + M022 * M122;
+}
+
+inline GCC_ALWAYS_INLINE void grt_cmat2x2_mul_lowprec(const cplx_t M1[2][2], const cplx_t M2[2][2], cplx_t M[2][2]){
     cplx_t M011, M012, M021, M022;
     cplx_t M111, M112, M121, M122;
     M011 = M1[0][0]; M012 = M1[0][1]; 
@@ -103,6 +109,22 @@ inline GCC_ALWAYS_INLINE void grt_cmat2x2_mul(const cplx_t M1[2][2], const cplx_
     M[1][0] = M021 * M111 + M022 * M121;
     M[1][1] = M021 * M112 + M022 * M122;
 }
+
+/**
+ * 计算2x2复矩阵的积(矩阵相乘)  
+ * 
+ * @param[in]      M1     矩阵1
+ * @param[in]      M2     矩阵2
+ * @param[out]     M      积矩阵, M1 * M2
+ */ 
+inline GCC_ALWAYS_INLINE void grt_cmat2x2_mul(const cplx_t M1[2][2], const cplx_t M2[2][2], cplx_t M[2][2]){
+    if(GRT_USE_HIGH_PRECISION){
+        grt_cmat2x2_mul_highprec(M1, M2, M);
+    } else {
+        grt_cmat2x2_mul_lowprec(M1, M2, M);
+    }
+}
+
 
 /**
  * 计算2x2复矩阵和常量的积
