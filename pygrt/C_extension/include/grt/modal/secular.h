@@ -80,23 +80,3 @@ void grt_secular_function_potential(
 void grt_secular_function(
     GRT_MODEL1D *mod1d, real_t cphase,
     const int secRaylType, const size_t iref, const DISPER_TYPE wtype, cplx_t *psec);
-
-/** 
- * 黄金分割法确定久期函数零点 
- * 
- * @param[in]      mod1d        模型结构体指针
- * @param[in]      w            圆频率
- * @param[in]      c1           左区间相速度
- * @param[in]      c2           右区间相速度
- * @param[in]      secRaylType  Rayl久期函数类型
- * @param[in]      iref         久期函数层位
- * @param[in]      wtype        频散类型
- * @param[in]      rtol         久期函数零点附近的幅值阈值
- * @param[out]     root_sec     零点的久期函数值
- * @param[out]     root_c       零点的相速度
- * 
- */
-size_t grt_goldensection_search_root(
-    GRT_MODEL1D *mod1d,  const real_t c1, const real_t c2, 
-    const int secRaylType, const size_t iref, const DISPER_TYPE wtype,
-    const real_t rtol, cplx_t *root_sec, real_t *root_c);
