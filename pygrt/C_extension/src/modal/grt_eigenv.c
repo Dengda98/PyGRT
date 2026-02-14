@@ -386,7 +386,7 @@ int eigenv_main(int argc, char **argv){
 
     // 取 S 波速度范围为搜索范围
     {
-        real_t vbmin = mod1d->Vb[0];  // 最小 S 波速度
+        real_t vbmin = 9.9e30;  // 最小 S 波速度
         for(size_t i = 0; i < mod1d->n; ++i){
             real_t va = mod1d->Va[i];
             real_t vb = mod1d->Vb[i];
