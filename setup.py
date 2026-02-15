@@ -37,6 +37,7 @@ setup(
         'scipy>=1.10',
         'matplotlib>=3.5',
         'obspy>=1.4',
+        'setuptools'
     ],
     python_requires='>=3.6',
     zip_safe=False,  # not compress the binary file
