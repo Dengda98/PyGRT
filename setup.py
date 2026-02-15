@@ -37,6 +37,7 @@ setup(
         'scipy>=1.10',
         'matplotlib>=3.5',
         'obspy>=1.4',
+        'setuptools==80.10.2'  # 兼容 obspy 对 pkg_resources 的使用
     ],
     python_requires='>=3.6',
     zip_safe=False,  # not compress the binary file
