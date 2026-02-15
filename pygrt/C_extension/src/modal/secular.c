@@ -298,15 +298,8 @@ void grt_GRT_matrix_Love(GRT_MODEL1D *mod1d, const real_t k, const size_t iref)
 
 
 void grt_secular_function_potential_Rayl(
-    GRT_MODEL1D *mod1d, const real_t cphase,
-    const int secRaylType, const size_t iref, cplx_t *psec, cplx_t *ppot)
+    GRT_MODEL1D *mod1d, const real_t cphase, const size_t iref, cplx_t *psec, cplx_t *ppot)
 {
-    // iref > 0 时， secRaylType必须等于1，否则报错
-    if(iref > 0 && secRaylType != 1){
-        fprintf(stderr, "iref > 0 && secRaylType != 1\n");
-        exit(EXIT_FAILURE);
-    }
-
     real_t k = creal(mod1d->omega)/cphase;
     grt_GRT_matrix_Rayl(mod1d, k, iref);
 
@@ -426,11 +419,10 @@ void grt_secular_function_potential_Love(
 }
 
 void grt_secular_function_potential(
-    GRT_MODEL1D *mod1d, const real_t cphase,
-    const int secRaylType, const size_t iref, const DISPER_TYPE wtype, cplx_t *psec, cplx_t *ppot)
+    GRT_MODEL1D *mod1d, const real_t cphase, const size_t iref, const DISPER_TYPE wtype, cplx_t *psec, cplx_t *ppot)
 {
     if(wtype == GRT_DISPERSION_RAYL){
-        grt_secular_function_potential_Rayl(mod1d, cphase, secRaylType, iref, psec, ppot);
+        grt_secular_function_potential_Rayl(mod1d, cphase, iref, psec, ppot);
     } 
     else if(wtype == GRT_DISPERSION_LOVE){
         grt_secular_function_potential_Love(mod1d, cphase, iref, psec, ppot);
@@ -441,8 +433,7 @@ void grt_secular_function_potential(
 }
 
 void grt_secular_function(
-    GRT_MODEL1D *mod1d, const real_t cphase,
-    const int secRaylType, const size_t iref, const DISPER_TYPE wtype, cplx_t *psec)
+    GRT_MODEL1D *mod1d, const real_t cphase, const size_t iref, const DISPER_TYPE wtype, cplx_t *psec)
 {
-    grt_secular_function_potential(mod1d, cphase, secRaylType, iref, wtype, psec, NULL);
+    grt_secular_function_potential(mod1d, cphase, iref, wtype, psec, NULL);
 }

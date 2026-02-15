@@ -49,14 +49,12 @@ void grt_GRT_matrix_Love(GRT_MODEL1D *mod1d, const real_t k, const size_t iref);
  * 
  * @param[in]      mod1d        模型结构体指针
  * @param[in]      cphase       本征相速度
- * @param[in]      secRaylType  Rayl久期函数类型，首层可为0，即 (D21*RD_RL + D22)；其余为1
  * @param[in]      iref         当前层位
  * @param[out]     psec         久期函数值
  * @param[out]     ppot         对应垂直波函数，不需要则设置为NULL
  */
 void grt_secular_function_potential_Rayl(
-    GRT_MODEL1D *mod1d, const real_t cphase,
-    const int secRaylType, const size_t iref, cplx_t *psec, cplx_t *ppot);
+    GRT_MODEL1D *mod1d, const real_t cphase, const size_t iref, cplx_t *psec, cplx_t *ppot);
 
 /**
  * 计算 Love 波的久期函数
@@ -73,10 +71,8 @@ void grt_secular_function_potential_Love(
 
 /** 合并 secular_function_potential_Rayl(Love) */
 void grt_secular_function_potential(
-    GRT_MODEL1D *mod1d, real_t cphase,
-    const int secRaylType, const size_t iref, const DISPER_TYPE wtype, cplx_t *psec, cplx_t *ppot);
+    GRT_MODEL1D *mod1d, real_t cphase, const size_t iref, const DISPER_TYPE wtype, cplx_t *psec, cplx_t *ppot);
 
 /** 只求久期函数值，即在 secular_function_potential 中设置 ppot=NULL */
 void grt_secular_function(
-    GRT_MODEL1D *mod1d, real_t cphase,
-    const int secRaylType, const size_t iref, const DISPER_TYPE wtype, cplx_t *psec);
+    GRT_MODEL1D *mod1d, real_t cphase, const size_t iref, const DISPER_TYPE wtype, cplx_t *psec);

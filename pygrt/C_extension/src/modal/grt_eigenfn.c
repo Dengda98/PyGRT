@@ -416,7 +416,7 @@ static void grt_eigenfn_egy_gdisp_phaseK_util(
 
             cplx_t potRaylLove[ncols];  memset(potRaylLove, 0, sizeof(cplx_t)*ncols);
             cplx_t secRaylLove = 0.0;
-            grt_secular_function_potential(local_mod1d, cphase, (iref==0)?0:1, iref, eigfnmet->wtype, &secRaylLove, potRaylLove);
+            grt_secular_function_potential(local_mod1d, cphase, iref, eigfnmet->wtype, &secRaylLove, potRaylLove);
  
             // 计算出每个物理分界面上侧（z_{j+1}-）和 下侧（z_j+）的垂直波函数
             grt_get_mod_potential_Up_Down(local_mod1d, eigfnmet->wtype, ncols, iref, potRaylLove, mod_potRaylLove_Down, mod_potRaylLove_Up);

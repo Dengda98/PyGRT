@@ -28,7 +28,6 @@
  * @param[in]      w            圆频率
  * @param[in]      c1           左区间相速度
  * @param[in]      c2           右区间相速度
- * @param[in]      secRaylType  Rayl久期函数类型
  * @param[in]      iref         久期函数层位
  * @param[in]      wtype        频散类型
  * @param[in]      rtol         久期函数零点附近的幅值阈值
@@ -38,7 +37,7 @@
  */
 static size_t grt_goldensection_search_root(
     GRT_MODEL1D *mod1d, const real_t c1, const real_t c2, 
-    const int secRaylType, const size_t iref, const DISPER_TYPE wtype,
+    const size_t iref, const DISPER_TYPE wtype,
     const real_t rtol, const real_t cgap, cplx_t *root_sec, real_t *root_c)
 {
     // 细化阶段使用高精度矩阵计算
@@ -52,7 +51,7 @@ static size_t grt_goldensection_search_root(
     real_t secABS[2];
 
     for(int i=0; i<2; ++i){
-        grt_secular_function(mod1d, x[i], secRaylType, iref, wtype, &sec[i]);
+        grt_secular_function(mod1d, x[i], iref, wtype, &sec[i]);
         secABS[i] = fabs(sec[i]);
     }
     size_t is=0;
@@ -71,7 +70,7 @@ static size_t grt_goldensection_search_root(
             secABS[1] = secABS[0];
             x[1] = x[0];
             x[0] = c[1] - GOLDEN_RATIO*(c[1] - c[0]);
-            grt_secular_function(mod1d, x[0], secRaylType, iref, wtype, &sec[0]);
+            grt_secular_function(mod1d, x[0], iref, wtype, &sec[0]);
             secABS[0] = fabs(sec[0]);
         } else {
             c[0] = x[0];
@@ -79,7 +78,7 @@ static size_t grt_goldensection_search_root(
             secABS[0] = secABS[1];
             x[0] = x[1];
             x[1] = c[0] + GOLDEN_RATIO*(c[1] - c[0]);
-            grt_secular_function(mod1d, x[1], secRaylType, iref, wtype, &sec[1]);
+            grt_secular_function(mod1d, x[1], iref, wtype, &sec[1]);
             secABS[1] = fabs(sec[1]);
         }
 
@@ -266,7 +265,6 @@ static bool check_fit(
  * @param[in]      tol          自适应收敛精度
  * @param[in]      c20          相速度搜索上界
  * @param[in]      isRayl       Rayleigh or Love
- * @param[in]      secRaylType  Rayl久期函数类型
  * @param[in]      iref         久期函数层位
  * @param[in]      print_sec    是否打印久期函数
  * @param[in]      nmode        最大零点个数, 如果 nmode<=0 则找全部零点
@@ -276,7 +274,7 @@ static bool check_fit(
  * 
  */
 static void grt_adaptive_step_secular_roots(
-    GRT_MODEL1D *mod1d, EIGENV_INFO *eigmet, EIGENV *eigv, const int secRaylType, const size_t iref,
+    GRT_MODEL1D *mod1d, EIGENV_INFO *eigmet, EIGENV *eigv, const size_t iref,
     const real_t *cpred, const size_t npred)
 {
     cplx_t root_sec = -1.0;
@@ -299,7 +297,7 @@ static void grt_adaptive_step_secular_roots(
         Citv.x3[1] = 0.5 * (c1 + c2);
         Citv.x3[2] = c2;
         for(size_t p = 0; p < 3; ++p){
-            grt_secular_function(mod1d, Citv.x3[p], secRaylType, iref, eigmet->wtype, &Citv.F3[p]);
+            grt_secular_function(mod1d, Citv.x3[p], iref, eigmet->wtype, &Citv.F3[p]);
         }
         stack_push(&stack, Citv);
     }
@@ -307,7 +305,7 @@ static void grt_adaptive_step_secular_roots(
 
     // 记录第一个值
     if(eigmet->print_sec){
-        fprintf(stdout, "# secRaylType=%d, iref=%zu, f=%f, tol=%e, c1=%f, c2=%f\n", secRaylType, iref, creal(mod1d->omega)/PI2, eigmet->satol, eigmet->cmin, eigmet->cmax);
+        fprintf(stdout, "# iref=%zu, f=%f, tol=%e, c1=%f, c2=%f\n", iref, creal(mod1d->omega)/PI2, eigmet->satol, eigmet->cmin, eigmet->cmax);
         fprintf(stdout, "%.16e %.16e %.16e \n", Citv.x3[0], GRT_CMPLX_SPLIT(Citv.F3[0]));
     }
 
@@ -357,8 +355,8 @@ static void grt_adaptive_step_secular_roots(
         Citv_left.F3[2] = Citv.F3[1];
         Citv_right.F3[0] = Citv.F3[1];
         Citv_right.F3[2] = Citv.F3[2];
-        grt_secular_function(mod1d, Citv_left.x3[1], secRaylType, iref, eigmet->wtype, &Citv_left.F3[1]);
-        grt_secular_function(mod1d, Citv_right.x3[1], secRaylType, iref, eigmet->wtype, &Citv_right.F3[1]);
+        grt_secular_function(mod1d, Citv_left.x3[1], iref, eigmet->wtype, &Citv_left.F3[1]);
+        grt_secular_function(mod1d, Citv_right.x3[1], iref, eigmet->wtype, &Citv_right.F3[1]);
 
         // 检查区间是否符合要求
         real_t goodtol = check_fit(&Citv, &Citv_left, &Citv_right, eigmet->satol);
@@ -414,7 +412,7 @@ static void grt_adaptive_step_secular_roots(
 
                 grt_goldensection_search_root(
                     mod1d, cCheck[i-2], cCheck[i], 
-                    secRaylType, iref, eigmet->wtype, eigmet->rtol, eigmet->cgap, &root_sec, &root_c
+                    iref, eigmet->wtype, eigmet->rtol, eigmet->cgap, &root_sec, &root_c
                 );
 
                 if(root_c > 0.0 && !grt_check_vel_in_mod(mod1d, root_c, eigmet->vgap)){
@@ -463,7 +461,7 @@ static void grt_adaptive_step_secular_roots(
 // ---------------------------------------------------------------------------------------------------
 
 static void grt_fixed_step_secular_roots(
-    GRT_MODEL1D *mod1d, EIGENV_INFO *eigmet, EIGENV *eigv, const int secRaylType, const size_t iref, 
+    GRT_MODEL1D *mod1d, EIGENV_INFO *eigmet, EIGENV *eigv, const size_t iref, 
     const real_t *cpred, const size_t npred)
 {
     real_t cmin=cpred[0];
@@ -477,18 +475,18 @@ static void grt_fixed_step_secular_roots(
     cplx_t f3[3] = {0};
     for(int i = 0; i < 2; ++i){
         c3[i] = cmin + dc*i;
-        grt_secular_function(mod1d, c3[i], secRaylType, iref, eigmet->wtype, &f3[i]);
+        grt_secular_function(mod1d, c3[i], iref, eigmet->wtype, &f3[i]);
     }
     c3[2] = c3[1] + dc;
 
     if(eigmet->print_sec){
-        fprintf(stdout, "# secRaylType=%d, iref=%zu, f=%f, tol=%e, c1=%f, c2=%f\n", secRaylType, iref, creal(mod1d->omega)/PI2, eigmet->satol, eigmet->cmin, eigmet->cmax);
+        fprintf(stdout, "# iref=%zu, f=%f, tol=%e, c1=%f, c2=%f\n", iref, creal(mod1d->omega)/PI2, eigmet->satol, eigmet->cmin, eigmet->cmax);
         fprintf(stdout, "%.16e %.16e %.16e \n", c3[0], GRT_CMPLX_SPLIT(f3[0]));
         fprintf(stdout, "%.16e %.16e %.16e \n", c3[1], GRT_CMPLX_SPLIT(f3[1]));
     }
     
     while(c3[2] < cmax) {
-        grt_secular_function(mod1d, c3[2], secRaylType, iref, eigmet->wtype, &f3[2]);
+        grt_secular_function(mod1d, c3[2], iref, eigmet->wtype, &f3[2]);
 
         if(eigmet->print_sec){
             fprintf(stdout, "%.16e %.16e %.16e \n", c3[2], GRT_CMPLX_SPLIT(f3[2]));
@@ -501,7 +499,7 @@ static void grt_fixed_step_secular_roots(
 
         grt_goldensection_search_root(
             mod1d, c3[0], c3[2], 
-            secRaylType, iref, eigmet->wtype, eigmet->rtol, eigmet->cgap, &root_sec, &root_c
+            iref, eigmet->wtype, eigmet->rtol, eigmet->cgap, &root_sec, &root_c
         );
 
         if(root_c > 0.0 && !grt_check_vel_in_mod(mod1d, root_c, eigmet->vgap)){
@@ -552,7 +550,7 @@ static void grt_fixed_step_secular_roots(
 
 // 搜索零点的函数指针
 typedef void (*SearchFunc)(
-    GRT_MODEL1D *mod1d, EIGENV_INFO *eigmet, EIGENV *eigv, const int secRaylType, const size_t iref, 
+    GRT_MODEL1D *mod1d, EIGENV_INFO *eigmet, EIGENV *eigv, const size_t iref, 
     const real_t *cpred, const size_t npred);
 
 
