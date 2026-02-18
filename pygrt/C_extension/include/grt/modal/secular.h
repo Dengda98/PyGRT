@@ -44,6 +44,8 @@ void grt_GRT_matrix_Rayl(GRT_MODEL1D *mod1d, const real_t k, const size_t iref);
 /** 计算所有层位的两个 SH 广义矩阵(标量)： RDL_RL, RUL_FR   */
 void grt_GRT_matrix_Love(GRT_MODEL1D *mod1d, const real_t k, const size_t iref);
 
+real_t grt_secular_function_cbegin(const GRT_MODEL1D *mod1d, const size_t iref, DISPER_TYPE wtype);
+
 /**
  * 计算 Rayleigh 波的久期函数
  * 
@@ -54,7 +56,7 @@ void grt_GRT_matrix_Love(GRT_MODEL1D *mod1d, const real_t k, const size_t iref);
  * @param[out]     ppot         对应垂直波函数，不需要则设置为NULL
  */
 void grt_secular_function_potential_Rayl(
-    GRT_MODEL1D *mod1d, const real_t cphase, const size_t iref, cplx_t *psec, cplx_t *ppot);
+    GRT_MODEL1D *mod1d, const real_t cphase, const size_t iref, cplx_t *psec, cplx_t ppot[GRT_RAYL_DIM], cplx_t ppotUp[GRT_RAYL_DIM]);
 
 /**
  * 计算 Love 波的久期函数
@@ -66,12 +68,11 @@ void grt_secular_function_potential_Rayl(
  * @param[out]     ppot         对应垂直波函数，不需要则设置为NULL
  */
 void grt_secular_function_potential_Love(
-    GRT_MODEL1D *mod1d, real_t cphase,
-    const size_t iref, cplx_t *psec, cplx_t *ppot);
+    GRT_MODEL1D *mod1d, real_t cphase, const size_t iref, cplx_t *psec, cplx_t ppot[GRT_LOVE_DIM]);
 
 /** 合并 secular_function_potential_Rayl(Love) */
 void grt_secular_function_potential(
-    GRT_MODEL1D *mod1d, real_t cphase, const size_t iref, const DISPER_TYPE wtype, cplx_t *psec, cplx_t *ppot);
+    GRT_MODEL1D *mod1d, real_t cphase, const size_t iref, const DISPER_TYPE wtype, cplx_t *psec, cplx_t *ppot, cplx_t *ppotUp);
 
 /** 只求久期函数值，即在 secular_function_potential 中设置 ppot=NULL */
 void grt_secular_function(

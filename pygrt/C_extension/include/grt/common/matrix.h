@@ -199,6 +199,42 @@ inline GCC_ALWAYS_INLINE void grt_cmatmxn_mul(size_t m1, size_t n1, size_t p1, c
 }
 
 /** 
+ * 计算mxn复矩阵的和
+ * 
+ * @param[in]     m1            矩阵行数
+ * @param[in]     n1            矩阵列数
+ * @param[in]     M1            矩阵1 
+ * @param[in]     M2            矩阵2 
+ * @param[out]    M             和矩阵 M1 + M2
+ */
+inline GCC_ALWAYS_INLINE void grt_cmatmxn_add(size_t m1, size_t n1, const cplx_t M1[m1][n1], const cplx_t M2[m1][n1], cplx_t M[m1][n1]){
+    size_t m, n;
+    for(m=0; m<m1; ++m){
+        for(n=0; n<n1; ++n){
+            M[m][n] = M1[m][n] + M2[m][n];
+        }
+    }
+}
+
+/** 
+ * 计算mxn复矩阵的差
+ * 
+ * @param[in]     m1            矩阵行数
+ * @param[in]     n1            矩阵列数
+ * @param[in]     M1            矩阵1 
+ * @param[in]     M2            矩阵2 
+ * @param[out]    M             和矩阵 M1 - M2
+ */
+inline GCC_ALWAYS_INLINE void grt_cmatmxn_sub(size_t m1, size_t n1, const cplx_t M1[m1][n1], const cplx_t M2[m1][n1], cplx_t M[m1][n1]){
+    size_t m, n;
+    for(m=0; m<m1; ++m){
+        for(n=0; n<n1; ++n){
+            M[m][n] = M1[m][n] - M2[m][n];
+        }
+    }
+}
+
+/** 
  * 计算mxn复矩阵的转置矩阵(不共轭)
  * 
  * @param[in]     m1            M1矩阵行数
@@ -280,6 +316,7 @@ inline GCC_ALWAYS_INLINE void grt_cmatmxn_print(size_t m1, size_t n1, const cplx
         }
         fprintf(stderr, "\n");
     }
+    fflush(stderr);
 }
 
 

@@ -167,14 +167,18 @@ static void grt_potential_propagate_DownUp_Rayl(
     grt_cmat2x2_mul(E, RU_FR_delay, RU_FR_delay);
 
     // \phi-_{j+1}-
-    cplx_t tmp[2][2];
-    grt_cmat2x2_mul(M->RD, RU_FR_delay, tmp);
-    grt_cmat2x2_one_sub(tmp);
-    grt_cmat2x2_inv(tmp, tmp);
-    grt_cmat2x2_mul(tmp, M->TU, tmp);
-    grt_cmat2x1_mul(tmp, potRaylLove2, potRaylLove2_Up);
-    // \phi+_{j+1}-
-    grt_cmat2x1_mul(RU_FR_delay, potRaylLove2_Up, potRaylLove2_Up + 2);
+    // 这里计算 (I - RD^(j) * RU_FR_delay) ^ (-1) 不适用于液体-固体界面，
+    // 因为从公式推导可得到，液体-固体界面对应的 |I - RD^(j) * RU_FR_delay| == 0， 其逆不存在
+    if(potRaylLove2_Up[0] == 0.0){
+        cplx_t tmp[2][2];
+        grt_cmat2x2_mul(M->RD, RU_FR_delay, tmp);
+        grt_cmat2x2_one_sub(tmp);
+        grt_cmat2x2_inv(tmp, tmp);
+        grt_cmat2x2_mul(tmp, M->TU, tmp);
+        grt_cmat2x1_mul(tmp, potRaylLove2, potRaylLove2_Up);
+        // \phi+_{j+1}-
+        grt_cmat2x1_mul(RU_FR_delay, potRaylLove2_Up, potRaylLove2_Up + 2);
+    }
 
     // \phi-_{j}+
     grt_cmat2x1_mul(E, potRaylLove2_Up, potRaylLove1);
@@ -219,7 +223,7 @@ static void grt_potential_propagate_DownUp_Love(
 
 
 void grt_get_mod_potential_Up_Down_Rayl(
-    GRT_MODEL1D *mod1d, const size_t iref, const cplx_t potRaylLove[GRT_RAYL_DIM],
+    GRT_MODEL1D *mod1d, const size_t iref, const cplx_t potRaylLove[GRT_RAYL_DIM], const cplx_t potRaylLoveUp[GRT_RAYL_DIM], 
     cplx_t (*mod_potRaylLove_Down)[GRT_RAYL_DIM], cplx_t (*mod_potRaylLove_Up)[GRT_RAYL_DIM])
 {
     // 先置零
@@ -228,6 +232,7 @@ void grt_get_mod_potential_Up_Down_Rayl(
 
     // 赋值 iref 层的垂直波函数
     memcpy(&mod_potRaylLove_Down[iref][0], potRaylLove, sizeof(cplx_t)*GRT_RAYL_DIM);
+    memcpy(&mod_potRaylLove_Up[iref][0], potRaylLoveUp, sizeof(cplx_t)*GRT_RAYL_DIM);
 
     // 计算 RD_RL, RU_FR 矩阵
     RT_MATRIX *Mall_FR = (RT_MATRIX *)calloc(mod1d->n, sizeof(RT_MATRIX));
@@ -290,11 +295,12 @@ void grt_get_mod_potential_Up_Down_Love(
 
 
 void grt_get_mod_potential_Up_Down(
-    GRT_MODEL1D *mod1d, const DISPER_TYPE wtype, const size_t ncols, const size_t iref, const cplx_t potRaylLove[ncols], 
+    GRT_MODEL1D *mod1d, const DISPER_TYPE wtype, const size_t ncols, const size_t iref, 
+    const cplx_t potRaylLove[ncols], const cplx_t potRaylLoveUp[ncols], 
     cplx_t (*mod_potRaylLove_Down)[ncols], cplx_t (*mod_potRaylLove_Up)[ncols])
 {
     if(wtype == GRT_DISPERSION_RAYL && ncols == GRT_RAYL_DIM){
-        grt_get_mod_potential_Up_Down_Rayl(mod1d, iref, potRaylLove, mod_potRaylLove_Down, mod_potRaylLove_Up);
+        grt_get_mod_potential_Up_Down_Rayl(mod1d, iref, potRaylLove, potRaylLoveUp, mod_potRaylLove_Down, mod_potRaylLove_Up);
     } 
     else if(wtype == GRT_DISPERSION_LOVE && ncols == GRT_LOVE_DIM) {
         grt_get_mod_potential_Up_Down_Love(mod1d, iref, potRaylLove, mod_potRaylLove_Down, mod_potRaylLove_Up);

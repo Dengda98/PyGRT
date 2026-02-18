@@ -22,9 +22,6 @@
 #include "grt/modal/secular.h"
 
 
-#define __DEBUG_SECULAR__  0
-
-
 void grt_GRT_matrix_allLayer_Rayl(GRT_MODEL1D *mod1d, const real_t k, RT_MATRIX *Mall_RL, RT_MATRIX *Mall_FR)
 {
     mod1d->k = k;
@@ -169,6 +166,11 @@ void grt_GRT_matrix_Rayl(GRT_MODEL1D *mod1d, const real_t k, const size_t iref)
     // 从顶到底，计算RD_RL
     for(size_t iy = 1; iy < mod1d->n-1; ++iy)
     {
+        // 界面两侧性质不同（固-液），计算广义矩阵时跳过该层，在组成久期函数时会单独处理该界面
+        if(iy == iref && (mod1d->isLiquid[iref-1] ^ mod1d->isLiquid[iref]) == 1){
+            continue;
+        }
+
         // 定义物理层内的反射透射系数矩阵
         RT_MATRIX *M = &(RT_MATRIX){};
         grt_reset_RT_matrix_PSV(M);
@@ -295,93 +297,191 @@ void grt_GRT_matrix_Love(GRT_MODEL1D *mod1d, const real_t k, const size_t iref)
     return;
 }
 
+real_t grt_secular_function_cbegin(const GRT_MODEL1D *mod1d, const size_t iref, DISPER_TYPE wtype)
+{
+    real_t cbegin = 0.0;
 
+    if(wtype == GRT_DISPERSION_RAYL){
+        // 逻辑应与 grt_secular_function_potential_Rayl 函数相互呼应
+        // 界面两侧均为固体
+        if(! mod1d->isLiquid[iref] && (iref==0 || (! mod1d->isLiquid[iref-1]))){
+            if(iref > 0)  cbegin = mod1d->Vb[iref];
+        }
+        // 界面两侧均为液体
+        else if(mod1d->isLiquid[iref] && (iref==0 || (mod1d->isLiquid[iref-1]))){
+            cbegin = mod1d->Va[iref];
+        }
+    }
+    else if(wtype == GRT_DISPERSION_LOVE){
+        cbegin = mod1d->Vb[iref];
+    }
+    
+    return cbegin;
+}
 
 void grt_secular_function_potential_Rayl(
-    GRT_MODEL1D *mod1d, const real_t cphase, const size_t iref, cplx_t *psec, cplx_t *ppot)
+    GRT_MODEL1D *mod1d, const real_t cphase, const size_t iref, cplx_t *psec, cplx_t ppot[GRT_RAYL_DIM], cplx_t ppotUp[GRT_RAYL_DIM])
 {
     real_t k = creal(mod1d->omega)/cphase;
     grt_GRT_matrix_Rayl(mod1d, k, iref);
+    
+    real_t cref = 0.0;
 
-    cplx_t tmp1[2][2] = GRT_INIT_ZERO_2x2_MATRIX;
-    cplx_t tmp2[2][2] = GRT_INIT_ZERO_2x2_MATRIX;
+    // 界面两侧均为固体
+    if(! mod1d->isLiquid[iref] && (iref==0 || (! mod1d->isLiquid[iref-1]))){
+        cplx_t Det[2][2] = GRT_INIT_ZERO_2x2_MATRIX;
+        cref = mod1d->Vb[0];
+        if(iref==0 && cphase < cref) {
+            // !! WARNING
+            // 这里这种改写仅适用于顶层为自由表面边界条件的情况
+            // 例如对于刚性条件就需要使用 D11 和 D12 矩阵
 
-    if(secRaylType==0) {
-        // !! WARNING
-        // 这里这种改写仅适用于顶层为自由表面边界条件的情况
-        // 例如对于刚性条件就需要使用 D11 和 D12 矩阵
+            // 对于首层，改为 D21*RD_RL + D22
+            // 计算顶层的D22 
+            cplx_t D22[2][2], D21[2][2];
+            cplx_t top_xa=0.0, top_xb=0.0;
+            cplx_t top_cbcb=0.0;
 
-        // 对于首层，改为 D21*RD_RL + D22
-        // 计算顶层的D22 
-        cplx_t D22[2][2], D21[2][2];
-        cplx_t top_xa=0.0, top_xb=0.0;
-        cplx_t top_caca=0.0, top_cbcb=0.0;
+            top_xa = mod1d->xa[0];
+            top_xb = mod1d->xb[0];
+            top_cbcb = mod1d->cbcb[0];
 
-        top_xa = mod1d->xa[0];
-        top_xb = mod1d->xb[0];
-        top_caca = mod1d->caca[0];
-        top_cbcb = mod1d->cbcb[0];
+            // 使用归一化的 D21, D22
+            D21[0][0] = 1.0 - 0.5*top_cbcb;   D21[0][1] = top_xb;
+            D21[1][0] = top_xa;               D21[1][1] = 1.0 - 0.5*top_cbcb;
 
-        // 使用归一化的 D21, D22
-        D21[0][0] = 1.0 - 0.5*top_cbcb;   D21[0][1] = top_xb;
-        D21[1][0] = top_xa;               D21[1][1] = 1.0 - 0.5*top_cbcb;
+            D22[0][0] = 1.0 - 0.5*top_cbcb;   D22[0][1] = - top_xb;
+            D22[1][0] = - top_xa;             D22[1][1] = 1.0 - 0.5*top_cbcb;
 
-        D22[0][0] = 1.0 - 0.5*top_cbcb;   D22[0][1] = - top_xb;
-        D22[1][0] = - top_xa;             D22[1][1] = 1.0 - 0.5*top_cbcb;
+            grt_cmat2x2_mul(D21, mod1d->M_BL.RD, Det);
+            grt_cmat2x2_add(D22, Det, Det);
+            *psec = Det[0][0]*Det[1][1] - Det[0][1]*Det[1][0];
+            // 适当控制久期函数幅值
+            *psec /= 2.0;
+        }
+        else {
+            grt_cmat2x2_mul(mod1d->M_FA.RU, mod1d->M_BL.RD, Det);
+            grt_cmat2x2_one_sub(Det);
+            *psec = Det[0][0]*Det[1][1] - Det[0][1]*Det[1][0];
+        }
 
-        // grt_get_layer_D21(top_xa, top_xb, top_kbkb, top_mu, omega, k, D21);
-        // grt_get_layer_D22(top_xa, top_xb, top_kbkb, top_mu, omega, k, D22);
-        
-        // 先适当缩放
-        grt_cmat2x2_k(mod1d->M_BL.RD, 1.0/(k*k), tmp1);
-
-        grt_cmat2x2_mul(D21, tmp1, tmp1);
-        // 逆缩放
-        grt_cmat2x2_k(tmp1, (k*k), tmp1);
-
-        grt_cmat2x2_add(D22, tmp1, tmp1);
-        // 适当乘上一个系数，将久期函数的值域置于合适的范围（大致在[-1,1]），方便后续找零点判断幅值
-        grt_cmat2x2_k(tmp1, 1.0/(2.0*sqrt(top_caca*top_cbcb)), tmp1);
+        // 返回对应的垂直波函数
+        if(ppot != NULL){
+            // 假设一个比例
+            ppot[2] = - Det[0][1] / sqrt( GRT_SQUARE(fabs(Det[0][0])) + GRT_SQUARE(fabs(Det[0][1])) ); 
+            ppot[3] = + Det[0][0] / sqrt( GRT_SQUARE(fabs(Det[0][0])) + GRT_SQUARE(fabs(Det[0][1])) );
+            grt_cmat2x1_mul(mod1d->M_BL.RD, ppot+2, ppot);
+        }
     }
-    else {
-        // grt_cmat2x2_mul(RU_FR, RD_RL, tmp1);
-        // grt_cmat2x2_one_sub(tmp1);
-
-        // 先适当缩放
-        grt_cmat2x2_k(mod1d->M_BL.RD, 1.0/(k*k), tmp1);
-        grt_cmat2x2_k(mod1d->M_FA.RU, 1.0/(k*k), tmp2);
-
-        grt_cmat2x2_mul(tmp2, tmp1, tmp1);
-        // 逆缩放
-        grt_cmat2x2_k(tmp1, (k*k*k*k), tmp1);
-        grt_cmat2x2_one_sub(tmp1);
-    }
-    *psec = tmp1[0][0]*tmp1[1][1] - tmp1[0][1]*tmp1[1][0];
-
-    // TEMP!!!
-    // 这里先临时加个处理，不使用if-else调整代码
-    // 如果 iref 位于液体层，则 RD、RU 仅在 [0][0] 位置有值，久期函数的计算要改变
-    if(mod1d->isLiquid[iref]){
-        // 不管 secRaylType
+    // 界面两侧均为液体
+    else if(mod1d->isLiquid[iref] && (iref==0 || (mod1d->isLiquid[iref-1]))){
         *psec = 1.0 - mod1d->M_FA.RU[0][0]*mod1d->M_BL.RD[0][0];
-    }
-
-    // 返回对应的垂直波函数
-    if(ppot != NULL){
-        // 假设一个比例
-        ppot[2] = - tmp1[0][1] / sqrt( GRT_SQUARE(fabs(tmp1[0][0])) + GRT_SQUARE(fabs(tmp1[0][1])) ); 
-        ppot[3] = + tmp1[0][0] / sqrt( GRT_SQUARE(fabs(tmp1[0][0])) + GRT_SQUARE(fabs(tmp1[0][1])) );
-        grt_cmat2x1_mul(mod1d->M_BL.RD, ppot+2, ppot);
-
-        // TEMP!!!
-        // 这里先临时加个处理，不使用if-else调整代码
-        // 如果 iref 位于液体层，则 RD、RU 仅在 [0][0] 位置有值，久期函数的计算要改变
-        if(mod1d->isLiquid[iref]){
-            // 不管 secRaylType
+        // 返回对应的垂直波函数
+        if(ppot != NULL){
             ppot[2] = 1.0;
             ppot[3] = 0.0;
             ppot[0] = mod1d->M_BL.RD[0][0];
             ppot[1] = 0.0;
+        }
+    }
+    // 界面两侧为液固/固液，此时 iref >= 1
+    // Qin * diag{RU, RD} - Qout
+    else {
+        // TODO
+        // 这一块儿的公式有一些变体比较有意思，固体-固体界面也适用，有空放到在线文档里
+        cplx_t Qin[3][3] = {0}, Qout[3][3] = {0};
+        grt_Q_mat3x3_ls_PSV(mod1d, iref, Qin, Qout);
+        cplx_t R3[3][3] = {0};
+        cplx_t RU_FA_delay[2][2] = {0};
+        if(mod1d->isLiquid[iref-1]){
+            cref = GRT_MIN(mod1d->Va[iref-1], mod1d->Vb[iref]);
+            cplx_t ex2a = exp( - mod1d->k * mod1d->Thk[iref-1] * mod1d->xa[iref-1]);
+            ex2a *= ex2a;
+            R3[0][0] = RU_FA_delay[0][0] = ex2a * mod1d->M_FA.RU[0][0];
+            R3[1][1] = mod1d->M_BL.RD[0][0];
+            R3[1][2] = mod1d->M_BL.RD[0][1];
+            R3[2][1] = mod1d->M_BL.RD[1][0];
+            R3[2][2] = mod1d->M_BL.RD[1][1];
+        } else {
+            cref = GRT_MIN(mod1d->Vb[iref-1], mod1d->Va[iref]);
+            real_t thk = mod1d->Thk[iref-1];
+            cplx_t xa1 = mod1d->xa[iref-1];
+            cplx_t xb1 = mod1d->xb[iref-1];
+            real_t k = mod1d->k;
+            
+            cplx_t exa, exb, ex2a, ex2b, exab;
+            exa = exp(- k*thk*xa1);
+            exb = exp(- k*thk*xb1);
+            ex2a = exa * exa;
+            ex2b = exb * exb;
+            exab = exa * exb;
+
+            R3[0][0] = mod1d->M_BL.RD[0][0];
+            R3[1][1] = RU_FA_delay[0][0] = ex2a * mod1d->M_FA.RU[0][0];
+            R3[1][2] = RU_FA_delay[0][1] = exab * mod1d->M_FA.RU[0][1];
+            R3[2][1] = RU_FA_delay[1][0] = exab * mod1d->M_FA.RU[1][0];
+            R3[2][2] = RU_FA_delay[1][1] = ex2b * mod1d->M_FA.RU[1][1];
+        }
+
+        if(cphase < cref){
+            grt_cmatmxn_mul(3, 3, 3, Qin, R3, R3);
+            grt_cmatmxn_sub(3, 3, R3, Qout, R3);
+            // 公式推导可证明，由于 Qin 和 Qout 在 [2][0] 恒为 0 
+            // 再结合原始的分块矩阵 R3 的特点，此时计算结果也在 [2][0] 位置恒为 0
+        } else {
+            cplx_t RT[3][3] = {0};
+            grt_RT_mat3x3_ls_PSV(mod1d, iref, RT);
+            grt_cmatmxn_mul(3, 3, 3, RT, R3, R3);
+            for(int i = 0; i < 3; ++i){
+                for(int j = 0; j < 3; ++j){
+                    if(i == j){
+                        R3[i][j] = 1.0 - R3[i][j];
+                    } else {
+                        R3[i][j] = - R3[i][j];
+                    }
+                }
+            }
+        }
+
+        // 3x3 矩阵行列式
+        *psec =  R3[0][0] * (R3[1][1] * R3[2][2] - R3[1][2] * R3[2][1])
+               - R3[0][1] * (R3[1][0] * R3[2][2] - R3[1][2] * R3[2][0])
+               + R3[0][2] * (R3[1][0] * R3[2][1] - R3[1][1] * R3[2][0]);
+
+        // 适当调整幅值
+        if(cphase < cref){
+            *psec *= 8.0*cphase*cphase*cphase*cphase;
+        }
+
+        // 返回对应的垂直波函数
+        if(ppot != NULL && ppotUp != NULL){
+            // 做叉积得到基础解
+            cplx_t tmp[3];
+            tmp[0] = R3[1][1] * R3[2][2] - R3[1][2] * R3[2][1];
+            tmp[1] = R3[1][2] * R3[2][0] - R3[1][0] * R3[2][2];
+            tmp[2] = R3[1][0] * R3[2][1] - R3[1][1] * R3[2][0];
+            real_t amp = sqrt(tmp[0]*tmp[0] + tmp[1]*tmp[1] + tmp[2]*tmp[2]);
+            tmp[0] /= amp;
+            tmp[1] /= amp;
+            tmp[2] /= amp;
+
+            if(mod1d->isLiquid[iref-1]){
+                ppot[2] = tmp[1]; 
+                ppot[3] = tmp[2];
+                grt_cmat2x1_mul(mod1d->M_BL.RD, ppot + 2, ppot);
+                ppotUp[0] = tmp[0];
+                ppotUp[1] = 0.0;
+                ppotUp[2] = RU_FA_delay[0][0] * tmp[0];
+                ppotUp[3] = 0.0;
+            } else {
+                ppot[2] = tmp[0];
+                ppot[3] = 0.0;
+                ppot[0] = mod1d->M_BL.RD[0][0] * tmp[0];
+                ppot[1] = 0.0;
+                ppotUp[0] = tmp[1];
+                ppotUp[1] = tmp[2];
+                grt_cmat2x1_mul(RU_FA_delay, ppotUp, ppotUp + 2);
+            }
         }
     }
 
@@ -390,8 +490,7 @@ void grt_secular_function_potential_Rayl(
 
 
 void grt_secular_function_potential_Love(
-    GRT_MODEL1D *mod1d, const real_t cphase,
-    const size_t iref, cplx_t *psec, cplx_t *ppot)
+    GRT_MODEL1D *mod1d, const real_t cphase, const size_t iref, cplx_t *psec, cplx_t ppot[GRT_LOVE_DIM])
 {
     real_t k = creal(mod1d->omega)/cphase;
     grt_GRT_matrix_Love(mod1d, k, iref);
@@ -419,10 +518,11 @@ void grt_secular_function_potential_Love(
 }
 
 void grt_secular_function_potential(
-    GRT_MODEL1D *mod1d, const real_t cphase, const size_t iref, const DISPER_TYPE wtype, cplx_t *psec, cplx_t *ppot)
+    GRT_MODEL1D *mod1d, const real_t cphase, const size_t iref, const DISPER_TYPE wtype, cplx_t *psec, cplx_t *ppot, cplx_t *ppotUp)
 {
+    mod1d->neval++;
     if(wtype == GRT_DISPERSION_RAYL){
-        grt_secular_function_potential_Rayl(mod1d, cphase, iref, psec, ppot);
+        grt_secular_function_potential_Rayl(mod1d, cphase, iref, psec, ppot, ppotUp);
     } 
     else if(wtype == GRT_DISPERSION_LOVE){
         grt_secular_function_potential_Love(mod1d, cphase, iref, psec, ppot);
@@ -435,5 +535,5 @@ void grt_secular_function_potential(
 void grt_secular_function(
     GRT_MODEL1D *mod1d, const real_t cphase, const size_t iref, const DISPER_TYPE wtype, cplx_t *psec)
 {
-    grt_secular_function_potential(mod1d, cphase, iref, wtype, psec, NULL);
+    grt_secular_function_potential(mod1d, cphase, iref, wtype, psec, NULL, NULL);
 }

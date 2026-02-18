@@ -30,7 +30,7 @@
  * 
  */
 void grt_get_mod_potential_Up_Down_Rayl(
-    GRT_MODEL1D *mod1d, const size_t iref, const cplx_t potRaylLove[GRT_RAYL_DIM],
+    GRT_MODEL1D *mod1d, const size_t iref, const cplx_t potRaylLove[GRT_RAYL_DIM], const cplx_t potRaylLoveUp[GRT_RAYL_DIM], 
     cplx_t (*mod_potRaylLove_Down)[GRT_RAYL_DIM], cplx_t (*mod_potRaylLove_Up)[GRT_RAYL_DIM]);
 
 /** 已知某个界面 z_j+ 上的垂直波函数，计算模型每个分界面 z_j+ 和 z_j- 的垂直波函数 SH, 参数见 get_mod_potential_Up_Down_Rayl */
@@ -40,7 +40,8 @@ void grt_get_mod_potential_Up_Down_Love(
 
 /** 合并 get_mod_potential_Up_Down_Rayl(Love) */
 void grt_get_mod_potential_Up_Down(
-    GRT_MODEL1D *mod1d, const DISPER_TYPE wtype, const size_t ncols, const size_t iref, const cplx_t potRaylLove[ncols], 
+    GRT_MODEL1D *mod1d, const DISPER_TYPE wtype, const size_t ncols, const size_t iref, 
+    const cplx_t potRaylLove[ncols], const cplx_t potRaylLoveUp[ncols], 
     cplx_t (*mod_potRaylLove_Down)[ncols], cplx_t (*mod_potRaylLove_Up)[ncols]);
 
 

@@ -19,7 +19,7 @@
 #include "grt/modal/root.h"
 #include "grt/modal/secular.h"
 
-
+#define __DEBUG_SECULAR__  0
 
 /** 
  * 黄金分割法确定久期函数零点 
@@ -286,12 +286,15 @@ static void grt_adaptive_step_secular_roots(
     // 初始化一个总区间
     Interval Citv;
     Interval last_Citv_right = {.x3 = {-1.0}};
-    
+
+    real_t cbegin = grt_secular_function_cbegin(mod1d, iref, eigmet->wtype) + eigmet->vgap;
     // 根据 cpred 在[cmin, cmax]之间初始化采样一些区间
     for(size_t i = 0; i < npred - 1; ++i){
-        real_t c1 = cpred[npred - i - 2];
+        real_t c1 = GRT_MAX(cbegin, cpred[npred - i - 2]);
         real_t c2 = cpred[npred - i - 1];
         if(fabs(c2 - c1) < eigmet->cgap) continue;
+        
+        if(cbegin >= c2) break;
 
         Citv.x3[0] = c1;
         Citv.x3[1] = 0.5 * (c1 + c2);
@@ -327,7 +330,7 @@ static void grt_adaptive_step_secular_roots(
         {
             size_t idx = grt_findLessEqualClosest_real_t(cpred, npred, Citv.x3[0]);
             if(idx == npred-1) idx--;
-            refdc = GRT_MAX((cpred[idx+1] - cpred[idx])*1e-2, eigmet->cgap);
+            refdc = GRT_MAX((cpred[idx+1] - cpred[idx])*1e-3, eigmet->cgap);
             // refdc = eigmet->cgap;
         }
 
@@ -464,8 +467,9 @@ static void grt_fixed_step_secular_roots(
     GRT_MODEL1D *mod1d, EIGENV_INFO *eigmet, EIGENV *eigv, const size_t iref, 
     const real_t *cpred, const size_t npred)
 {
-    real_t cmin=cpred[0];
-    real_t cmax=cpred[npred-1];
+    real_t cbegin = grt_secular_function_cbegin(mod1d, iref, eigmet->wtype) + eigmet->vgap;
+    real_t cmin = GRT_MAX(cbegin, cpred[0]);
+    real_t cmax = cpred[npred-1];
     real_t dc = eigmet->uniform_dc;
 
     cplx_t root_sec = -1.0;
@@ -544,10 +548,6 @@ static void grt_fixed_step_secular_roots(
 }
 
 
-
-
-
-
 // 搜索零点的函数指针
 typedef void (*SearchFunc)(
     GRT_MODEL1D *mod1d, EIGENV_INFO *eigmet, EIGENV *eigv, const size_t iref, 
@@ -564,21 +564,48 @@ static real_t grt_get_approx_nroots(GRT_MODEL1D *mod1d, const real_t freq, DISPE
         if(wtype == GRT_DISPERSION_RAYL){
             res += fabs(cimag(mod1d->Va[iy])) * mod1d->Thk[iy];
         }
-        // printf("xa=" GRT_CMPLX_FMT ", xb=" GRT_CMPLX_FMT "\n", GRT_CMPLX_SPLIT(xa), GRT_CMPLX_SPLIT(xb));
     }
     res *= 2.0*freq;
     res /= cphase;
     return res;
 }
 
+/** 指定某个层位的物性参数为半空间参数，计算均匀半空间中的Rayleigh波相速度 */
+static real_t grt_halfspace_Rayleigh_croot(const GRT_MODEL1D *mod1d, const size_t iref)
+{
+    real_t vp = mod1d->Va[iref];
+    real_t vs = mod1d->Vb[iref];
+    real_t xi2 = GRT_SQUARE(vs/vp);
+    real_t eta = 0.0;
 
-// static void get_dc_min_max(GRT_MODEL1D *mod1d, const real_t freq, const real_t cmin, const real_t cmax, real_t *pt_dcmin, real_t *pt_dcmax)
-// {
-//     size_t approx_n = grt_get_approx_maxnroots(mod1d, freq, cmax);
-//     *pt_dcmax = (cmax - cmin) / approx_n;
-//     *pt_dcmin = *pt_dcmax * 1e-4;
-//     // printf("# freq=%e, dcmin=%e, dcmax=%e, n=%zu, cmax=%f\n", creal(mod1d->omega)/PI2, *pt_dcmin, *pt_dcmax, approx_n, cmax);
-// }
+    // 初始猜想值 eta，从微偏离三次函数的局部极小值开始
+    {
+        real_t a = 3.0;
+        real_t b = -16.0;
+        real_t c = 8.0*(3.0 - 2.0*xi2);
+        eta = b*b - 4.0*a*c;
+        eta = (eta >= 0.0)? sqrt((- b - sqrt(eta))/(2.0*a)) * 0.9 : 0.9;
+    }
+
+    for(size_t i = 0; i < 10; ++i){
+        real_t eta2 = eta*eta;
+        real_t eta4 = eta2*eta2;
+        real_t eta6 = eta4*eta2;
+        real_t f_val = eta6 - 8.0*eta4 + 8.0*(3.0 - 2.0*xi2)*eta2 - 16.0*(1.0 - xi2);
+        real_t df_val = eta*(6.0*eta4 - 32.0*eta2 + 16.0*(3.0 - 2.0*xi2));
+
+        if(fabs(df_val) < 1e-10)  break;
+
+        real_t new_eta = eta - f_val / df_val;
+
+        if(fabs(new_eta - eta) < 1e-8)  break;
+
+        eta = new_eta;
+    }
+
+    return eta * vs;
+}
+
 
 /** 将对单个频率的处理包装成函数，方便被其它函数并行调用 */
 static void get_secular_roots_single_freq(GRT_MODEL1D *mod1d, EIGENV_INFO *eigmet, EIGENV *eigv, SearchFunc searchfunc)
@@ -610,49 +637,63 @@ static void get_secular_roots_single_freq(GRT_MODEL1D *mod1d, EIGENV_INFO *eigme
     cpred = (real_t *)realloc(cpred, sizeof(real_t)*(npred+1));
     cpred[npred++] = c2;
     if(eigmet->wtype == GRT_DISPERSION_RAYL && mod1d->Vb[0] > 0.0){
-        real_t target = 0.8*mod1d->Vb[0];
+        real_t target = 0.95 * grt_halfspace_Rayleigh_croot(mod1d, 0);
         cpred = (real_t *)realloc(cpred, sizeof(real_t)*(npred+1));
         grt_insertOrdered(cpred, &npred, npred+1, &target, sizeof(real_t), true, grt_compare_real_t);
     }
+    // TODO
+    // 在 cpred 中补充 stoneley 波的估计根
 
-    int secRaylType = 0; // 使用哪种Rayleigh波的secular function
     size_t iref = 0; // 使用哪一层的secular function
 
-    // 对于首层
-    iref = 0;
+    // 单独讨论首层
     if(eigmet->wtype == GRT_DISPERSION_RAYL){
-        // Rayleigh 波
-        // 搜索“基阶”进行补充
-        secRaylType = 0;
-        searchfunc(mod1d, eigmet, eigv, secRaylType, iref, cpred, npred);
+        searchfunc(mod1d, eigmet, eigv, 0, cpred, npred);
     } 
     else if(eigmet->wtype == GRT_DISPERSION_LOVE){
-        // Love 波 跳过液体层
-        if(! mod1d->isLiquid[iref]){
-            secRaylType = 1;
-            searchfunc(mod1d, eigmet, eigv, secRaylType, iref, cpred, npred);
+        // Love 波
+        // 从顶至下的第一个固体层
+        for(iref = 0; iref < mod1d->n; ++iref){
+            if(! mod1d->isLiquid[iref])  break;
         }
+        if(iref == mod1d->n - 1){
+            GRTRaiseError("Love wave can't exist in the model with full liquid.");
+        }
+        searchfunc(mod1d, eigmet, eigv, iref, cpred, npred);
     }
     else {
         GRTRaiseError("Wrong execution.");
     }
 
     // 检查低速层
-    for(iref=1; iref<mod1d->n-1; ++iref){
-        // 跳过两侧固体的递增 Vp 和 递增 Vs
-        if( ! mod1d->isLiquid[iref-1] && ! mod1d->isLiquid[iref] && mod1d->Vb[iref-1] <= mod1d->Vb[iref] && mod1d->Va[iref-1] <= mod1d->Va[iref]){
-            continue;
-        }
-        // 跳过两侧液体的递增 Vp
-        if( mod1d->isLiquid[iref-1] && mod1d->isLiquid[iref] && mod1d->Va[iref-1] <= mod1d->Va[iref]){
-            continue;
-        }
+    for(iref = 1; iref < mod1d->n-1; ++iref){
+        bool match = false;
+        real_t va1, va2, va3;
+        real_t vb1, vb2, vb3;
+        bool il1, il2;
+        va1 = mod1d->Va[iref-1];
+        vb1 = mod1d->Vb[iref-1];
+        il1 = mod1d->isLiquid[iref-1];
+        va2 = mod1d->Va[iref];
+        vb2 = mod1d->Vb[iref];
+        il2 = mod1d->isLiquid[iref];
+        va3 = mod1d->Va[iref+1];
+        vb3 = mod1d->Vb[iref+1];
+
         // 对于 Love 波跳过液体层
         if(eigmet->wtype == GRT_DISPERSION_LOVE && mod1d->isLiquid[iref]){
             continue;
         }
-        secRaylType = 1;
-        searchfunc(mod1d, eigmet, eigv, secRaylType, iref, cpred, npred);
+
+        // 形成低速层
+        if(va1 > va2 && va2 < va3)  match = true;
+        else if(vb1 > vb2 && vb2 < vb3)  match = true;
+        // 固液分界面
+        else if((il1 ^ il2) == 1)  match = true;
+
+        if(match){
+            searchfunc(mod1d, eigmet, eigv, iref, cpred, npred);
+        }
     }
 
     GRT_SAFE_FREE_PTR(cpred);
@@ -700,13 +741,15 @@ void grt_get_secular_roots(GRT_MODEL1D *mod1d, EIGENV_INFO *eigmet, const bool p
         #pragma omp parallel for schedule(guided) default(shared) 
         for(size_t iw = 0; iw < nf; ++iw){
             GRT_MODEL1D *local_mod1d = grt_copy_mod1d(mod1d);
+            local_mod1d->neval = 0;
             __CALL_SECULAR_ROOT(local_mod1d, iw);
 
             // 记录进度条变量 
             #pragma omp critical
             {   
+                mod1d->neval += local_mod1d->neval;
                 progress++;
-                if(print_progressbar) grt_printprogressBar("Computing Dispersion Curves: ", progress*100/nf);
+                if(print_progressbar) grt_printprogressBar("Computing Dispersion: ", progress*100/nf);
             }
             grt_free_mod1d(local_mod1d);
         }

@@ -105,7 +105,7 @@ printf("\n"
 /** 从命令行中读取选项，处理后记录到全局变量中 */
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     // 先为个别参数设置非0初始值
-    Ctrl->T.satol = 1e-3;
+    Ctrl->T.satol = 1e-2;
 
     // 以下浮点数不易过大或过小
     Ctrl->T.cgap = 1e-7;
@@ -405,6 +405,8 @@ int eigenv_main(int argc, char **argv){
     
     // 寻找久期函数零点
     grt_get_secular_roots(mod1d, eigmet, !Ctrl->s.active);
+
+    printf("# Number of evaluation: %zu\n", mod1d->neval);
 
     if(Ctrl->X.active) goto FINISH;
 
