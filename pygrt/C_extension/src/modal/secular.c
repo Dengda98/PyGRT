@@ -449,8 +449,8 @@ void grt_secular_function_potential_Rayl(
                + R3[0][2] * (R3[1][0] * R3[2][1] - R3[1][1] * R3[2][0]);
 
         // 适当调整幅值
-        if(cphase < cref){
-            *psec *= 8.0*cphase*cphase*cphase*cphase;
+        if(cphase < cref && cphase > 1.0){
+            *psec /= 4.0*cphase*cphase;
         }
 
         // 返回对应的垂直波函数

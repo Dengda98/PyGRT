@@ -530,15 +530,15 @@ void grt_Q_mat3x3_ls_PSV(const GRT_MODEL1D *mod1d, const size_t iy, cplx_t Qin[3
 
     Qin[0][0] = - sgn * xa1;
     Qin[0][1] = - sgn * xa2;
-    Qin[0][1] = - 1.0;
+    Qin[0][2] = - 1.0;
 
     Qin[1][0] = - Rho1*cphase*cphase/mu2;
     Qin[1][1] = - 2.0*gam;
-    Qin[1][1] = - sgn * 2.0*xb2;
+    Qin[1][2] = - sgn * 2.0*xb2;
 
     Qin[2][0] = 0.0;
     Qin[2][1] = - sgn * 2.0*xa2;
-    Qin[2][2] = 2.0*gam;
+    Qin[2][2] = - 2.0*gam;
 
 
     Qout[0][0] = - sgn * xa1;

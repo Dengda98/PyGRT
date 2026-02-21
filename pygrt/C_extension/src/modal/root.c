@@ -696,6 +696,11 @@ static void get_secular_roots_single_freq(GRT_MODEL1D *mod1d, EIGENV_INFO *eigme
         }
     }
 
+    // TODO
+    // 对于液固界面这类特殊情况，模型底层的久期函数也得考虑
+    // 目前临时的一个方法是在创建模型文件时为底层再添加一层物性相同的层
+    // 从而不会跳过“底层”的久期函数
+
     GRT_SAFE_FREE_PTR(cpred);
 }
 

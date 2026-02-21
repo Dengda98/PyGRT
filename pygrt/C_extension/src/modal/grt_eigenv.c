@@ -395,6 +395,14 @@ int eigenv_main(int argc, char **argv){
         real_t vbn = mod1d->Vb[mod1d->n-1];  // 半空间速度
         if(vbn == 0.0) vbn = mod1d->Va[mod1d->n-1];
 
+        // 如果存在上层固体、下层液体的情况，设置 vbmin 为极小非零值
+        for(size_t i = 0; i < mod1d->n-1; ++i){
+            if( ! mod1d->isLiquid[i] && mod1d->isLiquid[i+1]){
+                vbmin *= 1e-3;
+                break;
+            }
+        }
+
         if(vbmin >= vbn){
             GRTRaiseError("minimum velocity (vbmin=%f) >= halfspace velocity (vbn=%f).", vbmin, vbn);
         }
