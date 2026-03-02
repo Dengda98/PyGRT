@@ -54,7 +54,7 @@
 得到 :math:`\mathbf{\tilde{G}}_j` 的表达式，
 
 .. math:: 
-    :label: static_Gk
+    :label: static_uniform_static_Gk
 
     \mathbf{\tilde{G}}_j = \dfrac{1}{\mu k^2} \left[ \mathbf{I} - \dfrac{\lambda+\mu}{\lambda+2\mu} \dfrac{\mathbf{kk^T}}{k^2} \right] \mathbf{e}_j
     = \dfrac{1}{\mu k^2} \left[ \mathbf{I} - \dfrac{1}{2(1-\nu)} \dfrac{\mathbf{kk^T}}{k^2} \right] \mathbf{e}_j
@@ -81,7 +81,7 @@ Fourier变换对
     f(\mathbf{r}) = \mathcal{F}^{-1} \left[ F(\mathbf{k}) \right] = \dfrac{1}{(2\pi)^3} \int_{-\infty}^{+\infty} \int_{-\infty}^{+\infty} \int_{-\infty}^{+\infty} F(\mathbf{k}) e^{i \mathbf{k}\cdot \mathbf{r}} d^3 \mathbf{k}
 
 
-为了将 :eq:`static_Gk` 式变换回空间域，可逐项做逆变换，再合并得到最终解。 不过注意到 :eq:`static_Gk` 式中的特殊形式， **可基于微分关系快速获得对应项的变换对** 。
+为了将 :eq:`static_uniform_static_Gk` 式变换回空间域，可逐项做逆变换，再合并得到最终解。 不过注意到 :eq:`static_uniform_static_Gk` 式中的特殊形式， **可基于微分关系快速获得对应项的变换对** 。
 
 已知 :math:`1/r` 满足以下关系，
 
@@ -93,7 +93,7 @@ Fourier变换对
 其中 :math:`r=|\mathbf{r}|` 。变换到波矢域，得到变换对，
 
 .. math:: 
-    :label: 1k2_inv_final
+    :label: static_uniform_1k2_inv_final
 
     \mathcal{F} \left[ \dfrac{1}{4\pi r} \right] &= \dfrac{1}{k^2} \\
     \mathcal{F}^{-1} \left[ \dfrac{1}{k^2}  \right] &= \dfrac{1}{4\pi r}
@@ -106,10 +106,10 @@ Fourier变换对
     \mathcal{F} \left[ \nabla \nabla \left( \dfrac{1}{4\pi r} \right) \right] = \dfrac{\mathbf{kk^T}}{k^2}
 
 
-因此 :eq:`static_Gk` 式中涉及对 :math:`\mathbf{kk^T}/k^4` 的逆变换为
+因此 :eq:`static_uniform_static_Gk` 式中涉及对 :math:`\mathbf{kk^T}/k^4` 的逆变换为
 
 .. math:: 
-    :label: kkTk4_inv
+    :label: static_uniform_kkTk4_inv
 
     \mathcal{F}^{-1} \left[ \dfrac{1}{k^2} \cdot \dfrac{\mathbf{kk^T}}{k^2} \right] = 
     \dfrac{1}{4\pi r} * \nabla \nabla \left( \dfrac{1}{4\pi r} \right) = 
@@ -118,7 +118,7 @@ Fourier变换对
 同样再次使用积分变换求解卷积式 :math:`\left( \dfrac{1}{r} * \dfrac{1}{r} \right)`，其正变换为
 
 .. math:: 
-    :label: 1r1r_conv
+    :label: static_uniform_1r1r_conv
 
     \dfrac{1}{r} * \dfrac{1}{r} = \mathcal{F}^{-1} \left[ \mathcal{F} \left[ \dfrac{1}{r} * \dfrac{1}{r} \right] \right] = 
     \mathcal{F}^{-1} \left[ \mathcal{F} \left[ \dfrac{1}{r} \right] \cdot \mathcal{F} \left[ \dfrac{1}{r} \right] \right] 
@@ -139,17 +139,17 @@ Fourier变换对
     \mathcal{F} \left[ \dfrac{r}{8\pi} \right] &= \dfrac{1}{k^4} \\
     \mathcal{F}^{-1} \left[ \dfrac{1}{k^4} \right] &= \dfrac{r}{8\pi}
 
-上式代入到 :eq:`1r1r_conv` 式，得到
+上式代入到 :eq:`static_uniform_1r1r_conv` 式，得到
 
 .. math:: 
     :label:
 
     \dfrac{1}{r} * \dfrac{1}{r} = 2\pi r 
 
-上式代入到 :eq:`kkTk4_inv` 式，得到
+上式代入到 :eq:`static_uniform_kkTk4_inv` 式，得到
 
 .. math:: 
-    :label: kkTk4_inv_final
+    :label: static_uniform_kkTk4_inv_final
 
     \mathcal{F}^{-1} \left[ \dfrac{1}{k^2} \cdot \dfrac{\mathbf{kk^T}}{k^2} \right] = 
     \dfrac{1}{(4\pi)^2} \cdot \nabla \nabla \left( 2\pi r \right) =
@@ -160,7 +160,7 @@ Fourier变换对
 -----------------------------------
 
 
-将 :eq:`1k2_inv_final` 式，:eq:`kkTk4_inv_final` 式代入 :eq:`static_Gk` 式，作逆变换，整理，
+将 :eq:`static_uniform_1k2_inv_final` 式，:eq:`static_uniform_kkTk4_inv_final` 式代入 :eq:`static_uniform_static_Gk` 式，作逆变换，整理，
 
 .. math:: 
     :label: 
@@ -173,7 +173,7 @@ Fourier变换对
 最终得到无限均匀介质中集中脉冲力产生的静态位移场，
 
 .. math:: 
-    :label: Gtensor
+    :label: static_uniform_Gtensor
 
     \mathbf{G} = \dfrac{1}{16 \pi \mu (1-\nu) r}  \left[ (3-4\nu)\mathbf{I} + \dfrac{\mathbf{rr^T}}{r^2} \right]
 
@@ -184,7 +184,7 @@ Fourier变换对
 
     G_{ij} = \dfrac{1}{16 \pi \mu (1-\nu) r}  \left[ (3-4\nu) \delta_{ij} + \gamma_i \gamma_j \right] = \dfrac{1}{4\pi \mu} \dfrac{\Delta}{1+\Delta} \dfrac{1}{r} \left( \dfrac{\delta_{ij}}{\Delta} + \gamma_i \gamma_j \right)
 
-其中 :math:`\Delta=\dfrac{1}{3-4\nu}=\dfrac{\lambda+\mu}{\lambda+3\mu}` ， :math:`\gamma_i=r_i/r` 为方向余弦， :math:`r` 为源点和场点的直线距离。最终解 :eq:`Gtensor` 的表达式与朗道的弹性理论教材保持一致 [#]_ 。
+其中 :math:`\Delta=\dfrac{1}{3-4\nu}=\dfrac{\lambda+\mu}{\lambda+3\mu}` ， :math:`\gamma_i=r_i/r` 为方向余弦， :math:`r` 为源点和场点的直线距离。最终解 :eq:`static_uniform_Gtensor` 的表达式与朗道的弹性理论教材保持一致 [#]_ 。
 
 
 
