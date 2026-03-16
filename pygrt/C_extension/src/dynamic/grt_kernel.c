@@ -36,6 +36,12 @@ typedef struct {
         char *s_depsrc;
         char *s_deprcv;
     } D;
+    /** 顶层和底层的边界条件 */
+    struct {
+        bool active;
+        GRT_BOUND_TYPE topbound;
+        GRT_BOUND_TYPE botbound;
+    } B;
     /* 相速度搜索范围 */
     struct {
         bool active;
@@ -103,7 +109,7 @@ printf("\n"
 "----------------------------------------------------------------\n"
 "    grt kernel -M<model> -D<depsrc>/<deprcv> -C[<cmin>/<cmax>/]<dc>\n"
 "               -F<f1>/<f2>/<df>[+w<zeta>] -O<outdir> [-P<nthreads>]\n"
-"               [-e] [-h]\n"
+"               [-Bf|F|r|R|h|H]  [-e] [-h]\n"
 "\n"
 "\n\n"
 "Options:\n"
@@ -142,6 +148,13 @@ printf("\n"
 "                           frequency wI=zeta*PI*<df>.\n"
 "                           Default zeta=%.1f.\n", GRT_GREENFN_F_ZETA); printf(
 "\n"
+"    -Bf|F|r|R|h|H\n"
+"                 Boundary condition of top layer (lowercase) and\n"
+"                 bottom layer (uppercase).\n"
+"                 f|F: Free boundary.\n"
+"                 r|R: Rigid boundary.\n"
+"                 h|H: Halfspace.\n"
+"\n"
 "    -O<outdir>   Directorypath of output for saving.\n"
 "\n"
 "    -P<n>        Number of threads. Default use all cores.\n"
@@ -161,10 +174,13 @@ printf("\n"
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
 {
     // 先为个别参数设置非0初始值
+    Ctrl->B.topbound = GRT_BOUND_FREE;
+    Ctrl->B.botbound = GRT_BOUND_HALFSPACE;
+
     Ctrl->F.zeta = GRT_GREENFN_F_ZETA;
 
     int opt;
-    while ((opt = getopt(argc, argv, ":M:D:F:C:O:P:eh")) != -1) 
+    while ((opt = getopt(argc, argv, ":M:D:B:F:C:O:P:eh")) != -1) 
     {
         switch(opt)
         {
@@ -193,6 +209,24 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 }
                 if(Ctrl->D.depsrc < 0.0 || Ctrl->D.deprcv < 0.0){
                     GRTBadOptionError(D, "Negative value in -D is not supported.");
+                }
+                break;
+
+            // 顶层和底层的边界条件  -Bf|F|r|R|h|H
+            case 'B':
+                Ctrl->B.active = true;
+                if(strlen(optarg) == 0 || strlen(optarg) > 2)  GRTBadOptionError(B, "");
+                for(size_t i = 0; i < strlen(optarg); ++i) {
+                    switch(optarg[i]) {
+                        case 'f': Ctrl->B.topbound = GRT_BOUND_FREE; break;
+                        case 'r': Ctrl->B.topbound = GRT_BOUND_RIGID; break;
+                        case 'h': Ctrl->B.topbound = GRT_BOUND_HALFSPACE; break;
+                        case 'F': Ctrl->B.botbound = GRT_BOUND_FREE; break;
+                        case 'R': Ctrl->B.botbound = GRT_BOUND_RIGID; break;
+                        case 'H': Ctrl->B.botbound = GRT_BOUND_HALFSPACE; break;
+                        default:
+                            GRTBadOptionError(B, "unsupported -B%s.", optarg);
+                    }
                 }
                 break;
 
@@ -357,6 +391,9 @@ int kernel_main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
     GRT_MODEL1D *mod1d = Ctrl->M.mod1d;
+    
+    // 边界条件
+    grt_set_mod1d_boundary(mod1d, Ctrl->B.topbound, Ctrl->B.botbound);
 
     // 最大最小速度
     real_t vmin, vmax;
