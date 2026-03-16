@@ -403,10 +403,13 @@ void grt_RT_matrix_ls_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *
     cplx_t kb2k = cbcb2;
     cplx_t Og2k = 1.0 - 0.5*kb2k;
     cplx_t Og2k2 = Og2k*Og2k;
-    cplx_t A = 2.0*Og2k2*xa1*mu2 + 0.5*lamka1k*kb2k*xa2 - 2.0*mu2*xa1*xa2*xb2;
-    cplx_t B = 2.0*Og2k2*xa1*mu2 - 0.5*lamka1k*kb2k*xa2 + 2.0*mu2*xa1*xa2*xb2;
-    cplx_t C = 2.0*Og2k2*xa1*mu2 + 0.5*lamka1k*kb2k*xa2 + 2.0*mu2*xa1*xa2*xb2;
-    cplx_t D = 2.0*Og2k2*xa1*mu2 - 0.5*lamka1k*kb2k*xa2 - 2.0*mu2*xa1*xa2*xb2;
+    cplx_t p = 4.0*Og2k2*xa1*mu2;
+    cplx_t q = lamka1k*kb2k*xa2;
+    cplx_t h = 4.0*mu2*xa1*xa2*xb2;
+    cplx_t A = p + q - h;
+    cplx_t B = p - q + h;
+    cplx_t C = p + q + h;
+    cplx_t D = p - q - h;
 
     if(A == 0.0){
         M->stats = GRT_INVERSE_FAILURE;
@@ -418,14 +421,14 @@ void grt_RT_matrix_ls_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *
     pRD[0][1] = pRD[1][0] = pRD[1][1] = 0.0;
 
     pRU[0][0] = - B/A;
-    pRU[0][1] = - 4.0*Og2k*xa1*xb2*mu2/A * sgn;
+    pRU[0][1] = - 8.0*Og2k*xa1*xb2*mu2/A * sgn;
     pRU[1][0] = pRU[0][1]/xb2 * xa2;
     pRU[1][1] = - C/A;
 
-    pTD[0][0] = - 2.0*Og2k*xa1*lamka1k/A;      pTD[0][1] = 0.0;
-    pTD[1][0] = pTD[0][0]/Og2k*xa2 * sgn;       pTD[1][1] = 0.0;
+    pTD[0][0] = - 4.0*Og2k*xa1*lamka1k/A;      pTD[0][1] = 0.0;
+    pTD[1][0] = pTD[0][0]/Og2k * xa2 * sgn;       pTD[1][1] = 0.0;
 
-    pTU[0][0] = - 2.0*Og2k*xa2*mu2*kb2k/A;     pTU[0][1] = pTU[0][0]/Og2k*xb2 * sgn;
+    pTU[0][0] = - 4.0*Og2k*xa2*mu2*kb2k/A;     pTU[0][1] = pTU[0][0]/Og2k * xb2 * sgn;
     pTU[1][0] = pTU[1][1] = 0.0;
 
 }
@@ -471,16 +474,22 @@ void grt_RT_matrix_ss_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *
     MODEL_2LAYS_ATTRIB(real_t, Rho);
 
     // 定义一些中间变量来简化运算和书写
-    // real_t kk = k*k;
     cplx_t rmu = mu1/mu2;
-    cplx_t dmu = rmu - 1.0; // mu1 - mu2; 分子分母同除mu2
-    cplx_t dmu2 = dmu*dmu;
+    cplx_t q = rmu - 1.0;
+    cplx_t q2 = q*q;
 
-    cplx_t mu1cbcb1 = rmu*cbcb1;// mu1*kb1_k2;
-    cplx_t mu2cbcb2 = cbcb2; // mu2*kb2_k2;
+    cplx_t g = cbcb2;
+    cplx_t h = rmu*cbcb1; 
 
     real_t rho12 = Rho1 / Rho2;
     real_t rho21 = Rho2 / Rho1;
+    
+    cplx_t gammaP0 = (xa1*xb2+xa2*xb1);
+    cplx_t gammaS0 = (xa1*xb2-xa2*xb1);
+    cplx_t gammaP1 = (1.0+xa1*xb1);
+    cplx_t gammaS1 = (1.0-xa1*xb1);
+    cplx_t gammaP2 = (1.0+xa2*xb2);
+    cplx_t gammaS2 = (1.0-xa2*xb2);
 
     // 从原公式上，分母包含5项，但前四项会随着k的增大迅速超过最后一项
     // 最后一项要小前几项10余个数量级，但计算结果还是保持在最后一项的量级，
@@ -489,8 +498,8 @@ void grt_RT_matrix_ss_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *
     // 
     // 以下对公式重新整理，提出k的高阶项，以避免上述问题
     cplx_t Delta;
-    Delta =   dmu2*(1.0-xa1*xb1)*(1.0-xa2*xb2) + mu1cbcb1*dmu*(rho21*(1.0-xa1*xb1) - (1.0-xa2*xb2)) 
-            + 0.25*mu1cbcb1*mu2cbcb2*(rho12*(1.0-xa2*xb2) + rho21*(1.0-xa1*xb1) - 2.0 - (xa1*xb2+xa2*xb1));
+    Delta =   q2*gammaS1*gammaS2 + q*h*(rho21*gammaS1 - gammaS2) 
+            + 0.25*g*h*(rho12*gammaS2 + rho21*gammaS1 - 2.0 - gammaP0);
 
     if( Delta == 0.0 ){
         // printf("# zero Delta_inv=%e+%eJ\n", creal(Delta_inv), cimag(Delta_inv));
@@ -505,39 +514,39 @@ void grt_RT_matrix_ss_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *
     // REFELCTION
     //------------------ RD -----------------------------------
     // rpp+
-    M->RD[0][0] = ( - dmu2*(1.0+xa1*xb1)*(1.0-xa2*xb2) - mu1cbcb1*dmu*(rho21*(1.0+xa1*xb1) - (1.0-xa2*xb2))
-                    - 0.25*mu1cbcb1*mu2cbcb2*(rho12*(1.0-xa2*xb2) + rho21*(1.0+xa1*xb1) - 2.0 + (xa1*xb2-xa2*xb1))) * Delta;
+    M->RD[0][0] = ( - q2*gammaP1*gammaS2 - q*h*(rho21*gammaP1 - gammaS2)
+                    - 0.25*g*h*(rho12*gammaS2 + rho21*gammaP1 - 2.0 + gammaS0)) * Delta;
     // rsp+
-    tmp = ( - dmu2*(1.0-xa2*xb2) + 0.5*mu1cbcb1*dmu*((1.0-xa2*xb2) - 2.0*rho21) 
-                    + 0.25*mu1cbcb1*mu2cbcb2*(1.0-rho21)) * Delta * (-2.0);
+    tmp = ( - q2*gammaS2 + 0.5*q*h*(gammaS2 - 2.0*rho21) 
+                    + 0.25*g*h*(1.0-rho21)) * Delta * (-2.0);
     M->RD[0][1] = xb1*tmp;
     // rps+
     M->RD[1][0] = xa1*tmp;
     // rss+
-    M->RD[1][1] = ( - dmu2*(1.0+xa1*xb1)*(1.0-xa2*xb2) - mu1cbcb1*dmu*(rho21*(1.0+xa1*xb1) - (1.0-xa2*xb2))
-                    - 0.25*mu1cbcb1*mu2cbcb2*(rho12*(1.0-xa2*xb2) + rho21*(1.0+xa1*xb1) - 2.0 - (xa1*xb2-xa2*xb1))) * Delta;
+    M->RD[1][1] = ( - q2*gammaP1*gammaS2 - q*h*(rho21*gammaP1 - gammaS2)
+                    - 0.25*g*h*(rho12*gammaS2 + rho21*gammaP1 - 2.0 - gammaS0)) * Delta;
     //------------------ RU -----------------------------------
     // rpp-
-    M->RU[0][0] = ( - dmu2*(1.0-xa1*xb1)*(1.0+xa2*xb2) - mu1cbcb1*dmu*(rho21*(1.0-xa1*xb1) - (1.0+xa2*xb2))
-                    - 0.25*mu1cbcb1*mu2cbcb2*(rho12*(1.0+xa2*xb2) + rho21*(1.0-xa1*xb1) - 2.0 - (xa1*xb2-xa2*xb1))) * Delta;
+    M->RU[0][0] = ( - q2*gammaS1*gammaP2 - q*h*(rho21*gammaS1 - gammaP2)
+                    - 0.25*g*h*(rho12*gammaP2 + rho21*gammaS1 - 2.0 - gammaS0)) * Delta;
     // rsp-
-    tmp = ( - dmu2*(1.0-xa1*xb1) - 0.5*mu1cbcb1*dmu*(rho21*(1.0-xa1*xb1) - 2.0)
-                    + 0.25*mu1cbcb1*mu2cbcb2*(1.0-rho12)) * Delta * (2.0);
+    tmp = ( - q2*gammaS1 - 0.5*q*h*(rho21*gammaS1 - 2.0)
+                    + 0.25*g*h*(1.0-rho12)) * Delta * (2.0);
     M->RU[0][1] = xb2*tmp;
     // rps-
     M->RU[1][0] = xa2*tmp;
     // rss-
-    M->RU[1][1] = ( - dmu2*(1.0-xa1*xb1)*(1.0+xa2*xb2) - mu1cbcb1*dmu*(rho21*(1.0-xa1*xb1) - (1.0+xa2*xb2))
-                    - 0.25*mu1cbcb1*mu2cbcb2*(rho12*(1.0+xa2*xb2) + rho21*(1.0-xa1*xb1) - 2.0 + (xa1*xb2-xa2*xb1))) * Delta;
+    M->RU[1][1] = ( - q2*gammaS1*gammaP2 - q*h*(rho21*gammaS1 - gammaP2)
+                    - 0.25*g*h*(rho12*gammaP2 + rho21*gammaS1 - 2.0 + gammaS0)) * Delta;
 
     // REFRACTION
-    tmp = mu1cbcb1*(dmu*(xb2-xb1) - 0.5*mu1cbcb1*(rho21*xb1+xb2)) * Delta;
+    tmp = h*(q*(xb2-xb1) - 0.5*h*(rho21*xb1+xb2)) * Delta;
     M->TD[0][0] = xa1*tmp;     M->TU[0][0] = (rho21*xa2) * tmp;
-    tmp = mu1cbcb1*(dmu*(1.0-xa1*xb2) - 0.5*mu1cbcb1*(1.0-rho21)) * Delta;
+    tmp = h*(q*(1.0-xa1*xb2) - 0.5*h*(1.0-rho21)) * Delta;
     M->TD[0][1] = xb1*tmp;     M->TU[1][0] = (rho21*xa2) * tmp;
-    tmp = mu1cbcb1*(dmu*(1.0-xa2*xb1) - 0.5*mu1cbcb1*(1.0-rho21)) * Delta;
+    tmp = h*(q*(1.0-xa2*xb1) - 0.5*h*(1.0-rho21)) * Delta;
     M->TD[1][0] = xa1*tmp;     M->TU[0][1] = (rho21*xb2) * tmp;
-    tmp = mu1cbcb1*(dmu*(xa2-xa1) - 0.5*mu1cbcb1*(rho21*xa1+xa2)) * Delta;
+    tmp = h*(q*(xa2-xa1) - 0.5*h*(rho21*xa1+xa2)) * Delta;
     M->TD[1][1] = xb1*tmp;     M->TU[1][1] = (rho21*xb2) * tmp;
 }
 
