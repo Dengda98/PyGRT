@@ -276,7 +276,7 @@ static void interv_integ(const KInterval *ptKitv, size_t nr, real_t *rs, K_INTEG
 
 
 real_t grt_sa_filon_integ(
-    GRT_MODEL1D *mod1d, real_t k0, real_t dk0, real_t tol, real_t kmax, real_t kref,
+    MODEL1D *mod1d, real_t k0, real_t dk0, real_t tol, real_t kmax, real_t kref,
     size_t nr, real_t *rs, K_INTEG *K, FILE *fstats, GRT_KernelFunc kerfunc)
 {   
     real_t kmin = k0 + dk0;

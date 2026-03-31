@@ -63,7 +63,7 @@ inline GCC_ALWAYS_INLINE void _source_SH(const cplx_t xb, const cplx_t cbcb, con
 }
 
 
-void grt_source_coef(const GRT_MODEL1D *mod1d, cplxChnlGrid src_coefD, cplxChnlGrid src_coefU)
+void grt_source_coef(const MODEL1D *mod1d, cplxChnlGrid src_coefD, cplxChnlGrid src_coefU)
 {
     // 先全部赋0 
     memset(src_coefD, 0, sizeof(cplxChnlGrid));
@@ -74,7 +74,7 @@ void grt_source_coef(const GRT_MODEL1D *mod1d, cplxChnlGrid src_coefD, cplxChnlG
 }
 
 
-void grt_source_coef_PSV(const GRT_MODEL1D *mod1d, cplxChnlGrid src_coefD, cplxChnlGrid src_coefU)
+void grt_source_coef_PSV(const MODEL1D *mod1d, cplxChnlGrid src_coefD, cplxChnlGrid src_coefU)
 {
     size_t isrc = mod1d->isrc;
     cplx_t xa = mod1d->xa[isrc];
@@ -87,7 +87,7 @@ void grt_source_coef_PSV(const GRT_MODEL1D *mod1d, cplxChnlGrid src_coefD, cplxC
 }
 
 
-void grt_source_coef_SH(const GRT_MODEL1D *mod1d, cplxChnlGrid src_coefD, cplxChnlGrid src_coefU)
+void grt_source_coef_SH(const MODEL1D *mod1d, cplxChnlGrid src_coefD, cplxChnlGrid src_coefU)
 {
     size_t isrc = mod1d->isrc;
     cplx_t xb = mod1d->xb[isrc];

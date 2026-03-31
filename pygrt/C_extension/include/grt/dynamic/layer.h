@@ -24,8 +24,8 @@
  * @param[in,out]     mod1d          模型结构体指针，结果保存在 M_top
  * 
  */
-void grt_topbound_RU_PSV(GRT_MODEL1D *mod1d);
-void grt_topbound_RU_SH(GRT_MODEL1D *mod1d);
+void grt_topbound_RU_PSV(MODEL1D *mod1d);
+void grt_topbound_RU_SH(MODEL1D *mod1d);
 
 /**
  * 计算不同边界条件下底界面的反射系数RD，其中自由表面的公式见(5.3.10-14) 
@@ -34,8 +34,8 @@ void grt_topbound_RU_SH(GRT_MODEL1D *mod1d);
  * @param[in,out]     mod1d          模型结构体指针，结果保存在 M_bot
  * 
  */
-void grt_botbound_RD_PSV(GRT_MODEL1D *mod1d);
-void grt_botbound_RD_SH(GRT_MODEL1D *mod1d);
+void grt_botbound_RD_PSV(MODEL1D *mod1d);
+void grt_botbound_RD_SH(MODEL1D *mod1d);
 
 
 /**
@@ -44,7 +44,7 @@ void grt_botbound_RD_SH(GRT_MODEL1D *mod1d);
  * @param[in,out]     mod1d           模型结构体指针，结果保存在 R_EV
  * 
  */
-void grt_wave2qwv_REV_PSV(GRT_MODEL1D *mod1d);
+void grt_wave2qwv_REV_PSV(MODEL1D *mod1d);
 
 /**
  * 计算接收点位置的 SH 波接收矩阵，将波场转为位移，公式(5.2.19) + (5.7.7,25)
@@ -52,7 +52,7 @@ void grt_wave2qwv_REV_PSV(GRT_MODEL1D *mod1d);
  * @param[in,out]     mod1d           模型结构体指针，结果保存在 R_EVL
  * 
  */
-void grt_wave2qwv_REV_SH(GRT_MODEL1D *mod1d);
+void grt_wave2qwv_REV_SH(MODEL1D *mod1d);
 
 
 /**
@@ -62,7 +62,7 @@ void grt_wave2qwv_REV_SH(GRT_MODEL1D *mod1d);
  * @param[in,out]     mod1d           模型结构体指针，结果保存在 uiz_R_EV
  * 
  */
-void grt_wave2qwv_z_REV_PSV(GRT_MODEL1D *mod1d);
+void grt_wave2qwv_z_REV_PSV(MODEL1D *mod1d);
 
 
 /**
@@ -72,7 +72,7 @@ void grt_wave2qwv_z_REV_PSV(GRT_MODEL1D *mod1d);
  * @param[in,out]     mod1d           模型结构体指针，结果保存在 uiz_R_EVL
  * 
  */
-void grt_wave2qwv_z_REV_SH(GRT_MODEL1D *mod1d);
+void grt_wave2qwv_z_REV_SH(MODEL1D *mod1d);
 
 
 /**
@@ -86,7 +86,7 @@ void grt_wave2qwv_z_REV_SH(GRT_MODEL1D *mod1d);
  * @param[out]     M             R/T矩阵
  * 
  */
-void grt_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
+void grt_RT_matrix_PSV(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
 
 
 /**
@@ -98,25 +98,25 @@ void grt_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
  * @param[out]     M             R/T矩阵
  * 
  */
-void grt_RT_matrix_SH(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
+void grt_RT_matrix_SH(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
 
 /** 液-液 界面 */
-void grt_RT_matrix_ll_PSV(const GRT_MODEL1D *mod1d, size_t iy, RT_MATRIX *M);
+void grt_RT_matrix_ll_PSV(const MODEL1D *mod1d, size_t iy, RT_MATRIX *M);
 
 /** 液-液 界面 */
 void grt_RT_matrix_ll_SH(RT_MATRIX *M);
 
 /** 液-固 界面 */
-void grt_RT_matrix_ls_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
+void grt_RT_matrix_ls_PSV(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
 
 /** 液-固 界面 */
-void grt_RT_matrix_ls_SH(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
+void grt_RT_matrix_ls_SH(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
 
 /** 固-固 界面 */
-void grt_RT_matrix_ss_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
+void grt_RT_matrix_ss_PSV(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
 
 /** 固-固 界面 */
-void grt_RT_matrix_ss_SH(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
+void grt_RT_matrix_ss_SH(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
 
 /**
  * 为 R/T 矩阵添加时间延迟因子
@@ -126,9 +126,9 @@ void grt_RT_matrix_ss_SH(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M
  * @param[out]     M             R/T矩阵    
  * 
  */
-void grt_delay_RT_matrix(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
-void grt_delay_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
-void grt_delay_RT_matrix_SH(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
+void grt_delay_RT_matrix(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
+void grt_delay_RT_matrix_PSV(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
+void grt_delay_RT_matrix_SH(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
 
 /**
  * 为虚拟层的广义 R/T 矩阵添加时间延迟因子
@@ -138,7 +138,7 @@ void grt_delay_RT_matrix_SH(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX
  * @param[out]     M             R/T矩阵    
  * 
  */
-void grt_delay_GRT_matrix(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
+void grt_delay_GRT_matrix(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
 
 /**
  * 计算该层的连接 P-SV 应力位移矢量与垂直波函数的D矩阵(或其逆矩阵)，
@@ -155,25 +155,25 @@ void grt_delay_GRT_matrix(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *
  * @param[out]     D             D矩阵(或其逆矩阵)
  * 
  */
-void grt_get_layer_D(const GRT_MODEL1D *mod1d, const size_t iy, bool inverse, int liquid_invtype, cplx_t D[4][4]);
+void grt_get_layer_D(const MODEL1D *mod1d, const size_t iy, bool inverse, int liquid_invtype, cplx_t D[4][4]);
 
 /** 子矩阵 D11，函数参数见 get_layer_D 函数 */
-void grt_get_layer_D11(const GRT_MODEL1D *mod1d, const size_t iy, cplx_t D[2][2]);
+void grt_get_layer_D11(const MODEL1D *mod1d, const size_t iy, cplx_t D[2][2]);
 
 /** 子矩阵 D12，函数参数见 get_layer_D 函数 */
-void grt_get_layer_D12(const GRT_MODEL1D *mod1d, const size_t iy, cplx_t D[2][2]);
+void grt_get_layer_D12(const MODEL1D *mod1d, const size_t iy, cplx_t D[2][2]);
 
 /** 子矩阵 D21，函数参数见 get_layer_D 函数 */
-void grt_get_layer_D21(const GRT_MODEL1D *mod1d, const size_t iy, cplx_t D[2][2]);
+void grt_get_layer_D21(const MODEL1D *mod1d, const size_t iy, cplx_t D[2][2]);
 
 /** 子矩阵 D22，函数参数见 get_layer_D 函数 */
-void grt_get_layer_D22(const GRT_MODEL1D *mod1d, const size_t iy, cplx_t D[2][2]);
+void grt_get_layer_D22(const MODEL1D *mod1d, const size_t iy, cplx_t D[2][2]);
 
 /** 子矩阵 D11_uiz，后缀uiz表示连接位移对z的偏导和垂直波函数，函数参数见 get_layer_D 函数 */
-void grt_get_layer_D11_uiz(const GRT_MODEL1D *mod1d, const size_t iy, cplx_t D[2][2]);
+void grt_get_layer_D11_uiz(const MODEL1D *mod1d, const size_t iy, cplx_t D[2][2]);
 
 /** 子矩阵 D12_uiz，函数参数见 get_layer_D 函数 */
-void grt_get_layer_D12_uiz(const GRT_MODEL1D *mod1d, const size_t iy, cplx_t D[2][2]);
+void grt_get_layer_D12_uiz(const MODEL1D *mod1d, const size_t iy, cplx_t D[2][2]);
 
 
 /**
@@ -186,7 +186,7 @@ void grt_get_layer_D12_uiz(const GRT_MODEL1D *mod1d, const size_t iy, cplx_t D[2
  * @param[out]     T             T矩阵(或其逆矩阵)
  * 
  */
-void grt_get_layer_T(const GRT_MODEL1D *mod1d, const size_t iy, bool inverse, cplx_t T[2][2]);
+void grt_get_layer_T(const MODEL1D *mod1d, const size_t iy, bool inverse, cplx_t T[2][2]);
 
 
 // /**

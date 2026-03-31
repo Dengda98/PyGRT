@@ -106,7 +106,7 @@ static int __rigidBound_R_SH(bool isLiquid, cplx_t *ML)
     return GRT_INVERSE_SUCCESS;
 }
 
-void grt_topbound_RU_PSV(GRT_MODEL1D *mod1d)
+void grt_topbound_RU_PSV(MODEL1D *mod1d)
 {
     cplx_t cbcb = mod1d->cbcb[0];
     cplx_t xa = mod1d->xa[0];
@@ -128,7 +128,7 @@ void grt_topbound_RU_PSV(GRT_MODEL1D *mod1d)
     // RU 不需要时延
 }
 
-void grt_topbound_RU_SH(GRT_MODEL1D *mod1d)
+void grt_topbound_RU_SH(MODEL1D *mod1d)
 {
     bool isLiquid = mod1d->isLiquid[0];
     if(mod1d->topbound == GRT_BOUND_FREE){
@@ -147,7 +147,7 @@ void grt_topbound_RU_SH(GRT_MODEL1D *mod1d)
     // RU 不需要时延
 }
 
-void grt_botbound_RD_PSV(GRT_MODEL1D *mod1d)
+void grt_botbound_RD_PSV(MODEL1D *mod1d)
 {
     size_t nlay = mod1d->n;
     cplx_t cbcb = mod1d->cbcb[nlay-2];
@@ -182,7 +182,7 @@ void grt_botbound_RD_PSV(GRT_MODEL1D *mod1d)
     mod1d->M_bot.RD[1][0] *= exab;   mod1d->M_bot.RD[1][1] *= ex2b;
 }
 
-void grt_botbound_RD_SH(GRT_MODEL1D *mod1d)
+void grt_botbound_RD_SH(MODEL1D *mod1d)
 {
     size_t nlay = mod1d->n;
     cplx_t xb = mod1d->xb[nlay-2];
@@ -212,7 +212,7 @@ void grt_botbound_RD_SH(GRT_MODEL1D *mod1d)
 }
 
 
-void grt_wave2qwv_REV_PSV(GRT_MODEL1D *mod1d)
+void grt_wave2qwv_REV_PSV(MODEL1D *mod1d)
 {
     size_t ircv = mod1d->ircv;
     cplx_t xa = mod1d->xa[ircv];
@@ -247,7 +247,7 @@ void grt_wave2qwv_REV_PSV(GRT_MODEL1D *mod1d)
 }
 
 
-void grt_wave2qwv_REV_SH(GRT_MODEL1D *mod1d)
+void grt_wave2qwv_REV_SH(MODEL1D *mod1d)
 {
     size_t ircv = mod1d->ircv;
     bool   isLiquid = mod1d->isLiquid[ircv];
@@ -268,7 +268,7 @@ void grt_wave2qwv_REV_SH(GRT_MODEL1D *mod1d)
 }
 
 
-void grt_wave2qwv_z_REV_PSV(GRT_MODEL1D *mod1d)
+void grt_wave2qwv_z_REV_PSV(MODEL1D *mod1d)
 {
     size_t ircv = mod1d->ircv;
     cplx_t xa = mod1d->xa[ircv];
@@ -302,7 +302,7 @@ void grt_wave2qwv_z_REV_PSV(GRT_MODEL1D *mod1d)
 }    
 
 
-void grt_wave2qwv_z_REV_SH(GRT_MODEL1D *mod1d)
+void grt_wave2qwv_z_REV_SH(MODEL1D *mod1d)
 {
     size_t ircv = mod1d->ircv;
     cplx_t xb = mod1d->xb[ircv];
@@ -327,7 +327,7 @@ void grt_wave2qwv_z_REV_SH(GRT_MODEL1D *mod1d)
 }    
 
 
-void grt_RT_matrix_ll_PSV(const GRT_MODEL1D *mod1d, size_t iy, RT_MATRIX *M)
+void grt_RT_matrix_ll_PSV(const MODEL1D *mod1d, size_t iy, RT_MATRIX *M)
 {
     MODEL_2LAYS_ATTRIB(cplx_t, xa);
     MODEL_2LAYS_ATTRIB(real_t, Rho);
@@ -362,7 +362,7 @@ void grt_RT_matrix_ll_SH(RT_MATRIX *M)
 
 
 
-void grt_RT_matrix_ls_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
+void grt_RT_matrix_ls_PSV(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
 {
     MODEL_2LAYS_ATTRIB(cplx_t, xa);
     MODEL_2LAYS_ATTRIB(cplx_t, xb);
@@ -434,7 +434,7 @@ void grt_RT_matrix_ls_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *
 }
 
 
-void grt_RT_matrix_ls_SH(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
+void grt_RT_matrix_ls_SH(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
 {
     MODEL_2LAYS_ATTRIB(bool, isLiquid);
     
@@ -465,7 +465,7 @@ void grt_RT_matrix_ls_SH(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M
 
 
 
-void grt_RT_matrix_ss_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
+void grt_RT_matrix_ss_PSV(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
 {
     MODEL_2LAYS_ATTRIB(cplx_t, xa);
     MODEL_2LAYS_ATTRIB(cplx_t, xb);
@@ -551,7 +551,7 @@ void grt_RT_matrix_ss_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *
 }
 
 
-void grt_RT_matrix_ss_SH(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
+void grt_RT_matrix_ss_SH(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
 {
     MODEL_2LAYS_ATTRIB(cplx_t, xb);
     MODEL_2LAYS_ATTRIB(cplx_t, mu);
@@ -569,7 +569,7 @@ void grt_RT_matrix_ss_SH(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M
 
 
 
-void grt_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
+void grt_RT_matrix_PSV(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
 {
     MODEL_2LAYS_ATTRIB(bool, isLiquid);
     
@@ -586,7 +586,7 @@ void grt_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
 }
 
 
-void grt_RT_matrix_SH(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
+void grt_RT_matrix_SH(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
 {
     MODEL_2LAYS_ATTRIB(bool, isLiquid);
     
@@ -603,7 +603,7 @@ void grt_RT_matrix_SH(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
 }
 
 
-void grt_delay_RT_matrix(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
+void grt_delay_RT_matrix(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
 {
     real_t thk = mod1d->Thk[iy-1];
     cplx_t xa1 = mod1d->xa[iy-1];
@@ -633,7 +633,7 @@ void grt_delay_RT_matrix(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M
     M->TUL *= exb;
 }
 
-void grt_delay_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
+void grt_delay_RT_matrix_PSV(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
 {
     real_t thk = mod1d->Thk[iy-1];
     cplx_t xa1 = mod1d->xa[iy-1];
@@ -657,7 +657,7 @@ void grt_delay_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRI
     M->TU[1][0] *= exb;    M->TU[1][1] *= exb;
 }
 
-void grt_delay_RT_matrix_SH(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
+void grt_delay_RT_matrix_SH(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
 {
     real_t thk = mod1d->Thk[iy-1];
     cplx_t xb1 = mod1d->xb[iy-1];
@@ -674,7 +674,7 @@ void grt_delay_RT_matrix_SH(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX
 
 
 
-void grt_delay_GRT_matrix(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
+void grt_delay_GRT_matrix(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
 {
     real_t thk = mod1d->Thk[iy-1];
     cplx_t xa1 = mod1d->xa[iy-1];
@@ -703,7 +703,7 @@ void grt_delay_GRT_matrix(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *
 }
 
 
-void grt_get_layer_D(const GRT_MODEL1D *mod1d, const size_t iy, bool inverse, int liquid_invtype, cplx_t D[4][4])
+void grt_get_layer_D(const MODEL1D *mod1d, const size_t iy, bool inverse, int liquid_invtype, cplx_t D[4][4])
 {
     // 第iy层物理量
     real_t k = mod1d->k;
@@ -774,7 +774,7 @@ void grt_get_layer_D(const GRT_MODEL1D *mod1d, const size_t iy, bool inverse, in
     
 }
 
-void grt_get_layer_D11(const GRT_MODEL1D *mod1d, const size_t iy, cplx_t D[2][2])
+void grt_get_layer_D11(const MODEL1D *mod1d, const size_t iy, cplx_t D[2][2])
 {
     real_t k = mod1d->k;
     cplx_t xa = mod1d->xa[iy];
@@ -789,7 +789,7 @@ void grt_get_layer_D11(const GRT_MODEL1D *mod1d, const size_t iy, cplx_t D[2][2]
     
 }
 
-void grt_get_layer_D12(const GRT_MODEL1D *mod1d, const size_t iy, cplx_t D[2][2])
+void grt_get_layer_D12(const MODEL1D *mod1d, const size_t iy, cplx_t D[2][2])
 {
     real_t k = mod1d->k;
     cplx_t xa = mod1d->xa[iy];
@@ -803,7 +803,7 @@ void grt_get_layer_D12(const GRT_MODEL1D *mod1d, const size_t iy, cplx_t D[2][2]
     }
 }
 
-void grt_get_layer_D11_uiz(const GRT_MODEL1D *mod1d, const size_t iy, cplx_t D[2][2])
+void grt_get_layer_D11_uiz(const MODEL1D *mod1d, const size_t iy, cplx_t D[2][2])
 {
     real_t k = mod1d->k;
     cplx_t xa = mod1d->xa[iy];
@@ -820,7 +820,7 @@ void grt_get_layer_D11_uiz(const GRT_MODEL1D *mod1d, const size_t iy, cplx_t D[2
     }
 }
 
-void grt_get_layer_D12_uiz(const GRT_MODEL1D *mod1d, const size_t iy, cplx_t D[2][2])
+void grt_get_layer_D12_uiz(const MODEL1D *mod1d, const size_t iy, cplx_t D[2][2])
 {
     real_t k = mod1d->k;
     cplx_t xa = mod1d->xa[iy];
@@ -837,7 +837,7 @@ void grt_get_layer_D12_uiz(const GRT_MODEL1D *mod1d, const size_t iy, cplx_t D[2
     }
 }
 
-void grt_get_layer_D21(const GRT_MODEL1D *mod1d, const size_t iy, cplx_t D[2][2])
+void grt_get_layer_D21(const MODEL1D *mod1d, const size_t iy, cplx_t D[2][2])
 {
     real_t k = mod1d->k;
     cplx_t xa = mod1d->xa[iy];
@@ -857,7 +857,7 @@ void grt_get_layer_D21(const GRT_MODEL1D *mod1d, const size_t iy, cplx_t D[2][2]
     
 }
 
-void grt_get_layer_D22(const GRT_MODEL1D *mod1d, const size_t iy, cplx_t D[2][2])
+void grt_get_layer_D22(const MODEL1D *mod1d, const size_t iy, cplx_t D[2][2])
 {
     real_t k = mod1d->k;
     cplx_t xa = mod1d->xa[iy];
@@ -876,7 +876,7 @@ void grt_get_layer_D22(const GRT_MODEL1D *mod1d, const size_t iy, cplx_t D[2][2]
     }
 }
 
-void grt_get_layer_T(const GRT_MODEL1D *mod1d, const size_t iy, bool inverse, cplx_t T[2][2])
+void grt_get_layer_T(const MODEL1D *mod1d, const size_t iy, bool inverse, cplx_t T[2][2])
 {
     // 液体层不应该使用该函数
     if(mod1d->isLiquid[iy]){

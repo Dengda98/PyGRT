@@ -62,7 +62,7 @@ static void recordin_GRN(
 
 
 void grt_integ_grn_spec(
-    GRT_MODEL1D *mod1d, size_t nf1, size_t nf2, real_t *freqs,  
+    MODEL1D *mod1d, size_t nf1, size_t nf2, real_t *freqs,  
     size_t nr, real_t *rs, real_t wI, bool keepAllFreq, K_INTEG_METHOD *Kmet,    
     bool print_progressbar, bool calc_upar,
     pcplxChnlGrid grn[nr],
@@ -118,7 +118,7 @@ void grt_integ_grn_spec(
 
         cplx_t coef = - dk*fac / GRT_SQUARE(omega); // 最终要乘上的系数
 
-        GRT_MODEL1D *local_mod1d = NULL;
+        MODEL1D *local_mod1d = NULL;
         K_INTEG_METHOD *local_Kmet = NULL;
     #ifdef _OPENMP 
         // 定义局部模型对象

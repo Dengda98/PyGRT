@@ -25,8 +25,8 @@
  * @param[in,out]     mod1d             模型结构体指针，结果保存在 M_top
  * 
  */
-void grt_static_topbound_RU_PSV(GRT_MODEL1D *mod1d);
-void grt_static_topbound_RU_SH(GRT_MODEL1D *mod1d);
+void grt_static_topbound_RU_PSV(MODEL1D *mod1d);
+void grt_static_topbound_RU_SH(MODEL1D *mod1d);
 
 /**
  * 计算不同边界条件下底界面的静态反射系数RD，其中自由表面的公式见(6.3.12)
@@ -34,8 +34,8 @@ void grt_static_topbound_RU_SH(GRT_MODEL1D *mod1d);
  * @param[in,out]     mod1d             模型结构体指针，结果保存在 M_bot
  * 
  */
-void grt_static_botbound_RD_PSV(GRT_MODEL1D *mod1d);
-void grt_static_botbound_RD_SH(GRT_MODEL1D *mod1d);
+void grt_static_botbound_RD_PSV(MODEL1D *mod1d);
+void grt_static_botbound_RD_SH(MODEL1D *mod1d);
 
 /**
  * 计算接收点位置的 P-SV 静态接收矩阵，将波场转为位移，公式(6.3.35)
@@ -43,7 +43,7 @@ void grt_static_botbound_RD_SH(GRT_MODEL1D *mod1d);
  * @param[in,out]      mod1d           模型结构体指针，结果保存在 R_EV
  * 
  */
-void grt_static_wave2qwv_REV_PSV(GRT_MODEL1D *mod1d);
+void grt_static_wave2qwv_REV_PSV(MODEL1D *mod1d);
 
 /**
  * 计算接收点位置的 SH 静态接收矩阵，将波场转为位移，公式(6.3.37)
@@ -51,7 +51,7 @@ void grt_static_wave2qwv_REV_PSV(GRT_MODEL1D *mod1d);
  * @param[in,out]      mod1d           模型结构体指针，结果保存在 R_EVL
  * 
  */
-void grt_static_wave2qwv_REV_SH(GRT_MODEL1D *mod1d);
+void grt_static_wave2qwv_REV_SH(MODEL1D *mod1d);
 
 /**
  * 计算接收点位置的ui_z的 P-SV 静态接收矩阵，即将波场转为ui_z。
@@ -60,7 +60,7 @@ void grt_static_wave2qwv_REV_SH(GRT_MODEL1D *mod1d);
  * @param[in,out]      mod1d           模型结构体指针，结果保存在 uiz_R_EV
  * 
  */
-void grt_static_wave2qwv_z_REV_PSV(GRT_MODEL1D *mod1d);
+void grt_static_wave2qwv_z_REV_PSV(MODEL1D *mod1d);
 
 /**
  * 计算接收点位置的ui_z的 SH 静态接收矩阵，即将波场转为ui_z。
@@ -69,7 +69,7 @@ void grt_static_wave2qwv_z_REV_PSV(GRT_MODEL1D *mod1d);
  * @param[in,out]      mod1d           模型结构体指针，结果保存在 uiz_R_EVL
  * 
  */
-void grt_static_wave2qwv_z_REV_SH(GRT_MODEL1D *mod1d);
+void grt_static_wave2qwv_z_REV_SH(MODEL1D *mod1d);
 
 
 /**
@@ -81,7 +81,7 @@ void grt_static_wave2qwv_z_REV_SH(GRT_MODEL1D *mod1d);
  * @param[out]     M             R/T矩阵
  * 
  */
-void grt_static_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
+void grt_static_RT_matrix_PSV(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
 
 /**
  * 计算界面的 SH 波静态反射透射系数RDL/RUL/TDL/TUL
@@ -92,7 +92,7 @@ void grt_static_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATR
  * @param[out]     M             R/T矩阵
  * 
  */
-void grt_static_RT_matrix_SH(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
+void grt_static_RT_matrix_SH(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
 
 
 /**
@@ -103,4 +103,4 @@ void grt_static_RT_matrix_SH(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRI
  * @param[out]     M             R/T矩阵
  * 
  */
-void grt_static_delay_RT_matrix(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
+void grt_static_delay_RT_matrix(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);

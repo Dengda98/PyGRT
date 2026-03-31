@@ -78,7 +78,7 @@ void grt_KMET_destroy_fstats(const size_t nr, K_INTEG_METHOD *Kmet)
 
 
 K_INTEG * grt_wavenumber_integral(
-    GRT_MODEL1D *mod1d, size_t nr, real_t *rs, K_INTEG_METHOD *Kmet, bool calc_upar, GRT_KernelFunc kerfunc)
+    MODEL1D *mod1d, size_t nr, real_t *rs, K_INTEG_METHOD *Kmet, bool calc_upar, GRT_KernelFunc kerfunc)
 {
     real_t k = 0.0;
 

@@ -3,7 +3,7 @@
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2024-07-24
  * 
- * `GRT_MODEL1D` 结构体相关操作函数
+ * `MODEL1D` 结构体相关操作函数
  */
 
 #pragma once
@@ -75,42 +75,42 @@ typedef struct {
     cplx_t uiz_R_EV[2][2];
     cplx_t uiz_R_EVL;
 
-} GRT_MODEL1D;
+} MODEL1D;
 
 
 /**
- * 打印 GRT_MODEL1D 模型参数信息，主要用于调试程序 
+ * 打印 MODEL1D 模型参数信息，主要用于调试程序 
  * 
- * @param[in]    mod1d    `GRT_MODEL1D` 结构体指针
+ * @param[in]    mod1d    `MODEL1D` 结构体指针
  * 
  */
-void grt_print_mod1d(const GRT_MODEL1D *mod1d);
+void grt_print_mod1d(const MODEL1D *mod1d);
 
 /**
- * 释放 `GRT_MODEL1D` 结构体指针 
+ * 释放 `MODEL1D` 结构体指针 
  * 
- * @param[out]     mod1d      `GRT_MODEL1D` 结构体指针
+ * @param[out]     mod1d      `MODEL1D` 结构体指针
  */
-void grt_free_mod1d(GRT_MODEL1D *mod1d);
+void grt_free_mod1d(MODEL1D *mod1d);
 
 /**
- * 初始化 GRT_MODEL1D 模型内存空间 
+ * 初始化 MODEL1D 模型内存空间 
  * 
  * @param[in]    n        模型层数 
  * 
- * @return    `GRT_MODEL1D` 结构体指针
+ * @return    `MODEL1D` 结构体指针
  * 
  */
-GRT_MODEL1D * grt_init_mod1d(size_t n);
+MODEL1D * grt_init_mod1d(size_t n);
 
 /**
- * 复制 `GRT_MODEL1D` 结构体
+ * 复制 `MODEL1D` 结构体
  * 
- * @param[in]     mod1d1    `GRT_MODEL1D` 源结构体指针
- * @return        复制好的 `GRT_MODEL1D` 结构体指针
+ * @param[in]     mod1d1    `MODEL1D` 源结构体指针
+ * @return        复制好的 `MODEL1D` 结构体指针
  * 
  */
-GRT_MODEL1D * grt_copy_mod1d(const GRT_MODEL1D *mod1d1);
+MODEL1D * grt_copy_mod1d(const MODEL1D *mod1d1);
 
 /**
  * 根据不同的 omega， 计算衰减系数，更新弹性模量
@@ -118,7 +118,7 @@ GRT_MODEL1D * grt_copy_mod1d(const GRT_MODEL1D *mod1d1);
  * @param[in,out]     mod1d     `MODEL1D` 结构体指针
  * @param[in]         omega     复数频率
  */
-void grt_attenuate_mod1d(GRT_MODEL1D *mod1d, cplx_t omega);
+void grt_attenuate_mod1d(MODEL1D *mod1d, cplx_t omega);
 
 /**
  * 根据记录好的圆频率和波数，计算相速度和每层的 xa, xb, caca, cbcb
@@ -126,16 +126,16 @@ void grt_attenuate_mod1d(GRT_MODEL1D *mod1d, cplx_t omega);
  * @param[in,out]      mod1d    模型结构体指针
  * @param[in]          k        波数
  */
-void grt_mod1d_xa_xb(GRT_MODEL1D *mod1d, const real_t k);
+void grt_mod1d_xa_xb(MODEL1D *mod1d, const real_t k);
 
 
 /**
- * 扩容 `GRT_MODEL1D` 结构体
+ * 扩容 `MODEL1D` 结构体
  * 
  * @param[in,out]     mod1d     `MODEL1D` 结构体指针
  * @param[in]         n         新层数
  */
-void grt_realloc_mod1d(GRT_MODEL1D *mod1d, size_t n);
+void grt_realloc_mod1d(MODEL1D *mod1d, size_t n);
 
 /**
  * 从文件中读取模型文件
@@ -145,10 +145,10 @@ void grt_realloc_mod1d(GRT_MODEL1D *mod1d, size_t n);
  * @param[in]    deprcv         接收深度
  * @param[in]    allowLiquid    是否允许液体层
  * 
- * @return    `GRT_MODEL1D` 结构体指针
+ * @return    `MODEL1D` 结构体指针
  * 
  */
-GRT_MODEL1D * grt_read_mod1d_from_file(const char *modelpath, real_t depsrc, real_t deprcv, bool allowLiquid);
+MODEL1D * grt_read_mod1d_from_file(const char *modelpath, real_t depsrc, real_t deprcv, bool allowLiquid);
 
 /**
  * 设置模型的边界条件，并对底界面做检查
@@ -157,7 +157,7 @@ GRT_MODEL1D * grt_read_mod1d_from_file(const char *modelpath, real_t depsrc, rea
  * @param[in]           topbound   顶层边界条件
  * @param[in]           botbound   底层边界条件
  */
-void grt_set_mod1d_boundary(GRT_MODEL1D *mod1d, GRT_BOUND_TYPE topbound, GRT_BOUND_TYPE botbound);
+void grt_set_mod1d_boundary(MODEL1D *mod1d, GRT_BOUND_TYPE topbound, GRT_BOUND_TYPE botbound);
 
 /**
  * 从模型文件中判断各个量的大致精度（字符串长度），以确定浮点数输出位数
@@ -177,14 +177,14 @@ void grt_get_model_diglen_from_file(const char *modelpath, size_t diglen[6]);
  * 
  * @return    是否存在
  */
-bool grt_check_vel_in_mod(const GRT_MODEL1D *mod1d, const real_t vel, const real_t tol);
+bool grt_check_vel_in_mod(const MODEL1D *mod1d, const real_t vel, const real_t tol);
 
 /**
  * 计算最大最小速度（非零值）
  * 
- * @param    mod1d   (in)`GRT_MODEL1D` 结构体指针
+ * @param    mod1d   (in)`MODEL1D` 结构体指针
  * @param    vmin    (out)最小速度
  * @param    vmax    (out)最大速度
  * 
  */
-void grt_get_mod1d_vmin_vmax(const GRT_MODEL1D *mod1d, real_t *vmin, real_t *vmax);
+void grt_get_mod1d_vmin_vmax(const MODEL1D *mod1d, real_t *vmin, real_t *vmax);

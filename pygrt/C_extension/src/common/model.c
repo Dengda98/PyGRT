@@ -3,7 +3,7 @@
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2024-07-24
  * 
- * GRT_MODEL1D 结构体的相关操作函数
+ * MODEL1D 结构体的相关操作函数
  * 
  */
 
@@ -43,7 +43,7 @@
     X(cbcb, cplx_t)\
 
 
-void grt_print_mod1d(const GRT_MODEL1D *mod1d){
+void grt_print_mod1d(const MODEL1D *mod1d){
     // 模拟表格，打印速度
     // 每列字符宽度
     // [isrc/ircv] [h(km)] [Vp(km/s)] [Vs(km/s)] [Rho(g/cm^3)] [Qp] [Qs]
@@ -110,7 +110,7 @@ void grt_print_mod1d(const GRT_MODEL1D *mod1d){
     printf("\n");
 }
 
-void grt_free_mod1d(GRT_MODEL1D *mod1d){
+void grt_free_mod1d(MODEL1D *mod1d){
     #define X(P, T)  GRT_SAFE_FREE_PTR(mod1d->P);
         GRT_FOR_EACH_MODEL_QUANTITY_ARRAY
     #undef X
@@ -119,8 +119,8 @@ void grt_free_mod1d(GRT_MODEL1D *mod1d){
 }
 
 
-GRT_MODEL1D * grt_init_mod1d(size_t n){
-    GRT_MODEL1D *mod1d = (GRT_MODEL1D *)calloc(1, sizeof(GRT_MODEL1D));
+MODEL1D * grt_init_mod1d(size_t n){
+    MODEL1D *mod1d = (MODEL1D *)calloc(1, sizeof(MODEL1D));
     mod1d->n = n;
     mod1d->omgref = PI2*1.0;
 
@@ -132,8 +132,8 @@ GRT_MODEL1D * grt_init_mod1d(size_t n){
 }
 
 
-GRT_MODEL1D * grt_copy_mod1d(const GRT_MODEL1D *mod1d1){
-    GRT_MODEL1D *mod1d2 = (GRT_MODEL1D *)calloc(1, sizeof(GRT_MODEL1D));
+MODEL1D * grt_copy_mod1d(const MODEL1D *mod1d1){
+    MODEL1D *mod1d2 = (MODEL1D *)calloc(1, sizeof(MODEL1D));
 
     // 先直接赋值，实现浅拷贝
     *mod1d2 = *mod1d1;
@@ -151,7 +151,7 @@ GRT_MODEL1D * grt_copy_mod1d(const GRT_MODEL1D *mod1d1){
 }
 
 
-void grt_attenuate_mod1d(GRT_MODEL1D *mod1d, cplx_t omega){
+void grt_attenuate_mod1d(MODEL1D *mod1d, cplx_t omega){
     real_t Va0, Vb0;
     cplx_t atna, atnb;
     for(size_t i=0; i<mod1d->n; ++i){
@@ -177,7 +177,7 @@ void grt_attenuate_mod1d(GRT_MODEL1D *mod1d, cplx_t omega){
 }
 
 
-void grt_mod1d_xa_xb(GRT_MODEL1D *mod1d, const real_t k)
+void grt_mod1d_xa_xb(MODEL1D *mod1d, const real_t k)
 {
     mod1d->k = k;
     // 不合理的频率值，只可能是在计算静态解，此时不需要xa, xb等物理量
@@ -218,7 +218,7 @@ void grt_mod1d_xa_xb(GRT_MODEL1D *mod1d, const real_t k)
 }
 
 
-void grt_realloc_mod1d(GRT_MODEL1D *mod1d, size_t n){
+void grt_realloc_mod1d(MODEL1D *mod1d, size_t n){
     mod1d->n = n;
 
     #define X(P, T)  mod1d->P = (T*)realloc(mod1d->P, n*sizeof(T));
@@ -228,7 +228,7 @@ void grt_realloc_mod1d(GRT_MODEL1D *mod1d, size_t n){
 
 
 
-GRT_MODEL1D * grt_read_mod1d_from_file(const char *modelpath, real_t depsrc, real_t deprcv, bool allowLiquid){
+MODEL1D * grt_read_mod1d_from_file(const char *modelpath, real_t depsrc, real_t deprcv, bool allowLiquid){
     GRTCheckFileExist(modelpath);
 
     if(depsrc * deprcv < 0.0){
@@ -239,7 +239,7 @@ GRT_MODEL1D * grt_read_mod1d_from_file(const char *modelpath, real_t depsrc, rea
 
     
     // 初始化
-    GRT_MODEL1D *mod1d = grt_init_mod1d(1);
+    MODEL1D *mod1d = grt_init_mod1d(1);
 
     const int ncols = 6; // 模型文件有6列，或除去qa qb有四列
     const int ncols_noQ = 4;
@@ -441,7 +441,7 @@ GRT_MODEL1D * grt_read_mod1d_from_file(const char *modelpath, real_t depsrc, rea
 }
 
 
-void grt_set_mod1d_boundary(GRT_MODEL1D *mod1d, GRT_BOUND_TYPE topbound, GRT_BOUND_TYPE botbound)
+void grt_set_mod1d_boundary(MODEL1D *mod1d, GRT_BOUND_TYPE topbound, GRT_BOUND_TYPE botbound)
 {
     mod1d->topbound = topbound;
     mod1d->botbound = botbound;
@@ -478,7 +478,7 @@ void grt_get_model_diglen_from_file(const char *modelpath, size_t diglen[6]){
 }
 
 
-bool grt_check_vel_in_mod(const GRT_MODEL1D *mod1d, const real_t vel, const real_t tol){
+bool grt_check_vel_in_mod(const MODEL1D *mod1d, const real_t vel, const real_t tol){
     // 浮点数比较，检查是否存在该速度值
     for(size_t i=0; i<mod1d->n; ++i){
         if(fabs(vel - mod1d->Va[i])<tol || fabs(vel - mod1d->Vb[i])<tol)  return true;
@@ -488,7 +488,7 @@ bool grt_check_vel_in_mod(const GRT_MODEL1D *mod1d, const real_t vel, const real
 
 
 
-void grt_get_mod1d_vmin_vmax(const GRT_MODEL1D *mod1d, real_t *vmin, real_t *vmax){
+void grt_get_mod1d_vmin_vmax(const MODEL1D *mod1d, real_t *vmin, real_t *vmax){
     *vmin = 9.0e30;
     *vmax = 0.0;
     const real_t *Va = mod1d->Va;

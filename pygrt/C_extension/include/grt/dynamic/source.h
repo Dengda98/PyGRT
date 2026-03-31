@@ -24,10 +24,10 @@
  * @param[out]    src_coefU    上行震源系数
  * 
  */
-void grt_source_coef(const GRT_MODEL1D *mod1d, cplxChnlGrid src_coefD, cplxChnlGrid src_coefU);
+void grt_source_coef(const MODEL1D *mod1d, cplxChnlGrid src_coefD, cplxChnlGrid src_coefU);
 
 /* P-SV 波的震源系数  */
-void grt_source_coef_PSV(const GRT_MODEL1D *mod1d, cplxChnlGrid src_coefD, cplxChnlGrid src_coefU);
+void grt_source_coef_PSV(const MODEL1D *mod1d, cplxChnlGrid src_coefD, cplxChnlGrid src_coefU);
 
 /* SH 波的震源系数  */
-void grt_source_coef_SH(const GRT_MODEL1D *mod1d, cplxChnlGrid src_coefD, cplxChnlGrid src_coefU);
+void grt_source_coef_SH(const MODEL1D *mod1d, cplxChnlGrid src_coefD, cplxChnlGrid src_coefU);

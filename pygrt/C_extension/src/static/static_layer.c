@@ -67,7 +67,7 @@ static int __rigidBound_R_SH(cplx_t *ML)
     return GRT_INVERSE_SUCCESS;
 }
 
-void grt_static_topbound_RU_PSV(GRT_MODEL1D *mod1d)
+void grt_static_topbound_RU_PSV(MODEL1D *mod1d)
 {
     cplx_t delta = mod1d->delta[0];
     real_t k = mod1d->k;
@@ -87,7 +87,7 @@ void grt_static_topbound_RU_PSV(GRT_MODEL1D *mod1d)
     // RU 不需要时延
 }
 
-void grt_static_topbound_RU_SH(GRT_MODEL1D *mod1d)
+void grt_static_topbound_RU_SH(MODEL1D *mod1d)
 {
     if(mod1d->topbound == GRT_BOUND_FREE){
         mod1d->M_top.stats = __freeBound_R_SH(&mod1d->M_top.RUL);
@@ -105,7 +105,7 @@ void grt_static_topbound_RU_SH(GRT_MODEL1D *mod1d)
     // RU 不需要时延
 }
 
-void grt_static_botbound_RD_PSV(GRT_MODEL1D *mod1d)
+void grt_static_botbound_RD_PSV(MODEL1D *mod1d)
 {
     size_t nlay = mod1d->n;
     cplx_t delta = mod1d->delta[nlay-2];
@@ -133,7 +133,7 @@ void grt_static_botbound_RD_PSV(GRT_MODEL1D *mod1d)
     mod1d->M_bot.RD[1][0] *= ex2;   mod1d->M_bot.RD[1][1] *= ex2;
 }
 
-void grt_static_botbound_RD_SH(GRT_MODEL1D *mod1d)
+void grt_static_botbound_RD_SH(MODEL1D *mod1d)
 {
     size_t nlay = mod1d->n;
     real_t thk = mod1d->Thk[nlay-2];
@@ -159,7 +159,7 @@ void grt_static_botbound_RD_SH(GRT_MODEL1D *mod1d)
     mod1d->M_bot.RDL *= ex2;
 }
 
-void grt_static_wave2qwv_REV_PSV(GRT_MODEL1D *mod1d)
+void grt_static_wave2qwv_REV_PSV(MODEL1D *mod1d)
 {
     cplx_t D11[2][2] = {{1.0, -1.0}, {1.0, 1.0}};
     cplx_t D12[2][2] = {{1.0, -1.0}, {-1.0, -1.0}};
@@ -174,7 +174,7 @@ void grt_static_wave2qwv_REV_PSV(GRT_MODEL1D *mod1d)
     }
 }
 
-void grt_static_wave2qwv_REV_SH(GRT_MODEL1D *mod1d)
+void grt_static_wave2qwv_REV_SH(MODEL1D *mod1d)
 {
     if(mod1d->ircvup){// 震源更深
         mod1d->R_EVL = 1.0 + mod1d->M_FA.RUL;
@@ -183,7 +183,7 @@ void grt_static_wave2qwv_REV_SH(GRT_MODEL1D *mod1d)
     }
 }
 
-void grt_static_wave2qwv_z_REV_PSV(GRT_MODEL1D *mod1d)
+void grt_static_wave2qwv_z_REV_PSV(MODEL1D *mod1d)
 {
     real_t k = mod1d->k;
     size_t ircv = mod1d->ircv;
@@ -202,7 +202,7 @@ void grt_static_wave2qwv_z_REV_PSV(GRT_MODEL1D *mod1d)
     }
 }
 
-void grt_static_wave2qwv_z_REV_SH(GRT_MODEL1D *mod1d)
+void grt_static_wave2qwv_z_REV_SH(MODEL1D *mod1d)
 {
     real_t k = mod1d->k;
     // 新推导公式
@@ -214,7 +214,7 @@ void grt_static_wave2qwv_z_REV_SH(GRT_MODEL1D *mod1d)
 }
 
 
-void grt_static_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
+void grt_static_RT_matrix_PSV(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
 {
     MODEL_2LAYS_ATTRIB(cplx_t, mu);
     MODEL_2LAYS_ATTRIB(cplx_t, delta);
@@ -256,7 +256,7 @@ void grt_static_RT_matrix_PSV(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATR
 }
 
 
-void grt_static_RT_matrix_SH(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
+void grt_static_RT_matrix_SH(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
 {
     MODEL_2LAYS_ATTRIB(cplx_t, mu);
     
@@ -274,7 +274,7 @@ void grt_static_RT_matrix_SH(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRI
 }
 
 
-void grt_static_delay_RT_matrix(const GRT_MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
+void grt_static_delay_RT_matrix(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
 {
     real_t thk = mod1d->Thk[iy-1];
     real_t k = mod1d->k;

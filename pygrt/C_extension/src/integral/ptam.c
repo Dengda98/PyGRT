@@ -212,7 +212,7 @@ static void _cplx_shrink(size_t n1, size_t ir,  int im, int v, cplxIntegGrid (*F
 
 
 void grt_PTA_method(
-    GRT_MODEL1D *mod1d, real_t k0, real_t predk,
+    MODEL1D *mod1d, real_t k0, real_t predk,
     size_t nr, real_t *rs, K_INTEG *K, FILE *ptam_fstatsnr[nr][2], GRT_KernelFunc kerfunc)
 {   
     // 需要兼容对正常收敛而不具有规律波峰波谷的序列

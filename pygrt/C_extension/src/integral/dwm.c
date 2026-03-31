@@ -25,7 +25,7 @@
 
 
 real_t grt_discrete_integ(
-    GRT_MODEL1D *mod1d, real_t dk, real_t kmax, real_t keps,
+    MODEL1D *mod1d, real_t dk, real_t kmax, real_t keps,
     size_t nr, real_t *rs, K_INTEG *K, FILE *fstats, GRT_KernelFunc kerfunc)
 {
     if(kmax == 0.0)  return 0.0;

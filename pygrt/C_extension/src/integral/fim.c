@@ -24,7 +24,7 @@
 
 
 real_t grt_linear_filon_integ(
-    GRT_MODEL1D *mod1d, real_t k0, real_t dk0, real_t dk, real_t kmax, real_t keps,
+    MODEL1D *mod1d, real_t k0, real_t dk0, real_t dk, real_t kmax, real_t keps,
     size_t nr, real_t *rs, K_INTEG *K, FILE *fstats, GRT_KernelFunc kerfunc)
 {   
     if(k0 + dk0 >= kmax)  return k0;

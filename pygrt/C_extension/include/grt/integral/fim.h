@@ -28,7 +28,7 @@
  * 其中\f$x=kr\f$.
  * 
  * 
- * @param[in,out]  mod1d         `GRT_MODEL1D` 结构体指针
+ * @param[in,out]  mod1d         `MODEL1D` 结构体指针
  * @param[in]      k0            前一部分的波数积分结束点k值
  * @param[in]      dk0           前一部分的波数积分间隔
  * @param[in]      filondk       filon积分间隔
@@ -45,7 +45,7 @@
  * @return  k        积分截至时的波数
  */
 real_t grt_linear_filon_integ(
-    GRT_MODEL1D *mod1d, real_t k0, real_t dk0, real_t dk, real_t kmax, real_t keps,
+    MODEL1D *mod1d, real_t k0, real_t dk0, real_t dk, real_t kmax, real_t keps,
     size_t nr, real_t *rs, K_INTEG *K, FILE *fstats, GRT_KernelFunc kerfunc);
 
 
