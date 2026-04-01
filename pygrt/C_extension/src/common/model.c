@@ -360,7 +360,7 @@ MODEL1D_STATE * grt_copy_mod1d_state(const MODEL1D_STATE *mstat1)
 }
 
 
-void grt_update_mod1d_state_omega(MODEL1D_STATE *mstat, const cplx_t omega)
+void grt_update_mod1d_state_omega(MODEL1D_STATE *mstat, const cplx_t omega, const bool isElastic)
 {
     mstat->omega = omega;
 
@@ -372,10 +372,12 @@ void grt_update_mod1d_state_omega(MODEL1D_STATE *mstat, const cplx_t omega)
         Va0 = mod1d->Va[i];
         Vb0 = mod1d->Vb[i];
 
-        // 圆频率实部为负数表明不考虑模型的 Q 值属性
-        // 在读入模型后需要需要运行一次本函数以填充弹性模量，见 grt_read_mod1d_from_file 函数
-        atna = (creal(omega) >= 0.0 && mod1d->Qainv[i] > 0.0)? grt_attenuation_law(mod1d->Qainv[i], mod1d->omgref, omega) : 1.0;
-        atnb = (creal(omega) >= 0.0 && mod1d->Qbinv[i] > 0.0)? grt_attenuation_law(mod1d->Qbinv[i], mod1d->omgref, omega) : 1.0;
+        if(isElastic) {
+            atna = atnb = 1.0;
+        } else {
+            atna = (mod1d->Qainv[i] > 0.0)? grt_attenuation_law(mod1d->Qainv[i], mod1d->omgref, omega) : 1.0;
+            atnb = (mod1d->Qbinv[i] > 0.0)? grt_attenuation_law(mod1d->Qbinv[i], mod1d->omgref, omega) : 1.0;
+        }
 
         mstat->atna[i] = atna;
         mstat->atnb[i] = atnb;

@@ -129,7 +129,7 @@ void grt_integ_grn_spec(
         MODEL1D_STATE *local_mstat = grt_init_mod1d_state(mod1d);
 
         // 将 omega 计入模型结构体
-        grt_update_mod1d_state_omega(local_mstat, omega);
+        grt_update_mod1d_state_omega(local_mstat, omega, false);
 
         // 是否要输出积分过程文件
         bool needfstats = (statsstr!=NULL && (grt_findElement_size_t(statsidxs, nstatsidxs, iw) >= 0));
