@@ -163,11 +163,12 @@ MODEL1D_STATE * grt_copy_mod1d_state(const MODEL1D_STATE *mstat1);
 /**
  * 根据给定频率，设置衰减后的弹性参数；若omega实部小于0则视为弹性介质
  * 
- * @param[in,out]     mstat     `MODEL1D_STATE` 结构体指针
- * @param[in]         omega     圆频率
+ * @param[in,out]     mstat      `MODEL1D_STATE` 结构体指针
+ * @param[in]         omega      圆频率
+ * @param[in]         isElastic  是否为忽略层内的Q值
  * 
  */
-void grt_update_mod1d_state_omega(MODEL1D_STATE *mstat, const cplx_t omega);
+void grt_update_mod1d_state_omega(MODEL1D_STATE *mstat, const cplx_t omega, const bool isElastic);
 
 /**
  * 根据记录好的圆频率，给定波数，计算相速度和每层的 xa, xb, caca, cbcb

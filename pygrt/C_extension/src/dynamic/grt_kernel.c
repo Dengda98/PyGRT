@@ -435,7 +435,7 @@ int kernel_main(int argc, char **argv)
         // 将 omega 计入模型结构体
         local_mstat->omega = omega;
 
-        grt_update_mod1d_state_omega(local_mstat, omega);
+        grt_update_mod1d_state_omega(local_mstat, omega, false);
 
         // 为当前频率创建波数积分记录文件
         FILE *fstats = NULL;

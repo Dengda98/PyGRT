@@ -97,7 +97,7 @@ void grt_integ_static_grn(
     Kmet->kmax = Kmet->k0;
     // 模型状态
     MODEL1D_STATE *mstat = grt_init_mod1d_state(mod1d);
-    grt_update_mod1d_state_omega(mstat, -1.0);
+    grt_update_mod1d_state_omega(mstat, 1.0, true);
     K_INTEG *Kint = grt_wavenumber_integral(mstat, uniq_nr, uniq_rs, Kmet, calc_upar, grt_static_kernel);
     
     cplx_t src_mu = mstat->mu[mod1d->isrc];
