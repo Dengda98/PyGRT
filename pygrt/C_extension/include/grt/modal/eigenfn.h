@@ -19,7 +19,7 @@
 /**
  * 已知某个界面 z_j+ 上的垂直波函数，计算模型每个分界面 z_j+ 和 z_j- 的垂直波函数 P-SV
  * 
- * @param[in]      mod1d                模型结构体指针
+ * @param[in]      mstat                模型结构体指针
  * @param[in]      omega                圆频率
  * @param[in]      eigenK               本征波数
  * @param[out]     mod_potRaylLove_Down 每层 z_j+ 的垂直波函数
@@ -30,17 +30,17 @@
  * 
  */
 void grt_get_mod_potential_Up_Down_Rayl(
-    GRT_MODEL1D *mod1d, const size_t iref, const cplx_t potRaylLove[GRT_RAYL_DIM], const cplx_t potRaylLoveUp[GRT_RAYL_DIM], 
+    MODEL1D_STATE *mstat, const size_t iref, const cplx_t potRaylLove[GRT_RAYL_DIM], const cplx_t potRaylLoveUp[GRT_RAYL_DIM], 
     cplx_t (*mod_potRaylLove_Down)[GRT_RAYL_DIM], cplx_t (*mod_potRaylLove_Up)[GRT_RAYL_DIM]);
 
 /** 已知某个界面 z_j+ 上的垂直波函数，计算模型每个分界面 z_j+ 和 z_j- 的垂直波函数 SH, 参数见 get_mod_potential_Up_Down_Rayl */
 void grt_get_mod_potential_Up_Down_Love(
-    GRT_MODEL1D *mod1d, const size_t iref, const cplx_t potRaylLove[GRT_LOVE_DIM],
+    MODEL1D_STATE *mstat, const size_t iref, const cplx_t potRaylLove[GRT_LOVE_DIM],
     cplx_t (*mod_potRaylLove_Down)[GRT_LOVE_DIM], cplx_t (*mod_potRaylLove_Up)[GRT_LOVE_DIM]);
 
 /** 合并 get_mod_potential_Up_Down_Rayl(Love) */
 void grt_get_mod_potential_Up_Down(
-    GRT_MODEL1D *mod1d, const DISPER_TYPE wtype, const size_t ncols, const size_t iref, 
+    MODEL1D_STATE *mstat, const DISPER_TYPE wtype, const size_t ncols, const size_t iref, 
     const cplx_t potRaylLove[ncols], const cplx_t potRaylLoveUp[ncols], 
     cplx_t (*mod_potRaylLove_Down)[ncols], cplx_t (*mod_potRaylLove_Up)[ncols]);
 
@@ -48,7 +48,7 @@ void grt_get_mod_potential_Up_Down(
 /**
  * 计算某个深度处的本征函数 P-SV
  * 
- * @param[in]      mod1d                模型结构体指针
+ * @param[in]      mstat                模型结构体指针
  * @param[in]      omega                圆频率
  * @param[in]      eigenK               本征波数
  * @param[in]      mod_potRaylLove_Down 每层 z_j+ 的垂直波函数
@@ -61,17 +61,17 @@ void grt_get_mod_potential_Up_Down(
  * 
  */
 void grt_get_eigenfn_single_depth_Rayl(
-    const GRT_MODEL1D *mod1d, const cplx_t (*mod_potRaylLove_Down)[GRT_RAYL_DIM], const cplx_t (*mod_potRaylLove_Up)[GRT_RAYL_DIM],
+    const MODEL1D_STATE *mstat, const cplx_t (*mod_potRaylLove_Down)[GRT_RAYL_DIM], const cplx_t (*mod_potRaylLove_Up)[GRT_RAYL_DIM],
     cplx_t T0[GRT_RAYL_DIM][GRT_RAYL_DIM], const bool reuseT, const real_t zsamp, const size_t ziref, cplx_t eigenfn[4]);
 
 void grt_get_eigenfn_single_depth_Love(
-    const GRT_MODEL1D *mod1d, const cplx_t (*mod_potRaylLove_Down)[GRT_LOVE_DIM], const cplx_t (*mod_potRaylLove_Up)[GRT_LOVE_DIM],
+    const MODEL1D_STATE *mstat, const cplx_t (*mod_potRaylLove_Down)[GRT_LOVE_DIM], const cplx_t (*mod_potRaylLove_Up)[GRT_LOVE_DIM],
     cplx_t T0[GRT_LOVE_DIM][GRT_LOVE_DIM], const bool reuseT, const real_t zsamp, const size_t ziref, cplx_t eigenfn[4]);
 
 /**
  * 计算多个深度处的本征函数 P-SV
  * 
- * @param[in]      mod1d                模型结构体指针
+ * @param[in]      mstat                模型结构体指针
  * @param[in]      omega                圆频率
  * @param[in]      eigenK               本征波数
  * @param[in]      mod_potRaylLove_Down 每层 z_j+ 的垂直波函数
@@ -83,16 +83,16 @@ void grt_get_eigenfn_single_depth_Love(
  * 
  */
 void grt_get_eigenfn_depths_Rayl(
-    const GRT_MODEL1D *mod1d, const cplx_t (*mod_potRaylLove_Down)[GRT_RAYL_DIM], const cplx_t (*mod_potRaylLove_Up)[GRT_RAYL_DIM],
+    const MODEL1D_STATE *mstat, const cplx_t (*mod_potRaylLove_Down)[GRT_RAYL_DIM], const cplx_t (*mod_potRaylLove_Up)[GRT_RAYL_DIM],
     const EIGENFN_INFO *eigfnmet, EIGENFN *eigfn);
 
 /** 计算多个深度处的本征函数 SH, 参数见 get_eigenfn_depths_Rayl */
 void grt_get_eigenfn_depths_Love(
-    const GRT_MODEL1D *mod1d, const cplx_t (*mod_potRaylLove_Down)[GRT_LOVE_DIM], const cplx_t (*mod_potRaylLove_Up)[GRT_LOVE_DIM],
+    const MODEL1D_STATE *mstat, const cplx_t (*mod_potRaylLove_Down)[GRT_LOVE_DIM], const cplx_t (*mod_potRaylLove_Up)[GRT_LOVE_DIM],
     const EIGENFN_INFO *eigfnmet, EIGENFN *eigfn);
 
 /** 合并 get_eigenfn_depths_Rayl(Love)  */
 void grt_get_eigenfn_depths(
-    const GRT_MODEL1D *mod1d, const DISPER_TYPE wtype, const size_t ncols, 
+    const MODEL1D_STATE *mstat, const DISPER_TYPE wtype, const size_t ncols, 
     const cplx_t (*mod_potRaylLove_Down)[ncols], const cplx_t (*mod_potRaylLove_Up)[ncols],
     const EIGENFN_INFO *eigfnmet, EIGENFN *eigfn);

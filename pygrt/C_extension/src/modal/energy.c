@@ -151,7 +151,7 @@ static cplx_t _solve_typical_integral_Love(
  *     5. (dq/dz)^2
  *     6. (dw/dz)^2
  * 
- * @param[in]     mod1d        模型结构体指针
+ * @param[in]     mstat        模型结构体指针
  * @param[in]     iy           层位索引
  * @param[in]     H            层厚
  * @param[in]     potRaylLove  垂直波函数
@@ -159,7 +159,7 @@ static cplx_t _solve_typical_integral_Love(
  * 
  */
 static void energy_integrals_single_layer_Rayl(
-    const GRT_MODEL1D *mod1d, const size_t iy, const real_t H, const cplx_t potRaylLove[GRT_RAYL_DIM], cplx_t sub_egyint[6])
+    const MODEL1D_STATE *mstat, const size_t iy, const real_t H, const cplx_t potRaylLove[GRT_RAYL_DIM], cplx_t sub_egyint[6])
 {
     cplx_t M[GRT_RAYL_DIM][GRT_RAYL_DIM] = {0};
     cplx_t D11[2][2] = {0}, D12[2][2] = {0};
@@ -170,10 +170,10 @@ static void energy_integrals_single_layer_Rayl(
     cplx_t tmp4x2[4][2] = {0};
 
     // 构造 M 矩阵
-    grt_get_layer_D11(mod1d, iy, D11);
-    grt_get_layer_D12(mod1d, iy, D12);
-    grt_get_layer_D11_uiz(mod1d, iy, D11_uiz);
-    grt_get_layer_D12_uiz(mod1d, iy, D12_uiz);
+    grt_get_layer_D11(mstat, iy, D11);
+    grt_get_layer_D12(mstat, iy, D12);
+    grt_get_layer_D11_uiz(mstat, iy, D11_uiz);
+    grt_get_layer_D12_uiz(mstat, iy, D12_uiz);
 
     grt_cmatmxn_block_assign(2, 4, D2x4, 0, 0, 2, 2, D11);
     grt_cmatmxn_block_assign(2, 4, D2x4, 0, 2, 2, 2, D12);
@@ -183,9 +183,9 @@ static void energy_integrals_single_layer_Rayl(
     grt_cmatmxn_block_assign(2, 4, D2x4_uiz, 0, 2, 2, 2, D12_uiz);
     grt_cmatmxn_transpose(2, 4, D2x4_uiz, D4x2_uiz);
     
-    real_t k  = mod1d->k;
-    cplx_t xa = mod1d->xa[iy];
-    cplx_t xb = mod1d->xb[iy];
+    real_t k  = mstat->k;
+    cplx_t xa = mstat->xa[iy];
+    cplx_t xb = mstat->xb[iy];
 
     // 1. (q)^2
     memset(Diag, 0, sizeof(cplx_t)*4);
@@ -238,7 +238,7 @@ static void energy_integrals_single_layer_Rayl(
  *     1. (v)^2
  *     2. (dv/dz)^2
  * 
- * @param[in]     mod1d        模型结构体指针
+ * @param[in]     mstat        模型结构体指针
  * @param[in]     iy           层位索引
  * @param[in]     H            层厚
  * @param[in]     potRaylLove  垂直波函数
@@ -246,12 +246,12 @@ static void energy_integrals_single_layer_Rayl(
  * 
  */
 static void energy_integrals_single_layer_Love(
-    const GRT_MODEL1D *mod1d, const size_t iy, const real_t H, const cplx_t potRaylLove[GRT_LOVE_DIM], cplx_t sub_egyint[2])
+    const MODEL1D_STATE *mstat, const size_t iy, const real_t H, const cplx_t potRaylLove[GRT_LOVE_DIM], cplx_t sub_egyint[2])
 {
     cplx_t M[2][2] = {0};
 
-    real_t k  = mod1d->k;
-    cplx_t xb = mod1d->xb[iy];
+    real_t k  = mstat->k;
+    cplx_t xb = mstat->xb[iy];
 
     // 1. (v)^2
     memset(M, 0, sizeof(cplx_t)*4);
@@ -331,7 +331,7 @@ static void phase_sensitivity_numerator_single_layer_Rayl(
 
 
 void grt_energy_integrals_Rayl(
-    const GRT_MODEL1D *mod1d, const cplx_t (*mod_potRaylLove_Down)[GRT_RAYL_DIM], const cplx_t (*mod_potRaylLove_Up)[GRT_RAYL_DIM], 
+    const MODEL1D_STATE *mstat, const cplx_t (*mod_potRaylLove_Down)[GRT_RAYL_DIM], const cplx_t (*mod_potRaylLove_Up)[GRT_RAYL_DIM], 
     const EIGENFN_INFO *eigfnmet, EIGENFN *eigfn)
 {
     // 先置零
@@ -346,12 +346,13 @@ void grt_energy_integrals_Rayl(
     ziref = last_ziref = -1;
     real_t dz=0.0, h=0.0;
 
-    real_t eigenK = mod1d->k;
+    real_t eigenK = mstat->k;
     size_t cpar_nz = eigfnmet->cpar_nz;
+    size_t nlay = mstat->mod1d->n;
 
     // 如果没有定义cpar系列数组，则表示使用模型数组，
     // 此时要求 cpar_nz == mod1d->n
-    if((eigfnmet->cpar_zs==NULL || eigfnmet->cpar_z_irefs==NULL) && eigfnmet->cpar_nz != mod1d->n){
+    if((eigfnmet->cpar_zs==NULL || eigfnmet->cpar_z_irefs==NULL) && eigfnmet->cpar_nz != nlay){
         GRTRaiseError("cpar_xx variables error.\n");
     }
 
@@ -360,12 +361,12 @@ void grt_energy_integrals_Rayl(
 
         // 应用深度有序的性质
         if(ziref != last_ziref){
-            xa = mod1d->xa[ziref];
-            xb = mod1d->xb[ziref];
-            lambda = mod1d->lambda[ziref];
-            mu = mod1d->mu[ziref];
-            thk = mod1d->Thk[ziref];  
-            rho = mod1d->Rho[ziref];
+            xa = mstat->xa[ziref];
+            xb = mstat->xb[ziref];
+            lambda = mstat->lambda[ziref];
+            mu = mstat->mu[ziref];
+            thk = mstat->mod1d->Thk[ziref];  
+            rho = mstat->mod1d->Rho[ziref];
 
             // 构造垂直波函数
             memcpy(potRaylLove_bak, &mod_potRaylLove_Up[ziref+1][0], sizeof(cplx_t)*2);
@@ -374,10 +375,10 @@ void grt_energy_integrals_Rayl(
 
         if(eigfnmet->cpar_zs!=NULL){
             dz = (iz < cpar_nz-1)? eigfnmet->cpar_zs[iz+1] - eigfnmet->cpar_zs[iz] : -1.0;   // 这里负厚度用于表示正无穷
-            h = eigfnmet->cpar_zs[iz] - mod1d->Dep[ziref];
+            h = eigfnmet->cpar_zs[iz] - mstat->mod1d->Dep[ziref];
         } else {
             // 模型物理层
-            dz = (iz < cpar_nz-1)? mod1d->Thk[ziref] : -1.0;
+            dz = (iz < cpar_nz-1)? mstat->mod1d->Thk[ziref] : -1.0;
             h = 0.0;
         }
 
@@ -391,7 +392,7 @@ void grt_energy_integrals_Rayl(
 
         // 计算能量积分所需的子项, 这里负厚度用于表示正无穷
         cplx_t sub_egyint[6];
-        energy_integrals_single_layer_Rayl(mod1d, ziref, dz, potRaylLove, sub_egyint);
+        energy_integrals_single_layer_Rayl(mstat, ziref, dz, potRaylLove, sub_egyint);
 
         // I1
         eigfn->egyint[0] += 0.5 * rho * (sub_egyint[0] + sub_egyint[1]);
@@ -404,11 +405,11 @@ void grt_energy_integrals_Rayl(
 
         // 计算相速度敏感核
         if(eigfn->csens!=NULL){
-            phase_sensitivity_numerator_single_layer_Rayl(rho, creal(mod1d->omega), eigenK, lambda, mu, sub_egyint, eigfn->csens[iz]);
+            phase_sensitivity_numerator_single_layer_Rayl(rho, creal(mstat->omega), eigenK, lambda, mu, sub_egyint, eigfn->csens[iz]);
             // 去掉系数
-            eigfn->csens[iz][0] /= mod1d->Va[ziref]/mod1d->c_phase;
-            eigfn->csens[iz][1] /= mod1d->Vb[ziref]/mod1d->c_phase;
-            eigfn->csens[iz][2] /= rho/mod1d->c_phase;
+            eigfn->csens[iz][0] /= mstat->mod1d->Va[ziref] / mstat->c_phase;
+            eigfn->csens[iz][1] /= mstat->mod1d->Vb[ziref] / mstat->c_phase;
+            eigfn->csens[iz][2] /= rho / mstat->c_phase;
         }
 
         last_ziref = ziref;
@@ -432,7 +433,7 @@ void grt_energy_integrals_Rayl(
 
 
 void grt_energy_integrals_Love(
-    const GRT_MODEL1D *mod1d, const cplx_t (*mod_potRaylLove_Down)[GRT_LOVE_DIM], const cplx_t (*mod_potRaylLove_Up)[GRT_LOVE_DIM], 
+    const MODEL1D_STATE *mstat, const cplx_t (*mod_potRaylLove_Down)[GRT_LOVE_DIM], const cplx_t (*mod_potRaylLove_Up)[GRT_LOVE_DIM], 
     const EIGENFN_INFO *eigfnmet, EIGENFN *eigfn)
 {
     // 先置零
@@ -447,12 +448,13 @@ void grt_energy_integrals_Love(
     ziref = last_ziref = -1;
     real_t dz=0.0, h=0.0;
 
-    real_t eigenK = mod1d->k;
+    real_t eigenK = mstat->k;
     size_t cpar_nz = eigfnmet->cpar_nz;
+    size_t nlay = mstat->mod1d->n;
 
     // 如果没有定义cpar系列数组，则表示使用模型数组，
     // 此时要求 cpar_nz == mod1d->n
-    if((eigfnmet->cpar_zs==NULL || eigfnmet->cpar_z_irefs==NULL) && eigfnmet->cpar_nz != mod1d->n){
+    if((eigfnmet->cpar_zs==NULL || eigfnmet->cpar_z_irefs==NULL) && eigfnmet->cpar_nz != nlay){
         GRTRaiseError("cpar_xx variables error.\n");
     }
 
@@ -461,10 +463,10 @@ void grt_energy_integrals_Love(
 
         // 应用深度有序的性质
         if(ziref != last_ziref){
-            xb = mod1d->xb[ziref];
-            mu = mod1d->mu[ziref];
-            thk = mod1d->Thk[ziref];  
-            rho = mod1d->Rho[ziref];
+            xb = mstat->xb[ziref];
+            mu = mstat->mu[ziref];
+            thk = mstat->mod1d->Thk[ziref];  
+            rho = mstat->mod1d->Rho[ziref];
 
             // 构造垂直波函数
             potRaylLove_bak[0] = mod_potRaylLove_Up[ziref+1][0];
@@ -472,14 +474,14 @@ void grt_energy_integrals_Love(
         }
 
         // 跳过液体层， Love 波无位移应力，不会为能量积分和敏感核有贡献
-        if(mod1d->isLiquid[ziref])  continue;
+        if(mstat->mod1d->isLiquid[ziref])  continue;
 
         if(eigfnmet->cpar_zs!=NULL){
             dz = (iz < cpar_nz-1)? eigfnmet->cpar_zs[iz+1] - eigfnmet->cpar_zs[iz] : -1.0;   // 这里负厚度用于表示正无穷
-            h = eigfnmet->cpar_zs[iz] - mod1d->Dep[ziref];
+            h = eigfnmet->cpar_zs[iz] - mstat->mod1d->Dep[ziref];
         } else {
             // 模型物理层
-            dz = (iz < cpar_nz-1)? mod1d->Thk[ziref] : -1.0;
+            dz = (iz < cpar_nz-1)? mstat->mod1d->Thk[ziref] : -1.0;
             h = 0.0;
         }
         
@@ -492,7 +494,7 @@ void grt_energy_integrals_Love(
 
         // 计算能量积分所需的子项
         cplx_t sub_egyint[2] = {0};
-        energy_integrals_single_layer_Love(mod1d, ziref, dz, potRaylLove, sub_egyint);
+        energy_integrals_single_layer_Love(mstat, ziref, dz, potRaylLove, sub_egyint);
 
         // I1
         eigfn->egyint[0] += 0.5 * rho * sub_egyint[0];
@@ -508,10 +510,10 @@ void grt_energy_integrals_Love(
 
         // 计算相速度敏感核
         if(eigfn->csens!=NULL){
-            phase_sensitivity_numerator_single_layer_Love(rho, creal(mod1d->omega), eigenK, mu, sub_egyint, eigfn->csens[iz]);
+            phase_sensitivity_numerator_single_layer_Love(rho, creal(mstat->omega), eigenK, mu, sub_egyint, eigfn->csens[iz]);
             // 去掉系数
-            eigfn->csens[iz][1] /= mod1d->Vb[ziref]/mod1d->c_phase;
-            eigfn->csens[iz][2] /= rho/mod1d->c_phase;
+            eigfn->csens[iz][1] /= mstat->mod1d->Vb[ziref] / mstat->c_phase;
+            eigfn->csens[iz][2] /= rho / mstat->c_phase;
         }
 
     }
@@ -534,15 +536,15 @@ void grt_energy_integrals_Love(
 
 
 void grt_energy_integrals(
-    const GRT_MODEL1D *mod1d, const DISPER_TYPE wtype, const size_t ncols, 
+    const MODEL1D_STATE *mstat, const DISPER_TYPE wtype, const size_t ncols, 
     const cplx_t (*mod_potRaylLove_Down)[ncols], const cplx_t (*mod_potRaylLove_Up)[ncols], 
     const EIGENFN_INFO *eigfnmet, EIGENFN *eigfn)
 {
     if(wtype == GRT_DISPERSION_RAYL && ncols == GRT_RAYL_DIM){
-        grt_energy_integrals_Rayl(mod1d, mod_potRaylLove_Down, mod_potRaylLove_Up, eigfnmet, eigfn);
+        grt_energy_integrals_Rayl(mstat, mod_potRaylLove_Down, mod_potRaylLove_Up, eigfnmet, eigfn);
     }
     else if(wtype == GRT_DISPERSION_LOVE && ncols == GRT_LOVE_DIM) {
-        grt_energy_integrals_Love(mod1d, mod_potRaylLove_Down, mod_potRaylLove_Up, eigfnmet, eigfn);
+        grt_energy_integrals_Love(mstat, mod_potRaylLove_Down, mod_potRaylLove_Up, eigfnmet, eigfn);
     }
     else {
         GRTRaiseError("Wrong execution.");

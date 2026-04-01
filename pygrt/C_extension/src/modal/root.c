@@ -24,7 +24,7 @@
 /** 
  * 黄金分割法确定久期函数零点 
  * 
- * @param[in]      mod1d        模型结构体指针
+ * @param[in]      mstat        模型结构体指针
  * @param[in]      w            圆频率
  * @param[in]      c1           左区间相速度
  * @param[in]      c2           右区间相速度
@@ -36,7 +36,7 @@
  * 
  */
 static size_t grt_goldensection_search_root(
-    GRT_MODEL1D *mod1d, const real_t c1, const real_t c2, 
+    MODEL1D_STATE *mstat, const real_t c1, const real_t c2, 
     const size_t iref, const DISPER_TYPE wtype,
     const real_t rtol, const real_t cgap, cplx_t *root_sec, real_t *root_c)
 {
@@ -51,7 +51,7 @@ static size_t grt_goldensection_search_root(
     real_t secABS[2];
 
     for(int i=0; i<2; ++i){
-        grt_secular_function(mod1d, x[i], iref, wtype, &sec[i]);
+        grt_secular_function(mstat, x[i], iref, wtype, &sec[i]);
         secABS[i] = fabs(sec[i]);
     }
     size_t is=0;
@@ -70,7 +70,7 @@ static size_t grt_goldensection_search_root(
             secABS[1] = secABS[0];
             x[1] = x[0];
             x[0] = c[1] - GOLDEN_RATIO*(c[1] - c[0]);
-            grt_secular_function(mod1d, x[0], iref, wtype, &sec[0]);
+            grt_secular_function(mstat, x[0], iref, wtype, &sec[0]);
             secABS[0] = fabs(sec[0]);
         } else {
             c[0] = x[0];
@@ -78,7 +78,7 @@ static size_t grt_goldensection_search_root(
             secABS[0] = secABS[1];
             x[0] = x[1];
             x[1] = c[0] + GOLDEN_RATIO*(c[1] - c[0]);
-            grt_secular_function(mod1d, x[1], iref, wtype, &sec[1]);
+            grt_secular_function(mstat, x[1], iref, wtype, &sec[1]);
             secABS[1] = fabs(sec[1]);
         }
 
@@ -258,7 +258,7 @@ static bool check_fit(
 /**
  * 使用自适应采样寻找久期函数零点
  * 
- * @param[in]      mod1d        模型结构体指针
+ * @param[in]      mstat        模型结构体指针
  * @param[in]      V_sort       升序的模型速度
  * @param[in]      w            圆频率
  * @param[in]      c10          相速度搜索下界
@@ -274,7 +274,7 @@ static bool check_fit(
  * 
  */
 static void grt_adaptive_step_secular_roots(
-    GRT_MODEL1D *mod1d, EIGENV_INFO *eigmet, EIGENV *eigv, const size_t iref,
+    MODEL1D_STATE *mstat, EIGENV_INFO *eigmet, EIGENV *eigv, const size_t iref,
     const real_t *cpred, const size_t npred)
 {
     cplx_t root_sec = -1.0;
@@ -287,7 +287,7 @@ static void grt_adaptive_step_secular_roots(
     Interval Citv;
     Interval last_Citv_right = {.x3 = {-1.0}};
 
-    real_t cbegin = grt_secular_function_cbegin(mod1d, iref, eigmet->wtype) + eigmet->vgap;
+    real_t cbegin = grt_secular_function_cbegin(mstat, iref, eigmet->wtype) + eigmet->vgap;
     // 根据 cpred 在[cmin, cmax]之间初始化采样一些区间
     for(size_t i = 0; i < npred - 1; ++i){
         real_t c1 = GRT_MAX(cbegin, cpred[npred - i - 2]);
@@ -300,7 +300,7 @@ static void grt_adaptive_step_secular_roots(
         Citv.x3[1] = 0.5 * (c1 + c2);
         Citv.x3[2] = c2;
         for(size_t p = 0; p < 3; ++p){
-            grt_secular_function(mod1d, Citv.x3[p], iref, eigmet->wtype, &Citv.F3[p]);
+            grt_secular_function(mstat, Citv.x3[p], iref, eigmet->wtype, &Citv.F3[p]);
         }
         stack_push(&stack, Citv);
     }
@@ -308,7 +308,7 @@ static void grt_adaptive_step_secular_roots(
 
     // 记录第一个值
     if(eigmet->print_sec){
-        fprintf(stdout, "# iref=%zu, f=%f, tol=%e, c1=%f, c2=%f\n", iref, creal(mod1d->omega)/PI2, eigmet->satol, eigmet->cmin, eigmet->cmax);
+        fprintf(stdout, "# iref=%zu, f=%f, tol=%e, c1=%f, c2=%f\n", iref, creal(mstat->omega)/PI2, eigmet->satol, eigmet->cmin, eigmet->cmax);
         fprintf(stdout, "%.16e %.16e %.16e \n", Citv.x3[0], GRT_CMPLX_SPLIT(Citv.F3[0]));
     }
 
@@ -358,8 +358,8 @@ static void grt_adaptive_step_secular_roots(
         Citv_left.F3[2] = Citv.F3[1];
         Citv_right.F3[0] = Citv.F3[1];
         Citv_right.F3[2] = Citv.F3[2];
-        grt_secular_function(mod1d, Citv_left.x3[1], iref, eigmet->wtype, &Citv_left.F3[1]);
-        grt_secular_function(mod1d, Citv_right.x3[1], iref, eigmet->wtype, &Citv_right.F3[1]);
+        grt_secular_function(mstat, Citv_left.x3[1], iref, eigmet->wtype, &Citv_left.F3[1]);
+        grt_secular_function(mstat, Citv_right.x3[1], iref, eigmet->wtype, &Citv_right.F3[1]);
 
         // 检查区间是否符合要求
         real_t goodtol = check_fit(&Citv, &Citv_left, &Citv_right, eigmet->satol);
@@ -414,11 +414,11 @@ static void grt_adaptive_step_secular_roots(
                 if(!isTrough)  continue;
 
                 grt_goldensection_search_root(
-                    mod1d, cCheck[i-2], cCheck[i], 
+                    mstat, cCheck[i-2], cCheck[i], 
                     iref, eigmet->wtype, eigmet->rtol, eigmet->cgap, &root_sec, &root_c
                 );
 
-                if(root_c > 0.0 && !grt_check_vel_in_mod(mod1d, root_c, eigmet->vgap)){
+                if(root_c > 0.0 && !grt_check_vel_in_mod(mstat->mod1d, root_c, eigmet->vgap)){
                     if(eigv->c_roots == NULL){
                         // 需初始化动态内存
                         eigv->c_roots = (real_t *)realloc(eigv->c_roots, sizeof(real_t)*1);
@@ -464,10 +464,10 @@ static void grt_adaptive_step_secular_roots(
 // ---------------------------------------------------------------------------------------------------
 
 static void grt_fixed_step_secular_roots(
-    GRT_MODEL1D *mod1d, EIGENV_INFO *eigmet, EIGENV *eigv, const size_t iref, 
+    MODEL1D_STATE *mstat, EIGENV_INFO *eigmet, EIGENV *eigv, const size_t iref, 
     const real_t *cpred, const size_t npred)
 {
-    real_t cbegin = grt_secular_function_cbegin(mod1d, iref, eigmet->wtype) + eigmet->vgap;
+    real_t cbegin = grt_secular_function_cbegin(mstat, iref, eigmet->wtype) + eigmet->vgap;
     real_t cmin = GRT_MAX(cbegin, cpred[0]);
     real_t cmax = cpred[npred-1];
     real_t dc = eigmet->uniform_dc;
@@ -479,18 +479,18 @@ static void grt_fixed_step_secular_roots(
     cplx_t f3[3] = {0};
     for(int i = 0; i < 2; ++i){
         c3[i] = cmin + dc*i;
-        grt_secular_function(mod1d, c3[i], iref, eigmet->wtype, &f3[i]);
+        grt_secular_function(mstat, c3[i], iref, eigmet->wtype, &f3[i]);
     }
     c3[2] = c3[1] + dc;
 
     if(eigmet->print_sec){
-        fprintf(stdout, "# iref=%zu, f=%f, tol=%e, c1=%f, c2=%f\n", iref, creal(mod1d->omega)/PI2, eigmet->satol, eigmet->cmin, eigmet->cmax);
+        fprintf(stdout, "# iref=%zu, f=%f, tol=%e, c1=%f, c2=%f\n", iref, creal(mstat->omega)/PI2, eigmet->satol, eigmet->cmin, eigmet->cmax);
         fprintf(stdout, "%.16e %.16e %.16e \n", c3[0], GRT_CMPLX_SPLIT(f3[0]));
         fprintf(stdout, "%.16e %.16e %.16e \n", c3[1], GRT_CMPLX_SPLIT(f3[1]));
     }
     
     while(c3[2] < cmax) {
-        grt_secular_function(mod1d, c3[2], iref, eigmet->wtype, &f3[2]);
+        grt_secular_function(mstat, c3[2], iref, eigmet->wtype, &f3[2]);
 
         if(eigmet->print_sec){
             fprintf(stdout, "%.16e %.16e %.16e \n", c3[2], GRT_CMPLX_SPLIT(f3[2]));
@@ -502,11 +502,11 @@ static void grt_fixed_step_secular_roots(
         if(! isTrough) goto UPDATE_C3_F3;
 
         grt_goldensection_search_root(
-            mod1d, c3[0], c3[2], 
+            mstat, c3[0], c3[2], 
             iref, eigmet->wtype, eigmet->rtol, eigmet->cgap, &root_sec, &root_c
         );
 
-        if(root_c > 0.0 && !grt_check_vel_in_mod(mod1d, root_c, eigmet->vgap)){
+        if(root_c > 0.0 && !grt_check_vel_in_mod(mstat->mod1d, root_c, eigmet->vgap)){
             if(eigv->c_roots == NULL){
                 // 需初始化动态内存
                 eigv->c_roots = (real_t *)realloc(eigv->c_roots, sizeof(real_t)*1);
@@ -550,19 +550,22 @@ static void grt_fixed_step_secular_roots(
 
 // 搜索零点的函数指针
 typedef void (*SearchFunc)(
-    GRT_MODEL1D *mod1d, EIGENV_INFO *eigmet, EIGENV *eigv, const size_t iref, 
+    MODEL1D_STATE *mstat, EIGENV_INFO *eigmet, EIGENV *eigv, const size_t iref, 
     const real_t *cpred, const size_t npred);
 
 
-static real_t grt_get_approx_nroots(GRT_MODEL1D *mod1d, const real_t freq, DISPER_TYPE wtype, const real_t cphase)
+static real_t grt_get_approx_nroots(MODEL1D_STATE *mstat, const real_t freq, DISPER_TYPE wtype, const real_t cphase)
 {
     real_t res = 0;
-    grt_mod1d_xa_xb(mod1d, PI2*freq/cphase);
+    grt_update_mod1d_state_k(mstat, PI2*freq/cphase);
 
-    for(size_t iy = 0; iy < mod1d->n - 1; ++iy){
-        res += fabs(cimag(((mod1d->Vb[iy] > 0.0) ? mod1d->xb[iy] : 0.0))) * mod1d->Thk[iy];
+    real_t *Vb = mstat->mod1d->Vb;
+    real_t *Thk = mstat->mod1d->Thk;
+
+    for(size_t iy = 0; iy < mstat->mod1d->n - 1; ++iy){
+        res += fabs(cimag(((Vb[iy] > 0.0) ? mstat->xb[iy] : 0.0))) * Thk[iy];
         if(wtype == GRT_DISPERSION_RAYL){
-            res += fabs(cimag(mod1d->Va[iy])) * mod1d->Thk[iy];
+            res += fabs(cimag(mstat->xa[iy])) * Thk[iy];
         }
     }
     res *= 2.0*freq;
@@ -571,10 +574,10 @@ static real_t grt_get_approx_nroots(GRT_MODEL1D *mod1d, const real_t freq, DISPE
 }
 
 /** 指定某个层位的物性参数为半空间参数，计算均匀半空间中的Rayleigh波相速度 */
-static real_t grt_halfspace_Rayleigh_croot(const GRT_MODEL1D *mod1d, const size_t iref)
+static real_t grt_halfspace_Rayleigh_croot(const MODEL1D_STATE *mstat, const size_t iref)
 {
-    real_t vp = mod1d->Va[iref];
-    real_t vs = mod1d->Vb[iref];
+    real_t vp = mstat->mod1d->Va[iref];
+    real_t vs = mstat->mod1d->Vb[iref];
     real_t xi2 = GRT_SQUARE(vs/vp);
     real_t eta = 0.0;
 
@@ -587,6 +590,7 @@ static real_t grt_halfspace_Rayleigh_croot(const GRT_MODEL1D *mod1d, const size_
         eta = (eta >= 0.0)? sqrt((- b - sqrt(eta))/(2.0*a)) * 0.9 : 0.9;
     }
 
+    // 简单用一个牛顿迭代法求解
     for(size_t i = 0; i < 10; ++i){
         real_t eta2 = eta*eta;
         real_t eta4 = eta2*eta2;
@@ -608,36 +612,36 @@ static real_t grt_halfspace_Rayleigh_croot(const GRT_MODEL1D *mod1d, const size_
 
 
 /** 将对单个频率的处理包装成函数，方便被其它函数并行调用 */
-static void get_secular_roots_single_freq(GRT_MODEL1D *mod1d, EIGENV_INFO *eigmet, EIGENV *eigv, SearchFunc searchfunc)
+static void get_secular_roots_single_freq(MODEL1D_STATE *mstat, EIGENV_INFO *eigmet, EIGENV *eigv, SearchFunc searchfunc)
 {
     // 根据经验公式确定初始采样
     real_t *cpred = NULL;
     size_t npred = 0;
     DISPER_TYPE wtype = eigmet->wtype;
-    real_t freq = creal(mod1d->omega)/PI2;
+    real_t freq = creal(mstat->omega)/PI2;
     real_t cmin=eigmet->cmin + eigmet->vgap;
     real_t cmax=eigmet->cmax - eigmet->vgap;
-    real_t realN = grt_get_approx_nroots(mod1d, freq, wtype, cmax) + 1;
+    real_t realN = grt_get_approx_nroots(mstat, freq, wtype, cmax) + 1;
     real_t dc = (cmax - cmin) / realN;
     real_t c1, c2, rn1, rn2;
     c1 = cmin;
-    rn1 = grt_get_approx_nroots(mod1d, freq, wtype, cmin);
+    rn1 = grt_get_approx_nroots(mstat, freq, wtype, cmin);
     c2 = cmax;
     while(c1 < cmax){
         cpred = (real_t *)realloc(cpred, sizeof(real_t)*(npred+1));
         cpred[npred++] = c1;
         c2 = GRT_MIN(c1 + dc, cmax);
-        rn2 = grt_get_approx_nroots(mod1d, freq, wtype, c2);
+        rn2 = grt_get_approx_nroots(mstat, freq, wtype, c2);
         while(rn2 > 0.0 && fabs(rn2 - rn1) > 0.5){
             c2 = c1 + (c2 - c1)*0.5;
-            rn2 = grt_get_approx_nroots(mod1d, freq, wtype, c2);
+            rn2 = grt_get_approx_nroots(mstat, freq, wtype, c2);
         }
         c1 = c2; rn1 = rn2;
     }
     cpred = (real_t *)realloc(cpred, sizeof(real_t)*(npred+1));
     cpred[npred++] = c2;
-    if(eigmet->wtype == GRT_DISPERSION_RAYL && mod1d->Vb[0] > 0.0){
-        real_t target = 0.95 * grt_halfspace_Rayleigh_croot(mod1d, 0);
+    if(eigmet->wtype == GRT_DISPERSION_RAYL && ! mstat->mod1d->isLiquid[0]){
+        real_t target = 0.95 * grt_halfspace_Rayleigh_croot(mstat, 0);
         cpred = (real_t *)realloc(cpred, sizeof(real_t)*(npred+1));
         grt_insertOrdered(cpred, &npred, npred+1, &target, sizeof(real_t), true, grt_compare_real_t);
     }
@@ -646,42 +650,47 @@ static void get_secular_roots_single_freq(GRT_MODEL1D *mod1d, EIGENV_INFO *eigme
 
     size_t iref = 0; // 使用哪一层的secular function
 
+    size_t nlay = mstat->mod1d->n;
+    real_t *Va = mstat->mod1d->Va;
+    real_t *Vb = mstat->mod1d->Vb;
+    bool *isLiquid = mstat->mod1d->isLiquid;
+
     // 单独讨论首层
     if(eigmet->wtype == GRT_DISPERSION_RAYL){
-        searchfunc(mod1d, eigmet, eigv, 0, cpred, npred);
+        searchfunc(mstat, eigmet, eigv, 0, cpred, npred);
     } 
     else if(eigmet->wtype == GRT_DISPERSION_LOVE){
         // Love 波
         // 从顶至下的第一个固体层
-        for(iref = 0; iref < mod1d->n; ++iref){
-            if(! mod1d->isLiquid[iref])  break;
+        for(iref = 0; iref < nlay; ++iref){
+            if(! isLiquid[iref])  break;
         }
-        if(iref == mod1d->n - 1){
+        if(iref == nlay - 1){
             GRTRaiseError("Love wave can't exist in the model with full liquid.");
         }
-        searchfunc(mod1d, eigmet, eigv, iref, cpred, npred);
+        searchfunc(mstat, eigmet, eigv, iref, cpred, npred);
     }
     else {
         GRTRaiseError("Wrong execution.");
     }
 
     // 检查低速层
-    for(iref = 1; iref < mod1d->n-1; ++iref){
+    for(iref = 1; iref < nlay-1; ++iref){
         bool match = false;
         real_t va1, va2, va3;
         real_t vb1, vb2, vb3;
         bool il1, il2;
-        va1 = mod1d->Va[iref-1];
-        vb1 = mod1d->Vb[iref-1];
-        il1 = mod1d->isLiquid[iref-1];
-        va2 = mod1d->Va[iref];
-        vb2 = mod1d->Vb[iref];
-        il2 = mod1d->isLiquid[iref];
-        va3 = mod1d->Va[iref+1];
-        vb3 = mod1d->Vb[iref+1];
+        va1 = Va[iref-1];
+        vb1 = Vb[iref-1];
+        il1 = isLiquid[iref-1];
+        va2 = Va[iref];
+        vb2 = Vb[iref];
+        il2 = isLiquid[iref];
+        va3 = Va[iref+1];
+        vb3 = Vb[iref+1];
 
         // 对于 Love 波跳过液体层
-        if(eigmet->wtype == GRT_DISPERSION_LOVE && mod1d->isLiquid[iref]){
+        if(eigmet->wtype == GRT_DISPERSION_LOVE && isLiquid[iref]){
             continue;
         }
 
@@ -692,7 +701,7 @@ static void get_secular_roots_single_freq(GRT_MODEL1D *mod1d, EIGENV_INFO *eigme
         else if((il1 ^ il2) == 1)  match = true;
 
         if(match){
-            searchfunc(mod1d, eigmet, eigv, iref, cpred, npred);
+            searchfunc(mstat, eigmet, eigv, iref, cpred, npred);
         }
     }
 
@@ -705,7 +714,7 @@ static void get_secular_roots_single_freq(GRT_MODEL1D *mod1d, EIGENV_INFO *eigme
 }
 
 
-void grt_get_secular_roots(GRT_MODEL1D *mod1d, EIGENV_INFO *eigmet, const bool print_progressbar)
+void grt_get_secular_roots(MODEL1D *mod1d, EIGENV_INFO *eigmet, const bool print_progressbar)
 {
     real_t *freqs = eigmet->freqs;
     size_t nf = eigmet->nf;
@@ -722,22 +731,28 @@ void grt_get_secular_roots(GRT_MODEL1D *mod1d, EIGENV_INFO *eigmet, const bool p
     // 进度条变量 
     int progress=0;
 
-#define __CALL_SECULAR_ROOT(mod1d, iw) \
-    mod1d->omega = PI2*freqs[iw]; \
-    get_secular_roots_single_freq(mod1d, eigmet, eigmet->eigv+iw, searchfunc);
+#define __CALL_SECULAR_ROOT(mstat, iw) \
+    grt_update_mod1d_state_omega(mstat, PI2*freqs[iw], true); \
+    get_secular_roots_single_freq(mstat, eigmet, eigmet->eigv+iw, searchfunc);
 
     if(eigmet->print_sec){
-        __CALL_SECULAR_ROOT(mod1d, 0);
+        MODEL1D_STATE *mstat = grt_init_mod1d_state(mod1d);
+        __CALL_SECULAR_ROOT(mstat, 0);
+        grt_free_mod1d_state(mstat);
         goto FINISH;
     }
 
-#ifdef _OPENMP
+    size_t neval = 0;
+
     // 如果外部已在并行区域中，此处串行
     if (omp_in_parallel()) {
         for(size_t iw = 0; iw < nf; ++iw){
-            __CALL_SECULAR_ROOT(mod1d, iw);
+            MODEL1D_STATE *mstat = grt_init_mod1d_state(mod1d);
+            __CALL_SECULAR_ROOT(mstat, iw);
+            neval += mstat->neval;
             // 记录进度条变量 
             progress++;
+            grt_free_mod1d_state(mstat);
             if(print_progressbar) grt_printprogressBar("Computing Dispersion Curves: ", progress*100/nf);
         }
     }
@@ -745,30 +760,21 @@ void grt_get_secular_roots(GRT_MODEL1D *mod1d, EIGENV_INFO *eigmet, const bool p
     else{
         #pragma omp parallel for schedule(guided) default(shared) 
         for(size_t iw = 0; iw < nf; ++iw){
-            GRT_MODEL1D *local_mod1d = grt_copy_mod1d(mod1d);
-            local_mod1d->neval = 0;
-            __CALL_SECULAR_ROOT(local_mod1d, iw);
+            MODEL1D_STATE *locaL_mstat = grt_init_mod1d_state(mod1d);
+            __CALL_SECULAR_ROOT(locaL_mstat, iw);
 
             // 记录进度条变量 
             #pragma omp critical
             {   
-                mod1d->neval += local_mod1d->neval;
+                neval += locaL_mstat->neval;
                 progress++;
                 if(print_progressbar) grt_printprogressBar("Computing Dispersion: ", progress*100/nf);
             }
-            grt_free_mod1d(local_mod1d);
+            grt_free_mod1d_state(locaL_mstat);
         }
     }
 
-#else
-    // 串行
-    for(size_t iw = 0; iw < nf; ++iw){
-        __CALL_SECULAR_ROOT(mod1d, iw);
-        // 记录进度条变量 
-        progress++;
-        if(print_progressbar) grt_printprogressBar("Computing Dispersion Curves: ", progress*100/nf);
-    }
-#endif
+    eigmet->neval = neval;
 
-FINISH:
+    FINISH:
 }

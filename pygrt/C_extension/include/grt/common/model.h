@@ -77,6 +77,8 @@ typedef struct {
     cplx_t uiz_R_EV[2][2];
     cplx_t uiz_R_EVL;
 
+    size_t neval;
+
 } MODEL1D_STATE;
 
 /**

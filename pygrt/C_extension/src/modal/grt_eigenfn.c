@@ -384,18 +384,20 @@ static real_t grt_get_group_velocity(const real_t omega, const real_t eigenK, co
 
 /** 根据 grt_eigenfn 的一些参数，计算本征函数、能量积分、群速度、相速度敏感核 */
 static void grt_eigenfn_egy_gdisp_phaseK_util(
-    GRT_MODEL1D *mod1d, EIGENFN_INFO *eigfnmet, const int ncols, 
+    MODEL1D *mod1d, EIGENFN_INFO *eigfnmet, const int ncols, 
     const bool calc_egfn, const bool calc_egyint)
 {
+    size_t nlay = mod1d->n;
+
     // 循环每个频率
     #pragma omp parallel for schedule(guided) default(shared)
     for(size_t iw = 0; iw < eigfnmet->nf; ++iw){
-        GRT_MODEL1D *local_mod1d = grt_copy_mod1d(mod1d);
+        MODEL1D_STATE *local_mstat = grt_init_mod1d_state(mod1d);
 
         real_t omega = PI2*eigfnmet->freqs[iw];
         EIGENV *eigv = eigfnmet->eigv + iw;
 
-        local_mod1d->omega = omega;
+        grt_update_mod1d_state_omega(local_mstat, omega, true);
         
         // 假设这些本征值都是从 iref 层的久期函数算出来的，
         // 1. 先根据 iref（z_i+）的垂直波函数，计算出每个物理分界面上侧（z_j-）和下侧（z_j+）的垂直波函数
@@ -403,46 +405,46 @@ static void grt_eigenfn_egy_gdisp_phaseK_util(
         for(size_t ic = 0; ic < eigv->n; ++ic){
             real_t cphase = eigv->c_roots[ic];
             
-            local_mod1d->c_phase = cphase;
-            local_mod1d->k = creal(omega)/cphase;
-            grt_mod1d_xa_xb(local_mod1d, local_mod1d->k);
+            local_mstat->c_phase = cphase;
+            local_mstat->k = creal(omega)/cphase;
+            grt_update_mod1d_state_k(local_mstat, local_mstat->k);
 
             size_t iref = eigv->c_roots_iref[ic];
 
             // 模型每个物理层介质下方 z_j+ 的垂直波函数
-            cplx_t (*mod_potRaylLove_Down)[ncols] = (cplx_t (*)[ncols])calloc(local_mod1d->n, sizeof(cplx_t)*ncols);
+            cplx_t (*mod_potRaylLove_Down)[ncols] = (cplx_t (*)[ncols])calloc(nlay, sizeof(cplx_t)*ncols);
             // 模型每个物理层介质上方 z_j- 的垂直波函数，申请 n+1 的内存，方便后续不必讨论“半空间中的上行波场”
-            cplx_t (*mod_potRaylLove_Up)[ncols] = (cplx_t (*)[ncols])calloc(local_mod1d->n+1, sizeof(cplx_t)*ncols);
+            cplx_t (*mod_potRaylLove_Up)[ncols] = (cplx_t (*)[ncols])calloc(nlay + 1, sizeof(cplx_t)*ncols);
 
             cplx_t potRaylLove[ncols];  memset(potRaylLove, 0, sizeof(cplx_t)*ncols);
             cplx_t potRaylLoveUp[ncols];  memset(potRaylLoveUp, 0, sizeof(cplx_t)*ncols);
             cplx_t secRaylLove = 0.0;
-            grt_secular_function_potential(local_mod1d, cphase, iref, eigfnmet->wtype, &secRaylLove, potRaylLove, potRaylLoveUp);
+            grt_secular_function_potential(local_mstat, cphase, iref, eigfnmet->wtype, &secRaylLove, potRaylLove, potRaylLoveUp);
  
             // 计算出每个物理分界面上侧（z_{j+1}-）和 下侧（z_j+）的垂直波函数
-            grt_get_mod_potential_Up_Down(local_mod1d, eigfnmet->wtype, ncols, iref, potRaylLove, potRaylLoveUp, mod_potRaylLove_Down, mod_potRaylLove_Up);
+            grt_get_mod_potential_Up_Down(local_mstat, eigfnmet->wtype, ncols, iref, potRaylLove, potRaylLoveUp, mod_potRaylLove_Down, mod_potRaylLove_Up);
 
             // 计算不同深度的本征函数
             if(calc_egfn){
                 grt_get_eigenfn_depths(
-                    local_mod1d, eigfnmet->wtype, ncols, 
+                    local_mstat, eigfnmet->wtype, ncols, 
                     mod_potRaylLove_Down, mod_potRaylLove_Up, eigfnmet, &eigfnmet->eigfn[iw][ic]);
             }
 
             // 计算能量积分
             if(calc_egyint){
                 grt_energy_integrals(
-                    local_mod1d, eigfnmet->wtype, ncols, 
+                    local_mstat, eigfnmet->wtype, ncols, 
                     mod_potRaylLove_Down, mod_potRaylLove_Up, eigfnmet, &eigfnmet->eigfn[iw][ic]);
                 // 计算群速度
-                eigfnmet->eigv[iw].g_roots[ic] = grt_get_group_velocity(omega, local_mod1d->k, eigfnmet->eigfn[iw][ic].egyint, eigfnmet->wtype);
+                eigfnmet->eigv[iw].g_roots[ic] = grt_get_group_velocity(omega, local_mstat->k, eigfnmet->eigfn[iw][ic].egyint, eigfnmet->wtype);
             }
 
             GRT_SAFE_FREE_PTR(mod_potRaylLove_Down);
             GRT_SAFE_FREE_PTR(mod_potRaylLove_Up);
         }
         
-        grt_free_mod1d(local_mod1d);
+        grt_free_mod1d_state(local_mstat);
     }
 
     
@@ -462,7 +464,7 @@ int eigenfn_main(int argc, char **argv){
     grt_read_cdisp(Ctrl->C.s_filepath, eigmet, &modelpath);
 
     // 读取模型（不插入震源和台站的虚拟层）
-    GRT_MODEL1D *mod1d = NULL;
+    MODEL1D *mod1d = NULL;
     if((mod1d = grt_read_mod1d_from_file(modelpath, -1.0, -1.0, true)) ==NULL){
         exit(EXIT_FAILURE);
     }

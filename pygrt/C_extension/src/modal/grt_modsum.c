@@ -416,27 +416,27 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 
 
 static void grt_modsum_grn_Rayl(
-    const GRT_MODEL1D *mod1d, const cplx_t (*mod_potRaylLove_Down)[GRT_RAYL_DIM], const cplx_t (*mod_potRaylLove_Up)[GRT_RAYL_DIM],
+    const MODEL1D_STATE *mstat, const cplx_t (*mod_potRaylLove_Down)[GRT_RAYL_DIM], const cplx_t (*mod_potRaylLove_Up)[GRT_RAYL_DIM],
     const cplx_t *egyint, const size_t nr, const real_t *rs, const size_t iw, 
     bool calc_upar, pcplxChnlGrid *grn, pcplxChnlGrid *grn_uiz, pcplxChnlGrid *grn_uir)
 {
     // 注意模型中并未插入震源层和接收层
-    size_t isrc = mod1d->isrc;
-    size_t ircv = mod1d->ircv;
+    size_t isrc = mstat->mod1d->isrc;
+    size_t ircv = mstat->mod1d->ircv;
 
-    real_t eigenK = mod1d->k;
+    real_t eigenK = mstat->k;
 
     // 震源层物性参数
-    cplx_t src_mu = mod1d->mu[isrc];
-    real_t src_rho = mod1d->Rho[isrc];
-    cplx_t src_a = eigenK * mod1d->xa[isrc];
-    cplx_t src_b = eigenK * mod1d->xb[isrc];
-    cplx_t src_Omg = eigenK*eigenK * (1.0 - 0.5*mod1d->cbcb[isrc]);
+    cplx_t src_mu = mstat->mu[isrc];
+    real_t src_rho = mstat->mod1d->Rho[isrc];
+    cplx_t src_a = eigenK * mstat->xa[isrc];
+    cplx_t src_b = eigenK * mstat->xb[isrc];
+    cplx_t src_Omg = eigenK*eigenK * (1.0 - 0.5*mstat->cbcb[isrc]);
 
     // 计算震源系数
     cplxChnlGrid src_coefD = {0};
     cplxChnlGrid src_coefU = {0};
-    grt_source_coef_PSV(mod1d, src_coefD, src_coefU);
+    grt_source_coef_PSV(mstat, src_coefD, src_coefU);
 
     // 构造所需的震源系数
     cplx_t fcoef[GRT_SRC_M_NUM][GRT_RAYL_DIM];
@@ -450,7 +450,7 @@ static void grt_modsum_grn_Rayl(
     // 计算震源处的本征函数
     cplx_t T0[GRT_RAYL_DIM][GRT_RAYL_DIM] = {0};
     cplx_t src_eigenfn[4] = {0};
-    grt_get_eigenfn_single_depth_Rayl(mod1d, mod_potRaylLove_Down, mod_potRaylLove_Up, T0, false, mod1d->depsrc, isrc, src_eigenfn);
+    grt_get_eigenfn_single_depth_Rayl(mstat, mod_potRaylLove_Down, mod_potRaylLove_Up, T0, false, mstat->mod1d->depsrc, isrc, src_eigenfn);
 
     // 构造公式中的 Fm^R 项
     cplx_t F_item[GRT_SRC_M_NUM] = {0};
@@ -462,12 +462,12 @@ static void grt_modsum_grn_Rayl(
     // 计算接收处的本征函数
     cplx_t rcv_eigenfn[4] = {0};
     cplx_t rcv_eigenfn_z[4] = {0};
-    grt_get_eigenfn_single_depth_Rayl(mod1d, mod_potRaylLove_Down, mod_potRaylLove_Up, T0, false, mod1d->deprcv, ircv, rcv_eigenfn);
+    grt_get_eigenfn_single_depth_Rayl(mstat, mod_potRaylLove_Down, mod_potRaylLove_Up, T0, false, mstat->mod1d->deprcv, ircv, rcv_eigenfn);
     if(calc_upar){
-        cplx_t xa = mod1d->xa[ircv];
-        cplx_t xb = mod1d->xb[ircv];
-        bool   isLiquid = mod1d->isLiquid[ircv];
-        real_t k = mod1d->k;
+        cplx_t xa = mstat->xa[ircv];
+        cplx_t xb = mstat->xb[ircv];
+        bool   isLiquid = mstat->mod1d->isLiquid[ircv];
+        real_t k = mstat->k;
 
         cplx_t ak = k*k*xa;
         cplx_t bk = k*k*xb;
@@ -479,7 +479,7 @@ static void grt_modsum_grn_Rayl(
         };
 
         if(! isLiquid){
-            grt_get_eigenfn_single_depth_Rayl(mod1d, mod_potRaylLove_Down, mod_potRaylLove_Up, T0_z, true, mod1d->deprcv, ircv, rcv_eigenfn_z);
+            grt_get_eigenfn_single_depth_Rayl(mstat, mod_potRaylLove_Down, mod_potRaylLove_Up, T0_z, true, mstat->mod1d->deprcv, ircv, rcv_eigenfn_z);
         }
     }
 
@@ -492,7 +492,7 @@ static void grt_modsum_grn_Rayl(
         int modr = GRT_SRC_M_ORDERS[im];
         // Rayleigh 波仅考虑 q, w 项
         
-        cplx_t aa = - 1.0/(4.0*src_rho*GRT_SQUARE(mod1d->omega));
+        cplx_t aa = - 1.0/(4.0*src_rho*GRT_SQUARE(mstat->omega));
 
         // Z  
         wcoef = rcv_eigenfn[1] * i_m[modr] * F_item[im] / dom * aa;
@@ -518,25 +518,25 @@ static void grt_modsum_grn_Rayl(
 
 
 static void grt_modsum_grn_Love(
-    const GRT_MODEL1D *mod1d, const cplx_t (*mod_potRaylLove_Down)[GRT_LOVE_DIM], const cplx_t (*mod_potRaylLove_Up)[GRT_LOVE_DIM],
+    const MODEL1D_STATE *mstat, const cplx_t (*mod_potRaylLove_Down)[GRT_LOVE_DIM], const cplx_t (*mod_potRaylLove_Up)[GRT_LOVE_DIM],
     const cplx_t *egyint, const size_t nr, const real_t *rs, const size_t iw, 
     bool calc_upar, pcplxChnlGrid *grn, pcplxChnlGrid *grn_uiz, pcplxChnlGrid *grn_uir)
 {
     // 注意模型中并未插入震源层和接收层
-    size_t isrc = mod1d->isrc;
-    size_t ircv = mod1d->ircv;
+    size_t isrc = mstat->mod1d->isrc;
+    size_t ircv = mstat->mod1d->ircv;
 
-    real_t eigenK = mod1d->k;
+    real_t eigenK = mstat->k;
 
     // 震源层物性参数
-    cplx_t src_mu = mod1d->mu[isrc];
-    real_t src_rho = mod1d->Rho[isrc];
-    cplx_t src_b = eigenK * mod1d->xb[isrc];
+    cplx_t src_mu = mstat->mu[isrc];
+    real_t src_rho = mstat->mod1d->Rho[isrc];
+    cplx_t src_b = eigenK * mstat->xb[isrc];
 
     // 计算震源系数
     cplxChnlGrid src_coefD = {0};
     cplxChnlGrid src_coefU = {0};
-    grt_source_coef_SH(mod1d, src_coefD, src_coefU);
+    grt_source_coef_SH(mstat, src_coefD, src_coefU);
 
     // 构造所需的震源系数
     cplx_t fcoef[GRT_SRC_M_NUM][GRT_LOVE_DIM] = {0};
@@ -548,7 +548,7 @@ static void grt_modsum_grn_Love(
     // 计算震源处的本征函数
     cplx_t T0[GRT_LOVE_DIM][GRT_LOVE_DIM] = {0};
     cplx_t src_eigenfn[4] = {0};
-    grt_get_eigenfn_single_depth_Love(mod1d, mod_potRaylLove_Down, mod_potRaylLove_Up, T0, false, mod1d->depsrc, isrc, src_eigenfn);
+    grt_get_eigenfn_single_depth_Love(mstat, mod_potRaylLove_Down, mod_potRaylLove_Up, T0, false, mstat->mod1d->depsrc, isrc, src_eigenfn);
 
     // 构造公式中的 Fm^L 项
     cplx_t F_item[GRT_SRC_M_NUM] = {0};
@@ -559,17 +559,17 @@ static void grt_modsum_grn_Love(
     // 计算接收处的本征函数
     cplx_t rcv_eigenfn[4] = {0};
     cplx_t rcv_eigenfn_z[4] = {0};
-    grt_get_eigenfn_single_depth_Love(mod1d, mod_potRaylLove_Down, mod_potRaylLove_Up, T0, false, mod1d->deprcv, ircv, rcv_eigenfn);
+    grt_get_eigenfn_single_depth_Love(mstat, mod_potRaylLove_Down, mod_potRaylLove_Up, T0, false, mstat->mod1d->deprcv, ircv, rcv_eigenfn);
     if(calc_upar){
-        cplx_t xb = mod1d->xb[ircv];
-        bool   isLiquid = mod1d->isLiquid[ircv];
-        real_t k = mod1d->k;
+        cplx_t xb = mstat->xb[ircv];
+        bool   isLiquid = mstat->mod1d->isLiquid[ircv];
+        real_t k = mstat->k;
 
         cplx_t bk = k*k*xb;
         cplx_t T0_z[GRT_LOVE_DIM][GRT_LOVE_DIM] = {{bk, -bk}};
 
         if(! isLiquid){
-            grt_get_eigenfn_single_depth_Love(mod1d, mod_potRaylLove_Down, mod_potRaylLove_Up, T0_z, true, mod1d->deprcv, ircv, rcv_eigenfn_z);
+            grt_get_eigenfn_single_depth_Love(mstat, mod_potRaylLove_Down, mod_potRaylLove_Up, T0_z, true, mstat->mod1d->deprcv, ircv, rcv_eigenfn_z);
         }
     }
 
@@ -583,7 +583,7 @@ static void grt_modsum_grn_Love(
         // Love 波仅考虑 v 项
         if(modr == 0)  continue;
         
-        cplx_t aa = - 1.0/(4.0*src_rho*GRT_SQUARE(mod1d->omega));
+        cplx_t aa = - 1.0/(4.0*src_rho*GRT_SQUARE(mstat->omega));
 
         // T
         vcoef = I * rcv_eigenfn[0] * i_m[modr] * F_item[im] / dom * aa;
@@ -602,16 +602,16 @@ static void grt_modsum_grn_Love(
 }
 
 static void grt_modsum_grn(
-    const GRT_MODEL1D *mod1d, const DISPER_TYPE wtype, const size_t ncols, 
+    const MODEL1D_STATE *mstat, const DISPER_TYPE wtype, const size_t ncols, 
     const cplx_t (*mod_potRaylLove_Down)[ncols], const cplx_t (*mod_potRaylLove_Up)[ncols],
     const cplx_t *egyint, const size_t nr, const real_t *rs, const size_t iw, 
     bool calc_upar, pcplxChnlGrid *grn, pcplxChnlGrid *grn_uiz, pcplxChnlGrid *grn_uir)
 {
     if(wtype == GRT_DISPERSION_RAYL && ncols == GRT_RAYL_DIM){
-        grt_modsum_grn_Rayl(mod1d, mod_potRaylLove_Down, mod_potRaylLove_Up, egyint, nr, rs, iw, calc_upar, grn, grn_uiz, grn_uir);
+        grt_modsum_grn_Rayl(mstat, mod_potRaylLove_Down, mod_potRaylLove_Up, egyint, nr, rs, iw, calc_upar, grn, grn_uiz, grn_uir);
     } 
     else if(wtype == GRT_DISPERSION_LOVE && ncols == GRT_LOVE_DIM) {
-        grt_modsum_grn_Love(mod1d, mod_potRaylLove_Down, mod_potRaylLove_Up, egyint, nr, rs, iw, calc_upar, grn, grn_uiz, grn_uir);
+        grt_modsum_grn_Love(mstat, mod_potRaylLove_Down, mod_potRaylLove_Up, egyint, nr, rs, iw, calc_upar, grn, grn_uiz, grn_uir);
     }
     else {
         GRTRaiseError("Wrong execution.");
@@ -619,7 +619,7 @@ static void grt_modsum_grn(
 
     // 对一些特殊情况的修正
     // 当震源和场点均位于地表时，可理论验证DS分量恒为0，这里直接赋0以避免后续的精度干扰
-    if(mod1d->depsrc == 0.0 && mod1d->deprcv == 0.0)
+    if(mstat->mod1d->depsrc == 0.0 && mstat->mod1d->deprcv == 0.0)
     {
         for(size_t ir = 0; ir < nr; ++ir){
             for(int c = 0; c < GRT_CHANNEL_NUM; ++c){
@@ -699,7 +699,7 @@ int modsum_main(int argc, char **argv){
     grt_read_cdisp(Ctrl->C.s_filepath, eigmet, &modelpath);
 
     // 读取模型（不插入震源和台站的虚拟层）
-    GRT_MODEL1D *mod1d = NULL;
+    MODEL1D *mod1d = NULL;
     if((mod1d = grt_read_mod1d_from_file(modelpath, -1.0, -1.0, true)) ==NULL){
         exit(EXIT_FAILURE);
     }
@@ -767,16 +767,18 @@ int modsum_main(int argc, char **argv){
 
     // Rayleigh or Love
     const int ncols = (eigmet->wtype == GRT_DISPERSION_RAYL)? GRT_RAYL_DIM : GRT_LOVE_DIM;
+    
+    size_t nlay = mod1d->n;
 
     // 循环所需要的频率
     #pragma omp parallel for schedule(guided) default(shared)
     for(size_t iw = 0; iw < eigfnmet->nf; ++iw){
-        GRT_MODEL1D *local_mod1d = grt_copy_mod1d(mod1d);
+        MODEL1D_STATE *local_mstat = grt_init_mod1d_state(mod1d);
 
         real_t omega = PI2*eigfnmet->freqs[iw];
         EIGENV *eigv = eigfnmet->eigv + iw;
-
-        local_mod1d->omega = omega;
+        
+        grt_update_mod1d_state_omega(local_mstat, omega, true);
         
         // 假设这些本征值都是从 iref 层的久期函数算出来的，
         // 1. 先根据 iref（z_i+）的垂直波函数，计算出每个物理分界面上侧（z_j-）和下侧（z_j+）的垂直波函数
@@ -784,33 +786,33 @@ int modsum_main(int argc, char **argv){
         for(size_t ic = 0; ic < eigv->n; ++ic){
             real_t cphase = eigv->c_roots[ic];
             
-            local_mod1d->c_phase = cphase;
-            local_mod1d->k = creal(omega)/cphase;
-            grt_mod1d_xa_xb(local_mod1d, local_mod1d->k);
+            local_mstat->c_phase = cphase;
+            local_mstat->k = creal(omega)/cphase;
+            grt_update_mod1d_state_k(local_mstat, local_mstat->k);
 
             size_t iref = eigv->c_roots_iref[ic];
 
             // 模型每个物理层介质下方 z_j+ 的垂直波函数
-            cplx_t (*mod_potRaylLove_Down)[ncols] = (cplx_t (*)[ncols])calloc(local_mod1d->n, sizeof(cplx_t)*ncols);
+            cplx_t (*mod_potRaylLove_Down)[ncols] = (cplx_t (*)[ncols])calloc(nlay, sizeof(cplx_t)*ncols);
             // 模型每个物理层介质上方 z_j- 的垂直波函数，申请 n+1 的内存，方便后续不必讨论“半空间中的上行波场”
-            cplx_t (*mod_potRaylLove_Up)[ncols] = (cplx_t (*)[ncols])calloc(local_mod1d->n+1, sizeof(cplx_t)*ncols);
+            cplx_t (*mod_potRaylLove_Up)[ncols] = (cplx_t (*)[ncols])calloc(nlay + 1, sizeof(cplx_t)*ncols);
 
             cplx_t potRaylLove[ncols];  memset(potRaylLove, 0, sizeof(cplx_t)*ncols);
             cplx_t potRaylLoveUp[ncols];  memset(potRaylLoveUp, 0, sizeof(cplx_t)*ncols);
             cplx_t secRaylLove = 0.0;
-            grt_secular_function_potential(local_mod1d, cphase, iref, eigfnmet->wtype, &secRaylLove, potRaylLove, potRaylLoveUp);
+            grt_secular_function_potential(local_mstat, cphase, iref, eigfnmet->wtype, &secRaylLove, potRaylLove, potRaylLoveUp);
  
             // 计算出每个物理分界面上侧（z_{j+1}-）和 下侧（z_j+）的垂直波函数
-            grt_get_mod_potential_Up_Down(local_mod1d, eigfnmet->wtype, ncols, iref, potRaylLove, potRaylLoveUp, mod_potRaylLove_Down, mod_potRaylLove_Up);
+            grt_get_mod_potential_Up_Down(local_mstat, eigfnmet->wtype, ncols, iref, potRaylLove, potRaylLoveUp, mod_potRaylLove_Down, mod_potRaylLove_Up);
 
             // 计算能量积分
             grt_energy_integrals(
-                local_mod1d, eigfnmet->wtype, ncols, 
+                local_mstat, eigfnmet->wtype, ncols, 
                 mod_potRaylLove_Down, mod_potRaylLove_Up, eigfnmet, &eigfnmet->eigfn[iw][ic]);
 
             // 计算面波格林函数
             grt_modsum_grn(
-                local_mod1d, eigfnmet->wtype, ncols, 
+                local_mstat, eigfnmet->wtype, ncols, 
                 mod_potRaylLove_Down, mod_potRaylLove_Up, eigfnmet->eigfn[iw][ic].egyint,
                 Ctrl->R.nr, Ctrl->R.rs, iw + fft_offset, 
                 Ctrl->e.active, grn, grn_uiz, grn_uir);
@@ -818,7 +820,8 @@ int modsum_main(int argc, char **argv){
             GRT_SAFE_FREE_PTR(mod_potRaylLove_Down);
             GRT_SAFE_FREE_PTR(mod_potRaylLove_Up);
         }
-        grt_free_mod1d(local_mod1d);
+
+        grt_free_mod1d_state(local_mstat);
     }
 
 

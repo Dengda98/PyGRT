@@ -25,7 +25,7 @@ typedef struct {
         bool active;
         char *s_modelpath;        ///< 模型路径
         const char *s_modelname;  ///< 模型名称
-        GRT_MODEL1D *mod1d;         ///< 模型结构体指针
+        MODEL1D *mod1d;         ///< 模型结构体指针
     } M;
     /* 相速度频散结果输出路径 */
     struct {
@@ -361,7 +361,7 @@ int eigenv_main(int argc, char **argv){
     if((Ctrl->M.mod1d = grt_read_mod1d_from_file(Ctrl->M.s_modelpath, -1.0, -1.0, true)) ==NULL){
         exit(EXIT_FAILURE);
     }
-    GRT_MODEL1D *mod1d = Ctrl->M.mod1d;
+    MODEL1D *mod1d = Ctrl->M.mod1d;
 
     // 目前边界条件暂有限制
     if( ! (mod1d->topbound==GRT_BOUND_FREE && mod1d->botbound==GRT_BOUND_HALFSPACE)){
@@ -414,7 +414,7 @@ int eigenv_main(int argc, char **argv){
     // 寻找久期函数零点
     grt_get_secular_roots(mod1d, eigmet, !Ctrl->s.active);
 
-    printf("# Number of evaluation: %zu\n", mod1d->neval);
+    printf("# Number of evaluation: %zu\n", eigmet->neval);
 
     if(Ctrl->X.active) goto FINISH;
 

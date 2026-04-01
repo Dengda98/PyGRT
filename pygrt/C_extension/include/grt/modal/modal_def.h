@@ -39,6 +39,8 @@ typedef struct {
     real_t rtol;   ///< 极小值处判断为零点的久期函数幅值的阈值
     real_t vgap;   ///< 零点与模型速度值之间的最小间隔
 
+    size_t neval;
+
     EIGENV *eigv;  ///< 不同频率的频散
 } EIGENV_INFO;
 
