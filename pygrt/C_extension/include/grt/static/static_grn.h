@@ -23,7 +23,7 @@
 /**
  * 积分计算Z, R, T三个分量静态格林函数的核心函数
  * 
- * @param[in,out]      mod1d            `GRT_MODEL1D` 结构体指针 
+ * @param[in,out]      mod1d            `MODEL1D` 结构体指针 
  * @param[in]      nr               震中距数量
  * @param[in]      rs               震中距数组 
  * @param[in,out]   Kmet            波数积分相关参数的结构体指针
@@ -36,7 +36,7 @@
  * 
  */
 void grt_integ_static_grn(
-    GRT_MODEL1D *mod1d, size_t nr, real_t *rs, K_INTEG_METHOD *Kmet,
+    MODEL1D *mod1d, size_t nr, real_t *rs, K_INTEG_METHOD *Kmet,
     bool calc_upar, 
     realChnlGrid grn[nr],
     realChnlGrid grn_uiz[nr],

@@ -20,7 +20,7 @@ typedef struct {
     struct {
         bool active;
         char *s_modelpath;
-        GRT_MODEL1D *mod1d;         ///< 模型结构体指针
+        MODEL1D *mod1d;         ///< 模型结构体指针
     } M;
     /** 震源和接收器深度 */
     struct {
@@ -223,7 +223,7 @@ int travt_main(int argc, char **argv){
     if((Ctrl->M.mod1d = grt_read_mod1d_from_file(Ctrl->M.s_modelpath, Ctrl->D.depsrc, Ctrl->D.deprcv, true)) == NULL){
         exit(EXIT_FAILURE);
     }
-    GRT_MODEL1D *mod1d = Ctrl->M.mod1d;
+    MODEL1D *mod1d = Ctrl->M.mod1d;
 
     printf("------------------------------------------------\n");
     printf(" Distance(km)     Tp(secs)         Ts(secs)     \n");

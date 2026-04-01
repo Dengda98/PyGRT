@@ -25,7 +25,7 @@
 
 
 real_t grt_discrete_integ(
-    GRT_MODEL1D *mod1d, real_t dk, real_t kmax, real_t keps,
+    MODEL1D_STATE *mstat, real_t dk, real_t kmax, real_t keps,
     size_t nr, real_t *rs, K_INTEG *K, FILE *fstats, GRT_KernelFunc kerfunc)
 {
     if(kmax == 0.0)  return 0.0;
@@ -47,8 +47,8 @@ real_t grt_discrete_integ(
         k += dk; 
 
         // 计算核函数 F(k, w)
-        kerfunc(mod1d, k, K->QWV, K->calc_upar, K->QWVz); 
-        if(mod1d->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
+        kerfunc(mstat, k, K->QWV, K->calc_upar, K->QWVz); 
+        if(mstat->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
         if(K->applyDCM){
             GRT_LOOP_ChnlGrid(im, c){

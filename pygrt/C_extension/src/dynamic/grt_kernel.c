@@ -26,7 +26,7 @@ typedef struct {
         bool active;
         char *s_modelpath;        ///< 模型路径
         const char *s_modelname;  ///< 模型名称
-        GRT_MODEL1D *mod1d;         ///< 模型结构体指针
+        MODEL1D *mod1d;         ///< 模型结构体指针
     } M;
     /** 震源和接收器深度 */
     struct {
@@ -390,7 +390,7 @@ int kernel_main(int argc, char **argv)
     if((Ctrl->M.mod1d = grt_read_mod1d_from_file(Ctrl->M.s_modelpath, Ctrl->D.depsrc, Ctrl->D.deprcv, true)) == NULL){
         exit(EXIT_FAILURE);
     }
-    GRT_MODEL1D *mod1d = Ctrl->M.mod1d;
+    MODEL1D *mod1d = Ctrl->M.mod1d;
     
     // 边界条件
     grt_set_mod1d_boundary(mod1d, Ctrl->B.topbound, Ctrl->B.botbound);
@@ -430,18 +430,12 @@ int kernel_main(int argc, char **argv)
         real_t w = PI2*freq;
         cplx_t omega = w - I*Ctrl->F.wI;
 
-        GRT_MODEL1D *local_mod1d = NULL;
-    #ifdef _OPENMP 
-        // 定义局部模型对象
-        local_mod1d = grt_copy_mod1d(mod1d);
-    #else 
-        local_mod1d = mod1d;
-    #endif
+        MODEL1D_STATE *local_mstat = grt_init_mod1d_state(mod1d);
 
         // 将 omega 计入模型结构体
-        local_mod1d->omega = omega;
+        local_mstat->omega = omega;
 
-        grt_attenuate_mod1d(local_mod1d, omega);
+        grt_update_mod1d_state_omega(local_mstat, omega);
 
         // 为当前频率创建波数积分记录文件
         FILE *fstats = NULL;
@@ -459,7 +453,7 @@ int kernel_main(int argc, char **argv)
         {
             real_t cc = Ctrl->C.c_phases[ic];
             real_t k = w/cc;
-            grt_kernel(local_mod1d, k, QWV, Ctrl->e.active, QWV_uiz);
+            grt_kernel(local_mstat, k, QWV, Ctrl->e.active, QWV_uiz);
 
             // 系数
             GRT_LOOP_ChnlGrid(im, c){
@@ -476,9 +470,7 @@ int kernel_main(int argc, char **argv)
 
         fclose(fstats);
 
-    #ifdef _OPENMP
-        grt_free_mod1d(local_mod1d);
-    #endif
+        grt_free_mod1d_state(local_mstat);
 
     }
 

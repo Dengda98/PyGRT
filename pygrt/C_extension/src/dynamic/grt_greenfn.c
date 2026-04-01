@@ -44,7 +44,7 @@ typedef struct {
         bool active;
         char *s_modelpath;        ///< 模型路径
         const char *s_modelname;  ///< 模型名称
-        GRT_MODEL1D *mod1d;         ///< 模型结构体指针
+        MODEL1D *mod1d;         ///< 模型结构体指针
     } M;
     /** 震源和接收器深度 */
     struct {
@@ -978,7 +978,7 @@ int greenfn_main(int argc, char **argv) {
     if((Ctrl->M.mod1d = grt_read_mod1d_from_file(Ctrl->M.s_modelpath, Ctrl->D.depsrc, Ctrl->D.deprcv, true)) == NULL){
         exit(EXIT_FAILURE);
     }
-    GRT_MODEL1D *mod1d = Ctrl->M.mod1d;
+    MODEL1D *mod1d = Ctrl->M.mod1d;
 
     // 边界条件
     grt_set_mod1d_boundary(mod1d, Ctrl->B.topbound, Ctrl->B.botbound);

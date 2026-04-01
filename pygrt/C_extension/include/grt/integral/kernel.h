@@ -15,9 +15,7 @@
 /**
  * 计算核函数的函数指针，动态与静态的接口一致
  */
-typedef void (*GRT_KernelFunc) (
-    GRT_MODEL1D *mod1d, const real_t k, cplxChnlGrid QWV,
-    bool calc_uiz, cplxChnlGrid QWV_uiz);
+typedef void (*GRT_KernelFunc) (MODEL1D_STATE *mstat, const real_t k, cplxChnlGrid QWV, bool calc_uiz, cplxChnlGrid QWV_uiz);
 
 
 /**
@@ -81,34 +79,26 @@ typedef void (*GRT_KernelFunc) (
  *  即空间划分为FA,AB,BL, 计算这三个广义层的系数矩阵，再讨论震源层和接收层的深浅，
  *  计算相应的矩阵。  
  *
- *  @param[in,out]     mod1d           `MODEL1D` 结构体指针
+ *  @param[in,out]     mstat       `MODEL1D_STATE` 结构体指针
  *  @param[in]     k               波数
  *  @param[out]    QWV             不同震源，不同阶数的核函数 \f$ q_m, w_m, v_m \f$
  *  @param[in]     calc_uiz        是否计算ui_z（位移u对坐标z的偏导）
  *  @param[out]    QWV_uiz         不同震源，不同阶数的核函数对z的偏导 \f$ \frac{\partial q_m}{\partial z}, \frac{\partial w_m}{\partial z}, \frac{\partial v_m}{\partial z} \f$
  * 
  */
-void grt_kernel(
-    GRT_MODEL1D *mod1d, const real_t k, cplxChnlGrid QWV,
-    bool calc_uiz, cplxChnlGrid QWV_uiz);
+void grt_kernel(MODEL1D_STATE *mstat, const real_t k, cplxChnlGrid QWV, bool calc_uiz, cplxChnlGrid QWV_uiz);
 
 /** 构建广义反射透射系数矩阵。作为 kernel 函数中的第一部分 */
-void grt_GRT_matrix(GRT_MODEL1D *mod1d, const real_t k);
+void grt_GRT_matrix(MODEL1D_STATE *mstat, const real_t k);
 
 /** 从广义 R/T 矩阵出发，计算每个震源对应的核函数 QWV。 作为 kernel 函数中的第二部分 */
-void grt_GRT_build_QWV(
-    GRT_MODEL1D *mod1d, cplxChnlGrid QWV,
-    bool calc_uiz, cplxChnlGrid QWV_uiz);
+void grt_GRT_build_QWV(MODEL1D_STATE *mstat, cplxChnlGrid QWV, bool calc_uiz, cplxChnlGrid QWV_uiz);
 
 /** 静态解的核函数 */
-void grt_static_kernel(
-    GRT_MODEL1D *mod1d, const real_t k, cplxChnlGrid QWV,
-    bool calc_uiz, cplxChnlGrid QWV_uiz);
+void grt_static_kernel(MODEL1D_STATE *mstat, const real_t k, cplxChnlGrid QWV, bool calc_uiz, cplxChnlGrid QWV_uiz);
 
 /** 静态广义反射透射系数矩阵 */
-void grt_static_GRT_matrix(GRT_MODEL1D *mod1d, const real_t k);
+void grt_static_GRT_matrix(MODEL1D_STATE *mstat, const real_t k);
 
 /** 静态 QWV */
-void grt_static_GRT_build_QWV(
-    GRT_MODEL1D *mod1d, cplxChnlGrid QWV,
-    bool calc_uiz, cplxChnlGrid QWV_uiz);
+void grt_static_GRT_build_QWV(MODEL1D_STATE *mstat, cplxChnlGrid QWV, bool calc_uiz, cplxChnlGrid QWV_uiz);

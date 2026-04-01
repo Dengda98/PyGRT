@@ -61,30 +61,30 @@ inline GCC_ALWAYS_INLINE void _source_SH(const real_t k, cplxChnlGrid coefD, cpl
 }
 
 
-void grt_static_source_coef(const GRT_MODEL1D *mod1d, cplxChnlGrid src_coefD, cplxChnlGrid src_coefU)
+void grt_static_source_coef(const MODEL1D_STATE *mstat, cplxChnlGrid src_coefD, cplxChnlGrid src_coefU)
 {
     // 先全部赋0 
     memset(src_coefD, 0, sizeof(cplxChnlGrid));
     memset(src_coefU, 0, sizeof(cplxChnlGrid));
     
-    grt_static_source_coef_PSV(mod1d, src_coefD, src_coefU);
-    grt_static_source_coef_SH(mod1d, src_coefD, src_coefU);
+    grt_static_source_coef_PSV(mstat, src_coefD, src_coefU);
+    grt_static_source_coef_SH(mstat, src_coefD, src_coefU);
 }
 
 
-void grt_static_source_coef_PSV(const GRT_MODEL1D *mod1d, cplxChnlGrid src_coefD, cplxChnlGrid src_coefU)
+void grt_static_source_coef_PSV(const MODEL1D_STATE *mstat, cplxChnlGrid src_coefD, cplxChnlGrid src_coefU)
 {
-    size_t isrc = mod1d->isrc;
-    cplx_t delta = mod1d->delta[isrc];
-    real_t k = mod1d->k;
+    size_t isrc = mstat->mod1d->isrc;
+    cplx_t delta = mstat->delta[isrc];
+    real_t k = mstat->k;
 
     _source_PSV(delta, k, src_coefD, src_coefU);
 }
 
 
-void grt_static_source_coef_SH(const GRT_MODEL1D *mod1d, cplxChnlGrid src_coefD, cplxChnlGrid src_coefU)
+void grt_static_source_coef_SH(const MODEL1D_STATE *mstat, cplxChnlGrid src_coefD, cplxChnlGrid src_coefU)
 {
-    real_t k = mod1d->k;
+    real_t k = mstat->k;
     
     _source_SH(k, src_coefD, src_coefU);
 }

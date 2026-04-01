@@ -57,27 +57,27 @@
 #define __grt_wave2qwv_z_REV_SH   CONCAT_PREFIX(wave2qwv_z_REV_SH)
 
 
-void __GRT_MATRIX_FUNC__(GRT_MODEL1D *mod1d, const real_t k)
+void __GRT_MATRIX_FUNC__(MODEL1D_STATE *mstat, const real_t k)
 {
-    mod1d->k = k;
+    mstat->k = k;
     // 为动态解计算xa,xb,caca,cbcb
     #if defined(__DYNAMIC_KERNEL__)
-        grt_mod1d_xa_xb(mod1d, k);
+        grt_update_mod1d_state_k(mstat, k);
     #endif
 
-    size_t isrc = mod1d->isrc; // 震源所在虚拟层位, isrc>=1
-    size_t ircv = mod1d->ircv; // 接收点所在虚拟层位, ircv>=1, ircv != isrc
+    size_t isrc = mstat->mod1d->isrc; // 震源所在虚拟层位, isrc>=1
+    size_t ircv = mstat->mod1d->ircv; // 接收点所在虚拟层位, ircv>=1, ircv != isrc
     size_t imin, imax; // 相对浅层深层层位
     imin = GRT_MIN(isrc, ircv);
     imax = GRT_MAX(isrc, ircv);
 
     // 广义层的反射透射系数
-    RT_MATRIX *M_BL = &mod1d->M_BL;
-    RT_MATRIX *M_RS = &mod1d->M_RS;
-    RT_MATRIX *M_FA = &mod1d->M_FA;
+    RT_MATRIX *M_BL = &mstat->M_BL;
+    RT_MATRIX *M_RS = &mstat->M_RS;
+    RT_MATRIX *M_FA = &mstat->M_FA;
     // 顶底界面
-    RT_MATRIX *M_top = &mod1d->M_top;
-    RT_MATRIX *M_bot = &mod1d->M_bot;
+    RT_MATRIX *M_top = &mstat->M_top;
+    RT_MATRIX *M_bot = &mstat->M_bot;
 
     grt_reset_RT_matrix(M_BL);
     grt_reset_RT_matrix(M_RS);
@@ -85,8 +85,10 @@ void __GRT_MATRIX_FUNC__(GRT_MODEL1D *mod1d, const real_t k)
     grt_reset_RT_matrix(M_top);
     grt_reset_RT_matrix(M_bot);
 
+    size_t nlay = mstat->mod1d->n;
+
     // 从顶到底进行矩阵递推, 公式(5.5.3)
-    size_t maxidx = (imax+1 == mod1d->n)? mod1d->n : mod1d->n - 1;
+    size_t maxidx = (imax+1 == nlay)? nlay : nlay - 1;
     for(size_t iy = 1; iy < maxidx; ++iy) // 因为n>=3, 故一定会进入该循环
     {   
         // 定义物理层内的反射透射系数矩阵
@@ -99,15 +101,15 @@ void __GRT_MATRIX_FUNC__(GRT_MODEL1D *mod1d, const real_t k)
         if(iy != isrc && iy != ircv){
         #endif
             // 对第iy层的系数矩阵赋值
-            __grt_RT_matrix_PSV(mod1d, iy, M);
-            __grt_RT_matrix_SH(mod1d, iy, M);
+            __grt_RT_matrix_PSV(mstat, iy, M);
+            __grt_RT_matrix_SH(mstat, iy, M);
             if(M->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
         #ifdef __DYNAMIC_KERNEL__
         }
         #endif
 
         // 加入时间延迟因子(第iy-1界面与第iy界面之间)
-        __grt_delay_RT_matrix(mod1d, iy, M);
+        __grt_delay_RT_matrix(mstat, iy, M);
 
         // FA
         if(iy <= imin){ 
@@ -116,7 +118,7 @@ void __GRT_MATRIX_FUNC__(GRT_MODEL1D *mod1d, const real_t k)
             }
             #ifdef __DYNAMIC_KERNEL__
             else if(iy == imin){
-                grt_delay_GRT_matrix(mod1d, iy, M_FA);
+                grt_delay_GRT_matrix(mstat, iy, M_FA);
             }
             #endif
             else { // 递推FA
@@ -131,7 +133,7 @@ void __GRT_MATRIX_FUNC__(GRT_MODEL1D *mod1d, const real_t k)
             }
             #ifdef __DYNAMIC_KERNEL__
             else if(iy == imax){
-                grt_delay_GRT_matrix(mod1d, iy, M_RS);
+                grt_delay_GRT_matrix(mstat, iy, M_RS);
             }
             #endif
             else { // 递推RS
@@ -155,16 +157,16 @@ void __GRT_MATRIX_FUNC__(GRT_MODEL1D *mod1d, const real_t k)
     //===================================================================================
 
     // 递推RU_FA
-    __grt_topbound_RU_PSV(mod1d);
-    __grt_topbound_RU_SH(mod1d);
+    __grt_topbound_RU_PSV(mstat);
+    __grt_topbound_RU_SH(mstat);
     if(M_top->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
     grt_recursion_RU(M_top, M_FA, M_FA);
     if(M_FA->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
     // 递推RD_BL, 在模型定义阶段已检查震源/台站的虚拟层成为底层时，只能是半无限空间
-    if(imax+1 < mod1d->n){ // 此 if 仅减少不必要的计算
-        __grt_botbound_RD_PSV(mod1d);
-        __grt_botbound_RD_SH(mod1d);
+    if(imax+1 < nlay){ // 此 if 仅减少不必要的计算
+        __grt_botbound_RD_PSV(mstat);
+        __grt_botbound_RD_SH(mstat);
         if(M_bot->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
         grt_recursion_RD(M_BL, M_bot, M_BL);
         if(M_BL->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
@@ -176,26 +178,25 @@ void __GRT_MATRIX_FUNC__(GRT_MODEL1D *mod1d, const real_t k)
 }
 
 
-void __BUILD_QWV__(
-    GRT_MODEL1D *mod1d, cplxChnlGrid QWV,
-    bool calc_uiz, cplxChnlGrid QWV_uiz)
+void __BUILD_QWV__(MODEL1D_STATE *mstat, cplxChnlGrid QWV, bool calc_uiz, cplxChnlGrid QWV_uiz)
 {
     // 初始化qwv为0
     memset(QWV, 0, sizeof(cplxChnlGrid));
     if(calc_uiz)  memset(QWV_uiz, 0, sizeof(cplxChnlGrid));
 
+    MODEL1D *mod1d = mstat->mod1d;
     bool ircvup = mod1d->ircvup;
     // 广义层的反射透射系数
-    RT_MATRIX *M_BL = &mod1d->M_BL;
-    RT_MATRIX *M_AL = &mod1d->M_AL;
-    RT_MATRIX *M_RS = &mod1d->M_RS;
-    RT_MATRIX *M_FA = &mod1d->M_FA;
-    RT_MATRIX *M_FB = &mod1d->M_FB;
+    RT_MATRIX *M_BL = &mstat->M_BL;
+    RT_MATRIX *M_AL = &mstat->M_AL;
+    RT_MATRIX *M_RS = &mstat->M_RS;
+    RT_MATRIX *M_FA = &mstat->M_FA;
+    RT_MATRIX *M_FB = &mstat->M_FB;
 
     // 计算震源系数 P_m, SV_m, SH_m 
     cplxChnlGrid src_coefD;
     cplxChnlGrid src_coefU;
-    __grt_source_coef(mod1d, src_coefD, src_coefU);
+    __grt_source_coef(mstat, src_coefD, src_coefU);
 
     // 临时中转矩阵 (temperary)
     cplx_t tmpR2[2][2], tmp2x2[2][2], tmpRL, tmp2x2_uiz[2][2], tmpRL2;
@@ -204,8 +205,8 @@ void __BUILD_QWV__(
     if(ircvup){ // A接收  B震源
 
         // 计算R_EV
-        __grt_wave2qwv_REV_PSV(mod1d);
-        __grt_wave2qwv_REV_SH(mod1d);
+        __grt_wave2qwv_REV_PSV(mstat);
+        __grt_wave2qwv_REV_SH(mstat);
 
         // 递推RU_FS
         grt_recursion_RU(M_FA, M_RS, M_FB); // 已从ZR变为FR，加入了自由表面的效应
@@ -219,18 +220,18 @@ void __BUILD_QWV__(
 
         if(calc_uiz) grt_cmat2x2_assign(tmp2x2, tmp2x2_uiz); // 为后续计算空间导数备份
 
-        grt_cmat2x2_mul(mod1d->R_EV, tmp2x2, tmp2x2);
+        grt_cmat2x2_mul(mstat->R_EV, tmp2x2, tmp2x2);
         tmpRL = M_FB->invTL  / (1.0 - M_BL->RDL * M_FB->RUL);
-        tmpRL2 = mod1d->R_EVL * tmpRL;
+        tmpRL2 = mstat->R_EVL * tmpRL;
 
         grt_construct_qwv(ircvup, tmp2x2, tmpRL2, M_BL->RD, M_BL->RDL, src_coefD, src_coefU, QWV);
 
 
         if(calc_uiz){
-            __grt_wave2qwv_z_REV_PSV(mod1d);
-            __grt_wave2qwv_z_REV_SH(mod1d);
-            grt_cmat2x2_mul(mod1d->uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
-            tmpRL2 = mod1d->uiz_R_EVL * tmpRL;
+            __grt_wave2qwv_z_REV_PSV(mstat);
+            __grt_wave2qwv_z_REV_SH(mstat);
+            grt_cmat2x2_mul(mstat->uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
+            tmpRL2 = mstat->uiz_R_EVL * tmpRL;
 
             grt_construct_qwv(ircvup, tmp2x2_uiz, tmpRL2, M_BL->RD, M_BL->RDL, src_coefD, src_coefU, QWV_uiz);
         }
@@ -238,8 +239,8 @@ void __BUILD_QWV__(
     else { // A震源  B接收
 
         // 计算R_EV
-        __grt_wave2qwv_REV_PSV(mod1d);    
-        __grt_wave2qwv_REV_SH(mod1d);    
+        __grt_wave2qwv_REV_PSV(mstat);    
+        __grt_wave2qwv_REV_SH(mstat);    
 
         // 递推RD_SL
         grt_recursion_RD(M_RS, M_BL, M_AL);
@@ -253,18 +254,18 @@ void __BUILD_QWV__(
 
         if(calc_uiz) grt_cmat2x2_assign(tmp2x2, tmp2x2_uiz); // 为后续计算空间导数备份
 
-        grt_cmat2x2_mul(mod1d->R_EV, tmp2x2, tmp2x2);
+        grt_cmat2x2_mul(mstat->R_EV, tmp2x2, tmp2x2);
         tmpRL = M_AL->invTL / (1.0 - M_FA->RUL * M_AL->RDL);
-        tmpRL2 = mod1d->R_EVL * tmpRL;
+        tmpRL2 = mstat->R_EVL * tmpRL;
 
         grt_construct_qwv(ircvup, tmp2x2, tmpRL2, M_FA->RU, M_FA->RUL, src_coefD, src_coefU, QWV);
 
 
         if(calc_uiz){
-            __grt_wave2qwv_z_REV_PSV(mod1d);    
-            __grt_wave2qwv_z_REV_SH(mod1d);    
-            grt_cmat2x2_mul(mod1d->uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
-            tmpRL2 = mod1d->uiz_R_EVL * tmpRL;
+            __grt_wave2qwv_z_REV_PSV(mstat);    
+            __grt_wave2qwv_z_REV_SH(mstat);    
+            grt_cmat2x2_mul(mstat->uiz_R_EV, tmp2x2_uiz, tmp2x2_uiz);
+            tmpRL2 = mstat->uiz_R_EVL * tmpRL;
             
             grt_construct_qwv(ircvup, tmp2x2_uiz, tmpRL2, M_FA->RU, M_FA->RUL, src_coefD, src_coefU, QWV_uiz);
         }
@@ -287,12 +288,10 @@ void __BUILD_QWV__(
 }
 
 
-void __KERNEL_FUNC__(
-    GRT_MODEL1D *mod1d, const real_t k, cplxChnlGrid QWV,
-    bool calc_uiz, cplxChnlGrid QWV_uiz)
+void __KERNEL_FUNC__(MODEL1D_STATE *mstat, const real_t k, cplxChnlGrid QWV, bool calc_uiz, cplxChnlGrid QWV_uiz)
 {
-    __GRT_MATRIX_FUNC__(mod1d, k);
-    __BUILD_QWV__(mod1d, QWV, calc_uiz, QWV_uiz);
+    __GRT_MATRIX_FUNC__(mstat, k);
+    __BUILD_QWV__(mstat, QWV, calc_uiz, QWV_uiz);
 }
 
 

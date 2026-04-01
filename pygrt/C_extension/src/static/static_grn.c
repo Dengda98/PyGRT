@@ -59,7 +59,7 @@ static void recordin_GRN(
 
 
 void grt_integ_static_grn(
-    GRT_MODEL1D *mod1d, size_t nr, real_t *rs, K_INTEG_METHOD *Kmet,
+    MODEL1D *mod1d, size_t nr, real_t *rs, K_INTEG_METHOD *Kmet,
     bool calc_upar, 
     realChnlGrid grn[nr],
     realChnlGrid grn_uiz[nr],
@@ -95,9 +95,12 @@ void grt_integ_static_grn(
     //                          Wavenumber Integration
     // 波数积分上限
     Kmet->kmax = Kmet->k0;
-    K_INTEG *Kint = grt_wavenumber_integral(mod1d, uniq_nr, uniq_rs, Kmet, calc_upar, grt_static_kernel);
+    // 模型状态
+    MODEL1D_STATE *mstat = grt_init_mod1d_state(mod1d);
+    grt_update_mod1d_state_omega(mstat, -1.0);
+    K_INTEG *Kint = grt_wavenumber_integral(mstat, uniq_nr, uniq_rs, Kmet, calc_upar, grt_static_kernel);
     
-    cplx_t src_mu = mod1d->mu[mod1d->isrc];
+    cplx_t src_mu = mstat->mu[mod1d->isrc];
     cplx_t fac = Kmet->dk * 1.0/(4.0*PI * src_mu);
     
     // 将积分结果记录到浮点数数组中
@@ -125,6 +128,7 @@ void grt_integ_static_grn(
 
     // Free allocated memory for temporary variables
     grt_free_K_INTEG(Kint);
+    grt_free_mod1d_state(mstat);
 
     if(needfstats)  grt_KMET_destroy_fstats(uniq_nr, Kmet);
 

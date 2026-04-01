@@ -24,7 +24,7 @@
  * 传统的离散波数积分，结果以三维数组的形式返回，形状分别代表震中距、不同震源不同阶数
  * 和4种积分类型(p=0,1,2,3)
  * 
- * @param[in,out] mod1d         `GRT_MODEL1D` 结构体指针
+ * @param[in,out] mstat         `MODEL1D_STATE` 结构体指针
  * @param[in]     dk            波数积分间隔
  * @param[in]     kmax          波数积分的上限
  * @param[in]     keps          波数积分的收敛条件，要求在某震中距下所有格林函数都收敛，为负数代表不提前判断收敛，按照波数积分上限进行积分
@@ -39,5 +39,5 @@
  * @return  k        积分截至时的波数
  */
 real_t grt_discrete_integ(
-    GRT_MODEL1D *mod1d, real_t dk, real_t kmax, real_t keps,
+    MODEL1D_STATE *mstat, real_t dk, real_t kmax, real_t keps,
     size_t nr, real_t *rs, K_INTEG *K, FILE *fstats, GRT_KernelFunc kerfunc);

@@ -49,7 +49,7 @@ class PyModel1D:
         '''
         self.depsrc:float = depsrc 
         self.deprcv:float = deprcv 
-        self.c_mod1d:c_GRT_MODEL1D 
+        self.c_mod1d:c_MODEL1D 
         self.topbound:str = topbound
         self.botbound:str = botbound
         self.hasLiquid = False
