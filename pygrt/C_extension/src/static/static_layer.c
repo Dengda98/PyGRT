@@ -21,9 +21,9 @@
 #include "grt/common/matrix.h"
 
 /* 定义用于提取相邻两层物性参数的宏 */
-#define MODEL_2LAYS_ATTRIB(T, N) \
-    T N##1 = mod1d->N[iy-1];\
-    T N##2 = mod1d->N[iy];\
+#define MODEL_2LAYS_ATTRIB(MM, T, N) \
+    T N##1 = MM->N[iy-1];\
+    T N##2 = MM->N[iy];\
 
 
 static int __freeBound_R_PSV(real_t d, real_t k, cplx_t delta1, cplx_t M[2][2])
@@ -67,19 +67,20 @@ static int __rigidBound_R_SH(cplx_t *ML)
     return GRT_INVERSE_SUCCESS;
 }
 
-void grt_static_topbound_RU_PSV(MODEL1D *mod1d)
+void grt_static_topbound_RU_PSV(MODEL1D_STATE *mstat)
 {
-    cplx_t delta = mod1d->delta[0];
-    real_t k = mod1d->k;
+    MODEL1D *mod1d = mstat->mod1d;
+    cplx_t delta = mstat->delta[0];
+    real_t k = mstat->k;
     if(mod1d->topbound == GRT_BOUND_FREE){
-        mod1d->M_top.stats = __freeBound_R_PSV(0.0, k, delta, mod1d->M_top.RU);
+        mstat->M_top.stats = __freeBound_R_PSV(0.0, k, delta, mstat->M_top.RU);
     }
     else if(mod1d->topbound == GRT_BOUND_RIGID){
-        mod1d->M_top.stats = __rigidBound_R_PSV(0.0, k, delta, mod1d->M_top.RU);
+        mstat->M_top.stats = __rigidBound_R_PSV(0.0, k, delta, mstat->M_top.RU);
     }
     else if(mod1d->topbound == GRT_BOUND_HALFSPACE){
-        memset(mod1d->M_top.RU, 0, sizeof(cplx_t)*4);
-        mod1d->M_top.stats = GRT_INVERSE_SUCCESS;
+        memset(mstat->M_top.RU, 0, sizeof(cplx_t)*4);
+        mstat->M_top.stats = GRT_INVERSE_SUCCESS;
     }
     else{
         GRTRaiseError("Wrong execution.");
@@ -87,17 +88,18 @@ void grt_static_topbound_RU_PSV(MODEL1D *mod1d)
     // RU 不需要时延
 }
 
-void grt_static_topbound_RU_SH(MODEL1D *mod1d)
+void grt_static_topbound_RU_SH(MODEL1D_STATE *mstat)
 {
+    MODEL1D *mod1d = mstat->mod1d;
     if(mod1d->topbound == GRT_BOUND_FREE){
-        mod1d->M_top.stats = __freeBound_R_SH(&mod1d->M_top.RUL);
+        mstat->M_top.stats = __freeBound_R_SH(&mstat->M_top.RUL);
     }
     else if(mod1d->topbound == GRT_BOUND_RIGID){
-        mod1d->M_top.stats = __rigidBound_R_SH(&mod1d->M_top.RUL);
+        mstat->M_top.stats = __rigidBound_R_SH(&mstat->M_top.RUL);
     }
     else if(mod1d->topbound == GRT_BOUND_HALFSPACE){
-        mod1d->M_top.RUL = 0.0;
-        mod1d->M_top.stats = GRT_INVERSE_SUCCESS;
+        mstat->M_top.RUL = 0.0;
+        mstat->M_top.stats = GRT_INVERSE_SUCCESS;
     }
     else{
         GRTRaiseError("Wrong execution.");
@@ -105,20 +107,21 @@ void grt_static_topbound_RU_SH(MODEL1D *mod1d)
     // RU 不需要时延
 }
 
-void grt_static_botbound_RD_PSV(MODEL1D *mod1d)
+void grt_static_botbound_RD_PSV(MODEL1D_STATE *mstat)
 {
+    MODEL1D *mod1d = mstat->mod1d;
     size_t nlay = mod1d->n;
-    cplx_t delta = mod1d->delta[nlay-2];
+    cplx_t delta = mstat->delta[nlay-2];
     real_t thk = mod1d->Thk[nlay-2];
-    real_t k = mod1d->k;
+    real_t k = mstat->k;
     if(mod1d->botbound == GRT_BOUND_FREE){
-        mod1d->M_bot.stats = __freeBound_R_PSV(thk, k, delta, mod1d->M_bot.RD);
+        mstat->M_bot.stats = __freeBound_R_PSV(thk, k, delta, mstat->M_bot.RD);
     }
     else if(mod1d->botbound == GRT_BOUND_RIGID){
-        mod1d->M_bot.stats = __rigidBound_R_PSV(thk, k, delta, mod1d->M_bot.RD);
+        mstat->M_bot.stats = __rigidBound_R_PSV(thk, k, delta, mstat->M_bot.RD);
     }
     else if(mod1d->botbound == GRT_BOUND_HALFSPACE){
-        grt_static_RT_matrix_PSV(mod1d, nlay-1, &mod1d->M_bot);
+        grt_static_RT_matrix_PSV(mstat, nlay-1, &mstat->M_bot);
     }
     else{
         GRTRaiseError("Wrong execution.");
@@ -129,23 +132,24 @@ void grt_static_botbound_RD_PSV(MODEL1D *mod1d)
     ex = exp(- k*thk);
     ex2 = ex * ex;
 
-    mod1d->M_bot.RD[0][0] *= ex2;   mod1d->M_bot.RD[0][1] *= ex2;
-    mod1d->M_bot.RD[1][0] *= ex2;   mod1d->M_bot.RD[1][1] *= ex2;
+    mstat->M_bot.RD[0][0] *= ex2;   mstat->M_bot.RD[0][1] *= ex2;
+    mstat->M_bot.RD[1][0] *= ex2;   mstat->M_bot.RD[1][1] *= ex2;
 }
 
-void grt_static_botbound_RD_SH(MODEL1D *mod1d)
+void grt_static_botbound_RD_SH(MODEL1D_STATE *mstat)
 {
+    MODEL1D *mod1d = mstat->mod1d;
     size_t nlay = mod1d->n;
     real_t thk = mod1d->Thk[nlay-2];
-    real_t k = mod1d->k;
+    real_t k = mstat->k;
     if(mod1d->botbound == GRT_BOUND_FREE){
-        mod1d->M_bot.stats = __freeBound_R_SH(&mod1d->M_bot.RDL);
+        mstat->M_bot.stats = __freeBound_R_SH(&mstat->M_bot.RDL);
     }
     else if(mod1d->botbound == GRT_BOUND_RIGID){
-        mod1d->M_bot.stats = __rigidBound_R_SH(&mod1d->M_bot.RDL);
+        mstat->M_bot.stats = __rigidBound_R_SH(&mstat->M_bot.RDL);
     }
     else if(mod1d->botbound == GRT_BOUND_HALFSPACE){
-        grt_static_RT_matrix_SH(mod1d, nlay-1, &mod1d->M_bot);
+        grt_static_RT_matrix_SH(mstat, nlay-1, &mstat->M_bot);
     }
     else{
         GRTRaiseError("Wrong execution.");
@@ -156,70 +160,71 @@ void grt_static_botbound_RD_SH(MODEL1D *mod1d)
     ex = exp(- k*thk);
     ex2 = ex * ex;
 
-    mod1d->M_bot.RDL *= ex2;
+    mstat->M_bot.RDL *= ex2;
 }
 
-void grt_static_wave2qwv_REV_PSV(MODEL1D *mod1d)
+void grt_static_wave2qwv_REV_PSV(MODEL1D_STATE *mstat)
 {
     cplx_t D11[2][2] = {{1.0, -1.0}, {1.0, 1.0}};
     cplx_t D12[2][2] = {{1.0, -1.0}, {-1.0, -1.0}};
 
     // 公式(6.3.35,37)
-    if(mod1d->ircvup){// 震源更深
-        grt_cmat2x2_mul(D12, mod1d->M_FA.RU, mod1d->R_EV);
-        grt_cmat2x2_add(D11, mod1d->R_EV, mod1d->R_EV);
+    if(mstat->mod1d->ircvup){// 震源更深
+        grt_cmat2x2_mul(D12, mstat->M_FA.RU, mstat->R_EV);
+        grt_cmat2x2_add(D11, mstat->R_EV, mstat->R_EV);
     } else { // 接收点更深
-        grt_cmat2x2_mul(D11, mod1d->M_BL.RD, mod1d->R_EV);
-        grt_cmat2x2_add(D12, mod1d->R_EV, mod1d->R_EV);
+        grt_cmat2x2_mul(D11, mstat->M_BL.RD, mstat->R_EV);
+        grt_cmat2x2_add(D12, mstat->R_EV, mstat->R_EV);
     }
 }
 
-void grt_static_wave2qwv_REV_SH(MODEL1D *mod1d)
+void grt_static_wave2qwv_REV_SH(MODEL1D_STATE *mstat)
 {
-    if(mod1d->ircvup){// 震源更深
-        mod1d->R_EVL = 1.0 + mod1d->M_FA.RUL;
+    if(mstat->mod1d->ircvup){// 震源更深
+        mstat->R_EVL = 1.0 + mstat->M_FA.RUL;
     } else {
-        mod1d->R_EVL = 1.0 + mod1d->M_BL.RDL;
+        mstat->R_EVL = 1.0 + mstat->M_BL.RDL;
     }
 }
 
-void grt_static_wave2qwv_z_REV_PSV(MODEL1D *mod1d)
+void grt_static_wave2qwv_z_REV_PSV(MODEL1D_STATE *mstat)
 {
-    real_t k = mod1d->k;
+    MODEL1D *mod1d = mstat->mod1d;
+    real_t k = mstat->k;
     size_t ircv = mod1d->ircv;
-    cplx_t delta1 = mod1d->delta[ircv];
+    cplx_t delta1 = mstat->delta[ircv];
 
     // 新推导公式
     cplx_t kd2 = 2.0*k*delta1;
     cplx_t D11[2][2] = {{k, -k-kd2}, {k, k-kd2}};
     cplx_t D12[2][2] = {{-k, k+kd2}, {k, k-kd2}};
     if(mod1d->ircvup){// 震源更深
-        grt_cmat2x2_mul(D12, mod1d->M_FA.RU, mod1d->uiz_R_EV);
-        grt_cmat2x2_add(D11, mod1d->uiz_R_EV, mod1d->uiz_R_EV);
+        grt_cmat2x2_mul(D12, mstat->M_FA.RU, mstat->uiz_R_EV);
+        grt_cmat2x2_add(D11, mstat->uiz_R_EV, mstat->uiz_R_EV);
     } else { // 接收点更深
-        grt_cmat2x2_mul(D11, mod1d->M_BL.RD, mod1d->uiz_R_EV);
-        grt_cmat2x2_add(D12, mod1d->uiz_R_EV, mod1d->uiz_R_EV);
+        grt_cmat2x2_mul(D11, mstat->M_BL.RD, mstat->uiz_R_EV);
+        grt_cmat2x2_add(D12, mstat->uiz_R_EV, mstat->uiz_R_EV);
     }
 }
 
-void grt_static_wave2qwv_z_REV_SH(MODEL1D *mod1d)
+void grt_static_wave2qwv_z_REV_SH(MODEL1D_STATE *mstat)
 {
-    real_t k = mod1d->k;
+    real_t k = mstat->k;
     // 新推导公式
-    if(mod1d->ircvup){// 震源更深
-        mod1d->uiz_R_EVL = (1.0 - mod1d->M_FA.RUL)*k;
+    if(mstat->mod1d->ircvup){// 震源更深
+        mstat->uiz_R_EVL = (1.0 - mstat->M_FA.RUL)*k;
     } else { // 接收点更深
-        mod1d->uiz_R_EVL = (mod1d->M_BL.RDL - 1.0)*k;
+        mstat->uiz_R_EVL = (mstat->M_BL.RDL - 1.0)*k;
     }
 }
 
 
-void grt_static_RT_matrix_PSV(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
+void grt_static_RT_matrix_PSV(const MODEL1D_STATE *mstat, const size_t iy, RT_MATRIX *M)
 {
-    MODEL_2LAYS_ATTRIB(cplx_t, mu);
-    MODEL_2LAYS_ATTRIB(cplx_t, delta);
-    real_t thk = mod1d->Thk[iy-1];
-    real_t k = mod1d->k;
+    MODEL_2LAYS_ATTRIB(mstat, cplx_t, mu);
+    MODEL_2LAYS_ATTRIB(mstat, cplx_t, delta);
+    real_t thk = mstat->mod1d->Thk[iy-1];
+    real_t k = mstat->k;
 
     // 公式(6.3.18)
     cplx_t dmu = mu1 - mu2;
@@ -256,9 +261,9 @@ void grt_static_RT_matrix_PSV(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *
 }
 
 
-void grt_static_RT_matrix_SH(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
+void grt_static_RT_matrix_SH(const MODEL1D_STATE *mstat, const size_t iy, RT_MATRIX *M)
 {
-    MODEL_2LAYS_ATTRIB(cplx_t, mu);
+    MODEL_2LAYS_ATTRIB(mstat, cplx_t, mu);
     
     // 公式(6.3.18)
     cplx_t dmu = mu1 - mu2;
@@ -274,10 +279,10 @@ void grt_static_RT_matrix_SH(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M
 }
 
 
-void grt_static_delay_RT_matrix(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M)
+void grt_static_delay_RT_matrix(const MODEL1D_STATE *mstat, const size_t iy, RT_MATRIX *M)
 {
-    real_t thk = mod1d->Thk[iy-1];
-    real_t k = mod1d->k;
+    real_t thk = mstat->mod1d->Thk[iy-1];
+    real_t k = mstat->k;
     
     cplx_t ex, ex2;
     ex = exp(- k*thk);

@@ -26,7 +26,7 @@
 /**
  * 峰谷平均法 Peak-Trough Averaging Method，最后收敛的积分结果以三维数组的形式返回，
  * 
- * @param[in,out] mod1d         `MODEL1D` 结构体指针
+ * @param[in,out] mstat         `MODEL1D_STATE` 结构体指针
  * @param[in]     k0            先前的积分已经进行到了波数k0
  * @param[in]     predk         先前的积分使用的积分间隔dk，因为峰谷平均法使用的
  *                              积分间隔会和之前的不一致，这里传入该系数以做预先调整
@@ -41,6 +41,6 @@
  * 
  */
 void grt_PTA_method(
-    MODEL1D *mod1d, real_t k0, real_t predk,
+    MODEL1D_STATE *mstat, real_t k0, real_t predk,
     size_t nr, real_t *rs, K_INTEG *K, FILE *ptam_fstatsnr[nr][2], GRT_KernelFunc kerfunc);
 

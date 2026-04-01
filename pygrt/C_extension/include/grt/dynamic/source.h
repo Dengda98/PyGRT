@@ -19,15 +19,15 @@
  * 根据公式(4.6.6)，(4.6.15)，(4.6.21,26)，(4.8.34)计算不同震源不同阶数的震源系数，
  * 数组形状代表在[i][j]时表示i类震源的P(j=0),SV(j=1),SH(j=2)的震源系数(分别对应q,w,v). 
  * 
- * @param[in]     mod1d        模型结构体指针
+ * @param[in]     mstat        模型结构体指针
  * @param[out]    src_coefD    下行震源系数
  * @param[out]    src_coefU    上行震源系数
  * 
  */
-void grt_source_coef(const MODEL1D *mod1d, cplxChnlGrid src_coefD, cplxChnlGrid src_coefU);
+void grt_source_coef(const MODEL1D_STATE *mstat, cplxChnlGrid src_coefD, cplxChnlGrid src_coefU);
 
 /* P-SV 波的震源系数  */
-void grt_source_coef_PSV(const MODEL1D *mod1d, cplxChnlGrid src_coefD, cplxChnlGrid src_coefU);
+void grt_source_coef_PSV(const MODEL1D_STATE *mstat, cplxChnlGrid src_coefD, cplxChnlGrid src_coefU);
 
 /* SH 波的震源系数  */
-void grt_source_coef_SH(const MODEL1D *mod1d, cplxChnlGrid src_coefD, cplxChnlGrid src_coefU);
+void grt_source_coef_SH(const MODEL1D_STATE *mstat, cplxChnlGrid src_coefD, cplxChnlGrid src_coefU);

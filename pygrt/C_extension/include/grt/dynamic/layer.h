@@ -17,62 +17,59 @@
 #include "grt/common/const.h"
 #include "grt/common/RT_matrix.h"
 
-/**
- * 计算不同边界条件下顶界面的反射系数RU，其中自由表面的公式见(5.3.10-14) 
+/** 计算不同边界条件下顶界面的反射系数RU，其中自由表面的公式见(5.3.10-14)
  * 
- * 
- * @param[in,out]     mod1d          模型结构体指针，结果保存在 M_top
+ * @param[in,out]     mstat          模型结构体指针，结果保存在 M_bot
  * 
  */
-void grt_topbound_RU_PSV(MODEL1D *mod1d);
-void grt_topbound_RU_SH(MODEL1D *mod1d);
+void grt_topbound_RU_PSV(MODEL1D_STATE *mstat);
+void grt_topbound_RU_SH(MODEL1D_STATE *mstat);
 
 /**
  * 计算不同边界条件下底界面的反射系数RD，其中自由表面的公式见(5.3.10-14) 
  * 
- * 
- * @param[in,out]     mod1d          模型结构体指针，结果保存在 M_bot
+ * @param[in,out]     mstat          模型结构体指针，结果保存在 M_bot
  * 
  */
-void grt_botbound_RD_PSV(MODEL1D *mod1d);
-void grt_botbound_RD_SH(MODEL1D *mod1d);
+void grt_botbound_RD_PSV(MODEL1D_STATE *mstat);
+void grt_botbound_RD_SH(MODEL1D_STATE *mstat);
 
 
 /**
  * 计算接收点位置的 P-SV 波接收矩阵，将波场转为位移，公式(5.2.19) + (5.7.7,25)
  * 
- * @param[in,out]     mod1d           模型结构体指针，结果保存在 R_EV
+ * @param[in,out]     mstat           模型结构体指针，结果保存在 R_EV
  * 
  */
-void grt_wave2qwv_REV_PSV(MODEL1D *mod1d);
+void grt_wave2qwv_REV_PSV(MODEL1D_STATE *mstat);
 
 /**
  * 计算接收点位置的 SH 波接收矩阵，将波场转为位移，公式(5.2.19) + (5.7.7,25)
  * 
- * @param[in,out]     mod1d           模型结构体指针，结果保存在 R_EVL
+ * @param[in,out]     mstat           模型结构体指针，结果保存在 R_EVL
  * 
  */
-void grt_wave2qwv_REV_SH(MODEL1D *mod1d);
+void grt_wave2qwv_REV_SH(MODEL1D_STATE *mstat);
 
 
 /**
  * 计算接收点位置的ui_z的 P-SV 波接收矩阵，即将波场转为ui_z。
  * 公式本质是推导ui_z关于q_m, w_m, v_m的连接矩阵（就是应力推导过程的一部分）
  * 
- * @param[in,out]     mod1d           模型结构体指针，结果保存在 uiz_R_EV
+ * @param[in,out]     mstat           模型结构体指针，结果保存在 uiz_R_EV
  * 
  */
-void grt_wave2qwv_z_REV_PSV(MODEL1D *mod1d);
+void grt_wave2qwv_z_REV_PSV(MODEL1D_STATE *mstat);
 
 
 /**
  * 计算接收点位置的ui_z的 SH 波接收矩阵，即将波场转为ui_z。
  * 公式本质是推导ui_z关于q_m, w_m, v_m的连接矩阵（就是应力推导过程的一部分）
  * 
- * @param[in,out]     mod1d           模型结构体指针，结果保存在 uiz_R_EVL
+ * @param[in,out]     mstat           模型结构体指针，结果保存在 uiz_R_EVL
  * 
  */
-void grt_wave2qwv_z_REV_SH(MODEL1D *mod1d);
+void grt_wave2qwv_z_REV_SH(MODEL1D_STATE *mstat);
 
 
 /**
@@ -81,70 +78,70 @@ void grt_wave2qwv_z_REV_SH(MODEL1D *mod1d);
  * 
  * @note   对公式(5.4.14)进行了重新整理。原公式各项之间的数量级差别过大，浮点数计算损失精度严重。
  * 
- * @param[in]      mod1d         模型结构体指针
+ * @param[in]      mstat         模型结构体指针
  * @param[in]      iy            层位索引
  * @param[out]     M             R/T矩阵
  * 
  */
-void grt_RT_matrix_PSV(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
+void grt_RT_matrix_PSV(const MODEL1D_STATE *mstat, const size_t iy, RT_MATRIX *M);
 
 
 /**
  * 计算界面的 SH 波反射透射系数 RDL/RUL/TDL/TUL,
  * 根据公式(5.4.31)计算系数   
  * 
- * @param[in]      mod1d         模型结构体指针
+ * @param[in]      mstat         模型结构体指针
  * @param[in]      iy            层位索引
  * @param[out]     M             R/T矩阵
  * 
  */
-void grt_RT_matrix_SH(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
+void grt_RT_matrix_SH(const MODEL1D_STATE *mstat, const size_t iy, RT_MATRIX *M);
 
 /** 液-液 界面 */
-void grt_RT_matrix_ll_PSV(const MODEL1D *mod1d, size_t iy, RT_MATRIX *M);
+void grt_RT_matrix_ll_PSV(const MODEL1D_STATE *mstat, size_t iy, RT_MATRIX *M);
 
 /** 液-液 界面 */
 void grt_RT_matrix_ll_SH(RT_MATRIX *M);
 
 /** 液-固 界面 */
-void grt_RT_matrix_ls_PSV(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
+void grt_RT_matrix_ls_PSV(const MODEL1D_STATE *mstat, const size_t iy, RT_MATRIX *M);
 
 /** 液-固 界面 */
-void grt_RT_matrix_ls_SH(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
+void grt_RT_matrix_ls_SH(const MODEL1D_STATE *mstat, const size_t iy, RT_MATRIX *M);
 
 /** 固-固 界面 */
-void grt_RT_matrix_ss_PSV(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
+void grt_RT_matrix_ss_PSV(const MODEL1D_STATE *mstat, const size_t iy, RT_MATRIX *M);
 
 /** 固-固 界面 */
-void grt_RT_matrix_ss_SH(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
+void grt_RT_matrix_ss_SH(const MODEL1D_STATE *mstat, const size_t iy, RT_MATRIX *M);
 
 /**
  * 为 R/T 矩阵添加时间延迟因子
  * 
- * @param[in]      mod1d         模型结构体指针
+ * @param[in]      mstat         模型结构体指针
  * @param[in]      iy            层位索引
  * @param[out]     M             R/T矩阵    
  * 
  */
-void grt_delay_RT_matrix(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
-void grt_delay_RT_matrix_PSV(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
-void grt_delay_RT_matrix_SH(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
+void grt_delay_RT_matrix(const MODEL1D_STATE *mstat, const size_t iy, RT_MATRIX *M);
+void grt_delay_RT_matrix_PSV(const MODEL1D_STATE *mstat, const size_t iy, RT_MATRIX *M);
+void grt_delay_RT_matrix_SH(const MODEL1D_STATE *mstat, const size_t iy, RT_MATRIX *M);
 
 /**
  * 为虚拟层的广义 R/T 矩阵添加时间延迟因子
  * 
- * @param[in]      mod1d         模型结构体指针
+ * @param[in]      mstat         模型结构体指针
  * @param[in]      iy            层位索引
  * @param[out]     M             R/T矩阵    
  * 
  */
-void grt_delay_GRT_matrix(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
+void grt_delay_GRT_matrix(const MODEL1D_STATE *mstat, const size_t iy, RT_MATRIX *M);
 
 /**
  * 计算该层的连接 P-SV 应力位移矢量与垂直波函数的D矩阵(或其逆矩阵)，
  * 见公式(5.2.19-20)
  * 
- * @param[in]      mod1d         模型结构体指针
+ * @param[in]      mstat         模型结构体指针
  * @param[in]      iy            层位索引
  * @param[in]      inverse       是否生成逆矩阵
  * @param[in]      liquid_invtype   对于液体层，矩阵会有很多零，至少第二列、第四列和第四行均为零；
@@ -155,38 +152,38 @@ void grt_delay_GRT_matrix(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
  * @param[out]     D             D矩阵(或其逆矩阵)
  * 
  */
-void grt_get_layer_D(const MODEL1D *mod1d, const size_t iy, bool inverse, int liquid_invtype, cplx_t D[4][4]);
+void grt_get_layer_D(const MODEL1D_STATE *mstat, const size_t iy, bool inverse, int liquid_invtype, cplx_t D[4][4]);
 
 /** 子矩阵 D11，函数参数见 get_layer_D 函数 */
-void grt_get_layer_D11(const MODEL1D *mod1d, const size_t iy, cplx_t D[2][2]);
+void grt_get_layer_D11(const MODEL1D_STATE *mstat, const size_t iy, cplx_t D[2][2]);
 
 /** 子矩阵 D12，函数参数见 get_layer_D 函数 */
-void grt_get_layer_D12(const MODEL1D *mod1d, const size_t iy, cplx_t D[2][2]);
+void grt_get_layer_D12(const MODEL1D_STATE *mstat, const size_t iy, cplx_t D[2][2]);
 
 /** 子矩阵 D21，函数参数见 get_layer_D 函数 */
-void grt_get_layer_D21(const MODEL1D *mod1d, const size_t iy, cplx_t D[2][2]);
+void grt_get_layer_D21(const MODEL1D_STATE *mstat, const size_t iy, cplx_t D[2][2]);
 
 /** 子矩阵 D22，函数参数见 get_layer_D 函数 */
-void grt_get_layer_D22(const MODEL1D *mod1d, const size_t iy, cplx_t D[2][2]);
+void grt_get_layer_D22(const MODEL1D_STATE *mstat, const size_t iy, cplx_t D[2][2]);
 
 /** 子矩阵 D11_uiz，后缀uiz表示连接位移对z的偏导和垂直波函数，函数参数见 get_layer_D 函数 */
-void grt_get_layer_D11_uiz(const MODEL1D *mod1d, const size_t iy, cplx_t D[2][2]);
+void grt_get_layer_D11_uiz(const MODEL1D_STATE *mstat, const size_t iy, cplx_t D[2][2]);
 
 /** 子矩阵 D12_uiz，函数参数见 get_layer_D 函数 */
-void grt_get_layer_D12_uiz(const MODEL1D *mod1d, const size_t iy, cplx_t D[2][2]);
+void grt_get_layer_D12_uiz(const MODEL1D_STATE *mstat, const size_t iy, cplx_t D[2][2]);
 
 
 /**
  * 计算该层的连接 SH 应力位移矢量与垂直波函数的 T 矩阵(或其逆矩阵)，
  * 见公式(5.2.21-22)
  * 
- * @param[in]      mod1d         模型结构体指针
+ * @param[in]      mstat         模型结构体指针
  * @param[in]      iy            层位索引
  * @param[in]      inverse       是否生成逆矩阵
  * @param[out]     T             T矩阵(或其逆矩阵)
  * 
  */
-void grt_get_layer_T(const MODEL1D *mod1d, const size_t iy, bool inverse, cplx_t T[2][2]);
+void grt_get_layer_T(const MODEL1D_STATE *mstat, const size_t iy, bool inverse, cplx_t T[2][2]);
 
 
 // /**

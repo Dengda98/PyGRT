@@ -22,85 +22,85 @@
 /**
  * 计算不同边界条件下顶界面的静态反射系数RU，其中自由表面的公式见(6.3.12)
  * 
- * @param[in,out]     mod1d             模型结构体指针，结果保存在 M_top
+ * @param[in,out]     mstat             模型结构体指针，结果保存在 M_top
  * 
  */
-void grt_static_topbound_RU_PSV(MODEL1D *mod1d);
-void grt_static_topbound_RU_SH(MODEL1D *mod1d);
+void grt_static_topbound_RU_PSV(MODEL1D_STATE *mstat);
+void grt_static_topbound_RU_SH(MODEL1D_STATE *mstat);
 
 /**
  * 计算不同边界条件下底界面的静态反射系数RD，其中自由表面的公式见(6.3.12)
  * 
- * @param[in,out]     mod1d             模型结构体指针，结果保存在 M_bot
+ * @param[in,out]     mstat             模型结构体指针，结果保存在 M_bot
  * 
  */
-void grt_static_botbound_RD_PSV(MODEL1D *mod1d);
-void grt_static_botbound_RD_SH(MODEL1D *mod1d);
+void grt_static_botbound_RD_PSV(MODEL1D_STATE *mstat);
+void grt_static_botbound_RD_SH(MODEL1D_STATE *mstat);
 
 /**
  * 计算接收点位置的 P-SV 静态接收矩阵，将波场转为位移，公式(6.3.35)
  * 
- * @param[in,out]      mod1d           模型结构体指针，结果保存在 R_EV
+ * @param[in,out]      mstat           模型结构体指针，结果保存在 R_EV
  * 
  */
-void grt_static_wave2qwv_REV_PSV(MODEL1D *mod1d);
+void grt_static_wave2qwv_REV_PSV(MODEL1D_STATE *mstat);
 
 /**
  * 计算接收点位置的 SH 静态接收矩阵，将波场转为位移，公式(6.3.37)
  * 
- * @param[in,out]      mod1d           模型结构体指针，结果保存在 R_EVL
+ * @param[in,out]      mstat           模型结构体指针，结果保存在 R_EVL
  * 
  */
-void grt_static_wave2qwv_REV_SH(MODEL1D *mod1d);
+void grt_static_wave2qwv_REV_SH(MODEL1D_STATE *mstat);
 
 /**
  * 计算接收点位置的ui_z的 P-SV 静态接收矩阵，即将波场转为ui_z。
  * 公式本质是推导ui_z关于q_m, w_m, v_m的连接矩阵（就是应力推导过程的一部分）
  * 
- * @param[in,out]      mod1d           模型结构体指针，结果保存在 uiz_R_EV
+ * @param[in,out]      mstat           模型结构体指针，结果保存在 uiz_R_EV
  * 
  */
-void grt_static_wave2qwv_z_REV_PSV(MODEL1D *mod1d);
+void grt_static_wave2qwv_z_REV_PSV(MODEL1D_STATE *mstat);
 
 /**
  * 计算接收点位置的ui_z的 SH 静态接收矩阵，即将波场转为ui_z。
  * 公式本质是推导ui_z关于q_m, w_m, v_m的连接矩阵（就是应力推导过程的一部分）
  * 
- * @param[in,out]      mod1d           模型结构体指针，结果保存在 uiz_R_EVL
+ * @param[in,out]      mstat           模型结构体指针，结果保存在 uiz_R_EVL
  * 
  */
-void grt_static_wave2qwv_z_REV_SH(MODEL1D *mod1d);
+void grt_static_wave2qwv_z_REV_SH(MODEL1D_STATE *mstat);
 
 
 /**
  * 计算界面的 P-SV 波静态反射透射系数RD/RU/TD/TU
  * 根据公式(6.3.18)  
  * 
- * @param[in]      mod1d         模型结构体指针
+ * @param[in]      mstat         模型结构体指针
  * @param[in]      iy            层位索引
  * @param[out]     M             R/T矩阵
  * 
  */
-void grt_static_RT_matrix_PSV(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
+void grt_static_RT_matrix_PSV(const MODEL1D_STATE *mstat, const size_t iy, RT_MATRIX *M);
 
 /**
  * 计算界面的 SH 波静态反射透射系数RDL/RUL/TDL/TUL
  * 根据公式(6.3.18)  
  * 
- * @param[in]      mod1d         模型结构体指针
+ * @param[in]      mstat         模型结构体指针
  * @param[in]      iy            层位索引
  * @param[out]     M             R/T矩阵
  * 
  */
-void grt_static_RT_matrix_SH(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
+void grt_static_RT_matrix_SH(const MODEL1D_STATE *mstat, const size_t iy, RT_MATRIX *M);
 
 
 /**
  * 为静态 R/T 矩阵添加时间延迟因子
  * 
- * @param[in]      mod1d         模型结构体指针
+ * @param[in]      mstat         模型结构体指针
  * @param[in]      iy            层位索引
  * @param[out]     M             R/T矩阵
  * 
  */
-void grt_static_delay_RT_matrix(const MODEL1D *mod1d, const size_t iy, RT_MATRIX *M);
+void grt_static_delay_RT_matrix(const MODEL1D_STATE *mstat, const size_t iy, RT_MATRIX *M);

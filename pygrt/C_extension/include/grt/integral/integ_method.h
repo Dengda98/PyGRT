@@ -74,7 +74,7 @@ void grt_KMET_destroy_fstats(const size_t nr, K_INTEG_METHOD *Kmet);
 /**
  * 发起波数积分的总函数
  * 
- * @param[in,out]      mod1d        `MODEL1D` 结构体指针
+ * @param[in,out]      mstat        `MODEL1D_STATE` 结构体指针
  * @param[in]          nr           震中距数量
  * @param[in]          rs           震中距数组 
  * @param[in,out]      Kmet         K_INTEG_METHOD 结构体指针
@@ -85,4 +85,4 @@ void grt_KMET_destroy_fstats(const size_t nr, K_INTEG_METHOD *Kmet);
  * 
  */
 K_INTEG * grt_wavenumber_integral(
-    MODEL1D *mod1d, size_t nr, real_t *rs, K_INTEG_METHOD *Kmet, bool calc_upar, GRT_KernelFunc kerfunc);
+    MODEL1D_STATE *mstat, size_t nr, real_t *rs, K_INTEG_METHOD *Kmet, bool calc_upar, GRT_KernelFunc kerfunc);

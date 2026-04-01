@@ -24,7 +24,6 @@
 
 #include "grt/common/const.h"
 #include "grt/common/model.h"
-#include "grt/common/prtdbg.h"
 #include "grt/common/search.h"
 #include "grt/common/progressbar.h"
 
@@ -118,22 +117,19 @@ void grt_integ_grn_spec(
 
         cplx_t coef = - dk*fac / GRT_SQUARE(omega); // 最终要乘上的系数
 
-        MODEL1D *local_mod1d = NULL;
         K_INTEG_METHOD *local_Kmet = NULL;
     #ifdef _OPENMP 
-        // 定义局部模型对象
-        local_mod1d = grt_copy_mod1d(mod1d);
+        // 定义局部对象
         K_INTEG_METHOD __KMET = *Kmet;  // 只需浅拷贝
         local_Kmet = &__KMET;
     #else 
-        local_mod1d = mod1d;
         local_Kmet = Kmet;
     #endif
 
-        // 将 omega 计入模型结构体
-        local_mod1d->omega = omega;
+        MODEL1D_STATE *local_mstat = grt_init_mod1d_state(mod1d);
 
-        grt_attenuate_mod1d(local_mod1d, omega);
+        // 将 omega 计入模型结构体
+        grt_update_mod1d_state_omega(local_mstat, omega);
 
         // 是否要输出积分过程文件
         bool needfstats = (statsstr!=NULL && (grt_findElement_size_t(statsidxs, nstatsidxs, iw) >= 0));
@@ -154,7 +150,7 @@ void grt_integ_grn_spec(
         //                          Wavenumber Integration
         // 波数积分上限
         local_Kmet->kmax = hypot(local_Kmet->k0, local_Kmet->ampk * w / local_Kmet->vmin);
-        K_INTEG *Kint = grt_wavenumber_integral(local_mod1d, nr, rs, local_Kmet, calc_upar, grt_kernel);
+        K_INTEG *Kint = grt_wavenumber_integral(local_mstat, nr, rs, local_Kmet, calc_upar, grt_kernel);
 
         // 记录到格林函数结构体内
         // 如果计算核函数过程中存在除零错误，则放弃该频率【通常在大震中距的低频段】
@@ -165,13 +161,11 @@ void grt_integ_grn_spec(
         }
         // ===================================================================================
 
-        freq_invstats[iw] = local_mod1d->stats;
+        freq_invstats[iw] = local_mstat->stats;
 
         if(needfstats)  grt_KMET_destroy_fstats(nr, local_Kmet);
 
-    #ifdef _OPENMP
-        grt_free_mod1d(local_mod1d);
-    #endif
+        grt_free_mod1d_state(local_mstat);
 
         // 记录进度条变量 
         #pragma omp critical

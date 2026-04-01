@@ -30,7 +30,7 @@ libgrt = cdll.LoadLibrary(
 C_grt_integ_grn_spec = libgrt.grt_integ_grn_spec
 """C库中计算格林函数的主函数 integ_grn_spec, 详见C API同名函数"""
 C_grt_integ_grn_spec.argtypes = [
-    POINTER(c_GRT_MODEL1D), c_size_t, c_size_t, PREAL,       
+    POINTER(c_MODEL1D), c_size_t, c_size_t, PREAL,       
     c_size_t, PREAL, REAL, c_bool, POINTER(c_K_INTEG_METHOD),
     c_bool, c_bool,
     POINTER((PCPLX*CHANNEL_NUM)*SRC_M_NUM),
@@ -47,7 +47,7 @@ C_grt_integ_static_grn = libgrt.grt_integ_static_grn
 """计算静态格林函数"""
 C_grt_integ_static_grn.restype = None
 C_grt_integ_static_grn.argtypes = [
-    POINTER(c_GRT_MODEL1D), c_size_t, PREAL, POINTER(c_K_INTEG_METHOD),
+    POINTER(c_MODEL1D), c_size_t, PREAL, POINTER(c_K_INTEG_METHOD),
     c_bool,
     POINTER((REAL*CHANNEL_NUM)*SRC_M_NUM),
     POINTER((REAL*CHANNEL_NUM)*SRC_M_NUM),
@@ -96,18 +96,18 @@ C_grt_compute_travt1d.argtypes = [
 
 C_grt_read_mod1d_from_file = libgrt.grt_read_mod1d_from_file
 """读取模型文件并进行预处理"""
-C_grt_read_mod1d_from_file.restype = POINTER(c_GRT_MODEL1D)
+C_grt_read_mod1d_from_file.restype = POINTER(c_MODEL1D)
 C_grt_read_mod1d_from_file.argtypes = [c_char_p, c_double, c_double, c_bool]
 
 C_grt_set_mod1d_boundary = libgrt.grt_set_mod1d_boundary
 """设置模型边界条件并检查底界面"""
 C_grt_set_mod1d_boundary.restype = None
-C_grt_set_mod1d_boundary.argtypes = [POINTER(c_GRT_MODEL1D), c_int, c_int]
+C_grt_set_mod1d_boundary.argtypes = [POINTER(c_MODEL1D), c_int, c_int]
 
 C_grt_free_mod1d = libgrt.grt_free_mod1d
 """释放C程序中申请的 GRT_MODEL1D 结构体内存"""
 C_grt_free_mod1d.restype = None
-C_grt_free_mod1d.argtypes = [POINTER(c_GRT_MODEL1D)]
+C_grt_free_mod1d.argtypes = [POINTER(c_MODEL1D)]
 
 # -------------------------------------------------------------------
 #                      C函数定义的时间函数

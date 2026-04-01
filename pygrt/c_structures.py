@@ -32,7 +32,7 @@ __all__ = [
     "CPLX",
     "PCPLX",
 
-    "c_GRT_MODEL1D",
+    "c_MODEL1D",
     "c_K_INTEG_METHOD"
 ]
 
@@ -63,29 +63,10 @@ REAL = c_double
 PREAL = POINTER(REAL)
 PCPLX = POINTER(CPLX)
 
-class c_RT_MATRIX(Structure):
-    """
-    和C结构体 RT_MATRIX 匹配
-    """
 
-    _fields_ = [
-        ('RD', CPLX * 4),
-        ('RU', CPLX * 4),
-        ('TD', CPLX * 4),
-        ('TU', CPLX * 4),
-        ('RDL', CPLX),
-        ('RUL', CPLX),
-        ('TDL', CPLX),
-        ('TUL', CPLX),
-        ('invT', CPLX * 4),
-        ('invTL', CPLX),
-        ('stats', c_int)
-    ]
-
-
-class c_GRT_MODEL1D(Structure):
+class c_MODEL1D(Structure):
     """
-    和C结构体 GRT_MODEL1D 作匹配
+    和C结构体 MODEL1D 作匹配
     """
     
     _fields_ = [
@@ -97,11 +78,7 @@ class c_GRT_MODEL1D(Structure):
         ('ircvup', c_bool),
         ('io_depth', c_bool),
         ('srcrcv_isInserted', c_bool),
-
         ('omgref', CPLX),
-        ('omega', CPLX),
-        ('k', REAL),
-        ('c_phase', CPLX),
 
         ('Thk', PREAL),
         ('Dep', PREAL),
@@ -112,35 +89,10 @@ class c_GRT_MODEL1D(Structure):
         ('Qb', PREAL),
         ('Qainv', PREAL),
         ('Qbinv', PREAL),
-        ('isLiquid', c_bool),
-
-        ('mu', PCPLX),
-        ('lambda', PCPLX),
-        ('delta', PCPLX),
-        ('atna', PCPLX),
-        ('atnb', PCPLX),
-        ('xa', PCPLX),
-        ('xb', PCPLX),
-        ('caca', PCPLX),
-        ('cbcb', PCPLX),
-
-        ('stats', c_int),
-
-        ('M_AL', c_RT_MATRIX),
-        ('M_BL', c_RT_MATRIX),
-        ('M_RS', c_RT_MATRIX),
-        ('M_FA', c_RT_MATRIX),
-        ('M_FB', c_RT_MATRIX),
+        ('isLiquid', POINTER(c_bool)),
 
         ('topbound', c_int),
-        ('M_top', c_RT_MATRIX),
         ('botbound', c_int),
-        ('M_bot', c_RT_MATRIX),
-
-        ('R_EV', CPLX * 4),
-        ('R_EVL', CPLX),
-        ('uiz_R_EV', CPLX * 4),
-        ('uiz_R_EVL', CPLX),
     ]
 
 

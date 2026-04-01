@@ -276,7 +276,7 @@ static void interv_integ(const KInterval *ptKitv, size_t nr, real_t *rs, K_INTEG
 
 
 real_t grt_sa_filon_integ(
-    MODEL1D *mod1d, real_t k0, real_t dk0, real_t tol, real_t kmax, real_t kref,
+    MODEL1D_STATE *mstat, real_t k0, real_t dk0, real_t tol, real_t kmax, real_t kref,
     size_t nr, real_t *rs, K_INTEG *K, FILE *fstats, GRT_KernelFunc kerfunc)
 {   
     real_t kmin = k0 + dk0;
@@ -300,8 +300,8 @@ real_t grt_sa_filon_integ(
         .Fz3 = {{{0}}} 
     };
     for(int i=0; i<3; ++i) {
-        kerfunc(mod1d, Kitv.k3[i], Kitv.F3[i], K->calc_upar, Kitv.Fz3[i]);
-        if(mod1d->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
+        kerfunc(mstat, Kitv.k3[i], Kitv.F3[i], K->calc_upar, Kitv.Fz3[i]);
+        if(mstat->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
         
         if(K->applyDCM){
             GRT_LOOP_ChnlGrid(im, c){
@@ -355,11 +355,11 @@ real_t grt_sa_filon_integ(
             memcpy(Kitv_right.Fz3[2], Kitv.Fz3[2], sizeof(cplxChnlGrid));
         }
         
-        kerfunc(mod1d, Kitv_left.k3[1], Kitv_left.F3[1], K->calc_upar, Kitv_left.Fz3[1]);
-        if(mod1d->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
+        kerfunc(mstat, Kitv_left.k3[1], Kitv_left.F3[1], K->calc_upar, Kitv_left.Fz3[1]);
+        if(mstat->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
-        kerfunc(mod1d, Kitv_right.k3[1], Kitv_right.F3[1], K->calc_upar, Kitv_right.Fz3[1]);
-        if(mod1d->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
+        kerfunc(mstat, Kitv_right.k3[1], Kitv_right.F3[1], K->calc_upar, Kitv_right.Fz3[1]);
+        if(mstat->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
         if(K->applyDCM){
             GRT_LOOP_ChnlGrid(im, c){
