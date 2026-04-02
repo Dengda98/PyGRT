@@ -440,14 +440,14 @@ void grt_RT_matrix_ls_PSV(const MODEL1D_STATE *mstat, const size_t iy, RT_MATRIX
 
 }
 
-void grt_RT_mat3x3_ls_PSV(const GRT_MODEL1D *mod1d, const size_t iy, cplx_t RT[3][3])
+void grt_RT_mat3x3_ls_PSV(const MODEL1D_STATE *mstat, const size_t iy, cplx_t RT[3][3])
 {
-    MODEL_2LAYS_ATTRIB(cplx_t, xa);
-    MODEL_2LAYS_ATTRIB(cplx_t, xb);
-    MODEL_2LAYS_ATTRIB(cplx_t, mu);
-    MODEL_2LAYS_ATTRIB(cplx_t, cbcb);
-    MODEL_2LAYS_ATTRIB(real_t, Rho);
-    MODEL_2LAYS_ATTRIB(bool, isLiquid);
+    MODEL_2LAYS_ATTRIB(mstat, cplx_t, xa);
+    MODEL_2LAYS_ATTRIB(mstat, cplx_t, xb);
+    MODEL_2LAYS_ATTRIB(mstat, cplx_t, mu);
+    MODEL_2LAYS_ATTRIB(mstat, cplx_t, cbcb);
+    MODEL_2LAYS_ATTRIB(mstat->mod1d, real_t, Rho);
+    MODEL_2LAYS_ATTRIB(mstat->mod1d, bool, isLiquid);
 
     // 后缀1表示上层的液体的物理参数，后缀2表示下层的固体的物理参数
     // 若mu2==0, 则下层为液体，参数需相互交换 
@@ -468,7 +468,7 @@ void grt_RT_mat3x3_ls_PSV(const GRT_MODEL1D *mod1d, const size_t iy, cplx_t RT[3
     }
 
     // 定义一些中间变量来简化运算和书写
-    cplx_t lamka1k = Rho1*GRT_SQUARE(mod1d->c_phase);
+    cplx_t lamka1k = Rho1*GRT_SQUARE(mstat->c_phase);
     cplx_t kb2k = cbcb2;
     cplx_t Og2k = 1.0 - 0.5*kb2k;
     cplx_t Og2k2 = Og2k*Og2k;
@@ -497,14 +497,14 @@ void grt_RT_mat3x3_ls_PSV(const GRT_MODEL1D *mod1d, const size_t iy, cplx_t RT[3
     RT[0][2] = RT[0][1]/Og2k*xb2 * sgn;
 }
 
-void grt_Q_mat3x3_ls_PSV(const GRT_MODEL1D *mod1d, const size_t iy, cplx_t Qin[3][3], cplx_t Qout[3][3])
+void grt_Q_mat3x3_ls_PSV(const MODEL1D_STATE *mstat, const size_t iy, cplx_t Qin[3][3], cplx_t Qout[3][3])
 {
-    MODEL_2LAYS_ATTRIB(cplx_t, xa);
-    MODEL_2LAYS_ATTRIB(cplx_t, xb);
-    MODEL_2LAYS_ATTRIB(cplx_t, mu);
-    MODEL_2LAYS_ATTRIB(cplx_t, cbcb);
-    MODEL_2LAYS_ATTRIB(real_t, Rho);
-    MODEL_2LAYS_ATTRIB(bool, isLiquid);
+    MODEL_2LAYS_ATTRIB(mstat, cplx_t, xa);
+    MODEL_2LAYS_ATTRIB(mstat, cplx_t, xb);
+    MODEL_2LAYS_ATTRIB(mstat, cplx_t, mu);
+    MODEL_2LAYS_ATTRIB(mstat, cplx_t, cbcb);
+    MODEL_2LAYS_ATTRIB(mstat->mod1d, real_t, Rho);
+    MODEL_2LAYS_ATTRIB(mstat->mod1d, bool, isLiquid);
 
     // 后缀1表示上层的液体的物理参数，后缀2表示下层的固体的物理参数
     // 若mu2==0, 则下层为液体，参数需相互交换 
@@ -524,7 +524,7 @@ void grt_Q_mat3x3_ls_PSV(const GRT_MODEL1D *mod1d, const size_t iy, cplx_t Qin[3
         sgn = -1;
     }
 
-    cplx_t cphase = mod1d->c_phase;
+    cplx_t cphase = mstat->c_phase;
 
     cplx_t gam = 1.0 - 0.5*cbcb2;
 
