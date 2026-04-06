@@ -32,6 +32,7 @@
     #define mkdir(x, y) _mkdir(x)  ///< 为windows系统修改mkdir函数
 #endif
 
+#define GRT_MAIN_COMMAND   "grt"   ///< 主程序名
 
 // 使用双精度
 typedef double real_t;
@@ -161,6 +162,23 @@ enum {
 
 /** 当前模块名，根据所调用模块进行切换 */
 extern const char *GRT_MODULE_NAME;
+
+/** 共有的命令行处理语句 */ 
+#define GRT_Common_Options_in_Switch(X) \
+    /** 帮助 */  \
+    case 'h': \
+        print_help(); \
+        exit(EXIT_SUCCESS); \
+        break; \
+    /** 参数缺失 */  \
+    case ':': \
+        GRTMissArgsError(X, ""); \
+        break; \
+    /** 非法选项 */  \
+    case '?': \
+    default: \
+        GRTInvalidOptionError(X, ""); \
+        break; \
 
 
 /** 分别对应爆炸源(0阶)，垂直力源(0阶)，水平力源(1阶)，剪切源(0,1,2阶) */ 

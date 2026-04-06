@@ -7,14 +7,6 @@
  * 
  */
 
-
-#include "grt/common/const.h"
-#include "grt/common/radiation.h"
-#include "grt/common/coord.h"
-#include "grt/common/util.h"
-#include "grt/common/search.h"
-#include "grt/common/mynetcdf.h"
-
 #include "grt.h"
 
 /** 该子模块的参数控制结构体 */

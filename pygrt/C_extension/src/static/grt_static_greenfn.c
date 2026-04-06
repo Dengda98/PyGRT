@@ -7,16 +7,6 @@
  * 
  */
 
-
-#include "grt/static/static_grn.h"
-#include "grt/common/const.h"
-#include "grt/common/model.h"
-#include "grt/integral/integ_method.h"
-#include "grt/integral/iostats.h"
-#include "grt/common/search.h"
-#include "grt/common/util.h"
-#include "grt/common/mynetcdf.h"
-
 #include "grt.h"
 
 // 一些变量的非零默认值

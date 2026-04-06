@@ -7,13 +7,6 @@
  * 
  */
 
-#include "grt/common/const.h"
-#include "grt/common/model.h"
-#include "grt/integral/kernel.h"
-#include "grt/integral/iostats.h"
-#include "grt/common/util.h"
-#include "grt/common/progressbar.h"
-
 #include "grt.h"
 
 // 一些变量的非零默认值

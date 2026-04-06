@@ -8,10 +8,6 @@
  * 
  */
 
-#include "grt/common/const.h"
-#include "grt/integral/iostats.h"
-#include "grt/common/util.h"
-
 #include "grt.h"
 
 /** 该子模块的参数控制结构体 */

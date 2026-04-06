@@ -6,13 +6,7 @@
  *    求解第一类 Lamb 问题的主函数
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "grt.h"
-#include "grt/lamb/lamb1.h"
-#include "grt/lamb/lamb_util.h"
-
 
 /** 该子模块的参数控制结构体 */
 typedef struct {

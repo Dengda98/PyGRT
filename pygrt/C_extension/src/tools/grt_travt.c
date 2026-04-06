@@ -7,11 +7,6 @@
  * 
  */
 
-#include "grt/common/travt.h"
-#include "grt/common/const.h"
-#include "grt/common/model.h"
-#include "grt/common/util.h"
-
 #include "grt.h"
 
 /** 该子模块的参数控制结构体 */
