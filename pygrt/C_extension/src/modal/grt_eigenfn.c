@@ -6,19 +6,8 @@
  *     根据计算的相速度频散(本征值)，求解本征函数（包括位移和应力）
  * 
  */
+
 #include "grt.h"
-
-#include "grt/common/matrix.h"
-#include "grt/common/model.h"
-#include "grt/common/const.h"
-#include "grt/common/util.h"
-#include "grt/common/search.h"
-
-#include "grt/modal/modal_util.h"
-#include "grt/modal/secular.h"
-#include "grt/modal/eigenfn.h"
-#include "grt/modal/energy.h"
-
 
 /** 该子模块的参数控制结构体 */
 typedef struct {

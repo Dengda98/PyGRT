@@ -9,23 +9,6 @@
 
 #include "grt.h"
 
-#include "grt/common/matrix.h"
-#include "grt/common/model.h"
-#include "grt/common/const.h"
-#include "grt/common/util.h"
-#include "grt/common/search.h"
-#include "grt/common/myfftw.h"
-#include "grt/common/sacio2.h"
-
-#include "grt/dynamic/source.h"
-#include "grt/dynamic/layer.h"
-#include "grt/common/travt.h"
-#include "grt/modal/modal_util.h"
-#include "grt/modal/secular.h"
-#include "grt/modal/eigenfn.h"
-#include "grt/modal/energy.h"
-
-
 // 一些变量的非零默认值
 #define GRT_GREENFN_N_UPSAMPLE    1
 #define GRT_GREENFN_G_EX       true

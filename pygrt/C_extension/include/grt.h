@@ -48,6 +48,14 @@
 #include "grt/dynamic/syn.h"
 
 
+#include "grt/modal/eigenfn.h"
+#include "grt/modal/energy.h"
+#include "grt/modal/modal_def.h"
+#include "grt/modal/modal_util.h"
+#include "grt/modal/root.h"
+#include "grt/modal/secular.h"
+
+
 #include "grt/static/static_grn.h"
 #include "grt/static/static_layer.h"
 #include "grt/static/static_source.h"

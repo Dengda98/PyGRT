@@ -6,17 +6,8 @@
  *     求解Rayleigh波和Love波的相速度频散
  * 
  */
+
 #include "grt.h"
-
-#include "grt/common/model.h"
-#include "grt/common/const.h"
-#include "grt/common/search.h"
-#include "grt/common/util.h"
-
-#include "grt/modal/modal_def.h"
-#include "grt/modal/modal_util.h"
-#include "grt/modal/root.h"
-
 
 /** 该子模块的参数控制结构体 */
 typedef struct {

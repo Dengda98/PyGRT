@@ -20,6 +20,9 @@
     X(strain)              \
     X(stress)              \
     X(kernel)              \
+    X(eigenv)              \
+    X(eigenfn)             \
+    X(modsum)              \
     /* static */           \
     X(static_greenfn)      \
     X(static_syn)          \
