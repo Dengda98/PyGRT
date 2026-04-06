@@ -8,9 +8,6 @@
  * 
  */
 
-
-#include "grt/common/sacio2.h"
-
 #include "grt.h"
 
 /** 该子模块的参数控制结构体 */

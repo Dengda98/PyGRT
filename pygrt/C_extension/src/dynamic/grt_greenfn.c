@@ -9,16 +9,6 @@
  */
 
 
-#include "grt/dynamic/grn.h"
-#include "grt/dynamic/signals.h"
-#include "grt/common/const.h"
-#include "grt/common/model.h"
-#include "grt/common/search.h"
-#include "grt/common/sacio2.h"
-#include "grt/common/util.h"
-#include "grt/common/myfftw.h"
-#include "grt/common/travt.h"
-#include "grt/integral/integ_method.h"
 #include "grt.h"
 
 

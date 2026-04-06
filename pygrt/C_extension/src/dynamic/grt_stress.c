@@ -7,12 +7,6 @@
  * 
  */
 
-#include "grt/common/myfftw.h"
-
-#include "grt/common/attenuation.h"
-#include "grt/common/sacio2.h"
-#include "grt/common/const.h"
-
 #include "grt.h"
 
 /** 该子模块的参数控制结构体 */

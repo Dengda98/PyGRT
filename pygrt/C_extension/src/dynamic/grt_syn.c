@@ -7,15 +7,6 @@
  * 
  */
 
-#include <dirent.h>
-
-#include "grt/dynamic/signals.h"
-#include "grt/common/sacio2.h"
-#include "grt/common/const.h"
-#include "grt/common/radiation.h"
-#include "grt/common/coord.h"
-#include "grt/dynamic/syn.h"
-
 #include "grt.h"
 
 // 防止被替换为虚数单位
