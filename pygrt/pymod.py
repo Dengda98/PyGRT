@@ -352,9 +352,8 @@ class PyModel1D:
                 print(f"statsfile_index=", statsidxs)
 
 
-
+        # ====================================================================
         KMET = c_K_INTEG_METHOD()
-
         hs = max(abs(depsrc - deprcv), 1.0)
         KMET.k0 = k0 * np.pi / hs
         KMET.ampk = ampk
@@ -373,6 +372,27 @@ class PyModel1D:
 
         KMET.applyDCM = converg_method == 'DCM'
         KMET.applyPTAM = converg_method == 'PTAM'
+        # ====================================================================
+
+
+        # ====================================================================
+        grn = c_GRNSPEC()
+        grn.nf = nf
+        grn.freqs = c_freqs
+        grn.nf1 = nf1
+        grn.nf2 = nf2
+        grn.nr = nrs
+        grn.rs = c_rs
+        grn.wI = wI
+        grn.keepAllFreq = keepAllFreq
+        grn.calc_upar = calc_upar
+        grn.u = c_grnArr
+        grn.uiz = c_grnArr_uiz
+        grn.uir = c_grnArr_uir
+        grn.statsstr = c_statsfile
+        grn.nstatsidxs = nstatsidxs
+        grn.statsidxs = c_statsidxs
+        # ====================================================================
 
         # 运行C库函数
         #/////////////////////////////////////////////////////////////////////////////////
@@ -381,12 +401,7 @@ class PyModel1D:
         #     爆炸源 EX[ZR]                          1e-20 cm/(dyne*cm)
         #     剪切源 DD[ZR],DS[ZRT],SS[ZRT]          1e-20 cm/(dyne*cm)
         #=================================================================================
-        C_grt_integ_grn_spec(
-            self.c_mod1d, nf1, nf2, c_freqs, nrs, c_rs, wI, keepAllFreq, pointer(KMET),
-            print_runtime, calc_upar, 
-            c_grnArr, c_grnArr_uiz, c_grnArr_uir,
-            c_statsfile, nstatsidxs, c_statsidxs
-        )
+        C_grt_integ_grn_spec(self.c_mod1d, pointer(KMET), pointer(grn), print_runtime)
         #=================================================================================
         #/////////////////////////////////////////////////////////////////////////////////
 

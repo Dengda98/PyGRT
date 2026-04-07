@@ -3,8 +3,7 @@
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2024-11-28
  * 
- *    定义main函数，形成命令行式的用法（不使用python的entry_points，会牺牲性能）
- *    计算不同震源的格林函数
+ *    计算不同震源的层状介质全波解
  * 
  */
 
@@ -902,61 +901,6 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 
 
 
-/** 将一条数据反变换回时间域再进行处理，保存到SAC文件 */
-static void write_one_to_sac(
-    const char *srcname, const char ch, GRT_FFTW_HOLDER *fh, const real_t wI, 
-    SACTRACE *sac, const char *s_output_subdir, const char *s_prefix,
-    const int sgn, bool skipImagComps, const cplx_t *grncplx)
-{
-    snprintf(sac->hd.kcmpnm, sizeof(sac->hd.kcmpnm), "%s%s%c", s_prefix, srcname, ch);
-    
-    char *s_outpath = NULL;
-    GRT_SAFE_ASPRINTF(&s_outpath, "%s/%s.sac", s_output_subdir, sac->hd.kcmpnm);
-
-    // 执行fft任务会修改数组，需重新置零
-    grt_reset_fftw_holder_zero(fh);
-    
-    // 赋值复数，包括时移
-    cplx_t cfac, ccoef;
-    cfac = exp(I*PI2*fh->df*sac->hd.b);
-    ccoef = sgn;
-    // 只赋值有效长度，其余均为0
-    for(size_t i = 0; i < fh->nf_valid; ++i){
-        fh->W_f[i] = grncplx[i] * ccoef;
-        ccoef *= cfac;
-    }
-
-
-    if(! fh->naive_inv){
-        // 发起fft任务 
-        fftw_execute(fh->plan);
-    } else {
-        grt_naive_inverse_transform_double(fh);
-    }
-
-    // 归一化，并处理虚频
-    // 并转为 SAC 需要的单精度类型
-    real_t fac, coef;
-    coef = fh->df;
-    fac = 1.0;
-    if (! skipImagComps) {
-        coef *= exp(sac->hd.b * wI);
-        fac = exp(wI*fh->dt);
-    }
-    for(size_t i = 0; i < fh->nt; ++i){
-        sac->data[i] = fh->w_t[i] * coef;
-        coef *= fac;
-    }
-    
-
-    // 以sac文件保存到本地
-    grt_write_SACTRACE(s_outpath, sac);
-
-    GRT_SAFE_FREE_PTR(s_outpath);
-}
-
-
-
 /** 子模块主函数 */
 int greenfn_main(int argc, char **argv) {
     GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
@@ -1065,19 +1009,6 @@ int greenfn_main(int argc, char **argv) {
         GRTCheckMakeDir(Ctrl->S.s_statsdir);
     }
 
-    // 建立格林函数的complex数组
-    pcplxChnlGrid *grn = (pcplxChnlGrid *) calloc(Ctrl->R.nr, sizeof(*grn));
-    pcplxChnlGrid *grn_uiz = (Ctrl->e.active)? (pcplxChnlGrid *) calloc(Ctrl->R.nr, sizeof(*grn_uiz)) : NULL;
-    pcplxChnlGrid *grn_uir = (Ctrl->e.active)? (pcplxChnlGrid *) calloc(Ctrl->R.nr, sizeof(*grn_uir)) : NULL;
-
-    for(size_t ir=0; ir<Ctrl->R.nr; ++ir){
-        GRT_LOOP_ChnlGrid(im, c){
-            grn[ir][im][c] = (cplx_t*)calloc(Ctrl->N.nf, sizeof(cplx_t));
-            if(grn_uiz)  grn_uiz[ir][im][c] = (cplx_t*)calloc(Ctrl->N.nf, sizeof(cplx_t));
-            if(grn_uir)  grn_uir[ir][im][c] = (cplx_t*)calloc(Ctrl->N.nf, sizeof(cplx_t));
-        }
-    }
-
         
     // 波数积分方法
     K_INTEG_METHOD KMET = {0};
@@ -1106,29 +1037,37 @@ int greenfn_main(int argc, char **argv) {
     if(! Ctrl->s.active){
         print_Ctrl(Ctrl);
     }
+
+    // 格林函数频谱
+    GRNSPEC *grn = &(GRNSPEC){0};
+    {
+        grn->nf = Ctrl->N.nf;
+        grn->freqs = Ctrl->N.freqs;
+        grn->nf1 = Ctrl->H.nf1;
+        grn->nf2 = Ctrl->H.nf2;
+        grn->nr = Ctrl->R.nr;
+        grn->rs = Ctrl->R.rs;
+        grn->wI = Ctrl->N.wI;
+        grn->keepAllFreq = Ctrl->N.keepAllFreq;
+        grn->calc_upar = Ctrl->e.active;
+
+        grt_grnspec_allocate_u(grn);
+        grn->statsstr = Ctrl->S.s_statsdir;
+        grn->nstatsidxs = Ctrl->S.nstatsidxs;
+        grn->statsidxs = Ctrl->S.statsidxs;
+    }
     
 
     //==============================================================================
     // 计算格林函数
-    grt_integ_grn_spec(
-        mod1d, Ctrl->H.nf1, Ctrl->H.nf2, Ctrl->N.freqs, Ctrl->R.nr, Ctrl->R.rs, Ctrl->N.wI, Ctrl->N.keepAllFreq,
-        &KMET, !Ctrl->s.active, Ctrl->e.active, 
-        grn, grn_uiz, grn_uir,
-        Ctrl->S.s_statsdir, Ctrl->S.nstatsidxs, Ctrl->S.statsidxs
-    );
+    grt_integ_grn_spec(mod1d, &KMET, grn, !Ctrl->s.active);
     //==============================================================================
 
     // 使用fftw3做反傅里叶变换，并保存到 SAC 
     // 其中考虑了升采样倍数
-    GRT_FFTW_HOLDER *fh = grt_create_fftw_holder_C2R_1D(
-        Ctrl->N.nt*Ctrl->N.upsample_n, Ctrl->N.dt/Ctrl->N.upsample_n, Ctrl->N.nf, Ctrl->N.df);
+    GRT_FFTW_HOLDER *fh = grt_create_fftw_holder_C2R_1D(Ctrl->N.nt*Ctrl->N.upsample_n, Ctrl->N.dt/Ctrl->N.upsample_n, Ctrl->N.nf, Ctrl->N.df);
 
-    real_t (* travtPS)[2] = (real_t (*)[2])calloc(Ctrl->R.nr, sizeof(real_t)*2);
-
-    char *s_output_dirprefx = NULL;
-    GRT_SAFE_ASPRINTF(&s_output_dirprefx, "%s/%s_%s_%s", Ctrl->O.s_output_dir, Ctrl->M.s_modelname, Ctrl->D.s_depsrc, Ctrl->D.s_deprcv);
-    
-    // 建立SAC头文件，包含必要的头变量
+    // 建立 SAC 文件原型，包含必要的头变量
     SACTRACE *sac = grt_new_SACTRACE(fh->dt, fh->nt, 0.0);
     // 发震时刻作为参考时刻
     sac->hd.o = 0.0; 
@@ -1149,22 +1088,20 @@ int greenfn_main(int argc, char **argv) {
     sac->hd.user7 = mod1d->Vb[mod1d->isrc];
     sac->hd.user8 = mod1d->Rho[mod1d->isrc];
     
-    // 做反傅里叶变换，保存SAC文件
+    // 为每个震中距设置对应的变量
+    real_t (*travtPS)[2] = (real_t (*)[2])calloc(grn->nr, sizeof(real_t)*2);
+    real_t *begintimes = (real_t *)calloc(grn->nr, sizeof(real_t));
+    char **outputdirs = (char **)calloc(grn->nr, sizeof(char *));
     for(size_t ir = 0; ir < Ctrl->R.nr; ++ir){
         real_t dist = Ctrl->R.rs[ir];
-        sac->hd.dist = dist;
 
-        // 文件保存子目录
-        char *s_output_subdir = NULL;
-        
-        GRT_SAFE_ASPRINTF(&s_output_subdir, "%s_%s", s_output_dirprefx, Ctrl->R.s_rs[ir]);
-        GRTCheckMakeDir(s_output_subdir);
+        outputdirs[ir] = NULL;
+        GRT_SAFE_ASPRINTF(&outputdirs[ir], "%s/%s_%s_%s_%s", 
+            Ctrl->O.s_output_dir, Ctrl->M.s_modelname, Ctrl->D.s_depsrc, Ctrl->D.s_deprcv, Ctrl->R.s_rs[ir]);
 
         // 计算理论走时
-        sac->hd.t0 = grt_compute_travt1d(mod1d->Thk, mod1d->Va, mod1d->n, mod1d->isrc, mod1d->ircv, dist);
-        strcpy(sac->hd.kt0, "P");
-        sac->hd.t1 = grt_compute_travt1d(mod1d->Thk, mod1d->Vb, mod1d->n, mod1d->isrc, mod1d->ircv, dist);
-        strcpy(sac->hd.kt1, "S");
+        travtPS[ir][0] = grt_compute_travt1d(mod1d->Thk, mod1d->Va, mod1d->n, mod1d->isrc, mod1d->ircv, dist);
+        travtPS[ir][1] = grt_compute_travt1d(mod1d->Thk, mod1d->Vb, mod1d->n, mod1d->isrc, mod1d->ircv, dist);
 
         // 时间延迟
         {
@@ -1173,44 +1110,17 @@ int greenfn_main(int argc, char **argv) {
                 delayT = Ctrl->E.delayT0;
                 if(Ctrl->E.delayV0 > 0.0)   delayT += sqrt( GRT_SQUARE(dist) + GRT_SQUARE(Ctrl->D.deprcv - Ctrl->D.depsrc) ) / Ctrl->E.delayV0;
             } else {
-                delayT = Ctrl->E.delayT0 + sac->hd.t0;
+                delayT = Ctrl->E.delayT0 + travtPS[ir][0];
             }
             // 修改SAC头段时间变量
-            sac->hd.b = delayT;
-        }
-
-        GRT_LOOP_ChnlGrid(im, c){
-            if(! Ctrl->G.doEX  && im==GRT_SRC_M_EX_INDEX)  continue;
-            if(! Ctrl->G.doVF  && im==GRT_SRC_M_VF_INDEX)  continue;
-            if(! Ctrl->G.doHF  && im==GRT_SRC_M_HF_INDEX)  continue;
-            if(! Ctrl->G.doDC  && im>=GRT_SRC_M_DD_INDEX)  continue;
-
-            int modr = GRT_SRC_M_ORDERS[im];
-            int sgn=1;  // 用于反转Z分量
-
-            if(modr==0 && GRT_ZRT_CODES[c]=='T')  continue;  // 跳过输出0阶的T分量
-
-            // Z分量反转
-            sgn = (GRT_ZRT_CODES[c]=='Z') ? -1 : 1;
-
-            char ch = GRT_ZRT_CODES[c];
-
-            write_one_to_sac(GRT_SRC_M_NAME_ABBR[im], ch, fh, Ctrl->N.wI, sac, s_output_subdir, "", sgn, Ctrl->N.skipImagComps, grn[ir][im][c]);
-
-            if(Ctrl->e.active){
-                write_one_to_sac(GRT_SRC_M_NAME_ABBR[im], ch, fh, Ctrl->N.wI, sac, s_output_subdir, "z", sgn*(-1), Ctrl->N.skipImagComps, grn_uiz[ir][im][c]);
-                write_one_to_sac(GRT_SRC_M_NAME_ABBR[im], ch, fh, Ctrl->N.wI, sac, s_output_subdir, "r", sgn     , Ctrl->N.skipImagComps, grn_uir[ir][im][c]);
-            }
-        }
-
-        GRT_SAFE_FREE_PTR(s_output_subdir);
-        
-        // 记录走时
-        if(travtPS != NULL){
-            travtPS[ir][0] = sac->hd.t0;
-            travtPS[ir][1] = sac->hd.t1;
+            begintimes[ir] = delayT;
         }
     }
+
+    // 反傅里叶变换后保存到SAC文件
+    grt_grnspec_write_sac(
+        grn, travtPS, begintimes, outputdirs, fh, sac, 
+        Ctrl->N.skipImagComps, Ctrl->G.doEX, Ctrl->G.doVF, Ctrl->G.doHF, Ctrl->G.doDC);
 
     // 输出警告：当震源位于液体层中时，仅允许计算爆炸源对应的格林函数
     if(mod1d->isLiquid[mod1d->isrc]){
@@ -1219,7 +1129,6 @@ int greenfn_main(int argc, char **argv) {
             "therefore only the Green's Funtions for the Explosion source will be computed.\n");
     }
 
-    grt_free_SACTRACE(sac);
 
     
     // 打印走时
@@ -1235,19 +1144,13 @@ int greenfn_main(int argc, char **argv) {
     }
 
     // 释放内存
-    for(size_t ir=0; ir<Ctrl->R.nr; ++ir){
-        GRT_LOOP_ChnlGrid(im, c){
-            GRT_SAFE_FREE_PTR(grn[ir][im][c]);
-            if(grn_uiz) GRT_SAFE_FREE_PTR(grn_uiz[ir][im][c]);
-            if(grn_uir) GRT_SAFE_FREE_PTR(grn_uir[ir][im][c]);
-        }
-    }
-    GRT_SAFE_FREE_PTR(grn);
-    GRT_SAFE_FREE_PTR(grn_uiz);
-    GRT_SAFE_FREE_PTR(grn_uir);
+    grt_grnspec_free_u(grn);
     GRT_SAFE_FREE_PTR(travtPS);
-
+    GRT_SAFE_FREE_PTR(begintimes);
+    grt_free_SACTRACE(sac);
     grt_destroy_fftw_holder(fh);
+    for(size_t ir = 0; ir < grn->nr; ++ir)  GRT_SAFE_FREE_PTR(outputdirs[ir]);
+    GRT_SAFE_FREE_PTR(outputdirs);
 
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;
