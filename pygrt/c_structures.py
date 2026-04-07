@@ -33,7 +33,8 @@ __all__ = [
     "PCPLX",
 
     "c_MODEL1D",
-    "c_K_INTEG_METHOD"
+    "c_K_INTEG_METHOD",
+    "c_GRNSPEC"
 ]
 
 
@@ -123,4 +124,29 @@ class c_K_INTEG_METHOD(Structure):
 
         ('fstats', c_void_p),
         ('ptam_fstatsnr', c_void_p),
+    ]
+
+class c_GRNSPEC(Structure):
+    """
+    和 C 结构体 GRNSPEC 作匹配
+    """
+
+    _fields_ = [
+        ('nf', c_size_t),
+        ('freqs', PREAL),
+        ('nf1', c_size_t),
+        ('nf2', c_size_t),
+        ('nr', c_size_t),
+        ('rs', PREAL),
+        ('wI', REAL),
+        ('keepAllFreq', c_bool),
+        ('calc_upar', c_bool),
+        
+        ('u', POINTER((PCPLX*CHANNEL_NUM)*SRC_M_NUM)),
+        ('uiz', POINTER((PCPLX*CHANNEL_NUM)*SRC_M_NUM)),
+        ('uir', POINTER((PCPLX*CHANNEL_NUM)*SRC_M_NUM)),
+
+        ('statsstr', c_char_p),
+        ('nstatsidxs', c_size_t),
+        ('statsidxs', POINTER(c_size_t)),
     ]

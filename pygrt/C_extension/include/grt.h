@@ -41,6 +41,7 @@
 
 
 #include "grt/dynamic/grn.h"
+#include "grt/dynamic/grnspec.h"
 #include "grt/dynamic/layer.h"
 #include "grt/dynamic/signals.h"
 #include "grt/dynamic/source.h"

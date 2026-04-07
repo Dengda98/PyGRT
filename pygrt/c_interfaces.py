@@ -29,18 +29,7 @@ libgrt = cdll.LoadLibrary(
 
 C_grt_integ_grn_spec = libgrt.grt_integ_grn_spec
 """C库中计算格林函数的主函数 integ_grn_spec, 详见C API同名函数"""
-C_grt_integ_grn_spec.argtypes = [
-    POINTER(c_MODEL1D), c_size_t, c_size_t, PREAL,       
-    c_size_t, PREAL, REAL, c_bool, POINTER(c_K_INTEG_METHOD),
-    c_bool, c_bool,
-    POINTER((PCPLX*CHANNEL_NUM)*SRC_M_NUM),
-    POINTER((PCPLX*CHANNEL_NUM)*SRC_M_NUM),
-    POINTER((PCPLX*CHANNEL_NUM)*SRC_M_NUM),
-
-    c_char_p,
-    c_size_t, 
-    POINTER(c_size_t)
-]
+C_grt_integ_grn_spec.argtypes = [POINTER(c_MODEL1D), POINTER(c_K_INTEG_METHOD), POINTER(c_GRNSPEC), c_bool]
 
 
 C_grt_integ_static_grn = libgrt.grt_integ_static_grn
