@@ -34,7 +34,6 @@
 #include "grt/common/progressbar.h"
 #include "grt/common/radiation.h"
 #include "grt/common/sacio.h"
-#include "grt/common/sacio2.h"
 #include "grt/common/search.h"
 #include "grt/common/travt.h"
 #include "grt/common/util.h"
