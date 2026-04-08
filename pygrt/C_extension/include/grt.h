@@ -52,6 +52,7 @@
 #include "grt/modal/energy.h"
 #include "grt/modal/modal_def.h"
 #include "grt/modal/modal_util.h"
+#include "grt/modal/modgrn.h"
 #include "grt/modal/root.h"
 #include "grt/modal/secular.h"
 

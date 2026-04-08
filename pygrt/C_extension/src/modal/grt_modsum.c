@@ -398,277 +398,6 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 }
 
 
-static void grt_modsum_grn_Rayl(
-    const MODEL1D_STATE *mstat, const cplx_t (*mod_potRaylLove_Down)[GRT_RAYL_DIM], const cplx_t (*mod_potRaylLove_Up)[GRT_RAYL_DIM],
-    const cplx_t *egyint, const size_t nr, const real_t *rs, const size_t iw, 
-    bool calc_upar, pcplxChnlGrid *grn, pcplxChnlGrid *grn_uiz, pcplxChnlGrid *grn_uir)
-{
-    // 注意模型中并未插入震源层和接收层
-    size_t isrc = mstat->mod1d->isrc;
-    size_t ircv = mstat->mod1d->ircv;
-
-    real_t eigenK = mstat->k;
-
-    // 震源层物性参数
-    cplx_t src_mu = mstat->mu[isrc];
-    real_t src_rho = mstat->mod1d->Rho[isrc];
-    cplx_t src_a = eigenK * mstat->xa[isrc];
-    cplx_t src_b = eigenK * mstat->xb[isrc];
-    cplx_t src_Omg = eigenK*eigenK * (1.0 - 0.5*mstat->cbcb[isrc]);
-
-    // 计算震源系数
-    cplxChnlGrid src_coefD = {0};
-    cplxChnlGrid src_coefU = {0};
-    grt_source_coef_PSV(mstat, src_coefD, src_coefU);
-
-    // 构造所需的震源系数
-    cplx_t fcoef[GRT_SRC_M_NUM][GRT_RAYL_DIM];
-    for(int i = 0; i < GRT_SRC_M_NUM; ++i){
-        fcoef[i][0] =   eigenK*(src_coefD[i][0] - src_coefU[i][0]) - src_b*(src_coefD[i][1] + src_coefU[i][1]);
-        fcoef[i][1] = - src_a *(src_coefD[i][0] + src_coefU[i][0]) + eigenK*(src_coefD[i][1] - src_coefU[i][1]);
-        fcoef[i][2] =  2.0*src_mu*(src_Omg*(src_coefD[i][0] - src_coefU[i][0]) - eigenK*src_b*(src_coefD[i][1] + src_coefU[i][1]));
-        fcoef[i][3] =  2.0*src_mu*(- eigenK*src_a*(src_coefD[i][0] + src_coefU[i][0]) + src_Omg*(src_coefD[i][1] - src_coefU[i][1]));
-    }
-
-    // 计算震源处的本征函数
-    cplx_t T0[GRT_RAYL_DIM][GRT_RAYL_DIM] = {0};
-    cplx_t src_eigenfn[4] = {0};
-    grt_get_eigenfn_single_depth_Rayl(mstat, mod_potRaylLove_Down, mod_potRaylLove_Up, T0, false, mstat->mod1d->depsrc, isrc, src_eigenfn);
-
-    // 构造公式中的 Fm^R 项
-    cplx_t F_item[GRT_SRC_M_NUM] = {0};
-    for(int i = 0; i < GRT_SRC_M_NUM; ++i){
-        F_item[i] =   fcoef[i][0]*src_eigenfn[3] + fcoef[i][1]*src_eigenfn[2]
-                    - fcoef[i][2]*src_eigenfn[1] - fcoef[i][3]*src_eigenfn[0];
-    }
-
-    // 计算接收处的本征函数
-    cplx_t rcv_eigenfn[4] = {0};
-    cplx_t rcv_eigenfn_z[4] = {0};
-    grt_get_eigenfn_single_depth_Rayl(mstat, mod_potRaylLove_Down, mod_potRaylLove_Up, T0, false, mstat->mod1d->deprcv, ircv, rcv_eigenfn);
-    if(calc_upar){
-        cplx_t xa = mstat->xa[ircv];
-        cplx_t xb = mstat->xb[ircv];
-        bool   isLiquid = mstat->mod1d->isLiquid[ircv];
-        real_t k = mstat->k;
-
-        cplx_t ak = k*k*xa;
-        cplx_t bk = k*k*xb;
-        cplx_t bb = xb*bk;
-        cplx_t aa = xa*ak;
-        cplx_t T0_z[GRT_RAYL_DIM][GRT_RAYL_DIM] = {
-            {ak, bb, -ak, bb},
-            {aa, bk, aa, -bk}
-        };
-
-        if(! isLiquid){
-            grt_get_eigenfn_single_depth_Rayl(mstat, mod_potRaylLove_Down, mod_potRaylLove_Up, T0_z, true, mstat->mod1d->deprcv, ircv, rcv_eigenfn_z);
-        }
-    }
-
-    // 计算该频点、该本征值下的频谱
-    cplx_t i_m[GRT_MORDER_MAX+1] = {1.0, I, -1.0};
-    cplx_t dom = 4.0*egyint[1] - 2.0*egyint[2]/eigenK;
-    cplx_t wcoef, qcoef;
-    cplx_t wcoefz, qcoefz;
-    for(int im = 0; im < GRT_SRC_M_NUM; ++im){
-        int modr = GRT_SRC_M_ORDERS[im];
-        // Rayleigh 波仅考虑 q, w 项
-        
-        cplx_t aa = - 1.0/(4.0*src_rho*GRT_SQUARE(mstat->omega));
-
-        // Z  
-        wcoef = rcv_eigenfn[1] * i_m[modr] * F_item[im] / dom * aa;
-        wcoefz = rcv_eigenfn_z[1] * i_m[modr] * F_item[im] / dom * aa;
-        // R
-        qcoef = I * rcv_eigenfn[0] * i_m[modr] * F_item[im] / dom * aa;
-        qcoefz = I * rcv_eigenfn_z[0] * i_m[modr] * F_item[im] / dom * aa;
-
-        for(size_t ir = 0; ir < nr; ++ir){
-            // 草稿推导有误？似乎应该使用 H^(2)(kr)
-            cplx_t ekr = sqrt(2.0 / (PI*eigenK*rs[ir])) * exp( - I * (eigenK*rs[ir] + QUARTERPI));
-            grn[ir][im][0][iw] += wcoef * ekr;
-            grn[ir][im][1][iw] += - qcoef * ekr;
-            if(calc_upar){
-                grn_uiz[ir][im][0][iw] += wcoefz * ekr;
-                grn_uiz[ir][im][1][iw] += - qcoefz * ekr;
-            }
-        }
-    }
-
-}
-
-
-
-static void grt_modsum_grn_Love(
-    const MODEL1D_STATE *mstat, const cplx_t (*mod_potRaylLove_Down)[GRT_LOVE_DIM], const cplx_t (*mod_potRaylLove_Up)[GRT_LOVE_DIM],
-    const cplx_t *egyint, const size_t nr, const real_t *rs, const size_t iw, 
-    bool calc_upar, pcplxChnlGrid *grn, pcplxChnlGrid *grn_uiz, pcplxChnlGrid *grn_uir)
-{
-    // 注意模型中并未插入震源层和接收层
-    size_t isrc = mstat->mod1d->isrc;
-    size_t ircv = mstat->mod1d->ircv;
-
-    real_t eigenK = mstat->k;
-
-    // 震源层物性参数
-    cplx_t src_mu = mstat->mu[isrc];
-    real_t src_rho = mstat->mod1d->Rho[isrc];
-    cplx_t src_b = eigenK * mstat->xb[isrc];
-
-    // 计算震源系数
-    cplxChnlGrid src_coefD = {0};
-    cplxChnlGrid src_coefU = {0};
-    grt_source_coef_SH(mstat, src_coefD, src_coefU);
-
-    // 构造所需的震源系数
-    cplx_t fcoef[GRT_SRC_M_NUM][GRT_LOVE_DIM] = {0};
-    for(int i = 0; i < GRT_SRC_M_NUM; ++i){
-        fcoef[i][0] =   eigenK*(src_coefD[i][2] - src_coefU[i][2]);
-        fcoef[i][1] = - src_mu*eigenK*src_b*(src_coefD[i][2] + src_coefU[i][2]);
-    }
-
-    // 计算震源处的本征函数
-    cplx_t T0[GRT_LOVE_DIM][GRT_LOVE_DIM] = {0};
-    cplx_t src_eigenfn[4] = {0};
-    grt_get_eigenfn_single_depth_Love(mstat, mod_potRaylLove_Down, mod_potRaylLove_Up, T0, false, mstat->mod1d->depsrc, isrc, src_eigenfn);
-
-    // 构造公式中的 Fm^L 项
-    cplx_t F_item[GRT_SRC_M_NUM] = {0};
-    for(int i = 0; i < GRT_SRC_M_NUM; ++i){
-        F_item[i] = fcoef[i][0]*src_eigenfn[1] - fcoef[i][1]*src_eigenfn[0];
-    }
-
-    // 计算接收处的本征函数
-    cplx_t rcv_eigenfn[4] = {0};
-    cplx_t rcv_eigenfn_z[4] = {0};
-    grt_get_eigenfn_single_depth_Love(mstat, mod_potRaylLove_Down, mod_potRaylLove_Up, T0, false, mstat->mod1d->deprcv, ircv, rcv_eigenfn);
-    if(calc_upar){
-        cplx_t xb = mstat->xb[ircv];
-        bool   isLiquid = mstat->mod1d->isLiquid[ircv];
-        real_t k = mstat->k;
-
-        cplx_t bk = k*k*xb;
-        cplx_t T0_z[GRT_LOVE_DIM][GRT_LOVE_DIM] = {{bk, -bk}};
-
-        if(! isLiquid){
-            grt_get_eigenfn_single_depth_Love(mstat, mod_potRaylLove_Down, mod_potRaylLove_Up, T0_z, true, mstat->mod1d->deprcv, ircv, rcv_eigenfn_z);
-        }
-    }
-
-    // 计算该频点、该本征值下的频谱
-    cplx_t i_m[GRT_MORDER_MAX+1] = {1.0, I, -1.0};
-    cplx_t dom = 4.0*egyint[1];
-    cplx_t vcoef;
-    cplx_t vcoefz;
-    for(int im = 0; im < GRT_SRC_M_NUM; ++im){
-        int modr = GRT_SRC_M_ORDERS[im];
-        // Love 波仅考虑 v 项
-        if(modr == 0)  continue;
-        
-        cplx_t aa = - 1.0/(4.0*src_rho*GRT_SQUARE(mstat->omega));
-
-        // T
-        vcoef = I * rcv_eigenfn[0] * i_m[modr] * F_item[im] / dom * aa;
-        vcoefz = I * rcv_eigenfn_z[0] * i_m[modr] * F_item[im] / dom * aa;
-
-        for(size_t ir = 0; ir < nr; ++ir){
-            // 草稿推导有误？似乎应该使用 H^(2)(kr)
-            cplx_t ekr = sqrt(2.0 / (PI*eigenK*rs[ir])) * exp( - I * (eigenK*rs[ir] + QUARTERPI));
-            grn[ir][im][2][iw] += vcoef * ekr;
-            if(calc_upar){
-                grn_uiz[ir][im][2][iw] += vcoefz * ekr;
-            }
-        }
-    }
-
-}
-
-static void grt_modsum_grn(
-    const MODEL1D_STATE *mstat, const DISPER_TYPE wtype, const size_t ncols, 
-    const cplx_t (*mod_potRaylLove_Down)[ncols], const cplx_t (*mod_potRaylLove_Up)[ncols],
-    const cplx_t *egyint, const size_t nr, const real_t *rs, const size_t iw, 
-    bool calc_upar, pcplxChnlGrid *grn, pcplxChnlGrid *grn_uiz, pcplxChnlGrid *grn_uir)
-{
-    if(wtype == GRT_DISPERSION_RAYL && ncols == GRT_RAYL_DIM){
-        grt_modsum_grn_Rayl(mstat, mod_potRaylLove_Down, mod_potRaylLove_Up, egyint, nr, rs, iw, calc_upar, grn, grn_uiz, grn_uir);
-    } 
-    else if(wtype == GRT_DISPERSION_LOVE && ncols == GRT_LOVE_DIM) {
-        grt_modsum_grn_Love(mstat, mod_potRaylLove_Down, mod_potRaylLove_Up, egyint, nr, rs, iw, calc_upar, grn, grn_uiz, grn_uir);
-    }
-    else {
-        GRTRaiseError("Wrong execution.");
-    }
-
-    // 对一些特殊情况的修正
-    // 当震源和场点均位于地表时，可理论验证DS分量恒为0，这里直接赋0以避免后续的精度干扰
-    if(mstat->mod1d->depsrc == 0.0 && mstat->mod1d->deprcv == 0.0)
-    {
-        for(size_t ir = 0; ir < nr; ++ir){
-            for(int c = 0; c < GRT_CHANNEL_NUM; ++c){
-                grn[ir][GRT_SRC_M_DS_INDEX][c][iw] = 0.0;
-            }
-        }
-    }
-}
-
-
-
-/** 将一条数据反变换回时间域再进行处理，保存到SAC文件 */
-static void write_one_to_sac(
-    const char *srcname, const char ch, GRT_FFTW_HOLDER *fh, const real_t wI, 
-    SACTRACE *sac, const char *s_output_subdir, const char *s_prefix,
-    const int sgn, bool skipImagComps, const cplx_t *grncplx)
-{
-    snprintf(sac->hd.kcmpnm, sizeof(sac->hd.kcmpnm), "%s%s%c", s_prefix, srcname, ch);
-    
-    char *s_outpath = NULL;
-    GRT_SAFE_ASPRINTF(&s_outpath, "%s/%s.sac", s_output_subdir, sac->hd.kcmpnm);
-
-    // 执行fft任务会修改数组，需重新置零
-    grt_reset_fftw_holder_zero(fh);
-    
-    // 赋值复数，包括时移
-    cplx_t cfac, ccoef;
-    cfac = exp(I*PI2*fh->df*sac->hd.b);
-    ccoef = sgn;
-    // 只赋值有效长度，其余均为0
-    for(size_t i = 0; i < fh->nf_valid; ++i){
-        fh->W_f[i] = grncplx[i] * ccoef;
-        ccoef *= cfac;
-    }
-
-
-    if(! fh->naive_inv){
-        // 发起fft任务 
-        fftw_execute(fh->plan);
-    } else {
-        grt_naive_inverse_transform_double(fh);
-    }
-
-    // 归一化，并处理虚频
-    // 并转为 SAC 需要的单精度类型
-    real_t fac, coef;
-    coef = fh->df;
-    fac = 1.0;
-    if (! skipImagComps) {
-        coef *= exp(sac->hd.b * wI);
-        fac = exp(wI*fh->dt);
-    }
-    for(size_t i = 0; i < fh->nt; ++i){
-        sac->data[i] = fh->w_t[i] * coef;
-        coef *= fac;
-    }
-    
-
-    // 以sac文件保存到本地
-    grt_write_SACTRACE(s_outpath, sac);
-
-    GRT_SAFE_FREE_PTR(s_outpath);
-}
-
-
-
 /* 子模块主函数 */
 int modsum_main(int argc, char **argv){
     GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
@@ -732,90 +461,35 @@ int modsum_main(int argc, char **argv){
     // FFT需要的参数，包括零频和区域外的（从原频散文件确定，因此本模块中 -F 的作用仅用于筛选频段）
     real_t fft_df = eigmet->freqs[1] - eigmet->freqs[0];
     size_t fft_nf = eigmet->nf + 1; // + 1 是为零频
-    size_t fft_offset = round(eigmet->freqs[0] / fft_df);
     size_t fft_nt = 2*(fft_nf - 1);
     real_t fft_dt = 1.0 / fft_df;
 
-    // 计算的面波格林函数
-    pcplxChnlGrid *grn = (pcplxChnlGrid *) calloc(Ctrl->R.nr, sizeof(*grn));
-    pcplxChnlGrid *grn_uiz = (Ctrl->e.active)? (pcplxChnlGrid *) calloc(Ctrl->R.nr, sizeof(*grn_uiz)) : NULL;
-    pcplxChnlGrid *grn_uir = (Ctrl->e.active)? (pcplxChnlGrid *) calloc(Ctrl->R.nr, sizeof(*grn_uir)) : NULL;
-    for(size_t ir=0; ir<Ctrl->R.nr; ++ir){
-        GRT_LOOP_ChnlGrid(im, c){
-            grn[ir][im][c] = (cplx_t*)calloc(fft_nf, sizeof(cplx_t));
-            if(grn_uiz)  grn_uiz[ir][im][c] = (cplx_t*)calloc(fft_nf, sizeof(cplx_t));
-            if(grn_uir)  grn_uir[ir][im][c] = (cplx_t*)calloc(fft_nf, sizeof(cplx_t));
-        }
+    // 格林函数频谱
+    GRNSPEC *grn = &(GRNSPEC){0};
+    {
+        grn->nf = fft_nf;
+        grn->freqs = (real_t *)calloc(fft_nf, sizeof(real_t));   // 单独增加 0 频
+        memcpy(grn->freqs+1, eigmet->freqs, sizeof(real_t)*eigmet->nf);
+        grn->nf1 = 0;
+        grn->nf2 = fft_nf-1;
+        grn->nr = Ctrl->R.nr;
+        grn->rs = Ctrl->R.rs;
+        grn->wI = 0.0;
+        grn->keepAllFreq = true;
+        grn->calc_upar = Ctrl->e.active;
+
+        grt_grnspec_allocate_u(grn);
+        grn->statsstr = NULL;
+        grn->nstatsidxs = 0;
+        grn->statsidxs = NULL;
     }
 
-    // Rayleigh or Love
-    const int ncols = (eigmet->wtype == GRT_DISPERSION_RAYL)? GRT_RAYL_DIM : GRT_LOVE_DIM;
-    
-    size_t nlay = mod1d->n;
-
-    // 循环所需要的频率
-    #pragma omp parallel for schedule(guided) default(shared)
-    for(size_t iw = 0; iw < eigfnmet->nf; ++iw){
-        MODEL1D_STATE *local_mstat = grt_init_mod1d_state(mod1d);
-
-        real_t omega = PI2*eigfnmet->freqs[iw];
-        EIGENV *eigv = eigfnmet->eigv + iw;
-        
-        grt_update_mod1d_state_omega(local_mstat, omega, true);
-        
-        // 假设这些本征值都是从 iref 层的久期函数算出来的，
-        // 1. 先根据 iref（z_i+）的垂直波函数，计算出每个物理分界面上侧（z_j-）和下侧（z_j+）的垂直波函数
-        // 2. 循环每个深度采样点，使用上侧（z_{j+1}-）和下侧（z_j+）的垂直波函数推导采样点上的垂直波函数以及本征函数
-        for(size_t ic = 0; ic < eigv->n; ++ic){
-            real_t cphase = eigv->c_roots[ic];
-            
-            local_mstat->c_phase = cphase;
-            local_mstat->k = creal(omega)/cphase;
-            grt_update_mod1d_state_k(local_mstat, local_mstat->k);
-
-            size_t iref = eigv->c_roots_iref[ic];
-
-            // 模型每个物理层介质下方 z_j+ 的垂直波函数
-            cplx_t (*mod_potRaylLove_Down)[ncols] = (cplx_t (*)[ncols])calloc(nlay, sizeof(cplx_t)*ncols);
-            // 模型每个物理层介质上方 z_j- 的垂直波函数，申请 n+1 的内存，方便后续不必讨论“半空间中的上行波场”
-            cplx_t (*mod_potRaylLove_Up)[ncols] = (cplx_t (*)[ncols])calloc(nlay + 1, sizeof(cplx_t)*ncols);
-
-            cplx_t potRaylLove[ncols];  memset(potRaylLove, 0, sizeof(cplx_t)*ncols);
-            cplx_t potRaylLoveUp[ncols];  memset(potRaylLoveUp, 0, sizeof(cplx_t)*ncols);
-            cplx_t secRaylLove = 0.0;
-            grt_secular_function_potential(local_mstat, cphase, iref, eigfnmet->wtype, &secRaylLove, potRaylLove, potRaylLoveUp);
- 
-            // 计算出每个物理分界面上侧（z_{j+1}-）和 下侧（z_j+）的垂直波函数
-            grt_get_mod_potential_Up_Down(local_mstat, eigfnmet->wtype, ncols, iref, potRaylLove, potRaylLoveUp, mod_potRaylLove_Down, mod_potRaylLove_Up);
-
-            // 计算能量积分
-            grt_energy_integrals(
-                local_mstat, eigfnmet->wtype, ncols, 
-                mod_potRaylLove_Down, mod_potRaylLove_Up, eigfnmet, &eigfnmet->eigfn[iw][ic]);
-
-            // 计算面波格林函数
-            grt_modsum_grn(
-                local_mstat, eigfnmet->wtype, ncols, 
-                mod_potRaylLove_Down, mod_potRaylLove_Up, eigfnmet->eigfn[iw][ic].egyint,
-                Ctrl->R.nr, Ctrl->R.rs, iw + fft_offset, 
-                Ctrl->e.active, grn, grn_uiz, grn_uir);
-            
-            GRT_SAFE_FREE_PTR(mod_potRaylLove_Down);
-            GRT_SAFE_FREE_PTR(mod_potRaylLove_Up);
-        }
-
-        grt_free_mod1d_state(local_mstat);
-    }
+    grt_modsum_grn_spec(mod1d, eigmet->wtype, eigfnmet, grn);
 
 
     // 使用fftw3做反傅里叶变换，并保存到 SAC 
     // 其中考虑了升采样倍数
     GRT_FFTW_HOLDER *fh = grt_create_fftw_holder_C2R_1D(fft_nt*Ctrl->W.upsample_n, fft_dt/Ctrl->W.upsample_n, fft_nf, fft_df);
-
-    real_t (* travtPS)[2] = (real_t (*)[2])calloc(Ctrl->R.nr, sizeof(real_t)*2);
-
-    char *s_output_dirprefx = NULL;
-    GRT_SAFE_ASPRINTF(&s_output_dirprefx, "%s/%s_%s_%s", Ctrl->O.s_output_dir, modelpath, Ctrl->D.s_depsrc, Ctrl->D.s_deprcv);
     
     // 建立SAC头文件，包含必要的头变量
     SACTRACE *sac = grt_new_SACTRACE(fh->dt, fh->nt, 0.0);
@@ -838,22 +512,20 @@ int modsum_main(int argc, char **argv){
     sac->hd.user7 = mod1d->Vb[mod1d->isrc];
     sac->hd.user8 = mod1d->Rho[mod1d->isrc];
     
-    // 做反傅里叶变换，保存SAC文件
+    // 为每个震中距设置对应的变量
+    real_t (*travtPS)[2] = (real_t (*)[2])calloc(grn->nr, sizeof(real_t)*2);
+    real_t *begintimes = (real_t *)calloc(grn->nr, sizeof(real_t));
+    char **outputdirs = (char **)calloc(grn->nr, sizeof(char *));
     for(size_t ir = 0; ir < Ctrl->R.nr; ++ir){
         real_t dist = Ctrl->R.rs[ir];
-        sac->hd.dist = dist;
 
-        // 文件保存子目录
-        char *s_output_subdir = NULL;
-        
-        GRT_SAFE_ASPRINTF(&s_output_subdir, "%s_%s", s_output_dirprefx, Ctrl->R.s_rs[ir]);
-        GRTCheckMakeDir(s_output_subdir);
+        outputdirs[ir] = NULL;
+        GRT_SAFE_ASPRINTF(&outputdirs[ir], "%s/%s_%s_%s_%s", 
+            Ctrl->O.s_output_dir, modelpath, Ctrl->D.s_depsrc, Ctrl->D.s_deprcv, Ctrl->R.s_rs[ir]);
 
         // 计算理论走时
-        sac->hd.t0 = grt_compute_travt1d(mod1d->Thk, mod1d->Va, mod1d->n, mod1d->isrc, mod1d->ircv, dist);
-        strcpy(sac->hd.kt0, "P");
-        sac->hd.t1 = grt_compute_travt1d(mod1d->Thk, mod1d->Vb, mod1d->n, mod1d->isrc, mod1d->ircv, dist);
-        strcpy(sac->hd.kt1, "S");
+        travtPS[ir][0] = grt_compute_travt1d(mod1d->Thk, mod1d->Va, mod1d->n, mod1d->isrc, mod1d->ircv, dist);
+        travtPS[ir][1] = grt_compute_travt1d(mod1d->Thk, mod1d->Vb, mod1d->n, mod1d->isrc, mod1d->ircv, dist);
 
         // 时间延迟
         {
@@ -864,45 +536,16 @@ int modsum_main(int argc, char **argv){
             } else {
                 delayT = Ctrl->E.delayT0 + sac->hd.t0;
             }
-            // 修改SAC头段时间变量
-            sac->hd.b = delayT;
-        }
-
-        GRT_LOOP_ChnlGrid(im, c){
-            if(! Ctrl->G.doEX  && im==GRT_SRC_M_EX_INDEX)  continue;
-            if(! Ctrl->G.doVF  && im==GRT_SRC_M_VF_INDEX)  continue;
-            if(! Ctrl->G.doHF  && im==GRT_SRC_M_HF_INDEX)  continue;
-            if(! Ctrl->G.doDC  && im>=GRT_SRC_M_DD_INDEX)  continue;
-
-            int modr = GRT_SRC_M_ORDERS[im];
-            int sgn=1;  // 用于反转Z分量
-
-            if(modr==0 && GRT_ZRT_CODES[c]=='T')  continue;  // 跳过输出0阶的T分量
-
-            // Z分量反转
-            sgn = (GRT_ZRT_CODES[c]=='Z') ? -1 : 1;
-
-            char ch = GRT_ZRT_CODES[c];
-            
-            if(eigfnmet->wtype == GRT_DISPERSION_RAYL && ch =='T')  continue;
-            if(eigfnmet->wtype == GRT_DISPERSION_LOVE && ch !='T')  continue;
-
-            write_one_to_sac(GRT_SRC_M_NAME_ABBR[im], ch, fh, 0.0, sac, s_output_subdir, "", sgn, false, grn[ir][im][c]);
-
-            if(Ctrl->e.active){
-                write_one_to_sac(GRT_SRC_M_NAME_ABBR[im], ch, fh, 0.0, sac, s_output_subdir, "z", sgn*(-1), false, grn_uiz[ir][im][c]);
-                write_one_to_sac(GRT_SRC_M_NAME_ABBR[im], ch, fh, 0.0, sac, s_output_subdir, "r", sgn     , false, grn_uir[ir][im][c]);
-            }
-        }
-
-        GRT_SAFE_FREE_PTR(s_output_subdir);
-        
-        // 记录走时
-        if(travtPS != NULL){
-            travtPS[ir][0] = sac->hd.t0;
-            travtPS[ir][1] = sac->hd.t1;
+            begintimes[ir] = delayT;
         }
     }
+
+    const char *validChnls = (eigmet->wtype == GRT_DISPERSION_RAYL)? "ZR" : "T";
+
+    // 反傅里叶变换后保存到SAC文件
+    grt_grnspec_write_sac(
+        grn, travtPS, begintimes, outputdirs, fh, sac, 
+        validChnls, true, Ctrl->G.doEX, Ctrl->G.doVF, Ctrl->G.doHF, Ctrl->G.doDC);
 
     // 输出警告：当震源位于液体层中时，仅允许计算爆炸源对应的格林函数
     if(mod1d->isLiquid[mod1d->isrc]){
@@ -911,8 +554,11 @@ int modsum_main(int argc, char **argv){
             "therefore only the Green's Funtions for the Explosion source will be computed.\n");
     }
 
+    // 释放内存
+    GRT_SAFE_FREE_PTR(grn->freqs);
+    grt_grnspec_free_u(grn);
     grt_free_SACTRACE(sac);
-
+    grt_destroy_fftw_holder(fh);
     
     GRT_SAFE_FREE_PTR(modelpath);
 
