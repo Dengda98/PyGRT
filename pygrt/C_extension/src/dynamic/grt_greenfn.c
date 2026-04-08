@@ -1112,7 +1112,6 @@ int greenfn_main(int argc, char **argv) {
             } else {
                 delayT = Ctrl->E.delayT0 + travtPS[ir][0];
             }
-            // 修改SAC头段时间变量
             begintimes[ir] = delayT;
         }
     }
@@ -1120,7 +1119,7 @@ int greenfn_main(int argc, char **argv) {
     // 反傅里叶变换后保存到SAC文件
     grt_grnspec_write_sac(
         grn, travtPS, begintimes, outputdirs, fh, sac, 
-        Ctrl->N.skipImagComps, Ctrl->G.doEX, Ctrl->G.doVF, Ctrl->G.doHF, Ctrl->G.doDC);
+        "ZRT", Ctrl->N.skipImagComps, Ctrl->G.doEX, Ctrl->G.doVF, Ctrl->G.doHF, Ctrl->G.doDC);
 
     // 输出警告：当震源位于液体层中时，仅允许计算爆炸源对应的格林函数
     if(mod1d->isLiquid[mod1d->isrc]){

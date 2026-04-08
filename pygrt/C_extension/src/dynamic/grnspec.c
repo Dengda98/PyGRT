@@ -101,7 +101,7 @@ static void write_one_to_sac(
 
 void grt_grnspec_write_sac(
     const GRNSPEC *grn, const real_t (*travtPS)[2], const real_t *begintimes, char **outputdirs, GRT_FFTW_HOLDER *fh, SACTRACE *sac, 
-    const bool skipImagComps, const bool saveEX, const bool saveVF, const bool saveHF, const bool saveDC)
+    const char *validChnls, const bool skipImagComps, const bool saveEX, const bool saveVF, const bool saveHF, const bool saveDC)
 {
     // 做反傅里叶变换，保存SAC文件
     for(size_t ir = 0; ir < grn->nr; ++ir){
@@ -122,6 +122,8 @@ void grt_grnspec_write_sac(
         sac->hd.b = begintimes[ir];
 
         GRT_LOOP_ChnlGrid(im, c){
+            if(strchr(validChnls, GRT_ZRT_CODES[c]) == NULL)  continue;
+
             if(! saveEX && im==GRT_SRC_M_EX_INDEX)  continue;
             if(! saveVF && im==GRT_SRC_M_VF_INDEX)  continue;
             if(! saveHF && im==GRT_SRC_M_HF_INDEX)  continue;

@@ -50,6 +50,7 @@ void grt_grnspec_free_u(GRNSPEC *grn);
  * @param[in]    outputdirs   不同震中距的保存目录
  * @param[in]    fh           控制反傅里叶变换的结构体
  * @param[in,out]   sac       SACTRACE 原型，在头段变量中记录了基本信息
+ * @param[in]   validChnls    要保存的分量，例如全波解为 "ZRT"， Rayleigh面波解为 "ZR", Love面波解为 "T"
  * @param[in]   skipImagComps 跳过虚频率的补偿
  * @param[in]    saveEX       保存爆炸源结果
  * @param[in]    saveVF       保存垂直力源结果
@@ -59,4 +60,4 @@ void grt_grnspec_free_u(GRNSPEC *grn);
  */
 void grt_grnspec_write_sac(
     const GRNSPEC *grn, const real_t (*travtPS)[2], const real_t *begintimes, char **outputdirs, GRT_FFTW_HOLDER *fh, SACTRACE *sac, 
-    const bool skipImagComps, const bool saveEX, const bool saveVF, const bool saveHF, const bool saveDC);
+    const char *validChnls, const bool skipImagComps, const bool saveEX, const bool saveVF, const bool saveHF, const bool saveDC);
