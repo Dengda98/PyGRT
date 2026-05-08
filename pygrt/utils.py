@@ -173,18 +173,18 @@ def _gen_syn_from_static_gf(grnDct:dict, calc_upar:bool, compute_type:GRT_SYN_TY
     src_vb = grnDct['_src_vb']
     VpVs_ratio = src_va / src_vb
 
-    xarr0:np.ndarray = grnDct['_xarr']
-    yarr0:np.ndarray = grnDct['_yarr']
+    xarr0:np.ndarray = grnDct['_xarr'].astype(NPCT_REAL_TYPE)
+    yarr0:np.ndarray = grnDct['_yarr'].astype(NPCT_REAL_TYPE)
     nx0 = len(xarr0)
     ny0 = len(yarr0)
     nr0 = nx0 * ny0
 
     if "xarr" in kwargs and "yarr" in kwargs:
-        xarr:np.ndarray = kwargs['xarr']
-        yarr:np.ndarray = kwargs['yarr']
+        xarr:np.ndarray = kwargs['xarr'].astype(NPCT_REAL_TYPE)
+        yarr:np.ndarray = kwargs['yarr'].astype(NPCT_REAL_TYPE)
     else:
-        xarr:np.ndarray = grnDct['_xarr']
-        yarr:np.ndarray = grnDct['_yarr']
+        xarr:np.ndarray = grnDct['_xarr'].astype(NPCT_REAL_TYPE)
+        yarr:np.ndarray = grnDct['_yarr'].astype(NPCT_REAL_TYPE)
 
     nx = len(xarr)
     ny = len(yarr)
