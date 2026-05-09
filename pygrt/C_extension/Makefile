@@ -8,6 +8,7 @@ LIBS_NAME := lib$(LNAME).a
 LIBD_NAME := lib$(LNAME).so
 
 VERSION := v$(shell cat version )
+DATE := $(shell date +%Y-%m-%d)
 
 
 # link options for FFTW
@@ -47,7 +48,7 @@ CFLAGS2 :=
 # at least for now, it's not a big problem.
 CFLAGS := -O3 -std=gnu99 \
 		  -fPIC -Wall -Wextra -I$(shell realpath $(INC_DIR)) $(CFLAGS2) \
-		  -DGRT_VERSION=\"$(VERSION)\" -D_GNU_SOURCE  $(ARCH)  $(FOMPFLAGS)
+		  -DGRT_VERSION=\"$(VERSION)\" -DGRT_DATE=\"$(DATE)\" -D_GNU_SOURCE  $(ARCH)  $(FOMPFLAGS)
 #  -fdump-tree-all  -g -ffast-math -O3 -fno-associative-math  -march=native -mtune=native 
 #  -Wconversion -Wsign-conversion -Wfloat-conversion -Wcast-qual -Wcast-align
 

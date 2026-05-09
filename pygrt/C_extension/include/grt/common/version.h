@@ -13,3 +13,8 @@
 #define GRT_VERSION "none"  ///< 默认值，编译时会被替换
 
 #endif
+
+#ifndef GRT_DATE
+#define GRT_DATE "none"  ///< 默认值，编译时会被替换
+
+#endif
