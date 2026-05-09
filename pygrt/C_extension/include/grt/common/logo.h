@@ -44,14 +44,14 @@ printf(BOLD_GREEN "\n"
 "║        Code Homepage: https://github.com/Dengda98/PyGRT       ║\n"
 "║              License: GPL-3.0 license                         ║\n"
 "║              Version: %-20s                    ║\n"
+"║          Last Update: %-20s                    ║\n"
 "║                                                               ║\n"
 "║                                                               ║\n"
 "║    A Command-Line Tool for Computing Synthetic Seismograms    ║\n"
 "║            in Horizontally Layered Halfspace Model,           ║\n"
-"║     using Generalized Reflection-Transmission Method(GRTM)    ║\n"
-"║              and Discrete Wavenumber Method(DWM).             ║\n"
+"║   based on Generalized Reflection-Transmission Method (GRTM)  ║\n"
 "║                                                               ║\n"
 "╚═══════════════════════════════════════════════════════════════╝\n" 
-DEFAULT_RESTORE, GRT_VERSION);
+DEFAULT_RESTORE, GRT_VERSION, GRT_DATE);
 
 }
