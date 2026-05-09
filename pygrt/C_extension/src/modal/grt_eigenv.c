@@ -9,6 +9,12 @@
 
 #include "grt.h"
 
+#define GRT_EIGENV_SATOL  1e-3
+#define GRT_EIGENV_CGAP   1e-7
+#define GRT_EIGENV_RTOL   1e-4
+#define GRT_EIGENV_VGAP   1e-7
+
+
 /** 该子模块的参数控制结构体 */
 typedef struct {
     /** 输入模型 */
@@ -81,13 +87,78 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
 /** 打印使用说明 */
 static void print_help(){
 printf("\n"
-"[grt eigenval]\n\n"
-"    Compute eigenvalue of surface waves (dispersion).\n"
+"[grt eigenv] %s\n\n", GRT_VERSION);printf(
+"    Compute eigenvalue (dispersion) of surface waves.\n"
 "\n\n"
 "Usage:\n"
+"---------------------------------------------------------------------\n"
+"    grt eigenv -M<model> -C<path> -SR|L -F<f1>[/<f2>/<df>][+p]\n"
+"         [-N[<max_order>]] [-X<freq>] [-T+<params>] [-P<nthreads>] \n"
+"         [-s] [-h]\n"
+"\n\n"
+"Options:\n"
 "----------------------------------------------------------------\n"
-"    grt eigenval <syn_dir>/<name>\n"
-"    [WAITING TO FINISH]\n"
+"    -M<model>    Filepath to 1D horizontally layered halfspace \n"
+"                 model. The model file has 6 columns: \n"
+"\n"
+"         +-------+----------+----------+-------------+----+----+\n"
+"         | H(km) | Vp(km/s) | Vs(km/s) | Rho(g/cm^3) | Qp | Qa |\n"
+"         +-------+----------+----------+-------------+----+----+\n"
+"\n"
+"         The 1st column H is the layer thickness. \n"
+"         For compatibility, if the \"thickness\" of the first layer \n"
+"         set 0.0, then the first column will be the layer top depth, \n"
+"         which must be in an ascending order.\n"
+"         The number of layers are unlimited.\n"
+"\n"
+"    -C<path>    Output file (.nc format)\n"
+"\n"
+"    -SR|L       Surface wave type:\n"
+"                + R: Rayleigh wave\n"
+"                + L: Love wave\n"
+"\n"
+"    -F<f1>[/<f2>/<df>][+p]\n"
+"                Set the frequency points.\n"
+"                <f1>: start frequency (Hz)\n"
+"                <f2>: end frequency (Hz)\n"
+"                <df>: frequency interval (Hz)\n"
+"                If <f2> and <df> are not set, <f1> will be the \n"
+"                only one point. If you add +p at the end, <f1>, <f2>\n"
+"                and <df> will be period (sec).\n"
+"\n"
+"    -N[<max_order>]\n"
+"                Set the max order of roots at each frequency,\n"
+"                0 means fundamental mode.\n"
+"                + If -N is not given, equal to -N0.\n"
+"                + If set an empty -N, means find all roots\n"
+"                  as much as possible.\n"
+"\n"
+"    -X<freq>    Debug option. You can set -X to output the\n"
+"                secular function at frequency <freq>, and\n"
+"                at this time, -F can be omitted.\n"
+"\n"
+"    -T+<params> set some control parameters in root searching,\n"
+"                e.g. -T+t3+c7\n"
+"                + t<tol>: tolerance (10^{-<tol>}) for adaptive searching,\n"
+"                          default is %.1f\n", - log10(GRT_EIGENV_SATOL)); printf(
+"                + c<cgap>: min gap (10^{-<cgap>} km/s) between different\n"
+"                           roots at the same frequency, default is %.1f\n", - log10(GRT_EIGENV_CGAP)); printf(
+"                + r<thrd>: amplitude threshold (10^{-<thrd>}) to identify\n"
+"                           a root of secular function, default is %.1f\n", - log10(GRT_EIGENV_RTOL)); printf(
+"                + v<vgap>: min gap (10^{-<vgap>} km/s) between root\n"
+"                           and layer velocity, default is %.1f\n", - log10(GRT_EIGENV_VGAP)); printf(
+"                + u<dc>: searching step (10^{-<dc>} km/s) for\n"
+"                         fixed-interval searching, this is only for test.\n"); printf(
+"\n"
+"    -P<n>        Number of threads. Default use all cores.\n"
+"\n"
+"    -s           Silence all outputs.\n"
+"\n"
+"    -h           Display this help message.\n"
+"\n\n"
+"Examples:\n"
+"----------------------------------------------------------------\n"
+"    grt eigenv -Mmod -F0/100/0.5 -SR -N -Cphase_R.nc\n"
 "\n\n\n"
 );
 }
@@ -96,12 +167,12 @@ printf("\n"
 /** 从命令行中读取选项，处理后记录到全局变量中 */
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     // 先为个别参数设置非0初始值
-    Ctrl->T.satol = 1e-3;
+    Ctrl->T.satol = GRT_EIGENV_SATOL;
 
     // 以下浮点数不易过大或过小
-    Ctrl->T.cgap = 1e-7;
-    Ctrl->T.rtol = 1e-4;
-    Ctrl->T.vgap = 1e-7;
+    Ctrl->T.cgap = GRT_EIGENV_CGAP;
+    Ctrl->T.rtol = GRT_EIGENV_RTOL;
+    Ctrl->T.vgap = GRT_EIGENV_VGAP;
 
     int opt;
     while ((opt = getopt(argc, argv, ":M:C:S:N::F:X:T:P:sh")) != -1) {
@@ -244,7 +315,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 }
                 break;
 
-            // -T+t<tol>+c<cgap>+r<tol2>+v<vgap>+u<dc>
+            // -T+t<tol>+c<cgap>+r<thrd>+v<vgap>+u<dc>
             case 'T':
                 Ctrl->T.active = true;
                 {
