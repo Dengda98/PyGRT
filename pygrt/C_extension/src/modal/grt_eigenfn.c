@@ -89,7 +89,75 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
 
 /** 打印使用说明 */
 static void print_help(){
-    printf("[WAITING TO FINISH]\n");
+printf("\n"
+"[grt eigenfn] %s\n\n", GRT_VERSION);printf(
+"    Compute eigenfunctions, group velocity, energy integrals and \n"
+"    dispersion sensitivity based on eigenvalues of surface waves.\n"
+"\n"
+"    The modelpath was stored in the dispersion result from \n"
+"    module `eigenv`, therefore this module requires the modelpath\n"
+"    to exist and will automatically read the model.\n"
+"\n\n"
+"Usage:\n"
+"---------------------------------------------------------------------\n"
+"    grt eigenfn -C<path> [-F<f1>[/<f2>][/<df>][+p]]\n"
+"         [-N[<n1>][/<n2>][/<dn>]] [-Z<z1>[/<z2>/<dz>]] [-O<path>]\n"
+"         [-U<path>] [-K+<multi_output>] [-h]\n"
+"\n\n"
+"Options:\n"
+"----------------------------------------------------------------\n"
+"    -C<path>    Input dispersion result file from module `eigenv` \n"
+"                (.nc format)\n"
+"\n"
+"    -F<f1>[/<f2>][/<df>][+p]\n"
+"                Select the frequency range from the input file.\n"
+"                <f1>: start frequency (Hz)\n"
+"                <f2>: end frequency (Hz)\n"
+"                <df>: frequency interval (Hz)\n"
+"                + If set -F<f1>, means set only one point. \n"
+"                + If set -F<f1>/<f2>, means set min/max range. \n"
+"                + If add +p at the end, <f1>, <f2>\n"
+"                  and <df> will be period (sec).\n"
+"\n"
+"    -N[<n1>][/<n2>][/<dn>]\n"
+"                Select the order range from the input file, \n"
+"                0 means fundamental mode.\n"
+"                <n1>: start order\n"
+"                <n2>: end order\n"
+"                <dn>: order interval\n"
+"                + If -N is not given, equal to -N0.\n"
+"                + If set an empty -N, means all orders will be considered.\n"
+"                + If set -N<n1>/<n2>, means set min/max range.\n"
+"\n"
+"    -Z<z1>[/<z2>/<dz>\n"
+"                Set the depth points of the eigenfunctions.\n"
+"                -O must be used in conjunction with -Z.\n"
+"                <z1>: start depth (km)\n"
+"                <z2>: end depth (km)\n"
+"                <dz>: depth interval (km)\n"
+"                If set -Z<z1>, means set only one point. \n"
+"\n"
+"    -O<path>    Output eigenfunctions result file (.nc format)\n"
+"\n"
+"    -U<path>    Ouput group velocity (.nc format)\n"
+"\n"
+"    -K+<multi_output>\n"
+"                Ouput some quantities related to sensitivity:\n"
+"                + c<path>: phase-velocity dispersion sensitivity (.nc format).\n"
+"                + u<path>: group-velocity dispersion sensitivity (.nc format).\n"
+"                + z<dz>:   divide depth with interval dz (km),\n"
+"                           equivalent to performing stepwise \n"
+"                           sampling on the model before computing \n"
+"                           the sensitivity.\n"
+"                + x<path>: energy integrals (.nc format)\n"
+"\n"
+"    -h           Display this help message.\n"
+"\n\n"
+"Examples:\n"
+"----------------------------------------------------------------\n"
+"    grt eigenfn -Cphase_R.nc -F20 -N0/10 -Z0/0.06/1e-3 -Oegn_R.nc\n"
+"\n\n\n"
+);
 }
 
 
@@ -241,7 +309,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                                     GRTBadOptionError(K, "+%s wrong usage.", token);
                                 }
                                 break;
-                            case 'g':
+                            case 'u':
                                 Ctrl->K.s_upar_filepath = strdup(token+1);
                                 if(strlen(token)==1){
                                     GRTBadOptionError(K, "+%s wrong usage.", token);
