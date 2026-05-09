@@ -88,7 +88,7 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
 static void print_help(){
 printf("\n"
 "[grt eigenv] %s\n\n", GRT_VERSION);printf(
-"    Compute eigenvalue (dispersion) of surface waves.\n"
+"    Compute eigenvalues (dispersion) of surface waves.\n"
 "\n\n"
 "Usage:\n"
 "---------------------------------------------------------------------\n"
