@@ -3,7 +3,7 @@
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2025-08
  * 
- * 根据本征值计算面波解
+ * 根据频散结果计算面波解
  *   
  *                 
  */
