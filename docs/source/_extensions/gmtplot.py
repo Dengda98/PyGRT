@@ -42,13 +42,15 @@ gmtplot_gmt_config
 
 """
 
-import ast
+import importlib.util
 import os
 import shutil
-import subprocess
 import sys
 import tempfile
 import textwrap
+import types
+
+_subprocess = importlib.import_module("subprocess")
 from contextlib import contextmanager
 from pathlib import Path
 import hashlib
@@ -169,9 +171,8 @@ def _search_images(cwd):
         if len(ps_images) > 1:
             raise ValueError("More than one figure generated in one GMT plot.")
         elif len(ps_images) == 1:  # PS found
-            cmd = "gmt psconvert -A -P -T{} {}"
-            subprocess.run(cmd.format("g", ps_images[0]), shell=True, check=False)
-            subprocess.run(cmd.format("f", ps_images[0]), shell=True, check=False)
+            _subprocess.run(["gmt", "psconvert", "-A", "-P", "-Tg", str(ps_images[0])], shell=False, check=False)
+            _subprocess.run(["gmt", "psconvert", "-A", "-P", "-Tf", str(ps_images[0])], shell=False, check=False)
             png_images = list(cwd.glob("*.png"))
             pdf_images = list(cwd.glob("*.pdf"))
 
@@ -194,12 +195,12 @@ def eval_bash(code, code_dir, output_dir, output_base, config=None):
         Path(tmpdir, "gmtplot-script.sh").write_text(code, encoding="utf-8")
         if config.gmtplot_gmt_config:
             _write_gmt_config(config.gmtplot_gmt_config, cwd=tmpdir)
-        proc = subprocess.run(
+        proc = _subprocess.run(
             ["bash", "-e", Path(tmpdir, "gmtplot-script.sh")],
             check=False,
             cwd=tmpdir,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stdout=_subprocess.PIPE,
+            stderr=_subprocess.PIPE,
         )
         if proc.returncode != 0:
             raise RuntimeError(
@@ -238,47 +239,32 @@ class _CatchDisplay:
 def eval_python(
     code, code_dir, output_dir, output_base, filename="<string>", config=None
 ):
-    # pylint: disable=exec-used,too-many-arguments
+    # pylint: disable=too-many-arguments
     """
     Execute a multi-line block of Python code and copy the generated image files
     to specified output directory.
     """
-    tree = ast.parse(code, filename="<ast>", mode="exec")
-    if (
-        isinstance(tree.body[-1], ast.Expr) and tree.body[-1].value.func.attr == "show"
-    ):  # last statement is `fig.show()` in pygmt
-        to_exec, to_eval = tree.body[:-1], tree.body[-1:]
-    else:
-        to_exec, to_eval = tree.body, []
-
     cwd = os.getcwd()
     with environ(
         {"GMT_END_SHOW": "off", "GMT_DATADIR": _updated_gmt_datadir(code_dir)}
     ), tempfile.TemporaryDirectory() as tmpdir:
         os.chdir(tmpdir)
+        script_path = Path(tmpdir, "gmtplot-script.py")
+        script_path.write_text(code, encoding="utf-8")
         if config.gmtplot_gmt_config:
             _write_gmt_config(config.gmtplot_gmt_config, cwd=".")
-        for node in to_exec:
-            exec(
-                compile(
-                    ast.Module([node], type_ignores=[]), filename=filename, mode="exec"
-                )
-            )
+        spec = importlib.util.spec_from_file_location("gmtplot_code", script_path)
+        module = types.ModuleType("gmtplot_code")
+        catch_display = _CatchDisplay()
+        with catch_display:
+            spec.loader.exec_module(module)
         images = _search_images(tmpdir)
         if images:
             for image in images:
                 shutil.move(
                     image, Path(output_dir, output_base).with_suffix(image.suffix)
                 )
-        else:
-            catch_display = _CatchDisplay()
-            with catch_display:
-                for node in to_eval:
-                    exec(
-                        compile(
-                            ast.Interactive([node]), filename=filename, mode="single"
-                        )
-                    )
+        elif catch_display.output is not None:
             Path(output_dir, output_base).with_suffix(".png").write_bytes(
                 catch_display.output.data
             )
@@ -413,7 +399,7 @@ class GMTPlotDirective(Directive):
             caption = self.options["caption"] if "caption" in self.options else ""
 
         # use the md5sum value of the code as the basename of script and image files
-        output_base = hashlib.md5(code.encode()).hexdigest()
+        output_base = hashlib.sha256(code.encode()).hexdigest()
 
         # determine unique code filename under current working directory
         suffix = get_suffix_from_language(self.options["language"])
