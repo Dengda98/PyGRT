@@ -27,7 +27,6 @@ void grt_free_eigenv_info(EIGENV_INFO *eigmet)
 }
 
 
-// 从全部频散信息中，筛选出部分信息
 void grt_filter_eigenfn_info(
     const size_t nf, const real_t *freqs, const bool def_freq_range, 
     const size_t nmode, const size_t *modes, 
