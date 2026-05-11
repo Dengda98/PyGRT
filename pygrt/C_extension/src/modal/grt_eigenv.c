@@ -476,37 +476,18 @@ int eigenv_main(int argc, char **argv){
     // 寻找久期函数零点
     grt_get_secular_roots(mod1d, eigmet, !Ctrl->s.active);
 
-    printf("# Number of evaluation: %zu\n", eigmet->neval);
+    if(! Ctrl->s.active) printf("# Number of evaluation: %zu\n", eigmet->neval);
 
     if(Ctrl->X.active) goto FINISH;
 
     // 生成总命令
-    char *full_command;
-    {
-        char *tmp=NULL;
-        GRT_SAFE_ASPRINTF(&tmp, GRT_MAIN_COMMAND);
-        for(int i=0; i<argc; ++i){
-            char *tmp1=NULL;
-            GRT_SAFE_ASPRINTF(&tmp1, "%s %s", tmp, argv[i]);
-            GRT_SAFE_FREE_PTR(tmp);
-            tmp = tmp1;
-        }
-        
-        // 对 -N 特殊处理，因为 -N 可能没有传入，需要根据程序自动设置
-        // 这里在最后再加上一个 -N ，功能上会覆盖之前可能设置的 -N
-        // 相当于之前设置的最大阶数有冗余
-
-        // 最大零点数
-        size_t max_nroots = 0;
-        for(size_t iw=0; iw < Ctrl->F.nf; ++iw){
-            max_nroots = GRT_MAX(max_nroots, eigmet->eigv[iw].n);
-        }
+    char *full_command = NULL;
+    GRT_SAFE_ASPRINTF(&full_command, GRT_MAIN_COMMAND);
+    for(int i = 0; i < argc; ++i){
         char *tmp1=NULL;
-        GRT_SAFE_ASPRINTF(&tmp1, "%s -N%zu", tmp, max_nroots-1);
-        GRT_SAFE_FREE_PTR(tmp);
-        tmp = tmp1;
-
-        full_command = tmp;
+        GRT_SAFE_ASPRINTF(&tmp1, "%s %s", full_command, argv[i]);
+        GRT_SAFE_FREE_PTR(full_command);
+        full_command = tmp1;
     }
 
     // 输出频散结果
