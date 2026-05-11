@@ -21,20 +21,7 @@
 
 #define __DEBUG_SECULAR__  0
 
-/** 
- * 黄金分割法确定局部极小值
- * 
- * @param[in]      mstat        模型结构体指针
- * @param[in]      w            圆频率
- * @param[in]      c1           左区间相速度
- * @param[in]      c2           右区间相速度
- * @param[in]      iref         久期函数层位
- * @param[in]      wtype        频散类型
- * @param[in]      rtol         久期函数零点附近的幅值阈值
- * @param[out]     root_sec     零点的久期函数值
- * @param[out]     root_c       零点的相速度
- * 
- */
+/** 黄金分割法确定局部极小值 */
 static size_t grt_goldensection(
     MODEL1D_STATE *mstat, const real_t c1, const real_t c2, 
     const size_t iref, const DISPER_TYPE wtype,
@@ -254,25 +241,10 @@ static bool check_fit(
     return (! badtol);
 }
 
+// ---------------------------------------------------------------------------------------------------
+//                                   使用自适应采样寻找久期函数零点
+// ---------------------------------------------------------------------------------------------------
 
-/**
- * 使用自适应采样寻找久期函数零点
- * 
- * @param[in]      mstat        模型结构体指针
- * @param[in]      V_sort       升序的模型速度
- * @param[in]      w            圆频率
- * @param[in]      c10          相速度搜索下界
- * @param[in]      tol          自适应收敛精度
- * @param[in]      c20          相速度搜索上界
- * @param[in]      isRayl       Rayleigh or Love
- * @param[in]      iref         久期函数层位
- * @param[in]      print_sec    是否打印久期函数
- * @param[in]      nmode        最大零点个数, 如果 nmode<=0 则找全部零点
- * @param[out]     pt_c_roots   存储零点的本征值
- * @param[out]     pt_c_roots_iref   存储所使用的久期函数层位
- * @param[out]     Nroot        最终零点数量
- * 
- */
 static void grt_adaptive_step_secular_roots(
     MODEL1D_STATE *mstat, EIGENV_INFO *eigmet, EIGENV *eigv, const size_t iref,
     const real_t *cpred, const size_t npred)
@@ -561,7 +533,7 @@ typedef void (*SearchFunc)(
     MODEL1D_STATE *mstat, EIGENV_INFO *eigmet, EIGENV *eigv, const size_t iref, 
     const real_t *cpred, const size_t npred);
 
-
+/** 根据 Fan et al. (2007) 的公式估计根数 */
 static real_t grt_get_approx_nroots(MODEL1D_STATE *mstat, const real_t freq, DISPER_TYPE wtype, const real_t cphase)
 {
     real_t res = 0;
