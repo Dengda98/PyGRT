@@ -136,6 +136,7 @@ void grt_read_cdisp(const char *filepath, EIGENV_INFO *eigmet, char **pt_modelpa
     int c_varid, ciref_varid, cnum_varid;
 
     // 打开 NC 文件
+    GRTCheckFileExist(filepath);
     NC_CHECK(nc_open(filepath, NC_NOWRITE, &ncid));
 
     // 读取一系列全局属性

@@ -70,6 +70,7 @@ int eigv2asc_main(int argc, char **argv)
     int c_varid, ciref_varid, cnum_varid;
 
     // 打开 NC 文件
+    GRTCheckFileExist(Ctrl->s_filepath);
     NC_CHECK(nc_open(Ctrl->s_filepath, NC_NOWRITE, &ncid));
 
     size_t nfreq, nmode;
