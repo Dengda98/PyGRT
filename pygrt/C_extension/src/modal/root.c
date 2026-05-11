@@ -22,7 +22,7 @@
 #define __DEBUG_SECULAR__  0
 
 /** 
- * 黄金分割法确定久期函数零点 
+ * 黄金分割法确定局部极小值
  * 
  * @param[in]      mstat        模型结构体指针
  * @param[in]      w            圆频率
@@ -35,7 +35,7 @@
  * @param[out]     root_c       零点的相速度
  * 
  */
-static size_t grt_goldensection_search_root(
+static size_t grt_goldensection(
     MODEL1D_STATE *mstat, const real_t c1, const real_t c2, 
     const size_t iref, const DISPER_TYPE wtype,
     const real_t rtol, const real_t cgap, cplx_t *root_sec, real_t *root_c)
@@ -287,7 +287,10 @@ static void grt_adaptive_step_secular_roots(
     Interval Citv;
     Interval last_Citv_right = {.x3 = {-1.0}};
 
-    real_t cbegin = grt_secular_function_cbegin(mstat, iref, eigmet->wtype) + eigmet->vgap;
+    real_t cbegin = 0.0;
+    if(! eigmet->manual_crange){
+        cbegin = grt_secular_function_cbegin(mstat, iref, eigmet->wtype) + eigmet->vgap;
+    }
     // 根据 cpred 在[cmin, cmax]之间初始化采样一些区间
     for(size_t i = 0; i < npred - 1; ++i){
         real_t c1 = GRT_MAX(cbegin, cpred[npred - i - 2]);
@@ -305,10 +308,12 @@ static void grt_adaptive_step_secular_roots(
         stack_push(&stack, Citv);
     }
 
+    real_t cmin = GRT_MAX(cbegin, cpred[0]);
+    real_t cmax = cpred[npred - 1];
 
     // 记录第一个值
     if(eigmet->print_sec){
-        fprintf(stdout, "# iref=%zu, f=%f, tol=%e, c1=%f, c2=%f\n", iref, creal(mstat->omega)/PI2, eigmet->satol, eigmet->cmin, eigmet->cmax);
+        fprintf(stdout, "# iref=%zu, f=%f, tol=%e, c1=%f, c2=%f\n", iref, creal(mstat->omega)/PI2, eigmet->satol, cmin, cmax);
         fprintf(stdout, "%.16e %.16e %.16e \n", Citv.x3[0], GRT_CMPLX_SPLIT(Citv.F3[0]));
     }
 
@@ -413,7 +418,7 @@ static void grt_adaptive_step_secular_roots(
                 isTrough = secAbsCheck[i-2] >= secAbsCheck[i-1] && secAbsCheck[i-1] <= secAbsCheck[i];
                 if(!isTrough)  continue;
 
-                grt_goldensection_search_root(
+                grt_goldensection(
                     mstat, cCheck[i-2], cCheck[i], 
                     iref, eigmet->wtype, eigmet->rtol, eigmet->cgap, &root_sec, &root_c
                 );
@@ -467,7 +472,10 @@ static void grt_fixed_step_secular_roots(
     MODEL1D_STATE *mstat, EIGENV_INFO *eigmet, EIGENV *eigv, const size_t iref, 
     const real_t *cpred, const size_t npred)
 {
-    real_t cbegin = grt_secular_function_cbegin(mstat, iref, eigmet->wtype) + eigmet->vgap;
+    real_t cbegin = 0.0;
+    if(! eigmet->manual_crange){ 
+        cbegin = grt_secular_function_cbegin(mstat, iref, eigmet->wtype) + eigmet->vgap;
+    }
     real_t cmin = GRT_MAX(cbegin, cpred[0]);
     real_t cmax = cpred[npred-1];
     real_t dc = eigmet->uniform_dc;
@@ -484,7 +492,7 @@ static void grt_fixed_step_secular_roots(
     c3[2] = c3[1] + dc;
 
     if(eigmet->print_sec){
-        fprintf(stdout, "# iref=%zu, f=%f, tol=%e, c1=%f, c2=%f\n", iref, creal(mstat->omega)/PI2, eigmet->satol, eigmet->cmin, eigmet->cmax);
+        fprintf(stdout, "# iref=%zu, f=%f, dc=%e, c1=%f, c2=%f\n", iref, creal(mstat->omega)/PI2, eigmet->uniform_dc, cmin, cmax);
         fprintf(stdout, "%.16e %.16e %.16e \n", c3[0], GRT_CMPLX_SPLIT(f3[0]));
         fprintf(stdout, "%.16e %.16e %.16e \n", c3[1], GRT_CMPLX_SPLIT(f3[1]));
     }
@@ -501,7 +509,7 @@ static void grt_fixed_step_secular_roots(
         bool isTrough = (fabs(f3[0]) >= fabs(f3[1])) && (fabs(f3[1]) <= fabs(f3[2]));
         if(! isTrough) goto UPDATE_C3_F3;
 
-        grt_goldensection_search_root(
+        grt_goldensection(
             mstat, c3[0], c3[2], 
             iref, eigmet->wtype, eigmet->rtol, eigmet->cgap, &root_sec, &root_c
         );
@@ -640,13 +648,16 @@ static void get_secular_roots_single_freq(MODEL1D_STATE *mstat, EIGENV_INFO *eig
     }
     cpred = (real_t *)realloc(cpred, sizeof(real_t)*(npred+1));
     cpred[npred++] = c2;
-    if(eigmet->wtype == GRT_DISPERSION_RAYL && ! mstat->mod1d->isLiquid[0]){
-        real_t target = 0.95 * grt_halfspace_Rayleigh_croot(mstat, 0);
-        cpred = (real_t *)realloc(cpred, sizeof(real_t)*(npred+1));
-        grt_insertOrdered(cpred, &npred, npred+1, &target, sizeof(real_t), true, grt_compare_real_t);
+
+    if(! eigmet->manual_crange){
+        if(eigmet->wtype == GRT_DISPERSION_RAYL && ! mstat->mod1d->isLiquid[0]){
+            real_t target = 0.95 * grt_halfspace_Rayleigh_croot(mstat, 0);
+            cpred = (real_t *)realloc(cpred, sizeof(real_t)*(npred+1));
+            grt_insertOrdered(cpred, &npred, npred+1, &target, sizeof(real_t), true, grt_compare_real_t);
+        }
+        // TODO
+        // 在 cpred 中补充 stoneley 波的估计根
     }
-    // TODO
-    // 在 cpred 中补充 stoneley 波的估计根
 
     size_t iref = 0; // 使用哪一层的secular function
 

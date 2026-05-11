@@ -48,6 +48,9 @@ typedef struct {
     /** 输出久期函数 */
     struct {
         bool active;
+        bool manual_crange;
+        real_t cmin;
+        real_t cmax;
     } X;
     /* 零点阈值 */
     struct {
@@ -93,8 +96,8 @@ printf("\n"
 "Usage:\n"
 "---------------------------------------------------------------------\n"
 "    grt eigenv -M<model> -C<path> -SR|L -F<f1>[/<f2>/<df>][+p]\n"
-"         [-N[<max_order>]] [-X<freq>] [-T+<params>] [-P<nthreads>] \n"
-"         [-s] [-h]\n"
+"         [-N[<max_order>]] [-X<freq>[+c<cmin>/<cmax>]] [-T+<params>] \n"
+"         [-P<nthreads>] [-s] [-h]\n"
 "\n\n"
 "Options:\n"
 "----------------------------------------------------------------\n"
@@ -133,9 +136,11 @@ printf("\n"
 "                + If set an empty -N, means find all roots\n"
 "                  as much as possible.\n"
 "\n"
-"    -X<freq>    Debug option. You can set -X to output the\n"
-"                secular function at frequency <freq>, and\n"
-"                at this time, -F can be omitted.\n"
+"    -X<freq>[+c<cmin>/<cmax>]\n"
+"                Debug option. You can set -X to output the\n"
+"                secular function at frequency <freq> within \n"
+"                phase velocity [<cmin>, <cmax>], and\n"
+"                at this time, -F will be omitted.\n"
 "\n"
 "    -T+<params> set some control parameters in root searching,\n"
 "                e.g. -T+t3+c7\n"
@@ -294,16 +299,40 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 }
                 break;
             
-            // -X<freq>
+            // -X<freq>[+c<cmin>/<cmax>]
             case 'X':
                 Ctrl->X.active = true;
                 {
+                    char *string = strdup(optarg);
+                    char *token = strtok(string, "+");
                     real_t fx = -1.0;
-                    if(1 != sscanf(optarg, "%lf", &fx)){
+                    if(1 != sscanf(token, "%lf", &fx)){
                         GRTBadOptionError(X, "");
                     }
                     if(fx <= 0){
                         GRTBadOptionError(X, "Can't set nonpositive freq(%lf).", fx);
+                    }
+
+                    // 处理 + 号指令
+                    token = strtok(NULL, "+");
+                    if(token != NULL){
+                        switch (token[0]){
+                            case 'c':
+                                Ctrl->X.manual_crange = true;
+                                if(2 != sscanf(token+1, "%lf/%lf", &Ctrl->X.cmin, &Ctrl->X.cmax)){
+                                    GRTBadOptionError(X, "");
+                                }
+                                if(Ctrl->X.cmin < 0.0 || Ctrl->X.cmax < 0.0){
+                                    GRTBadOptionError(X, "Can't set negative velocity.");
+                                }
+                                if(Ctrl->X.cmin >= Ctrl->X.cmax){
+                                    GRTBadOptionError(X, "requires cmax < cmax.");
+                                }
+                                break;
+                            default:
+                                GRTBadOptionError(X, "+%s is not supported.", token);
+                                break;
+                        }
                     }
 
                     // 如果freqs已经在-F中申请了内存，则先释放
@@ -312,6 +341,8 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     Ctrl->F.nf = 1;
                     Ctrl->F.freqs = (real_t*)calloc(Ctrl->F.nf, sizeof(real_t));
                     Ctrl->F.freqs[0] = fx;
+
+                    GRT_SAFE_FREE_PTR(string);
                 }
                 break;
 
@@ -446,8 +477,16 @@ int eigenv_main(int argc, char **argv){
     // 存储频散值的结构体
     eigmet->eigv = (EIGENV *)calloc(eigmet->nf, sizeof(EIGENV));
 
-    // 取 S 波速度范围为搜索范围
+    // 相速度搜索范围
+    if(Ctrl->X.manual_crange)
     {
+        eigmet->manual_crange = true;
+        eigmet->cmin = Ctrl->X.cmin;
+        eigmet->cmax = Ctrl->X.cmax;
+    }
+    else
+    {
+        // 取 S 波速度范围为搜索范围
         real_t vbmin = 9.9e30;  // 最小 S 波速度
         for(size_t i = 0; i < mod1d->n; ++i){
             real_t va = mod1d->Va[i];
