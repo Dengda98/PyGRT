@@ -18,15 +18,10 @@
  * 计算 Rayleigh 波的能量积分和敏感核
  * 
  * @param[in]      mstat         模型结构体指针
- * @param[in]      omega         圆频率
- * @param[in]      eigenK        本征波数
  * @param[in]      mod_potRaylLove_Down 每层 z_j+ 的垂直波函数
  * @param[in]      mod_potRaylLove_Up   每层 z_j- 的垂直波函数
- * @param[out]     EgyInt        能量积分
- * @param[in]      cpar_nz       计算敏感核划分的薄层数量
- * @param[in]      cpar_zs       薄层深度
- * @param[in]      cpar_z_irefs  薄层所在层位
- * @param[out]     phase_K       敏感核
+ * @param[in]      eigfnmet             本征函数数据结构体指针
+ * @param[out]     eigfn                某频率某本征值的本征函数及相关
  * 
  */
 void grt_energy_integrals_Rayl(
@@ -38,15 +33,10 @@ void grt_energy_integrals_Rayl(
  * 计算 Love 波的能量积分和敏感核
  * 
  * @param[in]      mstat         模型结构体指针
- * @param[in]      omega         圆频率
- * @param[in]      eigenK        本征波数
  * @param[in]      mod_potRaylLove_Down 每层 z_j+ 的垂直波函数
  * @param[in]      mod_potRaylLove_Up   每层 z_j- 的垂直波函数
- * @param[out]     EgyInt        能量积分
- * @param[in]      cpar_nz       计算敏感核划分的薄层数量
- * @param[in]      cpar_zs       薄层深度
- * @param[in]      cpar_z_irefs  薄层所在层位
- * @param[out]     phase_K       敏感核
+ * @param[in]      eigfnmet             本征函数数据结构体指针
+ * @param[out]     eigfn                某频率某本征值的本征函数及相关
  * 
  */
 void grt_energy_integrals_Love(
