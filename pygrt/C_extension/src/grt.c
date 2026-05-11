@@ -30,6 +30,7 @@
     X(static_strain)       \
     X(static_stress)       \
     /* other */            \
+    X(eigv2asc)            \
     X(ker2asc)             \
     X(sac2asc)             \
     X(travt)               \
