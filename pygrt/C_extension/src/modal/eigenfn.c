@@ -25,14 +25,11 @@
  * 已知 z_{iy-1}+ 的垂直波函数，计算 z_{iy}+ 和 z_{iy}- 的垂直波函数 P-SV
  * 
  * @param[in]      mstat                模型结构体指针
- * @param[in]      omega                圆频率
- * @param[in]      eigenK               本征波数
  * @param[in]      iy                   待求解层位
- * @param[in]      RD_RL                广义矩阵 RD_RL
+ * @param[in]      M_RL                 广义矩阵 RD_RL
  * @param[in]      potRaylLove1         z_{iy-1}+ 的垂直波函数
  * @param[out]     potRaylLove2         z_{iy}+ 的垂直波函数
  * @param[out]     potRaylLove2_Up      z_{iy}- 的垂直波函数
- * @param[out]     stats                状态代码，是否有除零错误，非0为异常值
  * 
  */
 static void grt_potential_propagate_UpDown_Rayl(
@@ -82,7 +79,7 @@ static void grt_potential_propagate_UpDown_Rayl(
 }
 
 
-/** 已知 z_{iy-1}+ 的垂直波函数，计算 z_{iy}+ 和 z_{iy}- 的垂直波函数 SH, 参数见 potential_propagate_UpDown_Rayl */
+/** 已知 z_{iy-1}+ 的垂直波函数，计算 z_{iy}+ 和 z_{iy}- 的垂直波函数 SH */
 static void grt_potential_propagate_UpDown_Love(
     const MODEL1D_STATE *mstat, const size_t iy, const RT_MATRIX *M_RL,
     const cplx_t potRaylLove1[GRT_LOVE_DIM], cplx_t potRaylLove2[GRT_LOVE_DIM], cplx_t potRaylLove2_Up[GRT_LOVE_DIM])
@@ -130,14 +127,11 @@ static void grt_potential_propagate_UpDown_Love(
  * 已知 z_{iy+1}+ 的垂直波函数，计算 z_{iy}+ 和 z_{iy+1}- 的垂直波函数 P-SV
  * 
  * @param[in]      mstat                模型结构体指针
- * @param[in]      omega                圆频率
- * @param[in]      eigenK               本征波数
  * @param[in]      iy                   待求解层位
- * @param[in]      RU_FR                广义矩阵 RU_FR
+ * @param[in]      M_FR                 广义矩阵 RU_FR
  * @param[out]     potRaylLove1         z_{iy}+ 的垂直波函数
  * @param[in]      potRaylLove2         z_{iy+1}+ 的垂直波函数
  * @param[out]     potRaylLove2_Up      z_{iy+1}- 的垂直波函数
- * @param[out]     stats                状态代码，是否有除零错误，非0为异常值
  * 
  */
 static void grt_potential_propagate_DownUp_Rayl(
@@ -188,7 +182,7 @@ static void grt_potential_propagate_DownUp_Rayl(
 
 }
 
-/** 已知 z_{iy+1}+ 的垂直波函数，计算 z_{iy}+ 和 z_{iy+1}- 的垂直波函数 SH, 参数见 potential_propagate_DownUp_Rayl */
+/** 已知 z_{iy+1}+ 的垂直波函数，计算 z_{iy}+ 和 z_{iy+1}- 的垂直波函数 SH */
 static void grt_potential_propagate_DownUp_Love(
     const MODEL1D_STATE *mstat, const size_t iy, const RT_MATRIX *M_FR,
     cplx_t potRaylLove1[GRT_LOVE_DIM], const cplx_t potRaylLove2[GRT_LOVE_DIM], cplx_t potRaylLove2_Up[GRT_LOVE_DIM])

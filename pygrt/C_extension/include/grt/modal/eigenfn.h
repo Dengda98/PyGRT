@@ -19,21 +19,19 @@
 /**
  * 已知某个界面 z_j+ 上的垂直波函数，计算模型每个分界面 z_j+ 和 z_j- 的垂直波函数 P-SV
  * 
- * @param[in]      mstat                模型结构体指针
- * @param[in]      omega                圆频率
- * @param[in]      eigenK               本征波数
+ * @param[in,out]  mstat                模型结构体指针
+ * @param[in]      iref                 已知垂直波函数的层位
+ * @param[in]      potRaylLove          已知 z_iref+ 垂直波函数
+ * @param[in]      potRaylLoveUp        已知 z_iref- 垂直波函数
  * @param[out]     mod_potRaylLove_Down 每层 z_j+ 的垂直波函数
  * @param[out]     mod_potRaylLove_Up   每层 z_j- 的垂直波函数
- * @param[in]      iy                   已知垂直波函数的层位
- * @param[in]      potRaylLove          已知垂直波函数
- * @param[out]     stats                状态代码，是否有除零错误，非0为异常值
  * 
  */
 void grt_get_mod_potential_Up_Down_Rayl(
     MODEL1D_STATE *mstat, const size_t iref, const cplx_t potRaylLove[GRT_RAYL_DIM], const cplx_t potRaylLoveUp[GRT_RAYL_DIM], 
     cplx_t (*mod_potRaylLove_Down)[GRT_RAYL_DIM], cplx_t (*mod_potRaylLove_Up)[GRT_RAYL_DIM]);
 
-/** 已知某个界面 z_j+ 上的垂直波函数，计算模型每个分界面 z_j+ 和 z_j- 的垂直波函数 SH, 参数见 get_mod_potential_Up_Down_Rayl */
+/** 已知某个界面 z_j+ 上的垂直波函数，计算模型每个分界面 z_j+ 和 z_j- 的垂直波函数 SH */
 void grt_get_mod_potential_Up_Down_Love(
     MODEL1D_STATE *mstat, const size_t iref, const cplx_t potRaylLove[GRT_LOVE_DIM],
     cplx_t (*mod_potRaylLove_Down)[GRT_LOVE_DIM], cplx_t (*mod_potRaylLove_Up)[GRT_LOVE_DIM]);
@@ -49,8 +47,6 @@ void grt_get_mod_potential_Up_Down(
  * 计算某个深度处的本征函数 P-SV
  * 
  * @param[in]      mstat                模型结构体指针
- * @param[in]      omega                圆频率
- * @param[in]      eigenK               本征波数
  * @param[in]      mod_potRaylLove_Down 每层 z_j+ 的垂直波函数
  * @param[in]      mod_potRaylLove_Up   每层 z_j- 的垂直波函数
  * @param[in,out]  T0                   介质层矩阵
@@ -64,6 +60,7 @@ void grt_get_eigenfn_single_depth_Rayl(
     const MODEL1D_STATE *mstat, const cplx_t (*mod_potRaylLove_Down)[GRT_RAYL_DIM], const cplx_t (*mod_potRaylLove_Up)[GRT_RAYL_DIM],
     cplx_t T0[GRT_RAYL_DIM][GRT_RAYL_DIM], const bool reuseT, const real_t zsamp, const size_t ziref, cplx_t eigenfn[4]);
 
+/** 计算某个深度处的本征函数 SH */
 void grt_get_eigenfn_single_depth_Love(
     const MODEL1D_STATE *mstat, const cplx_t (*mod_potRaylLove_Down)[GRT_LOVE_DIM], const cplx_t (*mod_potRaylLove_Up)[GRT_LOVE_DIM],
     cplx_t T0[GRT_LOVE_DIM][GRT_LOVE_DIM], const bool reuseT, const real_t zsamp, const size_t ziref, cplx_t eigenfn[4]);
@@ -72,21 +69,17 @@ void grt_get_eigenfn_single_depth_Love(
  * 计算多个深度处的本征函数 P-SV
  * 
  * @param[in]      mstat                模型结构体指针
- * @param[in]      omega                圆频率
- * @param[in]      eigenK               本征波数
  * @param[in]      mod_potRaylLove_Down 每层 z_j+ 的垂直波函数
  * @param[in]      mod_potRaylLove_Up   每层 z_j- 的垂直波函数
- * @param[in]      nz                   沿深度采样数量
- * @param[in]      zsamps               有序深度数组
- * @param[in]      z_irefs              每个采样点所在层位
- * @param[out]     eigenfns             每个采样点本征函数
+ * @param[in]      eigfnmet             本征函数数据结构体指针
+ * @param[out]     eigfn                某频率某本征值的本征函数及相关
  * 
  */
 void grt_get_eigenfn_depths_Rayl(
     const MODEL1D_STATE *mstat, const cplx_t (*mod_potRaylLove_Down)[GRT_RAYL_DIM], const cplx_t (*mod_potRaylLove_Up)[GRT_RAYL_DIM],
     const EIGENFN_INFO *eigfnmet, EIGENFN *eigfn);
 
-/** 计算多个深度处的本征函数 SH, 参数见 get_eigenfn_depths_Rayl */
+/** 计算多个深度处的本征函数 SH */
 void grt_get_eigenfn_depths_Love(
     const MODEL1D_STATE *mstat, const cplx_t (*mod_potRaylLove_Down)[GRT_LOVE_DIM], const cplx_t (*mod_potRaylLove_Up)[GRT_LOVE_DIM],
     const EIGENFN_INFO *eigfnmet, EIGENFN *eigfn);
