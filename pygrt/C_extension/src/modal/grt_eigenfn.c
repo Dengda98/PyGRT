@@ -597,7 +597,7 @@ int eigenfn_main(int argc, char **argv){
             
             if(Ctrl->calc_egyint){
                 eigfntmp->csens = (cplx_t (*)[GRT_SNSTVTY_MAX])calloc(eigfnmet->cpar_nz, sizeof(*eigfntmp->csens));
-                eigfntmp->gsens = (cplx_t (*)[GRT_SNSTVTY_MAX])calloc(eigfnmet->cpar_nz, sizeof(*eigfntmp->gsens));
+                eigfntmp->usens = (cplx_t (*)[GRT_SNSTVTY_MAX])calloc(eigfnmet->cpar_nz, sizeof(*eigfntmp->usens));
             }
         }
     }
@@ -643,7 +643,7 @@ int eigenfn_main(int argc, char **argv){
     // 计算并输出群速度敏感核
     if(Ctrl->K.s_upar_filepath!=NULL){
         grt_group_sensitivity(eigfnmet);
-        grt_output_sensitivity(Ctrl->K.s_upar_filepath, "g", eigfnmet);
+        grt_output_sensitivity(Ctrl->K.s_upar_filepath, "u", eigfnmet);
     }
 
 

@@ -128,7 +128,7 @@ void grt_output_cdisp(const char *filepath, const char *full_command, const char
 }
 
 
-void grt_read_cdisp(const char *s_filepath, EIGENV_INFO *eigmet, char **pt_modelpath)
+void grt_read_cdisp(const char *filepath, EIGENV_INFO *eigmet, char **pt_modelpath)
 {  
     int ncid;
     int f_dimid, n_dimid;
@@ -136,7 +136,7 @@ void grt_read_cdisp(const char *s_filepath, EIGENV_INFO *eigmet, char **pt_model
     int c_varid, ciref_varid, cnum_varid;
 
     // 打开 NC 文件
-    NC_CHECK(nc_open(s_filepath, NC_NOWRITE, &ncid));
+    NC_CHECK(nc_open(filepath, NC_NOWRITE, &ncid));
 
     // 读取一系列全局属性
     // 读取模型路径
@@ -238,7 +238,7 @@ void grt_group_sensitivity(EIGENFN_INFO *eigfnmet)
                     }
                     
                     // 合并公式，计算群速度敏感核
-                    eigfn->gsens[iz][ia] = UoC * (2.0 - UoC) * eigfn->csens[iz][ia] + GRT_SQUARE(UoC) * eigfnmet->freqs[iw] * ddCdwdX;
+                    eigfn->usens[iz][ia] = UoC * (2.0 - UoC) * eigfn->csens[iz][ia] + GRT_SQUARE(UoC) * eigfnmet->freqs[iw] * ddCdwdX;
                 }
             }
         }
@@ -558,7 +558,6 @@ void grt_output_energy_integrals(const char *filepath, EIGENFN_INFO *eigfnmet)
 }
 
 
-/* 输出敏感核，相/群速度敏感核也应传入对应的相/群速度 */
 void grt_output_sensitivity(const char *filepath, const char *UC, EIGENFN_INFO *eigfnmet)
 {
     int ncid, f_dimid, n_dimid, z_dimid, k_dimid;
@@ -652,7 +651,7 @@ void grt_output_sensitivity(const char *filepath, const char *UC, EIGENFN_INFO *
         if(strcmp(UC, "c") == 0){
             cgdisp = eigfnmet->eigv[iw].c_roots;
         }
-        else if(strcmp(UC, "g") == 0){
+        else if(strcmp(UC, "u") == 0){
             cgdisp = eigfnmet->eigv[iw].g_roots;
         }
         else {
@@ -664,13 +663,13 @@ void grt_output_sensitivity(const char *filepath, const char *UC, EIGENFN_INFO *
         for(size_t ic = 0; ic < eigfnmet->eigv[iw].n; ++ic){
             memset(real_part, 0, sizeof(real_t)*eigfnmet->cpar_nz*nk);
 
-            cplx_t (*cgsens)[GRT_SNSTVTY_MAX] = NULL;
+            cplx_t (*cusens)[GRT_SNSTVTY_MAX] = NULL;
             
             if(strcmp(UC, "c") == 0){
-                cgsens = eigfnmet->eigfn[iw][ic].csens;
+                cusens = eigfnmet->eigfn[iw][ic].csens;
             }
-            else if(strcmp(UC, "g") == 0){
-                cgsens = eigfnmet->eigfn[iw][ic].gsens;
+            else if(strcmp(UC, "u") == 0){
+                cusens = eigfnmet->eigfn[iw][ic].usens;
             }
             else {
                 GRTRaiseError("Wrong execution.");
@@ -679,7 +678,7 @@ void grt_output_sensitivity(const char *filepath, const char *UC, EIGENFN_INFO *
             // 将复数数据转为实部和虚部
             for(size_t iz = 0; iz < eigfnmet->cpar_nz; ++iz){
                 for(int j = 0; j < nk; ++j){
-                    real_part[iz][j] = creal(cgsens[iz][j]);
+                    real_part[iz][j] = creal(cusens[iz][j]);
                 }
             }
 

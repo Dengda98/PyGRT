@@ -53,7 +53,7 @@ typedef struct {
     
     cplx_t egyint[GRT_EGYINTS_MAX];  ///< 能量积分
     cplx_t (*csens)[GRT_SNSTVTY_MAX];  // 相速度敏感核     [cpar_nz][3]
-    cplx_t (*gsens)[GRT_SNSTVTY_MAX];  // 群速度速度敏感核 [cpar_nz][3]
+    cplx_t (*usens)[GRT_SNSTVTY_MAX];  // 群速度速度敏感核 [cpar_nz][3]
 } EIGENFN;
 
 
