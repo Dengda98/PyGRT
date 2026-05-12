@@ -611,7 +611,7 @@ int modsum_main(int argc, char **argv){
 
         outputdirs[ir] = NULL;
         GRT_SAFE_ASPRINTF(&outputdirs[ir], "%s/%s_%s_%s_%s", 
-            Ctrl->O.s_output_dir, modelpath, Ctrl->D.s_depsrc, Ctrl->D.s_deprcv, Ctrl->R.s_rs[ir]);
+            Ctrl->O.s_output_dir, grt_get_basename(modelpath), Ctrl->D.s_depsrc, Ctrl->D.s_deprcv, Ctrl->R.s_rs[ir]);
 
         // 计算理论走时
         travtPS[ir][0] = grt_compute_travt1d(mod1d->Thk, mod1d->Va, mod1d->n, mod1d->isrc, mod1d->ircv, dist);
