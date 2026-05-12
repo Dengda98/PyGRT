@@ -13,7 +13,7 @@ void grt_free_eigenv(EIGENV *eigv)
 {
     GRT_SAFE_FREE_PTR(eigv->c_roots);
     GRT_SAFE_FREE_PTR(eigv->c_roots_iref);
-    GRT_SAFE_FREE_PTR(eigv->g_roots);
+    GRT_SAFE_FREE_PTR(eigv->u_roots);
 }
 
 void grt_free_eigenv_info(EIGENV_INFO *eigmet)
@@ -80,7 +80,7 @@ void grt_filter_eigenfn_info(
         // 写入频散
         EIGENV *eigvtmp = &eigfnmet->eigv[eigfnmet->nf];
         eigvtmp->c_roots = (real_t *)calloc(eigmet->nmode, sizeof(real_t));
-        eigvtmp->g_roots  = (real_t *)calloc(eigmet->nmode, sizeof(real_t));
+        eigvtmp->u_roots  = (real_t *)calloc(eigmet->nmode, sizeof(real_t));
         eigvtmp->c_roots_iref = (size_t *)calloc(eigmet->nmode, sizeof(size_t));
         eigvtmp->n = 0;
 
@@ -95,7 +95,7 @@ void grt_filter_eigenfn_info(
             eigvtmp->n++;
         }
         eigvtmp->c_roots = (real_t *)realloc(eigvtmp->c_roots, sizeof(real_t)*eigvtmp->n);
-        eigvtmp->g_roots  = (real_t *)realloc(eigvtmp->g_roots, sizeof(real_t)*eigvtmp->n);
+        eigvtmp->u_roots  = (real_t *)realloc(eigvtmp->u_roots, sizeof(real_t)*eigvtmp->n);
         eigvtmp->c_roots_iref = (size_t *)realloc(eigvtmp->c_roots_iref, sizeof(size_t)*eigvtmp->n);
 
         eigfnmet->nf++;

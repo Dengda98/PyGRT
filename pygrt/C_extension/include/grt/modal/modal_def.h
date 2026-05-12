@@ -15,7 +15,7 @@
 /** 某频率的频散值 */
 typedef struct {
     real_t *c_roots;       ///< 本征值， 两个维度分别为频率和根数
-    real_t *g_roots;
+    real_t *u_roots;
     size_t *c_roots_iref;  ///< 每个本征值来自哪层的久期函数
     size_t n;              ///< 每个频率下找到的零点数量
 } EIGENV;

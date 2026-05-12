@@ -34,7 +34,7 @@ typedef struct {
     /* 群速度 */
     struct {
         bool active;
-        char *s_gdisp_filepath;
+        char *s_udisp_filepath;
     } U;
     /* 敏感核 */
     struct {
@@ -70,7 +70,7 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
     // F
     GRT_SAFE_FREE_PTR(Ctrl->F.freqs);
     // U
-    GRT_SAFE_FREE_PTR(Ctrl->U.s_gdisp_filepath);
+    GRT_SAFE_FREE_PTR(Ctrl->U.s_udisp_filepath);
     // K
     GRT_SAFE_FREE_PTR(Ctrl->K.s_cpar_filepath);
     GRT_SAFE_FREE_PTR(Ctrl->K.s_upar_filepath);
@@ -293,7 +293,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             // 输出群速度 -U<path>
             case 'U':
                 Ctrl->U.active = true;
-                Ctrl->U.s_gdisp_filepath = strdup(optarg);
+                Ctrl->U.s_udisp_filepath = strdup(optarg);
                 break;
 
             // 输出能量积分和敏感核 -K+c<path>+u<path>+z<dz>+x<path>
@@ -441,7 +441,7 @@ static real_t grt_get_group_velocity(const real_t omega, const real_t eigenK, co
 
 
 /** 根据 grt_eigenfn 的一些参数，计算本征函数、能量积分、群速度、相速度敏感核 */
-static void grt_eigenfn_egy_gdisp_phaseK_util(
+static void grt_eigenfn_egy_udisp_phaseK_util(
     MODEL1D *mod1d, EIGENFN_INFO *eigfnmet, const int ncols, 
     const bool calc_egfn, const bool calc_egyint)
 {
@@ -495,7 +495,7 @@ static void grt_eigenfn_egy_gdisp_phaseK_util(
                     local_mstat, eigfnmet->wtype, ncols, 
                     mod_potRaylLove_Down, mod_potRaylLove_Up, eigfnmet, &eigfnmet->eigfn[iw][ic]);
                 // 计算群速度
-                eigfnmet->eigv[iw].g_roots[ic] = grt_get_group_velocity(omega, local_mstat->k, eigfnmet->eigfn[iw][ic].egyint, eigfnmet->wtype);
+                eigfnmet->eigv[iw].u_roots[ic] = grt_get_group_velocity(omega, local_mstat->k, eigfnmet->eigfn[iw][ic].egyint, eigfnmet->wtype);
             }
 
             GRT_SAFE_FREE_PTR(mod_potRaylLove_Down);
@@ -617,7 +617,7 @@ int eigenfn_main(int argc, char **argv){
     // }
     
     // 计算本征函数、能量积分、群速度、相速度敏感核
-    grt_eigenfn_egy_gdisp_phaseK_util(mod1d, eigfnmet, ncols, Ctrl->Z.active, Ctrl->calc_egyint);
+    grt_eigenfn_egy_udisp_phaseK_util(mod1d, eigfnmet, ncols, Ctrl->Z.active, Ctrl->calc_egyint);
 
     // 打印本征函数结果
     if(Ctrl->Z.active){
@@ -626,7 +626,7 @@ int eigenfn_main(int argc, char **argv){
 
     // 输出群速度
     if(Ctrl->U.active){
-        grt_output_gdisp(Ctrl->U.s_gdisp_filepath, eigfnmet);
+        grt_output_udisp(Ctrl->U.s_udisp_filepath, eigfnmet);
     }
 
     // 输出能量积分

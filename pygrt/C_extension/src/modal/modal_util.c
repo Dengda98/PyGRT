@@ -220,7 +220,7 @@ void grt_group_sensitivity(EIGENFN_INFO *eigfnmet)
     for(size_t iw = 0; iw < eigfnmet->nf; ++iw){
         for(size_t ic = 0; ic < eigfnmet->eigv[iw].n; ++ic){
             real_t C = eigfnmet->eigv[iw].c_roots[ic];
-            real_t U = eigfnmet->eigv[iw].g_roots[ic];
+            real_t U = eigfnmet->eigv[iw].u_roots[ic];
             real_t UoC = U/C;
 
             EIGENFN *eigfn = &eigfnmet->eigfn[iw][ic];
@@ -249,13 +249,13 @@ void grt_group_sensitivity(EIGENFN_INFO *eigfnmet)
 
 
 
-void grt_output_gdisp(const char *filepath, EIGENFN_INFO *eigfnmet)
+void grt_output_udisp(const char *filepath, EIGENFN_INFO *eigfnmet)
 {
     int ncid, f_dimid, n_dimid;
     const int ndims = 2;
     int dimids[ndims];
     int f_varid, n_varid;
-    int c_varid, g_varid, cnum_varid;
+    int c_varid, u_varid, cnum_varid;
 
     // 创建 NC 文件
     NC_CHECK(nc_create(filepath, NC_CLOBBER, &ncid));
@@ -275,12 +275,12 @@ void grt_output_gdisp(const char *filepath, EIGENFN_INFO *eigfnmet)
     // 定义频散数组
     NC_CHECK(nc_def_var(ncid, "cnum", NC_INT, 1, &f_dimid, &cnum_varid));
     NC_CHECK(nc_def_var(ncid, "c", NC_REAL, ndims, dimids, &c_varid));
-    NC_CHECK(nc_def_var(ncid, "g", NC_REAL, ndims, dimids, &g_varid));
+    NC_CHECK(nc_def_var(ncid, "u", NC_REAL, ndims, dimids, &u_varid));
 
     // 填充值
     const real_t fill_value_real_t = 0.0;
     NC_CHECK(NC_FUNC_REAL(nc_put_att) (ncid, c_varid, "_FillValue", NC_REAL, 1, &fill_value_real_t));
-    NC_CHECK(NC_FUNC_REAL(nc_put_att) (ncid, g_varid, "_FillValue", NC_REAL, 1, &fill_value_real_t));
+    NC_CHECK(NC_FUNC_REAL(nc_put_att) (ncid, u_varid, "_FillValue", NC_REAL, 1, &fill_value_real_t));
 
     // 其它属性
     // Rayleigh or Love
@@ -319,7 +319,7 @@ void grt_output_gdisp(const char *filepath, EIGENFN_INFO *eigfnmet)
         countp[1] = eigfnmet->eigv[iw].n;
 
         NC_CHECK(NC_FUNC_REAL(nc_put_vara) (ncid, c_varid, startp, countp, eigfnmet->eigv[iw].c_roots));
-        NC_CHECK(NC_FUNC_REAL(nc_put_vara) (ncid, g_varid, startp, countp, eigfnmet->eigv[iw].g_roots));
+        NC_CHECK(NC_FUNC_REAL(nc_put_vara) (ncid, u_varid, startp, countp, eigfnmet->eigv[iw].u_roots));
     }
     
     // 关闭文件
@@ -648,18 +648,18 @@ void grt_output_sensitivity(const char *filepath, const char *UC, EIGENFN_INFO *
         countp[2] = eigfnmet->cpar_nz;
         countp[3] = nk;
 
-        real_t *cgdisp = NULL;
+        real_t *cudisp = NULL;
         if(strcmp(UC, "c") == 0){
-            cgdisp = eigfnmet->eigv[iw].c_roots;
+            cudisp = eigfnmet->eigv[iw].c_roots;
         }
         else if(strcmp(UC, "u") == 0){
-            cgdisp = eigfnmet->eigv[iw].g_roots;
+            cudisp = eigfnmet->eigv[iw].u_roots;
         }
         else {
             GRTRaiseError("Wrong execution.");
         }
 
-        NC_CHECK(NC_FUNC_REAL(nc_put_vara) (ncid, cg_varid, startp, countp, cgdisp));
+        NC_CHECK(NC_FUNC_REAL(nc_put_vara) (ncid, cg_varid, startp, countp, cudisp));
 
         for(size_t ic = 0; ic < eigfnmet->eigv[iw].n; ++ic){
             memset(real_part, 0, sizeof(real_t)*eigfnmet->cpar_nz*nk);

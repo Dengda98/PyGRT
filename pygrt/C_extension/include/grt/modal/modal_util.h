@@ -30,7 +30,7 @@ void grt_output_cdisp(const char *filepath, const char *full_command, const char
  * @param[in]    filepath         输出路径
  * @param[in]    eigfnmet         本征函数数据结构体指针
  */
-void grt_output_gdisp(const char *filepath, EIGENFN_INFO *eigfnmet);
+void grt_output_udisp(const char *filepath, EIGENFN_INFO *eigfnmet);
 
 /** 
  * 读取频散文件 
