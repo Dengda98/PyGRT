@@ -591,6 +591,66 @@ static real_t grt_halfspace_Rayleigh_croot(const MODEL1D_STATE *mstat, const siz
 }
 
 
+static real_t __stoneley_func(real_t eta2, real_t xi_p2, real_t xi_f2, real_t gamma)
+{
+    real_t A = sqrt(1.0 - eta2);           // sqrt(1 - c^2/vs^2)
+    real_t P = sqrt(1.0 - xi_p2 * eta2);    // sqrt(1 - c^2/vp^2)
+    real_t F = sqrt(1.0 - xi_f2 * eta2);    // sqrt(1 - c^2/vf^2)
+
+    real_t R = (2.0 - eta2) * (2.0 - eta2) - 4.0 * A * P;
+    real_t L = gamma * (eta2 * eta2) * P / F;
+
+    return R + L;
+}
+
+/** 指定两个层位的物性参数为液体半空间-固体半空间参数，计算界面上的 Stoneley 波的相速度 */
+static real_t grt_halfspace_Scholte_croot(const MODEL1D_STATE *mstat, const size_t iref_liquid, const size_t iref_solid)
+{
+    real_t vp = mstat->mod1d->Va[iref_solid];
+    real_t vs = mstat->mod1d->Vb[iref_solid];
+    real_t vf = mstat->mod1d->Va[iref_liquid];
+
+    real_t rhof = mstat->mod1d->Rho[iref_liquid];
+    real_t rhos = mstat->mod1d->Rho[iref_solid];
+
+    real_t xi_p2 = (vs / vp) * (vs / vp);
+    real_t xi_f2 = (vs / vf) * (vs / vf);
+    real_t gamma = rhof / rhos;
+
+    // 确定物理上限：c 必须小于 vs 和 vf
+    real_t v_limit = (vf < vs) ? vf : vs;
+    
+    // 二分法区间 [low, high] (以 eta = c/vs 定义)
+    real_t low = 0.001;   
+    real_t high = (v_limit / vs) * (1.0 - 1e-14); // 极其靠近但绝不等于上限，防止 sqrt(0)
+    real_t mid;
+
+    real_t fhigh = __stoneley_func(high*high, xi_p2, xi_f2, gamma);
+    real_t fmid;
+
+    // 由于无法化简成多项式形式，需要二分迭代 (40次迭代可达到 1e-12 级别的精度)
+    for (int i = 0; i < 40; ++i) {
+        mid = (low + high) * 0.5;
+        fmid = __stoneley_func(mid*mid, xi_p2, xi_f2, gamma);
+        if (fmid * fhigh < 0.0) {
+            low = mid;
+        } else {
+            high = mid;
+        }
+        
+        if ((high - low) < 1e-12) break;
+
+        // printf("i = %d, mid = %f, mid*vs=%f\n", i, mid, mid * vs);
+    }
+
+    // 纠正由于精度不够而导致的问题，此时相速度无限接近介质速度
+    if(fabs(mid - low) < 1e-8)  mid = high;
+
+    return mid * vs;
+}
+
+
+
 /** 将对单个频率的处理包装成函数，方便被其它函数并行调用 */
 static void get_secular_roots_single_freq(MODEL1D_STATE *mstat, EIGENV_INFO *eigmet, EIGENV *eigv, SearchFunc searchfunc)
 {
@@ -622,13 +682,44 @@ static void get_secular_roots_single_freq(MODEL1D_STATE *mstat, EIGENV_INFO *eig
     cpred[npred++] = c2;
 
     if(! eigmet->manual_crange){
-        if(eigmet->wtype == GRT_DISPERSION_RAYL && ! mstat->mod1d->isLiquid[0]){
-            real_t target = 0.95 * grt_halfspace_Rayleigh_croot(mstat, 0);
-            cpred = (real_t *)realloc(cpred, sizeof(real_t)*(npred+1));
-            grt_insertOrdered(cpred, &npred, npred+1, &target, sizeof(real_t), true, grt_compare_real_t);
+        // 在 cpred 中补充首层半空间 Rayleigh 波的估计根
+        if(eigmet->wtype == GRT_DISPERSION_RAYL)
+        {
+            // 自顶向下的第一个固体层
+            size_t iy = 0;
+            for(iy = 0; iy < mstat->mod1d->n; ++iy){
+                if(! mstat->mod1d->isLiquid[iy]) break;
+            }
+            if(iy < mstat->mod1d->n){
+                real_t target = grt_halfspace_Rayleigh_croot(mstat, iy);
+                cpred = (real_t *)realloc(cpred, sizeof(real_t)*(npred+2));
+                grt_insertOrdered(cpred, &npred, npred+1, &target, sizeof(real_t), true, grt_compare_real_t);
+                target *= 0.95;
+                grt_insertOrdered(cpred, &npred, npred+1, &target, sizeof(real_t), true, grt_compare_real_t);
+            }
         }
-        // TODO
-        // 在 cpred 中补充 stoneley 波的估计根
+        // 在 cpred 中补充 Scholte 波的估计根
+        if(eigmet->wtype == GRT_DISPERSION_RAYL){
+            for(size_t iy = 0; iy < mstat->mod1d->n - 1; ++iy){
+                bool *isLiquid = mstat->mod1d->isLiquid;
+                bool il1 = isLiquid[iy];
+                bool il2 = isLiquid[iy+1];
+                if(il1 ^ il2){
+                    size_t iref_liquid, iref_solid;
+                    iref_liquid = iref_solid = iy;
+                    if(il1){
+                        iref_solid++;
+                    } else {
+                        iref_liquid++;
+                    }
+                    real_t target = grt_halfspace_Scholte_croot(mstat, iref_liquid, iref_solid);
+                    cpred = (real_t *)realloc(cpred, sizeof(real_t)*(npred+2));
+                    grt_insertOrdered(cpred, &npred, npred+1, &target, sizeof(real_t), true, grt_compare_real_t);
+                    target *= 0.95;
+                    grt_insertOrdered(cpred, &npred, npred+1, &target, sizeof(real_t), true, grt_compare_real_t);
+                }
+            }
+        }
     }
 
     // 如果手动指定了 iref， 则直接调用
@@ -684,8 +775,8 @@ static void get_secular_roots_single_freq(MODEL1D_STATE *mstat, EIGENV_INFO *eig
         }
 
         // 形成低速层
-        if(va1 > va2 && va2 < va3)  match = true;
-        else if(vb1 > vb2 && vb2 < vb3)  match = true;
+        if(va1 > va2 && va2 <= va3)  match = true;
+        else if(vb1 > vb2 && vb2 <= vb3)  match = true;
         // 固液分界面
         else if((il1 ^ il2) == 1)  match = true;
 
