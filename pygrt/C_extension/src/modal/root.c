@@ -631,6 +631,12 @@ static void get_secular_roots_single_freq(MODEL1D_STATE *mstat, EIGENV_INFO *eig
         // 在 cpred 中补充 stoneley 波的估计根
     }
 
+    // 如果手动指定了 iref， 则直接调用
+    if(eigmet->manual_iref){
+        searchfunc(mstat, eigmet, eigv, eigmet->iref, cpred, npred);
+        goto FINISH;
+    }
+
     size_t iref = 0; // 使用哪一层的secular function
 
     size_t nlay = mstat->mod1d->n;
@@ -693,6 +699,7 @@ static void get_secular_roots_single_freq(MODEL1D_STATE *mstat, EIGENV_INFO *eig
     // 目前临时的一个方法是在创建模型文件时为底层再添加一层物性相同的层
     // 从而不会跳过“底层”的久期函数
 
+FINISH:
     GRT_SAFE_FREE_PTR(cpred);
 }
 

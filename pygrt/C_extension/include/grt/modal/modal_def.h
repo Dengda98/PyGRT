@@ -31,6 +31,8 @@ typedef struct {
     real_t cmin;   ///< 搜根范围
     real_t cmax;
     bool manual_crange;  ///< 是否手动给定了相速度范围
+    size_t iref;
+    bool manual_iref;   ///< 是否手动给定了某层的久期函数
     
     // 两个搜根方法的参数
     real_t satol;  ///< 自适应方法的精度

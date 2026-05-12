@@ -51,6 +51,8 @@ typedef struct {
         bool manual_crange;
         real_t cmin;
         real_t cmax;
+        bool manual_iref;
+        size_t iref;
     } X;
     /* 零点阈值 */
     struct {
@@ -96,8 +98,8 @@ printf("\n"
 "Usage:\n"
 "---------------------------------------------------------------------\n"
 "    grt eigenv -M<model> -C<path> -SR|L -F<f1>[/<f2>/<df>][+p]\n"
-"         [-N[<max_order>]] [-X<freq>[+c<cmin>/<cmax>]] [-T+<params>] \n"
-"         [-P<nthreads>] [-s] [-h]\n"
+"         [-N[<max_order>]] [-X<freq>[+c<cmin>/<cmax>][+i<iref>]] \n"
+"         [-T+<params>] [-P<nthreads>] [-s] [-h]\n"
 "\n\n"
 "Options:\n"
 "----------------------------------------------------------------\n"
@@ -136,11 +138,11 @@ printf("\n"
 "                + If set an empty -N, means find all roots\n"
 "                  as much as possible.\n"
 "\n"
-"    -X<freq>[+c<cmin>/<cmax>]\n"
+"    -X<freq>[+c<cmin>/<cmax>][+i<iref>]\n"
 "                Debug option. You can set -X to output the\n"
-"                secular function at frequency <freq> within \n"
-"                phase velocity [<cmin>, <cmax>], and\n"
-"                at this time, -F will be omitted.\n"
+"                secular function of the <iref>-th layer\n"
+"                at frequency <freq> within phase velocity\n"
+"                [<cmin>, <cmax>]. At this time, -F will be omitted.\n"
 "\n"
 "    -T+<params> set some control parameters in root searching,\n"
 "                e.g. -T+t3+c7\n"
@@ -299,7 +301,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 }
                 break;
             
-            // -X<freq>[+c<cmin>/<cmax>]
+            // -X<freq>[+c<cmin>/<cmax>][+i<iref>]
             case 'X':
                 Ctrl->X.active = true;
                 {
@@ -314,8 +316,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     }
 
                     // 处理 + 号指令
-                    token = strtok(NULL, "+");
-                    if(token != NULL){
+                    while((token = strtok(NULL, "+")) != NULL){
                         switch (token[0]){
                             case 'c':
                                 Ctrl->X.manual_crange = true;
@@ -327,6 +328,19 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                                 }
                                 if(Ctrl->X.cmin >= Ctrl->X.cmax){
                                     GRTBadOptionError(X, "requires cmax < cmax.");
+                                }
+                                break;
+                            case 'i':
+                                Ctrl->X.manual_iref = true;
+                                {
+                                    ssize_t tmp = 0;
+                                    if(1 != sscanf(token+1, "%zd", &tmp)){
+                                        GRTBadOptionError(X, "");
+                                    }
+                                    if(tmp < 0){
+                                        GRTBadOptionError(X, "Can't set negative iref(%zd).", tmp);
+                                    }
+                                    Ctrl->X.iref = tmp;
                                 }
                                 break;
                             default:
@@ -510,6 +524,22 @@ int eigenv_main(int argc, char **argv){
 
         eigmet->cmin = vbmin;
         eigmet->cmax = vbn;
+    }
+
+    // 检查手动给定的 iref 是否合法
+    if(Ctrl->X.manual_iref){
+        eigmet->manual_iref = true;
+        eigmet->iref = Ctrl->X.iref;
+        // 根据之前的设置，模型层中未插入虚拟层，即 mod1d->n 为真实层数
+        // iref 是否越界
+        if(Ctrl->X.iref >= mod1d->n){
+            GRTRaiseError("iref(%zu) set by -X is out of bound, requires iref < layers (%zu).", 
+                Ctrl->X.iref, mod1d->n);
+        }
+        // iref 是否对于 Love 波在液体层中
+        if(eigmet->wtype == GRT_DISPERSION_LOVE && mod1d->isLiquid[Ctrl->X.iref]){
+            GRTRaiseError("iref(%zu) set by -X is in liquid, which is illegal for Love waves.", Ctrl->X.iref);
+        }
     }
     
     // 寻找久期函数零点
