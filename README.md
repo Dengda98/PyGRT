@@ -53,9 +53,11 @@ If you have any questions or suggestions, feel free to reach out:
 
 Since PyGRT has been under continuous maintenance and extension during the peer review, **its functions have exceeded the scope described in this paper.** For detailed usage of each function, please refer to the [**documentation**](https://pygrt.readthedocs.io/zh-cn/).
 
-> Zhu D., J. Wang, J. Hao, S. Yao, Y. Xu, T. Xu and Z. Yao (2026). PyGRT: An Efficient and Integrated Python Package for Computing Synthetic Seismograms in a Layered Half-Space Model. Seismological Research Letters. doi: [10.1785/0220250057](https://doi.org/10.1785/0220250057)
+> Zhu, D., Wang, J., Hao, J., Yao, S., Xu, Y., Xu, T., and Yao, Z. (2025). PyGRT: An Efficient and Integrated Python Package for Computing Synthetic Seismograms in a Layered Half‐Space Model. Seismological Research Letters, 97(3), 2138–2153. doi: [10.1785/0220250057](https://doi.org/10.1785/0220250057)
 
-> Zhu, D., T. Xu, J. Hao, and Z. Yao (2026). A Direct Convergence Method for Computing Synthetic Seismograms for a Layered Half-space with Sources and Receivers at Close Depths, Bulletin of the Seismological Society of America. doi: [10.1785/0120250190](https://doi.org/10.1785/0120250190)
+> Zhu, D., Xu, T., Hao, J., and Yao, Z. (2025). A Direct Convergence Method for Computing Synthetic Seismograms for a Layered Half‐Space with Sources and Receivers at Close Depths. Bulletin of the Seismological Society of America, 116(2), 576–588. doi: [10.1785/0120250190](https://doi.org/10.1785/0120250190)
+
+> Zhu, D., Xu, T., Hao, J., and Yao, Z. (2026). An Adaptive Strategy for Robust and Efficient Computation of Dispersion Curves in a Layered Half-Space, Bulletin of the Seismological Society of America, in press.
 
 ---------------
 ⭐ **Like this project? Give it a Star!** ⭐

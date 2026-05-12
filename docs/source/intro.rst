@@ -24,7 +24,7 @@
   :align: center
 
   **PyGRT** 可实现《理论地震图方法及其应用》中绝大部分的计算过程及算例。
-  该书为姚振兴院士和谢小碧研究员撰写的重要地震学著作， **PyGRT** 已成为该书推荐的开源程序包。
+  该书为姚振兴院士和谢小碧研究员撰写的地震学著作， **PyGRT** 已成为该书推荐的开源程序包。
   
 
 
@@ -96,21 +96,27 @@
 参考文献
 ------------
 
-如果你的研究中使用了 **PyGRT** 程序，请引用以下文章：
+如果你的研究中使用了 **PyGRT** 程序，请引用以下相关文章：
 
 + **PyGRT** 程序包。 由于审稿过程中程序在不断扩展完善，目前程序的功能已超过该文章的叙述范围，具体功能详见本文档。
 
-  Zhu, D., J. Wang, J. Hao, S. Yao, Y. Xu, T. Xu, and Z. Yao (2026). 
+  Zhu, D., Wang, J., Hao, J., Yao, S., Xu, Y., Xu, T., and Yao, Z. (2025). 
   PyGRT: An Efficient and Integrated Python Package for Computing Synthetic 
-  Seismograms in a Layered Half-Space Model, Seismological Research Letters.
+  Seismograms in a Layered Half-Space Model. Seismological Research Letters, 97(3), 2138–2153. 
   doi: `10.1785/0220250057 <https://doi.org/10.1785/0220250057>`_
 
 + **直接收敛法**
   
-  Zhu, D., T. Xu, J. Hao, and Z. Yao (2026). A Direct Convergence Method 
+  Zhu, D., Xu, T., Hao, J., and Yao, Z. (2025). A Direct Convergence Method 
   for Computing Synthetic Seismograms for a Layered Half-space with Sources and 
-  Receivers at Close Depths, Bulletin of the Seismological Society of America.
+  Receivers at Close Depths. Bulletin of the Seismological Society of America, 116(2), 576–588. 
   doi: `10.1785/0120250190 <https://doi.org/10.1785/0120250190>`_
+
++ **自适应搜根算法**
+
+  Zhu, D., Xu, T., Hao, J., and Yao, Z. (2026). 
+  An Adaptive Strategy for Robust and Efficient Computation of 
+  Dispersion Curves in a Layered Half-Space. Bulletin of the Seismological Society of America, in press.
 
 
 如果你对相关理论方法感兴趣， **PyGRT** 主要参考了以下文章和书籍：
