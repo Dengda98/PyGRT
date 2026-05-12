@@ -11,14 +11,36 @@
 
 /** 该子模块的参数控制结构体 */
 typedef struct {
-    /** 输入文件路径 */
-    char *s_filepath;
+    /* 相速度频散结果输出路径 */
+    struct {
+        bool active;
+        char *s_phasepath;
+    } C;
+    /* 阶数范围 */
+    struct {
+        bool active;
+        size_t *modes;
+        size_t nmode;
+    } N;
+    /* 频率范围 */
+    struct {
+        bool active;
+        real_t *freqs;
+        size_t nf;
+        bool def_range;  ///< 定义了搜索范围而不是离散的一些点
+        bool io_period;  ///< 以周期的形式输入输出
+    } F;
 } GRT_MODULE_CTRL;
 
 
 /** 释放结构体的内存 */
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
-    GRT_SAFE_FREE_PTR(Ctrl->s_filepath);
+    // C
+    GRT_SAFE_FREE_PTR(Ctrl->C.s_phasepath);
+    // N
+    GRT_SAFE_FREE_PTR(Ctrl->N.modes);
+    // F
+    GRT_SAFE_FREE_PTR(Ctrl->F.freqs);
     GRT_SAFE_FREE_PTR(Ctrl);
 }
 
@@ -31,7 +53,39 @@ printf("\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
-"    grt eigv2asc <ncfile>\n"
+"    grt eigv2asc -C<path> [-F<f1>[/<f2>][/<df>][+p]] \n"
+"         [-N[<n1>][/<n2>][/<dn>]] [-h]\n"
+"\n\n"
+"Options:\n"
+"----------------------------------------------------------------\n"
+"    -C<path>    Input dispersion result file from module `eigenv` \n"
+"                (.nc format)\n"
+"\n"
+"    -F<f1>[/<f2>][/<df>][+p]\n"
+"                Select the frequency range from the input file.\n"
+"                <f1>: start frequency (Hz)\n"
+"                <f2>: end frequency (Hz)\n"
+"                <df>: frequency interval (Hz)\n"
+"                + If set -F<f1>, means set only one point. \n"
+"                + If set -F<f1>/<f2>, means set min/max range. \n"
+"                + If add +p at the end, <f1>, <f2>\n"
+"                  and <df> will be period (sec).\n"
+"\n"
+"    -N[<n1>][/<n2>][/<dn>]\n"
+"                Select the order range from the input file, \n"
+"                0 means fundamental mode.\n"
+"                <n1>: start order\n"
+"                <n2>: end order\n"
+"                <dn>: order interval\n"
+"                + If -N is not given, equal to -N0.\n"
+"                + If set an empty -N, means all orders will be considered.\n"
+"                + If set -N<n1>/<n2>, means set min/max range.\n"
+"\n"
+"    -h           Display this help message.\n"
+"\n\n"
+"Examples:\n"
+"----------------------------------------------------------------\n"
+"    grt eigv2asc -Cphase_R.nc -N > phase_R.txt\n"
 "\n\n\n"
 );
 }
@@ -39,90 +93,178 @@ printf("\n"
 
 /** 从命令行中读取选项，处理后记录到全局变量中 */
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
-    (void)Ctrl;
     int opt;
-    while ((opt = getopt(argc, argv, ":h")) != -1) {
+    while ((opt = getopt(argc, argv, ":C:F:N::h")) != -1) {
         switch (opt) {
+            // -C<path>
+            case 'C':
+                Ctrl->C.active = true;
+                Ctrl->C.s_phasepath = strdup(optarg);
+                break;
+
+            // 阶数范围 -N[n1][/n2][/dn]
+            case 'N':
+                Ctrl->N.active = true;
+                // 没有参数，直接跳过
+                if(optarg==NULL)  break;
+                {
+                    ssize_t a1, a2, dif;
+                    a1 = a2 = 0;
+                    dif = 1;
+                    int nscan = sscanf(optarg, "%zd/%zd/%zd", &a1, &a2, &dif);
+                    if( !(nscan == 1 || nscan == 2 || nscan == 3)){
+                        GRTBadOptionError(N, "");
+                    }
+                    if(nscan == 1 && a1 < 0){
+                        GRTBadOptionError(N, "Can't set a single negative value.");
+                    }
+                    if(nscan == 1){
+                        a2 = a1;
+                        dif = 1;
+                    }
+                    else if(nscan >=2){
+                        if(dif <= 0){
+                            GRTBadOptionError(N, "Can't set negative dn(%zd).", dif);
+                        }
+                        if(a1 < 0 || a2 < 0){
+                            GRTBadOptionError(N, "Can't set nonpositive n1(%zd), n2(%zd).", a1, a2);
+                        }
+                        if(a1 > a2){
+                            GRTBadOptionError(N, "n1(%zd) > n2(%zd).", a1, a2);
+                        }
+                    }
+                    Ctrl->N.nmode = floor((a2-a1)/dif) + 1;
+                    Ctrl->N.modes = (size_t *)calloc(Ctrl->N.nmode, sizeof(size_t));
+                    for(size_t i=0; i < Ctrl->N.nmode; ++i){
+                        Ctrl->N.modes[i] = a1 + dif*i;
+                    }
+                }
+                break;
+
+            // 频率值 -Ff1[/f2][/df][+p]  可使用
+            case 'F':
+                Ctrl->F.active = true;
+                {
+                    char *string = strdup(optarg);
+                    char *token = strtok(string, "+");
+                    real_t a1, a2, df;
+                    a1 = a2 = 0;
+                    df = 1;
+                    int nscan = sscanf(token, "%lf/%lf/%lf", &a1, &a2, &df);
+                    if( !(nscan == 1 || nscan == 2 || nscan == 3)){
+                        GRTBadOptionError(F, "");
+                    };
+                    if(nscan == 1 && a1 <= 0.0){
+                        GRTBadOptionError(F, "Can't set a single nonpositive value.");
+                    }
+                    if(nscan == 1){
+                        a2 = a1;
+                        df = 1;
+                    }
+                    else if(nscan >= 2){
+                        if(df <= 0){
+                            GRTBadOptionError(F, "Can't set nonpositive df(%lf).", df);
+                        }
+                        if(a1 < 0.0 || a2 <= 0.0){
+                            GRTBadOptionError(F, "Can't set nonpositive f1(%lf), f2(%lf).", a1, a2);
+                        }
+                        if(a1 > a2){
+                            GRTBadOptionError(F, "f1(%lf) > f2(%lf).", a1, a2);
+                        }
+
+                        // 跳过零频
+                        if(nscan == 3){
+                            a1 = GRT_MAX(a1, df);
+                            a2 = GRT_MAX(a1, a2);
+                        }
+                    }
+
+                    bool isperiod = false;
+                    // 处理 + 号指令
+                    token = strtok(NULL, "+");
+                    if(token != NULL){
+                        switch (token[0]){
+                            case 'p':
+                                isperiod = true;
+                                break;
+                            default:
+                                GRTBadOptionError(F, "+%s is not supported.", token);
+                                break;
+                        }
+                    }
+
+                    if(nscan == 3 || nscan == 1){
+                        Ctrl->F.nf = floor((a2-a1)/df) + 1;
+                        Ctrl->F.freqs = (real_t*)calloc(Ctrl->F.nf, sizeof(real_t));
+                        for(size_t i=0; i<Ctrl->F.nf; ++i){
+                            if(isperiod){
+                                Ctrl->F.freqs[Ctrl->F.nf-1 - i] = 1.0/(a1 + df*i);
+                            } else {
+                                Ctrl->F.freqs[i] = a1 + df*i;
+                            }
+                        }
+                    }
+                    else if(nscan == 2){
+                        // 只约束最大值和最小值，内存申请由读取频散文件的过程中进行
+                        Ctrl->F.nf = 2;
+                        Ctrl->F.freqs = (real_t*)calloc(Ctrl->F.nf, sizeof(real_t));
+                        Ctrl->F.freqs[0] = a1;
+                        Ctrl->F.freqs[1] = a2;
+                        Ctrl->F.def_range = true;
+                    }
+                    
+                    Ctrl->F.io_period = isperiod;
+
+                    GRT_SAFE_FREE_PTR(string);
+                }
+                break;
+
             GRT_Common_Options_in_Switch((char)(optopt));
         }
     }
 
     // 检查必选项有没有设置
     GRTCheckOptionSet(argc > 1);
+    GRTCheckOptionActive(Ctrl, C);
+
+    // -N 的默认项，仅处理基阶
+    if( ! Ctrl->N.active ){
+        Ctrl->N.nmode = 1;
+        Ctrl->N.modes = (size_t *)calloc(Ctrl->N.nmode, sizeof(size_t));
+        Ctrl->N.modes[0] = 0;
+    }
 }
 
 
-
+/** 子模块主函数 */
 int eigv2asc_main(int argc, char **argv)
 {
     GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
 
+    // 传入参数 
     getopt_from_command(Ctrl, argc, argv);
 
-    Ctrl->s_filepath = strdup(argv[1]);
+    // 读取频散
+    char *modelpath = NULL;
+    EIGENV_INFO *eigmet = (EIGENV_INFO *)calloc(1, sizeof(EIGENV_INFO));
+    grt_read_cdisp(Ctrl->C.s_phasepath, eigmet, &modelpath);
+
+    // 根据命令行参数确定出所需的部分频散信息
+    EIGENFN_INFO *eigfnmet = (EIGENFN_INFO *)calloc(1, sizeof(EIGENFN_INFO));
+    grt_filter_eigenfn_info(
+        Ctrl->F.nf, Ctrl->F.freqs, Ctrl->F.def_range,
+        Ctrl->N.nmode, Ctrl->N.modes, eigmet, eigfnmet);
     
-    // 检查文件名是否存在
-    GRTCheckFileExist(Ctrl->s_filepath);
-
-    int ncid;
-    int f_dimid, n_dimid;
-    int f_varid;
-    int c_varid, ciref_varid, cnum_varid;
-
-    // 打开 NC 文件
-    GRTCheckFileExist(Ctrl->s_filepath);
-    NC_CHECK(nc_open(Ctrl->s_filepath, NC_NOWRITE, &ncid));
-
-    size_t nfreq, nmode;
-
-    // 读取 NC 文件的坐标变量
-    NC_CHECK(nc_inq_dimid(ncid, "freq", &f_dimid));
-    NC_CHECK(nc_inq_dimlen(ncid, f_dimid, &nfreq));
-    NC_CHECK(nc_inq_dimid(ncid, "mode", &n_dimid));
-    NC_CHECK(nc_inq_dimlen(ncid, n_dimid, &nmode));
-    real_t *freqs = (real_t *)calloc(nfreq, sizeof(real_t));
-    NC_CHECK(nc_inq_varid(ncid, "freq", &f_varid));
-    NC_CHECK(NC_FUNC_REAL(nc_get_var) (ncid, f_varid, freqs));
-
-    // 每个频率下有多少阶
-    int *cnum = (int *)calloc(nfreq, sizeof(int));
-    NC_CHECK(nc_inq_varid(ncid, "cnum", &cnum_varid));
-    NC_CHECK(NC_FUNC_INT(nc_get_var) (ncid, cnum_varid, cnum));
-
-    NC_CHECK(nc_inq_varid(ncid, "c", &c_varid));
-    NC_CHECK(nc_inq_varid(ncid, "ciref", &ciref_varid));    
-
-    // 读入所有频散
-    const int ndims = 2;
-    size_t startp[ndims];
-    size_t countp[ndims];
-    for(size_t iw = 0; iw < nfreq; ++iw){
-        int num = cnum[iw];
-        real_t *c_roots = (real_t *)calloc(cnum[iw], sizeof(real_t));
-        int *c_roots_iref = (int *)calloc(cnum[iw], sizeof(int));
-
-        startp[0] = iw;
-        startp[1] = 0;
-        countp[0] = 1;
-        countp[1] = cnum[iw];
-
-        NC_CHECK(NC_FUNC_REAL(nc_get_vara) (ncid, c_varid, startp, countp, c_roots));
-        NC_CHECK(NC_FUNC_INT(nc_get_vara) (ncid, ciref_varid, startp, countp, c_roots_iref));
+    for(size_t iw = 0; iw < eigfnmet->nf; ++iw){
+        real_t *c_roots = eigfnmet->eigv[iw].c_roots;
+        size_t *c_roots_iref = eigfnmet->eigv[iw].c_roots_iref;
+        size_t cnum = eigfnmet->eigv[iw].n;
 
         // 打印
-        for(int ik = 0; ik < num; ++ik){
-            printf("%15.5e %20.8e %10d %10d\n", freqs[iw], c_roots[ik], ik, c_roots_iref[ik]);
+        for(size_t ik = 0; ik < cnum; ++ik){
+            printf("%15.5e %20.8e %10zu %10zu\n", eigfnmet->freqs[iw], c_roots[ik], eigfnmet->modes[ik], c_roots_iref[ik]);
         }
-
-        GRT_SAFE_FREE_PTR(c_roots);
-        GRT_SAFE_FREE_PTR(c_roots_iref);
     }
-
-    // 关闭文件
-    NC_CHECK(nc_close(ncid));
-
-    GRT_SAFE_FREE_PTR(freqs);
-    GRT_SAFE_FREE_PTR(cnum);
 
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;
