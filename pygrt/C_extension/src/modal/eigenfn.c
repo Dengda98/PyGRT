@@ -188,7 +188,7 @@ static void grt_potential_propagate_DownUp_Love(
     cplx_t potRaylLove1[GRT_LOVE_DIM], const cplx_t potRaylLove2[GRT_LOVE_DIM], cplx_t potRaylLove2_Up[GRT_LOVE_DIM])
 {
     // 如果上层为液体层
-    if(mstat->mod1d->isLiquid[iy-1]){
+    if(mstat->mod1d->isLiquid[iy]){
         potRaylLove1[0]    = potRaylLove1[1]    = 0.0;
         potRaylLove2_Up[0] = potRaylLove2_Up[1] = 0.0;
         return;  // 直接返回
@@ -204,7 +204,8 @@ static void grt_potential_propagate_DownUp_Love(
     cplx_t xb0 = mstat->xb[iy];
 
     cplx_t exb = exp(- eigenK*thk0*xb0);
-    cplx_t RUL_FR_delay = M_FR->RUL * exb;
+    cplx_t ex2b = exb * exb;
+    cplx_t RUL_FR_delay = M_FR->RUL * ex2b;
     // \phi-_{j+1}-
     potRaylLove2_Up[0] = M->TUL * potRaylLove2[0] / (1.0 - M->RDL*RUL_FR_delay);
     // \phi+_{j+1}-
