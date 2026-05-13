@@ -552,7 +552,7 @@ int modsum_main(int argc, char **argv){
     real_t fft_df = eigmet->freqs[1] - eigmet->freqs[0];
     size_t fft_nf = eigmet->nf + 1; // + 1 是为零频
     size_t fft_nt = 2*(fft_nf - 1);
-    real_t fft_dt = 1.0 / fft_df;
+    real_t fft_dt = 0.5 / eigmet->freqs[eigmet->nf-1];
 
     // 格林函数频谱
     GRNSPEC *grn = &(GRNSPEC){0};
