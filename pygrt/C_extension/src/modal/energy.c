@@ -320,11 +320,11 @@ static void phase_sensitivity_numerator_single_layer_Rayl(
     // K_rho'
     K[2] = K_lam + K_mu + K_rho;
 
-    // K_alpha
+    // K_lam
     // K[0] = K_lam;
-    // // K_beta
+    // // K_mu
     // K[1] = K_mu;
-    // // K_rho'
+    // // K_rho
     // K[2] = K_rho;
 }
 
@@ -408,7 +408,11 @@ void grt_energy_integrals_Rayl(
             phase_sensitivity_numerator_single_layer_Rayl(rho, creal(mstat->omega), eigenK, lambda, mu, sub_egyint, eigfn->csens[iz]);
             // 去掉系数
             eigfn->csens[iz][0] /= mstat->mod1d->Va[ziref] / mstat->c_phase;
-            eigfn->csens[iz][1] /= mstat->mod1d->Vb[ziref] / mstat->c_phase;
+            if(mstat->mod1d->isLiquid[ziref]) {
+                eigfn->csens[iz][1] = 0.0;
+            } else {
+                eigfn->csens[iz][1] /= mstat->mod1d->Vb[ziref] / mstat->c_phase;
+            }
             eigfn->csens[iz][2] /= rho / mstat->c_phase;
         }
 
@@ -512,7 +516,11 @@ void grt_energy_integrals_Love(
         if(eigfn->csens!=NULL){
             phase_sensitivity_numerator_single_layer_Love(rho, creal(mstat->omega), eigenK, mu, sub_egyint, eigfn->csens[iz]);
             // 去掉系数
-            eigfn->csens[iz][1] /= mstat->mod1d->Vb[ziref] / mstat->c_phase;
+            if(mstat->mod1d->isLiquid[ziref]) {
+                eigfn->csens[iz][1] = 0.0;
+            } else {
+                eigfn->csens[iz][1] /= mstat->mod1d->Vb[ziref] / mstat->c_phase;
+            }
             eigfn->csens[iz][2] /= rho / mstat->c_phase;
         }
 
