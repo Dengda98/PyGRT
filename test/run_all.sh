@@ -4,7 +4,7 @@
 set -euo pipefail
 
 # 下载其它脚本
-wget "https://raw.githubusercontent.com/Dengda98/dengda98.github.io/refs/heads/main/assets/pygrt-tests/pygrt-tests.tar.gz"
+curl -L -o pygrt-tests.tar.gz "https://raw.githubusercontent.com/Dengda98/dengda98.github.io/refs/heads/main/assets/pygrt-tests/pygrt-tests.tar.gz"
 tar -xzvf pygrt-tests.tar.gz
 
 dirs=$(find . -maxdepth 1 -mindepth 1 -type d | sort)
