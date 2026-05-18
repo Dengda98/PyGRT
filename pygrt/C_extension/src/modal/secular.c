@@ -67,12 +67,6 @@ void grt_GRT_matrix_allLayer_Rayl(MODEL1D_STATE *mstat, const real_t k, RT_MATRI
     } // END for loop 
     //===================================================================================
 
-    // 递推 RU_FR
-    grt_topbound_RU_PSV(mstat);
-    for(size_t iy = 0; iy < nlay; ++iy){
-        grt_recursion_RU_PSV(M_top, &Mall_FR[iy], &Mall_FR[iy]);
-    }
-
     // ---------- 只算到 n-1 层 --------------
     // 递推 RU_FR
     grt_topbound_RU_PSV(mstat);
@@ -412,8 +406,7 @@ void grt_secular_function_potential_Rayl(
         cplx_t RU_FA_delay[2][2] = {0};
         if(isLiquid[iref-1]){
             cref = GRT_MIN(Va[iref-1], Vb[iref]);
-            cplx_t ex2a = exp( - mstat->k * Thk[iref-1] * mstat->xa[iref-1]);
-            ex2a *= ex2a;
+            cplx_t ex2a = exp( - 2.0 * mstat->k * Thk[iref-1] * mstat->xa[iref-1]);
             R3[0][0] = RU_FA_delay[0][0] = ex2a * mstat->M_FA.RU[0][0];
             R3[1][1] = mstat->M_BL.RD[0][0];
             R3[1][2] = mstat->M_BL.RD[0][1];
