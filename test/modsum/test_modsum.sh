@@ -20,4 +20,4 @@ grt modsum -Cphase_L.nc -D2/1 -R100 -N2 -OGRN_NM_2 -W5 -e
 grt modsum -Cphase_R.nc -D2/1 -R100 -N -OGRN_NM_all -W5 -e
 grt modsum -Cphase_L.nc -D2/1 -R100 -N -OGRN_NM_all -W5 -e
 
-rm GRN* *.nc -rf
+rm -rf GRN* *.nc
