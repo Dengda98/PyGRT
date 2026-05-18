@@ -858,4 +858,5 @@ void grt_get_secular_roots(MODEL1D *mod1d, EIGENV_INFO *eigmet, const bool print
     eigmet->neval = neval;
 
     FINISH:
+    return;
 }
