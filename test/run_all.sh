@@ -3,6 +3,10 @@
 
 set -euo pipefail
 
+# 下载其它脚本
+wget "https://raw.githubusercontent.com/Dengda98/dengda98.github.io/refs/heads/main/assets/pygrt-tests/pygrt-tests.tar.gz"
+tar -xzvf pygrt-tests.tar.gz
+
 dirs=$(find . -maxdepth 1 -mindepth 1 -type d | sort)
 
 for dir in $dirs; do
@@ -13,3 +17,7 @@ for dir in $dirs; do
     done
     cd - > /dev/null
 done
+
+# 删除下载的脚本
+tar -tf pygrt-tests.tar.gz | awk -F/ '{print $1}' | uniq | xargs rm -rf
+rm pygrt-tests.tar.gz
