@@ -295,14 +295,6 @@ jobs:
         shell: bash
 
     steps:
-      - name: Set MSYS2 (Windows)  # windows平台使用MSYS2工具编译程序
-        if: contains(matrix.os, 'windows')    
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: UCRT64
-          install: >-
-            wget 
-
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
