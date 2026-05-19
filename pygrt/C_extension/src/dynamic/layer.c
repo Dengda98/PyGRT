@@ -440,6 +440,119 @@ void grt_RT_matrix_ls_PSV(const MODEL1D_STATE *mstat, const size_t iy, RT_MATRIX
 
 }
 
+void grt_RT_mat3x3_ls_PSV(const MODEL1D_STATE *mstat, const size_t iy, cplx_t RT[3][3])
+{
+    MODEL_2LAYS_ATTRIB(mstat, cplx_t, xa);
+    MODEL_2LAYS_ATTRIB(mstat, cplx_t, xb);
+    MODEL_2LAYS_ATTRIB(mstat, cplx_t, mu);
+    MODEL_2LAYS_ATTRIB(mstat, cplx_t, cbcb);
+    MODEL_2LAYS_ATTRIB(mstat->mod1d, real_t, Rho);
+    MODEL_2LAYS_ATTRIB(mstat->mod1d, bool, isLiquid);
+
+    // 后缀1表示上层的液体的物理参数，后缀2表示下层的固体的物理参数
+    // 若mu2==0, 则下层为液体，参数需相互交换 
+
+    // 讨论液-固 or 固-液
+    int sgn = 1;
+    if(isLiquid1 && isLiquid2){
+        GRTRaiseError("fluid-fluid interface is not allowed.\n");
+    }
+
+    if(! isLiquid1){
+        GRT_SWAP(real_t, Rho1, Rho2);
+        GRT_SWAP(cplx_t, xa1, xa2);
+        GRT_SWAP(cplx_t, xb1, xb2);
+        GRT_SWAP(cplx_t, cbcb1, cbcb2);
+        GRT_SWAP(cplx_t, mu1, mu2);
+        sgn = -1;
+    }
+
+    // 定义一些中间变量来简化运算和书写
+    cplx_t lamka1k = Rho1*GRT_SQUARE(mstat->c_phase);
+    cplx_t kb2k = cbcb2;
+    cplx_t Og2k = 1.0 - 0.5*kb2k;
+    cplx_t Og2k2 = Og2k*Og2k;
+    cplx_t A = 2.0*Og2k2*xa1*mu2 + 0.5*lamka1k*kb2k*xa2 - 2.0*mu2*xa1*xa2*xb2;
+    cplx_t B = 2.0*Og2k2*xa1*mu2 - 0.5*lamka1k*kb2k*xa2 + 2.0*mu2*xa1*xa2*xb2;
+    cplx_t C = 2.0*Og2k2*xa1*mu2 + 0.5*lamka1k*kb2k*xa2 + 2.0*mu2*xa1*xa2*xb2;
+    cplx_t D = 2.0*Og2k2*xa1*mu2 - 0.5*lamka1k*kb2k*xa2 - 2.0*mu2*xa1*xa2*xb2;
+
+    if(A == 0.0){
+        GRTRaiseError("ZeroError, It shoulbe be avoided before calling.");
+    }
+
+    // RD RU
+    RT[0][0] = D/A;
+
+    RT[1][1] = - B/A;
+    RT[1][2] = - 4.0*Og2k*xa1*xb2*mu2/A * sgn;
+    RT[2][1] = RT[1][2]/xb2 * xa2;
+    RT[2][2] = - C/A;
+
+    // TD TU
+    RT[1][0] = - 2.0*Og2k*xa1*lamka1k/A;
+    RT[2][0] = RT[1][0]/Og2k*xa2 * sgn;
+
+    RT[0][1] = - 2.0*Og2k*xa2*mu2*kb2k/A; 
+    RT[0][2] = RT[0][1]/Og2k*xb2 * sgn;
+}
+
+void grt_Q_mat3x3_ls_PSV(const MODEL1D_STATE *mstat, const size_t iy, cplx_t Qin[3][3], cplx_t Qout[3][3])
+{
+    MODEL_2LAYS_ATTRIB(mstat, cplx_t, xa);
+    MODEL_2LAYS_ATTRIB(mstat, cplx_t, xb);
+    MODEL_2LAYS_ATTRIB(mstat, cplx_t, mu);
+    MODEL_2LAYS_ATTRIB(mstat, cplx_t, cbcb);
+    MODEL_2LAYS_ATTRIB(mstat->mod1d, real_t, Rho);
+    MODEL_2LAYS_ATTRIB(mstat->mod1d, bool, isLiquid);
+
+    // 后缀1表示上层的液体的物理参数，后缀2表示下层的固体的物理参数
+    // 若mu2==0, 则下层为液体，参数需相互交换 
+
+    // 讨论液-固 or 固-液
+    int sgn = 1;
+    if(isLiquid1 && isLiquid2){
+        GRTRaiseError("fluid-fluid interface is not allowed.\n");
+    }
+
+    if(! isLiquid1){
+        GRT_SWAP(real_t, Rho1, Rho2);
+        GRT_SWAP(cplx_t, xa1, xa2);
+        GRT_SWAP(cplx_t, xb1, xb2);
+        GRT_SWAP(cplx_t, cbcb1, cbcb2);
+        GRT_SWAP(cplx_t, mu1, mu2);
+        sgn = -1;
+    }
+
+    cplx_t cphase = mstat->c_phase;
+
+    cplx_t gam = 1.0 - 0.5*cbcb2;
+
+    Qin[0][0] = - sgn * xa1;
+    Qin[0][1] = - sgn * xa2;
+    Qin[0][2] = - 1.0;
+
+    Qin[1][0] = - Rho1*cphase*cphase/mu2;
+    Qin[1][1] = - 2.0*gam;
+    Qin[1][2] = - sgn * 2.0*xb2;
+
+    Qin[2][0] = 0.0;
+    Qin[2][1] = - sgn * 2.0*xa2;
+    Qin[2][2] = - 2.0*gam;
+
+
+    Qout[0][0] = - sgn * xa1;
+    Qout[0][1] = - sgn * xa2;
+    Qout[0][2] = 1.0;
+
+    Qout[1][0] = Rho1*cphase*cphase/mu2;
+    Qout[1][1] = 2.0*gam;
+    Qout[1][2] = - sgn * 2.0*xb2;
+
+    Qout[2][0] = 0.0;
+    Qout[2][1] = - sgn * 2.0*xa2;
+    Qout[2][2] = 2.0*gam;
+}
 
 void grt_RT_matrix_ls_SH(const MODEL1D_STATE *mstat, const size_t iy, RT_MATRIX *M)
 {

@@ -105,6 +105,9 @@ void grt_RT_matrix_ll_SH(RT_MATRIX *M);
 
 /** 液-固 界面 */
 void grt_RT_matrix_ls_PSV(const MODEL1D_STATE *mstat, const size_t iy, RT_MATRIX *M);
+/** RT = Qin^-1 * Qout */
+void grt_RT_mat3x3_ls_PSV(const MODEL1D_STATE *mstat, const size_t iy, cplx_t RT[3][3]);
+void grt_Q_mat3x3_ls_PSV(const MODEL1D_STATE *mstat, const size_t iy, cplx_t Min[3][3], cplx_t Mout[3][3]);
 
 /** 液-固 界面 */
 void grt_RT_matrix_ls_SH(const MODEL1D_STATE *mstat, const size_t iy, RT_MATRIX *M);
