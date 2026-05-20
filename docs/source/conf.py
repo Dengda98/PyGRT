@@ -160,7 +160,8 @@ rst_epilog = f"""
 .. |bouchon1981p| replace:: :ref:`Bouchon (1981) <reference>`
 .. |ji1995| replace:: :ref:`纪晨和姚振兴, 1995 <reference>`
 .. |ji1995p| replace:: :ref:`纪晨和姚振兴 (1995) <reference>`
-.. |xie1989| replace:: :ref:`(谢小碧和姚振兴, 1989) <reference>`
+.. |xie1989| replace:: :ref:`谢小碧和姚振兴, 1989 <reference>`
+.. |xie1989p| replace:: :ref:`谢小碧和姚振兴 (1989) <reference>`
 .. |yao2026| replace:: :ref:`(姚振兴和谢小碧, 2026) <reference>`
 .. |yao1983| replace:: :ref:`(Yao and Harkrider, 1983) <reference>`
 .. |zhang2021| replace:: :ref:`(张海明, 2021) <reference>`
