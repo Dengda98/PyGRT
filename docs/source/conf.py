@@ -156,18 +156,32 @@ rst_epilog = f"""
 .. |Stream| replace:: :class:`~obspy.core.stream.Stream`
 .. |Trace| replace:: :class:`~obspy.core.trace.Trace`
 .. |GRT_VERSION| replace:: {get_version_from_file()}
-.. |bouchon1981| replace:: :ref:`(Bouchon, 1981) <reference>`
-.. |ji1995| replace:: :ref:`(纪晨和姚振兴, 1995) <reference>`
-.. |xie1989| replace:: :ref:`(谢小碧和姚振兴, 1989) <reference>`
-.. |yao2026| replace:: :ref:`(姚振兴和谢小碧, 2026) <reference>`
-.. |yao1983| replace:: :ref:`(Yao and Harkrider, 1983) <reference>`
-.. |zhang2021| replace:: :ref:`(张海明, 2021) <reference>`
-.. |zhang2024| replace:: :ref:`(张海明和冯禧, 2024) <reference>`
-.. |zhang2003| replace:: :ref:`(Zhang et al., 2003) <reference>`
-.. |chen2001| replace:: :ref:`(Chen and Zhang, 2001) <reference>`
-.. |kennett1979| replace:: :ref:`(Kennett and Kerry, 1979) <reference>`
-.. |pygrt2026| replace:: :ref:`(Zhu et al., 2026a) <reference>`
-.. |dcm2026| replace:: :ref:`(Zhu et al., 2026b) <reference>`
+.. |bouchon1981| replace:: :ref:`Bouchon, 1981 <reference>`
+.. |bouchon1981p| replace:: :ref:`Bouchon (1981) <reference>`
+.. |ji1995| replace:: :ref:`纪晨和姚振兴, 1995 <reference>`
+.. |ji1995p| replace:: :ref:`纪晨和姚振兴 (1995) <reference>`
+.. |xie1989| replace:: :ref:`谢小碧和姚振兴, 1989 <reference>`
+.. |xie1989p| replace:: :ref:`谢小碧和姚振兴 (1989) <reference>`
+.. |yao2026| replace:: :ref:`姚振兴和谢小碧, 2026 <reference>`
+.. |yao2026p| replace:: :ref:`姚振兴和谢小碧 (2026) <reference>`
+.. |yao1983| replace:: :ref:`Yao and Harkrider, 1983 <reference>`
+.. |yao1983p| replace:: :ref:`Yao and Harkrider (1983) <reference>`
+.. |zhang2021| replace:: :ref:`张海明, 2021 <reference>`
+.. |zhang2021p| replace:: :ref:`张海明 (2021) <reference>`
+.. |chen2001| replace:: :ref:`Chen and Zhang, 2001 <reference>`
+.. |chen2001p| replace:: :ref:`Chen and Zhang (2001) <reference>`
+.. |zhang2024| replace:: :ref:`张海明和冯禧, 2024 <reference>`
+.. |zhang2024p| replace:: :ref:`张海明和冯禧 (2024) <reference>`
+.. |zhang2003| replace:: :ref:`Zhang et al., 2003 <reference>`
+.. |zhang2003p| replace:: :ref:`Zhang et al. (2003) <reference>`
+.. |kennett1979| replace:: :ref:`Kennett and Kerry, 1979 <reference>`
+.. |kennett1979p| replace:: :ref:`Kennett and Kerry (1979) <reference>`
+.. |pygrt2025| replace:: :ref:`Zhu et al., 2025a <reference>`
+.. |pygrt2025p| replace:: :ref:`Zhu et al. (2025a) <reference>`
+.. |dcm2025| replace:: :ref:`Zhu et al., 2025b <reference>`
+.. |dcm2025p| replace:: :ref:`Zhu et al. (2025b) <reference>`
+.. |ars2026| replace:: :ref:`Zhu et al., 2026 <reference>`
+.. |ars2026p| replace:: :ref:`Zhu et al. (2026) <reference>`
 """
 
  
