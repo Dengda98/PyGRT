@@ -170,7 +170,8 @@ rst_epilog = f"""
 .. |zhang2021p| replace:: :ref:`张海明 (2021) <reference>`
 .. |chen2001| replace:: :ref:`Chen and Zhang, 2001 <reference>`
 .. |chen2001p| replace:: :ref:`Chen and Zhang (2001) <reference>`
-.. |zhang2024| replace:: :ref:`(张海明和冯禧, 2024) <reference>`
+.. |zhang2024| replace:: :ref:`张海明和冯禧, 2024 <reference>`
+.. |zhang2024p| replace:: :ref:`张海明和冯禧 (2024) <reference>`
 .. |zhang2003| replace:: :ref:`(Zhang et al., 2003) <reference>`
 .. |kennett1979| replace:: :ref:`(Kennett and Kerry, 1979) <reference>`
 .. |pygrt2025| replace:: :ref:`(Zhu et al., 2025a) <reference>`
