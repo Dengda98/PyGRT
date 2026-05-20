@@ -93,7 +93,7 @@ Python中计算动态格林函数的主函数为 :func:`compute_grn() <pygrt.pym
    P_m(\omega) = \int_0^\infty F_m(k, \omega)J_m(kr)kdk 
 
 其中 :math:`F_m(k,\omega)` 称为核函数，它是和介质属性相关的量，与震中距无关。
-我们可以使用离散波数积分法 |bouchon1981| 将上式积分转变为求和:
+我们可以使用离散波数积分法 (|bouchon1981|) 将上式积分转变为求和:
 
 .. math:: 
 
@@ -111,7 +111,7 @@ Python中计算动态格林函数的主函数为 :func:`compute_grn() <pygrt.pym
    \right.
 
 其中 :math:`\alpha` 为参考P波速度， :math:`T` 为所需计算的理论地震图的总时间长度。
-常见的保守经验值为 :math:`L=20r` ，但也应依具体情况而定 。为了避开附加源以及奇点的影响， |bouchon1981| 在频率上添加微小虚部，具体推导过程详见 |bouchon1981| 和 |zhang2021| 。
+常见的保守经验值为 :math:`L=20r` ，但也应依具体情况而定 。为了避开附加源以及奇点的影响， |bouchon1981p| 在频率上添加微小虚部，具体推导过程详见 |bouchon1981p| 和 |zhang2021| 。
 
 
 
