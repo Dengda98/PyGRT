@@ -121,13 +121,13 @@
 
 如果你对相关理论方法感兴趣， **PyGRT** 主要参考了以下文章和书籍：
 
-+ Kennett, B. L. N., and N. J. Kerry, 1979. Seismic waves in a stratified half space, Geophysical Journal International, 57, no. 3, 557–583, `(link) <https://academic.oup.com/gji/article/57/3/557/681409>`_
++ Kennett, B. L. N., and Kerry N. J., 1979. Seismic waves in a stratified half space. Geophysical Journal International, 57(3), 557–583. `(link) <https://academic.oup.com/gji/article/57/3/557/681409>`_
 
-+ Michel Bouchon. 1981. A simple method to calculate Green's functions for elastic layered media. Bulletin of the Seismological Society of America. 71(4). 959–971. `(link) <https://pubs.geoscienceworld.org/ssa/bssa/article-abstract/71/4/959/102036>`_
++ Bouchon M. 1981. A simple method to calculate Green's functions for elastic layered media. Bulletin of the Seismological Society of America, 71(4), 959–971. `(link) <https://pubs.geoscienceworld.org/ssa/bssa/article-abstract/71/4/959/102036>`_
 
-+ Yao Z. and D. G. Harkrider. 1983. A generalized refelection-transmission coefficient matrix and discrete wavenumber method for synthetic seismograms. BSSA. 73(6). 1685-1699. `(link) <https://pubs.geoscienceworld.org/ssa/bssa/article-abstract/73/6A/1685/118529>`_ 
++ Yao Z., and Harkrider, D. G. 1983. A generalized refelection-transmission coefficient matrix and discrete wavenumber method for synthetic seismograms. Bulletin of the Seismological Society of America, 73(6), 1685-1699. `(link) <https://pubs.geoscienceworld.org/ssa/bssa/article-abstract/73/6A/1685/118529>`_ 
 
-+ Chen, X., Zhang, H., 2001. An Efficient Method for Computing Green’s Functions for a Layered Half-Space at Large Epicentral Distances. Bulletin of the Seismological Society of America 91, 858–869. `(link)  <https://pubs.geoscienceworld.org/ssa/bssa/article-abstract/91/4/858/120625>`_ 
++ Chen, X., and Zhang, H., 2001. An Efficient Method for Computing Green’s Functions for a Layered Half-Space at Large Epicentral Distances. Bulletin of the Seismological Society of America, 91(4), 858–869. `(link)  <https://pubs.geoscienceworld.org/ssa/bssa/article-abstract/91/4/858/120625>`_ 
 
 + Zhang, H. M., Chen, X. F., and Chang, S. 2003. An efficient numerical method for computing synthetic seismograms for a layered half-space with sources and receivers at close or same depths. Seismic motion, lithospheric structures, earthquake and volcanic sources: The Keiiti Aki volume, 467-486. `(link) <https://link.springer.com/article/10.1007/PL00012546>`_ 
 
