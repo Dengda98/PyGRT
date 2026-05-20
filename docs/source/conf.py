@@ -166,8 +166,9 @@ rst_epilog = f"""
 .. |zhang2003| replace:: :ref:`(Zhang et al., 2003) <reference>`
 .. |chen2001| replace:: :ref:`(Chen and Zhang, 2001) <reference>`
 .. |kennett1979| replace:: :ref:`(Kennett and Kerry, 1979) <reference>`
-.. |pygrt2026| replace:: :ref:`(Zhu et al., 2026a) <reference>`
-.. |dcm2026| replace:: :ref:`(Zhu et al., 2026b) <reference>`
+.. |pygrt2025| replace:: :ref:`(Zhu et al., 2025a) <reference>`
+.. |dcm2025| replace:: :ref:`(Zhu et al., 2025b) <reference>`
+.. |ars2026| replace:: :ref:`(Zhu et al., 2026) <reference>`
 """
 
  
