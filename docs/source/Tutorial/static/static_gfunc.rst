@@ -6,7 +6,7 @@
 
 Python中计算静态格林函数的主函数为 :func:`compute_static_grn() <pygrt.pymod.PyModel1D.compute_static_grn>` ，C模块为 :doc:`/Module/static_greenfn`。
 
-建议先阅读完 :doc:`/Tutorial/dynamic/gfunc` 部分。静态情况与动态情况采取的计算方法一致，只是推导细节会有不同，详见 |yao2026| 。
+建议先阅读完 :doc:`/Tutorial/dynamic/gfunc` 部分。静态情况与动态情况采取的计算方法一致，只是推导细节会有不同，详见 |yao2026p| 。
 
 静态解模块对于传入“震中距”的方式及后续处理与动态解模块相比稍有不同。
 不论是动态解还是静态解，在模型、源点深度和场点深度确定的情况下，格林函数仅与 **和震中距** 相关。
