@@ -6,7 +6,7 @@
 
 Python中计算动态格林函数的主函数为 :func:`compute_grn() <pygrt.pymod.PyModel1D.compute_grn>` ，C模块为 :doc:`/Module/greenfn`。
 
-核心计算逻辑来自  |yao2026| ，具体代码可见与C API中对应同名 :file:`*.c` 文件，其中计算格林函数频谱的主函数为 :file:`grn.c` 里的 :c:func:`grt_integ_grn_spec`。输出结果的坐标系见下图。
+核心计算逻辑来自  |yao2026p| ，具体代码可见与C API中对应同名 :file:`*.c` 文件，其中计算格林函数频谱的主函数为 :file:`grn.c` 里的 :c:func:`grt_integ_grn_spec`。输出结果的坐标系见下图。
 
 .. figure:: ../coord.svg
    :align: center
@@ -136,7 +136,7 @@ Python中计算动态格林函数的主函数为 :func:`compute_grn() <pygrt.pym
     初次推导该公式可能会对虚数 :math:`i` 及公式中的正负号感到疑惑，但其实这里的设计是将虚数 :math:`i` 和方向因子 :math:`e^{im\theta}` 合并，所以在后续合成理论地震图时你会发现，:math:`m=0,1,2` 阶的 :math:`W_m, Q_m` 的方向因子对 :math:`(m\theta)` 的偏导就是 :math:`V_m` 的方向因子。
 
 
-公式来自 |yao2026| (5.6.22)式，其中阶数 :math:`m=0,1,2`。核函数 :math:`q_m,w_m,v_m` 根据广义反射透射系数矩阵法(**GRTM**)求得，当震源比场点深时，有如下公式（震源浅于场点时有类似公式，这里不再展示）。
+公式来自 |yao2026p| (5.6.22)式，其中阶数 :math:`m=0,1,2`。核函数 :math:`q_m,w_m,v_m` 根据广义反射透射系数矩阵法(**GRTM**)求得，当震源比场点深时，有如下公式（震源浅于场点时有类似公式，这里不再展示）。
 
 .. math:: 
    \begin{aligned}
