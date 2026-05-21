@@ -116,7 +116,8 @@
 
   Zhu, D., Xu, T., Hao, J., and Yao, Z. (2026). 
   An Adaptive Strategy for Robust and Efficient Computation of 
-  Dispersion Curves in a Layered Half-Space. Bulletin of the Seismological Society of America, in press.
+  Dispersion Curves in a Layered Half-Space. Bulletin of the Seismological Society of America.
+  doi: `10.1785/0120260071 <https://doi.org/10.1785/0120260071>`_
 
 
 如果你对相关理论方法感兴趣， **PyGRT** 主要参考了以下文章和书籍：
