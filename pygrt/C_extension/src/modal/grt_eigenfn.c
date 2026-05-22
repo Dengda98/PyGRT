@@ -44,17 +44,13 @@ typedef struct {
         char *s_egyint_filepath;  ///< 输出能量积分
         real_t cpar_dz;   ///< 计算敏感核时对模型深度进行采样
     } K;
-    /* 深度采样本征函数 */
-    struct {
-        bool active;
-        real_t *zs;
-        size_t nz;
-    } Z;
-    /* 本征函数输出路径 */
+    /* 本征函数 */
     struct {
         bool active;
         char *s_egn_filepath;
-    } O;
+        real_t *zs;
+        size_t nz;
+    } W;
 
     bool calc_egyint;   ///< 是否需要计算能量积分
 
@@ -75,10 +71,9 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
     GRT_SAFE_FREE_PTR(Ctrl->K.s_cpar_filepath);
     GRT_SAFE_FREE_PTR(Ctrl->K.s_upar_filepath);
     GRT_SAFE_FREE_PTR(Ctrl->K.s_egyint_filepath);
-    // Z
-    GRT_SAFE_FREE_PTR(Ctrl->Z.zs);
-    // O
-    GRT_SAFE_FREE_PTR(Ctrl->O.s_egn_filepath);
+    // W
+    GRT_SAFE_FREE_PTR(Ctrl->W.s_egn_filepath);
+    GRT_SAFE_FREE_PTR(Ctrl->W.zs);
 
     // GRT_SAFE_FREE_PTR_ARRAY(Ctrl->cdisp, Ctrl->F.nf);
     // GRT_SAFE_FREE_PTR_ARRAY(Ctrl->cdisp_iref, Ctrl->F.nf);
@@ -101,7 +96,7 @@ printf("\n"
 "Usage:\n"
 "---------------------------------------------------------------------\n"
 "    grt eigenfn -C<path> [-F<f1>[/<f2>][/<df>][+p]]\n"
-"         [-N[<n1>][/<n2>][/<dn>]] [-Z<z1>[/<z2>/<dz>]] [-O<path>]\n"
+"         [-N[<n1>][/<n2>][/<dn>]] [-W<path>[+z<z1>[/<z2>/<dz>]]]\n"
 "         [-U<path>] [-K+<multi_output>] [-h]\n"
 "\n\n"
 "Options:\n"
@@ -129,15 +124,14 @@ printf("\n"
 "                + If set an empty -N, means all orders will be considered.\n"
 "                + If set -N<n1>/<n2>, means set min/max range.\n"
 "\n"
-"    -Z<z1>[/<z2>/<dz>\n"
-"                Set the depth points of the eigenfunctions.\n"
-"                -O must be used in conjunction with -Z.\n"
+"    -W<path>[+z<z1>[/<z2>/<dz>]]\n"
+"                Set the depth points and output eigenfunctions\n"
+"                result file (.nc format). \n"
 "                <z1>: start depth (km)\n"
 "                <z2>: end depth (km)\n"
 "                <dz>: depth interval (km)\n"
-"                If set -Z<z1>, means set only one point. \n"
-"\n"
-"    -O<path>    Output eigenfunctions result file (.nc format)\n"
+"                If set +z<z1>, means set only one point. \n"
+"                If not set +z, means set the layer depths. \n"
 "\n"
 "    -U<path>    Ouput group velocity (.nc format)\n"
 "\n"
@@ -156,7 +150,7 @@ printf("\n"
 "\n\n"
 "Examples:\n"
 "----------------------------------------------------------------\n"
-"    grt eigenfn -Cphase_R.nc -F20 -N0/10 -Z0/0.06/1e-3 -Oegn_R.nc\n"
+"    grt eigenfn -Cphase_R.nc -F20 -N0/10 -Wegn_R.nc+z0/0.06/1e-3\n"
 "\n\n\n"
 );
 }
@@ -165,7 +159,7 @@ printf("\n"
 /** 从命令行中读取选项，处理后记录到全局变量中 */
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     int opt;
-    while ((opt = getopt(argc, argv, ":C:N::F:U:K:Z:O:sh" )) != -1) {
+    while ((opt = getopt(argc, argv, ":C:N::F:U:K:W:sh" )) != -1) {
         switch (opt) {
             // 频散文件
             case 'C':
@@ -340,47 +334,59 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 }
                 break;
 
-            // 深度采样  -Zz1[/z2/dz]
-            case 'Z':
-                Ctrl->Z.active = true;
-                {   
-                    real_t a1, a2, dif;
-                    a1 = a2 = dif = 0;
-                    int nscan = sscanf(optarg, "%lf/%lf/%lf", &a1, &a2, &dif);
-                    if( !(nscan == 1 || nscan == 3)){
-                        GRTBadOptionError(Z, "");
-                    };
-                    if(nscan == 1 && a1 <= 0.0){
-                        GRTBadOptionError(Z, "Can't set a single nonpositive value.");
+            // 输出深度采样的本征函数  -Wpath[+zz1[/z2/dz]]
+            case 'W':
+                Ctrl->W.active = true;
+                {
+                    char *string = strdup(optarg);
+                    char *token = strtok(string, "+");
+                    if(strlen(token) == 0){
+                        GRTBadOptionError(W, "");
                     }
-                    if(nscan == 1){
-                        a2 = a1;
-                        dif = 1;
-                    }
-                    else if(nscan == 3){
-                        if(dif <= 0){
-                            GRTBadOptionError(Z, "Can't set nonpositive dz(%lf).", dif);
-                        }
-                        if(a1 < 0.0 || a2 <= 0.0){
-                            GRTBadOptionError(Z, "Can't set nonpositive z1(%lf), z2(%lf)", a1, a2);
-                        }
-                        if(a1 > a2){
-                            GRTBadOptionError(Z, "z1(%lf) > z2(%lf).", a1, a2);
-                        }
-                    }
+                    Ctrl->W.s_egn_filepath = strdup(token);
+                    
+                    token = strtok(NULL, "+");
+                    if(token != NULL){
+                        switch (token[0]){
+                            case 'z':
+                                real_t a1, a2, dif;
+                                a1 = a2 = dif = 0;
+                                int nscan = sscanf(token+1, "%lf/%lf/%lf", &a1, &a2, &dif);
+                                if( !(nscan == 1 || nscan == 3)){
+                                    GRTBadOptionError(Z, "");
+                                };
+                                if(nscan == 1 && a1 <= 0.0){
+                                    GRTBadOptionError(Z, "Can't set a single nonpositive value.");
+                                }
+                                if(nscan == 1){
+                                    a2 = a1;
+                                    dif = 1;
+                                }
+                                else if(nscan == 3){
+                                    if(dif <= 0){
+                                        GRTBadOptionError(Z, "Can't set nonpositive dz(%lf).", dif);
+                                    }
+                                    if(a1 < 0.0 || a2 <= 0.0){
+                                        GRTBadOptionError(Z, "Can't set nonpositive z1(%lf), z2(%lf)", a1, a2);
+                                    }
+                                    if(a1 > a2){
+                                        GRTBadOptionError(Z, "z1(%lf) > z2(%lf).", a1, a2);
+                                    }
+                                }
 
-                    Ctrl->Z.nz = floor((a2-a1)/dif) + 1;
-                    Ctrl->Z.zs = (real_t*)calloc(Ctrl->Z.nz, sizeof(real_t));
-                    for(size_t i=0; i<Ctrl->Z.nz; ++i){
-                        Ctrl->Z.zs[i] = a1 + dif*i;
+                                Ctrl->W.nz = floor((a2-a1)/dif) + 1;
+                                Ctrl->W.zs = (real_t*)calloc(Ctrl->W.nz, sizeof(real_t));
+                                for(size_t i=0; i<Ctrl->W.nz; ++i){
+                                    Ctrl->W.zs[i] = a1 + dif*i;
+                                }
+                                break;
+                            default:
+                                GRTBadOptionError(W, "+%s is not supported.", token);
+                                break;
+                        }
                     }
+                    GRT_SAFE_FREE_PTR(string);
                 }
-                break;
-
-            // 输出深度采样的本征函数
-            case 'O':
-                Ctrl->O.active = true;
-                Ctrl->O.s_egn_filepath = strdup(optarg);
                 break;
 
             GRT_Common_Options_in_Switch((char)(optopt));
@@ -392,11 +398,6 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     // 检查必须设置的参数是否有设置
     GRTCheckOptionSet(argc > 1);
     GRTCheckOptionActive(Ctrl, C);
-
-    // -Z 必须和 -O 同时使用
-    if(Ctrl->Z.active + Ctrl->O.active == 1){
-        GRTRaiseError("-Z and -O must be set simultaneously.");
-    }
 
     // 是否需要计算能量积分
     Ctrl->calc_egyint = Ctrl->U.active || Ctrl->K.active;
@@ -542,16 +543,24 @@ int eigenfn_main(int argc, char **argv){
     }
 
     // 判断每个深度值对应的层位
-    eigfnmet->nz = Ctrl->Z.nz;
-    eigfnmet->zs = (real_t *)calloc(eigfnmet->nz, sizeof(real_t));
-    memcpy(eigfnmet->zs, Ctrl->Z.zs, sizeof(real_t)*eigfnmet->nz);
-    eigfnmet->z_irefs = (size_t *)calloc(eigfnmet->nz, sizeof(size_t));
-    for(size_t iz = 0; iz < Ctrl->Z.nz; ++iz){
-        size_t ziref = 0;
-        for(ziref=0; ziref < mod1d->n-1; ++ziref){
-            if(mod1d->Dep[ziref+1] > Ctrl->Z.zs[iz])  break; 
+    if(Ctrl->W.active){
+        // 若不指定等距深度，则使用模型界面深度
+        if(Ctrl->W.nz == 0){
+            Ctrl->W.nz = mod1d->n;
+            Ctrl->W.zs = (real_t *)calloc(Ctrl->W.nz, sizeof(real_t));
+            memcpy(Ctrl->W.zs, mod1d->Dep, sizeof(real_t)*mod1d->n);
         }
-        eigfnmet->z_irefs[iz] = ziref;
+        eigfnmet->nz = Ctrl->W.nz;
+        eigfnmet->zs = (real_t *)calloc(eigfnmet->nz, sizeof(real_t));
+        memcpy(eigfnmet->zs, Ctrl->W.zs, sizeof(real_t)*eigfnmet->nz);
+        eigfnmet->z_irefs = (size_t *)calloc(eigfnmet->nz, sizeof(size_t));
+        for(size_t iz = 0; iz < Ctrl->W.nz; ++iz){
+            size_t ziref = 0;
+            for(ziref=0; ziref < mod1d->n-1; ++ziref){
+                if(mod1d->Dep[ziref+1] > Ctrl->W.zs[iz])  break; 
+            }
+            eigfnmet->z_irefs[iz] = ziref;
+        }
     }
 
     // Rayleigh or Love
@@ -591,7 +600,7 @@ int eigenfn_main(int argc, char **argv){
             EIGENFN *eigfntmp = &eigfnmet->eigfn[iw][ic];
 
             eigfntmp->eigenC = eigfnmet->eigv[iw].c_roots[ic];
-            if(Ctrl->Z.active){
+            if(Ctrl->W.active){
                 eigfntmp->fn = (cplx_t (*)[4])calloc(eigfnmet->nz, sizeof(*eigfntmp->fn));
             }
             
@@ -617,11 +626,11 @@ int eigenfn_main(int argc, char **argv){
     // }
     
     // 计算本征函数、能量积分、群速度、相速度敏感核
-    grt_eigenfn_egy_udisp_phaseK_util(mod1d, eigfnmet, ncols, Ctrl->Z.active, Ctrl->calc_egyint);
+    grt_eigenfn_egy_udisp_phaseK_util(mod1d, eigfnmet, ncols, Ctrl->W.active, Ctrl->calc_egyint);
 
     // 打印本征函数结果
-    if(Ctrl->Z.active){
-        grt_output_eigenfns(Ctrl->O.s_egn_filepath, ncols, eigfnmet);
+    if(Ctrl->W.active){
+        grt_output_eigenfns(Ctrl->W.s_egn_filepath, ncols, eigfnmet);
     }
 
     // 输出群速度
