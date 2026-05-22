@@ -348,7 +348,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     token = strtok(NULL, "+");
                     if(token != NULL){
                         switch (token[0]){
-                            case 'z':
+                            case 'z': {
                                 real_t a1, a2, dif;
                                 a1 = a2 = dif = 0;
                                 int nscan = sscanf(token+1, "%lf/%lf/%lf", &a1, &a2, &dif);
@@ -380,6 +380,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                                     Ctrl->W.zs[i] = a1 + dif*i;
                                 }
                                 break;
+                            }
                             default:
                                 GRTBadOptionError(W, "+%s is not supported.", token);
                                 break;
