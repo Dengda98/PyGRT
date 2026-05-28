@@ -43,20 +43,26 @@ void grt_filter_eigenfn_info(
     const real_t *in_freqs = eigmet->freqs;
 
     // 筛选阶次
+    // 保存特定阶次在原数组中的索引位置
+    size_t *idxs_modes = (size_t *)calloc(eigmet->nmode, sizeof(size_t));
     for(size_t i = 0; i < eigmet->nmode; ++i){
         bool match = false;
         if(modes == NULL){
             match = true;
         }
         else{
-            match = (grt_findElement_size_t(modes, nmode, i) >= 0);
+            match = (grt_findElement_size_t(modes, nmode, eigmet->modes[i]) >= 0);
         }
         
         if(match){
-            eigfnmet->modes[eigfnmet->nmode++] = i;
+            idxs_modes[eigfnmet->nmode] = i;
+            eigfnmet->modes[eigfnmet->nmode] = eigmet->modes[i];
+            eigfnmet->nmode++;
         }
+
     }
     eigfnmet->modes = (size_t *)realloc(eigfnmet->modes, sizeof(size_t)*eigfnmet->nmode);
+    idxs_modes = (size_t *)realloc(idxs_modes, sizeof(size_t)*eigfnmet->nmode);
 
     // 筛选频率
     for(size_t iw = 0; iw < eigmet->nf; ++iw){
@@ -86,11 +92,14 @@ void grt_filter_eigenfn_info(
 
         EIGENV *in_eigv = &eigmet->eigv[iw];
         for(size_t i = 0; i < eigfnmet->nmode; ++i){
-            size_t imode = eigfnmet->modes[i];
-            if(imode >= in_eigv->n) break;
+            size_t mode = eigfnmet->modes[i];
+            if(mode >= in_eigv->n) break;
 
-            eigvtmp->c_roots[eigvtmp->n] = in_eigv->c_roots[imode];
-            eigvtmp->c_roots_iref[eigvtmp->n] = in_eigv->c_roots_iref[imode];
+            size_t idx = idxs_modes[i];
+
+            eigvtmp->c_roots[eigvtmp->n] = in_eigv->c_roots[idx];
+            eigvtmp->u_roots[eigvtmp->n] = in_eigv->u_roots[idx];
+            eigvtmp->c_roots_iref[eigvtmp->n] = in_eigv->c_roots_iref[idx];
 
             eigvtmp->n++;
         }
@@ -101,4 +110,6 @@ void grt_filter_eigenfn_info(
         eigfnmet->nf++;
     }
     eigfnmet->freqs = (real_t *)realloc(eigfnmet->freqs, sizeof(real_t)*eigfnmet->nf);
+
+    GRT_SAFE_FREE_PTR(idxs_modes);
 }

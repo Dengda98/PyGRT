@@ -1,9 +1,10 @@
 /**
- * @file   grt_eigv2asc.c
+ * @file   grt_disp2asc.c
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2026-02
  * 
- *     将 eigenv 模块输出的频散结果转为文本格式以供阅读
+ *     将 eigenv 模块输出的相速度频散结果或 eigenfn 模块输出的群速度频散结果
+ *     转为文本格式以供阅读
  * 
  */
 
@@ -16,6 +17,11 @@ typedef struct {
         bool active;
         char *s_phasepath;
     } C;
+    /* 群速度频散结果输出路径 */
+    struct {
+        bool active;
+        char *s_grouppath;
+    } U;
     /* 阶数范围 */
     struct {
         bool active;
@@ -37,6 +43,8 @@ typedef struct {
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
     // C
     GRT_SAFE_FREE_PTR(Ctrl->C.s_phasepath);
+    // U
+    GRT_SAFE_FREE_PTR(Ctrl->U.s_grouppath);
     // N
     GRT_SAFE_FREE_PTR(Ctrl->N.modes);
     // F
@@ -47,19 +55,23 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
 /** 打印使用说明 */
 static void print_help(){
 printf("\n"
-"[grt eigv2asc] %s\n\n", GRT_VERSION);printf(
-"    Convert a .nc file from `eigenv` module into an ASCII file, \n"
-"    write to standard output (ignore some vars).\n"
+"[grt disp2asc] %s\n\n", GRT_VERSION);printf(
+"    Convert a nc-format dispersion result from `eigenv` module \n"
+"    or `eigenfn` module into an ASCII file, write to \n"
+"    standard output (ignore some vars).\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
-"    grt eigv2asc -C<path> [-F<f1>[/<f2>][/<df>][+p]] \n"
+"    grt disp2asc -C<path> [-F<f1>[/<f2>][/<df>][+p]] \n"
 "         [-N[<n1>][/<n2>][/<dn>]] [-h]\n"
 "\n\n"
 "Options:\n"
 "----------------------------------------------------------------\n"
-"    -C<path>    Input dispersion result file from module `eigenv` \n"
-"                (.nc format)\n"
+"    -C<path>    Input phase-velocity dispersion result file \n"
+"                from module `eigenv` (.nc format)\n"
+"\n"
+"    -U<path>    Input group-velocity dispersion result file \n"
+"                from module `eigenfn` (.nc format)\n"
 "\n"
 "    -F<f1>[/<f2>][/<df>][+p]\n"
 "                Select the frequency range from the input file.\n"
@@ -85,7 +97,7 @@ printf("\n"
 "\n\n"
 "Examples:\n"
 "----------------------------------------------------------------\n"
-"    grt eigv2asc -Cphase_R.nc -N > phase_R.txt\n"
+"    grt disp2asc -Cphase_R.nc -N > phase_R.txt\n"
 "\n\n\n"
 );
 }
@@ -94,12 +106,18 @@ printf("\n"
 /** 从命令行中读取选项，处理后记录到全局变量中 */
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     int opt;
-    while ((opt = getopt(argc, argv, ":C:F:N::h")) != -1) {
+    while ((opt = getopt(argc, argv, ":C:U:F:N::h")) != -1) {
         switch (opt) {
             // -C<path>
             case 'C':
                 Ctrl->C.active = true;
                 Ctrl->C.s_phasepath = strdup(optarg);
+                break;
+
+            // -U<path>
+            case 'U':
+                Ctrl->U.active = true;
+                Ctrl->U.s_grouppath = strdup(optarg);
                 break;
 
             // 阶数范围 -N[n1][/n2][/dn]
@@ -225,7 +243,11 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 
     // 检查必选项有没有设置
     GRTCheckOptionSet(argc > 1);
-    GRTCheckOptionActive(Ctrl, C);
+
+    // -C 和 -U 必须选择其中一个
+    if(Ctrl->C.active + Ctrl->U.active != 1){
+        GRTRaiseError("Need set and only set one of -C and -U. Use '-h' for help.\n");
+    }
 
     // -N 的默认项，仅处理基阶
     if( ! Ctrl->N.active ){
@@ -237,7 +259,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 
 
 /** 子模块主函数 */
-int eigv2asc_main(int argc, char **argv)
+int disp2asc_main(int argc, char **argv)
 {
     GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
 
@@ -245,9 +267,18 @@ int eigv2asc_main(int argc, char **argv)
     getopt_from_command(Ctrl, argc, argv);
 
     // 读取频散
-    char *modelpath = NULL;
     EIGENV_INFO *eigmet = (EIGENV_INFO *)calloc(1, sizeof(EIGENV_INFO));
-    grt_read_cdisp(Ctrl->C.s_phasepath, eigmet, &modelpath);
+
+    if(Ctrl->C.active){
+        char *modelpath = NULL;
+        grt_read_dispersion(Ctrl->C.s_phasepath, eigmet, &modelpath);
+        GRT_SAFE_FREE_PTR(modelpath);
+    } else if(Ctrl->U.active) {
+        grt_read_dispersion(Ctrl->U.s_grouppath, eigmet, NULL);
+    } else {
+        GRTRaiseError("Wrong Execution.");
+    }
+    
 
     // 根据命令行参数确定出所需的部分频散信息
     EIGENFN_INFO *eigfnmet = (EIGENFN_INFO *)calloc(1, sizeof(EIGENFN_INFO));
@@ -257,13 +288,22 @@ int eigv2asc_main(int argc, char **argv)
     
     for(size_t iw = 0; iw < eigfnmet->nf; ++iw){
         real_t *c_roots = eigfnmet->eigv[iw].c_roots;
+        real_t *u_roots = eigfnmet->eigv[iw].u_roots;
         size_t *c_roots_iref = eigfnmet->eigv[iw].c_roots_iref;
         size_t cnum = eigfnmet->eigv[iw].n;
 
-        // 打印
-        for(size_t ik = 0; ik < cnum; ++ik){
-            printf("%15.5e %20.8e %10zu %10zu\n", eigfnmet->freqs[iw], c_roots[ik], eigfnmet->modes[ik], c_roots_iref[ik]);
+        // 打印相速度
+        if(Ctrl->C.active){
+            for(size_t ik = 0; ik < cnum; ++ik){
+                printf("%15.5e %10zu %20.8e %10zu\n", eigfnmet->freqs[iw], eigfnmet->modes[ik], c_roots[ik], c_roots_iref[ik]);
+            }
+        // 打印群速度
+        } else if(Ctrl->U.active){
+            for(size_t ik = 0; ik < cnum; ++ik){
+                printf("%15.5e %10zu %20.8e %20.8e\n", eigfnmet->freqs[iw], eigfnmet->modes[ik], c_roots[ik], u_roots[ik]);
+            }
         }
+        
     }
 
     free_Ctrl(Ctrl);

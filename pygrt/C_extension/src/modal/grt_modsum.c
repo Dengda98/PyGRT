@@ -498,7 +498,7 @@ int modsum_main(int argc, char **argv){
     // 读取频散
     char *modelpath = NULL;
     EIGENV_INFO *eigmet = (EIGENV_INFO *)calloc(1, sizeof(EIGENV_INFO));
-    grt_read_cdisp(Ctrl->C.s_filepath, eigmet, &modelpath);
+    grt_read_dispersion(Ctrl->C.s_filepath, eigmet, &modelpath);
 
     // 读取模型（不插入震源和台站的虚拟层）
     MODEL1D *mod1d = NULL;
