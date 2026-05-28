@@ -182,6 +182,9 @@ rst_epilog = f"""
 .. |dcm2025p| replace:: :ref:`Zhu et al. (2025b) <reference>`
 .. |ars2026| replace:: :ref:`Zhu et al., 2026 <reference>`
 .. |ars2026p| replace:: :ref:`Zhu et al. (2026) <reference>`
+
+.. |NetCDF| replace:: `NetCDF <https://zh.wikipedia.org/wiki/NetCDF>`__
+.. |FFTW| replace:: `FFTW <https://www.fftw.org/>`__
 """
 
  

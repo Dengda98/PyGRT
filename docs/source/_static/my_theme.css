@@ -122,7 +122,17 @@ figcaption {
     font-style: italic;
 }
 
-.mermaid {
-    width: 70%;
-    overflow: auto;
+.mermaid-container {
+    justify-content: center;
+}
+
+.small-mermaid .mermaid {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+}
+
+.small-mermaid .mermaid svg {
+    max-width: 100% !important;
+    height: auto !important;
 }
