@@ -24,7 +24,8 @@ typedef struct {
 typedef struct {
     size_t nf;
     real_t *freqs;
-    size_t nmode;    ///< 最高阶数，例如最高为2阶， 则 nmode=3 (基阶，1阶，2阶)
+    size_t nmode;
+    size_t *modes;
     DISPER_TYPE wtype;
     bool print_sec;  ///< 仅打印单一频率的久期函数，不搜根
 

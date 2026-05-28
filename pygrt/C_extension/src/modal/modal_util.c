@@ -128,94 +128,8 @@ void grt_output_cdisp(const char *filepath, const char *full_command, const char
 }
 
 
-void grt_read_cdisp(const char *filepath, EIGENV_INFO *eigmet, char **pt_modelpath)
-{  
-    int ncid;
-    int f_dimid, n_dimid;
-    int f_varid;
-    int c_varid, ciref_varid, cnum_varid;
-
-    // 打开 NC 文件
-    GRTCheckFileExist(filepath);
-    NC_CHECK(nc_open(filepath, NC_NOWRITE, &ncid));
-
-    // 读取一系列全局属性
-    // 读取模型路径
-    {
-        size_t m_len = 0;
-        NC_CHECK(nc_inq_attlen(ncid, NC_GLOBAL, "model", &m_len));
-        char *modelpath = (char *)calloc(m_len+1, sizeof(char));
-        NC_CHECK(nc_get_att_text(ncid, NC_GLOBAL, "model", modelpath));
-        modelpath[m_len] = '\0';
-        if(pt_modelpath != NULL)  *pt_modelpath = modelpath;
-    }
-    // Rayleigh or Love
-    {
-        int isRayl_int = 0;
-        NC_CHECK(NC_FUNC_INT(nc_get_att) (ncid, NC_GLOBAL, "isRayl", &isRayl_int));
-        eigmet->wtype = (isRayl_int)? GRT_DISPERSION_RAYL : GRT_DISPERSION_LOVE;
-    }
-    
-    // 先读取 NC 文件的坐标变量
-    NC_CHECK(nc_inq_dimid(ncid, "freq", &f_dimid));
-    NC_CHECK(nc_inq_dimlen(ncid, f_dimid, &eigmet->nf));
-    NC_CHECK(nc_inq_dimid(ncid, "mode", &n_dimid));
-    NC_CHECK(nc_inq_dimlen(ncid, n_dimid, &eigmet->nmode));
-    eigmet->freqs = (real_t *)calloc(eigmet->nf, sizeof(real_t));
-    NC_CHECK(nc_inq_varid(ncid, "freq", &f_varid));
-    NC_CHECK(NC_FUNC_REAL(nc_get_var) (ncid, f_varid, eigmet->freqs));
-
-    // 每个频率下有多少阶
-    int *cnum = (int *)calloc(eigmet->nf, sizeof(int));
-    NC_CHECK(nc_inq_varid(ncid, "cnum", &cnum_varid));
-    NC_CHECK(NC_FUNC_INT(nc_get_var) (ncid, cnum_varid, cnum));
-
-    NC_CHECK(nc_inq_varid(ncid, "c", &c_varid));
-    NC_CHECK(nc_inq_varid(ncid, "ciref", &ciref_varid));    
-
-    eigmet->eigv = (EIGENV *)calloc(eigmet->nf, sizeof(EIGENV));
-
-    // 读入所有频散
-    const int ndims = 2;
-    size_t startp[ndims];
-    size_t countp[ndims];
-    for(size_t iw = 0; iw < eigmet->nf; ++iw){
-        eigmet->eigv[iw].n = cnum[iw];
-        eigmet->eigv[iw].c_roots = (real_t *)calloc(cnum[iw], sizeof(real_t));
-        eigmet->eigv[iw].c_roots_iref = (size_t *)calloc(cnum[iw], sizeof(size_t));
-
-        startp[0] = iw;
-        startp[1] = 0;
-        countp[0] = 1;
-        countp[1] = cnum[iw];
-
-        NC_CHECK(NC_FUNC_REAL(nc_get_vara) (ncid, c_varid, startp, countp, eigmet->eigv[iw].c_roots));
-        {
-            int *tmp = (int *)calloc(cnum[iw], sizeof(int));
-            NC_CHECK(NC_FUNC_INT(nc_get_vara) (ncid, ciref_varid, startp, countp, tmp));
-            for(int i = 0; i < cnum[iw]; ++i){
-                eigmet->eigv[iw].c_roots_iref[i] = tmp[i];
-            }
-            GRT_SAFE_FREE_PTR(tmp);
-        }
-    }
-
-    // 关闭文件
-    NC_CHECK(nc_close(ncid));
-
-    GRT_SAFE_FREE_PTR(cnum);
-}
-
-
-/** 根据计算好的相速度、群速度和相速度敏感核，计算群速度敏感核 */
 void grt_group_sensitivity(EIGENFN_INFO *eigfnmet)
 {
-    // 根据群速度与相速度的关系： U = c^2 / ( c - w*dc/dw )
-    // 推导得到敏感核（其中 X 表示 alpha/beta/rho ）
-    //    dU/dX = U/c * (2 - U/c) * dc/dX + (U/c)^2 * w * d(dc/dX)/dw
-    // 后一项存在对相速度敏感核在频率上做差分，
-    // 因此输入的频率间隔大小会直接影响群速度敏感核精度
-
     // 循环每个频率
     for(size_t iw = 0; iw < eigfnmet->nf; ++iw){
         for(size_t ic = 0; ic < eigfnmet->eigv[iw].n; ++ic){
@@ -559,13 +473,13 @@ void grt_output_energy_integrals(const char *filepath, EIGENFN_INFO *eigfnmet)
 }
 
 
-void grt_output_sensitivity(const char *filepath, const char *UC, EIGENFN_INFO *eigfnmet)
+void grt_output_sensitivity(const char *filepath, const char *char_uc, EIGENFN_INFO *eigfnmet)
 {
     int ncid, f_dimid, n_dimid, z_dimid, k_dimid;
     const int ndims = 4;
     int dimids[ndims];
     int f_varid, n_varid, z_varid, sens_varid;
-    int cg_varid, cnum_varid;
+    int cu_varid, cnum_varid;
     int nk = GRT_SNSTVTY_MAX;  // 敏感核仅取实部
 
     // 创建 NC 文件
@@ -590,15 +504,15 @@ void grt_output_sensitivity(const char *filepath, const char *UC, EIGENFN_INFO *
 
     // 定义频散数组
     NC_CHECK(nc_def_var(ncid, "cnum", NC_INT, 1, &f_dimid, &cnum_varid));
-    NC_CHECK(nc_def_var(ncid, UC, NC_REAL, 2, dimids, &cg_varid));   // 取前两维
+    NC_CHECK(nc_def_var(ncid, char_uc, NC_REAL, 2, dimids, &cu_varid));   // 取前两维
 
     // 填充值
     const real_t fill_value_real_t = 0.0;
-    NC_CHECK(NC_FUNC_REAL(nc_put_att) (ncid, cg_varid, "_FillValue", NC_REAL, 1, &fill_value_real_t));
+    NC_CHECK(NC_FUNC_REAL(nc_put_att) (ncid, cu_varid, "_FillValue", NC_REAL, 1, &fill_value_real_t));
 
     // 敏感核（仅取实部）
     char *sname = NULL;
-    GRT_SAFE_ASPRINTF(&sname, "%ssens", UC);
+    GRT_SAFE_ASPRINTF(&sname, "%ssens", char_uc);
     NC_CHECK(nc_def_var(ncid, sname, NC_REAL, ndims, dimids, &sens_varid));
     GRT_SAFE_FREE_PTR(sname);
     NC_CHECK(NC_FUNC_REAL(nc_put_att) (ncid, sens_varid, "_FillValue", NC_REAL, 1, &fill_value_real_t));
@@ -649,27 +563,27 @@ void grt_output_sensitivity(const char *filepath, const char *UC, EIGENFN_INFO *
         countp[3] = nk;
 
         real_t *cudisp = NULL;
-        if(strcmp(UC, "c") == 0){
+        if(strcmp(char_uc, "c") == 0){
             cudisp = eigfnmet->eigv[iw].c_roots;
         }
-        else if(strcmp(UC, "u") == 0){
+        else if(strcmp(char_uc, "u") == 0){
             cudisp = eigfnmet->eigv[iw].u_roots;
         }
         else {
             GRTRaiseError("Wrong execution.");
         }
 
-        NC_CHECK(NC_FUNC_REAL(nc_put_vara) (ncid, cg_varid, startp, countp, cudisp));
+        NC_CHECK(NC_FUNC_REAL(nc_put_vara) (ncid, cu_varid, startp, countp, cudisp));
 
         for(size_t ic = 0; ic < eigfnmet->eigv[iw].n; ++ic){
             memset(real_part, 0, sizeof(real_t)*eigfnmet->cpar_nz*nk);
 
             cplx_t (*cusens)[GRT_SNSTVTY_MAX] = NULL;
             
-            if(strcmp(UC, "c") == 0){
+            if(strcmp(char_uc, "c") == 0){
                 cusens = eigfnmet->eigfn[iw][ic].csens;
             }
-            else if(strcmp(UC, "u") == 0){
+            else if(strcmp(char_uc, "u") == 0){
                 cusens = eigfnmet->eigfn[iw][ic].usens;
             }
             else {
@@ -693,4 +607,117 @@ void grt_output_sensitivity(const char *filepath, const char *UC, EIGENFN_INFO *
     NC_CHECK(nc_close(ncid));
 
     GRT_SAFE_FREE_PTR(real_part);
+}
+
+
+
+/** 读取相/群速度频散结果 */
+void grt_read_dispersion(const char *filepath, EIGENV_INFO *eigmet, char **pt_modelpath)
+{  
+    int ncid;
+    int f_dimid, n_dimid;
+    int f_varid, n_varid;
+    int c_varid, u_varid, ciref_varid, cnum_varid;
+
+    // 打开 NC 文件
+    GRTCheckFileExist(filepath);
+    NC_CHECK(nc_open(filepath, NC_NOWRITE, &ncid));
+    
+    // 根据是否有变量 u 来判断这个文件记录的是群速度还是相速度
+    bool isGroup = false;
+    {
+        int ret = nc_inq_varid(ncid, "u", &u_varid);
+        if(ret == NC_NOERR){
+            isGroup = true;
+        } else if(ret == NC_ENOTVAR) {
+            isGroup = false;
+        }
+        else {
+            NC_CHECK(ret);
+        }
+    }
+
+    // 在相速度文件中读取读取模型路径
+    if(! isGroup){
+        size_t m_len = 0;
+        NC_CHECK(nc_inq_attlen(ncid, NC_GLOBAL, "model", &m_len));
+        char *modelpath = (char *)calloc(m_len+1, sizeof(char));
+        NC_CHECK(nc_get_att_text(ncid, NC_GLOBAL, "model", modelpath));
+        modelpath[m_len] = '\0';
+        if(pt_modelpath != NULL)  *pt_modelpath = modelpath;
+    }
+
+    // Rayleigh or Love
+    {
+        int isRayl_int = 0;
+        NC_CHECK(NC_FUNC_INT(nc_get_att) (ncid, NC_GLOBAL, "isRayl", &isRayl_int));
+        eigmet->wtype = (isRayl_int)? GRT_DISPERSION_RAYL : GRT_DISPERSION_LOVE;
+    }
+    
+    // 先读取 NC 文件的坐标变量
+    NC_CHECK(nc_inq_dimid(ncid, "freq", &f_dimid));
+    NC_CHECK(nc_inq_dimlen(ncid, f_dimid, &eigmet->nf));
+    NC_CHECK(nc_inq_dimid(ncid, "mode", &n_dimid));
+    NC_CHECK(nc_inq_dimlen(ncid, n_dimid, &eigmet->nmode));
+    eigmet->freqs = (real_t *)calloc(eigmet->nf, sizeof(real_t));
+    eigmet->modes = (size_t *)calloc(eigmet->nmode, sizeof(size_t));
+    NC_CHECK(nc_inq_varid(ncid, "freq", &f_varid));
+    NC_CHECK(nc_inq_varid(ncid, "mode", &n_varid));
+    NC_CHECK(NC_FUNC_REAL(nc_get_var) (ncid, f_varid, eigmet->freqs));
+    {
+        int *modes = (int *)calloc(eigmet->nmode, sizeof(int));
+        NC_CHECK(NC_FUNC_INT(nc_get_var) (ncid, n_varid, modes));
+        for(size_t i = 0; i < eigmet->nmode; ++i){
+            eigmet->modes[i] = modes[i];
+        }
+        GRT_SAFE_FREE_PTR(modes);
+    }
+
+    // 每个频率下有多少阶
+    int *cnum = (int *)calloc(eigmet->nf, sizeof(int));
+    NC_CHECK(nc_inq_varid(ncid, "cnum", &cnum_varid));
+    NC_CHECK(NC_FUNC_INT(nc_get_var) (ncid, cnum_varid, cnum));
+
+    NC_CHECK(nc_inq_varid(ncid, "c", &c_varid));
+    if(isGroup){
+        NC_CHECK(nc_inq_varid(ncid, "u", &u_varid));
+    } else {
+        NC_CHECK(nc_inq_varid(ncid, "ciref", &ciref_varid));    
+    }
+
+    eigmet->eigv = (EIGENV *)calloc(eigmet->nf, sizeof(EIGENV));
+
+    // 读入所有频散
+    const int ndims = 2;
+    size_t startp[ndims];
+    size_t countp[ndims];
+    for(size_t iw = 0; iw < eigmet->nf; ++iw){
+        eigmet->eigv[iw].n = cnum[iw];
+        eigmet->eigv[iw].c_roots = (real_t *)calloc(cnum[iw], sizeof(real_t));
+        eigmet->eigv[iw].u_roots = (real_t *)calloc(cnum[iw], sizeof(real_t));
+        eigmet->eigv[iw].c_roots_iref = (size_t *)calloc(cnum[iw], sizeof(size_t));
+
+        startp[0] = iw;
+        startp[1] = 0;
+        countp[0] = 1;
+        countp[1] = cnum[iw];
+
+        NC_CHECK(NC_FUNC_REAL(nc_get_vara) (ncid, c_varid, startp, countp, eigmet->eigv[iw].c_roots));
+        if(isGroup){
+            NC_CHECK(NC_FUNC_REAL(nc_get_vara) (ncid, u_varid, startp, countp, eigmet->eigv[iw].u_roots));
+        } else {
+            int *tmp = (int *)calloc(cnum[iw], sizeof(int));
+            NC_CHECK(NC_FUNC_INT(nc_get_vara) (ncid, ciref_varid, startp, countp, tmp));
+            for(int i = 0; i < cnum[iw]; ++i){
+                eigmet->eigv[iw].c_roots_iref[i] = tmp[i];
+            }
+            GRT_SAFE_FREE_PTR(tmp);
+        }
+            
+    }
+
+    // 关闭文件
+    NC_CHECK(nc_close(ncid));
+
+    GRT_SAFE_FREE_PTR(cnum);
 }
