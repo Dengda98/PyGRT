@@ -74,7 +74,7 @@ modsum
 
 .. include:: explain_-egrn.rst_
 
-.. include:: explain_-s.rst_
+.. include:: explain_-silent.rst_
 
 .. include:: explain_-h.rst_
 

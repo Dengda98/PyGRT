@@ -148,7 +148,7 @@ eigenv
     
     **eigenv** 模块会自动并行搜索不同频率的频散结果，提高计算效率。
 
-.. include:: explain_-s.rst_
+.. include:: explain_-silent.rst_
 
 .. include:: explain_-h.rst_
 
