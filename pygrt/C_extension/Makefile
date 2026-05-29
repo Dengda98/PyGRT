@@ -11,12 +11,13 @@ VERSION := v$(shell cat version )
 DATE := $(shell date +%Y-%m-%d)
 
 
+# 在Github构建时，仅编译出静态库，这样 -lfftw3 类似的表述既能用于Github构建也能在本地链接动态库时构建
+
 # link options for FFTW
 # NEED EXPLICITY SET LIBRARY PATH on MacOS
-LFFTW_FLAGS := -l:libfftw3.a  -l:libfftw3f.a
+LFFTW_FLAGS := -lfftw3 -lfftw3f
 
 CC := gcc
-
 
 # add -static to enforce gcc link the static library, no matter standard-lib or custom-lib,
 # -l like "-l:libXYZ.a" should be saved for conditional compile.
