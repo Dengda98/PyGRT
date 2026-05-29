@@ -334,7 +334,7 @@ jobs:
 
       # --------------------搭建python环境，开始测试，并制作wheel文件 ------------------------------
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: '3.9' 
 
