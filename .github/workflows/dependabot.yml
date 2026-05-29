@@ -1,0 +1,6 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions" # 监控 GitHub Actions
+    directory: "/"                      # 查找 workflow 文件的位置
+    schedule:
+      interval: "weekly"                # 每周检查一次更新
