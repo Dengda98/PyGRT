@@ -56,6 +56,10 @@ jobs:
         with:
           fetch-depth: 1  
 
+      - name: Set Safe Branch Name  # 防止分支名中的 “/” 影响后续文件命名
+        run: |
+          echo "SAFE_REF=$(echo ${{ github.ref_name }} | sed 's/\//-/g')" >> $GITHUB_ENV
+
       - name: Remove unwanted directories  # 删除不必要的文件夹，程序打包不需要
         run: |
           rm -rf docs/
@@ -213,7 +217,7 @@ jobs:
       # --------------------------- 打包整个程序 ---------------------
       - name: Package the binary
         run: |
-          PACK_NAME=pygrt_kit-${{ github.ref_name }}-${{ env.SUFFIX_PLAT_NAME }}
+          PACK_NAME=pygrt_kit-${{ env.SAFE_REF }}-${{ env.SUFFIX_PLAT_NAME }}
           echo "PACK_NAME=$PACK_NAME" >> $GITHUB_ENV
           FILE_CONTENT=$(ls)
           mkdir -p $PACK_NAME
