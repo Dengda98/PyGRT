@@ -227,7 +227,7 @@ jobs:
 
       # -------------------- upload artifacts -----------------------
       - name: Upload artifact (*.tar.gz)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.os }}-${{ matrix.arch }}_tar
           path: ${{ env.PACK_NAME }}.tar.gz
@@ -332,7 +332,7 @@ jobs:
       #     python setup.py bdist_wheel --plat-name=${{ env.SUFFIX_PLAT_NAME }}  # 只制作wheel，这里不打包源码 
 
       # - name: Upload artifact (*.whl)
-      #   uses: actions/upload-artifact@v4
+      #   uses: actions/upload-artifact@v7
       #   with:
       #     name: ${{ env.PACK_NAME }}_whl
       #     path: ${{ env.PACK_NAME }}/dist/*.whl
