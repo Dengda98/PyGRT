@@ -14,6 +14,18 @@ DATE := $(shell date +%Y-%m-%d)
 # link options for FFTW
 # NEED EXPLICITY SET LIBRARY PATH on MacOS
 LFFTW_FLAGS := -l:libfftw3.a  -l:libfftw3f.a
+ifneq ($(OS), Windows_NT)
+    UNAME_S := $(shell uname -s)
+    # macOS
+    ifeq ($(UNAME_S), Darwin)
+		LFFTW_FLAGS := -lfftw3 -lfftw3f
+    endif
+endif
+# detect macOS environment template
+UNAME_S := $(shell uname -s)
+IS_MACOS := $(filter Darwin,$(UNAME_S))
+
+
 
 CC := gcc
 
