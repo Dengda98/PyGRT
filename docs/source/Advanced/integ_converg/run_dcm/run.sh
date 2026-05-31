@@ -19,7 +19,7 @@ dt=0.005
 
 out="GRN"
 
-rm GRN* -rf
+rm -rf GRN*
 
 zeta=0.8
 
