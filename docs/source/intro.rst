@@ -122,6 +122,8 @@
 
 如果你对相关理论方法感兴趣， **PyGRT** 主要参考了以下文章和书籍：
 
++ Aki, Keiiti, and Richards P. G. 2009. Quantitative Seismology (2nd edition). 
+
 + Kennett, B. L. N., and Kerry N. J., 1979. Seismic waves in a stratified half space. Geophysical Journal International, 57(3), 557–583. `(link) <https://academic.oup.com/gji/article/57/3/557/681409>`_
 
 + Bouchon M. 1981. A simple method to calculate Green's functions for elastic layered media. Bulletin of the Seismological Society of America, 71(4), 959–971. `(link) <https://pubs.geoscienceworld.org/ssa/bssa/article-abstract/71/4/959/102036>`_
