@@ -46,3 +46,5 @@
    :maxdepth: 1
 
    eigenvalue
+   eigenfunction
+   surface_wave
