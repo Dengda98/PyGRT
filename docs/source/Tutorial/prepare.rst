@@ -8,7 +8,7 @@
 底层复杂运算由C语言编写，编译链接成动态库 ``libgrt.so`` 供Python调用。Python通过 ``ctypes`` 库导入动态库以使用外部函数，以此兼并了C语言的高效和Python语言的便捷。
 
 除了Python脚本式运行， **PyGRT** 保留传统命令行式运行C程序 :command:`grt` 。
-受 `GMT <https://www.generic-mapping-tools.org/>`_ 的启发， :command:`grt` 程序对多个计算功能使用模块化管理，
+受 |GMT| 的启发， :command:`grt` 程序对多个计算功能使用模块化管理，
 可使用类似于以下格式来运行程序。每个模块可使用 ``-h`` 查看帮助。
 
 .. code-block:: C

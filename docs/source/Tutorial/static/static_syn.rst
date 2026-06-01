@@ -10,7 +10,7 @@ Python中合成静态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.uti
 
 不同震源
 -------------
-以下绘图使用 `GMT <https://www.generic-mapping-tools.org/>`_  绘制。这里提供计算和绘图的 Python 脚本和 Shell 脚本供下载参考。
+以下绘图使用 |GMT| 绘制。这里提供计算和绘图的 Python 脚本和 Shell 脚本供下载参考。
 
 :download:`Shell Scripts <run/run.sh>`
 

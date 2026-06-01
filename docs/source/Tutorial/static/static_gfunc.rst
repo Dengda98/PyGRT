@@ -32,7 +32,7 @@ Python中计算静态格林函数的主函数为 :func:`compute_static_grn() <py
             :start-after: BEGIN GRN
             :end-before: END GRN
 
-        结果输出为 |NetCDF| 网格格式，方便使用 GMT 等软件处理和绘制。
+        结果输出为 |NetCDF| 网格格式，方便使用 |GMT| 等软件处理和绘制。
         如下使用 ``ncdump -h`` 命令可查看网格文件基本信息。
 
         .. literalinclude:: run/grn_head

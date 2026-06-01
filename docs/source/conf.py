@@ -185,6 +185,8 @@ rst_epilog = f"""
 
 .. |NetCDF| replace:: `NetCDF <https://zh.wikipedia.org/wiki/NetCDF>`__
 .. |FFTW| replace:: `FFTW <https://www.fftw.org/>`__
+.. |GMT| replace:: `GMT <https://gmt-china.org/>`__
+.. |Matplotlib| replace:: `Matplotlib <https://matplotlib.org/>`__
 """
 
  
