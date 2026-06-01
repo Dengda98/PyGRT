@@ -32,7 +32,7 @@
         S --> RR --> R
         S --> TT --> T
         
-        classDef cmdcls fill:#f9f2d9,stroke:#e8d174,stroke-width:2px,color:#333;
+        classDef cmdcls fill:#FBE8CE,stroke:#BFA28C,stroke-width:2px,color:#333;
         class GG,SS,EE,RR,TT cmdcls
 
 + C (module name)
@@ -61,7 +61,7 @@
         S --> RR --> R
         S --> TT --> T
         
-        classDef cmdcls fill:#f9f2d9,stroke:#e8d174,stroke-width:2px,color:#333;
+        classDef cmdcls fill:#FBE8CE,stroke:#BFA28C,stroke-width:2px,color:#333;
         class GG,SS,EE,RR,TT cmdcls
 
 .. toctree::
