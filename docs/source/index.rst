@@ -17,6 +17,7 @@
       - :doc:`install`
       - :doc:`Tutorial/prepare` 
       - :doc:`Tutorial/dynamic/index`
+      - :doc:`Tutorial/modal/index`
       - :doc:`Tutorial/static/index`
       - :doc:`Gallery/gallery`
 
@@ -55,6 +56,7 @@
    install
    Tutorial/prepare 
    Tutorial/dynamic/index
+   Tutorial/modal/index
    Tutorial/static/index 
    Gallery/gallery
 

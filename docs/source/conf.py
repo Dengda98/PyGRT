@@ -156,6 +156,8 @@ rst_epilog = f"""
 .. |Stream| replace:: :class:`~obspy.core.stream.Stream`
 .. |Trace| replace:: :class:`~obspy.core.trace.Trace`
 .. |GRT_VERSION| replace:: {get_version_from_file()}
+.. |aki2009| replace:: :ref:`Aki and Richards, 2009 <reference>`
+.. |aki2009p| replace:: :ref:`Aki and Richards (2009) <reference>`
 .. |bouchon1981| replace:: :ref:`Bouchon, 1981 <reference>`
 .. |bouchon1981p| replace:: :ref:`Bouchon (1981) <reference>`
 .. |ji1995| replace:: :ref:`纪晨和姚振兴, 1995 <reference>`
