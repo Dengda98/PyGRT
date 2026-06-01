@@ -547,9 +547,9 @@ int eigenv_main(int argc, char **argv){
     // 寻找久期函数零点
     grt_get_secular_roots(mod1d, eigmet, !Ctrl->s.active);
 
-    if(! Ctrl->s.active) printf("# Number of evaluation: %zu\n", eigmet->neval);
-
     if(Ctrl->X.active) goto FINISH;
+
+    if(! Ctrl->s.active) printf("# Number of evaluation: %zu\n", eigmet->neval);
 
     // 生成总命令
     char *full_command = NULL;
