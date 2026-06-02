@@ -549,7 +549,8 @@ int eigenv_main(int argc, char **argv){
 
     if(Ctrl->X.active) goto FINISH;
 
-    if(! Ctrl->s.active) printf("# Number of evaluation: %zu\n", eigmet->neval);
+    // 如有需要，可打印计算久期函数次数
+    // if(! Ctrl->s.active) printf("# Number of evaluation: %zu\n", eigmet->neval);
 
     // 生成总命令
     char *full_command = NULL;
