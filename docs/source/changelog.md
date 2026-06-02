@@ -1,6 +1,57 @@
 Changelog
 ====================
 
+## PyGRT v0.16.0
+
+Release _**Surface-wave modules**_ 
+
++ **eigenv**
++ **eigenfn**
++ **modsum**
++ **disp2asc**
+
+See [documentation](https://pygrt.readthedocs.io/) for details.
+
+### Pull requests
+* REFAC: add a boolean array in struct GRT_MODEL1D to indicate whether each layer is a liquid layer by [@Dengda98](https://github.com/Dengda98) in [#227](https://github.com/Dengda98/PyGRT/pull/227)
+* REFAC: split some kernel-related functions into P-SV and SH parts by [@Dengda98](https://github.com/Dengda98) in [#228](https://github.com/Dengda98/PyGRT/pull/228)
+* REFAC: remove members `src_coefD(U)` from struct GRT_MODEL1D by [@Dengda98](https://github.com/Dengda98) in [#229](https://github.com/Dengda98/PyGRT/pull/229)
+* REFAC: add member `srcrcv_isInserted` in struct GRT_MODEL1D by [@Dengda98](https://github.com/Dengda98) in [#231](https://github.com/Dengda98/PyGRT/pull/231)
+* REFAC: for series of function "grt_get_layer_Dxx", use struct GRT_MODEL1D to pass the args by [@Dengda98](https://github.com/Dengda98) in [#232](https://github.com/Dengda98/PyGRT/pull/232)
+* FIX: ModuleNotFoundError of 'pkg_resources' from obspy by [@Dengda98](https://github.com/Dengda98) in [#233](https://github.com/Dengda98/PyGRT/pull/233)
+* DOC: rename an unique math label to avoid overlapping from that in other files by [@Dengda98](https://github.com/Dengda98) in [#235](https://github.com/Dengda98/PyGRT/pull/235)
+* REFAC: just rename some temp vars for computing R/T matrix by [@Dengda98](https://github.com/Dengda98) in [#236](https://github.com/Dengda98/PyGRT/pull/236)
+* FEAT: set boundary condition in module `kernel` by [@Dengda98](https://github.com/Dengda98) in [#237](https://github.com/Dengda98/PyGRT/pull/237)
+* REFAC: split the model-related struct into two structs: MODEL1D and MODEL1D_STATE by [@Dengda98](https://github.com/Dengda98) in [#239](https://github.com/Dengda98/PyGRT/pull/239)
+* REFAC: add argument `isElastic` in function `grt_update_mod1d_state_omega` by [@Dengda98](https://github.com/Dengda98) in [#240](https://github.com/Dengda98/PyGRT/pull/240)
+* REFAC: reorganize and update "grt.h" by [@Dengda98](https://github.com/Dengda98) in [#241](https://github.com/Dengda98/PyGRT/pull/241)
+* REFAC: add "grnspec.h/c" to handle the Green Functions spectra by [@Dengda98](https://github.com/Dengda98) in [#242](https://github.com/Dengda98/PyGRT/pull/242)
+* DOC: update reference to  by [@Dengda98](https://github.com/Dengda98) in [#243](https://github.com/Dengda98/PyGRT/pull/243)
+* FIX: cast numpy array type to 'NPCT_REAL_TYPE' explicitly by [@Dengda98](https://github.com/Dengda98) in [#244](https://github.com/Dengda98/PyGRT/pull/244)
+* STYLE: update information in logo window by [@Dengda98](https://github.com/Dengda98) in [#245](https://github.com/Dengda98/PyGRT/pull/245)
+* fix: sanitize subprocess call in gmtplot.py by @orbisai0security in [#246](https://github.com/Dengda98/PyGRT/pull/246)
+* DOC: update citation by [@Dengda98](https://github.com/Dengda98) in [#247](https://github.com/Dengda98/PyGRT/pull/247)
+* TEST: move the test data to another repo by [@Dengda98](https://github.com/Dengda98) in [#248](https://github.com/Dengda98/PyGRT/pull/248)
+* FEAT: add modules for Surface-wave simulation by [@Dengda98](https://github.com/Dengda98) in [#249](https://github.com/Dengda98/PyGRT/pull/249)
+* DOC: revise bibliography and citation style in document by [@Dengda98](https://github.com/Dengda98) in [#250](https://github.com/Dengda98/PyGRT/pull/250)
+* DOC: add doi of Zhu et al., (2026) by [@Dengda98](https://github.com/Dengda98) in [#251](https://github.com/Dengda98/PyGRT/pull/251)
+* FEAT: replace -Z and -O with -W in eigenfn by [@Dengda98](https://github.com/Dengda98) in [#252](https://github.com/Dengda98/PyGRT/pull/252)
+* FEAT: rename eigv2asc to disp2asc, support -C for phase-vel dispersion and -U for group-vel dispersion by [@Dengda98](https://github.com/Dengda98) in [#253](https://github.com/Dengda98/PyGRT/pull/253)
+* DOC: add manuals for several surface-wave modules by [@Dengda98](https://github.com/Dengda98) in [#254](https://github.com/Dengda98/PyGRT/pull/254)
+* BUILD: avoid using formats like "-l:libXYZ.a" to link libraries in Mac by [@Dengda98](https://github.com/Dengda98) in [#255](https://github.com/Dengda98/PyGRT/pull/255)
+* Build(deps): Bump actions/setup-python from 4 to 6 by @dependabot[bot] in [#258](https://github.com/Dengda98/PyGRT/pull/258)
+* Build(deps): Bump softprops/action-gh-release from 1 to 3 by @dependabot[bot] in [#256](https://github.com/Dengda98/PyGRT/pull/256)
+* Build(deps): Bump actions/checkout from 3 to 6 by @dependabot[bot] in [#260](https://github.com/Dengda98/PyGRT/pull/260)
+* Build(deps): Bump actions/upload-artifact from 4 to 7 by @dependabot[bot] in [#259](https://github.com/Dengda98/PyGRT/pull/259)
+* Build(deps): Bump actions/download-artifact from 4 to 8 by @dependabot[bot] in [#257](https://github.com/Dengda98/PyGRT/pull/257)
+* DOC: rename "explain_-s.rst_" for case-insensitive system by [@Dengda98](https://github.com/Dengda98) in [#261](https://github.com/Dengda98/PyGRT/pull/261)
+* DOC: update some example scripts for MACOS by [@Dengda98](https://github.com/Dengda98) in [#262](https://github.com/Dengda98/PyGRT/pull/262)
+* DOC: add tutorials for surface-wave modules by [@Dengda98](https://github.com/Dengda98) in [#263](https://github.com/Dengda98/PyGRT/pull/263)
+* DOC: update layout of gallery by [@Dengda98](https://github.com/Dengda98) in [#264](https://github.com/Dengda98/PyGRT/pull/264)
+* DOC:  by [@Dengda98](https://github.com/Dengda98) in [#265](https://github.com/Dengda98/PyGRT/pull/265)
+
+**Full Changelog**: [v0.15.0...v0.16.0](https://github.com/Dengda98/PyGRT/compare/v0.15.0...v0.16.0)
+
 ## PyGRT v0.15.0
 
 - support Tension source
