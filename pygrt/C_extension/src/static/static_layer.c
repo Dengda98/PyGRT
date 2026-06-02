@@ -29,7 +29,7 @@
 static int __freeBound_R_PSV(real_t d, real_t k, cplx_t delta1, cplx_t M[2][2])
 {
     if(d <= 0.0){
-        // 公式(6.3.12)
+        // 公式(8.4.12)
         M[0][0] = M[1][1] = 0.0;
         M[0][1] = -delta1;
         M[1][0] = -1.0/delta1;
@@ -50,7 +50,6 @@ static int __freeBound_R_SH(cplx_t *ML)
 static int __rigidBound_R_PSV(real_t d, real_t k, cplx_t delta1, cplx_t M[2][2])
 {
     if(d <= 0.0){
-        // 公式(6.3.12)
         M[0][0] = M[1][1] = 0.0;
         M[0][1] = M[1][0] = 1.0;
     } else {
@@ -168,7 +167,7 @@ void grt_static_wave2qwv_REV_PSV(MODEL1D_STATE *mstat)
     cplx_t D11[2][2] = {{1.0, -1.0}, {1.0, 1.0}};
     cplx_t D12[2][2] = {{1.0, -1.0}, {-1.0, -1.0}};
 
-    // 公式(6.3.35,37)
+    // 公式(8.4.35,37)
     if(mstat->mod1d->ircvup){// 震源更深
         grt_cmat2x2_mul(D12, mstat->M_FA.RU, mstat->R_EV);
         grt_cmat2x2_add(D11, mstat->R_EV, mstat->R_EV);
@@ -226,7 +225,7 @@ void grt_static_RT_matrix_PSV(const MODEL1D_STATE *mstat, const size_t iy, RT_MA
     real_t thk = mstat->mod1d->Thk[iy-1];
     real_t k = mstat->k;
 
-    // 公式(6.3.18)
+    // 公式(8.4.18)
     cplx_t dmu = mu1 - mu2;
     cplx_t A112 = mu1*delta1 + mu2;
     cplx_t A221 = mu2*delta2 + mu1;
@@ -265,7 +264,7 @@ void grt_static_RT_matrix_SH(const MODEL1D_STATE *mstat, const size_t iy, RT_MAT
 {
     MODEL_2LAYS_ATTRIB(mstat, cplx_t, mu);
     
-    // 公式(6.3.18)
+    // 公式(8.4.30)
     cplx_t dmu = mu1 - mu2;
     cplx_t amu = mu1 + mu2;
 

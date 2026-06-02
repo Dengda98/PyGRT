@@ -20,7 +20,7 @@
 #include "grt/common/model.h"
 
 /**
- * 计算不同边界条件下顶界面的静态反射系数RU，其中自由表面的公式见(6.3.12)
+ * 计算不同边界条件下顶界面的静态反射系数RU，其中自由表面的公式见(8.4.12,29)
  * 
  * @param[in,out]     mstat             模型结构体指针，结果保存在 M_top
  * 
@@ -29,7 +29,7 @@ void grt_static_topbound_RU_PSV(MODEL1D_STATE *mstat);
 void grt_static_topbound_RU_SH(MODEL1D_STATE *mstat);
 
 /**
- * 计算不同边界条件下底界面的静态反射系数RD，其中自由表面的公式见(6.3.12)
+ * 计算不同边界条件下底界面的静态反射系数RD，其中自由表面的公式见(8.4.12,29)
  * 
  * @param[in,out]     mstat             模型结构体指针，结果保存在 M_bot
  * 
@@ -38,7 +38,7 @@ void grt_static_botbound_RD_PSV(MODEL1D_STATE *mstat);
 void grt_static_botbound_RD_SH(MODEL1D_STATE *mstat);
 
 /**
- * 计算接收点位置的 P-SV 静态接收矩阵，将波场转为位移，公式(6.3.35)
+ * 计算接收点位置的 P-SV 静态接收矩阵，将波场转为位移，公式(8.4.35,37)
  * 
  * @param[in,out]      mstat           模型结构体指针，结果保存在 R_EV
  * 
@@ -46,7 +46,7 @@ void grt_static_botbound_RD_SH(MODEL1D_STATE *mstat);
 void grt_static_wave2qwv_REV_PSV(MODEL1D_STATE *mstat);
 
 /**
- * 计算接收点位置的 SH 静态接收矩阵，将波场转为位移，公式(6.3.37)
+ * 计算接收点位置的 SH 静态接收矩阵，将波场转为位移，公式(8.4.35,37)
  * 
  * @param[in,out]      mstat           模型结构体指针，结果保存在 R_EVL
  * 
@@ -74,7 +74,7 @@ void grt_static_wave2qwv_z_REV_SH(MODEL1D_STATE *mstat);
 
 /**
  * 计算界面的 P-SV 波静态反射透射系数RD/RU/TD/TU
- * 根据公式(6.3.18)  
+ * 根据公式(8.4.18)  
  * 
  * @param[in]      mstat         模型结构体指针
  * @param[in]      iy            层位索引
@@ -85,7 +85,7 @@ void grt_static_RT_matrix_PSV(const MODEL1D_STATE *mstat, const size_t iy, RT_MA
 
 /**
  * 计算界面的 SH 波静态反射透射系数RDL/RUL/TDL/TUL
- * 根据公式(6.3.18)  
+ * 根据公式(8.4.30)  
  * 
  * @param[in]      mstat         模型结构体指针
  * @param[in]      iy            层位索引

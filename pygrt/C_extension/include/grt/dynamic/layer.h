@@ -88,7 +88,7 @@ void grt_RT_matrix_PSV(const MODEL1D_STATE *mstat, const size_t iy, RT_MATRIX *M
 
 /**
  * 计算界面的 SH 波反射透射系数 RDL/RUL/TDL/TUL,
- * 根据公式(5.4.31)计算系数   
+ * 根据公式(5.4.29)计算系数   
  * 
  * @param[in]      mstat         模型结构体指针
  * @param[in]      iy            层位索引
