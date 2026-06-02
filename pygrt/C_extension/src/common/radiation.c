@@ -78,7 +78,7 @@ void grt_set_source_radiation(
     else if(computeType == GRT_SYN_TS){
         real_t strike, dip;
         strike=mchn[0];   dip=mchn[1];
-        // 公式(4.8.35)
+        // 公式(4.8.40)但修改了各向同性的量
         real_t stkrad = strike*DEG1;
         real_t diprad = dip*DEG1;
         real_t therad = azrad - stkrad;

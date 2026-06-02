@@ -212,7 +212,7 @@ void __BUILD_QWV__(MODEL1D_STATE *mstat, cplxChnlGrid QWV, bool calc_uiz, cplxCh
         grt_recursion_RU(M_FA, M_RS, M_FB); // 已从ZR变为FR，加入了自由表面的效应
         if(M_FB->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
         
-        // 公式(5.7.12-14)
+        // 公式(5.7.12-13)
         grt_cmat2x2_mul(M_BL->RD, M_FB->RU, tmpR2);
         grt_cmat2x2_one_sub(tmpR2);
         if((M_FB->stats = grt_cmat2x2_inv(tmpR2, tmpR2)) == GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;// (I - xx)^-1
