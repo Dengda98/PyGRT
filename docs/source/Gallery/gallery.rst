@@ -9,19 +9,62 @@
 所有示例均在代码主页的 `docs/source/Gallery <https://github.com/Dengda98/PyGRT/tree/main/docs/source/Gallery>`_
 路径下。
 
-.. grid:: 1 1 2 3
+.. jinja::
 
-    .. jinja::
+    {% macro card(idx) %}
+    .. grid-item-card:: :doc:`ex{{ idx }}/ex{{ idx }}`
+        :class-item: cropped-grid
+        :padding: 1
+        :link-type: doc
+        :link: ex{{ idx }}/ex{{ idx }}
 
-        {% for i in range(1, 18) %}
-        {% set i = '%02d' % i %}
-        .. grid-item-card:: :doc:`ex{{i}}/ex{{i}}`
-            :padding: 1
-            :link-type: doc
-            :link: ex{{i}}/ex{{i}}
+        .. figure:: ex{{ idx }}/cover.*
+    {% endmacro %}
+    
+    动态解
+    ------------
 
-            .. figure:: ex{{i}}/cover.*
-        {% endfor %}
+    .. grid:: 4
+
+        {{ card('01')  | indent(8, first=true) }}  
+
+        {{ card('02')  | indent(8, first=true) }}
+
+        {{ card('03')  | indent(8, first=true) }}
+
+        {{ card('04')  | indent(8, first=true) }}
+
+        {{ card('05')  | indent(8, first=true) }}
+
+        {{ card('06')  | indent(8, first=true) }}
+
+        {{ card('07')  | indent(8, first=true) }}
+
+        {{ card('08')  | indent(8, first=true) }}
+
+        {{ card('09')  | indent(8, first=true) }}
+
+        {{ card('10')  | indent(8, first=true) }}
+        
+        {{ card('11')  | indent(8, first=true) }}
+
+        {{ card('14')  | indent(8, first=true) }}
+
+        {{ card('16')  | indent(8, first=true) }}
+
+        {{ card('17')  | indent(8, first=true) }}
+
+    静态解
+    ------------
+
+    .. grid:: 4
+
+        {{ card('12')  | indent(8, first=true) }}
+
+        {{ card('13')  | indent(8, first=true) }}
+
+        {{ card('15')  | indent(8, first=true) }}
+
 
 .. toctree::
    :hidden:
