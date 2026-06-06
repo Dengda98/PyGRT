@@ -15,7 +15,7 @@
 
 [**Chinese Document**](https://pygrt.readthedocs.io/zh-cn/)  |  ~~English Document (no longer maintained)~~
 
-**[PyGRT](https://github.com/Dengda98/PyGRT)** : An Efficient and Integrated C/Python Package for Computing Synthetic Seismograms, Strain, Rotation and Stress Tensor in a Layered Half-Space Model (Dynamic & Static Cases)
+**[PyGRT](https://github.com/Dengda98/PyGRT)** : An Integrated, Efficient C/Python Toolkit to Compute Synthetic Seismograms and Static Deformation in Layered Media, including Displacement, Strain, Stress and Rotation.
 
  + **PyGRT** now can compute following properties in **both dynamic and static case.**  
     ✔️ **Displacements and its spatial derivatives**  
