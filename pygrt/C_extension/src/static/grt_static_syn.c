@@ -432,7 +432,8 @@ void grt_static_syn_new_xy(
 
             // 从原震中距序列中找到最接近的
             size_t ir_pick = grt_findClosest_real_t(rs0, nr0, dist);
-            real_t distDiff = fabs(rs0[ir_pick] - dist);
+            real_t dist0 = rs0[ir_pick];
+            real_t distDiff = fabs(dist0 - dist);
             mean_distDiff += distDiff;
             std_distDiff += GRT_SQUARE(distDiff);
             min_distDiff = GRT_MIN(min_distDiff, distDiff);
@@ -457,7 +458,7 @@ void grt_static_syn_new_xy(
                         // 合成 ui_z, uir
                         case 'Z': case 'R': upar_scale = 1e-5; break;
                         // 合成 ui_t
-                        case 'T': upar_scale = 1e-5 / dist; break;
+                        case 'T': upar_scale = 1e-5 / dist0; break;
                         default: break;
                     }
                 }
@@ -496,7 +497,7 @@ void grt_static_syn_new_xy(
             // 是否要转到ZNE
             if(rot2ZNE){
                 if(calc_upar){
-                    grt_rot_zrt2zxy_upar(azrad, syn[ir], syn_upar[ir], dist*1e5);
+                    grt_rot_zrt2zxy_upar(azrad, syn[ir], syn_upar[ir], dist0*1e5);
                 } else {
                     grt_rot_zxy2zrt_vec(-azrad, syn[ir]);
                 }
