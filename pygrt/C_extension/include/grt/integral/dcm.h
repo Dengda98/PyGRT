@@ -17,7 +17,8 @@
  * 
  * @param[in]        nr      震中距数
  * @param[in]        rs      震中距数组
+ * @param[in]        kcut    截止波数
  * @param[in,out]    Kint    K_INTEG 结构体指针，对应着积分结果
  * @param[in]        keep_nearfield   是否要作用于近场项(p==1项)
  */
-void grt_dcm_correction(size_t nr, real_t *rs, K_INTEG *Kint, bool keep_nearfield);
+void grt_dcm_correction(size_t nr, real_t *rs, real_t kcut, K_INTEG *Kint, bool keep_nearfield);

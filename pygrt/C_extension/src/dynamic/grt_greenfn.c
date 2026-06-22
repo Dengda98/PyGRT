@@ -17,7 +17,7 @@
 #define GRT_GREENFN_H_FREQ1      -1.0
 #define GRT_GREENFN_H_FREQ2      -1.0
 #define GRT_GREENFN_K_VMIN        0.1
-#define GRT_GREENFN_K_K0          5.0
+#define GRT_GREENFN_K_K0         50.0
 #define GRT_GREENFN_K_AMPK       1.15
 #define GRT_GREENFN_G_EX       true
 #define GRT_GREENFN_G_VF       true
@@ -103,6 +103,7 @@ typedef struct {
         real_t ampk;
         real_t k0;
         real_t vmin;
+        bool fixed_k0;
     } K;
     /** 时间延迟 */
     struct {
@@ -234,7 +235,7 @@ printf("\n"
 "        -R<r1>,<r2>[,...]|<r1>/<r2>/<dr>|<file>\n"
 "        -O<outdir>     [-H<f1>/<f2>] \n"
 "        [-L<length>] [-C[d|p|n]] [-E[p]<t0>[/<v0>]] \n" 
-"        [-K[+k<k0>][+s<ampk>][+e<keps>][+v<vmin>]]\n"
+"        [-K[+k<k0>][+f][+s<ampk>][+e<keps>][+v<vmin>]]\n"
 "        [-P<nthreads>] [-Ge|v|h|s]  [-Bf|F|r|R|h|H]\n"
 "        [-S[<i1>,<i2>,...]] [-e] [-s]\n"
 "\n\n"
@@ -320,15 +321,15 @@ printf("\n"
 "                       the delay (the begining time) will be <t0> + first P, \n"
 "                       e.g., -Ep-10.\n"
 "\n"
-"    -K[+k<k0>][+s<ampk>][+e<keps>][+v<vmin>]\n"
-"                 Several parameters designed to define the\n"
-"                 behavior in wavenumber integration. The upper\n"
-"                 bound is \n"
+"    -K[+k<k0>][+f][+s<ampk>][+e<keps>][+v<vmin>]\n"
+"                 Define the wavenumber integration upper bound\n"
 "                 sqrt( <k0>^2 + (<ampk>*w/<vmin_ref>)^2 ),\n"
-"                 <k0>:   designed to give residual k at\n"
-"                         0 frequency, default is %.1f, and \n", GRT_GREENFN_K_K0); printf(
-"                         multiply PI/hs in program, \n"
+"                 <k0>:   maximum upper bound residual k for 0 frequency, \n"
+"                         default is %.1f, and multiply PI/hs in program, \n", GRT_GREENFN_K_K0); printf(
 "                         where hs = max(fabs(depsrc-deprcv), %.1f).\n", GRT_MIN_DEPTH_GAP_SRC_RCV); printf(
+"                         The program will choose the proper residual in [0, k0].\n"
+"                         If k0 is not enough, convergence method will be applied.\n"
+"                         If use +f, directly set k0 as the residual.\n"
 "                 <ampk>: amplification factor, default is %.2f.\n", GRT_GREENFN_K_AMPK); printf(
 "                 <keps>: a threshold for break wavenumber \n"
 "                         integration in advance. See \n"
@@ -623,7 +624,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 }
                 break;
 
-            // 波数积分相关变量 -K[+k<k0>][+s<ampk>][+e<keps>][+v<vmin>]
+            // 波数积分相关变量 -K[+k<k0>][+f][+s<ampk>][+e<keps>][+v<vmin>]
             case 'K':
                 Ctrl->K.active = true;
                 {
@@ -662,6 +663,10 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                             if(Ctrl->K.vmin <= 0.0){
                                 GRTBadOptionError(K, "Illegal vmin (%f).", Ctrl->K.vmin);
                             }
+                            break;
+
+                        case 'f':
+                            Ctrl->K.fixed_k0 = true;
                             break;
 
                         default:
@@ -951,6 +956,7 @@ int greenfn_main(int argc, char **argv) {
     {   
         real_t hs = GRT_MAX(fabs(mod1d->depsrc - mod1d->deprcv), GRT_MIN_DEPTH_GAP_SRC_RCV);
         KPROC.k0 = Ctrl->K.k0 * PI / hs;
+        KPROC.fixed_k0 = Ctrl->K.fixed_k0;
         KPROC.ampk = Ctrl->K.ampk;
         KPROC.keps = (Ctrl->C.convmet != K_INTEG_CONVERG_AUTO)? 0.0 : Ctrl->K.keps; // 如果使用了显式收敛方法，则不使用keps进行收敛判断
         KPROC.vmin = Ctrl->K.vmin;

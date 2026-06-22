@@ -21,6 +21,7 @@
 
 #include "grt/dynamic/grn.h"
 #include "grt/dynamic/grnspec.h"
+#include "grt/static/static_util.h"
 #include "grt/integral/integ_process.h"
 
 #include "grt/common/const.h"
@@ -80,6 +81,30 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kproc, GRNSPEC *grn, co
 
     mod1d->omgref = PI2*grn->freqs[grn->nf2];
 
+    // 静态解的 kmax ，用于动态解积分上限中的 k0
+    real_t static_kmax = 0.0;
+    if(Kproc->fixed_k0){
+        static_kmax = Kproc->k0;
+    } else {
+        size_t ncount = 0;
+        static_kmax = grt_predict_static_kmax(mod1d, Kproc->k0, &ncount);
+        GRTRaiseInfo(
+            "for a proper k0, ncount = %zu, k0 = %.3e, k0_ref = %.3e, nk = %zu", 
+            ncount, static_kmax, Kproc->k0, (size_t)(static_kmax / Kproc->dk));
+        
+        if(Kproc->cvgmet == K_INTEG_CONVERG_AUTO){
+            // 如果上限触发边界，且未指定收敛算法，则强制使用 DCM 进行收敛
+            if(static_kmax >= Kproc->k0){
+                Kproc->cvgmet = K_INTEG_CONVERG_DCM;
+                Kproc->keps = 0.0;
+                GRTRaiseWarning("k0 reaches k0_ref, apply %s.", GRT_EXPLAIN_CVGMETHOD(Kproc->cvgmet));
+            }
+        } else if(Kproc->cvgmet != K_INTEG_CONVERG_REFUSE) {
+            // 正常打印手动选择的收敛方法
+            GRTRaiseInfo("manually set the %s.", GRT_EXPLAIN_CVGMETHOD(Kproc->cvgmet));
+        }
+    }
+
     // 频率omega循环
     // schedule语句可以动态调度任务，最大程度地使用计算资源
     #pragma omp parallel for schedule(guided) default(shared) 
@@ -138,7 +163,7 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kproc, GRNSPEC *grn, co
         // ===================================================================================
         //                          Wavenumber Integration
         // 波数积分上限
-        local_Kproc->kmax = hypot(local_Kproc->k0, local_Kproc->ampk * w / local_Kproc->vmin);
+        local_Kproc->kmax = hypot(static_kmax, local_Kproc->ampk * w / local_Kproc->vmin);
         K_INTEG *Kint = grt_wavenumber_integral(local_mstat, grn->nr, grn->rs, local_Kproc, grn->calc_upar, grt_kernel);
 
         // 记录到格林函数结构体内

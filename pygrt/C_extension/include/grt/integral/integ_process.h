@@ -35,6 +35,7 @@ typedef enum {
 // 描述不同波数积分方法的结构体
 typedef struct {
     real_t k0;      ///< 波数积分的上限 \f$ \tilde{k_{max}}=\sqrt{(k_{0}*\pi/hs)^2 + (ampk*w/vmin_{ref})^2} \f$ ，k循环必须退出, hs=max(震源和台站深度差,1.0) 
+    bool fixed_k0;  ///< 固定 k0，默认在程序中自动调整 k0
     real_t ampk;    ///< 影响波数k积分上限的系数
     real_t keps;    ///< 波数积分的收敛条件，要求在某震中距下所有格林函数都收敛，为负数代表不提前判断收敛，按照波数积分上限进行积分 
     real_t vmin;    ///< 参考最小速度，用于定义波数积分的上限

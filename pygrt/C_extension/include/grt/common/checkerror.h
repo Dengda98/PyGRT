@@ -20,20 +20,20 @@
 
 // GRT自定义报错信息
 #define GRTRaiseError(ErrorMessage, ...) ({\
-    fprintf(stderr, BOLD_WHITE "%s:%d: In function ‘%s’: \n" BOLD_RED "[%s] Error! " ErrorMessage "\n" DEFAULT_RESTORE, __FILE__, __LINE__, __func__, GRT_MODULE_NAME, ##__VA_ARGS__);\
+    fprintf(stderr, BOLD_WHITE "%s:%d: In function ‘%s’: \n" BOLD_RED "[ERROR][%s] " ErrorMessage "\n" DEFAULT_RESTORE, __FILE__, __LINE__, __func__, GRT_MODULE_NAME, ##__VA_ARGS__);\
     fflush(stderr);\
     exit(EXIT_FAILURE);\
 })
 
 // GRT自定义一般信息
 #define GRTRaiseInfo(ErrorMessage, ...) ({\
-    fprintf(stdout, REGULAR_GREEN "[%s] " ErrorMessage "\n" DEFAULT_RESTORE, GRT_MODULE_NAME, ##__VA_ARGS__);\
+    fprintf(stdout, REGULAR_GREEN "[INFO][%s] " ErrorMessage "\n" DEFAULT_RESTORE, GRT_MODULE_NAME, ##__VA_ARGS__);\
     fflush(stdout);\
 })
 
 // GRT自定义警告信息，不结束程序
 #define GRTRaiseWarning(WarnMessage, ...) ({\
-    fprintf(stdout, BOLD_WHITE "%s:%d: In function ‘%s’: \n" BOLD_YELLOW "[%s] Warning! " WarnMessage "\n" DEFAULT_RESTORE, __FILE__, __LINE__, __func__, GRT_MODULE_NAME, ##__VA_ARGS__);\
+    fprintf(stdout, BOLD_WHITE "%s:%d: In function ‘%s’: \n" BOLD_YELLOW "[WARNING][%s] " WarnMessage "\n" DEFAULT_RESTORE, __FILE__, __LINE__, __func__, GRT_MODULE_NAME, ##__VA_ARGS__);\
     fflush(stdout);\
 })
 

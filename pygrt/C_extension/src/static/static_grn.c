@@ -20,6 +20,7 @@
 #include <errno.h>
 
 #include "grt/static/static_grn.h"
+#include "grt/static/static_util.h"
 #include "grt/common/const.h"
 #include "grt/common/model.h"
 #include "grt/integral/integ_process.h"
@@ -94,7 +95,40 @@ void grt_integ_static_grn(
     // ===================================================================================
     //                          Wavenumber Integration
     // 波数积分上限
-    Kproc->kmax = Kproc->k0;
+    if(Kproc->fixed_k0){
+        Kproc->kmax = Kproc->k0;
+    } else {
+        size_t ncount = 0, nk = 0;
+        real_t static_kmax = 0.0;
+        static_kmax = grt_predict_static_kmax(mod1d, Kproc->k0, &ncount);
+        nk = (size_t)(static_kmax / Kproc->dk);
+        GRTRaiseInfo(
+            "for a proper k0, ncount = %zu, k0 = %.3e, k0_ref = %.3e, nk = %zu", 
+            ncount, static_kmax, Kproc->k0, nk);
+        
+        // 若 nk 不够，适当调整 dk
+        if(nk < GRT_MIN_STATIC_NK){
+            real_t new_dk = static_kmax / GRT_MIN_STATIC_NK;
+            GRTRaiseWarning("nk(%zu) < %d, adjust dk from %.3e to %.3e", nk, GRT_MIN_STATIC_NK, Kproc->dk, new_dk);
+            Kproc->dk = new_dk;
+        }
+        
+        if(Kproc->cvgmet == K_INTEG_CONVERG_AUTO){
+            // 如果上限触发边界，且未指定收敛算法，则强制使用 DCM 进行收敛
+            if(static_kmax >= Kproc->k0){
+                Kproc->cvgmet = K_INTEG_CONVERG_DCM;
+                Kproc->keps = 0.0;
+                GRTRaiseWarning("k0 reaches k0_ref, apply %s.", GRT_EXPLAIN_CVGMETHOD(Kproc->cvgmet));
+            }
+        } else if(Kproc->cvgmet != K_INTEG_CONVERG_REFUSE) {
+            // 正常打印手动选择的收敛方法
+            GRTRaiseInfo("manually set the %s.", GRT_EXPLAIN_CVGMETHOD(Kproc->cvgmet));
+        }
+
+        Kproc->kmax = static_kmax;
+    }
+
+
     // 模型状态
     MODEL1D_STATE *mstat = grt_init_mod1d_state(mod1d);
     grt_update_mod1d_state_omega(mstat, 1.0, true);

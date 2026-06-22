@@ -52,8 +52,12 @@ real_t grt_discrete_integ(
 
         if(K->applyDCM){
             GRT_LOOP_ChnlGrid(im, c){
+                K->QWV_raw[im][c] = K->QWV[im][c];
                 K->QWV[im][c] -= K->QWV_kmax[im][c];
-                if(K->calc_upar) K->QWVz[im][c] -= K->QWVz_kmax[im][c];
+                if(K->calc_upar){
+                    K->QWVz_raw[im][c] = K->QWVz[im][c];
+                    K->QWVz[im][c] -= K->QWVz_kmax[im][c] * k / kmax;
+                }
             }
         }
 
@@ -68,7 +72,7 @@ real_t grt_discrete_integ(
             memset(K->SUM, 0, sizeof(cplxIntegGrid));
             
             // 计算被积函数一项 F(k,w)Jm(kr)k
-            grt_int_Pk(k, rs[ir], K->QWV, false, K->SUM);
+            grt_int_Pk(k, rs[ir], (K->applyDCM && GRT_IS_SMALLE_DISTANCE(rs[ir]))? K->QWV_raw : K->QWV, false, K->SUM);
             
             iendk0 = true;
 
@@ -94,7 +98,7 @@ real_t grt_discrete_integ(
             if(K->calc_upar){
                 // ------------------------------- ui_z -----------------------------------
                 // 计算被积函数一项 F(k,w)Jm(kr)k
-                grt_int_Pk(k, rs[ir], K->QWVz, false, K->SUM);
+                grt_int_Pk(k, rs[ir], (K->applyDCM && GRT_IS_SMALLE_DISTANCE(rs[ir]))? K->QWVz_raw : K->QWVz, false, K->SUM);
                 
                 // keps不参与计算位移空间导数的积分，背后逻辑认为u收敛，则uiz也收敛
                 GRT_LOOP_IntegGrid(im, v){
@@ -103,7 +107,7 @@ real_t grt_discrete_integ(
 
                 // ------------------------------- ui_r -----------------------------------
                 // 计算被积函数一项 F(k,w)Jm(kr)k
-                grt_int_Pk(k, rs[ir], K->QWV, true, K->SUM);
+                grt_int_Pk(k, rs[ir], (K->applyDCM && GRT_IS_SMALLE_DISTANCE(rs[ir]))? K->QWV_raw : K->QWV, true, K->SUM);
                 
                 // keps不参与计算位移空间导数的积分，背后逻辑认为u收敛，则uiz也收敛
                 GRT_LOOP_IntegGrid(im, v){

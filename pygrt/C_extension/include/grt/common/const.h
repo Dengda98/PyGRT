@@ -60,6 +60,7 @@ typedef double complex cplx_t;
 
 #define GRT_SWAP(type, a, b) { type temp = a; a = b; b = temp; } ///< 交换两个变量的值
 #define GRT_MIN_DISTANCE    1e-5   ///< 最小震中距，用于限制
+#define GRT_IS_SMALLE_DISTANCE(r)  ((r) <= GRT_MIN_DISTANCE)   ///< 判断是否是过小的震中距 
 
 #define GRT_STRING_FMT "%18s"  ///< 字符串输出格式
 #define GRT_REAL_FMT "%18.8e"  ///< 浮点数输出格式
@@ -130,6 +131,8 @@ typedef double complex cplx_t;
 #define GRT_INVERSE_FAILURE   -1     ///< 求逆或除法遇到除0错误
 
 #define GRT_GTYPES_MAX   2      ///< 2, 所有震源根据是否使用格林函数导数分为两类
+
+#define GRT_MIN_STATIC_NK  500    ///< 波数积分中 k0 部分最少的点数，若不够则对应调整 dk
 
 typedef cplx_t     cplxChnlGrid[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
 typedef cplx_t*   pcplxChnlGrid[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];

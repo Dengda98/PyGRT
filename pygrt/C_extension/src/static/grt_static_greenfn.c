@@ -10,7 +10,7 @@
 #include "grt.h"
 
 // 一些变量的非零默认值
-#define GRT_GREENFN_K_K0          5.0
+#define GRT_GREENFN_K_K0         50.0
 #define GRT_GREENFN_L_LENGTH     15.0
 
 
@@ -61,6 +61,7 @@ typedef struct {
         bool active;
         real_t keps;
         real_t k0;
+        bool fixed_k0;
     } K;
     /** 波数积分过程的核函数文件 */
     struct {
@@ -141,7 +142,7 @@ printf("\n"
 "           [-X<x1>/<x2>/<dx>] [-Y<y1>/<y2>/<dy>] \n"
 "           [-R<r1>,<r2>[,...]|<r1>/<r2>/<dr>|<file>]\n" 
 "           [-L<length>]   [-C[d|p|n]]  [-Bf|F|r|R|h|H] \n"
-"           [-K[+k<k0>][+e<keps>]] [-S]  [-e]\n"
+"           [-K[+k<k0>][+f][+e<keps>]] [-S]  [-e]\n"
 "\n"
 "    There're two ways to define the \"epicentral distances\":\n"
 "    1. set both -X and -Y to define a XY grid in advance.\n"
@@ -215,13 +216,13 @@ printf("\n"
 "                 r|R: Rigid boundary.\n"
 "                 h|H: Halfspace.\n"
 "\n"
-"    -K[+k<k0>][+e<keps>]\n"
-"                 Several parameters designed to define the\n"
-"                 behavior in wavenumber integration. The upper\n"
-"                 bound is k0,\n"
-"                 <k0>:   default is %.1f, and \n", GRT_GREENFN_K_K0); printf(
-"                         multiply PI/hs in program, \n"
-"                         where hs = max(fabs(depsrc-deprcv), %.1f).\n", GRT_MIN_DEPTH_GAP_SRC_RCV); printf(
+"    -K[+k<k0>][+f][+e<keps>]\n"
+"                 Define the wavenumber integration upperbound\n"
+"                 <k0>:   maximum upper bound, default is %.1f, and multiply PI/hs \n", GRT_GREENFN_K_K0); printf(
+"                         in program, where hs = max(fabs(depsrc-deprcv), %.1f).\n", GRT_MIN_DEPTH_GAP_SRC_RCV); printf(
+"                         The program will choose the proper upper bound in [0, k0].\n"
+"                         If k0 is not enough, convergence method will be applied.\n"
+"                         If use +f, directly set k0 as the upper bound.\n"
 "                 <keps>: a threshold for break wavenumber \n"
 "                         integration in advance. See \n"
 "                         (Yao and Harkrider, 1983) for details.\n"
@@ -383,7 +384,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 }
                 break;
 
-            // 波数积分相关变量 -K[+k<k0>][+e<keps>]
+            // 波数积分相关变量 -K[+k<k0>][+f][+e<keps>]
             case 'K':
                 Ctrl->K.active = true;
                 {
@@ -404,6 +405,10 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                             if(1 != sscanf(token+1, "%lf", &Ctrl->K.keps)){
                                 GRTBadOptionError(K+e, "");
                             }
+                            break;
+
+                        case 'f':
+                            Ctrl->K.fixed_k0 = true;
                             break;
 
                         default:
@@ -594,6 +599,7 @@ int static_greenfn_main(int argc, char **argv){
     {   
         real_t hs = GRT_MAX(fabs(mod1d->depsrc - mod1d->deprcv), GRT_MIN_DEPTH_GAP_SRC_RCV);
         KPROC.k0 = Ctrl->K.k0 * PI / hs;
+        KPROC.fixed_k0 = Ctrl->K.fixed_k0;
         KPROC.keps = (Ctrl->C.convmet != K_INTEG_CONVERG_AUTO)? 0.0 : Ctrl->K.keps;  // 如果使用了显式收敛方法，则不使用keps进行收敛判断
 
         // 最大震中距
