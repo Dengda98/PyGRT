@@ -138,7 +138,7 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kproc, GRNSPEC *grn, co
         // ===================================================================================
         //                          Wavenumber Integration
         // 波数积分上限
-        local_Kproc->kmax = hypot(static_kmax, local_Kproc->ampk * w / local_Kproc->vmin);
+        local_Kproc->kmax = hypot(local_Kproc->k0, local_Kproc->ampk * w / local_Kproc->vmin);
         K_INTEG *Kint = grt_wavenumber_integral(local_mstat, grn->nr, grn->rs, local_Kproc, grn->calc_upar, grt_kernel);
 
         // 记录到格林函数结构体内
