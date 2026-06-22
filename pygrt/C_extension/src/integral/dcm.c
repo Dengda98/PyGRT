@@ -35,7 +35,6 @@ void grt_dcm_correction(size_t nr, real_t *rs, real_t kcut, K_INTEG *Kint, bool 
 {
     for(size_t ir = 0; ir < nr; ++ir)    {
         real_t r = rs[ir];
-        if(GRT_IS_SMALLE_DISTANCE(r)) continue;
 
         real_t rinv = 1.0 / r;
         real_t cc;
