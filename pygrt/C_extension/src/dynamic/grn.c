@@ -59,7 +59,7 @@ static void recordin_GRN(size_t iw, size_t nr, cplx_t coef, cplxIntegGrid sumJ[n
 
 
 
-void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kmet, GRNSPEC *grn, const bool print_progressbar)
+void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kproc, GRNSPEC *grn, const bool print_progressbar)
 {
     // 程序运行开始时间
     struct timeval begin_t;
@@ -67,7 +67,7 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kmet, GRNSPEC *grn, con
 
     const real_t Rho = mod1d->Rho[mod1d->isrc]; // 震源区密度
     const real_t fac = 1.0/(4.0*PI*Rho);
-    const real_t dk = Kmet->dk;
+    const real_t dk = Kproc->dk;
 
     // 进度条变量 
     int progress=0;
@@ -106,13 +106,13 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kmet, GRNSPEC *grn, con
 
         cplx_t coef = - dk*fac / GRT_SQUARE(omega); // 最终要乘上的系数
 
-        K_INTEG_PROCESS *local_Kmet = NULL;
+        K_INTEG_PROCESS *local_Kproc = NULL;
     #ifdef _OPENMP 
         // 定义局部对象
-        K_INTEG_PROCESS __KMET = *Kmet;  // 只需浅拷贝
-        local_Kmet = &__KMET;
+        K_INTEG_PROCESS __KPROC = *Kproc;  // 只需浅拷贝
+        local_Kproc = &__KPROC;
     #else 
-        local_Kmet = Kmet;
+        local_Kproc = Kproc;
     #endif
 
         MODEL1D_STATE *local_mstat = grt_init_mod1d_state(mod1d);
@@ -127,7 +127,7 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kmet, GRNSPEC *grn, con
         if(needfstats){
             char *suffix = NULL;
             GRT_SAFE_ASPRINTF(&suffix, "_%04zu_%.5e", iw, grn->freqs[iw]);
-            grt_KMET_init_fstats(grn->nr, grn->rs, grn->statsstr, suffix, local_Kmet);
+            grt_KPROC_init_fstats(grn->nr, grn->rs, grn->statsstr, suffix, local_Kproc);
             GRT_SAFE_FREE_PTR(suffix);
         }
         
@@ -139,7 +139,7 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kmet, GRNSPEC *grn, con
         //                          Wavenumber Integration
         // 波数积分上限
         local_Kmet->kmax = hypot(local_Kmet->k0, local_Kmet->ampk * w / local_Kmet->vmin);
-        K_INTEG *Kint = grt_wavenumber_integral(local_mstat, grn->nr, grn->rs, local_Kmet, grn->calc_upar, grt_kernel);
+        K_INTEG *Kint = grt_wavenumber_integral(local_mstat, grn->nr, grn->rs, local_Kproc, grn->calc_upar, grt_kernel);
 
         // 记录到格林函数结构体内
         // 如果计算核函数过程中存在除零错误，则放弃该频率【通常在大震中距的低频段】
@@ -152,7 +152,7 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kmet, GRNSPEC *grn, con
 
         freq_invstats[iw] = local_mstat->stats;
 
-        if(needfstats)  grt_KMET_destroy_fstats(grn->nr, local_Kmet);
+        if(needfstats)  grt_KPROC_destroy_fstats(grn->nr, local_Kproc);
 
         grt_free_mod1d_state(local_mstat);
 

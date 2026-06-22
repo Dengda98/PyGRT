@@ -353,28 +353,28 @@ class PyModel1D:
 
 
         # ====================================================================
-        KMET = c_K_INTEG_PROCESS()
+        KPROC = c_K_INTEG_PROCESS()
         hs = max(abs(depsrc - deprcv), 1.0)
-        KMET.k0 = k0 * np.pi / hs
-        KMET.ampk = ampk
-        KMET.keps = keps if converg_method == 'none' else 0.0
-        KMET.vmin = vmin_ref
+        KPROC.k0 = k0 * np.pi / hs
+        KPROC.ampk = ampk
+        KPROC.keps = keps if converg_method == 'none' else 0.0
+        KPROC.vmin = vmin_ref
 
-        KMET.kcut = filonCut / rmax
+        KPROC.kcut = filonCut / rmax
         
-        KMET.dk = 2.0*np.pi / (Length * rmax)
+        KPROC.dk = 2.0*np.pi / (Length * rmax)
         
-        KMET.applyFIM = filonLength > 0.0
-        KMET.filondk = 2.0*np.pi / (filonLength * rmax) if filonLength > 0.0 else 0.0
+        KPROC.applyFIM = filonLength > 0.0
+        KPROC.filondk = 2.0*np.pi / (filonLength * rmax) if filonLength > 0.0 else 0.0
         
-        KMET.applySAFIM = safilonTol > 0.0
-        KMET.sa_tol = safilonTol
+        KPROC.applySAFIM = safilonTol > 0.0
+        KPROC.sa_tol = safilonTol
 
-        KMET.applyDCM = converg_method == 'DCM'
-        KMET.applyPTAM = converg_method == 'PTAM'
+        KPROC.applyDCM = converg_method == 'DCM'
+        KPROC.applyPTAM = converg_method == 'PTAM'
         # ====================================================================
 
-
+        
         # ====================================================================
         grn = c_GRNSPEC()
         grn.nf = nf
@@ -690,27 +690,27 @@ class PyModel1D:
             c_pygrn_uiz = c_pygrn_uir = None
         
 
-        KMET = c_K_INTEG_PROCESS()
+        KPROC = c_K_INTEG_PROCESS()
 
         hs = max(abs(depsrc - deprcv), 1.0)
-        KMET.k0 = k0 * np.pi / hs
-        KMET.keps = keps if converg_method == 'none' else 0.0
+        KPROC.k0 = k0 * np.pi / hs
+        KPROC.keps = keps if converg_method == 'none' else 0.0
 
         # 最大震中距
         rmax = np.max(rs)
 
-        KMET.kcut = filonCut / rmax
+        KPROC.kcut = filonCut / rmax
         
-        KMET.dk = 2.0*np.pi / (Length * rmax)
+        KPROC.dk = 2.0*np.pi / (Length * rmax)
         
-        KMET.applyFIM = filonLength > 0.0
-        KMET.filondk = 2.0*np.pi / (filonLength * rmax) if filonLength > 0.0 else 0.0
+        KPROC.applyFIM = filonLength > 0.0
+        KPROC.filondk = 2.0*np.pi / (filonLength * rmax) if filonLength > 0.0 else 0.0
         
-        KMET.applySAFIM = safilonTol > 0.0
-        KMET.sa_tol = safilonTol
+        KPROC.applySAFIM = safilonTol > 0.0
+        KPROC.sa_tol = safilonTol
 
-        KMET.applyDCM = converg_method == 'DCM'
-        KMET.applyPTAM = converg_method == 'PTAM'
+        KPROC.applyDCM = converg_method == 'DCM'
+        KPROC.applyPTAM = converg_method == 'PTAM'
 
         # 运行C库函数
         #/////////////////////////////////////////////////////////////////////////////////

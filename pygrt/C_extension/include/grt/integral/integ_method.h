@@ -53,20 +53,20 @@ typedef struct {
  * @param[in]          rs           震中距数组 
  * @param[in]          statsstr     积分过程输出目录
  * @param[in]          suffix       文件名后缀
- * @param[in,out]      Kmet         K_INTEG_PROCESS 结构体指针
+ * @param[in,out]      Kproc         K_INTEG_PROCESS 结构体指针
  * 
  */
-void grt_KMET_init_fstats(
+void grt_KPROC_init_fstats(
     const size_t nr, const real_t *rs, 
-    const char *statsstr, const char *suffix, K_INTEG_PROCESS *Kmet);
+    const char *statsstr, const char *suffix, K_INTEG_PROCESS *Kproc);
 
 /**
  * 关闭 K_INTEG_PROCESS 结构体中的文件指针，并释放内存
  * 
  * @param[in]          nr           震中距数量
- * @param[in,out]      Kmet         K_INTEG_PROCESS 结构体指针
+ * @param[in,out]      Kproc         K_INTEG_PROCESS 结构体指针
  */
-void grt_KMET_destroy_fstats(const size_t nr, K_INTEG_PROCESS *Kmet);
+void grt_KPROC_destroy_fstats(const size_t nr, K_INTEG_PROCESS *Kproc);
 
 
 
@@ -77,7 +77,7 @@ void grt_KMET_destroy_fstats(const size_t nr, K_INTEG_PROCESS *Kmet);
  * @param[in,out]      mstat        `MODEL1D_STATE` 结构体指针
  * @param[in]          nr           震中距数量
  * @param[in]          rs           震中距数组 
- * @param[in,out]      Kmet         K_INTEG_PROCESS 结构体指针
+ * @param[in,out]      Kproc         K_INTEG_PROCESS 结构体指针
  * @param[in]          calc_upar    是否计算位移u的空间导数
  * @param[in]          kerfunc      计算核函数的函数指针
  * 
@@ -85,4 +85,4 @@ void grt_KMET_destroy_fstats(const size_t nr, K_INTEG_PROCESS *Kmet);
  * 
  */
 K_INTEG * grt_wavenumber_integral(
-    MODEL1D_STATE *mstat, size_t nr, real_t *rs, K_INTEG_PROCESS *Kmet, bool calc_upar, GRT_KernelFunc kerfunc);
+    MODEL1D_STATE *mstat, size_t nr, real_t *rs, K_INTEG_PROCESS *Kproc, bool calc_upar, GRT_KernelFunc kerfunc);

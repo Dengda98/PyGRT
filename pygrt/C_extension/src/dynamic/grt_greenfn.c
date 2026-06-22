@@ -1010,26 +1010,26 @@ int greenfn_main(int argc, char **argv) {
 
         
     // 波数积分方法
-    K_INTEG_PROCESS KMET = {0};
+    K_INTEG_PROCESS KPROC = {0};
     {   
         real_t hs = GRT_MAX(fabs(mod1d->depsrc - mod1d->deprcv), GRT_MIN_DEPTH_GAP_SRC_RCV);
-        KMET.k0 = Ctrl->K.k0 * PI / hs;
-        KMET.ampk = Ctrl->K.ampk;
-        KMET.keps = (Ctrl->C.applyPTAM || Ctrl->C.applyDCM)? 0.0 : Ctrl->K.keps;  // 如果使用了显式收敛方法，则不使用keps进行收敛判断
-        KMET.vmin = Ctrl->K.vmin;
+        KPROC.k0 = Ctrl->K.k0 * PI / hs;
+        KPROC.ampk = Ctrl->K.ampk;
+        KPROC.keps = (Ctrl->C.applyPTAM || Ctrl->C.applyDCM)? 0.0 : Ctrl->K.keps;  // 如果使用了显式收敛方法，则不使用keps进行收敛判断
+        KPROC.vmin = Ctrl->K.vmin;
         
-        KMET.kcut = Ctrl->L.kcut / rmax;
+        KPROC.kcut = Ctrl->L.kcut / rmax;
 
-        KMET.dk = PI2 / (Ctrl->L.Length * rmax);
+        KPROC.dk = PI2 / (Ctrl->L.Length * rmax);
 
-        KMET.applyFIM = Ctrl->L.FIM.active;
-        KMET.filondk = (Ctrl->L.FIM.active) ? PI2 / (Ctrl->L.FIM.Length * rmax) : 0.0;
+        KPROC.applyFIM = Ctrl->L.FIM.active;
+        KPROC.filondk = (Ctrl->L.FIM.active) ? PI2 / (Ctrl->L.FIM.Length * rmax) : 0.0;
 
-        KMET.applySAFIM = Ctrl->L.SAFIM.active;
-        KMET.sa_tol = Ctrl->L.SAFIM.tol;
+        KPROC.applySAFIM = Ctrl->L.SAFIM.active;
+        KPROC.sa_tol = Ctrl->L.SAFIM.tol;
         
-        KMET.applyDCM = Ctrl->C.applyDCM;
-        KMET.applyPTAM = Ctrl->C.applyPTAM;
+        KPROC.applyDCM = Ctrl->C.applyDCM;
+        KPROC.applyPTAM = Ctrl->C.applyPTAM;
     }
 
     // 在计算前打印所有参数
@@ -1059,7 +1059,7 @@ int greenfn_main(int argc, char **argv) {
 
     //==============================================================================
     // 计算格林函数
-    grt_integ_grn_spec(mod1d, &KMET, grn, !Ctrl->s.active);
+    grt_integ_grn_spec(mod1d, &KPROC, grn, !Ctrl->s.active);
     //==============================================================================
 
     // 使用fftw3做反傅里叶变换，并保存到 SAC 

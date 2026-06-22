@@ -26,7 +26,7 @@
  * @param[in,out]      mod1d            `MODEL1D` 结构体指针 
  * @param[in]      nr               震中距数量
  * @param[in]      rs               震中距数组 
- * @param[in,out]   Kmet            波数积分相关参数的结构体指针
+ * @param[in,out]   Kproc            波数积分相关参数的结构体指针
  * @param[in]       calc_upar         是否计算位移u的空间导数
  * @param[out]      grn               浮点数数组，不同震源不同阶数的静态格林函数的Z、R、T分量
  * @param[out]      grn_uiz           浮点数数组，不同震源不同阶数的ui_z的Z、R、T分量
@@ -36,7 +36,7 @@
  * 
  */
 void grt_integ_static_grn(
-    MODEL1D *mod1d, size_t nr, real_t *rs, K_INTEG_PROCESS *Kmet,
+    MODEL1D *mod1d, size_t nr, real_t *rs, K_INTEG_PROCESS *Kproc,
     bool calc_upar, 
     realChnlGrid grn[nr],
     realChnlGrid grn_uiz[nr],

@@ -59,7 +59,7 @@ static void recordin_GRN(
 
 
 void grt_integ_static_grn(
-    MODEL1D *mod1d, size_t nr, real_t *rs, K_INTEG_PROCESS *Kmet,
+    MODEL1D *mod1d, size_t nr, real_t *rs, K_INTEG_PROCESS *Kproc,
     bool calc_upar, 
     realChnlGrid grn[nr],
     realChnlGrid grn_uiz[nr],
@@ -89,7 +89,7 @@ void grt_integ_static_grn(
     bool needfstats = (statsstr!=NULL);
 
     // 输出积分过程文件
-    if(needfstats) grt_KMET_init_fstats(uniq_nr, uniq_rs, statsstr, "", Kmet);
+    if(needfstats) grt_KPROC_init_fstats(uniq_nr, uniq_rs, statsstr, "", Kproc);
 
     // ===================================================================================
     //                          Wavenumber Integration
@@ -98,10 +98,11 @@ void grt_integ_static_grn(
     // 模型状态
     MODEL1D_STATE *mstat = grt_init_mod1d_state(mod1d);
     grt_update_mod1d_state_omega(mstat, 1.0, true);
-    K_INTEG *Kint = grt_wavenumber_integral(mstat, uniq_nr, uniq_rs, Kmet, calc_upar, grt_static_kernel);
+    
+    K_INTEG *Kint = grt_wavenumber_integral(mstat, uniq_nr, uniq_rs, Kproc, calc_upar, grt_static_kernel);
     
     cplx_t src_mu = mstat->mu[mod1d->isrc];
-    cplx_t fac = Kmet->dk * 1.0/(4.0*PI * src_mu);
+    cplx_t fac = Kproc->dk * 1.0/(4.0*PI * src_mu);
     
     // 将积分结果记录到浮点数数组中
     recordin_GRN(uniq_nr, fac, Kint->sumJ, grn);
@@ -130,7 +131,7 @@ void grt_integ_static_grn(
     grt_free_K_INTEG(Kint);
     grt_free_mod1d_state(mstat);
 
-    if(needfstats)  grt_KMET_destroy_fstats(uniq_nr, Kmet);
+    if(needfstats)  grt_KPROC_destroy_fstats(uniq_nr, Kproc);
 
     GRT_SAFE_FREE_PTR(uniq_rs);
     GRT_SAFE_FREE_PTR(rs_refidx);
