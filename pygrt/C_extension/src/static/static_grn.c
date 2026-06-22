@@ -94,7 +94,7 @@ void grt_integ_static_grn(
     // ===================================================================================
     //                          Wavenumber Integration
     // 波数积分上限
-    Kmet->kmax = Kmet->k0;
+    Kproc->kmax = Kproc->k0;
     // 模型状态
     MODEL1D_STATE *mstat = grt_init_mod1d_state(mod1d);
     grt_update_mod1d_state_omega(mstat, 1.0, true);

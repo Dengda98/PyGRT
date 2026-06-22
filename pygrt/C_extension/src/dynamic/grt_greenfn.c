@@ -94,9 +94,7 @@ typedef struct {
     /** 波数积分收敛方法 */
     struct {
         bool active;
-        bool applyDCM;
-        bool applyPTAM;
-        bool applyNoConverg;
+        K_INTEG_CONVERG_METHOD convmet;
     } C;
     /** 波数积分上限 */
     struct {
@@ -361,7 +359,7 @@ printf("\n"
 "                 + d: Direct Convergence Method (DCM).\n"
 "                 + p: Peak-Trough Averaging Method (PTAM).\n"
 "                 + n: None.\n"
-"                 Default use +cd when fabs(depsrc-deprcv) <= %.1f.\n", GRT_MIN_DEPTH_GAP_SRC_RCV); printf(
+"                 Default use -Cd when fabs(depsrc-deprcv) <= %.1f.\n", GRT_MIN_DEPTH_GAP_SRC_RCV); printf(
 "\n"
 "    -E[p]<t0>[/<v0>]\n"
 "                 Introduce the time delay in results. The total \n"
@@ -643,20 +641,17 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 }
                 switch (optarg[0]){
                     case 'p':
-                        Ctrl->C.applyPTAM = true;
+                        Ctrl->C.convmet = K_INTEG_CONVERG_PTAM;
                         break;
                     case 'd':
-                        Ctrl->C.applyDCM = true;
+                        Ctrl->C.convmet = K_INTEG_CONVERG_DCM;
                         break;
                     case 'n':
-                        Ctrl->C.applyNoConverg = true;
+                        Ctrl->C.convmet = K_INTEG_CONVERG_REFUSE;
                         break;
                     default:
                         GRTBadOptionError(C, "-C+%s is not supported.", optarg);
                         break;
-                }
-                if(Ctrl->C.applyPTAM && Ctrl->C.applyDCM){
-                    GRTBadOptionError(C, "You can't set -Cd and -Cp both.");
                 }
                 break;
 
@@ -929,11 +924,6 @@ int greenfn_main(int argc, char **argv) {
     // 参考最小速度
     if(Ctrl->K.vmin == 0.0){
         Ctrl->K.vmin = GRT_MAX(vmin, GRT_GREENFN_K_VMIN);
-    } 
-
-    // 判断是否要自动使用收敛方法
-    if( ! Ctrl->C.active && fabs(Ctrl->D.deprcv - Ctrl->D.depsrc) <= GRT_MIN_DEPTH_GAP_SRC_RCV) {
-        Ctrl->C.applyDCM = true;
     }
 
     // 时窗长度 
@@ -1015,7 +1005,7 @@ int greenfn_main(int argc, char **argv) {
         real_t hs = GRT_MAX(fabs(mod1d->depsrc - mod1d->deprcv), GRT_MIN_DEPTH_GAP_SRC_RCV);
         KPROC.k0 = Ctrl->K.k0 * PI / hs;
         KPROC.ampk = Ctrl->K.ampk;
-        KPROC.keps = (Ctrl->C.applyPTAM || Ctrl->C.applyDCM)? 0.0 : Ctrl->K.keps;  // 如果使用了显式收敛方法，则不使用keps进行收敛判断
+        KPROC.keps = (Ctrl->C.convmet != K_INTEG_CONVERG_AUTO)? 0.0 : Ctrl->K.keps; // 如果使用了显式收敛方法，则不使用keps进行收敛判断
         KPROC.vmin = Ctrl->K.vmin;
         
         KPROC.kcut = Ctrl->L.kcut / rmax;
@@ -1028,13 +1018,7 @@ int greenfn_main(int argc, char **argv) {
         KPROC.applySAFIM = Ctrl->L.SAFIM.active;
         KPROC.sa_tol = Ctrl->L.SAFIM.tol;
         
-        KPROC.applyDCM = Ctrl->C.applyDCM;
-        KPROC.applyPTAM = Ctrl->C.applyPTAM;
-    }
-
-    // 在计算前打印所有参数
-    if(! Ctrl->s.active){
-        print_Ctrl(Ctrl);
+        KPROC.cvgmet = Ctrl->C.convmet;
     }
 
     // 格林函数频谱

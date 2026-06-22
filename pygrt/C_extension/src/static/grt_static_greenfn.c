@@ -54,9 +54,7 @@ typedef struct {
     /** 波数积分收敛方法 */
     struct {
         bool active;
-        bool applyDCM;
-        bool applyPTAM;
-        bool applyNoConverg;
+        K_INTEG_CONVERG_METHOD convmet;
     } C;
     /** 波数积分上限 */
     struct {
@@ -208,7 +206,7 @@ printf("\n"
 "                 + d: Direct Convergence Method (DCM).\n"
 "                 + p: Peak-Trough Averaging Method (PTAM).\n"
 "                 + n: None.\n"
-"                 Default use +cd when fabs(depsrc-deprcv) <= %.1f.\n", GRT_MIN_DEPTH_GAP_SRC_RCV); printf(
+"                 Default use -Cd when fabs(depsrc-deprcv) <= %.1f.\n", GRT_MIN_DEPTH_GAP_SRC_RCV); printf(
 "\n"
 "    -Bf|F|r|R|h|H\n"
 "                 Boundary condition of top layer (lowercase) and\n"
@@ -371,20 +369,17 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 }
                 switch (optarg[0]){
                     case 'p':
-                        Ctrl->C.applyPTAM = true;
+                        Ctrl->C.convmet = K_INTEG_CONVERG_PTAM;
                         break;
                     case 'd':
-                        Ctrl->C.applyDCM = true;
+                        Ctrl->C.convmet = K_INTEG_CONVERG_DCM;
                         break;
                     case 'n':
-                        Ctrl->C.applyNoConverg = true;
+                        Ctrl->C.convmet = K_INTEG_CONVERG_REFUSE;
                         break;
                     default:
                         GRTBadOptionError(C, "-C+%s is not supported.", optarg);
                         break;
-                }
-                if(Ctrl->C.applyPTAM && Ctrl->C.applyDCM){
-                    GRTBadOptionError(C, "You can't set -Cd and -Cp both.");
                 }
                 break;
 
@@ -575,11 +570,6 @@ int static_greenfn_main(int argc, char **argv){
 
     // 边界条件
     grt_set_mod1d_boundary(mod1d, Ctrl->B.topbound, Ctrl->B.botbound);
-
-    // 判断是否要自动使用收敛方法
-    if( ! Ctrl->C.active && fabs(Ctrl->D.deprcv - Ctrl->D.depsrc) <= GRT_MIN_DEPTH_GAP_SRC_RCV) {
-        Ctrl->C.applyDCM = true;
-    }
     
     // 设置积分间隔默认值
     if(Ctrl->L.Length == 0.0)  Ctrl->L.Length = GRT_GREENFN_L_LENGTH;
@@ -604,7 +594,7 @@ int static_greenfn_main(int argc, char **argv){
     {   
         real_t hs = GRT_MAX(fabs(mod1d->depsrc - mod1d->deprcv), GRT_MIN_DEPTH_GAP_SRC_RCV);
         KPROC.k0 = Ctrl->K.k0 * PI / hs;
-        KPROC.keps = (Ctrl->C.applyPTAM || Ctrl->C.applyDCM)? 0.0 : Ctrl->K.keps;  // 如果使用了显式收敛方法，则不使用keps进行收敛判断
+        KPROC.keps = (Ctrl->C.convmet != K_INTEG_CONVERG_AUTO)? 0.0 : Ctrl->K.keps;  // 如果使用了显式收敛方法，则不使用keps进行收敛判断
 
         // 最大震中距
         real_t rmax = Ctrl->rs[grt_findMax_real_t(Ctrl->rs, Ctrl->nr)];   
@@ -619,8 +609,7 @@ int static_greenfn_main(int argc, char **argv){
         KPROC.applySAFIM = Ctrl->L.SAFIM.active;
         KPROC.sa_tol = Ctrl->L.SAFIM.tol;
         
-        KPROC.applyDCM = Ctrl->C.applyDCM;
-        KPROC.applyPTAM = Ctrl->C.applyPTAM;
+        KPROC.cvgmet = Ctrl->C.convmet;
     }
 
     //==============================================================================
