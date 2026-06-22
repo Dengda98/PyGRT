@@ -1,5 +1,5 @@
 /**
- * @file   integ_method.c
+ * @file   integ_process.c
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2025-12
  * 
@@ -13,7 +13,7 @@
 #include "grt/integral/safim.h"
 #include "grt/integral/dwm.h"
 #include "grt/integral/dcm.h"
-#include "grt/integral/integ_method.h"
+#include "grt/integral/integ_process.h"
 
 
 
@@ -37,7 +37,7 @@ void grt_KPROC_init_fstats(
     // PTAM的积分中间结果, 每个震中距两个文件，因为PTAM对不同震中距使用不同的dk
     // 在文件名后加后缀，区分不同震中距
     char *ptam_dirname = NULL;
-    if(Kproc->applyPTAM){
+    if(Kproc->cvgmet == K_INTEG_CONVERG_PTAM){
         for(size_t ir = 0; ir < nr; ++ir){
             // 新建文件夹目录 
             GRT_SAFE_ASPRINTF(&ptam_dirname, "%s/PTAM_%04zu_%.5e", statsstr, ir, rs[ir]);
@@ -92,7 +92,7 @@ K_INTEG * grt_wavenumber_integral(
 
     // 求和 sum F(ki,w)Jm(ki*r)ki 
     K_INTEG *Kint = grt_init_K_INTEG(calc_upar, nr);
-    Kint->applyDCM = Kproc->applyDCM;
+    Kint->applyDCM = Kproc->cvgmet == K_INTEG_CONVERG_DCM;
     Kint->kmax = Kproc->kmax;
 
     // 准备 DCM，计算波数上限处的核函数
@@ -123,13 +123,13 @@ K_INTEG * grt_wavenumber_integral(
     }
 
     // 显式收敛
-    if(Kproc->applyPTAM){
+    if(Kproc->cvgmet == K_INTEG_CONVERG_PTAM){
         grt_PTA_method(
             mstat, k, Kproc->dk, nr, rs, 
             Kint, Kproc->ptam_fstatsnr, kerfunc);
         if(mstat->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
     }
-    else if(Kproc->applyDCM){
+    else if(Kproc->cvgmet == K_INTEG_CONVERG_DCM){
         grt_dcm_correction(nr, rs, kcut, Kint, !isFilon);
     }
 

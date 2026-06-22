@@ -17,7 +17,7 @@
 
 
 #include "grt/common/model.h"
-#include "grt/integral/integ_method.h"
+#include "grt/integral/integ_process.h"
 
 
 /**

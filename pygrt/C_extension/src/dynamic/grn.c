@@ -21,7 +21,7 @@
 
 #include "grt/dynamic/grn.h"
 #include "grt/dynamic/grnspec.h"
-#include "grt/integral/integ_method.h"
+#include "grt/integral/integ_process.h"
 
 #include "grt/common/const.h"
 #include "grt/common/model.h"

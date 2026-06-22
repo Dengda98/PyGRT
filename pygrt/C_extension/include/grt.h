@@ -65,7 +65,7 @@
 #include "grt/integral/dcm.h"
 #include "grt/integral/dwm.h"
 #include "grt/integral/fim.h"
-#include "grt/integral/integ_method.h"
+#include "grt/integral/integ_process.h"
 #include "grt/integral/iostats.h"
 #include "grt/integral/k_integ.h"
 #include "grt/integral/kernel.h"

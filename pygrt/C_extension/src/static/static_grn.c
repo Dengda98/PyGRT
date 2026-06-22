@@ -22,7 +22,7 @@
 #include "grt/static/static_grn.h"
 #include "grt/common/const.h"
 #include "grt/common/model.h"
-#include "grt/integral/integ_method.h"
+#include "grt/integral/integ_process.h"
 #include "grt/common/search.h"
 
 

@@ -16,7 +16,7 @@
 
 #include "grt/common/model.h"
 #include "grt/dynamic/grnspec.h"
-#include "grt/integral/integ_method.h"
+#include "grt/integral/integ_process.h"
 
 /**
  * 积分计算Z, R, T三个分量格林函数的频谱的核心函数（被Python调用）  

@@ -1,5 +1,5 @@
 /**
- * @file   integ_method.h
+ * @file   integ_process.h
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2025-12
  * 
@@ -16,6 +16,21 @@
 #include "grt/integral/k_integ.h"
 #include "grt/integral/kernel.h"
 
+// 波数积分收敛方法
+typedef enum {
+    K_INTEG_CONVERG_AUTO = 0,  ///< 默认收敛处理由程序根据情况来决定
+    K_INTEG_CONVERG_REFUSE,  ///< 绝对不做收敛处理
+    K_INTEG_CONVERG_DCM,   ///< 直接收敛法
+    K_INTEG_CONVERG_PTAM       ///< 峰谷平均法
+} K_INTEG_CONVERG_METHOD;
+
+#define GRT_EXPLAIN_CVGMETHOD(code) (\
+    (code == K_INTEG_CONVERG_AUTO)     ? "Auto" : \
+    (code == K_INTEG_CONVERG_REFUSE)      ? "No Convergence" : \
+    (code == K_INTEG_CONVERG_DCM)         ? "Direct Convergence Method" : \
+    (code == K_INTEG_CONVERG_PTAM)        ? "Peak-Trough Averaging Method" : \
+    "Unsupported code" \
+)
 
 // 描述不同波数积分方法的结构体
 typedef struct {
@@ -36,9 +51,7 @@ typedef struct {
     bool applySAFIM;  ///< 是否使用 SAFIM
     real_t sa_tol;    ///< SAFIM 的收敛极限
     
-    // 积分显式收敛方法
-    bool applyDCM;    ///< 是否使用 DCM
-    bool applyPTAM;   ///< 是否使用 PTAM
+    K_INTEG_CONVERG_METHOD cvgmet;  ///< 波数积分收敛方法
     
     FILE *fstats;  ///< 保存核函数的文件指针
     FILE *(*ptam_fstatsnr)[2];  ///< 保存 PTAM 中核函数以及波峰波谷的文件指针
