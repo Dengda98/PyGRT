@@ -33,7 +33,7 @@ __all__ = [
     "PCPLX",
 
     "c_MODEL1D",
-    "c_K_INTEG_METHOD",
+    "c_K_INTEG_PROCESS",
     "c_GRNSPEC"
 ]
 
@@ -97,9 +97,9 @@ class c_MODEL1D(Structure):
     ]
 
 
-class c_K_INTEG_METHOD(Structure):
+class c_K_INTEG_PROCESS(Structure):
     """
-    和C结构体 K_INTEG_METHOD 作匹配
+    和C结构体 K_INTEG_PROCESS 作匹配
     """
 
     _fields_ = [

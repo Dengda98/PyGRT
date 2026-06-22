@@ -36,7 +36,7 @@
  * 
  */
 void grt_integ_static_grn(
-    MODEL1D *mod1d, size_t nr, real_t *rs, K_INTEG_METHOD *Kmet,
+    MODEL1D *mod1d, size_t nr, real_t *rs, K_INTEG_PROCESS *Kmet,
     bool calc_upar, 
     realChnlGrid grn[nr],
     realChnlGrid grn_uiz[nr],

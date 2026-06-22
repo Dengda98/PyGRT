@@ -19,12 +19,12 @@
 
 void grt_KMET_init_fstats(
     const size_t nr, const real_t *rs, 
-    const char *statsstr, const char *suffix, K_INTEG_METHOD *Kmet)
+    const char *statsstr, const char *suffix, K_INTEG_PROCESS *Kmet)
 {
     if(statsstr == NULL)  return;
 
     if(Kmet->fstats != NULL){
-        GRTRaiseError("fstats != NULL in K_INTEG_METHOD.");
+        GRTRaiseError("fstats != NULL in K_INTEG_PROCESS.");
     }
 
     // 为当前频率创建波数积分记录文件
@@ -56,7 +56,7 @@ void grt_KMET_init_fstats(
 }
 
 
-void grt_KMET_destroy_fstats(const size_t nr, K_INTEG_METHOD *Kmet)
+void grt_KMET_destroy_fstats(const size_t nr, K_INTEG_PROCESS *Kmet)
 {
     if(Kmet->fstats!=NULL) fclose(Kmet->fstats);
 
@@ -78,7 +78,7 @@ void grt_KMET_destroy_fstats(const size_t nr, K_INTEG_METHOD *Kmet)
 
 
 K_INTEG * grt_wavenumber_integral(
-    MODEL1D_STATE *mstat, size_t nr, real_t *rs, K_INTEG_METHOD *Kmet, bool calc_upar, GRT_KernelFunc kerfunc)
+    MODEL1D_STATE *mstat, size_t nr, real_t *rs, K_INTEG_PROCESS *Kmet, bool calc_upar, GRT_KernelFunc kerfunc)
 {
     real_t k = 0.0;
 

@@ -1010,7 +1010,7 @@ int greenfn_main(int argc, char **argv) {
 
         
     // 波数积分方法
-    K_INTEG_METHOD KMET = {0};
+    K_INTEG_PROCESS KMET = {0};
     {   
         real_t hs = GRT_MAX(fabs(mod1d->depsrc - mod1d->deprcv), GRT_MIN_DEPTH_GAP_SRC_RCV);
         KMET.k0 = Ctrl->K.k0 * PI / hs;

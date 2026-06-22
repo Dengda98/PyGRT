@@ -27,7 +27,7 @@
  * @param[in]       print_progressbar        是否打印进度条
  * 
  */ 
-void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_METHOD *Kmet, GRNSPEC *grn, const bool print_progressbar);
+void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kmet, GRNSPEC *grn, const bool print_progressbar);
 
 
 

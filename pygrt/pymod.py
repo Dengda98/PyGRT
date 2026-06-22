@@ -353,7 +353,7 @@ class PyModel1D:
 
 
         # ====================================================================
-        KMET = c_K_INTEG_METHOD()
+        KMET = c_K_INTEG_PROCESS()
         hs = max(abs(depsrc - deprcv), 1.0)
         KMET.k0 = k0 * np.pi / hs
         KMET.ampk = ampk
@@ -690,7 +690,7 @@ class PyModel1D:
             c_pygrn_uiz = c_pygrn_uir = None
         
 
-        KMET = c_K_INTEG_METHOD()
+        KMET = c_K_INTEG_PROCESS()
 
         hs = max(abs(depsrc - deprcv), 1.0)
         KMET.k0 = k0 * np.pi / hs

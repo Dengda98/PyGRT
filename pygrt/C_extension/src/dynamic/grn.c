@@ -59,7 +59,7 @@ static void recordin_GRN(size_t iw, size_t nr, cplx_t coef, cplxIntegGrid sumJ[n
 
 
 
-void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_METHOD *Kmet, GRNSPEC *grn, const bool print_progressbar)
+void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kmet, GRNSPEC *grn, const bool print_progressbar)
 {
     // 程序运行开始时间
     struct timeval begin_t;
@@ -106,10 +106,10 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_METHOD *Kmet, GRNSPEC *grn, cons
 
         cplx_t coef = - dk*fac / GRT_SQUARE(omega); // 最终要乘上的系数
 
-        K_INTEG_METHOD *local_Kmet = NULL;
+        K_INTEG_PROCESS *local_Kmet = NULL;
     #ifdef _OPENMP 
         // 定义局部对象
-        K_INTEG_METHOD __KMET = *Kmet;  // 只需浅拷贝
+        K_INTEG_PROCESS __KMET = *Kmet;  // 只需浅拷贝
         local_Kmet = &__KMET;
     #else 
         local_Kmet = Kmet;
