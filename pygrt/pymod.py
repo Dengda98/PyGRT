@@ -181,7 +181,7 @@ class PyModel1D:
         filonLength:float=0.0,
         safilonTol:float=0.0,
         filonCut:float=0.0,
-        converg_method:Union[str,None]=None,
+        converg_method:Literal['AUTO', 'NONE', 'DCM', 'PTAM']='AUTO',
         delayT0:float=0.0,
         delayV0:float=0.0,
         calc_upar:bool=False,
@@ -218,10 +218,6 @@ class PyModel1D:
         # 只能设置一种filon积分方法
         if safilonTol > 0.0 and filonLength > 0.0:
             raise ValueError(f"You should only set one of filonLength and safilonTol.")
-        
-        # 只能设置规定的收敛方法
-        if converg_method is not None and converg_method not in ['DCM', 'PTAM', 'none']:
-            raise ValueError(f'Wrong converg_method ({converg_method})')
         
         nf = nt//2+1 
         df = 1/(nt*dt)
@@ -267,10 +263,6 @@ class PyModel1D:
         # 参考最小速度
         if vmin_ref == 0.0:
             vmin_ref = max(self.vmin, 0.1)
-
-        # 若不指定显式收敛方法，则根据情况自动使用PTAM
-        if converg_method is None and abs(depsrc - deprcv) <= 1.0:
-            converg_method = 'DCM'
 
         # 时窗长度
         winT = nt*dt 
@@ -323,41 +315,12 @@ class PyModel1D:
             nstatsidxs = 0
 
 
-        # ===========================================
-        # 打印参数设置 
-        if print_runtime:
-            print(f"k0={k0}")
-            print(f"ampk={ampk}")
-            print(f"keps={keps}")
-            print(f"vmin={vmin_ref}")
-            print(f"Length={Length}")
-            print(f"kcut={filonCut}")
-            print(f"filonLength={filonLength}")
-            print(f"safilonTol={safilonTol}")
-            print(f'converg_method={converg_method}')
-            
-            print(f"nt={nt}")
-            print(f"dt={dt}")
-            print(f"winT={winT}")
-            print(f"zeta={zeta}")
-            print(f"delayT0={delayT0}")
-            print(f"delayV0={delayV0}")
-            print(f"tmax={tmax}")
-            
-            print(f"maxfreq(Hz)={freqs[nf-1]}")
-            print(f"f1(Hz)={freqs[nf1]}")
-            print(f"f2(Hz)={freqs[nf2]}")
-            print(f"distances(km)=", distarr)
-            if nstatsidxs > 0:
-                print(f"statsfile_index=", statsidxs)
-
-
         # ====================================================================
         KPROC = c_K_INTEG_PROCESS()
         hs = max(abs(depsrc - deprcv), 1.0)
         KPROC.k0 = k0 * np.pi / hs
         KPROC.ampk = ampk
-        KPROC.keps = keps if converg_method == 'none' else 0.0
+        KPROC.keps = keps if converg_method.upper() != 'AUTO' else 0.0
         KPROC.vmin = vmin_ref
 
         KPROC.kcut = filonCut / rmax
@@ -370,11 +333,10 @@ class PyModel1D:
         KPROC.applySAFIM = safilonTol > 0.0
         KPROC.sa_tol = safilonTol
 
-        KPROC.applyDCM = converg_method == 'DCM'
-        KPROC.applyPTAM = converg_method == 'PTAM'
+        KPROC.cvgmet = K_INTEG_CVGMET_DICT[converg_method.upper()]
         # ====================================================================
 
-        
+
         # ====================================================================
         grn = c_GRNSPEC()
         grn.nf = nf
@@ -401,7 +363,7 @@ class PyModel1D:
         #     爆炸源 EX[ZR]                          1e-20 cm/(dyne*cm)
         #     剪切源 DD[ZR],DS[ZRT],SS[ZRT]          1e-20 cm/(dyne*cm)
         #=================================================================================
-        C_grt_integ_grn_spec(self.c_mod1d, pointer(KMET), pointer(grn), print_runtime)
+        C_grt_integ_grn_spec(self.c_mod1d, pointer(KPROC), pointer(grn), print_runtime)
         #=================================================================================
         #/////////////////////////////////////////////////////////////////////////////////
 
@@ -504,7 +466,7 @@ class PyModel1D:
         filonLength:float=0.0,
         safilonTol:float=0.0,
         filonCut:float=0.0,
-        converg_method:Union[str,None]=None,
+        converg_method:Literal['AUTO', 'NONE', 'DCM', 'PTAM']='AUTO',
         delayT0:float=0.0,
         delayV0:float=0.0,
         skipImagComps:bool=False,
@@ -536,7 +498,7 @@ class PyModel1D:
             :param    filonLength:   integration step of Fixed-Interval Filon's Integration Method
             :param    safilonTol:    precision of Self-Adaptive Filon's Integration Method
             :param    filonCut:      The splitting point of DWM and (SA)FIM, k*=<filonCut>/rmax, default is 0
-            :param    converg_method:   The method of explicit convergence, you can set "DCM", "PTAM" or "none". Default use "DCM" when abs(depsrc-deprcv) <= 1.0 km
+            :param    converg_method:   The method of explicit convergence, you can set "AUTO", "NONE", "DCM" or "PTAM". Default use "AUTO".
             :param    skipImagComps:    skip the amplitude compensation from imaginary frequency.
             :param    calc_upar:     whether calculate the spatial derivatives of displacements.
             :param    gf_source:     The source type to be calculated
@@ -583,7 +545,7 @@ class PyModel1D:
         filonLength:float=0.0,
         safilonTol:float=0.0,
         filonCut:float=0.0,
-        converg_method:Union[str,None]=None,
+        converg_method:Literal['AUTO', 'NONE', 'DCM', 'PTAM']='AUTO',
         calc_upar:bool=False,
         statsfile:Union[str,None]=None):
 
@@ -603,7 +565,7 @@ class PyModel1D:
             :param       filonLength:   integration step of Fixed-Interval Filon's Integration Method
             :param       safilonTol:    precision of Self-Adaptive Filon's Integration Method
             :param       filonCut:      The splitting point of DWM and (SA)FIM, k*=<filonCut>/rmax, default is 0
-            :param    converg_method:   The method of explicit convergence, you can set "DCM", "PTAM" or "none". Default use "DCM" when abs(depsrc-deprcv) <= 1.0 km
+            :param    converg_method:   The method of explicit convergence, you can set "AUTO", "NONE", "DCM" or "PTAM". Default use "AUTO".
             :param       calc_upar:     whether calculate the spatial derivatives of displacements.
             :param       statsfile:     directory path for saving the statsfile during k integral, used to debug or observe the variations of :math:`F(k,\omega)` and :math:`F(k,\omega)J_m(kr)k` 
             
@@ -629,10 +591,6 @@ class PyModel1D:
         # 只能设置一种filon积分方法
         if safilonTol > 0.0 and filonLength > 0.0:
             raise ValueError(f"You should only set one of filonLength and safilonTol.")
-        
-        # 只能设置规定的收敛方法
-        if converg_method is not None and converg_method not in ['DCM', 'PTAM', 'none']:
-            raise ValueError(f'Wrong converg_method ({converg_method})')
 
         depsrc = self.depsrc
         deprcv = self.deprcv
@@ -671,10 +629,6 @@ class PyModel1D:
         if Length == 0.0:
             Length = 15.0
 
-        # 若不指定显式收敛方法，则根据情况自动使用PTAM
-        if converg_method is None and abs(depsrc - deprcv) <= 1.0:
-            converg_method = 'DCM'
-
         # 积分状态文件
         c_statsfile = None 
         if statsfile is not None:
@@ -690,11 +644,12 @@ class PyModel1D:
             c_pygrn_uiz = c_pygrn_uir = None
         
 
+        # ====================================================================
         KPROC = c_K_INTEG_PROCESS()
 
         hs = max(abs(depsrc - deprcv), 1.0)
         KPROC.k0 = k0 * np.pi / hs
-        KPROC.keps = keps if converg_method == 'none' else 0.0
+        KPROC.keps = keps if converg_method.upper() != 'AUTO' else 0.0
 
         # 最大震中距
         rmax = np.max(rs)
@@ -709,8 +664,10 @@ class PyModel1D:
         KPROC.applySAFIM = safilonTol > 0.0
         KPROC.sa_tol = safilonTol
 
-        KPROC.applyDCM = converg_method == 'DCM'
-        KPROC.applyPTAM = converg_method == 'PTAM'
+        KPROC.cvgmet = K_INTEG_CVGMET_DICT[converg_method.upper()]
+        # ====================================================================
+
+
 
         # 运行C库函数
         #/////////////////////////////////////////////////////////////////////////////////
@@ -720,7 +677,7 @@ class PyModel1D:
         #     剪切源 DD[ZR],DS[ZRT],SS[ZRT]          1e-20 cm/(dyne*cm)
         #=================================================================================
         C_grt_integ_static_grn(
-            self.c_mod1d, nr, c_rs, pointer(KMET),
+            self.c_mod1d, nr, c_rs, pointer(KPROC),
             calc_upar, c_pygrn, c_pygrn_uiz, c_pygrn_uir,
             c_statsfile
         )

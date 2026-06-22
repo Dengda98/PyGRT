@@ -184,59 +184,6 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
     GRT_SAFE_FREE_PTR(Ctrl);
 }
 
-
-/** 打印结构体中的参数 */
-static void print_Ctrl(const GRT_MODULE_CTRL *Ctrl){
-    grt_print_mod1d(Ctrl->M.mod1d);
-
-    const char format[]      = "   \%-20s  \%s\n";
-    const char format_real[] = "   \%-20s  \%.3f\n";
-    const char format_size[]  = "   \%-20s  \%zu\n";
-    char line[100];
-    printf("------------------------------------------------\n");
-    printf(format, "PARAMETER", "VALUE");
-    printf(format, "model_path", Ctrl->M.s_modelpath);
-    printf(format_real, "k0", Ctrl->K.k0);
-    printf(format_real, "ampk", Ctrl->K.ampk);
-    printf(format_real, "keps", Ctrl->K.keps);
-    printf(format_real, "vmin", Ctrl->K.vmin);
-    printf(format_real, "Length", Ctrl->L.Length);
-    printf(format_real, "kcut",   Ctrl->L.kcut);
-    printf(format_real, "filonLength",   Ctrl->L.FIM.Length);
-    printf(format_real, "safilonTol",   Ctrl->L.SAFIM.tol);
-    printf(format, "applyDCM", (Ctrl->C.applyDCM)? "true" : "false");
-    printf(format, "applyPTAM", (Ctrl->C.applyPTAM)? "true" : "false");
-
-    printf(format_size, "topbound", (size_t)Ctrl->B.topbound);
-    printf(format_size, "botbound", (size_t)Ctrl->B.botbound);
-
-    printf(format_size, "nt", Ctrl->N.nt);
-    printf(format_real, "dt", Ctrl->N.dt);
-    printf(format_real, "winT", Ctrl->N.winT);
-    printf(format_real, "zeta", Ctrl->N.zeta);
-    printf(format_real, "delayT0", Ctrl->E.delayT0);
-    printf(format_real, "delayV0", Ctrl->E.delayV0);
-    printf(format_real, "tmax", Ctrl->E.delayT0 + Ctrl->N.winT);
-    
-    printf(format_real, "maxfreq(Hz)", Ctrl->N.freqs[Ctrl->N.nf-1]);
-    printf(format_real, "f1(Hz)", Ctrl->N.freqs[Ctrl->H.nf1]);
-    printf(format_real, "f2(Hz)", Ctrl->N.freqs[Ctrl->H.nf2]);
-    printf(format, "distances(km)", Ctrl->R.s_raw);
-    if(Ctrl->S.nstatsidxs > 0){
-        printf(format, "statsfile_index", Ctrl->S.s_raw);
-    }
-    line[0] = '\0';
-    if(Ctrl->G.doEX) snprintf(line+strlen(line), sizeof(line)-strlen(line), "EX,");
-    if(Ctrl->G.doVF)  snprintf(line+strlen(line), sizeof(line)-strlen(line), "VF,");
-    if(Ctrl->G.doHF)  snprintf(line+strlen(line), sizeof(line)-strlen(line), "HF,");
-    if(Ctrl->G.doDC)  snprintf(line+strlen(line), sizeof(line)-strlen(line), "DC,");
-    printf(format, "sources", line);
-    
-    printf("------------------------------------------------\n");
-
-    printf("\n\n");
-}
-
 /** 打印使用说明 */
 static void print_help(){
 printf("\n"
@@ -1109,20 +1056,6 @@ int greenfn_main(int argc, char **argv) {
         GRTRaiseWarning(
             "The source is located in the liquid layer, "
             "therefore only the Green's Funtions for the Explosion source will be computed.\n");
-    }
-
-
-    
-    // 打印走时
-    if( ! Ctrl->s.active){
-        printf("\n\n");
-        printf("------------------------------------------------\n");
-        printf(" Distance(km)     Tp(secs)         Ts(secs)     \n");
-        for(size_t ir=0; ir<Ctrl->R.nr; ++ir){
-            printf(" %-15s  %-15.3f  %-15.3f\n", Ctrl->R.s_rs[ir], travtPS[ir][0], travtPS[ir][1]);
-        }
-        printf("------------------------------------------------\n");
-        printf("\n");
     }
 
     // 释放内存
