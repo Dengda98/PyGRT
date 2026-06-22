@@ -95,7 +95,7 @@ void grt_integ_static_grn(
     // ===================================================================================
     //                          Wavenumber Integration
     // 波数积分上限
-    if(Kproc->fixed_k0){
+    if(Kproc->k0_is_fixed){
         Kproc->kmax = Kproc->k0;
     } else {
         size_t ncount = 0, nk = 0;

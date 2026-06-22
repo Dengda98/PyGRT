@@ -61,7 +61,7 @@ typedef struct {
         bool active;
         real_t keps;
         real_t k0;
-        bool fixed_k0;
+        bool k0_is_fixed;
     } K;
     /** 波数积分过程的核函数文件 */
     struct {
@@ -408,7 +408,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                             break;
 
                         case 'f':
-                            Ctrl->K.fixed_k0 = true;
+                            Ctrl->K.k0_is_fixed = true;
                             break;
 
                         default:
@@ -599,7 +599,7 @@ int static_greenfn_main(int argc, char **argv){
     {   
         real_t hs = GRT_MAX(fabs(mod1d->depsrc - mod1d->deprcv), GRT_MIN_DEPTH_GAP_SRC_RCV);
         KPROC.k0 = Ctrl->K.k0 * PI / hs;
-        KPROC.fixed_k0 = Ctrl->K.fixed_k0;
+        KPROC.k0_is_fixed = Ctrl->K.k0_is_fixed;
         KPROC.keps = (Ctrl->C.convmet != K_INTEG_CONVERG_AUTO)? 0.0 : Ctrl->K.keps;  // 如果使用了显式收敛方法，则不使用keps进行收敛判断
 
         // 最大震中距

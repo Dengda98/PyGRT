@@ -83,7 +83,7 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kproc, GRNSPEC *grn, co
 
     // 静态解的 kmax ，用于动态解积分上限中的 k0
     real_t static_kmax = 0.0;
-    if(Kproc->fixed_k0){
+    if(Kproc->k0_is_fixed){
         static_kmax = Kproc->k0;
     } else {
         size_t ncount = 0;

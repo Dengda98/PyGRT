@@ -130,7 +130,7 @@ K_INTEG * grt_wavenumber_integral(
         if(mstat->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
     }
     else if(Kproc->cvgmet == K_INTEG_CONVERG_DCM){
-        grt_dcm_correction(nr, rs, Kint, !isFilon);
+        grt_dcm_correction(nr, rs, kcut, Kint, !isFilon);
     }
 
 
