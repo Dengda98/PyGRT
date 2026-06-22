@@ -27,6 +27,8 @@ __all__ = [
     "NPCT_REAL_TYPE",
     "NPCT_CMPLX_TYPE",
 
+    "K_INTEG_CVGMET_DICT",
+
     "REAL",
     "PREAL",
     "CPLX",
@@ -51,6 +53,13 @@ MECHANISM_NUM = 6
 
 NPCT_REAL_TYPE = 'f8'
 NPCT_CMPLX_TYPE = 'c16'
+
+K_INTEG_CVGMET_DICT = {
+    'AUTO': 0,
+    'NONE': 1,
+    'DCM': 2,
+    'PTAM': 3
+}
 
 
 class CPLX(Structure):
@@ -119,8 +128,7 @@ class c_K_INTEG_PROCESS(Structure):
         ('applySAFIM', c_bool),
         ('sa_tol', REAL),
 
-        ('applyDCM', c_bool),
-        ('applyPTAM', c_bool),
+        ('cvgmet', c_int),
 
         ('fstats', c_void_p),
         ('ptam_fstatsnr', c_void_p),
