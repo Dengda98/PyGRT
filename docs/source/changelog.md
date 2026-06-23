@@ -1,6 +1,18 @@
 Changelog
 ====================
 
+## PyGRT v0.16.1
+
+Bug fixed, feature enhanced
+
+### Pull requests
+* FIX: use the epicenter distance of the GFs in the coordinate transformation of the static solution by [@Dengda98](https://github.com/Dengda98) in [#266](https://github.com/Dengda98/PyGRT/pull/266)
+* Build(deps): Bump actions/checkout from 6 to 7 by @dependabot[bot] in [#267](https://github.com/Dengda98/PyGRT/pull/267)
+* FEAT+FIX: support small epicentral distance, support adaptive upper bound, fix DCM for z-directive by [@Dengda98](https://github.com/Dengda98) in [#268](https://github.com/Dengda98/PyGRT/pull/268)
+
+
+**Full Changelog**: [v0.16.0...v0.16.1](https://github.com/Dengda98/PyGRT/compare/v0.16.0...v0.16.1)
+
 ## PyGRT v0.16.0
 
 Release _**Surface-wave modules**_ 
