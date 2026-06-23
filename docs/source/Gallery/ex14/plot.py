@@ -30,9 +30,11 @@ t = np.arange(0, nt)*dt * Vs/r
 
 pymod = pygrt.PyModel1D(modarr, depsrc, deprcv)  # 整理好的模型对象
 # 计算格林函数
-st_none = pymod.compute_grn(distarr=rs, nt=nt, dt=dt, converg_method='none')[0]
-st_dcm = pymod.compute_grn(distarr=rs, nt=nt, dt=dt, converg_method='DCM')[0]
-st_ptam = pymod.compute_grn(distarr=rs, nt=nt, dt=dt, converg_method='DCM')[0]
+# 限制 k0 不太高以进行对比
+k0 = 10
+st_none = pymod.compute_grn(distarr=rs, nt=nt, dt=dt, k0=k0, converg_method='none')[0]
+st_dcm = pymod.compute_grn(distarr=rs, nt=nt, dt=dt, k0=k0, converg_method='DCM')[0]
+st_ptam = pymod.compute_grn(distarr=rs, nt=nt, dt=dt, k0=k0, converg_method='DCM')[0]
 
 # 卷积阶跃函数
 pygrt.utils.stream_integral(st_none)

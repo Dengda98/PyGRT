@@ -21,7 +21,8 @@
 
 #include "grt/dynamic/grn.h"
 #include "grt/dynamic/grnspec.h"
-#include "grt/integral/integ_method.h"
+#include "grt/static/static_util.h"
+#include "grt/integral/integ_process.h"
 
 #include "grt/common/const.h"
 #include "grt/common/model.h"
@@ -59,7 +60,7 @@ static void recordin_GRN(size_t iw, size_t nr, cplx_t coef, cplxIntegGrid sumJ[n
 
 
 
-void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_METHOD *Kmet, GRNSPEC *grn, const bool print_progressbar)
+void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kproc, GRNSPEC *grn, const bool print_progressbar)
 {
     // 程序运行开始时间
     struct timeval begin_t;
@@ -67,7 +68,7 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_METHOD *Kmet, GRNSPEC *grn, cons
 
     const real_t Rho = mod1d->Rho[mod1d->isrc]; // 震源区密度
     const real_t fac = 1.0/(4.0*PI*Rho);
-    const real_t dk = Kmet->dk;
+    const real_t dk = Kproc->dk;
 
     // 进度条变量 
     int progress=0;
@@ -79,6 +80,33 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_METHOD *Kmet, GRNSPEC *grn, cons
     size_t nf_valid = grn->nf2 - grn->nf1 + 1;
 
     mod1d->omgref = PI2*grn->freqs[grn->nf2];
+
+    // 静态解的 kmax ，用于动态解积分上限中的 k0
+    real_t static_kmax = 0.0;
+    if(Kproc->k0_is_fixed){
+        static_kmax = Kproc->k0;
+    } else {
+        size_t ncount = 0, nk = 0;
+        static_kmax = grt_predict_static_kmax(mod1d, Kproc->k0, &ncount);
+        nk = floor(static_kmax / Kproc->dk) + 1;
+        GRTRaiseInfo(
+            "For a proper kc, ncount = %zu, kc = %.3e, k0 = %.3e, nk = %zu", 
+            ncount, static_kmax, Kproc->k0, nk);
+        
+        if(Kproc->cvgmet == K_INTEG_CONVERG_AUTO){
+            // 如果上限触发边界，且未指定收敛算法，则强制使用 DCM 进行收敛
+            if(static_kmax >= Kproc->k0){
+                Kproc->cvgmet = K_INTEG_CONVERG_DCM;
+                Kproc->keps = 0.0;
+                GRTRaiseWarning(
+                    "kc reaches k0, apply %s. "
+                    "You should consider to increase the k0 (maximum upper bound)", GRT_EXPLAIN_CVGMETHOD(Kproc->cvgmet));
+            }
+        } else if(Kproc->cvgmet != K_INTEG_CONVERG_REFUSE) {
+            // 正常打印手动选择的收敛方法
+            GRTRaiseInfo("Manually set the %s.", GRT_EXPLAIN_CVGMETHOD(Kproc->cvgmet));
+        }
+    }
 
     // 频率omega循环
     // schedule语句可以动态调度任务，最大程度地使用计算资源
@@ -106,13 +134,13 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_METHOD *Kmet, GRNSPEC *grn, cons
 
         cplx_t coef = - dk*fac / GRT_SQUARE(omega); // 最终要乘上的系数
 
-        K_INTEG_METHOD *local_Kmet = NULL;
+        K_INTEG_PROCESS *local_Kproc = NULL;
     #ifdef _OPENMP 
         // 定义局部对象
-        K_INTEG_METHOD __KMET = *Kmet;  // 只需浅拷贝
-        local_Kmet = &__KMET;
+        K_INTEG_PROCESS __KPROC = *Kproc;  // 只需浅拷贝
+        local_Kproc = &__KPROC;
     #else 
-        local_Kmet = Kmet;
+        local_Kproc = Kproc;
     #endif
 
         MODEL1D_STATE *local_mstat = grt_init_mod1d_state(mod1d);
@@ -127,7 +155,7 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_METHOD *Kmet, GRNSPEC *grn, cons
         if(needfstats){
             char *suffix = NULL;
             GRT_SAFE_ASPRINTF(&suffix, "_%04zu_%.5e", iw, grn->freqs[iw]);
-            grt_KMET_init_fstats(grn->nr, grn->rs, grn->statsstr, suffix, local_Kmet);
+            grt_KPROC_init_fstats(grn->nr, grn->rs, grn->statsstr, suffix, local_Kproc);
             GRT_SAFE_FREE_PTR(suffix);
         }
         
@@ -138,8 +166,8 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_METHOD *Kmet, GRNSPEC *grn, cons
         // ===================================================================================
         //                          Wavenumber Integration
         // 波数积分上限
-        local_Kmet->kmax = hypot(local_Kmet->k0, local_Kmet->ampk * w / local_Kmet->vmin);
-        K_INTEG *Kint = grt_wavenumber_integral(local_mstat, grn->nr, grn->rs, local_Kmet, grn->calc_upar, grt_kernel);
+        local_Kproc->kmax = hypot(static_kmax, local_Kproc->ampk * w / local_Kproc->vmin);
+        K_INTEG *Kint = grt_wavenumber_integral(local_mstat, grn->nr, grn->rs, local_Kproc, grn->calc_upar, grt_kernel);
 
         // 记录到格林函数结构体内
         // 如果计算核函数过程中存在除零错误，则放弃该频率【通常在大震中距的低频段】
@@ -152,7 +180,7 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_METHOD *Kmet, GRNSPEC *grn, cons
 
         freq_invstats[iw] = local_mstat->stats;
 
-        if(needfstats)  grt_KMET_destroy_fstats(grn->nr, local_Kmet);
+        if(needfstats)  grt_KPROC_destroy_fstats(grn->nr, local_Kproc);
 
         grt_free_mod1d_state(local_mstat);
 

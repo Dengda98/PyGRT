@@ -306,7 +306,7 @@ real_t grt_sa_filon_integ(
         if(K->applyDCM){
             GRT_LOOP_ChnlGrid(im, c){
                 Kitv.F3[i][im][c] -= K->QWV_kmax[im][c];
-                if(K->calc_upar) Kitv.Fz3[i][im][c] -= K->QWVz_kmax[im][c];
+                if(K->calc_upar) Kitv.Fz3[i][im][c] -= K->QWVz_kmax[im][c] * Kitv.k3[i] / kmax;
             }
         }
     }
@@ -366,8 +366,8 @@ real_t grt_sa_filon_integ(
                 Kitv_left.F3[1][im][c] -= K->QWV_kmax[im][c];
                 Kitv_right.F3[1][im][c] -= K->QWV_kmax[im][c];
                 if(K->calc_upar){
-                    Kitv_left.Fz3[1][im][c] -= K->QWVz_kmax[im][c];
-                    Kitv_right.Fz3[1][im][c] -= K->QWVz_kmax[im][c];
+                    Kitv_left.Fz3[1][im][c]  -= K->QWVz_kmax[im][c] * Kitv_left.k3[1]  / kmax;
+                    Kitv_right.Fz3[1][im][c] -= K->QWVz_kmax[im][c] * Kitv_right.k3[1] / kmax;
                 }
             }
         }

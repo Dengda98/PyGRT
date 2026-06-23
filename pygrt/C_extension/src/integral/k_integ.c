@@ -76,13 +76,26 @@ void grt_int_Pk(real_t k, real_t r, const cplxChnlGrid QWV, bool calc_uir, cplxI
         real_t bjmk0[GRT_MORDER_MAX+1] = {0};
         for(int i=0; i<=GRT_MORDER_MAX; ++i)  bjmk0[i] = bjmk[i];
 
-        grt_besselp012(kr, &bjmk[0], &bjmk[1], &bjmk[2]); 
-        kcoef = k*k;
+        if(GRT_IS_SMALLE_DISTANCE(r)){
+            bjmk[0] = - bjmk0[1];
+            bjmk[1] = bjmk0[0] - 0.5;
+            bjmk[2] = bjmk0[1] - 0.25*kr;
+            Jmcoef[1] = - 0.125 * kr;
+            Jmcoef[2] = 0.125;
+        } else {
+            grt_besselp012(kr, &bjmk[0], &bjmk[1], &bjmk[2]); 
+            for(int i=1; i<=GRT_MORDER_MAX; ++i)  Jmcoef[i] = kr_inv * (-kr_inv * bjmk0[i] + bjmk[i]);
+        }
 
-        for(int i=1; i<=GRT_MORDER_MAX; ++i)  Jmcoef[i] = kr_inv * (-kr_inv * bjmk0[i] + bjmk[i]);
+        kcoef = k*k;
     } 
     else {
-        for(int i=1; i<=GRT_MORDER_MAX; ++i)  Jmcoef[i] = bjmk[i]*kr_inv;
+        if(GRT_IS_SMALLE_DISTANCE(r)){
+            Jmcoef[1] = 0.5;
+            Jmcoef[2] = 0.125*kr;
+        } else {
+            for(int i=1; i<=GRT_MORDER_MAX; ++i)  Jmcoef[i] = bjmk[i]*kr_inv;
+        }
     }
 
     for(int i=1; i<=GRT_MORDER_MAX; ++i)  Jmcoef[i] *= kcoef;
@@ -98,7 +111,7 @@ void grt_int_Pk(real_t k, real_t r, const cplxChnlGrid QWV, bool calc_uir, cplxI
         }
         else{
             SUM[i][0]  =   QWV[i][0] * bjmk[modr-1];         // qm*Jm-1*k
-            SUM[i][1]  = - modr*(QWV[i][0] + QWV[i][2]) * Jmcoef[modr];    // - m*(qm+vm)*Jm*k/kr
+            SUM[i][1]  = - modr * (QWV[i][0] + QWV[i][2]) * Jmcoef[modr];    // - m*(qm+vm)*Jm*k/kr
             SUM[i][2]  =   QWV[i][1] * bjmk[modr];           // wm*Jm*k
             SUM[i][3]  = - QWV[i][2] * bjmk[modr-1];         // -vm*Jm-1*k
         }

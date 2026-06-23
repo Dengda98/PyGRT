@@ -17,7 +17,7 @@
 #define GRT_GREENFN_H_FREQ1      -1.0
 #define GRT_GREENFN_H_FREQ2      -1.0
 #define GRT_GREENFN_K_VMIN        0.1
-#define GRT_GREENFN_K_K0          5.0
+#define GRT_GREENFN_K_K0         50.0
 #define GRT_GREENFN_K_AMPK       1.15
 #define GRT_GREENFN_G_EX       true
 #define GRT_GREENFN_G_VF       true
@@ -94,9 +94,7 @@ typedef struct {
     /** 波数积分收敛方法 */
     struct {
         bool active;
-        bool applyDCM;
-        bool applyPTAM;
-        bool applyNoConverg;
+        K_INTEG_CONVERG_METHOD convmet;
     } C;
     /** 波数积分上限 */
     struct {
@@ -105,6 +103,7 @@ typedef struct {
         real_t ampk;
         real_t k0;
         real_t vmin;
+        bool k0_is_fixed;
     } K;
     /** 时间延迟 */
     struct {
@@ -186,59 +185,6 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
     GRT_SAFE_FREE_PTR(Ctrl);
 }
 
-
-/** 打印结构体中的参数 */
-static void print_Ctrl(const GRT_MODULE_CTRL *Ctrl){
-    grt_print_mod1d(Ctrl->M.mod1d);
-
-    const char format[]      = "   \%-20s  \%s\n";
-    const char format_real[] = "   \%-20s  \%.3f\n";
-    const char format_size[]  = "   \%-20s  \%zu\n";
-    char line[100];
-    printf("------------------------------------------------\n");
-    printf(format, "PARAMETER", "VALUE");
-    printf(format, "model_path", Ctrl->M.s_modelpath);
-    printf(format_real, "k0", Ctrl->K.k0);
-    printf(format_real, "ampk", Ctrl->K.ampk);
-    printf(format_real, "keps", Ctrl->K.keps);
-    printf(format_real, "vmin", Ctrl->K.vmin);
-    printf(format_real, "Length", Ctrl->L.Length);
-    printf(format_real, "kcut",   Ctrl->L.kcut);
-    printf(format_real, "filonLength",   Ctrl->L.FIM.Length);
-    printf(format_real, "safilonTol",   Ctrl->L.SAFIM.tol);
-    printf(format, "applyDCM", (Ctrl->C.applyDCM)? "true" : "false");
-    printf(format, "applyPTAM", (Ctrl->C.applyPTAM)? "true" : "false");
-
-    printf(format_size, "topbound", (size_t)Ctrl->B.topbound);
-    printf(format_size, "botbound", (size_t)Ctrl->B.botbound);
-
-    printf(format_size, "nt", Ctrl->N.nt);
-    printf(format_real, "dt", Ctrl->N.dt);
-    printf(format_real, "winT", Ctrl->N.winT);
-    printf(format_real, "zeta", Ctrl->N.zeta);
-    printf(format_real, "delayT0", Ctrl->E.delayT0);
-    printf(format_real, "delayV0", Ctrl->E.delayV0);
-    printf(format_real, "tmax", Ctrl->E.delayT0 + Ctrl->N.winT);
-    
-    printf(format_real, "maxfreq(Hz)", Ctrl->N.freqs[Ctrl->N.nf-1]);
-    printf(format_real, "f1(Hz)", Ctrl->N.freqs[Ctrl->H.nf1]);
-    printf(format_real, "f2(Hz)", Ctrl->N.freqs[Ctrl->H.nf2]);
-    printf(format, "distances(km)", Ctrl->R.s_raw);
-    if(Ctrl->S.nstatsidxs > 0){
-        printf(format, "statsfile_index", Ctrl->S.s_raw);
-    }
-    line[0] = '\0';
-    if(Ctrl->G.doEX) snprintf(line+strlen(line), sizeof(line)-strlen(line), "EX,");
-    if(Ctrl->G.doVF)  snprintf(line+strlen(line), sizeof(line)-strlen(line), "VF,");
-    if(Ctrl->G.doHF)  snprintf(line+strlen(line), sizeof(line)-strlen(line), "HF,");
-    if(Ctrl->G.doDC)  snprintf(line+strlen(line), sizeof(line)-strlen(line), "DC,");
-    printf(format, "sources", line);
-    
-    printf("------------------------------------------------\n");
-
-    printf("\n\n");
-}
-
 /** 打印使用说明 */
 static void print_help(){
 printf("\n"
@@ -289,7 +235,7 @@ printf("\n"
 "        -R<r1>,<r2>[,...]|<r1>/<r2>/<dr>|<file>\n"
 "        -O<outdir>     [-H<f1>/<f2>] \n"
 "        [-L<length>] [-C[d|p|n]] [-E[p]<t0>[/<v0>]] \n" 
-"        [-K[+k<k0>][+s<ampk>][+e<keps>][+v<vmin>]]\n"
+"        [-K[+k<k0>][+f][+s<ampk>][+e<keps>][+v<vmin>]]\n"
 "        [-P<nthreads>] [-Ge|v|h|s]  [-Bf|F|r|R|h|H]\n"
 "        [-S[<i1>,<i2>,...]] [-e] [-s]\n"
 "\n\n"
@@ -361,7 +307,7 @@ printf("\n"
 "                 + d: Direct Convergence Method (DCM).\n"
 "                 + p: Peak-Trough Averaging Method (PTAM).\n"
 "                 + n: None.\n"
-"                 Default use +cd when fabs(depsrc-deprcv) <= %.1f.\n", GRT_MIN_DEPTH_GAP_SRC_RCV); printf(
+"                 Default use -Cd when fabs(depsrc-deprcv) <= %.1f.\n", GRT_MIN_DEPTH_GAP_SRC_RCV); printf(
 "\n"
 "    -E[p]<t0>[/<v0>]\n"
 "                 Introduce the time delay in results. The total \n"
@@ -375,15 +321,15 @@ printf("\n"
 "                       the delay (the begining time) will be <t0> + first P, \n"
 "                       e.g., -Ep-10.\n"
 "\n"
-"    -K[+k<k0>][+s<ampk>][+e<keps>][+v<vmin>]\n"
-"                 Several parameters designed to define the\n"
-"                 behavior in wavenumber integration. The upper\n"
-"                 bound is \n"
+"    -K[+k<k0>][+f][+s<ampk>][+e<keps>][+v<vmin>]\n"
+"                 Define the wavenumber integration upper bound\n"
 "                 sqrt( <k0>^2 + (<ampk>*w/<vmin_ref>)^2 ),\n"
-"                 <k0>:   designed to give residual k at\n"
-"                         0 frequency, default is %.1f, and \n", GRT_GREENFN_K_K0); printf(
-"                         multiply PI/hs in program, \n"
+"                 <k0>:   maximum upper bound residual k for 0 frequency, \n"
+"                         default is %.1f, and multiply PI/hs in program, \n", GRT_GREENFN_K_K0); printf(
 "                         where hs = max(fabs(depsrc-deprcv), %.1f).\n", GRT_MIN_DEPTH_GAP_SRC_RCV); printf(
+"                         The program will choose the proper residual in [0, k0].\n"
+"                         If k0 is not enough, convergence method will be applied.\n"
+"                         If use +f, directly set k0 as the residual.\n"
 "                 <ampk>: amplification factor, default is %.2f.\n", GRT_GREENFN_K_AMPK); printf(
 "                 <keps>: a threshold for break wavenumber \n"
 "                         integration in advance. See \n"
@@ -643,20 +589,17 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 }
                 switch (optarg[0]){
                     case 'p':
-                        Ctrl->C.applyPTAM = true;
+                        Ctrl->C.convmet = K_INTEG_CONVERG_PTAM;
                         break;
                     case 'd':
-                        Ctrl->C.applyDCM = true;
+                        Ctrl->C.convmet = K_INTEG_CONVERG_DCM;
                         break;
                     case 'n':
-                        Ctrl->C.applyNoConverg = true;
+                        Ctrl->C.convmet = K_INTEG_CONVERG_REFUSE;
                         break;
                     default:
                         GRTBadOptionError(C, "-C+%s is not supported.", optarg);
                         break;
-                }
-                if(Ctrl->C.applyPTAM && Ctrl->C.applyDCM){
-                    GRTBadOptionError(C, "You can't set -Cd and -Cp both.");
                 }
                 break;
 
@@ -681,7 +624,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 }
                 break;
 
-            // 波数积分相关变量 -K[+k<k0>][+s<ampk>][+e<keps>][+v<vmin>]
+            // 波数积分相关变量 -K[+k<k0>][+f][+s<ampk>][+e<keps>][+v<vmin>]
             case 'K':
                 Ctrl->K.active = true;
                 {
@@ -720,6 +663,10 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                             if(Ctrl->K.vmin <= 0.0){
                                 GRTBadOptionError(K, "Illegal vmin (%f).", Ctrl->K.vmin);
                             }
+                            break;
+
+                        case 'f':
+                            Ctrl->K.k0_is_fixed = true;
                             break;
 
                         default:
@@ -929,11 +876,6 @@ int greenfn_main(int argc, char **argv) {
     // 参考最小速度
     if(Ctrl->K.vmin == 0.0){
         Ctrl->K.vmin = GRT_MAX(vmin, GRT_GREENFN_K_VMIN);
-    } 
-
-    // 判断是否要自动使用收敛方法
-    if( ! Ctrl->C.active && fabs(Ctrl->D.deprcv - Ctrl->D.depsrc) <= GRT_MIN_DEPTH_GAP_SRC_RCV) {
-        Ctrl->C.applyDCM = true;
     }
 
     // 时窗长度 
@@ -1010,31 +952,26 @@ int greenfn_main(int argc, char **argv) {
 
         
     // 波数积分方法
-    K_INTEG_METHOD KMET = {0};
+    K_INTEG_PROCESS KPROC = {0};
     {   
         real_t hs = GRT_MAX(fabs(mod1d->depsrc - mod1d->deprcv), GRT_MIN_DEPTH_GAP_SRC_RCV);
-        KMET.k0 = Ctrl->K.k0 * PI / hs;
-        KMET.ampk = Ctrl->K.ampk;
-        KMET.keps = (Ctrl->C.applyPTAM || Ctrl->C.applyDCM)? 0.0 : Ctrl->K.keps;  // 如果使用了显式收敛方法，则不使用keps进行收敛判断
-        KMET.vmin = Ctrl->K.vmin;
+        KPROC.k0 = Ctrl->K.k0 * PI / hs;
+        KPROC.k0_is_fixed = Ctrl->K.k0_is_fixed;
+        KPROC.ampk = Ctrl->K.ampk;
+        KPROC.keps = (Ctrl->C.convmet != K_INTEG_CONVERG_AUTO)? 0.0 : Ctrl->K.keps; // 如果使用了显式收敛方法，则不使用keps进行收敛判断
+        KPROC.vmin = Ctrl->K.vmin;
         
-        KMET.kcut = Ctrl->L.kcut / rmax;
+        KPROC.kcut = Ctrl->L.kcut / rmax;
 
-        KMET.dk = PI2 / (Ctrl->L.Length * rmax);
+        KPROC.dk = PI2 / (Ctrl->L.Length * rmax);
 
-        KMET.applyFIM = Ctrl->L.FIM.active;
-        KMET.filondk = (Ctrl->L.FIM.active) ? PI2 / (Ctrl->L.FIM.Length * rmax) : 0.0;
+        KPROC.applyFIM = Ctrl->L.FIM.active;
+        KPROC.filondk = (Ctrl->L.FIM.active) ? PI2 / (Ctrl->L.FIM.Length * rmax) : 0.0;
 
-        KMET.applySAFIM = Ctrl->L.SAFIM.active;
-        KMET.sa_tol = Ctrl->L.SAFIM.tol;
+        KPROC.applySAFIM = Ctrl->L.SAFIM.active;
+        KPROC.sa_tol = Ctrl->L.SAFIM.tol;
         
-        KMET.applyDCM = Ctrl->C.applyDCM;
-        KMET.applyPTAM = Ctrl->C.applyPTAM;
-    }
-
-    // 在计算前打印所有参数
-    if(! Ctrl->s.active){
-        print_Ctrl(Ctrl);
+        KPROC.cvgmet = Ctrl->C.convmet;
     }
 
     // 格林函数频谱
@@ -1059,7 +996,7 @@ int greenfn_main(int argc, char **argv) {
 
     //==============================================================================
     // 计算格林函数
-    grt_integ_grn_spec(mod1d, &KMET, grn, !Ctrl->s.active);
+    grt_integ_grn_spec(mod1d, &KPROC, grn, !Ctrl->s.active);
     //==============================================================================
 
     // 使用fftw3做反傅里叶变换，并保存到 SAC 
@@ -1125,20 +1062,6 @@ int greenfn_main(int argc, char **argv) {
         GRTRaiseWarning(
             "The source is located in the liquid layer, "
             "therefore only the Green's Funtions for the Explosion source will be computed.\n");
-    }
-
-
-    
-    // 打印走时
-    if( ! Ctrl->s.active){
-        printf("\n\n");
-        printf("------------------------------------------------\n");
-        printf(" Distance(km)     Tp(secs)         Ts(secs)     \n");
-        for(size_t ir=0; ir<Ctrl->R.nr; ++ir){
-            printf(" %-15s  %-15.3f  %-15.3f\n", Ctrl->R.s_rs[ir], travtPS[ir][0], travtPS[ir][1]);
-        }
-        printf("------------------------------------------------\n");
-        printf("\n");
     }
 
     // 释放内存

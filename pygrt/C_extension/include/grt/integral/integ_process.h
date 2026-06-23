@@ -1,5 +1,5 @@
 /**
- * @file   integ_method.h
+ * @file   integ_process.h
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2025-12
  * 
@@ -16,10 +16,26 @@
 #include "grt/integral/k_integ.h"
 #include "grt/integral/kernel.h"
 
+// 波数积分收敛方法
+typedef enum {
+    K_INTEG_CONVERG_AUTO = 0,  ///< 默认收敛处理由程序根据情况来决定
+    K_INTEG_CONVERG_REFUSE,  ///< 绝对不做收敛处理
+    K_INTEG_CONVERG_DCM,   ///< 直接收敛法
+    K_INTEG_CONVERG_PTAM       ///< 峰谷平均法
+} K_INTEG_CONVERG_METHOD;
+
+#define GRT_EXPLAIN_CVGMETHOD(code) (\
+    (code == K_INTEG_CONVERG_AUTO)     ? "Auto" : \
+    (code == K_INTEG_CONVERG_REFUSE)      ? "No Convergence" : \
+    (code == K_INTEG_CONVERG_DCM)         ? "Direct Convergence Method" : \
+    (code == K_INTEG_CONVERG_PTAM)        ? "Peak-Trough Averaging Method" : \
+    "Unsupported code" \
+)
 
 // 描述不同波数积分方法的结构体
 typedef struct {
     real_t k0;      ///< 波数积分的上限 \f$ \tilde{k_{max}}=\sqrt{(k_{0}*\pi/hs)^2 + (ampk*w/vmin_{ref})^2} \f$ ，k循环必须退出, hs=max(震源和台站深度差,1.0) 
+    bool k0_is_fixed;  ///< 固定 k0，默认在程序中自动调整 k0
     real_t ampk;    ///< 影响波数k积分上限的系数
     real_t keps;    ///< 波数积分的收敛条件，要求在某震中距下所有格林函数都收敛，为负数代表不提前判断收敛，按照波数积分上限进行积分 
     real_t vmin;    ///< 参考最小速度，用于定义波数积分的上限
@@ -36,37 +52,35 @@ typedef struct {
     bool applySAFIM;  ///< 是否使用 SAFIM
     real_t sa_tol;    ///< SAFIM 的收敛极限
     
-    // 积分显式收敛方法
-    bool applyDCM;    ///< 是否使用 DCM
-    bool applyPTAM;   ///< 是否使用 PTAM
+    K_INTEG_CONVERG_METHOD cvgmet;  ///< 波数积分收敛方法
     
     FILE *fstats;  ///< 保存核函数的文件指针
     FILE *(*ptam_fstatsnr)[2];  ///< 保存 PTAM 中核函数以及波峰波谷的文件指针
     
-} K_INTEG_METHOD;
+} K_INTEG_PROCESS;
 
 
 /**
- * 初始化 K_INTEG_METHOD 结构体中的文件指针
+ * 初始化 K_INTEG_PROCESS 结构体中的文件指针
  * 
  * @param[in]          nr           震中距数量
  * @param[in]          rs           震中距数组 
  * @param[in]          statsstr     积分过程输出目录
  * @param[in]          suffix       文件名后缀
- * @param[in,out]      Kmet         K_INTEG_METHOD 结构体指针
+ * @param[in,out]      Kproc         K_INTEG_PROCESS 结构体指针
  * 
  */
-void grt_KMET_init_fstats(
+void grt_KPROC_init_fstats(
     const size_t nr, const real_t *rs, 
-    const char *statsstr, const char *suffix, K_INTEG_METHOD *Kmet);
+    const char *statsstr, const char *suffix, K_INTEG_PROCESS *Kproc);
 
 /**
- * 关闭 K_INTEG_METHOD 结构体中的文件指针，并释放内存
+ * 关闭 K_INTEG_PROCESS 结构体中的文件指针，并释放内存
  * 
  * @param[in]          nr           震中距数量
- * @param[in,out]      Kmet         K_INTEG_METHOD 结构体指针
+ * @param[in,out]      Kproc         K_INTEG_PROCESS 结构体指针
  */
-void grt_KMET_destroy_fstats(const size_t nr, K_INTEG_METHOD *Kmet);
+void grt_KPROC_destroy_fstats(const size_t nr, K_INTEG_PROCESS *Kproc);
 
 
 
@@ -77,7 +91,7 @@ void grt_KMET_destroy_fstats(const size_t nr, K_INTEG_METHOD *Kmet);
  * @param[in,out]      mstat        `MODEL1D_STATE` 结构体指针
  * @param[in]          nr           震中距数量
  * @param[in]          rs           震中距数组 
- * @param[in,out]      Kmet         K_INTEG_METHOD 结构体指针
+ * @param[in,out]      Kproc         K_INTEG_PROCESS 结构体指针
  * @param[in]          calc_upar    是否计算位移u的空间导数
  * @param[in]          kerfunc      计算核函数的函数指针
  * 
@@ -85,4 +99,4 @@ void grt_KMET_destroy_fstats(const size_t nr, K_INTEG_METHOD *Kmet);
  * 
  */
 K_INTEG * grt_wavenumber_integral(
-    MODEL1D_STATE *mstat, size_t nr, real_t *rs, K_INTEG_METHOD *Kmet, bool calc_upar, GRT_KernelFunc kerfunc);
+    MODEL1D_STATE *mstat, size_t nr, real_t *rs, K_INTEG_PROCESS *Kproc, bool calc_upar, GRT_KernelFunc kerfunc);

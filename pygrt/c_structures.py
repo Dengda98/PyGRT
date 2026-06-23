@@ -27,13 +27,15 @@ __all__ = [
     "NPCT_REAL_TYPE",
     "NPCT_CMPLX_TYPE",
 
+    "K_INTEG_CVGMET_DICT",
+
     "REAL",
     "PREAL",
     "CPLX",
     "PCPLX",
 
     "c_MODEL1D",
-    "c_K_INTEG_METHOD",
+    "c_K_INTEG_PROCESS",
     "c_GRNSPEC"
 ]
 
@@ -51,6 +53,13 @@ MECHANISM_NUM = 6
 
 NPCT_REAL_TYPE = 'f8'
 NPCT_CMPLX_TYPE = 'c16'
+
+K_INTEG_CVGMET_DICT = {
+    'AUTO': 0,
+    'NONE': 1,
+    'DCM': 2,
+    'PTAM': 3
+}
 
 
 class CPLX(Structure):
@@ -97,13 +106,14 @@ class c_MODEL1D(Structure):
     ]
 
 
-class c_K_INTEG_METHOD(Structure):
+class c_K_INTEG_PROCESS(Structure):
     """
-    和C结构体 K_INTEG_METHOD 作匹配
+    和C结构体 K_INTEG_PROCESS 作匹配
     """
 
     _fields_ = [
         ('k0', REAL),
+        ('k0_is_fixed', c_bool),
         ('ampk', REAL),
         ('keps', REAL),
         ('vmin', REAL),
@@ -119,8 +129,7 @@ class c_K_INTEG_METHOD(Structure):
         ('applySAFIM', c_bool),
         ('sa_tol', REAL),
 
-        ('applyDCM', c_bool),
-        ('applyPTAM', c_bool),
+        ('cvgmet', c_int),
 
         ('fstats', c_void_p),
         ('ptam_fstatsnr', c_void_p),

@@ -10,7 +10,7 @@
 #include "grt.h"
 
 // 一些变量的非零默认值
-#define GRT_GREENFN_K_K0          5.0
+#define GRT_GREENFN_K_K0         50.0
 #define GRT_GREENFN_L_LENGTH     15.0
 
 
@@ -54,15 +54,14 @@ typedef struct {
     /** 波数积分收敛方法 */
     struct {
         bool active;
-        bool applyDCM;
-        bool applyPTAM;
-        bool applyNoConverg;
+        K_INTEG_CONVERG_METHOD convmet;
     } C;
     /** 波数积分上限 */
     struct {
         bool active;
         real_t keps;
         real_t k0;
+        bool k0_is_fixed;
     } K;
     /** 波数积分过程的核函数文件 */
     struct {
@@ -143,7 +142,7 @@ printf("\n"
 "           [-X<x1>/<x2>/<dx>] [-Y<y1>/<y2>/<dy>] \n"
 "           [-R<r1>,<r2>[,...]|<r1>/<r2>/<dr>|<file>]\n" 
 "           [-L<length>]   [-C[d|p|n]]  [-Bf|F|r|R|h|H] \n"
-"           [-K[+k<k0>][+e<keps>]] [-S]  [-e]\n"
+"           [-K[+k<k0>][+f][+e<keps>]] [-S]  [-e]\n"
 "\n"
 "    There're two ways to define the \"epicentral distances\":\n"
 "    1. set both -X and -Y to define a XY grid in advance.\n"
@@ -208,7 +207,7 @@ printf("\n"
 "                 + d: Direct Convergence Method (DCM).\n"
 "                 + p: Peak-Trough Averaging Method (PTAM).\n"
 "                 + n: None.\n"
-"                 Default use +cd when fabs(depsrc-deprcv) <= %.1f.\n", GRT_MIN_DEPTH_GAP_SRC_RCV); printf(
+"                 Default use -Cd when fabs(depsrc-deprcv) <= %.1f.\n", GRT_MIN_DEPTH_GAP_SRC_RCV); printf(
 "\n"
 "    -Bf|F|r|R|h|H\n"
 "                 Boundary condition of top layer (lowercase) and\n"
@@ -217,13 +216,13 @@ printf("\n"
 "                 r|R: Rigid boundary.\n"
 "                 h|H: Halfspace.\n"
 "\n"
-"    -K[+k<k0>][+e<keps>]\n"
-"                 Several parameters designed to define the\n"
-"                 behavior in wavenumber integration. The upper\n"
-"                 bound is k0,\n"
-"                 <k0>:   default is %.1f, and \n", GRT_GREENFN_K_K0); printf(
-"                         multiply PI/hs in program, \n"
-"                         where hs = max(fabs(depsrc-deprcv), %.1f).\n", GRT_MIN_DEPTH_GAP_SRC_RCV); printf(
+"    -K[+k<k0>][+f][+e<keps>]\n"
+"                 Define the wavenumber integration upperbound\n"
+"                 <k0>:   maximum upper bound, default is %.1f, and multiply PI/hs \n", GRT_GREENFN_K_K0); printf(
+"                         in program, where hs = max(fabs(depsrc-deprcv), %.1f).\n", GRT_MIN_DEPTH_GAP_SRC_RCV); printf(
+"                         The program will choose the proper upper bound in [0, k0].\n"
+"                         If k0 is not enough, convergence method will be applied.\n"
+"                         If use +f, directly set k0 as the upper bound.\n"
 "                 <keps>: a threshold for break wavenumber \n"
 "                         integration in advance. See \n"
 "                         (Yao and Harkrider, 1983) for details.\n"
@@ -371,24 +370,21 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 }
                 switch (optarg[0]){
                     case 'p':
-                        Ctrl->C.applyPTAM = true;
+                        Ctrl->C.convmet = K_INTEG_CONVERG_PTAM;
                         break;
                     case 'd':
-                        Ctrl->C.applyDCM = true;
+                        Ctrl->C.convmet = K_INTEG_CONVERG_DCM;
                         break;
                     case 'n':
-                        Ctrl->C.applyNoConverg = true;
+                        Ctrl->C.convmet = K_INTEG_CONVERG_REFUSE;
                         break;
                     default:
                         GRTBadOptionError(C, "-C+%s is not supported.", optarg);
                         break;
                 }
-                if(Ctrl->C.applyPTAM && Ctrl->C.applyDCM){
-                    GRTBadOptionError(C, "You can't set -Cd and -Cp both.");
-                }
                 break;
 
-            // 波数积分相关变量 -K[+k<k0>][+e<keps>]
+            // 波数积分相关变量 -K[+k<k0>][+f][+e<keps>]
             case 'K':
                 Ctrl->K.active = true;
                 {
@@ -409,6 +405,10 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                             if(1 != sscanf(token+1, "%lf", &Ctrl->K.keps)){
                                 GRTBadOptionError(K+e, "");
                             }
+                            break;
+
+                        case 'f':
+                            Ctrl->K.k0_is_fixed = true;
                             break;
 
                         default:
@@ -575,11 +575,6 @@ int static_greenfn_main(int argc, char **argv){
 
     // 边界条件
     grt_set_mod1d_boundary(mod1d, Ctrl->B.topbound, Ctrl->B.botbound);
-
-    // 判断是否要自动使用收敛方法
-    if( ! Ctrl->C.active && fabs(Ctrl->D.deprcv - Ctrl->D.depsrc) <= GRT_MIN_DEPTH_GAP_SRC_RCV) {
-        Ctrl->C.applyDCM = true;
-    }
     
     // 设置积分间隔默认值
     if(Ctrl->L.Length == 0.0)  Ctrl->L.Length = GRT_GREENFN_L_LENGTH;
@@ -600,33 +595,33 @@ int static_greenfn_main(int argc, char **argv){
     realChnlGrid *grn_uir = (Ctrl->e.active)? (realChnlGrid *) calloc(Ctrl->nr, sizeof(*grn_uir)) : NULL;
 
     // 波数积分方法
-    K_INTEG_METHOD KMET = {0};
+    K_INTEG_PROCESS KPROC = {0};
     {   
         real_t hs = GRT_MAX(fabs(mod1d->depsrc - mod1d->deprcv), GRT_MIN_DEPTH_GAP_SRC_RCV);
-        KMET.k0 = Ctrl->K.k0 * PI / hs;
-        KMET.keps = (Ctrl->C.applyPTAM || Ctrl->C.applyDCM)? 0.0 : Ctrl->K.keps;  // 如果使用了显式收敛方法，则不使用keps进行收敛判断
+        KPROC.k0 = Ctrl->K.k0 * PI / hs;
+        KPROC.k0_is_fixed = Ctrl->K.k0_is_fixed;
+        KPROC.keps = (Ctrl->C.convmet != K_INTEG_CONVERG_AUTO)? 0.0 : Ctrl->K.keps;  // 如果使用了显式收敛方法，则不使用keps进行收敛判断
 
         // 最大震中距
         real_t rmax = Ctrl->rs[grt_findMax_real_t(Ctrl->rs, Ctrl->nr)];   
         
-        KMET.kcut = Ctrl->L.kcut / rmax;
+        KPROC.kcut = Ctrl->L.kcut / rmax;
 
-        KMET.dk = PI2 / (Ctrl->L.Length * rmax);
+        KPROC.dk = PI2 / (Ctrl->L.Length * rmax);
 
-        KMET.applyFIM = Ctrl->L.FIM.active;
-        KMET.filondk = (Ctrl->L.FIM.active) ? PI2 / (Ctrl->L.FIM.Length * rmax) : 0.0;
+        KPROC.applyFIM = Ctrl->L.FIM.active;
+        KPROC.filondk = (Ctrl->L.FIM.active) ? PI2 / (Ctrl->L.FIM.Length * rmax) : 0.0;
 
-        KMET.applySAFIM = Ctrl->L.SAFIM.active;
-        KMET.sa_tol = Ctrl->L.SAFIM.tol;
+        KPROC.applySAFIM = Ctrl->L.SAFIM.active;
+        KPROC.sa_tol = Ctrl->L.SAFIM.tol;
         
-        KMET.applyDCM = Ctrl->C.applyDCM;
-        KMET.applyPTAM = Ctrl->C.applyPTAM;
+        KPROC.cvgmet = Ctrl->C.convmet;
     }
 
     //==============================================================================
     // 计算静态格林函数
     grt_integ_static_grn(
-        mod1d, Ctrl->nr, Ctrl->rs, &KMET,
+        mod1d, Ctrl->nr, Ctrl->rs, &KPROC,
         Ctrl->e.active, grn, grn_uiz, grn_uir,
         Ctrl->S.s_statsdir
     );

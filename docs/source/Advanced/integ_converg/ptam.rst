@@ -109,7 +109,7 @@
 
 + **只使用离散波数积分**
 
-.. figure:: run_ptam/SS_0_0.1_static.svg
+.. figure:: run_ptam/SS_0_0.05_static.svg
     :align: center
 
 ----------------------------------
@@ -117,7 +117,7 @@
 
 + **使用峰谷平均法**
   
-.. figure:: run_ptam/SS_0_0.1_ptam_static.svg
+.. figure:: run_ptam/SS_0_0.05_ptam_static.svg
     :align: center
 
 

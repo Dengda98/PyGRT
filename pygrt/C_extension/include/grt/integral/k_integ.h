@@ -19,6 +19,8 @@ typedef struct {
     // 不同震源不同阶数的核函数 F(k, w) 
     cplxChnlGrid QWV;
     cplxChnlGrid QWVz;
+    cplxChnlGrid QWV_raw;  ///< 不受 DCM 影响，仅为计算出的核函数
+    cplxChnlGrid QWVz_raw;
 
     // 最大波数时的核函数，用于 DCM
     bool applyDCM;

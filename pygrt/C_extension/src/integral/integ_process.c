@@ -1,5 +1,5 @@
 /**
- * @file   integ_method.c
+ * @file   integ_process.c
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2025-12
  * 
@@ -13,41 +13,41 @@
 #include "grt/integral/safim.h"
 #include "grt/integral/dwm.h"
 #include "grt/integral/dcm.h"
-#include "grt/integral/integ_method.h"
+#include "grt/integral/integ_process.h"
 
 
 
-void grt_KMET_init_fstats(
+void grt_KPROC_init_fstats(
     const size_t nr, const real_t *rs, 
-    const char *statsstr, const char *suffix, K_INTEG_METHOD *Kmet)
+    const char *statsstr, const char *suffix, K_INTEG_PROCESS *Kproc)
 {
     if(statsstr == NULL)  return;
 
-    if(Kmet->fstats != NULL){
-        GRTRaiseError("fstats != NULL in K_INTEG_METHOD.");
+    if(Kproc->fstats != NULL){
+        GRTRaiseError("fstats != NULL in K_INTEG_PROCESS.");
     }
 
     // 为当前频率创建波数积分记录文件
     // PTAM为每个震中距都创建波数积分记录文件
-    Kmet->ptam_fstatsnr = (FILE *(*)[2])calloc(nr, sizeof(*Kmet->ptam_fstatsnr));
+    Kproc->ptam_fstatsnr = (FILE *(*)[2])calloc(nr, sizeof(*Kproc->ptam_fstatsnr));
     char *fname = NULL;
     GRT_SAFE_ASPRINTF(&fname, "%s/K%s", statsstr, suffix);
-    Kmet->fstats = fopen(fname, "wb");
+    Kproc->fstats = fopen(fname, "wb");
 
     // PTAM的积分中间结果, 每个震中距两个文件，因为PTAM对不同震中距使用不同的dk
     // 在文件名后加后缀，区分不同震中距
     char *ptam_dirname = NULL;
-    if(Kmet->applyPTAM){
+    if(Kproc->cvgmet == K_INTEG_CONVERG_PTAM){
         for(size_t ir = 0; ir < nr; ++ir){
             // 新建文件夹目录 
             GRT_SAFE_ASPRINTF(&ptam_dirname, "%s/PTAM_%04zu_%.5e", statsstr, ir, rs[ir]);
             GRTCheckMakeDir(ptam_dirname);
 
-            Kmet->ptam_fstatsnr[ir][0] = Kmet->ptam_fstatsnr[ir][1] = NULL;
+            Kproc->ptam_fstatsnr[ir][0] = Kproc->ptam_fstatsnr[ir][1] = NULL;
             GRT_SAFE_ASPRINTF(&fname, "%s/K%s", ptam_dirname, suffix);
-            Kmet->ptam_fstatsnr[ir][0] = fopen(fname, "wb");
+            Kproc->ptam_fstatsnr[ir][0] = fopen(fname, "wb");
             GRT_SAFE_ASPRINTF(&fname, "%s/PTAM%s", ptam_dirname, suffix);
-            Kmet->ptam_fstatsnr[ir][1] = fopen(fname, "wb");
+            Kproc->ptam_fstatsnr[ir][1] = fopen(fname, "wb");
         }
     }
     
@@ -56,20 +56,20 @@ void grt_KMET_init_fstats(
 }
 
 
-void grt_KMET_destroy_fstats(const size_t nr, K_INTEG_METHOD *Kmet)
+void grt_KPROC_destroy_fstats(const size_t nr, K_INTEG_PROCESS *Kproc)
 {
-    if(Kmet->fstats!=NULL) fclose(Kmet->fstats);
+    if(Kproc->fstats!=NULL) fclose(Kproc->fstats);
 
-    if(Kmet->ptam_fstatsnr != NULL){
+    if(Kproc->ptam_fstatsnr != NULL){
         for(size_t ir=0; ir<nr; ++ir){
-            if(Kmet->ptam_fstatsnr[ir][0]!=NULL){
-                fclose(Kmet->ptam_fstatsnr[ir][0]);
+            if(Kproc->ptam_fstatsnr[ir][0]!=NULL){
+                fclose(Kproc->ptam_fstatsnr[ir][0]);
             }
-            if(Kmet->ptam_fstatsnr[ir][1]!=NULL){
-                fclose(Kmet->ptam_fstatsnr[ir][1]);
+            if(Kproc->ptam_fstatsnr[ir][1]!=NULL){
+                fclose(Kproc->ptam_fstatsnr[ir][1]);
             }
         }
-        GRT_SAFE_FREE_PTR(Kmet->ptam_fstatsnr);
+        GRT_SAFE_FREE_PTR(Kproc->ptam_fstatsnr);
     }
 
 }
@@ -78,22 +78,22 @@ void grt_KMET_destroy_fstats(const size_t nr, K_INTEG_METHOD *Kmet)
 
 
 K_INTEG * grt_wavenumber_integral(
-    MODEL1D_STATE *mstat, size_t nr, real_t *rs, K_INTEG_METHOD *Kmet, bool calc_upar, GRT_KernelFunc kerfunc)
+    MODEL1D_STATE *mstat, size_t nr, real_t *rs, K_INTEG_PROCESS *Kproc, bool calc_upar, GRT_KernelFunc kerfunc)
 {
     real_t k = 0.0;
 
-    real_t kcut = Kmet->kmax;
+    real_t kcut = Kproc->kmax;
 
-    bool isFilon = Kmet->applyFIM || Kmet->applySAFIM;
+    bool isFilon = Kproc->applyFIM || Kproc->applySAFIM;
 
     if(isFilon){
-        kcut = GRT_MIN(Kmet->kcut, Kmet->kmax);
+        kcut = GRT_MIN(Kproc->kcut, Kproc->kmax);
     }
 
     // 求和 sum F(ki,w)Jm(ki*r)ki 
     K_INTEG *Kint = grt_init_K_INTEG(calc_upar, nr);
-    Kint->applyDCM = Kmet->applyDCM;
-    Kint->kmax = Kmet->kmax;
+    Kint->applyDCM = Kproc->cvgmet == K_INTEG_CONVERG_DCM;
+    Kint->kmax = Kproc->kmax;
 
     // 准备 DCM，计算波数上限处的核函数
     if(Kint->applyDCM){
@@ -102,35 +102,35 @@ K_INTEG * grt_wavenumber_integral(
     
     // DWM
     k = grt_discrete_integ(
-        mstat, Kmet->dk, kcut, Kmet->keps, nr, rs, 
-        Kint, Kmet->fstats, kerfunc);
+        mstat, Kproc->dk, kcut, Kproc->keps, nr, rs, 
+        Kint, Kproc->fstats, kerfunc);
     if(mstat->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
     // 基于线性插值的Filon积分，固定采样间隔
-    if(Kmet->applyFIM){
+    if(Kproc->applyFIM){
         k = grt_linear_filon_integ(
-            mstat, k, Kmet->dk, Kmet->filondk, Kmet->kmax, Kmet->keps, nr, rs, 
-            Kint, Kmet->fstats, kerfunc);
+            mstat, k, Kproc->dk, Kproc->filondk, Kproc->kmax, Kproc->keps, nr, rs, 
+            Kint, Kproc->fstats, kerfunc);
         if(mstat->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
     }
     // 基于自适应采样的Filon积分
-    else if(Kmet->applySAFIM){
-        real_t kref = (creal(mstat->omega) > 0.0) ? creal(mstat->omega) / Kmet->vmin * Kmet->ampk : 0.0; // 静态解中频率位置给了负值
+    else if(Kproc->applySAFIM){
+        real_t kref = (creal(mstat->omega) > 0.0) ? creal(mstat->omega) / Kproc->vmin * Kproc->ampk : 0.0; // 静态解中频率位置给了负值
         k = grt_sa_filon_integ(
-            mstat, k, Kmet->dk, Kmet->sa_tol, Kmet->kmax, kref, nr, rs, 
-            Kint, Kmet->fstats, kerfunc);
+            mstat, k, Kproc->dk, Kproc->sa_tol, Kproc->kmax, kref, nr, rs, 
+            Kint, Kproc->fstats, kerfunc);
         if(mstat->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
     }
 
     // 显式收敛
-    if(Kmet->applyPTAM){
+    if(Kproc->cvgmet == K_INTEG_CONVERG_PTAM){
         grt_PTA_method(
-            mstat, k, Kmet->dk, nr, rs, 
-            Kint, Kmet->ptam_fstatsnr, kerfunc);
+            mstat, k, Kproc->dk, nr, rs, 
+            Kint, Kproc->ptam_fstatsnr, kerfunc);
         if(mstat->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
     }
-    else if(Kmet->applyDCM){
-        grt_dcm_correction(nr, rs, Kint, !isFilon);
+    else if(Kproc->cvgmet == K_INTEG_CONVERG_DCM){
+        grt_dcm_correction(nr, rs, kcut, Kint, !isFilon);
     }
 
 
