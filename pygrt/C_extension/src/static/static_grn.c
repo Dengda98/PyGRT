@@ -101,9 +101,9 @@ void grt_integ_static_grn(
         size_t ncount = 0, nk = 0;
         real_t static_kmax = 0.0;
         static_kmax = grt_predict_static_kmax(mod1d, Kproc->k0, &ncount);
-        nk = (size_t)(static_kmax / Kproc->dk);
+        nk = floor(static_kmax / Kproc->dk) + 1;
         GRTRaiseInfo(
-            "for a proper k0, ncount = %zu, k0 = %.3e, k0_ref = %.3e, nk = %zu", 
+            "For a proper kc, ncount = %zu, kc = %.3e, k0 = %.3e, nk = %zu", 
             ncount, static_kmax, Kproc->k0, nk);
         
         // 若 nk 不够，适当调整 dk
@@ -118,11 +118,13 @@ void grt_integ_static_grn(
             if(static_kmax >= Kproc->k0){
                 Kproc->cvgmet = K_INTEG_CONVERG_DCM;
                 Kproc->keps = 0.0;
-                GRTRaiseWarning("k0 reaches k0_ref, apply %s.", GRT_EXPLAIN_CVGMETHOD(Kproc->cvgmet));
+                GRTRaiseWarning(
+                    "kc reaches k0, apply %s. "
+                    "You should consider to increase the k0 (maximum upper bound)", GRT_EXPLAIN_CVGMETHOD(Kproc->cvgmet));
             }
         } else if(Kproc->cvgmet != K_INTEG_CONVERG_REFUSE) {
             // 正常打印手动选择的收敛方法
-            GRTRaiseInfo("manually set the %s.", GRT_EXPLAIN_CVGMETHOD(Kproc->cvgmet));
+            GRTRaiseInfo("Manually set the %s.", GRT_EXPLAIN_CVGMETHOD(Kproc->cvgmet));
         }
 
         Kproc->kmax = static_kmax;
