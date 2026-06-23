@@ -40,7 +40,7 @@ import pygrt
 
 modarr = np.loadtxt("milrow")
 
-depsrc = 0.1
+depsrc = 0.05
 deprcv = 0.0
 pymod = pygrt.PyModel1D(modarr, depsrc=depsrc, deprcv=deprcv)
 

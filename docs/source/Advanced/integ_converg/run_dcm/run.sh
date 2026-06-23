@@ -26,7 +26,7 @@ zeta=0.8
 L="-L20"
 # 取不同震源深度，输出核函数的变化 seq 0 0.02 0.2; 
 for depsrc in $(seq 0 0.02 0.4); do
-    grt greenfn -M${modname} -O${out} -N${nt}/${dt}/$zeta -D${depsrc}/${deprcv} -R${dist} $L -H5/5 -S25 -K+k50+s5 -Cn
+    grt greenfn -M${modname} -O${out} -N${nt}/${dt}/$zeta -D${depsrc}/${deprcv} -R${dist} $L -H5/5 -S25 -K+k50+s5+f -Cn
 done
 
 python plot_depth_kernel.py
