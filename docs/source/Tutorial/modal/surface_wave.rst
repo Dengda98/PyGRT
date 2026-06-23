@@ -41,4 +41,4 @@ C 模块为 :doc:`/Module/modsum` （Python函数将于后续版本增加），
 
 + **所有阶面波**
 
-.. figure:: run_modsum/compare_2.svg
+.. figure:: run_modsum/compare_all.svg
