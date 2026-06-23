@@ -55,7 +55,7 @@ real_t grt_linear_filon_integ(
         if(K->applyDCM){
             GRT_LOOP_ChnlGrid(im, c){
                 K->QWV[im][c] -= K->QWV_kmax[im][c];
-                if(K->calc_upar) K->QWVz[im][c] -= K->QWVz_kmax[im][c];
+                if(K->calc_upar) K->QWVz[im][c] -= K->QWVz_kmax[im][c] * k / kmax;
             }
         }
 
@@ -162,7 +162,7 @@ real_t grt_linear_filon_integ(
         if(K->applyDCM){
             GRT_LOOP_ChnlGrid(im, c){
                 K->QWV[im][c] -= K->QWV_kmax[im][c];
-                if(K->calc_upar) K->QWVz[im][c] -= K->QWVz_kmax[im][c];
+                if(K->calc_upar) K->QWVz[im][c] -= K->QWVz_kmax[im][c] * k0N / kmax;
             }
         }
 
