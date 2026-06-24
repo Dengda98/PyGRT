@@ -60,7 +60,7 @@
     source/static_uniform
     source/static_source
 
-    k-integral/DCM_supply`
+    k-integral/DCM_supply
 
     others/uiz
     others/DS_zero
