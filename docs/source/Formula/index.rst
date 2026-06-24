@@ -31,6 +31,13 @@
     - :doc:`source/static_uniform`
     - :doc:`source/static_source`
 
+**波数积分**
+
+.. hlist::
+    :columns: 1
+
+    - :doc:`k-integral/DCM_supply`
+
 **其它**
 
 .. hlist::
@@ -52,6 +59,8 @@
     
     source/static_uniform
     source/static_source
+
+    k-integral/DCM_supply`
 
     others/uiz
     others/DS_zero
