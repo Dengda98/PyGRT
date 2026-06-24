@@ -47,7 +47,7 @@ void grt_dcm_correction(size_t nr, real_t *rs, real_t kcut, K_INTEG *Kint, bool 
         real_t coefs_near[] = {0.0, c2, c2};
 
         real_t coefs_r[]      = {0.0, -2.0*c3, -4.0*c3};
-        real_t coefs_r_near[] = {0.0, -2.0*c3, -4.0*c3};
+        real_t coefs_r_near[] = {0.0, -2.0*c3, -2.0*c3};
 
         real_t coefs_z[]      = {-1.0*c3, 0.0, 3.0*c3};
         real_t coefs_z_near[] = {0.0,      c3, 2.0*c3};
