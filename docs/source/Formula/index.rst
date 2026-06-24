@@ -6,7 +6,8 @@
 
 （以下面向选修中国科学院 《理论地震学》 课程的学生）
 
-在 2022 年春季，研究生一年级的我在雁栖湖选修了中国科学院 《理论地震学》 课程，教材包括 |yao2026p| ，后因兴趣，研读了相关论文，推导公式，编写了 **PyGRT** 程序包。以下是摸索过程中推导的一些公式（持续补充），包括扩展程序中用到的，作为对教材公式的补充，欢迎批评指正。
+在 2022 年春季，研究生一年级的我在雁栖湖选修了中国科学院 《理论地震学》 课程，使用的教材包括 |yao2026p| 的初稿，
+后因兴趣，研读了相关论文，推导公式，编写了 **PyGRT** 程序包。以下是摸索过程中推导的一些公式（持续补充），包括一些扩展部分的公式，作为对教材公式的补充，欢迎批评指正。
 
 .. note::
 
@@ -17,20 +18,26 @@
 .. hlist::
     :columns: 1
 
-    - :doc:`RT`
-    - :doc:`RT_static`
-    - :doc:`RT_liquid`
-    - :doc:`uiz`
-    - :doc:`DS_zero`
-    - :doc:`boundary`
+    - :doc:`RT/RT`
+    - :doc:`RT/RT_static`
+    - :doc:`RT/RT_liquid`
+    - :doc:`RT/boundary`
 
-**静力学震源参数**
+**震源系数**
 
 .. hlist::
     :columns: 1
 
-    - :doc:`static_uniform`
-    - :doc:`static_source`
+    - :doc:`source/static_uniform`
+    - :doc:`source/static_source`
+
+**其它**
+
+.. hlist::
+    :columns: 1
+
+    - :doc:`others/uiz`
+    - :doc:`others/DS_zero`
 
 
 
@@ -38,12 +45,14 @@
     :maxdepth: 1
     :hidden:
 
-    RT
-    RT_static
-    RT_liquid
-    uiz
-    DS_zero
-    boundary
-    static_uniform
-    static_source
+    RT/RT
+    RT/RT_static
+    RT/RT_liquid
+    RT/boundary
+    
+    source/static_uniform
+    source/static_source
+
+    others/uiz
+    others/DS_zero
     
