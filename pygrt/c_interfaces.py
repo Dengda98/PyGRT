@@ -31,6 +31,16 @@ C_grt_integ_grn_spec = libgrt.grt_integ_grn_spec
 """C库中计算格林函数的主函数 integ_grn_spec, 详见C API同名函数"""
 C_grt_integ_grn_spec.argtypes = [POINTER(c_MODEL1D), POINTER(c_K_INTEG_PROCESS), POINTER(c_GRNSPEC), c_bool]
 
+C_grt_get_secular_roots = libgrt.grt_get_secular_roots
+"""寻找 Rayleigh 波和 Love 波的久期函数零点"""
+C_grt_get_secular_roots.restype = None
+C_grt_get_secular_roots.argtypes = [POINTER(c_MODEL1D), POINTER(c_EIGENV_INFO), c_bool]
+
+C_grt_modsum_grn_spec = libgrt.grt_modsum_grn_spec
+"""根据频散结果，利用模态叠加法计算面波格林函数频谱"""
+C_grt_modsum_grn_spec.restype = None
+C_grt_modsum_grn_spec.argtypes = [POINTER(c_MODEL1D), c_int, POINTER(c_EIGENFN_INFO), POINTER(c_GRNSPEC)]
+
 
 C_grt_integ_static_grn = libgrt.grt_integ_static_grn
 """计算静态格林函数"""

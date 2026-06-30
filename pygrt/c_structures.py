@@ -23,6 +23,12 @@ __all__ = [
     "ZNEchs",
     "qwvchs",
     "MECHANISM_NUM",
+    "GRT_DISPERSION_RAYL",
+    "GRT_DISPERSION_LOVE",
+    "GRT_RAYL_DIM",
+    "GRT_LOVE_DIM",
+    "GRT_EGYINTS_MAX",
+    "GRT_SNSTVTY_MAX",
 
     "NPCT_REAL_TYPE",
     "NPCT_CMPLX_TYPE",
@@ -36,7 +42,11 @@ __all__ = [
 
     "c_MODEL1D",
     "c_K_INTEG_PROCESS",
-    "c_GRNSPEC"
+    "c_GRNSPEC",
+    "c_EIGENV",
+    "c_EIGENV_INFO",
+    "c_EIGENFN",
+    "c_EIGENFN_INFO",
 ]
 
 
@@ -50,6 +60,12 @@ ZRTchs = ['Z', 'R', 'T']
 ZNEchs = ['Z', 'N', 'E']
 qwvchs = ['q', 'w', 'v']
 MECHANISM_NUM = 6
+GRT_DISPERSION_RAYL = 0
+GRT_DISPERSION_LOVE = 1
+GRT_RAYL_DIM = 4
+GRT_LOVE_DIM = 2
+GRT_EGYINTS_MAX = 4
+GRT_SNSTVTY_MAX = 3
 
 NPCT_REAL_TYPE = 'f8'
 NPCT_CMPLX_TYPE = 'c16'
@@ -158,4 +174,88 @@ class c_GRNSPEC(Structure):
         ('statsstr', c_char_p),
         ('nstatsidxs', c_size_t),
         ('statsidxs', POINTER(c_size_t)),
+    ]
+
+
+class c_EIGENV(Structure):
+    """
+    和 C 结构体 EIGENV 作匹配
+    """
+
+    _fields_ = [
+        ('c_roots', PREAL),
+        ('u_roots', PREAL),
+        ('c_roots_iref', POINTER(c_size_t)),
+        ('n', c_size_t),
+    ]
+
+
+class c_EIGENV_INFO(Structure):
+    """
+    和 C 结构体 EIGENV_INFO 作匹配
+    """
+
+    _fields_ = [
+        ('nf', c_size_t),
+        ('freqs', PREAL),
+        ('nmode', c_size_t),
+        ('modes', POINTER(c_size_t)),
+        ('wtype', c_int),
+        ('print_sec', c_bool),
+
+        ('cmin', REAL),
+        ('cmax', REAL),
+        ('manual_crange', c_bool),
+        ('iref', c_size_t),
+        ('manual_iref', c_bool),
+
+        ('satol', REAL),
+        ('uniform_dc', REAL),
+
+        ('cgap', REAL),
+        ('rtol', REAL),
+        ('vgap', REAL),
+
+        ('neval', c_size_t),
+
+        ('eigv', POINTER(c_EIGENV)),
+    ]
+
+
+class c_EIGENFN(Structure):
+    """
+    和 C 结构体 EIGENFN 作匹配
+    """
+
+    _fields_ = [
+        ('eigenC', REAL),
+        ('fn', POINTER(CPLX*4)),
+        ('egyint', CPLX*GRT_EGYINTS_MAX),
+        ('csens', POINTER(CPLX*GRT_SNSTVTY_MAX)),
+        ('usens', POINTER(CPLX*GRT_SNSTVTY_MAX)),
+    ]
+
+
+class c_EIGENFN_INFO(Structure):
+    """
+    和 C 结构体 EIGENFN_INFO 作匹配
+    """
+
+    _fields_ = [
+        ('nf', c_size_t),
+        ('freqs', PREAL),
+        ('nmode', c_size_t),
+        ('modes', POINTER(c_size_t)),
+        ('wtype', c_int),
+
+        ('nz', c_size_t),
+        ('zs', PREAL),
+        ('z_irefs', POINTER(c_size_t)),
+
+        ('cpar_nz', c_size_t),
+        ('cpar_zs', PREAL),
+        ('cpar_z_irefs', POINTER(c_size_t)),
+
+        ('eigv', POINTER(c_EIGENV)),
+        ('eigfn', POINTER(POINTER(c_EIGENFN))),
     ]
