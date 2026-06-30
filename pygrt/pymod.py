@@ -23,8 +23,10 @@ from copy import deepcopy
 
 from ctypes import Array, pointer
 from ctypes import _Pointer
+from ctypes import cast
 from .c_interfaces import *
 from .c_structures import *
+from .modal import PyDispersion, _normalize_wave_type
 from .pygrn import PyGreenFunction
 
 __all__ = [
@@ -53,6 +55,7 @@ class PyModel1D:
         self.topbound:str = topbound
         self.botbound:str = botbound
         self.hasLiquid = False
+        self._modarr0 = np.array(modarr0, dtype=NPCT_REAL_TYPE, copy=True)
 
         if depsrc < 0.0 or deprcv < 0.0:
             raise ValueError("Negative source depth or receiver depth is not supported.")
@@ -99,6 +102,419 @@ class PyModel1D:
         nonzero_vb = vb[vb > 0]
         self.vmin = min(np.min(va), np.min(nonzero_vb)) if nonzero_vb.size else np.min(va)
         self.vmax = max(np.max(va), np.max(vb))
+
+
+    def _read_modal_model(self):
+        '''
+            读取未插入震源和台站虚拟层的模型，供面波相关 C 函数使用。
+        '''
+        boundDct = {
+            'free': 0,
+            'rigid': 1,
+            'halfspace': 2
+        }
+
+        with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmpfile:
+            ncol = self._modarr0.shape[-1]
+            np.savetxt(tmpfile, self._modarr0.reshape(-1, ncol), "%.15e")
+            tmp_path = tmpfile.name
+
+        try:
+            c_mod1d_ptr = C_grt_read_mod1d_from_file(tmp_path.encode("utf-8"), -1.0, -1.0, True)
+            C_grt_set_mod1d_boundary(c_mod1d_ptr, boundDct[self.topbound], boundDct[self.botbound])
+            return c_mod1d_ptr
+        finally:
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+
+
+    @staticmethod
+    def _resolve_dispersion_freqs(freqs, freq_range):
+        if freqs is not None and freq_range is not None:
+            raise ValueError("Set only one of freqs and freq_range.")
+        if freqs is None and freq_range is None:
+            raise ValueError("Set one of freqs and freq_range.")
+
+        if freq_range is not None:
+            if len(freq_range) != 3:
+                raise ValueError("freq_range must be (f1, f2, df).")
+            f1, f2, df = [float(x) for x in freq_range]
+            if df <= 0.0:
+                raise ValueError("freq_range df must be positive.")
+            if f1 < 0.0 or f2 <= 0.0:
+                raise ValueError("freq_range f1/f2 must be nonnegative/positive.")
+            if f1 > f2:
+                raise ValueError("freq_range f1 must be <= f2.")
+            f1 = max(f1, df)
+            f2 = max(f1, f2)
+            nfreq = int(np.floor((f2 - f1)/df + 1e-8)) + 1
+            freqs = f1 + np.arange(nfreq, dtype=NPCT_REAL_TYPE)*df
+        else:
+            freqs = np.asarray(freqs, dtype=NPCT_REAL_TYPE)
+            if freqs.ndim != 1:
+                raise ValueError("freqs must be a 1-D array.")
+            freqs = np.sort(freqs.copy())
+
+        if freqs.size == 0:
+            raise ValueError("freqs must not be empty.")
+        if np.any(freqs <= 0.0):
+            raise ValueError("freqs must be positive.")
+
+        return freqs.astype(NPCT_REAL_TYPE, copy=False)
+
+
+    @staticmethod
+    def _modal_wave_type_to_int(wave_type):
+        wave_type = _normalize_wave_type(wave_type)
+        if wave_type == "Rayleigh":
+            return wave_type, GRT_DISPERSION_RAYL
+        return wave_type, GRT_DISPERSION_LOVE
+
+
+    @staticmethod
+    def _free_eigenv_roots(eigv_arr, nf):
+        for iw in range(nf):
+            eigv = eigv_arr[iw]
+            if bool(eigv.c_roots):
+                C_grt_free(cast(eigv.c_roots, c_void_p))
+            if bool(eigv.u_roots):
+                C_grt_free(cast(eigv.u_roots, c_void_p))
+            if bool(eigv.c_roots_iref):
+                C_grt_free(cast(eigv.c_roots_iref, c_void_p))
+
+
+    def _set_modal_model_source_receiver(self, c_mod1d):
+        c_mod1d.depsrc = self.depsrc
+        c_mod1d.deprcv = self.deprcv
+        c_mod1d.ircvup = self.depsrc >= self.deprcv
+
+        deps = npct.as_array(c_mod1d.Dep, (c_mod1d.n,))
+        isrc = 0
+        for i in range(c_mod1d.n - 1):
+            isrc = i
+            if deps[i + 1] >= self.depsrc:
+                break
+        ircv = 0
+        for i in range(c_mod1d.n - 1):
+            ircv = i
+            if deps[i + 1] >= self.deprcv:
+                break
+        c_mod1d.isrc = isrc
+        c_mod1d.ircv = ircv
+
+
+    def _default_modal_crange(self, c_mod1d):
+        va = npct.as_array(c_mod1d.Va, (c_mod1d.n,))
+        vb = npct.as_array(c_mod1d.Vb, (c_mod1d.n,))
+        is_liquid = npct.as_array(c_mod1d.isLiquid, (c_mod1d.n,))
+
+        vb_for_min = np.where(vb > 0.0, vb, va)
+        vbmin = np.min(vb_for_min)
+        vbn = vb[-1] if vb[-1] > 0.0 else va[-1]
+
+        for i in range(c_mod1d.n - 1):
+            if (not is_liquid[i]) and is_liquid[i + 1]:
+                vbmin *= 1e-3
+                break
+
+        if vbmin >= vbn:
+            raise ValueError(f"minimum velocity ({vbmin}) >= halfspace velocity ({vbn}).")
+
+        return float(vbmin), float(vbn)
+
+
+    def compute_dispersion(
+        self,
+        freqs=None,
+        freq_range=None,
+        wave_type:Literal['Rayleigh', 'Love']='Rayleigh',
+        nmode:Union[int,None]=0,
+        cmin:Union[float,None]=None,
+        cmax:Union[float,None]=None,
+        iref:Union[int,None]=None,
+        satol:float=1e-3,
+        cgap:float=1e-7,
+        rtol:float=1e-4,
+        vgap:float=1e-7,
+        uniform_dc:float=0.0,
+        print_progress:bool=False):
+        r'''
+            Compute phase-velocity dispersion curves of Rayleigh or Love waves.
+
+            :param    freqs:       frequency points in Hz
+            :param    freq_range:  tuple ``(f1, f2, df)``, matching CLI ``-Ff1/f2/df``
+            :param    wave_type:   ``"Rayleigh"`` or ``"Love"``
+            :param    nmode:       maximum mode order, 0 for fundamental mode, None for all roots
+
+            :return:
+                - **dispersion** - :class:`pygrt.modal.PyDispersion`
+        '''
+        if self.topbound != 'free' or self.botbound != 'halfspace':
+            raise NotImplementedError(
+                "Surface-wave dispersion currently only supports "
+                "topbound='free' and botbound='halfspace'."
+            )
+
+        wave_type, wtype = self._modal_wave_type_to_int(wave_type)
+        freqs = self._resolve_dispersion_freqs(freqs, freq_range)
+
+        if nmode is not None:
+            if int(nmode) < 0:
+                raise ValueError("nmode must be nonnegative or None.")
+            c_nmode = int(nmode) + 1
+        else:
+            c_nmode = 0
+
+        if (cmin is None) != (cmax is None):
+            raise ValueError("cmin and cmax must be set together.")
+        if satol <= 0.0 or cgap <= 0.0 or rtol <= 0.0 or vgap <= 0.0:
+            raise ValueError("satol, cgap, rtol and vgap must be positive.")
+        if uniform_dc < 0.0:
+            raise ValueError("uniform_dc must be nonnegative.")
+
+        c_freqs = npct.as_ctypes(freqs)
+        eigv_arr = (c_EIGENV*len(freqs))()
+        eigmet = c_EIGENV_INFO()
+        eigmet.nf = len(freqs)
+        eigmet.freqs = c_freqs
+        eigmet.nmode = c_nmode
+        eigmet.modes = None
+        eigmet.wtype = wtype
+        eigmet.print_sec = False
+        eigmet.satol = satol
+        eigmet.uniform_dc = uniform_dc
+        eigmet.cgap = cgap
+        eigmet.rtol = rtol
+        eigmet.vgap = vgap
+        eigmet.eigv = eigv_arr
+
+        c_mod1d_ptr = self._read_modal_model()
+        try:
+            c_mod1d = c_mod1d_ptr.contents
+            if cmin is None:
+                eigmet.cmin, eigmet.cmax = self._default_modal_crange(c_mod1d)
+                eigmet.manual_crange = False
+            else:
+                if cmin <= 0.0 or cmax <= cmin:
+                    raise ValueError("Require 0 < cmin < cmax.")
+                eigmet.cmin = cmin
+                eigmet.cmax = cmax
+                eigmet.manual_crange = True
+
+            if iref is not None:
+                if int(iref) < 0 or int(iref) >= c_mod1d.n:
+                    raise ValueError("iref is out of model layer range.")
+                if wtype == GRT_DISPERSION_LOVE and c_mod1d.isLiquid[int(iref)]:
+                    raise ValueError("Love wave iref cannot be in a liquid layer.")
+                eigmet.iref = int(iref)
+                eigmet.manual_iref = True
+
+            C_grt_get_secular_roots(c_mod1d_ptr, pointer(eigmet), print_progress)
+
+            max_roots = c_nmode if c_nmode > 0 else max([eigv_arr[i].n for i in range(len(freqs))] + [0])
+            c = np.full((len(freqs), max_roots), np.nan, dtype=NPCT_REAL_TYPE)
+            ciref = np.full((len(freqs), max_roots), -1, dtype=np.int64)
+            cnum = np.zeros((len(freqs),), dtype=np.int64)
+
+            for iw in range(len(freqs)):
+                nroot = min(eigv_arr[iw].n, max_roots)
+                cnum[iw] = eigv_arr[iw].n
+                if nroot > 0:
+                    c[iw, :nroot] = npct.as_array(eigv_arr[iw].c_roots, (eigv_arr[iw].n,))[:nroot]
+                    ciref[iw, :nroot] = npct.as_array(eigv_arr[iw].c_roots_iref, (eigv_arr[iw].n,))[:nroot]
+        finally:
+            self._free_eigenv_roots(eigv_arr, len(freqs))
+            C_grt_free_mod1d(c_mod1d_ptr)
+
+        return PyDispersion(wave_type, freqs, c, ciref, cnum)
+
+
+    @staticmethod
+    def _validate_modal_fft_freqs(freqs):
+        if len(freqs) < 2:
+            raise ValueError("Modal summation requires at least two frequency points.")
+        df = freqs[1] - freqs[0]
+        if df <= 0.0:
+            raise ValueError("dispersion frequencies must be increasing.")
+        if not np.allclose(np.diff(freqs), df, rtol=1e-8, atol=1e-10):
+            raise ValueError("Modal summation requires uniformly sampled frequencies.")
+        if not np.isclose(freqs[0], df, rtol=1e-8, atol=1e-10):
+            raise ValueError(
+                "Modal summation requires dispersion generated like "
+                "freq_range=(0, fmax, df)."
+            )
+        return float(df)
+
+
+    def _build_eigenfn_info_for_modsum(self, dispersion, modes, freqband):
+        all_freqs = dispersion.freqs.astype(NPCT_REAL_TYPE, copy=False)
+        if freqband is None:
+            freq_mask = np.ones(all_freqs.shape, dtype=bool)
+        else:
+            if len(freqband) != 2:
+                raise ValueError("freqband must be [f1, f2].")
+            f1, f2 = [float(x) for x in freqband]
+            if f1 > f2:
+                raise ValueError("freqband f1 must be <= f2.")
+            freq_mask = (all_freqs >= f1) & (all_freqs <= f2)
+        freq_idxs = np.nonzero(freq_mask)[0]
+        if freq_idxs.size == 0:
+            raise ValueError("freqband selects no frequencies.")
+
+        if modes is None:
+            modes = np.arange(dispersion.c.shape[1], dtype=np.int64)
+        else:
+            modes = np.asarray(modes, dtype=np.int64)
+            if modes.ndim != 1:
+                raise ValueError("modes must be a 1-D array.")
+            if np.any(modes < 0) or np.any(modes >= dispersion.c.shape[1]):
+                raise ValueError("modes contains out-of-range mode indexes.")
+
+        nf = len(freq_idxs)
+        nmode = len(modes)
+        eigv_arr = (c_EIGENV*nf)()
+        eigfn_rows = (POINTER(c_EIGENFN)*nf)()
+        eigfn_storage = []
+        c_roots_storage = []
+        u_roots_storage = []
+        ciref_storage = []
+
+        for out_iw, src_iw in enumerate(freq_idxs):
+            valid_modes = [int(mode) for mode in modes if mode < dispersion.cnum[src_iw]]
+            nroot = len(valid_modes)
+            c_vals = np.array([dispersion.c[src_iw, mode] for mode in valid_modes], dtype=NPCT_REAL_TYPE)
+            iref_vals = np.array([dispersion.ciref[src_iw, mode] for mode in valid_modes], dtype=np.uint64)
+            u_vals = np.zeros((nroot,), dtype=NPCT_REAL_TYPE)
+
+            c_roots_storage.append(npct.as_ctypes(c_vals))
+            u_roots_storage.append(npct.as_ctypes(u_vals))
+            ciref_storage.append(npct.as_ctypes(iref_vals))
+
+            eigv_arr[out_iw].c_roots = c_roots_storage[-1]
+            eigv_arr[out_iw].u_roots = u_roots_storage[-1]
+            eigv_arr[out_iw].c_roots_iref = ciref_storage[-1]
+            eigv_arr[out_iw].n = nroot
+
+            eigfn_storage.append((c_EIGENFN*nroot)())
+            for ic in range(nroot):
+                eigfn_storage[-1][ic].eigenC = c_vals[ic]
+            eigfn_rows[out_iw] = eigfn_storage[-1]
+
+        c_eigfn_freqs = npct.as_ctypes(all_freqs[freq_idxs].astype(NPCT_REAL_TYPE, copy=True))
+        c_modes = npct.as_ctypes(modes.astype(np.uint64, copy=True))
+
+        eigfnmet = c_EIGENFN_INFO()
+        eigfnmet.nf = nf
+        eigfnmet.freqs = c_eigfn_freqs
+        eigfnmet.nmode = nmode
+        eigfnmet.modes = c_modes
+        eigfnmet.wtype = self._modal_wave_type_to_int(dispersion.wave_type)[1]
+        eigfnmet.cpar_nz = 0
+        eigfnmet.eigv = eigv_arr
+        eigfnmet.eigfn = eigfn_rows
+
+        keepalive = (
+            c_eigfn_freqs, c_modes, eigv_arr, eigfn_rows,
+            eigfn_storage, c_roots_storage, u_roots_storage, ciref_storage,
+        )
+        return eigfnmet, keepalive
+
+
+    def compute_surface_grn(
+        self,
+        dispersion:PyDispersion,
+        distarr:Union[np.ndarray,List[float],float],
+        modes:Union[np.ndarray,List[int],None]=None,
+        freqband:Union[np.ndarray,List[float],None]=None,
+        upsampling_n:int=1,
+        delayT0:float=0.0,
+        delayV0:float=0.0,
+        skipImagComps:bool=False,
+        calc_upar:bool=False,
+        gf_source=['EX', 'VF', 'HF', 'DC']):
+        r'''
+            Compute surface-wave Green's functions using modal summation.
+
+            :param    dispersion:    :class:`pygrt.modal.PyDispersion`
+            :param    distarr:       epicentral distances (km), or a single float
+            :param    modes:         mode indexes to sum, default all available columns
+            :param    freqband:      optional frequency range ``[f1, f2]`` in Hz
+
+            :return:
+                - **dataLst** - Green's Functions at multiple distances, in a list of :class:`obspy.Stream`
+        '''
+        if not isinstance(dispersion, PyDispersion):
+            raise TypeError("dispersion must be a PyDispersion instance.")
+        if self.topbound != 'free' or self.botbound != 'halfspace':
+            raise NotImplementedError(
+                "Surface-wave modal summation currently only supports "
+                "topbound='free' and botbound='halfspace'."
+            )
+        if upsampling_n <= 0:
+            raise ValueError("upsampling_n must be positive.")
+
+        df = self._validate_modal_fft_freqs(dispersion.freqs)
+        fft_nf = len(dispersion.freqs) + 1
+        fft_nt = 2*(fft_nf - 1)
+        fft_dt = 0.5 / dispersion.freqs[-1]
+        fft_freqs = (np.arange(fft_nf)*df).astype(NPCT_REAL_TYPE)
+        c_fft_freqs = npct.as_ctypes(fft_freqs)
+
+        if isinstance(distarr, float) or isinstance(distarr, int):
+            distarr = np.array([distarr*1.0])
+        distarr = np.array(distarr, dtype=NPCT_REAL_TYPE, copy=True)
+        if np.any(distarr < 0.0):
+            raise ValueError("distarr < 0")
+        distarr[distarr == 0.0] = 1e-5
+
+        pygrnLst, c_grnArr = self._init_grn(distarr, fft_nt, fft_dt, upsampling_n, fft_freqs, 0.0, '')
+        pygrnLst_uiz = []
+        c_grnArr_uiz = None
+        pygrnLst_uir = []
+        c_grnArr_uir = None
+        if calc_upar:
+            pygrnLst_uiz, c_grnArr_uiz = self._init_grn(distarr, fft_nt, fft_dt, upsampling_n, fft_freqs, 0.0, 'z')
+            pygrnLst_uir, c_grnArr_uir = self._init_grn(distarr, fft_nt, fft_dt, upsampling_n, fft_freqs, 0.0, 'r')
+
+        c_rs = npct.as_ctypes(distarr.astype(NPCT_REAL_TYPE, copy=True))
+        grn = c_GRNSPEC()
+        grn.nf = fft_nf
+        grn.freqs = c_fft_freqs
+        grn.nf1 = 0
+        grn.nf2 = fft_nf - 1
+        grn.nr = len(distarr)
+        grn.rs = c_rs
+        grn.wI = 0.0
+        grn.keepAllFreq = True
+        grn.calc_upar = calc_upar
+        grn.u = c_grnArr
+        grn.uiz = c_grnArr_uiz
+        grn.uir = c_grnArr_uir
+        grn.statsstr = None
+        grn.nstatsidxs = 0
+        grn.statsidxs = None
+
+        eigfnmet, keepalive = self._build_eigenfn_info_for_modsum(dispersion, modes, freqband)
+        _ = keepalive
+
+        c_mod1d_ptr = self._read_modal_model()
+        try:
+            c_mod1d = c_mod1d_ptr.contents
+            self._set_modal_model_source_receiver(c_mod1d)
+            eigfnmet.cpar_nz = c_mod1d.n
+            C_grt_modsum_grn_spec(
+                c_mod1d_ptr,
+                self._modal_wave_type_to_int(dispersion.wave_type)[1],
+                pointer(eigfnmet),
+                pointer(grn),
+            )
+        finally:
+            C_grt_free_mod1d(c_mod1d_ptr)
+
+        return self._get_stream_from_grn_spectra(
+            distarr, pygrnLst, pygrnLst_uiz, pygrnLst_uir,
+            delayT0, delayV0, skipImagComps, calc_upar, gf_source
+        )
 
     
     def compute_travt1d(self, dist:float):
