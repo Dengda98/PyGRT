@@ -1,6 +1,8 @@
 """
     :file:     modal.py
     :author:   Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
+    :contributors: Yuan Yusong (yuanyusong25@gmail.com)
+    :date:     2026-06-30
 
     Python端使用的面波频散相关类。
 """

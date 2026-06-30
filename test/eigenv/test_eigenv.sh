@@ -11,4 +11,6 @@ grt disp2asc -Cphase_R.nc -N > phase_R.txt
 grt eigenv -M../milrow -SR -X1 > secfunc_R.txt
 grt eigenv -M../milrow -SL -X1 > secfunc_L.txt
 
+python -u test_eigenv.py
+
 rm *.nc *.txt

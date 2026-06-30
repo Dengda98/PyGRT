@@ -2,6 +2,7 @@
     :file:     pymod.py  
     :author:   Zhu Dengda (zhudengda@mail.iggcas.ac.cn)  
     :date:     2024-07-24  
+    :updated:  2026-06-30 by Yuan Yusong (yuanyusong25@gmail.com), added modal surface-wave Python APIs
 
     该文件包括 Python端使用的模型 :class:`pygrt.c_structures.c_PyModel1D`
 
