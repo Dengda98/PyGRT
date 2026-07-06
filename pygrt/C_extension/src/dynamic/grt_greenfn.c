@@ -310,16 +310,17 @@ printf("\n"
 "                 Default use -Cd when fabs(depsrc-deprcv) <= %.1f.\n", GRT_MIN_DEPTH_GAP_SRC_RCV); printf(
 "\n"
 "    -E[p]<t0>[/<v0>]\n"
-"                 Introduce the time delay in results. The total \n"
-"                 delay = <t0> + dist/<v0>, dist is the\n"
+"                 Introduce the time shift in results. The times series \n"
+"                 starts at the travel time = <t0> + dist/<v0>, where dist is the\n"
 "                 straight-line distance between source and \n"
 "                 receiver.\n"
-"                 <t0>: reference delay (s), default t0=0.0\n"); printf(
+"                 <t0>: reference offset (s), default t0=0.0\n"); printf(
 "                 <v0>: reference velocity (km/s), \n"
 "                       default 0.0 not use. \n"
 "                 -Ep<t0>: \n"
 "                       the delay (the begining time) will be <t0> + first P, \n"
 "                       e.g., -Ep-10.\n"
+"                 If -E is not used, then the first time sample will be the origin time.\n"
 "\n"
 "    -K[+k<k0>][+f][+s<ampk>][+e<keps>][+v<vmin>]\n"
 "                 Define the wavenumber integration upper bound\n"
@@ -607,15 +608,15 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             case 'E':
                 Ctrl->E.active = true;
                 if(optarg[0] == 'p'){
+                    Ctrl->E.refFirstP = true;
                     if(1 != sscanf(optarg+1, "%lf", &Ctrl->E.delayT0)){
                         GRTBadOptionError(E, "");
                     };
                     if(Ctrl->E.delayT0 >= 0.0){
                         GRTBadOptionError(E, "Can't set positive t0(%f) in -Ep.", Ctrl->E.delayT0);
                     }
-                    Ctrl->E.refFirstP = true;
                 } else {
-                    if(0 == sscanf(optarg+1, "%lf/%lf", &Ctrl->E.delayT0, &Ctrl->E.delayV0)){
+                    if(0 == sscanf(optarg, "%lf/%lf", &Ctrl->E.delayT0, &Ctrl->E.delayV0)){
                         GRTBadOptionError(E, "");
                     };
                     if(Ctrl->E.delayV0 < 0.0){
