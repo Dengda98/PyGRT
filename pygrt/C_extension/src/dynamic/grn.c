@@ -82,6 +82,7 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kproc, GRNSPEC *grn, co
     mod1d->omgref = PI2*grn->freqs[grn->nf2];
 
     // 静态解的 kmax ，用于动态解积分上限中的 k0
+    GRTRaiseInfo("depsrc = %.3e, deprcv = %.3e", mod1d->depsrc, mod1d->deprcv);
     real_t static_kmax = 0.0;
     if(Kproc->k0_is_fixed){
         static_kmax = Kproc->k0;
@@ -89,18 +90,16 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kproc, GRNSPEC *grn, co
         size_t ncount = 0, nk = 0;
         static_kmax = grt_predict_static_kmax(mod1d, Kproc->k0, &ncount);
         nk = floor(static_kmax / Kproc->dk) + 1;
-        GRTRaiseInfo(
-            "For a proper kc, ncount = %zu, kc = %.3e, k0 = %.3e, nk = %zu", 
-            ncount, static_kmax, Kproc->k0, nk);
+        GRTRaiseInfo("For a proper kc, kc = %.3e, k0 = %.3e, nk = %zu", static_kmax, Kproc->k0, nk);
         
         if(Kproc->cvgmet == K_INTEG_CONVERG_AUTO){
-            // 如果上限触发边界，且未指定收敛算法，则强制使用 DCM 进行收敛
-            if(static_kmax >= Kproc->k0){
+            // 如果深度恰好相同，或上限触发边界，且未指定收敛算法，则强制使用 DCM 进行收敛
+            if(mod1d->depsrc == mod1d->deprcv || static_kmax >= Kproc->k0){
                 Kproc->cvgmet = K_INTEG_CONVERG_DCM;
                 Kproc->keps = 0.0;
-                GRTRaiseWarning(
-                    "kc reaches k0, apply %s. "
-                    "You should consider to increase the k0 (maximum upper bound)", GRT_EXPLAIN_CVGMETHOD(Kproc->cvgmet));
+                if(static_kmax >= Kproc->k0){
+                    GRTRaiseWarning("kc reaches k0, apply %s. ", GRT_EXPLAIN_CVGMETHOD(Kproc->cvgmet));
+                }
             }
         } else if(Kproc->cvgmet != K_INTEG_CONVERG_REFUSE) {
             // 正常打印手动选择的收敛方法

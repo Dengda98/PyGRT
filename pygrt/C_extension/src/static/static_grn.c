@@ -94,6 +94,7 @@ void grt_integ_static_grn(
 
     // ===================================================================================
     //                          Wavenumber Integration
+    GRTRaiseInfo("depsrc = %.3e, deprcv = %.3e", mod1d->depsrc, mod1d->deprcv);
     // 波数积分上限
     if(Kproc->k0_is_fixed){
         Kproc->kmax = Kproc->k0;
@@ -102,25 +103,23 @@ void grt_integ_static_grn(
         real_t static_kmax = 0.0;
         static_kmax = grt_predict_static_kmax(mod1d, Kproc->k0, &ncount);
         nk = floor(static_kmax / Kproc->dk) + 1;
-        GRTRaiseInfo(
-            "For a proper kc, ncount = %zu, kc = %.3e, k0 = %.3e, nk = %zu", 
-            ncount, static_kmax, Kproc->k0, nk);
+        GRTRaiseInfo("For a proper kc, kc = %.3e, k0 = %.3e, nk = %zu", static_kmax, Kproc->k0, nk);
         
         // 若 nk 不够，适当调整 dk
         if(nk < GRT_MIN_STATIC_NK){
             real_t new_dk = static_kmax / GRT_MIN_STATIC_NK;
-            GRTRaiseWarning("nk(%zu) < %d, adjust dk from %.3e to %.3e", nk, GRT_MIN_STATIC_NK, Kproc->dk, new_dk);
+            GRTRaiseInfo("To increase nk(%zu) to %d, adjust dk from %.3e to %.3e", nk, GRT_MIN_STATIC_NK, Kproc->dk, new_dk);
             Kproc->dk = new_dk;
         }
         
         if(Kproc->cvgmet == K_INTEG_CONVERG_AUTO){
-            // 如果上限触发边界，且未指定收敛算法，则强制使用 DCM 进行收敛
-            if(static_kmax >= Kproc->k0){
+            // 如果深度恰好相同，或上限触发边界，且未指定收敛算法，则强制使用 DCM 进行收敛
+            if(mod1d->depsrc == mod1d->deprcv || static_kmax >= Kproc->k0){
                 Kproc->cvgmet = K_INTEG_CONVERG_DCM;
                 Kproc->keps = 0.0;
-                GRTRaiseWarning(
-                    "kc reaches k0, apply %s. "
-                    "You should consider to increase the k0 (maximum upper bound)", GRT_EXPLAIN_CVGMETHOD(Kproc->cvgmet));
+                if(static_kmax >= Kproc->k0){
+                    GRTRaiseWarning("kc reaches k0, apply %s. ", GRT_EXPLAIN_CVGMETHOD(Kproc->cvgmet));
+                }
             }
         } else if(Kproc->cvgmet != K_INTEG_CONVERG_REFUSE) {
             // 正常打印手动选择的收敛方法
