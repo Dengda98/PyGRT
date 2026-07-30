@@ -62,6 +62,26 @@ void grt_free_K_INTEG(K_INTEG *K)
 }
 
 
+void grt_int_dcm_revision(real_t kmax, real_t k, cplxChnlGrid QWV, cplxChnlGrid QWV_kmax, bool calc_upar, cplxChnlGrid QWVz, cplxChnlGrid QWVz_kmax)
+{
+    GRT_LOOP_ChnlGrid(im, c){
+        real_t scale = 1.0, zscale = 1.0;
+        if(GRT_SRC_M_INDEX_IS_FORCE(im)){
+            scale = kmax / k;
+            zscale = 1.0;
+        } else {
+            scale = 1.0;
+            zscale = k / kmax;
+        }
+
+        QWV[im][c] -= QWV_kmax[im][c] * scale;
+        if(calc_upar){
+            QWVz[im][c] -= QWVz_kmax[im][c] * zscale;
+        }
+    }
+}
+
+
 void grt_int_Pk(real_t k, real_t r, const cplxChnlGrid QWV, bool calc_uir, cplxIntegGrid SUM)
 {
     real_t bjmk[GRT_MORDER_MAX+1] = {0};

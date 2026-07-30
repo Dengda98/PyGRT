@@ -170,6 +170,9 @@ enum {
     GRT_SRC_M_SS_INDEX = 5,
 };
 
+// 判断这个索引是不是一个单力源索引
+#define GRT_SRC_M_INDEX_IS_FORCE(im)   (((im) == GRT_SRC_M_VF_INDEX) || ((im) == GRT_SRC_M_HF_INDEX))
+
 /** 当前模块名，根据所调用模块进行切换 */
 extern const char *GRT_MODULE_NAME;
 

@@ -60,6 +60,18 @@ K_INTEG * grt_copy_K_INTEG(const K_INTEG *K);
  */
 void grt_free_K_INTEG(K_INTEG *K);
 
+/** 
+ * 波数积分过程对 DCM 对原积分的分解
+ * 
+ * @param[in]     kmax         DCM 校正所用的最大波数
+ * @param[in]     k            当前积分波数
+ * @param[in,out] QWV          当前波数处的核函数；函数返回时已减去 DCM 分解项
+ * @param[in]     QWV_kmax     最大波数处的核函数，用于构造 DCM 分解项
+ * @param[in]     calc_upar    是否同时校正核函数的 z 方向空间导数
+ * @param[in,out] QWVz         当前波数处核函数的 z 方向导数；仅当 calc_upar 为 true 时修改
+ * @param[in]     QWVz_kmax    最大波数处核函数的 z 方向导数，用于构造 DCM 分解项
+ */
+void grt_int_dcm_revision(real_t kmax, real_t k, cplxChnlGrid QWV, cplxChnlGrid QWV_kmax, bool calc_upar, cplxChnlGrid QWVz, cplxChnlGrid QWVz_kmax);
 
 /**
  * 计算核函数和Bessel函数的乘积，相当于计算了一个小积分区间内的值。参数中涉及两种数组形状：

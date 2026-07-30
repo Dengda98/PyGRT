@@ -230,10 +230,14 @@ static bool check_fit(
  * 以下实际拟合的二次函数是 sqrt(k)*F(k,w), 这样积分时可以避免计算超越函数
  * 
  */
-static void interv_integ(const KInterval *ptKitv, size_t nr, real_t *rs, K_INTEG *K)
+static void interv_integ(const KInterval *ptKitv, size_t nr, real_t *rs, K_INTEG *K, real_t depsrc, real_t deprcv)
 {
     // 震中距rs循环
-    for(size_t ir=0; ir<nr; ++ir){
+    for(size_t ir = 0; ir < nr; ++ir){
+
+        // 跳过奇异点
+        if(depsrc == deprcv && GRT_IS_SMALLE_DISTANCE(rs[ir]))  continue;
+
 
         memset(K->SUM, 0, sizeof(cplxIntegGrid));
 
@@ -279,6 +283,9 @@ real_t grt_sa_filon_integ(
     MODEL1D_STATE *mstat, real_t k0, real_t dk0, real_t tol, real_t kmax, real_t kref,
     size_t nr, real_t *rs, K_INTEG *K, FILE *fstats, GRT_KernelFunc kerfunc)
 {   
+    real_t depsrc = mstat->mod1d->depsrc;
+    real_t deprcv = mstat->mod1d->deprcv;
+    
     real_t kmin = k0 + dk0;
     if(kmin >= kmax)  return k0;
 
@@ -304,10 +311,7 @@ real_t grt_sa_filon_integ(
         if(mstat->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
         
         if(K->applyDCM){
-            GRT_LOOP_ChnlGrid(im, c){
-                Kitv.F3[i][im][c] -= K->QWV_kmax[im][c];
-                if(K->calc_upar) Kitv.Fz3[i][im][c] -= K->QWVz_kmax[im][c] * Kitv.k3[i] / kmax;
-            }
+            grt_int_dcm_revision(kmax, Kitv.k3[i], Kitv.F3[i], K->QWV_kmax, K->calc_upar, Kitv.Fz3[i], K->QWVz_kmax);
         }
     }
     stack_push(&stack, Kitv);
@@ -362,14 +366,8 @@ real_t grt_sa_filon_integ(
         if(mstat->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
         if(K->applyDCM){
-            GRT_LOOP_ChnlGrid(im, c){
-                Kitv_left.F3[1][im][c] -= K->QWV_kmax[im][c];
-                Kitv_right.F3[1][im][c] -= K->QWV_kmax[im][c];
-                if(K->calc_upar){
-                    Kitv_left.Fz3[1][im][c]  -= K->QWVz_kmax[im][c] * Kitv_left.k3[1]  / kmax;
-                    Kitv_right.Fz3[1][im][c] -= K->QWVz_kmax[im][c] * Kitv_right.k3[1] / kmax;
-                }
-            }
+            grt_int_dcm_revision(kmax, Kitv_left.k3[1], Kitv_left.F3[1], K->QWV_kmax, K->calc_upar, Kitv_left.Fz3[1], K->QWVz_kmax);
+            grt_int_dcm_revision(kmax, Kitv_right.k3[1], Kitv_right.F3[1], K->QWV_kmax, K->calc_upar, Kitv_right.Fz3[1], K->QWVz_kmax);
         }
 
         // 增加新值，并比较QWV最大绝对值
@@ -406,12 +404,12 @@ real_t grt_sa_filon_integ(
                 }
             }
             // 计算积分
-            interv_integ(&Kitv, nr, rs, K2);
+            interv_integ(&Kitv, nr, rs, K2, depsrc, deprcv);
         }
     } // END sampling
 
     // 乘上总系数 sqrt(2.0/(PI*r)) / dk0,  除dks0是在该函数外还会再乘dk0, 并将结果加到原数组中
-    for(size_t ir=0; ir<nr; ++ir){
+    for(size_t ir = 0; ir < nr; ++ir){
         real_t tmp = sqrt(2.0/(PI*rs[ir])) / dk0;
 
         GRT_LOOP_IntegGrid(im, v){
