@@ -20,7 +20,7 @@
 #include <errno.h>
 
 #include "grt/static/static_grn.h"
-#include "grt/static/static_util.h"
+#include "grt/integral/kmax.h"
 #include "grt/common/const.h"
 #include "grt/common/model.h"
 #include "grt/integral/integ_process.h"
@@ -101,7 +101,11 @@ void grt_integ_static_grn(
     } else {
         size_t ncount = 0, nk = 0;
         real_t static_kmax = 0.0;
-        static_kmax = grt_predict_static_kmax(mod1d, Kproc->k0, &ncount);
+        MODEL1D_STATE *kmax_mstat = grt_init_mod1d_state(mod1d);
+        grt_update_mod1d_state_omega(kmax_mstat, 1.0, true);
+        static_kmax = grt_predict_kmax(
+            kmax_mstat, grt_static_kernel, Kproc->k0 * 1e-3, Kproc->k0, &ncount);
+        grt_free_mod1d_state(kmax_mstat);
         nk = floor(static_kmax / Kproc->dk) + 1;
         GRTRaiseInfo("For a proper kc, kc = %.3e, k0 = %.3e, nk = %zu", static_kmax, Kproc->k0, nk);
         

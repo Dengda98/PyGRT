@@ -21,7 +21,7 @@
 
 #include "grt/dynamic/grn.h"
 #include "grt/dynamic/grnspec.h"
-#include "grt/static/static_util.h"
+#include "grt/integral/kmax.h"
 #include "grt/integral/integ_process.h"
 
 #include "grt/common/const.h"
@@ -81,30 +81,10 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kproc, GRNSPEC *grn, co
 
     mod1d->omgref = PI2*grn->freqs[grn->nf2];
 
-    // 静态解的 kmax ，用于动态解积分上限中的 k0
+    // k0 是动态核函数搜索上限中的零频部分
     GRTRaiseInfo("depsrc = %.3e, deprcv = %.3e", mod1d->depsrc, mod1d->deprcv);
-    real_t static_kmax = 0.0;
-    if(Kproc->k0_is_fixed){
-        static_kmax = Kproc->k0;
-    } else {
-        size_t ncount = 0, nk = 0;
-        static_kmax = grt_predict_static_kmax(mod1d, Kproc->k0, &ncount);
-        nk = floor(static_kmax / Kproc->dk) + 1;
-        GRTRaiseInfo("For a proper kc, kc = %.3e, k0 = %.3e, nk = %zu", static_kmax, Kproc->k0, nk);
-        
-        if(Kproc->cvgmet == K_INTEG_CONVERG_AUTO){
-            // 如果深度恰好相同，或上限触发边界，且未指定收敛算法，则强制使用 DCM 进行收敛
-            if(mod1d->depsrc == mod1d->deprcv || static_kmax >= Kproc->k0){
-                Kproc->cvgmet = K_INTEG_CONVERG_DCM;
-                Kproc->keps = 0.0;
-                if(static_kmax >= Kproc->k0){
-                    GRTRaiseWarning("kc reaches k0, apply %s. ", GRT_EXPLAIN_CVGMETHOD(Kproc->cvgmet));
-                }
-            }
-        } else if(Kproc->cvgmet != K_INTEG_CONVERG_REFUSE) {
-            // 正常打印手动选择的收敛方法
-            GRTRaiseInfo("Manually set the %s.", GRT_EXPLAIN_CVGMETHOD(Kproc->cvgmet));
-        }
+    if(Kproc->cvgmet != K_INTEG_CONVERG_AUTO && Kproc->cvgmet != K_INTEG_CONVERG_REFUSE){
+        GRTRaiseInfo("Manually set the %s.", GRT_EXPLAIN_CVGMETHOD(Kproc->cvgmet));
     }
 
     // 频率omega循环
@@ -164,8 +144,33 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kproc, GRNSPEC *grn, co
 
         // ===================================================================================
         //                          Wavenumber Integration
-        // 波数积分上限
-        local_Kproc->kmax = hypot(static_kmax, local_Kproc->ampk * w / local_Kproc->vmin);
+        // 每个频率均直接根据动态核函数估计积分上限
+        real_t kmax_ref = hypot(local_Kproc->k0, local_Kproc->ampk * w / local_Kproc->vmin);
+        if(local_Kproc->k0_is_fixed){
+            local_Kproc->kmax = kmax_ref;
+        } else {
+            size_t ncount = 0;
+            real_t kmax_init = GRT_MAX(local_Kproc->dk, w / local_Kproc->vmin);
+            local_Kproc->kmax = grt_predict_kmax(
+                local_mstat, grt_kernel, kmax_init, kmax_ref, &ncount);
+            // #pragma omp critical
+            // {
+            //     GRTRaiseInfo("iw=%zu, freq=%.3e, kref=%.3e, kmax=%.3e", iw, w/PI2, kmax_ref, local_Kproc->kmax);
+            // }
+
+            if(local_Kproc->cvgmet == K_INTEG_CONVERG_AUTO &&
+                (mod1d->depsrc == mod1d->deprcv || local_Kproc->kmax >= kmax_ref)){
+                local_Kproc->cvgmet = K_INTEG_CONVERG_DCM;
+                local_Kproc->keps = 0.0;
+                if(local_Kproc->kmax >= kmax_ref){
+                    #pragma omp critical
+                    {
+                        GRTRaiseWarning("iw=%zu: kc reaches kmax_ref, apply %s.", iw,
+                            GRT_EXPLAIN_CVGMETHOD(local_Kproc->cvgmet));
+                    }
+                }
+            }
+        }
         K_INTEG *Kint = grt_wavenumber_integral(local_mstat, grn->nr, grn->rs, local_Kproc, grn->calc_upar, grt_kernel);
 
         // 记录到格林函数结构体内
@@ -210,9 +215,5 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kproc, GRNSPEC *grn, co
     fflush(stdout);
 
 }
-
-
-
-
 
 
