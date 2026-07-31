@@ -92,23 +92,31 @@ void grt_integ_static_grn(
     // 输出积分过程文件
     if(needfstats) grt_KPROC_init_fstats(uniq_nr, uniq_rs, statsstr, "", Kproc);
 
-    // ===================================================================================
-    //                          Wavenumber Integration
     GRTRaiseInfo("depsrc = %.3e, deprcv = %.3e", mod1d->depsrc, mod1d->deprcv);
     if(Kproc->cvgmet != K_INTEG_CONVERG_AUTO && Kproc->cvgmet != K_INTEG_CONVERG_REFUSE){
         GRTRaiseInfo("Manually set the %s.", GRT_EXPLAIN_CVGMETHOD(Kproc->cvgmet));
     }
 
+    // 如果深度一致，必须使用收敛算法
+    if(Kproc->cvgmet == K_INTEG_CONVERG_AUTO && mod1d->depsrc == mod1d->deprcv){
+        Kproc->cvgmet = K_INTEG_CONVERG_DCM;
+        Kproc->keps = 0.0;
+    }
+
+    // ===================================================================================
+    //                          Wavenumber Integration
     // 波数积分上限
     if(Kproc->k0_is_fixed){
         Kproc->kmax = Kproc->k0;
+        size_t nk = floor(Kproc->kmax / Kproc->dk) + 1;
+        GRTRaiseInfo("kmax = %.3e, nk = %zu", Kproc->kmax, nk);
     } else {
         size_t ncount = 0, nk = 0;
         real_t static_kmax = 0.0;
         MODEL1D_STATE *kmax_mstat = grt_init_mod1d_state(mod1d);
         grt_update_mod1d_state_omega(kmax_mstat, 1.0, true);
         static_kmax = grt_predict_kmax(
-            kmax_mstat, grt_static_kernel, Kproc->k0 * 1e-3, Kproc->k0, &ncount);
+            kmax_mstat, grt_static_kernel, Kproc->dk, Kproc->k0, &ncount);
         grt_free_mod1d_state(kmax_mstat);
         nk = floor(static_kmax / Kproc->dk) + 1;
         GRTRaiseInfo("kmax = %.3e, nk = %zu, kref = %.3e, ncount = %zu", static_kmax, nk, Kproc->k0, ncount);
@@ -120,15 +128,10 @@ void grt_integ_static_grn(
             Kproc->dk = new_dk;
         }
         
-        if(Kproc->cvgmet == K_INTEG_CONVERG_AUTO){
-            // 如果深度恰好相同，或上限触发边界，且未指定收敛算法，则强制使用 DCM 进行收敛
-            if(mod1d->depsrc == mod1d->deprcv || static_kmax >= Kproc->k0){
-                Kproc->cvgmet = K_INTEG_CONVERG_DCM;
-                Kproc->keps = 0.0;
-                if(static_kmax >= Kproc->k0){
-                    GRTRaiseWarning("kmax reaches kref, apply %s. ", GRT_EXPLAIN_CVGMETHOD(Kproc->cvgmet));
-                }
-            }
+        if(Kproc->cvgmet == K_INTEG_CONVERG_AUTO && static_kmax >= Kproc->k0){
+            Kproc->cvgmet = K_INTEG_CONVERG_DCM;
+            Kproc->keps = 0.0;
+            GRTRaiseWarning("kmax reaches kref, apply %s. ", GRT_EXPLAIN_CVGMETHOD(Kproc->cvgmet));
         }
 
         Kproc->kmax = static_kmax;

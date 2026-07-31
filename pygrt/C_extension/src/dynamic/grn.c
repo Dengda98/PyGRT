@@ -141,6 +141,11 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kproc, GRNSPEC *grn, co
         // 计算核函数过程中是否有遇到除零错误
         freq_invstats[iw]=GRT_INVERSE_SUCCESS;
 
+        // 如果深度一致，必须使用收敛算法
+        if(local_Kproc->cvgmet == K_INTEG_CONVERG_AUTO && mod1d->depsrc == mod1d->deprcv){
+            local_Kproc->cvgmet = K_INTEG_CONVERG_DCM;
+            local_Kproc->keps = 0.0;
+        }
 
         // ===================================================================================
         //                          Wavenumber Integration
@@ -150,27 +155,23 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kproc, GRNSPEC *grn, co
             local_Kproc->kmax = kmax_ref;
         } else {
             size_t ncount = 0;
-            real_t kmax_init = GRT_MAX(local_Kproc->dk, w / local_Kproc->vmin);
             local_Kproc->kmax = grt_predict_kmax(
-                local_mstat, grt_kernel, kmax_init, kmax_ref, &ncount);
+                local_mstat, grt_kernel, local_Kproc->dk, kmax_ref, &ncount);
                 
-            // size_t nk = floor(local_Kproc->kmax / local_Kproc->dk) + 1;
-            // #pragma omp critical
-            // {
-            //     GRTRaiseInfo("iw=%zu, freq=%.3e, kmax=%.3e, nk=%zu, kref=%.3e, ncount=%zu",
-            //         iw, w/PI2, local_Kproc->kmax, nk, kmax_ref, ncount);
-            // }
+            size_t nk = floor(local_Kproc->kmax / local_Kproc->dk) + 1;
+            #pragma omp critical
+            {
+                GRTRaiseInfo("iw=%zu, freq=%.3e, kmax=%.3e, nk=%zu, kref=%.3e, ncount=%zu",
+                    iw, w/PI2, local_Kproc->kmax, nk, kmax_ref, ncount);
+            }
 
-            if(local_Kproc->cvgmet == K_INTEG_CONVERG_AUTO &&
-                (mod1d->depsrc == mod1d->deprcv || local_Kproc->kmax >= kmax_ref)){
+            if(local_Kproc->cvgmet == K_INTEG_CONVERG_AUTO && local_Kproc->kmax >= kmax_ref){
                 local_Kproc->cvgmet = K_INTEG_CONVERG_DCM;
                 local_Kproc->keps = 0.0;
-                if(local_Kproc->kmax >= kmax_ref){
-                    #pragma omp critical
-                    {
-                        GRTRaiseWarning("iw=%zu, freq=%.3e: kmax reaches kmax_ref, apply %s.", iw, w/PI2,
-                            GRT_EXPLAIN_CVGMETHOD(local_Kproc->cvgmet));
-                    }
+                #pragma omp critical
+                {
+                    GRTRaiseWarning("iw=%zu, freq=%.3e: kmax reaches kmax_ref, apply %s.", iw, w/PI2,
+                        GRT_EXPLAIN_CVGMETHOD(local_Kproc->cvgmet));
                 }
             }
         }

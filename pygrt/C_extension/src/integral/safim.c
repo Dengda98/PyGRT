@@ -53,6 +53,8 @@ typedef struct {
     real_t k3[3];
     cplxChnlGrid F3[3]; 
     cplxChnlGrid Fz3[3]; 
+    cplxChnlGrid F3_raw[3];
+    cplxChnlGrid Fz3_raw[3];
 } KInterval;
 
 // 区间栈结构体
@@ -304,12 +306,19 @@ real_t grt_sa_filon_integ(
             kmax
         }, 
         .F3 = {{{0}}}, 
-        .Fz3 = {{{0}}} 
+        .Fz3 = {{{0}}},
+        .F3_raw = {{{0}}},
+        .Fz3_raw = {{{0}}}
     };
     for(int i=0; i<3; ++i) {
         kerfunc(mstat, Kitv.k3[i], Kitv.F3[i], K->calc_upar, Kitv.Fz3[i]);
         if(mstat->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
-        
+
+        memcpy(Kitv.F3_raw[i], Kitv.F3[i], sizeof(cplxChnlGrid));
+        if(K->calc_upar){
+            memcpy(Kitv.Fz3_raw[i], Kitv.Fz3[i], sizeof(cplxChnlGrid));
+        }
+
         if(K->applyDCM){
             grt_int_dcm_revision(kmax, Kitv.k3[i], Kitv.F3[i], K->QWV_kmax, K->calc_upar, Kitv.Fz3[i], K->QWVz_kmax);
         }
@@ -323,7 +332,7 @@ real_t grt_sa_filon_integ(
     real_t maxabsQWV_uiz[GRT_GTYPES_MAX]={0};
 
     // 记录第一个值
-    if(fstats!=NULL)  grt_write_stats(fstats, Kitv.k3[0], (K->calc_upar)? Kitv.Fz3[0] : Kitv.F3[0]);
+    if(fstats!=NULL)  grt_write_stats(fstats, Kitv.k3[0], (K->calc_upar)? Kitv.Fz3_raw[0] : Kitv.F3_raw[0]);
 
     // 自适应采样
     while(stack.size > 0) {
@@ -337,7 +346,9 @@ real_t grt_sa_filon_integ(
                 Kitv.k3[1]
             }, 
             .F3 = {{{0}}}, 
-            .Fz3 = {{{0}}} 
+            .Fz3 = {{{0}}},
+            .F3_raw = {{{0}}},
+            .Fz3_raw = {{{0}}}
         };
         KInterval Kitv_right = { 
             .k3 = {
@@ -346,24 +357,42 @@ real_t grt_sa_filon_integ(
                 Kitv.k3[2]
             }, 
             .F3 = {{{0}}}, 
-            .Fz3 = {{{0}}} 
+            .Fz3 = {{{0}}},
+            .F3_raw = {{{0}}},
+            .Fz3_raw = {{{0}}}
         };
         memcpy(Kitv_left.F3[0], Kitv.F3[0], sizeof(cplxChnlGrid));
         memcpy(Kitv_left.F3[2], Kitv.F3[1], sizeof(cplxChnlGrid));
         memcpy(Kitv_right.F3[0], Kitv.F3[1], sizeof(cplxChnlGrid));
         memcpy(Kitv_right.F3[2], Kitv.F3[2], sizeof(cplxChnlGrid));
+        memcpy(Kitv_left.F3_raw[0], Kitv.F3_raw[0], sizeof(cplxChnlGrid));
+        memcpy(Kitv_left.F3_raw[2], Kitv.F3_raw[1], sizeof(cplxChnlGrid));
+        memcpy(Kitv_right.F3_raw[0], Kitv.F3_raw[1], sizeof(cplxChnlGrid));
+        memcpy(Kitv_right.F3_raw[2], Kitv.F3_raw[2], sizeof(cplxChnlGrid));
         if(K->calc_upar){
             memcpy(Kitv_left.Fz3[0], Kitv.Fz3[0], sizeof(cplxChnlGrid));
             memcpy(Kitv_left.Fz3[2], Kitv.Fz3[1], sizeof(cplxChnlGrid));
             memcpy(Kitv_right.Fz3[0], Kitv.Fz3[1], sizeof(cplxChnlGrid));
             memcpy(Kitv_right.Fz3[2], Kitv.Fz3[2], sizeof(cplxChnlGrid));
+            memcpy(Kitv_left.Fz3_raw[0], Kitv.Fz3_raw[0], sizeof(cplxChnlGrid));
+            memcpy(Kitv_left.Fz3_raw[2], Kitv.Fz3_raw[1], sizeof(cplxChnlGrid));
+            memcpy(Kitv_right.Fz3_raw[0], Kitv.Fz3_raw[1], sizeof(cplxChnlGrid));
+            memcpy(Kitv_right.Fz3_raw[2], Kitv.Fz3_raw[2], sizeof(cplxChnlGrid));
         }
         
         kerfunc(mstat, Kitv_left.k3[1], Kitv_left.F3[1], K->calc_upar, Kitv_left.Fz3[1]);
         if(mstat->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
+        memcpy(Kitv_left.F3_raw[1], Kitv_left.F3[1], sizeof(cplxChnlGrid));
+        if(K->calc_upar){
+            memcpy(Kitv_left.Fz3_raw[1], Kitv_left.Fz3[1], sizeof(cplxChnlGrid));
+        }
 
         kerfunc(mstat, Kitv_right.k3[1], Kitv_right.F3[1], K->calc_upar, Kitv_right.Fz3[1]);
         if(mstat->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
+        memcpy(Kitv_right.F3_raw[1], Kitv_right.F3[1], sizeof(cplxChnlGrid));
+        if(K->calc_upar){
+            memcpy(Kitv_right.Fz3_raw[1], Kitv_right.Fz3[1], sizeof(cplxChnlGrid));
+        }
 
         if(K->applyDCM){
             grt_int_dcm_revision(kmax, Kitv_left.k3[1], Kitv_left.F3[1], K->QWV_kmax, K->calc_upar, Kitv_left.Fz3[1], K->QWVz_kmax);
@@ -397,10 +426,10 @@ real_t grt_sa_filon_integ(
             // 记录后四个采样值
             if(fstats!=NULL){
                 for(int i=1; i<3; ++i){
-                    grt_write_stats(fstats, Kitv_left.k3[i], (K->calc_upar)? Kitv_left.Fz3[i] : Kitv_left.F3[i]);
+                    grt_write_stats(fstats, Kitv_left.k3[i], (K->calc_upar)? Kitv_left.Fz3_raw[i] : Kitv_left.F3_raw[i]);
                 }
                 for(int i=1; i<3; ++i){
-                    grt_write_stats(fstats, Kitv_right.k3[i], (K->calc_upar)? Kitv_right.Fz3[i] : Kitv_right.F3[i]);
+                    grt_write_stats(fstats, Kitv_right.k3[i], (K->calc_upar)? Kitv_right.Fz3_raw[i] : Kitv_right.F3_raw[i]);
                 }
             }
             // 计算积分

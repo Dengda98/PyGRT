@@ -55,12 +55,17 @@ real_t grt_linear_filon_integ(
         kerfunc(mstat, k, K->QWV, K->calc_upar, K->QWVz); 
         if(mstat->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
+        memcpy(K->QWV_raw, K->QWV, sizeof(cplxChnlGrid));
+        if(K->calc_upar){
+            memcpy(K->QWVz_raw, K->QWVz, sizeof(cplxChnlGrid));
+        }
+
         if(K->applyDCM){
             grt_int_dcm_revision(kmax, k, K->QWV, K->QWV_kmax, K->calc_upar, K->QWVz, K->QWVz_kmax);
         }
 
         // 记录积分结果
-        if(fstats!=NULL)  grt_write_stats(fstats, k, (K->calc_upar)? K->QWVz : K->QWV);
+        if(fstats!=NULL)  grt_write_stats(fstats, k, (K->calc_upar)? K->QWVz_raw : K->QWV_raw);
 
         // 震中距rs循环
         iendk = true;
@@ -162,6 +167,11 @@ real_t grt_linear_filon_integ(
         // 计算核函数 F(k, w)
         kerfunc(mstat, k0N, K->QWV, K->calc_upar, K->QWVz);
         if(mstat->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN; 
+
+        memcpy(K->QWV_raw, K->QWV, sizeof(cplxChnlGrid));
+        if(K->calc_upar){
+            memcpy(K->QWVz_raw, K->QWVz, sizeof(cplxChnlGrid));
+        }
 
         if(K->applyDCM){
             grt_int_dcm_revision(kmax, k0N, K->QWV, K->QWV_kmax, K->calc_upar, K->QWVz, K->QWVz_kmax);

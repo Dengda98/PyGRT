@@ -53,18 +53,17 @@ real_t grt_discrete_integ(
         kerfunc(mstat, k, K->QWV, K->calc_upar, K->QWVz); 
         if(mstat->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
+        memcpy(K->QWV_raw, K->QWV, sizeof(cplxChnlGrid));
+        if(K->calc_upar){
+            memcpy(K->QWVz_raw, K->QWVz, sizeof(cplxChnlGrid));
+        }
+
         if(K->applyDCM){
-            GRT_LOOP_ChnlGrid(im, c){
-                K->QWV_raw[im][c] = K->QWV[im][c];
-                if(K->calc_upar){
-                    K->QWVz_raw[im][c] = K->QWVz[im][c];
-                }
-            }
             grt_int_dcm_revision(kmax, k, K->QWV, K->QWV_kmax, K->calc_upar, K->QWVz, K->QWVz_kmax);
         }
 
         // 记录积分核函数
-        if(fstats!=NULL)  grt_write_stats(fstats, k, (K->calc_upar)? K->QWVz : K->QWV);
+        if(fstats!=NULL)  grt_write_stats(fstats, k, (K->calc_upar)? K->QWVz_raw : K->QWV_raw);
 
         // 震中距rs循环
         iendk = true;
