@@ -158,12 +158,12 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kproc, GRNSPEC *grn, co
             local_Kproc->kmax = grt_predict_kmax(
                 local_mstat, grt_kernel, local_Kproc->dk, kmax_ref, &ncount);
                 
-            size_t nk = floor(local_Kproc->kmax / local_Kproc->dk) + 1;
-            #pragma omp critical
-            {
-                GRTRaiseInfo("iw=%zu, freq=%.3e, kmax=%.3e, nk=%zu, kref=%.3e, ncount=%zu",
-                    iw, w/PI2, local_Kproc->kmax, nk, kmax_ref, ncount);
-            }
+            // size_t nk = floor(local_Kproc->kmax / local_Kproc->dk) + 1;
+            // #pragma omp critical
+            // {
+            //     GRTRaiseInfo("iw=%zu, freq=%.3e, kmax=%.3e, nk=%zu, kref=%.3e, ncount=%zu",
+            //         iw, w/PI2, local_Kproc->kmax, nk, kmax_ref, ncount);
+            // }
 
             if(local_Kproc->cvgmet == K_INTEG_CONVERG_AUTO && local_Kproc->kmax >= kmax_ref){
                 local_Kproc->cvgmet = K_INTEG_CONVERG_DCM;
