@@ -153,9 +153,12 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kproc, GRNSPEC *grn, co
             real_t kmax_init = GRT_MAX(local_Kproc->dk, w / local_Kproc->vmin);
             local_Kproc->kmax = grt_predict_kmax(
                 local_mstat, grt_kernel, kmax_init, kmax_ref, &ncount);
+                
+            // size_t nk = floor(local_Kproc->kmax / local_Kproc->dk) + 1;
             // #pragma omp critical
             // {
-            //     GRTRaiseInfo("iw=%zu, freq=%.3e, kref=%.3e, kmax=%.3e", iw, w/PI2, kmax_ref, local_Kproc->kmax);
+            //     GRTRaiseInfo("iw=%zu, freq=%.3e, kmax=%.3e, nk=%zu, kref=%.3e, ncount=%zu",
+            //         iw, w/PI2, local_Kproc->kmax, nk, kmax_ref, ncount);
             // }
 
             if(local_Kproc->cvgmet == K_INTEG_CONVERG_AUTO &&
@@ -165,7 +168,7 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kproc, GRNSPEC *grn, co
                 if(local_Kproc->kmax >= kmax_ref){
                     #pragma omp critical
                     {
-                        GRTRaiseWarning("iw=%zu: kc reaches kmax_ref, apply %s.", iw,
+                        GRTRaiseWarning("iw=%zu, freq=%.3e: kmax reaches kmax_ref, apply %s.", iw, w/PI2,
                             GRT_EXPLAIN_CVGMETHOD(local_Kproc->cvgmet));
                     }
                 }

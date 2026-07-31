@@ -95,6 +95,10 @@ void grt_integ_static_grn(
     // ===================================================================================
     //                          Wavenumber Integration
     GRTRaiseInfo("depsrc = %.3e, deprcv = %.3e", mod1d->depsrc, mod1d->deprcv);
+    if(Kproc->cvgmet != K_INTEG_CONVERG_AUTO && Kproc->cvgmet != K_INTEG_CONVERG_REFUSE){
+        GRTRaiseInfo("Manually set the %s.", GRT_EXPLAIN_CVGMETHOD(Kproc->cvgmet));
+    }
+
     // 波数积分上限
     if(Kproc->k0_is_fixed){
         Kproc->kmax = Kproc->k0;
@@ -107,7 +111,7 @@ void grt_integ_static_grn(
             kmax_mstat, grt_static_kernel, Kproc->k0 * 1e-3, Kproc->k0, &ncount);
         grt_free_mod1d_state(kmax_mstat);
         nk = floor(static_kmax / Kproc->dk) + 1;
-        GRTRaiseInfo("For a proper kc, kc = %.3e, k0 = %.3e, nk = %zu", static_kmax, Kproc->k0, nk);
+        GRTRaiseInfo("kmax = %.3e, nk = %zu, kref = %.3e, ncount = %zu", static_kmax, nk, Kproc->k0, ncount);
         
         // 若 nk 不够，适当调整 dk
         if(nk < GRT_MIN_STATIC_NK){
@@ -122,12 +126,9 @@ void grt_integ_static_grn(
                 Kproc->cvgmet = K_INTEG_CONVERG_DCM;
                 Kproc->keps = 0.0;
                 if(static_kmax >= Kproc->k0){
-                    GRTRaiseWarning("kc reaches k0, apply %s. ", GRT_EXPLAIN_CVGMETHOD(Kproc->cvgmet));
+                    GRTRaiseWarning("kmax reaches kref, apply %s. ", GRT_EXPLAIN_CVGMETHOD(Kproc->cvgmet));
                 }
             }
-        } else if(Kproc->cvgmet != K_INTEG_CONVERG_REFUSE) {
-            // 正常打印手动选择的收敛方法
-            GRTRaiseInfo("Manually set the %s.", GRT_EXPLAIN_CVGMETHOD(Kproc->cvgmet));
         }
 
         Kproc->kmax = static_kmax;

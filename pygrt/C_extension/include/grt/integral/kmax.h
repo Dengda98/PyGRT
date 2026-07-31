@@ -16,6 +16,10 @@
  *
  * 调用方须先按对应的静态或动态频率更新 mstat。对于静态解，通常从
  * kmax_ref * 1e-3 开始；对于动态解，通常从 omega / vmin 开始。
+ *
+ * 搜索在 log(k) 上等间距推进（自适应几何因子），目标约 40 步覆盖
+ * [kmax_init, kmax_ref]。同深度用相对 dF/F 判断逼近常数；
+ * 异深度用振幅相对峰值衰减判断逼近 0。
  * 
  * @param[in,out]  mstat        已设置频率的模型状态
  * @param[in]      kerfunc      待检查的核函数

@@ -12,17 +12,54 @@
 #include "grt/integral/kmax.h"
 #include "grt/integral/kernel.h"
 
+/**
+ * kmax 搜索参数
+ *
+ * 步长采用 log(k) 上等间距（自适应几何因子），使静态（k_init << k_ref）
+ * 与动态高频（k_init 接近 k_ref）都能在约 GRT_KMAX_SEARCH_N 步内扫完区间
+ * 纯线性等步长 dk=k_ref/N 在静态小 k 下会严重过冲，故不采用
+ */
+#define GRT_KMAX_SEARCH_N          40      ///< 覆盖 [k_init, k_ref] 的目标步数
+#define GRT_KMAX_FACTOR_MIN        1.01    ///< 几何因子下限，保证每步有推进
+#define GRT_KMAX_FACTOR_MAX        1.50    ///< 几何因子上限，避免步长过大
+#define GRT_KMAX_NVAL_NEED         3       ///< 连续满足收敛准则的次数
+#define GRT_KMAX_DECAY_ZERO_TOL    1e-2    ///< 衰减到 0：F < tol * Fmax
+#define GRT_KMAX_DECAY_CONST_TOL   1e-2    ///< 衰减到常数：dF < tol * F
+
+
+/** 根据搜索区间计算自适应几何因子 */
+static real_t _kmax_step_factor(real_t kmax_init, real_t kmax_ref)
+{
+    real_t ratio, factor;
+    if(kmax_init <= 0.0 || kmax_ref <= kmax_init){
+        return GRT_KMAX_FACTOR_MIN;
+    }
+    ratio = kmax_ref / kmax_init;
+    factor = pow(ratio, 1.0 / (real_t)GRT_KMAX_SEARCH_N);
+    factor = GRT_MIN(GRT_MAX(factor, GRT_KMAX_FACTOR_MIN), GRT_KMAX_FACTOR_MAX);
+    return factor;
+}
+
+
 /** 衰减到 0 */
 static real_t _decay_zero(
     MODEL1D_STATE *mstat, GRT_KernelFunc kerfunc,
     real_t kmax_init, real_t kmax_ref, size_t *Ncount)
 {
-    // 利用振幅来估计一个合适的积分上限
     real_t Fmax = 0.0, F = 0.0, kmax = 0.0;
+    real_t factor = 0.0;
     cplxChnlGrid QWV = {0}, QWVz = {0};
-    kmax = kmax_init;
     size_t ncount = 0;
     size_t nval = 0;
+
+    if(kmax_init >= kmax_ref){
+        if(Ncount != NULL) *Ncount = 0;
+        return kmax_ref;
+    }
+
+    factor = _kmax_step_factor(kmax_init, kmax_ref);
+    kmax = kmax_init;
+
     while(kmax < kmax_ref){
         F = 0.0;
         kerfunc(mstat, kmax, QWV, true, QWVz);
@@ -31,15 +68,15 @@ static real_t _decay_zero(
         }
         Fmax = GRT_MAX(F, Fmax);
 
-        if(F < 1e-3 * Fmax){
+        if(F < GRT_KMAX_DECAY_ZERO_TOL * Fmax){
             nval++;
         } else {
             nval = 0;
         }
 
-        if(nval >= 3) break;
+        if(nval >= GRT_KMAX_NVAL_NEED) break;
 
-        kmax *= 1.2;
+        kmax *= factor;
         ncount++;
     }
     kmax = GRT_MIN(kmax, kmax_ref);
@@ -54,13 +91,21 @@ static real_t _decay_constant(
     MODEL1D_STATE *mstat, GRT_KernelFunc kerfunc,
     real_t kmax_init, real_t kmax_ref, size_t *Ncount)
 {
-    // 利用振幅来估计一个合适的积分上限
     real_t dF = 0.0, F = 0.0, kmax = 0.0;
+    real_t factor = 0.0;
     cplxChnlGrid QWV = {0}, QWVz = {0};
     cplxChnlGrid QWV_const = {0}, QWVz_const = {0};
-    kmax = kmax_init;
     size_t ncount = 0;
     size_t nval = 0;
+
+    if(kmax_init >= kmax_ref){
+        if(Ncount != NULL) *Ncount = 0;
+        return kmax_ref;
+    }
+
+    factor = _kmax_step_factor(kmax_init, kmax_ref);
+    kmax = kmax_init;
+
     while(kmax < kmax_ref){
         dF = F = 0.0;
         kerfunc(mstat, kmax, QWV, true, QWVz);
@@ -80,18 +125,17 @@ static real_t _decay_constant(
         memcpy(QWV_const, QWV, sizeof(cplxChnlGrid));
         memcpy(QWVz_const, QWVz, sizeof(cplxChnlGrid));
 
-        if(dF < 1e-3 * F){
+        // 相邻采样点的相对变化
+        if(dF < GRT_KMAX_DECAY_CONST_TOL * F){
             nval++;
         } else {
             nval = 0;
         }
 
-        if(nval >= 3)  break;
+        if(nval >= GRT_KMAX_NVAL_NEED)  break;
 
-        kmax *= 1.2;
+        kmax *= factor;
         ncount++;
-
-        // printf("ncount = %zu, F = %.3e, dF = %.3e, kmax = %.3e, kref = %.3e\n", ncount, F, dF, kmax, kmax_ref);
     }
     kmax = GRT_MIN(kmax, kmax_ref);
 
