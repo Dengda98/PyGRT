@@ -115,8 +115,8 @@ void grt_integ_static_grn(
         real_t static_kmax = 0.0;
         MODEL1D_STATE *kmax_mstat = grt_init_mod1d_state(mod1d);
         grt_update_mod1d_state_omega(kmax_mstat, 1.0, true);
-        static_kmax = grt_predict_kmax(
-            kmax_mstat, grt_static_kernel, Kproc->dk, Kproc->k0, &ncount);
+        static_kmax = grt_predict_kmax(kmax_mstat, grt_static_kernel, Kproc->dk,
+            Kproc->dk, Kproc->k0, &ncount);
         grt_free_mod1d_state(kmax_mstat);
         nk = floor(static_kmax / Kproc->dk) + 1;
         GRTRaiseInfo("kmax = %.3e, nk = %zu, kref = %.3e, ncount = %zu", static_kmax, nk, Kproc->k0, ncount);

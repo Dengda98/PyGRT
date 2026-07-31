@@ -24,7 +24,7 @@
 #define GRT_KMAX_FACTOR_MAX        1.50    ///< 几何因子上限，避免步长过大
 #define GRT_KMAX_NVAL_NEED         3       ///< 连续满足收敛准则的次数
 #define GRT_KMAX_DECAY_ZERO_TOL    1e-2    ///< 衰减到 0：F < tol * Fmax
-#define GRT_KMAX_DECAY_CONST_TOL   1e-2    ///< 衰减到常数：dF < tol * F
+#define GRT_KMAX_DECAY_CONST_TOL   1e-2    ///< 衰减到常数：相对 log(k) 变化率 < tol
 
 
 /** 根据搜索区间计算自适应几何因子 */
@@ -40,14 +40,20 @@ static real_t _kmax_step_factor(real_t kmax_init, real_t kmax_ref)
     return factor;
 }
 
+/** 将搜索前期的最低判定波数限制在 [kmax_init, kmax_ref]。 */
+static real_t _kmax_low(real_t kmax_init, real_t kmax_low, real_t kmax_ref)
+{
+    return GRT_MIN(GRT_MAX(kmax_low, kmax_init), kmax_ref);
+}
+
 
 /** 衰减到 0 */
 static real_t _decay_zero(
     MODEL1D_STATE *mstat, GRT_KernelFunc kerfunc,
-    real_t kmax_init, real_t kmax_ref, size_t *Ncount)
+    real_t kmax_init, real_t kmax_low, real_t kmax_ref, size_t *Ncount)
 {
     real_t Fmax = 0.0, F = 0.0, kmax = 0.0;
-    real_t factor = 0.0;
+    real_t factor = 0.0, k_low_eff = 0.0;
     cplxChnlGrid QWV = {0}, QWVz = {0};
     size_t ncount = 0;
     size_t nval = 0;
@@ -58,6 +64,7 @@ static real_t _decay_zero(
     }
 
     factor = _kmax_step_factor(kmax_init, kmax_ref);
+    k_low_eff = _kmax_low(kmax_init, kmax_low, kmax_ref);
     kmax = kmax_init;
 
     while(kmax < kmax_ref){
@@ -68,7 +75,7 @@ static real_t _decay_zero(
         }
         Fmax = GRT_MAX(F, Fmax);
 
-        if(F < GRT_KMAX_DECAY_ZERO_TOL * Fmax){
+        if(kmax >= k_low_eff && F < GRT_KMAX_DECAY_ZERO_TOL * Fmax){
             nval++;
         } else {
             nval = 0;
@@ -89,10 +96,11 @@ static real_t _decay_zero(
 /** 衰减到常数 */
 static real_t _decay_constant(
     MODEL1D_STATE *mstat, GRT_KernelFunc kerfunc,
-    real_t kmax_init, real_t kmax_ref, size_t *Ncount)
+    real_t kmax_init, real_t kmax_low, real_t kmax_ref, size_t *Ncount)
 {
-    real_t dF = 0.0, F = 0.0, kmax = 0.0;
-    real_t factor = 0.0;
+    real_t dF = 0.0, F = 0.0, Fmax = 0.0, kmax = 0.0;
+    real_t factor = 0.0, k_low_eff = 0.0;
+    real_t k_prev = 0.0, dlogk = 0.0, rel_log_change = 0.0;
     cplxChnlGrid QWV = {0}, QWVz = {0};
     cplxChnlGrid QWV_const = {0}, QWVz_const = {0};
     size_t ncount = 0;
@@ -104,7 +112,9 @@ static real_t _decay_constant(
     }
 
     factor = _kmax_step_factor(kmax_init, kmax_ref);
+    k_low_eff = _kmax_low(kmax_init, kmax_low, kmax_ref);
     kmax = kmax_init;
+    k_prev = kmax_init;
 
     while(kmax < kmax_ref){
         dF = F = 0.0;
@@ -122,11 +132,19 @@ static real_t _decay_constant(
             F += fabs(QWV[im][c]) + fabs(QWVz[im][c]);
             dF += fabs(QWV[im][c] - QWV_const[im][c]) + fabs(QWVz[im][c] - QWVz_const[im][c]);
         }
+        Fmax = GRT_MAX(F, Fmax);
         memcpy(QWV_const, QWV, sizeof(cplxChnlGrid));
         memcpy(QWVz_const, QWVz, sizeof(cplxChnlGrid));
 
-        // 相邻采样点的相对变化
-        if(dF < GRT_KMAX_DECAY_CONST_TOL * F){
+        // dF 是离散变化量；除以 dlog(k) 后，准则不依赖搜索步长
+        // 使用 Fmax 归一化，避免当前 F 处于局部谷值时分母过小
+        dlogk = log(kmax / k_prev);
+        if(kmax >= k_low_eff && dlogk > 0.0 && Fmax > 0.0){
+            rel_log_change = (dF / Fmax) / dlogk;
+        } else {
+            rel_log_change = 1e300;
+        }
+        if(rel_log_change < GRT_KMAX_DECAY_CONST_TOL){
             nval++;
         } else {
             nval = 0;
@@ -134,6 +152,7 @@ static real_t _decay_constant(
 
         if(nval >= GRT_KMAX_NVAL_NEED)  break;
 
+        k_prev = kmax;
         kmax *= factor;
         ncount++;
     }
@@ -146,11 +165,11 @@ static real_t _decay_constant(
 
 real_t grt_predict_kmax(
     MODEL1D_STATE *mstat, GRT_KernelFunc kerfunc,
-    real_t kmax_init, real_t kmax_ref, size_t *Ncount)
+    real_t kmax_init, real_t kmax_low, real_t kmax_ref, size_t *Ncount)
 {
     if(mstat->mod1d->depsrc == mstat->mod1d->deprcv){
-        return _decay_constant(mstat, kerfunc, kmax_init, kmax_ref, Ncount);
+        return _decay_constant(mstat, kerfunc, kmax_init, kmax_low, kmax_ref, Ncount);
     } else {
-        return _decay_zero(mstat, kerfunc, kmax_init, kmax_ref, Ncount);
+        return _decay_zero(mstat, kerfunc, kmax_init, kmax_low, kmax_ref, Ncount);
     }
 }

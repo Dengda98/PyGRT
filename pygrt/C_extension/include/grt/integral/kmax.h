@@ -14,20 +14,21 @@
 /**
  * 根据核函数的振幅，估计波数积分中合适的 kmax。
  *
- * 调用方须先按对应的静态或动态频率更新 mstat。对于静态解，通常从
- * kmax_ref * 1e-3 开始；对于动态解，通常从 omega / vmin 开始。
+ * 调用方须先按对应的静态或动态频率更新 mstat，通常从 dk 开始
  *
  * 搜索在 log(k) 上等间距推进（自适应几何因子），目标约 40 步覆盖
- * [kmax_init, kmax_ref]。同深度用相对 dF/F 判断逼近常数；
- * 异深度用振幅相对峰值衰减判断逼近 0。
+ * [kmax_init, kmax_ref]；在 kmax_low 之前不判断收敛。同深度使用
+ * 以 Fmax 归一化、再按 log(k) 步长归一化的变化率判断逼近常数；
+ * 异深度用振幅相对峰值衰减判断逼近 0
  * 
  * @param[in,out]  mstat        已设置频率的模型状态
  * @param[in]      kerfunc      待检查的核函数
  * @param[in]      kmax_init    扫描的初始波数
+ * @param[in]      kmax_low     允许判断收敛的最低波数
  * @param[in]      kmax_ref     最大上限
  * @param[out]     Ncount       估计过程中计算核函数的次数，可为 NULL
  * @return     估计的 kmax
  */
 real_t grt_predict_kmax(
     MODEL1D_STATE *mstat, GRT_KernelFunc kerfunc,
-    real_t kmax_init, real_t kmax_ref, size_t *Ncount);
+    real_t kmax_init, real_t kmax_low, real_t kmax_ref, size_t *Ncount);
