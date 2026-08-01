@@ -22,7 +22,7 @@ greenfn
 [ |-H|\ *f1/f2* ]
 [ |-L|\ *length*\ [**+l**\ *Flength*][**+a**\ *Ftol*][**+o**\ *offset*] ]
 [ |-C|\ **d|p|n** ]
-[ |-K|\ [**+k**\ *k0*][**+s**\ *ampk*][**+e**\ *keps*][**+v**\ *vmin*] ]
+[ |-K|\ [**+k**\ *k0*][**+f**][**+s**\ *ampk*][**+e**\ *keps*][**+v**\ *vmin*] ]
 [ |-E|\ [**p**]\ *t0*\ [/*v0*] ]
 [ |-P|\ *nthreads* ]
 [ |-G|\ **e|v|h|s** ]
@@ -98,18 +98,26 @@ greenfn
 
 .. _-K:
 
-**-K**\ [**+k**\ *k0*][**+s**\ *ampk*][**+e**\ *keps*][**+v**\ *vmin*]
-    控制波数积分上限
+**-K**\ [**+k**\ *k0*][**+f**][**+s**\ *ampk*][**+e**\ *keps*][**+v**\ *vmin*]
+    控制波数积分搜索区间的上界 :math:`k_{\text{max,ref}}`
 
     .. math::
 
-        k_{\text{max}} = \sqrt{ k_0 \cdot \dfrac{\pi}{\Delta h} + \textit{<ampk>} \cdot \left(\dfrac{\omega}{v_{\text{min}}}\right)^2}
+        k_{\text{max,ref}} = \sqrt{ \left(k_0 \cdot \dfrac{\pi}{\Delta h}\right)^2 + \textit{<ampk>}^2 \cdot \left(\dfrac{\omega}{v_{\text{min}}}\right)^2 }
 
-    + **+k**\ *k0* - 控制零频的积分上限 [5.0]，其中深度差 :math:`\Delta h = \max(|z_s - z_r|, 0.1)` 。
-    + **+s**\ *ampk* - 放大倍数 [1.15] 。
-    + **+e**\ *keps* - 用于判断提前结束波数积分的收敛精度[0.0, 默认不使用]，详见
-      Yao and Harkrider (1983) 和 :doc:`/Advanced/k_integ/kmax` 。
-    + **+v**\ *vmin* - 参考最小速度，默认 :math:`\max{(\min\limits_{i} (\alpha_i \cup \beta_i), 0.1)}` 。
+    程序在 :math:`[\Delta k, k_{\text{max,ref}}]` 内基于核函数振幅搜索实际积分上限 :math:`k_{\text{max}}` 。
+    若搜索达到 :math:`k_{\text{max,ref}}` 仍未收敛，或震源与场点完全同深度时，
+    默认模式下将自动启用 DCM 。
+
+    + **+k**\ *k0* - 零频项系数 [50.0]，
+      其中深度差 :math:`\Delta h = \max(|z_s - z_r|, 0.1)` 。
+    + **+f** - 直接使用 :math:`k_{\text{max,ref}}` 作为积分上限，
+      不进行振幅搜索。
+    + **+s**\ *ampk* - 放大倍数 [2.0] 。
+    + **+e**\ *keps* - 用于判断提前结束波数积分的收敛精度[0.0, 默认不使用]，
+      详见 Yao and Harkrider (1983) 和 :doc:`/Advanced/k_integ/kmax` 。
+    + **+v**\ *vmin* - 参考最小速度，
+      默认 :math:`\max{(\min\limits_{i} (\alpha_i \cup \beta_i), 0.1)}` 。
 
 .. include:: explain_-Cconverg.rst_
 

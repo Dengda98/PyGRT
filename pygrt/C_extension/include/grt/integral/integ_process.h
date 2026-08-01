@@ -34,15 +34,19 @@ typedef enum {
 
 // 描述不同波数积分方法的结构体
 typedef struct {
-    real_t k0;      ///< 波数积分的上限 \f$ \tilde{k_{max}}=\sqrt{(k_{0}*\pi/hs)^2 + (ampk*w/vmin_{ref})^2} \f$ ，k循环必须退出, hs=max(震源和台站深度差,1.0) 
-    bool k0_is_fixed;  ///< 固定 k0，默认在程序中自动调整 k0
-    real_t ampk;    ///< 影响波数k积分上限的系数
-    real_t keps;    ///< 波数积分的收敛条件，要求在某震中距下所有格林函数都收敛，为负数代表不提前判断收敛，按照波数积分上限进行积分 
-    real_t vmin;    ///< 参考最小速度，用于定义波数积分的上限
+    real_t k0;      ///< 用户参数 k0 经 \f$ \pi/hs \f$ 缩放后的零频项，
+                    ///< 与 \f$ ampk*\omega/vmin \f$ 共同确定搜索上界 kmax_ref；
+                    ///< hs=max(震源和台站深度差, 0.1)
+    bool k0_is_fixed;  ///< 为 true 时直接将 kmax_ref 作为积分上限，不进行基于振幅的搜索
+    real_t ampk;    ///< 影响 kmax_ref 中频率相关项的系数，默认 2.0
+    real_t keps;    ///< 波数积分的收敛条件，要求在某震中距下所有格林函数都收敛；
+                    ///< 为负数代表不提前判断收敛
+    real_t vmin;    ///< 参考最小速度，用于定义 kmax_ref
 
     real_t kcut;    ///< 波数积分和Filon积分的分割点
 
-    real_t kmax;    ///< 全局波数最大值，程序运行中会随频率变动
+    real_t kmax;    ///< 实际波数积分上限，默认在 [dk, kmax_ref] 内由振幅搜索确定，
+                    ///< 程序运行中会随频率变动
 
     real_t dk;      ///< DWM 的波数积分间隔
 

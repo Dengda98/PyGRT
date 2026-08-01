@@ -55,7 +55,7 @@ typedef double complex cplx_t;
 #define DEG1 0.017453292519943295  ///< \f$ \frac{\pi}{180} \f$ 
 #define GOLDEN_RATIO 0.6180339887498949  ///< \f$ \frac{\sqrt{5}-1}{2} \f$
 
-#define GRT_MIN_DEPTH_GAP_SRC_RCV  1.0  ///< 震源和台站的最小深度差（不做绝对限制，仅用于参考波数积分上限，以及判断是否需要其它收敛方法）
+#define GRT_MIN_DEPTH_GAP_SRC_RCV  0.1  ///< 震源和台站的最小深度差（不做绝对限制，仅用于 kmax_ref 中 hs 的下限）
 #define GCC_ALWAYS_INLINE __attribute__((always_inline))  ///< gcc编译器不改动内联函数
 
 #define GRT_SWAP(type, a, b) { type temp = a; a = b; b = temp; } ///< 交换两个变量的值

@@ -175,7 +175,7 @@ class PyModel1D:
         keepAllFreq:bool=False,
         vmin_ref:float=0.0,
         keps:float=-1.0,  
-        ampk:float=1.15,
+        ampk:float=2.0,
         k0:float=50.0, 
         k0_is_fixed:bool=False,
         Length:float=0.0, 
@@ -462,7 +462,7 @@ class PyModel1D:
         keepAllFreq:bool=False,
         vmin_ref:float=0.0,
         keps:float=-1.0,  
-        ampk:float=1.15,
+        ampk:float=2.0,
         k0:float=50.0, 
         k0_is_fixed:bool=False,
         Length:float=0.0, 
@@ -492,12 +492,18 @@ class PyModel1D:
                                      :math:`\tilde{\omega} = \omega - j*w_I, w_I = \zeta*\pi/T, T=nt*dt` .
                                      see Bouchon (1981) and 张海明 (2021) for more details and tests.
             :param    keepAllFreq:   calculate all frequency points, no matter how low the frequency is
-            :param    vmin_ref:      minimum reference velocity (km/s). the default vmin=max(minimum velocity, 0.1), used to define the upper bound of k integral
+            :param    vmin_ref:      minimum reference velocity (km/s).
+                                     the default vmin=max(minimum velocity, 0.1), used to define kmax_ref
             :param    keps:          automatic convergence condition, see Yao and Harkrider (1983) for more details.
                                      negative value denotes not use.
-            :param    ampk:          The factor that affect the upper bound of the k integral, see below.
-            :param    k0:            k0 used to define the maximum offset of upper bound :math:`\tilde{k_{max}}=\sqrt{(k_{0}*\pi/hs)^2 + (ampk*w/vmin_{ref})^2}` , hs=max(abs(depsrc-deprcv),0.1)
-            :param    k0_is_fixed:      directly use k0, rather than choosing a proper offset in [0, k0]
+            :param    ampk:          amplification factor in kmax_ref, see below.
+            :param    k0:            coefficient in kmax_ref
+                                     :math:`k_{\text{max,ref}}=\sqrt{(k_{0}*\pi/hs)^2 + (ampk*\omega/vmin_{ref})^2}` ,
+                                     hs=max(abs(depsrc-deprcv),0.1).
+                                     The actual kmax is searched in [dk, kmax_ref] based on kernel amplitude;
+                                     if the search reaches kmax_ref without convergence,
+                                     or source and receiver are at the same depth, DCM is applied in Auto mode.
+            :param    k0_is_fixed:   directly use kmax_ref as kmax, without amplitude search
             :param    Length:        integration step `dk=2\pi / (L*rmax)`, see Bouchon (1981) and 张海明 (2021) for the criterion, default set automatically.
             :param    filonLength:   integration step of Fixed-Interval Filon's Integration Method
             :param    safilonTol:    precision of Self-Adaptive Filon's Integration Method
@@ -565,8 +571,12 @@ class PyModel1D:
             :param    distarr:          equal to "xarr=[0.0], yarr=distarr"
             :param       keps:          automatic convergence condition, see (Yao and Harkrider (1983) for more details.
                                         negative value denotes not use.
-            :param       k0:            k0 used to define the maximum offset of upper bound :math:`\tilde{k_{max}}=(k_{0}*\pi/hs)^2`, hs=max(abs(depsrc-deprcv),0.1)
-            :param       k0_is_fixed:      directly use k0, rather than choosing a proper offset in [0, k0]
+            :param       k0:            coefficient in kmax_ref :math:`k_{\text{max,ref}}=k_{0}*\pi/hs`,
+                                        hs=max(abs(depsrc-deprcv),0.1).
+                                        The actual kmax is searched in [dk, kmax_ref] based on kernel amplitude;
+                                        if the search reaches kmax_ref without convergence,
+                                        or source and receiver are at the same depth, DCM is applied in Auto mode.
+            :param       k0_is_fixed:   directly use kmax_ref as kmax, without amplitude search
             :param       Length:        integration step `dk=2\pi / (L*rmax)`, default L=15
             :param       filonLength:   integration step of Fixed-Interval Filon's Integration Method
             :param       safilonTol:    precision of Self-Adaptive Filon's Integration Method

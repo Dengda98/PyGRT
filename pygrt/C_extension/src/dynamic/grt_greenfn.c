@@ -18,7 +18,7 @@
 #define GRT_GREENFN_H_FREQ2      -1.0
 #define GRT_GREENFN_K_VMIN        0.1
 #define GRT_GREENFN_K_K0         50.0
-#define GRT_GREENFN_K_AMPK       1.15
+#define GRT_GREENFN_K_AMPK       2.0
 #define GRT_GREENFN_G_EX       true
 #define GRT_GREENFN_G_VF       true
 #define GRT_GREENFN_G_HF       true
@@ -323,22 +323,23 @@ printf("\n"
 "                 If -E is not used, then the first time sample will be the origin time.\n"
 "\n"
 "    -K[+k<k0>][+f][+s<ampk>][+e<keps>][+v<vmin>]\n"
-"                 Define the wavenumber integration upper bound\n"
-"                 sqrt( <k0>^2 + (<ampk>*w/<vmin_ref>)^2 ),\n"
-"                 <k0>:   maximum upper bound residual k for 0 frequency, \n"
+"                 Define the reference upper bound of wavenumber integration\n"
+"                 kmax_ref = sqrt( (<k0>*PI/hs)^2 + (<ampk>*w/<vmin_ref>)^2 ),\n"
+"                 <k0>:   coefficient for the zero-frequency term in kmax_ref,\n"
 "                         default is %.1f, and multiply PI/hs in program, \n", GRT_GREENFN_K_K0); printf(
 "                         where hs = max(fabs(depsrc-deprcv), %.1f).\n", GRT_MIN_DEPTH_GAP_SRC_RCV); printf(
-"                         The program will choose the proper residual in [0, k0].\n"
-"                         If k0 is not enough, convergence method will be applied.\n"
-"                         If use +f, directly set k0 as the residual.\n"
+"                         The program searches kmax in [dk, kmax_ref] based on\n"
+"                         kernel amplitude. If the search reaches kmax_ref without\n"
+"                         convergence, or source and receiver are at the same depth,\n"
+"                         DCM will be applied (in Auto mode).\n"
+"                         If use +f, directly set kmax to kmax_ref.\n"
 "                 <ampk>: amplification factor, default is %.2f.\n", GRT_GREENFN_K_AMPK); printf(
 "                 <keps>: a threshold for break wavenumber \n"
 "                         integration in advance. See \n"
 "                         (Yao and Harkrider, 1983) for details.\n"
 "                         Default 0.0 not use.\n"
 "                 <vmin>: Minimum velocity (km/s) for reference. This\n"
-"                         is designed to define the upper bound \n"
-"                         of wavenumber integration.\n"
+"                         is designed to define kmax_ref.\n"
 "                         There are 2 cases:\n"
 "                         + (default) not set or set 0.0.\n"); printf(
 "                           <vmin> will be the minimum velocity\n"

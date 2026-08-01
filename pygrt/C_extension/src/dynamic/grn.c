@@ -150,7 +150,7 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kproc, GRNSPEC *grn, co
 
         // ===================================================================================
         //                          Wavenumber Integration
-        // 每个频率均直接根据动态核函数估计积分上限
+        // 每个频率根据 kmax_ref 与核函数振幅搜索实际积分上限
         real_t kmax_ref = hypot(local_Kproc->k0, local_Kproc->ampk * w / local_Kproc->vmin);
         if(local_Kproc->k0_is_fixed){
             local_Kproc->kmax = kmax_ref;

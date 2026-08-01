@@ -111,6 +111,9 @@ class c_MODEL1D(Structure):
 class c_K_INTEG_PROCESS(Structure):
     """
     和C结构体 K_INTEG_PROCESS 作匹配
+
+    波数积分参数。k0、ampk、vmin 共同确定搜索上界 kmax_ref；
+    默认在 [dk, kmax_ref] 内基于核函数振幅搜索实际积分上限 kmax。
     """
 
     _fields_ = [
