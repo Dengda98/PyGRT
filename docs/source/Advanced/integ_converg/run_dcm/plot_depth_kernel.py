@@ -13,10 +13,9 @@ def gray_mapping(x):
     return (0.7 - x / 0.7) ** 0.8
 
 def _plot_one(ax:Axes, pattern:str, ktype:str):
-    norm = 0.0
-    yLst = []
-    evdpLst = []
+    plotLst = []
     maxnorm = 0
+    kmax = 0.0
     for path in glob.glob(pattern):
         data = pygrt.utils.read_statsfile(path)
 
@@ -26,16 +25,16 @@ def _plot_one(ax:Axes, pattern:str, ktype:str):
         Farr = data[ktype]
 
         norm = np.linalg.norm(np.real(Farr), np.inf)
-        yLst.append(np.real(Farr))
-        evdpLst.append(evdp)
+        plotLst.append((karr, np.real(Farr), evdp))
         maxnorm = max(maxnorm, norm)
+        kmax = max(kmax, karr[-1])
 
     ax.axhline(y=0, color='k', ls='--', linewidth=1)
     
-    for y, evdp in zip(yLst, evdpLst):
+    for karr, y, evdp in plotLst:
         ax.plot(karr, y/maxnorm * 1e8, c=str(gray_mapping(evdp)), zorder=int(evdp*1e6))
     
-    ax.set_xlim(0, karr[-1])
+    ax.set_xlim(0, kmax * 0.4)
     ax.grid(linewidth=0.4)
 
 
