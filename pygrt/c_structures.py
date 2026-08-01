@@ -23,6 +23,7 @@ __all__ = [
     "ZNEchs",
     "qwvchs",
     "MECHANISM_NUM",
+    "MIN_DEPTH_GAP_SRC_RCV",
 
     "NPCT_REAL_TYPE",
     "NPCT_CMPLX_TYPE",
@@ -50,6 +51,7 @@ ZRTchs = ['Z', 'R', 'T']
 ZNEchs = ['Z', 'N', 'E']
 qwvchs = ['q', 'w', 'v']
 MECHANISM_NUM = 6
+MIN_DEPTH_GAP_SRC_RCV = 0.1
 
 NPCT_REAL_TYPE = 'f8'
 NPCT_CMPLX_TYPE = 'c16'

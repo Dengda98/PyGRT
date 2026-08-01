@@ -318,7 +318,7 @@ class PyModel1D:
 
         # ====================================================================
         KPROC = c_K_INTEG_PROCESS()
-        hs = max(abs(depsrc - deprcv), 1.0)
+        hs = max(abs(depsrc - deprcv), MIN_DEPTH_GAP_SRC_RCV)
         KPROC.k0 = k0 * np.pi / hs
         KPROC.k0_is_fixed = k0_is_fixed
         KPROC.ampk = ampk
@@ -496,7 +496,7 @@ class PyModel1D:
             :param    keps:          automatic convergence condition, see Yao and Harkrider (1983) for more details.
                                      negative value denotes not use.
             :param    ampk:          The factor that affect the upper bound of the k integral, see below.
-            :param    k0:            k0 used to define the maximum offset of upper bound :math:`\tilde{k_{max}}=\sqrt{(k_{0}*\pi/hs)^2 + (ampk*w/vmin_{ref})^2}` , hs=max(abs(depsrc-deprcv),1.0)
+            :param    k0:            k0 used to define the maximum offset of upper bound :math:`\tilde{k_{max}}=\sqrt{(k_{0}*\pi/hs)^2 + (ampk*w/vmin_{ref})^2}` , hs=max(abs(depsrc-deprcv),0.1)
             :param    k0_is_fixed:      directly use k0, rather than choosing a proper offset in [0, k0]
             :param    Length:        integration step `dk=2\pi / (L*rmax)`, see Bouchon (1981) and 张海明 (2021) for the criterion, default set automatically.
             :param    filonLength:   integration step of Fixed-Interval Filon's Integration Method
@@ -565,7 +565,7 @@ class PyModel1D:
             :param    distarr:          equal to "xarr=[0.0], yarr=distarr"
             :param       keps:          automatic convergence condition, see (Yao and Harkrider (1983) for more details.
                                         negative value denotes not use.
-            :param       k0:            k0 used to define the maximum offset of upper bound :math:`\tilde{k_{max}}=(k_{0}*\pi/hs)^2`, hs=max(abs(depsrc-deprcv),1.0)
+            :param       k0:            k0 used to define the maximum offset of upper bound :math:`\tilde{k_{max}}=(k_{0}*\pi/hs)^2`, hs=max(abs(depsrc-deprcv),0.1)
             :param       k0_is_fixed:      directly use k0, rather than choosing a proper offset in [0, k0]
             :param       Length:        integration step `dk=2\pi / (L*rmax)`, default L=15
             :param       filonLength:   integration step of Fixed-Interval Filon's Integration Method
@@ -652,7 +652,7 @@ class PyModel1D:
 
         # ====================================================================
         KPROC = c_K_INTEG_PROCESS()
-        hs = max(abs(depsrc - deprcv), 1.0)
+        hs = max(abs(depsrc - deprcv), MIN_DEPTH_GAP_SRC_RCV)
         KPROC.k0 = k0 * np.pi / hs
         KPROC.k0_is_fixed = k0_is_fixed
         KPROC.keps = keps if converg_method.upper() != 'AUTO' else 0.0

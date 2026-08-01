@@ -105,7 +105,7 @@ greenfn
 
         k_{\text{max}} = \sqrt{ k_0 \cdot \dfrac{\pi}{\Delta h} + \textit{<ampk>} \cdot \left(\dfrac{\omega}{v_{\text{min}}}\right)^2}
 
-    + **+k**\ *k0* - 控制零频的积分上限 [5.0]，其中深度差 :math:`\Delta h = \max(|z_s - z_r|, 1.0)` 。
+    + **+k**\ *k0* - 控制零频的积分上限 [5.0]，其中深度差 :math:`\Delta h = \max(|z_s - z_r|, 0.1)` 。
     + **+s**\ *ampk* - 放大倍数 [1.15] 。
     + **+e**\ *keps* - 用于判断提前结束波数积分的收敛精度[0.0, 默认不使用]，详见
       Yao and Harkrider (1983) 和 :doc:`/Advanced/k_integ/kmax` 。
