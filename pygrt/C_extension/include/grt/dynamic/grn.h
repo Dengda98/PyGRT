@@ -24,10 +24,10 @@
  * @param[in,out]   mod1d            `MODEL1D` 结构体指针 
  * @param[in,out]   Kproc             波数积分相关参数的结构体指针
  * @param[in,out]   grn              计算的格林函数频谱
- * @param[in]       print_progressbar        是否打印进度条
+ * @param[in]       print_log                是否打印日志
  * 
  */ 
-void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kproc, GRNSPEC *grn, const bool print_progressbar);
+void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kproc, GRNSPEC *grn, const bool print_log);
 
 
 

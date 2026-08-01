@@ -21,7 +21,7 @@
 
 #include "grt/dynamic/grn.h"
 #include "grt/dynamic/grnspec.h"
-#include "grt/static/static_util.h"
+#include "grt/integral/kmax.h"
 #include "grt/integral/integ_process.h"
 
 #include "grt/common/const.h"
@@ -60,7 +60,7 @@ static void recordin_GRN(size_t iw, size_t nr, cplx_t coef, cplxIntegGrid sumJ[n
 
 
 
-void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kproc, GRNSPEC *grn, const bool print_progressbar)
+void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kproc, GRNSPEC *grn, const bool print_log)
 {
     // 程序运行开始时间
     struct timeval begin_t;
@@ -76,61 +76,41 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kproc, GRNSPEC *grn, co
     // 记录每个频率的计算中是否有除0错误
     int *freq_invstats = (int *)calloc(grn->nf2 + 1, sizeof(int));
 
-    // 实际计算的频点数
-    size_t nf_valid = grn->nf2 - grn->nf1 + 1;
-
     mod1d->omgref = PI2*grn->freqs[grn->nf2];
 
-    // 静态解的 kmax ，用于动态解积分上限中的 k0
-    real_t static_kmax = 0.0;
-    if(Kproc->k0_is_fixed){
-        static_kmax = Kproc->k0;
-    } else {
-        size_t ncount = 0, nk = 0;
-        static_kmax = grt_predict_static_kmax(mod1d, Kproc->k0, &ncount);
-        nk = floor(static_kmax / Kproc->dk) + 1;
-        GRTRaiseInfo(
-            "For a proper kc, ncount = %zu, kc = %.3e, k0 = %.3e, nk = %zu", 
-            ncount, static_kmax, Kproc->k0, nk);
-        
-        if(Kproc->cvgmet == K_INTEG_CONVERG_AUTO){
-            // 如果上限触发边界，且未指定收敛算法，则强制使用 DCM 进行收敛
-            if(static_kmax >= Kproc->k0){
-                Kproc->cvgmet = K_INTEG_CONVERG_DCM;
-                Kproc->keps = 0.0;
-                GRTRaiseWarning(
-                    "kc reaches k0, apply %s. "
-                    "You should consider to increase the k0 (maximum upper bound)", GRT_EXPLAIN_CVGMETHOD(Kproc->cvgmet));
+    // k0 是动态核函数搜索上限中的零频部分
+    if(print_log){
+        GRTRaiseInfo("depsrc = %.3e, deprcv = %.3e", mod1d->depsrc, mod1d->deprcv);
+    }
+    if(print_log && Kproc->cvgmet != K_INTEG_CONVERG_AUTO && Kproc->cvgmet != K_INTEG_CONVERG_REFUSE){
+        GRTRaiseInfo("Manually set the %s.", GRT_EXPLAIN_CVGMETHOD(Kproc->cvgmet));
+    }
+
+    // 低频跳过只可能连续出现在频段起始处，因此在进入并行区前统一处理
+    size_t nf1_valid = grn->nf1;
+    if(!grn->keepAllFreq){
+        while(nf1_valid <= grn->nf2){
+            cplx_t omega = grn->freqs[nf1_valid]*PI2 - grn->wI*I;
+            if(fabs(omega) >= 0.1)  break;
+
+            if(print_log){
+                GRTRaiseWarning("Skip low frequency (iw=%zu, freq=%.5e).",
+                    nf1_valid, grn->freqs[nf1_valid]);
             }
-        } else if(Kproc->cvgmet != K_INTEG_CONVERG_REFUSE) {
-            // 正常打印手动选择的收敛方法
-            GRTRaiseInfo("Manually set the %s.", GRT_EXPLAIN_CVGMETHOD(Kproc->cvgmet));
+            ++nf1_valid;
         }
     }
+    if(nf1_valid > grn->nf2)  GRTRaiseError("NO VALID FREQUENCIES.");
+
+    // 实际计算的频点数
+    size_t nf_valid = grn->nf2 - nf1_valid + 1;
 
     // 频率omega循环
     // schedule语句可以动态调度任务，最大程度地使用计算资源
     #pragma omp parallel for schedule(guided) default(shared) 
-    for(size_t iw = grn->nf1; iw <= grn->nf2; ++iw){
+    for(size_t iw = nf1_valid; iw <= grn->nf2; ++iw){
         real_t w = grn->freqs[iw]*PI2;     // 实频率
         cplx_t omega = w - grn->wI*I; // 复数频率 omega = w - i*wI
-
-        // 如果在虚频率的帮助下，频率仍然距离原点太近，
-        // 计算会有严重的数值问题，因此直接根据频率距离原点的距离，
-        // 跳过该频率，没有必要再计算
-        if( ! grn->keepAllFreq )
-        {
-            real_t R = 0.1; // 完全经验性地设定，暂不必要暴露在用户可控层面
-            if(fabs(omega) < R){
-                #pragma omp critical
-                {
-                    GRTRaiseWarning("Skip low frequency (iw=%zu, freq=%.5e).", iw, grn->freqs[iw]);
-                    nf_valid--;
-                }
-                if(nf_valid == 0)  GRTRaiseError("NO VALID FREQUENCIES.");
-                continue;
-            }
-        }
 
         cplx_t coef = - dk*fac / GRT_SQUARE(omega); // 最终要乘上的系数
 
@@ -162,11 +142,57 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kproc, GRNSPEC *grn, co
         // 计算核函数过程中是否有遇到除零错误
         freq_invstats[iw]=GRT_INVERSE_SUCCESS;
 
+        // 如果深度一致，必须使用收敛算法
+        if(local_Kproc->cvgmet == K_INTEG_CONVERG_AUTO && mod1d->depsrc == mod1d->deprcv){
+            local_Kproc->cvgmet = K_INTEG_CONVERG_DCM;
+            local_Kproc->keps = 0.0;
+        }
 
         // ===================================================================================
         //                          Wavenumber Integration
-        // 波数积分上限
-        local_Kproc->kmax = hypot(static_kmax, local_Kproc->ampk * w / local_Kproc->vmin);
+        // 每个频率均直接根据动态核函数估计积分上限
+        real_t kmax_ref = hypot(local_Kproc->k0, local_Kproc->ampk * w / local_Kproc->vmin);
+        if(local_Kproc->k0_is_fixed){
+            local_Kproc->kmax = kmax_ref;
+            size_t nk = floor(local_Kproc->kmax / local_Kproc->dk) + 1;
+            #pragma omp critical(grn_console)
+            {
+                // 同步终端输出，避免日志覆盖进度条
+                if(print_log){
+                    printf("\r\033[K");
+                    GRTRaiseInfo("iw=%zu, freq=%.3e, kmax=%.3e, nk=%zu",
+                        iw, w/PI2, local_Kproc->kmax, nk);
+                    grt_printprogressBar("Computing Green Functions: ", progress*100/nf_valid);
+                }
+            }
+        } else {
+            size_t ncount = 0;
+            local_Kproc->kmax = grt_predict_kmax(local_mstat, grt_kernel, local_Kproc->dk,
+                w / local_Kproc->vmin, kmax_ref, &ncount);
+                
+            size_t nk = floor(local_Kproc->kmax / local_Kproc->dk) + 1;
+            bool kmax_reaches_ref = (local_Kproc->cvgmet == K_INTEG_CONVERG_AUTO &&
+                local_Kproc->kmax >= kmax_ref);
+            if(kmax_reaches_ref){
+                local_Kproc->cvgmet = K_INTEG_CONVERG_DCM;
+                local_Kproc->keps = 0.0;
+            }
+
+            #pragma omp critical(grn_console)
+            {
+                // 同步终端输出，允许日志按线程完成顺序显示
+                if(print_log){
+                    printf("\r\033[K");
+                    GRTRaiseInfo("iw=%zu, freq=%.3e, kmax=%.3e, (DWM)nk=%zu, kref=%.3e, ncount=%zu",
+                        iw, w/PI2, local_Kproc->kmax, nk, kmax_ref, ncount);
+                    if(kmax_reaches_ref){
+                        GRTRaiseWarning("iw=%zu, freq=%.3e: kmax reaches kmax_ref, apply %s.",
+                            iw, w/PI2, GRT_EXPLAIN_CVGMETHOD(local_Kproc->cvgmet));
+                    }
+                    grt_printprogressBar("Computing Green Functions: ", progress*100/nf_valid);
+                }
+            }
+        }
         K_INTEG *Kint = grt_wavenumber_integral(local_mstat, grn->nr, grn->rs, local_Kproc, grn->calc_upar, grt_kernel);
 
         // 记录到格林函数结构体内
@@ -185,10 +211,11 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kproc, GRNSPEC *grn, co
         grt_free_mod1d_state(local_mstat);
 
         // 记录进度条变量 
-        #pragma omp critical
+        #pragma omp critical(grn_console)
         {
             progress++;
-            if(print_progressbar) grt_printprogressBar("Computing Green Functions: ", progress*100/nf_valid);
+            // 与日志输出使用同一临界区，避免进度条被多线程日志覆盖
+            if(print_log) grt_printprogressBar("Computing Green Functions: ", progress*100/nf_valid);
         } 
         
         // Free allocated memory for temporary variables
@@ -198,7 +225,7 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kproc, GRNSPEC *grn, co
 
     // 打印 freq_invstats
     for(size_t iw = grn->nf1; iw <= grn->nf2; ++iw){
-        if(freq_invstats[iw]==GRT_INVERSE_FAILURE){
+        if(print_log && freq_invstats[iw]==GRT_INVERSE_FAILURE){
             GRTRaiseWarning("iw=%zu, freq=%e(Hz), meet Zero Divison Error, results are filled with 0.\n", iw, grn->freqs[iw]);
         }
     }
@@ -207,13 +234,9 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kproc, GRNSPEC *grn, co
     // 程序运行结束时间
     struct timeval end_t;
     gettimeofday(&end_t, NULL);
-    if(print_progressbar) printf("Runtime: %.3f s\n", (end_t.tv_sec - begin_t.tv_sec) + (end_t.tv_usec - begin_t.tv_usec) / 1e6);
+    if(print_log) printf("Runtime: %.3f s\n", (end_t.tv_sec - begin_t.tv_sec) + (end_t.tv_usec - begin_t.tv_usec) / 1e6);
     fflush(stdout);
 
 }
-
-
-
-
 
 

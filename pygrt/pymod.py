@@ -188,7 +188,7 @@ class PyModel1D:
         calc_upar:bool=False,
         statsfile:Union[str,None]=None, 
         statsidxs:Union[np.ndarray,List[int],None]=None, 
-        print_runtime:bool=True
+        print_log:bool=True
     ):
         
         depsrc = self.depsrc
@@ -365,7 +365,7 @@ class PyModel1D:
         #     爆炸源 EX[ZR]                          1e-20 cm/(dyne*cm)
         #     剪切源 DD[ZR],DS[ZRT],SS[ZRT]          1e-20 cm/(dyne*cm)
         #=================================================================================
-        C_grt_integ_grn_spec(self.c_mod1d, pointer(KPROC), pointer(grn), print_runtime)
+        C_grt_integ_grn_spec(self.c_mod1d, pointer(KPROC), pointer(grn), print_log)
         #=================================================================================
         #/////////////////////////////////////////////////////////////////////////////////
 
@@ -477,7 +477,7 @@ class PyModel1D:
         gf_source=['EX', 'VF', 'HF', 'DC'],
         statsfile:Union[str,None]=None, 
         statsidxs:Union[np.ndarray,List[int],None]=None, 
-        print_runtime:bool=True):
+        print_log:bool=True):
         
         r'''
             Call the C function to calculate the Green's functions at multiple distances and return them in a list, 
@@ -509,7 +509,7 @@ class PyModel1D:
             :param    statsfile:     directory path for saving the statsfile during k integral, used to debug or observe the variations of :math:`F(k,\omega)` and :math:`F(k,\omega)J_m(kr)k`    
             :param    statsidxs:     only output the statsfile at specific frequency indexes. It is recommended to specify the indexes; 
                                      otherwise, by default, statsfiles of all frequency will be output, which probably occupy a lot of disk space
-            :param    print_runtime: whether print runtime and some other infomation.
+            :param    print_log:     whether print calculation logs.
 
             :return:
                 - **dataLst** -   Green's Functions at multiple distances, in a list of :class:`obspy.Stream`
@@ -526,7 +526,7 @@ class PyModel1D:
             distarr, nt, dt, upsampling_n, freqband, zeta, keepAllFreq, 
             vmin_ref, keps, ampk, k0, k0_is_fixed, Length, filonLength, safilonTol, filonCut, converg_method,
             delayT0, delayV0, calc_upar,
-            statsfile, statsidxs, print_runtime
+            statsfile, statsidxs, print_log
         )
 
         dataLst = self._get_stream_from_grn_spectra(

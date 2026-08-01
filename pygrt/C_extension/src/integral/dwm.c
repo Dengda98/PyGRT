@@ -29,6 +29,9 @@ real_t grt_discrete_integ(
     size_t nr, real_t *rs, K_INTEG *K, FILE *fstats, GRT_KernelFunc kerfunc)
 {
     if(kmax == 0.0)  return 0.0;
+
+    real_t depsrc = mstat->mod1d->depsrc;
+    real_t deprcv = mstat->mod1d->deprcv;
     
     real_t k = 0.0;
 
@@ -50,24 +53,25 @@ real_t grt_discrete_integ(
         kerfunc(mstat, k, K->QWV, K->calc_upar, K->QWVz); 
         if(mstat->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
+        memcpy(K->QWV_raw, K->QWV, sizeof(cplxChnlGrid));
+        if(K->calc_upar){
+            memcpy(K->QWVz_raw, K->QWVz, sizeof(cplxChnlGrid));
+        }
+
         if(K->applyDCM){
-            GRT_LOOP_ChnlGrid(im, c){
-                K->QWV_raw[im][c] = K->QWV[im][c];
-                K->QWV[im][c] -= K->QWV_kmax[im][c];
-                if(K->calc_upar){
-                    K->QWVz_raw[im][c] = K->QWVz[im][c];
-                    K->QWVz[im][c] -= K->QWVz_kmax[im][c] * k / kmax;
-                }
-            }
+            grt_int_dcm_revision(kmax, k, K->QWV, K->QWV_kmax, K->calc_upar, K->QWVz, K->QWVz_kmax);
         }
 
         // 记录积分核函数
-        if(fstats!=NULL)  grt_write_stats(fstats, k, (K->calc_upar)? K->QWVz : K->QWV);
+        if(fstats!=NULL)  grt_write_stats(fstats, k, (K->calc_upar)? K->QWVz_raw : K->QWV_raw);
 
         // 震中距rs循环
         iendk = true;
-        for(size_t ir=0; ir<nr; ++ir){
+        for(size_t ir = 0; ir < nr; ++ir){
             if(iendkrs[ir]) continue; // 该震中距下的波数k积分已收敛
+
+            // 跳过奇异点
+            if(depsrc == deprcv && GRT_IS_SMALLE_DISTANCE(rs[ir]))  continue;
 
             memset(K->SUM, 0, sizeof(cplxIntegGrid));
             
