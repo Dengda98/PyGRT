@@ -177,7 +177,7 @@ class PyModel1D:
         keps:float=-1.0,  
         ampk:float=2.0,
         k0:float=50.0, 
-        k0_is_fixed:bool=False,
+        use_kmax_ref:bool=False,
         Length:float=0.0, 
         filonLength:float=0.0,
         safilonTol:float=0.0,
@@ -320,7 +320,7 @@ class PyModel1D:
         KPROC = c_K_INTEG_PROCESS()
         hs = max(abs(depsrc - deprcv), MIN_DEPTH_GAP_SRC_RCV)
         KPROC.k0 = k0 * np.pi / hs
-        KPROC.k0_is_fixed = k0_is_fixed
+        KPROC.use_kmax_ref = use_kmax_ref
         KPROC.ampk = ampk
         KPROC.keps = keps if converg_method.upper() != 'AUTO' else 0.0
         KPROC.vmin = vmin_ref
@@ -464,7 +464,7 @@ class PyModel1D:
         keps:float=-1.0,  
         ampk:float=2.0,
         k0:float=50.0, 
-        k0_is_fixed:bool=False,
+        use_kmax_ref:bool=False,
         Length:float=0.0, 
         filonLength:float=0.0,
         safilonTol:float=0.0,
@@ -503,7 +503,7 @@ class PyModel1D:
                                      The actual kmax is searched in [dk, kmax_ref] based on kernel amplitude;
                                      if the search reaches kmax_ref without convergence,
                                      or source and receiver are at the same depth, DCM is applied in Auto mode.
-            :param    k0_is_fixed:   directly use kmax_ref as kmax, without amplitude search
+            :param    use_kmax_ref:   directly use kmax_ref as kmax, without amplitude search
             :param    Length:        integration step `dk=2\pi / (L*rmax)`, see Bouchon (1981) and 张海明 (2021) for the criterion, default set automatically.
             :param    filonLength:   integration step of Fixed-Interval Filon's Integration Method
             :param    safilonTol:    precision of Self-Adaptive Filon's Integration Method
@@ -530,7 +530,7 @@ class PyModel1D:
 
         pygrnLst, pygrnLst_uiz, pygrnLst_uir = self._get_grn_spectra(
             distarr, nt, dt, upsampling_n, freqband, zeta, keepAllFreq, 
-            vmin_ref, keps, ampk, k0, k0_is_fixed, Length, filonLength, safilonTol, filonCut, converg_method,
+            vmin_ref, keps, ampk, k0, use_kmax_ref, Length, filonLength, safilonTol, filonCut, converg_method,
             delayT0, delayV0, calc_upar,
             statsfile, statsidxs, print_log
         )
@@ -551,7 +551,7 @@ class PyModel1D:
         distarr:Union[np.ndarray,List[float],float,None]=None, 
         keps:float=-1.0,  
         k0:float=50.0, 
-        k0_is_fixed:bool=False,
+        use_kmax_ref:bool=False,
         Length:float=15.0, 
         filonLength:float=0.0,
         safilonTol:float=0.0,
@@ -576,7 +576,7 @@ class PyModel1D:
                                         The actual kmax is searched in [dk, kmax_ref] based on kernel amplitude;
                                         if the search reaches kmax_ref without convergence,
                                         or source and receiver are at the same depth, DCM is applied in Auto mode.
-            :param       k0_is_fixed:   directly use kmax_ref as kmax, without amplitude search
+            :param       use_kmax_ref:   directly use kmax_ref as kmax, without amplitude search
             :param       Length:        integration step `dk=2\pi / (L*rmax)`, default L=15
             :param       filonLength:   integration step of Fixed-Interval Filon's Integration Method
             :param       safilonTol:    precision of Self-Adaptive Filon's Integration Method
@@ -664,7 +664,7 @@ class PyModel1D:
         KPROC = c_K_INTEG_PROCESS()
         hs = max(abs(depsrc - deprcv), MIN_DEPTH_GAP_SRC_RCV)
         KPROC.k0 = k0 * np.pi / hs
-        KPROC.k0_is_fixed = k0_is_fixed
+        KPROC.use_kmax_ref = use_kmax_ref
         KPROC.keps = keps if converg_method.upper() != 'AUTO' else 0.0
 
         # 最大震中距

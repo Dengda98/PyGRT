@@ -118,7 +118,7 @@ class c_K_INTEG_PROCESS(Structure):
 
     _fields_ = [
         ('k0', REAL),
-        ('k0_is_fixed', c_bool),
+        ('use_kmax_ref', c_bool),
         ('ampk', REAL),
         ('keps', REAL),
         ('vmin', REAL),

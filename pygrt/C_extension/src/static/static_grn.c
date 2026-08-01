@@ -106,7 +106,7 @@ void grt_integ_static_grn(
     // ===================================================================================
     //                          Wavenumber Integration
     // 波数积分上限：在 [dk, kmax_ref] 内基于核函数振幅搜索
-    if(Kproc->k0_is_fixed){
+    if(Kproc->use_kmax_ref){
         Kproc->kmax = Kproc->k0;
         size_t nk = floor(Kproc->kmax / Kproc->dk) + 1;
         GRTRaiseInfo("kmax = %.3e, nk = %zu", Kproc->kmax, nk);

@@ -61,7 +61,7 @@ typedef struct {
         bool active;
         real_t keps;
         real_t k0;
-        bool k0_is_fixed;
+        bool use_kmax_ref;
     } K;
     /** 波数积分过程的核函数文件 */
     struct {
@@ -217,12 +217,15 @@ printf("\n"
 "                 h|H: Halfspace.\n"
 "\n"
 "    -K[+k<k0>][+f][+e<keps>]\n"
-"                 Define the wavenumber integration upperbound\n"
-"                 <k0>:   maximum upper bound, default is %.1f, and multiply PI/hs \n", GRT_GREENFN_K_K0); printf(
+"                 Define the reference upper bound of wavenumber integration\n"
+"                 kmax_ref = <k0> * PI / hs,\n"
+"                 <k0>:   coefficient, default is %.1f, and multiply PI/hs \n", GRT_GREENFN_K_K0); printf(
 "                         in program, where hs = max(fabs(depsrc-deprcv), %.1f).\n", GRT_MIN_DEPTH_GAP_SRC_RCV); printf(
-"                         The program will choose the proper upper bound in [0, k0].\n"
-"                         If k0 is not enough, convergence method will be applied.\n"
-"                         If use +f, directly set k0 as the upper bound.\n"
+"                         The program searches kmax in [dk, kmax_ref] based on\n"
+"                         kernel amplitude. If the search reaches kmax_ref without\n"
+"                         convergence, or source and receiver are at the same depth,\n"
+"                         DCM will be applied (in Auto mode).\n"
+"                         If use +f, directly set kmax to kmax_ref.\n"
 "                 <keps>: a threshold for break wavenumber \n"
 "                         integration in advance. See \n"
 "                         (Yao and Harkrider, 1983) for details.\n"
@@ -408,7 +411,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                             break;
 
                         case 'f':
-                            Ctrl->K.k0_is_fixed = true;
+                            Ctrl->K.use_kmax_ref = true;
                             break;
 
                         default:
@@ -599,7 +602,7 @@ int static_greenfn_main(int argc, char **argv){
     {   
         real_t hs = GRT_MAX(fabs(mod1d->depsrc - mod1d->deprcv), GRT_MIN_DEPTH_GAP_SRC_RCV);
         KPROC.k0 = Ctrl->K.k0 * PI / hs;
-        KPROC.k0_is_fixed = Ctrl->K.k0_is_fixed;
+        KPROC.use_kmax_ref = Ctrl->K.use_kmax_ref;
         KPROC.keps = (Ctrl->C.convmet != K_INTEG_CONVERG_AUTO)? 0.0 : Ctrl->K.keps;  // 如果使用了显式收敛方法，则不使用keps进行收敛判断
 
         // 最大震中距

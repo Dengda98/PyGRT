@@ -103,7 +103,7 @@ typedef struct {
         real_t ampk;
         real_t k0;
         real_t vmin;
-        bool k0_is_fixed;
+        bool use_kmax_ref;
     } K;
     /** 时间延迟 */
     struct {
@@ -668,7 +668,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                             break;
 
                         case 'f':
-                            Ctrl->K.k0_is_fixed = true;
+                            Ctrl->K.use_kmax_ref = true;
                             break;
 
                         default:
@@ -958,7 +958,7 @@ int greenfn_main(int argc, char **argv) {
     {   
         real_t hs = GRT_MAX(fabs(mod1d->depsrc - mod1d->deprcv), GRT_MIN_DEPTH_GAP_SRC_RCV);
         KPROC.k0 = Ctrl->K.k0 * PI / hs;
-        KPROC.k0_is_fixed = Ctrl->K.k0_is_fixed;
+        KPROC.use_kmax_ref = Ctrl->K.use_kmax_ref;
         KPROC.ampk = Ctrl->K.ampk;
         KPROC.keps = (Ctrl->C.convmet != K_INTEG_CONVERG_AUTO)? 0.0 : Ctrl->K.keps; // 如果使用了显式收敛方法，则不使用keps进行收敛判断
         KPROC.vmin = Ctrl->K.vmin;

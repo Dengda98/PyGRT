@@ -37,7 +37,7 @@ typedef struct {
     real_t k0;      ///< 用户参数 k0 经 \f$ \pi/hs \f$ 缩放后的零频项，
                     ///< 与 \f$ ampk*\omega/vmin \f$ 共同确定搜索上界 kmax_ref；
                     ///< hs=max(震源和台站深度差, 0.1)
-    bool k0_is_fixed;  ///< 为 true 时直接将 kmax_ref 作为积分上限，不进行基于振幅的搜索
+    bool use_kmax_ref;  ///< 为 true 时直接将 kmax_ref 作为积分上限，不进行基于振幅的搜索
     real_t ampk;    ///< 影响 kmax_ref 中频率相关项的系数，默认 2.0
     real_t keps;    ///< 波数积分的收敛条件，要求在某震中距下所有格林函数都收敛；
                     ///< 为负数代表不提前判断收敛

@@ -33,7 +33,7 @@
 默认情况下，程序在 :math:`[\Delta k, k_{\text{max,ref}}]` 内基于核函数振幅搜索
 实际积分上限 :math:`k_{\text{max}}` 。
 同深度时判断核函数是否逼近常数，异深度时判断振幅是否衰减至 0 。
-若指定 ``k0_is_fixed=True`` （C 模块 **+f**），则直接使用 :math:`k_{\text{max,ref}}` 作为
+若指定 ``use_kmax_ref=True`` （C 模块 **+f**），则直接使用 :math:`k_{\text{max,ref}}` 作为
 :math:`k_{\text{max}}` 。
 
 若振幅搜索达到 :math:`k_{\text{max,ref}}` 仍未满足收敛判据，
@@ -68,7 +68,7 @@
         + ``k0:float``, 对应公式中零频项的系数 :math:`k_0` ，默认为 50 
         + ``ampk:float``, 对应公式中的 :math:`s` ，默认为 2.0 
         + ``keps:float`` 对应公式中的 :math:`\epsilon`，默认为 -1（不使用）
-        + ``k0_is_fixed:bool`` 为 True 时直接使用 :math:`k_{\text{max,ref}}` 作为
+        + ``use_kmax_ref:bool`` 为 True 时直接使用 :math:`k_{\text{max,ref}}` 作为
           积分上限
         
         :func:`compute_static_grn() <pygrt.pymod.PyModel1D.compute_static_grn>` 函数支持以下可选参数来控制波数积分，
@@ -76,4 +76,4 @@
 
         + ``k0:float`` 
         + ``keps:float`` 
-        + ``k0_is_fixed:bool`` 
+        + ``use_kmax_ref:bool``
