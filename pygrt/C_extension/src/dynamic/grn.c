@@ -167,9 +167,8 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kproc, GRNSPEC *grn, co
             }
         } else {
             size_t ncount = 0;
-            // 这里 kmax_low 只是参考性的取了个值
             local_Kproc->kmax = grt_predict_kmax(local_mstat, grt_kernel, local_Kproc->dk,
-                w / mod1d->Va[mod1d->isrc], kmax_ref, &ncount);
+                w / local_Kproc->vmin, kmax_ref, &ncount);
                 
             size_t nk = floor(local_Kproc->kmax / local_Kproc->dk) + 1;
             bool kmax_reaches_ref = (local_Kproc->cvgmet == K_INTEG_CONVERG_AUTO &&
