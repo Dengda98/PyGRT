@@ -12,7 +12,7 @@ pymod = pygrt.PyModel1D(modarr, depsrc=depsrc, deprcv=deprcv)
 distarr = [5,8,10]
 # 设置 converg_method='PTAM' 进行收敛
 stgrnLst = pymod.compute_grn(
-    distarr=distarr, nt=500, dt=0.02, converg_method='PTAM',
+    distarr=distarr, nt=500, dt=0.02, converg_method='PTAM', k0=2, ampk=1.2, use_kmax_ref=True,
     statsfile=f"pygrtstats_{depsrc}_{deprcv}", statsidxs=[50,100]
 )
 # END DEPSRC 0.0 DGRN
@@ -46,7 +46,7 @@ pymod = pygrt.PyModel1D(modarr, depsrc=depsrc, deprcv=deprcv)
 
 xarr = np.array([2.0])
 yarr = np.array([2.0])
-static_grn = pymod.compute_static_grn(xarr, yarr, converg_method='PTAM', statsfile=f"static_pygrtstats_{depsrc}_{deprcv}")
+static_grn = pymod.compute_static_grn(xarr, yarr, converg_method='PTAM', statsfile=f"static_pygrtstats_{depsrc}_{deprcv}", k0=3, use_kmax_ref=True)
 
 ir = 0
 statsdata1, statsdata2, ptamdata, dist = pygrt.utils.read_statsfile_ptam(f"static_pygrtstats_{depsrc}_{deprcv}/PTAM_{ir:04d}_*/PTAM")

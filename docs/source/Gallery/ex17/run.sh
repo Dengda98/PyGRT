@@ -13,8 +13,8 @@ cat > halfspace_Q <<EOF
 EOF
 
 # 强衰减介质需要更高的积分上限
-grt greenfn -Mhalfspace   -N2000/0.001+a -D0/0  -R5  -OGRN     -Cd
-grt greenfn -Mhalfspace_Q -N2000/0.001+a -D0/0  -R5  -OGRN_Q   -Cd
+grt greenfn -Mhalfspace   -N2000/0.001+a -D0/0  -R5  -OGRN  
+grt greenfn -Mhalfspace_Q -N2000/0.001+a -D0/0  -R5  -OGRN_Q
 python plot.py
 
 cp compare.svg cover.svg

@@ -23,6 +23,7 @@ __all__ = [
     "ZNEchs",
     "qwvchs",
     "MECHANISM_NUM",
+    "MIN_DEPTH_GAP_SRC_RCV",
 
     "NPCT_REAL_TYPE",
     "NPCT_CMPLX_TYPE",
@@ -50,6 +51,7 @@ ZRTchs = ['Z', 'R', 'T']
 ZNEchs = ['Z', 'N', 'E']
 qwvchs = ['q', 'w', 'v']
 MECHANISM_NUM = 6
+MIN_DEPTH_GAP_SRC_RCV = 0.1
 
 NPCT_REAL_TYPE = 'f8'
 NPCT_CMPLX_TYPE = 'c16'
@@ -109,11 +111,14 @@ class c_MODEL1D(Structure):
 class c_K_INTEG_PROCESS(Structure):
     """
     和C结构体 K_INTEG_PROCESS 作匹配
+
+    波数积分参数。k0、ampk、vmin 共同确定搜索上界 kmax_ref；
+    默认在 [dk, kmax_ref] 内基于核函数振幅搜索实际积分上限 kmax。
     """
 
     _fields_ = [
         ('k0', REAL),
-        ('k0_is_fixed', c_bool),
+        ('use_kmax_ref', c_bool),
         ('ampk', REAL),
         ('keps', REAL),
         ('vmin', REAL),
