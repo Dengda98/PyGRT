@@ -16,15 +16,17 @@
  * kmax 搜索参数
  *
  * 步长采用 log(k) 上等间距（自适应几何因子），使静态（k_init << k_ref）
- * 与动态高频（k_init 接近 k_ref）都能在约 GRT_KMAX_SEARCH_N 步内扫完区间
- * 纯线性等步长 dk=k_ref/N 在静态小 k 下会严重过冲，故不采用
+ * 与动态高频（k_init 接近 k_ref）都能在约 GRT_KMAX_SEARCH_N 步内扫完区间。
+ * 同时限制绝对步长不超过 kmax_ref / GRT_KMAX_SEARCH_N，避免后期几何
+ * 递进产生过大的 dk。
  */
 #define GRT_KMAX_SEARCH_N          40      ///< 覆盖 [k_init, k_ref] 的目标步数
 #define GRT_KMAX_FACTOR_MIN        1.01    ///< 几何因子下限，保证每步有推进
 #define GRT_KMAX_FACTOR_MAX        1.50    ///< 几何因子上限，避免步长过大
 #define GRT_KMAX_NVAL_NEED         3       ///< 连续满足收敛准则的次数
+#define GRT_KMAX_MAX_STEP_DIVISOR  GRT_KMAX_SEARCH_N
 #define GRT_KMAX_DECAY_ZERO_TOL    1e-2    ///< 衰减到 0：F < tol * Fmax
-#define GRT_KMAX_DECAY_CONST_TOL   1e-2    ///< 衰减到常数：相对 log(k) 变化率 < tol
+#define GRT_KMAX_DECAY_CONST_TOL   5e-2    ///< 衰减到常数：dF < tol * Fmax
 
 
 /** 根据搜索区间计算自适应几何因子 */
@@ -53,7 +55,7 @@ static real_t _decay_zero(
     real_t kmax_init, real_t kmax_low, real_t kmax_ref, size_t *Ncount)
 {
     real_t Fmax = 0.0, F = 0.0, kmax = 0.0;
-    real_t factor = 0.0, k_low_eff = 0.0;
+    real_t factor = 0.0, dk_max = 0.0, dk = 0.0, k_low_eff = 0.0;
     cplxChnlGrid QWV = {0}, QWVz = {0};
     size_t ncount = 0;
     size_t nval = 0;
@@ -64,6 +66,7 @@ static real_t _decay_zero(
     }
 
     factor = _kmax_step_factor(kmax_init, kmax_ref);
+    dk_max = kmax_ref / GRT_KMAX_MAX_STEP_DIVISOR;
     k_low_eff = _kmax_low(kmax_init, kmax_low, kmax_ref);
     kmax = kmax_init;
 
@@ -83,7 +86,8 @@ static real_t _decay_zero(
 
         if(nval >= GRT_KMAX_NVAL_NEED) break;
 
-        kmax *= factor;
+        dk = GRT_MIN((factor - 1.0) * kmax, dk_max);
+        kmax += dk;
         ncount++;
     }
     kmax = GRT_MIN(kmax, kmax_ref);
@@ -99,8 +103,7 @@ static real_t _decay_constant(
     real_t kmax_init, real_t kmax_low, real_t kmax_ref, size_t *Ncount)
 {
     real_t dF = 0.0, F = 0.0, Fmax = 0.0, kmax = 0.0;
-    real_t factor = 0.0, k_low_eff = 0.0;
-    real_t k_prev = 0.0, dlogk = 0.0, rel_log_change = 0.0;
+    real_t factor = 0.0, dk_max = 0.0, dk = 0.0, k_low_eff = 0.0;
     cplxChnlGrid QWV = {0}, QWVz = {0};
     cplxChnlGrid QWV_const = {0}, QWVz_const = {0};
     size_t ncount = 0;
@@ -112,9 +115,9 @@ static real_t _decay_constant(
     }
 
     factor = _kmax_step_factor(kmax_init, kmax_ref);
+    dk_max = kmax_ref / GRT_KMAX_MAX_STEP_DIVISOR;
     k_low_eff = _kmax_low(kmax_init, kmax_low, kmax_ref);
     kmax = kmax_init;
-    k_prev = kmax_init;
 
     while(kmax < kmax_ref){
         dF = F = 0.0;
@@ -136,15 +139,8 @@ static real_t _decay_constant(
         memcpy(QWV_const, QWV, sizeof(cplxChnlGrid));
         memcpy(QWVz_const, QWVz, sizeof(cplxChnlGrid));
 
-        // dF 是离散变化量；除以 dlog(k) 后，准则不依赖搜索步长
-        // 使用 Fmax 归一化，避免当前 F 处于局部谷值时分母过小
-        dlogk = log(kmax / k_prev);
-        if(kmax >= k_low_eff && dlogk > 0.0 && Fmax > 0.0){
-            rel_log_change = (dF / Fmax) / dlogk;
-        } else {
-            rel_log_change = 1e300;
-        }
-        if(rel_log_change < GRT_KMAX_DECAY_CONST_TOL){
+        // dF 是当前核函数与前一采样点（收敛值估计）之间的差值。
+        if(kmax >= k_low_eff && dF < GRT_KMAX_DECAY_CONST_TOL * (Fmax + 1e-30)){
             nval++;
         } else {
             nval = 0;
@@ -152,8 +148,8 @@ static real_t _decay_constant(
 
         if(nval >= GRT_KMAX_NVAL_NEED)  break;
 
-        k_prev = kmax;
-        kmax *= factor;
+        dk = GRT_MIN((factor - 1.0) * kmax, dk_max);
+        kmax += dk;
         ncount++;
     }
     kmax = GRT_MIN(kmax, kmax_ref);

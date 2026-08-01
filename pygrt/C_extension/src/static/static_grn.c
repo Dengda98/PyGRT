@@ -119,7 +119,7 @@ void grt_integ_static_grn(
             Kproc->dk, Kproc->k0, &ncount);
         grt_free_mod1d_state(kmax_mstat);
         nk = floor(static_kmax / Kproc->dk) + 1;
-        GRTRaiseInfo("kmax = %.3e, nk = %zu, kref = %.3e, ncount = %zu", static_kmax, nk, Kproc->k0, ncount);
+        GRTRaiseInfo("kmax = %.3e, (DWM)nk = %zu, kref = %.3e, ncount = %zu", static_kmax, nk, Kproc->k0, ncount);
         
         // 若 nk 不够，适当调整 dk
         if(nk < GRT_MIN_STATIC_NK){
