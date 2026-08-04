@@ -59,7 +59,11 @@ Since PyGRT has been under continuous maintenance and extension during the peer 
 
 ---------------
 ⭐ **Like this project? Give it a Star!** ⭐
-<p align="center">
-  <img src="https://api.star-history.com/svg?repos=Dengda98/PyGRT&type=date&legend=top-left" 
-    alt="Star History Chart" width="80%" />
-</p>
+
+<a href="https://www.star-history.com/?repos=Dengda98%2FPyGRT&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=Dengda98/PyGRT&type=date&theme=dark&legend=top-left&sealed_token=Jw-kPUVn4gvtpMiGN6uzodUZDKXgbco-qVgwPt1EB3XoFVG7vrOEy0AgEBE1U89qw69hnLNJy0fKZrEY5L1EhJKD7WPbkIk47OkGUFtCDccEG4Tum4vzRQ" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=Dengda98/PyGRT&type=date&legend=top-left&sealed_token=Jw-kPUVn4gvtpMiGN6uzodUZDKXgbco-qVgwPt1EB3XoFVG7vrOEy0AgEBE1U89qw69hnLNJy0fKZrEY5L1EhJKD7WPbkIk47OkGUFtCDccEG4Tum4vzRQ" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=Dengda98/PyGRT&type=date&legend=top-left&sealed_token=Jw-kPUVn4gvtpMiGN6uzodUZDKXgbco-qVgwPt1EB3XoFVG7vrOEy0AgEBE1U89qw69hnLNJy0fKZrEY5L1EhJKD7WPbkIk47OkGUFtCDccEG4Tum4vzRQ" />
+ </picture>
+</a>
