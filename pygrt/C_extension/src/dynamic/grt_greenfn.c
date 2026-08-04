@@ -1046,7 +1046,7 @@ int greenfn_main(int argc, char **argv) {
             real_t delayT = 0.0;
             if (! Ctrl->E.refFirstP){
                 delayT = Ctrl->E.delayT0;
-                if(Ctrl->E.delayV0 > 0.0)   delayT += sqrt( GRT_SQUARE(dist) + GRT_SQUARE(Ctrl->D.deprcv - Ctrl->D.depsrc) ) / Ctrl->E.delayV0;
+                if(Ctrl->E.delayV0 > 0.0)   delayT += hypot( dist, Ctrl->D.deprcv - Ctrl->D.depsrc ) / Ctrl->E.delayV0;
             } else {
                 delayT = Ctrl->E.delayT0 + travtPS[ir][0];
             }

@@ -406,7 +406,7 @@ class PyModel1D:
             # 计算延迟
             delayT = delayT0 
             if delayV0 > 0.0:
-                delayT += np.sqrt(dist**2 + (deprcv-depsrc)**2)/delayV0
+                delayT += np.hypot(dist, deprcv-depsrc)/delayV0
 
             # 计算走时
             travtP, travtS = self.compute_travt1d(dist)
@@ -638,7 +638,7 @@ class PyModel1D:
         rs = np.zeros((nr,), dtype=NPCT_REAL_TYPE)
         for iy in range(ny):
             for ix in range(nx):
-                rs[ix + iy*nx] = max(np.sqrt(xarr[ix]**2 + yarr[iy]**2), 1e-5)
+                rs[ix + iy*nx] = max(np.hypot(xarr[ix], yarr[iy]), 1e-5)
         c_rs = npct.as_ctypes(rs)
         
         # 设置波数积分间隔

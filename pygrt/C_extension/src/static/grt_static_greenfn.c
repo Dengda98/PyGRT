@@ -555,7 +555,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     Ctrl->rs = (real_t*)calloc(Ctrl->nr, sizeof(real_t));
     for(size_t ix=0; ix<Ctrl->X.nx; ++ix){
         for(size_t iy=0; iy<Ctrl->Y.ny; ++iy){
-            Ctrl->rs[iy + ix*Ctrl->Y.ny] = GRT_MAX(sqrt(GRT_SQUARE(Ctrl->X.xs[ix]) + GRT_SQUARE(Ctrl->Y.ys[iy])), GRT_MIN_DISTANCE);  // 避免0震中距
+            Ctrl->rs[iy + ix*Ctrl->Y.ny] = GRT_MAX(hypot(Ctrl->X.xs[ix], Ctrl->Y.ys[iy]), GRT_MIN_DISTANCE);  // 避免0震中距
         }
     }
 
