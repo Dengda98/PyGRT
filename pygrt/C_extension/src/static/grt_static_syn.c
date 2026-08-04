@@ -390,33 +390,123 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 }
 
 
-/** 选取震中距最近的点的格林函数计算新网格点的静态位移 */
-void grt_static_syn_new_xy(
-    size_t nx0, real_t *xs0, size_t ny0, real_t *ys0,
-    size_t nx, real_t *xs, size_t ny, real_t *ys,
-    realChnlGrid *u, realChnlGrid *uiz, realChnlGrid *uir, 
-    GRT_SYN_TYPE computeType, real_t M0, real_t VpVs_ratio, real_t mchn[GRT_MECHANISM_NUM],
+/**
+ * 在单个震中距点上，由静态格林函数合成三分量（及可选空间偏导）。
+ * 逻辑对应动态解的 grt_syn_from_gf，但数据为标量场而非时序。
+ */
+static void static_syn_from_gf_one(
+    real_t azrad, size_t ir_pick, real_t dist0,
+    const realChnlGrid *u, const realChnlGrid *uiz, const realChnlGrid *uir,
+    GRT_SYN_TYPE computeType, real_t M0, real_t VpVs_ratio, const real_t mchn[GRT_MECHANISM_NUM],
+    bool rot2ZNE, bool calc_upar,
+    real_t syn[GRT_CHANNEL_NUM], real_t syn_upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])
+{
+    int calcUTypes = calc_upar ? 4 : 1;
+    realChnlGrid srcRadi = {0};
+    real_t tmpsyn[GRT_CHANNEL_NUM];
+
+    for(int ityp = 0; ityp < calcUTypes; ++ityp){
+        real_t upar_scale = 1.0;
+        // 求位移空间导数时，需调整比例系数（1e-5: km→cm）
+        if(ityp > 0){
+            switch (GRT_ZRT_CODES[ityp-1]){
+                case 'Z': case 'R':
+                    upar_scale = 1e-5;
+                    break;
+                case 'T':
+                    upar_scale = 1e-5 / dist0;
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        const realChnlGrid *up = u;
+        if(ityp == 1){
+            up = uiz;
+        } else if(ityp == 2){
+            up = uir;
+        }
+
+        memset(tmpsyn, 0, sizeof(tmpsyn));
+        grt_set_source_radiation(srcRadi, computeType, (ityp == 3), M0, upar_scale, VpVs_ratio, azrad, mchn);
+
+        GRT_LOOP_ChnlGrid(im, c){
+            int modr = GRT_SRC_M_ORDERS[im];
+            if(modr == 0 && GRT_ZRT_CODES[c] == 'T') continue;
+            tmpsyn[c] += up[ir_pick][im][c] * srcRadi[im][c];
+        }
+
+        for(int i = 0; i < GRT_CHANNEL_NUM; ++i){
+            if(ityp == 0){
+                syn[i] = tmpsyn[i];
+            } else {
+                syn_upar[ityp-1][i] = tmpsyn[i];
+            }
+        }
+    }
+
+    if(rot2ZNE){
+        if(calc_upar){
+            grt_rot_zrt2zxy_upar(azrad, syn, syn_upar, dist0 * 1e5);
+        } else {
+            grt_rot_zxy2zrt_vec(-azrad, syn);
+        }
+    }
+}
+
+
+/**
+ * 由静态格林函数合成三分量位移场（及可选空间偏导）。
+ *
+ * 对应动态解的 grt_syn_from_gf。输入为原 XY 网格上的格林函数，
+ * 可插值到新 XY 网格。
+ *
+ * 数组布局：u[震中距点][震源][分量]、syn[新网格点][分量]、
+ * syn_upar[新网格点][偏导方向][分量]。uiz/uir 在 calc_upar=false 时可传 NULL。
+ */
+void grt_static_syn_from_gf(
+    size_t nx0, const real_t *xs0, size_t ny0, const real_t *ys0,
+    size_t nx, const real_t *xs, size_t ny, const real_t *ys,
+    const realChnlGrid *u, const realChnlGrid *uiz, const realChnlGrid *uir,
+    GRT_SYN_TYPE computeType, real_t M0, real_t VpVs_ratio, const real_t mchn[GRT_MECHANISM_NUM],
     bool rot2ZNE, bool calc_upar,
     real_t (*syn)[GRT_CHANNEL_NUM], real_t (*syn_upar)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])
 {
     size_t nr0 = nx0 * ny0;
-    size_t nr = nx * ny;
 
     // 原网格震中距序列
     real_t *rs0 = (real_t *)calloc(nr0, sizeof(real_t));
+    real_t *sort_rs0 = (real_t *)calloc(nr0, sizeof(real_t));
+    size_t *sort_rs0_idx = (size_t *)calloc(nr0, sizeof(size_t));
     for(size_t ix = 0; ix < nx0; ++ix){
         for(size_t iy = 0; iy < ny0; ++iy){
-            rs0[iy + ix*ny0] = GRT_MAX(hypot(xs0[ix], ys0[iy]), GRT_MIN_DISTANCE);
+            size_t idx = iy + ix*ny0;
+            rs0[idx] = GRT_MAX(hypot(xs0[ix], ys0[iy]), GRT_MIN_DISTANCE);
+            sort_rs0_idx[idx] = idx;
+        }
+    }
+    memcpy(sort_rs0, rs0, nr0 * sizeof(*sort_rs0));
+
+    // 还未排序前，先判断是否是一个等距升序数组，这样对于加快后续查找
+    bool isUniform = (nr0 > 2);
+    real_t dr = (nr0 > 1)? rs0[1] - rs0[0] : 0.0;
+    for(size_t ir = 1; ir < nr0-1; ++ir){
+        if( fabs(2.0*rs0[ir] - (rs0[ir-1] + rs0[ir+1])) > 1e-3 || rs0[ir-1] >= rs0[ir] || rs0[ir] >= rs0[ir+1]){
+            isUniform = false;
+            break;
         }
     }
 
-    // 统计选取的最近震中距的绝对距离差的均值与标准差
-    real_t mean_distDiff = 0.0;
-    real_t std_distDiff = 0.0;
-    real_t min_distDiff = __DBL_MAX__;
-    real_t max_distDiff = 0.0;
+    if(! isUniform){
+        if(grt_argsort(rs0, nr0, sizeof(*rs0), grt_compare_real_t, sort_rs0_idx) != 0){
+            GRTRaiseError("Unable to sort source-grid distances.");
+        }
 
-    realChnlGrid srcRadi = {0};
+        for(size_t i = 0; i < nr0; ++i){
+            sort_rs0[i] = rs0[sort_rs0_idx[i]];
+        }
+    }
 
     // 每个点逐个处理
     for(size_t ix = 0; ix < nx; ++ix){
@@ -430,93 +520,52 @@ void grt_static_syn_new_xy(
             // 方位角
             real_t azrad = atan2(y, x);
 
-            // 从原震中距序列中找到最接近的
-            size_t ir_pick = grt_findClosest_real_t(rs0, nr0, dist);
-            real_t dist0 = rs0[ir_pick];
-            real_t distDiff = fabs(dist0 - dist);
-            mean_distDiff += distDiff;
-            std_distDiff += GRT_SQUARE(distDiff);
-            min_distDiff = GRT_MIN(min_distDiff, distDiff);
-            max_distDiff = GRT_MAX(max_distDiff, distDiff);
-
             size_t ir = iy + ix * ny;
 
-            // 计算和位移相关量的种类（1-位移，2-ui_z，3-ui_r，4-ui_t）
-            int calcUTypes = (calc_upar)? 4 : 1;
-            real_t upar_scale = 1.0;
+            memset(syn[ir], 0, sizeof(syn[ir]));
+            memset(syn_upar[ir], 0, sizeof(syn_upar[ir]));
 
-            realChnlGrid *up;  // 使用对应类型的格林函数
-            real_t tmpsyn[GRT_CHANNEL_NUM];
+            // 检查是否越界
+            bool r_OutofBound = (dist < sort_rs0[0] || dist > sort_rs0[nr0-1] + 1e-8);
+            if(r_OutofBound){
+                GRTRaiseWarning("(x, y)=(%.3e, %.3e) is out of distance bounds, skip.", x, y);
+                continue;
+            }
 
-            for(int ityp=0; ityp<calcUTypes; ++ityp){
+            size_t sort_ir_pick = 0, sort_ir_pick1 = 0;
+            if(isUniform){
+                sort_ir_pick = (size_t)((dist - sort_rs0[0]) / dr);
+            } else {
+                for(sort_ir_pick = 0; sort_ir_pick < nr0-1; ++sort_ir_pick)   if(sort_rs0[sort_ir_pick+1] > dist)  break;
+            }
+            sort_ir_pick1 = GRT_MIN(sort_ir_pick + 1, nr0-1);
 
-                upar_scale=1.0;
+            real_t drs = (sort_ir_pick == sort_ir_pick1)? 0.0 : (dist - sort_rs0[sort_ir_pick]) / (sort_rs0[sort_ir_pick1] - sort_rs0[sort_ir_pick]);
 
-                // 求位移空间导数时，需调整比例系数
-                if(ityp > 0){
-                    switch (GRT_ZRT_CODES[ityp-1]){
-                        // 合成 ui_z, uir
-                        case 'Z': case 'R': upar_scale = 1e-5; break;
-                        // 合成 ui_t
-                        case 'T': upar_scale = 1e-5 / dist0; break;
-                        default: break;
+            real_t syn2[GRT_CHANNEL_NUM] = {0.0}, syn2_upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM] = {{0.0}};
+
+            size_t iir[2] = {sort_ir_pick, sort_ir_pick1};
+            real_t facr[2] = {1.0 - drs, drs};
+            for(int j = 0; j < 2; ++j){
+                if(j==1 && sort_ir_pick == sort_ir_pick1)  continue;
+
+                size_t ir_pick = sort_rs0_idx[iir[j]];
+                real_t dist0 = sort_rs0[iir[j]];
+                static_syn_from_gf_one(azrad, ir_pick, dist0, u, uiz, uir, computeType, M0, VpVs_ratio, mchn, rot2ZNE, calc_upar, syn2, syn2_upar);
+
+                for(int c = 0; c < GRT_CHANNEL_NUM; ++c){
+                    syn[ir][c] += facr[j] * syn2[c];
+                    for(int c2 = 0; c2 < GRT_CHANNEL_NUM; ++c2){
+                        syn_upar[ir][c][c2] += facr[j] * syn2_upar[c][c2];
                     }
-                }
-
-                if(ityp==1){
-                    up = uiz;
-                } else if(ityp==2){
-                    up = uir;
-                } else {
-                    up = u;
-                }
-
-                memset(tmpsyn, 0, sizeof(real_t)*GRT_CHANNEL_NUM);
-
-                // 计算震源辐射因子
-                grt_set_source_radiation(srcRadi, computeType, (ityp > 0) && GRT_ZRT_CODES[ityp-1]=='T', M0, upar_scale, VpVs_ratio, azrad, mchn);
-
-                // 合成
-                GRT_LOOP_ChnlGrid(im, c){
-                    int modr = GRT_SRC_M_ORDERS[im];
-                    if(modr==0 && GRT_ZRT_CODES[c]=='T')  continue;
-                    tmpsyn[c] += up[ir_pick][im][c] * srcRadi[im][c];
-                }
-
-                // 记录数据
-                for(int i=0; i<GRT_CHANNEL_NUM; ++i){
-                    if(ityp == 0){
-                        syn[ir][i] = tmpsyn[i];
-                    } else {
-                        syn_upar[ir][ityp-1][i] = tmpsyn[i];
-                    }
-                }
-
-            } // END loop calcUTypes
-
-            // 是否要转到ZNE
-            if(rot2ZNE){
-                if(calc_upar){
-                    grt_rot_zrt2zxy_upar(azrad, syn[ir], syn_upar[ir], dist0*1e5);
-                } else {
-                    grt_rot_zxy2zrt_vec(-azrad, syn[ir]);
                 }
             }
         }
     }
 
-    mean_distDiff = mean_distDiff / nr;
-    std_distDiff = (std_distDiff - GRT_SQUARE(mean_distDiff) / nr) / nr;
-
-    if(mean_distDiff != 0.0){
-        GRTRaiseInfo("Distance gap between the GFs and the new XY grid:");
-        GRTRaiseInfo("MIN: %.5e km", min_distDiff);
-        GRTRaiseInfo("MAX: %.5e km", max_distDiff);
-        GRTRaiseInfo("MEAN: %.5e km", mean_distDiff);
-        GRTRaiseInfo("STD: %.5e km", std_distDiff);
-    }
-
     GRT_SAFE_FREE_PTR(rs0);
+    GRT_SAFE_FREE_PTR(sort_rs0);
+    GRT_SAFE_FREE_PTR(sort_rs0_idx);
 }
 
 
@@ -705,7 +754,7 @@ int static_syn_main(int argc, char **argv){
     real_t (*syn)[GRT_CHANNEL_NUM] = (real_t (*)[GRT_CHANNEL_NUM])calloc(nr, sizeof(real_t)*GRT_CHANNEL_NUM);
     real_t (*syn_upar)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM] = (real_t (*)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])calloc(nr, sizeof(real_t)*GRT_CHANNEL_NUM*GRT_CHANNEL_NUM);
     
-    grt_static_syn_new_xy(
+    grt_static_syn_from_gf(
         nx0, xs0, ny0, ys0, 
         nx, xs, ny, ys, 
         grn, grn_uiz, grn_uir, 
