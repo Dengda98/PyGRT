@@ -196,164 +196,61 @@ def _gen_syn_from_static_gf(grnDct:dict, calc_upar:bool, compute_type:GRT_SYN_TY
         :param    kwargs:          其它各种参数，包括震源参数，新网格参数等
             
     """
-    chs = ZRTchs
-
-    mechn = _set_source_mechanism(compute_type, **kwargs)
-
     # 为张裂计算 Vp/Vs
-    src_va = grnDct['_src_va']
-    src_vb = grnDct['_src_vb']
-    VpVs_ratio = src_va / src_vb
+    VpVs_ratio = float(grnDct['_src_va'] / grnDct['_src_vb'])
 
-    xarr0:np.ndarray = grnDct['_xarr'].astype(NPCT_REAL_TYPE)
-    yarr0:np.ndarray = grnDct['_yarr'].astype(NPCT_REAL_TYPE)
-    nx0 = len(xarr0)
-    ny0 = len(yarr0)
-    nr0 = nx0 * ny0
+    xarr0 = np.ascontiguousarray(grnDct['_xarr'], dtype=NPCT_REAL_TYPE)
+    yarr0 = np.ascontiguousarray(grnDct['_yarr'], dtype=NPCT_REAL_TYPE)
+    xarr = np.ascontiguousarray(kwargs.get('xarr', grnDct['_xarr']), dtype=NPCT_REAL_TYPE)
+    yarr = np.ascontiguousarray(kwargs.get('yarr', grnDct['_yarr']), dtype=NPCT_REAL_TYPE)
+    nx0, ny0 = len(xarr0), len(yarr0)
+    nx, ny = len(xarr), len(yarr)
+    nr0, nr = nx0 * ny0, nx * ny
 
-    if "xarr" in kwargs and "yarr" in kwargs:
-        xarr:np.ndarray = kwargs['xarr'].astype(NPCT_REAL_TYPE)
-        yarr:np.ndarray = kwargs['yarr'].astype(NPCT_REAL_TYPE)
-    else:
-        xarr:np.ndarray = grnDct['_xarr'].astype(NPCT_REAL_TYPE)
-        yarr:np.ndarray = grnDct['_yarr'].astype(NPCT_REAL_TYPE)
+    def _pack_gf(prefix:str=''):
+        """打包为 C 侧 realChnlGrid[nr]：arr[震中距点][震源][分量]"""
+        arr = np.zeros((nr0, SRC_M_NUM, CHANNEL_NUM), dtype=NPCT_REAL_TYPE)
+        for isrc, src_name in enumerate(SRC_M_NAME_ABBR):
+            for ic, comp in enumerate(ZRTchs):
+                key = f'{prefix}{src_name}{comp}'
+                if key in grnDct:
+                    arr[:, isrc, ic] = np.ravel(grnDct[key])
+        return arr
 
-    nx = len(xarr)
-    ny = len(yarr)
-    nr = nx * ny
-    
-    # 格林函数字典转为三个数组
-    pygrn = np.zeros((nr0, SRC_M_NUM, CHANNEL_NUM), dtype=NPCT_REAL_TYPE, order='C');       c_pygrn = npct.as_ctypes(pygrn)
-    pygrn_uiz = np.zeros((nr0, SRC_M_NUM, CHANNEL_NUM), dtype=NPCT_REAL_TYPE, order='C');   c_pygrn_uiz = npct.as_ctypes(pygrn_uiz)
-    pygrn_uir = np.zeros((nr0, SRC_M_NUM, CHANNEL_NUM), dtype=NPCT_REAL_TYPE, order='C');   c_pygrn_uir = npct.as_ctypes(pygrn_uir)
-    if not calc_upar:
-        c_pygrn_uiz = c_pygrn_uir = None
-    for isrc in range(SRC_M_NUM):
-        src_name = SRC_M_NAME_ABBR[isrc]
-        for ic, comp in enumerate(ZRTchs):
-            pygrn[:,isrc,ic] = grnDct[f'{src_name}{comp}'].ravel()
-            if calc_upar:
-                pygrn_uiz[:,isrc,ic] = grnDct[f'z{src_name}{comp}'].ravel()
-                pygrn_uir[:,isrc,ic] = grnDct[f'r{src_name}{comp}'].ravel()
-    
-    # 结果数组
-    syn = np.zeros((nr, CHANNEL_NUM), dtype=NPCT_REAL_TYPE, order='C');        c_syn = npct.as_ctypes(syn)
-    syn_upar = np.zeros((nr, CHANNEL_NUM, CHANNEL_NUM), dtype=NPCT_REAL_TYPE, order='C');        c_syn_upar = npct.as_ctypes(syn_upar)
+    pygrn = _pack_gf()
+    pygrn_uiz = _pack_gf('z') if calc_upar else None
+    pygrn_uir = _pack_gf('r') if calc_upar else None
 
-    C_grt_static_syn_new_xy(
+    syn = np.zeros((nr, CHANNEL_NUM), dtype=NPCT_REAL_TYPE)
+    syn_upar = np.zeros((nr, CHANNEL_NUM, CHANNEL_NUM), dtype=NPCT_REAL_TYPE)
+
+    # ========================================================================
+    #                            调用 C 函数
+    mchn = _set_source_mechanism(compute_type, **kwargs)
+    C_grt_static_syn_from_gf(
         nx0, npct.as_ctypes(xarr0), ny0, npct.as_ctypes(yarr0),
         nx, npct.as_ctypes(xarr), ny, npct.as_ctypes(yarr),
-        c_pygrn, c_pygrn_uiz, c_pygrn_uir,
-        compute_type.value, M0, VpVs_ratio, npct.as_ctypes(mechn),
+        npct.as_ctypes(pygrn),
+        npct.as_ctypes(pygrn_uiz) if calc_upar else None,
+        npct.as_ctypes(pygrn_uir) if calc_upar else None,
+        compute_type.value, M0, VpVs_ratio, npct.as_ctypes(mchn),
         ZNE, calc_upar,
-        c_syn, c_syn_upar, 
+        npct.as_ctypes(syn), npct.as_ctypes(syn_upar),
     )
+    # ========================================================================
 
-    # 结果字典
-    resDct = {}
-
-    # 基本数据拷贝
-    for k in grnDct.keys():
-        if k[0] != '_':
-            continue 
-        resDct[k] = deepcopy(grnDct[k])
-
+    resDct = {k: deepcopy(v) for k, v in grnDct.items() if k.startswith('_')}
     resDct['_xarr'] = xarr
     resDct['_yarr'] = yarr
 
-    if ZNE:
-        chs = ZNEchs
-
-    for i1 in range(CHANNEL_NUM):
-        c1 = chs[i1]
+    chs = ZNEchs if ZNE else ZRTchs
+    for i1, c1 in enumerate(chs):
         resDct[c1] = syn[:, i1].reshape((nx, ny))
         if calc_upar:
-            for i2 in range(CHANNEL_NUM):
-                c2 = chs[i2]
+            for i2, c2 in enumerate(chs):
                 resDct[f'{c2.lower()}{c1}'] = syn_upar[:, i2, i1].reshape((nx, ny))
 
     return resDct
-
-
-def _data_zrt2zne(stall:Stream):
-    r"""
-        将位移分量和位移空间导数分量转为ZNE坐标系
-
-        :param     stall:     柱坐标系(zrt)下合成地震图
-
-        :return:
-            - **stream** - :class:`obspy.Stream` 类型
-    """
-
-    chs = ZRTchs
-
-    synLst:List[Trace] = []  # 顺序要求Z, R, T
-    uparLst:List[Trace] = [] # 顺序要求zXXZ, zXXR, zXXT, rXXZ, rXXR, rXXT, tXXZ, tXXR, tXXT
-    stsyn_upar = Stream()
-    for ch in chs:
-        st = stall.select(channel=f"{ch}")
-        if len(st) == 1:
-            synLst.append(st[0])
-        
-        for ch2 in chs:
-            st = stall.select(channel=f"{ch.lower()}{ch2}")
-            if len(st) == 1:
-                uparLst.append(st[0])
-
-    if len(synLst) != 3:
-        raise ValueError(f"WRONG! synLst should have 3 components.")
-    if len(stsyn_upar) != 0 and len(stsyn_upar) != 9:
-        raise ValueError(f"WRONG! stsyn_upar should have 0 or 9 components.")
-
-    
-    # 是否有空间导数
-    doupar = (len(uparLst) == 9)
-    
-    nt = stall[0].stats.npts
-    azrad = np.deg2rad(stall[0].stats.sac['az'])
-    dist = stall[0].stats.sac['dist']
-
-    dblsyn = (c_double * 3)()
-    dbleupar = (c_double * 9)()
-
-    # 对每一个时间点
-    for n in range(nt):
-        # 复制数据
-        for i1 in range(3):
-            dblsyn[i1] = synLst[i1].data[n]
-            if doupar:
-                for i2 in range(3):
-                    dbleupar[i2 + i1*3] = uparLst[i2 + i1*3].data[n]
-        
-        if doupar:
-            C_grt_rot_zrt2zxy_upar(azrad, dblsyn, dbleupar, dist*1e5)
-        else:
-            C_grt_rot_zxy2zrt_vec(-azrad, dblsyn)
-
-        # 将结果写入原数组
-        for i1 in range(3):
-            synLst[i1].data[n] = dblsyn[i1]
-            if doupar:
-                for i2 in range(3):
-                    uparLst[i2 + i1*3].data[n] = dbleupar[i2 + i1*3]
-
-    # 修改通道名
-    for i1 in range(3):
-        ch1 = ZNEchs[i1]
-        tr = synLst[i1]
-        tr.stats.channel = tr.stats.sac['kcmpnm'] = f'{ch1}'
-        if doupar:
-            for i2 in range(3):
-                ch2 = ZNEchs[i2]
-                tr = uparLst[i2 + i1*3]
-                tr.stats.channel = tr.stats.sac['kcmpnm'] = f'{ch1.lower()}{ch2}'
-
-    stres = Stream()
-    stres.extend(synLst)
-    if doupar:
-        stres.extend(uparLst)
-
-    return stres
 
 
 def _set_source_mechanism(

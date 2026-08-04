@@ -176,3 +176,54 @@ ssize_t grt_insertOrdered(
 
     return pos;
 }
+
+
+
+// 索引-元素地址配对结构体，用于 qsort 排序
+// compare 保存在每个配对项中，使标准 qsort 的比较函数无需依赖全局状态
+typedef struct {
+    const unsigned char *element;
+    size_t index;
+    grt_compare_fn compare;
+} GRTArgSortPair;
+
+// 标准 qsort 比较函数：先按元素值升序，再按原始索引排序以保持稳定性
+static int compare_argsort_pair(const void *a, const void *b)
+{
+    const GRTArgSortPair *pa = a;
+    const GRTArgSortPair *pb = b;
+    int result = pa->compare(pa->element, pb->element);
+
+    if (result != 0) return result;
+    return (pa->index > pb->index) - (pa->index < pb->index);
+}
+
+/** 计算任意元素类型数组的稳定升序排序索引（argsort）*/
+int grt_argsort(
+    const void *base, size_t n, size_t element_size,
+    grt_compare_fn compare, size_t *indices)
+{
+    if (n == 0) return 0;
+    if (base == NULL || element_size == 0 || compare == NULL || indices == NULL) return -1;
+    if (n > (size_t)-1 / element_size ||
+        n > (size_t)-1 / sizeof(GRTArgSortPair)) return -1;
+
+    GRTArgSortPair *pairs = malloc(n * sizeof(*pairs));
+    if (pairs == NULL) return -2;
+
+    const unsigned char *bytes = base;
+    for (size_t i = 0; i < n; i++) {
+        pairs[i].element = bytes + i * element_size;
+        pairs[i].index = i;
+        pairs[i].compare = compare;
+    }
+
+    qsort(pairs, n, sizeof(*pairs), compare_argsort_pair);
+
+    for (size_t i = 0; i < n; i++) {
+        indices[i] = pairs[i].index;
+    }
+
+    free(pairs);
+    return 0;
+}

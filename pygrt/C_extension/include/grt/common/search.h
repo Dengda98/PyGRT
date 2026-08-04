@@ -136,3 +136,24 @@ __FOR_EACH_INT
 ssize_t grt_insertOrdered(
     void *arr, size_t *size, size_t capacity, const void *target, size_t elementSize, bool ascending,
     int (*compare)(const void *, const void *));
+
+/** 元素比较函数，语义与 qsort 的比较函数相同 */
+typedef int (*grt_compare_fn)(const void *a, const void *b);
+
+/**
+ * 计算任意元素类型数组的稳定升序排序索引（argsort）
+ *
+ * @param[in]  base          输入数组的首元素地址，不会被修改
+ * @param[in]  n             数组元素个数
+ * @param[in]  element_size  每个元素的字节长度，语义与 qsort 的 size 参数相同
+ * @param[in]  compare       元素比较函数，传入 base 中两个元素的地址
+ * @param[out] indices       输出索引数组，调用方需提前分配至少 n 个 size_t 空间
+ *                           结果满足 base[indices[i]] 按 compare 升序排列
+ *
+ * @return 0 表示成功；-1 表示参数无效或字节数溢出；-2 表示内存分配失败
+ *
+ * @note 对 compare 返回 0 的元素，结果保持其在原数组中的相对顺序
+ */
+int grt_argsort(
+    const void *base, size_t n, size_t element_size,
+    grt_compare_fn compare, size_t *indices);
