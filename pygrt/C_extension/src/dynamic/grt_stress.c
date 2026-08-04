@@ -51,6 +51,90 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     GRTCheckOptionSet(argc > 1);
 }
 
+void grt_compute_stress(
+    size_t npts, float dt, float dist, float va, float vb, float rho,
+    float Qainv, float Qbinv, float *const u[GRT_CHANNEL_NUM],
+    float *const upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM],
+    float *const res[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM], bool rot2ZNE)
+{
+    const char *chs = rot2ZNE ? GRT_ZNE_CODES : GRT_ZRT_CODES;
+    size_t nf = npts/2 + 1;
+    float df = 1.0f/(npts*dt);
+    fftwf_complex *lam_ukk = fftwf_malloc(sizeof(*lam_ukk)*nf);
+    fftwf_complex *lams = fftwf_malloc(sizeof(*lams)*nf);
+    fftwf_complex *mus = fftwf_malloc(sizeof(*mus)*nf);
+    GRT_FFTWF_HOLDER *fwd = grt_create_fftwf_holder_R2C_1D(npts, dt, nf, df);
+    GRT_FFTWF_HOLDER *inv = grt_create_fftwf_holder_C2R_1D(npts, dt, nf, df);
+
+    memset(lam_ukk, 0, sizeof(*lam_ukk)*nf);
+    for(size_t i=0; i<nf; ++i){
+        float freq = (i==0) ? 0.01f : df*i;
+        float w = PI2 * freq;
+        fftwf_complex atta = grt_attenuation_law(Qainv, PI2*(nf-1)*df, w);
+        fftwf_complex attb = grt_attenuation_law(Qbinv, PI2*(nf-1)*df, w);
+        mus[i] = vb*vb*attb*attb*rho*1e10f;
+        lams[i] = va*va*atta*atta*rho*1e10f - 2.0f*mus[i];
+    }
+
+    for(int c=0; c<GRT_CHANNEL_NUM; ++c){
+        memcpy(fwd->w_t, upar[c][c], sizeof(float)*npts);
+        fftwf_execute(fwd->plan);
+        for(size_t i=0; i<nf; ++i)  lam_ukk[i] += fwd->W_f[i];
+    }
+
+    // ZRT 联络项 u/r（1e-5: km→cm）；时域先算好再 FFT，避免频域再分支缩放
+    float *ur_over_r = (float *)malloc(sizeof(float)*npts);
+    float *ut_over_r = (float *)malloc(sizeof(float)*npts);
+    for(size_t i=0; i<npts; ++i){
+        ur_over_r[i] = u[1][i] / dist * 1e-5f;
+        ut_over_r[i] = u[2][i] / dist * 1e-5f;
+    }
+
+    if(!rot2ZNE){
+        memcpy(fwd->w_t, ur_over_r, sizeof(float)*npts);
+        fftwf_execute(fwd->plan);
+        for(size_t i=0; i<nf; ++i)  lam_ukk[i] += fwd->W_f[i];
+    }
+    for(size_t i=0; i<nf; ++i)  lam_ukk[i] *= lams[i];
+
+    for(int c=0; c<GRT_CHANNEL_NUM; ++c){
+        for(int c2=c; c2<GRT_CHANNEL_NUM; ++c2){
+            memcpy(fwd->w_t, upar[c2][c], sizeof(float)*npts);
+            fftwf_execute(fwd->plan);
+            for(size_t i=0; i<nf; ++i)  inv->W_f[i] += fwd->W_f[i];
+
+            memcpy(fwd->w_t, upar[c][c2], sizeof(float)*npts);
+            fftwf_execute(fwd->plan);
+            for(size_t i=0; i<nf; ++i)  inv->W_f[i] = (inv->W_f[i] + fwd->W_f[i]) * mus[i];
+            if(c == c2){
+                for(size_t i=0; i<nf; ++i)  inv->W_f[i] += lam_ukk[i];
+            }
+            if(chs[c]=='R' && chs[c2]=='T'){
+                memcpy(fwd->w_t, ut_over_r, sizeof(float)*npts);
+                fftwf_execute(fwd->plan);
+                for(size_t i=0; i<nf; ++i)  inv->W_f[i] -= mus[i]*fwd->W_f[i];
+            }
+            else if(chs[c]=='T' && chs[c2]=='T'){
+                memcpy(fwd->w_t, ur_over_r, sizeof(float)*npts);
+                fftwf_execute(fwd->plan);
+                for(size_t i=0; i<nf; ++i)  inv->W_f[i] += 2.0f*mus[i]*fwd->W_f[i];
+            }
+            fftwf_execute(inv->plan);
+            for(size_t i=0; i<npts; ++i)  res[c2][c][i] = inv->w_t[i]/npts;
+            grt_reset_fftwf_holder_zero(inv);
+        }
+    }
+
+    GRT_SAFE_FREE_PTR(ur_over_r);
+    GRT_SAFE_FREE_PTR(ut_over_r);
+
+    grt_destroy_fftwf_holder(fwd);
+    grt_destroy_fftwf_holder(inv);
+    fftwf_free(lam_ukk);
+    fftwf_free(lams);
+    fftwf_free(mus);
+}
+
 
 int stress_main(int argc, char **argv){
     GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
@@ -87,8 +171,6 @@ int stress_main(int argc, char **argv){
     int npts = insac->hd.npts;
     float dt = insac->hd.delta;
     float dist = insac->hd.dist;
-    float df = 1.0/(npts*dt);
-    int nf = npts/2 + 1;
     float va = insac->hd.user1;
     float vb = insac->hd.user2;
     float rho = insac->hd.user3;
@@ -100,132 +182,45 @@ int stress_main(int argc, char **argv){
     SACTRACE *outsac = grt_copy_SACTRACE(insac, true);
     grt_free_SACTRACE(insac);
 
-    // 申请内存
-    // lamda * 体积应变
-    fftwf_complex *lam_ukk = (fftwf_complex*)fftwf_malloc(sizeof(fftwf_complex)*nf);
-    // 不同频率的lambda和mu
-    fftwf_complex *lams = (fftwf_complex*)fftwf_malloc(sizeof(fftwf_complex)*nf);
-    fftwf_complex *mus = (fftwf_complex*)fftwf_malloc(sizeof(fftwf_complex)*nf);
-    // 分配FFTW
-    GRT_FFTWF_HOLDER *fwd_fftw_holder = grt_create_fftwf_holder_R2C_1D(npts, dt, nf, df);
-    GRT_FFTWF_HOLDER *inv_fftw_holder = grt_create_fftwf_holder_C2R_1D(npts, dt, nf, df);
-    // 初始化
-    memset(lam_ukk, 0, sizeof(fftwf_complex)*nf);
-    memset(lams, 0, sizeof(fftwf_complex)*nf);
-    memset(mus, 0, sizeof(fftwf_complex)*nf);
-    // 计算不同频率下的拉梅系数
-    for(int i=0; i<nf; ++i){
-        float freq, w;
-        freq = (i==0) ? 0.01f : df*i; // 计算衰减因子不能为0频
-        w = PI2 * freq;
-        fftwf_complex atta, attb;
-        atta = grt_attenuation_law(Qainv, PI2*(nf-1)*df, w);
-        attb = grt_attenuation_law(Qbinv, PI2*(nf-1)*df, w);
-        // 乘上1e10，转为dyne/(cm^2)
-        mus[i] = vb*vb*attb*attb*rho*1e10;
-        lams[i] = va*va*atta*atta*rho*1e10 - 2.0*mus[i];
-    }
-
-    // ----------------------------------------------------------------------------------
-    // 先计算体积应变u_kk = u_11 + u22 + u33 和 lamda的乘积
-    for(int i1=0; i1<3; ++i1){
-        c1 = chs[i1];
-
-        // 读取数据 u_{k,k}
-        GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%c.sac", Ctrl->s_synpath, tolower(c1), c1);
+    float *u[GRT_CHANNEL_NUM];
+    float *upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
+    float *res[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
+    for(int c=0; c<GRT_CHANNEL_NUM; ++c){
+        GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c.sac", Ctrl->s_synpath, chs[c]);
         insac = grt_read_SACTRACE(s_filepath, false);
-        memcpy(fwd_fftw_holder->w_t, insac->data, sizeof(float)*npts);
-
-        // 累加
-        fftwf_execute(fwd_fftw_holder->plan);
-        for(int i=0; i<nf; ++i)  lam_ukk[i] += fwd_fftw_holder->W_f[i];
+        u[c] = insac->data;
+        insac->data = NULL;
+        grt_free_SACTRACE(insac);
+        for(int c2=0; c2<GRT_CHANNEL_NUM; ++c2){
+            GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%c.sac", Ctrl->s_synpath, tolower(chs[c2]), chs[c]);
+            insac = grt_read_SACTRACE(s_filepath, false);
+            upar[c2][c] = insac->data;
+            insac->data = NULL;
+            grt_free_SACTRACE(insac);
+            res[c2][c] = calloc(npts, sizeof(*res[c2][c]));
+        }
     }
-    // 加上协变导数
-    if(!rot2ZNE){
-        GRT_SAFE_ASPRINTF(&s_filepath, "%s/R.sac", Ctrl->s_synpath);
-        insac = grt_read_SACTRACE(s_filepath, false);
-        memcpy(fwd_fftw_holder->w_t, insac->data, sizeof(float)*npts);
-        fftwf_execute(fwd_fftw_holder->plan);
-        for(int i=0; i<nf; ++i)  lam_ukk[i] += fwd_fftw_holder->W_f[i]/dist*1e-5;
-    }
+    grt_compute_stress(npts, dt, dist, va, vb, rho, Qainv, Qbinv, u, upar, res, rot2ZNE);
 
-    // 乘上lambda系数
-    for(int i=0; i<nf; ++i)  lam_ukk[i] *= lams[i];
-
-    // 重新初始化
-    grt_reset_fftwf_holder_zero(fwd_fftw_holder);
-    grt_reset_fftwf_holder_zero(inv_fftw_holder);
-
-    // ----------------------------------------------------------------------------------
-    // 循环6个分量
+    // 写出6个分量
     for(int i1=0; i1<3; ++i1){
         c1 = chs[i1];
         for(int i2=i1; i2<3; ++i2){
             c2 = chs[i2];
-
-            // 读取数据 u_{i,j}
-            GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%c.sac", Ctrl->s_synpath, tolower(c2), c1);
-            insac = grt_read_SACTRACE(s_filepath, false);
-            memcpy(fwd_fftw_holder->w_t, insac->data, sizeof(float)*npts);
-
-            // 累加
-            fftwf_execute(fwd_fftw_holder->plan);
-            for(int i=0; i<nf; ++i)  inv_fftw_holder->W_f[i] += fwd_fftw_holder->W_f[i];
-
-            // 读取数据 u_{j,i}
-            GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%c.sac", Ctrl->s_synpath, tolower(c1), c2);
-            insac = grt_read_SACTRACE(s_filepath, false);
-            memcpy(fwd_fftw_holder->w_t, insac->data, sizeof(float)*npts);
-            
-            // 累加
-            fftwf_execute(fwd_fftw_holder->plan);
-            for(int i=0; i<nf; ++i)  inv_fftw_holder->W_f[i] = (inv_fftw_holder->W_f[i] + fwd_fftw_holder->W_f[i]) * mus[i];
-
-            // 对于对角线分量，需加上lambda * u_kk
-            if(c1 == c2){
-                for(int i=0; i<nf; ++i)  inv_fftw_holder->W_f[i] += lam_ukk[i];
-            }
-
-            // 特殊情况需加上协变导数，1e-5是因为km->cm
-            if(c1=='R' && c2=='T'){
-                // 读取数据 u_T
-                GRT_SAFE_ASPRINTF(&s_filepath, "%s/T.sac", Ctrl->s_synpath);
-                insac = grt_read_SACTRACE(s_filepath, false);
-                memcpy(fwd_fftw_holder->w_t, insac->data, sizeof(float)*npts);
-                fftwf_execute(fwd_fftw_holder->plan);
-                for(int i=0; i<nf; ++i)  inv_fftw_holder->W_f[i] -= mus[i] * fwd_fftw_holder->W_f[i] / dist * 1e-5;
-            }
-            else if(c1=='T' && c2=='T'){
-                // 读取数据 u_R
-                GRT_SAFE_ASPRINTF(&s_filepath, "%s/R.sac", Ctrl->s_synpath);
-                insac = grt_read_SACTRACE(s_filepath, false);
-                memcpy(fwd_fftw_holder->w_t, insac->data, sizeof(float)*npts);
-                fftwf_execute(fwd_fftw_holder->plan);
-                for(int i=0; i<nf; ++i)  inv_fftw_holder->W_f[i] += 2.0f * mus[i] * fwd_fftw_holder->W_f[i] / dist * 1e-5;
-            }
-            
-            // 保存到SAC
-            fftwf_execute(inv_fftw_holder->plan);
-            for(int i=0; i<npts; ++i)  inv_fftw_holder->w_t[i] /= npts;
-            memcpy(outsac->data, inv_fftw_holder->w_t, sizeof(float)*npts);
+            memcpy(outsac->data, res[i2][i1], sizeof(*outsac->data)*npts);
             sprintf(outsac->hd.kcmpnm, "%c%c", c1, c2);
             GRT_SAFE_ASPRINTF(&s_filepath, "%s/stress_%c%c.sac", Ctrl->s_synpath, c1, c2);
             grt_write_SACTRACE(s_filepath, outsac);
-
-            // 置零
-            grt_reset_fftwf_holder_zero(inv_fftw_holder);
         }
     }
 
-
-    grt_destroy_fftwf_holder(fwd_fftw_holder);
-    grt_destroy_fftwf_holder(inv_fftw_holder);
-
-    GRT_SAFE_FFTW_FREE_PTR(lam_ukk, f);
-    GRT_SAFE_FFTW_FREE_PTR(lams, f);
-    GRT_SAFE_FFTW_FREE_PTR(mus, f);
-
-    grt_free_SACTRACE(insac);
+    for(int c=0; c<GRT_CHANNEL_NUM; ++c){
+        free(u[c]);
+        for(int c2=0; c2<GRT_CHANNEL_NUM; ++c2){
+            free(upar[c2][c]);
+            free(res[c2][c]);
+        }
+    }
     grt_free_SACTRACE(outsac);
     GRT_SAFE_FREE_PTR(s_filepath);
 

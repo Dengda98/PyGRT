@@ -48,6 +48,44 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     // 暂不支持设置其它参数
 }
 
+void grt_static_compute_stress(
+    size_t nx, size_t ny, const real_t *xs, const real_t *ys,
+    real_t *const u[GRT_CHANNEL_NUM],
+    real_t *const upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM],
+    real_t *const res[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM],
+    bool rot2ZNE, real_t mu, real_t lam)
+{
+    const char *chs = rot2ZNE ? GRT_ZNE_CODES : GRT_ZRT_CODES;
+
+    for(size_t ix=0; ix<nx; ++ix){
+        for(size_t iy=0; iy<ny; ++iy){
+            size_t ir = iy + ix*ny;
+            real_t dist = GRT_MAX(hypot(xs[ix], ys[iy]), GRT_MIN_DISTANCE);
+            // ZRT 联络项 u/r，1e-5: km→cm
+            real_t ur_over_r = u[1][ir] / dist * 1e-5;
+            real_t ut_over_r = u[2][ir] / dist * 1e-5;
+
+            real_t lam_ukk = upar[0][0][ir] + upar[1][1][ir] + upar[2][2][ir];
+            if(!rot2ZNE)  lam_ukk += ur_over_r;
+            lam_ukk *= lam;
+
+            for(int c=0; c<GRT_CHANNEL_NUM; ++c){
+                for(int c2=c; c2<GRT_CHANNEL_NUM; ++c2){
+                    real_t val = mu * (upar[c2][c][ir] + upar[c][c2][ir]);
+                    if(c == c2)  val += lam_ukk;
+                    if(chs[c]=='R' && chs[c2]=='T'){
+                        val -= mu * ut_over_r;
+                    }
+                    else if(chs[c]=='T' && chs[c2]=='T'){
+                        val += 2.0 * mu * ur_over_r;
+                    }
+                    res[c2][c][ir] = val;
+                }
+            }
+        }
+    }
+}
+
 
 /** 子模块主函数 */
 int static_stress_main(int argc, char **argv){
@@ -168,42 +206,7 @@ int static_stress_main(int argc, char **argv){
         }
     }
     
-    // 每个点逐个处理
-    for(size_t ix=0; ix < nx; ++ix){
-        real_t x = xs[ix];
-        for(size_t iy=0; iy < ny; ++iy){
-            real_t y = ys[iy];
-
-            size_t ir = iy + ix*ny;
-
-            // 震中距
-            real_t dist = GRT_MAX(sqrt(x*x + y*y), GRT_MIN_DISTANCE);
-
-            // 先计算体积应变u_kk = u_11 + u22 + u33 和 lamda的乘积，ZRT分量需包括协变导数
-            real_t lam_ukk = upar[0][0][ir] + upar[1][1][ir] + upar[2][2][ir];
-            if(!rot2ZNE)  lam_ukk += u[1][ir] / dist*1e-5;
-            lam_ukk *= rcv_lam;
-
-            for(int c=0; c<GRT_CHANNEL_NUM; ++c){
-                for(int c2=c; c2<GRT_CHANNEL_NUM; ++c2){
-                    real_t val = rcv_mu * (upar[c2][c][ir] + upar[c][c2][ir]);
-
-                    // 对角线分量
-                    if(c == c2)   val += lam_ukk;
-                    
-                    // 特殊情况需加上协变导数，1e-5是因为km->cm
-                    if(chs[c]=='R' && chs[c2]=='T'){
-                        val -= rcv_mu * u[2][ir] / dist * 1e-5;
-                    }
-                    else if(chs[c]=='T' && chs[c2]=='T'){
-                        val += 2.0 * rcv_mu * u[1][ir] / dist * 1e-5;
-                    }
-
-                    res[c2][c][ir] = val;
-                }
-            }
-        }
-    }
+    grt_static_compute_stress(nx, ny, xs, ys, u, upar, res, rot2ZNE, rcv_mu, rcv_lam);
 
     // 写入 nc 文件
     for(int c=0; c<GRT_CHANNEL_NUM; ++c){
