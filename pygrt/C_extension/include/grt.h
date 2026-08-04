@@ -46,7 +46,6 @@
 #include "grt/dynamic/dyn_postprocess.h"
 #include "grt/dynamic/signals.h"
 #include "grt/dynamic/source.h"
-#include "grt/dynamic/syn.h"
 
 
 #include "grt/modal/eigenfn.h"

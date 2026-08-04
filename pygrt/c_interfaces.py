@@ -66,6 +66,20 @@ FLOAT_CHNL_PTR_MAT = FLOAT_CHNL_PTRS * CHANNEL_NUM
 REAL_CHNL_PTRS = PREAL * CHANNEL_NUM
 REAL_CHNL_PTR_MAT = REAL_CHNL_PTRS * CHANNEL_NUM
 
+C_grt_syn_from_gf = libgrt.grt_syn_from_gf
+"""由动态格林函数合成三分量地震图（及可选空间偏导）"""
+C_grt_syn_from_gf.restype = None
+C_grt_syn_from_gf.argtypes = [
+    c_size_t, c_float,
+    POINTER(FPOINTER * CHANNEL_NUM),
+    POINTER(FPOINTER * CHANNEL_NUM),
+    POINTER(FPOINTER * CHANNEL_NUM),
+    c_int, REAL, REAL, REAL, REAL * MECHANISM_NUM,
+    c_bool, c_bool,
+    FPOINTER * CHANNEL_NUM, POINTER(FPOINTER * CHANNEL_NUM),
+]
+
+
 C_grt_compute_stress = libgrt.grt_compute_stress
 """由动态位移偏导合成应力张量"""
 C_grt_compute_stress.restype = None
