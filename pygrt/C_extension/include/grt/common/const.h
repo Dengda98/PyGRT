@@ -138,6 +138,7 @@ typedef cplx_t     cplxChnlGrid[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
 typedef cplx_t*   pcplxChnlGrid[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
 typedef real_t     realChnlGrid[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
 typedef real_t*   prealChnlGrid[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
+typedef float*   pfloatChnlGrid[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
 typedef int         intChnlGrid[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
 
 typedef cplx_t cplxIntegGrid[GRT_SRC_M_NUM][GRT_INTEG_NUM];

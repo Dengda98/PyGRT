@@ -90,65 +90,97 @@ def _gen_syn_from_gf(st:Stream, calc_upar:bool, compute_type:GRT_SYN_TYPE, M0:fl
         :param    ZNE:             是否以ZNE分量输出?
             
     """
-    chs = ZRTchs
-    sacin_prefixes = ["", "z", "r", ""]   # 输入通道名
-    sacout_prefixes = ["", "z", "r", "t"]   # 输出通道名
-    srcName = ["EX", "VF", "HF", "DD", "DS", "SS"]
     allchs = [tr.stats.channel for tr in st]
 
     # 为张裂计算 Vp/Vs
     src_va = st[0].stats.sac['user6']
     src_vb = st[0].stats.sac['user7']
-    VpVs_ratio = src_va / src_vb
+    VpVs_ratio = float(src_va / src_vb)
+
+    azrad = float(np.deg2rad(az))
+    dist = float(st[0].stats.sac['dist'])
+    npts = int(st[0].stats.npts)
 
     baz = 180 + az
     if baz > 360:
         baz -= 360
 
-    azrad = np.deg2rad(az)
+    FPtrs = FPOINTER * CHANNEL_NUM
+    FGrid = FPtrs * SRC_M_NUM
+    FMat = FPtrs * CHANNEL_NUM
 
-    calcUTypes = 4 if calc_upar else 1
+    def _trace_data(channel:str):
+        if channel not in allchs:
+            raise ValueError(f"Failed, channel=\"{channel}\" not exists.")
+        return np.ascontiguousarray(st.select(channel=channel)[0].data, dtype=np.float32)
 
+    # 格林函数数组布局：gf[震源][分量][采样点]
+    gf_hold = [[None] * CHANNEL_NUM for _ in range(SRC_M_NUM)]
+    gf_uiz_hold = [[None] * CHANNEL_NUM for _ in range(SRC_M_NUM)]
+    gf_uir_hold = [[None] * CHANNEL_NUM for _ in range(SRC_M_NUM)]
+    for im, src_name in enumerate(SRC_M_NAME_ABBR):
+        for ic, ch in enumerate(ZRTchs):
+            # m=0 无 T 分量
+            if SRC_M_ORDERS[im] == 0 and ch == 'T':
+                continue
+            channel = f'{src_name}{ch}'
+            # 仅加载存在的道（未用到的震源可缺省；C 侧对非零系数会校验）
+            if channel not in allchs:
+                continue
+            gf_hold[im][ic] = _trace_data(channel)
+            if calc_upar:
+                gf_uiz_hold[im][ic] = _trace_data(f'z{src_name}{ch}')
+                gf_uir_hold[im][ic] = _trace_data(f'r{src_name}{ch}')
+
+    def _src_chnl_ptrs(hold):
+        return FGrid(*(
+            FPtrs(*(
+                (arr.ctypes.data_as(FPOINTER) if arr is not None else FPOINTER())
+                for arr in row
+            ))
+            for row in hold
+        ))
+
+    gf_ptrs = _src_chnl_ptrs(gf_hold)
+    gf_uiz_ptrs = _src_chnl_ptrs(gf_uiz_hold) if calc_upar else None
+    gf_uir_ptrs = _src_chnl_ptrs(gf_uir_hold) if calc_upar else None
+
+    synarr = np.zeros((CHANNEL_NUM, npts), dtype=np.float32)
+    syn_upar_arr = np.zeros((CHANNEL_NUM, CHANNEL_NUM, npts), dtype=np.float32)
+    syn_ptrs = FPtrs(*(synarr[c].ctypes.data_as(FPOINTER) for c in range(CHANNEL_NUM)))
+    syn_upar_ptrs = FMat(*(
+        FPtrs(*(syn_upar_arr[d, c].ctypes.data_as(FPOINTER) for c in range(CHANNEL_NUM)))
+        for d in range(CHANNEL_NUM)
+    ))
+
+    # ========================================================================
+    #                            调用 C 函数
+    mchn = _set_source_mechanism(compute_type, **kwargs)
+    C_grt_syn_from_gf(
+        npts, dist,
+        gf_ptrs, gf_uiz_ptrs, gf_uir_ptrs,
+        compute_type.value, M0, VpVs_ratio, azrad, npct.as_ctypes(mchn),
+        ZNE, calc_upar,
+        syn_ptrs, syn_upar_ptrs,
+    )
+    # ========================================================================
+
+    out_chs = ZNEchs if ZNE else ZRTchs
     stall = Stream()
+    for c, ch in enumerate(out_chs):
+        tr:Trace = st[0].copy()
+        tr.data = synarr[c].copy()
+        tr.stats.channel = kcmpnm = f'{ch}'
+        __check_trace_attr_sac(tr, az=az, baz=baz, kcmpnm=kcmpnm)
+        stall.append(tr)
+        if calc_upar:
+            for d, dch in enumerate(out_chs):
+                tr = st[0].copy()
+                tr.data = syn_upar_arr[d, c].copy()
+                tr.stats.channel = kcmpnm = f'{dch.lower()}{ch}'
+                __check_trace_attr_sac(tr, az=az, baz=baz, kcmpnm=kcmpnm)
+                stall.append(tr)
 
-    dist = st[0].stats.sac['dist']
-    upar_scale:float = 1.0
-    for ityp in range(calcUTypes):
-        if ityp > 0:
-            upar_scale = 1e-5
-        if ityp == 3:
-            upar_scale /= dist
-
-        srcRadi = _set_source_radi(ityp==3, upar_scale, compute_type, M0, azrad, VpVs_ratio=VpVs_ratio, **kwargs)
-
-        inpref = sacin_prefixes[ityp]
-        outpref = sacout_prefixes[ityp]
-
-        for c in range(CHANNEL_NUM):
-            ch = chs[c]
-            tr:Trace = st[0].copy()
-            tr.data[:] = 0.0
-            tr.stats.channel = kcmpnm = f'{outpref}{ch}'
-            __check_trace_attr_sac(tr, az=az, baz=baz, kcmpnm=kcmpnm)
-            for k in range(SRC_M_NUM):
-                coef = srcRadi[k, c]
-                if coef==0.0:
-                    continue
-
-                # 读入数据
-                channel = f'{inpref}{srcName[k]}{ch}'
-                if channel not in allchs:
-                    raise ValueError(f"Failed, channel=\"{channel}\" not exists.")
-                    
-                tr0 = st.select(channel=channel)[0].copy()
-                
-                tr.data += coef*tr0.data
-
-            stall.append(tr)
-
-    if ZNE:
-        stall = _data_zrt2zne(stall)
-            
     return stall
 
 
