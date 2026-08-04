@@ -47,6 +47,38 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     // 暂不支持设置其它参数
 }
 
+void grt_static_compute_strain(
+    size_t nx, size_t ny, const real_t *xs, const real_t *ys,
+    real_t *const u[GRT_CHANNEL_NUM],
+    real_t *const upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM],
+    real_t *const res[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM], bool rot2ZNE)
+{
+    const char *chs = rot2ZNE ? GRT_ZNE_CODES : GRT_ZRT_CODES;
+
+    for(size_t ix=0; ix<nx; ++ix){
+        for(size_t iy=0; iy<ny; ++iy){
+            size_t ir = iy + ix*ny;
+            real_t dist = GRT_MAX(hypot(xs[ix], ys[iy]), GRT_MIN_DISTANCE);
+            // ZRT 联络项 u/r，1e-5: km→cm
+            real_t ur_over_r = u[1][ir] / dist * 1e-5;
+            real_t ut_over_r = u[2][ir] / dist * 1e-5;
+
+            for(int c=0; c<GRT_CHANNEL_NUM; ++c){
+                for(int c2=c; c2<GRT_CHANNEL_NUM; ++c2){
+                    real_t val = 0.5 * (upar[c2][c][ir] + upar[c][c2][ir]);
+                    if(chs[c]=='R' && chs[c2]=='T'){
+                        val -= 0.5 * ut_over_r;
+                    }
+                    else if(chs[c]=='T' && chs[c2]=='T'){
+                        val += ur_over_r;
+                    }
+                    res[c2][c][ir] = val;
+                }
+            }
+        }
+    }
+}
+
 
 /** 子模块主函数 */
 int static_strain_main(int argc, char **argv){
@@ -156,34 +188,7 @@ int static_strain_main(int argc, char **argv){
         }
     }
 
-    // 每个点逐个处理
-    for(size_t ix=0; ix < nx; ++ix){
-        real_t x = xs[ix];
-        for(size_t iy=0; iy < ny; ++iy){
-            real_t y = ys[iy];
-
-            size_t ir = iy + ix*ny;
-
-            // 震中距
-            real_t dist = GRT_MAX(sqrt(x*x + y*y), GRT_MIN_DISTANCE);
-
-            for(int c=0; c<GRT_CHANNEL_NUM; ++c){
-                for(int c2=c; c2<GRT_CHANNEL_NUM; ++c2){
-                    real_t val = 0.5 * (upar[c2][c][ir] + upar[c][c2][ir]);
-                    
-                    // 特殊情况需加上协变导数，1e-5是因为km->cm
-                    if(chs[c]=='R' && chs[c2]=='T'){
-                        val -= 0.5 * u[2][ir] / dist * 1e-5;
-                    }
-                    else if(chs[c]=='T' && chs[c2]=='T'){
-                        val += u[1][ir] / dist * 1e-5;
-                    }
-
-                    res[c2][c][ir] = val;
-                }
-            }
-        }
-    }
+    grt_static_compute_strain(nx, ny, xs, ys, u, upar, res, rot2ZNE);
 
     // 写入 nc 文件
     for(int c=0; c<GRT_CHANNEL_NUM; ++c){

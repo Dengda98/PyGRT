@@ -58,6 +58,63 @@ C_grt_static_syn_new_xy.argtypes = [
     POINTER(REAL*CHANNEL_NUM), POINTER((REAL*CHANNEL_NUM)*CHANNEL_NUM), 
 ]
 
+# 通道维指针容器，对应 C 侧常用布局：
+#   T *arr[GRT_CHANNEL_NUM]                      → *_CHNL_PTRS
+#   T *arr[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM]      → *_CHNL_PTR_MAT
+FLOAT_CHNL_PTRS = FPOINTER * CHANNEL_NUM
+FLOAT_CHNL_PTR_MAT = FLOAT_CHNL_PTRS * CHANNEL_NUM
+REAL_CHNL_PTRS = PREAL * CHANNEL_NUM
+REAL_CHNL_PTR_MAT = REAL_CHNL_PTRS * CHANNEL_NUM
+
+C_grt_compute_stress = libgrt.grt_compute_stress
+"""由动态位移偏导合成应力张量"""
+C_grt_compute_stress.restype = None
+C_grt_compute_stress.argtypes = [
+    c_size_t, c_float, c_float, c_float, c_float, c_float, c_float, c_float,
+    FLOAT_CHNL_PTRS, POINTER(FLOAT_CHNL_PTRS), POINTER(FLOAT_CHNL_PTRS), c_bool,
+]
+
+C_grt_compute_strain = libgrt.grt_compute_strain
+"""由动态位移偏导合成应变张量"""
+C_grt_compute_strain.restype = None
+C_grt_compute_strain.argtypes = [
+    c_size_t, c_float, FLOAT_CHNL_PTRS, POINTER(FLOAT_CHNL_PTRS),
+    POINTER(FLOAT_CHNL_PTRS), c_bool,
+]
+
+C_grt_compute_rotation = libgrt.grt_compute_rotation
+"""由动态位移偏导合成旋转张量"""
+C_grt_compute_rotation.restype = None
+C_grt_compute_rotation.argtypes = [
+    c_size_t, c_float, FLOAT_CHNL_PTRS, POINTER(FLOAT_CHNL_PTRS),
+    POINTER(FLOAT_CHNL_PTRS), c_bool,
+]
+
+C_grt_static_compute_stress = libgrt.grt_static_compute_stress
+"""由静态位移偏导合成应力张量"""
+C_grt_static_compute_stress.restype = None
+C_grt_static_compute_stress.argtypes = [
+    c_size_t, c_size_t, PREAL, PREAL,
+    REAL_CHNL_PTRS, POINTER(REAL_CHNL_PTRS), POINTER(REAL_CHNL_PTRS),
+    c_bool, REAL, REAL,
+]
+
+C_grt_static_compute_strain = libgrt.grt_static_compute_strain
+"""由静态位移偏导合成应变张量"""
+C_grt_static_compute_strain.restype = None
+C_grt_static_compute_strain.argtypes = [
+    c_size_t, c_size_t, PREAL, PREAL,
+    REAL_CHNL_PTRS, POINTER(REAL_CHNL_PTRS), POINTER(REAL_CHNL_PTRS), c_bool,
+]
+
+C_grt_static_compute_rotation = libgrt.grt_static_compute_rotation
+"""由静态位移偏导合成旋转张量"""
+C_grt_static_compute_rotation.restype = None
+C_grt_static_compute_rotation.argtypes = [
+    c_size_t, c_size_t, PREAL, PREAL,
+    REAL_CHNL_PTRS, POINTER(REAL_CHNL_PTRS), POINTER(REAL_CHNL_PTRS), c_bool,
+]
+
 
 C_grt_set_num_threads = libgrt.grt_set_num_threads
 """设置多线程数"""

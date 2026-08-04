@@ -531,11 +531,9 @@ def _compute_strain_rotation(st_syn:Stream, Type:str):
     """
 
     if Type == 'strain':
-        sgn = 1
         i1_end = 3
         i2_offset = 0
     elif Type == 'rotation':
-        sgn = -1
         i1_end = 2
         i2_offset = 1
     else:
@@ -547,49 +545,80 @@ def _compute_strain_rotation(st_syn:Stream, Type:str):
     if len(st_syn.select(channel=f"nN")) > 0:
         chs = ZNEchs
 
+    npts = st_syn[0].stats.npts
     dist = st_syn[0].stats.sac['dist']
+    u, upar, u_ptrs, upar_ptrs = _prepare_dynamic_postprocess_arrays(st_syn, chs, npts)
+    resarr, res_ptrs = _prepare_dynamic_postprocess_result(npts)
+    if Type == 'strain':
+        C_grt_compute_strain(npts, dist, u_ptrs, upar_ptrs, res_ptrs, chs == ZNEchs)
+    else:
+        C_grt_compute_rotation(npts, dist, u_ptrs, upar_ptrs, res_ptrs, chs == ZNEchs)
 
-    # ----------------------------------------------------------------------------------
-    # 循环6/3个分量
     stres = Stream()
     for i1 in range(i1_end):
         c1 = chs[i1]
         for i2 in range(i1+i2_offset, 3):
             c2 = chs[i2]
-
-            channel = f"{c2.lower()}{c1}"
-            st = st_syn.select(channel=channel)
-            if len(st) == 0:
-                raise NameError(f"{channel} not exists.")
-            tr = st[0].copy()
-
-            channel = f"{c1.lower()}{c2}"
-            st = st_syn.select(channel=channel)
-            if len(st) == 0:
-                raise NameError(f"{channel} not exists.")
-            tr.data = (tr.data + sgn*st[0].data) * 0.5
-
-            # 特殊情况加上协变导数
-            if c1=='R' and c2=='T':
-                channel = f"T"
-                st = st_syn.select(channel=channel)
-                if len(st) == 0:
-                    raise NameError(f"{channel} not exists.")
-                tr.data -= 0.5*st[0].data / dist * 1e-5
-            
-            elif c1=='T' and c2=='T':
-                channel = f"R"
-                st = st_syn.select(channel=channel)
-                if len(st) == 0:
-                    raise NameError(f"{channel} not exists.")
-                tr.data += st[0].data / dist * 1e-5
-
-            # 修改通道名
+            tr = st_syn.select(channel=f"{c2.lower()}{c1}")[0].copy()
+            tr.data = resarr[i2, i1]
             tr.stats.channel = tr.stats.sac['kcmpnm'] = f"{c1}{c2}"
-
             stres.append(tr)
 
     return stres
+
+
+def _prepare_dynamic_postprocess_arrays(st_syn:Stream, chs:List[str], npts:int):
+    """收集动态位移/偏导数组，并构造 ctypes 通道指针表。"""
+    def data(channel:str):
+        st = st_syn.select(channel=channel)
+        if len(st) == 0:
+            raise NameError(f"{channel} not exists.")
+        if st[0].stats.npts != npts:
+            raise ValueError("All dynamic traces must have the same number of samples.")
+        return np.ascontiguousarray(st[0].data, dtype=np.float32)
+
+    u = [data(c) for c in chs]
+    upar = [[data(f"{d.lower()}{c}") for c in chs] for d in chs]
+    u_ptrs = FLOAT_CHNL_PTRS(*(arr.ctypes.data_as(FPOINTER) for arr in u))
+    upar_ptrs = FLOAT_CHNL_PTR_MAT(*(
+        FLOAT_CHNL_PTRS(*(arr.ctypes.data_as(FPOINTER) for arr in row)) for row in upar))
+    return u, upar, u_ptrs, upar_ptrs
+
+
+def _prepare_dynamic_postprocess_result(npts:int):
+    """分配动态后处理结果数组及其 ctypes 通道指针表。"""
+    resarr = np.zeros((CHANNEL_NUM, CHANNEL_NUM, npts), dtype=np.float32)
+    res_ptrs = FLOAT_CHNL_PTR_MAT(*(
+        FLOAT_CHNL_PTRS(*(resarr[c2, c1].ctypes.data_as(FPOINTER) for c1 in range(CHANNEL_NUM)))
+        for c2 in range(CHANNEL_NUM)))
+    return resarr, res_ptrs
+
+
+def _prepare_static_postprocess_arrays(syn:dict, chs:List[str]):
+    """整理静态后处理所需的连续内存数组与 ctypes 通道指针表。"""
+    xarr = np.ascontiguousarray(syn['_xarr'], dtype=np.float64)
+    yarr = np.ascontiguousarray(syn['_yarr'], dtype=np.float64)
+    if xarr.ndim != 1 or yarr.ndim != 1:
+        raise ValueError("'_xarr' and '_yarr' must be one-dimensional arrays.")
+
+    u = [np.ascontiguousarray(syn[c], dtype=np.float64) for c in chs]
+    upar = [
+        [np.ascontiguousarray(syn[f"{d.lower()}{c}"], dtype=np.float64) for c in chs]
+        for d in chs
+    ]
+    expected_shape = (len(xarr), len(yarr))
+    if any(arr.shape != expected_shape for arr in u) or any(
+            arr.shape != expected_shape for row in upar for arr in row):
+        raise ValueError("Static displacement and derivative arrays must match '_xarr'/'_yarr'.")
+
+    u_ptrs = REAL_CHNL_PTRS(*(arr.ctypes.data_as(PREAL) for arr in u))
+    upar_ptrs = REAL_CHNL_PTR_MAT(*(
+        REAL_CHNL_PTRS(*(arr.ctypes.data_as(PREAL) for arr in row)) for row in upar))
+    resarr = np.zeros((CHANNEL_NUM, CHANNEL_NUM, *expected_shape), dtype=np.float64)
+    res_ptrs = REAL_CHNL_PTR_MAT(*(
+        REAL_CHNL_PTRS(*(resarr[c2, c1].ctypes.data_as(PREAL) for c1 in range(CHANNEL_NUM)))
+        for c2 in range(CHANNEL_NUM)))
+    return xarr, yarr, u, upar, u_ptrs, upar_ptrs, resarr, res_ptrs
 
 
 def _compute_static_strain_rotation(syn:dict, Type:str):
@@ -604,11 +633,9 @@ def _compute_static_strain_rotation(syn:dict, Type:str):
     """
 
     if Type == 'strain':
-        sgn = 1
         i1_end = 3
         i2_offset = 0
     elif Type == 'rotation':
-        sgn = -1
         i1_end = 2
         i2_offset = 1
     else:
@@ -620,8 +647,8 @@ def _compute_static_strain_rotation(syn:dict, Type:str):
     if f"nN" in syn.keys():
         chs = ZNEchs
 
-    xarr:np.ndarray = syn['_xarr']
-    yarr:np.ndarray = syn['_yarr']
+    xarr, yarr, u, upar, u_ptrs, upar_ptrs, resarr, res_ptrs = \
+        _prepare_static_postprocess_arrays(syn, chs)
 
     # 结果字典
     resDct = {}
@@ -632,48 +659,18 @@ def _compute_static_strain_rotation(syn:dict, Type:str):
             continue 
         resDct[k] = deepcopy(syn[k])
 
-    # 6/3个分量建立数组
+    if Type == 'strain':
+        C_grt_static_compute_strain(
+            len(xarr), len(yarr), xarr.ctypes.data_as(PREAL), yarr.ctypes.data_as(PREAL),
+            u_ptrs, upar_ptrs, res_ptrs, chs == ZNEchs)
+    else:
+        C_grt_static_compute_rotation(
+            len(xarr), len(yarr), xarr.ctypes.data_as(PREAL), yarr.ctypes.data_as(PREAL),
+            u_ptrs, upar_ptrs, res_ptrs, chs == ZNEchs)
+
     for i1 in range(i1_end):
-        c1 = chs[i1]
-        for i2 in range(i1+i2_offset, 3):
-            c2 = chs[i2]
-            channel = f"{c1}{c2}"
-            resDct[channel] = np.zeros((len(xarr), len(yarr)), dtype='f8')
-
-
-    for iy in range(len(yarr)):
-        for ix in range(len(xarr)):
-            # 震中距
-            dist = max(np.sqrt(xarr[ix]**2 + yarr[iy]**2), 1e-5)
-
-            # ----------------------------------------------------------------------------------
-            # 循环6/3个分量
-            for i1 in range(i1_end):
-                c1 = chs[i1]
-                for i2 in range(i1+i2_offset, 3):
-                    c2 = chs[i2]
-
-                    channel = f"{c2.lower()}{c1}"
-                    v12 = syn[channel][ix, iy]
-
-                    channel = f"{c1.lower()}{c2}"
-                    v21 = syn[channel][ix, iy]
-
-                    val = 0.5*(v12 + sgn*v21)
-
-                    # 特殊情况加上协变导数
-                    if c1=='R' and c2=='T':
-                        channel = f"T"
-                        v0 = syn[channel][ix, iy]
-                        val -= 0.5*v0 / dist * 1e-5
-
-                    elif c1=='T' and c2=='T':
-                        channel = f"R"
-                        v0 = syn[channel][ix, iy]
-                        val += v0 / dist * 1e-5
-
-                    channel = f"{c1}{c2}"
-                    resDct[channel][ix, iy] = val
+        for i2 in range(i1+i2_offset, CHANNEL_NUM):
+            resDct[f"{chs[i1]}{chs[i2]}"] = resarr[i2, i1]
 
     return resDct
 
@@ -736,99 +733,27 @@ def _compute_stress(st_syn:Stream):
     nt = st_syn[0].stats.npts
     dt = st_syn[0].stats.delta
     dist = st_syn[0].stats.sac['dist']
-    df = 1.0/(nt*dt)
-    nf = nt//2 + 1
     va = st_syn[0].stats.sac['user1']
     vb = st_syn[0].stats.sac['user2']
     rho = st_syn[0].stats.sac['user3']
     Qainv = st_syn[0].stats.sac['user4']
     Qbinv = st_syn[0].stats.sac['user5']
 
-    # 计算不同频率下的拉梅系数
-    mus = np.zeros((nf,), dtype='c16')
-    lams = np.zeros((nf,), dtype='c16')
-    omega = CPLX(0.0, 0.0)
-    atte = CPLX(0.0, 0.0)
-    omgref = CPLX(2.0*np.pi*(nf-1)*df, 0.0)
-    for i in range(nf):
-        freq = 0.01 if i==0 else df*i 
-        w = 2.0*np.pi*freq 
-        omega.real = w
-        atte = C_grt_attenuation_law(Qbinv, omgref, omega)
-        attb = atte.real + atte.imag*1j
-        mus[i] = vb*vb*attb*attb*rho*1e10
-        atte = C_grt_attenuation_law(Qainv, omgref, omega)
-        atta = atte.real + atte.imag*1j
-        lams[i] = va*va*atta*atta*rho*1e10 - 2.0*mus[i]
-    
-    del omega, atte
+    u, upar, u_ptrs, upar_ptrs = _prepare_dynamic_postprocess_arrays(st_syn, chs, nt)
+    resarr, res_ptrs = _prepare_dynamic_postprocess_result(nt)
+    C_grt_compute_stress(
+        nt, dt, dist, va, vb, rho, Qainv, Qbinv,
+        u_ptrs, upar_ptrs, res_ptrs, rot2ZNE)
 
-    # ----------------------------------------------------------------------------------
-    # 先计算体积应变u_kk = u_11 + u22 + u33 和 lamda的乘积
-    lam_ukk = np.zeros((nf,), dtype='c16')
-    for i in range(3):
-        c = chs[i]
-        channel = f"{c.lower()}{c}"
-        st = st_syn.select(channel=channel)
-        if len(st) == 0:
-            raise NameError(f"{channel} not exists.")
-        lam_ukk[:] += rfft(st[0].data, nt)
-
-    # 加上协变导数
-    if not rot2ZNE:
-        channel = f"R"
-        st = st_syn.select(channel=channel)
-        if len(st) == 0:
-            raise NameError(f"{channel} not exists.")
-        lam_ukk[:] += rfft(st[0].data, nt) / dist * 1e-5
-
-    lam_ukk[:] *= lams 
-
-    # ----------------------------------------------------------------------------------
-    # 循环6个分量
     stres = Stream()
     for i1 in range(3):
         c1 = chs[i1]
         for i2 in range(i1, 3):
             c2 = chs[i2]
 
-            channel = f"{c2.lower()}{c1}"
-            st = st_syn.select(channel=channel)
-            if len(st) == 0:
-                raise NameError(f"{channel} not exists.")
-            tr = st[0].copy()
-            fftarr = np.zeros((nf,), dtype='c16')
-
-            channel = f"{c1.lower()}{c2}"
-            st = st_syn.select(channel=channel)
-            if len(st) == 0:
-                raise NameError(f"{channel} not exists.")
-            fftarr[:] = rfft(tr.data + st[0].data, nt) * mus
-
-            # 对于对角线分量，需加上lambda * u_kk
-            if c1==c2:
-                fftarr[:] += lam_ukk
-
-            # 特殊情况加上协变导数
-            if c1=='R' and c2=='T':
-                channel = f"T"
-                st = st_syn.select(channel=channel)
-                if len(st) == 0:
-                    raise NameError(f"{channel} not exists.")
-                fftarr[:] -= mus*rfft(st[0].data, nt) / dist * 1e-5
-            
-            elif c1=='T' and c2=='T':
-                channel = f"R"
-                st = st_syn.select(channel=channel)
-                if len(st) == 0:
-                    raise NameError(f"{channel} not exists.")
-                fftarr[:] += 2.0*mus*rfft(st[0].data, nt) / dist * 1e-5
-
-            # 修改通道名
+            tr = st_syn.select(channel=f"{c2.lower()}{c1}")[0].copy()
+            tr.data = resarr[i2, i1]
             tr.stats.channel = tr.stats.sac['kcmpnm'] = f"{c1}{c2}"
-
-            tr.data = irfft(fftarr, nt)
-
             stres.append(tr)
 
     return stres
@@ -852,8 +777,8 @@ def _compute_static_stress(syn:dict):
         chs = ZNEchs
         rot2ZNE = True
 
-    xarr:np.ndarray = syn['_xarr']
-    yarr:np.ndarray = syn['_yarr']
+    xarr, yarr, u, upar, u_ptrs, upar_ptrs, resarr, res_ptrs = \
+        _prepare_static_postprocess_arrays(syn, chs)
     va = syn['_rcv_va']
     vb = syn['_rcv_vb']
     rho = syn['_rcv_rho']
@@ -869,67 +794,13 @@ def _compute_static_stress(syn:dict):
             continue 
         resDct[k] = deepcopy(syn[k])
 
-    # 6个分量建立数组
-    for i1 in range(3):
-        c1 = chs[i1]
-        for i2 in range(i1, 3):
-            c2 = chs[i2]
-            channel = f"{c1}{c2}"
-            resDct[channel] = np.zeros((len(xarr), len(yarr)), dtype='f8')
+    C_grt_static_compute_stress(
+        len(xarr), len(yarr), xarr.ctypes.data_as(PREAL), yarr.ctypes.data_as(PREAL),
+        u_ptrs, upar_ptrs, res_ptrs, rot2ZNE, mu, lam)
 
-
-    for iy in range(len(yarr)):
-        for ix in range(len(xarr)):
-            # 震中距
-            dist = max(np.sqrt(xarr[ix]**2 + yarr[iy]**2), 1e-5)
-
-            # ----------------------------------------------------------------------------------
-            # 先计算体积应变u_kk = u_11 + u22 + u33 和 lamda的乘积
-            lam_ukk = 0.0
-            for i in range(3):
-                c = chs[i]
-                channel = f"{c.lower()}{c}"
-                lam_ukk += syn[channel][ix, iy]
-            
-            # 加上协变导数
-            if not rot2ZNE:
-                channel = f"R"
-                lam_ukk += syn[channel][ix, iy] / dist * 1e-5
-            
-            lam_ukk *= lam
-
-            # ----------------------------------------------------------------------------------
-            # 循环6个分量
-            for i1 in range(3):
-                c1 = chs[i1]
-                for i2 in range(i1, 3):
-                    c2 = chs[i2]
-
-                    channel = f"{c2.lower()}{c1}"
-                    v12 = syn[channel][ix, iy]
-
-                    channel = f"{c1.lower()}{c2}"
-                    v21 = syn[channel][ix, iy]
-
-                    val = mu*(v12 + v21)
-
-                    # 对于对角线分量，需加上lambda * u_kk
-                    if c1==c2:
-                        val += lam_ukk
-
-                    # 特殊情况加上协变导数
-                    if c1=='R' and c2=='T':
-                        channel = f"T"
-                        v0 = syn[channel][ix, iy]
-                        val -= mu*v0 / dist * 1e-5
-
-                    elif c1=='T' and c2=='T':
-                        channel = f"R"
-                        v0 = syn[channel][ix, iy]
-                        val += 2.0*mu*v0 / dist * 1e-5
-
-                    channel = f"{c1}{c2}"
-                    resDct[channel][ix, iy] = val
+    for i1 in range(CHANNEL_NUM):
+        for i2 in range(i1, CHANNEL_NUM):
+            resDct[f"{chs[i1]}{chs[i2]}"] = resarr[i2, i1]
 
     return resDct
 
@@ -1602,4 +1473,3 @@ def solve_lamb1(nu:float, ts:np.ndarray, azimuth:float):
     C_grt_solve_lamb1(nu, npct.as_ctypes(ts), nt, azimuth, npct.as_ctypes(u.ravel()))
 
     return u
-

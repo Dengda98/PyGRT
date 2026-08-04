@@ -51,6 +51,29 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     GRTCheckOptionSet(argc > 1);
 }
 
+void grt_compute_rotation(
+    size_t npts, float dist, float *const u[GRT_CHANNEL_NUM],
+    float *const upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM],
+    float *const res[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM], bool rot2ZNE)
+{
+    const char *chs = rot2ZNE ? GRT_ZNE_CODES : GRT_ZRT_CODES;
+
+    for(size_t i=0; i<npts; ++i){
+        // ZRT 联络项 u_θ/r，1e-5: km→cm
+        float ut_over_r = u[2][i] / dist * 1e-5f;
+
+        for(int c=0; c<GRT_CHANNEL_NUM; ++c){
+            for(int c2=c+1; c2<GRT_CHANNEL_NUM; ++c2){
+                float val = 0.5f * (upar[c2][c][i] - upar[c][c2][i]);
+                if(chs[c]=='R' && chs[c2]=='T'){
+                    val -= 0.5f * ut_over_r;
+                }
+                res[c2][c][i] = val;
+            }
+        }
+    }
+}
+
 
 /** 子模块主函数 */
 int rotation_main(int argc, char **argv){
@@ -90,46 +113,45 @@ int rotation_main(int argc, char **argv){
     SACTRACE *outsac = grt_copy_SACTRACE(insac, true);
     grt_free_SACTRACE(insac);
 
-    // ----------------------------------------------------------------------------------
-    // 循环3个分量
+    float *u[GRT_CHANNEL_NUM];
+    float *upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
+    float *res[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
+    for(int c=0; c<GRT_CHANNEL_NUM; ++c){
+        GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c.sac", Ctrl->s_synpath, chs[c]);
+        insac = grt_read_SACTRACE(s_filepath, false);
+        u[c] = insac->data;
+        insac->data = NULL;
+        grt_free_SACTRACE(insac);
+        for(int c2=0; c2<GRT_CHANNEL_NUM; ++c2){
+            GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%c.sac", Ctrl->s_synpath, tolower(chs[c2]), chs[c]);
+            insac = grt_read_SACTRACE(s_filepath, false);
+            upar[c2][c] = insac->data;
+            insac->data = NULL;
+            grt_free_SACTRACE(insac);
+            res[c2][c] = calloc(npts, sizeof(*res[c2][c]));
+        }
+    }
+    grt_compute_rotation(npts, dist, u, upar, res, rot2ZNE);
+
+    // 写出3个分量
     for(int i1=0; i1<2; ++i1){
         c1 = chs[i1];
         for(int i2=i1+1; i2<3; ++i2){
             c2 = chs[i2];
-
-            // 读取数据 u_{i,j}
-            GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%c.sac", Ctrl->s_synpath, tolower(c2), c1);
-            insac = grt_read_SACTRACE(s_filepath, false);
-
-            // 累加
-            for(int i=0; i<npts; ++i)  outsac->data[i] += insac->data[i];
-
-            // 读取数据 u_{j,i}
-            GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%c.sac", Ctrl->s_synpath, tolower(c1), c2);
-            insac = grt_read_SACTRACE(s_filepath, false);
-
-            // 累加
-            for(int i=0; i<npts; ++i)  outsac->data[i] = (outsac->data[i] - insac->data[i]) * 0.5f;
-
-            // 特殊情况需加上协变导数，1e-5是因为km->cm
-            if(c1=='R' && c2=='T'){
-                // 读取数据 u_T
-                GRT_SAFE_ASPRINTF(&s_filepath, "%s/T.sac", Ctrl->s_synpath);
-                insac = grt_read_SACTRACE(s_filepath, false);
-                for(int i=0; i<npts; ++i)  outsac->data[i] -= 0.5f * insac->data[i] / dist * 1e-5;
-            }
-
-            // 保存到SAC
+            memcpy(outsac->data, res[i2][i1], sizeof(*outsac->data)*npts);
             sprintf(outsac->hd.kcmpnm, "%c%c", c1, c2);
             GRT_SAFE_ASPRINTF(&s_filepath, "%s/rotation_%c%c.sac", Ctrl->s_synpath, c1, c2);
             grt_write_SACTRACE(s_filepath, outsac);
-
-            // 置零
-            for(int i=0; i<npts; ++i)  outsac->data[i] = 0.0f;
         }
     }
 
-    grt_free_SACTRACE(insac);
+    for(int c=0; c<GRT_CHANNEL_NUM; ++c){
+        free(u[c]);
+        for(int c2=0; c2<GRT_CHANNEL_NUM; ++c2){
+            free(upar[c2][c]);
+            free(res[c2][c]);
+        }
+    }
     grt_free_SACTRACE(outsac);
     GRT_SAFE_FREE_PTR(s_filepath);
 
