@@ -83,7 +83,7 @@ real_t grt_compute_travt1d(
     // =========================================================
     // ------------------- 同层直达波 ----------------------
     if(imax - imin == 1){ // 位于同一物理层
-        travt = sqrt(dist*dist + depdif*depdif) / vsrc;
+        travt = hypot(dist, depdif) / vsrc;
         // printf("direct wave in same layer, travt=%f\n", travt);
     }
     else {

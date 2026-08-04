@@ -379,8 +379,8 @@ void grt_secular_function_potential_Rayl(
         // 返回对应的垂直波函数
         if(ppot != NULL){
             // 假设一个比例
-            ppot[2] = - Det[0][1] / sqrt( GRT_SQUARE(fabs(Det[0][0])) + GRT_SQUARE(fabs(Det[0][1])) ); 
-            ppot[3] = + Det[0][0] / sqrt( GRT_SQUARE(fabs(Det[0][0])) + GRT_SQUARE(fabs(Det[0][1])) );
+            ppot[2] = - Det[0][1] / hypot( fabs(Det[0][0]), fabs(Det[0][1]) ); 
+            ppot[3] = + Det[0][0] / hypot( fabs(Det[0][0]), fabs(Det[0][1]) );
             grt_cmat2x1_mul(mstat->M_BL.RD, ppot+2, ppot);
         }
     }
