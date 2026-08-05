@@ -60,10 +60,11 @@ Since PyGRT has been under continuous maintenance and extension during the peer 
 ---------------
 ⭐ **Like this project? Give it a Star!** ⭐
 
+
 <a href="https://www.star-history.com/?repos=Dengda98%2FPyGRT&type=date&legend=top-left">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=Dengda98/PyGRT&type=date&theme=dark&legend=top-left&sealed_token=Jw-kPUVn4gvtpMiGN6uzodUZDKXgbco-qVgwPt1EB3XoFVG7vrOEy0AgEBE1U89qw69hnLNJy0fKZrEY5L1EhJKD7WPbkIk47OkGUFtCDccEG4Tum4vzRQ" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=Dengda98/PyGRT&type=date&legend=top-left&sealed_token=Jw-kPUVn4gvtpMiGN6uzodUZDKXgbco-qVgwPt1EB3XoFVG7vrOEy0AgEBE1U89qw69hnLNJy0fKZrEY5L1EhJKD7WPbkIk47OkGUFtCDccEG4Tum4vzRQ" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=Dengda98/PyGRT&type=date&legend=top-left&sealed_token=Jw-kPUVn4gvtpMiGN6uzodUZDKXgbco-qVgwPt1EB3XoFVG7vrOEy0AgEBE1U89qw69hnLNJy0fKZrEY5L1EhJKD7WPbkIk47OkGUFtCDccEG4Tum4vzRQ" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=Dengda98/PyGRT&type=date&theme=dark&legend=top-left&sealed_token=Wh3FLANubp3kqhtwCRymlY-guZ4mrInTSHzj11UQIWRcZRbFR6g9ltLppgkEe7XMGqSA-cur0s3sR6w07X1DGsk4ItUUz-YSK9WC0nD2ya9XGi5AbHQm_w" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=Dengda98/PyGRT&type=date&legend=top-left&sealed_token=Wh3FLANubp3kqhtwCRymlY-guZ4mrInTSHzj11UQIWRcZRbFR6g9ltLppgkEe7XMGqSA-cur0s3sR6w07X1DGsk4ItUUz-YSK9WC0nD2ya9XGi5AbHQm_w" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=Dengda98/PyGRT&type=date&legend=top-left&sealed_token=Wh3FLANubp3kqhtwCRymlY-guZ4mrInTSHzj11UQIWRcZRbFR6g9ltLppgkEe7XMGqSA-cur0s3sR6w07X1DGsk4ItUUz-YSK9WC0nD2ya9XGi5AbHQm_w" />
  </picture>
 </a>
