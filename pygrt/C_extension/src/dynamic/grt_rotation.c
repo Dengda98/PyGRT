@@ -59,8 +59,8 @@ void grt_compute_rotation(
     const char *chs = rot2ZNE ? GRT_ZNE_CODES : GRT_ZRT_CODES;
 
     for(size_t i=0; i<npts; ++i){
-        // ZRT 联络项 u_θ/r，1e-5: km→cm
-        float ut_over_r = u[2][i] / dist * 1e-5f;
+        // 联络项 u_θ/r（1e-5: km→cm）：r≠0 用 u_θ/r；r=0 改用 ∂_r u_θ
+        float ut_over_r = GRT_IS_ZERO(dist) ? upar[1][2][i] : (u[2][i] / dist * 1e-5f);
 
         for(int c=0; c<GRT_CHANNEL_NUM; ++c){
             for(int c2=c+1; c2<GRT_CHANNEL_NUM; ++c2){

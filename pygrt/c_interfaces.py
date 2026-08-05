@@ -17,7 +17,6 @@ from .c_structures import *
 
 FPOINTER = POINTER(c_float)
 IPOINTER = POINTER(c_int)
-DPOINTER = POINTER(c_double)
 
 
 libgrt = cdll.LoadLibrary(
@@ -44,6 +43,8 @@ C_grt_integ_static_grn.argtypes = [
     c_char_p
 ]
 
+
+
 C_grt_static_syn_from_gf = libgrt.grt_static_syn_from_gf
 """由静态格林函数合成三分量位移场（及可选空间偏导），可插值到新 XY 网格"""
 C_grt_static_syn_from_gf.restype = None
@@ -58,14 +59,6 @@ C_grt_static_syn_from_gf.argtypes = [
     POINTER(REAL * CHANNEL_NUM), POINTER((REAL * CHANNEL_NUM) * CHANNEL_NUM),
 ]
 
-# 通道维指针容器，对应 C 侧常用布局：
-#   T *arr[GRT_CHANNEL_NUM]                      → *_CHNL_PTRS
-#   T *arr[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM]      → *_CHNL_PTR_MAT
-FLOAT_CHNL_PTRS = FPOINTER * CHANNEL_NUM
-FLOAT_CHNL_PTR_MAT = FLOAT_CHNL_PTRS * CHANNEL_NUM
-REAL_CHNL_PTRS = PREAL * CHANNEL_NUM
-REAL_CHNL_PTR_MAT = REAL_CHNL_PTRS * CHANNEL_NUM
-
 C_grt_syn_from_gf = libgrt.grt_syn_from_gf
 """由动态格林函数合成三分量地震图（及可选空间偏导）"""
 C_grt_syn_from_gf.restype = None
@@ -74,7 +67,7 @@ C_grt_syn_from_gf.argtypes = [
     POINTER(FPOINTER * CHANNEL_NUM),
     POINTER(FPOINTER * CHANNEL_NUM),
     POINTER(FPOINTER * CHANNEL_NUM),
-    c_int, REAL, REAL, REAL, REAL * MECHANISM_NUM,
+    c_int, REAL, REAL, PREAL, REAL * MECHANISM_NUM,
     c_bool, c_bool,
     FPOINTER * CHANNEL_NUM, POINTER(FPOINTER * CHANNEL_NUM),
 ]
@@ -85,23 +78,29 @@ C_grt_compute_stress = libgrt.grt_compute_stress
 C_grt_compute_stress.restype = None
 C_grt_compute_stress.argtypes = [
     c_size_t, c_float, c_float, c_float, c_float, c_float, c_float, c_float,
-    FLOAT_CHNL_PTRS, POINTER(FLOAT_CHNL_PTRS), POINTER(FLOAT_CHNL_PTRS), c_bool,
+    FPOINTER * CHANNEL_NUM,
+    POINTER(FPOINTER * CHANNEL_NUM), POINTER(FPOINTER * CHANNEL_NUM),
+    c_bool,
 ]
 
 C_grt_compute_strain = libgrt.grt_compute_strain
 """由动态位移偏导合成应变张量"""
 C_grt_compute_strain.restype = None
 C_grt_compute_strain.argtypes = [
-    c_size_t, c_float, FLOAT_CHNL_PTRS, POINTER(FLOAT_CHNL_PTRS),
-    POINTER(FLOAT_CHNL_PTRS), c_bool,
+    c_size_t, c_float,
+    FPOINTER * CHANNEL_NUM,
+    POINTER(FPOINTER * CHANNEL_NUM), POINTER(FPOINTER * CHANNEL_NUM),
+    c_bool,
 ]
 
 C_grt_compute_rotation = libgrt.grt_compute_rotation
 """由动态位移偏导合成旋转张量"""
 C_grt_compute_rotation.restype = None
 C_grt_compute_rotation.argtypes = [
-    c_size_t, c_float, FLOAT_CHNL_PTRS, POINTER(FLOAT_CHNL_PTRS),
-    POINTER(FLOAT_CHNL_PTRS), c_bool,
+    c_size_t, c_float,
+    FPOINTER * CHANNEL_NUM,
+    POINTER(FPOINTER * CHANNEL_NUM), POINTER(FPOINTER * CHANNEL_NUM),
+    c_bool,
 ]
 
 C_grt_static_compute_stress = libgrt.grt_static_compute_stress
@@ -109,7 +108,8 @@ C_grt_static_compute_stress = libgrt.grt_static_compute_stress
 C_grt_static_compute_stress.restype = None
 C_grt_static_compute_stress.argtypes = [
     c_size_t, c_size_t, PREAL, PREAL,
-    REAL_CHNL_PTRS, POINTER(REAL_CHNL_PTRS), POINTER(REAL_CHNL_PTRS),
+    PREAL * CHANNEL_NUM,
+    POINTER(PREAL * CHANNEL_NUM), POINTER(PREAL * CHANNEL_NUM),
     c_bool, REAL, REAL,
 ]
 
@@ -118,7 +118,9 @@ C_grt_static_compute_strain = libgrt.grt_static_compute_strain
 C_grt_static_compute_strain.restype = None
 C_grt_static_compute_strain.argtypes = [
     c_size_t, c_size_t, PREAL, PREAL,
-    REAL_CHNL_PTRS, POINTER(REAL_CHNL_PTRS), POINTER(REAL_CHNL_PTRS), c_bool,
+    PREAL * CHANNEL_NUM,
+    POINTER(PREAL * CHANNEL_NUM), POINTER(PREAL * CHANNEL_NUM),
+    c_bool,
 ]
 
 C_grt_static_compute_rotation = libgrt.grt_static_compute_rotation
@@ -126,13 +128,15 @@ C_grt_static_compute_rotation = libgrt.grt_static_compute_rotation
 C_grt_static_compute_rotation.restype = None
 C_grt_static_compute_rotation.argtypes = [
     c_size_t, c_size_t, PREAL, PREAL,
-    REAL_CHNL_PTRS, POINTER(REAL_CHNL_PTRS), POINTER(REAL_CHNL_PTRS), c_bool,
+    PREAL * CHANNEL_NUM,
+    POINTER(PREAL * CHANNEL_NUM), POINTER(PREAL * CHANNEL_NUM),
+    c_bool,
 ]
 
 
 C_grt_set_num_threads = libgrt.grt_set_num_threads
 """设置多线程数"""
-C_grt_set_num_threads.restype = None 
+C_grt_set_num_threads.restype = None
 C_grt_set_num_threads.argtypes = [c_int]
 
 
@@ -191,46 +195,6 @@ C_grt_get_ricker_wave = libgrt.grt_get_ricker_wave
 """雷克子波"""
 C_grt_get_ricker_wave.restype = FPOINTER
 C_grt_get_ricker_wave.argtypes = [c_float, c_float, IPOINTER]
-
-
-# -------------------------------------------------------------------
-#                      C函数定义的旋转函数
-# -------------------------------------------------------------------
-C_grt_rot_zxy2zrt_vec = libgrt.grt_rot_zxy2zrt_vec
-"""直角坐标zxy到柱坐标zrt的矢量旋转"""
-C_grt_rot_zxy2zrt_vec.restype = None
-C_grt_rot_zxy2zrt_vec.argtypes = [c_double, DPOINTER]  # double, double[3]
-
-C_grt_rot_zxy2zrt_symtensor2odr = libgrt.grt_rot_zxy2zrt_symtensor2odr
-"""直角坐标zxy到柱坐标zrt的二阶对称张量旋转"""
-C_grt_rot_zxy2zrt_symtensor2odr.restype = None
-C_grt_rot_zxy2zrt_symtensor2odr.argtypes = [c_double, DPOINTER]  # double, double[6]
-
-C_grt_rot_zrt2zxy_upar = libgrt.grt_rot_zrt2zxy_upar
-"""柱坐标下的位移偏导 ∂u(z,r,t)/∂(z,r,t) 转到 直角坐标 ∂u(z,x,y)/∂(z,x,y)"""
-C_grt_rot_zrt2zxy_upar.restype = None
-C_grt_rot_zrt2zxy_upar.argtypes = [c_double, DPOINTER, DPOINTER, c_double]  # double, double[3], double[3][3], double
-
-
-# -------------------------------------------------------------------
-#                      C函数定义的衰减函数
-# -------------------------------------------------------------------
-C_grt_attenuation_law = libgrt.grt_attenuation_law
-"""品质因子Q 对 波速的影响"""
-C_grt_attenuation_law.restype = CPLX
-C_grt_attenuation_law.argtypes = [REAL, CPLX, CPLX]  # double, cplx, cplx
-
-
-# -------------------------------------------------------------------
-#                      C 函数定义的方向因子
-# -------------------------------------------------------------------
-C_grt_set_source_radiation = libgrt.grt_set_source_radiation
-C_grt_set_source_radiation.restype = None
-C_grt_set_source_radiation.argtypes = [
-    (REAL*CHANNEL_NUM)*SRC_M_NUM, c_int, c_bool,
-    REAL, REAL, REAL, REAL, REAL*MECHANISM_NUM
-]
-
 
 
 # -------------------------------------------------------------------

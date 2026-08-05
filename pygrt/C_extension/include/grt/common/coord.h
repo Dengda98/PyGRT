@@ -52,7 +52,7 @@ void grt_rot_zxy2zrt_symtensor2odr(real_t theta, real_t A[6]);
  * 
  * @param[in]       theta      r轴相对x轴的旋转弧度
  * @param[in,out]   u          柱坐标下的位移矢量
- * @param[in,out]   upar       柱坐标下的位移空间偏导
- * @param[in]       r          r轴坐标
+ * @param[in,out]   upar       柱坐标下的位移空间偏导（第三行已是 (1/r)∂_θ 有限部分）
+ * @param[in]       r          r 坐标 (cm)；r=0 时联络项 u/r 改用 ∂_r u
  */
 void grt_rot_zrt2zxy_upar(const real_t theta, real_t u[3], real_t upar[3][3], const real_t r);

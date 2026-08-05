@@ -60,9 +60,9 @@ void grt_static_compute_rotation(
     for(size_t ix=0; ix<nx; ++ix){
         for(size_t iy=0; iy<ny; ++iy){
             size_t ir = iy + ix*ny;
-            real_t dist = GRT_MAX(hypot(xs[ix], ys[iy]), GRT_MIN_DISTANCE);
-            // ZRT 联络项 u_θ/r，1e-5: km→cm
-            real_t ut_over_r = u[2][ir] / dist * 1e-5;
+            real_t dist = hypot(xs[ix], ys[iy]);
+            // 联络项 u_θ/r（1e-5: km→cm）：r≠0 用 u_θ/r；r=0 改用 ∂_r u_θ
+            real_t ut_over_r = GRT_IS_ZERO(dist) ? upar[1][2][ir] : (u[2][ir] / dist * 1e-5);
 
             for(int c=0; c<GRT_CHANNEL_NUM; ++c){
                 for(int c2=c+1; c2<GRT_CHANNEL_NUM; ++c2){

@@ -57,9 +57,9 @@ void grt_compute_strain(
     const char *chs = rot2ZNE ? GRT_ZNE_CODES : GRT_ZRT_CODES;
 
     for(size_t i=0; i<npts; ++i){
-        // ZRT 联络项 u/r，1e-5: km→cm
-        float ur_over_r = u[1][i] / dist * 1e-5f;
-        float ut_over_r = u[2][i] / dist * 1e-5f;
+        // 联络项（1e-5: km→cm）：r≠0 用 u/r；r=0 改用 ∂_r u，与 syn 中 (1/r)∂_θ 有限部分配套
+        float ur_over_r = GRT_IS_ZERO(dist) ? upar[1][1][i] : (u[1][i] / dist * 1e-5f);
+        float ut_over_r = GRT_IS_ZERO(dist) ? upar[1][2][i] : (u[2][i] / dist * 1e-5f);
 
         for(int c=0; c<GRT_CHANNEL_NUM; ++c){
             for(int c2=c; c2<GRT_CHANNEL_NUM; ++c2){

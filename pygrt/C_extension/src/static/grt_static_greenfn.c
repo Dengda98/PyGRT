@@ -195,7 +195,8 @@ printf("\n"
 "                 + (default) not set or set 0.0. \n"
 "                   <length> will be %.1f.\n", GRT_GREENFN_L_LENGTH); printf(
 "                 + manually set one POSITIVE <length>, e.g. -L20\n"
-"                 For FIM or SAFIM:\n"
+"                 For FIM or SAFIM (large epicentral distance only;\n"
+"                 zero epicentral distance is not allowed):\n"
 "                 + +l<Flength> defines the dk of the FIM.\n"
 "                 + +a<Ftol> defines the tolerance of the SAFIM.\n"
 "                   you can't set both.\n"
@@ -555,7 +556,16 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     Ctrl->rs = (real_t*)calloc(Ctrl->nr, sizeof(real_t));
     for(size_t ix=0; ix<Ctrl->X.nx; ++ix){
         for(size_t iy=0; iy<Ctrl->Y.ny; ++iy){
-            Ctrl->rs[iy + ix*Ctrl->Y.ny] = GRT_MAX(hypot(Ctrl->X.xs[ix], Ctrl->Y.ys[iy]), GRT_MIN_DISTANCE);  // 避免0震中距
+            Ctrl->rs[iy + ix*Ctrl->Y.ny] = hypot(Ctrl->X.xs[ix], Ctrl->Y.ys[iy]);
+        }
+    }
+
+    // FIM/SAFIM 面向远震中距，公式含 1/r、1/√r，不能用于 r=0（含 kcut 分段）
+    if(Ctrl->L.FIM.active || Ctrl->L.SAFIM.active){
+        for(size_t ir=0; ir<Ctrl->nr; ++ir){
+            if(GRT_IS_ZERO(Ctrl->rs[ir])){
+                GRTBadOptionError(L, "FIM/SAFIM cannot be used with zero epicentral distance.");
+            }
         }
     }
 

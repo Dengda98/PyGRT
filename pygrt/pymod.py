@@ -219,6 +219,10 @@ class PyModel1D:
         # 只能设置一种filon积分方法
         if safilonTol > 0.0 and filonLength > 0.0:
             raise ValueError(f"You should only set one of filonLength and safilonTol.")
+
+        # FIM/SAFIM 面向远震中距，不能用于 r=0（含 filonCut 分段）
+        if (filonLength > 0.0 or safilonTol > 0.0) and np.any(np.asarray(distarr) <= ZERO_DISTANCE):
+            raise ValueError("FIM/SAFIM cannot be used with zero epicentral distance.")
         
         nf = nt//2+1 
         df = 1/(nt*dt)
@@ -246,13 +250,10 @@ class PyModel1D:
         # 虚频率 
         wI = zeta * np.pi/(nt*dt)
 
-        # 避免绝对0震中距 
         nrs = len(distarr)
         for ir in range(nrs):
             if(distarr[ir] < 0.0):
                 raise ValueError(f"r({distarr[ir]}) < 0")
-            elif(distarr[ir] == 0.0):
-                distarr[ir] = 1e-5 
 
         # 最大震中距
         rmax = np.max(distarr)
@@ -505,8 +506,8 @@ class PyModel1D:
                                      or source and receiver are at the same depth, DCM is applied in Auto mode.
             :param    use_kmax_ref:   directly use kmax_ref as kmax, without amplitude search
             :param    Length:        integration step `dk=2\pi / (L*rmax)`, see Bouchon (1981) and 张海明 (2021) for the criterion, default set automatically.
-            :param    filonLength:   integration step of Fixed-Interval Filon's Integration Method
-            :param    safilonTol:    precision of Self-Adaptive Filon's Integration Method
+            :param    filonLength:   integration step of Fixed-Interval Filon's Integration Method (large distance only; not for r=0)
+            :param    safilonTol:    precision of Self-Adaptive Filon's Integration Method (large distance only; not for r=0)
             :param    filonCut:      The splitting point of DWM and (SA)FIM, k*=<filonCut>/rmax, default is 0
             :param    converg_method:   The method of explicit convergence, you can set "AUTO", "NONE", "DCM" or "PTAM". Default use "AUTO".
             :param    skipImagComps:    skip the amplitude compensation from imaginary frequency.
@@ -578,8 +579,8 @@ class PyModel1D:
                                         or source and receiver are at the same depth, DCM is applied in Auto mode.
             :param       use_kmax_ref:   directly use kmax_ref as kmax, without amplitude search
             :param       Length:        integration step `dk=2\pi / (L*rmax)`, default L=15
-            :param       filonLength:   integration step of Fixed-Interval Filon's Integration Method
-            :param       safilonTol:    precision of Self-Adaptive Filon's Integration Method
+            :param       filonLength:   integration step of Fixed-Interval Filon's Integration Method (large distance only; not for r=0)
+            :param       safilonTol:    precision of Self-Adaptive Filon's Integration Method (large distance only; not for r=0)
             :param       filonCut:      The splitting point of DWM and (SA)FIM, k*=<filonCut>/rmax, default is 0
             :param    converg_method:   The method of explicit convergence, you can set "AUTO", "NONE", "DCM" or "PTAM". Default use "AUTO".
             :param       calc_upar:     whether calculate the spatial derivatives of displacements.
@@ -638,8 +639,12 @@ class PyModel1D:
         rs = np.zeros((nr,), dtype=NPCT_REAL_TYPE)
         for iy in range(ny):
             for ix in range(nx):
-                rs[ix + iy*nx] = max(np.hypot(xarr[ix], yarr[iy]), 1e-5)
+                rs[ix + iy*nx] = np.hypot(xarr[ix], yarr[iy])
         c_rs = npct.as_ctypes(rs)
+
+        # FIM/SAFIM 面向远震中距，不能用于 r=0（含 filonCut 分段）
+        if (filonLength > 0.0 or safilonTol > 0.0) and np.any(rs <= ZERO_DISTANCE):
+            raise ValueError("FIM/SAFIM cannot be used with zero epicentral distance.")
         
         # 设置波数积分间隔
         if Length == 0.0:

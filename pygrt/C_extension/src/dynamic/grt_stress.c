@@ -82,12 +82,13 @@ void grt_compute_stress(
         for(size_t i=0; i<nf; ++i)  lam_ukk[i] += fwd->W_f[i];
     }
 
-    // ZRT 联络项 u/r（1e-5: km→cm）；时域先算好再 FFT，避免频域再分支缩放
+    // 联络项（1e-5: km→cm）：r≠0 用 u/r；r=0 改用 ∂_r u，与 syn 中 (1/r)∂_θ 有限部分配套
+    // 时域先算好 ur_over_r / ut_over_r，再 FFT，避免频域再分支缩放
     float *ur_over_r = (float *)malloc(sizeof(float)*npts);
     float *ut_over_r = (float *)malloc(sizeof(float)*npts);
     for(size_t i=0; i<npts; ++i){
-        ur_over_r[i] = u[1][i] / dist * 1e-5f;
-        ut_over_r[i] = u[2][i] / dist * 1e-5f;
+        ur_over_r[i] = GRT_IS_ZERO(dist) ? upar[1][1][i] : (u[1][i] / dist * 1e-5f);
+        ut_over_r[i] = GRT_IS_ZERO(dist) ? upar[1][2][i] : (u[2][i] / dist * 1e-5f);
     }
 
     if(!rot2ZNE){

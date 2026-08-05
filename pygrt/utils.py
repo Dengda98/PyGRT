@@ -6,9 +6,8 @@
     该文件包含一些数据处理操作上的补充:   
         1、剪切源、张裂源、单力源、爆炸源、矩张量源 通过格林函数合成理论地震图的函数\n
         2、Stream类型的时域卷积、微分、积分 (基于numpy和scipy)    \n
-        3、Stream类型写到本地sac文件，自定义名称    \n
-        4、读取波数积分和峰谷平均法过程文件  \n
-        5、其它辅助函数  \n
+        3、读取波数积分和峰谷平均法过程文件  \n
+        4、其它辅助函数  \n
 
 """
 
@@ -97,13 +96,9 @@ def _gen_syn_from_gf(st:Stream, calc_upar:bool, compute_type:GRT_SYN_TYPE, M0:fl
     src_vb = st[0].stats.sac['user7']
     VpVs_ratio = float(src_va / src_vb)
 
-    azrad = float(np.deg2rad(az))
+    azrad = REAL(np.deg2rad(az))
     dist = float(st[0].stats.sac['dist'])
     npts = int(st[0].stats.npts)
-
-    baz = 180 + az
-    if baz > 360:
-        baz -= 360
 
     FPtrs = FPOINTER * CHANNEL_NUM
     FGrid = FPtrs * SRC_M_NUM
@@ -164,6 +159,12 @@ def _gen_syn_from_gf(st:Stream, calc_upar:bool, compute_type:GRT_SYN_TYPE, M0:fl
         syn_ptrs, syn_upar_ptrs,
     )
     # ========================================================================
+
+    # C 可能因 r=0 强制 azrad=0，同步方位角头段
+    az = float(np.rad2deg(azrad.value))
+    baz = az + 180.0
+    if baz >= 360.0:
+        baz -= 360.0
 
     out_chs = ZNEchs if ZNE else ZRTchs
     stall = Stream()
@@ -277,35 +278,6 @@ def _set_source_mechanism(
         raise ValueError("Unsupported source type.")
     
     return mchn
-
-
-def _set_source_radi(
-    par_theta:bool, coef:float, compute_type:GRT_SYN_TYPE, M0:float, azrad:float, **kwargs):
-    r"""
-        使用 C 函数计算不同震源的方向因子矩阵
-
-        :param    par_theta:       是否求对theta的偏导
-        :param    coef:            比例系数
-        :param    compute_type:    计算震源类型
-        :param    M0:              地震矩
-        :param    azrad:           方位角(弧度)
-
-        - 其他参数根据计算类型可选:
-            - 单力源需要: fZ, fN, fE, 
-            - 剪切源需要: strike, dip, rake
-            - 矩张量源需要: MT=(Mxx, Mxy, Mxz, Myy, Myz, Mzz)
-    """
-
-    VpVs_ratio = kwargs['VpVs_ratio'] if 'VpVs_ratio' in kwargs else 0.0
-
-    src_coef = np.zeros((SRC_M_NUM, CHANNEL_NUM), dtype=NPCT_REAL_TYPE)
-    mchn = _set_source_mechanism(compute_type, **kwargs)
-
-    C_grt_set_source_radiation(
-        npct.as_ctypes(src_coef), compute_type.value, par_theta, 
-        M0, coef, VpVs_ratio, azrad, npct.as_ctypes(mchn))
-    
-    return src_coef
 
 
 def gen_syn_from_gf_DC(st:Union[Stream,dict], M0:float, strike:float, dip:float, rake:float, az:float=-999, ZNE=False, calc_upar:bool=False, **kwargs):
@@ -498,6 +470,9 @@ def _compute_strain_rotation(st_syn:Stream, Type:str):
 
 def _prepare_dynamic_postprocess_arrays(st_syn:Stream, chs:List[str], npts:int):
     """收集动态位移/偏导数组，并构造 ctypes 通道指针表。"""
+    FPtrs = FPOINTER * CHANNEL_NUM
+    FMat = FPtrs * CHANNEL_NUM
+
     def data(channel:str):
         st = st_syn.select(channel=channel)
         if len(st) == 0:
@@ -508,23 +483,29 @@ def _prepare_dynamic_postprocess_arrays(st_syn:Stream, chs:List[str], npts:int):
 
     u = [data(c) for c in chs]
     upar = [[data(f"{d.lower()}{c}") for c in chs] for d in chs]
-    u_ptrs = FLOAT_CHNL_PTRS(*(arr.ctypes.data_as(FPOINTER) for arr in u))
-    upar_ptrs = FLOAT_CHNL_PTR_MAT(*(
-        FLOAT_CHNL_PTRS(*(arr.ctypes.data_as(FPOINTER) for arr in row)) for row in upar))
+    u_ptrs = FPtrs(*(arr.ctypes.data_as(FPOINTER) for arr in u))
+    upar_ptrs = FMat(*(
+        FPtrs(*(arr.ctypes.data_as(FPOINTER) for arr in row)) for row in upar))
     return u, upar, u_ptrs, upar_ptrs
 
 
 def _prepare_dynamic_postprocess_result(npts:int):
     """分配动态后处理结果数组及其 ctypes 通道指针表。"""
+    FPtrs = FPOINTER * CHANNEL_NUM
+    FMat = FPtrs * CHANNEL_NUM
+
     resarr = np.zeros((CHANNEL_NUM, CHANNEL_NUM, npts), dtype=np.float32)
-    res_ptrs = FLOAT_CHNL_PTR_MAT(*(
-        FLOAT_CHNL_PTRS(*(resarr[c2, c1].ctypes.data_as(FPOINTER) for c1 in range(CHANNEL_NUM)))
+    res_ptrs = FMat(*(
+        FPtrs(*(resarr[c2, c1].ctypes.data_as(FPOINTER) for c1 in range(CHANNEL_NUM)))
         for c2 in range(CHANNEL_NUM)))
     return resarr, res_ptrs
 
 
 def _prepare_static_postprocess_arrays(syn:dict, chs:List[str]):
     """整理静态后处理所需的连续内存数组与 ctypes 通道指针表。"""
+    RPtrs = PREAL * CHANNEL_NUM
+    RMat = RPtrs * CHANNEL_NUM
+
     xarr = np.ascontiguousarray(syn['_xarr'], dtype=np.float64)
     yarr = np.ascontiguousarray(syn['_yarr'], dtype=np.float64)
     if xarr.ndim != 1 or yarr.ndim != 1:
@@ -540,12 +521,12 @@ def _prepare_static_postprocess_arrays(syn:dict, chs:List[str]):
             arr.shape != expected_shape for row in upar for arr in row):
         raise ValueError("Static displacement and derivative arrays must match '_xarr'/'_yarr'.")
 
-    u_ptrs = REAL_CHNL_PTRS(*(arr.ctypes.data_as(PREAL) for arr in u))
-    upar_ptrs = REAL_CHNL_PTR_MAT(*(
-        REAL_CHNL_PTRS(*(arr.ctypes.data_as(PREAL) for arr in row)) for row in upar))
+    u_ptrs = RPtrs(*(arr.ctypes.data_as(PREAL) for arr in u))
+    upar_ptrs = RMat(*(
+        RPtrs(*(arr.ctypes.data_as(PREAL) for arr in row)) for row in upar))
     resarr = np.zeros((CHANNEL_NUM, CHANNEL_NUM, *expected_shape), dtype=np.float64)
-    res_ptrs = REAL_CHNL_PTR_MAT(*(
-        REAL_CHNL_PTRS(*(resarr[c2, c1].ctypes.data_as(PREAL) for c1 in range(CHANNEL_NUM)))
+    res_ptrs = RMat(*(
+        RPtrs(*(resarr[c2, c1].ctypes.data_as(PREAL) for c1 in range(CHANNEL_NUM)))
         for c2 in range(CHANNEL_NUM)))
     return xarr, yarr, u, upar, u_ptrs, upar_ptrs, resarr, res_ptrs
 
