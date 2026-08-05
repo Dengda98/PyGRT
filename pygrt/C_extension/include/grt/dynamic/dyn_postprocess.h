@@ -12,6 +12,9 @@
  * 由动态位移偏导合成应变张量。
  * 数组布局：u[分量][采样点]、upar[偏导方向][分量][采样点]、
  * res[第二分量][第一分量][采样点]。
+ *
+ * ZRT 联络项：r≠0 用 u/r；r=0 改用 ∂_r u（upar[1][*]），
+ * 与 syn 中轴点处 (1/r)∂_θ 有限部分配套。
  */
 void grt_compute_strain(
     size_t npts, float dist, float *const u[GRT_CHANNEL_NUM],

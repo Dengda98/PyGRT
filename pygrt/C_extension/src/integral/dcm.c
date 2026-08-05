@@ -34,7 +34,8 @@ void grt_dcm_correction(size_t nr, real_t *rs, real_t dk, real_t kcut, K_INTEG *
 {
     for(size_t ir = 0; ir < nr; ++ir){
         real_t r = rs[ir];
-        if(GRT_IS_SMALLE_DISTANCE(r)) continue;
+        // 修正系数含 1/r；r=0 跳过（近场极限已在 k_integ 的 Bessel 极限中处理）
+        if(GRT_IS_ZERO(r)) continue;
 
         real_t c = 1.0 / r;
 

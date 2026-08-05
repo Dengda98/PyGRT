@@ -295,7 +295,8 @@ printf("\n"
 "                   <length> will be determined automatically\n"
 "                   in program with the criterion (Bouchon, 1980).\n"
 "                 + manually set one POSITIVE <length>, e.g. -L20\n"
-"                 For FIM or SAFIM:\n"
+"                 For FIM or SAFIM (large epicentral distance only;\n"
+"                 zero epicentral distance is not allowed):\n"
 "                 + +l<Flength> defines the dk of the FIM.\n"
 "                 + +a<Ftol> defines the tolerance of the SAFIM.\n"
 "                   you can't set both.\n"
@@ -845,6 +846,15 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     fclose(fp);
     GRT_SAFE_FREE_PTR(dummy);
 
+    // FIM/SAFIM 面向远震中距，公式含 1/r、1/√r，不能用于 r=0（含 kcut 分段）
+    if(Ctrl->L.FIM.active || Ctrl->L.SAFIM.active){
+        for(size_t ir=0; ir<Ctrl->R.nr; ++ir){
+            if(GRT_IS_ZERO(Ctrl->R.rs[ir])){
+                GRTBadOptionError(L, "FIM/SAFIM cannot be used with zero epicentral distance.");
+            }
+        }
+    }
+
 }
 
 
@@ -884,7 +894,7 @@ int greenfn_main(int argc, char **argv) {
     Ctrl->N.winT = Ctrl->N.nt*Ctrl->N.dt;
 
     // 最大震中距
-    real_t rmax = Ctrl->R.rs[grt_findMax_real_t(Ctrl->R.rs, Ctrl->R.nr)];   
+    real_t rmax = Ctrl->R.rs[grt_findMax_real_t(Ctrl->R.rs, Ctrl->R.nr)];
 
     // 时窗最大截止时刻
     real_t tmax = 0.0;

@@ -408,13 +408,16 @@ static void static_syn_from_gf_one(
     for(int ityp = 0; ityp < calcUTypes; ++ityp){
         real_t upar_scale = 1.0;
         // 求位移空间导数时，需调整比例系数（1e-5: km→cm）
+        // ZRT 协变导数拆两步：此处合成 (1/r)∂_θ u，后处理再补 ±u/r。
+        // r=0 时协变组合仍有限，两项分别换成有限极限（见下方 up 与后处理）。
         if(ityp > 0){
             switch (GRT_ZRT_CODES[ityp-1]){
                 case 'Z': case 'R':
                     upar_scale = 1e-5;
                     break;
+                // (1/r)∂_θ：r≠0 时 scale∝1/r；r=0 时改用 ∂_r GF，scale 仅留 km→cm
                 case 'T':
-                    upar_scale = 1e-5 / dist0;
+                    upar_scale = GRT_IS_ZERO(dist0) ? 1e-5 : (1e-5 / dist0);
                     break;
                 default:
                     break;
@@ -425,6 +428,11 @@ static void static_syn_from_gf_one(
         if(ityp == 1){
             up = uiz;
         } else if(ityp == 2){
+            up = uir;
+        } else if(ityp == 3 && GRT_IS_ZERO(dist0)){
+            // r=0: 用 ∂_r GF（par_θ 辐射因子）合成 (1/r)∂_θ 的有限部分；
+            // 后处理中 u/r 联络项改用 ∂_r u，二者合并得有限直角/柱坐标导数。
+            // 对 u_z：m≥1 ⇒ u_z(0)=0，lim u_z/r=∂_r u_z；m=0 无 ∂_θ；无 ±u_z/r 联络项。
             up = uir;
         }
 
@@ -448,6 +456,7 @@ static void static_syn_from_gf_one(
 
     if(rot2ZNE){
         if(calc_upar){
+            // dist0: km→cm；r=0 时 coord 内 u/r 联络项改用 ∂_r u
             grt_rot_zrt2zxy_upar(azrad, syn, syn_upar, dist0 * 1e5);
         } else {
             grt_rot_zxy2zrt_vec(-azrad, syn);
@@ -460,7 +469,7 @@ static void static_syn_from_gf_one(
  * 由静态格林函数合成三分量位移场（及可选空间偏导）。
  *
  * 对应动态解的 grt_syn_from_gf。输入为原 XY 网格上的格林函数，
- * 可插值到新 XY 网格。
+ * 可插值到新 XY 网格；r=0 时强制方位角为 0（e_r→N、e_θ→E）。
  *
  * 数组布局：u[震中距点][震源][分量]、syn[新网格点][分量]、
  * syn_upar[新网格点][偏导方向][分量]。uiz/uir 在 calc_upar=false 时可传 NULL。
@@ -482,7 +491,7 @@ void grt_static_syn_from_gf(
     for(size_t ix = 0; ix < nx0; ++ix){
         for(size_t iy = 0; iy < ny0; ++iy){
             size_t idx = iy + ix*ny0;
-            rs0[idx] = GRT_MAX(hypot(xs0[ix], ys0[iy]), GRT_MIN_DISTANCE);
+            rs0[idx] = hypot(xs0[ix], ys0[iy]);
             sort_rs0_idx[idx] = idx;
         }
     }
@@ -515,18 +524,18 @@ void grt_static_syn_from_gf(
             real_t y = ys[iy];
 
             // 震中距
-            real_t dist = GRT_MAX(hypot(x, y), GRT_MIN_DISTANCE);
+            real_t dist = hypot(x, y);
 
-            // 方位角
-            real_t azrad = atan2(y, x);
+            // 方位角；r=0 时 atan2(0,0) 无定义，约定 e_r→N、e_θ→E ⇒ az=0
+            real_t azrad = GRT_IS_ZERO(dist) ? 0.0 : atan2(y, x);
 
             size_t ir = iy + ix * ny;
 
             memset(syn[ir], 0, sizeof(syn[ir]));
             memset(syn_upar[ir], 0, sizeof(syn_upar[ir]));
 
-            // 检查是否越界
-            bool r_OutofBound = (dist < sort_rs0[0] || dist > sort_rs0[nr0-1] + 1e-8);
+            // 检查是否越界（允许查询点为精确的零震中距）
+            bool r_OutofBound = (dist < sort_rs0[0] - 1e-8 || dist > sort_rs0[nr0-1] + 1e-8);
             if(r_OutofBound){
                 GRTRaiseWarning("(x, y)=(%.3e, %.3e) is out of distance bounds, skip.", x, y);
                 continue;

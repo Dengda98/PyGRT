@@ -13,6 +13,9 @@
  *
  * 数组布局：u[分量][点]、upar[偏导方向][分量][点]、
  * res[第二分量][第一分量][点]。仅写入 res 的上三角分量。
+ *
+ * ZRT 联络项：r≠0 用 u/r；r=0 改用 ∂_r u（upar[1][*]），
+ * 与 syn 中轴点处 (1/r)∂_θ 有限部分配套。
  */
 void grt_static_compute_stress(
     size_t nx, size_t ny, const real_t *xs, const real_t *ys,

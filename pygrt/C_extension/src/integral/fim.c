@@ -29,9 +29,6 @@ real_t grt_linear_filon_integ(
 {   
     if(k0 + dk0 >= kmax)  return k0;
 
-    real_t depsrc = mstat->mod1d->depsrc;
-    real_t deprcv = mstat->mod1d->deprcv;
-    
     // 从0开始，存储第二部分Filon积分的结果
     K_INTEG *K2 = grt_init_K_INTEG(K->calc_upar, nr);
 
@@ -72,8 +69,8 @@ real_t grt_linear_filon_integ(
         for(size_t ir = 0; ir < nr; ++ir){
             if(iendkrs[ir]) continue; // 该震中距下的波数k积分已收敛
 
-            // 跳过奇异点
-            if(depsrc == deprcv && GRT_IS_SMALLE_DISTANCE(rs[ir]))  continue;
+            // 防御：r=0 应在参数入口已拒绝（FIM 不适于零震中距）
+            if(GRT_IS_ZERO(rs[ir]))  continue;
 
             memset(K2->SUM, 0, sizeof(cplxIntegGrid));
             
@@ -180,8 +177,8 @@ real_t grt_linear_filon_integ(
         for(size_t ir = 0; ir < nr; ++ir){
             real_t r = rs[ir];
 
-            // 跳过奇异点
-            if(depsrc == deprcv && GRT_IS_SMALLE_DISTANCE(rs[ir]))  continue;
+            // 防御：r=0 应在参数入口已拒绝（FIM 不适于零震中距）
+            if(GRT_IS_ZERO(rs[ir]))  continue;
 
             // Gc
             grt_int_Pk_filon(k0N, r, true, K->QWV, false, SUM_Gc[iik]);
@@ -232,6 +229,8 @@ real_t grt_linear_filon_integ(
     // 乘上总系数 sqrt(2.0/(PI*r)) / dk0,  除dks0是在该函数外还会再乘dk0, 并将结果加到原数组中
     for(size_t ir = 0; ir < nr; ++ir){
         real_t r = rs[ir];
+        // 防御：r=0 应在参数入口已拒绝（总系数含 1/√r）
+        if(GRT_IS_ZERO(r))  continue;
         real_t tmp = sqrt(2.0/(PI*r)) / dk0;
 
         GRT_LOOP_IntegGrid(im, v){

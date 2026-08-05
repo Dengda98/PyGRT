@@ -86,34 +86,44 @@ void grt_int_Pk(real_t k, real_t r, const cplxChnlGrid QWV, bool calc_uir, cplxI
 {
     real_t bjmk[GRT_MORDER_MAX+1] = {0};
     real_t kr = k*r;
-    real_t kr_inv = 1.0/kr;
     real_t kcoef = k;
 
     real_t Jmcoef[GRT_MORDER_MAX+1] = {0};
 
-    grt_bessel012(kr, &bjmk[0], &bjmk[1], &bjmk[2]); 
-    if(calc_uir){
-        real_t bjmk0[GRT_MORDER_MAX+1] = {0};
-        for(int i=0; i<=GRT_MORDER_MAX; ++i)  bjmk0[i] = bjmk[i];
-
-        if(GRT_IS_SMALLE_DISTANCE(r)){
-            bjmk[0] = - bjmk0[1];
-            bjmk[1] = bjmk0[0] - 0.5;
-            bjmk[2] = bjmk0[1] - 0.25*kr;
-            Jmcoef[1] = - 0.125 * kr;
+    // r=0 ⇒ kr≡0（任意 k）。近场项含 J_m(kr)/r、∂_r(J_m/r)，直接取 x=kr→0 极限，
+    // 避免 1/kr。仅当 GRT_IS_ZERO(r) 时成立，不可对一般小 r、大 k 套用。
+    if(GRT_IS_ZERO(r)){
+        if(calc_uir){
+            // bjmk ← J_m'(0): J0'=0, J1'=1/2, J2'=0
+            bjmk[0] = 0.0;
+            bjmk[1] = 0.5;
+            bjmk[2] = 0.0;
+            // Jmcoef ← lim (J_m' - J_m/x)/x ；×k² 后即 lim ∂_r(J_m/r)
+            // m=1 → 0, m=2 → 1/8
+            Jmcoef[1] = 0.0;
             Jmcoef[2] = 0.125;
+            kcoef = k*k;
         } else {
-            grt_besselp012(kr, &bjmk[0], &bjmk[1], &bjmk[2]); 
-            for(int i=1; i<=GRT_MORDER_MAX; ++i)  Jmcoef[i] = kr_inv * (-kr_inv * bjmk0[i] + bjmk[i]);
-        }
-
-        kcoef = k*k;
-    } 
-    else {
-        if(GRT_IS_SMALLE_DISTANCE(r)){
+            // bjmk ← J_m(0): J0=1, J1=J2=0
+            bjmk[0] = 1.0;
+            bjmk[1] = 0.0;
+            bjmk[2] = 0.0;
+            // Jmcoef ← lim J_m(x)/x ；×k 后即 lim J_m/r
+            // m=1 → 1/2, m=2 → 0
             Jmcoef[1] = 0.5;
-            Jmcoef[2] = 0.125*kr;
+            Jmcoef[2] = 0.0;
+        }
+    } else {
+        grt_bessel012(kr, &bjmk[0], &bjmk[1], &bjmk[2]);
+        if(calc_uir){
+            real_t bjmk0[GRT_MORDER_MAX+1] = {0};
+            for(int i=0; i<=GRT_MORDER_MAX; ++i)  bjmk0[i] = bjmk[i];
+            real_t kr_inv = 1.0/kr;
+            grt_besselp012(kr, &bjmk[0], &bjmk[1], &bjmk[2]);
+            for(int i=1; i<=GRT_MORDER_MAX; ++i)  Jmcoef[i] = kr_inv * (-kr_inv * bjmk0[i] + bjmk[i]);
+            kcoef = k*k;
         } else {
+            real_t kr_inv = 1.0/kr;
             for(int i=1; i<=GRT_MORDER_MAX; ++i)  Jmcoef[i] = bjmk[i]*kr_inv;
         }
     }

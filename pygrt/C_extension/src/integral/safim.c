@@ -232,13 +232,13 @@ static bool check_fit(
  * 以下实际拟合的二次函数是 sqrt(k)*F(k,w), 这样积分时可以避免计算超越函数
  * 
  */
-static void interv_integ(const KInterval *ptKitv, size_t nr, real_t *rs, K_INTEG *K, real_t depsrc, real_t deprcv)
+static void interv_integ(const KInterval *ptKitv, size_t nr, real_t *rs, K_INTEG *K)
 {
     // 震中距rs循环
     for(size_t ir = 0; ir < nr; ++ir){
 
-        // 跳过奇异点
-        if(depsrc == deprcv && GRT_IS_SMALLE_DISTANCE(rs[ir]))  continue;
+        // 防御：r=0 应在参数入口已拒绝（SAFIM 不适于零震中距）
+        if(GRT_IS_ZERO(rs[ir]))  continue;
 
 
         memset(K->SUM, 0, sizeof(cplxIntegGrid));
@@ -285,8 +285,6 @@ real_t grt_sa_filon_integ(
     MODEL1D_STATE *mstat, real_t k0, real_t dk0, real_t tol, real_t kmax, real_t kref,
     size_t nr, real_t *rs, K_INTEG *K, FILE *fstats, GRT_KernelFunc kerfunc)
 {   
-    real_t depsrc = mstat->mod1d->depsrc;
-    real_t deprcv = mstat->mod1d->deprcv;
     
     real_t kmin = k0 + dk0;
     if(kmin >= kmax)  return k0;
@@ -433,12 +431,14 @@ real_t grt_sa_filon_integ(
                 }
             }
             // 计算积分
-            interv_integ(&Kitv, nr, rs, K2, depsrc, deprcv);
+            interv_integ(&Kitv, nr, rs, K2);
         }
     } // END sampling
 
     // 乘上总系数 sqrt(2.0/(PI*r)) / dk0,  除dks0是在该函数外还会再乘dk0, 并将结果加到原数组中
     for(size_t ir = 0; ir < nr; ++ir){
+        // 防御：r=0 应在参数入口已拒绝（总系数含 1/√r）
+        if(GRT_IS_ZERO(rs[ir]))  continue;
         real_t tmp = sqrt(2.0/(PI*rs[ir])) / dk0;
 
         GRT_LOOP_IntegGrid(im, v){

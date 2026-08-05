@@ -140,6 +140,8 @@ printf("\n"
 "    -G<grn_path>  Green's Functions output directory of module `greenfn`.\n"
 "\n"
 "    -A<azimuth>   Azimuth in degree, from source to station.\n"
+"                  Ignored (forced to 0°) when Green's Functions\n"
+"                  have zero epicentral distance.\n"
 "\n"
 "    -S[u]<scale>  Scale factor to all kinds of source. \n"
 "                  + For Explosion, Shear and Moment Tensor,\n"
@@ -535,17 +537,27 @@ static void syn_accum_from_gf(
  * syn_upar[偏导方向][分量][采样点]。gf_uiz/gf_uir 在 calc_upar=false
  * 时可传 NULL；单个分量指针为 NULL 时跳过该道。
  *
- * @param[in]       azrad     方位角（弧度）
+ * r=0 时强制 *azrad=0（e_r→N、e_θ→E）并告警；
+ * 并用 ∂_r 格林函数合成 (1/r)∂_θ 的有限部分（见函数内注释）。
+ *
+ * @param[in,out]  azrad     方位角（弧度）；r=0 时写回 0
  */
 void grt_syn_from_gf(
     size_t npts, float dist,
     const pfloatChnlGrid gf, const pfloatChnlGrid gf_uiz, const pfloatChnlGrid gf_uir,
-    GRT_SYN_TYPE computeType, real_t M0, real_t VpVs_ratio, real_t azrad,
+    GRT_SYN_TYPE computeType, real_t M0, real_t VpVs_ratio, real_t *azrad,
     const real_t mchn[GRT_MECHANISM_NUM],
     bool rot2ZNE, bool calc_upar,
     float *const syn[GRT_CHANNEL_NUM], float *const syn_upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])
 {
-    const real_t az = azrad;
+    // r=0：方位角无定义，约定 e_r→N、e_θ→E，故强制 az=0
+    if(GRT_IS_ZERO(dist)){
+        GRTRaiseWarning(
+            "Zero epicentral distance: azimuth is ignored "
+            "(forced to 0°; e_r→N, e_θ→E).");
+        *azrad = 0.0;
+    }
+    const real_t az = *azrad;
 
     int calcUTypes = calc_upar ? 4 : 1;
     realChnlGrid srcRadi = {0};
@@ -563,14 +575,16 @@ void grt_syn_from_gf(
     for(int ityp = 0; ityp < calcUTypes; ++ityp){
         real_t upar_scale = 1.0;
         // 求位移空间导数时，需调整比例系数（1e-5: km→cm）
-        // ZRT 协变导数拆两步：此处算 (1/r)∂_θ u，后处理再补 ±u/r。
+        // ZRT 协变导数拆两步：此处合成 (1/r)∂_θ u，后处理再补 ±u/r。
+        // r=0 时协变组合仍有限，两项分别换成有限极限（见下方 gf 与后处理）。
         if(ityp > 0){
             switch (GRT_ZRT_CODES[ityp-1]){
                 case 'Z': case 'R':
                     upar_scale = 1e-5;
                     break;
+                // (1/r)∂_θ：r≠0 时 scale∝1/r；r=0 时改用 ∂_r GF，scale 仅留 km→cm
                 case 'T':
-                    upar_scale = 1e-5 / dist;
+                    upar_scale = GRT_IS_ZERO(dist) ? 1e-5 : (1e-5 / dist);
                     break;
                 default:
                     break;
@@ -581,6 +595,11 @@ void grt_syn_from_gf(
         if(ityp == 1){
             up = gf_uiz;
         } else if(ityp == 2){
+            up = gf_uir;
+        } else if(ityp == 3 && GRT_IS_ZERO(dist)){
+            // r=0: 用 ∂_r GF（par_θ 辐射因子）合成 (1/r)∂_θ 的有限部分；
+            // 后处理中 u/r 联络项改用 ∂_r u，二者合并得有限直角/柱坐标导数。
+            // 对 u_z：m≥1 ⇒ u_z(0)=0，lim u_z/r=∂_r u_z；m=0 无 ∂_θ；无 ±u_z/r 联络项。
             up = gf_uir;
         }
 
@@ -752,8 +771,13 @@ int syn_main(int argc, char **argv)
     grt_syn_from_gf(
         (size_t)npts, Ctrl->dist,
         gf, calc_upar ? gf_uiz : NULL, calc_upar ? gf_uir : NULL,
-        Ctrl->computeType, Ctrl->S.M0, Ctrl->VpVs_ratio, Ctrl->A.azrad, Ctrl->mchn,
+        Ctrl->computeType, Ctrl->S.M0, Ctrl->VpVs_ratio, &Ctrl->A.azrad, Ctrl->mchn,
         false, calc_upar, syn, syn_upar);
+
+    // C 可能因 r=0 强制 azrad=0，同步方位角头段
+    Ctrl->A.azimuth = Ctrl->A.azrad / DEG1;
+    Ctrl->A.backazimuth = Ctrl->A.azimuth + 180.0;
+    if(Ctrl->A.backazimuth >= 360.0) Ctrl->A.backazimuth -= 360.0;
 
     // 时间函数 / 积分 / 微分（在旋转前，与历史行为一致）
     SACTRACE *tfsac = NULL;

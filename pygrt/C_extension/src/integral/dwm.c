@@ -70,13 +70,14 @@ real_t grt_discrete_integ(
         for(size_t ir = 0; ir < nr; ++ir){
             if(iendkrs[ir]) continue; // 该震中距下的波数k积分已收敛
 
-            // 跳过奇异点
-            if(depsrc == deprcv && GRT_IS_SMALLE_DISTANCE(rs[ir]))  continue;
+            // 震源-接收点重合且 r=0：格林函数奇异
+            if(depsrc == deprcv && GRT_IS_ZERO(rs[ir]))  continue;
 
             memset(K->SUM, 0, sizeof(cplxIntegGrid));
             
             // 计算被积函数一项 F(k,w)Jm(kr)k
-            grt_int_Pk(k, rs[ir], (K->applyDCM && GRT_IS_SMALLE_DISTANCE(rs[ir]))? K->QWV_raw : K->QWV, false, K->SUM);
+            // r=0 时 DCM 解析修正被跳过，故改用未扣除近场的 QWV_raw；近场由 k_integ 极限处理
+            grt_int_Pk(k, rs[ir], (K->applyDCM && GRT_IS_ZERO(rs[ir]))? K->QWV_raw : K->QWV, false, K->SUM);
             
             iendk0 = true;
 
@@ -102,7 +103,7 @@ real_t grt_discrete_integ(
             if(K->calc_upar){
                 // ------------------------------- ui_z -----------------------------------
                 // 计算被积函数一项 F(k,w)Jm(kr)k
-                grt_int_Pk(k, rs[ir], (K->applyDCM && GRT_IS_SMALLE_DISTANCE(rs[ir]))? K->QWVz_raw : K->QWVz, false, K->SUM);
+                grt_int_Pk(k, rs[ir], (K->applyDCM && GRT_IS_ZERO(rs[ir]))? K->QWVz_raw : K->QWVz, false, K->SUM);
                 
                 // keps不参与计算位移空间导数的积分，背后逻辑认为u收敛，则uiz也收敛
                 GRT_LOOP_IntegGrid(im, v){
@@ -111,7 +112,7 @@ real_t grt_discrete_integ(
 
                 // ------------------------------- ui_r -----------------------------------
                 // 计算被积函数一项 F(k,w)Jm(kr)k
-                grt_int_Pk(k, rs[ir], (K->applyDCM && GRT_IS_SMALLE_DISTANCE(rs[ir]))? K->QWV_raw : K->QWV, true, K->SUM);
+                grt_int_Pk(k, rs[ir], (K->applyDCM && GRT_IS_ZERO(rs[ir]))? K->QWV_raw : K->QWV, true, K->SUM);
                 
                 // keps不参与计算位移空间导数的积分，背后逻辑认为u收敛，则uiz也收敛
                 GRT_LOOP_IntegGrid(im, v){

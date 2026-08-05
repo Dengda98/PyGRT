@@ -66,6 +66,17 @@ void grt_rot_zrt2zxy_upar(const real_t theta, real_t u[3], real_t upar[3][3], co
     real_t cct = ct*ct;
     real_t sct = st*ct;
 
+    // 变换含联络项 u_r/r、u_θ/r（r 单位 cm）。
+    // r=0: u/r 联络项改用 ∂_r u_r、∂_r u_θ（s11,s12），与 syn 中 (1/r)∂_θ 有限部分配套。
+    real_t u1_over_r, u2_over_r;
+    if(GRT_IS_ZERO(r * 1e-5)){  // cm → km 后再判零
+        u1_over_r = s11;
+        u2_over_r = s12;
+    } else {
+        u1_over_r = u1/r;
+        u2_over_r = u2/r;
+    }
+
     //           uz       ux       uy
     //  ∂z
     //  ∂x
@@ -82,17 +93,17 @@ void grt_rot_zrt2zxy_upar(const real_t theta, real_t u[3], real_t upar[3][3], co
     // ∂ uz / ∂ x
     upar[1][0] = s10*ct - s20*st;
     // ∂ ux / ∂ x
-    upar[1][1] = s11*cct + s22*sst - (s12+s21)*sct + u1*sst/r + u2*sct/r;
+    upar[1][1] = s11*cct + s22*sst - (s12+s21)*sct + u1_over_r*sst + u2_over_r*sct;
     // ∂ uy / ∂ x
-    upar[1][2] = s12*cct - s21*sst + (s11-s22)*sct - u1*sct/r + u2*sst/r;
+    upar[1][2] = s12*cct - s21*sst + (s11-s22)*sct - u1_over_r*sct + u2_over_r*sst;
 
 
     // ∂ uz / ∂ y
     upar[2][0] = s10*st + s20*ct;
     // ∂ ux / ∂ y
-    upar[2][1] = s21*cct - s12*sst + (s11-s22)*sct - u1*sct/r - u2*cct/r;
+    upar[2][1] = s21*cct - s12*sst + (s11-s22)*sct - u1_over_r*sct - u2_over_r*cct;
     // ∂ uy / ∂ y
-    upar[2][2] = s22*cct + s11*sst + (s12+s21)*sct + u1*cct/r - u2*sct/r;
+    upar[2][2] = s22*cct + s11*sst + (s12+s21)*sct + u1_over_r*cct - u2_over_r*sct;
 
 
     // 转矢量

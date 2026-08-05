@@ -259,14 +259,11 @@ void grt_PTA_method(
     #undef __ARR
     #undef __CALLOC_ARRAY
 
-    real_t depsrc = mstat->mod1d->depsrc;
-    real_t deprcv = mstat->mod1d->deprcv;
-
     // 对于PTAM，不同震中距使用不同dk
     for(size_t ir = 0; ir < nr; ++ir){
 
-        // 跳过奇异点
-        if(depsrc == deprcv && GRT_IS_SMALLE_DISTANCE(rs[ir]))  continue;
+        // 零震中距：PTAM 步长含 1/r；震源-接收点重合时格林函数奇异
+        if(GRT_IS_ZERO(rs[ir]))  continue;
 
 
         real_t dk = PI/((GRT_PTAM_WAITS_MAX-1)*rs[ir]); 
@@ -316,8 +313,7 @@ void grt_PTA_method(
 
     // 做缩减序列，赋值最终解
     for(size_t ir = 0; ir < nr; ++ir){
-        // 跳过奇异点
-        if(depsrc == deprcv && GRT_IS_SMALLE_DISTANCE(rs[ir]))  continue;
+        if(GRT_IS_ZERO(rs[ir]))  continue;
 
         // 记录到文件
         if(ptam_fstatsnr != NULL)  grt_write_stats_ptam(ptam_fstatsnr[ir][1], Kpt[ir], (K->calc_upar)? Fpt_uiz[ir] : Fpt[ir]);
