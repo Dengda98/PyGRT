@@ -68,7 +68,6 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kproc, GRNSPEC *grn, co
 
     const real_t Rho = mod1d->Rho[mod1d->isrc]; // 震源区密度
     const real_t fac = 1.0/(4.0*PI*Rho);
-    const real_t dk = Kproc->dk;
 
     // 进度条变量 
     int progress=0;
@@ -111,8 +110,6 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kproc, GRNSPEC *grn, co
     for(size_t iw = nf1_valid; iw <= grn->nf2; ++iw){
         real_t w = grn->freqs[iw]*PI2;     // 实频率
         cplx_t omega = w - grn->wI*I; // 复数频率 omega = w - i*wI
-
-        cplx_t coef = - dk*fac / GRT_SQUARE(omega); // 最终要乘上的系数
 
         K_INTEG_PROCESS *local_Kproc = NULL;
     #ifdef _OPENMP 
@@ -192,7 +189,24 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kproc, GRNSPEC *grn, co
                     grt_printprogressBar("Computing Green Functions: ", progress*100/nf_valid);
                 }
             }
+
+            // 若 nk 不够，适当调整 dk（与静态解一致）
+            if(nk < GRT_MIN_NK){
+                real_t new_dk = local_Kproc->kmax / GRT_MIN_NK;
+                #pragma omp critical(grn_console)
+                {
+                    if(print_log){
+                        printf("\r\033[K");
+                        GRTRaiseInfo("iw=%zu, freq=%.3e: To increase nk(%zu) to %d, adjust dk from %.3e to %.3e",
+                            iw, w/PI2, nk, GRT_MIN_NK, local_Kproc->dk, new_dk);
+                    }
+                }
+                local_Kproc->dk = new_dk;
+            }
         }
+        // coef 必须用最终 dk（可能因 nk 下限被收紧）
+        cplx_t coef = - local_Kproc->dk * fac / GRT_SQUARE(omega);
+
         K_INTEG *Kint = grt_wavenumber_integral(local_mstat, grn->nr, grn->rs, local_Kproc, grn->calc_upar, grt_kernel);
 
         // 记录到格林函数结构体内

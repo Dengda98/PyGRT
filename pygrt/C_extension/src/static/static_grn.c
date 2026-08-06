@@ -122,9 +122,9 @@ void grt_integ_static_grn(
         GRTRaiseInfo("kmax = %.3e, (DWM)nk = %zu, kref = %.3e, ncount = %zu", static_kmax, nk, Kproc->k0, ncount);
         
         // 若 nk 不够，适当调整 dk
-        if(nk < GRT_MIN_STATIC_NK){
-            real_t new_dk = static_kmax / GRT_MIN_STATIC_NK;
-            GRTRaiseInfo("To increase nk(%zu) to %d, adjust dk from %.3e to %.3e", nk, GRT_MIN_STATIC_NK, Kproc->dk, new_dk);
+        if(nk < GRT_MIN_NK){
+            real_t new_dk = static_kmax / GRT_MIN_NK;
+            GRTRaiseInfo("To increase nk(%zu) to %d, adjust dk from %.3e to %.3e", nk, GRT_MIN_NK, Kproc->dk, new_dk);
             Kproc->dk = new_dk;
         }
         

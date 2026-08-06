@@ -909,11 +909,11 @@ int greenfn_main(int argc, char **argv) {
     }
 
     // 自动选择积分间隔，默认使用传统离散波数积分
-    // 自动选择会给出很保守的值（较大的Length）
+    // 自动选择会给出很保守的值（较大的Length）；rmax=0 时保留默认值
     if(Ctrl->L.Length == 0.0){
         Ctrl->L.Length = 15.0; 
         real_t jus = GRT_SQUARE(vmax*tmax) - GRT_SQUARE(Ctrl->D.deprcv - Ctrl->D.depsrc);
-        if(jus >= 0.0){
+        if(jus >= 0.0 && !GRT_IS_ZERO(rmax)){
             Ctrl->L.Length = GRT_MAX(1.0 + sqrt(jus)/rmax + 0.5, Ctrl->L.Length); // +0.5为保守值
         }
     }
@@ -975,7 +975,8 @@ int greenfn_main(int argc, char **argv) {
         
         KPROC.kcut = Ctrl->L.kcut / rmax;
 
-        KPROC.dk = PI2 / (Ctrl->L.Length * rmax);
+        // rmax=0 时用阈值防止除零，此时 dk 偏大，后续由 GRT_MIN_NK 收紧
+        KPROC.dk = PI2 / (Ctrl->L.Length * GRT_MAX(rmax, GRT_ZERO_DISTANCE));
 
         KPROC.applyFIM = Ctrl->L.FIM.active;
         KPROC.filondk = (Ctrl->L.FIM.active) ? PI2 / (Ctrl->L.FIM.Length * rmax) : 0.0;

@@ -616,11 +616,12 @@ int static_greenfn_main(int argc, char **argv){
         KPROC.keps = (Ctrl->C.convmet != K_INTEG_CONVERG_AUTO)? 0.0 : Ctrl->K.keps;  // 如果使用了显式收敛方法，则不使用keps进行收敛判断
 
         // 最大震中距
-        real_t rmax = Ctrl->rs[grt_findMax_real_t(Ctrl->rs, Ctrl->nr)];   
-        
+        real_t rmax = Ctrl->rs[grt_findMax_real_t(Ctrl->rs, Ctrl->nr)];
+
         KPROC.kcut = Ctrl->L.kcut / rmax;
 
-        KPROC.dk = PI2 / (Ctrl->L.Length * rmax);
+        // rmax=0 时用阈值防止除零，此时 dk 偏大，后续由 GRT_MIN_NK 收紧
+        KPROC.dk = PI2 / (Ctrl->L.Length * GRT_MAX(rmax, GRT_ZERO_DISTANCE));
 
         KPROC.applyFIM = Ctrl->L.FIM.active;
         KPROC.filondk = (Ctrl->L.FIM.active) ? PI2 / (Ctrl->L.FIM.Length * rmax) : 0.0;

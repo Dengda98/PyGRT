@@ -132,7 +132,7 @@ typedef double complex cplx_t;
 
 #define GRT_GTYPES_MAX   2      ///< 2, 所有震源根据是否使用格林函数导数分为两类
 
-#define GRT_MIN_STATIC_NK  500    ///< 波数积分中 k0 部分最少的点数，若不够则对应调整 dk
+#define GRT_MIN_NK  500    ///< 波数积分最少采样点数；nk 不足时收紧 dk
 
 typedef cplx_t     cplxChnlGrid[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
 typedef cplx_t*   pcplxChnlGrid[GRT_SRC_M_NUM][GRT_CHANNEL_NUM];
