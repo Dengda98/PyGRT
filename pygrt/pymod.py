@@ -275,11 +275,11 @@ class PyModel1D:
             tmax += rmax/delayV0
 
         # 设置波数积分间隔
-        # 自动情况下给出保守值
+        # 自动情况下给出保守值；rmax≈0 时保留默认 Length
         if Length == 0.0:
             Length = 15.0
             jus = (self.vmax*tmax)**2 - (depsrc - deprcv)**2
-            if jus >= 0.0:
+            if jus >= 0.0 and rmax > ZERO_DISTANCE:
                 Length = 1.0 + np.sqrt(jus)/rmax + 0.5  # 0.5作保守值
                 if Length < 15.0:
                     Length = 15.0
@@ -327,8 +327,9 @@ class PyModel1D:
         KPROC.vmin = vmin_ref
 
         KPROC.kcut = filonCut / rmax
-        
-        KPROC.dk = 2.0*np.pi / (Length * rmax)
+
+        # rmax=0 时用阈值防止除零，此时 dk 偏大，后续由 GRT_MIN_NK 收紧
+        KPROC.dk = 2.0*np.pi / (Length * max(rmax, ZERO_DISTANCE))
         
         KPROC.applyFIM = filonLength > 0.0
         KPROC.filondk = 2.0*np.pi / (filonLength * rmax) if filonLength > 0.0 else 0.0
@@ -675,7 +676,8 @@ class PyModel1D:
         # 最大震中距
         rmax = np.max(rs)
         KPROC.kcut = filonCut / rmax
-        KPROC.dk = 2.0*np.pi / (Length * rmax)
+        # rmax=0 时用阈值防止除零，此时 dk 偏大，后续由 GRT_MIN_NK 收紧
+        KPROC.dk = 2.0*np.pi / (Length * max(rmax, ZERO_DISTANCE))
         
         KPROC.applyFIM = filonLength > 0.0
         KPROC.filondk = 2.0*np.pi / (filonLength * rmax) if filonLength > 0.0 else 0.0
