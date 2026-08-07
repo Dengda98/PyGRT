@@ -14,5 +14,6 @@
 /pygrt/C_extension/build/
 /pygrt/C_extension/lib/
 /pygrt/C_extension/bin/
+/pygrt/C_extension/.clangd
 
 TODO
