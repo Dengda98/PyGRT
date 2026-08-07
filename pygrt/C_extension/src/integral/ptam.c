@@ -104,31 +104,30 @@ static int _cplx_peak_or_trough(
  * @param[in]           im        不同震源不同阶数的索引              
  * @param[in]           v         积分形式索引                          
  * @param[in]           k         波数                             
- * @param[in]           dk        波数步长                              
+ * @param[in]           dk        波数步长
+ * @param[in]           waits_max 当前震中距允许的最大等待采样数
  * @param[in]           J3        存储的积分采样幅值数组                  
  * @param[in,out]       Kpt       积分值峰谷的波数数组     
  * @param[in,out]       Fpt       用于存储波峰/波谷点的幅值数组 
  * @param[in,out]       Ipt       用于存储波峰/波谷点的个数数组 
  * @param[in,out]       Gpt       用于存储等待迭次数的数组    
- * @param[in,out]       iendk0    一个布尔指针，用于指示是否满足结束条件 
  */
 static void process_peak_or_trough(
-    size_t ir, int im, int v, real_t k, real_t dk, 
+    size_t ir, int im, int v, real_t k, real_t dk, size_t waits_max,
     cplxIntegGrid (*J3)[GRT_PTAM_WINDOW_SIZE], realIntegGrid (*Kpt)[GRT_PTAM_PT_MAX], 
-    cplxIntegGrid (*Fpt)[GRT_PTAM_PT_MAX], sizeIntegGrid (*Ipt), sizeIntegGrid (*Gpt), bool *iendk0)
+    cplxIntegGrid (*Fpt)[GRT_PTAM_PT_MAX], sizeIntegGrid (*Ipt), sizeIntegGrid (*Gpt))
 {
     cplx_t tmp0;
     if (Gpt[ir][im][v] >= GRT_PTAM_WINDOW_SIZE-1 && Ipt[ir][im][v] < GRT_PTAM_PT_MAX) {
         if (_cplx_peak_or_trough(im, v, J3[ir], k, dk, &Kpt[ir][Ipt[ir][im][v]][im][v], &tmp0) != 0) {
             Fpt[ir][Ipt[ir][im][v]++][im][v] = tmp0;
             Gpt[ir][im][v] = 0;
-        } else if (Gpt[ir][im][v] >= GRT_PTAM_WAITS_MAX) {  // 不再等待，直接取中点作为波峰波谷
+        } else if (Gpt[ir][im][v] >= waits_max) {  // 不再等待，直接取中点作为波峰波谷
             Kpt[ir][Ipt[ir][im][v]][im][v] = k - dk;
             Fpt[ir][Ipt[ir][im][v]++][im][v] = J3[ir][1][im][v];
             Gpt[ir][im][v] = 0;
         }
     }
-    *iendk0 = *iendk0 && (Ipt[ir][im][v] == GRT_PTAM_PT_MAX);
 }
 
 
@@ -136,8 +135,7 @@ static void process_peak_or_trough(
  * 在输入被积函数的情况下，对不同震源使用峰谷平均法
  * 
  * @param[in]           ir                  震中距索引
- * @param[in]           nr                  震中距个数
- * @param[in]           precoef             积分值系数
+ * @param[in]           waits_max           当前震中距允许的最大等待采样数
  * @param[in]           k                   波数                             
  * @param[in]           dk                  波数步长       
  * @param[in,out]       SUM3                被积函数的幅值数组 
@@ -148,32 +146,27 @@ static void process_peak_or_trough(
  * @param[in,out]       Ipt                 用于存储波峰/波谷点的个数数组 
  * @param[in,out]       Gpt                 用于存储等待迭次数的数组 
  * 
- * @param[in,out]       iendk0              是否收集足够峰谷
- * 
  */
-static void ptam_once(
-    const size_t ir, const size_t nr, const real_t precoef, real_t k, real_t dk, 
-    cplxIntegGrid SUM3[nr][GRT_PTAM_WINDOW_SIZE],
-    cplxIntegGrid sumJ[nr],
-    realIntegGrid Kpt[nr][GRT_PTAM_PT_MAX],
-    cplxIntegGrid Fpt[nr][GRT_PTAM_PT_MAX],
-    sizeIntegGrid Ipt[nr],
-    sizeIntegGrid Gpt[nr],
-    bool *iendk0)
+static bool ptam_once(
+    const size_t ir, const size_t waits_max, real_t k, real_t dk,
+    cplxIntegGrid (*SUM3)[GRT_PTAM_WINDOW_SIZE],
+    cplxIntegGrid *sumJ,
+    realIntegGrid (*Kpt)[GRT_PTAM_PT_MAX],
+    cplxIntegGrid (*Fpt)[GRT_PTAM_PT_MAX],
+    sizeIntegGrid *Ipt,
+    sizeIntegGrid *Gpt)
 {
-    *iendk0 = true;
-
     GRT_LOOP_IntegGrid(im, v){
         int modr = GRT_SRC_M_ORDERS[im];
         if(modr == 0 && v!=0 && v!= 2)  continue;
 
         // 赋更新量
         // SUM3转为求和结果
-        sumJ[ir][im][v] += SUM3[ir][GRT_PTAM_WINDOW_SIZE-1][im][v] * precoef;
+        sumJ[ir][im][v] += SUM3[ir][GRT_PTAM_WINDOW_SIZE-1][im][v];
         SUM3[ir][GRT_PTAM_WINDOW_SIZE-1][im][v] = sumJ[ir][im][v];         
         
         // 3点以上，判断波峰波谷 
-        process_peak_or_trough(ir, im, v, k, dk, SUM3, Kpt, Fpt, Ipt, Gpt, iendk0);
+        process_peak_or_trough(ir, im, v, k, dk, waits_max, SUM3, Kpt, Fpt, Ipt, Gpt);
 
         // 左移动点, 
         for(int jj=0; jj<GRT_PTAM_WINDOW_SIZE-1; ++jj){
@@ -183,6 +176,26 @@ static void ptam_once(
         // 点数+1
         Gpt[ir][im][v]++;
     }
+
+    bool iendk0 = true;
+    GRT_LOOP_IntegGrid(im, v){
+        int modr = GRT_SRC_M_ORDERS[im];
+        if(modr == 0 && v!=0 && v!= 2)  continue;
+        iendk0 = iendk0 && (Ipt[ir][im][v] == GRT_PTAM_PT_MAX);
+    }
+    return iendk0;
+}
+
+
+static bool ptam_is_complete(size_t ir, const sizeIntegGrid *Ipt)
+{
+    bool iendk0 = true;
+    GRT_LOOP_IntegGrid(im, v){
+        int modr = GRT_SRC_M_ORDERS[im];
+        if(modr == 0 && v!=0 && v!= 2)  continue;
+        iendk0 = iendk0 && (Ipt[ir][im][v] == GRT_PTAM_PT_MAX);
+    }
+    return iendk0;
 }
 
 
@@ -212,7 +225,7 @@ static void _cplx_shrink(size_t n1, size_t ir,  int im, int v, cplxIntegGrid (*F
 
 
 void grt_PTA_method(
-    MODEL1D_STATE *mstat, real_t k0, real_t predk,
+    MODEL1D_STATE *mstat, real_t k0, real_t dk,
     size_t nr, real_t *rs, K_INTEG *K, FILE *ptam_fstatsnr[nr][2], GRT_KernelFunc kerfunc)
 {   
     // 需要兼容对正常收敛而不具有规律波峰波谷的序列
@@ -220,6 +233,16 @@ void grt_PTA_method(
     // 此时设置最大等待次数，超过直接设置为中间值
 
     real_t k=0.0;
+    real_t rmin=0.0;
+    size_t nvalid=0;
+
+    for(size_t ir = 0; ir < nr; ++ir){
+        if(GRT_IS_ZERO(rs[ir]))  continue;
+        if(nvalid == 0 || rs[ir] < rmin)  rmin = rs[ir];
+        nvalid++;
+    }
+
+    if(nvalid == 0 || dk <= 0.0)  return;
 
     // 使用宏函数，方便定义
     #define __CALLOC_ARRAY(VAR, TYP, __ARR) \
@@ -259,56 +282,66 @@ void grt_PTA_method(
     #undef __ARR
     #undef __CALLOC_ARRAY
 
-    // 对于PTAM，不同震中距使用不同dk
+    size_t *waits_max = (size_t *)calloc(nr, sizeof(*waits_max));
+    bool *iendkrs = (bool *)calloc(nr, sizeof(*iendkrs));
     for(size_t ir = 0; ir < nr; ++ir){
-
-        // 零震中距：PTAM 步长含 1/r；震源-接收点重合时格林函数奇异
         if(GRT_IS_ZERO(rs[ir]))  continue;
+        waits_max[ir] = (size_t)ceil(PI/(rs[ir]*dk)) + 5;  // + 5 以防万一
+        if(waits_max[ir] < GRT_PTAM_WINDOW_SIZE-1){
+            waits_max[ir] = GRT_PTAM_WINDOW_SIZE-1;
+        }
+    }
 
+    // 由最小非零震中距保证所有距离都有足够的峰谷
+    real_t kmax = k0 + (GRT_PTAM_PT_MAX+5)*PI/rmin;
+    bool iendk = false;
+    k = k0;
+    while(!iendk && k <= kmax){
+        k += dk;
 
-        real_t dk = PI/((GRT_PTAM_WAITS_MAX-1)*rs[ir]); 
-        real_t precoef = dk/predk; // 提前乘dk系数，以抵消格林函数主函数计算时最后乘dk
-        // 根据波峰波谷的目标也给出一个kmax，+5以防万一 
-        real_t kmax = k0 + (GRT_PTAM_PT_MAX+5)*PI/rs[ir];
+        // 计算一次核函数，供所有尚未完成的震中距复用
+        kerfunc(mstat, k, K->QWV, K->calc_upar, K->QWVz);
+        if(mstat->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
 
-        bool iendk0=false;
+        iendk = true;
+        for(size_t ir = 0; ir < nr; ++ir){
+            if(GRT_IS_ZERO(rs[ir]) || iendkrs[ir])  continue;
 
-        k = k0;
-        while(true){
-            if(k > kmax) break;
-            k += dk;
+            // 记录仍在处理的震中距对应的核函数
+            if(ptam_fstatsnr != NULL){
+                grt_write_stats(ptam_fstatsnr[ir][0], k, (K->calc_upar)? K->QWVz : K->QWV);
+            }
 
-            // 计算核函数 F(k, w)
-            kerfunc(mstat, k, K->QWV, K->calc_upar, K->QWVz); 
-            if(mstat->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
+            bool iendk0 = ptam_is_complete(ir, Ipt);
+            if(!iendk0){
+                grt_int_Pk(k, rs[ir], K->QWV, false, SUM3[ir][GRT_PTAM_WINDOW_SIZE-1]);
+                iendk0 = ptam_once(
+                    ir, waits_max[ir], k, dk, SUM3, K->sumJ, Kpt, Fpt, Ipt, Gpt);
+            }
 
-            // 记录核函数
-            if(ptam_fstatsnr != NULL)  grt_write_stats(ptam_fstatsnr[ir][0], k, (K->calc_upar)? K->QWVz : K->QWV);
-
-            // 计算被积函数一项 F(k,w)Jm(kr)k
-            grt_int_Pk(k, rs[ir], K->QWV, false, SUM3[ir][GRT_PTAM_WINDOW_SIZE-1]);  // [GRT_PTAM_WINDOW_SIZE-1]表示把新点值放在最后
-            // 判断和记录波峰波谷
-            ptam_once(ir, nr, precoef, k, dk, SUM3, K->sumJ, Kpt, Fpt, Ipt, Gpt, &iendk0);
-            
-            // -------------------------- 位移空间导数 ------------------------------------
             if(K->calc_upar){
-                // ------------------------------- ui_z -----------------------------------
-                // 计算被积函数一项 F(k,w)Jm(kr)k
-                grt_int_Pk(k, rs[ir], K->QWVz, false, SUM3_uiz[ir][GRT_PTAM_WINDOW_SIZE-1]);  // [GRT_PTAM_WINDOW_SIZE-1]表示把新点值放在最后
-                // 判断和记录波峰波谷
-                ptam_once(ir, nr, precoef, k, dk, SUM3_uiz, K->sumJz, Kpt_uiz, Fpt_uiz, Ipt_uiz, Gpt_uiz, &iendk0);
+                bool iendk_uiz = ptam_is_complete(ir, Ipt_uiz);
+                if(!iendk_uiz){
+                    grt_int_Pk(k, rs[ir], K->QWVz, false, SUM3_uiz[ir][GRT_PTAM_WINDOW_SIZE-1]);
+                    iendk_uiz = ptam_once(
+                        ir, waits_max[ir], k, dk, SUM3_uiz, K->sumJz,
+                        Kpt_uiz, Fpt_uiz, Ipt_uiz, Gpt_uiz);
+                }
 
-                // ------------------------------- ui_r -----------------------------------
-                // 计算被积函数一项 F(k,w)Jm(kr)k
-                grt_int_Pk(k, rs[ir], K->QWV, true, SUM3_uir[ir][GRT_PTAM_WINDOW_SIZE-1]);  // [GRT_PTAM_WINDOW_SIZE-1]表示把新点值放在最后
-                // 判断和记录波峰波谷
-                ptam_once(ir, nr, precoef, k, dk, SUM3_uir, K->sumJr, Kpt_uir, Fpt_uir, Ipt_uir, Gpt_uir, &iendk0);
-            
-            } // END if calc_upar
+                bool iendk_uir = ptam_is_complete(ir, Ipt_uir);
+                if(!iendk_uir){
+                    grt_int_Pk(k, rs[ir], K->QWV, true, SUM3_uir[ir][GRT_PTAM_WINDOW_SIZE-1]);
+                    iendk_uir = ptam_once(
+                        ir, waits_max[ir], k, dk, SUM3_uir, K->sumJr,
+                        Kpt_uir, Fpt_uir, Ipt_uir, Gpt_uir);
+                }
 
+                iendk0 = iendk0 && iendk_uiz && iendk_uir;
+            }
 
-            if(iendk0) break;
-        }// end k loop
+            iendkrs[ir] = iendk0;
+            iendk = iendk && iendkrs[ir];
+        }
     }
 
     // 做缩减序列，赋值最终解
@@ -339,6 +372,7 @@ void grt_PTA_method(
         X(Kpt)     X(Fpt)         X(Ipt)       X(Gpt) \
         X(Kpt_uiz)     X(Fpt_uiz)         X(Ipt_uiz)       X(Gpt_uiz) \
         X(Kpt_uir)     X(Fpt_uir)         X(Ipt_uir)       X(Gpt_uir) \
+        X(waits_max)   X(iendkrs) \
 
     #define X(A)  GRT_SAFE_FREE_PTR(A);
         __FREE_ALL_ARRAY

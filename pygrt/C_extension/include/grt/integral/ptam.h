@@ -28,8 +28,7 @@
  * 
  * @param[in,out] mstat         `MODEL1D_STATE` 结构体指针
  * @param[in]     k0            先前的积分已经进行到了波数k0
- * @param[in]     predk         先前的积分使用的积分间隔dk，因为峰谷平均法使用的
- *                              积分间隔会和之前的不一致，这里传入该系数以做预先调整
+ * @param[in]     dk            先前积分使用的统一波数间隔，PTAM继续复用该间隔
  * @param[in]     nr            震中距数量
  * @param[in]     rs            震中距数组  
  * 
@@ -41,6 +40,6 @@
  * 
  */
 void grt_PTA_method(
-    MODEL1D_STATE *mstat, real_t k0, real_t predk,
+    MODEL1D_STATE *mstat, real_t k0, real_t dk,
     size_t nr, real_t *rs, K_INTEG *K, FILE *ptam_fstatsnr[nr][2], GRT_KernelFunc kerfunc);
 
