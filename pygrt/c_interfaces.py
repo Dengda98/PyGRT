@@ -26,10 +26,41 @@ libgrt = cdll.LoadLibrary(
 """libgrt库"""
 
 
+C_grt_prepare_grn_spec = libgrt.grt_prepare_grn_spec
+"""动态格林函数：频谱积分前准备（Length/wI/freqs/KPROC/GRNSPEC 元数据）"""
+C_grt_prepare_grn_spec.restype = None
+C_grt_prepare_grn_spec.argtypes = [
+    POINTER(c_MODEL1D),
+    c_size_t, PREAL,
+    c_size_t, REAL, REAL, c_bool,
+    REAL, REAL,
+    REAL,
+    REAL, REAL, REAL,
+    REAL, REAL, REAL, REAL, c_bool,
+    c_int,
+    REAL, REAL, c_bool,
+    c_bool,
+    POINTER(c_K_INTEG_PROCESS),
+    POINTER(c_GRNSPEC),
+]
+
 C_grt_integ_grn_spec = libgrt.grt_integ_grn_spec
 """C库中计算格林函数的主函数 integ_grn_spec, 详见C API同名函数"""
 C_grt_integ_grn_spec.argtypes = [POINTER(c_MODEL1D), POINTER(c_K_INTEG_PROCESS), POINTER(c_GRNSPEC), c_bool]
 
+
+C_grt_prepare_static_grn = libgrt.grt_prepare_static_grn
+"""静态格林函数：积分前准备（Length 默认 + KPROC）"""
+C_grt_prepare_static_grn.restype = None
+C_grt_prepare_static_grn.argtypes = [
+    POINTER(c_MODEL1D),
+    c_size_t, PREAL,
+    REAL,
+    REAL, REAL, REAL,
+    REAL, REAL, c_bool,
+    c_int,
+    POINTER(c_K_INTEG_PROCESS),
+]
 
 C_grt_integ_static_grn = libgrt.grt_integ_static_grn
 """计算静态格林函数"""

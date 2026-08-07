@@ -23,8 +23,6 @@ __all__ = [
     "ZNEchs",
     "qwvchs",
     "MECHANISM_NUM",
-    "MIN_DEPTH_GAP_SRC_RCV",
-    "ZERO_DISTANCE",
 
     "NPCT_REAL_TYPE",
     "NPCT_CMPLX_TYPE",
@@ -52,8 +50,6 @@ ZRTchs = ['Z', 'R', 'T']
 ZNEchs = ['Z', 'N', 'E']
 qwvchs = ['q', 'w', 'v']
 MECHANISM_NUM = 6
-MIN_DEPTH_GAP_SRC_RCV = 0.1
-ZERO_DISTANCE = 1e-8  # 与 C 侧 GRT_ZERO_DISTANCE 一致
 
 NPCT_REAL_TYPE = 'f8'
 NPCT_CMPLX_TYPE = 'c16'

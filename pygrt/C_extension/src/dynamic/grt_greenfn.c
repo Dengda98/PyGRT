@@ -846,17 +846,122 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     fclose(fp);
     GRT_SAFE_FREE_PTR(dummy);
 
+}
+
+
+
+/**
+ * 频谱积分前的共享准备：自动 Length、wI、频点网格、nf1/nf2、填充 KPROC 与 GRNSPEC 元数据。
+ * grn->freqs 由本函数 malloc，调用方负责释放；grn->rs 借用调用方指针。
+ * 不分配 u/uiz/uir，不处理 stats 路径。
+ */
+void grt_prepare_grn_spec(
+    MODEL1D *mod1d,
+    size_t nr, real_t *rs,
+    size_t nt, real_t dt, real_t zeta, bool keepAllFreq,
+    real_t freq1, real_t freq2,
+    real_t Length,
+    real_t filonLength, real_t safilonTol, real_t filonCut,
+    real_t k0, real_t ampk, real_t keps, real_t vmin_ref, bool use_kmax_ref,
+    int convmet,
+    real_t delayT0, real_t delayV0, bool refFirstP,
+    bool calc_upar,
+    K_INTEG_PROCESS *Kproc,
+    GRNSPEC *grn)
+{
     // FIM/SAFIM 面向远震中距，公式含 1/r、1/√r，不能用于 r=0（含 kcut 分段）
-    if(Ctrl->L.FIM.active || Ctrl->L.SAFIM.active){
-        for(size_t ir=0; ir<Ctrl->R.nr; ++ir){
-            if(GRT_IS_ZERO(Ctrl->R.rs[ir])){
-                GRTBadOptionError(L, "FIM/SAFIM cannot be used with zero epicentral distance.");
+    if(filonLength > 0.0 || safilonTol > 0.0){
+        for(size_t ir = 0; ir < nr; ++ir){
+            if(GRT_IS_ZERO(rs[ir])){
+                GRTRaiseError("FIM/SAFIM cannot be used with zero epicentral distance.");
             }
         }
     }
 
-}
+    real_t vmin, vmax;
+    grt_get_mod1d_vmin_vmax(mod1d, &vmin, &vmax);
 
+    // 参考最小速度
+    if(vmin_ref == 0.0){
+        vmin_ref = GRT_MAX(vmin, GRT_GREENFN_K_VMIN);
+    }
+
+    real_t winT = nt * dt;
+    real_t rmax = rs[grt_findMax_real_t(rs, nr)];
+
+    // 时窗最大截止时刻（用于自动 Length）
+    real_t tmax = 0.0;
+    if(!refFirstP){
+        tmax = delayT0 + winT;
+        if(delayV0 > 0.0)   tmax += rmax / delayV0;
+    } else {
+        real_t maxP = grt_compute_travt1d(mod1d->Thk, mod1d->Va, mod1d->n, mod1d->isrc, mod1d->ircv, rmax);
+        tmax = delayT0 + maxP + winT;
+    }
+
+    // 自动选择积分间隔；rmax=0 时保留默认值
+    if(Length == 0.0){
+        Length = 15.0;
+        real_t jus = GRT_SQUARE(vmax * tmax) - GRT_SQUARE(mod1d->deprcv - mod1d->depsrc);
+        if(jus >= 0.0 && !GRT_IS_ZERO(rmax)){
+            Length = GRT_MAX(1.0 + sqrt(jus) / rmax + 0.5, Length); // +0.5为保守值
+        }
+    }
+
+    real_t wI = zeta * PI / winT;
+
+    size_t nf = nt / 2 + 1;
+    real_t df = 1.0 / winT;
+    real_t *freqs = (real_t *)malloc(nf * sizeof(real_t));
+    for(size_t i = 0; i < nf; ++i){
+        freqs[i] = i * df;
+    }
+
+    size_t nf1 = 0;
+    size_t nf2 = nf - 1;
+    if(freq1 > 0.0){
+        nf1 = GRT_MIN(ceil(freq1 / df), nf - 1);
+    }
+    if(freq2 > 0.0){
+        nf2 = GRT_MIN(floor(freq2 / df), nf - 1);
+    }
+    nf2 = GRT_MAX(nf1, nf2);
+
+    memset(Kproc, 0, sizeof(*Kproc));
+    {
+        real_t hs = GRT_MAX(fabs(mod1d->depsrc - mod1d->deprcv), GRT_MIN_DEPTH_GAP_SRC_RCV);
+        Kproc->k0 = k0 * PI / hs;
+        Kproc->use_kmax_ref = use_kmax_ref;
+        Kproc->ampk = ampk;
+        // 显式收敛方法时不使用 keps
+        Kproc->keps = (convmet != K_INTEG_CONVERG_AUTO) ? 0.0 : keps;
+        Kproc->vmin = vmin_ref;
+
+        Kproc->kcut = filonCut / rmax;
+
+        // rmax=0 时用阈值防止除零，此时 dk 偏大，后续由 GRT_MIN_NK 收紧
+        Kproc->dk = PI2 / (Length * GRT_MAX(rmax, GRT_ZERO_DISTANCE));
+
+        Kproc->applyFIM = filonLength > 0.0;
+        Kproc->filondk = (filonLength > 0.0) ? PI2 / (filonLength * rmax) : 0.0;
+
+        Kproc->applySAFIM = safilonTol > 0.0;
+        Kproc->sa_tol = safilonTol;
+
+        Kproc->cvgmet = convmet;
+    }
+
+    memset(grn, 0, sizeof(*grn));
+    grn->nf = nf;
+    grn->freqs = freqs;
+    grn->nf1 = nf1;
+    grn->nf2 = nf2;
+    grn->nr = nr;
+    grn->rs = rs;
+    grn->wI = wI;
+    grn->keepAllFreq = keepAllFreq;
+    grn->calc_upar = calc_upar;
+}
 
 
 /** 子模块主函数 */
@@ -881,53 +986,32 @@ int greenfn_main(int argc, char **argv) {
         Ctrl->G.doHF = Ctrl->G.doVF = Ctrl->G.doDC = false;
     }
 
-    // 最大最小速度
-    real_t vmin, vmax;
-    grt_get_mod1d_vmin_vmax(mod1d, &vmin, &vmax);
+    K_INTEG_PROCESS KPROC = {0};
+    GRNSPEC grn_storage = {0};
+    GRNSPEC *grn = &grn_storage;
+    grt_prepare_grn_spec(
+        mod1d,
+        Ctrl->R.nr, Ctrl->R.rs,
+        Ctrl->N.nt, Ctrl->N.dt, Ctrl->N.zeta, Ctrl->N.keepAllFreq,
+        Ctrl->H.freq1, Ctrl->H.freq2,
+        Ctrl->L.Length,
+        Ctrl->L.FIM.active ? Ctrl->L.FIM.Length : 0.0,
+        Ctrl->L.SAFIM.active ? Ctrl->L.SAFIM.tol : 0.0,
+        Ctrl->L.kcut,
+        Ctrl->K.k0, Ctrl->K.ampk, Ctrl->K.keps, Ctrl->K.vmin, Ctrl->K.use_kmax_ref,
+        Ctrl->C.convmet,
+        Ctrl->E.delayT0, Ctrl->E.delayV0, Ctrl->E.refFirstP,
+        Ctrl->e.active,
+        &KPROC, grn);
 
-    // 参考最小速度
-    if(Ctrl->K.vmin == 0.0){
-        Ctrl->K.vmin = GRT_MAX(vmin, GRT_GREENFN_K_VMIN);
-    }
-
-    // 时窗长度 
-    Ctrl->N.winT = Ctrl->N.nt*Ctrl->N.dt;
-
-    // 最大震中距
-    real_t rmax = Ctrl->R.rs[grt_findMax_real_t(Ctrl->R.rs, Ctrl->R.nr)];
-
-    // 时窗最大截止时刻
-    real_t tmax = 0.0;
-    {
-        if (! Ctrl->E.refFirstP){
-            tmax = Ctrl->E.delayT0 + Ctrl->N.winT;
-            if(Ctrl->E.delayV0 > 0.0)   tmax += rmax/Ctrl->E.delayV0;
-        } else {
-            real_t maxP = grt_compute_travt1d(mod1d->Thk, mod1d->Va, mod1d->n, mod1d->isrc, mod1d->ircv, rmax);
-            tmax = Ctrl->E.delayT0 + maxP + Ctrl->N.winT;
-        }
-    }
-
-    // 自动选择积分间隔，默认使用传统离散波数积分
-    // 自动选择会给出很保守的值（较大的Length）；rmax=0 时保留默认值
-    if(Ctrl->L.Length == 0.0){
-        Ctrl->L.Length = 15.0; 
-        real_t jus = GRT_SQUARE(vmax*tmax) - GRT_SQUARE(Ctrl->D.deprcv - Ctrl->D.depsrc);
-        if(jus >= 0.0 && !GRT_IS_ZERO(rmax)){
-            Ctrl->L.Length = GRT_MAX(1.0 + sqrt(jus)/rmax + 0.5, Ctrl->L.Length); // +0.5为保守值
-        }
-    }
-
-    // 虚频率
-    Ctrl->N.wI = Ctrl->N.zeta*PI/Ctrl->N.winT;
-
-    // 定义要计算的频率、时窗等
-    Ctrl->N.nf = Ctrl->N.nt/2 + 1;
-    Ctrl->N.df = 1.0/Ctrl->N.winT;
-    Ctrl->N.freqs = (real_t*)malloc(Ctrl->N.nf*sizeof(real_t));
-    for(size_t i=0; i<Ctrl->N.nf; ++i){
-        Ctrl->N.freqs[i] = i*Ctrl->N.df;
-    }
+    // 写回 Ctrl，供后续 IFFT/SAC/free_Ctrl 使用
+    Ctrl->N.winT = Ctrl->N.nt * Ctrl->N.dt;
+    Ctrl->N.nf = grn->nf;
+    Ctrl->N.df = 1.0 / Ctrl->N.winT;
+    Ctrl->N.freqs = grn->freqs;
+    Ctrl->N.wI = grn->wI;
+    Ctrl->H.nf1 = grn->nf1;
+    Ctrl->H.nf2 = grn->nf2;
 
     // 如果只传入了 -S, 未指定索引，则默认所有频率索引
     if(Ctrl->S.active && Ctrl->S.statsidxs == NULL){
@@ -940,17 +1024,6 @@ int greenfn_main(int argc, char **argv) {
         Ctrl->S.s_raw = strdup("(all)");
     }
 
-    // 自定义频段
-    Ctrl->H.nf1 = 0; 
-    Ctrl->H.nf2 = Ctrl->N.nf-1;
-    if(Ctrl->H.freq1 > 0.0){
-        Ctrl->H.nf1 = GRT_MIN(ceil(Ctrl->H.freq1/Ctrl->N.df), Ctrl->N.nf-1);
-    }
-    if(Ctrl->H.freq2 > 0.0){
-        Ctrl->H.nf2 = GRT_MIN(floor(Ctrl->H.freq2/Ctrl->N.df), Ctrl->N.nf-1);
-    }
-    Ctrl->H.nf2 = GRT_MAX(Ctrl->H.nf1, Ctrl->H.nf2);
-
     // 波数积分中间文件输出目录
     if(Ctrl->S.active){
         Ctrl->S.s_statsdir = NULL;
@@ -962,50 +1035,10 @@ int greenfn_main(int argc, char **argv) {
         GRTCheckMakeDir(Ctrl->S.s_statsdir);
     }
 
-        
-    // 波数积分方法
-    K_INTEG_PROCESS KPROC = {0};
-    {   
-        real_t hs = GRT_MAX(fabs(mod1d->depsrc - mod1d->deprcv), GRT_MIN_DEPTH_GAP_SRC_RCV);
-        KPROC.k0 = Ctrl->K.k0 * PI / hs;
-        KPROC.use_kmax_ref = Ctrl->K.use_kmax_ref;
-        KPROC.ampk = Ctrl->K.ampk;
-        KPROC.keps = (Ctrl->C.convmet != K_INTEG_CONVERG_AUTO)? 0.0 : Ctrl->K.keps; // 如果使用了显式收敛方法，则不使用keps进行收敛判断
-        KPROC.vmin = Ctrl->K.vmin;
-        
-        KPROC.kcut = Ctrl->L.kcut / rmax;
-
-        // rmax=0 时用阈值防止除零，此时 dk 偏大，后续由 GRT_MIN_NK 收紧
-        KPROC.dk = PI2 / (Ctrl->L.Length * GRT_MAX(rmax, GRT_ZERO_DISTANCE));
-
-        KPROC.applyFIM = Ctrl->L.FIM.active;
-        KPROC.filondk = (Ctrl->L.FIM.active) ? PI2 / (Ctrl->L.FIM.Length * rmax) : 0.0;
-
-        KPROC.applySAFIM = Ctrl->L.SAFIM.active;
-        KPROC.sa_tol = Ctrl->L.SAFIM.tol;
-        
-        KPROC.cvgmet = Ctrl->C.convmet;
-    }
-
-    // 格林函数频谱
-    GRNSPEC *grn = &(GRNSPEC){0};
-    {
-        grn->nf = Ctrl->N.nf;
-        grn->freqs = Ctrl->N.freqs;
-        grn->nf1 = Ctrl->H.nf1;
-        grn->nf2 = Ctrl->H.nf2;
-        grn->nr = Ctrl->R.nr;
-        grn->rs = Ctrl->R.rs;
-        grn->wI = Ctrl->N.wI;
-        grn->keepAllFreq = Ctrl->N.keepAllFreq;
-        grn->calc_upar = Ctrl->e.active;
-
-        grt_grnspec_allocate_u(grn);
-        grn->statsstr = Ctrl->S.s_statsdir;
-        grn->nstatsidxs = Ctrl->S.nstatsidxs;
-        grn->statsidxs = Ctrl->S.statsidxs;
-    }
-    
+    grt_grnspec_allocate_u(grn);
+    grn->statsstr = Ctrl->S.s_statsdir;
+    grn->nstatsidxs = Ctrl->S.nstatsidxs;
+    grn->statsidxs = Ctrl->S.statsidxs;
 
     //==============================================================================
     // 计算格林函数

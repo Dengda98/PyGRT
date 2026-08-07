@@ -560,17 +560,58 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
         }
     }
 
+}
+
+
+/**
+ * 静态积分前准备：默认 Length，填充 K_INTEG_PROCESS。
+ * 不分配输出缓冲，不处理 stats 路径。
+ */
+void grt_prepare_static_grn(
+    MODEL1D *mod1d,
+    size_t nr, real_t *rs,
+    real_t Length,
+    real_t filonLength, real_t safilonTol, real_t filonCut,
+    real_t k0, real_t keps, bool use_kmax_ref,
+    int convmet,
+    K_INTEG_PROCESS *Kproc)
+{
     // FIM/SAFIM 面向远震中距，公式含 1/r、1/√r，不能用于 r=0（含 kcut 分段）
-    if(Ctrl->L.FIM.active || Ctrl->L.SAFIM.active){
-        for(size_t ir=0; ir<Ctrl->nr; ++ir){
-            if(GRT_IS_ZERO(Ctrl->rs[ir])){
-                GRTBadOptionError(L, "FIM/SAFIM cannot be used with zero epicentral distance.");
+    if(filonLength > 0.0 || safilonTol > 0.0){
+        for(size_t ir = 0; ir < nr; ++ir){
+            if(GRT_IS_ZERO(rs[ir])){
+                GRTRaiseError("FIM/SAFIM cannot be used with zero epicentral distance.");
             }
         }
     }
 
-}
+    if(Length == 0.0){
+        Length = GRT_GREENFN_L_LENGTH;
+    }
 
+    memset(Kproc, 0, sizeof(*Kproc));
+    {
+        real_t hs = GRT_MAX(fabs(mod1d->depsrc - mod1d->deprcv), GRT_MIN_DEPTH_GAP_SRC_RCV);
+        Kproc->k0 = k0 * PI / hs;
+        Kproc->use_kmax_ref = use_kmax_ref;
+        // 显式收敛方法时不使用 keps
+        Kproc->keps = (convmet != K_INTEG_CONVERG_AUTO) ? 0.0 : keps;
+
+        real_t rmax = rs[grt_findMax_real_t(rs, nr)];
+        Kproc->kcut = filonCut / rmax;
+
+        // rmax=0 时用阈值防止除零，此时 dk 偏大，后续由 GRT_MIN_NK 收紧
+        Kproc->dk = PI2 / (Length * GRT_MAX(rmax, GRT_ZERO_DISTANCE));
+
+        Kproc->applyFIM = filonLength > 0.0;
+        Kproc->filondk = (filonLength > 0.0) ? PI2 / (filonLength * rmax) : 0.0;
+
+        Kproc->applySAFIM = safilonTol > 0.0;
+        Kproc->sa_tol = safilonTol;
+
+        Kproc->cvgmet = convmet;
+    }
+}
 
 
 /** 子模块主函数 */
@@ -588,9 +629,6 @@ int static_greenfn_main(int argc, char **argv){
 
     // 边界条件
     grt_set_mod1d_boundary(mod1d, Ctrl->B.topbound, Ctrl->B.botbound);
-    
-    // 设置积分间隔默认值
-    if(Ctrl->L.Length == 0.0)  Ctrl->L.Length = GRT_GREENFN_L_LENGTH;
 
     // 波数积分输出目录
     if(Ctrl->S.active){
@@ -607,30 +645,17 @@ int static_greenfn_main(int argc, char **argv){
     realChnlGrid *grn_uiz = (Ctrl->e.active)? (realChnlGrid *) calloc(Ctrl->nr, sizeof(*grn_uiz)) : NULL;
     realChnlGrid *grn_uir = (Ctrl->e.active)? (realChnlGrid *) calloc(Ctrl->nr, sizeof(*grn_uir)) : NULL;
 
-    // 波数积分方法
     K_INTEG_PROCESS KPROC = {0};
-    {   
-        real_t hs = GRT_MAX(fabs(mod1d->depsrc - mod1d->deprcv), GRT_MIN_DEPTH_GAP_SRC_RCV);
-        KPROC.k0 = Ctrl->K.k0 * PI / hs;
-        KPROC.use_kmax_ref = Ctrl->K.use_kmax_ref;
-        KPROC.keps = (Ctrl->C.convmet != K_INTEG_CONVERG_AUTO)? 0.0 : Ctrl->K.keps;  // 如果使用了显式收敛方法，则不使用keps进行收敛判断
-
-        // 最大震中距
-        real_t rmax = Ctrl->rs[grt_findMax_real_t(Ctrl->rs, Ctrl->nr)];
-
-        KPROC.kcut = Ctrl->L.kcut / rmax;
-
-        // rmax=0 时用阈值防止除零，此时 dk 偏大，后续由 GRT_MIN_NK 收紧
-        KPROC.dk = PI2 / (Ctrl->L.Length * GRT_MAX(rmax, GRT_ZERO_DISTANCE));
-
-        KPROC.applyFIM = Ctrl->L.FIM.active;
-        KPROC.filondk = (Ctrl->L.FIM.active) ? PI2 / (Ctrl->L.FIM.Length * rmax) : 0.0;
-
-        KPROC.applySAFIM = Ctrl->L.SAFIM.active;
-        KPROC.sa_tol = Ctrl->L.SAFIM.tol;
-        
-        KPROC.cvgmet = Ctrl->C.convmet;
-    }
+    grt_prepare_static_grn(
+        mod1d,
+        Ctrl->nr, Ctrl->rs,
+        Ctrl->L.Length,
+        Ctrl->L.FIM.active ? Ctrl->L.FIM.Length : 0.0,
+        Ctrl->L.SAFIM.active ? Ctrl->L.SAFIM.tol : 0.0,
+        Ctrl->L.kcut,
+        Ctrl->K.k0, Ctrl->K.keps, Ctrl->K.use_kmax_ref,
+        Ctrl->C.convmet,
+        &KPROC);
 
     //==============================================================================
     // 计算静态格林函数

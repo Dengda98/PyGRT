@@ -17,11 +17,12 @@ from scipy.fft import irfft, ifft
 from obspy.core import AttribDict
 from typing import List, Dict, Union, Literal
 import tempfile
+import os
 
 from time import time
 from copy import deepcopy
 
-from ctypes import Array, pointer
+from ctypes import Array, pointer, c_char_p
 from ctypes import _Pointer
 from .c_interfaces import *
 from .c_structures import *
@@ -190,10 +191,7 @@ class PyModel1D:
         statsidxs:Union[np.ndarray,List[int],None]=None, 
         print_log:bool=True
     ):
-        
-        depsrc = self.depsrc
-        deprcv = self.deprcv
-
+        # 仅做最基本的正负号等检查；物理预处理交给 C grt_prepare_grn_spec
         if np.any(distarr < 0):
             raise ValueError(f"distarr < 0")
         if nt < 0:
@@ -214,162 +212,92 @@ class PyModel1D:
         if filonCut < 0.0:
             raise ValueError(f"filonCut ({filonCut}) < 0") 
         if safilonTol < 0.0:
-            raise ValueError(f"filonCut ({safilonTol}) < 0") 
+            raise ValueError(f"safilonTol ({safilonTol}) < 0") 
         
         # 只能设置一种filon积分方法
         if safilonTol > 0.0 and filonLength > 0.0:
             raise ValueError(f"You should only set one of filonLength and safilonTol.")
 
-        # FIM/SAFIM 面向远震中距，不能用于 r=0（含 filonCut 分段）
-        if (filonLength > 0.0 or safilonTol > 0.0) and np.any(np.asarray(distarr) <= ZERO_DISTANCE):
-            raise ValueError("FIM/SAFIM cannot be used with zero epicentral distance.")
-        
-        nf = nt//2+1 
-        df = 1/(nt*dt)
-        fnyq = 1/(2*dt)
-        # 确定频带范围 
         f1, f2 = freqband 
         if f1 >= f2 and f1 >= 0 and f2 >= 0:
             raise ValueError(f"freqband f1({f1}) >= f2({f2})")
-        
-        if f1 < 0:
-            f1 = 0 
-        if f2 < 0:
-            f2 = fnyq+df
-            
-        f1 = max(0, f1) 
-        f2 = min(f2, fnyq + df)
-        nf1 = min(int(np.ceil(f1/df)), nf-1)
-        nf2 = min(int(np.floor(f2/df)), nf-1)
-        if nf2 < nf1:
-            nf2 = nf1
 
-        # 所有频点 
-        freqs = (np.arange(0, nf)*df).astype(NPCT_REAL_TYPE) 
-
-        # 虚频率 
-        wI = zeta * np.pi/(nt*dt)
-
+        distarr = np.asarray(distarr, dtype=NPCT_REAL_TYPE)
         nrs = len(distarr)
-        for ir in range(nrs):
-            if(distarr[ir] < 0.0):
-                raise ValueError(f"r({distarr[ir]}) < 0")
+        c_rs = npct.as_ctypes(distarr)
 
-        # 最大震中距
-        rmax = np.max(distarr)
-        
-        # 转为C类型
-        c_freqs = npct.as_ctypes(freqs)
-        c_rs = npct.as_ctypes(np.array(distarr).astype(NPCT_REAL_TYPE) )
-
-        # 参考最小速度
-        if vmin_ref == 0.0:
-            vmin_ref = max(self.vmin, 0.1)
-
-        # 时窗长度
-        winT = nt*dt 
-        
-        # 时窗最大截止时刻 
-        tmax = delayT0 + winT
-        if delayV0 > 0.0:
-            tmax += rmax/delayV0
-
-        # 设置波数积分间隔
-        # 自动情况下给出保守值；rmax≈0 时保留默认 Length
-        if Length == 0.0:
-            Length = 15.0
-            jus = (self.vmax*tmax)**2 - (depsrc - deprcv)**2
-            if jus >= 0.0 and rmax > ZERO_DISTANCE:
-                Length = 1.0 + np.sqrt(jus)/rmax + 0.5  # 0.5作保守值
-                if Length < 15.0:
-                    Length = 15.0
-
-        # 初始化格林函数
-        pygrnLst, c_grnArr = self._init_grn(distarr, nt, dt, upsampling_n, freqs, wI, '')
-        
-        pygrnLst_uiz = []
-        c_grnArr_uiz = None
-        pygrnLst_uir = []
-        c_grnArr_uir = None
-        if calc_upar:
-            pygrnLst_uiz, c_grnArr_uiz = self._init_grn(distarr, nt, dt, upsampling_n, freqs, wI, 'z')
-            pygrnLst_uir, c_grnArr_uir = self._init_grn(distarr, nt, dt, upsampling_n, freqs, wI, 'r')
-
-
-        c_statsfile = None 
-        if statsfile is not None:
-            os.makedirs(statsfile, exist_ok=True)
-            c_statsfile = c_char_p(statsfile.encode('utf-8'))
-
-            nstatsidxs = 0 
-            if statsidxs is None:
-                statsidxs = np.arange(nf)
-
-            statsidxs = np.array(statsidxs)
-            # 不能有负数
-            if np.any(statsidxs < 0):
-                raise ValueError("negative value in statsidxs is not supported.")
-            
-            c_statsidxs = npct.as_ctypes(np.array(statsidxs).astype(np.uint64))   # size_t
-            nstatsidxs = len(statsidxs)
-        else:
-            c_statsfile = c_statsidxs = None
-            nstatsidxs = 0
-
-
-        # ====================================================================
         KPROC = c_K_INTEG_PROCESS()
-        hs = max(abs(depsrc - deprcv), MIN_DEPTH_GAP_SRC_RCV)
-        KPROC.k0 = k0 * np.pi / hs
-        KPROC.use_kmax_ref = use_kmax_ref
-        KPROC.ampk = ampk
-        KPROC.keps = keps if converg_method.upper() != 'AUTO' else 0.0
-        KPROC.vmin = vmin_ref
-
-        KPROC.kcut = filonCut / rmax
-
-        # rmax=0 时用阈值防止除零，此时 dk 偏大，后续由 GRT_MIN_NK 收紧
-        KPROC.dk = 2.0*np.pi / (Length * max(rmax, ZERO_DISTANCE))
-        
-        KPROC.applyFIM = filonLength > 0.0
-        KPROC.filondk = 2.0*np.pi / (filonLength * rmax) if filonLength > 0.0 else 0.0
-        
-        KPROC.applySAFIM = safilonTol > 0.0
-        KPROC.sa_tol = safilonTol
-
-        KPROC.cvgmet = K_INTEG_CVGMET_DICT[converg_method.upper()]
-        # ====================================================================
-
-
-        # ====================================================================
         grn = c_GRNSPEC()
-        grn.nf = nf
-        grn.freqs = c_freqs
-        grn.nf1 = nf1
-        grn.nf2 = nf2
-        grn.nr = nrs
-        grn.rs = c_rs
-        grn.wI = wI
-        grn.keepAllFreq = keepAllFreq
-        grn.calc_upar = calc_upar
-        grn.u = c_grnArr
-        grn.uiz = c_grnArr_uiz
-        grn.uir = c_grnArr_uir
-        grn.statsstr = c_statsfile
-        grn.nstatsidxs = nstatsidxs
-        grn.statsidxs = c_statsidxs
-        # ====================================================================
+        C_grt_prepare_grn_spec(
+            self.c_mod1d,
+            nrs, c_rs,
+            nt, dt, zeta, keepAllFreq,
+            float(f1), float(f2),
+            Length,
+            filonLength, safilonTol, filonCut,
+            k0, ampk, keps, vmin_ref, use_kmax_ref,
+            K_INTEG_CVGMET_DICT[converg_method.upper()],
+            delayT0, delayV0, False,
+            calc_upar,
+            pointer(KPROC), pointer(grn),
+        )
 
-        # 运行C库函数
-        #/////////////////////////////////////////////////////////////////////////////////
-        # 计算得到的格林函数的单位：
-        #     单力源 HF[ZRT],VF[ZR]                  1e-15 cm/dyne
-        #     爆炸源 EX[ZR]                          1e-20 cm/(dyne*cm)
-        #     剪切源 DD[ZR],DS[ZRT],SS[ZRT]          1e-20 cm/(dyne*cm)
-        #=================================================================================
-        C_grt_integ_grn_spec(self.c_mod1d, pointer(KPROC), pointer(grn), print_log)
-        #=================================================================================
-        #/////////////////////////////////////////////////////////////////////////////////
+        try:
+            nf = grn.nf
+            freqs = npct.as_array(grn.freqs, shape=(nf,)).copy()
+            freqs.flags.writeable = False
+            wI = float(grn.wI)
+
+            # 初始化格林函数（缓冲仍由 Python 持有）
+            pygrnLst, c_grnArr = self._init_grn(distarr, nt, dt, upsampling_n, freqs, wI, '')
+            
+            pygrnLst_uiz = []
+            c_grnArr_uiz = None
+            pygrnLst_uir = []
+            c_grnArr_uir = None
+            if calc_upar:
+                pygrnLst_uiz, c_grnArr_uiz = self._init_grn(distarr, nt, dt, upsampling_n, freqs, wI, 'z')
+                pygrnLst_uir, c_grnArr_uir = self._init_grn(distarr, nt, dt, upsampling_n, freqs, wI, 'r')
+
+            c_statsfile = None 
+            if statsfile is not None:
+                os.makedirs(statsfile, exist_ok=True)
+                c_statsfile = c_char_p(statsfile.encode('utf-8'))
+
+                if statsidxs is None:
+                    statsidxs = np.arange(nf)
+
+                statsidxs = np.array(statsidxs)
+                if np.any(statsidxs < 0):
+                    raise ValueError("negative value in statsidxs is not supported.")
+                
+                c_statsidxs = npct.as_ctypes(np.array(statsidxs).astype(np.uint64))   # size_t
+                nstatsidxs = len(statsidxs)
+            else:
+                c_statsidxs = None
+                nstatsidxs = 0
+
+            grn.u = c_grnArr
+            grn.uiz = c_grnArr_uiz
+            grn.uir = c_grnArr_uir
+            grn.statsstr = c_statsfile
+            grn.nstatsidxs = nstatsidxs
+            grn.statsidxs = c_statsidxs
+
+            # 运行C库函数
+            #/////////////////////////////////////////////////////////////////////////////////
+            # 计算得到的格林函数的单位：
+            #     单力源 HF[ZRT],VF[ZR]                  1e-15 cm/dyne
+            #     爆炸源 EX[ZR]                          1e-20 cm/(dyne*cm)
+            #     剪切源 DD[ZR],DS[ZRT],SS[ZRT]          1e-20 cm/(dyne*cm)
+            #=================================================================================
+            C_grt_integ_grn_spec(self.c_mod1d, pointer(KPROC), pointer(grn), print_log)
+            #=================================================================================
+            #/////////////////////////////////////////////////////////////////////////////////
+        finally:
+            if grn.freqs:
+                C_grt_free(grn.freqs)
+                grn.freqs = None
 
         return pygrnLst, pygrnLst_uiz, pygrnLst_uir
 
@@ -610,9 +538,6 @@ class PyModel1D:
         if safilonTol > 0.0 and filonLength > 0.0:
             raise ValueError(f"You should only set one of filonLength and safilonTol.")
 
-        depsrc = self.depsrc
-        deprcv = self.deprcv
-
         if distarr is not None:
             if isinstance(distarr, float) or isinstance(distarr, int):
                 distarr = np.array([distarr*1.0])
@@ -643,14 +568,6 @@ class PyModel1D:
                 rs[ix + iy*nx] = np.hypot(xarr[ix], yarr[iy])
         c_rs = npct.as_ctypes(rs)
 
-        # FIM/SAFIM 面向远震中距，不能用于 r=0（含 filonCut 分段）
-        if (filonLength > 0.0 or safilonTol > 0.0) and np.any(rs <= ZERO_DISTANCE):
-            raise ValueError("FIM/SAFIM cannot be used with zero epicentral distance.")
-        
-        # 设置波数积分间隔
-        if Length == 0.0:
-            Length = 15.0
-
         # 积分状态文件
         c_statsfile = None 
         if statsfile is not None:
@@ -664,31 +581,18 @@ class PyModel1D:
 
         if not calc_upar:
             c_pygrn_uiz = c_pygrn_uir = None
-        
 
-        # ====================================================================
+        # 仅做最基本的正负号等检查；物理预处理交给 C grt_prepare_static_grn
         KPROC = c_K_INTEG_PROCESS()
-        hs = max(abs(depsrc - deprcv), MIN_DEPTH_GAP_SRC_RCV)
-        KPROC.k0 = k0 * np.pi / hs
-        KPROC.use_kmax_ref = use_kmax_ref
-        KPROC.keps = keps if converg_method.upper() != 'AUTO' else 0.0
-
-        # 最大震中距
-        rmax = np.max(rs)
-        KPROC.kcut = filonCut / rmax
-        # rmax=0 时用阈值防止除零，此时 dk 偏大，后续由 GRT_MIN_NK 收紧
-        KPROC.dk = 2.0*np.pi / (Length * max(rmax, ZERO_DISTANCE))
-        
-        KPROC.applyFIM = filonLength > 0.0
-        KPROC.filondk = 2.0*np.pi / (filonLength * rmax) if filonLength > 0.0 else 0.0
-        
-        KPROC.applySAFIM = safilonTol > 0.0
-        KPROC.sa_tol = safilonTol
-
-        KPROC.cvgmet = K_INTEG_CVGMET_DICT[converg_method.upper()]
-        # ====================================================================
-
-
+        C_grt_prepare_static_grn(
+            self.c_mod1d,
+            nr, c_rs,
+            Length,
+            filonLength, safilonTol, filonCut,
+            k0, keps, use_kmax_ref,
+            K_INTEG_CVGMET_DICT[converg_method.upper()],
+            pointer(KPROC),
+        )
 
         # 运行C库函数
         #/////////////////////////////////////////////////////////////////////////////////
