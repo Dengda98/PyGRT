@@ -34,7 +34,7 @@ void grt_KPROC_init_fstats(
     GRT_SAFE_ASPRINTF(&fname, "%s/K%s", statsstr, suffix);
     Kproc->fstats = fopen(fname, "wb");
 
-    // PTAM的积分中间结果, 每个震中距两个文件，因为PTAM对不同震中距使用不同的dk
+    // PTAM的积分中间结果，每个震中距两个文件，保持现有统计文件布局
     // 在文件名后加后缀，区分不同震中距
     char *ptam_dirname = NULL;
     if(Kproc->cvgmet == K_INTEG_CONVERG_PTAM){

@@ -125,7 +125,6 @@ typedef double complex cplx_t;
 
 #define GRT_PTAM_PT_MAX   36         ///< 36， 最后统计波峰波谷的目标数量
 #define GRT_PTAM_WINDOW_SIZE  3      ///< 3，  使用连续点数判断是否为波峰或波谷
-#define GRT_PTAM_WAITS_MAX    9      ///< 9,   判断波峰或波谷的最大等待次数，不能太小
 
 #define GRT_INVERSE_SUCCESS   0      ///< 求逆或除法没有遇到除0错误
 #define GRT_INVERSE_FAILURE   -1     ///< 求逆或除法遇到除0错误
