@@ -103,10 +103,10 @@ for ZNE in [False, True]:
 
 #-------------------------- Static -----------------------------------------
 # 为了方便测试，避免引入其他因素的误差，这里有意避开 0
-xarr = np.arange(-3.1, 3.2, 0.6)
-yarr = np.arange(-4.1, 4.2, 0.8)
+norths = np.arange(-3.1, 3.2, 0.6)
+easts = np.arange(-4.1, 4.2, 0.8)
 
-static_grn = pymod.compute_static_grn(xarr, yarr, calc_upar=True)
+static_grn = pymod.compute_static_grn(norths, easts, calc_upar=True)
 AVGRERR2 = []
 # plot_static(static_grn, "static/stgrn.nc")
 

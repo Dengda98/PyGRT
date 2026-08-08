@@ -44,9 +44,9 @@ depsrc = 0.05
 deprcv = 0.0
 pymod = pygrt.PyModel1D(modarr, depsrc=depsrc, deprcv=deprcv)
 
-xarr = np.array([2.0])
-yarr = np.array([2.0])
-static_grn = pymod.compute_static_grn(xarr, yarr, converg_method='PTAM', statsfile=f"static_pygrtstats_{depsrc}_{deprcv}", k0=3, use_kmax_ref=True)
+norths = np.array([2.0])
+easts = np.array([2.0])
+static_grn = pymod.compute_static_grn(norths, easts, converg_method='PTAM', statsfile=f"static_pygrtstats_{depsrc}_{deprcv}", k0=3, use_kmax_ref=True)
 
 ir = 0
 statsdata1, statsdata2, ptamdata, dist = pygrt.utils.read_statsfile_ptam(f"static_pygrtstats_{depsrc}_{deprcv}/PTAM_{ir:04d}_*/PTAM")

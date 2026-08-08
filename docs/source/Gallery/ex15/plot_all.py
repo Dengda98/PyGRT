@@ -16,7 +16,7 @@ pymod = pygrt.PyModel1D(modarr, depsrc, deprcv)
 pygrnLst, _, _ = pymod._get_grn_spectra(distarr, nt=1, dt=500, zeta=1.0, keepAllFreq=True)
 
 # 静态解
-static_grn = pymod.compute_static_grn(xarr=[0.0], yarr=distarr)
+static_grn = pymod.compute_static_grn(norths=[0.0], easts=distarr)
 
 # 绘制零频结果
 fig, axs = plt.subplots(2, 3, figsize=(12, 8), gridspec_kw=dict(hspace=0.3, wspace=0.3)) # 

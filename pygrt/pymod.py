@@ -18,6 +18,7 @@ from obspy.core import AttribDict
 from typing import List, Dict, Union, Literal
 import tempfile
 import os
+import warnings
 
 from time import time
 from copy import deepcopy
@@ -476,8 +477,8 @@ class PyModel1D:
 
     def compute_static_grn(
         self,
-        xarr:Union[np.ndarray,List[float],float,None]=None, 
-        yarr:Union[np.ndarray,List[float],float,None]=None, 
+        norths:Union[np.ndarray,List[float],float,None]=None, 
+        easts:Union[np.ndarray,List[float],float,None]=None, 
         distarr:Union[np.ndarray,List[float],float,None]=None, 
         keps:float=-1.0,  
         k0:float=50.0, 
@@ -488,17 +489,21 @@ class PyModel1D:
         filonCut:float=0.0,
         converg_method:Literal['AUTO', 'NONE', 'DCM', 'PTAM']='AUTO',
         calc_upar:bool=False,
-        statsfile:Union[str,None]=None):
+        statsfile:Union[str,None]=None,
+        xarr:Union[np.ndarray,List[float],float,None]=None,
+        yarr:Union[np.ndarray,List[float],float,None]=None):
 
         r"""
             Call the C function to calculate the static Green's functions and return them in a dict.
             There're two ways to define the "epicentral distances":
-            1. set both "xarr" and "yarr" to define a XY grid in advance.
-            2. simply set "distarr", which equal to "xarr=[0.0], yarr=distarr".
+            1. set both ``norths`` and ``easts`` to define a north/east grid in advance.
+            2. simply set ``distarr``, which equals ``norths=[0.0], easts=distarr``.
 
-            :param       xarr:          coordinate array in the north direction (km), or a single float.
-            :param       yarr:          coordinate array in the east direction (km), or a single float.
-            :param    distarr:          equal to "xarr=[0.0], yarr=distarr"
+            :param       norths:          coordinate array in the north direction (km), or a single float.
+            :param       easts:           coordinate array in the east direction (km), or a single float.
+            :param       xarr:            deprecated alias of ``norths``
+            :param       yarr:            deprecated alias of ``easts``
+            :param    distarr:          equal to "norths=[0.0], easts=distarr"
             :param       keps:          automatic convergence condition, see (Yao and Harkrider (1983) for more details.
                                         negative value denotes not use.
             :param       k0:            coefficient in kmax_ref :math:`k_{\text{max,ref}}=k_{0}*\pi/hs`,
@@ -525,6 +530,17 @@ class PyModel1D:
                 "in a model with liquid layers has not yet been implemented."
             )
 
+        # 兼容旧公开 API：xarr/yarr
+        if xarr is not None or yarr is not None:
+            warnings.warn(
+                "Arguments 'xarr'/'yarr' are deprecated; prefer 'norths'/'easts'.",
+                FutureWarning,
+                stacklevel=2,
+            )
+            if norths is not None or easts is not None:
+                raise ValueError("Use either norths/easts or xarr/yarr, not both.")
+            norths, easts = xarr, yarr
+
         if Length < 0.0:
             raise ValueError(f"Length ({Length}) < 0")
         if filonLength < 0.0:
@@ -543,29 +559,29 @@ class PyModel1D:
                 distarr = np.array([distarr*1.0])
             distarr = np.array(distarr)
     
-            xarr = np.array([0.0])
-            yarr = distarr.copy()
-            if np.any(yarr < 0.0):
+            norths = np.array([0.0])
+            easts = distarr.copy()
+            if np.any(easts < 0.0):
                 raise ValueError("distances can't be negative.")
         
-        if xarr is None or yarr is None:
-            raise ValueError("you need to set xarr and yarr or distarr.")
+        if norths is None or easts is None:
+            raise ValueError("you need to set norths and easts or distarr.")
 
-        if isinstance(xarr, float) or isinstance(xarr, int):
-            xarr = np.array([xarr*1.0]) 
-        xarr = np.array(xarr)
+        if isinstance(norths, float) or isinstance(norths, int):
+            norths = np.array([norths*1.0]) 
+        norths = np.array(norths)
 
-        if isinstance(yarr, float) or isinstance(yarr, int):
-            yarr = np.array([yarr*1.0]) 
-        yarr = np.array(yarr)
+        if isinstance(easts, float) or isinstance(easts, int):
+            easts = np.array([easts*1.0]) 
+        easts = np.array(easts)
 
-        nx = len(xarr)
-        ny = len(yarr)
-        nr = nx*ny
+        nnorth = len(norths)
+        neast = len(easts)
+        nr = nnorth*neast
         rs = np.zeros((nr,), dtype=NPCT_REAL_TYPE)
-        for iy in range(ny):
-            for ix in range(nx):
-                rs[ix + iy*nx] = np.hypot(xarr[ix], yarr[iy])
+        for ieast in range(neast):
+            for inorth in range(nnorth):
+                rs[inorth + ieast*nnorth] = np.hypot(norths[inorth], easts[ieast])
         c_rs = npct.as_ctypes(rs)
 
         # 积分状态文件
@@ -619,8 +635,10 @@ class PyModel1D:
 
         # 结果字典
         dataDct = {}
-        dataDct['_xarr'] = xarr.copy()
-        dataDct['_yarr'] = yarr.copy()
+        dataDct['_norths'] = norths.copy()
+        dataDct['_easts'] = easts.copy()
+        dataDct['_depsrc'] = self.depsrc
+        dataDct['_deprcv'] = self.deprcv
         dataDct['_src_va'] = src_va
         dataDct['_src_vb'] = src_vb
         dataDct['_src_rho'] = src_rho
@@ -628,14 +646,14 @@ class PyModel1D:
         dataDct['_rcv_vb'] = rcv_vb
         dataDct['_rcv_rho'] = rcv_rho
 
-        # 整理结果，将每个格林函数以2d矩阵的形式存储，shape=(nx, ny)
+        # 整理结果，以 (nnorth, neast) 矩阵存储；物理量仍只依赖震中距
         for isrc in range(SRC_M_NUM):
             src_name = SRC_M_NAME_ABBR[isrc]
             for ic, comp in enumerate(ZRTchs):
                 sgn = -1 if comp=='Z' else 1
-                dataDct[f'{src_name}{comp}'] = sgn * pygrn[:,isrc,ic].reshape((nx, ny), order='F')
+                dataDct[f'{src_name}{comp}'] = sgn * pygrn[:,isrc,ic].reshape((nnorth, neast), order='F')
                 if calc_upar:
-                    dataDct[f'z{src_name}{comp}'] = sgn * pygrn_uiz[:,isrc,ic].reshape((nx, ny), order='F') * (-1)
-                    dataDct[f'r{src_name}{comp}'] = sgn * pygrn_uir[:,isrc,ic].reshape((nx, ny), order='F')
+                    dataDct[f'z{src_name}{comp}'] = sgn * pygrn_uiz[:,isrc,ic].reshape((nnorth, neast), order='F') * (-1)
+                    dataDct[f'r{src_name}{comp}'] = sgn * pygrn_uir[:,isrc,ic].reshape((nnorth, neast), order='F')
 
         return dataDct

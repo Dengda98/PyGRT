@@ -91,8 +91,8 @@ def plot_static(resDct:dict, c_prefix:str):
     n = len([k for k in resDct.keys() if k[0] != '_'])
     fig, axs = plt.subplots(n, 3, figsize=(8, 3*n))
     with netcdf_file(c_prefix, mmap=False) as f:
-        norths = resDct['_xarr']
-        easts  = resDct['_yarr']
+        norths = resDct['_norths']
+        easts  = resDct['_easts']
 
         keys = f.variables
         keys.pop('north')

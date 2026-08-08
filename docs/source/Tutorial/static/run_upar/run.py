@@ -5,8 +5,8 @@ import pygrt
 def plot6(data:dict, title:str, out:str|None=None):
     chs = [k for k in data.keys() if k[0]!='_']
     chs.sort(reverse=True)
-    xarr = data['_xarr']
-    yarr = data['_yarr']
+    norths = data['_norths']
+    easts = data['_easts']
     fig, axs = plt.subplots(len(chs)//3, 3, figsize=(10, len(chs)))
     axs = axs.ravel()
 
@@ -25,7 +25,7 @@ def plot6(data:dict, title:str, out:str|None=None):
             vmin = -1
             vmax = 1
 
-        pcm = ax.pcolormesh(yarr, xarr, data[ch], shading='nearest', vmin=vmin, vmax=vmax, rasterized=True)
+        pcm = ax.pcolormesh(easts, norths, data[ch], shading='nearest', vmin=vmin, vmax=vmax, rasterized=True)
         ax.set_aspect('equal')
         ax.set_title(ch)
         cbar = fig.colorbar(pcm, ax=ax)
@@ -42,10 +42,10 @@ modarr = np.loadtxt("milrow")
 
 pymod = pygrt.PyModel1D(modarr, depsrc=2.0, deprcv=0.0)
 
-xarr = np.linspace(-3, 3, 41)
-yarr = np.linspace(-2.5, 2.5, 33)
+norths = np.linspace(-3, 3, 41)
+easts = np.linspace(-2.5, 2.5, 33)
 # 传入calc_upar=True可计算空间导数
-static_grn = pymod.compute_static_grn(xarr, yarr, calc_upar=True)
+static_grn = pymod.compute_static_grn(norths, easts, calc_upar=True)
 
 # 传入calc_upar=True可计算空间导数
 # 传入ZNE=True返回ZNE分量

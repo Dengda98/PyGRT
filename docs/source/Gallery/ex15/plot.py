@@ -16,7 +16,7 @@ pymod = pygrt.PyModel1D(modarr, depsrc, deprcv)
 pygrnLst, _, _ = pymod._get_grn_spectra(distarr, nt=1, dt=100, zeta=1.0, keepAllFreq=True)
 
 # 静态解
-static_grn = pymod.compute_static_grn(xarr=[0.0], yarr=distarr)
+static_grn = pymod.compute_static_grn(norths=[0.0], easts=distarr)
 
 # 绘制
 coef = 1e-20 * 1e25  # 1e25 为地震矩
