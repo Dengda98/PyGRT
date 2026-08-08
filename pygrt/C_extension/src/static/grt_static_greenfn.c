@@ -68,17 +68,17 @@ typedef struct {
         bool active;
         char *s_statsdir;  ///< 保存目录，和当前目录同级
     } S;
-    /** X 坐标 */
+    /** -X: north 坐标 */
     struct {
         bool active;
-        size_t nx;
-        real_t *xs;
+        size_t nnorth;
+        real_t *norths;
     } X;
-    /** Y 坐标 */
+    /** -Y: east 坐标 */
     struct {
         bool active;
-        size_t ny;
-        real_t *ys;
+        size_t neast;
+        real_t *easts;
     } Y;
     /** 输出 nc 文件名 */
     struct {
@@ -106,10 +106,10 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
     GRT_SAFE_FREE_PTR(Ctrl->D.s_deprcv);
 
     // X
-    GRT_SAFE_FREE_PTR(Ctrl->X.xs);
+    GRT_SAFE_FREE_PTR(Ctrl->X.norths);
 
     // Y
-    GRT_SAFE_FREE_PTR(Ctrl->Y.ys);
+    GRT_SAFE_FREE_PTR(Ctrl->Y.easts);
 
     // O
     GRT_SAFE_FREE_PTR(Ctrl->O.s_outgrid);
@@ -145,8 +145,11 @@ printf("\n"
 "           [-K[+k<k0>][+f][+e<keps>]] [-S]  [-e]\n"
 "\n"
 "    There're two ways to define the \"epicentral distances\":\n"
-"    1. set both -X and -Y to define a XY grid in advance.\n"
-"    2. simply set -R, which equal to set the Y-coord with X=0.0.\n"
+"    1. set both -X and -Y (north/east). The kernel still depends\n"
+"       only on r=hypot(north,east); results are stored with north/east\n"
+"       dims for compatibility.\n"
+"    2. set -R for a 1D distance list. Stored as nnorth=1, norths=[0],\n"
+"       easts=R (recommended for building a GF library).\n"
 "\n\n"
 "Options:\n"
 "----------------------------------------------------------------\n"
@@ -442,10 +445,10 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                         GRTBadOptionError(X, "x1(%f) > x2(%f).", a1, a2);
                     }
 
-                    Ctrl->X.nx = floor((a2-a1)/delta) + 1;
-                    Ctrl->X.xs = (real_t*)calloc(Ctrl->X.nx, sizeof(real_t));
-                    for(size_t i=0; i<Ctrl->X.nx; ++i){
-                        Ctrl->X.xs[i] = a1 + delta*i;
+                    Ctrl->X.nnorth = floor((a2-a1)/delta) + 1;
+                    Ctrl->X.norths = (real_t*)calloc(Ctrl->X.nnorth, sizeof(real_t));
+                    for(size_t i=0; i<Ctrl->X.nnorth; ++i){
+                        Ctrl->X.norths[i] = a1 + delta*i;
                     }
                 }
                 break;
@@ -465,25 +468,25 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                         GRTBadOptionError(Y, "y1(%f) > y2(%f).", a1, a2);
                     }
 
-                    Ctrl->Y.ny = floor((a2-a1)/delta) + 1;
-                    Ctrl->Y.ys = (real_t*)calloc(Ctrl->Y.ny, sizeof(real_t));
-                    for(size_t i=0; i<Ctrl->Y.ny; ++i){
-                        Ctrl->Y.ys[i] = a1 + delta*i;
+                    Ctrl->Y.neast = floor((a2-a1)/delta) + 1;
+                    Ctrl->Y.easts = (real_t*)calloc(Ctrl->Y.neast, sizeof(real_t));
+                    for(size_t i=0; i<Ctrl->Y.neast; ++i){
+                        Ctrl->Y.easts[i] = a1 + delta*i;
                     }
                 }
                 break;
 
-            // -R 算是别名，相当于 -X0/0/1, -Yy1/y2/dy, 以此方式指定一维震中距序列
+            // -R：一维震中距序列，存成 nnorth=1, norths=[0], easts=R
             // -R<r1>,<r2>[,...]|<r1>/<r2>/<dr>|<file>
             case 'R':
                 Ctrl->X.active = Ctrl->Y.active = true;
                 {
                     real_t a1, a2, delta;
-                    char **s_ys = NULL;
+                    char **s_easts = NULL;
                     
                     // 如果输入仅由数字、小数点和间隔符组成，则直接读取
                     if(grt_string_composed_of(optarg, GRT_NUM_STR "eE+-" ".,")){
-                        s_ys = grt_string_split(optarg, ",", &Ctrl->Y.ny);
+                        s_easts = grt_string_split(optarg, ",", &Ctrl->Y.neast);
                     }
                     // 尝试按照 <r1>/<r2>/<dr> 读取
                     else if(3 == sscanf(optarg, "%lf/%lf/%lf", &a1, &a2, &delta)){
@@ -494,32 +497,32 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                             GRTBadOptionError(R, "r1(%f) > r2(%f).", a1, a2);
                         }
 
-                        Ctrl->Y.ny = floor((a2-a1)/delta) + 1;
-                        s_ys = (char **)calloc(Ctrl->Y.ny, sizeof(char*) * Ctrl->Y.ny);
-                        for(size_t ir = 0; ir < Ctrl->Y.ny; ++ir){
-                            GRT_SAFE_ASPRINTF(&s_ys[ir], "%.*f", 8, a1 + delta*ir);
+                        Ctrl->Y.neast = floor((a2-a1)/delta) + 1;
+                        s_easts = (char **)calloc(Ctrl->Y.neast, sizeof(char*) * Ctrl->Y.neast);
+                        for(size_t ir = 0; ir < Ctrl->Y.neast; ++ir){
+                            GRT_SAFE_ASPRINTF(&s_easts[ir], "%.*f", 8, a1 + delta*ir);
                         }
                     }
                     // 否则从文件读取
                     else {
                         FILE *fp = GRTCheckOpenFile(optarg, "r");
-                        s_ys = grt_string_from_file(fp, &Ctrl->Y.ny);
+                        s_easts = grt_string_from_file(fp, &Ctrl->Y.neast);
                         fclose(fp);
                     }
 
                     // 转为浮点数
-                    Ctrl->Y.ys = (real_t*)realloc(Ctrl->Y.ys, sizeof(real_t)*(Ctrl->Y.ny));
-                    for(size_t i=0; i < Ctrl->Y.ny; ++i){
-                        Ctrl->Y.ys[i] = atof(s_ys[i]);
-                        if(Ctrl->Y.ys[i] < 0.0){
-                            GRTBadOptionError(R, "Can't set negative epicentral distance(%f).", Ctrl->Y.ys[i]);
+                    Ctrl->Y.easts = (real_t*)realloc(Ctrl->Y.easts, sizeof(real_t)*(Ctrl->Y.neast));
+                    for(size_t i=0; i < Ctrl->Y.neast; ++i){
+                        Ctrl->Y.easts[i] = atof(s_easts[i]);
+                        if(Ctrl->Y.easts[i] < 0.0){
+                            GRTBadOptionError(R, "Can't set negative epicentral distance(%f).", Ctrl->Y.easts[i]);
                         }
                     }
-                    GRT_SAFE_FREE_PTR_ARRAY(s_ys, Ctrl->Y.ny);
+                    GRT_SAFE_FREE_PTR_ARRAY(s_easts, Ctrl->Y.neast);
 
-                    Ctrl->X.nx = 1;
-                    Ctrl->X.xs = (real_t*)calloc(Ctrl->X.nx, sizeof(real_t));
-                    Ctrl->X.xs[0] = 0.0;
+                    Ctrl->X.nnorth = 1;
+                    Ctrl->X.norths = (real_t*)calloc(Ctrl->X.nnorth, sizeof(real_t));
+                    Ctrl->X.norths[0] = 0.0;
                 }
                 break;
 
@@ -552,11 +555,11 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     GRTCheckOptionActive(Ctrl, O);
 
     // 设置震中距数组
-    Ctrl->nr = Ctrl->X.nx*Ctrl->Y.ny;
+    Ctrl->nr = Ctrl->X.nnorth*Ctrl->Y.neast;
     Ctrl->rs = (real_t*)calloc(Ctrl->nr, sizeof(real_t));
-    for(size_t ix=0; ix<Ctrl->X.nx; ++ix){
-        for(size_t iy=0; iy<Ctrl->Y.ny; ++iy){
-            Ctrl->rs[iy + ix*Ctrl->Y.ny] = hypot(Ctrl->X.xs[ix], Ctrl->Y.ys[iy]);
+    for(size_t inorth=0; inorth<Ctrl->X.nnorth; ++inorth){
+        for(size_t ieast=0; ieast<Ctrl->Y.neast; ++ieast){
+            Ctrl->rs[ieast + inorth*Ctrl->Y.neast] = hypot(Ctrl->X.norths[inorth], Ctrl->Y.easts[ieast]);
         }
     }
 
@@ -677,10 +680,10 @@ int static_greenfn_main(int argc, char **argv){
     // ==================================================================================
     // 将结果保存为 nc 格式
     // ==================================================================================
-    int ncid, x_dimid, y_dimid;
+    int ncid, north_dimid, east_dimid;
     const int ndims = 2;
     int dimids[ndims];
-    int x_varid, y_varid;
+    int north_varid, east_varid;
     intChnlGrid u_varids;
     intChnlGrid uiz_varids;
     intChnlGrid uir_varids;
@@ -689,6 +692,8 @@ int static_greenfn_main(int argc, char **argv){
     NC_CHECK(nc_create(Ctrl->O.s_outgrid, NC_CLOBBER, &ncid));
 
     // 写入全局属性
+    NC_CHECK(NC_FUNC_REAL(nc_put_att) (ncid, NC_GLOBAL, "depsrc", NC_REAL, 1, &mod1d->depsrc));
+    NC_CHECK(NC_FUNC_REAL(nc_put_att) (ncid, NC_GLOBAL, "deprcv", NC_REAL, 1, &mod1d->deprcv));
     NC_CHECK(NC_FUNC_REAL(nc_put_att) (ncid, NC_GLOBAL, "src_va", NC_REAL, 1, &src_va));
     NC_CHECK(NC_FUNC_REAL(nc_put_att) (ncid, NC_GLOBAL, "src_vb", NC_REAL, 1, &src_vb));
     NC_CHECK(NC_FUNC_REAL(nc_put_att) (ncid, NC_GLOBAL, "src_rho", NC_REAL, 1, &src_rho));
@@ -702,14 +707,14 @@ int static_greenfn_main(int argc, char **argv){
     }
 
     // 定义维度
-    NC_CHECK(nc_def_dim(ncid, "north", Ctrl->X.nx, &x_dimid));
-    NC_CHECK(nc_def_dim(ncid, "east", Ctrl->Y.ny, &y_dimid));
-    dimids[0] = x_dimid;
-    dimids[1] = y_dimid;
+    NC_CHECK(nc_def_dim(ncid, "north", Ctrl->X.nnorth, &north_dimid));
+    NC_CHECK(nc_def_dim(ncid, "east", Ctrl->Y.neast, &east_dimid));
+    dimids[0] = north_dimid;
+    dimids[1] = east_dimid;
 
     // 定义维度数组
-    NC_CHECK(nc_def_var(ncid, "north", NC_REAL, 1, &x_dimid, &x_varid));
-    NC_CHECK(nc_def_var(ncid, "east", NC_REAL, 1, &y_dimid, &y_varid));
+    NC_CHECK(nc_def_var(ncid, "north", NC_REAL, 1, &north_dimid, &north_varid));
+    NC_CHECK(nc_def_var(ncid, "east", NC_REAL, 1, &east_dimid, &east_varid));
 
     // 定义不同震源不同分量的格林函数数组
     GRT_LOOP_ChnlGrid(im, c){
@@ -735,8 +740,8 @@ int static_greenfn_main(int argc, char **argv){
     NC_CHECK(nc_enddef(ncid));
 
     // 写入数据
-    NC_CHECK(NC_FUNC_REAL(nc_put_var) (ncid, x_varid, Ctrl->X.xs));
-    NC_CHECK(NC_FUNC_REAL(nc_put_var) (ncid, y_varid, Ctrl->Y.ys));
+    NC_CHECK(NC_FUNC_REAL(nc_put_var) (ncid, north_varid, Ctrl->X.norths));
+    NC_CHECK(NC_FUNC_REAL(nc_put_var) (ncid, east_varid, Ctrl->Y.easts));
     real_t *tmpdata = (real_t *)calloc(Ctrl->nr, sizeof(real_t));
     GRT_LOOP_ChnlGrid(im, c){
         int modr = GRT_SRC_M_ORDERS[im];

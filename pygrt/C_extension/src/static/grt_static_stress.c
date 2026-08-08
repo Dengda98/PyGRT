@@ -49,7 +49,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 }
 
 void grt_static_compute_stress(
-    size_t nx, size_t ny, const real_t *xs, const real_t *ys,
+    size_t nnorth, size_t neast, const real_t *norths, const real_t *easts,
     real_t *const u[GRT_CHANNEL_NUM],
     real_t *const upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM],
     real_t *const res[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM],
@@ -57,10 +57,10 @@ void grt_static_compute_stress(
 {
     const char *chs = rot2ZNE ? GRT_ZNE_CODES : GRT_ZRT_CODES;
 
-    for(size_t ix=0; ix<nx; ++ix){
-        for(size_t iy=0; iy<ny; ++iy){
-            size_t ir = iy + ix*ny;
-            real_t dist = hypot(xs[ix], ys[iy]);
+    for(size_t ix=0; ix<nnorth; ++ix){
+        for(size_t iy=0; iy<neast; ++iy){
+            size_t ir = iy + ix*neast;
+            real_t dist = hypot(norths[ix], easts[iy]);
             // 联络项（1e-5: km→cm）：r≠0 用 u/r；r=0 改用 ∂_r u，与 syn 中 (1/r)∂_θ 有限部分配套
             real_t ur_over_r = GRT_IS_ZERO(dist) ? upar[1][1][ir] : (u[1][ir] / dist * 1e-5);
             real_t ut_over_r = GRT_IS_ZERO(dist) ? upar[1][2][ir] : (u[2][ir] / dist * 1e-5);
@@ -98,8 +98,8 @@ int static_stress_main(int argc, char **argv){
 
     // nc 文件相关变量
     int in_ncid;
-    int in_x_dimid, in_y_dimid;
-    int in_x_varid, in_y_varid;
+    int in_north_dimid, in_east_dimid;
+    int in_north_varid, in_east_varid;
     const int ndims = 2;
     int in_dimids[ndims];
     int in_syn_varids[GRT_CHANNEL_NUM];
@@ -142,21 +142,21 @@ int static_stress_main(int argc, char **argv){
     }
 
     // 读入坐标变量 dimid, varid
-    size_t nx, ny;
-    NC_CHECK(nc_inq_dimid(in_ncid, "north", &in_x_dimid));
-    NC_CHECK(nc_inq_dimlen(in_ncid, in_x_dimid, &nx));
-    NC_CHECK(nc_inq_dimid(in_ncid, "east", &in_y_dimid));
-    NC_CHECK(nc_inq_dimlen(in_ncid, in_y_dimid, &ny));
-    in_dimids[0] = in_x_dimid;
-    in_dimids[1] = in_y_dimid;
+    size_t nnorth, neast;
+    NC_CHECK(nc_inq_dimid(in_ncid, "north", &in_north_dimid));
+    NC_CHECK(nc_inq_dimlen(in_ncid, in_north_dimid, &nnorth));
+    NC_CHECK(nc_inq_dimid(in_ncid, "east", &in_east_dimid));
+    NC_CHECK(nc_inq_dimlen(in_ncid, in_east_dimid, &neast));
+    in_dimids[0] = in_north_dimid;
+    in_dimids[1] = in_east_dimid;
 
     // 读取坐标变量
-    real_t *xs = (real_t *)calloc(nx, sizeof(real_t));
-    real_t *ys = (real_t *)calloc(ny, sizeof(real_t));
-    NC_CHECK(nc_inq_varid(in_ncid, "north", &in_x_varid));
-    NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_x_varid, xs));
-    NC_CHECK(nc_inq_varid(in_ncid, "east", &in_y_varid));
-    NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_y_varid, ys));
+    real_t *norths = (real_t *)calloc(nnorth, sizeof(real_t));
+    real_t *easts = (real_t *)calloc(neast, sizeof(real_t));
+    NC_CHECK(nc_inq_varid(in_ncid, "north", &in_north_varid));
+    NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_north_varid, norths));
+    NC_CHECK(nc_inq_varid(in_ncid, "east", &in_east_varid));
+    NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_east_varid, easts));
 
     // 读入合成位移偏导 varid
     for(int c=0; c<GRT_CHANNEL_NUM; ++c){
@@ -189,7 +189,7 @@ int static_stress_main(int argc, char **argv){
     NC_CHECK(nc_enddef(in_ncid));
 
     // 总震中距数
-    size_t nr = nx * ny;
+    size_t nr = nnorth * neast;
 
     // 先读入内存，
     real_t *u[GRT_CHANNEL_NUM];
@@ -206,7 +206,7 @@ int static_stress_main(int argc, char **argv){
         }
     }
     
-    grt_static_compute_stress(nx, ny, xs, ys, u, upar, res, rot2ZNE, rcv_mu, rcv_lam);
+    grt_static_compute_stress(nnorth, neast, norths, easts, u, upar, res, rot2ZNE, rcv_mu, rcv_lam);
 
     // 写入 nc 文件
     for(int c=0; c<GRT_CHANNEL_NUM; ++c){

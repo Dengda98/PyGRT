@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 import sys
 
-yarr = np.arange(0.01, 10.01, 0.01)
+easts = np.arange(0.01, 10.01, 0.01)
 rs = np.array([10]) # 震中距数组，km
 nt = 801     # 总点数，不要求2的幂次
 dt = 0.01    # 采样时间间隔(s)
@@ -32,7 +32,7 @@ else:
 pymod1 = pygrt.PyModel1D(modarr, depsrc, deprcv, topbound=bound1, botbound=bound2)
 st1 = pymod1.compute_grn(distarr=rs, nt=nt, dt=dt, keepAllFreq=True)[0]
 pygrt.utils.stream_integral(st1)
-static1 = pymod1.compute_static_grn(xarr=[0.0], yarr=yarr)
+static1 = pymod1.compute_static_grn(norths=[0.0], easts=easts)
 
 # =============================================================
 # 设置上下翻转模型
@@ -54,7 +54,7 @@ print(modarr2.shape, depsrc2, deprcv2)
 
 pymod2 = pygrt.PyModel1D(modarr2, depsrc2, deprcv2, topbound=bound2, botbound=bound1)  # 整理好的模型对象
 st2 = pymod2.compute_grn(distarr=rs, nt=nt, dt=dt, keepAllFreq=True)[0]
-static2 = pymod2.compute_static_grn(xarr=[0.0], yarr=yarr)
+static2 = pymod2.compute_static_grn(norths=[0.0], easts=easts)
 pygrt.utils.stream_integral(st2)
 
 
@@ -87,8 +87,8 @@ for i in range(5):
     ax.set_ymargin(0.3)
 
     ax = axs2[i]
-    ax.plot(yarr, static1[chLst[i]][0], **prop1)
-    ax.plot(yarr, static2[chLst[i]][0] * sgn, **prop2)
+    ax.plot(easts, static1[chLst[i]][0], **prop1)
+    ax.plot(easts, static2[chLst[i]][0] * sgn, **prop2)
     ax.text(0.96, 0.9, chLst[i], transform=ax.transAxes, 
             ha='right', va='top', bbox=dict(fc='w'))
     ax.ticklabel_format(axis='y', style='sci', scilimits=(0,0))

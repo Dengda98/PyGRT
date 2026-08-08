@@ -4,7 +4,7 @@
     :date:     2024-07-24  
 
     该文件包含一些数据处理操作上的补充:   
-        1、剪切源、张裂源、单力源、爆炸源、矩张量源 通过格林函数合成理论地震图的函数\n
+        1、剪切源、张裂源、单力源、爆炸源、矩张量源、有限断层 通过格林函数合成理论地震图的函数\n
         2、Stream类型的时域卷积、微分、积分 (基于numpy和scipy)    \n
         3、读取波数积分和峰谷平均法过程文件  \n
         4、其它辅助函数  \n
@@ -27,12 +27,65 @@ from scipy.interpolate import interpn
 import math 
 import os
 import glob
-from typing import List, Union
+import warnings
+from typing import List, Union, Tuple
 from copy import deepcopy
 
 from numpy.typing import ArrayLike
 
 from .c_interfaces import *
+
+
+def _warn_xarr_yarr_deprecated(stacklevel:int=3):
+    warnings.warn(
+        "Arguments 'xarr'/'yarr' (and dict keys '_xarr'/'_yarr') are deprecated; "
+        "prefer 'norths'/'easts' (and '_norths'/'_easts').",
+        FutureWarning,
+        stacklevel=stacklevel,
+    )
+
+
+def _resolve_static_ne_coords(
+    norths=None, easts=None, xarr=None, yarr=None,
+    default_norths=None, default_easts=None,
+    stacklevel:int=3,
+) -> Tuple[object, object]:
+    """解析 north/east 坐标，兼容旧公开 API 名 xarr/yarr"""
+    if xarr is not None or yarr is not None:
+        _warn_xarr_yarr_deprecated(stacklevel=stacklevel)
+        if norths is not None or easts is not None:
+            raise ValueError("Use either norths/easts or xarr/yarr, not both.")
+        norths, easts = xarr, yarr
+    if norths is None:
+        norths = default_norths
+    if easts is None:
+        easts = default_easts
+    return norths, easts
+
+
+def _pop_static_ne_from_kwargs(
+    kwargs:dict,
+    default_norths=None,
+    default_easts=None,
+    stacklevel:int=3,
+) -> Tuple[object, object]:
+    """从 kwargs 取出 norths/easts（或旧名 xarr/yarr）"""
+    return _resolve_static_ne_coords(
+        kwargs.pop('norths', None), kwargs.pop('easts', None),
+        kwargs.pop('xarr', None), kwargs.pop('yarr', None),
+        default_norths=default_norths, default_easts=default_easts,
+        stacklevel=stacklevel,
+    )
+
+
+def _static_dict_norths_easts(d:dict, stacklevel:int=3) -> Tuple[object, object]:
+    """从静态结果字典读取 north/east，兼容旧键 _xarr/_yarr"""
+    if '_norths' in d and '_easts' in d:
+        return d['_norths'], d['_easts']
+    if '_xarr' in d and '_yarr' in d:
+        _warn_xarr_yarr_deprecated(stacklevel=stacklevel)
+        return d['_xarr'], d['_yarr']
+    raise KeyError("static dict missing '_norths'/'_easts' (or deprecated '_xarr'/'_yarr').")
 
 from enum import Enum, unique
 
@@ -200,13 +253,16 @@ def _gen_syn_from_static_gf(grnDct:dict, calc_upar:bool, compute_type:GRT_SYN_TY
     # 为张裂计算 Vp/Vs
     VpVs_ratio = float(grnDct['_src_va'] / grnDct['_src_vb'])
 
-    xarr0 = np.ascontiguousarray(grnDct['_xarr'], dtype=NPCT_REAL_TYPE)
-    yarr0 = np.ascontiguousarray(grnDct['_yarr'], dtype=NPCT_REAL_TYPE)
-    xarr = np.ascontiguousarray(kwargs.get('xarr', grnDct['_xarr']), dtype=NPCT_REAL_TYPE)
-    yarr = np.ascontiguousarray(kwargs.get('yarr', grnDct['_yarr']), dtype=NPCT_REAL_TYPE)
-    nx0, ny0 = len(xarr0), len(yarr0)
-    nx, ny = len(xarr), len(yarr)
-    nr0, nr = nx0 * ny0, nx * ny
+    norths0, easts0 = _static_dict_norths_easts(grnDct, stacklevel=4)
+    norths0 = np.ascontiguousarray(norths0, dtype=NPCT_REAL_TYPE)
+    easts0 = np.ascontiguousarray(easts0, dtype=NPCT_REAL_TYPE)
+    norths, easts = _pop_static_ne_from_kwargs(
+        kwargs, default_norths=norths0, default_easts=easts0, stacklevel=4)
+    norths = np.ascontiguousarray(norths, dtype=NPCT_REAL_TYPE)
+    easts = np.ascontiguousarray(easts, dtype=NPCT_REAL_TYPE)
+    nnorth0, neast0 = len(norths0), len(easts0)
+    nnorth, neast = len(norths), len(easts)
+    nr0, nr = nnorth0 * neast0, nnorth * neast
 
     def _pack_gf(prefix:str=''):
         """打包为 C 侧 realChnlGrid[nr]：arr[震中距点][震源][分量]"""
@@ -229,8 +285,8 @@ def _gen_syn_from_static_gf(grnDct:dict, calc_upar:bool, compute_type:GRT_SYN_TY
     #                            调用 C 函数
     mchn = _set_source_mechanism(compute_type, **kwargs)
     C_grt_static_syn_from_gf(
-        nx0, npct.as_ctypes(xarr0), ny0, npct.as_ctypes(yarr0),
-        nx, npct.as_ctypes(xarr), ny, npct.as_ctypes(yarr),
+        nnorth0, npct.as_ctypes(norths0), neast0, npct.as_ctypes(easts0),
+        nnorth, npct.as_ctypes(norths), neast, npct.as_ctypes(easts),
         npct.as_ctypes(pygrn),
         npct.as_ctypes(pygrn_uiz) if calc_upar else None,
         npct.as_ctypes(pygrn_uir) if calc_upar else None,
@@ -241,15 +297,15 @@ def _gen_syn_from_static_gf(grnDct:dict, calc_upar:bool, compute_type:GRT_SYN_TY
     # ========================================================================
 
     resDct = {k: deepcopy(v) for k, v in grnDct.items() if k.startswith('_')}
-    resDct['_xarr'] = xarr
-    resDct['_yarr'] = yarr
+    resDct['_norths'] = norths
+    resDct['_easts'] = easts
 
     chs = ZNEchs if ZNE else ZRTchs
     for i1, c1 in enumerate(chs):
-        resDct[c1] = syn[:, i1].reshape((nx, ny))
+        resDct[c1] = syn[:, i1].reshape((nnorth, neast))
         if calc_upar:
             for i2, c2 in enumerate(chs):
-                resDct[f'{c2.lower()}{c1}'] = syn_upar[:, i2, i1].reshape((nx, ny))
+                resDct[f'{c2.lower()}{c1}'] = syn_upar[:, i2, i1].reshape((nnorth, neast))
 
     return resDct
 
@@ -292,8 +348,9 @@ def gen_syn_from_gf_DC(st:Union[Stream,dict], M0:float, strike:float, dip:float,
         :param    az:       azimuth, 0 <= az <= 360 (not used for static case)
         :param    ZNE:          whether output in 'ZNE'-coord, default is 'ZRT'
         :param    calc_upar:    whether calculate the spatial derivatives of displacements.
-        :param    kwargs:       For static rsults, you can set "xarr" and "yarr" to define a new XY grid, 
-                                the program will automatically find the nearest Green's functions for each node.
+        :param    kwargs:       For static results, set ``norths``/``easts`` (preferred) or
+                                deprecated ``xarr``/``yarr`` to define a new north/east grid;
+                                synthesis interpolates in epicentral distance.
 
         :return:
             - **stream** -  :class:`obspy.Stream`
@@ -318,8 +375,9 @@ def gen_syn_from_gf_TS(st:Union[Stream,dict], M0:float, strike:float, dip:float,
         :param    az:       azimuth, 0 <= az <= 360 (not used for static case)
         :param    ZNE:          whether output in 'ZNE'-coord, default is 'ZRT'
         :param    calc_upar:    whether calculate the spatial derivatives of displacements.
-        :param    kwargs:       For static rsults, you can set "xarr" and "yarr" to define a new XY grid, 
-                                the program will automatically find the nearest Green's functions for each node.
+        :param    kwargs:       For static results, set ``norths``/``easts`` (preferred) or
+                                deprecated ``xarr``/``yarr`` to define a new north/east grid;
+                                synthesis interpolates in epicentral distance.
 
         :return:
             - **stream** -  :class:`obspy.Stream`
@@ -346,8 +404,9 @@ def gen_syn_from_gf_SF(st:Union[Stream,dict], S:float, fN:float, fE:float, fZ:fl
         :param    az:    azimuth, 0 <= az <= 360 (not used for static case)
         :param    ZNE:          whether output in 'ZNE'-coord, default is 'ZRT'
         :param    calc_upar:    whether calculate the spatial derivatives of displacements.
-        :param    kwargs:       For static rsults, you can set "xarr" and "yarr" to define a new XY grid, 
-                                the program will automatically find the nearest Green's functions for each node.
+        :param    kwargs:       For static results, set ``norths``/``easts`` (preferred) or
+                                deprecated ``xarr``/``yarr`` to define a new north/east grid;
+                                synthesis interpolates in epicentral distance.
 
         :return:
             - **stream** - :class:`obspy.Stream`
@@ -371,8 +430,9 @@ def gen_syn_from_gf_EX(st:Union[Stream,dict], M0:float, az:float=-999, ZNE=False
         :param    az:          azimuth, 0 <= az <= 360 (not used for static case)
         :param    ZNE:          whether output in 'ZNE'-coord, default is 'ZRT'
         :param    calc_upar:    whether calculate the spatial derivatives of displacements.
-        :param    kwargs:       For static rsults, you can set "xarr" and "yarr" to define a new XY grid, 
-                                the program will automatically find the nearest Green's functions for each node.
+        :param    kwargs:       For static results, set ``norths``/``easts`` (preferred) or
+                                deprecated ``xarr``/``yarr`` to define a new north/east grid;
+                                synthesis interpolates in epicentral distance.
 
         :return:
             - **stream** -       :class:`obspy.Stream`
@@ -397,8 +457,9 @@ def gen_syn_from_gf_MT(st:Union[Stream,dict], M0:float, MT:ArrayLike, az:float=-
         :param    az:          azimuth, 0 <= az <= 360 (not used for static case)
         :param    ZNE:          whether output in 'ZNE'-coord, default is 'ZRT'
         :param    calc_upar:    whether calculate the spatial derivatives of displacements.
-        :param    kwargs:       For static rsults, you can set "xarr" and "yarr" to define a new XY grid, 
-                                the program will automatically find the nearest Green's functions for each node.
+        :param    kwargs:       For static results, set ``norths``/``easts`` (preferred) or
+                                deprecated ``xarr``/``yarr`` to define a new north/east grid;
+                                synthesis interpolates in epicentral distance.
 
         :return:
             - **stream** -     :class:`obspy.Stream`
@@ -506,20 +567,21 @@ def _prepare_static_postprocess_arrays(syn:dict, chs:List[str]):
     RPtrs = PREAL * CHANNEL_NUM
     RMat = RPtrs * CHANNEL_NUM
 
-    xarr = np.ascontiguousarray(syn['_xarr'], dtype=np.float64)
-    yarr = np.ascontiguousarray(syn['_yarr'], dtype=np.float64)
-    if xarr.ndim != 1 or yarr.ndim != 1:
-        raise ValueError("'_xarr' and '_yarr' must be one-dimensional arrays.")
+    norths, easts = _static_dict_norths_easts(syn, stacklevel=4)
+    norths = np.ascontiguousarray(norths, dtype=np.float64)
+    easts = np.ascontiguousarray(easts, dtype=np.float64)
+    if norths.ndim != 1 or easts.ndim != 1:
+        raise ValueError("'_norths' and '_easts' must be one-dimensional arrays.")
 
     u = [np.ascontiguousarray(syn[c], dtype=np.float64) for c in chs]
     upar = [
         [np.ascontiguousarray(syn[f"{d.lower()}{c}"], dtype=np.float64) for c in chs]
         for d in chs
     ]
-    expected_shape = (len(xarr), len(yarr))
+    expected_shape = (len(norths), len(easts))
     if any(arr.shape != expected_shape for arr in u) or any(
             arr.shape != expected_shape for row in upar for arr in row):
-        raise ValueError("Static displacement and derivative arrays must match '_xarr'/'_yarr'.")
+        raise ValueError("Static displacement and derivative arrays must match '_norths'/'_easts'.")
 
     u_ptrs = RPtrs(*(arr.ctypes.data_as(PREAL) for arr in u))
     upar_ptrs = RMat(*(
@@ -528,7 +590,7 @@ def _prepare_static_postprocess_arrays(syn:dict, chs:List[str]):
     res_ptrs = RMat(*(
         RPtrs(*(resarr[c2, c1].ctypes.data_as(PREAL) for c1 in range(CHANNEL_NUM)))
         for c2 in range(CHANNEL_NUM)))
-    return xarr, yarr, u, upar, u_ptrs, upar_ptrs, resarr, res_ptrs
+    return norths, easts, u, upar, u_ptrs, upar_ptrs, resarr, res_ptrs
 
 
 def _compute_static_strain_rotation(syn:dict, Type:str):
@@ -557,7 +619,7 @@ def _compute_static_strain_rotation(syn:dict, Type:str):
     if f"nN" in syn.keys():
         chs = ZNEchs
 
-    xarr, yarr, u, upar, u_ptrs, upar_ptrs, resarr, res_ptrs = \
+    norths, easts, u, upar, u_ptrs, upar_ptrs, resarr, res_ptrs = \
         _prepare_static_postprocess_arrays(syn, chs)
 
     # 结果字典
@@ -571,11 +633,11 @@ def _compute_static_strain_rotation(syn:dict, Type:str):
 
     if Type == 'strain':
         C_grt_static_compute_strain(
-            len(xarr), len(yarr), xarr.ctypes.data_as(PREAL), yarr.ctypes.data_as(PREAL),
+            len(norths), len(easts), norths.ctypes.data_as(PREAL), easts.ctypes.data_as(PREAL),
             u_ptrs, upar_ptrs, res_ptrs, chs == ZNEchs)
     else:
         C_grt_static_compute_rotation(
-            len(xarr), len(yarr), xarr.ctypes.data_as(PREAL), yarr.ctypes.data_as(PREAL),
+            len(norths), len(easts), norths.ctypes.data_as(PREAL), easts.ctypes.data_as(PREAL),
             u_ptrs, upar_ptrs, res_ptrs, chs == ZNEchs)
 
     for i1 in range(i1_end):
@@ -687,7 +749,7 @@ def _compute_static_stress(syn:dict):
         chs = ZNEchs
         rot2ZNE = True
 
-    xarr, yarr, u, upar, u_ptrs, upar_ptrs, resarr, res_ptrs = \
+    norths, easts, u, upar, u_ptrs, upar_ptrs, resarr, res_ptrs = \
         _prepare_static_postprocess_arrays(syn, chs)
     va = syn['_rcv_va']
     vb = syn['_rcv_vb']
@@ -705,7 +767,7 @@ def _compute_static_stress(syn:dict):
         resDct[k] = deepcopy(syn[k])
 
     C_grt_static_compute_stress(
-        len(xarr), len(yarr), xarr.ctypes.data_as(PREAL), yarr.ctypes.data_as(PREAL),
+        len(norths), len(easts), norths.ctypes.data_as(PREAL), easts.ctypes.data_as(PREAL),
         u_ptrs, upar_ptrs, res_ptrs, rot2ZNE, mu, lam)
 
     for i1 in range(CHANNEL_NUM):

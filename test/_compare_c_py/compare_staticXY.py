@@ -14,8 +14,8 @@ pymod = pygrt.PyModel1D(modarr, depsrc, deprcv)
 
 #-------------------------- Static -----------------------------------------
 # 为了方便测试，避免引入其他因素的误差，这里有意避开 0
-xarr = np.arange(-3.1, 3.2, 0.6)
-yarr = np.arange(-4.1, 4.2, 0.8)
+norths = np.arange(-3.1, 3.2, 0.6)
+easts = np.arange(-4.1, 4.2, 0.8)
 S=1e24
 
 fn=2
@@ -39,7 +39,7 @@ AVGRERR2 = []
 
 for ZNE in [False, True]:
     suffix = "-N" if ZNE else ""
-    static_syn = pygrt.utils.gen_syn_from_gf_EX(static_grn, S, ZNE=ZNE, calc_upar=True, xarr=xarr, yarr=yarr)
+    static_syn = pygrt.utils.gen_syn_from_gf_EX(static_grn, S, ZNE=ZNE, calc_upar=True, norths=norths, easts=easts)
     ststrain = pygrt.utils.compute_strain(static_syn)
     strotation = pygrt.utils.compute_rotation(static_syn)
     ststress = pygrt.utils.compute_stress(static_syn)
@@ -48,7 +48,7 @@ for ZNE in [False, True]:
     update_dict(static_syn, strotation, "rotation_")
     AVGRERR2.append(static_compare3(static_syn, f"static/stsyn_ex{suffix}.nc"))
 
-    static_syn = pygrt.utils.gen_syn_from_gf_SF(static_grn, S, fn, fe, fz, ZNE=ZNE, calc_upar=True, xarr=xarr, yarr=yarr)
+    static_syn = pygrt.utils.gen_syn_from_gf_SF(static_grn, S, fn, fe, fz, ZNE=ZNE, calc_upar=True, norths=norths, easts=easts)
     ststrain = pygrt.utils.compute_strain(static_syn)
     strotation = pygrt.utils.compute_rotation(static_syn)
     ststress = pygrt.utils.compute_stress(static_syn)
@@ -57,7 +57,7 @@ for ZNE in [False, True]:
     update_dict(static_syn, strotation, "rotation_")
     AVGRERR2.append(static_compare3(static_syn, f"static/stsyn_sf{suffix}.nc"))
 
-    static_syn = pygrt.utils.gen_syn_from_gf_DC(static_grn, S, stk, dip, rak, ZNE=ZNE, calc_upar=True, xarr=xarr, yarr=yarr)
+    static_syn = pygrt.utils.gen_syn_from_gf_DC(static_grn, S, stk, dip, rak, ZNE=ZNE, calc_upar=True, norths=norths, easts=easts)
     ststrain = pygrt.utils.compute_strain(static_syn)
     strotation = pygrt.utils.compute_rotation(static_syn)
     ststress = pygrt.utils.compute_stress(static_syn)
@@ -66,7 +66,7 @@ for ZNE in [False, True]:
     update_dict(static_syn, strotation, "rotation_")
     AVGRERR2.append(static_compare3(static_syn, f"static/stsyn_dc{suffix}.nc"))
 
-    static_syn = pygrt.utils.gen_syn_from_gf_TS(static_grn, S, stk, dip, ZNE=ZNE, calc_upar=True, xarr=xarr, yarr=yarr)
+    static_syn = pygrt.utils.gen_syn_from_gf_TS(static_grn, S, stk, dip, ZNE=ZNE, calc_upar=True, norths=norths, easts=easts)
     ststrain = pygrt.utils.compute_strain(static_syn)
     strotation = pygrt.utils.compute_rotation(static_syn)
     ststress = pygrt.utils.compute_stress(static_syn)
@@ -75,7 +75,7 @@ for ZNE in [False, True]:
     update_dict(static_syn, strotation, "rotation_")
     AVGRERR2.append(static_compare3(static_syn, f"static/stsyn_ts{suffix}.nc"))
 
-    static_syn = pygrt.utils.gen_syn_from_gf_MT(static_grn, S, [M11,M12,M13,M22,M23,M33], ZNE=ZNE, calc_upar=True, xarr=xarr, yarr=yarr)
+    static_syn = pygrt.utils.gen_syn_from_gf_MT(static_grn, S, [M11,M12,M13,M22,M23,M33], ZNE=ZNE, calc_upar=True, norths=norths, easts=easts)
     ststrain = pygrt.utils.compute_strain(static_syn)
     strotation = pygrt.utils.compute_rotation(static_syn)
     ststress = pygrt.utils.compute_stress(static_syn)
