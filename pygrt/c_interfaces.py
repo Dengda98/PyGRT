@@ -77,7 +77,7 @@ C_grt_integ_static_grn.argtypes = [
 
 
 C_grt_static_syn_from_gf = libgrt.grt_static_syn_from_gf
-"""由静态格林函数合成三分量位移场（及可选空间偏导），可插值到新 XY 网格"""
+"""由静态格林函数合成三分量位移场（及可选空间偏导），可按震中距插值到新的 north/east 接收点网格"""
 C_grt_static_syn_from_gf.restype = None
 C_grt_static_syn_from_gf.argtypes = [
     c_size_t, PREAL, c_size_t, PREAL,

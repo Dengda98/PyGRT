@@ -39,17 +39,17 @@ typedef struct {
     struct {
         bool active;
     } T;
-    /** X 坐标 */
+    /** -X: north 坐标 */
     struct {
         bool active;
-        size_t nx;
-        real_t *xs;
+        size_t nnorth;
+        real_t *norths;
     } X;
-    /** Y 坐标 */
+    /** -Y: east 坐标 */
     struct {
         bool active;
-        size_t ny;
-        real_t *ys;
+        size_t neast;
+        real_t *easts;
     } Y;
     /** 输出 nc 文件名 */
     struct {
@@ -65,8 +65,8 @@ typedef struct {
         bool active;
     } e;
 
-    // 是否使用新网格
-    bool isnewXYgrid;
+    // 是否使用 -X/-Y 指定的新接收点网格
+    bool isnewNEgrid;
 
     // 存储不同震源的震源机制相关参数的数组
     real_t mchn[GRT_MECHANISM_NUM];
@@ -83,10 +83,10 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
     GRT_SAFE_FREE_PTR(Ctrl->G.s_ingrid);
 
     // X
-    GRT_SAFE_FREE_PTR(Ctrl->X.xs);
+    GRT_SAFE_FREE_PTR(Ctrl->X.norths);
 
     // Y
-    GRT_SAFE_FREE_PTR(Ctrl->Y.ys);
+    GRT_SAFE_FREE_PTR(Ctrl->Y.easts);
 
     // O
     GRT_SAFE_FREE_PTR(Ctrl->O.s_outgrid);
@@ -106,8 +106,10 @@ printf("\n"
 "       + Transverse Clockwise (T),\n"
 "    and the units are cm. You can add -N to rotate ZRT to ZNE.\n"
 "\n"
-"    You can also set -X and -Y to define a new XY grid, the program \n"
-"    will automatically find the nearest Green's functions for each node.\n"
+"    You can also set -X/-Y to define a new north/east receiver grid;\n"
+"    synthesis interpolates Green's functions in epicentral distance.\n"
+"    (Green's functions themselves depend only on distance, even if the\n"
+"    input nc stores north/east dimensions for compatibility.)\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
@@ -193,7 +195,7 @@ printf("\n"
 "    or Moment Tensor\n"
 "        grt static syn -Gstgrn.nc -Su1e16 -T2.3/0.2/-4.0/0.3/0.5/1.2 -Ostsyn_mt.nc\n"
 "\n"
-"    You can also set a new XY grid, for example\n"
+"    You can also set a new north/east receiver grid, for example\n"
 "        grt static syn -Gstgrn.nc -Su1e16 -Ostsyn_ex.nc -X-5/5/0.5 -Y-5/5/0.5\n"
 "\n\n\n"
 "\n"
@@ -321,10 +323,10 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                         GRTBadOptionError(X, "x1(%f) > x2(%f).", a1, a2);
                     }
 
-                    Ctrl->X.nx = floor((a2-a1)/delta) + 1;
-                    Ctrl->X.xs = (real_t*)calloc(Ctrl->X.nx, sizeof(real_t));
-                    for(size_t i=0; i<Ctrl->X.nx; ++i){
-                        Ctrl->X.xs[i] = a1 + delta*i;
+                    Ctrl->X.nnorth = floor((a2-a1)/delta) + 1;
+                    Ctrl->X.norths = (real_t*)calloc(Ctrl->X.nnorth, sizeof(real_t));
+                    for(size_t i=0; i<Ctrl->X.nnorth; ++i){
+                        Ctrl->X.norths[i] = a1 + delta*i;
                     }
                 }
                 break;
@@ -344,10 +346,10 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                         GRTBadOptionError(Y, "y1(%f) > y2(%f).", a1, a2);
                     }
 
-                    Ctrl->Y.ny = floor((a2-a1)/delta) + 1;
-                    Ctrl->Y.ys = (real_t*)calloc(Ctrl->Y.ny, sizeof(real_t));
-                    for(size_t i=0; i<Ctrl->Y.ny; ++i){
-                        Ctrl->Y.ys[i] = a1 + delta*i;
+                    Ctrl->Y.neast = floor((a2-a1)/delta) + 1;
+                    Ctrl->Y.easts = (real_t*)calloc(Ctrl->Y.neast, sizeof(real_t));
+                    for(size_t i=0; i<Ctrl->Y.neast; ++i){
+                        Ctrl->Y.easts[i] = a1 + delta*i;
                     }
                 }
                 break;
@@ -384,9 +386,9 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 
     // 指定新网格时必须同时指定 -X 和 -Y
     if(Ctrl->X.active ^ Ctrl->Y.active){
-        GRTRaiseError("If you want to set a new grid, you need set \"-X\" and \"-Y\" both.\n");
+        GRTRaiseError("If you want to set a new north/east grid, you need set \"-X\" and \"-Y\" both.\n");
     }
-    Ctrl->isnewXYgrid = Ctrl->X.active;
+    Ctrl->isnewNEgrid = Ctrl->X.active;
 }
 
 
@@ -468,30 +470,31 @@ static void static_syn_from_gf_one(
 /**
  * 由静态格林函数合成三分量位移场（及可选空间偏导）。
  *
- * 对应动态解的 grt_syn_from_gf。输入为原 XY 网格上的格林函数，
- * 可插值到新 XY 网格；r=0 时强制方位角为 0（e_r→N、e_θ→E）。
+ * 对应动态解的 grt_syn_from_gf。输入 nc 虽以 north/east 存储，
+ * 合成时按 r=hypot(north,east) 做一维震中距插值；可换到新的接收点
+ * north/east 网格。r=0 时强制方位角为 0（e_r→N、e_θ→E）
  *
- * 数组布局：u[震中距点][震源][分量]、syn[新网格点][分量]、
- * syn_upar[新网格点][偏导方向][分量]。uiz/uir 在 calc_upar=false 时可传 NULL。
+ * 数组布局：u[采样点][震源][分量]、syn[接收点][分量]、
+ * syn_upar[接收点][偏导方向][分量]。uiz/uir 在 calc_upar=false 时可传 NULL
  */
 void grt_static_syn_from_gf(
-    size_t nx0, const real_t *xs0, size_t ny0, const real_t *ys0,
-    size_t nx, const real_t *xs, size_t ny, const real_t *ys,
+    size_t nnorth0, const real_t *norths0, size_t neast0, const real_t *easts0,
+    size_t nnorth, const real_t *norths, size_t neast, const real_t *easts,
     const realChnlGrid *u, const realChnlGrid *uiz, const realChnlGrid *uir,
     GRT_SYN_TYPE computeType, real_t M0, real_t VpVs_ratio, const real_t mchn[GRT_MECHANISM_NUM],
     bool rot2ZNE, bool calc_upar,
     real_t (*syn)[GRT_CHANNEL_NUM], real_t (*syn_upar)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])
 {
-    size_t nr0 = nx0 * ny0;
+    size_t nr0 = nnorth0 * neast0;
 
-    // 原网格震中距序列
+    // 由 north/east 派生震中距序列（GF 只依赖 r）
     real_t *rs0 = (real_t *)calloc(nr0, sizeof(real_t));
     real_t *sort_rs0 = (real_t *)calloc(nr0, sizeof(real_t));
     size_t *sort_rs0_idx = (size_t *)calloc(nr0, sizeof(size_t));
-    for(size_t ix = 0; ix < nx0; ++ix){
-        for(size_t iy = 0; iy < ny0; ++iy){
-            size_t idx = iy + ix*ny0;
-            rs0[idx] = hypot(xs0[ix], ys0[iy]);
+    for(size_t inorth = 0; inorth < nnorth0; ++inorth){
+        for(size_t ieast = 0; ieast < neast0; ++ieast){
+            size_t idx = ieast + inorth*neast0;
+            rs0[idx] = hypot(norths0[inorth], easts0[ieast]);
             sort_rs0_idx[idx] = idx;
         }
     }
@@ -517,19 +520,19 @@ void grt_static_syn_from_gf(
         }
     }
 
-    // 每个点逐个处理
-    for(size_t ix = 0; ix < nx; ++ix){
-        real_t x = xs[ix];
-        for(size_t iy = 0; iy < ny; ++iy){
-            real_t y = ys[iy];
+    // 每个接收点逐个处理
+    for(size_t inorth = 0; inorth < nnorth; ++inorth){
+        real_t north = norths[inorth];
+        for(size_t ieast = 0; ieast < neast; ++ieast){
+            real_t east = easts[ieast];
 
             // 震中距
-            real_t dist = hypot(x, y);
+            real_t dist = hypot(north, east);
 
             // 方位角；r=0 时 atan2(0,0) 无定义，约定 e_r→N、e_θ→E ⇒ az=0
-            real_t azrad = GRT_IS_ZERO(dist) ? 0.0 : atan2(y, x);
+            real_t azrad = GRT_IS_ZERO(dist) ? 0.0 : atan2(east, north);
 
-            size_t ir = iy + ix * ny;
+            size_t ir = ieast + inorth * neast;
 
             memset(syn[ir], 0, sizeof(syn[ir]));
             memset(syn_upar[ir], 0, sizeof(syn_upar[ir]));
@@ -537,7 +540,7 @@ void grt_static_syn_from_gf(
             // 检查是否越界（允许查询点为精确的零震中距）
             bool r_OutofBound = (dist < sort_rs0[0] - 1e-8 || dist > sort_rs0[nr0-1] + 1e-8);
             if(r_OutofBound){
-                GRTRaiseWarning("(x, y)=(%.3e, %.3e) is out of distance bounds, skip.", x, y);
+                GRTRaiseWarning("(north, east)=(%.3e, %.3e) is out of distance bounds, skip.", north, east);
                 continue;
             }
 
@@ -549,14 +552,18 @@ void grt_static_syn_from_gf(
             }
             sort_ir_pick1 = GRT_MIN(sort_ir_pick + 1, nr0-1);
 
-            real_t drs = (sort_ir_pick == sort_ir_pick1)? 0.0 : (dist - sort_rs0[sort_ir_pick]) / (sort_rs0[sort_ir_pick1] - sort_rs0[sort_ir_pick]);
+            real_t r0 = sort_rs0[sort_ir_pick];
+            real_t r1 = sort_rs0[sort_ir_pick1];
+            // 重复震中距时避免除零（-X/-Y 建库时对称点可能 r 相同）
+            real_t drs = (sort_ir_pick == sort_ir_pick1 || fabs(r1 - r0) < 1e-15)
+                ? 0.0 : (dist - r0) / (r1 - r0);
 
             real_t syn2[GRT_CHANNEL_NUM] = {0.0}, syn2_upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM] = {{0.0}};
 
             size_t iir[2] = {sort_ir_pick, sort_ir_pick1};
             real_t facr[2] = {1.0 - drs, drs};
             for(int j = 0; j < 2; ++j){
-                if(j==1 && sort_ir_pick == sort_ir_pick1)  continue;
+                if(j==1 && (sort_ir_pick == sort_ir_pick1 || fabs(r1 - r0) < 1e-15))  continue;
 
                 size_t ir_pick = sort_rs0_idx[iir[j]];
                 real_t dist0 = sort_rs0[iir[j]];
@@ -605,8 +612,8 @@ int static_syn_main(int argc, char **argv){
     int out_syn_varids[GRT_CHANNEL_NUM];
     int out_syn_upar_varids[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
 
-    size_t nx, ny, nx0, ny0;
-    real_t *xs, *ys, *xs0, *ys0;
+    size_t nnorth, neast, nnorth0, neast0;
+    real_t *norths, *easts, *norths0, *easts0;
     size_t nr, nr0;
     
     // 打开 nc 文件
@@ -655,21 +662,21 @@ int static_syn_main(int argc, char **argv){
     
     // 读入坐标变量 dimid, varid
     NC_CHECK(nc_inq_dimid(in_ncid, "north", &in_x_dimid));
-    NC_CHECK(nc_inq_dimlen(in_ncid, in_x_dimid, &nx0));
+    NC_CHECK(nc_inq_dimlen(in_ncid, in_x_dimid, &nnorth0));
     NC_CHECK(nc_inq_dimid(in_ncid, "east", &in_y_dimid));
-    NC_CHECK(nc_inq_dimlen(in_ncid, in_y_dimid, &ny0));
-    xs0 = (real_t *)calloc(nx0, sizeof(real_t));
-    ys0 = (real_t *)calloc(ny0, sizeof(real_t));
+    NC_CHECK(nc_inq_dimlen(in_ncid, in_y_dimid, &neast0));
+    norths0 = (real_t *)calloc(nnorth0, sizeof(real_t));
+    easts0 = (real_t *)calloc(neast0, sizeof(real_t));
 
-    // 根据情况使用新网格
-    nx = (Ctrl->isnewXYgrid)? Ctrl->X.nx : nx0;
-    ny = (Ctrl->isnewXYgrid)? Ctrl->Y.ny : ny0;
-    xs = (Ctrl->isnewXYgrid)? Ctrl->X.xs : xs0;
-    ys = (Ctrl->isnewXYgrid)? Ctrl->Y.ys : ys0;
+    // 根据情况使用 -X/-Y 指定的新接收点网格
+    nnorth = (Ctrl->isnewNEgrid)? Ctrl->X.nnorth : nnorth0;
+    neast = (Ctrl->isnewNEgrid)? Ctrl->Y.neast : neast0;
+    norths = (Ctrl->isnewNEgrid)? Ctrl->X.norths : norths0;
+    easts = (Ctrl->isnewNEgrid)? Ctrl->Y.easts : easts0;
 
     // 写入坐标变量 dimid, varid
-    NC_CHECK(nc_def_dim(out_ncid, "north", nx, &out_x_dimid));
-    NC_CHECK(nc_def_dim(out_ncid, "east", ny, &out_y_dimid));
+    NC_CHECK(nc_def_dim(out_ncid, "north", nnorth, &out_x_dimid));
+    NC_CHECK(nc_def_dim(out_ncid, "east", neast, &out_y_dimid));
     NC_CHECK(nc_def_var(out_ncid, "north", NC_REAL, 1, &out_x_dimid, &out_x_varid));
     NC_CHECK(nc_def_var(out_ncid, "east",  NC_REAL, 1, &out_y_dimid, &out_y_varid));
     out_dimids[0] = out_x_dimid;
@@ -714,16 +721,16 @@ int static_syn_main(int argc, char **argv){
 
     // 读取坐标变量
     NC_CHECK(nc_inq_varid(in_ncid, "north", &in_x_varid));
-    NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_x_varid, xs0));
+    NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_x_varid, norths0));
     NC_CHECK(nc_inq_varid(in_ncid, "east", &in_y_varid));
-    NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_y_varid, ys0));
+    NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_y_varid, easts0));
 
     // 写入坐标变量
-    NC_CHECK(NC_FUNC_REAL(nc_put_var) (out_ncid, out_x_varid, xs));
-    NC_CHECK(NC_FUNC_REAL(nc_put_var) (out_ncid, out_y_varid, ys));
+    NC_CHECK(NC_FUNC_REAL(nc_put_var) (out_ncid, out_x_varid, norths));
+    NC_CHECK(NC_FUNC_REAL(nc_put_var) (out_ncid, out_y_varid, easts));
 
     // 总震中距数
-    nr0 = nx0 * ny0;
+    nr0 = nnorth0 * neast0;
 
     // 先将所有格林函数及其偏导读入内存，
     // 否则连续使用 nc_grt_var1 式读入效率太慢
@@ -756,16 +763,16 @@ int static_syn_main(int argc, char **argv){
         GRT_SAFE_FREE_PTR(u);
     }
 
-    // 新网格总震中距数
-    nr = nx * ny;
+    // 新接收点网格总点数
+    nr = nnorth * neast;
     
     // 最终计算的结果
     real_t (*syn)[GRT_CHANNEL_NUM] = (real_t (*)[GRT_CHANNEL_NUM])calloc(nr, sizeof(real_t)*GRT_CHANNEL_NUM);
     real_t (*syn_upar)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM] = (real_t (*)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])calloc(nr, sizeof(real_t)*GRT_CHANNEL_NUM*GRT_CHANNEL_NUM);
     
     grt_static_syn_from_gf(
-        nx0, xs0, ny0, ys0, 
-        nx, xs, ny, ys, 
+        nnorth0, norths0, neast0, easts0, 
+        nnorth, norths, neast, easts, 
         grn, grn_uiz, grn_uir, 
         Ctrl->computeType, Ctrl->S.M0, src_va/src_vb, Ctrl->mchn, 
         rot2ZNE, Ctrl->e.active, 
@@ -802,8 +809,8 @@ int static_syn_main(int argc, char **argv){
     }
 
     // 释放内存
-    GRT_SAFE_FREE_PTR(xs0);
-    GRT_SAFE_FREE_PTR(ys0);
+    GRT_SAFE_FREE_PTR(norths0);
+    GRT_SAFE_FREE_PTR(easts0);
 
     GRT_SAFE_FREE_PTR(grn);
     GRT_SAFE_FREE_PTR(grn_uiz);
