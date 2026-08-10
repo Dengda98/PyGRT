@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import sys
+import warnings
 from pathlib import Path
 
 import pygrt
@@ -284,6 +285,21 @@ def test_compute_static_grn_xy_and_distarr():
         )
         assert "-X" not in " ".join(cmd)
         assert "-Y" not in " ".join(cmd)
+
+        # 多深度：应拼出 -Ds/-Dr，且 stats 被忽略
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            model.compute_static_grn(
+                depsrc=[1.0, 2.0, 3.0],
+                deprcv=[0.0, 0.5],
+                norths=[-2.0, 2.0, 1.0],
+                easts=[-2.0, 2.0, 1.0],
+                stats=True,
+            )
+        assert any("stats" in str(w.message) for w in caught)
+        cmd = runner.commands[-1]
+        assert_command_has(cmd, "static", "greenfn", "-Ds1,2,3", "-Dr0,0.5", "-X-2/2/1", "-Y-2/2/1")
+        assert not any(str(tok) == "-S" for tok in cmd)
     finally:
         _restore_run_grt(pygrt.pymod, original)
 

@@ -20,16 +20,16 @@ typedef struct {
     struct {
         bool active;
         char *s_modelpath;        ///< 模型路径
-        const char *s_modelname;  ///< 模型名称
-        MODEL1D *mod1d;         ///< 模型结构体指针
     } M;
-    /** 震源和接收器深度 */
+    /** 震源和接收器深度：-Dsrc/rcv 或 -Ds/-Dr */
     struct {
-        bool active;
-        real_t depsrc;
-        real_t deprcv;
-        char *s_depsrc;
-        char *s_deprcv;
+        bool active;       ///< 旧式 -D<depsrc>/<deprcv>
+        bool s_active;     ///< -Ds
+        bool r_active;     ///< -Dr
+        size_t ndepsrc;
+        real_t *depsrcs;
+        size_t ndeprcv;
+        real_t *deprcvs;
     } D;
     /** 顶层和底层的边界条件 */
     struct {
@@ -99,11 +99,10 @@ typedef struct {
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
     // M
     GRT_SAFE_FREE_PTR(Ctrl->M.s_modelpath);
-    grt_free_mod1d(Ctrl->M.mod1d);
-    
+
     // D
-    GRT_SAFE_FREE_PTR(Ctrl->D.s_depsrc);
-    GRT_SAFE_FREE_PTR(Ctrl->D.s_deprcv);
+    GRT_SAFE_FREE_PTR(Ctrl->D.depsrcs);
+    GRT_SAFE_FREE_PTR(Ctrl->D.deprcvs);
 
     // X
     GRT_SAFE_FREE_PTR(Ctrl->X.norths);
@@ -117,9 +116,7 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
     GRT_SAFE_FREE_PTR(Ctrl->rs);
 
     // S
-    if(Ctrl->S.active){
-        GRT_SAFE_FREE_PTR(Ctrl->S.s_statsdir);
-    }
+    GRT_SAFE_FREE_PTR(Ctrl->S.s_statsdir);
 
     GRT_SAFE_FREE_PTR(Ctrl);
 }
@@ -138,11 +135,15 @@ printf("\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
-"    grt static greenfn -M<model> -D<depsrc>/<deprcv>  -O<outgrid>  \n"
+"    grt static greenfn -M<model> -O<outgrid>\n"
+"           (-D<depsrc>/<deprcv> | -Ds<source> -Dr<receiver>) \n"
 "           [-X<x1>/<x2>/<dx>] [-Y<y1>/<y2>/<dy>] \n"
 "           [-R<r1>,<r2>[,...]|<r1>/<r2>/<dr>|<file>]\n" 
 "           [-L<length>]   [-C[d|p|n]]  [-Bf|F|r|R|h|H] \n"
 "           [-K[+k<k0>][+f][+e<keps>]] [-S]  [-e]\n"
+"\n"
+"    Output is always one nc file with dims\n"
+"    [depsrc][deprcv][north][east] (even if each depth size is 1).\n"
 "\n"
 "    There're two ways to define the \"epicentral distances\":\n"
 "    1. set both -X and -Y (north/east). The kernel still depends\n"
@@ -167,8 +168,18 @@ printf("\n"
 "         The number of layers are unlimited.\n"
 "\n"
 "    -D<depsrc>/<deprcv>\n"
-"                 <depsrc>: source depth (km).\n"
-"                 <deprcv>: receiver depth (km).\n"
+"                 Single source/receiver depth (km). Compatible form.\n"
+"                 Mutually exclusive with -Ds/-Dr.\n"
+"\n"
+"    -Ds<source>  Source depth list (km), same syntax as -R:\n"
+"                 + z1,z2[,...]\n"
+"                 + z1/z2/dz\n"
+"                 + <file>\n"
+"                 Must be paired with -Dr.\n"
+"\n"
+"    -Dr<receiver>\n"
+"                 Receiver depth list (km), same syntax as -Ds.\n"
+"                 Must be paired with -Ds.\n"
 "\n"
 "    -X<x1>/<x2>/<dx>\n"
 "                 Set the equidistant points in the north direction.\n"
@@ -236,6 +247,7 @@ printf("\n"
 "                         Default 0.0 not use.\n"
 "\n"
 "    -S           Output statsfile in wavenumber integration.\n"
+"                 Only available for a single source/receiver depth.\n"
 "\n"
 "    -e           Compute the spatial derivatives, ui_z and ui_r,\n"
 "                 of displacement u. In columns, prefix \"r\" means \n"
@@ -251,8 +263,93 @@ printf("\n"
 "----------------------------------------------------------------\n"
 "    grt static greenfn -Mmilrow -D2/0 -X-10/10/1 -Y-10/10/1 -Ostgrn.nc\n"
 "    grt static greenfn -Mmilrow -D2/0 -R0/20/1 -Ostgrn.nc\n"
+"    grt static greenfn -Mmilrow -Ds0.2/50/0.5 -Dr0 -R0/500/0.5 -Ostgrn.nc -e\n"
 "\n\n\n"
 );
+}
+
+
+/**
+ * 解析深度列表（语法同 -R），结果升序去重写入 *zs / *nz
+ *
+ * 三种输入形式按优先级依次尝试：
+ *   1. 仅含数字与分隔符时：按逗号拆成离散列表 z1,z2,...
+ *   2. 可扫成 z1/z2/dz：按等间距生成 [z1, z1+dz, ..., <=z2]
+ *   3. 否则当作文件路径：逐行读入数值
+ *
+ * 随后转为 real_t、禁止负深度、升序排序并按 1e-8 容差去重
+ *
+ * @param[in]   optarg    -Ds/-Dr 后的字符串（不含前缀 s/r）
+ * @param[out]  zs        新分配的深度数组，调用方释放
+ * @param[out]  nz        去重后的点数
+ * @param[in]   optname   用于报错的选项名（'s' 或 'r'）
+ */
+static void parse_depth_spec(const char *optarg, real_t **zs, size_t *nz, char optname)
+{
+    real_t a1, a2, delta;
+    char **s_vals = NULL;
+    size_t n = 0;
+
+    // 形式 1：逗号分隔列表（字符集与 -R 一致）
+    if(grt_string_composed_of(optarg, GRT_NUM_STR "eE+-" ".,")){
+        s_vals = grt_string_split(optarg, ",", &n);
+    }
+    // 形式 2：等间距 z1/z2/dz
+    else if(3 == sscanf(optarg, "%lf/%lf/%lf", &a1, &a2, &delta)){
+        if(delta <= 0){
+            GRTRaiseError("-%c: nonpositive spacing (%f).", optname, delta);
+        }
+        if(a1 > a2){
+            GRTRaiseError("-%c: start (%f) > end (%f).", optname, a1, a2);
+        }
+        n = (size_t)floor((a2 - a1) / delta) + 1;
+        s_vals = (char **)calloc(n, sizeof(char *));
+        for(size_t i = 0; i < n; ++i){
+            GRT_SAFE_ASPRINTF(&s_vals[i], "%.*f", 8, a1 + delta * i);
+        }
+    }
+    // 形式 3：从文件逐行读取
+    else {
+        FILE *fp = GRTCheckOpenFile(optarg, "r");
+        s_vals = grt_string_from_file(fp, &n);
+        fclose(fp);
+    }
+
+    if(n == 0){
+        GRTRaiseError("-%c: empty depth list.", optname);
+    }
+
+    // 字符串 -> 数值，并检查非负
+    real_t *raw = (real_t *)calloc(n, sizeof(real_t));
+    for(size_t i = 0; i < n; ++i){
+        raw[i] = atof(s_vals[i]);
+        if(raw[i] < 0.0){
+            GRTRaiseError("-%c: negative depth (%f) is not supported.", optname, raw[i]);
+        }
+    }
+    GRT_SAFE_FREE_PTR_ARRAY(s_vals, n);
+
+    // 升序排序（argsort 写索引，再按索引取数）
+    size_t *order = (size_t *)calloc(n, sizeof(size_t));
+    for(size_t i = 0; i < n; ++i) order[i] = i;
+    if(n > 1 && grt_argsort(raw, n, sizeof(*raw), grt_compare_real_t, order) != 0){
+        GRTRaiseError("-%c: unable to sort depths.", optname);
+    }
+
+    // 容差去重，保留升序唯一深度
+    real_t *uniq = (real_t *)calloc(n, sizeof(real_t));
+    size_t nu = 0;
+    for(size_t i = 0; i < n; ++i){
+        real_t v = raw[order[i]];
+        if(nu == 0 || fabs(v - uniq[nu - 1]) > 1e-8){
+            uniq[nu++] = v;
+        }
+    }
+    GRT_SAFE_FREE_PTR(raw);
+    GRT_SAFE_FREE_PTR(order);
+
+    *zs = uniq;
+    *nz = nu;
 }
 
 
@@ -277,25 +374,31 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             case 'M':
                 Ctrl->M.active = true;
                 Ctrl->M.s_modelpath = strdup(optarg);
-                Ctrl->M.s_modelname = grt_get_basename(Ctrl->M.s_modelpath);
                 break;
 
-            // 震源和场点深度， -Ddepsrc/deprcv
+            // -Dsrc/rcv 或 -Ds<spec> / -Dr<spec>
             case 'D':
-                Ctrl->D.active = true;
-                Ctrl->D.s_depsrc = (char*)malloc(sizeof(char)*(strlen(optarg)+1));
-                Ctrl->D.s_deprcv = (char*)malloc(sizeof(char)*(strlen(optarg)+1));
-                if(2 != sscanf(optarg, "%[^/]/%s", Ctrl->D.s_depsrc, Ctrl->D.s_deprcv)){
-                    GRTBadOptionError(D, "");
-                };
-                if(1 != sscanf(Ctrl->D.s_depsrc, "%lf", &Ctrl->D.depsrc)){
-                    GRTBadOptionError(D, "");
-                }
-                if(1 != sscanf(Ctrl->D.s_deprcv, "%lf", &Ctrl->D.deprcv)){
-                    GRTBadOptionError(D, "");
-                }
-                if(Ctrl->D.depsrc < 0.0 || Ctrl->D.deprcv < 0.0){
-                    GRTBadOptionError(D, "Negative value in -D is not supported.");
+                if(optarg[0] == 's'){
+                    Ctrl->D.s_active = true;
+                    parse_depth_spec(optarg + 1, &Ctrl->D.depsrcs, &Ctrl->D.ndepsrc, 's');
+                } else if(optarg[0] == 'r'){
+                    Ctrl->D.r_active = true;
+                    parse_depth_spec(optarg + 1, &Ctrl->D.deprcvs, &Ctrl->D.ndeprcv, 'r');
+                } else {
+                    Ctrl->D.active = true;
+                    real_t depsrc, deprcv;
+                    if(2 != sscanf(optarg, "%lf/%lf", &depsrc, &deprcv)){
+                        GRTBadOptionError(D, "");
+                    }
+                    if(depsrc < 0.0 || deprcv < 0.0){
+                        GRTBadOptionError(D, "Negative value in -D is not supported.");
+                    }
+                    Ctrl->D.ndepsrc = 1;
+                    Ctrl->D.ndeprcv = 1;
+                    Ctrl->D.depsrcs = (real_t *)calloc(1, sizeof(real_t));
+                    Ctrl->D.deprcvs = (real_t *)calloc(1, sizeof(real_t));
+                    Ctrl->D.depsrcs[0] = depsrc;
+                    Ctrl->D.deprcvs[0] = deprcv;
                 }
                 break;
 
@@ -549,10 +652,18 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     // 检查必须设置的参数是否有设置
     GRTCheckOptionSet(argc > 1);
     GRTCheckOptionActive(Ctrl, M);
-    GRTCheckOptionActive(Ctrl, D);
     GRTCheckOptionActive(Ctrl, X);
     GRTCheckOptionActive(Ctrl, Y);
     GRTCheckOptionActive(Ctrl, O);
+
+    // 深度选项：-D 与 -Ds/-Dr 互斥；-Ds/-Dr 必须成对
+    if(Ctrl->D.active && (Ctrl->D.s_active || Ctrl->D.r_active)){
+        GRTRaiseError("Options -D and -Ds/-Dr are mutually exclusive.");
+    } else if(Ctrl->D.s_active != Ctrl->D.r_active){
+        GRTRaiseError("Options -Ds and -Dr must be set together.");
+    } else if(!Ctrl->D.active && !Ctrl->D.s_active){
+        GRTRaiseError("Depth option required: -D<depsrc>/<deprcv> or -Ds... -Dr...");
+    }
 
     // 设置震中距数组
     Ctrl->nr = Ctrl->X.nnorth*Ctrl->Y.neast;
@@ -567,15 +678,14 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 
 
 /**
- * 静态积分前准备：默认 Length，填充 K_INTEG_PROCESS
- * 不分配输出缓冲，不处理 stats 路径
+ * 静态积分前准备：按震中距与用户参数填充深度无关的 K_INTEG_PROCESS 字段
+ * 不写入 Kproc->k0；调用方按 hs 自行缩放
  */
-static void prepare_static_grn(
-    MODEL1D *mod1d,
+void grt_prepare_static_grn(
     size_t nr, real_t *rs,
     real_t Length,
     real_t filonLength, real_t safilonTol, real_t filonCut,
-    real_t k0, real_t keps, bool use_kmax_ref,
+    real_t keps, bool use_kmax_ref,
     int convmet,
     K_INTEG_PROCESS *Kproc)
 {
@@ -594,8 +704,6 @@ static void prepare_static_grn(
 
     memset(Kproc, 0, sizeof(*Kproc));
     {
-        real_t hs = GRT_MAX(fabs(mod1d->depsrc - mod1d->deprcv), GRT_MIN_DEPTH_GAP_SRC_RCV);
-        Kproc->k0 = k0 * PI / hs;
         Kproc->use_kmax_ref = use_kmax_ref;
         // 显式收敛方法时不使用 keps
         Kproc->keps = (convmet != K_INTEG_CONVERG_AUTO) ? 0.0 : keps;
@@ -617,167 +725,170 @@ static void prepare_static_grn(
 }
 
 
+/** 将积分结果按符号约定写入 STGRNLIB 的一层 */
+static void copy_grn_slice_with_sign(
+    STGRNLIB *lib, size_t is, size_t ir,
+    size_t nr, bool calc_upar,
+    const realChnlGrid *grn, const realChnlGrid *grn_uiz, const realChnlGrid *grn_uir)
+{
+    GRT_LOOP_ChnlGrid(im, c){
+        int modr = GRT_SRC_M_ORDERS[im];
+        if(modr == 0 && GRT_ZRT_CODES[c] == 'T') continue;
+        int sgn0 = (GRT_ZRT_CODES[c] == 'Z') ? -1 : 1;
+        for(size_t ipt = 0; ipt < nr; ++ipt){
+            lib->u[is][ir][ipt][im][c] = sgn0 * grn[ipt][im][c];
+            if(calc_upar){
+                lib->uiz[is][ir][ipt][im][c] = (-1) * sgn0 * grn_uiz[ipt][im][c];
+                lib->uir[is][ir][ipt][im][c] = sgn0 * grn_uir[ipt][im][c];
+            }
+        }
+    }
+}
+
+
+void grt_compute_stgrnlib_to_nc(
+    const char *modelpath,
+    size_t ndepsrc, const real_t *depsrcs,
+    size_t ndeprcv, const real_t *deprcvs,
+    size_t nnorth,  const real_t *norths,
+    size_t neast,   const real_t *easts,
+    real_t k0,
+    K_INTEG_PROCESS *Kproc,
+    int topbound, int botbound,
+    bool calc_upar,
+    const char *outpath,
+    const char *statsstr)
+{
+    if(modelpath == NULL || outpath == NULL || Kproc == NULL
+       || depsrcs == NULL || deprcvs == NULL || norths == NULL || easts == NULL){
+        GRTRaiseError("NULL argument.");
+    }
+    if(ndepsrc == 0 || ndeprcv == 0 || nnorth == 0 || neast == 0){
+        GRTRaiseError("empty dimension.");
+    }
+    if(statsstr != NULL && (ndepsrc > 1 || ndeprcv > 1)){
+        GRTRaiseError("-S / statsstr is only available for a single source/receiver depth.");
+    }
+
+    size_t nr = nnorth * neast;
+    real_t *rs = (real_t *)calloc(nr, sizeof(real_t));
+    for(size_t inorth = 0; inorth < nnorth; ++inorth){
+        for(size_t ieast = 0; ieast < neast; ++ieast){
+            rs[ieast + inorth * neast] = hypot(norths[inorth], easts[ieast]);
+        }
+    }
+
+    STGRNLIB *lib = grt_stgrnlib_alloc(
+        ndepsrc, depsrcs, ndeprcv, deprcvs, nnorth, norths, neast, easts, calc_upar);
+
+    realChnlGrid *grn = (realChnlGrid *)calloc(nr, sizeof(*grn));
+    realChnlGrid *grn_uiz = calc_upar ? (realChnlGrid *)calloc(nr, sizeof(*grn_uiz)) : NULL;
+    realChnlGrid *grn_uir = calc_upar ? (realChnlGrid *)calloc(nr, sizeof(*grn_uir)) : NULL;
+
+    size_t ntot = ndepsrc * ndeprcv;
+    size_t idone = 0;
+    const char *modelname = grt_get_basename(modelpath);
+
+    for(size_t is = 0; is < ndepsrc; ++is){
+        for(size_t ir = 0; ir < ndeprcv; ++ir){
+            real_t zs = depsrcs[is];
+            real_t zr = deprcvs[ir];
+
+            MODEL1D *mod1d = NULL;
+            if((mod1d = grt_read_mod1d_from_file(modelpath, zs, zr, false)) == NULL){
+                exit(EXIT_FAILURE);
+            }
+            grt_set_mod1d_boundary(mod1d, (GRT_BOUND_TYPE)topbound, (GRT_BOUND_TYPE)botbound);
+
+            // 拷贝模板，避免 integ 改写 cvgmet/dk 等影响后续深度
+            K_INTEG_PROCESS local_K = *Kproc;
+            real_t hs = GRT_MAX(fabs(zs - zr), GRT_MIN_DEPTH_GAP_SRC_RCV);
+            local_K.k0 = k0 * PI / hs;
+
+            memset(grn, 0, nr * sizeof(*grn));
+            if(calc_upar){
+                memset(grn_uiz, 0, nr * sizeof(*grn_uiz));
+                memset(grn_uir, 0, nr * sizeof(*grn_uir));
+            }
+
+            grt_integ_static_grn(
+                mod1d, nr, rs, &local_K,
+                calc_upar, grn, grn_uiz, grn_uir, statsstr);
+
+            lib->src_va[is] = mod1d->Va[mod1d->isrc];
+            lib->src_vb[is] = mod1d->Vb[mod1d->isrc];
+            lib->src_rho[is] = mod1d->Rho[mod1d->isrc];
+            lib->rcv_va[ir] = mod1d->Va[mod1d->ircv];
+            lib->rcv_vb[ir] = mod1d->Vb[mod1d->ircv];
+            lib->rcv_rho[ir] = mod1d->Rho[mod1d->ircv];
+
+            copy_grn_slice_with_sign(lib, is, ir, nr, calc_upar, grn, grn_uiz, grn_uir);
+
+            idone++;
+            GRTRaiseInfo("static greenfn: [%zu/%zu] depsrc=%.6g deprcv=%.6g (%s) done.",
+                idone, ntot, zs, zr, modelname);
+
+            grt_free_mod1d(mod1d);
+        }
+    }
+
+    grt_stgrnlib_save_nc(lib, outpath);
+    GRTRaiseInfo("Static Green's function library saved in \"%s\".", outpath);
+
+    GRT_SAFE_FREE_PTR(rs);
+    GRT_SAFE_FREE_PTR(grn);
+    GRT_SAFE_FREE_PTR(grn_uiz);
+    GRT_SAFE_FREE_PTR(grn_uir);
+    grt_stgrnlib_free(lib);
+}
+
+
 /** 子模块主函数 */
 int static_greenfn_main(int argc, char **argv){
     GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
 
-    // 传入参数 
     getopt_from_command(Ctrl, argc, argv);
 
-    // 读入模型文件（暂先不考虑液体层）
-    if((Ctrl->M.mod1d = grt_read_mod1d_from_file(Ctrl->M.s_modelpath, Ctrl->D.depsrc, Ctrl->D.deprcv, false)) == NULL){
-        exit(EXIT_FAILURE);
-    }
-    MODEL1D *mod1d = Ctrl->M.mod1d;
-
-    // 边界条件
-    grt_set_mod1d_boundary(mod1d, Ctrl->B.topbound, Ctrl->B.botbound);
-
-    // 波数积分输出目录
+    bool multi_depth = (Ctrl->D.ndepsrc > 1) || (Ctrl->D.ndeprcv > 1);
     if(Ctrl->S.active){
-        Ctrl->S.s_statsdir = NULL;
-        GRT_SAFE_ASPRINTF(&Ctrl->S.s_statsdir, "stgrtstats");
-        // 建立保存目录
-        GRTCheckMakeDir(Ctrl->S.s_statsdir);
-        GRT_SAFE_ASPRINTF(&Ctrl->S.s_statsdir, "%s/%s_%s_%s", Ctrl->S.s_statsdir, Ctrl->M.s_modelname, Ctrl->D.s_depsrc, Ctrl->D.s_deprcv);
-        GRTCheckMakeDir(Ctrl->S.s_statsdir);
+        if(multi_depth){
+            GRTRaiseWarning("-S is ignored for multi-depth STGRNLIB computation.");
+        } else {
+            // 单深度：stgrtstats/<model>_<depsrc>_<deprcv>
+            GRT_SAFE_ASPRINTF(&Ctrl->S.s_statsdir, "stgrtstats");
+            GRTCheckMakeDir(Ctrl->S.s_statsdir);
+            GRT_SAFE_ASPRINTF(
+                &Ctrl->S.s_statsdir, "%s/%s_%g_%g",
+                Ctrl->S.s_statsdir,
+                grt_get_basename(Ctrl->M.s_modelpath),
+                Ctrl->D.depsrcs[0], Ctrl->D.deprcvs[0]);
+            GRTCheckMakeDir(Ctrl->S.s_statsdir);
+        }
     }
-
-    // 建立格林函数的浮点数
-    realChnlGrid *grn = (realChnlGrid *) calloc(Ctrl->nr, sizeof(*grn));
-    realChnlGrid *grn_uiz = (Ctrl->e.active)? (realChnlGrid *) calloc(Ctrl->nr, sizeof(*grn_uiz)) : NULL;
-    realChnlGrid *grn_uir = (Ctrl->e.active)? (realChnlGrid *) calloc(Ctrl->nr, sizeof(*grn_uir)) : NULL;
 
     K_INTEG_PROCESS KPROC = {0};
-    prepare_static_grn(
-        mod1d,
+    grt_prepare_static_grn(
         Ctrl->nr, Ctrl->rs,
         Ctrl->L.Length,
         Ctrl->L.FIM.active ? Ctrl->L.FIM.Length : 0.0,
         Ctrl->L.SAFIM.active ? Ctrl->L.SAFIM.tol : 0.0,
         Ctrl->L.kcut,
-        Ctrl->K.k0, Ctrl->K.keps, Ctrl->K.use_kmax_ref,
+        Ctrl->K.keps, Ctrl->K.use_kmax_ref,
         Ctrl->C.convmet,
         &KPROC);
 
-    //==============================================================================
-    // 计算静态格林函数
-    grt_integ_static_grn(
-        mod1d, Ctrl->nr, Ctrl->rs, &KPROC,
-        Ctrl->e.active, grn, grn_uiz, grn_uir,
-        Ctrl->S.s_statsdir
-    );
-    //==============================================================================
-
-    real_t src_va = mod1d->Va[mod1d->isrc];
-    real_t src_vb = mod1d->Vb[mod1d->isrc];
-    real_t src_rho = mod1d->Rho[mod1d->isrc];
-    real_t rcv_va = mod1d->Va[mod1d->ircv];
-    real_t rcv_vb = mod1d->Vb[mod1d->ircv];
-    real_t rcv_rho = mod1d->Rho[mod1d->ircv];
-
-
-    // ==================================================================================
-    // 将结果保存为 nc 格式
-    // ==================================================================================
-    int ncid, north_dimid, east_dimid;
-    const int ndims = 2;
-    int dimids[ndims];
-    int north_varid, east_varid;
-    intChnlGrid u_varids;
-    intChnlGrid uiz_varids;
-    intChnlGrid uir_varids;
-
-    // 创建 NC 文件
-    NC_CHECK(nc_create(Ctrl->O.s_outgrid, NC_CLOBBER, &ncid));
-
-    // 写入全局属性
-    NC_CHECK(NC_FUNC_REAL(nc_put_att) (ncid, NC_GLOBAL, "depsrc", NC_REAL, 1, &mod1d->depsrc));
-    NC_CHECK(NC_FUNC_REAL(nc_put_att) (ncid, NC_GLOBAL, "deprcv", NC_REAL, 1, &mod1d->deprcv));
-    NC_CHECK(NC_FUNC_REAL(nc_put_att) (ncid, NC_GLOBAL, "src_va", NC_REAL, 1, &src_va));
-    NC_CHECK(NC_FUNC_REAL(nc_put_att) (ncid, NC_GLOBAL, "src_vb", NC_REAL, 1, &src_vb));
-    NC_CHECK(NC_FUNC_REAL(nc_put_att) (ncid, NC_GLOBAL, "src_rho", NC_REAL, 1, &src_rho));
-    NC_CHECK(NC_FUNC_REAL(nc_put_att) (ncid, NC_GLOBAL, "rcv_va", NC_REAL, 1, &rcv_va));
-    NC_CHECK(NC_FUNC_REAL(nc_put_att) (ncid, NC_GLOBAL, "rcv_vb", NC_REAL, 1, &rcv_vb));
-    NC_CHECK(NC_FUNC_REAL(nc_put_att) (ncid, NC_GLOBAL, "rcv_rho", NC_REAL, 1, &rcv_rho));
-    // 是否计算了位移偏导也直接写到全局属性
-    {
-        int tmp = Ctrl->e.active;
-        NC_CHECK(nc_put_att_int(ncid, NC_GLOBAL, "calc_upar", NC_INT, 1, &tmp));
-    }
-
-    // 定义维度
-    NC_CHECK(nc_def_dim(ncid, "north", Ctrl->X.nnorth, &north_dimid));
-    NC_CHECK(nc_def_dim(ncid, "east", Ctrl->Y.neast, &east_dimid));
-    dimids[0] = north_dimid;
-    dimids[1] = east_dimid;
-
-    // 定义维度数组
-    NC_CHECK(nc_def_var(ncid, "north", NC_REAL, 1, &north_dimid, &north_varid));
-    NC_CHECK(nc_def_var(ncid, "east", NC_REAL, 1, &east_dimid, &east_varid));
-
-    // 定义不同震源不同分量的格林函数数组
-    GRT_LOOP_ChnlGrid(im, c){
-        int modr = GRT_SRC_M_ORDERS[im];
-        char *s_title = NULL;
-
-        if(modr==0 && GRT_ZRT_CODES[c]=='T')  continue;
-
-        GRT_SAFE_ASPRINTF(&s_title, "%s%c", GRT_SRC_M_NAME_ABBR[im], GRT_ZRT_CODES[c]);
-        NC_CHECK(nc_def_var(ncid, s_title, NC_REAL, ndims, dimids, &u_varids[im][c]));
-
-        // 位移偏导
-        if(Ctrl->e.active){
-            GRT_SAFE_ASPRINTF(&s_title, "z%s%c", GRT_SRC_M_NAME_ABBR[im], GRT_ZRT_CODES[c]);
-            NC_CHECK(nc_def_var(ncid, s_title, NC_REAL, ndims, dimids, &uiz_varids[im][c]));
-            GRT_SAFE_ASPRINTF(&s_title, "r%s%c", GRT_SRC_M_NAME_ABBR[im], GRT_ZRT_CODES[c]);
-            NC_CHECK(nc_def_var(ncid, s_title, NC_REAL, ndims, dimids, &uir_varids[im][c]));
-        }
-        GRT_SAFE_FREE_PTR(s_title);
-    }
-
-    // 结束定义模式
-    NC_CHECK(nc_enddef(ncid));
-
-    // 写入数据
-    NC_CHECK(NC_FUNC_REAL(nc_put_var) (ncid, north_varid, Ctrl->X.norths));
-    NC_CHECK(NC_FUNC_REAL(nc_put_var) (ncid, east_varid, Ctrl->Y.easts));
-    real_t *tmpdata = (real_t *)calloc(Ctrl->nr, sizeof(real_t));
-    GRT_LOOP_ChnlGrid(im, c){
-        int modr = GRT_SRC_M_ORDERS[im];
-
-        if(modr==0 && GRT_ZRT_CODES[c]=='T')  continue;
-
-        int sgn0 = 1;
-        sgn0 = (GRT_ZRT_CODES[c]=='Z')? -1 : 1;
-        for(size_t ir=0; ir < Ctrl->nr; ++ir){
-            tmpdata[ir] = sgn0 * grn[ir][im][c];
-        }
-
-        NC_CHECK(NC_FUNC_REAL(nc_put_var) (ncid, u_varids[im][c], tmpdata));
-
-        // 位移偏导
-        if(Ctrl->e.active){
-            for(size_t ir=0; ir < Ctrl->nr; ++ir){
-                tmpdata[ir] = (-1) * sgn0 * grn_uiz[ir][im][c];  // 这里多乘的(-1)是因为对z的偏导，z需反向
-            }
-            NC_CHECK(NC_FUNC_REAL(nc_put_var) (ncid, uiz_varids[im][c], tmpdata));
-            for(size_t ir=0; ir < Ctrl->nr; ++ir){
-                tmpdata[ir] = sgn0 * grn_uir[ir][im][c];  // 这里多乘的(-1)是因为对z的偏导，z需反向
-            }
-            NC_CHECK(NC_FUNC_REAL(nc_put_var) (ncid, uir_varids[im][c], tmpdata));
-        }
-    }
-    GRT_SAFE_FREE_PTR(tmpdata);
-
-    // 关闭文件
-    NC_CHECK(nc_close(ncid));
-
-
-    // 释放内存
-    GRT_SAFE_FREE_PTR(grn);
-    GRT_SAFE_FREE_PTR(grn_uiz);
-    GRT_SAFE_FREE_PTR(grn_uir);
+    grt_compute_stgrnlib_to_nc(
+        Ctrl->M.s_modelpath,
+        Ctrl->D.ndepsrc, Ctrl->D.depsrcs,
+        Ctrl->D.ndeprcv, Ctrl->D.deprcvs,
+        Ctrl->X.nnorth, Ctrl->X.norths,
+        Ctrl->Y.neast, Ctrl->Y.easts,
+        Ctrl->K.k0,
+        &KPROC,
+        (int)Ctrl->B.topbound, (int)Ctrl->B.botbound,
+        Ctrl->e.active,
+        Ctrl->O.s_outgrid,
+        Ctrl->S.s_statsdir);
 
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;

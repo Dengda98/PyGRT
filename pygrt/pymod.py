@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import os
+import warnings
 from ctypes import c_size_t, cast, c_void_p
 from pathlib import Path
 from typing import Dict, Iterable, Optional, Sequence, Union
@@ -24,6 +25,7 @@ from .utils import read_static_nc
 
 
 PathLike = Union[str, os.PathLike]
+DepthLike = Union[float, Sequence[float]]
 
 __all__ = ["PyModel1D"]
 
@@ -42,6 +44,33 @@ def _normalize_distarr(distarr):
     if arr.ndim == 1:
         return False, np.ascontiguousarray(arr, dtype=np.float64)
     raise ValueError("distarr must be a scalar or a 1-D sequence of floats.")
+
+
+def _normalize_depths(depths: DepthLike, name: str) -> np.ndarray:
+    """
+    将震源/接收深度规范为一维 float64 数组
+
+    接受标量或一维浮点序列；空数组与负深度会报错
+    """
+    if isinstance(depths, (str, bytes)):
+        raise TypeError(f"{name} must be a float or a 1-D sequence of floats, not a string.")
+    arr = np.asarray(depths, dtype=np.float64)
+    if arr.ndim == 0:
+        arr = np.ascontiguousarray([float(arr)], dtype=np.float64)
+    elif arr.ndim == 1:
+        arr = np.ascontiguousarray(arr, dtype=np.float64)
+    else:
+        raise ValueError(f"{name} must be a scalar or a 1-D sequence of floats.")
+    if arr.size == 0:
+        raise ValueError(f"{name} must not be empty.")
+    if np.any(arr < 0.0):
+        raise ValueError(f"{name} must be nonnegative.")
+    return arr
+
+
+def _format_depth_list(depths: np.ndarray) -> str:
+    """将深度数组格式化为 CLI ``-Ds``/``-Dr`` 的逗号列表"""
+    return ",".join(format_float(float(z)) for z in depths)
 
 
 class PyModel1D:
@@ -350,8 +379,8 @@ class PyModel1D:
     def compute_static_grn(
         self,
         *,
-        depsrc: float,
-        deprcv: float,
+        depsrc: DepthLike,
+        deprcv: DepthLike,
         norths: Optional[Sequence[float]] = None,
         easts: Optional[Sequence[float]] = None,
         distarr: Optional[Sequence[float]] = None,
@@ -370,8 +399,14 @@ class PyModel1D:
         Compute static Green's functions with the ``grt static greenfn`` command.
 
         Call :meth:`set_static_grn_path` first. Results are written to the
-        configured NetCDF file and currently overwrite any existing content.
-        All arguments must be passed by keyword.
+        configured NetCDF file (4D STGRNLIB layout
+        ``[depsrc][deprcv][north][east]``) and currently overwrite any existing
+        content. All arguments must be passed by keyword.
+
+        ``depsrc`` / ``deprcv`` may be a scalar or a 1-D sequence:
+
+        * Single depth pair: CLI ``-Ddepsrc/deprcv``.
+        * Multiple depths: CLI ``-Ds...`` / ``-Dr...`` (comma-separated list).
 
         Receiver locations can be specified in either of two ways:
 
@@ -380,8 +415,8 @@ class PyModel1D:
         2. ``distarr``, a list of epicentral distances in km. This is equivalent
            to placing receivers along the east axis with north = 0.
 
-        :param    depsrc:            Source depth in km.
-        :param    deprcv:            Receiver depth in km.
+        :param    depsrc:            Source depth(s) in km.
+        :param    deprcv:            Receiver depth(s) in km.
         :param    norths:            Three values defining the north-coordinate
                                      option ``-Xstart/stop/step`` in km.
         :param    easts:             Three values defining the east-coordinate
@@ -414,13 +449,18 @@ class PyModel1D:
                                      displacement. Required later if strain,
                                      stress or rotation will be computed.
         :param    stats:             Whether to write integration statistics.
+                                     Only available for a single source/receiver depth;
+                                     ignored with a warning for multi-depth runs.
 
         :return: ``None``. Results are written to the configured NetCDF file.
         """
         if self.static_grn_path is None:
             raise RuntimeError("Call set_static_grn_path() before compute_static_grn().")
-        if depsrc < 0 or deprcv < 0:
-            raise ValueError("Source and receiver depths must be nonnegative.")
+
+        depsrcs = _normalize_depths(depsrc, "depsrc")
+        deprcvs = _normalize_depths(deprcv, "deprcv")
+        multi_depth = (depsrcs.size > 1) or (deprcvs.size > 1)
+
         if distarr is not None:
             if norths is not None or easts is not None:
                 raise ValueError("Use either distarr or norths/easts.")
@@ -442,10 +482,14 @@ class PyModel1D:
             "module": "static",
             "subcommand": "greenfn",
             "M": f"-M{self.modelpath}",
-            "D": f"-D{format_float(depsrc)}/{format_float(deprcv)}",
-            "O": f"-O{self.static_grn_path}",
-            "B": f"-B{self._boundary_option()}",
         }
+        if multi_depth:
+            command["Ds"] = f"-Ds{_format_depth_list(depsrcs)}"
+            command["Dr"] = f"-Dr{_format_depth_list(deprcvs)}"
+        else:
+            command["D"] = f"-D{format_float(float(depsrcs[0]))}/{format_float(float(deprcvs[0]))}"
+        command["O"] = f"-O{self.static_grn_path}"
+        command["B"] = f"-B{self._boundary_option()}"
         command.update(command_grid)
 
         # Build the -L option.
@@ -472,7 +516,13 @@ class PyModel1D:
 
         # Build the statistics and derivative options.
         if stats:
-            command["S"] = "-S"
+            if multi_depth:
+                warnings.warn(
+                    "stats is ignored for multi-depth STGRNLIB computation.",
+                    stacklevel=2,
+                )
+            else:
+                command["S"] = "-S"
         if calc_upar:
             command["e"] = "-e"
 

@@ -595,58 +595,63 @@ int static_syn_main(int argc, char **argv){
     // 根据参数设置，选择分量名
     const char *chs = (rot2ZNE)? GRT_ZNE_CODES : GRT_ZRT_CODES;
 
-    // nc 文件相关变量
-    int in_ncid;
-    int in_x_dimid, in_y_dimid;
-    int in_x_varid, in_y_varid;
-    const int ndims = 2;
-    intChnlGrid in_u_varids;
-    intChnlGrid in_uiz_varids;
-    intChnlGrid in_uir_varids;
+    // 以 STGRNLIB 加载输入格林函数库（dims: depsrc×deprcv×north×east）
+    GRTCheckFileExist(Ctrl->G.s_ingrid);
+    STGRNLIB *lib = grt_stgrnlib_load_nc(Ctrl->G.s_ingrid);
+    if(lib->ndepsrc != 1 || lib->ndeprcv != 1){
+        grt_stgrnlib_free(lib);
+        GRTRaiseError(
+            "static syn currently supports only a single source/receiver depth "
+            "in the STGRNLIB nc (ndepsrc=1 and ndeprcv=1)."
+        );
+    }
+
+    real_t src_va = lib->src_va[0];
+    real_t src_vb = lib->src_vb[0];
+    real_t src_rho = lib->src_rho[0];
+    real_t src_mu = src_vb * src_vb * src_rho * 1e10;
+    if(Ctrl->S.mult_src_mu) Ctrl->S.M0 *= src_mu;
+
+    int calc_upar = lib->calc_upar ? 1 : 0;
+    if(Ctrl->e.active && calc_upar == 0){
+        grt_stgrnlib_free(lib);
+        GRTRaiseError("Input grid didn't have displacement derivatives, you can't set -e.");
+    }
+
+    size_t nnorth0 = lib->nnorth;
+    size_t neast0 = lib->neast;
+    real_t *norths0 = lib->norths;
+    real_t *easts0 = lib->easts;
+
+    // 根据情况使用 -X/-Y 指定的新接收点网格
+    size_t nnorth = (Ctrl->isnewNEgrid)? Ctrl->X.nnorth : nnorth0;
+    size_t neast = (Ctrl->isnewNEgrid)? Ctrl->Y.neast : neast0;
+    real_t *norths = (Ctrl->isnewNEgrid)? Ctrl->X.norths : norths0;
+    real_t *easts = (Ctrl->isnewNEgrid)? Ctrl->Y.easts : easts0;
+
+    // 输出 nc
     int out_ncid;
     int out_x_dimid, out_y_dimid;
     int out_x_varid, out_y_varid;
+    const int ndims = 2;
     int out_dimids[ndims];
     int out_syn_varids[GRT_CHANNEL_NUM];
     int out_syn_upar_varids[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
 
-    size_t nnorth, neast, nnorth0, neast0;
-    real_t *norths, *easts, *norths0, *easts0;
-    size_t nr, nr0;
-    
-    // 打开 nc 文件
-    GRTCheckFileExist(Ctrl->G.s_ingrid);
-    NC_CHECK(nc_open(Ctrl->G.s_ingrid, NC_NOWRITE, &in_ncid));
     NC_CHECK(nc_create(Ctrl->O.s_outgrid, NC_CLOBBER, &out_ncid));
 
-    // 读取全局属性，视情况计算 src_mu
-    real_t src_va=0.0, src_vb=0.0, src_rho=0.0, src_mu=0.0;
-    NC_CHECK(NC_FUNC_REAL(nc_get_att) (in_ncid, NC_GLOBAL, "src_va", &src_va));
-    NC_CHECK(NC_FUNC_REAL(nc_get_att) (in_ncid, NC_GLOBAL, "src_vb", &src_vb));
-    NC_CHECK(NC_FUNC_REAL(nc_get_att) (in_ncid, NC_GLOBAL, "src_rho", &src_rho));
-    src_mu = src_vb*src_vb*src_rho*1e10;
-    if(Ctrl->S.mult_src_mu) Ctrl->S.M0 *= src_mu;
-
-    // 读入的数据是否有位移偏导
-    int calc_upar;
-    NC_CHECK(nc_get_att_int(in_ncid, NC_GLOBAL, "calc_upar", &calc_upar));
-    if(Ctrl->e.active && calc_upar == 0){
-        GRTRaiseError("Input grid didn't have displacement derivatives, you can't set -e.");
-    }
-
-    // 复制属性
+    // 复制介质属性到输出（合成结果仍用全局属性，与旧格式一致）
     NC_CHECK(NC_FUNC_REAL(nc_put_att) (out_ncid, NC_GLOBAL, "src_va", NC_REAL, 1, &src_va));
     NC_CHECK(NC_FUNC_REAL(nc_put_att) (out_ncid, NC_GLOBAL, "src_vb", NC_REAL, 1, &src_vb));
     NC_CHECK(NC_FUNC_REAL(nc_put_att) (out_ncid, NC_GLOBAL, "src_rho", NC_REAL, 1, &src_rho));
     NC_CHECK(nc_put_att_int(out_ncid, NC_GLOBAL, "calc_upar", NC_INT, 1, &calc_upar));
     {
-        real_t rcv_va=0.0, rcv_vb=0.0, rcv_rho=0.0;
-        NC_CHECK(NC_FUNC_REAL(nc_get_att) (in_ncid, NC_GLOBAL, "rcv_va", &rcv_va));
-        NC_CHECK(NC_FUNC_REAL(nc_get_att) (in_ncid, NC_GLOBAL, "rcv_vb", &rcv_vb));
-        NC_CHECK(NC_FUNC_REAL(nc_get_att) (in_ncid, NC_GLOBAL, "rcv_rho", &rcv_rho));
+        real_t rcv_va = lib->rcv_va[0];
+        real_t rcv_vb = lib->rcv_vb[0];
+        real_t rcv_rho = lib->rcv_rho[0];
         NC_CHECK(NC_FUNC_REAL(nc_put_att) (out_ncid, NC_GLOBAL, "rcv_va", NC_REAL, 1, &rcv_va));
         NC_CHECK(NC_FUNC_REAL(nc_put_att) (out_ncid, NC_GLOBAL, "rcv_vb", NC_REAL, 1, &rcv_vb));
-        NC_CHECK(NC_FUNC_REAL(nc_put_att) (out_ncid, NC_GLOBAL, "rcv_rho", NC_REAL, 1, &rcv_rho)); 
+        NC_CHECK(NC_FUNC_REAL(nc_put_att) (out_ncid, NC_GLOBAL, "rcv_rho", NC_REAL, 1, &rcv_rho));
     }
 
     // 是否旋转到ZNE记录到全局属性
@@ -657,20 +662,6 @@ int static_syn_main(int argc, char **argv){
 
     // 震源类型写入全局属性
     NC_CHECK(nc_put_att_text(out_ncid, NC_GLOBAL, "computeType", strlen(Ctrl->s_computeType), Ctrl->s_computeType));
-    
-    // 读入坐标变量 dimid, varid
-    NC_CHECK(nc_inq_dimid(in_ncid, "north", &in_x_dimid));
-    NC_CHECK(nc_inq_dimlen(in_ncid, in_x_dimid, &nnorth0));
-    NC_CHECK(nc_inq_dimid(in_ncid, "east", &in_y_dimid));
-    NC_CHECK(nc_inq_dimlen(in_ncid, in_y_dimid, &neast0));
-    norths0 = (real_t *)calloc(nnorth0, sizeof(real_t));
-    easts0 = (real_t *)calloc(neast0, sizeof(real_t));
-
-    // 根据情况使用 -X/-Y 指定的新接收点网格
-    nnorth = (Ctrl->isnewNEgrid)? Ctrl->X.nnorth : nnorth0;
-    neast = (Ctrl->isnewNEgrid)? Ctrl->Y.neast : neast0;
-    norths = (Ctrl->isnewNEgrid)? Ctrl->X.norths : norths0;
-    easts = (Ctrl->isnewNEgrid)? Ctrl->Y.easts : easts0;
 
     // 写入坐标变量 dimid, varid
     NC_CHECK(nc_def_dim(out_ncid, "north", nnorth, &out_x_dimid));
@@ -679,25 +670,6 @@ int static_syn_main(int argc, char **argv){
     NC_CHECK(nc_def_var(out_ncid, "east",  NC_REAL, 1, &out_y_dimid, &out_y_varid));
     out_dimids[0] = out_x_dimid;
     out_dimids[1] = out_y_dimid;
-
-    // 读入格林函数 varid
-    GRT_LOOP_ChnlGrid(im, c){
-        int modr = GRT_SRC_M_ORDERS[im];
-        char *s_title = NULL;
-        if(modr==0 && GRT_ZRT_CODES[c]=='T')  continue;
-
-        GRT_SAFE_ASPRINTF(&s_title, "%s%c", GRT_SRC_M_NAME_ABBR[im], GRT_ZRT_CODES[c]);
-        NC_CHECK(nc_inq_varid(in_ncid, s_title, &in_u_varids[im][c]));
-
-        // 位移偏导
-        if(Ctrl->e.active){
-            GRT_SAFE_ASPRINTF(&s_title, "z%s%c", GRT_SRC_M_NAME_ABBR[im], GRT_ZRT_CODES[c]);
-            NC_CHECK(nc_inq_varid(in_ncid, s_title, &in_uiz_varids[im][c]));
-            GRT_SAFE_ASPRINTF(&s_title, "r%s%c", GRT_SRC_M_NAME_ABBR[im], GRT_ZRT_CODES[c]);
-            NC_CHECK(nc_inq_varid(in_ncid, s_title, &in_uir_varids[im][c]));
-        }
-        GRT_SAFE_FREE_PTR(s_title);
-    }
 
     // 定义合成结果 varid
     for(int c=0; c<GRT_CHANNEL_NUM; ++c){
@@ -717,63 +689,27 @@ int static_syn_main(int argc, char **argv){
     // 结束定义模式
     NC_CHECK(nc_enddef(out_ncid));
 
-    // 读取坐标变量
-    NC_CHECK(nc_inq_varid(in_ncid, "north", &in_x_varid));
-    NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_x_varid, norths0));
-    NC_CHECK(nc_inq_varid(in_ncid, "east", &in_y_varid));
-    NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_y_varid, easts0));
-
     // 写入坐标变量
     NC_CHECK(NC_FUNC_REAL(nc_put_var) (out_ncid, out_x_varid, norths));
     NC_CHECK(NC_FUNC_REAL(nc_put_var) (out_ncid, out_y_varid, easts));
 
-    // 总震中距数
-    nr0 = nnorth0 * neast0;
-
-    // 先将所有格林函数及其偏导读入内存，
-    // 否则连续使用 nc_grt_var1 式读入效率太慢
-    realChnlGrid *grn = (realChnlGrid *) calloc(nr0, sizeof(*grn));
-    realChnlGrid *grn_uiz = (Ctrl->e.active)? (realChnlGrid *) calloc(nr0, sizeof(*grn_uiz)) : NULL;
-    realChnlGrid *grn_uir = (Ctrl->e.active)? (realChnlGrid *) calloc(nr0, sizeof(*grn_uir)) : NULL;
-    {
-        real_t *u = (real_t *)calloc(nr0, sizeof(real_t));
-        GRT_LOOP_ChnlGrid(im, c){
-            int modr = GRT_SRC_M_ORDERS[im];
-            if(modr==0 && GRT_ZRT_CODES[c]=='T')  continue;
-
-            NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_u_varids[im][c], u));
-            for(size_t ir = 0; ir < nr0; ++ir){
-                grn[ir][im][c] = u[ir];
-            }
-
-            if(Ctrl->e.active){
-                NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_uiz_varids[im][c], u));
-                for(size_t ir = 0; ir < nr0; ++ir){
-                    grn_uiz[ir][im][c] = u[ir];
-                }
-                NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_uir_varids[im][c], u));
-                for(size_t ir = 0; ir < nr0; ++ir){
-                    grn_uir[ir][im][c] = u[ir];
-                }
-            }
-
-        }
-        GRT_SAFE_FREE_PTR(u);
-    }
+    // 单深度切片：直接使用库内指针
+    realChnlGrid *grn = lib->u[0][0];
+    realChnlGrid *grn_uiz = (Ctrl->e.active)? lib->uiz[0][0] : NULL;
+    realChnlGrid *grn_uir = (Ctrl->e.active)? lib->uir[0][0] : NULL;
 
     // 新接收点网格总点数
-    nr = nnorth * neast;
-    
+    size_t nr = nnorth * neast;
+
     // 最终计算的结果
     real_t (*syn)[GRT_CHANNEL_NUM] = (real_t (*)[GRT_CHANNEL_NUM])calloc(nr, sizeof(real_t)*GRT_CHANNEL_NUM);
     real_t (*syn_upar)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM] = (real_t (*)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])calloc(nr, sizeof(real_t)*GRT_CHANNEL_NUM*GRT_CHANNEL_NUM);
-    
     static_syn_from_gf(
-        nnorth0, norths0, neast0, easts0, 
-        nnorth, norths, neast, easts, 
-        grn, grn_uiz, grn_uir, 
-        Ctrl->computeType, Ctrl->S.M0, src_va/src_vb, Ctrl->mchn, 
-        rot2ZNE, Ctrl->e.active, 
+        nnorth0, norths0, neast0, easts0,
+        nnorth, norths, neast, easts,
+        grn, grn_uiz, grn_uir,
+        Ctrl->computeType, Ctrl->S.M0, src_va/src_vb, Ctrl->mchn,
+        rot2ZNE, Ctrl->e.active,
         syn, syn_upar
     );
 
@@ -796,10 +732,8 @@ int static_syn_main(int argc, char **argv){
         }
     }
     GRT_SAFE_FREE_PTR(tmpdata);
-    
 
     // 关闭文件
-    NC_CHECK(nc_close(in_ncid));
     NC_CHECK(nc_close(out_ncid));
 
     if(! Ctrl->s.active) {
@@ -807,15 +741,9 @@ int static_syn_main(int argc, char **argv){
     }
 
     // 释放内存
-    GRT_SAFE_FREE_PTR(norths0);
-    GRT_SAFE_FREE_PTR(easts0);
-
-    GRT_SAFE_FREE_PTR(grn);
-    GRT_SAFE_FREE_PTR(grn_uiz);
-    GRT_SAFE_FREE_PTR(grn_uir);
     GRT_SAFE_FREE_PTR(syn);
     GRT_SAFE_FREE_PTR(syn_upar);
-
+    grt_stgrnlib_free(lib);
 
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;

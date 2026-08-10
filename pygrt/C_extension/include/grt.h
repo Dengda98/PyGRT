@@ -57,6 +57,7 @@
 
 
 #include "grt/static/static_grn.h"
+#include "grt/static/stgrnlib.h"
 #include "grt/static/static_layer.h"
 #include "grt/static/static_source.h"
 

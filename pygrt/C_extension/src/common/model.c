@@ -86,6 +86,7 @@ void grt_realloc_mod1d(MODEL1D *mod1d, size_t n)
 
 void grt_free_mod1d(MODEL1D *mod1d)
 {
+    if(mod1d == NULL) return;
     #define X(P, T)  GRT_SAFE_FREE_PTR(mod1d->P);
         __MODEL1D_FOR_EACH_ARRAY
     #undef X
