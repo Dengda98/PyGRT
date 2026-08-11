@@ -14,8 +14,10 @@ from .pymod import *
 # 格林函数类
 from .pygrn import *
 
+# 面波频散类
+from .modal import *
+
 from . import signals as sigs
 
 from . import utils 
-
 
