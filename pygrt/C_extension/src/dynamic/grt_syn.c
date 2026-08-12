@@ -531,18 +531,18 @@ static void syn_accum_from_gf(
 
 
 /**
- * 由动态格林函数合成三分量地震图（及可选空间偏导）。
+ * 由动态格林函数合成三分量地震图（及可选空间偏导）
  *
  * 数组布局：gf[震源][分量][采样点]、syn[分量][采样点]、
  * syn_upar[偏导方向][分量][采样点]。gf_uiz/gf_uir 在 calc_upar=false
- * 时可传 NULL；单个分量指针为 NULL 时跳过该道。
+ * 时可传 NULL；单个分量指针为 NULL 时跳过该道
  *
  * r=0 时强制 *azrad=0（e_r→N、e_θ→E）并告警；
- * 并用 ∂_r 格林函数合成 (1/r)∂_θ 的有限部分（见函数内注释）。
+ * 并用 ∂_r 格林函数合成 (1/r)∂_θ 的有限部分（见函数内注释）
  *
  * @param[in,out]  azrad     方位角（弧度）；r=0 时写回 0
  */
-void grt_syn_from_gf(
+static void syn_from_gf(
     size_t npts, float dist,
     const pfloatChnlGrid gf, const pfloatChnlGrid gf_uiz, const pfloatChnlGrid gf_uir,
     GRT_SYN_TYPE computeType, real_t M0, real_t VpVs_ratio, real_t *azrad,
@@ -768,7 +768,7 @@ int syn_main(int argc, char **argv)
         }
     }
 
-    grt_syn_from_gf(
+    syn_from_gf(
         (size_t)npts, Ctrl->dist,
         gf, calc_upar ? gf_uiz : NULL, calc_upar ? gf_uir : NULL,
         Ctrl->computeType, Ctrl->S.M0, Ctrl->VpVs_ratio, &Ctrl->A.azrad, Ctrl->mchn,

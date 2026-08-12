@@ -43,7 +43,6 @@
 #include "grt/dynamic/grn.h"
 #include "grt/dynamic/grnspec.h"
 #include "grt/dynamic/layer.h"
-#include "grt/dynamic/dyn_postprocess.h"
 #include "grt/dynamic/signals.h"
 #include "grt/dynamic/source.h"
 
@@ -59,7 +58,6 @@
 
 #include "grt/static/static_grn.h"
 #include "grt/static/static_layer.h"
-#include "grt/static/static_postprocess.h"
 #include "grt/static/static_source.h"
 
 

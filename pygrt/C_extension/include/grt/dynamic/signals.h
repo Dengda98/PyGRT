@@ -173,7 +173,7 @@ float * grt_get_ricker_wave(float dt, float f0, int *Nt);
 float * grt_get_custom_wave(int *Nt, const char *tfparams);
 
 /**
- * 专用于在Python端释放C中申请的内存
+ * 释放 C 侧 malloc 的一维数组
  * 
  * @param[out]     pt    指针
  */

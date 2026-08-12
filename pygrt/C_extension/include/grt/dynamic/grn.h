@@ -19,7 +19,7 @@
 #include "grt/integral/integ_process.h"
 
 /**
- * 积分计算Z, R, T三个分量格林函数的频谱的核心函数（被Python调用）  
+ * 积分计算Z, R, T三个分量格林函数的频谱的核心函数
  * 
  * @param[in,out]   mod1d            `MODEL1D` 结构体指针 
  * @param[in,out]   Kproc             波数积分相关参数的结构体指针

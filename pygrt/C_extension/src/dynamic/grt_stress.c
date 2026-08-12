@@ -51,7 +51,8 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     GRTCheckOptionSet(argc > 1);
 }
 
-void grt_compute_stress(
+/** 在频域由位移偏导合成应力张量 */
+static void compute_stress(
     size_t npts, float dt, float dist, float va, float vb, float rho,
     float Qainv, float Qbinv, float *const u[GRT_CHANNEL_NUM],
     float *const upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM],
@@ -201,7 +202,7 @@ int stress_main(int argc, char **argv){
             res[c2][c] = calloc(npts, sizeof(*res[c2][c]));
         }
     }
-    grt_compute_stress(npts, dt, dist, va, vb, rho, Qainv, Qbinv, u, upar, res, rot2ZNE);
+    compute_stress(npts, dt, dist, va, vb, rho, Qainv, Qbinv, u, upar, res, rot2ZNE);
 
     // 写出6个分量
     for(int i1=0; i1<3; ++i1){
