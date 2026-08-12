@@ -681,7 +681,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
  * 静态积分前准备：按震中距与用户参数填充深度无关的 K_INTEG_PROCESS 字段
  * 不写入 Kproc->k0；调用方按 hs 自行缩放
  */
-void grt_prepare_static_grn(
+static void prepare_static_grn(
     size_t nr, real_t *rs,
     real_t Length,
     real_t filonLength, real_t safilonTol, real_t filonCut,
@@ -746,7 +746,13 @@ static void copy_grn_slice_with_sign(
 }
 
 
-void grt_compute_stgrnlib_to_nc(
+/**
+ * 循环计算多震源/接收深度静态格林函数并写入单个四维 nc
+ *
+ * Kproc 须已由 prepare_static_grn 填好深度无关字段；
+ * 循环内按各 (depsrc, deprcv) 的 hs 更新局部拷贝的 k0，避免积分过程改写模板
+ */
+static void compute_stgrnlib_to_nc(
     const char *modelpath,
     size_t ndepsrc, const real_t *depsrcs,
     size_t ndeprcv, const real_t *deprcvs,
@@ -867,7 +873,7 @@ int static_greenfn_main(int argc, char **argv){
     }
 
     K_INTEG_PROCESS KPROC = {0};
-    grt_prepare_static_grn(
+    prepare_static_grn(
         Ctrl->nr, Ctrl->rs,
         Ctrl->L.Length,
         Ctrl->L.FIM.active ? Ctrl->L.FIM.Length : 0.0,
@@ -877,7 +883,7 @@ int static_greenfn_main(int argc, char **argv){
         Ctrl->C.convmet,
         &KPROC);
 
-    grt_compute_stgrnlib_to_nc(
+    compute_stgrnlib_to_nc(
         Ctrl->M.s_modelpath,
         Ctrl->D.ndepsrc, Ctrl->D.depsrcs,
         Ctrl->D.ndeprcv, Ctrl->D.deprcvs,

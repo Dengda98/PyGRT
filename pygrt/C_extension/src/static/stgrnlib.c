@@ -8,16 +8,13 @@
  */
 
 #include <string.h>
-#include <math.h>
 
 #include "grt/static/stgrnlib.h"
 #include "grt/common/mynetcdf.h"
 #include "grt/common/checkerror.h"
-#include "grt/common/search.h"
 
-#define STGRNLIB_ATOL 1e-8
-
-void grt_stgrnlib_allocate_u(STGRNLIB *lib)
+/** 按已填好的维度申请 u/uiz/uir */
+static void allocate_u(STGRNLIB *lib)
 {
     size_t nr = lib->nnorth * lib->neast;
     lib->u = (realChnlGrid ***)calloc(lib->ndepsrc, sizeof(*lib->u));
@@ -38,6 +35,29 @@ void grt_stgrnlib_allocate_u(STGRNLIB *lib)
             }
         }
     }
+}
+
+/** 仅释放 u/uiz/uir */
+static void free_u(STGRNLIB *lib)
+{
+    if(lib == NULL) return;
+    if(lib->u != NULL){
+        for(size_t is = 0; is < lib->ndepsrc; ++is){
+            if(lib->u[is] != NULL){
+                for(size_t ir = 0; ir < lib->ndeprcv; ++ir){
+                    GRT_SAFE_FREE_PTR(lib->u[is][ir]);
+                    if(lib->uiz && lib->uiz[is]) GRT_SAFE_FREE_PTR(lib->uiz[is][ir]);
+                    if(lib->uir && lib->uir[is]) GRT_SAFE_FREE_PTR(lib->uir[is][ir]);
+                }
+            }
+            GRT_SAFE_FREE_PTR(lib->u[is]);
+            if(lib->uiz) GRT_SAFE_FREE_PTR(lib->uiz[is]);
+            if(lib->uir) GRT_SAFE_FREE_PTR(lib->uir[is]);
+        }
+    }
+    GRT_SAFE_FREE_PTR(lib->u);
+    GRT_SAFE_FREE_PTR(lib->uiz);
+    GRT_SAFE_FREE_PTR(lib->uir);
 }
 
 STGRNLIB *grt_stgrnlib_alloc(
@@ -78,36 +98,14 @@ STGRNLIB *grt_stgrnlib_alloc(
     lib->rcv_vb = (real_t *)calloc(ndeprcv, sizeof(real_t));
     lib->rcv_rho = (real_t *)calloc(ndeprcv, sizeof(real_t));
 
-    grt_stgrnlib_allocate_u(lib);
+    allocate_u(lib);
     return lib;
-}
-
-void grt_stgrnlib_free_u(STGRNLIB *lib)
-{
-    if(lib == NULL) return;
-    if(lib->u != NULL){
-        for(size_t is = 0; is < lib->ndepsrc; ++is){
-            if(lib->u[is] != NULL){
-                for(size_t ir = 0; ir < lib->ndeprcv; ++ir){
-                    GRT_SAFE_FREE_PTR(lib->u[is][ir]);
-                    if(lib->uiz && lib->uiz[is]) GRT_SAFE_FREE_PTR(lib->uiz[is][ir]);
-                    if(lib->uir && lib->uir[is]) GRT_SAFE_FREE_PTR(lib->uir[is][ir]);
-                }
-            }
-            GRT_SAFE_FREE_PTR(lib->u[is]);
-            if(lib->uiz) GRT_SAFE_FREE_PTR(lib->uiz[is]);
-            if(lib->uir) GRT_SAFE_FREE_PTR(lib->uir[is]);
-        }
-    }
-    GRT_SAFE_FREE_PTR(lib->u);
-    GRT_SAFE_FREE_PTR(lib->uiz);
-    GRT_SAFE_FREE_PTR(lib->uir);
 }
 
 void grt_stgrnlib_free(STGRNLIB *lib)
 {
     if(lib == NULL) return;
-    grt_stgrnlib_free_u(lib);
+    free_u(lib);
     GRT_SAFE_FREE_PTR(lib->depsrcs);
     GRT_SAFE_FREE_PTR(lib->deprcvs);
     GRT_SAFE_FREE_PTR(lib->norths);
@@ -119,52 +117,6 @@ void grt_stgrnlib_free(STGRNLIB *lib)
     GRT_SAFE_FREE_PTR(lib->rcv_vb);
     GRT_SAFE_FREE_PTR(lib->rcv_rho);
     free(lib);
-}
-
-real_t grt_stgrnlib_default_subfault_size(const STGRNLIB *lib)
-{
-    if(lib == NULL){
-        GRTRaiseError("lib is NULL.");
-    }
-
-    size_t nr = lib->nnorth * lib->neast;
-    real_t *rs = (real_t *)calloc(nr, sizeof(real_t));
-    size_t *order = (size_t *)calloc(nr, sizeof(size_t));
-    for(size_t inorth = 0; inorth < lib->nnorth; ++inorth){
-        for(size_t ieast = 0; ieast < lib->neast; ++ieast){
-            size_t ipt = ieast + inorth * lib->neast;
-            rs[ipt] = hypot(lib->norths[inorth], lib->easts[ieast]);
-            order[ipt] = ipt;
-        }
-    }
-    if(nr > 1 && grt_argsort(rs, nr, sizeof(*rs), grt_compare_real_t, order) != 0){
-        GRT_SAFE_FREE_PTR(rs);
-        GRT_SAFE_FREE_PTR(order);
-        GRTRaiseError("Unable to sort epicentral distances.");
-    }
-
-    real_t dr = -1.0;
-    for(size_t i = 0; i + 1 < nr; ++i){
-        real_t d = rs[order[i + 1]] - rs[order[i]];
-        if(d > STGRNLIB_ATOL && (dr < 0.0 || d < dr)) dr = d;
-    }
-    GRT_SAFE_FREE_PTR(rs);
-    GRT_SAFE_FREE_PTR(order);
-
-    real_t dz = -1.0;
-    for(size_t i = 0; i + 1 < lib->ndepsrc; ++i){
-        real_t d = fabs(lib->depsrcs[i + 1] - lib->depsrcs[i]);
-        if(d > STGRNLIB_ATOL && (dz < 0.0 || d < dz)) dz = d;
-    }
-
-    if(dr < 0.0 && dz < 0.0){
-        GRTRaiseError(
-            "Cannot infer default subfault size: "
-            "need at least two distinct epicentral-distance or source-depth samples.");
-    }
-    if(dr < 0.0) return dz;
-    if(dz < 0.0) return dr;
-    return GRT_MIN(dr, dz);
 }
 
 /** 读入一层 (is, ir) 的通道；ncid 已打开，变量为 4D */
@@ -391,47 +343,4 @@ void grt_stgrnlib_save_nc(const STGRNLIB *lib, const char *path)
     }
     GRT_SAFE_FREE_PTR(tmpdata);
     NC_CHECK(nc_close(ncid));
-}
-
-STGRNLIB *grt_stgrnlib_create(
-    size_t ndepsrc, const real_t *depsrcs,
-    size_t ndeprcv, const real_t *deprcvs,
-    size_t nnorth,  const real_t *norths,
-    size_t neast,   const real_t *easts,
-    bool calc_upar,
-    const real_t *src_va,  const real_t *src_vb,  const real_t *src_rho,
-    const real_t *rcv_va,  const real_t *rcv_vb,  const real_t *rcv_rho,
-    const real_t *u,       const real_t *uiz,     const real_t *uir)
-{
-    if(u == NULL || src_va == NULL || src_vb == NULL || src_rho == NULL
-       || rcv_va == NULL || rcv_vb == NULL || rcv_rho == NULL){
-        GRTRaiseError("required arrays are NULL.");
-    }
-    if(calc_upar && (uiz == NULL || uir == NULL)){
-        GRTRaiseError("calc_upar requires uiz and uir.");
-    }
-
-    STGRNLIB *lib = grt_stgrnlib_alloc(
-        ndepsrc, depsrcs, ndeprcv, deprcvs, nnorth, norths, neast, easts, calc_upar);
-
-    memcpy(lib->src_va, src_va, ndepsrc * sizeof(real_t));
-    memcpy(lib->src_vb, src_vb, ndepsrc * sizeof(real_t));
-    memcpy(lib->src_rho, src_rho, ndepsrc * sizeof(real_t));
-    memcpy(lib->rcv_va, rcv_va, ndeprcv * sizeof(real_t));
-    memcpy(lib->rcv_vb, rcv_vb, ndeprcv * sizeof(real_t));
-    memcpy(lib->rcv_rho, rcv_rho, ndeprcv * sizeof(real_t));
-
-    size_t nr = nnorth * neast;
-    size_t nper = nr * GRT_SRC_M_NUM * GRT_CHANNEL_NUM;
-    for(size_t is = 0; is < ndepsrc; ++is){
-        for(size_t ir = 0; ir < ndeprcv; ++ir){
-            size_t off = (is * ndeprcv + ir) * nper;
-            memcpy(lib->u[is][ir], u + off, nper * sizeof(real_t));
-            if(calc_upar){
-                memcpy(lib->uiz[is][ir], uiz + off, nper * sizeof(real_t));
-                memcpy(lib->uir[is][ir], uir + off, nper * sizeof(real_t));
-            }
-        }
-    }
-    return lib;
 }
