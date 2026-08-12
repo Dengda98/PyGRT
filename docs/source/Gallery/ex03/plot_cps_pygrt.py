@@ -4,12 +4,10 @@ import matplotlib.pyplot as plt
 from obspy import * 
 
 
-# load model 
-modarr = np.loadtxt("./milrow")
-
 depsrc = 2.0   
 deprcv = 0     
-pymod = pygrt.PyModel1D(modarr, depsrc, deprcv) 
+pymod = pygrt.PyModel1D("./milrow")
+pymod.set_dynamic_grn_path("GRN_pygrt")
 
 rs = np.array([10]) 
 
@@ -18,13 +16,17 @@ dt = 0.01
 zeta = 0.8  
 
 # compute Green's Functions
-st_grt = pymod.compute_grn(
-    distarr=rs, 
-    nt=nt, 
-    dt=dt, 
-    zeta=zeta, 
+pymod.compute_grn(
+    depsrc=depsrc,
+    deprcv=deprcv,
+    distarr=rs,
+    nt=nt,
+    dt=dt,
+    zeta=zeta,
     Length=20,
-)[0]
+)
+# 仅一个震中距，可用通配符读回
+st_grt = read("GRN_pygrt/*/*.sac")
 
 
 try:
@@ -34,3 +36,10 @@ try:
     plot(st_grt, st_cps, "compare_cps_pygrt.svg")
 except Exception as e:
     print(str(e))
+
+# 删除中间计算结果，仅保留成图
+import shutil
+from pathlib import Path
+p = Path("GRN_pygrt")
+if p.is_dir():
+    shutil.rmtree(p, ignore_errors=True)

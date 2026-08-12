@@ -20,4 +20,4 @@ grt static rotation stsyn_ZNE.nc
 
 python -u test_static_tensors.py
 
-rm *.nc
+rm -rf *.nc

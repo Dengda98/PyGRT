@@ -9,7 +9,7 @@
 
     **震源机制参数中（如单力源、矩张量源）Z轴取向下为正。**
 
-Python中合成动态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.utils.gen_syn_from_gf_DC>` （\*表示对不同震源）  ，C模块为 :doc:`/Module/syn`。
+Python中合成动态位移的主函数为 :meth:`compute_syn() <pygrt.pymod.PyModel1D.compute_syn>` ，C模块为 :doc:`/Module/syn`。
 
 使用上节计算的格林函数，合成动态位移（理论地震图）。方便起见，这里统一使用milrow模型，震源深度2km，场点位于地表，震中距10km的格林函数，方位角30°。
 
@@ -225,7 +225,9 @@ Python中合成动态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.uti
             :start-after: BEGIN TIME FUNC
             :end-before: END TIME FUNC
 
-        其它时间函数以及具体参数用法可在 :py:mod:`pygrt.signals` 模块中查看函数参数。
+        生成的时间函数会以SAC格式保存在对应路径中，文件名为 :file:`sig.sac`。
+        其它时间函数以及具体参数用法详见 :meth:`compute_syn() <pygrt.pymod.PyModel1D.compute_syn>`
+        的 ``time_function`` 参数。
 
 .. figure:: run/syn_sf_trig.svg
    :align: center
@@ -253,6 +255,10 @@ Python中合成动态位移的主函数为 :func:`gen_syn_from_gf_*() <pygrt.uti
             :start-after: BEGIN INT DIF
             :end-before: END INT DIF
 
+        Python 示例在合成后使用 :func:`stream_integral() <pygrt.utils.stream_integral>` /
+        :func:`stream_diff() <pygrt.utils.stream_diff>` 做积分与微分。
+        若希望在合成阶段完成，也可传入 ``integrate_order`` / ``differentiate_order``
+        （分别对应 CLI 的 ``-I`` / ``-J``）。
 
 .. figure:: run/syn_mt_intdif_Z.svg
    :align: center

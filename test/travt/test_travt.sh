@@ -12,6 +12,6 @@ cat > dists <<EOF
 5
 EOF
 grt travt -M../milrow -D2/0 -Rdists
-rm dists
+rm -rf dists
 
 python -u test_travt.py

@@ -1,6 +1,8 @@
 import pygrt
 import numpy as np
 import matplotlib.pyplot as plt
+from pathlib import Path
+from obspy import read
 
 # 定义半无限空间模型 
 Vp = 8     # km/s
@@ -28,11 +30,26 @@ r = rs[idx]
 
 t = np.arange(0, nt)*dt * Vs/r 
 
-pymod = pygrt.PyModel1D(modarr, depsrc, deprcv)  # 整理好的模型对象
-# 计算格林函数
-st_none = pymod.compute_grn(distarr=rs, nt=nt, dt=dt, converg_method='none')[0]
-st_dcm = pymod.compute_grn(distarr=rs, nt=nt, dt=dt, converg_method='DCM')[0]
-st_ptam = pymod.compute_grn(distarr=rs, nt=nt, dt=dt, converg_method='PTAM')[0]
+modfile = "_halfspace_mod"
+np.savetxt(modfile, modarr)
+pymod = pygrt.PyModel1D(modfile)
+pymod.set_dynamic_grn_path("GRN")
+# 计算格林函数（仅一个震中距，可用通配符读回）
+pymod.compute_grn(
+    depsrc=depsrc, deprcv=deprcv, distarr=rs, nt=nt, dt=dt,
+    converg_method='none',
+)
+st_none = read("GRN/*/*.sac")
+pymod.compute_grn(
+    depsrc=depsrc, deprcv=deprcv, distarr=rs, nt=nt, dt=dt,
+    converg_method='DCM',
+)
+st_dcm = read("GRN/*/*.sac")
+pymod.compute_grn(
+    depsrc=depsrc, deprcv=deprcv, distarr=rs, nt=nt, dt=dt,
+    converg_method='PTAM',
+)
+st_ptam = read("GRN/*/*.sac")
 
 # 卷积阶跃函数
 pygrt.utils.stream_integral(st_none)
@@ -72,3 +89,12 @@ axs[0,1].set_title("Apply DCM")
 axs[0,2].set_title("Apply PTAM")
 
 fig.savefig("lamb1_compare.svg", bbox_inches='tight')
+
+# 删除中间计算结果，仅保留成图
+import shutil
+for name in ["GRN", "_halfspace_mod"]:
+    p = Path(name)
+    if p.is_dir():
+        shutil.rmtree(p, ignore_errors=True)
+    elif p.is_file():
+        p.unlink(missing_ok=True)

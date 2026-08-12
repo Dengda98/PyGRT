@@ -72,8 +72,8 @@
           积分上限
         
         :func:`compute_static_grn() <pygrt.pymod.PyModel1D.compute_static_grn>` 函数支持以下可选参数来控制波数积分，
-        参数与上面对应，具体说明详见API。
+        具体说明详见API。静态解无 ``ampk`` 参数。
 
-        + ``k0:float`` 
-        + ``keps:float`` 
+        + ``k0:float``
+        + ``keps:float``
         + ``use_kmax_ref:bool``

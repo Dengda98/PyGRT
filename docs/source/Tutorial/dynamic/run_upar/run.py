@@ -1,61 +1,28 @@
 # --------------------------------------------------------------------------------------
 # BEGIN GRN
 import numpy as np
-import pygrt 
+import pygrt
+from obspy import read
 
-modarr = np.loadtxt("milrow")
+pymod = pygrt.PyModel1D("milrow")
+pymod.set_dynamic_grn_path("GRN")
 
-pymod = pygrt.PyModel1D(modarr, depsrc=2.0, deprcv=0.0)
-
-# 传入calc_upar=True计算空间导数
-stgrn = pymod.compute_grn(distarr=[10], nt=500, dt=0.02, calc_upar=True)[0]
+# 传入 calc_upar=True 计算空间导数
+pymod.compute_grn(
+    depsrc=2.0,
+    deprcv=0.0,
+    distarr=[10],
+    nt=500,
+    dt=0.02,
+    calc_upar=True,
+)
+stgrn = read("GRN/*/*.sac")
 print(stgrn.__str__(extended=True))
 # 45 Trace(s) in Stream:
 # .SYN..EXZ  | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..VFZ  | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..DDZ  | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..HFZ  | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..DSZ  | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..SSZ  | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..zEXZ | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..rEXZ | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..zVFZ | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..rVFZ | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..zDDZ | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..rDDZ | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..zHFZ | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..rHFZ | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..zDSZ | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..rDSZ | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..zSSZ | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..rSSZ | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..EXR  | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..VFR  | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..DDR  | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..HFR  | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..DSR  | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..SSR  | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..zEXR | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..rEXR | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..zVFR | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..rVFR | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..zDDR | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..rDDR | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..zHFR | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..rHFR | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..zDSR | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..rDSR | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..zSSR | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..rSSR | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..HFT  | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..DST  | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..SST  | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..zHFT | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..rHFT | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..zDST | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..rDST | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..zSST | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..rSST | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
+# ...
+# .SYN..zEXZ | ...
+# .SYN..rEXZ | ...
 # END GRN
 # --------------------------------------------------------------------------------------
 
@@ -63,44 +30,53 @@ print(stgrn.__str__(extended=True))
 
 # --------------------------------------------------------------------------------------
 # BEGIN SYN DC
-# 传入calc_upar=True计算空间导数
-stsyn = pygrt.utils.gen_syn_from_gf_DC(stgrn, M0=1e24, strike=33, dip=50, rake=120, az=30, calc_upar=True)
+# 传入 calc_upar=True 计算空间导数
+# ?.sac 为位移，[zrt]?.sac 为空间导数
+pymod.compute_syn(
+    dist=10.0,
+    azimuth=30.0,
+    scale=1e24,
+    output_path="syn_dc",
+    source="DC",
+    strike=33,
+    dip=50,
+    rake=120,
+    calc_upar=True,
+)
+stsyn = read("syn_dc/?.sac") + read("syn_dc/[zrt]?.sac")
 print(stsyn)
 # 12 Trace(s) in Stream:
-# .SYN..Z  | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..R  | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..T  | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..zZ | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..zR | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..zT | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..rZ | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..rR | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..rT | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..tZ | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..tR | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..tT | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
+# .SYN..Z  | ...
+# .SYN..zZ | ...
+# .SYN..rZ | ...
+# .SYN..tZ | ...
 # END SYN DC
 # --------------------------------------------------------------------------------------
 
 
 # --------------------------------------------------------------------------------------
 # BEGIN ZNE
-# 传入ZNE=True可返回ZNE分量
-stsyn = pygrt.utils.gen_syn_from_gf_DC(stgrn, M0=1e24, strike=33, dip=50, rake=120, az=30, calc_upar=True, ZNE=True)
+# 传入 zne=True 可返回 ZNE 分量
+# ?.sac 为位移，[zne]?.sac 为空间导数
+pymod.compute_syn(
+    dist=10.0,
+    azimuth=30.0,
+    scale=1e24,
+    output_path="syn_dc_zne",
+    source="DC",
+    strike=33,
+    dip=50,
+    rake=120,
+    calc_upar=True,
+    zne=True,
+)
+stsyn = read("syn_dc_zne/?.sac") + read("syn_dc_zne/[zne]?.sac")
 print(stsyn)
 # 12 Trace(s) in Stream:
-# .SYN..Z  | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..N  | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..E  | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..zZ | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..zN | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..zE | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..nZ | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..nN | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..nE | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..eZ | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..eN | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..eE | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
+# .SYN..Z  | ...
+# .SYN..zZ | ...
+# .SYN..nZ | ...
+# .SYN..eZ | ...
 # END ZNE
 # --------------------------------------------------------------------------------------
 
@@ -122,8 +98,8 @@ def plot6(st6:Stream, title:str, out:str|None=None):
         if MIN > np.min(d):
             MIN = np.min(d)
 
-    travtP = stsyn[0].stats.sac['t0']
-    travtS = stsyn[0].stats.sac['t1']
+    travtP = st6[0].stats.sac['t0']
+    travtS = st6[0].stats.sac['t1']
 
     fig, axs = plt.subplots(len(st6), 1, figsize=(10, 1.2*len(st6)), gridspec_kw=dict(hspace=0.0), sharex=True)
     for i in range(len(st6)):
@@ -133,11 +109,13 @@ def plot6(st6:Stream, title:str, out:str|None=None):
         ax.plot(t, tr.data, c='k', lw=0.5, label=tr.stats.channel)
         ax.legend(loc='upper left')
 
+        # 相对全局最大值过小时，固定到同样数量级下的坐标轴便于展示近零分量
+        m = np.max(np.abs(tr.data))
         ylims = ax.get_ylim()
-        if np.max(np.abs(np.array(ylims)))/MAX < 1e-5:
-            ylims = [-1, 1]
+        if m / MAX < 1e-5:
+            ylims = np.array([-1, 1]) * MAX
             ax.set_ylim(ylims)
-            
+
         # 绘制到时
         ax.vlines(travtP, *ylims, colors='b')
         ax.text(travtP, ylims[1], "P", ha='left', va='top', color='b')
@@ -153,32 +131,33 @@ def plot6(st6:Stream, title:str, out:str|None=None):
         fig.savefig(out, bbox_inches='tight')
 # END plot func
 # --------------------------------------------------------------------------------------
-    
+
 
 
 # --------------------------------------------------------------------------------------
 # BEGIN STRAIN
-st_strain = pygrt.utils.compute_strain(stsyn)
+# return_result=True 时按文件名前缀读回 strain_*.sac，避免与位移等混在一起
+st_strain = pygrt.utils.compute_strain("syn_dc_zne", return_result=True)
 print(st_strain)
 # 6 Trace(s) in Stream:
-# .SYN..ZZ | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..ZN | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..ZE | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..NN | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..NE | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..EE | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
+# .SYN..ZZ | ...
+# .SYN..ZN | ...
+# .SYN..ZE | ...
+# .SYN..NN | ...
+# .SYN..NE | ...
+# .SYN..EE | ...
 plot6(st_strain, "Strain", "strain.svg")
 # END STRAIN
 # --------------------------------------------------------------------------------------
 
 # --------------------------------------------------------------------------------------
 # BEGIN ROTATION
-st_rotation = pygrt.utils.compute_rotation(stsyn)
+st_rotation = pygrt.utils.compute_rotation("syn_dc_zne", return_result=True)
 print(st_rotation)
-# 6 Trace(s) in Stream:
-# .SYN..ZN | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..ZE | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..NE | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
+# 3 Trace(s) in Stream:
+# .SYN..ZN | ...
+# .SYN..ZE | ...
+# .SYN..NE | ...
 plot6(st_rotation, "Rotation", "rotation.svg")
 # END ROTATION
 # --------------------------------------------------------------------------------------
@@ -186,15 +165,23 @@ plot6(st_rotation, "Rotation", "rotation.svg")
 
 
 # BEGIN STRESS
-st_stress = pygrt.utils.compute_stress(stsyn)
+st_stress = pygrt.utils.compute_stress("syn_dc_zne", return_result=True)
 print(st_stress)
 # 6 Trace(s) in Stream:
-# .SYN..ZZ | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..ZN | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..ZE | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..NN | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..NE | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
-# .SYN..EE | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
+# .SYN..ZZ | ...
+# .SYN..ZN | ...
+# .SYN..ZE | ...
+# .SYN..NN | ...
+# .SYN..NE | ...
+# .SYN..EE | ...
 plot6(st_stress, "Stress", "stress.svg")
 # END STRESS
 # --------------------------------------------------------------------------------------
+
+# 删除中间计算结果，仅保留成图
+import shutil
+from pathlib import Path
+for name in ["GRN", "syn_dc", "syn_dc_zne"]:
+    p = Path(name)
+    if p.is_dir():
+        shutil.rmtree(p, ignore_errors=True)

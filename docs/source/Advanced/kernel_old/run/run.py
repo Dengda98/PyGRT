@@ -4,15 +4,22 @@ import numpy as np
 import matplotlib.pyplot as plt
 from typing import Union
 import pygrt 
+from pygrt.cli import format_float
 
-modarr = np.loadtxt("mod1")
+pymod = pygrt.PyModel1D("mod1")
+pymod.set_dynamic_grn_path("KERNEL")
 
-pymod = pygrt.PyModel1D(modarr, depsrc=0.03, deprcv=0.0)
+depsrc = 0.03
+deprcv = 0.0
 
-# 不指定statsidx，默认输出全部频率点的积分过程文件
+# 不指定 statsidxs 索引时传空列表，输出全部频率点的积分过程文件
 # vmin_ref 显式给定参考速度（用于定义波数积分上限），避免使用PTAM
 # Length 给定波数积分间隔dk
-_ = pymod.compute_grn(distarr=[1], nt=500, dt=0.02, vmin_ref=0.1, Length=20, use_kmax_ref=True, converg_method='none', statsfile="pygrtstats")
+pymod.compute_grn(
+    depsrc=depsrc, deprcv=deprcv, distarr=[1], nt=500, dt=0.02,
+    vmin_ref=0.1, Length=20, use_kmax_ref=True, converg_method='none',
+    statsidxs=[],
+)
 # END GRN
 # -----------------------------------------------------------------
 
@@ -23,7 +30,8 @@ vels = np.arange(0.1, 0.6, 0.001)
 
 # 读取所有频率的核函数，并插值到vels
 # 不指定ktypes，默认返回全部核函数，均以2D数组的形式保存，shape=(nfreqs, nvels)
-kerDct = pygrt.utils.read_kernels_freqs("pygrtstats", vels)
+statsdir = f"KERNEL_grtstats/mod1_{format_float(depsrc)}_{format_float(deprcv)}"
+kerDct = pygrt.utils.read_kernels_freqs(statsdir, vels)
 print(kerDct.keys())
 # dict_keys(['_vels', '_freqs', 'EX_q', 'EX_w', 'VF_q', 'VF_w', 'HF_q', 'HF_w', 'HF_v', 'DD_q', 'DD_w', 'DS_q', 'DS_w', 'DS_v', 'SS_q', 'SS_w', 'SS_v'])
 # END read
@@ -78,3 +86,11 @@ plot_kernel(kerDct, False, "imag.svg")
 plot_kernel(kerDct, True, "real.svg")
 # END plot
 # -----------------------------------------------------------------
+
+# 删除中间计算结果，仅保留成图
+import shutil
+from pathlib import Path
+for name in ["KERNEL", "KERNEL_grtstats"]:
+    p = Path(name)
+    if p.is_dir():
+        shutil.rmtree(p, ignore_errors=True)

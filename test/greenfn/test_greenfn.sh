@@ -37,7 +37,7 @@ cat > dists <<EOF
 10
 EOF
 grt greenfn -M../milrow -D2/0 -N600/0.02 -Rdists -OGRN
-rm dists
+rm -rf dists
 grt greenfn -M../milrow -D2/0 -N600/0.02 -R6/10/2 -OGRN
 
 

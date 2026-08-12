@@ -1,23 +1,11 @@
 # -----------------------------------------------------------------------------------
 # START BUILD MODEL
 import numpy as np
-import pygrt 
+import pygrt
 
-# option 1:
-# modarr = np.loadtxt("milrow")
+# 直接使用模型文件路径
+pymod = pygrt.PyModel1D("milrow")
 
-# option 2
-modarr = np.array([
-    [0.2, 3.4, 1.7, 2.3, 9e10, 9e10],
-    [0.6, 3.7, 1.9, 2.4, 9e10, 9e10],
-    [0.5, 4.2, 2.1, 2.4, 9e10, 9e10],
-    [0.5, 4.6, 2.3, 2.5, 9e10, 9e10],
-    [0.7, 4.9, 2.8, 2.6, 9e10, 9e10],
-    [0.5, 5.1, 2.9, 2.7, 9e10, 9e10],
-    [6.0, 5.9, 3.3, 2.7, 9e10, 9e10],
-    [28., 6.9, 4.0, 2.8, 9e10, 9e10],
-    [0.,  8.2, 4.7, 3.2, 9e10, 9e10],
-])
 # END BUILD MODEL
 # -----------------------------------------------------------------------------------
 
@@ -25,17 +13,23 @@ modarr = np.array([
 
 # -----------------------------------------------------------------------------------
 # BEGIN GRN
-modarr = np.loadtxt("milrow")
+from obspy import read
 
-pymod = pygrt.PyModel1D(modarr, depsrc=2.0, deprcv=0.0)
+pymod = pygrt.PyModel1D("milrow")
+pymod.set_dynamic_grn_path("GRN")
 
-# 多个震中距的格林函数以列表形式返回，其中每个元素为 |Stream| 类。
-stgrnLst = pymod.compute_grn(
-    distarr=[5,8,10],
-    nt=500, dt=0.02
+# 结果写入 GRN/milrow_{depsrc}_{deprcv}_{dist}/
+pymod.compute_grn(
+    depsrc=2.0,
+    deprcv=0.0,
+    distarr=[5, 8, 10],
+    nt=500,
+    dt=0.02,
 )
+# 需要时再显式读回；多震中距时需指定子目录，单震中距可用 GRN/*/*.sac
+stgrn = read("GRN/milrow_2_0_5/*.sac")
 
-print(stgrnLst[0])
+print(stgrn)
 # 15 Trace(s) in Stream:
 # .SYN..EXZ | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
 # .SYN..VFZ | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
@@ -51,15 +45,21 @@ import matplotlib.pyplot as plt
 from typing import Union
 
 def plot_syn(stsyn:Stream, out:Union[str,None]=None, sigs:Union[np.ndarray,None]=None):
+    traces = list(stsyn)
+    order = {ch: i for i, ch in enumerate("ZRTNE")}
+    traces.sort(key=lambda tr: order.get(tr.stats.channel, 99))
+
     figsize = (10, 4)
-    nrow = 3
+    nrow = len(traces)
     if sigs is not None:
         nrow += 1
         figsize = (10, 4.5)
 
     fig, axs = plt.subplots(nrow, 1, figsize=figsize, gridspec_kw=dict(hspace=0.0), sharex=True)
-    nt = stsyn[0].stats.npts
-    dt = stsyn[0].stats.delta
+    if nrow == 1:
+        axs = [axs]
+    nt = traces[0].stats.npts
+    dt = traces[0].stats.delta
     t = np.arange(nt)*dt
 
     if sigs is not None:
@@ -67,10 +67,10 @@ def plot_syn(stsyn:Stream, out:Union[str,None]=None, sigs:Union[np.ndarray,None]
         ax.plot(t[:len(sigs)], sigs, 'k-', lw=0.5)
         axs = axs[1:]
 
-    travtP = stsyn[0].stats.sac['t0']
-    travtS = stsyn[0].stats.sac['t1']
+    travtP = traces[0].stats.sac['t0']
+    travtS = traces[0].stats.sac['t1']
 
-    for i, tr in enumerate(stsyn):
+    for i, tr in enumerate(traces):
         ax = axs[i]
         ax.plot(t, tr.data, c='k', lw=0.5, label=tr.stats.channel)
         ax.legend(loc='upper left')
@@ -88,7 +88,7 @@ def plot_syn(stsyn:Stream, out:Union[str,None]=None, sigs:Union[np.ndarray,None]
     if out is not None:
         fig.savefig(out, bbox_inches='tight')
 
-def plot_int_dif(stsyn:Stream, stsyn_int:Stream, stsyn_dif:Stream, comp:str, out:Union[str,None]=None):
+def plot_int_dif(stsyn:Stream, stsyn_int:Stream, stsyn_dif:Stream, chnl:str, out:Union[str,None]=None):
     nt = stsyn[0].stats.npts
     dt = stsyn[0].stats.delta
     t = np.arange(nt)*dt
@@ -98,7 +98,7 @@ def plot_int_dif(stsyn:Stream, stsyn_int:Stream, stsyn_dif:Stream, comp:str, out
 
     fig, axs = plt.subplots(3, 1, figsize=(10, 4), gridspec_kw=dict(hspace=0.0), sharex=True)
     for i, (st, suffix) in enumerate(zip([stsyn, stsyn_int, stsyn_dif], ["", "_int", "_dif"])):
-        tr = st.select(component=comp)[0]
+        tr = st.select(channel=chnl)[0]
 
         ax = axs[i]
         ax.plot(t, tr.data, c='k', lw=0.5, label=f"{tr.stats.channel}{suffix}")
@@ -123,11 +123,16 @@ def plot_int_dif(stsyn:Stream, stsyn_int:Stream, stsyn_dif:Stream, comp:str, out
 
 # -----------------------------------------------------------------------------------
 # BEGIN SYN EX
-# 接之前的代码
-idx = 2
-stgrn = stgrnLst[idx]   # 选择格林函数
-
-stsyn = pygrt.utils.gen_syn_from_gf_EX(stgrn, M0=1e24, az=30)
+# 接之前的代码，使用震中距 10 km 的格林函数
+# ?.sac 匹配位移三分量文件名（Z/R/T 或 Z/N/E）
+pymod.compute_syn(
+    dist=10.0,
+    azimuth=30.0,
+    scale=1e24,
+    output_path="syn_ex",
+    source="EX",
+)
+stsyn = read("syn_ex/?.sac")
 print(stsyn)
 # 3 Trace(s) in Stream:
 # .SYN..Z | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
@@ -140,10 +145,15 @@ plot_syn(stsyn, "syn_ex.svg")
 # -----------------------------------------------------------------------------------
 # BEGIN SYN SF
 # 接之前的代码
-idx = 2
-stgrn = stgrnLst[idx]   # 选择格林函数
-
-stsyn = pygrt.utils.gen_syn_from_gf_SF(stgrn, S=1e16, fN=1, fE=-0.5, fZ=2, az=30)
+pymod.compute_syn(
+    dist=10.0,
+    azimuth=30.0,
+    scale=1e16,
+    output_path="syn_sf",
+    source="SF",
+    force=(1, -0.5, 2),
+)
+stsyn = read("syn_sf/?.sac")
 print(stsyn)
 # 3 Trace(s) in Stream:
 # .SYN..Z | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
@@ -157,10 +167,17 @@ plot_syn(stsyn, "syn_sf.svg")
 # -----------------------------------------------------------------------------------
 # BEGIN SYN DC
 # 接之前的代码
-idx = 2
-stgrn = stgrnLst[idx]   # 选择格林函数
-
-stsyn = pygrt.utils.gen_syn_from_gf_DC(stgrn, M0=1e24, strike=33, dip=50, rake=120, az=30)
+pymod.compute_syn(
+    dist=10.0,
+    azimuth=30.0,
+    scale=1e24,
+    output_path="syn_dc",
+    source="DC",
+    strike=33,
+    dip=50,
+    rake=120,
+)
+stsyn = read("syn_dc/?.sac")
 print(stsyn)
 # 3 Trace(s) in Stream:
 # .SYN..Z | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
@@ -174,10 +191,16 @@ plot_syn(stsyn, "syn_dc.svg")
 # -----------------------------------------------------------------------------------
 # BEGIN SYN TS
 # 接之前的代码
-idx = 2
-stgrn = stgrnLst[idx]   # 选择格林函数
-
-stsyn = pygrt.utils.gen_syn_from_gf_TS(stgrn, M0=1e24, strike=33, dip=50, az=30)
+pymod.compute_syn(
+    dist=10.0,
+    azimuth=30.0,
+    scale=1e24,
+    output_path="syn_ts",
+    source="TS",
+    strike=33,
+    dip=50,
+)
+stsyn = read("syn_ts/?.sac")
 print(stsyn)
 # 3 Trace(s) in Stream:
 # .SYN..Z | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
@@ -190,10 +213,15 @@ plot_syn(stsyn, "syn_ts.svg")
 
 # -----------------------------------------------------------------------------------
 # BEGIN SYN MT
-idx = 2
-stgrn = stgrnLst[idx]   # 选择格林函数
-
-stsyn = pygrt.utils.gen_syn_from_gf_MT(stgrn, M0=1e24, MT=[0.1,-0.2,1.0,0.3,-0.5,-2.0], az=30)
+pymod.compute_syn(
+    dist=10.0,
+    azimuth=30.0,
+    scale=1e24,
+    output_path="syn_mt",
+    source="MT",
+    moment_tensor=(0.1, -0.2, 1.0, 0.3, -0.5, -2.0),
+)
+stsyn = read("syn_mt/?.sac")
 print(stsyn)
 # 3 Trace(s) in Stream:
 # .SYN..Z | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
@@ -207,11 +235,19 @@ plot_syn(stsyn, "syn_mt.svg")
 # -----------------------------------------------------------------------------------
 # BEGIN ZNE
 # 接之前的代码
-idx = 2
-stgrn = stgrnLst[idx]   # 选择格林函数
-
-# 设置ZNE=True可返回ZNE分量
-stsyn = pygrt.utils.gen_syn_from_gf_DC(stgrn, M0=1e24, strike=33, dip=50, rake=120, az=30, ZNE=True)
+# 设置 zne=True 可返回 ZNE 分量
+pymod.compute_syn(
+    dist=10.0,
+    azimuth=30.0,
+    scale=1e24,
+    output_path="syn_dc_zne",
+    source="DC",
+    strike=33,
+    dip=50,
+    rake=120,
+    zne=True,
+)
+stsyn = read("syn_dc_zne/?.sac")
 print(stsyn)
 # 3 Trace(s) in Stream:
 # .SYN..Z | 1970-01-01T00:00:00.000000Z - 1970-01-01T00:00:09.980000Z | 50.0 Hz, 500 samples
@@ -225,14 +261,19 @@ plot_syn(stsyn, "syn_dc_zne.svg")
 
 # -----------------------------------------------------------------------------------
 # BEGIN TIME FUNC
-idx = 2
-stgrn = stgrnLst[idx]   # 选择格林函数
-
-stsyn = pygrt.utils.gen_syn_from_gf_SF(stgrn, S=1e16, fN=1, fE=-0.5, fZ=2, az=30)
-# 生成时间函数
-trig = pygrt.sigs.gen_triangle_wave(0.6, 0.02)
-# 卷积，原地修改
-pygrt.utils.stream_convolve(stsyn, trig)
+# time_function 对应 CLI -D；t1=t2 时梯形波退化为三角波
+# 卷积用的时间函数会以 sig.sac 保存在输出目录
+pymod.compute_syn(
+    dist=10.0,
+    azimuth=30.0,
+    scale=1e16,
+    output_path="syn_sf_trig",
+    source="SF",
+    force=(1, -0.5, 2),
+    time_function="t/0.3/0.3/0.6",
+)
+stsyn = read("syn_sf_trig/?.sac")
+trig = read("syn_sf_trig/sig.sac")[0].data
 plot_syn(stsyn, "syn_sf_trig.svg", trig)
 # END TIME FUNC
 # -----------------------------------------------------------------------------------
@@ -241,12 +282,17 @@ plot_syn(stsyn, "syn_sf_trig.svg", trig)
 
 # -----------------------------------------------------------------------------------
 # BEGIN INT DIF
-idx = 2
-stgrn = stgrnLst[idx]   # 选择格林函数
+pymod.compute_syn(
+    dist=10.0,
+    azimuth=30.0,
+    scale=1e24,
+    output_path="syn_mt_intdif",
+    source="MT",
+    moment_tensor=(0.1, -0.2, 1.0, 0.3, -0.5, -2.0),
+)
+stsyn = read("syn_mt_intdif/?.sac")
 
-stsyn = pygrt.utils.gen_syn_from_gf_MT(stgrn, M0=1e24, MT=[0.1,-0.2,1.0,0.3,-0.5,-2.0], az=30)
-
-# 使用inplace=False，防止原地修改
+# 使用 inplace=False，防止原地修改
 stsyn_int = pygrt.utils.stream_integral(stsyn, inplace=False)
 stsyn_dif = pygrt.utils.stream_diff(stsyn, inplace=False)
 
@@ -254,3 +300,17 @@ for ch in ['Z', 'R', 'T']:
     plot_int_dif(stsyn, stsyn_int, stsyn_dif, ch, f"syn_mt_intdif_{ch}.svg")
 # END INT DIF
 # -----------------------------------------------------------------------------------
+
+# 删除中间计算结果，仅保留成图
+import shutil
+from pathlib import Path
+for name in [
+    "GRN",
+    "syn_ex", "syn_sf", "syn_dc", "syn_ts", "syn_mt",
+    "syn_dc_zne", "syn_sf_trig", "syn_mt_intdif",
+]:
+    p = Path(name)
+    if p.is_dir():
+        shutil.rmtree(p, ignore_errors=True)
+    elif p.is_file():
+        p.unlink(missing_ok=True)

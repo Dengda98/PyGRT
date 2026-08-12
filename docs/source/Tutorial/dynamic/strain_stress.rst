@@ -144,7 +144,10 @@
             :start-after: BEGIN STRAIN
             :end-before: END STRAIN
 
-        返回的 |Stream| 通道名即为分量名，如ZZ、ZN等。
+        张量结果写回原合成目录中的 :file:`strain_??.sac`，
+        通道名即为分量名，如 ZZ、ZN 等。
+        动态结果只能靠文件名前缀区分应变/旋转/应力；
+        ``return_result=True`` 时按 :file:`strain_*.sac` 读回，避免与位移等混在一起。
 
 .. figure:: run_upar/strain.svg
     :align: center
@@ -176,7 +179,9 @@
             :start-after: BEGIN ROTATION
             :end-before: END ROTATION
 
-        返回的 |Stream| 通道名即为分量名，如ZN，ZE，NE。
+        张量结果写回原合成目录中的 :file:`rotation_??.sac`，
+        通道名即为分量名，如 ZN、ZE、NE。
+        ``return_result=True`` 时按 :file:`rotation_*.sac` 读回。
 
 .. figure:: run_upar/rotation.svg
     :align: center
@@ -210,7 +215,9 @@
             :start-after: BEGIN STRESS
             :end-before: END STRESS
 
-        返回的 |Stream| 通道名即为分量名，如ZZ、ZN等。
+        张量结果写回原合成目录中的 :file:`stress_??.sac`，
+        通道名即为分量名，如 ZZ、ZN 等。
+        ``return_result=True`` 时按 :file:`stress_*.sac` 读回。
 
 .. figure:: run_upar/stress.svg
     :align: center

@@ -1,19 +1,18 @@
 """
-    :file:     signals.py  
-    :author:   Zhu Dengda (zhudengda@mail.iggcas.ac.cn)  
-    :date:     2024-07-24  
+    :file:     signals.py
+    :author:   Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
+    :date:     2024-07-24
 
-    该文件包括一些常见的时间信号，最高幅值均为1    
-
+    该文件包括一些常见的时间信号，最高幅值均为1
 
 """
 
-
-import numpy as np  
+import numpy as np
 import numpy.ctypeslib as npct
 from ctypes import byref, cast
 
 from .c_interfaces import *
+
 
 __all__ = [
     "gen_triangle_wave",
@@ -22,14 +21,15 @@ __all__ = [
     "gen_ricker_wave",
 ]
 
+
 def gen_triangle_wave(vlen, dt):
     '''
-        generate triangle-shape wave  
+        generate triangle-shape wave
 
-        :param    vlen:    signal length (s)  
-        :param    dt:      time interval (s)   
+        :param    vlen:    signal length (s)
+        :param    dt:      time interval (s)
 
-        :return: 
+        :return:
             - **wave** -    amplitude sequence
     '''
     return gen_trap_wave(vlen/2.0, vlen/2.0, vlen, dt)
@@ -37,12 +37,12 @@ def gen_triangle_wave(vlen, dt):
 
 def gen_parabola_wave(vlen, dt):
     '''
-        generate parabola-shape wave    
+        generate parabola-shape wave
 
-        :param    vlen:    signal length (s)  
-        :param    dt:      time interval (s)   
-        
-        :return: 
+        :param    vlen:    signal length (s)
+        :param    dt:      time interval (s)
+
+        :return:
             - **wave** -    amplitude sequence
     '''
     ct1 = c_float(vlen)
@@ -55,16 +55,17 @@ def gen_parabola_wave(vlen, dt):
 
     return arr
 
+
 def gen_trap_wave(t1, t2, t3, dt):
     '''
-        generate trapezoid-shape wave  
+        generate trapezoid-shape wave
 
-        :param    t1:      ramp-up cutoff time (s)  
-        :param    t2:      plateau cutoff time (s)  
-        :param    t3:      ramp-down cutoff time (s)  
-        :param    dt:      time interval (s)   
+        :param    t1:      ramp-up cutoff time (s)
+        :param    t2:      plateau cutoff time (s)
+        :param    t3:      ramp-down cutoff time (s)
+        :param    dt:      time interval (s)
 
-        :return: 
+        :return:
             - **wave** -    amplitude sequence
     '''
     ct1 = c_float(t1)

@@ -1,31 +1,35 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import pygrt 
+import pygrt
 
 def plot6(data:dict, title:str, out:str|None=None):
-    chs = [k for k in data.keys() if k[0]!='_']
-    chs.sort(reverse=True)
-    norths = data['_norths']
-    easts = data['_easts']
+    vars_ = data["variables"]
+    norths = vars_["north"]["data"]
+    easts = vars_["east"]["data"]
+    chs = sorted(
+        [k for k in vars_ if k.startswith(title.lower() + "_")],
+        reverse=True,
+    )
     fig, axs = plt.subplots(len(chs)//3, 3, figsize=(10, len(chs)))
     axs = axs.ravel()
 
     MAX = 0
     for i in range(len(chs)):
         ch = chs[i]
-        m = np.max(np.abs(data[ch]))
+        m = np.max(np.abs(vars_[ch]["data"]))
         if m > MAX:
             MAX = m
 
     for i in range(len(chs)):
         ax = axs[i]
         ch = chs[i]
+        arr = vars_[ch]["data"]
         vmin = vmax = None
-        if np.max(np.abs(data[ch]))/MAX < 1e-5:
+        if np.max(np.abs(arr))/MAX < 1e-5:
             vmin = -1
             vmax = 1
 
-        pcm = ax.pcolormesh(easts, norths, data[ch], shading='nearest', vmin=vmin, vmax=vmax, rasterized=True)
+        pcm = ax.pcolormesh(easts, norths, arr, shading='nearest', vmin=vmin, vmax=vmax, rasterized=True)
         ax.set_aspect('equal')
         ax.set_title(ch)
         cbar = fig.colorbar(pcm, ax=ax)
@@ -38,28 +42,45 @@ def plot6(data:dict, title:str, out:str|None=None):
         fig.savefig(out, bbox_inches='tight')
 
 
-modarr = np.loadtxt("milrow")
+pymod = pygrt.PyModel1D("milrow")
+pymod.set_static_grn_path("stgrn.nc")
 
-pymod = pygrt.PyModel1D(modarr, depsrc=2.0, deprcv=0.0)
+# norths/easts 各为三个元素: start/stop/step (km)
+# 传入 calc_upar=True 可计算空间导数
+pymod.compute_static_grn(
+    depsrc=2.0,
+    deprcv=0.0,
+    norths=[-3.0, 3.0, 0.15],
+    easts=[-2.5, 2.5, 0.15],
+    calc_upar=True,
+)
 
-norths = np.linspace(-3, 3, 41)
-easts = np.linspace(-2.5, 2.5, 33)
-# 传入calc_upar=True可计算空间导数
-static_grn = pymod.compute_static_grn(norths, easts, calc_upar=True)
+# 传入 calc_upar=True 可计算空间导数
+# 传入 zne=True 返回 ZNE 分量
+pymod.compute_static_syn(
+    scale=1e24,
+    output_path="stsyn_dc_zne.nc",
+    source="DC",
+    strike=33,
+    dip=50,
+    rake=120,
+    zne=True,
+    calc_upar=True,
+)
 
-# 传入calc_upar=True可计算空间导数
-# 传入ZNE=True返回ZNE分量
-static_syn = pygrt.utils.gen_syn_from_gf_DC(static_grn, M0=1e24, strike=33, dip=50, rake=120, ZNE=True, calc_upar=True)
-
-# 计算应变
-static_strain = pygrt.utils.compute_strain(static_syn)
-
-# 计算旋转
-static_rotation = pygrt.utils.compute_rotation(static_syn)
-
-# 计算应力
-static_stress = pygrt.utils.compute_stress(static_syn)
+# 计算应变 / 旋转 / 应力，结果写回同一 nc 文件
+static_strain = pygrt.utils.compute_strain("stsyn_dc_zne.nc", return_result=True)
+static_rotation = pygrt.utils.compute_rotation("stsyn_dc_zne.nc", return_result=True)
+static_stress = pygrt.utils.compute_stress("stsyn_dc_zne.nc", return_result=True)
 
 plot6(static_strain, "Strain", 'static_strain.svg')
 plot6(static_rotation, "Rotation", 'static_rotation.svg')
 plot6(static_stress, "Stress", 'static_stress.svg')
+
+# 删除中间计算结果，仅保留成图
+import shutil
+from pathlib import Path
+for name in ["stgrn.nc", "stsyn_dc_zne.nc"]:
+    p = Path(name)
+    if p.is_file():
+        p.unlink(missing_ok=True)

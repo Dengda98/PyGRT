@@ -3,657 +3,801 @@
     :author:   Zhu Dengda (zhudengda@mail.iggcas.ac.cn)  
     :date:     2024-07-24  
 
-    该文件包括 Python端使用的模型 :class:`pygrt.c_structures.c_PyModel1D`
+    该文件包括 Python 端使用的基于文件的模型 :class:`PyModel1D`
 
 """
 
-
 from __future__ import annotations
-from multiprocessing import Value
+
+import os
+from ctypes import c_size_t, cast, c_void_p
+from pathlib import Path
+from typing import Dict, Iterable, Optional, Sequence, Union
+
 import numpy as np
 import numpy.ctypeslib as npct
-from obspy import read, Stream, Trace, UTCDateTime
-from scipy.fft import irfft, ifft
-from obspy.core import AttribDict
-from typing import List, Dict, Union, Literal
-import tempfile
-import os
-import warnings
+from obspy import read
 
-from time import time
-from copy import deepcopy
+from .cli import format_float, format_range, run_grt
+from .c_interfaces import C_grt_compute_travt1d_from_file, C_grt_free, PREAL
+from .utils import read_static_nc
 
-from ctypes import Array, pointer, c_char_p
-from ctypes import _Pointer
-from .c_interfaces import *
-from .c_structures import *
-from .pygrn import PyGreenFunction
 
-__all__ = [
-    "PyModel1D",
-]
+PathLike = Union[str, os.PathLike]
+
+__all__ = ["PyModel1D"]
+
+
+def _normalize_distarr(distarr):
+    """
+    将 distarr 规范为一维 float64 数组
+
+    仅接受标量浮点数或一维浮点序列；字符串等类型直接拒绝
+    """
+    if isinstance(distarr, (str, bytes)):
+        raise TypeError("distarr must be a float or a 1-D sequence of floats, not a string.")
+    arr = np.asarray(distarr, dtype=np.float64)
+    if arr.ndim == 0:
+        return True, np.ascontiguousarray([float(arr)], dtype=np.float64)
+    if arr.ndim == 1:
+        return False, np.ascontiguousarray(arr, dtype=np.float64)
+    raise ValueError("distarr must be a scalar or a 1-D sequence of floats.")
 
 
 class PyModel1D:
-    def __init__(self, modarr0:np.ndarray, depsrc:float, deprcv:float, allowLiquid:bool=True,
-                 topbound:Literal['free', 'rigid', 'halfspace']='free', 
-                 botbound:Literal['free', 'rigid', 'halfspace']='halfspace'):
-        '''
-            Create 1D model instance, and insert the imaginary layer of source and receiver.
+    """
+    File-based 1D layered model for GRT calculations.
 
-            :param    modarr0:    model array, in the format of [thickness(km), Vp(km/s), Vs(km/s), Rho(g/cm^3), Qp, Qs]  
-            :param    depsrc:     source depth (km)  
-            :param    deprcv:     receiver depth (km)  
-            :param    allowLiquid:    (deprecated) unused argument
-            :param    topbound:       boundary condition of the top layer
-            :param    botbound:       boundary condition of the bottom layer
+    Typical workflow:
 
-        '''
-        self.depsrc:float = depsrc 
-        self.deprcv:float = deprcv 
-        self.c_mod1d:c_MODEL1D 
-        self.topbound:str = topbound
-        self.botbound:str = botbound
-        self.hasLiquid = False
+    1. Create the model from a layered-model file.
+    2. Call :meth:`set_dynamic_grn_path` or :meth:`set_static_grn_path`.
+    3. Compute Green's functions with :meth:`compute_grn` or :meth:`compute_static_grn`.
+    4. Synthesize waveforms or static fields with :meth:`compute_syn` or :meth:`compute_static_syn`.
+    """
 
-        if depsrc < 0.0 or deprcv < 0.0:
-            raise ValueError("Negative source depth or receiver depth is not supported.")
+    def __init__(
+        self,
+        modelpath: PathLike,
+        topbound: str = "free",
+        botbound: str = "halfspace",
+    ):
+        """
+        Create a file-based 1D layered model.
 
-        boundDct = {
-            'free': 0,
-            'rigid': 1,
-            'halfspace': 2
-        }
+        The model file is a plain text table. Each row is one layer in the form
+        ``thickness(km)  Vp(km/s)  Vs(km/s)  Rho(g/cm^3)  [Qp  Qs]``.
+        A zero thickness marks a half-space bottom layer.
 
-        if topbound not in boundDct:
+        :param    modelpath:          Path to the layered model file.
+        :param    topbound:           Top boundary condition. One of ``free``, ``rigid`` and ``halfspace``.
+        :param    botbound:           Bottom boundary condition. One of ``free``, ``rigid`` and ``halfspace``.
+        """
+        self.modelpath = str(Path(modelpath))
+        self.topbound = topbound
+        self.botbound = botbound
+        self.dynamic_grn_path: Optional[str] = None
+        self.static_grn_path: Optional[str] = None
+
+        if not Path(self.modelpath).is_file():
+            raise FileNotFoundError(f"Model file does not exist: {self.modelpath}")
+        if topbound not in {"free", "rigid", "halfspace"}:
             raise ValueError(f"Unsupported topbound={topbound}.")
-        if botbound not in boundDct:
+        if botbound not in {"free", "rigid", "halfspace"}:
             raise ValueError(f"Unsupported botbound={botbound}.")
 
-        # 将modarr写入临时数组
-        with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmpfile:
-            ncol = modarr0.shape[-1]
-            np.savetxt(tmpfile, modarr0.reshape(-1, ncol), "%.15e")
-            tmp_path = tmpfile.name  # 获取临时文件路径
-
-        try:
-            c_mod1d_ptr = C_grt_read_mod1d_from_file(tmp_path.encode("utf-8"), depsrc, deprcv, True)
-            self.c_mod1d = c_mod1d_ptr.contents  # 这部分内存在C中申请，需由C函数释放。占用不多，这里跳过
-            C_grt_set_mod1d_boundary(self.c_mod1d, boundDct[topbound], boundDct[botbound])
-        finally:
-            if os.path.exists(tmp_path):
-                os.unlink(tmp_path)
-        
-        # 设置边界条件
-        self.c_mod1d.topbound = boundDct[topbound]
-        self.c_mod1d.botbound = boundDct[botbound]
-        
-        self.isrc = self.c_mod1d.isrc
-        self.ircv = self.c_mod1d.ircv
-
-        va = npct.as_array(self.c_mod1d.Va, (self.c_mod1d.n,))
-        vb = npct.as_array(self.c_mod1d.Vb, (self.c_mod1d.n,))
-        if np.any(vb == 0.0):
-            self.hasLiquid = True
-        
-        self.vmin = min(np.min(va), np.min(vb))
-        # 最小非零速度
-        nonzero_vb = vb[vb > 0]
-        self.vmin = min(np.min(va), np.min(nonzero_vb)) if nonzero_vb.size else np.min(va)
-        self.vmax = max(np.max(va), np.max(vb))
-
-    
-    def compute_travt1d(self, dist:float):
-        r"""
-            Call the C function to calculate the travel time of the first P-wave and S-wave
-
-            :param       dist:    epicentral distance (km)
-
-            :return:
-              - **travtP**  -  first P-wave arrival (s)
-              - **travtS**  -  first S-wave arrival (s)
-        """
-        travtP = C_grt_compute_travt1d(
-            self.c_mod1d.Thk,
-            self.c_mod1d.Va,
-            self.c_mod1d.n,
-            self.c_mod1d.isrc,
-            self.c_mod1d.ircv,
-            dist
-        )
-        travtS = C_grt_compute_travt1d(
-            self.c_mod1d.Thk,
-            self.c_mod1d.Vb,
-            self.c_mod1d.n,
-            self.c_mod1d.isrc,
-            self.c_mod1d.ircv,
-            dist
-        )
-
-        return travtP, travtS
-
-
-    def _init_grn(
+    def compute_travt1d(
         self,
-        distarr:np.ndarray,
-        nt:int, dt:float, upsampling_n:int, freqs:np.ndarray, wI:float, prefix:str=''):
-
-        '''
-            建立各个震源对应的格林函数类
-        '''
-
-        depsrc = self.depsrc
-        deprcv = self.deprcv
-        nr = len(distarr)
-
-        pygrnLst:List[List[List[PyGreenFunction]]] = []
-        c_grnArr = (((PCPLX*CHANNEL_NUM)*SRC_M_NUM)*nr)()
-        
-        for ir in range(len(distarr)):
-            dist = distarr[ir]
-            pygrnLst.append([])
-            for isrc in range(SRC_M_NUM):
-                pygrnLst[ir].append([])
-                for ic, comp in enumerate(ZRTchs):
-
-                    pygrn = PyGreenFunction(f'{prefix}{SRC_M_NAME_ABBR[isrc]}{comp}', nt, dt, upsampling_n, freqs, wI, dist, depsrc, deprcv)
-                    pygrnLst[ir][isrc].append(pygrn)
-                    c_grnArr[ir][isrc][ic] = pygrn.cmplx_grn.ctypes.data_as(PCPLX)
-
-        return pygrnLst, c_grnArr
-    
-
-    def gen_gf_spectra(self, *args, **kwargs):
-        raise NameError("Function 'gen_gf_spectra()' has been removed, use 'compute_grn' instead.")
-    
-    def _get_grn_spectra(
-        self, 
-        distarr:np.ndarray, 
-        nt:int, 
-        dt:float, 
-        upsampling_n:int = 1,
-        freqband:Union[np.ndarray,List[float]]=[-1,-1],
-        zeta:float=0.8, 
-        keepAllFreq:bool=False,
-        vmin_ref:float=0.0,
-        keps:float=-1.0,  
-        ampk:float=2.0,
-        k0:float=50.0, 
-        use_kmax_ref:bool=False,
-        Length:float=0.0, 
-        filonLength:float=0.0,
-        safilonTol:float=0.0,
-        filonCut:float=0.0,
-        converg_method:Literal['AUTO', 'NONE', 'DCM', 'PTAM']='AUTO',
-        delayT0:float=0.0,
-        delayV0:float=0.0,
-        calc_upar:bool=False,
-        statsfile:Union[str,None]=None, 
-        statsidxs:Union[np.ndarray,List[int],None]=None, 
-        print_log:bool=True
+        *,
+        depsrc: float,
+        deprcv: float,
+        distarr: Union[float, Sequence[float]],
     ):
-        # 仅做最基本的正负号等检查；物理预处理交给 C grt_prepare_grn_spec
-        if np.any(distarr < 0):
-            raise ValueError(f"distarr < 0")
-        if nt < 0:
-            raise ValueError(f"nt ({nt}) < 0")
-        if dt < 0:
-            raise ValueError(f"dt ({dt}) < 0")
-        if zeta < 0:
-            raise ValueError(f"zeta ({zeta}) < 0")
-        if k0 < 0:
-            raise ValueError(f"k0 ({k0}) < 0")
-        if vmin_ref < 0:
-            raise ValueError(f"vmin_ref ({vmin_ref}) < 0")
-        
-        if Length < 0.0:
-            raise ValueError(f"Length ({Length}) < 0")
-        if filonLength < 0.0:
-            raise ValueError(f"filonLength ({filonLength}) < 0") 
-        if filonCut < 0.0:
-            raise ValueError(f"filonCut ({filonCut}) < 0") 
-        if safilonTol < 0.0:
-            raise ValueError(f"safilonTol ({safilonTol}) < 0") 
-        
-        # 只能设置一种filon积分方法
-        if safilonTol > 0.0 and filonLength > 0.0:
-            raise ValueError(f"You should only set one of filonLength and safilonTol.")
+        r"""
+        Compute first-arrival P- and S-wave travel times.
 
-        f1, f2 = freqband 
-        if f1 >= f2 and f1 >= 0 and f2 >= 0:
-            raise ValueError(f"freqband f1({f1}) >= f2({f2})")
+        Calls the C routine ``grt_compute_travt1d_from_file``, which reads the
+        layered model from ``modelpath`` and evaluates travel times at the given
+        source/receiver depths and epicentral distances. All arguments must be
+        passed by keyword.
 
-        distarr = np.asarray(distarr, dtype=NPCT_REAL_TYPE)
-        nrs = len(distarr)
-        c_rs = npct.as_ctypes(distarr)
+        :param    depsrc:            Source depth in km.
+        :param    deprcv:            Receiver depth in km.
+        :param    distarr:           Epicentral distance(s) in km. A scalar or a sequence of distances.
 
-        KPROC = c_K_INTEG_PROCESS()
-        grn = c_GRNSPEC()
-        C_grt_prepare_grn_spec(
-            self.c_mod1d,
-            nrs, c_rs,
-            nt, dt, zeta, keepAllFreq,
-            float(f1), float(f2),
-            Length,
-            filonLength, safilonTol, filonCut,
-            k0, ampk, keps, vmin_ref, use_kmax_ref,
-            K_INTEG_CVGMET_DICT[converg_method.upper()],
-            delayT0, delayV0, False,
-            calc_upar,
-            pointer(KPROC), pointer(grn),
+        :return: ``(travtP, travtS)`` in s. For a scalar distance both are floats;
+                 for multiple distances both are NumPy arrays of shape ``(n,)``.
+        """
+        if depsrc < 0 or deprcv < 0:
+            raise ValueError("Source and receiver depths must be nonnegative.")
+
+        # 标量震中距返回 float，序列返回长度为 n 的数组
+        single, distances = _normalize_distarr(distarr)
+        if distances.size == 0 or np.any(distances < 0):
+            raise ValueError("distarr must contain nonnegative distances.")
+
+        carr = C_grt_compute_travt1d_from_file(
+            self.modelpath.encode("utf-8"),
+            float(depsrc),
+            float(deprcv),
+            distances.ctypes.data_as(PREAL),
+            c_size_t(distances.size),
         )
+        if cast(carr, c_void_p).value is None:
+            raise RuntimeError(f"Failed to compute travel times for model {self.modelpath}.")
 
-        try:
-            nf = grn.nf
-            freqs = npct.as_array(grn.freqs, shape=(nf,)).copy()
-            freqs.flags.writeable = False
-            wI = float(grn.wI)
+        arr = npct.as_array(carr, shape=(distances.size, 2)).copy()
+        C_grt_free(carr)
 
-            # 初始化格林函数（缓冲仍由 Python 持有）
-            pygrnLst, c_grnArr = self._init_grn(distarr, nt, dt, upsampling_n, freqs, wI, '')
-            
-            pygrnLst_uiz = []
-            c_grnArr_uiz = None
-            pygrnLst_uir = []
-            c_grnArr_uir = None
-            if calc_upar:
-                pygrnLst_uiz, c_grnArr_uiz = self._init_grn(distarr, nt, dt, upsampling_n, freqs, wI, 'z')
-                pygrnLst_uir, c_grnArr_uir = self._init_grn(distarr, nt, dt, upsampling_n, freqs, wI, 'r')
+        if single:
+            return float(arr[0, 0]), float(arr[0, 1])
+        return arr[:, 0].copy(), arr[:, 1].copy()
 
-            c_statsfile = None 
-            if statsfile is not None:
-                os.makedirs(statsfile, exist_ok=True)
-                c_statsfile = c_char_p(statsfile.encode('utf-8'))
+    def set_dynamic_grn_path(self, path: PathLike) -> str:
+        """
+        Set and create the root directory for dynamic Green's functions.
 
-                if statsidxs is None:
-                    statsidxs = np.arange(nf)
+        Later calls to :meth:`compute_grn` write SAC files under this directory.
+        Subdirectories are named
+        ``{model}_{depsrc}_{deprcv}_{distance}``.
 
-                statsidxs = np.array(statsidxs)
-                if np.any(statsidxs < 0):
-                    raise ValueError("negative value in statsidxs is not supported.")
-                
-                c_statsidxs = npct.as_ctypes(np.array(statsidxs).astype(np.uint64))   # size_t
-                nstatsidxs = len(statsidxs)
-            else:
-                c_statsidxs = None
-                nstatsidxs = 0
+        :param    path:               Root directory for dynamic Green's functions.
 
-            grn.u = c_grnArr
-            grn.uiz = c_grnArr_uiz
-            grn.uir = c_grnArr_uir
-            grn.statsstr = c_statsfile
-            grn.nstatsidxs = nstatsidxs
-            grn.statsidxs = c_statsidxs
+        :return: The configured dynamic Green's function directory.
+        """
+        target = Path(path)
+        target.mkdir(parents=True, exist_ok=True)
+        self.dynamic_grn_path = str(target)
+        return self.dynamic_grn_path
 
-            # 运行C库函数
-            #/////////////////////////////////////////////////////////////////////////////////
-            # 计算得到的格林函数的单位：
-            #     单力源 HF[ZRT],VF[ZR]                  1e-15 cm/dyne
-            #     爆炸源 EX[ZR]                          1e-20 cm/(dyne*cm)
-            #     剪切源 DD[ZR],DS[ZRT],SS[ZRT]          1e-20 cm/(dyne*cm)
-            #=================================================================================
-            C_grt_integ_grn_spec(self.c_mod1d, pointer(KPROC), pointer(grn), print_log)
-            #=================================================================================
-            #/////////////////////////////////////////////////////////////////////////////////
-        finally:
-            if grn.freqs:
-                C_grt_free(grn.freqs)
-                grn.freqs = None
+    def set_static_grn_path(self, path: PathLike) -> str:
+        """
+        Set the NetCDF file path for static Green's functions.
 
-        return pygrnLst, pygrnLst_uiz, pygrnLst_uir
+        Later calls to :meth:`compute_static_grn` write (and currently overwrite)
+        this file. Parent directories are created if needed.
 
-    def _get_stream_from_grn_spectra(
-        self, distarr, pygrnLst, pygrnLst_uiz, pygrnLst_uir, 
-        delayT0:float=0.0,
-        delayV0:float=0.0,
-        skipImagComps:bool=False,
-        calc_upar:bool=False,
-        gf_source=['EX', 'VF', 'HF', 'DC']
-    ):
-        depsrc = self.depsrc
-        deprcv = self.deprcv
-        
-        calc_EX:bool = 'EX' in gf_source
-        calc_VF:bool = 'VF' in gf_source
-        calc_HF:bool = 'HF' in gf_source
-        calc_DC:bool = 'DC' in gf_source
+        :param    path:               NetCDF file path for static Green's functions.
 
-        # 震源和场点层的物性，写入sac头段变量
-        rcv_va = self.c_mod1d.Va[self.ircv]
-        rcv_vb = self.c_mod1d.Vb[self.ircv]
-        rcv_rho = self.c_mod1d.Rho[self.ircv]
-        rcv_qainv = self.c_mod1d.Qainv[self.ircv]
-        rcv_qbinv = self.c_mod1d.Qbinv[self.ircv]
-        src_va = self.c_mod1d.Va[self.isrc]
-        src_vb = self.c_mod1d.Vb[self.isrc]
-        src_rho = self.c_mod1d.Rho[self.isrc]
-        
-        # 对应实际采集的地震信号，取向上为正(和理论推导使用的方向相反)
-        dataLst = []
-        for ir in range(len(distarr)):
-            stream = Stream()
-            dist = distarr[ir]
-
-            # 计算延迟
-            delayT = delayT0 
-            if delayV0 > 0.0:
-                delayT += np.hypot(dist, deprcv-depsrc)/delayV0
-
-            # 计算走时
-            travtP, travtS = self.compute_travt1d(dist)
-
-            for im in range(SRC_M_NUM):
-                if(not calc_EX and im==0):
-                    continue
-                if(not calc_VF and im==1):
-                    continue
-                if(not calc_HF and im==2):
-                    continue
-                if(not calc_DC and im>=3):
-                    continue
-
-                modr = SRC_M_ORDERS[im]
-                sgn = 1
-                for c in range(CHANNEL_NUM):
-                    if(modr==0 and ZRTchs[c]=='T'):
-                        continue
-                    
-                    sgn = -1 if ZRTchs[c]=='Z'=='Z' else 1
-                    stream.append(pygrnLst[ir][im][c].freq2time(delayT, travtP, travtS, sgn, skipImagComps))
-                    if(calc_upar):
-                        stream.append(pygrnLst_uiz[ir][im][c].freq2time(delayT, travtP, travtS, sgn*(-1), skipImagComps))
-                        stream.append(pygrnLst_uir[ir][im][c].freq2time(delayT, travtP, travtS, sgn     , skipImagComps))
-
-
-            # 在sac头段变量部分
-            for tr in stream:
-                SAC = tr.stats.sac
-                SAC['user1'] = rcv_va
-                SAC['user2'] = rcv_vb
-                SAC['user3'] = rcv_rho
-                SAC['user4'] = rcv_qainv
-                SAC['user5'] = rcv_qbinv
-                SAC['user6'] = src_va
-                SAC['user7'] = src_vb
-                SAC['user8'] = src_rho
-
-            dataLst.append(stream)
-
-        return dataLst
-
+        :return: The configured static Green's function file path.
+        """
+        target = Path(path)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        self.static_grn_path = str(target)
+        return self.static_grn_path
 
     def compute_grn(
-        self, 
-        distarr:Union[np.ndarray,List[float],float], 
-        nt:int, 
-        dt:float, 
-        upsampling_n:int = 1,
-        freqband:Union[np.ndarray,List[float]]=[-1,-1],
-        zeta:float=0.8, 
-        keepAllFreq:bool=False,
-        vmin_ref:float=0.0,
-        keps:float=-1.0,  
-        ampk:float=2.0,
-        k0:float=50.0, 
-        use_kmax_ref:bool=False,
-        Length:float=0.0, 
-        filonLength:float=0.0,
-        safilonTol:float=0.0,
-        filonCut:float=0.0,
-        converg_method:Literal['AUTO', 'NONE', 'DCM', 'PTAM']='AUTO',
-        delayT0:float=0.0,
-        delayV0:float=0.0,
-        skipImagComps:bool=False,
-        calc_upar:bool=False,
-        gf_source=['EX', 'VF', 'HF', 'DC'],
-        statsfile:Union[str,None]=None, 
-        statsidxs:Union[np.ndarray,List[int],None]=None, 
-        print_log:bool=True):
-        
-        r'''
-            Call the C function to calculate the Green's functions at multiple distances and return them in a list, 
-            where each element is in the form of :class: 'obspy.Stream' type.
+        self,
+        *,
+        depsrc: float,
+        deprcv: float,
+        distarr: Union[float, Sequence[float]],
+        nt: int,
+        dt: float,
+        upsampling_n: int = 1,
+        freqband: Sequence[float] = (-1.0, -1.0),
+        zeta: float = 0.8,
+        keepAllFreq: bool = False,
+        vmin_ref: float = 0.0,
+        keps: float = -1.0,
+        ampk: float = 2.0,
+        k0: float = 50.0,
+        use_kmax_ref: bool = False,
+        Length: float = 0.0,
+        filonLength: float = 0.0,
+        safilonTol: float = 0.0,
+        filonCut: float = 0.0,
+        converg_method: str = "AUTO",
+        delayT0: float = 0.0,
+        delayV0: float = 0.0,
+        ref_first_p: bool = False,
+        skipImagComps: bool = False,
+        calc_upar: bool = False,
+        gf_source: Optional[Iterable[str]] = None,
+        statsidxs: Optional[Sequence[int]] = None,
+        print_log: bool = True,
+    ):
+        r"""
+        Compute dynamic Green's functions with the ``grt greenfn`` command.
 
-            :param    distarr:       array of epicentral distances (km), or a single float
-            :param    nt:            number of time points. with the help of `SciPy`, nt no longer needs to be a power of 2
-            :param    dt:            time interval (s)  
-            :param    upsampling_n:  upsampling factor 
-            :param    freqband:      frequency range (Hz)
-            :param    zeta:          zeta is used to define the imaginary angular frequency, 
-                                     :math:`\tilde{\omega} = \omega - j*w_I, w_I = \zeta*\pi/T, T=nt*dt` .
-                                     see Bouchon (1981) and 张海明 (2021) for more details and tests.
-            :param    keepAllFreq:   calculate all frequency points, no matter how low the frequency is
-            :param    vmin_ref:      minimum reference velocity (km/s).
-                                     the default vmin=max(minimum velocity, 0.1), used to define kmax_ref
-            :param    keps:          automatic convergence condition, see Yao and Harkrider (1983) for more details.
-                                     negative value denotes not use.
-            :param    ampk:          amplification factor in kmax_ref, see below.
-            :param    k0:            coefficient in kmax_ref
-                                     :math:`k_{\text{max,ref}}=\sqrt{(k_{0}*\pi/hs)^2 + (ampk*\omega/vmin_{ref})^2}` ,
-                                     hs=max(abs(depsrc-deprcv),0.1).
-                                     The actual kmax is searched in [dk, kmax_ref] based on kernel amplitude;
-                                     if the search reaches kmax_ref without convergence,
-                                     or source and receiver are at the same depth, DCM is applied in Auto mode.
-            :param    use_kmax_ref:   directly use kmax_ref as kmax, without amplitude search
-            :param    Length:        integration step `dk=2\pi / (L*rmax)`, see Bouchon (1981) and 张海明 (2021) for the criterion, default set automatically.
-            :param    filonLength:   integration step of Fixed-Interval Filon's Integration Method (large distance only; not for r=0)
-            :param    safilonTol:    precision of Self-Adaptive Filon's Integration Method (large distance only; not for r=0)
-            :param    filonCut:      The splitting point of DWM and (SA)FIM, k*=<filonCut>/rmax, default is 0
-            :param    converg_method:   The method of explicit convergence, you can set "AUTO", "NONE", "DCM" or "PTAM". Default use "AUTO".
-            :param    skipImagComps:    skip the amplitude compensation from imaginary frequency.
-            :param    calc_upar:     whether calculate the spatial derivatives of displacements.
-            :param    gf_source:     The source type to be calculated
-            :param    statsfile:     directory path for saving the statsfile during k integral, used to debug or observe the variations of :math:`F(k,\omega)` and :math:`F(k,\omega)J_m(kr)k`    
-            :param    statsidxs:     only output the statsfile at specific frequency indexes. It is recommended to specify the indexes; 
-                                     otherwise, by default, statsfiles of all frequency will be output, which probably occupy a lot of disk space
-            :param    print_log:     whether print calculation logs.
+        Call :meth:`set_dynamic_grn_path` first. Results are written as SAC files
+        under ``{dynamic_grn_path}/{model}_{depsrc}_{deprcv}_{distance}``.
+        All arguments must be passed by keyword.
 
-            :return:
-                - **dataLst** -   Green's Functions at multiple distances, in a list of :class:`obspy.Stream`
-                
-        '''
+        :param    depsrc:            Source depth in km.
+        :param    deprcv:            Receiver depth in km.
+        :param    distarr:           Array of epicentral distances in km, or a single distance.
+        :param    nt:                Number of time points. With the help of SciPy,
+                                     ``nt`` no longer needs to be a power of 2.
+        :param    dt:                Time interval in s.
+        :param    upsampling_n:      Upsampling factor applied after inverse FFT.
+        :param    freqband:          Frequency range ``(f1, f2)`` in Hz. Negative values mean
+                                     that the corresponding bound is determined automatically.
+        :param    zeta:              Coefficient defining the imaginary angular frequency,
+                                     :math:`\tilde{\omega} = \omega - j w_I`,
+                                     where :math:`w_I = \zeta\pi/T` and :math:`T=nt\,dt`.
+        :param    keepAllFreq:       Whether to calculate all frequency points,
+                                     regardless of how low the frequency is.
+        :param    vmin_ref:          Minimum reference velocity in km/s. ``0.0`` means the
+                                     minimum model velocity, limited to 0.1 km/s.
+        :param    keps:              Automatic convergence condition. See Yao and Harkrider
+                                     (1983) for more details. A negative value disables this condition.
+        :param    ampk:              Amplification factor in the reference maximum wavenumber.
+        :param    k0:                Coefficient in the reference maximum wavenumber,
+                                     :math:`k_{\mathrm{max,ref}} =
+                                     \sqrt{(k_0\pi/h_s)^2 + (ampk\,\omega/v_{\mathrm{min,ref}})^2}`.
+                                     Here :math:`h_s=\max(|depsrc-deprcv|,0.1)`.
+        :param    use_kmax_ref:      Whether to use the reference maximum wavenumber directly,
+                                     without amplitude searching.
+        :param    Length:            Integration step :math:`dk=2\pi/(Lr_{\max})`.
+                                     ``0.0`` means the value is selected automatically.
+        :param    filonLength:       Integration step of fixed-interval Filon integration at
+                                     large distances, but not at zero distance. ``0.0`` disables
+                                     this method. Do not set together with ``safilonTol``.
+        :param    safilonTol:        Precision of self-adaptive Filon integration at large
+                                     distances, but not at zero distance. ``0.0`` disables this
+                                     method. Do not set together with ``filonLength``.
+        :param    filonCut:          Splitting point between DWM and Filon integration,
+                                     :math:`k^*=\mathrm{filonCut}/r_{\max}`.
+        :param    converg_method:    Explicit convergence method. One of ``AUTO``, ``NONE``,
+                                     ``DCM`` and ``PTAM``.
+        :param    delayT0:           Time delay at zero distance in s.
+        :param    delayV0:           Reference velocity for the time delay in km/s.
+                                     Used only when ``ref_first_p`` is false.
+        :param    ref_first_p:       Whether to use the first P-wave arrival as the reference
+                                     for the time delay (CLI ``-Ep``).
+        :param    skipImagComps:     Whether to skip the amplitude compensation from the
+                                     imaginary frequency.
+        :param    calc_upar:         Whether to calculate spatial derivatives of displacement.
+                                     Required later if strain, stress or rotation will be computed.
+        :param    gf_source:         Source types to calculate. Choose from ``EX``, ``VF``,
+                                     ``HF`` and ``DC``. ``None`` means all available source types.
+        :param    statsidxs:         Frequency indexes for optional statistics output.
+                                     ``None`` means no statistics files. An empty list means
+                                     all frequency indexes (CLI bare ``-S``).
+        :param    print_log:         Whether to print calculation logs.
 
-        if isinstance(distarr, float) or isinstance(distarr, int):
-            distarr = np.array([distarr*1.0]) 
+        :return: ``None``. Results are written to disk.
+        """
+        if self.dynamic_grn_path is None:
+            raise RuntimeError("Call set_dynamic_grn_path() before compute_grn().")
+        if nt <= 0 or dt <= 0:
+            raise ValueError("nt and dt must be positive.")
+        if depsrc < 0 or deprcv < 0:
+            raise ValueError("Source and receiver depths must be nonnegative.")
 
-        distarr = np.array(distarr)
-        distarr = distarr.copy().astype(NPCT_REAL_TYPE)
+        _, distances = _normalize_distarr(distarr)
+        if distances.size == 0 or np.any(distances < 0):
+            raise ValueError("distarr must contain nonnegative distances.")
 
-        pygrnLst, pygrnLst_uiz, pygrnLst_uir = self._get_grn_spectra(
-            distarr, nt, dt, upsampling_n, freqband, zeta, keepAllFreq, 
-            vmin_ref, keps, ampk, k0, use_kmax_ref, Length, filonLength, safilonTol, filonCut, converg_method,
-            delayT0, delayV0, calc_upar,
-            statsfile, statsidxs, print_log
-        )
+        try:
+            freq1, freq2 = freqband
+        except (TypeError, ValueError):
+            raise ValueError("freqband must contain exactly two values (f1, f2).") from None
 
-        dataLst = self._get_stream_from_grn_spectra(
-            distarr, pygrnLst, pygrnLst_uiz, pygrnLst_uir,
-            delayT0, delayV0, skipImagComps, calc_upar, gf_source
-        )
-        
-        return dataLst  
+        command = {
+            "subcommand": "greenfn",
+            "M": f"-M{self.modelpath}",
+            "D": f"-D{format_float(depsrc)}/{format_float(deprcv)}",
+            "N": f"-N{nt}/{format_float(dt)}+w{format_float(zeta)}+n{upsampling_n}",
+            "R": f"-R{','.join(format_float(distance) for distance in distances)}",
+            "O": f"-O{self.dynamic_grn_path}",
+            "B": f"-B{self._boundary_option()}",
+        }
 
-    
+        # Build the -N option.
+        if keepAllFreq:
+            command["N"] += "+a"
+        if skipImagComps:
+            command["N"] += "+f"
+
+        # Build the -H option.
+        command["H"] = f"-H{format_float(freq1)}/{format_float(freq2)}"
+
+        # Build the -L option.
+        option = format_float(Length)
+        if filonLength:
+            option += f"+l{format_float(filonLength)}"
+        if safilonTol:
+            option += f"+a{format_float(safilonTol)}"
+        if filonCut:
+            option += f"+o{format_float(filonCut)}"
+        command["L"] = f"-L{option}"
+
+        # Build the -C option.
+        option = self._convergence_option(converg_method)
+        if option:
+            command["C"] = f"-C{option}"
+
+        # Build the -K option.
+        options = [f"+k{format_float(k0)}"]
+        if use_kmax_ref:
+            options.append("+f")
+        options.extend([f"+s{format_float(ampk)}", f"+e{format_float(keps)}"])
+        if vmin_ref:
+            options.append(f"+v{format_float(vmin_ref)}")
+        command["K"] = "-K" + "".join(options)
+
+        # Build the -E option.
+        if ref_first_p:
+            command["E"] = f"-Ep{format_float(delayT0)}"
+        else:
+            command["E"] = f"-E{format_float(delayT0)}/{format_float(delayV0)}"
+
+        # Build the -G option.
+        if gf_source is not None:
+            source_codes = {"EX": "e", "VF": "v", "HF": "h", "DC": "s"}
+            codes = []
+            for name in gf_source:
+                key = str(name).upper()
+                if key not in source_codes:
+                    raise ValueError(f"Unsupported gf_source={name!r}. Choose from EX, VF, HF and DC.")
+                codes.append(source_codes[key])
+            command["G"] = "-G" + "".join(codes)
+
+        # Build the -S option.
+        if statsidxs is not None:
+            command["S"] = "-S" + ",".join(str(index) for index in statsidxs)
+
+        # Build the derivative and logging options.
+        if calc_upar:
+            command["e"] = "-e"
+        if not print_log:
+            command["s"] = "-s"
+
+        run_grt(list(command.values()), print_log=print_log)
 
     def compute_static_grn(
         self,
-        norths:Union[np.ndarray,List[float],float,None]=None, 
-        easts:Union[np.ndarray,List[float],float,None]=None, 
-        distarr:Union[np.ndarray,List[float],float,None]=None, 
-        keps:float=-1.0,  
-        k0:float=50.0, 
-        use_kmax_ref:bool=False,
-        Length:float=15.0, 
-        filonLength:float=0.0,
-        safilonTol:float=0.0,
-        filonCut:float=0.0,
-        converg_method:Literal['AUTO', 'NONE', 'DCM', 'PTAM']='AUTO',
-        calc_upar:bool=False,
-        statsfile:Union[str,None]=None,
-        xarr:Union[np.ndarray,List[float],float,None]=None,
-        yarr:Union[np.ndarray,List[float],float,None]=None):
-
+        *,
+        depsrc: float,
+        deprcv: float,
+        norths: Optional[Sequence[float]] = None,
+        easts: Optional[Sequence[float]] = None,
+        distarr: Optional[Sequence[float]] = None,
+        keps: float = -1.0,
+        k0: float = 50.0,
+        use_kmax_ref: bool = False,
+        Length: float = 15.0,
+        filonLength: float = 0.0,
+        safilonTol: float = 0.0,
+        filonCut: float = 0.0,
+        converg_method: str = "AUTO",
+        calc_upar: bool = False,
+        stats: bool = False,
+    ):
         r"""
-            Call the C function to calculate the static Green's functions and return them in a dict.
-            There're two ways to define the "epicentral distances":
-            1. set both ``norths`` and ``easts`` to define a north/east grid in advance.
-            2. simply set ``distarr``, which equals ``norths=[0.0], easts=distarr``.
+        Compute static Green's functions with the ``grt static greenfn`` command.
 
-            :param       norths:          coordinate array in the north direction (km), or a single float.
-            :param       easts:           coordinate array in the east direction (km), or a single float.
-            :param       xarr:            deprecated alias of ``norths``
-            :param       yarr:            deprecated alias of ``easts``
-            :param    distarr:          equal to "norths=[0.0], easts=distarr"
-            :param       keps:          automatic convergence condition, see (Yao and Harkrider (1983) for more details.
-                                        negative value denotes not use.
-            :param       k0:            coefficient in kmax_ref :math:`k_{\text{max,ref}}=k_{0}*\pi/hs`,
-                                        hs=max(abs(depsrc-deprcv),0.1).
-                                        The actual kmax is searched in [dk, kmax_ref] based on kernel amplitude;
-                                        if the search reaches kmax_ref without convergence,
-                                        or source and receiver are at the same depth, DCM is applied in Auto mode.
-            :param       use_kmax_ref:   directly use kmax_ref as kmax, without amplitude search
-            :param       Length:        integration step `dk=2\pi / (L*rmax)`, default L=15
-            :param       filonLength:   integration step of Fixed-Interval Filon's Integration Method (large distance only; not for r=0)
-            :param       safilonTol:    precision of Self-Adaptive Filon's Integration Method (large distance only; not for r=0)
-            :param       filonCut:      The splitting point of DWM and (SA)FIM, k*=<filonCut>/rmax, default is 0
-            :param    converg_method:   The method of explicit convergence, you can set "AUTO", "NONE", "DCM" or "PTAM". Default use "AUTO".
-            :param       calc_upar:     whether calculate the spatial derivatives of displacements.
-            :param       statsfile:     directory path for saving the statsfile during k integral, used to debug or observe the variations of :math:`F(k,\omega)` and :math:`F(k,\omega)J_m(kr)k` 
-            
-            :return:
-                - **dataDct** -   static Green's function in a dict
+        Call :meth:`set_static_grn_path` first. Results are written to the
+        configured NetCDF file and currently overwrite any existing content.
+        All arguments must be passed by keyword.
+
+        Receiver locations can be specified in either of two ways:
+
+        1. ``norths`` and ``easts``, each a three-value sequence
+           ``(start, stop, step)`` in km, mapped to CLI ``-X`` / ``-Y``.
+        2. ``distarr``, a list of epicentral distances in km. This is equivalent
+           to placing receivers along the east axis with north = 0.
+
+        :param    depsrc:            Source depth in km.
+        :param    deprcv:            Receiver depth in km.
+        :param    norths:            Three values defining the north-coordinate
+                                     option ``-Xstart/stop/step`` in km.
+        :param    easts:             Three values defining the east-coordinate
+                                     option ``-Ystart/stop/step`` in km.
+        :param    distarr:           Epicentral distances in km. Equivalent to
+                                     receivers with north = 0 and east = ``distarr``.
+                                     Mutually exclusive with ``norths`` / ``easts``.
+        :param    keps:              Automatic convergence condition. See Yao and
+                                     Harkrider (1983) for more details. A negative
+                                     value disables this condition.
+        :param    k0:                Coefficient in the reference maximum wavenumber,
+                                     where :math:`h_s=\max(|depsrc-deprcv|,0.1)`.
+                                     The actual maximum wavenumber is searched based
+                                     on the kernel amplitude.
+        :param    use_kmax_ref:      Whether to use the reference maximum wavenumber
+                                     directly, without amplitude searching.
+        :param    Length:            Integration step :math:`dk=2\pi/(Lr_{\max})`.
+                                     The default is 15.
+        :param    filonLength:       Step parameter for fixed-interval Filon
+                                     integration at large distances. ``0.0`` disables
+                                     this method. Do not set together with
+                                     ``safilonTol``.
+        :param    safilonTol:        Tolerance for self-adaptive Filon integration
+                                     at large distances. ``0.0`` disables this method.
+                                     Do not set together with ``filonLength``.
+        :param    filonCut:          Splitting point between DWM and Filon integration.
+        :param    converg_method:    Explicit convergence method. One of
+                                     ``AUTO``, ``NONE``, ``DCM`` and ``PTAM``.
+        :param    calc_upar:         Whether to calculate spatial derivatives of
+                                     displacement. Required later if strain,
+                                     stress or rotation will be computed.
+        :param    stats:             Whether to write integration statistics.
+
+        :return: ``None``. Results are written to the configured NetCDF file.
         """
-
-        if self.hasLiquid:
-            raise NotImplementedError(
-                "The feature for calculating static displacements "
-                "in a model with liquid layers has not yet been implemented."
-            )
-
-        # 兼容旧公开 API：xarr/yarr
-        if xarr is not None or yarr is not None:
-            warnings.warn(
-                "Arguments 'xarr'/'yarr' are deprecated; prefer 'norths'/'easts'.",
-                FutureWarning,
-                stacklevel=2,
-            )
-            if norths is not None or easts is not None:
-                raise ValueError("Use either norths/easts or xarr/yarr, not both.")
-            norths, easts = xarr, yarr
-
-        if Length < 0.0:
-            raise ValueError(f"Length ({Length}) < 0")
-        if filonLength < 0.0:
-            raise ValueError(f"filonLength ({filonLength}) < 0") 
-        if filonCut < 0.0:
-            raise ValueError(f"filonCut ({filonCut}) < 0") 
-        if safilonTol < 0.0:
-            raise ValueError(f"filonCut ({safilonTol}) < 0") 
-        
-        # 只能设置一种filon积分方法
-        if safilonTol > 0.0 and filonLength > 0.0:
-            raise ValueError(f"You should only set one of filonLength and safilonTol.")
-
+        if self.static_grn_path is None:
+            raise RuntimeError("Call set_static_grn_path() before compute_static_grn().")
+        if depsrc < 0 or deprcv < 0:
+            raise ValueError("Source and receiver depths must be nonnegative.")
         if distarr is not None:
-            if isinstance(distarr, float) or isinstance(distarr, int):
-                distarr = np.array([distarr*1.0])
-            distarr = np.array(distarr)
-    
-            norths = np.array([0.0])
-            easts = distarr.copy()
-            if np.any(easts < 0.0):
-                raise ValueError("distances can't be negative.")
-        
-        if norths is None or easts is None:
-            raise ValueError("you need to set norths and easts or distarr.")
+            if norths is not None or easts is not None:
+                raise ValueError("Use either distarr or norths/easts.")
+            _, distances = _normalize_distarr(distarr)
+            if distances.size == 0 or np.any(distances < 0.0):
+                raise ValueError("distarr must contain nonnegative distances.")
+            command_grid = {
+                "R": f"-R{','.join(format_float(value) for value in distances)}"
+            }
+        else:
+            if norths is None or easts is None:
+                raise ValueError("Set norths and easts, or set distarr.")
+            command_grid = {
+                "X": f"-X{format_range(norths, 'norths')}",
+                "Y": f"-Y{format_range(easts, 'easts')}",
+            }
 
-        if isinstance(norths, float) or isinstance(norths, int):
-            norths = np.array([norths*1.0]) 
-        norths = np.array(norths)
+        command = {
+            "module": "static",
+            "subcommand": "greenfn",
+            "M": f"-M{self.modelpath}",
+            "D": f"-D{format_float(depsrc)}/{format_float(deprcv)}",
+            "O": f"-O{self.static_grn_path}",
+            "B": f"-B{self._boundary_option()}",
+        }
+        command.update(command_grid)
 
-        if isinstance(easts, float) or isinstance(easts, int):
-            easts = np.array([easts*1.0]) 
-        easts = np.array(easts)
+        # Build the -L option.
+        option = format_float(Length)
+        if filonLength:
+            option += f"+l{format_float(filonLength)}"
+        if safilonTol:
+            option += f"+a{format_float(safilonTol)}"
+        if filonCut:
+            option += f"+o{format_float(filonCut)}"
+        command["L"] = f"-L{option}"
 
-        nnorth = len(norths)
-        neast = len(easts)
-        nr = nnorth*neast
-        rs = np.zeros((nr,), dtype=NPCT_REAL_TYPE)
-        for ieast in range(neast):
-            for inorth in range(nnorth):
-                rs[inorth + ieast*nnorth] = np.hypot(norths[inorth], easts[ieast])
-        c_rs = npct.as_ctypes(rs)
+        # Build the -C option.
+        option = self._convergence_option(converg_method)
+        if option:
+            command["C"] = f"-C{option}"
 
-        # 积分状态文件
-        c_statsfile = None 
-        if statsfile is not None:
-            os.makedirs(statsfile, exist_ok=True)
-            c_statsfile = c_char_p(statsfile.encode('utf-8'))
+        # Build the -K option.
+        options = [f"+k{format_float(k0)}"]
+        if use_kmax_ref:
+            options.append("+f")
+        options.append(f"+e{format_float(keps)}")
+        command["K"] = "-K" + "".join(options)
 
-        # 初始化格林函数
-        pygrn = np.zeros((nr, SRC_M_NUM, CHANNEL_NUM), dtype=NPCT_REAL_TYPE, order='C');       c_pygrn = npct.as_ctypes(pygrn)
-        pygrn_uiz = np.zeros((nr, SRC_M_NUM, CHANNEL_NUM), dtype=NPCT_REAL_TYPE, order='C');   c_pygrn_uiz = npct.as_ctypes(pygrn_uiz)
-        pygrn_uir = np.zeros((nr, SRC_M_NUM, CHANNEL_NUM), dtype=NPCT_REAL_TYPE, order='C');   c_pygrn_uir = npct.as_ctypes(pygrn_uir)
+        # Build the statistics and derivative options.
+        if stats:
+            command["S"] = "-S"
+        if calc_upar:
+            command["e"] = "-e"
 
-        if not calc_upar:
-            c_pygrn_uiz = c_pygrn_uir = None
+        run_grt(list(command.values()))
 
-        # 仅做最基本的正负号等检查；物理预处理交给 C grt_prepare_static_grn
-        KPROC = c_K_INTEG_PROCESS()
-        C_grt_prepare_static_grn(
-            self.c_mod1d,
-            nr, c_rs,
-            Length,
-            filonLength, safilonTol, filonCut,
-            k0, keps, use_kmax_ref,
-            K_INTEG_CVGMET_DICT[converg_method.upper()],
-            pointer(KPROC),
+    def compute_syn(
+        self,
+        *,
+        dist: float,
+        azimuth: float,
+        scale: float,
+        output_path: PathLike,
+        source: str = "EX",
+        strike: Optional[float] = None,
+        dip: Optional[float] = None,
+        rake: Optional[float] = None,
+        force: Optional[Sequence[float]] = None,
+        moment_tensor: Optional[Sequence[float]] = None,
+        time_function: Optional[str] = None,
+        integrate_order: Optional[int] = None,
+        differentiate_order: Optional[int] = None,
+        scale_with_mu: bool = False,
+        zne: bool = False,
+        calc_upar: bool = False,
+        return_result: bool = False,
+    ):
+        r"""
+        Synthesize dynamic three-component displacement with ``grt syn``.
+
+        Results are written as SAC files under ``output_path``. By default the
+        synthetics are impulse-like displacements in cm with ZRT components:
+
+        * ``Z`` - vertical upward
+        * ``R`` - radial outward
+        * ``T`` - clockwise 90° from ``R``
+
+        Call :meth:`set_dynamic_grn_path` and :meth:`compute_grn` first. The
+        Green's function directory is located under ``dynamic_grn_path`` by
+        matching ``dist`` in the subdirectory name. All arguments must be
+        passed by keyword.
+
+        Choose one source type with ``source``:
+
+        * ``EX`` - explosion. Only ``scale`` is required.
+        * ``DC`` - double-couple / shear. Requires ``strike``, ``dip`` and ``rake``.
+        * ``TS`` - tensile crack. Requires ``strike`` and ``dip``.
+        * ``SF`` - single force. Requires ``force=(fN, fE, fZ)``.
+        * ``MT`` - moment tensor. Requires
+          ``moment_tensor=(Mxx, Mxy, Mxz, Myy, Myz, Mzz)``.
+
+        :param    dist:                Epicentral distance in km. Used to locate the
+                                       Green's function directory under
+                                       ``dynamic_grn_path``.
+        :param    azimuth:             Azimuth from source to receiver in deg.
+                                       North is 0°, clockwise positive.
+        :param    scale:               Source scaling factor. For ``EX``, ``DC``,
+                                       ``TS`` and ``MT``, this is the scalar seismic
+                                       moment in dyne·cm. For ``SF``, the unit is dyne.
+                                       If ``scale_with_mu`` is true, ``scale`` is
+                                       treated as area × slip in cm³ and multiplied by
+                                       the source-layer shear modulus :math:`\mu`.
+        :param    output_path:         Output directory for SAC files
+                                       ``{output_path}/{ch}.sac``.
+        :param    source:              Source type. One of ``EX``, ``DC``, ``TS``,
+                                       ``SF`` and ``MT``.
+        :param    strike:              Fault strike in deg, in [0, 360]. North is 0°,
+                                       clockwise positive. Required for ``DC`` and
+                                       ``TS``.
+        :param    dip:                 Fault dip in deg, in [0, 90]. Required for
+                                       ``DC`` and ``TS``.
+        :param    rake:                Slip rake in deg, in [-180, 180],
+                                       counterclockwise positive on the fault plane.
+                                       Required for ``DC``.
+        :param    force:               Single-force coefficients ``(fN, fE, fZ)`` for
+                                       ``SF``. Directions are north, east and downward.
+                                       Each coefficient is multiplied by ``scale``.
+        :param    moment_tensor:       Six independent moment-tensor coefficients
+                                       ``(Mxx, Mxy, Mxz, Myy, Myz, Mzz)`` for ``MT``.
+                                       Subscripts x/y/z denote north/east/down.
+        :param    time_function:       Time-function string passed to CLI ``-D``.
+                                       Supported forms include:
+
+                                       * ``p/t0`` - parabola lasting ``t0`` s
+                                       * ``t/t1/t2/t3`` - trapezoid with rise,
+                                         plateau and fall cutoffs in s
+                                       * ``r/f0`` - Ricker wavelet with dominant
+                                         frequency ``f0`` in Hz
+                                       * ``0/file`` - custom one-column amplitude file
+
+                                       The peak amplitude of the time function is 1.
+                                       Omit this argument for an impulse response.
+        :param    integrate_order:     Number of time integrations. For example,
+                                       ``1`` yields step-like displacement.
+        :param    differentiate_order: Number of time differentiations. For example,
+                                       ``1`` yields velocity.
+        :param    scale_with_mu:       If true, multiply ``scale`` by the source-layer
+                                       shear modulus :math:`\mu` (CLI ``-Su``).
+        :param    zne:                 If true, output ZNE instead of ZRT components.
+        :param    calc_upar:           If true, also synthesize spatial derivatives of
+                                       displacement. Derivative channel names are
+                                       prefixed with ``z``, ``r`` or ``t``. Set this
+                                       when strain, stress or rotation will be computed
+                                       later.
+        :param    return_result:       If true, read the generated SAC files into an
+                                       :class:`obspy.Stream`.
+
+        :return: An ObsPy stream when ``return_result`` is true; otherwise ``None``.
+        """
+        grn_path = self._dynamic_grn_dir(dist)
+        output = Path(output_path)
+        output.mkdir(parents=True, exist_ok=True)
+
+        command = {
+            "subcommand": "syn",
+            "G": f"-G{grn_path}",
+            "A": f"-A{format_float(azimuth)}",
+            "S": f"-S{'u' if scale_with_mu else ''}{format_float(scale)}",
+            "O": f"-O{output}",
+        }
+        command.update(
+            self._source_options(source, strike, dip, rake, force, moment_tensor)
         )
 
-        # 运行C库函数
-        #/////////////////////////////////////////////////////////////////////////////////
-        # 计算得到的格林函数的单位：
-        #     单力源 HF[ZRT],VF[ZR]                  1e-15 cm/dyne
-        #     爆炸源 EX[ZR]                          1e-20 cm/(dyne*cm)
-        #     剪切源 DD[ZR],DS[ZRT],SS[ZRT]          1e-20 cm/(dyne*cm)
-        #=================================================================================
-        C_grt_integ_static_grn(
-            self.c_mod1d, nr, c_rs, pointer(KPROC),
-            calc_upar, c_pygrn, c_pygrn_uiz, c_pygrn_uir,
-            c_statsfile
+        # Build the time-function and operation-order options.
+        if time_function is not None:
+            command["D"] = f"-D{time_function}"
+        if integrate_order is not None:
+            command["I"] = f"-I{integrate_order}"
+        if differentiate_order is not None:
+            command["J"] = f"-J{differentiate_order}"
+
+        # Build the component and derivative options.
+        if zne:
+            command["N"] = "-N"
+        if calc_upar:
+            command["e"] = "-e"
+
+        run_grt(list(command.values()))
+        if return_result:
+            return read(str(output / "*.sac"))
+        return None
+
+    def compute_static_syn(
+        self,
+        *,
+        scale: float,
+        output_path: PathLike,
+        source: str = "EX",
+        strike: Optional[float] = None,
+        dip: Optional[float] = None,
+        rake: Optional[float] = None,
+        force: Optional[Sequence[float]] = None,
+        moment_tensor: Optional[Sequence[float]] = None,
+        scale_with_mu: bool = False,
+        norths: Optional[Sequence[float]] = None,
+        easts: Optional[Sequence[float]] = None,
+        zne: bool = False,
+        calc_upar: bool = False,
+        return_result: bool = False,
+    ):
+        r"""
+        Synthesize static three-component displacement with ``grt static syn``.
+
+        Results are written to the NetCDF file ``output_path``. Source-type and
+        component conventions match :meth:`compute_syn`. Call
+        :meth:`set_static_grn_path` and :meth:`compute_static_grn` first.
+        All arguments must be passed by keyword.
+
+        By default the output grid inherits the north/east grid of the static
+        Green's function file. You may pass ``norths`` and ``easts`` to request a
+        new grid; each node then uses the nearest epicentral-distance Green's
+        function, which is an approximation that reuses an existing library.
+
+        Choose one source type with ``source``:
+
+        * ``EX`` - explosion. Only ``scale`` is required.
+        * ``DC`` - double-couple / shear. Requires ``strike``, ``dip`` and ``rake``.
+        * ``TS`` - tensile crack. Requires ``strike`` and ``dip``.
+        * ``SF`` - single force. Requires ``force=(fN, fE, fZ)``.
+        * ``MT`` - moment tensor. Requires
+          ``moment_tensor=(Mxx, Mxy, Mxz, Myy, Myz, Mzz)``.
+
+        :param    scale:             Source scaling factor. For ``EX``, ``DC``,
+                                     ``TS`` and ``MT``, this is the scalar seismic
+                                     moment in dyne·cm. For ``SF``, the unit is dyne.
+                                     If ``scale_with_mu`` is true, ``scale`` is
+                                     treated as area × slip in cm³ and multiplied by
+                                     the source-layer shear modulus :math:`\mu`.
+        :param    output_path:       Output NetCDF file path.
+        :param    source:            Source type. One of ``EX``, ``DC``, ``TS``,
+                                     ``SF`` and ``MT``.
+        :param    strike:            Fault strike in deg, in [0, 360]. North is 0°,
+                                     clockwise positive. Required for ``DC`` and
+                                     ``TS``.
+        :param    dip:               Fault dip in deg, in [0, 90]. Required for
+                                     ``DC`` and ``TS``.
+        :param    rake:              Slip rake in deg, in [-180, 180],
+                                     counterclockwise positive on the fault plane.
+                                     Required for ``DC``.
+        :param    force:             Single-force coefficients ``(fN, fE, fZ)`` for
+                                     ``SF``. Directions are north, east and downward.
+                                     Each coefficient is multiplied by ``scale``.
+        :param    moment_tensor:     Six independent moment-tensor coefficients
+                                     ``(Mxx, Mxy, Mxz, Myy, Myz, Mzz)`` for ``MT``.
+                                     Subscripts x/y/z denote north/east/down.
+        :param    scale_with_mu:     If true, multiply ``scale`` by the source-layer
+                                     shear modulus :math:`\mu` (CLI ``-Su``).
+        :param    norths:            Optional new north grid as three values
+                                     ``(start, stop, step)`` in km. Must be set
+                                     together with ``easts``.
+        :param    easts:             Optional new east grid as three values
+                                     ``(start, stop, step)`` in km. Must be set
+                                     together with ``norths``.
+        :param    zne:               If true, output ZNE instead of ZRT components.
+        :param    calc_upar:         If true, also synthesize spatial derivatives of
+                                     displacement. Derivative variable names are
+                                     prefixed with ``z``, ``r`` or ``t``. Set this
+                                     when strain, stress or rotation will be computed
+                                     later.
+        :param    return_result:     If true, read the generated NetCDF file with
+                                     :func:`pygrt.utils.read_static_nc`.
+
+        :return: The synthesized NetCDF data when ``return_result`` is true;
+                 otherwise ``None``.
+        """
+        if self.static_grn_path is None:
+            raise RuntimeError("Call set_static_grn_path() before compute_static_syn().")
+        output = Path(output_path)
+        output.parent.mkdir(parents=True, exist_ok=True)
+        command = {
+            "module": "static",
+            "subcommand": "syn",
+            "G": f"-G{self.static_grn_path}",
+            "S": f"-S{'u' if scale_with_mu else ''}{format_float(scale)}",
+            "O": f"-O{output}",
+        }
+        command.update(
+            self._source_options(source, strike, dip, rake, force, moment_tensor)
         )
-        #=================================================================================
-        #/////////////////////////////////////////////////////////////////////////////////
 
-        # 震源和场点层的物性
-        rcv_va = self.c_mod1d.Va[self.ircv]
-        rcv_vb = self.c_mod1d.Vb[self.ircv]
-        rcv_rho = self.c_mod1d.Rho[self.ircv]
-        src_va = self.c_mod1d.Va[self.isrc]
-        src_vb = self.c_mod1d.Vb[self.isrc]
-        src_rho = self.c_mod1d.Rho[self.isrc]
+        # Build the coordinate options.
+        if norths is not None or easts is not None:
+            if norths is None or easts is None:
+                raise ValueError("norths and easts must be supplied together.")
+            command["X"] = f"-X{format_range(norths, 'norths')}"
+            command["Y"] = f"-Y{format_range(easts, 'easts')}"
 
-        # 结果字典
-        dataDct = {}
-        dataDct['_norths'] = norths.copy()
-        dataDct['_easts'] = easts.copy()
-        dataDct['_depsrc'] = self.depsrc
-        dataDct['_deprcv'] = self.deprcv
-        dataDct['_src_va'] = src_va
-        dataDct['_src_vb'] = src_vb
-        dataDct['_src_rho'] = src_rho
-        dataDct['_rcv_va'] = rcv_va
-        dataDct['_rcv_vb'] = rcv_vb
-        dataDct['_rcv_rho'] = rcv_rho
+        # Build the component and derivative options.
+        if zne:
+            command["N"] = "-N"
+        if calc_upar:
+            command["e"] = "-e"
 
-        # 整理结果，以 (nnorth, neast) 矩阵存储；物理量仍只依赖震中距
-        for isrc in range(SRC_M_NUM):
-            src_name = SRC_M_NAME_ABBR[isrc]
-            for ic, comp in enumerate(ZRTchs):
-                sgn = -1 if comp=='Z' else 1
-                dataDct[f'{src_name}{comp}'] = sgn * pygrn[:,isrc,ic].reshape((nnorth, neast), order='F')
-                if calc_upar:
-                    dataDct[f'z{src_name}{comp}'] = sgn * pygrn_uiz[:,isrc,ic].reshape((nnorth, neast), order='F') * (-1)
-                    dataDct[f'r{src_name}{comp}'] = sgn * pygrn_uir[:,isrc,ic].reshape((nnorth, neast), order='F')
+        run_grt(list(command.values()))
+        if return_result:
+            return read_static_nc(output)
+        return None
 
-        return dataDct
+    def _dynamic_grn_dir(self, dist: float) -> str:
+        """
+        在 dynamic_grn_path 下按震中距匹配格林函数子目录
+
+        子目录命名为 ``{model}_{depsrc}_{deprcv}_{dist}``
+        当前假设仅有一套震源/台站深度，故只需匹配 dist
+        """
+        if self.dynamic_grn_path is None:
+            raise RuntimeError("Call set_dynamic_grn_path() before compute_syn().")
+        root = Path(self.dynamic_grn_path)
+        if not root.is_dir():
+            raise FileNotFoundError(f"Dynamic Green's function root does not exist: {root}")
+
+        suffix = f"_{format_float(dist)}"
+        matches = [path for path in root.iterdir() if path.is_dir() and path.name.endswith(suffix)]
+        if not matches:
+            raise FileNotFoundError(f"No Green's function directory matching dist={format_float(dist)} under {root}.")
+        if len(matches) > 1:
+            names = ", ".join(path.name for path in sorted(matches))
+            raise RuntimeError(f"Multiple Green's function directories match dist={format_float(dist)} under {root}: {names}.")
+        return str(matches[0])
+
+    def _boundary_option(self) -> str:
+        return {
+            "free": "f",
+            "rigid": "r",
+            "halfspace": "h",
+        }[self.topbound] + {
+            "free": "F",
+            "rigid": "R",
+            "halfspace": "H",
+        }[self.botbound]
+
+    @staticmethod
+    def _convergence_option(value: str) -> str:
+        options = {"AUTO": "", "DCM": "d", "PTAM": "p", "NONE": "n"}
+        try:
+            return options[value.upper()]
+        except KeyError:
+            raise ValueError(f"Unsupported convergence method: {value}") from None
+
+    @staticmethod
+    def _source_options(
+        source: str,
+        strike: Optional[float],
+        dip: Optional[float],
+        rake: Optional[float],
+        force: Optional[Sequence[float]],
+        moment_tensor: Optional[Sequence[float]],
+    ) -> Dict[str, str]:
+        source = source.upper()
+        if source == "EX":
+            return {}
+        if source == "DC":
+            if strike is None or dip is None or rake is None:
+                raise ValueError("DC source requires strike, dip and rake.")
+            return {"M": f"-M{format_float(strike)}/{format_float(dip)}/{format_float(rake)}"}
+        if source == "TS":
+            if strike is None or dip is None:
+                raise ValueError("TS source requires strike and dip.")
+            return {"M": f"-M{format_float(strike)}/{format_float(dip)}"}
+        if source == "SF":
+            if force is None or len(force) != 3:
+                raise ValueError("SF source requires force=(fN, fE, fZ).")
+            return {"F": "-F" + "/".join(format_float(value) for value in force)}
+        if source == "MT":
+            if moment_tensor is None or len(moment_tensor) != 6:
+                raise ValueError("MT source requires six moment-tensor values.")
+            return {"T": "-T" + "/".join(format_float(value) for value in moment_tensor)}
+        raise ValueError(f"Unsupported source type: {source}")

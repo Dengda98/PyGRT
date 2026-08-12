@@ -4,7 +4,7 @@
 计算静态格林函数
 =================
 
-Python中计算静态格林函数的主函数为 :func:`compute_static_grn() <pygrt.pymod.PyModel1D.compute_static_grn>` ，C模块为 :doc:`/Module/static_greenfn`。
+Python中计算静态格林函数的主函数为 :meth:`compute_static_grn() <pygrt.pymod.PyModel1D.compute_static_grn>` ，C模块为 :doc:`/Module/static_greenfn`。
 
 建议先阅读完 :doc:`/Tutorial/dynamic/gfunc` 部分。静态情况与动态情况采取的计算方法一致，只是推导细节会有不同，详见 |yao2026p| 。
 
@@ -15,8 +15,8 @@ Python中计算静态格林函数的主函数为 :func:`compute_static_grn() <py
 + 指定二维的 XY 网格。坐标 (0,0) 为源点的水平投影，每个节点的震中距为 :math:`r_{ij} = \sqrt{x_i^2 + y_j^2}` 。实际计算中会对震中距自动去重以减少计算量。
 + 指定一维的震中距序列。在计算和结果保存上等同于指定从原点 (X=0.0) 沿东向 (Y/km) 指定对应的采样点。
 
-为了兼容性，结果的输出仍然保持以 XY 网格的形式。在 :doc:`static_syn` 阶段，可以指定新的 XY 网格，
-此时每个节点的格林函数会近似为最近震中距的格林函数。
+结果会写入用户通过 :meth:`set_static_grn_path() <pygrt.pymod.PyModel1D.set_static_grn_path>` 指定的
+NetCDF 文件。在 :doc:`static_syn` 阶段，可以指定新的 XY 网格，此时每个节点的格林函数会近似为最近震中距的格林函数。
 
 示例程序
 -----------
@@ -46,4 +46,7 @@ Python中计算静态格林函数的主函数为 :func:`compute_static_grn() <py
             :start-after: BEGIN GRN
             :end-before: END GRN
 
-        函数返回字典类型，包括一些基本参数以及格林函数（2D矩阵）。
+        结果写入 :meth:`set_static_grn_path() <pygrt.pymod.PyModel1D.set_static_grn_path>`
+        指定的 NetCDF 文件。需要读回时调用
+        :func:`pygrt.utils.read_static_nc`，返回字典包含
+        ``dimensions``、 ``variables`` 与 ``attributes``。

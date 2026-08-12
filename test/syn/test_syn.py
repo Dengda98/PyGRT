@@ -1,50 +1,84 @@
-import numpy as np
+import shutil
+from pathlib import Path
+
 import pygrt
 
-dist=10
-depsrc=2
-deprcv=3
+dist = 10.0
+depsrc = 2.0
+deprcv = 3.0
+nt = 600
+dt = 0.02
+modname = "../milrow"
+az = 22.0
 
-nt=600
-dt=0.02
+pymod = pygrt.PyModel1D(modname)
+pymod.set_dynamic_grn_path("GRN")
+pymod.compute_grn(
+    depsrc=depsrc, deprcv=deprcv, distarr=dist, nt=nt, dt=dt, calc_upar=True,
+)
 
-modname="../milrow"
+pymod.compute_syn(
+    dist=dist, azimuth=az, scale=1e20, output_path="syn", source="EX",
+)
+pymod.compute_syn(
+    dist=dist, azimuth=az, scale=1e16, output_path="syn", source="SF",
+    force=(-1, 2, -4),
+)
+pymod.compute_syn(
+    dist=dist, azimuth=az, scale=1e20, output_path="syn", source="DC",
+    strike=33, dip=44, rake=55,
+)
+pymod.compute_syn(
+    dist=dist, azimuth=az, scale=1e20, output_path="syn", source="TS",
+    strike=33, dip=44,
+)
+pymod.compute_syn(
+    dist=dist, azimuth=az, scale=1e20, output_path="syn", source="MT",
+    moment_tensor=(1, -2, -5, 0.5, 3, 1.2),
+)
 
-modarr = np.loadtxt(modname)
+# 时间函数
+pymod.compute_syn(
+    dist=dist, azimuth=az, scale=1e20, output_path="syn", source="EX",
+    time_function="p/0.6",
+)
+pymod.compute_syn(
+    dist=dist, azimuth=az, scale=1e20, output_path="syn", source="EX",
+    time_function="t/0.2/0.4/0.7",
+)
+pymod.compute_syn(
+    dist=dist, azimuth=az, scale=1e20, output_path="syn", source="EX",
+    time_function="t/0.4/0.4/0.8",
+)
+pymod.compute_syn(
+    dist=dist, azimuth=az, scale=1e20, output_path="syn", source="EX",
+    time_function="r/1.2",
+)
 
-pymod = pygrt.PyModel1D(modarr, depsrc, deprcv)
-stgrn = pymod.compute_grn(dist, nt, dt, calc_upar=True)[0]
+# 积分 / 微分
+pymod.compute_syn(
+    dist=dist, azimuth=az, scale=1e20, output_path="syn", source="EX",
+    integrate_order=1,
+)
+pymod.compute_syn(
+    dist=dist, azimuth=az, scale=1e20, output_path="syn", source="EX",
+    differentiate_order=1,
+)
 
-stsyn = pygrt.utils.gen_syn_from_gf_EX(stgrn, 1e20, 22)
-stsyn = pygrt.utils.gen_syn_from_gf_SF(stgrn, 1e16, fN=-1, fE=2, fZ=-4, az=22)
-stsyn = pygrt.utils.gen_syn_from_gf_DC(stgrn, 1e20, strike=33, dip=44, rake=55, az=22)
-stsyn = pygrt.utils.gen_syn_from_gf_TS(stgrn, 1e20, strike=33, dip=44, az=22)
-stsyn = pygrt.utils.gen_syn_from_gf_MT(stgrn, 1e20, [1, -2, -5, 0.5, 3, 1.2], az=22)
+# ZNE / 空间导数
+pymod.compute_syn(
+    dist=dist, azimuth=az, scale=1e20, output_path="syn", source="EX", zne=True,
+)
+pymod.compute_syn(
+    dist=dist, azimuth=az, scale=1e20, output_path="syn", source="EX",
+    calc_upar=True,
+)
+pymod.compute_syn(
+    dist=dist, azimuth=az, scale=1e20, output_path="syn", source="EX",
+    zne=True, calc_upar=True,
+)
 
-
-stsyn = pygrt.utils.gen_syn_from_gf_EX(stgrn, 1e20, 22)
-
-sigs = pygrt.sigs.gen_parabola_wave(0.6, dt)
-stsyn0 = stsyn.copy()
-pygrt.utils.stream_convolve(stsyn0, sigs)
-sigs = pygrt.sigs.gen_trap_wave(0.2, 0.4, 0.7, dt)
-stsyn0 = stsyn.copy()
-pygrt.utils.stream_convolve(stsyn0, sigs)
-sigs = pygrt.sigs.gen_triangle_wave(0.8, dt)
-stsyn0 = stsyn.copy()
-pygrt.utils.stream_convolve(stsyn0, sigs)
-sigs = pygrt.sigs.gen_ricker_wave(1.2, dt)
-stsyn0 = stsyn.copy()
-pygrt.utils.stream_convolve(stsyn0, sigs)
-sigs = np.array([0.0, 0.1, 0.2, 0.4, 0.4, 0.4, 0.2, 0.1, 0.0])
-stsyn0 = stsyn.copy()
-pygrt.utils.stream_convolve(stsyn0, sigs)
-
-stsyn0 = stsyn.copy()
-pygrt.utils.stream_integral(stsyn0)
-stsyn0 = stsyn.copy()
-pygrt.utils.stream_diff(stsyn0)
-
-stsyn = pygrt.utils.gen_syn_from_gf_EX(stgrn, 1e20, 22, calc_upar=True)
-stsyn = pygrt.utils.gen_syn_from_gf_EX(stgrn, 1e20, 22, ZNE=True)
-stsyn = pygrt.utils.gen_syn_from_gf_EX(stgrn, 1e20, 22, ZNE=True, calc_upar=True)
+for name in ["GRN", "syn"]:
+    p = Path(name)
+    if p.is_dir():
+        shutil.rmtree(p, ignore_errors=True)

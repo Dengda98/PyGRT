@@ -2,18 +2,19 @@
 # BEGIN DEPSRC 0.0 DGRN
 import numpy as np
 import pygrt 
-
-modarr = np.loadtxt("milrow")
+from pygrt.cli import format_float
 
 depsrc = 0.0
 deprcv = 0.0
-pymod = pygrt.PyModel1D(modarr, depsrc=depsrc, deprcv=deprcv)
+pymod = pygrt.PyModel1D("milrow")
+pymod.set_dynamic_grn_path("GRN")
 
 distarr = [5,8,10]
 # 设置 converg_method='PTAM' 进行收敛
-stgrnLst = pymod.compute_grn(
+pymod.compute_grn(
+    depsrc=depsrc, deprcv=deprcv,
     distarr=distarr, nt=500, dt=0.02, converg_method='PTAM', k0=2, ampk=1.2, use_kmax_ref=True,
-    statsfile=f"pygrtstats_{depsrc}_{deprcv}", statsidxs=[50,100]
+    statsidxs=[50,100],
 )
 # END DEPSRC 0.0 DGRN
 # -------------------------------------------------------------------
@@ -22,7 +23,9 @@ stgrnLst = pymod.compute_grn(
 # -------------------------------------------------------------------
 # BEGIN plot ptam
 ir = 2
-statsdata1, statsdata2, ptamdata, dist = pygrt.utils.read_statsfile_ptam(f"pygrtstats_{depsrc}_{deprcv}/PTAM_{ir:04d}_*/PTAM_0050_*")
+statsdata1, statsdata2, ptamdata, dist = pygrt.utils.read_statsfile_ptam(
+    f"GRN_grtstats/milrow_{format_float(depsrc)}_{format_float(deprcv)}/PTAM_{ir:04d}_*/PTAM_0050_*"
+)
 
 srctype="SS"
 ptype="0"
@@ -36,20 +39,26 @@ fig.savefig(f"{srctype}_{ptype}_{depsrc}_ptam_RI.svg", bbox_inches='tight')
 # -------------------------------------------------------------------
 # BEGIN SGRN
 import numpy as np
-import pygrt 
-
-modarr = np.loadtxt("milrow")
+import pygrt
+from pygrt.cli import format_float
 
 depsrc = 0.05
 deprcv = 0.0
-pymod = pygrt.PyModel1D(modarr, depsrc=depsrc, deprcv=deprcv)
+pymod = pygrt.PyModel1D("milrow")
+pymod.set_static_grn_path("stgrn.nc")
 
-norths = np.array([2.0])
-easts = np.array([2.0])
-static_grn = pymod.compute_static_grn(norths, easts, converg_method='PTAM', statsfile=f"static_pygrtstats_{depsrc}_{deprcv}", k0=3, use_kmax_ref=True)
+norths = [2.0, 2.0, 1.0]
+easts = [2.0, 2.0, 1.0]
+pymod.compute_static_grn(
+    depsrc=depsrc, deprcv=deprcv,
+    norths=norths, easts=easts,
+    converg_method='PTAM', stats=True, k0=3, use_kmax_ref=True,
+)
 
 ir = 0
-statsdata1, statsdata2, ptamdata, dist = pygrt.utils.read_statsfile_ptam(f"static_pygrtstats_{depsrc}_{deprcv}/PTAM_{ir:04d}_*/PTAM")
+statsdata1, statsdata2, ptamdata, dist = pygrt.utils.read_statsfile_ptam(
+    f"stgrtstats/milrow_{format_float(depsrc)}_{format_float(deprcv)}/PTAM_{ir:04d}_*/PTAM"
+)
 
 srctype="SS"
 ptype="0"
@@ -65,3 +74,13 @@ fig.savefig(f"{srctype}_{ptype}_{depsrc}_ptam_static.svg", bbox_inches='tight')
 
 # END SGRN
 # -------------------------------------------------------------------
+
+# 删除中间计算结果，仅保留成图
+import shutil
+from pathlib import Path
+for name in ["GRN", "GRN_grtstats", "stgrn.nc", "stgrtstats"]:
+    p = Path(name)
+    if p.is_dir():
+        shutil.rmtree(p, ignore_errors=True)
+    elif p.is_file():
+        p.unlink(missing_ok=True)

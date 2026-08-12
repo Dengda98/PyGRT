@@ -4,10 +4,17 @@ import matplotlib.pyplot as plt
 from typing import Union
 import pygrt
 
-modarr = np.loadtxt("milrow")
-pymod = pygrt.PyModel1D(modarr, 5, 0)
-stgrn = pymod.compute_grn(distarr=[180], nt=1400, dt=0.1)[0]
-st = pygrt.utils.gen_syn_from_gf_DC(stgrn, M0=1e24, strike=77, dip=88, rake=99, az=39.2)
+pymod = pygrt.PyModel1D("milrow")
+pymod.set_dynamic_grn_path("GRN")
+pymod.compute_grn(depsrc=5.0, deprcv=0.0, distarr=[180], nt=1400, dt=0.1)
+# ?.sac 匹配位移三分量文件名（Z/R/T）
+# integrate_order=1 对应 CLI -I1，得到阶跃型位移
+pymod.compute_syn(
+    dist=180.0, azimuth=39.2, scale=1e24, output_path="syn_dc",
+    source="DC", strike=77, dip=88, rake=99,
+    integrate_order=1,
+)
+st = read("syn_dc/?.sac")
 
 def plot_syn(stsyn:Stream, sigs:Union[np.ndarray,None]=None):
     figsize = (10, 5.5)
@@ -31,7 +38,7 @@ def plot_syn(stsyn:Stream, sigs:Union[np.ndarray,None]=None):
 
     for i, comp in enumerate(['R', 'T', 'Z']):
         ax = axs[i]
-        tr = st.select(component=comp)[0]
+        tr = stsyn.select(channel=comp)[0]
         ax.plot(t, tr.data, c='k', lw=0.5, label=tr.stats.channel[-1])
         ax.legend(loc='upper left')
 
@@ -48,6 +55,15 @@ def plot_syn(stsyn:Stream, sigs:Union[np.ndarray,None]=None):
 
     return fig, axs
 
-pygrt.utils.stream_integral(st)
 fig, axs = plot_syn(st)
 fig.savefig('cover.svg', bbox_inches='tight')
+
+# 删除中间计算结果，仅保留成图
+import shutil
+from pathlib import Path
+for name in ["GRN", "syn_dc"]:
+    p = Path(name)
+    if p.is_dir():
+        shutil.rmtree(p, ignore_errors=True)
+    elif p.is_file():
+        p.unlink(missing_ok=True)
