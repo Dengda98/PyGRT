@@ -4,10 +4,11 @@
 准备工作
 =============
 
-**PyGRT** 程序包由C和Python两个编程语言的代码组成，目的是兼并高效性和便捷性。
-底层复杂运算由C语言编写，编译链接成动态库 ``libgrt.so`` 供Python调用。Python通过 ``ctypes`` 库导入动态库以使用外部函数，以此兼并了C语言的高效和Python语言的便捷。
+**PyGRT** 程序包由 C 和 Python 两个编程语言的代码组成，目的是兼并高效性和便捷性。
+底层复杂运算由 C 语言编写，并以可执行文件 :command:`grt` 的形式提供。
+Python 接口主要负责组织模型与输出路径，并调用 :command:`grt` 完成计算与文件读写。
 
-除了Python脚本式运行， **PyGRT** 保留传统命令行式运行C程序 :command:`grt` 。
+除了 Python 脚本式运行，也可直接在终端运行 :command:`grt` 。
 受 |GMT| 的启发， :command:`grt` 程序对多个计算功能使用模块化管理，
 可使用类似于以下格式来运行程序。每个模块可使用 ``-h`` 查看帮助。
 
@@ -15,7 +16,7 @@
 
     grt <module-name> [<module-options>]
 
-**C程序的运行独立于Python，不需要Python环境，从而满足了更多计算场景。** 
+**C 程序的运行独立于 Python，不需要 Python 环境，从而满足了更多计算场景。**
 
 
 建立模型文件
@@ -49,7 +50,7 @@
 
     .. tab:: Python
 
-        模型格式与C一致，在Python中可以使用 :code:`np.loadtxt()` 导入文本文件，或者手动定义数组
+        模型格式与 C 一致，Python 端直接传入模型文件路径。
 
         .. literalinclude:: dynamic/run/run.py
             :language: python

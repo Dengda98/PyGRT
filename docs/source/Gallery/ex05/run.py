@@ -13,23 +13,30 @@ dt=0.01
 
 modname="milrow"
 
-modarr = np.loadtxt(modname)
-
-pymod = pygrt.PyModel1D(modarr, depsrc, deprcv)
+pymod = pygrt.PyModel1D(modname)
+pymod.set_dynamic_grn_path("GRN")
 
 # compute green functions
-st_grn = pymod.compute_grn(dist, nt, dt)[0]
+pymod.compute_grn(
+    depsrc=depsrc, deprcv=deprcv, distarr=[dist], nt=nt, dt=dt,
+)
 
 def plot_syn(stsyn:Stream, out:Union[str,None]=None, sigs:Union[np.ndarray,None]=None):
+    traces = list(stsyn)
+    order = {ch: i for i, ch in enumerate("ZRTNE")}
+    traces.sort(key=lambda tr: order.get(tr.stats.channel, 99))
+
     figsize = (10, 4)
-    nrow = 3
+    nrow = len(traces)
     if sigs is not None:
         nrow += 1
         figsize = (10, 4.5)
 
     fig, axs = plt.subplots(nrow, 1, figsize=figsize, gridspec_kw=dict(hspace=0.0), sharex=True)
-    nt = stsyn[0].stats.npts
-    dt = stsyn[0].stats.delta
+    if nrow == 1:
+        axs = [axs]
+    nt = traces[0].stats.npts
+    dt = traces[0].stats.delta
     t = np.arange(nt)*dt
 
     if sigs is not None:
@@ -37,10 +44,10 @@ def plot_syn(stsyn:Stream, out:Union[str,None]=None, sigs:Union[np.ndarray,None]
         ax.plot(t[:len(sigs)], sigs, 'k-', lw=0.5)
         axs = axs[1:]
 
-    travtP = stsyn[0].stats.sac['t0']
-    travtS = stsyn[0].stats.sac['t1']
+    travtP = traces[0].stats.sac['t0']
+    travtS = traces[0].stats.sac['t1']
 
-    for i, tr in enumerate(stsyn):
+    for i, tr in enumerate(traces):
         ax = axs[i]
         ax.plot(t, tr.data, c='k', lw=0.5, label=tr.stats.channel)
         ax.legend(loc='upper left')
@@ -60,24 +67,51 @@ def plot_syn(stsyn:Stream, out:Union[str,None]=None, sigs:Union[np.ndarray,None]
         fig.savefig(out, bbox_inches='tight')
 
 # synthetic
+# ?.sac 匹配位移三分量文件名（Z/R/T）
+# time_function 对应 CLI -D，卷积用的时间函数保存在输出目录的 sig.sac
 S=1e24
 az=39.2
-st = pygrt.utils.gen_syn_from_gf_EX(st_grn, S, az)
-sigs = pygrt.sigs.gen_triangle_wave(0.4, dt)
-pygrt.utils.stream_convolve(st, sigs)
+pymod.compute_syn(
+    dist=dist, azimuth=az, scale=S, output_path="syn_ex", source="EX",
+    time_function="t/0.2/0.2/0.4",
+)
+st = read("syn_ex/?.sac")
+sigs = read("syn_ex/sig.sac")[0].data
 plot_syn(st, "trig.svg", sigs)
 
-st = pygrt.utils.gen_syn_from_gf_SF(st_grn, S, 2, -1, 4, az)
-sigs = pygrt.sigs.gen_trap_wave(0.1, 0.3, 0.6, dt)
-pygrt.utils.stream_convolve(st, sigs)
+pymod.compute_syn(
+    dist=dist, azimuth=az, scale=S, output_path="syn_sf", source="SF",
+    force=(2, -1, 4),
+    time_function="t/0.1/0.3/0.6",
+)
+st = read("syn_sf/?.sac")
+sigs = read("syn_sf/sig.sac")[0].data
 plot_syn(st, "trap.svg", sigs)
 
-st = pygrt.utils.gen_syn_from_gf_DC(st_grn, S, 77, 88, 99, az)
-sigs = pygrt.sigs.gen_parabola_wave(0.6, dt)
-pygrt.utils.stream_convolve(st, sigs)
+pymod.compute_syn(
+    dist=dist, azimuth=az, scale=S, output_path="syn_dc", source="DC",
+    strike=77, dip=88, rake=99,
+    time_function="p/0.6",
+)
+st = read("syn_dc/?.sac")
+sigs = read("syn_dc/sig.sac")[0].data
 plot_syn(st, "para.svg", sigs)
 
-st = pygrt.utils.gen_syn_from_gf_MT(st_grn, S, [1,-2,-5,0.5,3,1.2], az)
-sigs = pygrt.sigs.gen_ricker_wave(3, dt)
-pygrt.utils.stream_convolve(st, sigs)
+pymod.compute_syn(
+    dist=dist, azimuth=az, scale=S, output_path="syn_mt", source="MT",
+    moment_tensor=(1, -2, -5, 0.5, 3, 1.2),
+    time_function="r/3",
+)
+st = read("syn_mt/?.sac")
+sigs = read("syn_mt/sig.sac")[0].data
 plot_syn(st, "rick.svg", sigs)
+
+# 删除中间计算结果，仅保留成图
+import shutil
+from pathlib import Path
+for name in ["GRN", "syn_ex", "syn_sf", "syn_dc", "syn_mt"]:
+    p = Path(name)
+    if p.is_dir():
+        shutil.rmtree(p, ignore_errors=True)
+    elif p.is_file():
+        p.unlink(missing_ok=True)

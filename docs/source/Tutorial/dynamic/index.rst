@@ -13,10 +13,10 @@
     flowchart TB 
 
         GG(["compute_grn()"])
-        SS(["gen_syn_from_gf_*()"])
-        EE(["compute_strain()"])
-        RR(["compute_rotation()"])
-        TT(["compute_stress()"])
+        SS(["compute_syn()"])
+        EE(["utils.compute_strain()"])
+        RR(["utils.compute_rotation()"])
+        TT(["utils.compute_stress()"])
 
         G["Compute Green's Functions
         (and its Spatial Derivatives)"]

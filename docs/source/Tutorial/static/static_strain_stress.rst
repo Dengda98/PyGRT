@@ -4,7 +4,8 @@
 计算静态应变、旋转、应力张量
 =================================
 
-除了使用不同的函数名/程序名，输出文件不同之外，流程基本和 :doc:`/Tutorial/dynamic/strain_stress` 类似。这里直接给出脚本。
+除了使用不同的程序名和输出文件之外，流程基本和 :doc:`/Tutorial/dynamic/strain_stress` 类似。
+Python 接口接收静态合成 NetCDF 路径，并由 C CLI 原地写入张量变量。
 
 
 .. tabs:: 

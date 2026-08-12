@@ -1,6 +1,8 @@
 import pygrt
 import numpy as np
 import matplotlib.pyplot as plt
+from pathlib import Path
+from obspy import read
 
 plt.rcParams.update({
     "font.sans-serif": "Times New Roman",
@@ -36,14 +38,15 @@ r = rs[idx]
 
 t = np.arange(0, nt)*dt * Vs/r 
 
-
-pymod = pygrt.PyModel1D(modarr, depsrc, deprcv)  # 整理好的模型对象
-# 计算格林函数
-st = pymod.compute_grn(
-    distarr=rs, 
-    nt=nt, 
-    dt=dt, 
-)[0]
+modfile = "_halfspace_mod"
+np.savetxt(modfile, modarr)
+pymod = pygrt.PyModel1D(modfile)
+pymod.set_dynamic_grn_path("GRN")
+# 计算格林函数（仅一个震中距，可用通配符读回）
+pymod.compute_grn(
+    depsrc=depsrc, deprcv=deprcv, distarr=rs, nt=nt, dt=dt,
+)
+st = read("GRN/*/*.sac")
 
 # 卷积阶跃函数
 pygrt.utils.stream_integral(st)
@@ -84,3 +87,12 @@ axs[0,0].set_title("From Time-Domain")
 axs[0,1].set_title("From Frequency-Domain")
 
 fig.savefig("lamb1_compare_freq_time.svg", bbox_inches='tight')
+
+# 删除中间计算结果，仅保留成图
+import shutil
+for name in ["GRN", "_halfspace_mod"]:
+    p = Path(name)
+    if p.is_dir():
+        shutil.rmtree(p, ignore_errors=True)
+    elif p.is_file():
+        p.unlink(missing_ok=True)

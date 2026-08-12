@@ -52,10 +52,10 @@ ncdump -h stgrn.nc > grn_head
 
 
 # ---------------------------------------------------------------------------------
-# BEGIN SYN EXP
+# BEGIN SYN EX
 # 从网格文件中读取格林函数，再将合成结果写入新网格
 grt static syn -S1e24 -N -Gstgrn.nc -Ostsyn_ex.nc
-# END SYN EXP
+# END SYN EX
 # ---------------------------------------------------------------------------------
 
 gmt begin syn_ex pdf

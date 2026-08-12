@@ -1,20 +1,30 @@
 # ---------------------------------------------------------------------------------
 # BEGIN GRN
 import numpy as np
-import pygrt 
+import pygrt
 
-modarr = np.loadtxt("milrow")
+pymod = pygrt.PyModel1D("milrow")
+pymod.set_static_grn_path("stgrn.nc")
 
-pymod = pygrt.PyModel1D(modarr, depsrc=2.0, deprcv=0.0)
-
-norths = np.linspace(-3, 3, 41)
-easts = np.linspace(-2.5, 2.5, 33)
+# norths/easts 各为三个元素: start/stop/step (km)
+norths = [-3.0, 3.0, 0.15]
+easts = [-2.5, 2.5, 0.15]
 # 可以设置 distarr 来指定震中距序列
-# static_grn = pymod.compute_static_grn(distarr=np.arange(0,10+1e-8,0.1))
+# pymod.compute_static_grn(
+#     depsrc=2.0, deprcv=0.0, distarr=np.arange(0, 10+1e-8, 0.1),
+# )
 # 也可以设置 norths 和 easts 来指定 north/east 网格
-static_grn = pymod.compute_static_grn(norths=norths, easts=easts)
+pymod.compute_static_grn(
+    depsrc=2.0,
+    deprcv=0.0,
+    norths=norths,
+    easts=easts,
+)
+static_grn = pygrt.utils.read_static_nc("stgrn.nc")
 print(static_grn.keys())
-# dict_keys(['_norths', '_easts', '_src_va', '_src_vb', '_src_rho', '_rcv_va', '_rcv_vb', '_rcv_rho', 'EXZ', 'VFZ', 'DDZ', 'HFZ', 'DSZ', 'SSZ', 'EXR', 'VFR', 'DDR', 'HFR', 'DSR', 'SSR', 'HFT', 'DST', 'SST'])
+# dict_keys(['dimensions', 'variables', 'attributes'])
+print(list(static_grn["variables"].keys()))
+# ['north', 'east', 'EXZ', 'EXR', ...]
 # END GRN
 # ---------------------------------------------------------------------------------
 
@@ -24,14 +34,20 @@ import matplotlib.pyplot as plt
 from typing import Union
 
 def plot_static(static_syn:dict, out:Union[str,None]=None):
-    fig, ax = plt.subplots(1, 1, figsize=(10,8))
+    vars_ = static_syn["variables"]
+    north = vars_["north"]["data"]
+    east = vars_["east"]["data"]
+    Z = vars_["Z"]["data"]
+    N = vars_["N"]["data"]
+    E = vars_["E"]["data"]
+
+    fig, ax = plt.subplots(1, 1, figsize=(10, 8))
     # 设计对称色标
-    m = np.max(np.abs(static_syn[f'Z'])) * 1.2
-    pcm = ax.pcolormesh(easts, norths, static_syn[f'Z'], cmap='bwr', vmin=-m, vmax=m)
-    ax.quiver(easts, norths, static_syn[f'E'], static_syn[f'N'], 
-            angles='uv', pivot='mid')
-    ax.set_ylim([norths[0], norths[-1]])
-    ax.set_xlim([easts[0], easts[-1]])
+    m = np.max(np.abs(Z)) * 1.2
+    pcm = ax.pcolormesh(east, north, Z, cmap='bwr', vmin=-m, vmax=m)
+    ax.quiver(east, north, E, N, angles='uv', pivot='mid')
+    ax.set_ylim([north[0], north[-1]])
+    ax.set_xlim([east[0], east[-1]])
     ax.set_aspect('equal')
     cbar = fig.colorbar(pcm, ax=ax, label='Z(cm)')
     cbar.formatter.set_powerlimits((0, 0))
@@ -44,9 +60,15 @@ def plot_static(static_syn:dict, out:Union[str,None]=None):
 
 # ---------------------------------------------------------------------------------
 # BEGIN SYN EX
-static_syn = pygrt.utils.gen_syn_from_gf_EX(static_grn, M0=1e24, ZNE=True)
-print(static_syn.keys())
-# dict_keys(['_norths', '_easts', '_src_va', '_src_vb', '_src_rho', '_rcv_va', '_rcv_vb', '_rcv_rho', 'Z', 'N', 'E'])
+static_syn = pymod.compute_static_syn(
+    scale=1e24,
+    output_path="stsyn_ex.nc",
+    source="EX",
+    zne=True,
+    return_result=True,
+)
+print(list(static_syn["variables"].keys()))
+# ['north', 'east', 'Z', 'N', 'E']
 plot_static(static_syn, "syn_ex.svg")
 # END SYN EX
 # ---------------------------------------------------------------------------------
@@ -54,9 +76,16 @@ plot_static(static_syn, "syn_ex.svg")
 
 # ---------------------------------------------------------------------------------
 # BEGIN SYN SF
-static_syn = pygrt.utils.gen_syn_from_gf_SF(static_grn, S=1e16, fN=1, fE=-0.5, fZ=2, ZNE=True)
-print(static_syn.keys())
-# dict_keys(['_norths', '_easts', '_src_va', '_src_vb', '_src_rho', '_rcv_va', '_rcv_vb', '_rcv_rho', 'Z', 'N', 'E'])
+static_syn = pymod.compute_static_syn(
+    scale=1e16,
+    output_path="stsyn_sf.nc",
+    source="SF",
+    force=(1, -0.5, 2),
+    zne=True,
+    return_result=True,
+)
+print(list(static_syn["variables"].keys()))
+# ['north', 'east', 'Z', 'N', 'E']
 plot_static(static_syn, "syn_sf.svg")
 # END SYN SF
 # ---------------------------------------------------------------------------------
@@ -64,27 +93,53 @@ plot_static(static_syn, "syn_sf.svg")
 
 # ---------------------------------------------------------------------------------
 # BEGIN SYN DC
-static_syn = pygrt.utils.gen_syn_from_gf_DC(static_grn, M0=1e24, strike=33, dip=50, rake=120, ZNE=True)
-print(static_syn.keys())
-# dict_keys(['_norths', '_easts', '_src_va', '_src_vb', '_src_rho', '_rcv_va', '_rcv_vb', '_rcv_rho', 'Z', 'N', 'E'])
+static_syn = pymod.compute_static_syn(
+    scale=1e24,
+    output_path="stsyn_dc.nc",
+    source="DC",
+    strike=33,
+    dip=50,
+    rake=120,
+    zne=True,
+    return_result=True,
+)
+print(list(static_syn["variables"].keys()))
+# ['north', 'east', 'Z', 'N', 'E']
 plot_static(static_syn, "syn_dc.svg")
 # END SYN DC
 # ---------------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------------
 # BEGIN SYN DC2
-static_syn = pygrt.utils.gen_syn_from_gf_DC(static_grn, M0=1e24, strike=33, dip=90, rake=0, ZNE=True)
-print(static_syn.keys())
-# dict_keys(['_norths', '_easts', '_src_va', '_src_vb', '_src_rho', '_rcv_va', '_rcv_vb', '_rcv_rho', 'Z', 'N', 'E'])
+static_syn = pymod.compute_static_syn(
+    scale=1e24,
+    output_path="stsyn_dc2.nc",
+    source="DC",
+    strike=33,
+    dip=90,
+    rake=0,
+    zne=True,
+    return_result=True,
+)
+print(list(static_syn["variables"].keys()))
+# ['north', 'east', 'Z', 'N', 'E']
 plot_static(static_syn, "syn_dc2.svg")
 # END SYN DC2
 # ---------------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------------
 # BEGIN SYN TS
-static_syn = pygrt.utils.gen_syn_from_gf_TS(static_grn, M0=1e24, strike=33, dip=50, ZNE=True)
-print(static_syn.keys())
-# dict_keys(['_norths', '_easts', '_src_va', '_src_vb', '_src_rho', '_rcv_va', '_rcv_vb', '_rcv_rho', 'Z', 'N', 'E'])
+static_syn = pymod.compute_static_syn(
+    scale=1e24,
+    output_path="stsyn_ts.nc",
+    source="TS",
+    strike=33,
+    dip=50,
+    zne=True,
+    return_result=True,
+)
+print(list(static_syn["variables"].keys()))
+# ['north', 'east', 'Z', 'N', 'E']
 plot_static(static_syn, "syn_ts.svg")
 # END SYN TS
 # ---------------------------------------------------------------------------------
@@ -92,9 +147,17 @@ plot_static(static_syn, "syn_ts.svg")
 
 # ---------------------------------------------------------------------------------
 # BEGIN SYN TS2
-static_syn = pygrt.utils.gen_syn_from_gf_TS(static_grn, M0=1e24, strike=33, dip=90, ZNE=True)
-print(static_syn.keys())
-# dict_keys(['_norths', '_easts', '_src_va', '_src_vb', '_src_rho', '_rcv_va', '_rcv_vb', '_rcv_rho', 'Z', 'N', 'E'])
+static_syn = pymod.compute_static_syn(
+    scale=1e24,
+    output_path="stsyn_ts2.nc",
+    source="TS",
+    strike=33,
+    dip=90,
+    zne=True,
+    return_result=True,
+)
+print(list(static_syn["variables"].keys()))
+# ['north', 'east', 'Z', 'N', 'E']
 plot_static(static_syn, "syn_ts2.svg")
 # END SYN TS2
 # ---------------------------------------------------------------------------------
@@ -102,18 +165,32 @@ plot_static(static_syn, "syn_ts2.svg")
 
 # ---------------------------------------------------------------------------------
 # BEGIN SYN MT
-static_syn = pygrt.utils.gen_syn_from_gf_MT(static_grn, M0=1e24, MT=[0.1,-0.2,1.0,0.3,-0.5,-2.0], ZNE=True)
-print(static_syn.keys())
-# dict_keys(['_norths', '_easts', '_src_va', '_src_vb', '_src_rho', '_rcv_va', '_rcv_vb', '_rcv_rho', 'Z', 'N', 'E'])
+static_syn = pymod.compute_static_syn(
+    scale=1e24,
+    output_path="stsyn_mt.nc",
+    source="MT",
+    moment_tensor=(0.1, -0.2, 1.0, 0.3, -0.5, -2.0),
+    zne=True,
+    return_result=True,
+)
+print(list(static_syn["variables"].keys()))
+# ['north', 'east', 'Z', 'N', 'E']
 plot_static(static_syn, "syn_mt.svg")
 # END SYN MT
 # ---------------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------------
 # BEGIN SYN MT2
-static_syn = pygrt.utils.gen_syn_from_gf_MT(static_grn, M0=1e24, MT=[0,-0.2,0,0,0,0], ZNE=True)
-print(static_syn.keys())
-# dict_keys(['_norths', '_easts', '_src_va', '_src_vb', '_src_rho', '_rcv_va', '_rcv_vb', '_rcv_rho', 'Z', 'N', 'E'])
+static_syn = pymod.compute_static_syn(
+    scale=1e24,
+    output_path="stsyn_mt2.nc",
+    source="MT",
+    moment_tensor=(0, -0.2, 0, 0, 0, 0),
+    zne=True,
+    return_result=True,
+)
+print(list(static_syn["variables"].keys()))
+# ['north', 'east', 'Z', 'N', 'E']
 plot_static(static_syn, "syn_mt2.svg")
 # END SYN MT2
 # ---------------------------------------------------------------------------------
@@ -121,11 +198,33 @@ plot_static(static_syn, "syn_mt2.svg")
 
 # ---------------------------------------------------------------------------------
 # BEGIN NEW XY
-norths2 = np.arange(-3, 3+1e-8, 0.2)
-easts2 = np.arange(-2.5, 2.5+1e-8, 0.25)
-static_syn = pygrt.utils.gen_syn_from_gf_DC(static_grn, M0=1e24, strike=33, dip=90, rake=0, ZNE=True, norths=norths2, easts=easts2)
-print(static_syn.keys())
-# dict_keys(['_norths', '_easts', '_src_va', '_src_vb', '_src_rho', '_rcv_va', '_rcv_vb', '_rcv_rho', 'Z', 'N', 'E'])
+static_syn = pymod.compute_static_syn(
+    scale=1e24,
+    output_path="stsynXY_dc2.nc",
+    source="DC",
+    strike=33,
+    dip=90,
+    rake=0,
+    zne=True,
+    norths=[-3.0, 3.0, 0.2],
+    easts=[-2.5, 2.5, 0.25],
+    return_result=True,
+)
+print(list(static_syn["variables"].keys()))
+# ['north', 'east', 'Z', 'N', 'E']
 plot_static(static_syn, "synXY_dc2.svg")
 # END NEW XY
 # ---------------------------------------------------------------------------------
+
+# 删除中间计算结果，仅保留成图
+import shutil
+from pathlib import Path
+for name in [
+    "stgrn.nc",
+    "stsyn_ex.nc", "stsyn_sf.nc", "stsyn_dc.nc", "stsyn_dc2.nc",
+    "stsyn_ts.nc", "stsyn_ts2.nc", "stsyn_mt.nc", "stsyn_mt2.nc",
+    "stsynXY_dc2.nc",
+]:
+    p = Path(name)
+    if p.is_file():
+        p.unlink(missing_ok=True)

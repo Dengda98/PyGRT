@@ -1,15 +1,22 @@
 # BEGIN 1
 import numpy as np
 import pygrt
+from obspy import read
+from pygrt.cli import format_float
 
-modarr = np.loadtxt("milrow")
+pymod = pygrt.PyModel1D("milrow")
+pymod.set_dynamic_grn_path("GRN")
 
-pymod = pygrt.PyModel1D(modarr, depsrc=10, deprcv=0.0)
-
+depsrc = 10.0
+deprcv = 0.0
 nt = 500
 dt = 10
 
-st_grn = pymod.compute_grn(5000, nt=nt, dt=dt, keepAllFreq=True, statsfile="pygrtstats")[0]
+pymod.compute_grn(
+    depsrc=depsrc, deprcv=deprcv, distarr=[5000],
+    nt=nt, dt=dt, keepAllFreq=True, statsidxs=[0, 1, 2, 3, 4, 5],
+)
+st_grn = read("GRN/*/*.sac")
 # END 1
 
 # 仅绘制一个分量做示例
@@ -85,7 +92,8 @@ fig.savefig("grn2_freqs.svg", bbox_inches='tight')
 # =================================================================
 # 读入核函数
 import glob
-paths = glob.glob("pygrtstats/K_000[0-5]_*")
+statsdir = f"GRN_grtstats/milrow_{format_float(depsrc)}_{format_float(deprcv)}"
+paths = glob.glob(f"{statsdir}/K_000[0-5]_*")
 paths.sort()
 print(paths)
 
@@ -110,7 +118,10 @@ fig.savefig("kernels.svg", bbox_inches='tight')
 
 # =================================================================
 # 跳过频段，重新计算
-st_grn3 = pymod.compute_grn(5000, nt=nt, dt=dt)[0]
+pymod.compute_grn(
+    depsrc=depsrc, deprcv=deprcv, distarr=[5000], nt=nt, dt=dt,
+)
+st_grn3 = read("GRN/*/*.sac")
 
 srctypes = ['EX', 'VF', 'HF', 'DD', 'DS', 'SS']
 chlst = ['Z', 'R', 'T']
@@ -137,3 +148,11 @@ def plot_all_waves(st_grn:Stream):
 fig = plot_all_waves(st_grn3.copy())
 fig.savefig("grn3.svg", bbox_inches='tight')
 # =================================================================
+
+# 删除中间计算结果，仅保留成图
+import shutil
+from pathlib import Path
+for name in ["GRN", f"GRN_grtstats"]:
+    p = Path(name)
+    if p.is_dir():
+        shutil.rmtree(p, ignore_errors=True)

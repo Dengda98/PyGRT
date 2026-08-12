@@ -40,12 +40,11 @@
 
   + **底层复杂运算完全由 C 语言重新实现**，并基于 `OpenMP <https://www.openmp.org/>`_ 进行并行优化，极大提升计算效率。
 
-  + C 代码被编译链接成动态库 ``libgrt.so`` ， **PyGRT** 再基于 Python 的 
-    `ctypes <https://docs.python.org/3/library/ctypes.html>`_ 标准库实现对 C 库函数的调用。
-    再基于第三方库 `NumPy <https://numpy.org/>`_ 、 `SciPy <https://scipy.org/>`_ 
-    和 `ObsPy <https://docs.obspy.org/>`_ ，用户可很方便地完成对 C 程序结果的数据整合、
-    Fourier 变换、卷积、滤波、保存到 sac 文件等操作（例如 FFT 点数不再强制要求 2 次幂）。
-    借用 Python 语言的特点以及丰富成熟的第三方库，用户可灵活地实现后续的各种数据处理。
+  + 计算主流程以可执行文件 **grt** 的形式提供。Python 接口负责组织模型与输出路径，
+    并调用 **grt** 完成格林函数、合成与张量等计算；结果以 SAC / NetCDF 文件保存。
+    再基于第三方库 `NumPy <https://numpy.org/>`_ 、 `SciPy <https://scipy.org/>`_
+    和 `ObsPy <https://docs.obspy.org/>`_ ，用户可方便地读回结果并做后续处理
+    （例如卷积、滤波、积分微分等；FFT 点数不再强制要求 2 次幂）。
 
 2. **C 程序 grt**
 
@@ -82,7 +81,7 @@
   
   - **含低速层模型的面波频散计算** ：
     
-    + **自适应搜根策略** |ars2026|
+    + **自适应搜根策略** (|ars2026|)
 
 6. **开源透明，持续维护**
 

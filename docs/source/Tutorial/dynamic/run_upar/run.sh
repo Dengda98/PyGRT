@@ -47,6 +47,8 @@ grt stress syn_dc_zne
 # END STRESS
 # --------------------------------------------------------------------------------------
 
+# C 示例与 Python 示例共用目录名，跑 Python 前清掉残留，避免读回混入旧 SAC
+rm -rf GRN* syn*
 python run.py
 
 find . \( -name "syn*" -o -name "GRN*" \) -type d -exec rm -rf {} \+

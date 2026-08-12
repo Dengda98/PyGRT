@@ -40,7 +40,8 @@
             :start-after: BEGIN DEPSRC 0.0 DGRN
             :end-before: END DEPSRC 0.0 DGRN
 
-        输出的核函数文件会在自定义路径下。
+        输出的核函数文件会在 :rst:dir:`GRN_grtstats/milrow_{depsrc}_{deprcv}/` 路径下
+        （与 C 一致）。
 
 在 ``K_{iw}_{freq}`` 文件同级目录下，程序把 **PTAM过程中的核函数以及积分峰谷位置分为两个文件** 
 保存在 ``PTAM_{ir}_{dist}/`` 目录下（ ``{ir}`` 为震中距索引， ``{dist}`` 为震中距），

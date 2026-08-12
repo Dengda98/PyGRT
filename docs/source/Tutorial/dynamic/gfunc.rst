@@ -4,7 +4,7 @@
 计算动态格林函数
 =================
 
-Python中计算动态格林函数的主函数为 :func:`compute_grn() <pygrt.pymod.PyModel1D.compute_grn>` ，C模块为 :doc:`/Module/greenfn`。
+Python中计算动态格林函数的主函数为 :meth:`compute_grn() <pygrt.pymod.PyModel1D.compute_grn>` ，C模块为 :doc:`/Module/greenfn`。
 
 核心计算逻辑来自  |yao2026p| ，具体代码可见与C API中对应同名 :file:`*.c` 文件，其中计算格林函数频谱的主函数为 :file:`grn.c` 里的 :c:func:`grt_integ_grn_spec`。输出结果的坐标系见下图。
 
@@ -69,7 +69,9 @@ Python中计算动态格林函数的主函数为 :func:`compute_grn() <pygrt.pym
             :start-after: BEGIN GRN
             :end-before: END GRN
 
-        多个震中距的格林函数以列表形式返回，其中每个元素为 |Stream| 类。:class:`Trace.stats.sac` 中保存了SAC头段变量，与C程序输出保持一致。
+        格林函数写入 :meth:`set_dynamic_grn_path() <pygrt.pymod.PyModel1D.set_dynamic_grn_path>`
+        指定的根目录。需要读回时使用 ObsPy 的 ``read`` 。 :class:`Trace.stats.sac`
+        中保存了 SAC 头段变量，与 C 程序输出保持一致。
 
 当时窗长度 nt\*dt 太小“包不住”有效信号，或时窗长度足够但时延不合适，输出的波形会发生混叠，
 此时需调整相关参数。

@@ -31,6 +31,8 @@ grt static rotation stsyn_dc_zne.nc
 grt static stress stsyn_dc_zne.nc
 # END
 
+# C 示例与 Python 示例共用文件名，跑 Python 前清掉残留
+rm -rf stgrn* stsyn*
 python run.py
 
 rm -rf stgrn* stsyn*
