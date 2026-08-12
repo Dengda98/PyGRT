@@ -1,29 +1,39 @@
-import numpy as np
+import shutil
+from pathlib import Path
+
 import pygrt
 
-dist=10
-depsrc=2
-deprcv=3
+dist = 10.0
+depsrc = 2.0
+deprcv = 3.0
+nt = 600
+dt = 0.02
+modname = "../milrow"
+az = 22.0
 
-nt=600
-dt=0.02
+pymod = pygrt.PyModel1D(modname)
+pymod.set_dynamic_grn_path("GRN")
+pymod.compute_grn(
+    depsrc=depsrc, deprcv=deprcv, distarr=dist, nt=nt, dt=dt, calc_upar=True,
+)
 
-modname="../milrow"
+pymod.compute_syn(
+    dist=dist, azimuth=az, scale=1e20, output_path="syn", source="EX",
+    calc_upar=True,
+)
+pygrt.utils.compute_strain("syn")
+pygrt.utils.compute_stress("syn")
+pygrt.utils.compute_rotation("syn")
 
-modarr = np.loadtxt(modname)
+pymod.compute_syn(
+    dist=dist, azimuth=az, scale=1e20, output_path="syn_zne", source="EX",
+    zne=True, calc_upar=True,
+)
+pygrt.utils.compute_strain("syn_zne")
+pygrt.utils.compute_stress("syn_zne")
+pygrt.utils.compute_rotation("syn_zne")
 
-pymod = pygrt.PyModel1D(modarr, depsrc, deprcv)
-stgrn = pymod.compute_grn(dist, nt, dt, calc_upar=True)[0]
-
-stsyn = pygrt.utils.gen_syn_from_gf_EX(stgrn, 1e20, 22, calc_upar=True)
-
-strain = pygrt.utils.compute_strain(stsyn)
-stress = pygrt.utils.compute_stress(stsyn)
-rotation = pygrt.utils.compute_rotation(stsyn)
-
-stsyn = pygrt.utils.gen_syn_from_gf_EX(stgrn, 1e20, 22, ZNE=True, calc_upar=True)
-strain = pygrt.utils.compute_strain(stsyn)
-stress = pygrt.utils.compute_stress(stsyn)
-rotation = pygrt.utils.compute_rotation(stsyn)
-
-
+for name in ["GRN", "syn", "syn_zne"]:
+    p = Path(name)
+    if p.is_dir():
+        shutil.rmtree(p, ignore_errors=True)

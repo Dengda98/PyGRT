@@ -1,25 +1,35 @@
-import numpy as np
+from pathlib import Path
+
 import pygrt
 
-depsrc=2
-deprcv=0
-norths = np.arange(-3., 3.1, 0.2)
-easts = np.arange(-2., 2.1, 0.2)
+depsrc = 2.0
+deprcv = 0.0
+norths = [-3.0, 3.0, 0.2]
+easts = [-2.0, 2.0, 0.2]
+modname = "../milrow"
 
-modname="../milrow"
+pymod = pygrt.PyModel1D(modname)
+pymod.set_static_grn_path("stgrn.nc")
+pymod.compute_static_grn(
+    depsrc=depsrc, deprcv=deprcv, norths=norths, easts=easts, calc_upar=True,
+)
 
-modarr = np.loadtxt(modname)
+pymod.compute_static_syn(
+    scale=1e20, output_path="stsyn.nc", source="EX", calc_upar=True,
+)
+pygrt.utils.compute_strain("stsyn.nc")
+pygrt.utils.compute_stress("stsyn.nc")
+pygrt.utils.compute_rotation("stsyn.nc")
 
-pymod = pygrt.PyModel1D(modarr, depsrc, deprcv)
-stgrn = pymod.compute_static_grn(norths, easts, calc_upar=True)
+pymod.compute_static_syn(
+    scale=1e20, output_path="stsyn_zne.nc", source="EX",
+    zne=True, calc_upar=True,
+)
+pygrt.utils.compute_strain("stsyn_zne.nc")
+pygrt.utils.compute_stress("stsyn_zne.nc")
+pygrt.utils.compute_rotation("stsyn_zne.nc")
 
-stsyn = pygrt.utils.gen_syn_from_gf_EX(stgrn, 1e20, 22, calc_upar=True)
-
-strain = pygrt.utils.compute_strain(stsyn)
-stress = pygrt.utils.compute_stress(stsyn)
-rotation = pygrt.utils.compute_rotation(stsyn)
-
-stsyn = pygrt.utils.gen_syn_from_gf_EX(stgrn, 1e20, 22, ZNE=True, calc_upar=True)
-strain = pygrt.utils.compute_strain(stsyn)
-stress = pygrt.utils.compute_stress(stsyn)
-rotation = pygrt.utils.compute_rotation(stsyn)
+for name in ["stgrn.nc", "stsyn.nc", "stsyn_zne.nc"]:
+    p = Path(name)
+    if p.is_file():
+        p.unlink(missing_ok=True)
