@@ -1,226 +1,54 @@
 """
-    :file:     c_interfaces.py  
-    :author:   Zhu Dengda (zhudengda@mail.iggcas.ac.cn)  
-    :date:     2024-07-24  
+    :file:     c_interfaces.py
+    :author:   Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
+    :date:     2024-07-24
 
-    该文件包括 C库的调用接口  
+    该文件包括 C 库的调用接口
 
 """
 
-
 import os
-from ctypes import \
-    c_double, c_float, c_int, c_size_t, c_bool, c_char_p, c_void_p,\
-    POINTER, cdll
+from ctypes import POINTER, c_char_p, c_double, c_float, c_int, c_size_t, c_void_p, cdll
 
-from .c_structures import * 
 
 FPOINTER = POINTER(c_float)
 IPOINTER = POINTER(c_int)
+REAL = c_double
+PREAL = POINTER(REAL)
 
 
 libgrt = cdll.LoadLibrary(
     os.path.join(
-        os.path.abspath(os.path.dirname(__file__)), 
-        "C_extension/lib/libgrt.so"))
-"""libgrt库"""
+        os.path.abspath(os.path.dirname(__file__)),
+        "C_extension/lib/libgrt.so",
+    )
+)
+"""libgrt 库"""
 
 
-C_grt_prepare_grn_spec = libgrt.grt_prepare_grn_spec
-"""动态格林函数：频谱积分前准备（Length/wI/freqs/KPROC/GRNSPEC 元数据）"""
-C_grt_prepare_grn_spec.restype = None
-C_grt_prepare_grn_spec.argtypes = [
-    POINTER(c_MODEL1D),
-    c_size_t, PREAL,
-    c_size_t, REAL, REAL, c_bool,
-    REAL, REAL,
-    REAL,
-    REAL, REAL, REAL,
-    REAL, REAL, REAL, REAL, c_bool,
-    c_int,
-    REAL, REAL, c_bool,
-    c_bool,
-    POINTER(c_K_INTEG_PROCESS),
-    POINTER(c_GRNSPEC),
-]
-
-C_grt_integ_grn_spec = libgrt.grt_integ_grn_spec
-"""C库中计算格林函数的主函数 integ_grn_spec, 详见C API同名函数"""
-C_grt_integ_grn_spec.argtypes = [POINTER(c_MODEL1D), POINTER(c_K_INTEG_PROCESS), POINTER(c_GRNSPEC), c_bool]
-
-
-C_grt_prepare_static_grn = libgrt.grt_prepare_static_grn
-"""静态格林函数：积分前准备（Length 默认 + KPROC）"""
-C_grt_prepare_static_grn.restype = None
-C_grt_prepare_static_grn.argtypes = [
-    POINTER(c_MODEL1D),
-    c_size_t, PREAL,
-    REAL,
-    REAL, REAL, REAL,
-    REAL, REAL, c_bool,
-    c_int,
-    POINTER(c_K_INTEG_PROCESS),
-]
-
-C_grt_integ_static_grn = libgrt.grt_integ_static_grn
-"""计算静态格林函数"""
-C_grt_integ_static_grn.restype = None
-C_grt_integ_static_grn.argtypes = [
-    POINTER(c_MODEL1D), c_size_t, PREAL, POINTER(c_K_INTEG_PROCESS),
-    c_bool,
-    POINTER((REAL*CHANNEL_NUM)*SRC_M_NUM),
-    POINTER((REAL*CHANNEL_NUM)*SRC_M_NUM),
-    POINTER((REAL*CHANNEL_NUM)*SRC_M_NUM),
-    c_char_p
-]
-
-
-
-C_grt_static_syn_from_gf = libgrt.grt_static_syn_from_gf
-"""由静态格林函数合成三分量位移场（及可选空间偏导），可按震中距插值到新的 north/east 接收点网格"""
-C_grt_static_syn_from_gf.restype = None
-C_grt_static_syn_from_gf.argtypes = [
-    c_size_t, PREAL, c_size_t, PREAL,
-    c_size_t, PREAL, c_size_t, PREAL,
-    POINTER((REAL * CHANNEL_NUM) * SRC_M_NUM),
-    POINTER((REAL * CHANNEL_NUM) * SRC_M_NUM),
-    POINTER((REAL * CHANNEL_NUM) * SRC_M_NUM),
-    c_int, REAL, REAL, REAL * MECHANISM_NUM,
-    c_bool, c_bool,
-    POINTER(REAL * CHANNEL_NUM), POINTER((REAL * CHANNEL_NUM) * CHANNEL_NUM),
-]
-
-C_grt_syn_from_gf = libgrt.grt_syn_from_gf
-"""由动态格林函数合成三分量地震图（及可选空间偏导）"""
-C_grt_syn_from_gf.restype = None
-C_grt_syn_from_gf.argtypes = [
-    c_size_t, c_float,
-    POINTER(FPOINTER * CHANNEL_NUM),
-    POINTER(FPOINTER * CHANNEL_NUM),
-    POINTER(FPOINTER * CHANNEL_NUM),
-    c_int, REAL, REAL, PREAL, REAL * MECHANISM_NUM,
-    c_bool, c_bool,
-    FPOINTER * CHANNEL_NUM, POINTER(FPOINTER * CHANNEL_NUM),
-]
-
-
-C_grt_compute_stress = libgrt.grt_compute_stress
-"""由动态位移偏导合成应力张量"""
-C_grt_compute_stress.restype = None
-C_grt_compute_stress.argtypes = [
-    c_size_t, c_float, c_float, c_float, c_float, c_float, c_float, c_float,
-    FPOINTER * CHANNEL_NUM,
-    POINTER(FPOINTER * CHANNEL_NUM), POINTER(FPOINTER * CHANNEL_NUM),
-    c_bool,
-]
-
-C_grt_compute_strain = libgrt.grt_compute_strain
-"""由动态位移偏导合成应变张量"""
-C_grt_compute_strain.restype = None
-C_grt_compute_strain.argtypes = [
-    c_size_t, c_float,
-    FPOINTER * CHANNEL_NUM,
-    POINTER(FPOINTER * CHANNEL_NUM), POINTER(FPOINTER * CHANNEL_NUM),
-    c_bool,
-]
-
-C_grt_compute_rotation = libgrt.grt_compute_rotation
-"""由动态位移偏导合成旋转张量"""
-C_grt_compute_rotation.restype = None
-C_grt_compute_rotation.argtypes = [
-    c_size_t, c_float,
-    FPOINTER * CHANNEL_NUM,
-    POINTER(FPOINTER * CHANNEL_NUM), POINTER(FPOINTER * CHANNEL_NUM),
-    c_bool,
-]
-
-C_grt_static_compute_stress = libgrt.grt_static_compute_stress
-"""由静态位移偏导合成应力张量"""
-C_grt_static_compute_stress.restype = None
-C_grt_static_compute_stress.argtypes = [
-    c_size_t, c_size_t, PREAL, PREAL,
-    PREAL * CHANNEL_NUM,
-    POINTER(PREAL * CHANNEL_NUM), POINTER(PREAL * CHANNEL_NUM),
-    c_bool, REAL, REAL,
-]
-
-C_grt_static_compute_strain = libgrt.grt_static_compute_strain
-"""由静态位移偏导合成应变张量"""
-C_grt_static_compute_strain.restype = None
-C_grt_static_compute_strain.argtypes = [
-    c_size_t, c_size_t, PREAL, PREAL,
-    PREAL * CHANNEL_NUM,
-    POINTER(PREAL * CHANNEL_NUM), POINTER(PREAL * CHANNEL_NUM),
-    c_bool,
-]
-
-C_grt_static_compute_rotation = libgrt.grt_static_compute_rotation
-"""由静态位移偏导合成旋转张量"""
-C_grt_static_compute_rotation.restype = None
-C_grt_static_compute_rotation.argtypes = [
-    c_size_t, c_size_t, PREAL, PREAL,
-    PREAL * CHANNEL_NUM,
-    POINTER(PREAL * CHANNEL_NUM), POINTER(PREAL * CHANNEL_NUM),
-    c_bool,
-]
-
-
-C_grt_set_num_threads = libgrt.grt_set_num_threads
-"""设置多线程数"""
-C_grt_set_num_threads.restype = None
-C_grt_set_num_threads.argtypes = [c_int]
-
-
-def set_num_threads(n):
-    r'''
-        定义计算使用的多线程数
-
-        :param       n:    线程数
-    '''
-    C_grt_set_num_threads(n)
-
-
-C_grt_compute_travt1d = libgrt.grt_compute_travt1d
-"""计算1D层状半空间的初至波走时"""
-C_grt_compute_travt1d.restype = REAL 
-C_grt_compute_travt1d.argtypes = [
-    PREAL, PREAL, c_int, 
-    c_int, c_int, REAL
-]
-
-
-C_grt_read_mod1d_from_file = libgrt.grt_read_mod1d_from_file
-"""读取模型文件并进行预处理"""
-C_grt_read_mod1d_from_file.restype = POINTER(c_MODEL1D)
-C_grt_read_mod1d_from_file.argtypes = [c_char_p, c_double, c_double, c_bool]
-
-C_grt_set_mod1d_boundary = libgrt.grt_set_mod1d_boundary
-"""设置模型边界条件并检查底界面"""
-C_grt_set_mod1d_boundary.restype = None
-C_grt_set_mod1d_boundary.argtypes = [POINTER(c_MODEL1D), c_int, c_int]
-
-C_grt_free_mod1d = libgrt.grt_free_mod1d
-"""释放C程序中申请的 GRT_MODEL1D 结构体内存"""
-C_grt_free_mod1d.restype = None
-C_grt_free_mod1d.argtypes = [POINTER(c_MODEL1D)]
-
-# -------------------------------------------------------------------
-#                      C函数定义的时间函数
-# -------------------------------------------------------------------
 C_grt_free = libgrt.grt_free1d
-"""释放在C中申请的内存"""
+"""释放在 C 中申请的内存"""
 C_grt_free.restype = None
 C_grt_free.argtypes = [c_void_p]
+
 
 C_grt_get_trap_wave = libgrt.grt_get_trap_wave
 """梯形波"""
 C_grt_get_trap_wave.restype = FPOINTER
-C_grt_get_trap_wave.argtypes = [c_float, FPOINTER, FPOINTER, FPOINTER, IPOINTER]
+C_grt_get_trap_wave.argtypes = [
+    c_float,
+    FPOINTER,
+    FPOINTER,
+    FPOINTER,
+    IPOINTER,
+]
+
 
 C_grt_get_parabola_wave = libgrt.grt_get_parabola_wave
 """抛物波"""
 C_grt_get_parabola_wave.restype = FPOINTER
 C_grt_get_parabola_wave.argtypes = [c_float, FPOINTER, IPOINTER]
+
 
 C_grt_get_ricker_wave = libgrt.grt_get_ricker_wave
 """雷克子波"""
@@ -228,12 +56,25 @@ C_grt_get_ricker_wave.restype = FPOINTER
 C_grt_get_ricker_wave.argtypes = [c_float, c_float, IPOINTER]
 
 
-# -------------------------------------------------------------------
-#                      使用 C 函数求解 Lamb 问题
-# -------------------------------------------------------------------
 C_grt_solve_lamb1 = libgrt.grt_solve_lamb1
 """使用广义闭合解求解第一类 Lamb 问题"""
 C_grt_solve_lamb1.restype = None
 C_grt_solve_lamb1.argtypes = [
-    REAL, PREAL, c_int, REAL, PREAL
+    REAL,
+    PREAL,
+    c_int,
+    REAL,
+    PREAL,
+]
+
+
+C_grt_compute_travt1d_from_file = libgrt.grt_compute_travt1d_from_file
+"""从模型文件计算多个震中距的初至 P/S 走时"""
+C_grt_compute_travt1d_from_file.restype = PREAL
+C_grt_compute_travt1d_from_file.argtypes = [
+    c_char_p,
+    REAL,
+    REAL,
+    PREAL,
+    c_size_t,
 ]

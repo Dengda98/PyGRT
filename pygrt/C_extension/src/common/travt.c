@@ -8,7 +8,9 @@
  */
 
 #include <stdbool.h>
+#include <stdlib.h>
 
+#include "grt/common/model.h"
 #include "grt/common/travt.h"
 
 
@@ -367,4 +369,39 @@ real_t grt_compute_travt1d(
     free(Vel);
 
     return travt;
+}
+
+
+real_t *grt_compute_travt1d_from_file(
+    const char *modelpath,
+    const real_t depsrc,
+    const real_t deprcv,
+    const real_t *rs,
+    const size_t nr)
+{
+    if(modelpath == NULL || rs == NULL || nr == 0){
+        return NULL;
+    }
+
+    MODEL1D *mod1d = grt_read_mod1d_from_file(modelpath, depsrc, deprcv, true);
+    if(mod1d == NULL){
+        return NULL;
+    }
+
+    // 按 [Tp0, Ts0, Tp1, Ts1, ...] 交错排列
+    real_t *out = (real_t*)malloc(sizeof(real_t) * nr * 2);
+    if(out == NULL){
+        grt_free_mod1d(mod1d);
+        return NULL;
+    }
+
+    for(size_t i = 0; i < nr; ++i){
+        out[2*i] = grt_compute_travt1d(
+            mod1d->Thk, mod1d->Va, mod1d->n, mod1d->isrc, mod1d->ircv, rs[i]);
+        out[2*i + 1] = grt_compute_travt1d(
+            mod1d->Thk, mod1d->Vb, mod1d->n, mod1d->isrc, mod1d->ircv, rs[i]);
+    }
+
+    grt_free_mod1d(mod1d);
+    return out;
 }

@@ -4,970 +4,305 @@
     :date:     2024-07-24  
 
     该文件包含一些数据处理操作上的补充:   
-        1、剪切源、张裂源、单力源、爆炸源、矩张量源、有限断层 通过格林函数合成理论地震图的函数\n
-        2、Stream类型的时域卷积、微分、积分 (基于numpy和scipy)    \n
-        3、读取波数积分和峰谷平均法过程文件  \n
-        4、其它辅助函数  \n
 
 """
 
+from __future__ import annotations
 
-import numpy as np
-import numpy.ctypeslib as npct
-import matplotlib.pyplot as plt
-from matplotlib.axes import Axes
-from matplotlib.figure import Figure
-from obspy import Stream, Trace 
-from obspy.core import AttribDict
-from copy import deepcopy
-from scipy.signal import oaconvolve
-from scipy.fft import rfft, irfft
-from scipy.special import jv
-from scipy.interpolate import interpn
-import math 
 import os
 import glob
-import warnings
-from typing import List, Union, Tuple
 from copy import deepcopy
+from pathlib import Path
+from typing import List, Union
 
-from numpy.typing import ArrayLike
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
+from obspy import Stream, read
+from scipy.interpolate import interpn
+from scipy.io import netcdf_file
+from scipy.signal import oaconvolve
+from scipy.special import jv
+import numpy.ctypeslib as npct
 
-from .c_interfaces import *
-
-
-def _warn_xarr_yarr_deprecated(stacklevel:int=3):
-    warnings.warn(
-        "Arguments 'xarr'/'yarr' (and dict keys '_xarr'/'_yarr') are deprecated; "
-        "prefer 'norths'/'easts' (and '_norths'/'_easts').",
-        FutureWarning,
-        stacklevel=stacklevel,
-    )
-
-
-def _resolve_static_ne_coords(
-    norths=None, easts=None, xarr=None, yarr=None,
-    default_norths=None, default_easts=None,
-    stacklevel:int=3,
-) -> Tuple[object, object]:
-    """解析 north/east 坐标，兼容旧公开 API 名 xarr/yarr"""
-    if xarr is not None or yarr is not None:
-        _warn_xarr_yarr_deprecated(stacklevel=stacklevel)
-        if norths is not None or easts is not None:
-            raise ValueError("Use either norths/easts or xarr/yarr, not both.")
-        norths, easts = xarr, yarr
-    if norths is None:
-        norths = default_norths
-    if easts is None:
-        easts = default_easts
-    return norths, easts
-
-
-def _pop_static_ne_from_kwargs(
-    kwargs:dict,
-    default_norths=None,
-    default_easts=None,
-    stacklevel:int=3,
-) -> Tuple[object, object]:
-    """从 kwargs 取出 norths/easts（或旧名 xarr/yarr）"""
-    return _resolve_static_ne_coords(
-        kwargs.pop('norths', None), kwargs.pop('easts', None),
-        kwargs.pop('xarr', None), kwargs.pop('yarr', None),
-        default_norths=default_norths, default_easts=default_easts,
-        stacklevel=stacklevel,
-    )
-
-
-def _static_dict_norths_easts(d:dict, stacklevel:int=3) -> Tuple[object, object]:
-    """从静态结果字典读取 north/east，兼容旧键 _xarr/_yarr"""
-    if '_norths' in d and '_easts' in d:
-        return d['_norths'], d['_easts']
-    if '_xarr' in d and '_yarr' in d:
-        _warn_xarr_yarr_deprecated(stacklevel=stacklevel)
-        return d['_xarr'], d['_yarr']
-    raise KeyError("static dict missing '_norths'/'_easts' (or deprecated '_xarr'/'_yarr').")
-
-from enum import Enum, unique
-
-@unique
-class GRT_SYN_TYPE(Enum):
-    GRT_SYN_EX = 0
-    GRT_SYN_SF = 1
-    GRT_SYN_DC = 2
-    GRT_SYN_TS = 3
-    GRT_SYN_MT = 4
-
+from .cli import run_grt
+from .c_interfaces import C_grt_solve_lamb1
 
 
 __all__ = [
-    "gen_syn_from_gf_DC",
-    "gen_syn_from_gf_SF",
-    "gen_syn_from_gf_EX",
-    "gen_syn_from_gf_MT",
-
+    "read_static_nc",
+    "read_static_grn",
     "compute_strain",
     "compute_rotation",
     "compute_stress",
-
     "stream_convolve",
     "stream_integral",
     "stream_diff",
     "stream_write_sac",
-
     "read_kernels_freqs",
     "read_statsfile",
     "read_statsfile_ptam",
     "plot_statsdata",
     "plot_statsdata_ptam",
-
-    "solve_lamb1"
+    "solve_lamb1",
 ]
 
 
-#=================================================================================================================
-#
-#                                           根据辐射因子合成地震图
-#
-#=================================================================================================================
+PathLike = Union[str, os.PathLike]
 
-def _gen_syn_from_gf(st:Stream, calc_upar:bool, compute_type:GRT_SYN_TYPE, M0:float, az:float, ZNE=False, **kwargs):
-    r"""
-        一个发起函数，根据不同震源参数，从格林函数中合成理论地震图
 
-        :param    st:              计算好的时域格林函数, :class:`obspy.Stream` 类型
-        :param    calc_upar:       是否计算位移u的空间导数
-        :param    compute_type:    计算震源类型
-        :param    M0:              标量地震矩, 单位dyne*cm
-        :param    az:              方位角(度)
-        :param    ZNE:             是否以ZNE分量输出?
-            
+QWV_NUM = 3
+INTEG_NUM = 4
+SRC_M_NUM = 6
+SRC_M_ORDERS = [0, 0, 1, 0, 1, 2]
+SRC_M_NAME_ABBR = ["EX", "VF", "HF", "DD", "DS", "SS"]
+qwvchs = ["q", "w", "v"]
+NPCT_REAL_TYPE = "f8"
+NPCT_CMPLX_TYPE = "c16"
+
+
+def _attribute_value(value):
+    """Convert a NetCDF attribute to a convenient Python value."""
+    if isinstance(value, np.ndarray) and value.ndim == 0:
+        return value.item()
+    if isinstance(value, bytes):
+        return value.decode("utf-8")
+    return value
+
+
+def read_static_nc(path: PathLike) -> dict:
     """
-    allchs = [tr.stats.channel for tr in st]
+    Read a static NetCDF grid produced by ``grt static`` modules.
 
-    # 为张裂计算 Vp/Vs
-    src_va = st[0].stats.sac['user6']
-    src_vb = st[0].stats.sac['user7']
-    VpVs_ratio = float(src_va / src_vb)
+    The returned dictionary contains three top-level entries:
 
-    azrad = REAL(np.deg2rad(az))
-    dist = float(st[0].stats.sac['dist'])
-    npts = int(st[0].stats.npts)
+    * ``dimensions`` - mapping from dimension name to length
+    * ``variables`` - mapping from variable name to
+      ``{"dimensions", "data", "attributes"}``
+    * ``attributes`` - global NetCDF attributes
 
-    FPtrs = FPOINTER * CHANNEL_NUM
-    FGrid = FPtrs * SRC_M_NUM
-    FMat = FPtrs * CHANNEL_NUM
+    Variable arrays are available at ``variables[name]["data"]``.
 
-    def _trace_data(channel:str):
-        if channel not in allchs:
-            raise ValueError(f"Failed, channel=\"{channel}\" not exists.")
-        return np.ascontiguousarray(st.select(channel=channel)[0].data, dtype=np.float32)
+    :param    path:               Path to the static NetCDF file.
 
-    # 格林函数数组布局：gf[震源][分量][采样点]
-    gf_hold = [[None] * CHANNEL_NUM for _ in range(SRC_M_NUM)]
-    gf_uiz_hold = [[None] * CHANNEL_NUM for _ in range(SRC_M_NUM)]
-    gf_uir_hold = [[None] * CHANNEL_NUM for _ in range(SRC_M_NUM)]
-    for im, src_name in enumerate(SRC_M_NAME_ABBR):
-        for ic, ch in enumerate(ZRTchs):
-            # m=0 无 T 分量
-            if SRC_M_ORDERS[im] == 0 and ch == 'T':
-                continue
-            channel = f'{src_name}{ch}'
-            # 仅加载存在的道（未用到的震源可缺省；C 侧对非零系数会校验）
-            if channel not in allchs:
-                continue
-            gf_hold[im][ic] = _trace_data(channel)
-            if calc_upar:
-                gf_uiz_hold[im][ic] = _trace_data(f'z{src_name}{ch}')
-                gf_uir_hold[im][ic] = _trace_data(f'r{src_name}{ch}')
-
-    def _src_chnl_ptrs(hold):
-        return FGrid(*(
-            FPtrs(*(
-                (arr.ctypes.data_as(FPOINTER) if arr is not None else FPOINTER())
-                for arr in row
-            ))
-            for row in hold
-        ))
-
-    gf_ptrs = _src_chnl_ptrs(gf_hold)
-    gf_uiz_ptrs = _src_chnl_ptrs(gf_uiz_hold) if calc_upar else None
-    gf_uir_ptrs = _src_chnl_ptrs(gf_uir_hold) if calc_upar else None
-
-    synarr = np.zeros((CHANNEL_NUM, npts), dtype=np.float32)
-    syn_upar_arr = np.zeros((CHANNEL_NUM, CHANNEL_NUM, npts), dtype=np.float32)
-    syn_ptrs = FPtrs(*(synarr[c].ctypes.data_as(FPOINTER) for c in range(CHANNEL_NUM)))
-    syn_upar_ptrs = FMat(*(
-        FPtrs(*(syn_upar_arr[d, c].ctypes.data_as(FPOINTER) for c in range(CHANNEL_NUM)))
-        for d in range(CHANNEL_NUM)
-    ))
-
-    # ========================================================================
-    #                            调用 C 函数
-    mchn = _set_source_mechanism(compute_type, **kwargs)
-    C_grt_syn_from_gf(
-        npts, dist,
-        gf_ptrs, gf_uiz_ptrs, gf_uir_ptrs,
-        compute_type.value, M0, VpVs_ratio, azrad, npct.as_ctypes(mchn),
-        ZNE, calc_upar,
-        syn_ptrs, syn_upar_ptrs,
-    )
-    # ========================================================================
-
-    # C 可能因 r=0 强制 azrad=0，同步方位角头段
-    az = float(np.rad2deg(azrad.value))
-    baz = az + 180.0
-    if baz >= 360.0:
-        baz -= 360.0
-
-    out_chs = ZNEchs if ZNE else ZRTchs
-    stall = Stream()
-    for c, ch in enumerate(out_chs):
-        tr:Trace = st[0].copy()
-        tr.data = synarr[c].copy()
-        tr.stats.channel = kcmpnm = f'{ch}'
-        __check_trace_attr_sac(tr, az=az, baz=baz, kcmpnm=kcmpnm)
-        stall.append(tr)
-        if calc_upar:
-            for d, dch in enumerate(out_chs):
-                tr = st[0].copy()
-                tr.data = syn_upar_arr[d, c].copy()
-                tr.stats.channel = kcmpnm = f'{dch.lower()}{ch}'
-                __check_trace_attr_sac(tr, az=az, baz=baz, kcmpnm=kcmpnm)
-                stall.append(tr)
-
-    return stall
-
-
-def _gen_syn_from_static_gf(grnDct:dict, calc_upar:bool, compute_type:GRT_SYN_TYPE, M0:float, ZNE=False, **kwargs):
-    r"""
-        一个发起函数，根据不同震源参数，从静态格林函数中合成理论静态场
-
-        :param    grnDct:          计算好的静态格林函数, 字典类型
-        :param    calc_upar:       是否计算位移u的空间导数
-        :param    compute_type:    计算震源类型
-        :param    M0:              标量地震矩, 单位dyne*cm
-        :param    ZNE:             是否以ZNE分量输出?
-        :param    kwargs:          其它各种参数，包括震源参数，新网格参数等
-            
+    :return: A dictionary containing the NetCDF data and metadata.
     """
-    # 为张裂计算 Vp/Vs
-    VpVs_ratio = float(grnDct['_src_va'] / grnDct['_src_vb'])
+    path = str(path)
+    if not Path(path).is_file():
+        raise FileNotFoundError(f"NetCDF file does not exist: {path}")
 
-    norths0, easts0 = _static_dict_norths_easts(grnDct, stacklevel=4)
-    norths0 = np.ascontiguousarray(norths0, dtype=NPCT_REAL_TYPE)
-    easts0 = np.ascontiguousarray(easts0, dtype=NPCT_REAL_TYPE)
-    norths, easts = _pop_static_ne_from_kwargs(
-        kwargs, default_norths=norths0, default_easts=easts0, stacklevel=4)
-    norths = np.ascontiguousarray(norths, dtype=NPCT_REAL_TYPE)
-    easts = np.ascontiguousarray(easts, dtype=NPCT_REAL_TYPE)
-    nnorth0, neast0 = len(norths0), len(easts0)
-    nnorth, neast = len(norths), len(easts)
-    nr0, nr = nnorth0 * neast0, nnorth * neast
-
-    def _pack_gf(prefix:str=''):
-        """打包为 C 侧 realChnlGrid[nr]：arr[震中距点][震源][分量]"""
-        arr = np.zeros((nr0, SRC_M_NUM, CHANNEL_NUM), dtype=NPCT_REAL_TYPE)
-        for isrc, src_name in enumerate(SRC_M_NAME_ABBR):
-            for ic, comp in enumerate(ZRTchs):
-                key = f'{prefix}{src_name}{comp}'
-                if key in grnDct:
-                    arr[:, isrc, ic] = np.ravel(grnDct[key])
-        return arr
-
-    pygrn = _pack_gf()
-    pygrn_uiz = _pack_gf('z') if calc_upar else None
-    pygrn_uir = _pack_gf('r') if calc_upar else None
-
-    syn = np.zeros((nr, CHANNEL_NUM), dtype=NPCT_REAL_TYPE)
-    syn_upar = np.zeros((nr, CHANNEL_NUM, CHANNEL_NUM), dtype=NPCT_REAL_TYPE)
-
-    # ========================================================================
-    #                            调用 C 函数
-    mchn = _set_source_mechanism(compute_type, **kwargs)
-    C_grt_static_syn_from_gf(
-        nnorth0, npct.as_ctypes(norths0), neast0, npct.as_ctypes(easts0),
-        nnorth, npct.as_ctypes(norths), neast, npct.as_ctypes(easts),
-        npct.as_ctypes(pygrn),
-        npct.as_ctypes(pygrn_uiz) if calc_upar else None,
-        npct.as_ctypes(pygrn_uir) if calc_upar else None,
-        compute_type.value, M0, VpVs_ratio, npct.as_ctypes(mchn),
-        ZNE, calc_upar,
-        npct.as_ctypes(syn), npct.as_ctypes(syn_upar),
-    )
-    # ========================================================================
-
-    resDct = {k: deepcopy(v) for k, v in grnDct.items() if k.startswith('_')}
-    resDct['_norths'] = norths
-    resDct['_easts'] = easts
-
-    chs = ZNEchs if ZNE else ZRTchs
-    for i1, c1 in enumerate(chs):
-        resDct[c1] = syn[:, i1].reshape((nnorth, neast))
-        if calc_upar:
-            for i2, c2 in enumerate(chs):
-                resDct[f'{c2.lower()}{c1}'] = syn_upar[:, i2, i1].reshape((nnorth, neast))
-
-    return resDct
+    with netcdf_file(path, mode="r", mmap=False) as dataset:
+        dimensions = {name: int(length) for name, length in dataset.dimensions.items()}
+        attributes = {name: _attribute_value(getattr(dataset, name)) for name in dataset._attributes}
+        variables = {}
+        result = {
+            "dimensions": dimensions,
+            "variables": variables,
+            "attributes": attributes,
+        }
+        for name, variable in dataset.variables.items():
+            data = np.array(variable[:], copy=True)
+            variable_attributes = {key: _attribute_value(value) for key, value in variable._attributes.items()}
+            variables[name] = {
+                "dimensions": tuple(variable.dimensions),
+                "data": data,
+                "attributes": variable_attributes,
+            }
+    return result
 
 
-def _set_source_mechanism(
-    compute_type:GRT_SYN_TYPE, 
-    fZ=None, fN=None, fE=None, 
-    strike=None, dip=None, rake=None, 
-    MT=None, **kwargs):
-    r"""
-        整理 C 函数需要的震源机制数组
+def read_static_grn(path: PathLike) -> dict:
     """
+    Read a static Green's function NetCDF file.
 
-    mchn = np.zeros((MECHANISM_NUM,), dtype=NPCT_REAL_TYPE)
-    if compute_type == GRT_SYN_TYPE.GRT_SYN_EX:
-        pass
-    elif compute_type == GRT_SYN_TYPE.GRT_SYN_SF:
-        mchn[:3] = [fN, fE, fZ]
-    elif compute_type == GRT_SYN_TYPE.GRT_SYN_DC:
-        mchn[:3] = [strike, dip, rake]
-    elif compute_type == GRT_SYN_TYPE.GRT_SYN_TS:
-        mchn[:2] = [strike, dip]
-    elif compute_type == GRT_SYN_TYPE.GRT_SYN_MT:
-        mchn[:] = MT[:]
-    else:
-        raise ValueError("Unsupported source type.")
-    
-    return mchn
+    This is an alias of :func:`read_static_nc`.
 
+    :param    path:               Path to the static Green's function file.
 
-def gen_syn_from_gf_DC(st:Union[Stream,dict], M0:float, strike:float, dip:float, rake:float, az:float=-999, ZNE=False, calc_upar:bool=False, **kwargs):
-    '''
-        Shear source, the unit of angles is all degrees(°)
-
-        :param    st:       Green's functions in a :class:`obspy.Stream` (dynamic-case) or a dict (static-case)
-        :param    M0:       scalar seismic moment (dyne*cm)
-        :param    strike:   0 <= strike <= 360 (north=0, clockwise as positive)
-        :param    dip:      0 <= dip <= 90
-        :param    rake:     -180 <= rake <= 180 (on the fault plane, counterclockwise as positive)
-        :param    az:       azimuth, 0 <= az <= 360 (not used for static case)
-        :param    ZNE:          whether output in 'ZNE'-coord, default is 'ZRT'
-        :param    calc_upar:    whether calculate the spatial derivatives of displacements.
-        :param    kwargs:       For static results, set ``norths``/``easts`` (preferred) or
-                                deprecated ``xarr``/``yarr`` to define a new north/east grid;
-                                synthesis interpolates in epicentral distance.
-
-        :return:
-            - **stream** -  :class:`obspy.Stream`
-    '''
-    if isinstance(st, Stream):
-        if az > 360 or az < -360:
-            raise ValueError(f"WRONG azimuth ({az})")
-        return _gen_syn_from_gf(st, calc_upar, GRT_SYN_TYPE.GRT_SYN_DC, M0, az, ZNE, strike=strike, dip=dip, rake=rake)
-    elif isinstance(st, dict):
-        return _gen_syn_from_static_gf(st, calc_upar, GRT_SYN_TYPE.GRT_SYN_DC, M0, ZNE, strike=strike, dip=dip, rake=rake, **kwargs)
-    else:
-        raise NotImplementedError
-
-def gen_syn_from_gf_TS(st:Union[Stream,dict], M0:float, strike:float, dip:float, az:float=-999, ZNE=False, calc_upar:bool=False, **kwargs):
-    '''
-        Tension source, the unit of angles is all degrees(°)
-
-        :param    st:       Green's functions in a :class:`obspy.Stream` (dynamic-case) or a dict (static-case)
-        :param    M0:       scalar seismic moment (dyne*cm)
-        :param    strike:   0 <= strike <= 360 (north=0, clockwise as positive)
-        :param    dip:      0 <= dip <= 90
-        :param    az:       azimuth, 0 <= az <= 360 (not used for static case)
-        :param    ZNE:          whether output in 'ZNE'-coord, default is 'ZRT'
-        :param    calc_upar:    whether calculate the spatial derivatives of displacements.
-        :param    kwargs:       For static results, set ``norths``/``easts`` (preferred) or
-                                deprecated ``xarr``/``yarr`` to define a new north/east grid;
-                                synthesis interpolates in epicentral distance.
-
-        :return:
-            - **stream** -  :class:`obspy.Stream`
-    '''
-    if isinstance(st, Stream):
-        if az > 360 or az < -360:
-            raise ValueError(f"WRONG azimuth ({az})")
-        return _gen_syn_from_gf(st, calc_upar, GRT_SYN_TYPE.GRT_SYN_TS, M0, az, ZNE, strike=strike, dip=dip)
-    elif isinstance(st, dict):
-        return _gen_syn_from_static_gf(st, calc_upar, GRT_SYN_TYPE.GRT_SYN_TS, M0, ZNE, strike=strike, dip=dip, **kwargs)
-    else:
-        raise NotImplementedError
-
-
-def gen_syn_from_gf_SF(st:Union[Stream,dict], S:float, fN:float, fE:float, fZ:float, az:float=-999, ZNE=False, calc_upar:bool=False, **kwargs):
-    '''
-        Single-force source (dyne)  
-
-        :param    st:    Green's functions in a :class:`obspy.Stream` (dynamic-case) or a dict (static-case)
-        :param     S:    scaling factor (dyne)
-        :param    fN:    coefficient of Northward force   
-        :param    fE:    coefficient of Eastward force
-        :param    fZ:    coefficient of Vertical(Downward) force 
-        :param    az:    azimuth, 0 <= az <= 360 (not used for static case)
-        :param    ZNE:          whether output in 'ZNE'-coord, default is 'ZRT'
-        :param    calc_upar:    whether calculate the spatial derivatives of displacements.
-        :param    kwargs:       For static results, set ``norths``/``easts`` (preferred) or
-                                deprecated ``xarr``/``yarr`` to define a new north/east grid;
-                                synthesis interpolates in epicentral distance.
-
-        :return:
-            - **stream** - :class:`obspy.Stream`
-    '''
-    if isinstance(st, Stream):
-        if az > 360 or az < -360:
-            raise ValueError(f"WRONG azimuth ({az})")
-        return _gen_syn_from_gf(st, calc_upar, GRT_SYN_TYPE.GRT_SYN_SF, S, az, ZNE, fN=fN, fE=fE, fZ=fZ)
-    elif isinstance(st, dict):
-        return _gen_syn_from_static_gf(st, calc_upar, GRT_SYN_TYPE.GRT_SYN_SF, S, ZNE, fN=fN, fE=fE, fZ=fZ, **kwargs)
-    else:
-        raise NotImplementedError
-
-
-def gen_syn_from_gf_EX(st:Union[Stream,dict], M0:float, az:float=-999, ZNE=False, calc_upar:bool=False, **kwargs):
-    '''
-        Explosion
-
-        :param    st:          Green's functions in a :class:`obspy.Stream` (dynamic-case) or a dict (static-case)
-        :param    M0:          scalar seismic moment (dyne*cm)
-        :param    az:          azimuth, 0 <= az <= 360 (not used for static case)
-        :param    ZNE:          whether output in 'ZNE'-coord, default is 'ZRT'
-        :param    calc_upar:    whether calculate the spatial derivatives of displacements.
-        :param    kwargs:       For static results, set ``norths``/``easts`` (preferred) or
-                                deprecated ``xarr``/``yarr`` to define a new north/east grid;
-                                synthesis interpolates in epicentral distance.
-
-        :return:
-            - **stream** -       :class:`obspy.Stream`
-    '''
-    if isinstance(st, Stream):
-        if az > 360 or az < -360:
-            raise ValueError(f"WRONG azimuth ({az})")
-        return _gen_syn_from_gf(st, calc_upar, GRT_SYN_TYPE.GRT_SYN_EX, M0, az, ZNE)
-    elif isinstance(st, dict):
-        return _gen_syn_from_static_gf(st, calc_upar, GRT_SYN_TYPE.GRT_SYN_EX, M0, ZNE, **kwargs)
-    else:
-        raise NotImplementedError
-    
-
-def gen_syn_from_gf_MT(st:Union[Stream,dict], M0:float, MT:ArrayLike, az:float=-999, ZNE=False, calc_upar:bool=False, **kwargs):
-    ''' 
-        Moment tensor
-
-        :param    st:          Green's functions in a :class:`obspy.Stream` (dynamic-case) or a dict (static-case)
-        :param    M0:          scalar seismic moment (dyne*cm)
-        :param    MT:          coefficient of Moment tensor (M11, M12, M13, M22, M23, M33), subscripts 1,2,3 denote Northward,Eastward,Downward
-        :param    az:          azimuth, 0 <= az <= 360 (not used for static case)
-        :param    ZNE:          whether output in 'ZNE'-coord, default is 'ZRT'
-        :param    calc_upar:    whether calculate the spatial derivatives of displacements.
-        :param    kwargs:       For static results, set ``norths``/``easts`` (preferred) or
-                                deprecated ``xarr``/``yarr`` to define a new north/east grid;
-                                synthesis interpolates in epicentral distance.
-
-        :return:
-            - **stream** -     :class:`obspy.Stream`
-    '''
-    if isinstance(st, Stream):
-        if az > 360 or az < -360:
-            raise ValueError(f"WRONG azimuth ({az})")
-        return _gen_syn_from_gf(st, calc_upar, GRT_SYN_TYPE.GRT_SYN_MT, M0, az, ZNE, MT=MT)
-    elif isinstance(st, dict):
-        return _gen_syn_from_static_gf(st, calc_upar, GRT_SYN_TYPE.GRT_SYN_MT, M0, ZNE, MT=MT, **kwargs)
-    else:
-        raise NotImplementedError
-
-
-#=================================================================================================================
-#
-#                                           根据几何方程和本构方程合成应力、应变、旋转张量
-#
-#=================================================================================================================
-
-
-def _compute_strain_rotation(st_syn:Stream, Type:str):
-    r"""
-        Compute dynamic strain/rotation tensor from synthetic spatial derivatives.
-
-        :param     st_syn:      synthetic spatial derivatives.
-        :param     Type:        "strain" or "rotation"
-
-        :return:
-            - **stream** -  dynamic strain/rotation tensor, in :class:`obspy.Stream` class.
+    :return: A dictionary containing the NetCDF data and metadata.
     """
-
-    if Type == 'strain':
-        i1_end = 3
-        i2_offset = 0
-    elif Type == 'rotation':
-        i1_end = 2
-        i2_offset = 1
-    else:
-        raise ValueError(f"{Type} not supported.")
-        
-    chs = ZRTchs
-
-    # 判断是否有标志性的trace
-    if len(st_syn.select(channel=f"nN")) > 0:
-        chs = ZNEchs
-
-    npts = st_syn[0].stats.npts
-    dist = st_syn[0].stats.sac['dist']
-    u, upar, u_ptrs, upar_ptrs = _prepare_dynamic_postprocess_arrays(st_syn, chs, npts)
-    resarr, res_ptrs = _prepare_dynamic_postprocess_result(npts)
-    if Type == 'strain':
-        C_grt_compute_strain(npts, dist, u_ptrs, upar_ptrs, res_ptrs, chs == ZNEchs)
-    else:
-        C_grt_compute_rotation(npts, dist, u_ptrs, upar_ptrs, res_ptrs, chs == ZNEchs)
-
-    stres = Stream()
-    for i1 in range(i1_end):
-        c1 = chs[i1]
-        for i2 in range(i1+i2_offset, 3):
-            c2 = chs[i2]
-            tr = st_syn.select(channel=f"{c2.lower()}{c1}")[0].copy()
-            tr.data = resarr[i2, i1]
-            tr.stats.channel = tr.stats.sac['kcmpnm'] = f"{c1}{c2}"
-            stres.append(tr)
-
-    return stres
+    return read_static_nc(path)
 
 
-def _prepare_dynamic_postprocess_arrays(st_syn:Stream, chs:List[str], npts:int):
-    """收集动态位移/偏导数组，并构造 ctypes 通道指针表。"""
-    FPtrs = FPOINTER * CHANNEL_NUM
-    FMat = FPtrs * CHANNEL_NUM
-
-    def data(channel:str):
-        st = st_syn.select(channel=channel)
-        if len(st) == 0:
-            raise NameError(f"{channel} not exists.")
-        if st[0].stats.npts != npts:
-            raise ValueError("All dynamic traces must have the same number of samples.")
-        return np.ascontiguousarray(st[0].data, dtype=np.float32)
-
-    u = [data(c) for c in chs]
-    upar = [[data(f"{d.lower()}{c}") for c in chs] for d in chs]
-    u_ptrs = FPtrs(*(arr.ctypes.data_as(FPOINTER) for arr in u))
-    upar_ptrs = FMat(*(
-        FPtrs(*(arr.ctypes.data_as(FPOINTER) for arr in row)) for row in upar))
-    return u, upar, u_ptrs, upar_ptrs
+def _postprocess(path: PathLike, module: str, return_result: bool):
+    path = Path(path)
+    if path.is_dir():
+        run_grt([module, path])
+        # 动态结果只能靠文件名前缀区分 strain/rotation/stress
+        return read(str(path / f"{module}_*.sac")) if return_result else None
+    if path.is_file():
+        run_grt(["static", module, path])
+        return read_static_nc(path) if return_result else None
+    raise FileNotFoundError(f"Synthesis result does not exist: {path}")
 
 
-def _prepare_dynamic_postprocess_result(npts:int):
-    """分配动态后处理结果数组及其 ctypes 通道指针表。"""
-    FPtrs = FPOINTER * CHANNEL_NUM
-    FMat = FPtrs * CHANNEL_NUM
-
-    resarr = np.zeros((CHANNEL_NUM, CHANNEL_NUM, npts), dtype=np.float32)
-    res_ptrs = FMat(*(
-        FPtrs(*(resarr[c2, c1].ctypes.data_as(FPOINTER) for c1 in range(CHANNEL_NUM)))
-        for c2 in range(CHANNEL_NUM)))
-    return resarr, res_ptrs
-
-
-def _prepare_static_postprocess_arrays(syn:dict, chs:List[str]):
-    """整理静态后处理所需的连续内存数组与 ctypes 通道指针表。"""
-    RPtrs = PREAL * CHANNEL_NUM
-    RMat = RPtrs * CHANNEL_NUM
-
-    norths, easts = _static_dict_norths_easts(syn, stacklevel=4)
-    norths = np.ascontiguousarray(norths, dtype=np.float64)
-    easts = np.ascontiguousarray(easts, dtype=np.float64)
-    if norths.ndim != 1 or easts.ndim != 1:
-        raise ValueError("'_norths' and '_easts' must be one-dimensional arrays.")
-
-    u = [np.ascontiguousarray(syn[c], dtype=np.float64) for c in chs]
-    upar = [
-        [np.ascontiguousarray(syn[f"{d.lower()}{c}"], dtype=np.float64) for c in chs]
-        for d in chs
-    ]
-    expected_shape = (len(norths), len(easts))
-    if any(arr.shape != expected_shape for arr in u) or any(
-            arr.shape != expected_shape for row in upar for arr in row):
-        raise ValueError("Static displacement and derivative arrays must match '_norths'/'_easts'.")
-
-    u_ptrs = RPtrs(*(arr.ctypes.data_as(PREAL) for arr in u))
-    upar_ptrs = RMat(*(
-        RPtrs(*(arr.ctypes.data_as(PREAL) for arr in row)) for row in upar))
-    resarr = np.zeros((CHANNEL_NUM, CHANNEL_NUM, *expected_shape), dtype=np.float64)
-    res_ptrs = RMat(*(
-        RPtrs(*(resarr[c2, c1].ctypes.data_as(PREAL) for c1 in range(CHANNEL_NUM)))
-        for c2 in range(CHANNEL_NUM)))
-    return norths, easts, u, upar, u_ptrs, upar_ptrs, resarr, res_ptrs
-
-
-def _compute_static_strain_rotation(syn:dict, Type:str):
-    r"""
-        Compute static strain/rotation tensor from synthetic spatial derivatives.
-
-        :param     syn:      synthetic spatial derivatives.
-        :param     Type:        "strain" or "rotation"
-
-        :return:
-            - **res** -  static strain/rotation tensor, in dict class.
+def compute_strain(
+    path: PathLike,
+    *,
+    return_result: bool = False,
+):
     """
+    Compute the strain tensor in place from synthetic spatial derivatives.
 
-    if Type == 'strain':
-        i1_end = 3
-        i2_offset = 0
-    elif Type == 'rotation':
-        i1_end = 2
-        i2_offset = 1
-    else:
-        raise ValueError(f"{Type} not supported.")
+    ``path`` may be either:
 
-    chs = ZRTchs
+    * a dynamic synthesis directory containing SAC files, processed by
+      ``grt strain``
+    * a static synthesis NetCDF file, processed by ``grt static strain``
 
-    # 判断是否有标志性的分量名
-    if f"nN" in syn.keys():
-        chs = ZNEchs
+    The synthesis must have been computed with ``calc_upar=True``. Results are
+    written back to the same directory or file.
 
-    norths, easts, u, upar, u_ptrs, upar_ptrs, resarr, res_ptrs = \
-        _prepare_static_postprocess_arrays(syn, chs)
+    :param    path:               Dynamic SAC directory or static NetCDF file.
+    :param    return_result:      If true, read and return the processed result.
+                                  For a dynamic directory this reads
+                                  ``strain_*.sac`` only; for a static NetCDF file
+                                  this returns the full NetCDF dictionary.
 
-    # 结果字典
-    resDct = {}
-
-    # 基本数据拷贝
-    for k in syn.keys():
-        if k[0] != '_':
-            continue 
-        resDct[k] = deepcopy(syn[k])
-
-    if Type == 'strain':
-        C_grt_static_compute_strain(
-            len(norths), len(easts), norths.ctypes.data_as(PREAL), easts.ctypes.data_as(PREAL),
-            u_ptrs, upar_ptrs, res_ptrs, chs == ZNEchs)
-    else:
-        C_grt_static_compute_rotation(
-            len(norths), len(easts), norths.ctypes.data_as(PREAL), easts.ctypes.data_as(PREAL),
-            u_ptrs, upar_ptrs, res_ptrs, chs == ZNEchs)
-
-    for i1 in range(i1_end):
-        for i2 in range(i1+i2_offset, CHANNEL_NUM):
-            resDct[f"{chs[i1]}{chs[i2]}"] = resarr[i2, i1]
-
-    return resDct
-
-
-def compute_strain(st:Union[Stream,dict]):
-    r"""
-        Compute dynamic/static strain tensor from synthetic spatial derivatives.
-
-        :param     st:      synthetic spatial derivatives
-                            :class:`obspy.Stream` class for dynamic case, dict class for static case.
-
-        :return:
-            - **stres** -  dynamic/static strain tensor, in :class:`obspy.Stream` class or dict class.
+    :return: An :class:`obspy.Stream` or NetCDF dictionary when
+             ``return_result`` is true; otherwise ``None``.
     """
-    if isinstance(st, Stream):
-        return _compute_strain_rotation(st, "strain")
-    elif isinstance(st, dict):
-        return _compute_static_strain_rotation(st, "strain")
-    else:
-        raise NotImplementedError
-    
-def compute_rotation(st:Union[Stream,dict]):
-    r"""
-        Compute dynamic/static rotation tensor from synthetic spatial derivatives.
+    return _postprocess(path, "strain", return_result)
 
-        :param     st:      synthetic spatial derivatives
-                            :class:`obspy.Stream` class for dynamic case, dict class for static case.
 
-        :return:
-            - **stres** -  dynamic/static rotation tensor, in :class:`obspy.Stream` class or dict class.
+def compute_rotation(
+    path: PathLike,
+    *,
+    return_result: bool = False,
+):
     """
-    if isinstance(st, Stream):
-        return _compute_strain_rotation(st, "rotation")
-    elif isinstance(st, dict):
-        return _compute_static_strain_rotation(st, "rotation")
-    else:
-        raise NotImplementedError
+    Compute the rotation tensor in place from synthetic spatial derivatives.
 
+    ``path`` may be either:
 
-def _compute_stress(st_syn:Stream):
-    r"""
-        Compute dynamic stress tensor from synthetic spatial derivatives.
+    * a dynamic synthesis directory containing SAC files, processed by
+      ``grt rotation``
+    * a static synthesis NetCDF file, processed by ``grt static rotation``
 
-        :param     st_syn:      synthetic spatial derivatives.
+    The synthesis must have been computed with ``calc_upar=True``. Results are
+    written back to the same directory or file.
 
-        :return:
-            - **stream** -  dynamic stress tensor (unit: dyne/cm^2 = 0.1 Pa), in :class:`obspy.Stream` class.
+    :param    path:               Dynamic SAC directory or static NetCDF file.
+    :param    return_result:      If true, read and return the processed result.
+                                  For a dynamic directory this reads
+                                  ``rotation_*.sac`` only; for a static NetCDF file
+                                  this returns the full NetCDF dictionary.
+
+    :return: An :class:`obspy.Stream` or NetCDF dictionary when
+             ``return_result`` is true; otherwise ``None``.
     """
-
-    # 由于有Q值的存在，lambda和mu变成了复数，需在频域进行
-
-    chs = ZRTchs
-    rot2ZNE:bool = False
-
-    # 判断是否有标志性的trace
-    if len(st_syn.select(channel=f"nN")) > 0:
-        chs = ZNEchs
-        rot2ZNE = True
-
-    nt = st_syn[0].stats.npts
-    dt = st_syn[0].stats.delta
-    dist = st_syn[0].stats.sac['dist']
-    va = st_syn[0].stats.sac['user1']
-    vb = st_syn[0].stats.sac['user2']
-    rho = st_syn[0].stats.sac['user3']
-    Qainv = st_syn[0].stats.sac['user4']
-    Qbinv = st_syn[0].stats.sac['user5']
-
-    u, upar, u_ptrs, upar_ptrs = _prepare_dynamic_postprocess_arrays(st_syn, chs, nt)
-    resarr, res_ptrs = _prepare_dynamic_postprocess_result(nt)
-    C_grt_compute_stress(
-        nt, dt, dist, va, vb, rho, Qainv, Qbinv,
-        u_ptrs, upar_ptrs, res_ptrs, rot2ZNE)
-
-    stres = Stream()
-    for i1 in range(3):
-        c1 = chs[i1]
-        for i2 in range(i1, 3):
-            c2 = chs[i2]
-
-            tr = st_syn.select(channel=f"{c2.lower()}{c1}")[0].copy()
-            tr.data = resarr[i2, i1]
-            tr.stats.channel = tr.stats.sac['kcmpnm'] = f"{c1}{c2}"
-            stres.append(tr)
-
-    return stres
+    return _postprocess(path, "rotation", return_result)
 
 
-def _compute_static_stress(syn:dict):
-    r"""
-        Compute static stress tensor from synthetic spatial derivatives.
-
-        :param     syn:      synthetic spatial derivatives.
-
-        :return:
-            - **res** -  static stress tensor (unit: dyne/cm^2 = 0.1 Pa), in dict class.
+def compute_stress(
+    path: PathLike,
+    *,
+    return_result: bool = False,
+):
     """
- 
-    chs = ZRTchs
-    rot2ZNE:bool = False
+    Compute the stress tensor in place from synthetic spatial derivatives.
 
-    # 判断是否有标志性的分量名
-    if f"nN" in syn.keys():
-        chs = ZNEchs
-        rot2ZNE = True
+    ``path`` may be either:
 
-    norths, easts, u, upar, u_ptrs, upar_ptrs, resarr, res_ptrs = \
-        _prepare_static_postprocess_arrays(syn, chs)
-    va = syn['_rcv_va']
-    vb = syn['_rcv_vb']
-    rho = syn['_rcv_rho']
-    mu = vb*vb*rho*1e10
-    lam = va*va*rho*1e10 - 2.0*mu
+    * a dynamic synthesis directory containing SAC files, processed by
+      ``grt stress``
+    * a static synthesis NetCDF file, processed by ``grt static stress``
 
-    # 结果字典
-    resDct = {}
+    The synthesis must have been computed with ``calc_upar=True``. Results are
+    written back to the same directory or file. Stress unit is
+    dyne/cm² (= 0.1 Pa).
 
-    # 基本数据拷贝
-    for k in syn.keys():
-        if k[0] != '_':
-            continue 
-        resDct[k] = deepcopy(syn[k])
+    :param    path:               Dynamic SAC directory or static NetCDF file.
+    :param    return_result:      If true, read and return the processed result.
+                                  For a dynamic directory this reads
+                                  ``stress_*.sac`` only; for a static NetCDF file
+                                  this returns the full NetCDF dictionary.
 
-    C_grt_static_compute_stress(
-        len(norths), len(easts), norths.ctypes.data_as(PREAL), easts.ctypes.data_as(PREAL),
-        u_ptrs, upar_ptrs, res_ptrs, rot2ZNE, mu, lam)
-
-    for i1 in range(CHANNEL_NUM):
-        for i2 in range(i1, CHANNEL_NUM):
-            resDct[f"{chs[i1]}{chs[i2]}"] = resarr[i2, i1]
-
-    return resDct
-
-
-def compute_stress(st:Union[Stream,dict]):
-    r"""
-        Compute dynamic/static stress tensor from synthetic spatial derivatives.
-
-        :param     st:      synthetic spatial derivatives
-                            :class:`obspy.Stream` class for dynamic case, dict class for static case.
-
-        :return:
-            - **stres** -  dynamic/static stress tensor (unit: dyne/cm^2 = 0.1 Pa), in :class:`obspy.Stream` class or dict class.
+    :return: An :class:`obspy.Stream` or NetCDF dictionary when
+             ``return_result`` is true; otherwise ``None``.
     """
-    if isinstance(st, Stream):
-        return _compute_stress(st)
-    elif isinstance(st, dict):
-        return _compute_static_stress(st)
-    else:
-        raise NotImplementedError
+    return _postprocess(path, "stress", return_result)
 
 
-def __check_trace_attr_sac(tr:Trace, **kwargs):
-    '''
-        临时函数，检查trace中是否有sac字典，并将kwargs内容填入  
-    '''
-    if hasattr(tr.stats, 'sac'):
-        for k, v in kwargs.items():
-            tr.stats.sac[k] = v 
-    else: 
-        tr.stats.sac = AttribDict(**kwargs)
+def stream_convolve(st0: Stream, signal0: np.ndarray, inplace: bool = True) -> Stream:
+    """
+    Convolve every trace with a discrete signal.
 
+    :param    st0:            Input ObsPy stream.
+    :param    signal0:        Discrete convolution signal.
+    :param    inplace:        Whether to modify ``st0`` in place.
 
-#=================================================================================================================
-#
-#                                           卷积、微分、积分、保存SAC
-#
-#=================================================================================================================
-
-
-
-# def stream_convolve(st0:Stream, timearr:np.ndarray, inplace=True):
-#     '''
-#         频域实现线性卷
-#     '''
-#     st = st0 if inplace else deepcopy(st0)
-    
-#     sacAttr = st[0].stats.sac
-#     try:
-#         wI = sacAttr['user0']  # 虚频率
-#     except:
-#         wI = 0.0
-#     nt = sacAttr['npts']
-#     dt = sacAttr['delta']
-
-#     nt2 = len(timearr)
-#     N = nt+nt2-1
-#     nf = N//2 + 1
-
-#     wI_exp1 = np.exp(-wI*np.arange(0,nt)*dt)
-#     wI_exp2 = np.exp( wI*np.arange(0,nt)*dt)
-
-#     fft_tf = np.ones((nf, ), dtype='c16') 
-#     # if scale is None:
-#     #     scale = 1.0/np.trapz(timearr, dx=dt)
-
-#     timearr0 = timearr.copy()
-#     timearr0.resize((N,))  # 填充0
-#     timearr0[:nt] *= wI_exp1
-#     # FFT 
-#     fft_tf[:] = rfft(timearr0, N)
-#     fft_tf[:] *= dt
-    
-#     # 对每一道做相同处理
-#     for tr in st:
-#         data = tr.data
-#         # 虚频率 
-#         data[:] *= wI_exp1
-
-#         # FFT
-#         fft_d = rfft(data, N)
-
-#         # 卷积+系数
-#         fft_d[:] *= fft_tf
-
-#         # IFFT
-#         data[:] = irfft(fft_d, N)[:nt]
-
-#         # 虚频率 
-#         data[:] *= wI_exp2
-
-#     return st
-
-
-def stream_convolve(st0:Stream, signal0:np.ndarray, inplace=True):
-    '''
-        convolve each trace with a signal
-
-        :param    st0:        :class:`obspy.Stream`
-        :param    signal0:    convolution signal
-        :param    inplace:    whether change in-place  
-
-        :return:
-            - **stream** -    convolution result, :class:`obspy.Stream`
-    '''
+    :return: The convolved ObsPy stream.
+    """
     st = st0 if inplace else deepcopy(st0)
-    signal = deepcopy(signal0)
-    
-    for tr in st:
-        data = tr.data 
-        dt = tr.stats.delta
-        
-        fac = None
-        user_wI = hasattr(tr.stats, "sac") and "user0" in tr.stats.sac
-        # 使用虚频率先压制
-        if user_wI:
-            npts = tr.stats.npts
-            wI = tr.stats.sac['user0']
-            fac = np.exp(np.arange(0, npts)*dt*wI)
-            signal = deepcopy(signal0)
-
-            signal[:] /= fac[:len(signal)]
-            data[:] /= fac
-
-        data1 = np.pad(data, (len(signal)-1, 0), mode='wrap') # 强制循环卷
-        data[:] = oaconvolve(data1, signal, mode='valid')[:data.shape[0]] * dt  # dt是连续卷积的系数
-
-        if user_wI:
-            data[:] *= fac
-
+    signal = np.asarray(signal0, dtype=float)
+    for trace in st:
+        dt = trace.stats.delta
+        data = trace.data
+        if hasattr(trace.stats, "sac") and "user0" in trace.stats.sac:
+            npts = trace.stats.npts
+            w_i = trace.stats.sac["user0"]
+            factor = np.exp(np.arange(npts) * dt * w_i)
+            adjusted_signal = signal / factor[: len(signal)]
+            data[:] /= factor
+            data1 = np.pad(data, (len(signal) - 1, 0), mode="wrap")
+            data[:] = oaconvolve(data1, adjusted_signal, mode="valid")[:npts] * dt
+            data[:] *= factor
+        else:
+            data1 = np.pad(data, (len(signal) - 1, 0), mode="wrap")
+            data[:] = oaconvolve(data1, signal, mode="valid")[: len(data)] * dt
     return st
 
 
-def stream_integral(st0:Stream, inplace=True):
-    '''
-        Perform integration on each trace
-        
-        :param    st0:        :class:`obspy.Stream`
-        :param    inplace:    whether change in-place  
+def stream_integral(st0: Stream, inplace: bool = True) -> Stream:
+    """
+    Integrate every trace with the trapezoidal rule.
 
-        :return:
-            - **stream** -    integration result, :class:`obspy.Stream`
-    '''
+    :param    st0:            Input ObsPy stream.
+    :param    inplace:        Whether to modify ``st0`` in place.
+
+    :return: The integrated ObsPy stream.
+    """
     st = st0 if inplace else deepcopy(st0)
-    for tr in st:
-        dt = tr.stats.delta
-        data = tr.data 
-        lastx = data[0]
+    for trace in st:
+        dt = trace.stats.delta
+        data = trace.data
+        last = data[0]
         data[0] = 0.0
-        
-        for i in range(1, len(data)):
-            tmp = data[i]
-            data[i] = 0.5*(data[i] + lastx)*dt + data[i-1]
-            lastx = tmp
-
+        for index in range(1, len(data)):
+            current = data[index]
+            data[index] = 0.5 * (current + last) * dt + data[index - 1]
+            last = current
     return st
 
 
-def stream_diff(st0:Stream, inplace=True):
-    '''
-        Perform central difference on each trace
+def stream_diff(st0: Stream, inplace: bool = True) -> Stream:
+    """
+    Differentiate every trace with a centered finite difference.
 
-        :param    st0:        :class:`obspy.Stream`
-        :param    inplace:    whether change in-place  
+    :param    st0:            Input ObsPy stream.
+    :param    inplace:        Whether to modify ``st0`` in place.
 
-        :return:
-            - **stream** -    difference result, :class:`obspy.Stream`
-    '''
+    :return: The differentiated ObsPy stream.
+    """
     st = st0 if inplace else deepcopy(st0)
-    
-    for tr in st:
-        data = tr.data 
-        data[:] = np.gradient(data, tr.stats.delta)
-
+    for trace in st:
+        trace.data[:] = np.gradient(trace.data, trace.stats.delta)
     return st
 
 
-def stream_write_sac(st:Stream, dir:str):
-    '''
-        save each trace to "dir/{channel}.sac"
+def stream_write_sac(st: Stream, directory: PathLike) -> None:
+    """
+    Write each trace to ``directory/{channel}.sac``.
 
-        :param    st:         :class:`obspy.Stream`
-        :param    dir:        saving directory
-
-    '''
-    # 新建对应文件夹
-    os.makedirs(dir, exist_ok=True)
-
-    # 每一道的保存路径为 dir/{channel}.sac
-    for tr in st:
-        filepath = os.path.join(dir, f"{tr.stats.channel}.sac")
-        tr.write(filepath, format='SAC')
-
-
-
+    :param    st:             ObsPy stream to write.
+    :param    directory:      Directory for the SAC files.
+    """
+    directory = Path(directory)
+    directory.mkdir(parents=True, exist_ok=True)
+    for trace in st:
+        trace.write(str(directory / f"{trace.stats.channel}.sac"), format="SAC")
 
 
 #=================================================================================================================
@@ -990,7 +325,7 @@ def read_statsfile(statsfile:str):
     if len(Lst) != 1:
         raise OSError(f"{statsfile} should only match one file, but {len(Lst)} matched.")
     statsfile = Lst[0]
-    print(f"raed in {statsfile}.")
+    print(f"read in {statsfile}.")
 
     basename = os.path.basename(statsfile)
 
@@ -1019,7 +354,7 @@ def read_kernels_freqs(statsdir:str, vels:Union[np.ndarray,None]=None, ktypes:Un
         :param        vels:         When a positive-order vels (km/s) is specified, files starting with `K_` are read 
                                     and linear interpolation from wavenumber to phase velocity is performed.
                                     Otherwise read the files starting with `C_`
-        :param        ktype:        Specify the return of a series of kernel function names, 
+        :param        ktypes:       Specify the return of a series of kernel function names,
                                     such as `EX_q`, `DS_w`, etc. By default, all are returned
 
         :return:
@@ -1294,7 +629,7 @@ def plot_statsdata(statsdata:np.ndarray, dist:float, srctype:str, ptype:str, Ror
             ax3.plot(karr, np.real(Parr), lw=0.8, label='Real') 
         else:
             ax3.plot(karr, np.imag(Parr), lw=0.8, label='Imag') 
-    ax3.set_title(f'$\sum_k$ {FJname}')
+    ax3.set_title(rf'$\sum_k$ {FJname}')
     ax3.set_xlabel("k /$km^{-1}$")
     ax3.grid()
     ax3.legend(loc='lower left')
@@ -1302,7 +637,7 @@ def plot_statsdata(statsdata:np.ndarray, dist:float, srctype:str, ptype:str, Ror
     return fig, (ax1, ax2, ax3)
 
 
-def plot_statsdata_ptam(statsdata1:np.ndarray, statsdata2:np.ndarray, statsdata_ptam:np.ndarray, 
+def plot_statsdata_ptam(statsdata1:np.ndarray, statsdata2:np.ndarray, statsdata_ptam:np.ndarray,
                         dist:float, srctype:str, ptype:str, RorI:Union[bool,int]=True,
                         fig:Union[Figure,None]=None, axs:Union[Axes,None]=None):
     r'''
@@ -1403,11 +738,10 @@ def plot_statsdata_ptam(statsdata1:np.ndarray, statsdata2:np.ndarray, statsdata_
             ax3.plot(ptKarr, np.imag(ptFJarr), 'r+', markersize=6)
     
 
-    ax3.set_title(f'$\sum_k$ {FJname}')
+    ax3.set_title(rf'$\sum_k$ {FJname}')
     ax3.set_xlabel("k /$km^{-1}$")
     ax3.grid()
     ax3.legend(loc='lower left')
-
 
     return fig, (ax1, ax2, ax3)
 
