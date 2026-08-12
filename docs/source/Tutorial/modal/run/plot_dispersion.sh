@@ -20,7 +20,7 @@ function _plot(){
     c1=$(echo "scale=1; $minc - ($maxc - $minc) * 0.05" | bc)
     c2=$(echo "scale=1; $maxc + ($maxc - $minc) * 0.05" | bc)
 
-    rm $JUNK
+    rm -rf $JUNK
 
     gmt basemap -R0/$maxfreq/$c1/$c2 -JX10c/7c -Bxa1f+l"Frequency (Hz)" -Bya0.2f+l"Phase velocity (km/s)" -BWSen+t"$title" $args
     for i in $(seq 0 $maxmode); do
@@ -38,4 +38,4 @@ gmt begin $filename pdf
 gmt end
 
 pdf2svg $filename.pdf $filename.svg
-rm $filename.pdf
+rm -rf $filename.pdf

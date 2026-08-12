@@ -20,4 +20,4 @@ done
 
 # 删除下载的脚本
 tar -tf pygrt-tests.tar.gz | awk -F/ '{print $1}' | uniq | xargs rm -rf
-rm pygrt-tests.tar.gz
+rm -rf pygrt-tests.tar.gz

@@ -194,7 +194,7 @@ gmt end
 for pdfname in $(ls *.pdf); do
     name=$(basename $pdfname .pdf)
     pdf2svg $pdfname ${name}.svg
-    rm -r $pdfname
+    rm -rf $pdfname
 done
 
 rm -rf stgrn* stsyn*

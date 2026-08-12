@@ -29,7 +29,7 @@ cat > tfile <<EOF
 0.16    0.0
 EOF
 grt syn -GGRN/milrow_2_3_10 -A22 -S1e20 -D0/tfile -Osyn 
-rm tfile
+rm -rf tfile
 
 grt syn -GGRN/milrow_2_3_10 -A22 -S1e20 -M33/44/55 -I1 -Osyn 
 grt syn -GGRN/milrow_2_3_10 -A22 -S1e20 -M33/44/55 -J1 -Osyn 

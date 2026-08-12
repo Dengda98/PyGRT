@@ -9,4 +9,4 @@ grt eigenfn -Cphase_R.nc -F1 -N0/10 -Wegn_R.nc+z0/40/0.1 -Ugroup_R.nc -K+ccsens.
 grt disp2asc -Ugroup_R.nc -N > group_R.txt
 
 
-rm *.nc *.txt
+rm -rf *.nc *.txt

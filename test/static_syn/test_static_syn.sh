@@ -19,4 +19,4 @@ grt static syn -S1e20 -F2/-1/4 -N -e -Gstgrn.nc -Ostsyn.nc
 
 python -u test_static_syn.py
 
-rm *.nc
+rm -rf *.nc
