@@ -47,7 +47,8 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     // 暂不支持设置其它参数
 }
 
-void grt_static_compute_strain(
+/** 由静态位移偏导合成应变张量 */
+static void compute_strain(
     size_t nnorth, size_t neast, const real_t *norths, const real_t *easts,
     real_t *const u[GRT_CHANNEL_NUM],
     real_t *const upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM],
@@ -188,7 +189,7 @@ int static_strain_main(int argc, char **argv){
         }
     }
 
-    grt_static_compute_strain(nnorth, neast, norths, easts, u, upar, res, rot2ZNE);
+    compute_strain(nnorth, neast, norths, easts, u, upar, res, rot2ZNE);
 
     // 写入 nc 文件
     for(int c=0; c<GRT_CHANNEL_NUM; ++c){

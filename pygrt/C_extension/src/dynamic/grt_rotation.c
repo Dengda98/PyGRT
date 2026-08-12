@@ -51,7 +51,8 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     GRTCheckOptionSet(argc > 1);
 }
 
-void grt_compute_rotation(
+/** 由位移偏导合成旋转张量 */
+static void compute_rotation(
     size_t npts, float dist, float *const u[GRT_CHANNEL_NUM],
     float *const upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM],
     float *const res[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM], bool rot2ZNE)
@@ -131,7 +132,7 @@ int rotation_main(int argc, char **argv){
             res[c2][c] = calloc(npts, sizeof(*res[c2][c]));
         }
     }
-    grt_compute_rotation(npts, dist, u, upar, res, rot2ZNE);
+    compute_rotation(npts, dist, u, upar, res, rot2ZNE);
 
     // 写出3个分量
     for(int i1=0; i1<2; ++i1){

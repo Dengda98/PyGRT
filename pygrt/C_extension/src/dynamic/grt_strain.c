@@ -49,7 +49,8 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     GRTCheckOptionSet(argc > 1);
 }
 
-void grt_compute_strain(
+/** 由位移偏导合成应变张量 */
+static void compute_strain(
     size_t npts, float dist, float *const u[GRT_CHANNEL_NUM],
     float *const upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM],
     float *const res[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM], bool rot2ZNE)
@@ -133,7 +134,7 @@ int strain_main(int argc, char **argv){
             res[c2][c] = calloc(npts, sizeof(*res[c2][c]));
         }
     }
-    grt_compute_strain(npts, dist, u, upar, res, rot2ZNE);
+    compute_strain(npts, dist, u, upar, res, rot2ZNE);
 
     // 写出6个分量
     for(int i1=0; i1<3; ++i1){

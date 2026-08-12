@@ -567,10 +567,10 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 
 
 /**
- * 静态积分前准备：默认 Length，填充 K_INTEG_PROCESS。
- * 不分配输出缓冲，不处理 stats 路径。
+ * 静态积分前准备：默认 Length，填充 K_INTEG_PROCESS
+ * 不分配输出缓冲，不处理 stats 路径
  */
-void grt_prepare_static_grn(
+static void prepare_static_grn(
     MODEL1D *mod1d,
     size_t nr, real_t *rs,
     real_t Length,
@@ -649,7 +649,7 @@ int static_greenfn_main(int argc, char **argv){
     realChnlGrid *grn_uir = (Ctrl->e.active)? (realChnlGrid *) calloc(Ctrl->nr, sizeof(*grn_uir)) : NULL;
 
     K_INTEG_PROCESS KPROC = {0};
-    grt_prepare_static_grn(
+    prepare_static_grn(
         mod1d,
         Ctrl->nr, Ctrl->rs,
         Ctrl->L.Length,

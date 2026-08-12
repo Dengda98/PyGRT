@@ -393,8 +393,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 
 
 /**
- * 在单个震中距点上，由静态格林函数合成三分量（及可选空间偏导）。
- * 逻辑对应动态解的 grt_syn_from_gf，但数据为标量场而非时序。
+ * 在单个震中距点上，由静态格林函数合成三分量（及可选空间偏导）
  */
 static void static_syn_from_gf_one(
     real_t azrad, size_t ir_pick, real_t dist0,
@@ -468,16 +467,15 @@ static void static_syn_from_gf_one(
 
 
 /**
- * 由静态格林函数合成三分量位移场（及可选空间偏导）。
+ * 由静态格林函数合成三分量位移场（及可选空间偏导）
  *
- * 对应动态解的 grt_syn_from_gf。输入 nc 虽以 north/east 存储，
- * 合成时按 r=hypot(north,east) 做一维震中距插值；可换到新的接收点
- * north/east 网格。r=0 时强制方位角为 0（e_r→N、e_θ→E）
+ * 输入 nc 虽以 north/east 存储，合成时按 r=hypot(north,east) 做一维震中距插值；
+ * 可换到新的接收点 north/east 网格。r=0 时强制方位角为 0（e_r→N、e_θ→E）
  *
  * 数组布局：u[采样点][震源][分量]、syn[接收点][分量]、
  * syn_upar[接收点][偏导方向][分量]。uiz/uir 在 calc_upar=false 时可传 NULL
  */
-void grt_static_syn_from_gf(
+static void static_syn_from_gf(
     size_t nnorth0, const real_t *norths0, size_t neast0, const real_t *easts0,
     size_t nnorth, const real_t *norths, size_t neast, const real_t *easts,
     const realChnlGrid *u, const realChnlGrid *uiz, const realChnlGrid *uir,
@@ -770,7 +768,7 @@ int static_syn_main(int argc, char **argv){
     real_t (*syn)[GRT_CHANNEL_NUM] = (real_t (*)[GRT_CHANNEL_NUM])calloc(nr, sizeof(real_t)*GRT_CHANNEL_NUM);
     real_t (*syn_upar)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM] = (real_t (*)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])calloc(nr, sizeof(real_t)*GRT_CHANNEL_NUM*GRT_CHANNEL_NUM);
     
-    grt_static_syn_from_gf(
+    static_syn_from_gf(
         nnorth0, norths0, neast0, easts0, 
         nnorth, norths, neast, easts, 
         grn, grn_uiz, grn_uir, 

@@ -53,13 +53,8 @@ typedef struct {
     struct {
         bool active;
         size_t nt;
-        size_t nf;
         real_t dt;
-        real_t df;
-        real_t winT;  ///< 时窗长度 
-        real_t zeta;  ///< 虚频率系数， w <- w - zeta*PI/r* 1j
-        real_t wI;    ///< 虚频率  zeta*PI/r
-        real_t *freqs;
+        real_t zeta;  ///< 虚频率系数， w <- w - zeta*PI/T * 1j
         size_t upsample_n;  ///< 升采样倍数
         bool keepAllFreq;    ///< 计算所有频率，不论频率多低
         bool skipImagComps;  ///< 跳过虚频率的补偿
@@ -74,8 +69,6 @@ typedef struct {
         bool active;
         real_t freq1;
         real_t freq2;
-        size_t nf1;
-        size_t nf2;
     } H;
     /** 波数积分间隔以及方法 */
     struct {
@@ -162,9 +155,6 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
     // D
     GRT_SAFE_FREE_PTR(Ctrl->D.s_depsrc);
     GRT_SAFE_FREE_PTR(Ctrl->D.s_deprcv);
-
-    // N
-    GRT_SAFE_FREE_PTR(Ctrl->N.freqs);
 
     // O
     GRT_SAFE_FREE_PTR(Ctrl->O.s_output_dir);
@@ -851,11 +841,11 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 
 
 /**
- * 频谱积分前的共享准备：自动 Length、wI、频点网格、nf1/nf2、填充 KPROC 与 GRNSPEC 元数据。
- * grn->freqs 由本函数 malloc，调用方负责释放；grn->rs 借用调用方指针。
- * 不分配 u/uiz/uir，不处理 stats 路径。
+ * 频谱积分前准备：自动 Length、wI、频点网格、nf1/nf2、填充 KPROC 与 GRNSPEC 元数据
+ * grn->freqs 由本函数 malloc，调用方负责释放；grn->rs 借用调用方指针
+ * 不分配 u/uiz/uir，不处理 stats 路径
  */
-void grt_prepare_grn_spec(
+static void prepare_grn_spec(
     MODEL1D *mod1d,
     size_t nr, real_t *rs,
     size_t nt, real_t dt, real_t zeta, bool keepAllFreq,
@@ -989,7 +979,7 @@ int greenfn_main(int argc, char **argv) {
     K_INTEG_PROCESS KPROC = {0};
     GRNSPEC grn_storage = {0};
     GRNSPEC *grn = &grn_storage;
-    grt_prepare_grn_spec(
+    prepare_grn_spec(
         mod1d,
         Ctrl->R.nr, Ctrl->R.rs,
         Ctrl->N.nt, Ctrl->N.dt, Ctrl->N.zeta, Ctrl->N.keepAllFreq,
@@ -1004,19 +994,12 @@ int greenfn_main(int argc, char **argv) {
         Ctrl->e.active,
         &KPROC, grn);
 
-    // 写回 Ctrl，供后续 IFFT/SAC/free_Ctrl 使用
-    Ctrl->N.winT = Ctrl->N.nt * Ctrl->N.dt;
-    Ctrl->N.nf = grn->nf;
-    Ctrl->N.df = 1.0 / Ctrl->N.winT;
-    Ctrl->N.freqs = grn->freqs;
-    Ctrl->N.wI = grn->wI;
-    Ctrl->H.nf1 = grn->nf1;
-    Ctrl->H.nf2 = grn->nf2;
+    real_t df = 1.0 / (Ctrl->N.nt * Ctrl->N.dt);
 
     // 如果只传入了 -S, 未指定索引，则默认所有频率索引
     if(Ctrl->S.active && Ctrl->S.statsidxs == NULL){
         // 另外两个字符相关的指针仍指向 NULL
-        Ctrl->S.nstatsidxs = Ctrl->N.nf;
+        Ctrl->S.nstatsidxs = grn->nf;
         Ctrl->S.statsidxs = (size_t*)realloc(Ctrl->S.statsidxs, sizeof(size_t)*(Ctrl->S.nstatsidxs));
         for(size_t i=0; i < Ctrl->S.nstatsidxs; ++i){
             Ctrl->S.statsidxs[i] = i;
@@ -1047,7 +1030,7 @@ int greenfn_main(int argc, char **argv) {
 
     // 使用fftw3做反傅里叶变换，并保存到 SAC 
     // 其中考虑了升采样倍数
-    GRT_FFTW_HOLDER *fh = grt_create_fftw_holder_C2R_1D(Ctrl->N.nt*Ctrl->N.upsample_n, Ctrl->N.dt/Ctrl->N.upsample_n, Ctrl->N.nf, Ctrl->N.df);
+    GRT_FFTW_HOLDER *fh = grt_create_fftw_holder_C2R_1D(Ctrl->N.nt*Ctrl->N.upsample_n, Ctrl->N.dt/Ctrl->N.upsample_n, grn->nf, df);
 
     // 建立 SAC 文件原型，包含必要的头变量
     SACTRACE *sac = grt_new_SACTRACE(fh->dt, fh->nt, 0.0);
@@ -1058,7 +1041,7 @@ int greenfn_main(int argc, char **argv) {
     sac->hd.evdp = Ctrl->D.depsrc; // km
     sac->hd.stel = (-1.0)*Ctrl->D.deprcv*1e3; // m
     // 写入虚频率
-    sac->hd.user0 = Ctrl->N.wI;
+    sac->hd.user0 = grn->wI;
     // 写入接受点的Vp,Vs,rho
     sac->hd.user1 = mod1d->Va[mod1d->ircv];
     sac->hd.user2 = mod1d->Vb[mod1d->ircv];
@@ -1112,6 +1095,7 @@ int greenfn_main(int argc, char **argv) {
 
     // 释放内存
     grt_grnspec_free_u(grn);
+    GRT_SAFE_FREE_PTR(grn->freqs);
     GRT_SAFE_FREE_PTR(travtPS);
     GRT_SAFE_FREE_PTR(begintimes);
     grt_free_SACTRACE(sac);
