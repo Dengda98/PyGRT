@@ -122,6 +122,7 @@ typedef double complex cplx_t;
 #define GRT_MORDER_MAX   2    ///< 2, 代码中阶数m的最大值
 #define GRT_SRC_M_NUM    6   ///< 6, 代码中不同震源、不同阶数的个数
 #define GRT_MECHANISM_NUM   6   ///<  6, 描述震源机制的最多参数
+#define GRT_MODARR_NCOL  6   ///< 6, 模型矩阵列数：Thk, Va, Vb, Rho, Qa, Qb
 
 #define GRT_PTAM_PT_MAX   36         ///< 36， 最后统计波峰波谷的目标数量
 #define GRT_PTAM_WINDOW_SIZE  3      ///< 3，  使用连续点数判断是否为波峰或波谷
