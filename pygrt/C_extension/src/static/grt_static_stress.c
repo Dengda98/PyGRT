@@ -23,13 +23,22 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
 static void print_help(){
 printf("\n"
 "[grt static stress] %s\n\n", GRT_VERSION);printf(
-"    Conbine spatial derivatives of static displacements\n"
-"    into stress tensor (unit: dyne/cm^2 = 0.1 Pa), .\n"
+"    Combine spatial derivatives of static displacements\n"
+"    into stress tensor (unit: dyne/cm^2 = 0.1 Pa),\n"
 "    and write into the same nc file.\n"
+"    Input must be a static syn NetCDF computed with -e.\n"
+"    Both grid (-X/-Y) and points (-Q) layouts are supported.\n"
+"    For points layout, lame parameters are taken per receiver\n"
+"    from rcv_va/rcv_vb/rcv_rho stored in the syn file.\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
 "    grt static stress <ingrid>\n"
+"\n"
+"Examples:\n"
+"----------------------------------------------------------------\n"
+"    grt static syn -Gstgrn.nc -Su1e16 -e -Ostsyn.nc\n"
+"    grt static stress stsyn.nc\n"
 "\n\n\n"
 );
 }
@@ -50,40 +59,55 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 
 /** 由静态位移偏导合成应力张量 */
 static void compute_stress(
-    size_t nnorth, size_t neast, const real_t *norths, const real_t *easts,
+    size_t npts, const real_t *norths, const real_t *easts,
     real_t *const u[GRT_CHANNEL_NUM],
     real_t *const upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM],
     real_t *const res[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM],
-    bool rot2ZNE, real_t mu, real_t lam)
+    bool rot2ZNE, const real_t *mu, const real_t *lam)
 {
     const char *chs = rot2ZNE ? GRT_ZNE_CODES : GRT_ZRT_CODES;
 
-    for(size_t ix=0; ix<nnorth; ++ix){
-        for(size_t iy=0; iy<neast; ++iy){
-            size_t ir = iy + ix*neast;
-            real_t dist = hypot(norths[ix], easts[iy]);
-            // 联络项（1e-5: km→cm）：r≠0 用 u/r；r=0 改用 ∂_r u，与 syn 中 (1/r)∂_θ 有限部分配套
-            real_t ur_over_r = GRT_IS_ZERO(dist) ? upar[1][1][ir] : (u[1][ir] / dist * 1e-5);
-            real_t ut_over_r = GRT_IS_ZERO(dist) ? upar[1][2][ir] : (u[2][ir] / dist * 1e-5);
+    for(size_t ir=0; ir<npts; ++ir){
+        real_t dist = hypot(norths[ir], easts[ir]);
+        // 联络项（1e-5: km→cm）：r≠0 用 u/r；r=0 改用 ∂_r u，与 syn 中 (1/r)∂_θ 有限部分配套
+        real_t ur_over_r = GRT_IS_ZERO(dist) ? upar[1][1][ir] : (u[1][ir] / dist * 1e-5);
+        real_t ut_over_r = GRT_IS_ZERO(dist) ? upar[1][2][ir] : (u[2][ir] / dist * 1e-5);
 
-            real_t lam_ukk = upar[0][0][ir] + upar[1][1][ir] + upar[2][2][ir];
-            if(!rot2ZNE)  lam_ukk += ur_over_r;
-            lam_ukk *= lam;
+        real_t mu_i = mu[ir];
+        real_t lam_i = lam[ir];
+        real_t lam_ukk = upar[0][0][ir] + upar[1][1][ir] + upar[2][2][ir];
+        if(!rot2ZNE)  lam_ukk += ur_over_r;
+        lam_ukk *= lam_i;
 
-            for(int c=0; c<GRT_CHANNEL_NUM; ++c){
-                for(int c2=c; c2<GRT_CHANNEL_NUM; ++c2){
-                    real_t val = mu * (upar[c2][c][ir] + upar[c][c2][ir]);
-                    if(c == c2)  val += lam_ukk;
-                    if(chs[c]=='R' && chs[c2]=='T'){
-                        val -= mu * ut_over_r;
-                    }
-                    else if(chs[c]=='T' && chs[c2]=='T'){
-                        val += 2.0 * mu * ur_over_r;
-                    }
-                    res[c2][c][ir] = val;
+        for(int c=0; c<GRT_CHANNEL_NUM; ++c){
+            for(int c2=c; c2<GRT_CHANNEL_NUM; ++c2){
+                real_t val = mu_i * (upar[c2][c][ir] + upar[c][c2][ir]);
+                if(c == c2)  val += lam_ukk;
+                if(chs[c]=='R' && chs[c2]=='T'){
+                    val -= mu_i * ut_over_r;
                 }
+                else if(chs[c]=='T' && chs[c2]=='T'){
+                    val += 2.0 * mu_i * ur_over_r;
+                }
+                res[c2][c][ir] = val;
             }
         }
+    }
+}
+
+
+/** 由全局属性读取标量 rcv_va/vb/rho，填满 mu/lam 数组 */
+static void fill_mu_lam_from_global_atts(int ncid, size_t npts, real_t *mu, real_t *lam)
+{
+    real_t rcv_va=0.0, rcv_vb=0.0, rcv_rho=0.0;
+    NC_CHECK(NC_FUNC_REAL(nc_get_att) (ncid, NC_GLOBAL, "rcv_va", &rcv_va));
+    NC_CHECK(NC_FUNC_REAL(nc_get_att) (ncid, NC_GLOBAL, "rcv_vb", &rcv_vb));
+    NC_CHECK(NC_FUNC_REAL(nc_get_att) (ncid, NC_GLOBAL, "rcv_rho", &rcv_rho));
+    real_t rcv_mu  = rcv_vb*rcv_vb*rcv_rho*1e10;
+    real_t rcv_lam = rcv_va*rcv_va*rcv_rho*1e10 - 2.0*rcv_mu;
+    for(size_t i = 0; i < npts; ++i){
+        mu[i]  = rcv_mu;
+        lam[i] = rcv_lam;
     }
 }
 
@@ -99,10 +123,6 @@ int static_stress_main(int argc, char **argv){
 
     // nc 文件相关变量
     int in_ncid;
-    int in_north_dimid, in_east_dimid;
-    int in_north_varid, in_east_varid;
-    const int ndims = 2;
-    int in_dimids[ndims];
     int in_syn_varids[GRT_CHANNEL_NUM];
     int in_syn_upar_varids[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
     int out_varids[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
@@ -131,33 +151,87 @@ int static_stress_main(int argc, char **argv){
         GRTRaiseError("Input grid didn't have displacement derivatives.");
     }
 
-    // 读入接收点的物性参数，计算 rcv_mu 和 rcv_lambda
-    real_t rcv_mu, rcv_lam;
-    {
-        real_t rcv_va=0.0, rcv_vb=0.0, rcv_rho=0.0;
-        NC_CHECK(NC_FUNC_REAL(nc_get_att) (in_ncid, NC_GLOBAL, "rcv_va", &rcv_va));
-        NC_CHECK(NC_FUNC_REAL(nc_get_att) (in_ncid, NC_GLOBAL, "rcv_vb", &rcv_vb));
-        NC_CHECK(NC_FUNC_REAL(nc_get_att) (in_ncid, NC_GLOBAL, "rcv_rho", &rcv_rho));
-        rcv_mu = rcv_vb*rcv_vb*rcv_rho*1e10;
-        rcv_lam = rcv_va*rcv_va*rcv_rho*1e10 - 2.0*rcv_mu;
+    // 识别 grid / points 布局，展开为长度 npts 的坐标
+    bool is_points = grt_recv_nc_is_points(in_ncid);
+    size_t npts;
+    real_t *norths_flat = NULL, *easts_flat = NULL;
+    int out_ndims;
+    int out_dimids[2];
+
+    if(is_points){
+        int point_dimid, north_varid, east_varid;
+        NC_CHECK(nc_inq_dimid(in_ncid, "point", &point_dimid));
+        NC_CHECK(nc_inq_dimlen(in_ncid, point_dimid, &npts));
+        norths_flat = (real_t *)calloc(npts, sizeof(real_t));
+        easts_flat  = (real_t *)calloc(npts, sizeof(real_t));
+        NC_CHECK(nc_inq_varid(in_ncid, "north", &north_varid));
+        NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, north_varid, norths_flat));
+        NC_CHECK(nc_inq_varid(in_ncid, "east", &east_varid));
+        NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, east_varid, easts_flat));
+        out_ndims = 1;
+        out_dimids[0] = point_dimid;
+    } else {
+        int north_dimid, east_dimid, north_varid, east_varid;
+        size_t nnorth, neast;
+        NC_CHECK(nc_inq_dimid(in_ncid, "north", &north_dimid));
+        NC_CHECK(nc_inq_dimlen(in_ncid, north_dimid, &nnorth));
+        NC_CHECK(nc_inq_dimid(in_ncid, "east", &east_dimid));
+        NC_CHECK(nc_inq_dimlen(in_ncid, east_dimid, &neast));
+
+        real_t *norths = (real_t *)calloc(nnorth, sizeof(real_t));
+        real_t *easts  = (real_t *)calloc(neast, sizeof(real_t));
+        NC_CHECK(nc_inq_varid(in_ncid, "north", &north_varid));
+        NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, north_varid, norths));
+        NC_CHECK(nc_inq_varid(in_ncid, "east", &east_varid));
+        NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, east_varid, easts));
+
+        npts = nnorth * neast;
+        norths_flat = (real_t *)calloc(npts, sizeof(real_t));
+        easts_flat  = (real_t *)calloc(npts, sizeof(real_t));
+        for(size_t inorth = 0; inorth < nnorth; ++inorth){
+            for(size_t ieast = 0; ieast < neast; ++ieast){
+                size_t ipt = ieast + inorth * neast;
+                norths_flat[ipt] = norths[inorth];
+                easts_flat[ipt]  = easts[ieast];
+            }
+        }
+        GRT_SAFE_FREE_PTR(norths);
+        GRT_SAFE_FREE_PTR(easts);
+
+        out_ndims = 2;
+        out_dimids[0] = north_dimid;
+        out_dimids[1] = east_dimid;
     }
 
-    // 读入坐标变量 dimid, varid
-    size_t nnorth, neast;
-    NC_CHECK(nc_inq_dimid(in_ncid, "north", &in_north_dimid));
-    NC_CHECK(nc_inq_dimlen(in_ncid, in_north_dimid, &nnorth));
-    NC_CHECK(nc_inq_dimid(in_ncid, "east", &in_east_dimid));
-    NC_CHECK(nc_inq_dimlen(in_ncid, in_east_dimid, &neast));
-    in_dimids[0] = in_north_dimid;
-    in_dimids[1] = in_east_dimid;
-
-    // 读取坐标变量
-    real_t *norths = (real_t *)calloc(nnorth, sizeof(real_t));
-    real_t *easts = (real_t *)calloc(neast, sizeof(real_t));
-    NC_CHECK(nc_inq_varid(in_ncid, "north", &in_north_varid));
-    NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_north_varid, norths));
-    NC_CHECK(nc_inq_varid(in_ncid, "east", &in_east_varid));
-    NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_east_varid, easts));
+    // 逐点物性参数 mu/lam
+    real_t *mu  = (real_t *)calloc(npts, sizeof(real_t));
+    real_t *lam = (real_t *)calloc(npts, sizeof(real_t));
+    if(is_points){
+        int va_varid;
+        if(nc_inq_varid(in_ncid, "rcv_va", &va_varid) == NC_NOERR){
+            int vb_varid, rho_varid;
+            real_t *rcv_va  = (real_t *)calloc(npts, sizeof(real_t));
+            real_t *rcv_vb  = (real_t *)calloc(npts, sizeof(real_t));
+            real_t *rcv_rho = (real_t *)calloc(npts, sizeof(real_t));
+            NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, va_varid, rcv_va));
+            NC_CHECK(nc_inq_varid(in_ncid, "rcv_vb", &vb_varid));
+            NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, vb_varid, rcv_vb));
+            NC_CHECK(nc_inq_varid(in_ncid, "rcv_rho", &rho_varid));
+            NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, rho_varid, rcv_rho));
+            for(size_t i = 0; i < npts; ++i){
+                mu[i]  = rcv_vb[i]*rcv_vb[i]*rcv_rho[i]*1e10;
+                lam[i] = rcv_va[i]*rcv_va[i]*rcv_rho[i]*1e10 - 2.0*mu[i];
+            }
+            GRT_SAFE_FREE_PTR(rcv_va);
+            GRT_SAFE_FREE_PTR(rcv_vb);
+            GRT_SAFE_FREE_PTR(rcv_rho);
+        } else {
+            // 无逐点变量时回退到全局属性
+            fill_mu_lam_from_global_atts(in_ncid, npts, mu, lam);
+        }
+    } else {
+        fill_mu_lam_from_global_atts(in_ncid, npts, mu, lam);
+    }
 
     // 读入合成位移偏导 varid
     for(int c=0; c<GRT_CHANNEL_NUM; ++c){
@@ -181,7 +255,7 @@ int static_stress_main(int argc, char **argv){
         for(int c2=c; c2<GRT_CHANNEL_NUM; ++c2){
             // 这里命名顺序要注意，例如 ZR -> mu*(u_{z,r} + u_{r,z})
             GRT_SAFE_ASPRINTF(&s_title, "stress_%c%c", toupper(chs[c]), toupper(chs[c2]));
-            NC_CHECK(nc_def_var(in_ncid, s_title, NC_REAL, ndims, in_dimids, &out_varids[c2][c]));
+            NC_CHECK(nc_def_var(in_ncid, s_title, NC_REAL, out_ndims, out_dimids, &out_varids[c2][c]));
         }
         GRT_SAFE_FREE_PTR(s_title);
     }
@@ -189,25 +263,22 @@ int static_stress_main(int argc, char **argv){
     // 结束定义模式
     NC_CHECK(nc_enddef(in_ncid));
 
-    // 总震中距数
-    size_t nr = nnorth * neast;
-
-    // 先读入内存，
+    // 先读入内存
     real_t *u[GRT_CHANNEL_NUM];
     real_t *upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
     // 计算结果
     real_t *res[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
     for(int c=0; c<GRT_CHANNEL_NUM; ++c){
-        u[c] = (real_t *)calloc(nr, sizeof(real_t));
+        u[c] = (real_t *)calloc(npts, sizeof(real_t));
         NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_syn_varids[c], u[c]));
         for(int c2=0; c2<GRT_CHANNEL_NUM; ++c2){
-            res[c2][c] = (real_t *)calloc(nr, sizeof(real_t));
-            upar[c2][c] = (real_t *)calloc(nr, sizeof(real_t));
+            res[c2][c] = (real_t *)calloc(npts, sizeof(real_t));
+            upar[c2][c] = (real_t *)calloc(npts, sizeof(real_t));
             NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_syn_upar_varids[c2][c], upar[c2][c]));
         }
     }
-    
-    compute_stress(nnorth, neast, norths, easts, u, upar, res, rot2ZNE, rcv_mu, rcv_lam);
+
+    compute_stress(npts, norths_flat, easts_flat, u, upar, res, rot2ZNE, mu, lam);
 
     // 写入 nc 文件
     for(int c=0; c<GRT_CHANNEL_NUM; ++c){
@@ -215,11 +286,14 @@ int static_stress_main(int argc, char **argv){
             NC_CHECK(NC_FUNC_REAL(nc_put_var) (in_ncid, out_varids[c2][c], res[c2][c]));
         }
     }
-    
 
     // 关闭文件
     NC_CHECK(nc_close(in_ncid));
 
+    GRT_SAFE_FREE_PTR(norths_flat);
+    GRT_SAFE_FREE_PTR(easts_flat);
+    GRT_SAFE_FREE_PTR(mu);
+    GRT_SAFE_FREE_PTR(lam);
     GRT_SAFE_FREE_PTR(s_ingrid);
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;

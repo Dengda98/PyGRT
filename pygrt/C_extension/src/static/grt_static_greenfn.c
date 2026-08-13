@@ -195,9 +195,10 @@ printf("\n"
 "\n"
 "    -R<r1>,<r2>[,...]|<r1>/<r2>/<dr>|<file>\n"
 "                 Multiple epicentral distances (km), support three ways:\n"
-"                 + <r1>,<r2>[,...]: seperated by comma.\n"
+"                 + <r1>,<r2>[,...]: seperated by comma (strictly ascending).\n"
 "                 + <r1>/<r2>/<dr>:  equal distance <dr> within [r1,r2].\n"
-"                 + <file>: each line contains a distance value.\n"
+"                 + <file>: each line contains a distance value\n"
+"                   (must be strictly ascending).\n"
 "\n"
 "    -O<outgrid>  Filepath to output nc grid.\n"
 "\n"
@@ -623,6 +624,12 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     }
                     GRT_SAFE_FREE_PTR_ARRAY(s_easts, Ctrl->Y.neast);
 
+                    for(size_t i = 1; i < Ctrl->Y.neast; ++i){
+                        if(!(Ctrl->Y.easts[i] > Ctrl->Y.easts[i - 1])){
+                            GRTBadOptionError(R, "Epicentral distances must be strictly ascending.");
+                        }
+                    }
+
                     Ctrl->X.nnorth = 1;
                     Ctrl->X.norths = (real_t*)calloc(Ctrl->X.nnorth, sizeof(real_t));
                     Ctrl->X.norths[0] = 0.0;
@@ -750,7 +757,7 @@ static void copy_grn_slice_with_sign(
  * 循环计算多震源/接收深度静态格林函数并写入单个四维 nc
  *
  * Kproc 须已由 prepare_static_grn 填好深度无关字段；
- * 循环内按各 (depsrc, deprcv) 的 hs 更新局部拷贝的 k0，避免积分过程改写模板
+ * 循环内按各 (depsrc, deprcv) 的 hs 更新局部拷贝的 k0
  */
 static void compute_stgrnlib_to_nc(
     const char *modelpath,
@@ -760,7 +767,7 @@ static void compute_stgrnlib_to_nc(
     size_t neast,   const real_t *easts,
     real_t k0,
     K_INTEG_PROCESS *Kproc,
-    int topbound, int botbound,
+    GRT_BOUND_TYPE topbound, GRT_BOUND_TYPE botbound,
     bool calc_upar,
     const char *outpath,
     const char *statsstr)
@@ -776,16 +783,10 @@ static void compute_stgrnlib_to_nc(
         GRTRaiseError("-S / statsstr is only available for a single source/receiver depth.");
     }
 
-    size_t nr = nnorth * neast;
-    real_t *rs = (real_t *)calloc(nr, sizeof(real_t));
-    for(size_t inorth = 0; inorth < nnorth; ++inorth){
-        for(size_t ieast = 0; ieast < neast; ++ieast){
-            rs[ieast + inorth * neast] = hypot(norths[inorth], easts[ieast]);
-        }
-    }
-
     STGRNLIB *lib = grt_stgrnlib_alloc(
         ndepsrc, depsrcs, ndeprcv, deprcvs, nnorth, norths, neast, easts, calc_upar);
+    size_t nr = lib->nr;
+    real_t *rs = lib->rs;
 
     realChnlGrid *grn = (realChnlGrid *)calloc(nr, sizeof(*grn));
     realChnlGrid *grn_uiz = calc_upar ? (realChnlGrid *)calloc(nr, sizeof(*grn_uiz)) : NULL;
@@ -804,7 +805,7 @@ static void compute_stgrnlib_to_nc(
             if((mod1d = grt_read_mod1d_from_file(modelpath, zs, zr, false)) == NULL){
                 exit(EXIT_FAILURE);
             }
-            grt_set_mod1d_boundary(mod1d, (GRT_BOUND_TYPE)topbound, (GRT_BOUND_TYPE)botbound);
+            grt_set_mod1d_boundary(mod1d, topbound, botbound);
 
             // 拷贝模板，避免 integ 改写 cvgmet/dk 等影响后续深度
             K_INTEG_PROCESS local_K = *Kproc;
@@ -831,17 +832,24 @@ static void compute_stgrnlib_to_nc(
             copy_grn_slice_with_sign(lib, is, ir, nr, calc_upar, grn, grn_uiz, grn_uir);
 
             idone++;
-            GRTRaiseInfo("static greenfn: [%zu/%zu] depsrc=%.6g deprcv=%.6g (%s) done.",
+            GRTRaiseInfo("[%zu/%zu] depsrc=%.6g deprcv=%.6g (%s) done.",
                 idone, ntot, zs, zr, modelname);
 
             grt_free_mod1d(mod1d);
         }
     }
 
+    // 将模型矩阵写入库，供后续 syn/应力按深度查层
+    {
+        size_t nlayer = 0;
+        real_t (*modarr)[GRT_MODARR_NCOL] = grt_read_modarr_from_file(modelpath, &nlayer, false);
+        grt_stgrnlib_set_modarr(lib, nlayer, (const real_t (*)[GRT_MODARR_NCOL])modarr);
+        GRT_SAFE_FREE_PTR(modarr);
+    }
+
     grt_stgrnlib_save_nc(lib, outpath);
     GRTRaiseInfo("Static Green's function library saved in \"%s\".", outpath);
 
-    GRT_SAFE_FREE_PTR(rs);
     GRT_SAFE_FREE_PTR(grn);
     GRT_SAFE_FREE_PTR(grn_uiz);
     GRT_SAFE_FREE_PTR(grn_uir);
@@ -891,7 +899,7 @@ int static_greenfn_main(int argc, char **argv){
         Ctrl->Y.neast, Ctrl->Y.easts,
         Ctrl->K.k0,
         &KPROC,
-        (int)Ctrl->B.topbound, (int)Ctrl->B.botbound,
+        Ctrl->B.topbound, Ctrl->B.botbound,
         Ctrl->e.active,
         Ctrl->O.s_outgrid,
         Ctrl->S.s_statsdir);

@@ -21,9 +21,12 @@
  * 静态格林函数库
  *
  * 数组布局：
- *   - depsrcs[ndepsrc], deprcvs[ndeprcv] 升序 (km)
- *   - norths[nnorth], easts[neast] 为 north / east 坐标 (km)
- *   - u[is][ir][ipt][im][c]，ipt = ieast + inorth*neast，nr = nnorth*neast
+ *   - depsrcs[ndepsrc], deprcvs[ndeprcv] 严格升序 (km)
+ *   - norths[nnorth], easts[neast] 为 north / east 坐标 (km)，各自严格升序
+ *   - rs[nr] 为网格序震中距，ipt = ieast + inorth*neast，nr = nnorth*neast
+ *   - sort_rs / sort_rs_idx 为 rs 的升序排列及回指网格 ipt 的索引
+ *   - isUniform / dr：网格序 rs 是否已是等距升序及其步长（同 syn 查找加速）
+ *   - u[is][ir][ipt][im][c]
  *   - 分量符号约定与 nc 文件 / Python dict 一致（Z 已取反等）
  */
 typedef struct {
@@ -38,6 +41,13 @@ typedef struct {
     real_t *norths;             ///< north 坐标 norths[nnorth]
     real_t *easts;              ///< east 坐标 easts[neast]（-R 建库时即震中距）
 
+    size_t nr;                  ///< = nnorth * neast
+    real_t *rs;                 ///< 网格序震中距 rs[nr]
+    real_t *sort_rs;            ///< 升序震中距 sort_rs[nr]
+    size_t *sort_rs_idx;        ///< sort_rs[i] 对应网格 ipt = sort_rs_idx[i]
+    bool isUniform;             ///< 网格序 rs 是否已是等距升序
+    real_t dr;                  ///< 等距步长；非等距时无意义
+
     bool calc_upar;             ///< 是否含位移空间导数
 
     real_t *src_va;             ///< 各震源深度处 P 波速 src_va[ndepsrc]
@@ -47,6 +57,9 @@ typedef struct {
     real_t *rcv_va;             ///< 各接收深度处 P 波速 rcv_va[ndeprcv]
     real_t *rcv_vb;             ///< 各接收深度处 S 波速
     real_t *rcv_rho;            ///< 各接收深度处密度
+
+    size_t nlayer;              ///< 建库模型层数
+    real_t (*modarr)[GRT_MODARR_NCOL]; ///< 模型矩阵 [nlayer][6]：Thk/Va/Vb/Rho/Qa/Qb
 
     realChnlGrid ***u;          ///< u[is][ir]，每个为 realChnlGrid[nr]
     realChnlGrid ***uiz;        ///< 可选，calc_upar=false 时为 NULL
@@ -84,6 +97,24 @@ STGRNLIB *grt_stgrnlib_alloc(
  * @param[in,out]  lib   STGRNLIB 结构体，可为 NULL
  */
 void grt_stgrnlib_free(STGRNLIB *lib);
+
+/**
+ * 设置建库模型矩阵（会拷贝一份）
+ *
+ * @param[in,out]  lib      STGRNLIB
+ * @param[in]      nlayer   层数，须 > 0
+ * @param[in]      modarr   模型矩阵，每行 Thk/Va/Vb/Rho/Qa/Qb
+ */
+void grt_stgrnlib_set_modarr(
+    STGRNLIB *lib, size_t nlayer, const real_t (*modarr)[GRT_MODARR_NCOL]);
+
+/**
+ * 由震中距与震源深度采样推断默认子断层尺寸 min(dr, dz)
+ *
+ * @param[in]   lib   STGRNLIB
+ * @return      默认 dL=dW (km)
+ */
+real_t grt_stgrnlib_default_subfault_size(const STGRNLIB *lib);
 
 /**
  * 从四维 nc 文件加载完整 STGRNLIB
