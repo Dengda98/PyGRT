@@ -115,6 +115,9 @@ expect_fail "nonpositive depth spacing" \
 expect_fail "depth start > end" \
     grt static greenfn -M../milrow -Ds3/1/1 -Dr0 -X-2/2/1 -Y-2/2/1 -Ostgrn_bad.nc
 
+expect_fail "non-ascending -R list" \
+    grt static greenfn -M../milrow -D2/0 -R3,1,2 -Ostgrn_bad.nc
+
 # -------------------- Python --------------------
 python -u test_static_greenfn.py
 

@@ -88,6 +88,16 @@ pymod_mr = pygrt.PyModel1D(modname)
 pymod_mr.set_static_grn_path("stgrn_py_mr.nc")
 pymod_mr.compute_static_grn(depsrc=2.0, deprcv=[0.0, 0.5], norths=norths_c, easts=easts_c)
 
+# -R / distarr 建库
+pymod_r = pygrt.PyModel1D(modname)
+pymod_r.set_static_grn_path("stgrn_py_r.nc")
+pymod_r.compute_static_grn(
+    depsrc=2.0, deprcv=0.0, distarr=[0.0, 1.0, 2.0, 4.0],
+)
+with netcdf_file("stgrn_py_r.nc", mmap=False) as f:
+    assert f.dimensions["north"] == 1
+    assert f.dimensions["east"] == 4
+
 # -------------------- 错误 / 警告（Python）--------------------
 try:
     pymod_m.compute_static_grn(depsrc=-1.0, deprcv=0.0, norths=norths_c, easts=easts_c)
@@ -107,6 +117,12 @@ try:
 except ValueError:
     pass
 
+try:
+    pymod_r.compute_static_grn(depsrc=2.0, deprcv=0.0, distarr=[0.0, 2.0, 1.0])
+    raise AssertionError("non-ascending distarr should raise")
+except ValueError:
+    pass
+
 # 多深度 stats 应警告并忽略
 with warnings.catch_warnings(record=True) as w:
     warnings.simplefilter("always")
@@ -118,7 +134,7 @@ with warnings.catch_warnings(record=True) as w:
 
 for name in [
     "stgrn.nc", "stgrn_py_multi.nc", "stgrn_py_ms.nc", "stgrn_py_mr.nc",
-    "stgrn_py_multi2.nc", "stgrtstats",
+    "stgrn_py_multi2.nc", "stgrn_py_r.nc", "stgrtstats",
 ]:
     p = Path(name)
     if p.is_dir():

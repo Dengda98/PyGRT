@@ -2,13 +2,18 @@
 Compare STGRNLIB nc results:
 1) CLI vs Python for single/multi source and receiver depths
 2) Multi-depth library slices vs corresponding single-depth results
+3) Synthesis from multi-depth libraries: CLI vs Python, exact-depth vs
+   single-depth library, depth-interpolation linearity, and tensor postprocess
 """
 
 from pathlib import Path
 
 import numpy as np
 import pygrt
+from pygrt.cli import format_float, run_grt
 from scipy.io import netcdf_file
+
+from compare_func import compare_nc_files
 
 # 与 shell 脚本保持一致
 NORTHS = (-2.0, 2.0, 1.0)
@@ -22,6 +27,12 @@ ATOL = 1e-10
 RTOL = 1e-8
 # 平均相对误差阈值
 MEAN_RERR_MAX = 1e-6
+SCALE = 1e20
+
+SYN_SKIP = {
+    "north", "east", "depth", "depsrc", "deprcv",
+    "rcv_va", "rcv_vb", "rcv_rho", "model",
+}
 
 
 def _coord_tag(z: float) -> str:
@@ -55,7 +66,7 @@ def compare_nc_data(a: dict, b: dict, label: str) -> float:
                 raise ValueError(f"{label}: medium mismatch on '{key}'\n"
                                  f"  a={a[key]}\n  b={b[key]}")
 
-    skip = {"depsrc", "deprcv", "north", "east", *med_keys}
+    skip = {"depsrc", "deprcv", "north", "east", "model", *med_keys}
     keys = sorted(set(a.keys()) & set(b.keys()) - skip)
     if not keys:
         raise ValueError(f"{label}: no channel variables to compare")
@@ -63,6 +74,8 @@ def compare_nc_data(a: dict, b: dict, label: str) -> float:
     errors = []
     for k in keys:
         va, vb = a[k], b[k]
+        if va.ndim != 4 or vb.ndim != 4:
+            continue
         if va.shape != vb.shape:
             raise ValueError(f"{label}: shape mismatch on '{k}': {va.shape} vs {vb.shape}")
         if np.all(va == 0.0) and np.all(vb == 0.0):
@@ -95,9 +108,11 @@ def extract_slice(lib: dict, isrc: int, ircv: int) -> dict:
         "rcv_vb": np.array([lib["rcv_vb"][ircv]], dtype=float),
         "rcv_rho": np.array([lib["rcv_rho"][ircv]], dtype=float),
     }
-    skip = set(out.keys())
+    skip = set(out.keys()) | {"model"}
     for k, v in lib.items():
         if k in skip:
+            continue
+        if getattr(v, "ndim", 0) != 4:
             continue
         # 通道数据 shape: (ndepsrc, ndeprcv, nnorth, neast)
         out[k] = v[isrc:isrc + 1, ircv:ircv + 1, :, :].copy()
@@ -111,6 +126,127 @@ def py_compute_to_nc(depsrcs, deprcvs, outpath: str):
         depsrc=depsrcs, deprcv=deprcvs, norths=NORTHS, easts=EASTS, calc_upar=True,
     )
     assert Path(outpath).is_file()
+
+
+def load_syn_fields(path: Path) -> dict:
+    """读取合成 nc 中的场量（跳过坐标与介质）"""
+    out = {}
+    with netcdf_file(str(path), mmap=False) as f:
+        for k, v in f.variables.items():
+            if k in SYN_SKIP:
+                continue
+            out[k] = np.array(v[:], dtype=float).copy()
+    return out
+
+
+def compare_syn_fields(a: dict, b: dict, label: str) -> float:
+    """比较两个合成场量字典，返回平均相对误差"""
+    keys = sorted(set(a.keys()) & set(b.keys()))
+    if not keys:
+        raise ValueError(f"{label}: no syn fields to compare")
+    errors = []
+    for k in keys:
+        va, vb = a[k], b[k]
+        if va.shape != vb.shape:
+            raise ValueError(f"{label}: shape mismatch on '{k}': {va.shape} vs {vb.shape}")
+        if np.all(va == 0.0) and np.all(vb == 0.0):
+            continue
+        denom = np.mean(np.abs(vb))
+        if denom == 0.0:
+            denom = np.mean(np.abs(va))
+        rerr = np.sum(np.abs(va - vb)) / denom
+        print(f"  {k}: {rerr:.6e}")
+        errors.append(rerr)
+    mean_err = float(np.mean(errors)) if errors else 0.0
+    print(f"{label}: mean relative error = {mean_err:.6e}")
+    if mean_err > MEAN_RERR_MAX:
+        raise ValueError(f"{label}: mean relative error too large ({mean_err})")
+    return mean_err
+
+
+def c_static_syn(grn: Path, out: Path, extra: list) -> None:
+    run_grt(["static", "syn", f"-G{grn}", f"-S{format_float(SCALE)}", f"-O{out}", *extra, "-e"])
+
+
+def py_static_syn(grn: Path, out: Path, **kwargs) -> None:
+    model = pygrt.PyModel1D(MODNAME)
+    model.set_static_grn_path(grn)
+    model.compute_static_syn(scale=SCALE, output_path=out, calc_upar=True, **kwargs)
+
+
+def compare_syn_cli_py() -> list:
+    """同一多深度库上，CLI 与 Python 合成结果应一致"""
+    errors = []
+    grn = CMPDIR / "stgrn_mm.nc"
+
+    print("\n--- syn exact depth Ds=2 Dr=0.5 ---")
+    c_out = CMPDIR / "stsyn_exact_c.nc"
+    py_out = CMPDIR / "stsyn_exact_py.nc"
+    c_static_syn(grn, c_out, ["-Ds2", "-Dr0.5"])
+    py_static_syn(grn, py_out, depsrc=2.0, deprcv=0.5)
+    errors.append(compare_nc_files(py_out, c_out))
+
+    print("\n--- syn interpolated Ds=1.5 Dr=0.25 + new XY ---")
+    c_out = CMPDIR / "stsyn_interp_c.nc"
+    py_out = CMPDIR / "stsyn_interp_py.nc"
+    xy = ["-Ds1.5", "-Dr0.25", "-X-1/1/1", "-Y-1/1/1"]
+    c_static_syn(grn, c_out, xy)
+    py_static_syn(
+        grn, py_out, depsrc=1.5, deprcv=0.25,
+        norths=(-1.0, 1.0, 1.0), easts=(-1.0, 1.0, 1.0),
+    )
+    errors.append(compare_nc_files(py_out, c_out))
+
+    print("\n--- syn -Q points ---")
+    rcv = CMPDIR / "rcv_pts.txt"
+    rcv.write_text("0 0 0\n1 1 0.5\n-1 0.5 1\n")
+    c_out = CMPDIR / "stsyn_q_c.nc"
+    py_out = CMPDIR / "stsyn_q_py.nc"
+    c_static_syn(grn, c_out, ["-Ds2", f"-Q{rcv}"])
+    py_static_syn(grn, py_out, depsrc=2.0, recv_points=rcv)
+    errors.append(compare_nc_files(py_out, c_out))
+
+    print("\n--- syn + strain/rotation/stress ---")
+    c_ten = CMPDIR / "stsyn_ten_c.nc"
+    py_ten = CMPDIR / "stsyn_ten_py.nc"
+    c_static_syn(grn, c_ten, ["-Ds2", "-Dr0.5", "-N"])
+    py_static_syn(grn, py_ten, depsrc=2.0, deprcv=0.5, zne=True)
+    run_grt(["static", "strain", str(c_ten)])
+    run_grt(["static", "rotation", str(c_ten)])
+    run_grt(["static", "stress", str(c_ten)])
+    pygrt.utils.compute_strain(py_ten)
+    pygrt.utils.compute_rotation(py_ten)
+    pygrt.utils.compute_stress(py_ten)
+    errors.append(compare_nc_files(py_ten, c_ten))
+    return errors
+
+
+def compare_syn_multi_vs_single() -> list:
+    """多深度库在节点深度上的合成，应与对应单深度库一致"""
+    print("\n--- syn multi-depth lib at Ds=2 Dr=0.5 vs single-depth lib ---")
+    mm_out = CMPDIR / "stsyn_mm_node.nc"
+    ref_out = CMPDIR / "stsyn_ref_node.nc"
+    c_static_syn(CMPDIR / "stgrn_mm.nc", mm_out, ["-Ds2", "-Dr0.5"])
+    c_static_syn(CMPDIR / "stgrn_ref_zs2_zr0p5.nc", ref_out, [])
+    return [compare_syn_fields(load_syn_fields(mm_out), load_syn_fields(ref_out),
+                               "syn multi vs single [zs=2,zr=0.5]")]
+
+
+def compare_syn_depth_linearity() -> list:
+    """线性插值：syn(1.5) 应等于 0.5*(syn(1)+syn(2))（同一 deprcv，不用 -Su）"""
+    print("\n--- syn depth interpolation linearity Ds=1.5 vs 0.5*(1+2) ---")
+    grn = CMPDIR / "stgrn_mm.nc"
+    out1 = CMPDIR / "stsyn_lin_z1.nc"
+    out2 = CMPDIR / "stsyn_lin_z2.nc"
+    outm = CMPDIR / "stsyn_lin_z15.nc"
+    c_static_syn(grn, out1, ["-Ds1", "-Dr0"])
+    c_static_syn(grn, out2, ["-Ds2", "-Dr0"])
+    c_static_syn(grn, outm, ["-Ds1.5", "-Dr0"])
+    a = load_syn_fields(out1)
+    b = load_syn_fields(out2)
+    mid = load_syn_fields(outm)
+    pred = {k: 0.5 * (a[k] + b[k]) for k in mid if k in a and k in b}
+    return [compare_syn_fields(pred, mid, "syn depth linearity [Ds=1.5]")]
 
 
 def main():
@@ -154,6 +290,15 @@ def main():
             sl = extract_slice(mm_py, isrc, ircv)
             ref = load_stgrnlib_nc(str(single_path))
             all_errs.append(compare_nc_data(sl, ref, f"multi vs single Python [zs={zs},zr={zr}]"))
+
+    print("\n================ Syn: CLI vs Python ================")
+    all_errs.extend(compare_syn_cli_py())
+
+    print("\n================ Syn: multi vs single (exact depth) ================")
+    all_errs.extend(compare_syn_multi_vs_single())
+
+    print("\n================ Syn: depth interpolation linearity ================")
+    all_errs.extend(compare_syn_depth_linearity())
 
     all_errs = np.array(all_errs, dtype=float)
     print("\n================ Summary ================")

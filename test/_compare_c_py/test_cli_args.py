@@ -437,14 +437,67 @@ def test_compute_static_syn_and_tensor_postprocess_args():
                 "static",
                 "syn",
                 f"-G{model.static_grn_path}",
-                "-Su1e+24",
                 f"-O{out}",
+                "-Su1e+24",
                 "-M33/50/120",
                 "-X-5/5/1",
                 "-Y-4/4/2",
                 "-N",
                 "-e",
             ],
+        )
+
+        # 多深度点源 + 任意接收点
+        model.compute_static_syn(
+            scale=1e20,
+            output_path=out,
+            source="EX",
+            depsrc=2.0,
+            recv_points=HERE / "rcv.txt",
+        )
+        assert_command_has(
+            runner.commands[-1],
+            "static", "syn",
+            f"-G{model.static_grn_path}",
+            f"-O{out}",
+            "-S1e+20",
+            "-Ds2",
+            f"-Q{HERE / 'rcv.txt'}",
+        )
+
+        # 多深度点源 + 新网格 + 台站深度
+        model.compute_static_syn(
+            scale=1e20,
+            output_path=out,
+            source="EX",
+            depsrc=2.0,
+            deprcv=0.5,
+            norths=[-2.0, 2.0, 1.0],
+            easts=[-2.0, 2.0, 1.0],
+        )
+        assert_command_has(
+            runner.commands[-1],
+            "static", "syn",
+            "-Ds2",
+            "-Dr0.5",
+            "-X-2/2/1",
+            "-Y-2/2/1",
+        )
+
+        # 有限断层
+        model.compute_static_syn(
+            output_path=out,
+            finite_fault=HERE / "cfaults.inp",
+            subfault_size=(1.0, 2.0),
+            calc_upar=True,
+        )
+        assert_command_has(
+            runner.commands[-1],
+            "static", "syn",
+            f"-G{model.static_grn_path}",
+            f"-O{out}",
+            f"-C{HERE / 'cfaults.inp'}+i1/2",
+            "-e",
         )
 
         # 张量后处理：目录走动态模块，文件走 static 模块
