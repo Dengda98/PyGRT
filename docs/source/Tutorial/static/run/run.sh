@@ -118,7 +118,7 @@ grt static syn -S1e24 -M33/50 -N -Gstgrn.nc -Ostsyn_ts.nc
 gmt begin syn_ts pdf
     gmtplot_static stsyn_ts.nc -Si0.03c
     gmt meca -Sz0.5c <<EOF
-0 0 2 $(python tension2mt.py 33 50 stsyn_ts.nc) 24
+0 0 2 $(python tension2mt.py 33 50 stgrn.nc) 24
 EOF
     gmt colorbar -Bx+l"Z (cm)"
 gmt end
@@ -134,7 +134,7 @@ grt static syn -S1e24 -M33/90 -N -Gstgrn.nc -Ostsyn_ts2.nc
 gmt begin syn_ts2 pdf
     gmtplot_static stsyn_ts2.nc -Si0.03c
     gmt meca -Sz0.5c <<EOF
-0 0 2 $(python tension2mt.py 33 90 stsyn_ts2.nc) 24
+0 0 2 $(python tension2mt.py 33 90 stgrn.nc) 24
 EOF
     gmt colorbar -Bx+l"Z (cm)"
 gmt end

@@ -24,7 +24,7 @@ static_grn = pygrt.utils.read_static_nc("stgrn.nc")
 print(static_grn.keys())
 # dict_keys(['dimensions', 'variables', 'attributes'])
 print(list(static_grn["variables"].keys()))
-# ['north', 'east', 'EXZ', 'EXR', ...]
+# ['model', 'depsrc', 'deprcv', 'north', 'east', 'src_va', ..., 'EXZ', 'EXR', ...]
 # END GRN
 # ---------------------------------------------------------------------------------
 

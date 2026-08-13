@@ -62,12 +62,12 @@ for isrc, (src, src2) in enumerate(zip(srctypes,
     ms = 2
     lw = 0.8
     ax.plot(distarr, dynamic_Z, 'k', lw=lw, label='Dynamic Z')
-    ax.plot(distarr, static_grn['variables'][f'{src}Z']['data'][0] * coef, 'ro', ms=ms, label='Static Z')
+    ax.plot(distarr, static_grn['variables'][f'{src}Z']['data'][0, 0, 0] * coef, 'ro', ms=ms, label='Static Z')
     ax.plot(distarr, dynamic_R, 'k', lw=lw, label='Dynamic R')
-    ax.plot(distarr, static_grn['variables'][f'{src}R']['data'][0] * coef, 'bo', ms=ms, label='Static R')
+    ax.plot(distarr, static_grn['variables'][f'{src}R']['data'][0, 0, 0] * coef, 'bo', ms=ms, label='Static R')
     if src not in ['EX', 'VF', 'DD']:
         ax.plot(distarr, dynamic_T, 'k', lw=lw, label='Dynamic T')
-        ax.plot(distarr, static_grn['variables'][f'{src}T']['data'][0] * coef, 'go', ms=ms, label='Static T')
+        ax.plot(distarr, static_grn['variables'][f'{src}T']['data'][0, 0, 0] * coef, 'go', ms=ms, label='Static T')
 
     ax.set_xlim(0, 50)
     ax.set_xlabel('Distance (km)')

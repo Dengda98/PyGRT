@@ -115,8 +115,8 @@ for i in range(5):
     ax.set_ymargin(0.3)
 
     ax = axs2[i]
-    ax.plot(easts, static1['variables'][chLst[i]]['data'][0], **prop1)
-    ax.plot(easts, static2['variables'][chLst[i]]['data'][0] * sgn, **prop2)
+    ax.plot(easts, static1['variables'][chLst[i]]['data'][0, 0, 0], **prop1)
+    ax.plot(easts, static2['variables'][chLst[i]]['data'][0, 0, 0] * sgn, **prop2)
     ax.text(0.96, 0.9, chLst[i], transform=ax.transAxes, 
             ha='right', va='top', bbox=dict(fc='w'))
     ax.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
