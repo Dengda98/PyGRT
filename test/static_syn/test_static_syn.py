@@ -10,8 +10,7 @@ norths = [-3.0, 3.0, 0.2]
 easts = [-2.0, 2.0, 0.2]
 modname = "../milrow"
 
-pymod = pygrt.PyModel1D(modname)
-pymod.set_static_grn_path("stgrn.nc")
+pymod = pygrt.PyModel1D(stgrn="stgrn.nc", modelpath=modname)
 pymod.compute_static_grn(
     depsrc=depsrc, deprcv=deprcv, norths=norths, easts=easts, calc_upar=True,
 )
@@ -44,8 +43,7 @@ pymod.compute_static_syn(
 )
 
 # -------------------- -R 建库后合成 --------------------
-pymod_r = pygrt.PyModel1D(modname)
-pymod_r.set_static_grn_path("stgrn_r.nc")
+pymod_r = pygrt.PyModel1D(stgrn="stgrn_r.nc", modelpath=modname)
 pymod_r.compute_static_grn(
     depsrc=depsrc, deprcv=deprcv, distarr=[0.0, 1.0, 2.0, 4.0, 8.0], calc_upar=True,
 )
@@ -56,8 +54,7 @@ pymod_r.compute_static_syn(
 )
 
 # -------------------- 多深度：点源 -Ds、深度插值、-Q、有限断层 --------------------
-pymod_m = pygrt.PyModel1D(modname)
-pymod_m.set_static_grn_path("stgrn_md.nc")
+pymod_m = pygrt.PyModel1D(stgrn="stgrn_md.nc", modelpath=modname)
 pymod_m.compute_static_grn(
     depsrc=[1.0, 2.0, 3.0], deprcv=0.0,
     distarr=[0.0, 1.0, 2.0, 4.0, 8.0], calc_upar=True,
@@ -92,8 +89,7 @@ pymod_m.compute_static_syn(
 )
 
 # 多台站深度必须给 deprcv
-pymod_mr = pygrt.PyModel1D(modname)
-pymod_mr.set_static_grn_path("stgrn_mr.nc")
+pymod_mr = pygrt.PyModel1D(stgrn="stgrn_mr.nc", modelpath=modname)
 pymod_mr.compute_static_grn(
     depsrc=2.0, deprcv=[0.0, 0.5], distarr=[0.0, 5.0], calc_upar=True,
 )

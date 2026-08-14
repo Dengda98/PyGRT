@@ -111,8 +111,7 @@ def run_c_dynamic(c_root: Path) -> None:
 
 def run_py_dynamic(py_root: Path) -> None:
     """Python API 计算动态结果"""
-    model = pygrt.PyModel1D(MODEL, "free", "halfspace")
-    model.set_dynamic_grn_path(py_root / "GRN")
+    model = pygrt.PyModel1D(grn=py_root / "GRN", modelpath=MODEL, topbound="free", botbound="halfspace")
     model.compute_grn(
         depsrc=DEPSRC,
         deprcv=DEPRCV,
@@ -202,8 +201,7 @@ def run_py_static(py_root: Path) -> None:
     """Python API 计算静态结果"""
     static_dir = py_root / "static"
     static_dir.mkdir(parents=True)
-    model = pygrt.PyModel1D(MODEL)
-    model.set_static_grn_path(static_dir / "stgrn.nc")
+    model = pygrt.PyModel1D(stgrn=static_dir / "stgrn.nc", modelpath=MODEL)
     model.compute_static_grn(
         depsrc=DEPSRC,
         deprcv=DEPRCV,

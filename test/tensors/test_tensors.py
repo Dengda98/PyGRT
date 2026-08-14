@@ -11,8 +11,7 @@ dt = 0.02
 modname = "../milrow"
 az = 22.0
 
-pymod = pygrt.PyModel1D(modname)
-pymod.set_dynamic_grn_path("GRN")
+pymod = pygrt.PyModel1D(grn="GRN", modelpath=modname)
 pymod.compute_grn(
     depsrc=depsrc, deprcv=deprcv, distarr=dist, nt=nt, dt=dt, calc_upar=True,
 )
@@ -34,8 +33,7 @@ pygrt.utils.compute_stress("syn_zne")
 pygrt.utils.compute_rotation("syn_zne")
 
 # -------------------- 静态应变 / 应力 / 旋转 --------------------
-pymod_s = pygrt.PyModel1D(modname)
-pymod_s.set_static_grn_path("stgrn.nc")
+pymod_s = pygrt.PyModel1D(stgrn="stgrn.nc", modelpath=modname)
 pymod_s.compute_static_grn(
     depsrc=2.0, deprcv=0.0, norths=[-3.0, 3.0, 1.0], easts=[-2.0, 2.0, 1.0],
     calc_upar=True,

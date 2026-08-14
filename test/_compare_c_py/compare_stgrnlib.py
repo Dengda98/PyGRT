@@ -120,8 +120,7 @@ def extract_slice(lib: dict, isrc: int, ircv: int) -> dict:
 
 
 def py_compute_to_nc(depsrcs, deprcvs, outpath: str):
-    pymod = pygrt.PyModel1D(MODNAME)
-    pymod.set_static_grn_path(outpath)
+    pymod = pygrt.PyModel1D(stgrn=outpath, modelpath=MODNAME)
     pymod.compute_static_grn(
         depsrc=depsrcs, deprcv=deprcvs, norths=NORTHS, easts=EASTS, calc_upar=True,
     )
@@ -169,8 +168,7 @@ def c_static_syn(grn: Path, out: Path, extra: list) -> None:
 
 
 def py_static_syn(grn: Path, out: Path, **kwargs) -> None:
-    model = pygrt.PyModel1D(MODNAME)
-    model.set_static_grn_path(grn)
+    model = pygrt.PyModel1D(stgrn=grn, modelpath=MODNAME)
     model.compute_static_syn(scale=SCALE, output_path=out, calc_upar=True, **kwargs)
 
 

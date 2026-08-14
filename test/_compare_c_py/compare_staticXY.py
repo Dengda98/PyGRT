@@ -95,8 +95,7 @@ def run_c(c_root: Path) -> None:
 def run_py(py_root: Path) -> None:
     static_dir = py_root / "static"
     static_dir.mkdir(parents=True)
-    model = pygrt.PyModel1D(MODEL)
-    model.set_static_grn_path(static_dir / "stgrn.nc")
+    model = pygrt.PyModel1D(stgrn=static_dir / "stgrn.nc", modelpath=MODEL)
     model.compute_static_grn(
         depsrc=DEPSRC,
         deprcv=DEPRCV,
