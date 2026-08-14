@@ -3,8 +3,7 @@
 import numpy as np
 import pygrt
 
-pymod = pygrt.PyModel1D("milrow")
-pymod.set_static_grn_path("stgrn.nc")
+pymod = pygrt.PyModel1D(stgrn="stgrn.nc", modelpath="milrow")
 
 # norths/easts 各为三个元素: start/stop/step (km)
 norths = [-3.0, 3.0, 0.15]
@@ -55,6 +54,14 @@ def plot_static(static_syn:dict, out:Union[str,None]=None):
     if out is not None:
         fig.savefig(out, bbox_inches='tight')
 # END plot func
+# ---------------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------------
+# BEGIN REUSE STGRN
+# 若仅使用已算好的静态格林函数做合成，构造时只需指定 stgrn，无需 modelpath
+pymod = pygrt.PyModel1D(stgrn="stgrn.nc")
+# END REUSE STGRN
 # ---------------------------------------------------------------------------------
 
 

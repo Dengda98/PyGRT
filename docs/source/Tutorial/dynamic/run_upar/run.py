@@ -4,8 +4,7 @@ import numpy as np
 import pygrt
 from obspy import read
 
-pymod = pygrt.PyModel1D("milrow")
-pymod.set_dynamic_grn_path("GRN")
+pymod = pygrt.PyModel1D(grn="GRN", modelpath="milrow")
 
 # 传入 calc_upar=True 计算空间导数
 pymod.compute_grn(

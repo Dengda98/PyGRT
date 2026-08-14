@@ -7,8 +7,7 @@ from pygrt.cli import format_float
 depsrc = 2.0
 deprcv = 0.0
 
-pymod = pygrt.PyModel1D("milrow")
-pymod.set_dynamic_grn_path("GRN")
+pymod = pygrt.PyModel1D(grn="GRN", modelpath="milrow")
 
 # statsidxs 指定频率索引，核函数写入 GRN_grtstats/{model}_{depsrc}_{deprcv}/
 distarr = [5,8,10]
@@ -61,8 +60,7 @@ fig.savefig(f"{srctype}_{ptype}_RI.svg", bbox_inches='tight')
 # BEGIN DEPSRC 0.0 DGRN
 depsrc = 0.0
 deprcv = 0.0
-pymod = pygrt.PyModel1D("milrow")
-pymod.set_dynamic_grn_path("GRN")
+pymod = pygrt.PyModel1D(grn="GRN", modelpath="milrow")
 
 pymod.compute_grn(
     depsrc=depsrc, deprcv=deprcv,

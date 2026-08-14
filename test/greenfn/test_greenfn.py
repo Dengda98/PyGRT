@@ -10,8 +10,7 @@ nt = 600
 dt = 0.02
 modname = "../milrow"
 
-pymod = pygrt.PyModel1D(modname)
-pymod.set_dynamic_grn_path("GRN")
+pymod = pygrt.PyModel1D(grn="GRN", modelpath=modname)
 
 pymod.compute_grn(depsrc=depsrc, deprcv=deprcv, distarr=dist, nt=nt, dt=dt)
 pymod.compute_grn(
@@ -65,16 +64,13 @@ pymod.compute_grn(
 )
 
 # boundary condition
-pymod = pygrt.PyModel1D(modname, topbound="free", botbound="free")
-pymod.set_dynamic_grn_path("GRN")
+pymod = pygrt.PyModel1D(grn="GRN", modelpath=modname, topbound="free", botbound="free")
 pymod.compute_grn(depsrc=depsrc, deprcv=deprcv, distarr=dist, nt=nt, dt=dt)
 
-pymod = pygrt.PyModel1D(modname, topbound="halfspace", botbound="free")
-pymod.set_dynamic_grn_path("GRN")
+pymod = pygrt.PyModel1D(grn="GRN", modelpath=modname, topbound="halfspace", botbound="free")
 pymod.compute_grn(depsrc=depsrc, deprcv=deprcv, distarr=dist, nt=nt, dt=dt)
 
-pymod = pygrt.PyModel1D(modname, topbound="rigid", botbound="rigid")
-pymod.set_dynamic_grn_path("GRN")
+pymod = pygrt.PyModel1D(grn="GRN", modelpath=modname, topbound="rigid", botbound="rigid")
 pymod.compute_grn(depsrc=depsrc, deprcv=deprcv, distarr=dist, nt=nt, dt=dt)
 
 for name in ["GRN", "GRN_grtstats"]:

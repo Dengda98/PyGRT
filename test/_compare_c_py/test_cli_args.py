@@ -44,8 +44,7 @@ def test_invalid_gf_source_and_freqband_and_distarr():
     runner = CapturedRunner()
     original = _patch_run_grt(pygrt.pymod, runner)
     try:
-        model = pygrt.PyModel1D(MODEL)
-        model.set_dynamic_grn_path(HERE / "_tmp_args_grn")
+        model = pygrt.PyModel1D(grn=HERE / "_tmp_args_grn", modelpath=MODEL)
 
         try:
             model.compute_grn(depsrc=1.0, deprcv=0.0, distarr=1.0, nt=8, dt=0.1, gf_source=["XX"])
@@ -75,8 +74,7 @@ def test_print_log_forwarded_to_run_grt():
     runner = CapturedRunner()
     original = _patch_run_grt(pygrt.pymod, runner)
     try:
-        model = pygrt.PyModel1D(MODEL)
-        model.set_dynamic_grn_path(HERE / "_tmp_args_grn")
+        model = pygrt.PyModel1D(grn=HERE / "_tmp_args_grn", modelpath=MODEL)
 
         model.compute_grn(depsrc=1.0, deprcv=0.0, distarr=1.0, nt=8, dt=0.1, print_log=True)
         assert runner.kwargs[-1].get("print_log") is True
@@ -93,8 +91,7 @@ def test_compute_grn_default_and_optional_flags():
     runner = CapturedRunner()
     original = _patch_run_grt(pygrt.pymod, runner)
     try:
-        model = pygrt.PyModel1D(MODEL, "free", "halfspace")
-        model.set_dynamic_grn_path(HERE / "_tmp_args_grn")
+        model = pygrt.PyModel1D(grn=HERE / "_tmp_args_grn", modelpath=MODEL, topbound="free", botbound="halfspace")
 
         # 默认参数应显式带上 C 侧常用默认片段
         model.compute_grn(
@@ -113,7 +110,7 @@ def test_compute_grn_default_and_optional_flags():
                 "-D2/0",
                 "-N32/0.05+w0.8+n1",
                 "-R1,2.5",
-                f"-O{model.dynamic_grn_path}",
+                f"-O{model.grn}",
                 "-BfH",
                 "-H-1/-1",
                 "-L0",
@@ -158,7 +155,7 @@ def test_compute_grn_default_and_optional_flags():
             "-D3.5/1.25",
             "-N64/0.02+w0.6+n2+a+f",
             "-R10",
-            f"-O{model.dynamic_grn_path}",
+            f"-O{model.grn}",
             "-BfH",
             "-H0.1/5",
             "-L20+l5+o2",
@@ -199,8 +196,7 @@ def test_compute_grn_default_and_optional_flags():
             ("rigid", "free", "-BrF"),
             ("halfspace", "rigid", "-BhR"),
         ]:
-            model2 = pygrt.PyModel1D(MODEL, top, bot)
-            model2.set_dynamic_grn_path(HERE / "_tmp_args_grn2")
+            model2 = pygrt.PyModel1D(grn=HERE / "_tmp_args_grn2", modelpath=MODEL, topbound=top, botbound=bot)
             model2.compute_grn(
                 depsrc=1.0,
                 deprcv=0.0,
@@ -228,8 +224,7 @@ def test_compute_static_grn_xy_and_distarr():
     runner = CapturedRunner()
     original = _patch_run_grt(pygrt.pymod, runner)
     try:
-        model = pygrt.PyModel1D(MODEL)
-        model.set_static_grn_path(HERE / "_tmp_args_static.nc")
+        model = pygrt.PyModel1D(stgrn=HERE / "_tmp_args_static.nc", modelpath=MODEL)
 
         model.compute_static_grn(
             depsrc=2.0,
@@ -254,7 +249,7 @@ def test_compute_static_grn_xy_and_distarr():
                 "greenfn",
                 f"-M{MODEL}",
                 "-D2/3.3",
-                f"-O{model.static_grn_path}",
+                f"-O{model.stgrn}",
                 "-BfH",
                 "-X-3.1/3.1/0.6",
                 "-Y-4.1/4.1/0.8",
@@ -308,9 +303,8 @@ def test_compute_syn_source_and_time_function_options():
     runner = CapturedRunner()
     original = _patch_run_grt(pygrt.pymod, runner)
     try:
-        model = pygrt.PyModel1D(MODEL)
+        model = pygrt.PyModel1D(grn=HERE / "_tmp_args_grn", modelpath=MODEL)
         grn_root = HERE / "_tmp_args_grn"
-        model.set_dynamic_grn_path(grn_root)
         # 按 dist 匹配子目录，测试前需先准备假目录
         grn_dir = grn_root / f"{MODEL.name}_2_3.3_10"
         grn_dir.mkdir(parents=True, exist_ok=True)
@@ -414,8 +408,7 @@ def test_compute_static_syn_and_tensor_postprocess_args():
     original_pymod = _patch_run_grt(pygrt.pymod, runner)
     original_utils = _patch_run_grt(pygrt.utils, runner)
     try:
-        model = pygrt.PyModel1D(MODEL)
-        model.set_static_grn_path(HERE / "_tmp_args_static.nc")
+        model = pygrt.PyModel1D(stgrn=HERE / "_tmp_args_static.nc", modelpath=MODEL)
         out = HERE / "_tmp_args_static_syn.nc"
 
         model.compute_static_syn(
@@ -436,7 +429,7 @@ def test_compute_static_syn_and_tensor_postprocess_args():
             [
                 "static",
                 "syn",
-                f"-G{model.static_grn_path}",
+                f"-G{model.stgrn}",
                 f"-O{out}",
                 "-Su1e+24",
                 "-M33/50/120",
@@ -458,7 +451,7 @@ def test_compute_static_syn_and_tensor_postprocess_args():
         assert_command_has(
             runner.commands[-1],
             "static", "syn",
-            f"-G{model.static_grn_path}",
+            f"-G{model.stgrn}",
             f"-O{out}",
             "-S1e+20",
             "-Ds2",
@@ -494,7 +487,7 @@ def test_compute_static_syn_and_tensor_postprocess_args():
         assert_command_has(
             runner.commands[-1],
             "static", "syn",
-            f"-G{model.static_grn_path}",
+            f"-G{model.stgrn}",
             f"-O{out}",
             f"-C{HERE / 'cfaults.inp'}+i1/2",
             "-e",

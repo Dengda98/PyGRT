@@ -40,8 +40,7 @@ t = np.arange(0, nt)*dt * Vs/r
 
 modfile = "_halfspace_mod"
 np.savetxt(modfile, modarr)
-pymod = pygrt.PyModel1D(modfile)
-pymod.set_dynamic_grn_path("GRN")
+pymod = pygrt.PyModel1D(grn="GRN", modelpath=modfile)
 # 计算格林函数（仅一个震中距，可用通配符读回）
 pymod.compute_grn(
     depsrc=depsrc, deprcv=deprcv, distarr=rs, nt=nt, dt=dt,

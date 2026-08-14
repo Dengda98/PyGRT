@@ -35,9 +35,7 @@ else:
     ])
 modfile1 = f"mod_{bound1}_{bound2}"
 np.savetxt(modfile1, modarr)
-pymod1 = pygrt.PyModel1D(modfile1, topbound=bound1, botbound=bound2)
-pymod1.set_dynamic_grn_path("GRN1")
-pymod1.set_static_grn_path("stgrn1.nc")
+pymod1 = pygrt.PyModel1D(grn="GRN1", stgrn="stgrn1.nc", modelpath=modfile1, topbound=bound1, botbound=bound2)
 pymod1.compute_grn(
     depsrc=depsrc, deprcv=deprcv, distarr=rs, nt=nt, dt=dt,
     keepAllFreq=True,
@@ -70,9 +68,7 @@ print(modarr2.shape, depsrc2, deprcv2)
 
 modfile2 = f"mod_{bound2}_{bound1}"
 np.savetxt(modfile2, modarr2)
-pymod2 = pygrt.PyModel1D(modfile2, topbound=bound2, botbound=bound1)
-pymod2.set_dynamic_grn_path("GRN2")
-pymod2.set_static_grn_path("stgrn2.nc")
+pymod2 = pygrt.PyModel1D(grn="GRN2", stgrn="stgrn2.nc", modelpath=modfile2, topbound=bound2, botbound=bound1)
 pymod2.compute_grn(
     depsrc=depsrc2, deprcv=deprcv2, distarr=rs, nt=nt, dt=dt,
     keepAllFreq=True,

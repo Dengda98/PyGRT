@@ -23,7 +23,7 @@
          
     .. group-tab:: Python
 
-        :func:`PyModel1D() <pygrt.pymod.PyModel1D>` 创建模型时可设置边界条件：
+        :func:`PyModel1D() <pygrt.pymod.PyModel1D>` 创建时可设置边界条件（与 ``grn`` / ``stgrn`` / ``modelpath`` 同为关键字参数）：
 
         + ``topbound:Literal['free', 'rigid', 'halfspace']`` 顶层边界条件
         + ``botbound:Literal['free', 'rigid', 'halfspace']`` 底层边界条件

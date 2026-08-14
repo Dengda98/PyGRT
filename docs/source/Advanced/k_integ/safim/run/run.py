@@ -1,8 +1,7 @@
 import numpy as np
 import pygrt 
 
-pymod = pygrt.PyModel1D("milrow")
-pymod.set_dynamic_grn_path("GRN")
+pymod = pygrt.PyModel1D(grn="GRN", modelpath="milrow")
 
 pymod.compute_grn(
     depsrc=5.0,

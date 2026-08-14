@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <limits.h>
 
 #include "grt/common/util.h"
 #include "grt/common/model.h"
@@ -133,6 +134,51 @@ bool grt_is_comment_or_empty(const char* line) {
     
     // 检查是否为空行或注释行
     return (*line == '\0' || *line == GRT_COMMENT_HEAD);
+}
+
+
+void grt_copy_file(const char *src, const char *dst)
+{
+    // 源与目标为同一路径时跳过，避免截断自身
+    {
+#if _TEST_WHETHER_WIN32_
+        char src_full[_MAX_PATH];
+        char dst_full[_MAX_PATH];
+        if(_fullpath(src_full, src, _MAX_PATH) != NULL
+           && _fullpath(dst_full, dst, _MAX_PATH) != NULL
+           && strcmp(src_full, dst_full) == 0){
+            return;
+        }
+#else
+        char src_real[PATH_MAX];
+        char dst_real[PATH_MAX];
+        if(realpath(src, src_real) != NULL && realpath(dst, dst_real) != NULL
+           && strcmp(src_real, dst_real) == 0){
+            return;
+        }
+#endif
+    }
+
+    FILE *fin = GRTCheckOpenFile(src, "rb");
+    FILE *fout = GRTCheckOpenFile(dst, "wb");
+
+    char buf[8192];
+    size_t n;
+    while((n = fread(buf, 1, sizeof(buf), fin)) > 0){
+        if(fwrite(buf, 1, n, fout) != n){
+            fclose(fin);
+            fclose(fout);
+            GRTRaiseError("Failed to write copy of \"%s\" to \"%s\".\n", src, dst);
+        }
+    }
+    if(ferror(fin)){
+        fclose(fin);
+        fclose(fout);
+        GRTRaiseError("Failed to read \"%s\" while copying to \"%s\".\n", src, dst);
+    }
+
+    fclose(fin);
+    fclose(fout);
 }
 
 

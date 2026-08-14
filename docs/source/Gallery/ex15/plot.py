@@ -11,9 +11,7 @@ deprcv = 0.0
 depsrc = 5.0
 distarr = np.arange(0.1, 50, 1)
 
-pymod = pygrt.PyModel1D(modname)
-pymod.set_dynamic_grn_path("GRN")
-pymod.set_static_grn_path("stgrn.nc")
+pymod = pygrt.PyModel1D(grn="GRN", stgrn="stgrn.nc", modelpath=modname)
 
 # 零频频谱: nt=1 时只算 ω=0
 # C 反变换写 SAC 时乘了 df=1/(nt*dt)，故时域首点 * dt 即还原频域幅值

@@ -4,8 +4,7 @@ import pygrt
 from obspy import read
 from pygrt.cli import format_float
 
-pymod = pygrt.PyModel1D("milrow")
-pymod.set_dynamic_grn_path("GRN")
+pymod = pygrt.PyModel1D(grn="GRN", modelpath="milrow")
 
 depsrc = 10.0
 deprcv = 0.0

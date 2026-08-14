@@ -29,8 +29,7 @@
             :start-after: BEGIN DGRN
             :end-before: END DGRN
 
-        输出的核函数文件会在 :rst:dir:`GRN_grtstats/milrow_{depsrc}_{deprcv}/` 路径下
-        （与 C 一致，根目录名由 ``set_dynamic_grn_path`` 的输出目录决定）。
+        输出的核函数文件会在 :rst:dir:`GRN_grtstats/milrow_{depsrc}_{deprcv}/` 路径下。
 
 
 C和Python导出的核函数文件是一致的，底层调用的是相同的函数。文件名称格式为 ``K_{iw}_{freq}``，其中 ``{iw}`` 表示频率索引值， ``{freq}`` 表示对应频率(Hz)。文件为自定义的二进制文件， **强烈建议使用Python进行读取及后续处理**。这里还是给出两种读取方法。

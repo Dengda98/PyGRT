@@ -8,6 +8,12 @@ Python中合成静态位移的主函数为 :meth:`compute_static_syn() <pygrt.py
 C模块为 :doc:`/Module/static_syn`。
 
 使用上节计算的格林函数，合成静态位移。为方便画图，以下结果都使用ZNE分量。
+若仅使用已算好的静态格林函数，构造 :class:`~pygrt.pymod.PyModel1D` 时只需指定 ``stgrn``，无需再传 ``modelpath``：
+
+.. literalinclude:: run/run.py
+    :language: python
+    :start-after: BEGIN REUSE STGRN
+    :end-before: END REUSE STGRN
 
 不同震源
 -------------

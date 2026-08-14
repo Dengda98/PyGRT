@@ -79,41 +79,67 @@ class PyModel1D:
 
     Typical workflow:
 
-    1. Create the model from a layered-model file.
-    2. Call :meth:`set_dynamic_grn_path` or :meth:`set_static_grn_path`.
-    3. Compute Green's functions with :meth:`compute_grn` or :meth:`compute_static_grn`.
-    4. Synthesize waveforms or static fields with :meth:`compute_syn` or :meth:`compute_static_syn`.
+    1. Create :class:`PyModel1D` with the Green's function path(s) actually needed
+       (``grn`` and/or ``stgrn``) and optional ``modelpath``.
+    2. Compute Green's functions with :meth:`compute_grn` or :meth:`compute_static_grn`
+       (requires ``modelpath``).
+    3. Synthesize waveforms or static fields with :meth:`compute_syn` or
+       :meth:`compute_static_syn` (only the corresponding GF path is required).
     """
 
     def __init__(
         self,
-        modelpath: PathLike,
+        *,
+        grn: Optional[PathLike] = None,
+        stgrn: Optional[PathLike] = None,
+        modelpath: Optional[PathLike] = None,
         topbound: str = "free",
         botbound: str = "halfspace",
     ):
         """
-        Create a file-based 1D layered model.
+        Create a file-based 1D layered model handle.
 
         The model file is a plain text table. Each row is one layer in the form
         ``thickness(km)  Vp(km/s)  Vs(km/s)  Rho(g/cm^3)  [Qp  Qs]``.
         A zero thickness marks a half-space bottom layer.
 
-        :param    modelpath:          Path to the layered model file.
+        All arguments must be passed by keyword. ``grn`` / ``stgrn`` / ``modelpath``
+        are optional at construction; methods that need them raise if missing.
+
+        :param    grn:                Root directory for dynamic Green's functions.
+        :param    stgrn:              NetCDF file path for static Green's functions.
+        :param    modelpath:          Path to the layered model file. Required when
+                                      computing Green's functions or travel times
+                                      (unless ``modelpath`` is passed to
+                                      :meth:`compute_travt1d`).
         :param    topbound:           Top boundary condition. One of ``free``, ``rigid`` and ``halfspace``.
         :param    botbound:           Bottom boundary condition. One of ``free``, ``rigid`` and ``halfspace``.
         """
-        self.modelpath = str(Path(modelpath))
-        self.topbound = topbound
-        self.botbound = botbound
-        self.dynamic_grn_path: Optional[str] = None
-        self.static_grn_path: Optional[str] = None
-
-        if not Path(self.modelpath).is_file():
-            raise FileNotFoundError(f"Model file does not exist: {self.modelpath}")
         if topbound not in {"free", "rigid", "halfspace"}:
             raise ValueError(f"Unsupported topbound={topbound}.")
         if botbound not in {"free", "rigid", "halfspace"}:
             raise ValueError(f"Unsupported botbound={botbound}.")
+
+        self.topbound = topbound
+        self.botbound = botbound
+        self.modelpath: Optional[str] = None
+        self.grn: Optional[str] = None
+        self.stgrn: Optional[str] = None
+
+        if modelpath is not None:
+            self.modelpath = str(Path(modelpath))
+            if not Path(self.modelpath).is_file():
+                raise FileNotFoundError(f"Model file does not exist: {self.modelpath}")
+
+        if grn is not None:
+            target = Path(grn)
+            target.mkdir(parents=True, exist_ok=True)
+            self.grn = str(target)
+
+        if stgrn is not None:
+            target = Path(stgrn)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            self.stgrn = str(target)
 
     def compute_travt1d(
         self,
@@ -121,18 +147,22 @@ class PyModel1D:
         depsrc: float,
         deprcv: float,
         distarr: Union[float, Sequence[float]],
+        modelpath: Optional[PathLike] = None,
     ):
         r"""
         Compute first-arrival P- and S-wave travel times.
 
         Calls the C routine ``grt_compute_travt1d_from_file``, which reads the
-        layered model from ``modelpath`` and evaluates travel times at the given
-        source/receiver depths and epicentral distances. All arguments must be
-        passed by keyword.
+        layered model and evaluates travel times at the given source/receiver
+        depths and epicentral distances. All arguments must be passed by keyword.
 
         :param    depsrc:            Source depth in km.
         :param    deprcv:            Receiver depth in km.
         :param    distarr:           Epicentral distance(s) in km. A scalar or a sequence of distances.
+        :param    modelpath:         Model file for this call only. If omitted, uses
+                                     ``self.modelpath``. If both are set and differ,
+                                     a warning is issued and ``self.modelpath`` is not changed.
+                                     Required when ``self.modelpath`` is unset.
 
         :return: ``(travtP, travtS)`` in s. For a scalar distance both are floats;
                  for multiple distances both are NumPy arrays of shape ``(n,)``.
@@ -140,20 +170,36 @@ class PyModel1D:
         if depsrc < 0 or deprcv < 0:
             raise ValueError("Source and receiver depths must be nonnegative.")
 
+        if modelpath is not None:
+            use_model = str(Path(modelpath))
+            if not Path(use_model).is_file():
+                raise FileNotFoundError(f"Model file does not exist: {use_model}")
+            if self.modelpath is not None:
+                warnings.warn(
+                    f"compute_travt1d uses temporary modelpath={use_model!r}; "
+                    f"instance modelpath={self.modelpath!r} is unchanged.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+        else:
+            if self.modelpath is None:
+                raise RuntimeError("Pass modelpath= to compute_travt1d() or set it in PyModel1D(...).")
+            use_model = self.modelpath
+
         # 标量震中距返回 float，序列返回长度为 n 的数组
         single, distances = _normalize_distarr(distarr)
         if distances.size == 0 or np.any(distances < 0):
             raise ValueError("distarr must contain nonnegative distances.")
 
         carr = C_grt_compute_travt1d_from_file(
-            self.modelpath.encode("utf-8"),
+            use_model.encode("utf-8"),
             float(depsrc),
             float(deprcv),
             distances.ctypes.data_as(PREAL),
             c_size_t(distances.size),
         )
         if cast(carr, c_void_p).value is None:
-            raise RuntimeError(f"Failed to compute travel times for model {self.modelpath}.")
+            raise RuntimeError(f"Failed to compute travel times for model {use_model}.")
 
         arr = npct.as_array(carr, shape=(distances.size, 2)).copy()
         C_grt_free(carr)
@@ -161,39 +207,6 @@ class PyModel1D:
         if single:
             return float(arr[0, 0]), float(arr[0, 1])
         return arr[:, 0].copy(), arr[:, 1].copy()
-
-    def set_dynamic_grn_path(self, path: PathLike) -> str:
-        """
-        Set and create the root directory for dynamic Green's functions.
-
-        Later calls to :meth:`compute_grn` write SAC files under this directory.
-        Subdirectories are named
-        ``{model}_{depsrc}_{deprcv}_{distance}``.
-
-        :param    path:               Root directory for dynamic Green's functions.
-
-        :return: The configured dynamic Green's function directory.
-        """
-        target = Path(path)
-        target.mkdir(parents=True, exist_ok=True)
-        self.dynamic_grn_path = str(target)
-        return self.dynamic_grn_path
-
-    def set_static_grn_path(self, path: PathLike) -> str:
-        """
-        Set the NetCDF file path for static Green's functions.
-
-        Later calls to :meth:`compute_static_grn` write (and currently overwrite)
-        this file. Parent directories are created if needed.
-
-        :param    path:               NetCDF file path for static Green's functions.
-
-        :return: The configured static Green's function file path.
-        """
-        target = Path(path)
-        target.parent.mkdir(parents=True, exist_ok=True)
-        self.static_grn_path = str(target)
-        return self.static_grn_path
 
     def compute_grn(
         self,
@@ -229,8 +242,9 @@ class PyModel1D:
         r"""
         Compute dynamic Green's functions with the ``grt greenfn`` command.
 
-        Call :meth:`set_dynamic_grn_path` first. Results are written as SAC files
-        under ``{dynamic_grn_path}/{model}_{depsrc}_{deprcv}_{distance}``.
+        Requires ``grn`` and ``modelpath`` in the constructor. Results are written
+        as SAC files under ``{grn}/{model}_{depsrc}_{deprcv}_{distance}``. The
+        model file is also copied into the ``grn`` root directory by the C module.
         All arguments must be passed by keyword.
 
         :param    depsrc:            Source depth in km.
@@ -288,8 +302,10 @@ class PyModel1D:
 
         :return: ``None``. Results are written to disk.
         """
-        if self.dynamic_grn_path is None:
-            raise RuntimeError("Call set_dynamic_grn_path() before compute_grn().")
+        if self.grn is None:
+            raise RuntimeError("Pass grn= to PyModel1D(...) before compute_grn().")
+        if self.modelpath is None:
+            raise RuntimeError("Pass modelpath= to PyModel1D(...) before compute_grn().")
         if nt <= 0 or dt <= 0:
             raise ValueError("nt and dt must be positive.")
         if depsrc < 0 or deprcv < 0:
@@ -310,7 +326,7 @@ class PyModel1D:
             "D": f"-D{format_float(depsrc)}/{format_float(deprcv)}",
             "N": f"-N{nt}/{format_float(dt)}+w{format_float(zeta)}+n{upsampling_n}",
             "R": f"-R{','.join(format_float(distance) for distance in distances)}",
-            "O": f"-O{self.dynamic_grn_path}",
+            "O": f"-O{self.grn}",
             "B": f"-B{self._boundary_option()}",
         }
 
@@ -398,8 +414,8 @@ class PyModel1D:
         r"""
         Compute static Green's functions with the ``grt static greenfn`` command.
 
-        Call :meth:`set_static_grn_path` first. Results are written to the
-        configured NetCDF file (4D STGRNLIB layout
+        Requires ``stgrn`` and ``modelpath`` in the constructor. Results are written
+        to the configured NetCDF file (4D STGRNLIB layout
         ``[depsrc][deprcv][north][east]``) and currently overwrite any existing
         content. All arguments must be passed by keyword.
 
@@ -456,8 +472,10 @@ class PyModel1D:
 
         :return: ``None``. Results are written to the configured NetCDF file.
         """
-        if self.static_grn_path is None:
-            raise RuntimeError("Call set_static_grn_path() before compute_static_grn().")
+        if self.stgrn is None:
+            raise RuntimeError("Pass stgrn= to PyModel1D(...) before compute_static_grn().")
+        if self.modelpath is None:
+            raise RuntimeError("Pass modelpath= to PyModel1D(...) before compute_static_grn().")
 
         depsrcs = _normalize_depths(depsrc, "depsrc")
         deprcvs = _normalize_depths(deprcv, "deprcv")
@@ -496,7 +514,7 @@ class PyModel1D:
             command["Dr"] = f"-Dr{_format_depth_list(deprcvs)}"
         else:
             command["D"] = f"-D{format_float(float(depsrcs[0]))}/{format_float(float(deprcvs[0]))}"
-        command["O"] = f"-O{self.static_grn_path}"
+        command["O"] = f"-O{self.stgrn}"
         command["B"] = f"-B{self._boundary_option()}"
         command.update(command_grid)
 
@@ -567,8 +585,8 @@ class PyModel1D:
         * ``R`` - radial outward
         * ``T`` - clockwise 90° from ``R``
 
-        Call :meth:`set_dynamic_grn_path` and :meth:`compute_grn` first. The
-        Green's function directory is located under ``dynamic_grn_path`` by
+        Call :meth:`compute_grn` first (or point ``grn`` at an existing GF root).
+        The Green's function directory is located under ``grn`` by
         matching ``dist`` in the subdirectory name. All arguments must be
         passed by keyword.
 
@@ -582,8 +600,7 @@ class PyModel1D:
           ``moment_tensor=(Mxx, Mxy, Mxz, Myy, Myz, Mzz)``.
 
         :param    dist:                Epicentral distance in km. Used to locate the
-                                       Green's function directory under
-                                       ``dynamic_grn_path``.
+                                       Green's function directory under ``grn``.
         :param    azimuth:             Azimuth from source to receiver in deg.
                                        North is 0°, clockwise positive.
         :param    scale:               Source scaling factor. For ``EX``, ``DC``,
@@ -699,8 +716,8 @@ class PyModel1D:
         r"""
         Synthesize static three-component displacement with ``grt static syn``.
 
-        Results are written to the NetCDF file ``output_path``. Call
-        :meth:`set_static_grn_path` and :meth:`compute_static_grn` first.
+        Results are written to the NetCDF file ``output_path``. Requires
+        ``stgrn`` (and typically a prior :meth:`compute_static_grn`).
         All arguments must be passed by keyword.
 
         Receivers default to the library north/east grid. Optionally redefine
@@ -791,8 +808,8 @@ class PyModel1D:
         :return: The synthesized NetCDF data when ``return_result`` is true;
                  otherwise ``None``.
         """
-        if self.static_grn_path is None:
-            raise RuntimeError("Call set_static_grn_path() before compute_static_syn().")
+        if self.stgrn is None:
+            raise RuntimeError("Pass stgrn= to PyModel1D(...) before compute_static_syn().")
         output = Path(output_path)
         output.parent.mkdir(parents=True, exist_ok=True)
 
@@ -831,7 +848,7 @@ class PyModel1D:
         command = {
             "module": "static",
             "subcommand": "syn",
-            "G": f"-G{self.static_grn_path}",
+            "G": f"-G{self.stgrn}",
             "O": f"-O{output}",
         }
 
@@ -870,14 +887,14 @@ class PyModel1D:
 
     def _dynamic_grn_dir(self, dist: float) -> str:
         """
-        在 dynamic_grn_path 下按震中距匹配格林函数子目录
+        在 grn 根目录下按震中距匹配格林函数子目录
 
         子目录命名为 ``{model}_{depsrc}_{deprcv}_{dist}``
         当前假设仅有一套震源/台站深度，故只需匹配 dist
         """
-        if self.dynamic_grn_path is None:
-            raise RuntimeError("Call set_dynamic_grn_path() before compute_syn().")
-        root = Path(self.dynamic_grn_path)
+        if self.grn is None:
+            raise RuntimeError("Pass grn= to PyModel1D(...) before compute_syn().")
+        root = Path(self.grn)
         if not root.is_dir():
             raise FileNotFoundError(f"Dynamic Green's function root does not exist: {root}")
 

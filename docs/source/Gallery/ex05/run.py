@@ -13,8 +13,7 @@ dt=0.01
 
 modname="milrow"
 
-pymod = pygrt.PyModel1D(modname)
-pymod.set_dynamic_grn_path("GRN")
+pymod = pygrt.PyModel1D(grn="GRN", modelpath=modname)
 
 # compute green functions
 pymod.compute_grn(

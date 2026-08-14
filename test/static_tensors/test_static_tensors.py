@@ -8,8 +8,7 @@ norths = [-3.0, 3.0, 0.2]
 easts = [-2.0, 2.0, 0.2]
 modname = "../milrow"
 
-pymod = pygrt.PyModel1D(modname)
-pymod.set_static_grn_path("stgrn.nc")
+pymod = pygrt.PyModel1D(stgrn="stgrn.nc", modelpath=modname)
 pymod.compute_static_grn(
     depsrc=depsrc, deprcv=deprcv, norths=norths, easts=easts, calc_upar=True,
 )

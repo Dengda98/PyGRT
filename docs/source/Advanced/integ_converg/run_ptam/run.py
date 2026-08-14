@@ -6,8 +6,7 @@ from pygrt.cli import format_float
 
 depsrc = 0.0
 deprcv = 0.0
-pymod = pygrt.PyModel1D("milrow")
-pymod.set_dynamic_grn_path("GRN")
+pymod = pygrt.PyModel1D(grn="GRN", modelpath="milrow")
 
 distarr = [5,8,10]
 # 设置 converg_method='PTAM' 进行收敛
@@ -44,8 +43,7 @@ from pygrt.cli import format_float
 
 depsrc = 0.05
 deprcv = 0.0
-pymod = pygrt.PyModel1D("milrow")
-pymod.set_static_grn_path("stgrn.nc")
+pymod = pygrt.PyModel1D(stgrn="stgrn.nc", modelpath="milrow")
 
 norths = [2.0, 2.0, 1.0]
 easts = [2.0, 2.0, 1.0]

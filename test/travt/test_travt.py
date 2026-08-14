@@ -4,7 +4,7 @@ depsrc = 2.0
 deprcv = 0.0
 modname = "../milrow"
 
-pymod = pygrt.PyModel1D(modname)
+pymod = pygrt.PyModel1D(modelpath=modname)
 
 for dist in [2, 3, 4, 5]:
     tp, ts = pymod.compute_travt1d(depsrc=depsrc, deprcv=deprcv, distarr=dist)

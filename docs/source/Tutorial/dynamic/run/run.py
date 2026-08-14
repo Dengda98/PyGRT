@@ -4,7 +4,7 @@ import numpy as np
 import pygrt
 
 # 直接使用模型文件路径
-pymod = pygrt.PyModel1D("milrow")
+pymod = pygrt.PyModel1D(modelpath="milrow")
 
 # END BUILD MODEL
 # -----------------------------------------------------------------------------------
@@ -15,8 +15,7 @@ pymod = pygrt.PyModel1D("milrow")
 # BEGIN GRN
 from obspy import read
 
-pymod = pygrt.PyModel1D("milrow")
-pymod.set_dynamic_grn_path("GRN")
+pymod = pygrt.PyModel1D(grn="GRN", modelpath="milrow")
 
 # 结果写入 GRN/milrow_{depsrc}_{deprcv}_{dist}/
 pymod.compute_grn(
@@ -118,6 +117,14 @@ def plot_int_dif(stsyn:Stream, stsyn_int:Stream, stsyn_dif:Stream, chnl:str, out
             fig.savefig(out, bbox_inches='tight')
 
 # END plot func
+# -----------------------------------------------------------------------------------
+
+
+# -----------------------------------------------------------------------------------
+# BEGIN REUSE GRN
+# 若仅使用已算好的格林函数做合成，构造时只需指定 grn，无需 modelpath
+pymod = pygrt.PyModel1D(grn="GRN")
+# END REUSE GRN
 # -----------------------------------------------------------------------------------
 
 
