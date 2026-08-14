@@ -270,6 +270,7 @@ printf("\n"
 "                 + <file>: each line contains a distance value.\n"
 "\n"
 "    -O<outdir>   Directorypath of output for saving.\n"
+"                 The model file is also copied into <outdir>.\n"
 "\n"
 "    -H<f1>/<f2>  Apply bandpass filer with rectangle window, \n"
 "                 default no filter.\n"
@@ -823,6 +824,14 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 
     // 建立保存目录
     GRTCheckMakeDir(Ctrl->O.s_output_dir);
+
+    // 在目录中保留模型文件副本（basename），便于后续流程取用
+    {
+        char *model_copy = NULL;
+        GRT_SAFE_ASPRINTF(&model_copy, "%s/%s", Ctrl->O.s_output_dir, Ctrl->M.s_modelname);
+        grt_copy_file(Ctrl->M.s_modelpath, model_copy);
+        GRT_SAFE_FREE_PTR(model_copy);
+    }
 
     // 在目录中保留命令
     char *dummy = NULL;

@@ -139,6 +139,7 @@ printf("\n"
 "                 <deprcv>: receiver depth (km).\n"
 "\n"
 "    -O<outdir>   Directorypath of output for saving.\n"
+"                 The model file is also copied into <outdir>.\n"
 "\n"
 "    -R<r1>,<r2>[,...]|<r1>/<r2>/<dr>|<file>\n"
 "                 Multiple epicentral distances (km), support three ways:\n"
@@ -505,6 +506,14 @@ int modsum_main(int argc, char **argv){
     MODEL1D *mod1d = NULL;
     if((mod1d = grt_read_mod1d_from_file(modelpath, -1.0, -1.0, true)) ==NULL){
         exit(EXIT_FAILURE);
+    }
+
+    // 在输出根目录保留模型文件副本（basename），便于后续流程取用
+    {
+        char *model_copy = NULL;
+        GRT_SAFE_ASPRINTF(&model_copy, "%s/%s", Ctrl->O.s_output_dir, grt_get_basename(modelpath));
+        grt_copy_file(modelpath, model_copy);
+        GRT_SAFE_FREE_PTR(model_copy);
     }
 
     // 当震源位于液体层中时，仅允许计算爆炸源对应的格林函数

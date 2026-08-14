@@ -5,6 +5,8 @@ set -euo pipefail
 grt greenfn -h
 
 grt greenfn -M../milrow -D2/3 -N600/0.02 -R10 -OGRN
+# 输出根目录应保留模型文件副本
+test -f GRN/milrow
 grt greenfn -M../milrow -D2/3 -N600/0.02 -R10 -e -OGRN
 grt greenfn -M../milrow -D2/3 -N600/0.02+w0.6+n10 -R10 -OGRN
 grt greenfn -M../milrow -D2/3 -N600/0.02 -H1/10 -R10 -OGRN
