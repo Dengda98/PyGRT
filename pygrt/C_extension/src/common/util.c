@@ -141,12 +141,22 @@ void grt_copy_file(const char *src, const char *dst)
 {
     // 源与目标为同一路径时跳过，避免截断自身
     {
+#if _TEST_WHETHER_WIN32_
+        char src_full[_MAX_PATH];
+        char dst_full[_MAX_PATH];
+        if(_fullpath(src_full, src, _MAX_PATH) != NULL
+           && _fullpath(dst_full, dst, _MAX_PATH) != NULL
+           && strcmp(src_full, dst_full) == 0){
+            return;
+        }
+#else
         char src_real[PATH_MAX];
         char dst_real[PATH_MAX];
         if(realpath(src, src_real) != NULL && realpath(dst, dst_real) != NULL
            && strcmp(src_real, dst_real) == 0){
             return;
         }
+#endif
     }
 
     FILE *fin = GRTCheckOpenFile(src, "rb");
