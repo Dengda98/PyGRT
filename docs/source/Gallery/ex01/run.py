@@ -4,8 +4,7 @@ import matplotlib.pyplot as plt
 from typing import Union
 import pygrt
 
-pymod = pygrt.PyModel1D("milrow")
-pymod.set_dynamic_grn_path("GRN")
+pymod = pygrt.PyModel1D(grn="GRN", modelpath="milrow")
 pymod.compute_grn(depsrc=5.0, deprcv=0.0, distarr=[180], nt=1400, dt=0.1)
 # ?.sac 匹配位移三分量文件名（Z/R/T）
 # integrate_order=1 对应 CLI -I1，得到阶跃型位移

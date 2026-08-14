@@ -6,8 +6,7 @@ from obspy import *
 
 depsrc = 2.0   
 deprcv = 0     
-pymod = pygrt.PyModel1D("./milrow")
-pymod.set_dynamic_grn_path("GRN_pygrt")
+pymod = pygrt.PyModel1D(grn="GRN_pygrt", modelpath="./milrow")
 
 rs = np.array([10]) 
 

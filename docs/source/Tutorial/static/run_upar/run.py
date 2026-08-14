@@ -42,8 +42,7 @@ def plot6(data:dict, title:str, out:str|None=None):
         fig.savefig(out, bbox_inches='tight')
 
 
-pymod = pygrt.PyModel1D("milrow")
-pymod.set_static_grn_path("stgrn.nc")
+pymod = pygrt.PyModel1D(stgrn="stgrn.nc", modelpath="milrow")
 
 # norths/easts 各为三个元素: start/stop/step (km)
 # 传入 calc_upar=True 可计算空间导数

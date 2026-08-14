@@ -34,7 +34,8 @@ Python中计算动态格林函数的主函数为 :meth:`compute_grn() <pygrt.pym
             :start-after: BEGIN GRN
             :end-before: END GRN
 
-        不同震源深度、接收点深度和震中距的格林函数会在 :rst:dir:`GRN/milrow_{depsrc}_{deprcv}_{dist}/` 路径下，使用SAC格式保存。 
+        不同震源深度、接收点深度和震中距的格林函数会在 :rst:dir:`GRN/milrow_{depsrc}_{deprcv}_{dist}/` 路径下，使用SAC格式保存。
+        输出根目录下还会保留模型文件副本（basename）以及 ``command`` 记录。
 
         一些基本信息（包括源点和场点的物性参数）保存在SAC头段变量中，其中 :c:var:`t0` 和 :c:var:`t1` 分别代表初至P波和初至S波的到时。在不设定其它参数时，程序中使用0（发震时刻）作为参考时间，故其等价于走时。
 
@@ -69,8 +70,9 @@ Python中计算动态格林函数的主函数为 :meth:`compute_grn() <pygrt.pym
             :start-after: BEGIN GRN
             :end-before: END GRN
 
-        格林函数写入 :meth:`set_dynamic_grn_path() <pygrt.pymod.PyModel1D.set_dynamic_grn_path>`
-        指定的根目录。需要读回时使用 ObsPy 的 ``read`` 。 :class:`Trace.stats.sac`
+        格林函数写入构造 :class:`~pygrt.pymod.PyModel1D` 时 ``grn=`` 指定的根目录。
+        该根目录下还会保留一份模型文件副本（与 ``-M`` 的 basename 相同），便于后续取用。
+        需要读回时使用 ObsPy 的 ``read`` 。 :class:`Trace.stats.sac`
         中保存了 SAC 头段变量，与 C 程序输出保持一致。
 
 当时窗长度 nt\*dt 太小“包不住”有效信号，或时窗长度足够但时延不合适，输出的波形会发生混叠，

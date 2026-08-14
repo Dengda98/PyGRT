@@ -12,6 +12,12 @@
 Python中合成动态位移的主函数为 :meth:`compute_syn() <pygrt.pymod.PyModel1D.compute_syn>` ，C模块为 :doc:`/Module/syn`。
 
 使用上节计算的格林函数，合成动态位移（理论地震图）。方便起见，这里统一使用milrow模型，震源深度2km，场点位于地表，震中距10km的格林函数，方位角30°。
+若仅使用已算好的格林函数，构造 :class:`~pygrt.pymod.PyModel1D` 时只需指定 ``grn``，无需再传 ``modelpath``：
+
+.. literalinclude:: run/run.py
+    :language: python
+    :start-after: BEGIN REUSE GRN
+    :end-before: END REUSE GRN
 
 在已知三分量格林函数 :math:`W_m(t), Q_m(t), V_m(t)` 后，合成三分量位移 :math:`u_z(t), u_r(t), u_\theta (t)` 的公式为
 

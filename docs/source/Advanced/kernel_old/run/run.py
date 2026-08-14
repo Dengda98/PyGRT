@@ -6,8 +6,7 @@ from typing import Union
 import pygrt 
 from pygrt.cli import format_float
 
-pymod = pygrt.PyModel1D("mod1")
-pymod.set_dynamic_grn_path("KERNEL")
+pymod = pygrt.PyModel1D(grn="KERNEL", modelpath="mod1")
 
 depsrc = 0.03
 deprcv = 0.0
