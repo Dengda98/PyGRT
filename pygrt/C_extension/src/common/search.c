@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <math.h>
 
 #include "grt/common/search.h"
 #include "grt/common/const.h"
@@ -226,4 +227,44 @@ int grt_argsort(
 
     free(pairs);
     return 0;
+}
+
+
+bool grt_locateLinearInterp(
+    const real_t *x, size_t n, real_t q,
+    size_t *i0, size_t *i1, real_t *w)
+{
+    const real_t atol = 1e-8;
+
+    if(x == NULL || n == 0 || i0 == NULL || i1 == NULL || w == NULL){
+        return false;
+    }
+    if(n == 1){
+        if(fabs(q - x[0]) > atol) return false;
+        *i0 = *i1 = 0;
+        *w = 0.0;
+        return true;
+    }
+    if(q < x[0] - atol || q > x[n - 1] + atol){
+        return false;
+    }
+    if(q <= x[0]){
+        *i0 = *i1 = 0;
+        *w = 0.0;
+        return true;
+    }
+    if(q >= x[n - 1]){
+        *i0 = *i1 = n - 1;
+        *w = 0.0;
+        return true;
+    }
+    size_t i = 0;
+    for(; i + 1 < n; ++i){
+        if(q <= x[i + 1] + atol) break;
+    }
+    *i0 = i;
+    *i1 = i + 1;
+    real_t dx = x[*i1] - x[*i0];
+    *w = (fabs(dx) < atol) ? 0.0 : (q - x[*i0]) / dx;
+    return true;
 }

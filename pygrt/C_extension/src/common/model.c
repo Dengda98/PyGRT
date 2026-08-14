@@ -86,6 +86,7 @@ void grt_realloc_mod1d(MODEL1D *mod1d, size_t n)
 
 void grt_free_mod1d(MODEL1D *mod1d)
 {
+    if(mod1d == NULL) return;
     #define X(P, T)  GRT_SAFE_FREE_PTR(mod1d->P);
         __MODEL1D_FOR_EACH_ARRAY
     #undef X
@@ -94,63 +95,53 @@ void grt_free_mod1d(MODEL1D *mod1d)
 }
 
 
-MODEL1D * grt_read_mod1d_from_file(const char *modelpath, real_t depsrc, real_t deprcv, bool allowLiquid)
+real_t (* grt_read_modarr_from_file(
+    const char *modelpath, size_t *nlayer, bool allowLiquid))[GRT_MODARR_NCOL]
 {
     GRTCheckFileExist(modelpath);
-
-    if(depsrc * deprcv < 0.0){
-        GRTRaiseError("depsrc and deprcv should have the same sign.");
+    if(nlayer == NULL){
+        GRTRaiseError("nlayer is NULL.");
     }
-    
+
     FILE *fp = GRTCheckOpenFile(modelpath, "r");
 
-    
-    // 初始化
-    MODEL1D *mod1d = grt_init_mod1d(1);
-
-    const int ncols = 6; // 模型文件有6列，或除去qa qb有四列
-    const int ncols_noQ = 4;
+    const int ncols = GRT_MODARR_NCOL;
+    const int ncols_noQ = GRT_MODARR_NCOL - 2;  // 不含 Qa, Qb
     size_t iline = 0;
-    real_t h, va, vb, rho, qa, qb;
-    real_t (*modarr)[ncols] = NULL;
-    h = va = vb = rho = qa = qb = 0.0;
     size_t nlay = 0;
-    mod1d->io_depth = false;
+    bool io_depth = false;
+    real_t (*modarr)[GRT_MODARR_NCOL] = NULL;
+    real_t h, va, vb, rho, qa, qb;
 
-    size_t len;
+    size_t len = 0;
     char *line = NULL;
-
-    while(grt_getline(&line, &len, fp) != -1) {
+    while(grt_getline(&line, &len, fp) != -1){
         iline++;
-        
-        // 注释行
-        if(grt_is_comment_or_empty(line))  continue;
+        if(grt_is_comment_or_empty(line)) continue;
 
         h = va = vb = rho = qa = qb = 0.0;
         int nscan = sscanf(line, "%lf %lf %lf %lf %lf %lf\n", &h, &va, &vb, &rho, &qa, &qb);
         if(ncols != nscan && ncols_noQ != nscan){
             GRTRaiseError("Model file read error in line %zu.\n", iline);
-        };
+        }
 
-        // 读取首行，如果首行首列为 0 ，则首列指示每层顶界面深度而非厚度
+        // 首行首列为 0 时，首列表示层顶深度而非厚度
         if(nlay == 0 && h == 0.0){
-            mod1d->io_depth = true;
+            io_depth = true;
         }
 
         if(va <= 0.0 || rho <= 0.0 || (ncols == nscan && (qa <= 0.0 || qb <= 0.0))){
             GRTRaiseError("In model file, line %zu, nonpositive value is not supported.\n", iline);
         }
-
         if(vb < 0.0){
             GRTRaiseError("In model file, line %zu, negative Vs is not supported.\n", iline);
         }
-
         if(!allowLiquid && vb == 0.0){
             GRTRaiseError("In model file, line %zu, Vs==0.0 is not supported.\n", iline);
         }
 
-        modarr = (real_t(*)[ncols])realloc(modarr, sizeof(real_t)*ncols*(nlay+1));
-
+        modarr = (real_t (*)[GRT_MODARR_NCOL])realloc(
+            modarr, sizeof(real_t) * GRT_MODARR_NCOL * (nlay + 1));
         modarr[nlay][0] = h;
         modarr[nlay][1] = va;
         modarr[nlay][2] = vb;
@@ -158,26 +149,65 @@ MODEL1D * grt_read_mod1d_from_file(const char *modelpath, real_t depsrc, real_t 
         modarr[nlay][4] = qa;
         modarr[nlay][5] = qb;
         nlay++;
-
     }
+    fclose(fp);
+    GRT_SAFE_FREE_PTR(line);
 
-    if(iline==0 || modarr==NULL){
+    if(iline == 0 || modarr == NULL){
         GRTRaiseError("Model file %s read error.\n", modelpath);
     }
 
-    // 如果读取了深度，转为厚度
-    if(mod1d->io_depth){
-        for(size_t i=1; i<nlay; ++i){
-            // 检查，若为负数，则表示输入的层顶深度非递增
-            real_t tmp = modarr[i][0] - modarr[i-1][0];
+    // 深度列转为厚度（末层首列保持原值，查层时末层视为半空间）
+    if(io_depth){
+        for(size_t i = 1; i < nlay; ++i){
+            real_t tmp = modarr[i][0] - modarr[i - 1][0];
             if(tmp < 0.0){
                 GRTRaiseError("In model file, negative thickness found in layer %zu.\n", i);
             }
-            modarr[i-1][0] = tmp;
+            modarr[i - 1][0] = tmp;
         }
     }
 
+    *nlayer = nlay;
+    return modarr;
+}
 
+void grt_modarr_medium_at_depth(
+    size_t nlayer, const real_t (*modarr)[GRT_MODARR_NCOL],
+    real_t depth, real_t *va, real_t *vb, real_t *rho)
+{
+    if(nlayer == 0 || modarr == NULL){
+        GRTRaiseError("modarr is empty.");
+    }
+    if(depth < 0.0){
+        GRTRaiseError("Negative depth %.6g is not supported.", depth);
+    }
+
+    real_t top = 0.0;
+    size_t i = 0;
+    for(; i + 1 < nlayer; ++i){
+        real_t bot = top + modarr[i][0];
+        if(depth <= bot) break;  // 恰在界面取上层
+        top = bot;
+    }
+    if(va  != NULL) *va  = modarr[i][1];
+    if(vb  != NULL) *vb  = modarr[i][2];
+    if(rho != NULL) *rho = modarr[i][3];
+}
+
+MODEL1D * grt_read_mod1d_from_file(const char *modelpath, real_t depsrc, real_t deprcv, bool allowLiquid)
+{
+    if(depsrc * deprcv < 0.0){
+        GRTRaiseError("depsrc and deprcv should have the same sign.");
+    }
+
+    size_t nlay = 0;
+    real_t (*modarr)[GRT_MODARR_NCOL] = grt_read_modarr_from_file(modelpath, &nlay, allowLiquid);
+
+    MODEL1D *mod1d = grt_init_mod1d(1);
+    mod1d->io_depth = false;  // 已在 read_modarr 中转为厚度
+
+    real_t h, va, vb, rho, qa, qb;
     size_t isrc=0, ircv=0;
     size_t *pmin_idx, *pmax_idx, *pimg_idx;
     real_t depth = 0.0, depmin, depmax, depimg;
@@ -293,9 +323,7 @@ MODEL1D * grt_read_mod1d_from_file(const char *modelpath, real_t depsrc, real_t 
         depth += mod1d->Thk[iz];
     }
 
-    fclose(fp);
     GRT_SAFE_FREE_PTR(modarr);
-    GRT_SAFE_FREE_PTR(line);
 
     // 设置一个默认边界条件
     mod1d->topbound = GRT_BOUND_FREE;

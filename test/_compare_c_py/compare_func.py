@@ -75,11 +75,11 @@ def compare_sac_dirs(
 
 
 def _nc_variable_map(path: PathLike) -> dict:
-    """读取 NetCDF 变量数据，跳过坐标轴 north/east"""
+    """读取 NetCDF 变量数据，跳过坐标轴 north/east/depsrc/deprcv/depth"""
     result = {}
     with netcdf_file(str(path), mmap=False) as dataset:
         for name, variable in dataset.variables.items():
-            if name in {"north", "east"}:
+            if name in {"north", "east", "depsrc", "deprcv", "depth"}:
                 continue
             result[name] = np.array(variable[:], copy=True)
     return result

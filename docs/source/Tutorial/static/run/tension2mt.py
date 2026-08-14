@@ -20,10 +20,10 @@ nvec = np.array([
 
 vvec = nvec.copy()
 
-# 从 nc 文件中读取 src_va, src_vb
+# 单震源深度：直接取该层的 src_va / src_vb
 with netcdf_file(ncfile, mmap=False) as f:
-    src_va = f._attributes['src_va']
-    src_vb = f._attributes['src_vb']
+    src_va = float(f.variables["src_va"][0])
+    src_vb = float(f.variables["src_vb"][0])
 
 M = ((src_va/src_vb)**2 - 2) * np.eye(3) * np.sum(nvec * vvec) + (np.einsum('i,j', nvec, vvec) + np.einsum('i,j', vvec, nvec))
 

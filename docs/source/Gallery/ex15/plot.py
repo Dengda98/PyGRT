@@ -50,8 +50,8 @@ for i, st in enumerate(stgrnLst):
 ax.plot(distarr, dynamic_Z, 'k', label='Dynamic Z')
 ax.plot(distarr, dynamic_R, 'k', label='Dynamic R')
 
-ax.plot(distarr, static_grn['variables']['EXZ']['data'][0] * coef, 'ro', ms=4, label='Static Z')
-ax.plot(distarr, static_grn['variables']['EXR']['data'][0] * coef, 'bo', ms=4, label='Static R')
+ax.plot(distarr, static_grn['variables']['EXZ']['data'][0, 0, 0] * coef, 'ro', ms=4, label='Static Z')
+ax.plot(distarr, static_grn['variables']['EXR']['data'][0, 0, 0] * coef, 'bo', ms=4, label='Static R')
 
 ax.set_xlim(0, 50)
 ax.set_xlabel('Distance (km)')

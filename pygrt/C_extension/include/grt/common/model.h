@@ -128,6 +128,32 @@ void grt_free_mod1d(MODEL1D *mod1d);
  */
 MODEL1D * grt_read_mod1d_from_file(const char *modelpath, real_t depsrc, real_t deprcv, bool allowLiquid);
 
+/**
+ * 从模型文件读取 ``nlayer × 6`` 矩阵（Thk, Va, Vb, Rho, Qa, Qb）
+ * 若首列以层顶深度给出则先转为厚度；末层厚度保持文件原值
+ * 
+ * @param[in]     modelpath      模型文件路径
+ * @param[out]    nlayer         层数
+ * @param[in]     allowLiquid    是否允许液体层（Vs==0）
+ * @return        新分配的矩阵，调用方负责 free
+ */
+real_t (* grt_read_modarr_from_file(
+    const char *modelpath, size_t *nlayer, bool allowLiquid))[GRT_MODARR_NCOL];
+
+/**
+ * 由 ``nlayer × 6`` 模型矩阵按深度查层介质
+ * 末层视为半空间；恰落在层界面时取上层
+ * 
+ * @param[in]     nlayer    层数
+ * @param[in]     modarr    模型矩阵，每行 Thk/Va/Vb/Rho/Qa/Qb
+ * @param[in]     depth     深度 (km)，须 >= 0
+ * @param[out]    va        P 波速 (km/s)，可为 NULL
+ * @param[out]    vb        S 波速 (km/s)，可为 NULL
+ * @param[out]    rho       密度 (g/cm^3)，可为 NULL
+ */
+void grt_modarr_medium_at_depth(
+    size_t nlayer, const real_t (*modarr)[GRT_MODARR_NCOL],
+    real_t depth, real_t *va, real_t *vb, real_t *rho);
 
 /**
  * 设置模型的边界条件，并对底界面做检查

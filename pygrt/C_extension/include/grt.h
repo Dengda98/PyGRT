@@ -26,6 +26,7 @@
 #include "grt/common/colorstr.h"
 #include "grt/common/const.h"
 #include "grt/common/coord.h"
+#include "grt/common/finite_fault.h"
 #include "grt/common/logo.h"
 #include "grt/common/matrix.h"
 #include "grt/common/model.h"
@@ -56,7 +57,9 @@
 #include "grt/modal/secular.h"
 
 
+#include "grt/static/recv_points.h"
 #include "grt/static/static_grn.h"
+#include "grt/static/stgrnlib.h"
 #include "grt/static/static_layer.h"
 #include "grt/static/static_source.h"
 

@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import os
+import warnings
 from ctypes import c_size_t, cast, c_void_p
 from pathlib import Path
 from typing import Dict, Iterable, Optional, Sequence, Union
@@ -24,6 +25,7 @@ from .utils import read_static_nc
 
 
 PathLike = Union[str, os.PathLike]
+DepthLike = Union[float, Sequence[float]]
 
 __all__ = ["PyModel1D"]
 
@@ -42,6 +44,33 @@ def _normalize_distarr(distarr):
     if arr.ndim == 1:
         return False, np.ascontiguousarray(arr, dtype=np.float64)
     raise ValueError("distarr must be a scalar or a 1-D sequence of floats.")
+
+
+def _normalize_depths(depths: DepthLike, name: str) -> np.ndarray:
+    """
+    将震源/接收深度规范为一维 float64 数组
+
+    接受标量或一维浮点序列；空数组与负深度会报错
+    """
+    if isinstance(depths, (str, bytes)):
+        raise TypeError(f"{name} must be a float or a 1-D sequence of floats, not a string.")
+    arr = np.asarray(depths, dtype=np.float64)
+    if arr.ndim == 0:
+        arr = np.ascontiguousarray([float(arr)], dtype=np.float64)
+    elif arr.ndim == 1:
+        arr = np.ascontiguousarray(arr, dtype=np.float64)
+    else:
+        raise ValueError(f"{name} must be a scalar or a 1-D sequence of floats.")
+    if arr.size == 0:
+        raise ValueError(f"{name} must not be empty.")
+    if np.any(arr < 0.0):
+        raise ValueError(f"{name} must be nonnegative.")
+    return arr
+
+
+def _format_depth_list(depths: np.ndarray) -> str:
+    """将深度数组格式化为 CLI ``-Ds``/``-Dr`` 的逗号列表"""
+    return ",".join(format_float(float(z)) for z in depths)
 
 
 class PyModel1D:
@@ -350,8 +379,8 @@ class PyModel1D:
     def compute_static_grn(
         self,
         *,
-        depsrc: float,
-        deprcv: float,
+        depsrc: DepthLike,
+        deprcv: DepthLike,
         norths: Optional[Sequence[float]] = None,
         easts: Optional[Sequence[float]] = None,
         distarr: Optional[Sequence[float]] = None,
@@ -370,8 +399,14 @@ class PyModel1D:
         Compute static Green's functions with the ``grt static greenfn`` command.
 
         Call :meth:`set_static_grn_path` first. Results are written to the
-        configured NetCDF file and currently overwrite any existing content.
-        All arguments must be passed by keyword.
+        configured NetCDF file (4D STGRNLIB layout
+        ``[depsrc][deprcv][north][east]``) and currently overwrite any existing
+        content. All arguments must be passed by keyword.
+
+        ``depsrc`` / ``deprcv`` may be a scalar or a 1-D sequence:
+
+        * Single depth pair: CLI ``-Ddepsrc/deprcv``.
+        * Multiple depths: CLI ``-Ds...`` / ``-Dr...`` (comma-separated list).
 
         Receiver locations can be specified in either of two ways:
 
@@ -380,8 +415,10 @@ class PyModel1D:
         2. ``distarr``, a list of epicentral distances in km. This is equivalent
            to placing receivers along the east axis with north = 0.
 
-        :param    depsrc:            Source depth in km.
-        :param    deprcv:            Receiver depth in km.
+        :param    depsrc:            Source depth(s) in km. Multiple values must be
+                                     strictly ascending.
+        :param    deprcv:            Receiver depth(s) in km. Multiple values must be
+                                     strictly ascending.
         :param    norths:            Three values defining the north-coordinate
                                      option ``-Xstart/stop/step`` in km.
         :param    easts:             Three values defining the east-coordinate
@@ -414,19 +451,30 @@ class PyModel1D:
                                      displacement. Required later if strain,
                                      stress or rotation will be computed.
         :param    stats:             Whether to write integration statistics.
+                                     Only available for a single source/receiver depth;
+                                     ignored with a warning for multi-depth runs.
 
         :return: ``None``. Results are written to the configured NetCDF file.
         """
         if self.static_grn_path is None:
             raise RuntimeError("Call set_static_grn_path() before compute_static_grn().")
-        if depsrc < 0 or deprcv < 0:
-            raise ValueError("Source and receiver depths must be nonnegative.")
+
+        depsrcs = _normalize_depths(depsrc, "depsrc")
+        deprcvs = _normalize_depths(deprcv, "deprcv")
+        if depsrcs.size > 1 and not np.all(np.diff(depsrcs) > 0.0):
+            raise ValueError("depsrc must be strictly ascending when multiple values are given.")
+        if deprcvs.size > 1 and not np.all(np.diff(deprcvs) > 0.0):
+            raise ValueError("deprcv must be strictly ascending when multiple values are given.")
+        multi_depth = (depsrcs.size > 1) or (deprcvs.size > 1)
+
         if distarr is not None:
             if norths is not None or easts is not None:
                 raise ValueError("Use either distarr or norths/easts.")
             _, distances = _normalize_distarr(distarr)
             if distances.size == 0 or np.any(distances < 0.0):
                 raise ValueError("distarr must contain nonnegative distances.")
+            if distances.size > 1 and not np.all(np.diff(distances) > 0.0):
+                raise ValueError("distarr must be strictly ascending.")
             command_grid = {
                 "R": f"-R{','.join(format_float(value) for value in distances)}"
             }
@@ -442,10 +490,14 @@ class PyModel1D:
             "module": "static",
             "subcommand": "greenfn",
             "M": f"-M{self.modelpath}",
-            "D": f"-D{format_float(depsrc)}/{format_float(deprcv)}",
-            "O": f"-O{self.static_grn_path}",
-            "B": f"-B{self._boundary_option()}",
         }
+        if multi_depth:
+            command["Ds"] = f"-Ds{_format_depth_list(depsrcs)}"
+            command["Dr"] = f"-Dr{_format_depth_list(deprcvs)}"
+        else:
+            command["D"] = f"-D{format_float(float(depsrcs[0]))}/{format_float(float(deprcvs[0]))}"
+        command["O"] = f"-O{self.static_grn_path}"
+        command["B"] = f"-B{self._boundary_option()}"
         command.update(command_grid)
 
         # Build the -L option.
@@ -472,7 +524,13 @@ class PyModel1D:
 
         # Build the statistics and derivative options.
         if stats:
-            command["S"] = "-S"
+            if multi_depth:
+                warnings.warn(
+                    "stats is ignored for multi-depth STGRNLIB computation.",
+                    stacklevel=2,
+                )
+            else:
+                command["S"] = "-S"
         if calc_upar:
             command["e"] = "-e"
 
@@ -618,8 +676,8 @@ class PyModel1D:
     def compute_static_syn(
         self,
         *,
-        scale: float,
         output_path: PathLike,
+        scale: Optional[float] = None,
         source: str = "EX",
         strike: Optional[float] = None,
         dip: Optional[float] = None,
@@ -627,8 +685,13 @@ class PyModel1D:
         force: Optional[Sequence[float]] = None,
         moment_tensor: Optional[Sequence[float]] = None,
         scale_with_mu: bool = False,
+        depsrc: Optional[float] = None,
+        deprcv: Optional[float] = None,
         norths: Optional[Sequence[float]] = None,
         easts: Optional[Sequence[float]] = None,
+        recv_points: Optional[PathLike] = None,
+        finite_fault: Optional[PathLike] = None,
+        subfault_size: Optional[Sequence[float]] = None,
         zne: bool = False,
         calc_upar: bool = False,
         return_result: bool = False,
@@ -636,17 +699,25 @@ class PyModel1D:
         r"""
         Synthesize static three-component displacement with ``grt static syn``.
 
-        Results are written to the NetCDF file ``output_path``. Source-type and
-        component conventions match :meth:`compute_syn`. Call
+        Results are written to the NetCDF file ``output_path``. Call
         :meth:`set_static_grn_path` and :meth:`compute_static_grn` first.
         All arguments must be passed by keyword.
 
-        By default the output grid inherits the north/east grid of the static
-        Green's function file. You may pass ``norths`` and ``easts`` to request a
-        new grid; each node then uses the nearest epicentral-distance Green's
-        function, which is an approximation that reuses an existing library.
+        Receivers default to the library north/east grid. Optionally redefine
+        them with ``norths``/``easts`` (uniform ``deprcv`` when the library has
+        multiple receiver depths), or with ``recv_points`` for an ASCII file of
+        arbitrary ``north east depth`` points (CLI ``-Q``). ``recv_points`` is
+        mutually exclusive with ``norths``/``easts`` and ``deprcv``. If the
+        library was built with ``distarr`` / ``-R``, the default grid is a 1-D
+        line (north = 0, east = R); set ``norths``/``easts`` or ``recv_points``
+        to obtain a 2-D field.
 
-        Choose one source type with ``source``:
+        Point sources use ``scale`` and ``source``. Finite faults use
+        ``finite_fault`` (Coulomb-format file, CLI ``-C``) instead; that path
+        requires a multi-source-depth library, automatically writes ZNE, and
+        ignores point-source options.
+
+        Choose one point-source type with ``source``:
 
         * ``EX`` - explosion. Only ``scale`` is required.
         * ``DC`` - double-couple / shear. Requires ``strike``, ``dip`` and ``rake``.
@@ -655,15 +726,18 @@ class PyModel1D:
         * ``MT`` - moment tensor. Requires
           ``moment_tensor=(Mxx, Mxy, Mxz, Myy, Myz, Mzz)``.
 
-        :param    scale:             Source scaling factor. For ``EX``, ``DC``,
+        :param    output_path:       Output NetCDF file path.
+        :param    scale:             Point-source scaling factor. For ``EX``, ``DC``,
                                      ``TS`` and ``MT``, this is the scalar seismic
                                      moment in dyne·cm. For ``SF``, the unit is dyne.
                                      If ``scale_with_mu`` is true, ``scale`` is
                                      treated as area × slip in cm³ and multiplied by
                                      the source-layer shear modulus :math:`\mu`.
-        :param    output_path:       Output NetCDF file path.
-        :param    source:            Source type. One of ``EX``, ``DC``, ``TS``,
-                                     ``SF`` and ``MT``.
+                                     Required for point sources; ignored for
+                                     ``finite_fault``.
+        :param    source:            Point-source type. One of ``EX``, ``DC``,
+                                     ``TS``, ``SF`` and ``MT``. Ignored when
+                                     ``finite_fault`` is set.
         :param    strike:            Fault strike in deg, in [0, 360]. North is 0°,
                                      clockwise positive. Required for ``DC`` and
                                      ``TS``.
@@ -680,18 +754,37 @@ class PyModel1D:
                                      Subscripts x/y/z denote north/east/down.
         :param    scale_with_mu:     If true, multiply ``scale`` by the source-layer
                                      shear modulus :math:`\mu` (CLI ``-Su``).
+        :param    depsrc:            Point-source depth in km (CLI ``-Ds``). Required
+                                     when the library has multiple source depths;
+                                     forbidden for ``finite_fault``.
+        :param    deprcv:            Receiver depth in km for grid receivers
+                                     (CLI ``-Dr``). Required when the library has
+                                     multiple receiver depths and ``recv_points``
+                                     is not used.
         :param    norths:            Optional new north grid as three values
                                      ``(start, stop, step)`` in km. Must be set
-                                     together with ``easts``.
+                                     together with ``easts``. Mutually exclusive
+                                     with ``recv_points``.
         :param    easts:             Optional new east grid as three values
                                      ``(start, stop, step)`` in km. Must be set
-                                     together with ``norths``.
+                                     together with ``norths``. Mutually exclusive
+                                     with ``recv_points``.
+        :param    recv_points:       ASCII file of arbitrary receivers
+                                     (``north east depth`` in km; ``#`` comments).
+                                     Mutually exclusive with ``norths``/``easts``
+                                     and ``deprcv``.
+        :param    finite_fault:      Coulomb-format finite-fault file (CLI ``-C``).
+                                     Mutually exclusive with point-source options.
+        :param    subfault_size:     Optional ``(dL, dW)`` in km for finite-fault
+                                     subdivision along strike / dip. If omitted,
+                                     the C code uses ``min(dr, dz)`` of the library.
         :param    zne:               If true, output ZNE instead of ZRT components.
+                                     Finite faults always write ZNE.
         :param    calc_upar:         If true, also synthesize spatial derivatives of
-                                     displacement. Derivative variable names are
-                                     prefixed with ``z``, ``r`` or ``t``. Set this
-                                     when strain, stress or rotation will be computed
-                                     later.
+                                     displacement. Derivative variable names use
+                                     prefixes ``z``/``r``/``t`` (ZRT) or
+                                     ``z``/``n``/``e`` (ZNE). Set this when strain,
+                                     stress or rotation will be computed later.
         :param    return_result:     If true, read the generated NetCDF file with
                                      :func:`pygrt.utils.read_static_nc`.
 
@@ -702,25 +795,69 @@ class PyModel1D:
             raise RuntimeError("Call set_static_grn_path() before compute_static_syn().")
         output = Path(output_path)
         output.parent.mkdir(parents=True, exist_ok=True)
+
+        use_ff = finite_fault is not None
+        use_q = recv_points is not None
+        use_xy = norths is not None or easts is not None
+        if use_ff and (
+            scale is not None
+            or force is not None
+            or moment_tensor is not None
+            or strike is not None
+            or dip is not None
+            or rake is not None
+            or scale_with_mu
+            or source.upper() != "EX"
+        ):
+            raise ValueError("finite_fault is mutually exclusive with point-source options.")
+        if use_q and use_xy:
+            raise ValueError("recv_points is mutually exclusive with norths/easts.")
+        if use_q and deprcv is not None:
+            raise ValueError("recv_points is mutually exclusive with deprcv.")
+        if use_xy and (norths is None or easts is None):
+            raise ValueError("norths and easts must be supplied together.")
+        if depsrc is not None and depsrc < 0.0:
+            raise ValueError("depsrc must be nonnegative.")
+        if deprcv is not None and deprcv < 0.0:
+            raise ValueError("deprcv must be nonnegative.")
+        if use_ff and depsrc is not None:
+            raise ValueError("depsrc is forbidden when finite_fault is set.")
+        if subfault_size is not None:
+            if not use_ff:
+                raise ValueError("subfault_size requires finite_fault.")
+            if len(subfault_size) != 2:
+                raise ValueError("subfault_size must be (dL, dW).")
+
         command = {
             "module": "static",
             "subcommand": "syn",
             "G": f"-G{self.static_grn_path}",
-            "S": f"-S{'u' if scale_with_mu else ''}{format_float(scale)}",
             "O": f"-O{output}",
         }
-        command.update(
-            self._source_options(source, strike, dip, rake, force, moment_tensor)
-        )
 
-        # Build the coordinate options.
-        if norths is not None or easts is not None:
-            if norths is None or easts is None:
-                raise ValueError("norths and easts must be supplied together.")
+        if use_ff:
+            c_opt = f"-C{Path(finite_fault)}"
+            if subfault_size is not None:
+                c_opt += f"+i{format_float(subfault_size[0])}/{format_float(subfault_size[1])}"
+            command["C"] = c_opt
+        else:
+            if scale is None:
+                raise ValueError("scale is required for point-source synthesis.")
+            command["S"] = f"-S{'u' if scale_with_mu else ''}{format_float(scale)}"
+            command.update(
+                self._source_options(source, strike, dip, rake, force, moment_tensor)
+            )
+            if depsrc is not None:
+                command["Ds"] = f"-Ds{format_float(depsrc)}"
+
+        if deprcv is not None:
+            command["Dr"] = f"-Dr{format_float(deprcv)}"
+        if use_q:
+            command["Q"] = f"-Q{Path(recv_points)}"
+        elif use_xy:
             command["X"] = f"-X{format_range(norths, 'norths')}"
             command["Y"] = f"-Y{format_range(easts, 'easts')}"
 
-        # Build the component and derivative options.
         if zne:
             command["N"] = "-N"
         if calc_upar:

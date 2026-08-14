@@ -33,7 +33,40 @@ pygrt.utils.compute_strain("syn_zne")
 pygrt.utils.compute_stress("syn_zne")
 pygrt.utils.compute_rotation("syn_zne")
 
-for name in ["GRN", "syn", "syn_zne"]:
+# -------------------- 静态应变 / 应力 / 旋转 --------------------
+pymod_s = pygrt.PyModel1D(modname)
+pymod_s.set_static_grn_path("stgrn.nc")
+pymod_s.compute_static_grn(
+    depsrc=2.0, deprcv=0.0, norths=[-3.0, 3.0, 1.0], easts=[-2.0, 2.0, 1.0],
+    calc_upar=True,
+)
+pymod_s.compute_static_syn(
+    scale=1e20, output_path="stsyn.nc", source="EX", calc_upar=True,
+)
+pygrt.utils.compute_strain("stsyn.nc")
+pygrt.utils.compute_stress("stsyn.nc")
+pygrt.utils.compute_rotation("stsyn.nc")
+
+pymod_s.compute_static_syn(
+    scale=1e20, output_path="stsyn_zne.nc", source="EX", zne=True, calc_upar=True,
+)
+pygrt.utils.compute_strain("stsyn_zne.nc")
+pygrt.utils.compute_stress("stsyn_zne.nc")
+pygrt.utils.compute_rotation("stsyn_zne.nc")
+
+rcv = Path("rcv_pts.txt")
+rcv.write_text("# north east depth (km)\n0 0 0\n1 2 0\n-1 1 0\n")
+pymod_s.compute_static_syn(
+    scale=1e20, output_path="stsyn_q.nc", source="EX",
+    recv_points=rcv, calc_upar=True,
+)
+pygrt.utils.compute_strain("stsyn_q.nc")
+pygrt.utils.compute_stress("stsyn_q.nc")
+pygrt.utils.compute_rotation("stsyn_q.nc")
+
+for name in ["GRN", "syn", "syn_zne", "stgrn.nc", "stsyn.nc", "stsyn_zne.nc", "stsyn_q.nc", "rcv_pts.txt"]:
     p = Path(name)
     if p.is_dir():
         shutil.rmtree(p, ignore_errors=True)
+    elif p.is_file():
+        p.unlink(missing_ok=True)

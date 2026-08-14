@@ -157,3 +157,21 @@ typedef int (*grt_compare_fn)(const void *a, const void *b);
 int grt_argsort(
     const void *base, size_t n, size_t element_size,
     grt_compare_fn compare, size_t *indices);
+
+/**
+ * 在升序数组上定位 1D 线性插值的左右邻点与权重
+ *
+ * n==1 时要求 |q-x[0]| 在容差内，此时 i0=i1=0、w=0；
+ * q 越界（超出端点容差）返回 false
+ *
+ * @param[in]   x    升序坐标数组
+ * @param[in]   n    长度
+ * @param[in]   q    查询值
+ * @param[out]  i0   左邻索引
+ * @param[out]  i1   右邻索引
+ * @param[out]  w    权重，使值 = (1-w)*x[i0] + w*x[i1]
+ * @return      是否在范围内
+ */
+bool grt_locateLinearInterp(
+    const real_t *x, size_t n, real_t q,
+    size_t *i0, size_t *i1, real_t *w);
