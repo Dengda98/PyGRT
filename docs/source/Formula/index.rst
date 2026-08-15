@@ -37,6 +37,7 @@
     :columns: 1
 
     - :doc:`k-integral/DCM_supply`
+    - :doc:`k-integral/zero_distance`
 
 **其它**
 
@@ -61,7 +62,7 @@
     source/static_source
 
     k-integral/DCM_supply
+    k-integral/zero_distance
 
     others/uiz
     others/DS_zero
-    

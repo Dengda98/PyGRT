@@ -8,6 +8,7 @@
  */
 
 #include "grt/common/const.h"
+#include "grt/integral/dcm.h"
 #include "grt/integral/k_integ.h"
 
 /** DCM 的校正项，其中积分定义与 grt_int_Pk() 函数保持一致 */
