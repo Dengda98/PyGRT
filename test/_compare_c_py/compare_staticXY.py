@@ -31,7 +31,7 @@ FN, FE, FZ = 2.0, -1.0, 4.0
 STK, DIP, RAK = 77.0, 88.0, 99.0
 MT = (1.0, -2.0, -5.0, 0.5, 3.0, 1.2)
 # 格林函数库用震中距采样；合成时再插值到新网格
-DISTARR = np.arange(0.0, 10.0 + 1e-8, 0.1)
+DISTS = np.arange(0.0, 10.0 + 1e-8, 0.1)
 NORTHS = (-3.1, 3.1, 0.6)
 EASTS = (-4.1, 4.1, 0.8)
 THRESH = 1e-10
@@ -47,7 +47,7 @@ def run_c(c_root: Path) -> None:
     static_dir = c_root / "static"
     static_dir.mkdir(parents=True)
     grn = static_dir / "stgrn.nc"
-    rs = ",".join(format_float(float(r)) for r in DISTARR)
+    rs = ",".join(format_float(float(r)) for r in DISTS)
 
     run_grt([
         "static",
@@ -99,7 +99,7 @@ def run_py(py_root: Path) -> None:
     model.compute_static_grn(
         depsrc=DEPSRC,
         deprcv=DEPRCV,
-        distarr=DISTARR,
+        dists=DISTS,
         calc_upar=True,
     )
 

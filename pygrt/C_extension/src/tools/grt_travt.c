@@ -84,9 +84,10 @@ printf("\n"
 "\n"
 "    -R<r1>,<r2>[,...]|<r1>/<r2>/<dr>|<file>\n"
 "                 Multiple epicentral distances (km), support three ways:\n"
-"                 + <r1>,<r2>[,...]: seperated by comma.\n"
+"                 + <r1>,<r2>[,...]: separated by comma.\n"
 "                 + <r1>/<r2>/<dr>:  equal distance <dr> within [r1,r2].\n"
 "                 + <file>: each line contains a distance value.\n"
+"                   Values must be strictly ascending.\n"
 "\n"
 "    -h           Display this help message.\n"
 "\n\n"
@@ -189,6 +190,11 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                         Ctrl->R.rs[i] = atof(Ctrl->R.s_rs[i]);
                         if(Ctrl->R.rs[i] < 0.0){
                             GRTBadOptionError(R, "Can't set negative epicentral distance(%f).", Ctrl->R.rs[i]);
+                        }
+                    }
+                    for(size_t i=1; i<Ctrl->R.nr; ++i){
+                        if(!(Ctrl->R.rs[i] > Ctrl->R.rs[i - 1])){
+                            GRTBadOptionError(R, "Epicentral distances must be strictly ascending.");
                         }
                     }
                 }

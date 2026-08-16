@@ -40,32 +40,39 @@ def _restore_run_grt(monkey_target, original):
     monkey_target.run_grt = original
 
 
-def test_invalid_gf_source_and_freqband_and_distarr():
+def test_invalid_gf_source_and_freqband_and_dists():
     runner = CapturedRunner()
     original = _patch_run_grt(pygrt.pymod, runner)
     try:
         model = pygrt.PyModel1D(grn=HERE / "_tmp_args_grn", modelpath=MODEL)
 
         try:
-            model.compute_grn(depsrc=1.0, deprcv=0.0, distarr=1.0, nt=8, dt=0.1, gf_source=["XX"])
+            model.compute_grn(depsrc=1.0, deprcv=0.0, dists=1.0, nt=8, dt=0.1, gf_source=["XX"])
         except ValueError as exc:
             assert "gf_source" in str(exc)
         else:
             raise AssertionError("invalid gf_source should raise ValueError")
 
         try:
-            model.compute_grn(depsrc=1.0, deprcv=0.0, distarr=1.0, nt=8, dt=0.1, freqband=[1.0])
+            model.compute_grn(depsrc=1.0, deprcv=0.0, dists=1.0, nt=8, dt=0.1, freqband=[1.0])
         except ValueError as exc:
             assert "freqband" in str(exc)
         else:
             raise AssertionError("short freqband should raise ValueError")
 
         try:
-            model.compute_grn(depsrc=1.0, deprcv=0.0, distarr="10.5", nt=8, dt=0.1)
+            model.compute_grn(depsrc=1.0, deprcv=0.0, dists="10.5", nt=8, dt=0.1)
         except TypeError as exc:
-            assert "distarr" in str(exc)
+            assert "dists" in str(exc)
         else:
-            raise AssertionError("string distarr should raise TypeError")
+            raise AssertionError("string dists should raise TypeError")
+
+        try:
+            model.compute_grn(depsrc=1.0, deprcv=0.0, dists=[2.0, 1.0], nt=8, dt=0.1)
+        except ValueError as exc:
+            assert "strictly ascending" in str(exc)
+        else:
+            raise AssertionError("non-ascending dists should raise ValueError")
     finally:
         _restore_run_grt(pygrt.pymod, original)
 
@@ -76,11 +83,11 @@ def test_print_log_forwarded_to_run_grt():
     try:
         model = pygrt.PyModel1D(grn=HERE / "_tmp_args_grn", modelpath=MODEL)
 
-        model.compute_grn(depsrc=1.0, deprcv=0.0, distarr=1.0, nt=8, dt=0.1, print_log=True)
+        model.compute_grn(depsrc=1.0, deprcv=0.0, dists=1.0, nt=8, dt=0.1, print_log=True)
         assert runner.kwargs[-1].get("print_log") is True
         assert "-s" not in runner.commands[-1]
 
-        model.compute_grn(depsrc=1.0, deprcv=0.0, distarr=1.0, nt=8, dt=0.1, print_log=False)
+        model.compute_grn(depsrc=1.0, deprcv=0.0, dists=1.0, nt=8, dt=0.1, print_log=False)
         assert runner.kwargs[-1].get("print_log") is False
         assert "-s" in runner.commands[-1]
     finally:
@@ -97,7 +104,7 @@ def test_compute_grn_default_and_optional_flags():
         model.compute_grn(
             depsrc=2.0,
             deprcv=0.0,
-            distarr=[1.0, 2.5],
+            dists=[1.0, 2.5],
             nt=32,
             dt=0.05,
         )
@@ -123,7 +130,7 @@ def test_compute_grn_default_and_optional_flags():
         model.compute_grn(
             depsrc=3.5,
             deprcv=1.25,
-            distarr=10.0,
+            dists=10.0,
             nt=64,
             dt=0.02,
             upsampling_n=2,
@@ -172,7 +179,7 @@ def test_compute_grn_default_and_optional_flags():
         model.compute_grn(
             depsrc=2.0,
             deprcv=0.0,
-            distarr=5.0,
+            dists=5.0,
             nt=16,
             dt=0.1,
             delayT0=0.5,
@@ -200,7 +207,7 @@ def test_compute_grn_default_and_optional_flags():
             model2.compute_grn(
                 depsrc=1.0,
                 deprcv=0.0,
-                distarr=1.0,
+                dists=1.0,
                 nt=8,
                 dt=0.1,
             )
@@ -210,7 +217,7 @@ def test_compute_grn_default_and_optional_flags():
         model.compute_grn(
             depsrc=1.0,
             deprcv=0.0,
-            distarr=1.0,
+            dists=1.0,
             nt=8,
             dt=0.1,
             converg_method="NONE",
@@ -220,7 +227,7 @@ def test_compute_grn_default_and_optional_flags():
         _restore_run_grt(pygrt.pymod, original)
 
 
-def test_compute_static_grn_xy_and_distarr():
+def test_compute_static_grn_xy_and_dists():
     runner = CapturedRunner()
     original = _patch_run_grt(pygrt.pymod, runner)
     try:
@@ -264,7 +271,7 @@ def test_compute_static_grn_xy_and_distarr():
         model.compute_static_grn(
             depsrc=1.0,
             deprcv=0.0,
-            distarr=[0.0, 1.5, 3.0],
+            dists=[0.0, 1.5, 3.0],
             safilonTol=1e-5,
             converg_method="PTAM",
         )
@@ -578,10 +585,10 @@ def test_format_helpers():
 def main():
     tests = [
         test_format_helpers,
-        test_invalid_gf_source_and_freqband_and_distarr,
+        test_invalid_gf_source_and_freqband_and_dists,
         test_print_log_forwarded_to_run_grt,
         test_compute_grn_default_and_optional_flags,
-        test_compute_static_grn_xy_and_distarr,
+        test_compute_static_grn_xy_and_dists,
         test_compute_syn_source_and_time_function_options,
         test_compute_static_syn_and_tensor_postprocess_args,
         test_tensor_return_result_reads_prefix_only,

@@ -2,6 +2,20 @@
 
 set -euo pipefail
 
+expect_fail() {
+    local desc="$1"
+    shift
+    set +e
+    "$@" >/dev/null 2>&1
+    local ret=$?
+    set -e
+    if [ "$ret" -eq 0 ]; then
+        echo "ERROR: expected failure but succeeded: $desc" >&2
+        exit 1
+    fi
+    echo "OK (failed as expected): $desc"
+}
+
 grt greenfn -h
 
 grt greenfn -M../milrow -D2/3 -N600/0.02 -R10 -OGRN
@@ -41,6 +55,9 @@ EOF
 grt greenfn -M../milrow -D2/0 -N600/0.02 -Rdists -OGRN
 rm -rf dists
 grt greenfn -M../milrow -D2/0 -N600/0.02 -R6/10/2 -OGRN
+
+expect_fail "non-ascending -R list" \
+    grt greenfn -M../milrow -D2/0 -N600/0.02 -R3,1,2 -OGRN_bad
 
 
 python -u test_greenfn.py
