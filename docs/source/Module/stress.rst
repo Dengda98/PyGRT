@@ -13,7 +13,7 @@ stress
 语法
 -----------
 
-**grt stress** *syn_dir*
+**grt stress** *syn_dir* [-h]
 
 描述
 --------------

@@ -8,11 +8,11 @@ depsrc = 0.0
 deprcv = 0.0
 pymod = pygrt.PyModel1D(grn="GRN", modelpath="milrow")
 
-distarr = [5,8,10]
+dists = [5,8,10]
 # 设置 converg_method='PTAM' 进行收敛
 pymod.compute_grn(
     depsrc=depsrc, deprcv=deprcv,
-    distarr=distarr, nt=500, dt=0.02, converg_method='PTAM', k0=2, ampk=1.2, use_kmax_ref=True,
+    dists=dists, nt=500, dt=0.02, converg_method='PTAM', k0=2, ampk=1.2, use_kmax_ref=True,
     statsidxs=[50,100],
 )
 # END DEPSRC 0.0 DGRN

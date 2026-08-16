@@ -115,7 +115,7 @@ def run_py_dynamic(py_root: Path) -> None:
     model.compute_grn(
         depsrc=DEPSRC,
         deprcv=DEPRCV,
-        distarr=DIST,
+        dists=DIST,
         nt=NT,
         dt=DT,
         calc_upar=True,

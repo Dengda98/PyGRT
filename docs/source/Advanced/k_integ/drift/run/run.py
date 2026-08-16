@@ -12,7 +12,7 @@ nt = 500
 dt = 10
 
 pymod.compute_grn(
-    depsrc=depsrc, deprcv=deprcv, distarr=[5000],
+    depsrc=depsrc, deprcv=deprcv, dists=[5000],
     nt=nt, dt=dt, keepAllFreq=True, statsidxs=[0, 1, 2, 3, 4, 5],
 )
 st_grn = read("GRN/*/*.sac")
@@ -118,7 +118,7 @@ fig.savefig("kernels.svg", bbox_inches='tight')
 # =================================================================
 # 跳过频段，重新计算
 pymod.compute_grn(
-    depsrc=depsrc, deprcv=deprcv, distarr=[5000], nt=nt, dt=dt,
+    depsrc=depsrc, deprcv=deprcv, dists=[5000], nt=nt, dt=dt,
 )
 st_grn3 = read("GRN/*/*.sac")
 

@@ -13,7 +13,7 @@ az = 22.0
 
 pymod = pygrt.PyModel1D(grn="GRN", modelpath=modname)
 pymod.compute_grn(
-    depsrc=depsrc, deprcv=deprcv, distarr=dist, nt=nt, dt=dt, calc_upar=True,
+    depsrc=depsrc, deprcv=deprcv, dists=dist, nt=nt, dt=dt, calc_upar=True,
 )
 
 pymod.compute_syn(

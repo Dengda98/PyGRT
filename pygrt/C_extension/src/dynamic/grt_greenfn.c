@@ -265,11 +265,12 @@ printf("\n"
 "\n"
 "    -R<r1>,<r2>[,...]|<r1>/<r2>/<dr>|<file>\n"
 "                 Multiple epicentral distances (km), support three ways:\n"
-"                 + <r1>,<r2>[,...]: seperated by comma.\n"
+"                 + <r1>,<r2>[,...]: separated by comma.\n"
 "                 + <r1>/<r2>/<dr>:  equal distance <dr> within [r1,r2].\n"
 "                 + <file>: each line contains a distance value.\n"
+"                   Values must be strictly ascending.\n"
 "\n"
-"    -O<outdir>   Directorypath of output for saving.\n"
+"    -O<outdir>   Directory path for saving output.\n"
 "                 The model file is also copied into <outdir>.\n"
 "\n"
 "    -H<f1>/<f2>  Apply bandpass filer with rectangle window, \n"
@@ -741,6 +742,11 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                             GRTBadOptionError(R, "Can't set negative epicentral distance(%f).", Ctrl->R.rs[i]);
                         }
                     }
+                    for(size_t i=1; i<Ctrl->R.nr; ++i){
+                        if(!(Ctrl->R.rs[i] > Ctrl->R.rs[i - 1])){
+                            GRTBadOptionError(R, "Epicentral distances must be strictly ascending.");
+                        }
+                    }
                 }
                 break;
 
@@ -1115,4 +1121,3 @@ int greenfn_main(int argc, char **argv) {
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;
 }
-

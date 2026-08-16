@@ -6,6 +6,9 @@
 
 Python中计算动态格林函数的主函数为 :meth:`compute_grn() <pygrt.pymod.PyModel1D.compute_grn>` ，C模块为 :doc:`/Module/greenfn`。
 
+使用 **-R** 或 Python 接口的 ``dists`` 传入多个震中距时，数值必须严格递增，不能重复或倒序；
+单个震中距不受此限制。
+
 核心计算逻辑来自  |yao2026p| ，具体代码可见与C API中对应同名 :file:`*.c` 文件，其中计算格林函数频谱的主函数为 :file:`grn.c` 里的 :c:func:`grt_integ_grn_spec`。输出结果的坐标系见下图。
 
 .. figure:: ../coord.svg

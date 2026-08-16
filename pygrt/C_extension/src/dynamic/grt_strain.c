@@ -25,11 +25,13 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
 static void print_help(){
 printf("\n"
 "[grt strain] %s\n\n", GRT_VERSION);printf(
-"    Conbine spatial derivatives of displacements into strain tensor.\n"
+"    Combine spatial derivatives of displacements into strain tensor.\n"
+"    Input must be a `syn` output computed with -e.\n"
+"    Six SAC files are written to the same directory.\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
-"    grt strain <syn_dir>\n"
+"    grt strain <syn_dir> [-h]\n"
 "\n\n\n"
 );
 }

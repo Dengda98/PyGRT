@@ -30,20 +30,20 @@ DepthLike = Union[float, Sequence[float]]
 __all__ = ["PyModel1D"]
 
 
-def _normalize_distarr(distarr):
+def _normalize_dists(dists):
     """
-    将 distarr 规范为一维 float64 数组
+    将 dists 规范为一维 float64 数组
 
     仅接受标量浮点数或一维浮点序列；字符串等类型直接拒绝
     """
-    if isinstance(distarr, (str, bytes)):
-        raise TypeError("distarr must be a float or a 1-D sequence of floats, not a string.")
-    arr = np.asarray(distarr, dtype=np.float64)
+    if isinstance(dists, (str, bytes)):
+        raise TypeError("dists must be a float or a 1-D sequence of floats, not a string.")
+    arr = np.asarray(dists, dtype=np.float64)
     if arr.ndim == 0:
         return True, np.ascontiguousarray([float(arr)], dtype=np.float64)
     if arr.ndim == 1:
         return False, np.ascontiguousarray(arr, dtype=np.float64)
-    raise ValueError("distarr must be a scalar or a 1-D sequence of floats.")
+    raise ValueError("dists must be a scalar or a 1-D sequence of floats.")
 
 
 def _normalize_depths(depths: DepthLike, name: str) -> np.ndarray:
@@ -146,7 +146,7 @@ class PyModel1D:
         *,
         depsrc: float,
         deprcv: float,
-        distarr: Union[float, Sequence[float]],
+        dists: Union[float, Sequence[float]],
         modelpath: Optional[PathLike] = None,
     ):
         r"""
@@ -158,7 +158,8 @@ class PyModel1D:
 
         :param    depsrc:            Source depth in km.
         :param    deprcv:            Receiver depth in km.
-        :param    distarr:           Epicentral distance(s) in km. A scalar or a sequence of distances.
+        :param    dists:             Epicentral distance(s) in km. A scalar or a
+                                     strictly ascending sequence of distances.
         :param    modelpath:         Model file for this call only. If omitted, uses
                                      ``self.modelpath``. If both are set and differ,
                                      a warning is issued and ``self.modelpath`` is not changed.
@@ -187,9 +188,11 @@ class PyModel1D:
             use_model = self.modelpath
 
         # 标量震中距返回 float，序列返回长度为 n 的数组
-        single, distances = _normalize_distarr(distarr)
+        single, distances = _normalize_dists(dists)
         if distances.size == 0 or np.any(distances < 0):
-            raise ValueError("distarr must contain nonnegative distances.")
+            raise ValueError("dists must contain nonnegative distances.")
+        if distances.size > 1 and not np.all(np.diff(distances) > 0.0):
+            raise ValueError("dists must be strictly ascending.")
 
         carr = C_grt_compute_travt1d_from_file(
             use_model.encode("utf-8"),
@@ -213,7 +216,7 @@ class PyModel1D:
         *,
         depsrc: float,
         deprcv: float,
-        distarr: Union[float, Sequence[float]],
+        dists: Union[float, Sequence[float]],
         nt: int,
         dt: float,
         upsampling_n: int = 1,
@@ -249,7 +252,8 @@ class PyModel1D:
 
         :param    depsrc:            Source depth in km.
         :param    deprcv:            Receiver depth in km.
-        :param    distarr:           Array of epicentral distances in km, or a single distance.
+        :param    dists:             Array of strictly ascending epicentral distances
+                                     in km, or a single distance.
         :param    nt:                Number of time points. With the help of SciPy,
                                      ``nt`` no longer needs to be a power of 2.
         :param    dt:                Time interval in s.
@@ -311,9 +315,11 @@ class PyModel1D:
         if depsrc < 0 or deprcv < 0:
             raise ValueError("Source and receiver depths must be nonnegative.")
 
-        _, distances = _normalize_distarr(distarr)
+        _, distances = _normalize_dists(dists)
         if distances.size == 0 or np.any(distances < 0):
-            raise ValueError("distarr must contain nonnegative distances.")
+            raise ValueError("dists must contain nonnegative distances.")
+        if distances.size > 1 and not np.all(np.diff(distances) > 0.0):
+            raise ValueError("dists must be strictly ascending.")
 
         try:
             freq1, freq2 = freqband
@@ -399,7 +405,7 @@ class PyModel1D:
         deprcv: DepthLike,
         norths: Optional[Sequence[float]] = None,
         easts: Optional[Sequence[float]] = None,
-        distarr: Optional[Sequence[float]] = None,
+        dists: Optional[Union[float, Sequence[float]]] = None,
         keps: float = -1.0,
         k0: float = 50.0,
         use_kmax_ref: bool = False,
@@ -424,12 +430,22 @@ class PyModel1D:
         * Single depth pair: CLI ``-Ddepsrc/deprcv``.
         * Multiple depths: CLI ``-Ds...`` / ``-Dr...`` (comma-separated list).
 
+        For an ordinary Green's-function library, ``dists`` is the usual
+        choice: it computes a one-dimensional distance list and stores it as
+        ``north=0`` and ``east=dists``. This is also the most convenient
+        format for :meth:`compute_static_syn`, which synthesizes results at
+        surrounding distance samples and combines those results with
+        distance-based weights.
         Receiver locations can be specified in either of two ways:
 
-        1. ``norths`` and ``easts``, each a three-value sequence
-           ``(start, stop, step)`` in km, mapped to CLI ``-X`` / ``-Y``.
-        2. ``distarr``, a list of epicentral distances in km. This is equivalent
-           to placing receivers along the east axis with north = 0.
+        1. ``dists``, a scalar or sequence of epicentral distances in km.
+           This is equivalent to placing receivers along the east axis with
+           north = 0 and is the recommended way to build a reusable library.
+        2. ``norths`` and ``easts``, each a three-value sequence
+           ``(start, stop, step)`` in km, mapped to CLI ``-X`` / ``-Y``. This
+           form is mainly useful for accuracy tests or when a later synthesis
+           should reuse the same grid without distance-based combination of
+           multiple synthesized results.
 
         :param    depsrc:            Source depth(s) in km. Multiple values must be
                                      strictly ascending.
@@ -439,8 +455,9 @@ class PyModel1D:
                                      option ``-Xstart/stop/step`` in km.
         :param    easts:             Three values defining the east-coordinate
                                      option ``-Ystart/stop/step`` in km.
-        :param    distarr:           Epicentral distances in km. Equivalent to
-                                     receivers with north = 0 and east = ``distarr``.
+        :param    dists:             Epicentral distance(s) in km. A scalar or
+                                     strictly ascending sequence, equivalent to
+                                     receivers with north = 0 and east = ``dists``.
                                      Mutually exclusive with ``norths`` / ``easts``.
         :param    keps:              Automatic convergence condition. See Yao and
                                      Harkrider (1983) for more details. A negative
@@ -485,20 +502,20 @@ class PyModel1D:
             raise ValueError("deprcv must be strictly ascending when multiple values are given.")
         multi_depth = (depsrcs.size > 1) or (deprcvs.size > 1)
 
-        if distarr is not None:
+        if dists is not None:
             if norths is not None or easts is not None:
-                raise ValueError("Use either distarr or norths/easts.")
-            _, distances = _normalize_distarr(distarr)
+                raise ValueError("Use either dists or norths/easts.")
+            _, distances = _normalize_dists(dists)
             if distances.size == 0 or np.any(distances < 0.0):
-                raise ValueError("distarr must contain nonnegative distances.")
+                raise ValueError("dists must contain nonnegative distances.")
             if distances.size > 1 and not np.all(np.diff(distances) > 0.0):
-                raise ValueError("distarr must be strictly ascending.")
+                raise ValueError("dists must be strictly ascending.")
             command_grid = {
                 "R": f"-R{','.join(format_float(value) for value in distances)}"
             }
         else:
             if norths is None or easts is None:
-                raise ValueError("Set norths and easts, or set distarr.")
+                raise ValueError("Set norths and easts, or set dists.")
             command_grid = {
                 "X": f"-X{format_range(norths, 'norths')}",
                 "Y": f"-Y{format_range(easts, 'easts')}",
@@ -725,14 +742,25 @@ class PyModel1D:
         multiple receiver depths), or with ``recv_points`` for an ASCII file of
         arbitrary ``north east depth`` points (CLI ``-Q``). ``recv_points`` is
         mutually exclusive with ``norths``/``easts`` and ``deprcv``. If the
-        library was built with ``distarr`` / ``-R``, the default grid is a 1-D
+        library was built with ``dists`` / ``-R``, the default grid is a 1-D
         line (north = 0, east = R); set ``norths``/``easts`` or ``recv_points``
         to obtain a 2-D field.
 
         Point sources use ``scale`` and ``source``. Finite faults use
         ``finite_fault`` (Coulomb-format file, CLI ``-C``) instead; that path
         requires a multi-source-depth library, automatically writes ZNE, and
-        ignores point-source options.
+        rejects point-source options.
+
+        For each target receiver, the C module first synthesizes results at the
+        surrounding epicentral-distance samples and combines those synthesized
+        results with weights based on the target distance. When a requested
+        source or receiver depth lies between samples, it performs the same
+        process for each surrounding depth combination and then combines those
+        synthesized results with depth-based weights. Thus, interpolation is
+        applied to synthesized results rather than directly to Green's-function
+        arrays. If the library was generated with an explicit ``-X``/``-Y`` grid
+        and the same grid is reused, the corresponding synthesized results can
+        be used directly.
 
         Choose one point-source type with ``source``:
 
@@ -777,7 +805,9 @@ class PyModel1D:
         :param    deprcv:            Receiver depth in km for grid receivers
                                      (CLI ``-Dr``). Required when the library has
                                      multiple receiver depths and ``recv_points``
-                                     is not used.
+                                     is not used; do not set it for a library
+                                     with one receiver depth or when using
+                                     ``recv_points``.
         :param    norths:            Optional new north grid as three values
                                      ``(start, stop, step)`` in km. Must be set
                                      together with ``easts``. Mutually exclusive
@@ -791,7 +821,8 @@ class PyModel1D:
                                      Mutually exclusive with ``norths``/``easts``
                                      and ``deprcv``.
         :param    finite_fault:      Coulomb-format finite-fault file (CLI ``-C``).
-                                     Mutually exclusive with point-source options.
+                                     Mutually exclusive with point-source options;
+                                     point-source arguments cause ``ValueError``.
         :param    subfault_size:     Optional ``(dL, dW)`` in km for finite-fault
                                      subdivision along strike / dip. If omitted,
                                      the C code uses ``min(dr, dz)`` of the library.

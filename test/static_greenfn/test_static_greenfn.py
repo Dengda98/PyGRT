@@ -81,10 +81,10 @@ pymod_ms.compute_static_grn(
 pymod_mr = pygrt.PyModel1D(stgrn="stgrn_py_mr.nc", modelpath=modname)
 pymod_mr.compute_static_grn(depsrc=2.0, deprcv=[0.0, 0.5], norths=norths_c, easts=easts_c)
 
-# -R / distarr 建库
+# -R / dists 建库
 pymod_r = pygrt.PyModel1D(stgrn="stgrn_py_r.nc", modelpath=modname)
 pymod_r.compute_static_grn(
-    depsrc=2.0, deprcv=0.0, distarr=[0.0, 1.0, 2.0, 4.0],
+    depsrc=2.0, deprcv=0.0, dists=[0.0, 1.0, 2.0, 4.0],
 )
 with netcdf_file("stgrn_py_r.nc", mmap=False) as f:
     assert f.dimensions["north"] == 1
@@ -110,8 +110,8 @@ except ValueError:
     pass
 
 try:
-    pymod_r.compute_static_grn(depsrc=2.0, deprcv=0.0, distarr=[0.0, 2.0, 1.0])
-    raise AssertionError("non-ascending distarr should raise")
+    pymod_r.compute_static_grn(depsrc=2.0, deprcv=0.0, dists=[0.0, 2.0, 1.0])
+    raise AssertionError("non-ascending dists should raise")
 except ValueError:
     pass
 

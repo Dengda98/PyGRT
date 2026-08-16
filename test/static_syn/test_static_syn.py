@@ -45,7 +45,7 @@ pymod.compute_static_syn(
 # -------------------- -R 建库后合成 --------------------
 pymod_r = pygrt.PyModel1D(stgrn="stgrn_r.nc", modelpath=modname)
 pymod_r.compute_static_grn(
-    depsrc=depsrc, deprcv=deprcv, distarr=[0.0, 1.0, 2.0, 4.0, 8.0], calc_upar=True,
+    depsrc=depsrc, deprcv=deprcv, dists=[0.0, 1.0, 2.0, 4.0, 8.0], calc_upar=True,
 )
 pymod_r.compute_static_syn(scale=1e20, output_path="stsyn_r.nc", source="EX")
 pymod_r.compute_static_syn(
@@ -57,7 +57,7 @@ pymod_r.compute_static_syn(
 pymod_m = pygrt.PyModel1D(stgrn="stgrn_md.nc", modelpath=modname)
 pymod_m.compute_static_grn(
     depsrc=[1.0, 2.0, 3.0], deprcv=0.0,
-    distarr=[0.0, 1.0, 2.0, 4.0, 8.0], calc_upar=True,
+    dists=[0.0, 1.0, 2.0, 4.0, 8.0], calc_upar=True,
 )
 pymod_m.compute_static_syn(
     scale=1e16, output_path="stsyn_md.nc", source="EX", depsrc=2.0, scale_with_mu=True,
@@ -91,7 +91,7 @@ pymod_m.compute_static_syn(
 # 多台站深度必须给 deprcv
 pymod_mr = pygrt.PyModel1D(stgrn="stgrn_mr.nc", modelpath=modname)
 pymod_mr.compute_static_grn(
-    depsrc=2.0, deprcv=[0.0, 0.5], distarr=[0.0, 5.0], calc_upar=True,
+    depsrc=2.0, deprcv=[0.0, 0.5], dists=[0.0, 5.0], calc_upar=True,
 )
 pymod_mr.compute_static_syn(
     scale=1e20, output_path="stsyn_dr.nc", source="EX",

@@ -37,7 +37,7 @@ modfile1 = f"mod_{bound1}_{bound2}"
 np.savetxt(modfile1, modarr)
 pymod1 = pygrt.PyModel1D(grn="GRN1", stgrn="stgrn1.nc", modelpath=modfile1, topbound=bound1, botbound=bound2)
 pymod1.compute_grn(
-    depsrc=depsrc, deprcv=deprcv, distarr=rs, nt=nt, dt=dt,
+    depsrc=depsrc, deprcv=deprcv, dists=rs, nt=nt, dt=dt,
     keepAllFreq=True,
 )
 st1 = read("GRN1/*/*.sac")
@@ -70,7 +70,7 @@ modfile2 = f"mod_{bound2}_{bound1}"
 np.savetxt(modfile2, modarr2)
 pymod2 = pygrt.PyModel1D(grn="GRN2", stgrn="stgrn2.nc", modelpath=modfile2, topbound=bound2, botbound=bound1)
 pymod2.compute_grn(
-    depsrc=depsrc2, deprcv=deprcv2, distarr=rs, nt=nt, dt=dt,
+    depsrc=depsrc2, deprcv=deprcv2, dists=rs, nt=nt, dt=dt,
     keepAllFreq=True,
 )
 st2 = read("GRN2/*/*.sac")

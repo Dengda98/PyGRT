@@ -7,8 +7,8 @@ rm -rf GRN* *.svg *.tar.gz
 # 震中距数组
 # 输出到文件
 seq -f "%.2f" 0.5 0.01 1.5 > dists
-distarr=($(cat dists | tr '\n' ','))
-distarr=${distarr%,}  # 删除最后的逗号
+dists=($(cat dists | tr '\n' ','))
+dists=${dists%,}  # 删除最后的逗号
 
 # 震源台站都在地表
 depsrc=0

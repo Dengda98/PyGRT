@@ -35,17 +35,17 @@ np.savetxt(modfile, modarr)
 pymod = pygrt.PyModel1D(grn="GRN", modelpath=modfile)
 # 计算格林函数（仅一个震中距，可用通配符读回）
 pymod.compute_grn(
-    depsrc=depsrc, deprcv=deprcv, distarr=rs, nt=nt, dt=dt,
+    depsrc=depsrc, deprcv=deprcv, dists=rs, nt=nt, dt=dt,
     converg_method='none',
 )
 st_none = read("GRN/*/*.sac")
 pymod.compute_grn(
-    depsrc=depsrc, deprcv=deprcv, distarr=rs, nt=nt, dt=dt,
+    depsrc=depsrc, deprcv=deprcv, dists=rs, nt=nt, dt=dt,
     converg_method='DCM',
 )
 st_dcm = read("GRN/*/*.sac")
 pymod.compute_grn(
-    depsrc=depsrc, deprcv=deprcv, distarr=rs, nt=nt, dt=dt,
+    depsrc=depsrc, deprcv=deprcv, dists=rs, nt=nt, dt=dt,
     converg_method='PTAM',
 )
 st_ptam = read("GRN/*/*.sac")

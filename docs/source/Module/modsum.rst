@@ -24,7 +24,6 @@ modsum
 [ |-P|\ *nthreads* ]
 [ |-G|\ **e|v|h|s** ]
 [ **-e** ]
-[ **-s** ]
 [ **-h** ]
 
 
@@ -74,12 +73,9 @@ modsum
 
 .. include:: explain_-egrn.rst_
 
-.. include:: explain_-silent.rst_
-
 .. include:: explain_-h.rst_
 
 
 示例
 -------
-
 

@@ -26,12 +26,14 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
 static void print_help(){
 printf("\n"
 "[grt rotation] %s\n\n", GRT_VERSION);printf(
-"    Conbine spatial derivatives of displacements into rotation tensor.\n"
+"    Combine spatial derivatives of displacements into rotation tensor.\n"
 "    For example, \"ZR\" in filename means 0.5*(u_{z,r} - u_{r,z}).\n"
+"    Input must be a `syn` output computed with -e.\n"
+"    Three SAC files are written to the same directory.\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
-"    grt rotation <syn_dir>\n"
+"    grt rotation <syn_dir> [-h]\n"
 "\n\n\n"
 );
 }

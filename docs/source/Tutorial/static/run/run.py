@@ -8,9 +8,9 @@ pymod = pygrt.PyModel1D(stgrn="stgrn.nc", modelpath="milrow")
 # norths/easts 各为三个元素: start/stop/step (km)
 norths = [-3.0, 3.0, 0.15]
 easts = [-2.5, 2.5, 0.15]
-# 可以设置 distarr 来指定震中距序列
+# 可以设置 dists 来指定震中距序列
 # pymod.compute_static_grn(
-#     depsrc=2.0, deprcv=0.0, distarr=np.arange(0, 10+1e-8, 0.1),
+#     depsrc=2.0, deprcv=0.0, dists=np.arange(0, 10+1e-8, 0.1),
 # )
 # 也可以设置 norths 和 easts 来指定 north/east 网格
 pymod.compute_static_grn(

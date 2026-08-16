@@ -104,6 +104,8 @@ for (size_t n = 0; GRT_Module_Names[n] != NULL; ++n) {
 printf("\n"
 "For each module, you can use -h to see its help message, e.g.\n"
 "    grt greenfn -h \n"
+"Static modules also accept the shorter form, e.g.\n"
+"    grt static greenfn -h\n"
 "\n");
 }
 

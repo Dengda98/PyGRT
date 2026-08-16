@@ -17,7 +17,7 @@ pymod = pygrt.PyModel1D(grn="GRN", modelpath=modname)
 
 # compute green functions
 pymod.compute_grn(
-    depsrc=depsrc, deprcv=deprcv, distarr=[dist], nt=nt, dt=dt,
+    depsrc=depsrc, deprcv=deprcv, dists=[dist], nt=nt, dt=dt,
 )
 
 def plot_syn(stsyn:Stream, out:Union[str,None]=None, sigs:Union[np.ndarray,None]=None):
