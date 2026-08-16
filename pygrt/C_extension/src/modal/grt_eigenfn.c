@@ -133,10 +133,10 @@ printf("\n"
 "                If set +z<z1>, means set only one point. \n"
 "                If not set +z, means set the layer depths. \n"
 "\n"
-"    -U<path>    Ouput group velocity (.nc format)\n"
+"    -U<path>    Output group velocity (.nc format)\n"
 "\n"
 "    -K[+c<path>][+u<path>][+x<path>][+z<dz>]\n"
-"                Ouput some quantities related to sensitivity,\n"
+"                Output some quantities related to sensitivity,\n"
 "                e.g. -K+ccsens.nc+uusens.nc\n"
 "                + c<path>: phase-velocity dispersion sensitivity (.nc format).\n"
 "                + u<path>: group-velocity dispersion sensitivity (.nc format).\n"
@@ -660,5 +660,3 @@ int eigenfn_main(int argc, char **argv){
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;
 }
-
-

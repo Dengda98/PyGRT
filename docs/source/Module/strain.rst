@@ -13,7 +13,7 @@ strain
 语法
 -----------
 
-**grt strain** *syn_dir*
+**grt strain** *syn_dir* [-h]
 
 描述
 --------------

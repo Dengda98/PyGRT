@@ -13,7 +13,7 @@ rotation
 语法
 -----------
 
-**grt rotation** *syn_dir*
+**grt rotation** *syn_dir* [-h]
 
 描述
 --------------
