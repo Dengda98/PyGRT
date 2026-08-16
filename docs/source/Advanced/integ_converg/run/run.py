@@ -10,10 +10,10 @@ deprcv = 0.0
 pymod = pygrt.PyModel1D(grn="GRN", modelpath="milrow")
 
 # statsidxs 指定频率索引，核函数写入 GRN_grtstats/{model}_{depsrc}_{deprcv}/
-distarr = [5,8,10]
+dists = [5,8,10]
 pymod.compute_grn(
     depsrc=depsrc, deprcv=deprcv,
-    distarr=distarr, nt=500, dt=0.02,
+    dists=dists, nt=500, dt=0.02,
     statsidxs=[50,100],
 )
 # END DGRN
@@ -35,7 +35,7 @@ print(statsdata.dtype)
 # -------------------------------------------------------------------
 # BEGIN plot stats
 ir = 2
-dist=distarr[ir]
+dist=dists[ir]
 srctype="SS"
 ptype="0"
 fig, ax = pygrt.utils.plot_statsdata(statsdata, dist=dist, srctype=srctype, ptype=ptype)
@@ -46,7 +46,7 @@ fig.savefig(f"{srctype}_{ptype}.svg", bbox_inches='tight')
 # -------------------------------------------------------------------
 # BEGIN plot stats RI
 ir = 2
-dist=distarr[ir]
+dist=dists[ir]
 srctype="SS"
 ptype="0"
 fig, ax = pygrt.utils.plot_statsdata(statsdata, dist=dist, srctype=srctype, ptype=ptype, RorI=2)
@@ -64,7 +64,7 @@ pymod = pygrt.PyModel1D(grn="GRN", modelpath="milrow")
 
 pymod.compute_grn(
     depsrc=depsrc, deprcv=deprcv,
-    distarr=distarr, nt=500, dt=0.02, converg_method='none',
+    dists=dists, nt=500, dt=0.02, converg_method='none',
     statsidxs=[50,100],
 )
 

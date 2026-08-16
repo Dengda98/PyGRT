@@ -18,7 +18,7 @@ zeta = 0.8
 pymod.compute_grn(
     depsrc=depsrc,
     deprcv=deprcv,
-    distarr=rs,
+    dists=rs,
     nt=nt,
     dt=dt,
     zeta=zeta,

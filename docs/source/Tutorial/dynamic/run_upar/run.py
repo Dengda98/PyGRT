@@ -10,7 +10,7 @@ pymod = pygrt.PyModel1D(grn="GRN", modelpath="milrow")
 pymod.compute_grn(
     depsrc=2.0,
     deprcv=0.0,
-    distarr=[10],
+    dists=[10],
     nt=500,
     dt=0.02,
     calc_upar=True,

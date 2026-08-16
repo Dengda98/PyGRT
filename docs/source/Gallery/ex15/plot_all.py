@@ -9,7 +9,7 @@ modname = sys.argv[1]
 
 deprcv = 0.0
 depsrc = 5.0
-distarr = np.arange(0.1, 50, 0.5)
+dists = np.arange(0.1, 50, 0.5)
 
 pymod = pygrt.PyModel1D(grn="GRN", stgrn="stgrn.nc", modelpath=modname)
 
@@ -17,19 +17,19 @@ pymod = pygrt.PyModel1D(grn="GRN", stgrn="stgrn.nc", modelpath=modname)
 # C 反变换写 SAC 时乘了 df=1/(nt*dt)，故时域首点 * dt 即还原频域幅值
 dt = 500.0
 pymod.compute_grn(
-    depsrc=depsrc, deprcv=deprcv, distarr=distarr.tolist(),
+    depsrc=depsrc, deprcv=deprcv, dists=dists.tolist(),
     nt=1, dt=dt, zeta=1.0, keepAllFreq=True,
 )
-# 多震中距：按子目录名末段解析 dist，再按 distarr 顺序读入
+# 多震中距：按子目录名末段解析 dist，再按 dists 顺序读入
 dist2st = {
     float(p.name.rsplit("_", 1)[-1]): read(str(p / "*.sac"))
     for p in Path("GRN").iterdir() if p.is_dir()
 }
-stgrnLst = [dist2st[float(d)] for d in distarr]
+stgrnLst = [dist2st[float(d)] for d in dists]
 
 # 静态解
 pymod.compute_static_grn(
-    depsrc=depsrc, deprcv=deprcv, distarr=distarr.tolist(),
+    depsrc=depsrc, deprcv=deprcv, dists=dists.tolist(),
 )
 static_grn = pygrt.utils.read_static_nc("stgrn.nc")
 
@@ -47,9 +47,9 @@ for isrc, (src, src2) in enumerate(zip(srctypes,
     else:
         coef = 1e-20 * 1e25  # 1e25 dyne·cm
 
-    dynamic_Z = np.zeros_like(distarr)
-    dynamic_R = np.zeros_like(distarr)
-    dynamic_T = np.zeros_like(distarr)
+    dynamic_Z = np.zeros_like(dists)
+    dynamic_R = np.zeros_like(dists)
+    dynamic_T = np.zeros_like(dists)
     for i, st in enumerate(stgrnLst):
         # SAC 中 Z 已取反为向上为正，无需再乘 -1
         dynamic_Z[i] = st.select(channel=f'{src}Z')[0].data[0] * dt * coef
@@ -59,13 +59,13 @@ for isrc, (src, src2) in enumerate(zip(srctypes,
 
     ms = 2
     lw = 0.8
-    ax.plot(distarr, dynamic_Z, 'k', lw=lw, label='Dynamic Z')
-    ax.plot(distarr, static_grn['variables'][f'{src}Z']['data'][0, 0, 0] * coef, 'ro', ms=ms, label='Static Z')
-    ax.plot(distarr, dynamic_R, 'k', lw=lw, label='Dynamic R')
-    ax.plot(distarr, static_grn['variables'][f'{src}R']['data'][0, 0, 0] * coef, 'bo', ms=ms, label='Static R')
+    ax.plot(dists, dynamic_Z, 'k', lw=lw, label='Dynamic Z')
+    ax.plot(dists, static_grn['variables'][f'{src}Z']['data'][0, 0, 0] * coef, 'ro', ms=ms, label='Static Z')
+    ax.plot(dists, dynamic_R, 'k', lw=lw, label='Dynamic R')
+    ax.plot(dists, static_grn['variables'][f'{src}R']['data'][0, 0, 0] * coef, 'bo', ms=ms, label='Static R')
     if src not in ['EX', 'VF', 'DD']:
-        ax.plot(distarr, dynamic_T, 'k', lw=lw, label='Dynamic T')
-        ax.plot(distarr, static_grn['variables'][f'{src}T']['data'][0, 0, 0] * coef, 'go', ms=ms, label='Static T')
+        ax.plot(dists, dynamic_T, 'k', lw=lw, label='Dynamic T')
+        ax.plot(dists, static_grn['variables'][f'{src}T']['data'][0, 0, 0] * coef, 'go', ms=ms, label='Static T')
 
     ax.set_xlim(0, 50)
     ax.set_xlabel('Distance (km)')
