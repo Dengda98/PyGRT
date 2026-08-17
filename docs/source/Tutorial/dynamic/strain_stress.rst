@@ -22,7 +22,7 @@
             :start-after: BEGIN GRN
             :end-before: END GRN
 
-        在 :rst:dir:`GRN/milrow_{depsrc}_{deprcv}_{dist}/` 路径下，文件名开头有"r"和"z"就代表 :math:`\partial r` 和 :math:`\partial z`。
+        在 :rst:dir:`GRN/milrow_2_0_10/` 路径下，文件名开头有"r"和"z"就代表 :math:`\partial r` 和 :math:`\partial z`。
 
     .. group-tab:: Python
 
@@ -233,4 +233,3 @@
 
 
 .. [#covariant] 这只适用于ZNE坐标系，对于ZRT坐标系需考虑协变导数。程序中已考虑，这里不再做公式介绍。
-

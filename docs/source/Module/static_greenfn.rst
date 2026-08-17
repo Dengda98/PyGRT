@@ -57,7 +57,7 @@ static_greenfn
 
 + **-D**\ *depsrc/deprcv* 设置单个震源深度和接收深度，适合兼容旧命令
 + **-Ds**\ *source* 和 **-Dr**\ *receiver* 分别设置深度列表，二者必须同时使用，
-  列表语法与 |-R| 相同。多深度结果可用于点源合成时的深度加权组合和有限断层合成
+  具体语法见下方 **-Ds/-Dr** 的说明。多深度结果可用于点源合成时的深度加权组合和有限断层合成
 
 
 必选选项
@@ -67,20 +67,7 @@ static_greenfn
 
 .. include:: explain_-D.rst_
 
-.. note::
-
-    **-D** 与 **-Ds/-Dr** 二选一。使用 **-Ds** 时必须同时设置 **-Dr**。
-
-.. _-Ds:
-
-**-Ds**\ *source*
-    震源深度列表 (km)。支持逗号分隔列表、*z1/z2/dz* 等距范围和每行一个数值的文件。
-    必须与 **-Dr** 一起使用，深度必须非负；程序会自动排序并合并近似重复值。
-
-.. _-Dr:
-
-**-Dr**\ *receiver*
-    接收深度列表 (km)。语法和限制与 **-Ds** 相同，必须与 **-Ds** 一起使用。
+.. include:: explain_-Dmulti.rst_
 
 .. include:: explain_-Ogrid.rst_
 
