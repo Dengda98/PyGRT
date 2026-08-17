@@ -12,9 +12,9 @@
 #include <string.h>
 #include <ctype.h>
 #include <limits.h>
+#include <math.h>
 
 #include "grt/common/util.h"
-#include "grt/common/model.h"
 #include "grt/common/const.h"
 #include "grt/common/checkerror.h"
 
@@ -48,12 +48,73 @@ char ** grt_string_from_file(FILE *fp, size_t *size){
 
     size_t len=0;
     while(grt_getline(&s_split[*size], &len, fp) != -1){
-        s_split[*size][strlen(s_split[*size])-1] = '\0';  // 换行符换为终止符
+        size_t line_len = strlen(s_split[*size]);
+        if(line_len > 0 && s_split[*size][line_len - 1] == '\n'){
+            s_split[*size][--line_len] = '\0';
+        }
+        if(line_len > 0 && s_split[*size][line_len - 1] == '\r'){
+            s_split[*size][line_len - 1] = '\0';
+        }
         (*size)++;
         s_split = (char**)realloc(s_split, sizeof(char*)*(*size+1));
         s_split[*size] = NULL;
     }
     return s_split;
+}
+
+real_t *grt_parse_real_array(const char *optarg, size_t *size, char ***s_values, char optname)
+{
+    real_t a1, a2, delta;
+    char **s_vals = NULL;
+    size_t n = 0;
+
+    // 逗号分隔的数值列表
+    if(grt_string_composed_of(optarg, GRT_NUM_STR "eE+-" ".,")){
+        s_vals = grt_string_split(optarg, ",", &n);
+    }
+    // 等间距范围
+    else if(3 == sscanf(optarg, "%lf/%lf/%lf", &a1, &a2, &delta)){
+        if(delta <= 0.0){
+            GRTRaiseError("-%c: nonpositive spacing (%f).", optname, delta);
+        }
+        if(a1 > a2){
+            GRTRaiseError("-%c: start (%f) > end (%f).", optname, a1, a2);
+        }
+        n = (size_t)floor((a2 - a1) / delta) + 1;
+        s_vals = (char **)calloc(n, sizeof(char *));
+        for(size_t i = 0; i < n; ++i){
+            GRT_SAFE_ASPRINTF(&s_vals[i], "%.15g", a1 + delta * i);
+        }
+    }
+    // 文件中的每行读取一个数值
+    else {
+        FILE *fp = GRTCheckOpenFile(optarg, "r");
+        s_vals = grt_string_from_file(fp, &n);
+        fclose(fp);
+    }
+
+    if(n == 0){
+        GRTRaiseError("-%c: empty value list.", optname);
+    }
+
+    real_t *values = (real_t *)calloc(n, sizeof(real_t));
+    for(size_t i = 0; i < n; ++i){
+        values[i] = atof(s_vals[i]);
+        if(values[i] < 0.0){
+            GRTRaiseError("-%c: negative value (%f) is not supported.", optname, values[i]);
+        }
+        if(i > 0 && !(values[i] > values[i - 1])){
+            GRTRaiseError("-%c: values must be strictly ascending.", optname);
+        }
+    }
+
+    if(s_values != NULL){
+        *s_values = s_vals;
+    } else {
+        GRT_SAFE_FREE_PTR_ARRAY(s_vals, n);
+    }
+    *size = n;
+    return values;
 }
 
 bool grt_string_composed_of(const char *str, const char *alws){
@@ -236,4 +297,3 @@ ssize_t grt_getline(char **lineptr, size_t *n, FILE *stream){
     
     return len;
 }
-

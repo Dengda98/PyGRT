@@ -177,14 +177,12 @@ printf("\n"
 "                 + z1,z2[,...]\n"
 "                 + z1/z2/dz\n"
 "                 + <file> (one depth per line)\n"
-"                 Values must be nonnegative; they are sorted and\n"
-"                 near-duplicates are merged automatically.\n"
+"                 Values must be nonnegative and strictly ascending.\n"
 "                 Must be paired with -Dr.\n"
 "\n"
 "    -Dr<receiver>\n"
 "                 Receiver depth list (km), same syntax as -Ds.\n"
-"                 Values must be nonnegative; they are sorted and\n"
-"                 near-duplicates are merged automatically.\n"
+"                 Values must be nonnegative and strictly ascending.\n"
 "                 Must be paired with -Ds.\n"
 "\n"
 "    -X<x1>/<x2>/<dx>\n"
@@ -277,93 +275,6 @@ printf("\n"
 }
 
 
-/**
- * 解析深度列表（语法同 -R），结果升序去重写入 *zs / *nz
- *
- * 三种输入形式按优先级依次尝试：
- *   1. 仅含数字与分隔符时：按逗号拆成离散列表 z1,z2,...
- *   2. 可扫成 z1/z2/dz：按等间距生成 [z1, z1+dz, ..., <=z2]
- *   3. 否则当作文件路径：逐行读入数值
- *
- * 随后转为 real_t、禁止负深度、升序排序并按 1e-8 容差去重
- *
- * @param[in]   optarg    -Ds/-Dr 后的字符串（不含前缀 s/r）
- * @param[out]  zs        新分配的深度数组，调用方释放
- * @param[out]  nz        去重后的点数
- * @param[in]   optname   用于报错的选项名（'s' 或 'r'）
- */
-static void parse_depth_spec(const char *optarg, real_t **zs, size_t *nz, char optname)
-{
-    real_t a1, a2, delta;
-    char **s_vals = NULL;
-    size_t n = 0;
-
-    // 形式 1：逗号分隔列表（字符集与 -R 一致）
-    if(grt_string_composed_of(optarg, GRT_NUM_STR "eE+-" ".,")){
-        s_vals = grt_string_split(optarg, ",", &n);
-    }
-    // 形式 2：等间距 z1/z2/dz
-    else if(3 == sscanf(optarg, "%lf/%lf/%lf", &a1, &a2, &delta)){
-        if(delta <= 0){
-            GRTRaiseError("-%c: nonpositive spacing (%f).", optname, delta);
-        }
-        if(a1 > a2){
-            GRTRaiseError("-%c: start (%f) > end (%f).", optname, a1, a2);
-        }
-        n = (size_t)floor((a2 - a1) / delta) + 1;
-        s_vals = (char **)calloc(n, sizeof(char *));
-        for(size_t i = 0; i < n; ++i){
-            GRT_SAFE_ASPRINTF(&s_vals[i], "%.*f", 8, a1 + delta * i);
-        }
-    }
-    // 形式 3：从文件逐行读取
-    else {
-        FILE *fp = GRTCheckOpenFile(optarg, "r");
-        s_vals = grt_string_from_file(fp, &n);
-        fclose(fp);
-    }
-
-    if(n == 0){
-        GRTRaiseError("-%c: empty depth list.", optname);
-    }
-
-    // 字符串 -> 数值，并检查非负
-    real_t *raw = (real_t *)calloc(n, sizeof(real_t));
-    for(size_t i = 0; i < n; ++i){
-        raw[i] = atof(s_vals[i]);
-        if(raw[i] < 0.0){
-            GRTRaiseError("-%c: negative depth (%f) is not supported.", optname, raw[i]);
-        }
-    }
-    GRT_SAFE_FREE_PTR_ARRAY(s_vals, n);
-
-    // 升序排序（argsort 写索引，再按索引取数）
-    size_t *order = (size_t *)calloc(n, sizeof(size_t));
-    for(size_t i = 0; i < n; ++i) order[i] = i;
-    if(n > 1 && grt_argsort(raw, n, sizeof(*raw), grt_compare_real_t, order) != 0){
-        GRTRaiseError("-%c: unable to sort depths.", optname);
-    }
-
-    // 容差去重，保留升序唯一深度
-    real_t *uniq = (real_t *)calloc(n, sizeof(real_t));
-    size_t nu = 0;
-    for(size_t i = 0; i < n; ++i){
-        real_t v = raw[order[i]];
-        if(nu == 0 || fabs(v - uniq[nu - 1]) > 1e-8){
-            uniq[nu++] = v;
-        }
-    }
-    GRT_SAFE_FREE_PTR(raw);
-    GRT_SAFE_FREE_PTR(order);
-
-    *zs = uniq;
-    *nz = nu;
-}
-
-
-
-
-
 /** 从命令行中读取选项，处理后记录到全局变量中 */
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     // 先为个别参数设置非0初始值
@@ -388,10 +299,10 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             case 'D':
                 if(optarg[0] == 's'){
                     Ctrl->D.s_active = true;
-                    parse_depth_spec(optarg + 1, &Ctrl->D.depsrcs, &Ctrl->D.ndepsrc, 's');
+                    Ctrl->D.depsrcs = grt_parse_real_array(optarg + 1, &Ctrl->D.ndepsrc, NULL, 's');
                 } else if(optarg[0] == 'r'){
                     Ctrl->D.r_active = true;
-                    parse_depth_spec(optarg + 1, &Ctrl->D.deprcvs, &Ctrl->D.ndeprcv, 'r');
+                    Ctrl->D.deprcvs = grt_parse_real_array(optarg + 1, &Ctrl->D.ndeprcv, NULL, 'r');
                 } else {
                     Ctrl->D.active = true;
                     real_t depsrc, deprcv;
@@ -592,51 +503,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             case 'R':
                 Ctrl->X.active = Ctrl->Y.active = true;
                 {
-                    real_t a1, a2, delta;
-                    char **s_easts = NULL;
-                    
-                    // 如果输入仅由数字、小数点和间隔符组成，则直接读取
-                    if(grt_string_composed_of(optarg, GRT_NUM_STR "eE+-" ".,")){
-                        s_easts = grt_string_split(optarg, ",", &Ctrl->Y.neast);
-                    }
-                    // 尝试按照 <r1>/<r2>/<dr> 读取
-                    else if(3 == sscanf(optarg, "%lf/%lf/%lf", &a1, &a2, &delta)){
-                        if(delta <= 0){
-                            GRTBadOptionError(R, "Can't set nonpositive dr(%f)", delta);
-                        }
-                        if(a1 > a2){
-                            GRTBadOptionError(R, "r1(%f) > r2(%f).", a1, a2);
-                        }
-
-                        Ctrl->Y.neast = floor((a2-a1)/delta) + 1;
-                        s_easts = (char **)calloc(Ctrl->Y.neast, sizeof(char*) * Ctrl->Y.neast);
-                        for(size_t ir = 0; ir < Ctrl->Y.neast; ++ir){
-                            GRT_SAFE_ASPRINTF(&s_easts[ir], "%.*f", 8, a1 + delta*ir);
-                        }
-                    }
-                    // 否则从文件读取
-                    else {
-                        FILE *fp = GRTCheckOpenFile(optarg, "r");
-                        s_easts = grt_string_from_file(fp, &Ctrl->Y.neast);
-                        fclose(fp);
-                    }
-
-                    // 转为浮点数
-                    Ctrl->Y.easts = (real_t*)realloc(Ctrl->Y.easts, sizeof(real_t)*(Ctrl->Y.neast));
-                    for(size_t i=0; i < Ctrl->Y.neast; ++i){
-                        Ctrl->Y.easts[i] = atof(s_easts[i]);
-                        if(Ctrl->Y.easts[i] < 0.0){
-                            GRTBadOptionError(R, "Can't set negative epicentral distance(%f).", Ctrl->Y.easts[i]);
-                        }
-                    }
-                    GRT_SAFE_FREE_PTR_ARRAY(s_easts, Ctrl->Y.neast);
-
-                    for(size_t i = 1; i < Ctrl->Y.neast; ++i){
-                        if(!(Ctrl->Y.easts[i] > Ctrl->Y.easts[i - 1])){
-                            GRTBadOptionError(R, "Epicentral distances must be strictly ascending.");
-                        }
-                    }
-
+                    Ctrl->Y.easts = grt_parse_real_array(optarg, &Ctrl->Y.neast, NULL, 'R');
                     Ctrl->X.nnorth = 1;
                     Ctrl->X.norths = (real_t*)calloc(Ctrl->X.nnorth, sizeof(real_t));
                     Ctrl->X.norths[0] = 0.0;

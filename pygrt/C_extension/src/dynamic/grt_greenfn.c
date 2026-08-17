@@ -38,6 +38,12 @@ typedef struct {
     /** 震源和接收器深度 */
     struct {
         bool active;
+        bool s_active;
+        bool r_active;
+        size_t ndepsrc;
+        real_t *depsrcs;
+        size_t ndeprcv;
+        real_t *deprcvs;
         real_t depsrc;
         real_t deprcv;
         char *s_depsrc;
@@ -153,6 +159,8 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
     grt_free_mod1d(Ctrl->M.mod1d);
     
     // D
+    GRT_SAFE_FREE_PTR(Ctrl->D.depsrcs);
+    GRT_SAFE_FREE_PTR(Ctrl->D.deprcvs);
     GRT_SAFE_FREE_PTR(Ctrl->D.s_depsrc);
     GRT_SAFE_FREE_PTR(Ctrl->D.s_deprcv);
 
@@ -220,7 +228,7 @@ printf("\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
-"    grt greenfn -M<model> -D<depsrc>/<deprcv> \n"
+"    grt greenfn -M<model> (-D<depsrc>/<deprcv> | -Ds<source> -Dr<receiver>) \n"
 "        -N<nt>/<dt>[+w<zeta>][+n<fac>][+a][+f] \n"
 "        -R<r1>,<r2>[,...]|<r1>/<r2>/<dr>|<file>\n"
 "        -O<outdir>     [-H<f1>/<f2>] \n"
@@ -247,6 +255,17 @@ printf("\n"
 "    -D<depsrc>/<deprcv>\n"
 "                 <depsrc>: source depth (km).\n"
 "                 <deprcv>: receiver depth (km).\n"
+"                 Mutually exclusive with -Ds/-Dr.\n"
+"\n"
+"    -Ds<source>  Source depth list (km), same syntax as -R:\n"
+"                 + z1,z2[,...]\n"
+"                 + z1/z2/dz\n"
+"                 + <file> (one depth per line)\n"
+"                 Must be paired with -Dr.\n"
+"\n"
+"    -Dr<receiver>\n"
+"                 Receiver depth list (km), same syntax as -Ds.\n"
+"                 Must be paired with -Ds.\n"
 "\n"
 "    -N<nt>/<dt>[+w<zeta>][+n<fac>][+a][+f] \n"
 "                 <nt>:   number of points. (NOT requires 2^n).\n"
@@ -416,20 +435,27 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 
             // 震源和场点深度， -Ddepsrc/deprcv
             case 'D':
-                Ctrl->D.active = true;
-                Ctrl->D.s_depsrc = (char*)malloc(sizeof(char)*(strlen(optarg)+1));
-                Ctrl->D.s_deprcv = (char*)malloc(sizeof(char)*(strlen(optarg)+1));
-                if(2 != sscanf(optarg, "%[^/]/%s", Ctrl->D.s_depsrc, Ctrl->D.s_deprcv)){
-                    GRTBadOptionError(D, "");
-                };
-                if(1 != sscanf(Ctrl->D.s_depsrc, "%lf", &Ctrl->D.depsrc)){
-                    GRTBadOptionError(D, "");
-                }
-                if(1 != sscanf(Ctrl->D.s_deprcv, "%lf", &Ctrl->D.deprcv)){
-                    GRTBadOptionError(D, "");
-                }
-                if(Ctrl->D.depsrc < 0.0 || Ctrl->D.deprcv < 0.0){
-                    GRTBadOptionError(D, "Negative value in -D is not supported.");
+                if(optarg[0] == 's'){
+                    Ctrl->D.s_active = true;
+                    Ctrl->D.depsrcs = grt_parse_real_array(optarg + 1, &Ctrl->D.ndepsrc, NULL, 's');
+                } else if(optarg[0] == 'r' && optarg[1] != '/'){
+                    Ctrl->D.r_active = true;
+                    Ctrl->D.deprcvs = grt_parse_real_array(optarg + 1, &Ctrl->D.ndeprcv, NULL, 'r');
+                } else {
+                    Ctrl->D.active = true;
+                    real_t depsrc, deprcv;
+                    if(2 != sscanf(optarg, "%lf/%lf", &depsrc, &deprcv)){
+                        GRTBadOptionError(D, "");
+                    }
+                    if(depsrc < 0.0 || deprcv < 0.0){
+                        GRTBadOptionError(D, "Negative value in -D is not supported.");
+                    }
+                    Ctrl->D.ndepsrc = 1;
+                    Ctrl->D.ndeprcv = 1;
+                    Ctrl->D.depsrcs = (real_t *)calloc(1, sizeof(real_t));
+                    Ctrl->D.deprcvs = (real_t *)calloc(1, sizeof(real_t));
+                    Ctrl->D.depsrcs[0] = depsrc;
+                    Ctrl->D.deprcvs[0] = deprcv;
                 }
                 break;
 
@@ -685,69 +711,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             case 'R':
                 Ctrl->R.active = true;
                 Ctrl->R.s_raw = strdup(optarg);
-                {
-                    real_t a1, a2, delta;
-                    
-                    // 如果输入仅由数字、小数点和间隔符组成，则直接读取
-                    if(grt_string_composed_of(optarg, GRT_NUM_STR "eE+-" ".,")){
-                        Ctrl->R.s_rs = grt_string_split(optarg, ",", &Ctrl->R.nr);
-                    }
-                    // 尝试按照 <r1>/<r2>/<dr> 读取
-                    else if(3 == sscanf(optarg, "%lf/%lf/%lf", &a1, &a2, &delta)){
-                        if(delta <= 0){
-                            GRTBadOptionError(R, "Can't set nonpositive dr(%f)", delta);
-                        }
-                        if(a1 > a2){
-                            GRTBadOptionError(R, "r1(%f) > r2(%f).", a1, a2);
-                        }
-
-                        // 根据最大的小数位数来设置 s_rs
-                        int place = 0;
-                        real_t test[3] = {0};
-                        test[0] = a1;
-                        test[1] = a2;
-                        test[2] = delta;
-                        do {
-                            bool agree = true;
-                            for(size_t i = 0; i < 3; ++i)  {
-                                real_t new_frac = test[i] - (int)test[i];
-                                test[i] *= 10.0;
-                                // 如果乘以10后变成整数（或非常接近整数）
-                                if (fabs(new_frac) > 1e-8) {
-                                    agree = false;
-                                }
-                            }
-                            if(agree) break;
-                            place++;
-                        } while (place < 8);  // 最多小数点后 8 位
-
-                        Ctrl->R.nr = floor((a2-a1)/delta) + 1;
-                        Ctrl->R.s_rs = (char **)calloc(Ctrl->R.nr, sizeof(char*) * Ctrl->R.nr);
-                        for(size_t ir = 0; ir < Ctrl->R.nr; ++ir){
-                            GRT_SAFE_ASPRINTF(&Ctrl->R.s_rs[ir], "%.*f", place, a1 + delta*ir);
-                        }
-                    }
-                    // 否则从文件读取
-                    else {
-                        FILE *fp = GRTCheckOpenFile(optarg, "r");
-                        Ctrl->R.s_rs = grt_string_from_file(fp, &Ctrl->R.nr);
-                        fclose(fp);
-                    }
-                        
-                    // 转为浮点数
-                    Ctrl->R.rs = (real_t*)realloc(Ctrl->R.rs, sizeof(real_t)*(Ctrl->R.nr));
-                    for(size_t i=0; i<Ctrl->R.nr; ++i){
-                        Ctrl->R.rs[i] = atof(Ctrl->R.s_rs[i]);
-                        if(Ctrl->R.rs[i] < 0.0){
-                            GRTBadOptionError(R, "Can't set negative epicentral distance(%f).", Ctrl->R.rs[i]);
-                        }
-                    }
-                    for(size_t i=1; i<Ctrl->R.nr; ++i){
-                        if(!(Ctrl->R.rs[i] > Ctrl->R.rs[i - 1])){
-                            GRTBadOptionError(R, "Epicentral distances must be strictly ascending.");
-                        }
-                    }
-                }
+                Ctrl->R.rs = grt_parse_real_array(optarg, &Ctrl->R.nr, &Ctrl->R.s_rs, 'R');
                 break;
 
             // 多线程数 -Pnthreads
@@ -823,10 +787,20 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     // 检查必须设置的参数是否有设置
     GRTCheckOptionSet(argc > 1);
     GRTCheckOptionActive(Ctrl, M);
-    GRTCheckOptionActive(Ctrl, D);
     GRTCheckOptionActive(Ctrl, N);
     GRTCheckOptionActive(Ctrl, R);
     GRTCheckOptionActive(Ctrl, O);
+
+    if(Ctrl->D.active && (Ctrl->D.s_active || Ctrl->D.r_active)){
+        GRTRaiseError("Options -D and -Ds/-Dr are mutually exclusive.");
+    }
+    if(Ctrl->D.s_active != Ctrl->D.r_active){
+        GRTRaiseError("Options -Ds and -Dr must be set together.");
+    }
+    if(!Ctrl->D.active && !Ctrl->D.s_active && !Ctrl->D.r_active){
+        GRTRaiseError("Depth option required: -D<depsrc>/<deprcv> or -Ds... -Dr...");
+    }
+    Ctrl->D.active = true;
 
     // 建立保存目录
     GRTCheckMakeDir(Ctrl->O.s_output_dir);
@@ -969,13 +943,8 @@ static void prepare_grn_spec(
 }
 
 
-/** 子模块主函数 */
-int greenfn_main(int argc, char **argv) {
-    GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
-
-    // 传入参数 
-    getopt_from_command(Ctrl, argc, argv);
-
+/** 计算一个震源深度和台站深度组合的格林函数 */
+static void compute_greenfn_one(GRT_MODULE_CTRL *Ctrl) {
     // 读入模型文件
     if((Ctrl->M.mod1d = grt_read_mod1d_from_file(Ctrl->M.s_modelpath, Ctrl->D.depsrc, Ctrl->D.deprcv, true)) == NULL){
         exit(EXIT_FAILURE);
@@ -1117,6 +1086,46 @@ int greenfn_main(int argc, char **argv) {
     grt_destroy_fftw_holder(fh);
     for(size_t ir = 0; ir < grn->nr; ++ir)  GRT_SAFE_FREE_PTR(outputdirs[ir]);
     GRT_SAFE_FREE_PTR(outputdirs);
+
+    GRT_SAFE_FREE_PTR(Ctrl->S.s_statsdir);
+    grt_free_mod1d(Ctrl->M.mod1d);
+    Ctrl->M.mod1d = NULL;
+}
+
+
+/** 子模块主函数 */
+int greenfn_main(int argc, char **argv) {
+    GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
+
+    getopt_from_command(Ctrl, argc, argv);
+
+    bool multi_depth = (Ctrl->D.ndepsrc > 1) || (Ctrl->D.ndeprcv > 1);
+    if(Ctrl->S.active && multi_depth){
+        GRTRaiseWarning("-S is ignored for multi-depth Green's function computation.");
+        Ctrl->S.active = false;
+    }
+
+    bool doEX = Ctrl->G.doEX;
+    bool doVF = Ctrl->G.doVF;
+    bool doHF = Ctrl->G.doHF;
+    bool doDC = Ctrl->G.doDC;
+
+    // 输出文件名中的深度字符串使用规范化后的浮点表示
+    for(size_t is = 0; is < Ctrl->D.ndepsrc; ++is){
+        Ctrl->D.depsrc = Ctrl->D.depsrcs[is];
+        for(size_t ir = 0; ir < Ctrl->D.ndeprcv; ++ir){
+            Ctrl->D.deprcv = Ctrl->D.deprcvs[ir];
+            Ctrl->G.doEX = doEX;
+            Ctrl->G.doVF = doVF;
+            Ctrl->G.doHF = doHF;
+            Ctrl->G.doDC = doDC;
+            GRT_SAFE_FREE_PTR(Ctrl->D.s_depsrc);
+            GRT_SAFE_FREE_PTR(Ctrl->D.s_deprcv);
+            GRT_SAFE_ASPRINTF(&Ctrl->D.s_depsrc, "%g", Ctrl->D.depsrc);
+            GRT_SAFE_ASPRINTF(&Ctrl->D.s_deprcv, "%g", Ctrl->D.deprcv);
+            compute_greenfn_one(Ctrl);
+        }
+    }
 
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;
