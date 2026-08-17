@@ -14,7 +14,7 @@ greenfn
 
 **grt greenfn** 
 |-M|\ *model*
-|-D|\ *depsrc/deprcv*
+( |-D|\ *depsrc/deprcv* | **-Ds**\ *source* **-Dr**\ *receiver* )
 |-N|\ *nt/dt*\ [**+w**\ *zeta*][**+n**\ *fac*][**+a**][**+f**]
 |-R|\ *r1/r2/dr*\|\ *r1,r2,...*\|\ *file*
 |-O|\ *outdir*
@@ -41,6 +41,11 @@ greenfn
 同时会在 *outdir* 根目录保留一份模型文件副本（文件名为 ``-M`` 路径的 basename），
 执行命令也会附加式地写入 ``{outdir}/command`` 。
 
+震源和台站深度支持两种写法：**-D** 设置单个深度组合；**-Ds** 和
+**-Dr** 分别设置深度列表，具体语法见下方 **-Ds/-Dr** 的说明，支持逗号列表、
+等距范围和每行一个数值的文件。使用列表时，程序会对每个震源深度和台站深度组合
+分别计算，结果仍按上述目录格式保存。
+
 不同震源的格林函数单位为：
 
 + 爆炸源：  :math:`10^{-20} \, \frac{\text{cm}}{\text{dyne} \cdot \text{cm}}`  
@@ -55,6 +60,8 @@ greenfn
 .. include:: explain_-M.rst_
 
 .. include:: explain_-D.rst_
+
+.. include:: explain_-Dmulti.rst_
 
 .. _-N:
 

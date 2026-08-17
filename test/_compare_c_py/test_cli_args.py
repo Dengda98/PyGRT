@@ -335,10 +335,11 @@ def test_compute_syn_source_and_time_function_options():
             cmd,
             [
                 "syn",
-                f"-G{grn_dir}",
+                f"-G{grn_root}",
                 "-A39.2",
                 "-Su1e+24",
                 f"-O{out / 'ex'}",
+                "-R10",
                 "-Dt/0.2/0.2/0.4",
                 "-I1",
                 "-J2",
@@ -402,7 +403,7 @@ def test_compute_syn_source_and_time_function_options():
         cmd = runner.commands[-1]
         assert_command_has(
             cmd,
-            f"-G{grn_dir}",
+            f"-G{grn_root}",
             "-T1/-2/-5/0.5/3/1.2",
             "-Dr/3",
         )

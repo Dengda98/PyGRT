@@ -36,6 +36,17 @@ grt modsum -Cphase_L.nc -D2/1 -R100 -N2 -OGRN_NM_2 -W5 -e
 grt modsum -Cphase_R.nc -D2/1 -R100 -N -OGRN_NM_all -W5 -e
 grt modsum -Cphase_L.nc -D2/1 -R100 -N -OGRN_NM_all -W5 -e
 
+# 多震源/台站深度
+grt modsum -Cphase_R.nc -Ds1,2 -Dr0,1 -R100 -N0 -OGRN_NM_MULTI -W2 -e
+test -f GRN_NM_MULTI/milrow_1_0_100/EXZ.sac
+test -f GRN_NM_MULTI/milrow_2_1_100/EXZ.sac
+
+expect_fail "-Ds without -Dr" \
+    grt modsum -Cphase_R.nc -Ds1,2 -R100 -N0 -OGRN_bad
+
+expect_fail "-D and -Ds/-Dr are mutually exclusive" \
+    grt modsum -Cphase_R.nc -D2/1 -Ds1,2 -Dr0 -R100 -N0 -OGRN_bad
+
 expect_fail "non-ascending -R list" \
     grt modsum -Cphase_R.nc -D2/1 -R100,50 -N0 -OGRN_bad
 

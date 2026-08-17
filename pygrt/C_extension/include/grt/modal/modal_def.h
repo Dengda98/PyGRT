@@ -85,6 +85,9 @@ void grt_free_eigenv(EIGENV *eigv);
 /** 释放 eigmet 内部及其本身内存 */
 void grt_free_eigenv_info(EIGENV_INFO *eigmet);
 
+/** 释放 eigfnmet 内部及其本身内存 */
+void grt_free_eigenfn_info(EIGENFN_INFO *eigfnmet);
+
 /** 从全部频散信息中，筛选出部分信息 */
 void grt_filter_eigenfn_info(
     const size_t nf, const real_t *freqs, const bool def_freq_range, 

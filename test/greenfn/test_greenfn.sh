@@ -55,12 +55,31 @@ EOF
 grt greenfn -M../milrow -D2/0 -N600/0.02 -Rdists -OGRN
 rm -rf dists
 grt greenfn -M../milrow -D2/0 -N600/0.02 -R6/10/2 -OGRN
+test -f GRN/milrow_2_0_6/EXZ.sac
+test -f GRN/milrow_2_0_8/EXZ.sac
+test -f GRN/milrow_2_0_10/EXZ.sac
+
+printf '6\n8\n10' > dists_no_newline
+grt greenfn -M../milrow -D2/0 -N600/0.02 -Rdists_no_newline -OGRN
+rm -f dists_no_newline
+
+# multi source/receiver depths
+grt greenfn -M../milrow -Ds1,2 -Dr0,1 -N80/0.02 -R5 -OGRN_MULTI -s
+test -f GRN_MULTI/milrow_1_0_5/EXZ.sac
+test -f GRN_MULTI/milrow_2_1_5/EXZ.sac
 
 expect_fail "non-ascending -R list" \
     grt greenfn -M../milrow -D2/0 -N600/0.02 -R3,1,2 -OGRN_bad
+
+expect_fail "-D and -Ds/-Dr are mutually exclusive" \
+    grt greenfn -M../milrow -D2/0 -Ds1,2 -Dr0 -N80/0.02 -R5 -OGRN_bad
+
+expect_fail "-Ds without -Dr" \
+    grt greenfn -M../milrow -Ds1,2 -N80/0.02 -R5 -OGRN_bad
 
 
 python -u test_greenfn.py
 
 rm -rf GRN
+rm -rf GRN_MULTI
 rm -rf GRN_grtstats

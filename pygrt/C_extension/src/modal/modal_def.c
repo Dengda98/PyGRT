@@ -27,6 +27,38 @@ void grt_free_eigenv_info(EIGENV_INFO *eigmet)
 }
 
 
+void grt_free_eigenfn_info(EIGENFN_INFO *eigfnmet)
+{
+    if(eigfnmet == NULL) return;
+
+    GRT_SAFE_FREE_PTR(eigfnmet->freqs);
+    GRT_SAFE_FREE_PTR(eigfnmet->modes);
+    GRT_SAFE_FREE_PTR(eigfnmet->zs);
+    GRT_SAFE_FREE_PTR(eigfnmet->z_irefs);
+    GRT_SAFE_FREE_PTR(eigfnmet->cpar_zs);
+    GRT_SAFE_FREE_PTR(eigfnmet->cpar_z_irefs);
+
+    for(size_t iw = 0; iw < eigfnmet->nf; ++iw){
+        if(eigfnmet->eigv != NULL){
+            grt_free_eigenv(eigfnmet->eigv + iw);
+        }
+        if(eigfnmet->eigfn != NULL && eigfnmet->eigfn[iw] != NULL){
+            size_t nmode = (eigfnmet->eigv != NULL)? eigfnmet->eigv[iw].n : 0;
+            for(size_t ic = 0; ic < nmode; ++ic){
+                GRT_SAFE_FREE_PTR(eigfnmet->eigfn[iw][ic].fn);
+                GRT_SAFE_FREE_PTR(eigfnmet->eigfn[iw][ic].csens);
+                GRT_SAFE_FREE_PTR(eigfnmet->eigfn[iw][ic].usens);
+            }
+            GRT_SAFE_FREE_PTR(eigfnmet->eigfn[iw]);
+        }
+    }
+
+    GRT_SAFE_FREE_PTR(eigfnmet->eigv);
+    GRT_SAFE_FREE_PTR(eigfnmet->eigfn);
+    GRT_SAFE_FREE_PTR(eigfnmet);
+}
+
+
 void grt_filter_eigenfn_info(
     const size_t nf, const real_t *freqs, const bool def_freq_range, 
     const size_t nmode, const size_t *modes, 

@@ -38,6 +38,18 @@ char ** grt_string_split(const char *string, const char *delim, size_t *size);
 char ** grt_string_from_file(FILE *fp, size_t *size);
 
 /**
+ * 从逗号列表、等间距范围或文本文件中读取非负且严格升序的数值数组
+ *
+ * @param[in]    optarg       数值列表、范围或文件路径
+ * @param[out]   size         数值数组长度
+ * @param[out]   s_values     原始字符串数组，可为 NULL；非 NULL 时由调用方释放
+ * @param[in]    optname      用于报错的选项字符
+ *
+ * @return   新分配的数值数组，调用方释放
+ */
+real_t *grt_parse_real_array(const char *optarg, size_t *size, char ***s_values, char optname);
+
+/**
  * 判断字符串是否由特定的若个字符组成（充分条件）
  * 
  * @param[in]    str      待检查的字符串

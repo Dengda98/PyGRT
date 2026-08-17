@@ -62,6 +62,9 @@ pymod.compute_grn(
 pymod.compute_grn(
     depsrc=depsrc, deprcv=0.0, dists=[6, 8, 10], nt=nt, dt=dt,
 )
+pymod.compute_grn(
+    depsrc=[1.0, 2.0], deprcv=[0.0, 1.0], dists=5.0, nt=80, dt=0.02,
+)
 
 # boundary condition
 pymod = pygrt.PyModel1D(grn="GRN", modelpath=modname, topbound="free", botbound="free")

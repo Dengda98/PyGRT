@@ -26,6 +26,7 @@ grt static greenfn -M../milrow -D2/0 -X-3/3/0.2 -Y-2/2/0.2 -e -Ostgrn.nc
 grt static syn -S1e20 -Gstgrn.nc -Ostsyn.nc
 grt static syn -S1e20 -F2/-1/4    -Gstgrn.nc -Ostsyn.nc
 grt static syn -S1e20 -M77/88/111 -Gstgrn.nc -Ostsyn.nc
+grt static syn -S1e20 -Ds2 -Dr0 -Gstgrn.nc -Ostsyn.nc
 grt static syn -Su1e6 -M77/88/111 -Gstgrn.nc -Ostsyn.nc
 grt static syn -Su1e6 -M77/88 -Gstgrn.nc -Ostsyn.nc
 grt static syn -S1e20 -T1/-2/-5/0.5/3/1.2 -Gstgrn.nc -Ostsyn.nc
@@ -78,8 +79,11 @@ expect_fail "multi-src library requires -Ds" \
 expect_fail "multi-rcv library requires -Dr" \
     grt static syn -Gstgrn_mr.nc -S1e20 -Ostsyn_bad.nc
 
-expect_fail "single-rcv library forbids -Dr" \
-    grt static syn -Gstgrn.nc -S1e20 -Dr0 -Ostsyn_bad.nc
+expect_fail "wrong single receiver depth is rejected" \
+    grt static syn -Gstgrn.nc -S1e20 -Dr0.1 -Ostsyn_bad.nc
+
+expect_fail "wrong single source depth is rejected" \
+    grt static syn -Gstgrn.nc -S1e20 -Ds2.1 -Ostsyn_bad.nc
 
 expect_fail "-Q mutually exclusive with -X/-Y" \
     grt static syn -Gstgrn_md.nc -S1e20 -Ds2 -Qrcv_pts.txt -X-1/1/1 -Y-1/1/1 -Ostsyn_bad.nc
