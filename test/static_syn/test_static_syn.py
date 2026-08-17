@@ -41,6 +41,26 @@ pymod.compute_static_syn(
     scale=1e20, output_path="stsyn_xy.nc", source="EX",
     norths=[-2.0, 2.0, 0.5], easts=[-1.0, 1.0, 0.5],
 )
+pymod.compute_static_syn(
+    scale=1e20, output_path="stsyn_single_explicit.nc", source="EX",
+    depsrc=depsrc, deprcv=deprcv,
+)
+
+try:
+    pymod.compute_static_syn(
+        scale=1e20, output_path="stsyn_bad.nc", source="EX", depsrc=depsrc + 0.1,
+    )
+    raise AssertionError("wrong single source depth should fail")
+except RuntimeError:
+    pass
+
+try:
+    pymod.compute_static_syn(
+        scale=1e20, output_path="stsyn_bad.nc", source="EX", deprcv=deprcv + 0.1,
+    )
+    raise AssertionError("wrong single receiver depth should fail")
+except RuntimeError:
+    pass
 
 # -------------------- -R 建库后合成 --------------------
 pymod_r = pygrt.PyModel1D(stgrn="stgrn_r.nc", modelpath=modname)
@@ -152,7 +172,7 @@ except RuntimeError:
 
 for name in [
     "stgrn.nc", "stgrn_r.nc", "stgrn_md.nc", "stgrn_mr.nc",
-    "stsyn.nc", "stsyn_xy.nc", "stsyn_r.nc", "stsyn_rxy.nc",
+    "stsyn.nc", "stsyn_xy.nc", "stsyn_single_explicit.nc", "stsyn_r.nc", "stsyn_rxy.nc",
     "stsyn_md.nc", "stsyn_interp.nc", "stsyn_q.nc", "stsyn_ff.nc", "stsyn_dr.nc",
     "rcv_pts.txt", "cfaults_tiny.inp", "cfaults_bad_dip.inp", "cfaults_bad_bot.inp",
 ]:

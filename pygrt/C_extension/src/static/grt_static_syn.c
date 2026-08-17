@@ -168,13 +168,14 @@ printf("\n"
 "\n"
 "    -G always points to a single 4D STGRNLIB nc file.\n"
 "    Depth options (without -Q) depend on the library shape:\n"
-"      ndepsrc=1, ndeprcv=1: do not set -Ds/-Dr; finite faults forbidden\n"
-"      ndepsrc=1, ndeprcv>1: -Dr required; do not set -Ds;\n"
+"      ndepsrc=1, ndeprcv=1: -Ds/-Dr optional; finite faults forbidden\n"
+"      ndepsrc=1, ndeprcv>1: -Dr required; -Ds optional;\n"
 "                            finite faults forbidden\n"
 "      ndepsrc>1, ndeprcv=1: -Ds required for point source;\n"
-"                            do not set -Dr; finite faults allowed\n"
+"                            -Dr optional; finite faults allowed\n"
 "      ndepsrc>1, ndeprcv>1: -Ds required for point source;\n"
 "                            -Dr required; finite faults allowed\n"
+"    When an optional depth is set, it must be within the library range.\n"
 "    With -Q, receiver depths come from the file; do not set -Dr.\n"
 "\n"
 "\n\n"
@@ -184,12 +185,12 @@ printf("\n"
 "                  library (dims depsrc×deprcv×north×east).\n"
 "\n"
 "    -Ds<depsrc>   Point-source source depth (km). Required when the\n"
-"                  library has multiple source depths. Forbidden for\n"
-"                  finite faults.\n"
+"                  library has multiple source depths; optional when\n"
+"                  it has one source depth. Forbidden for finite faults.\n"
 "\n"
 "    -Dr<deprcv>   Receiver depth (km) for grid receivers. Required\n"
-"                  only when the library has multiple receiver depths\n"
-"                  and -Q is not used; forbidden otherwise and with -Q.\n"
+"                  when the library has multiple receiver depths and -Q\n"
+"                  is not used; optional for one depth, but forbidden with -Q.\n"
 "\n"
 "    -S[u]<scale>  Scale factor to all kinds of point source. \n"
 "                  + For Explosion, Shear and Moment Tensor,\n"
@@ -1073,18 +1074,17 @@ static void check_syn_depth_options(const GRT_MODULE_CTRL *Ctrl, const STGRNLIB 
             GRTRaiseError("Do not set -Dr with -Q; receiver depths come from the points file.");
         }
     } else {
-        // 网格接收：单台站深度库禁止 -Dr，多台站深度库必须 -Dr
-        if(!multi_rcv && Ctrl->D.r_active){
-            GRTRaiseError("Library has a single receiver depth; do not set -Dr.");
-        }
+        // 网格接收：多台站深度库必须 -Dr，单台站深度库可省略或显式设置
         if(multi_rcv && !Ctrl->D.r_active){
             GRTRaiseError("Library has multiple receiver depths; -Dr<deprcv> is required.");
         }
     }
 
-    // 点源：多震源深度必须 -Ds（有限断层震源深度来自断层几何，不走此项）
-    if(Ctrl->isPointSource && multi_src && !Ctrl->D.s_active){
-        GRTRaiseError("Library has multiple source depths; -Ds<depsrc> is required for point source.");
+    // 点源：多震源深度必须 -Ds，单震源深度可省略或显式设置
+    if(Ctrl->isPointSource){
+        if(multi_src && !Ctrl->D.s_active){
+            GRTRaiseError("Library has multiple source depths; -Ds<depsrc> is required for point source.");
+        }
     }
 }
 
