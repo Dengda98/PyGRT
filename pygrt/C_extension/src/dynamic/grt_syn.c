@@ -70,6 +70,18 @@ typedef struct {
         char tftype;
         char *tfparams;
     } D;
+    /** 根目录检索时的震源和台站深度 */
+    struct {
+        bool s_active;
+        bool r_active;
+        real_t depsrc;
+        real_t deprcv;
+    } Depth;
+    /** 根目录检索时的震中距 */
+    struct {
+        bool active;
+        real_t dist;
+    } R;
     /** 静默输出 */
     struct {
         bool active;
@@ -96,6 +108,8 @@ typedef struct {
     char s_computeType[3];
 
 } GRT_MODULE_CTRL;
+
+static void resolve_syn_grn_path(GRT_MODULE_CTRL *Ctrl);
 
 
 /** 释放结构体的内存 */
@@ -128,6 +142,7 @@ printf("\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
 "    grt syn -G<grn_path> -A<azimuth> -S[u]<scale> -O<outdir> \n"
+"            [-Ds<depsrc>] [-Dr<deprcv>] [-R<dist>]\n"
 "            [-M<strike>/<dip>[/<rake>]]\n"
 "            [-T<Mxx>/<Mxy>/<Mxz>/<Myy>/<Myz>/<Mzz>]\n"
 "            [-F<fn>/<fe>/<fz>] \n"
@@ -138,6 +153,26 @@ printf("\n"
 "Options:\n"
 "----------------------------------------------------------------\n"
 "    -G<grn_path>  Green's Functions output directory of module `greenfn`.\n"
+"                  A single-distance subdirectory may be given directly.\n"
+"                  In that mode, -Ds, -Dr and -R cannot be used.\n"
+"                  When the output root directory is given, each of -Ds, -Dr\n"
+"                  and -R is required when the corresponding library dimension\n"
+"                  has multiple values, and optional when it has one value.\n"
+"                  Explicit selectors must exactly match the corresponding\n"
+"                  values in the library; no depth or distance interpolation\n"
+"                  is done.\n"
+
+"    -Ds<depsrc>   Source depth (km) used with a Green's-function root.\n"
+"                  Required for multiple source depths and optional for one.\n"
+"                  It cannot be used when -G points to a subdirectory.\n"
+
+"    -Dr<deprcv>   Receiver depth (km) used with a Green's-function root.\n"
+"                  Required for multiple receiver depths and optional for one.\n"
+"                  It cannot be used when -G points to a subdirectory.\n"
+
+"    -R<dist>      Exact epicentral distance (km) used with a root directory.\n"
+"                  Required for multiple distances and optional for one.\n"
+"                  It cannot be used when -G points to a subdirectory.\n"
 "\n"
 "    -A<azimuth>   Azimuth in degree, from source to station.\n"
 "                  Ignored (forced to 0°) when Green's Functions\n"
@@ -248,7 +283,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     sprintf(Ctrl->s_computeType, "%s", "EX");
 
     int opt;
-    while ((opt = getopt(argc, argv, ":G:A:S:M:F:T:O:D:I:J:Nehs")) != -1) {
+    while ((opt = getopt(argc, argv, ":G:A:S:M:F:T:O:D:I:J:R:Nehs")) != -1) {
         switch (opt) {
             // 格林函数路径
             case 'G':
@@ -364,14 +399,39 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 
             // 卷积时间函数
             case 'D':
-                Ctrl->D.active = true;
-                Ctrl->D.tfparams = (char*)malloc(sizeof(char)*strlen(optarg));
-                if(optarg[1] != '/' || 1 != sscanf(optarg, "%c", &Ctrl->D.tftype) || 1 != sscanf(optarg+2, "%s", Ctrl->D.tfparams)){
-                    GRTBadOptionError(D, "");
+                if(optarg[0] == 's'){
+                    Ctrl->Depth.s_active = true;
+                    if(strchr(optarg + 1, '/') != NULL || 1 != sscanf(optarg + 1, "%lf", &Ctrl->Depth.depsrc)){
+                        GRTBadOptionError(Ds, "");
+                    }
+                    if(Ctrl->Depth.depsrc < 0.0){
+                        GRTBadOptionError(Ds, "Negative source depth is not supported.");
+                    }
+                } else if(optarg[0] == 'r' && optarg[1] != '/'){
+                    Ctrl->Depth.r_active = true;
+                    if(strchr(optarg + 1, '/') != NULL || 1 != sscanf(optarg + 1, "%lf", &Ctrl->Depth.deprcv)){
+                        GRTBadOptionError(Dr, "");
+                    }
+                    if(Ctrl->Depth.deprcv < 0.0){
+                        GRTBadOptionError(Dr, "Negative receiver depth is not supported.");
+                    }
+                } else {
+                    Ctrl->D.active = true;
+                    Ctrl->D.tfparams = (char*)malloc(sizeof(char) * (strlen(optarg) + 1));
+                    if(optarg[1] != '/' || 1 != sscanf(optarg, "%c", &Ctrl->D.tftype) || 1 != sscanf(optarg + 2, "%s", Ctrl->D.tfparams)){
+                        GRTBadOptionError(D, "");
+                    }
+                    if(! grt_check_tftype_tfparams(Ctrl->D.tftype, Ctrl->D.tfparams)){
+                        GRTBadOptionError(D, "");
+                    }
                 }
-                // 检查测试
-                if(! grt_check_tftype_tfparams(Ctrl->D.tftype, Ctrl->D.tfparams)){
-                    GRTBadOptionError(D, "");
+                break;
+
+            // 根目录检索时指定震中距
+            case 'R':
+                Ctrl->R.active = true;
+                if(1 != sscanf(optarg, "%lf", &Ctrl->R.dist) || Ctrl->R.dist < 0.0){
+                    GRTBadOptionError(R, "Nonnegative epicentral distance is required.");
                 }
                 break;
 
@@ -429,6 +489,8 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
         GRTRaiseError("Only support at most one of \"-M\", \"-F\" and \"-T\". Use \"-h\" for help.\n");
     }
 
+    resolve_syn_grn_path(Ctrl);
+
     // 建立保存目录
     GRTCheckMakeDir(Ctrl->O.s_output_dir);
 
@@ -446,6 +508,12 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             GRT_SAFE_FREE_PTR(s_filepath);
 
             Ctrl->dist = sac->hd.dist;
+
+            if(!Ctrl->s.active){
+                GRTRaiseInfo(
+                    "Selected Green's function: depsrc = %.6g km, deprcv = %.6g km, dist = %.6g km.",
+                    sac->hd.evdp, -sac->hd.stel * 1e-3, sac->hd.dist);
+            }
 
             float va, vb, rho;  
             va  = sac->hd.user6;
@@ -474,6 +542,193 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 
         closedir(dp);
     }
+}
+
+
+/** 返回目录中的任意一个 SAC 文件路径 */
+static char *find_sac_in_dir(const char *dirpath)
+{
+    DIR *dir = opendir(dirpath);
+    if(dir == NULL) return NULL;
+
+    struct dirent *entry;
+    while((entry = readdir(dir)) != NULL){
+        size_t len = strlen(entry->d_name);
+        if(len <= 4 || strcmp(entry->d_name + len - 4, ".sac") != 0) continue;
+
+        char *filepath = NULL;
+        GRT_SAFE_ASPRINTF(&filepath, "%s/%s", dirpath, entry->d_name);
+        struct stat st;
+        if(stat(filepath, &st) == 0 && S_ISREG(st.st_mode)){
+            closedir(dir);
+            return filepath;
+        }
+        GRT_SAFE_FREE_PTR(filepath);
+    }
+
+    closedir(dir);
+    return NULL;
+}
+
+
+static bool real_value_exists(const real_t *values, size_t nvalues, real_t value, const real_t tolerance)
+{
+    for(size_t i = 0; i < nvalues; ++i){
+        if(fabs(values[i] - value) <= tolerance) return true;
+    }
+    return false;
+}
+
+
+static void append_unique_real(real_t **values, size_t *nvalues, real_t value, const real_t tolerance)
+{
+    if(real_value_exists(*values, *nvalues, value, tolerance)) return;
+
+    real_t *new_values = (real_t *)realloc(*values, sizeof(real_t) * (*nvalues + 1));
+    if(new_values == NULL){
+        GRTRaiseError("Failed to allocate Green's-function directory metadata.");
+    }
+    new_values[*nvalues] = value;
+    *values = new_values;
+    *nvalues += 1;
+}
+
+
+/** 根据根目录和库形态选取唯一的动态格林函数子目录 */
+static void resolve_syn_grn_path(GRT_MODULE_CTRL *Ctrl)
+{
+    const real_t match_tolerance = 1e-5;
+    char *sample = find_sac_in_dir(Ctrl->G.s_grnpath);
+    if(sample != NULL){
+        GRT_SAFE_FREE_PTR(sample);
+        if(Ctrl->Depth.s_active || Ctrl->Depth.r_active || Ctrl->R.active){
+            GRTRaiseError("-Ds/-Dr/-R cannot be used when -G points to a Green's-function subdirectory.");
+        }
+        return;
+    }
+
+    DIR *root = opendir(Ctrl->G.s_grnpath);
+    if(root == NULL){
+        GRTRaiseError("Unable to open Green's-function root \"%s\".", Ctrl->G.s_grnpath);
+    }
+
+    real_t *depsrcs = NULL;
+    real_t *deprcvs = NULL;
+    real_t *dists = NULL;
+    size_t ndepsrcs = 0;
+    size_t ndeprcvs = 0;
+    size_t ndists = 0;
+    struct dirent *entry;
+    while((entry = readdir(root)) != NULL){
+        if(entry->d_name[0] == '.') continue;
+
+        char *dirpath = NULL;
+        GRT_SAFE_ASPRINTF(&dirpath, "%s/%s", Ctrl->G.s_grnpath, entry->d_name);
+        struct stat st;
+        if(stat(dirpath, &st) != 0 || !S_ISDIR(st.st_mode)){
+            GRT_SAFE_FREE_PTR(dirpath);
+            continue;
+        }
+
+        sample = find_sac_in_dir(dirpath);
+        if(sample == NULL){
+            GRT_SAFE_FREE_PTR(dirpath);
+            continue;
+        }
+
+        SACTRACE *sac = grt_read_SACTRACE(sample, true);
+        append_unique_real(&depsrcs, &ndepsrcs, sac->hd.evdp, match_tolerance);
+        append_unique_real(&deprcvs, &ndeprcvs, -sac->hd.stel * 1e-3, match_tolerance);
+        append_unique_real(&dists, &ndists, sac->hd.dist, match_tolerance);
+        grt_free_SACTRACE(sac);
+        GRT_SAFE_FREE_PTR(sample);
+        GRT_SAFE_FREE_PTR(dirpath);
+    }
+    closedir(root);
+
+    if(ndepsrcs == 0 || ndeprcvs == 0 || ndists == 0){
+        GRTRaiseError("Green's-function root contains no valid subdirectories.");
+    }
+
+    if(ndepsrcs == 1){
+        if(!Ctrl->Depth.s_active){
+            Ctrl->Depth.depsrc = depsrcs[0];
+        }
+    } else if(!Ctrl->Depth.s_active){
+        GRTRaiseError("Green's-function root has multiple source depths; -Ds<depsrc> is required.");
+    }
+
+    if(ndeprcvs == 1){
+        if(!Ctrl->Depth.r_active){
+            Ctrl->Depth.deprcv = deprcvs[0];
+        }
+    } else if(!Ctrl->Depth.r_active){
+        GRTRaiseError("Green's-function root has multiple receiver depths; -Dr<deprcv> is required.");
+    }
+
+    if(ndists == 1){
+        if(!Ctrl->R.active){
+            Ctrl->R.dist = dists[0];
+        }
+    } else if(!Ctrl->R.active){
+        GRTRaiseError("Green's-function root has multiple epicentral distances; -R<dist> is required.");
+    }
+
+    GRT_SAFE_FREE_PTR(depsrcs);
+    GRT_SAFE_FREE_PTR(deprcvs);
+    GRT_SAFE_FREE_PTR(dists);
+
+    root = opendir(Ctrl->G.s_grnpath);
+    if(root == NULL){
+        GRTRaiseError("Unable to open Green's-function root \"%s\".", Ctrl->G.s_grnpath);
+    }
+
+    char *match = NULL;
+    size_t nmatch = 0;
+    while((entry = readdir(root)) != NULL){
+        if(entry->d_name[0] == '.') continue;
+
+        char *dirpath = NULL;
+        GRT_SAFE_ASPRINTF(&dirpath, "%s/%s", Ctrl->G.s_grnpath, entry->d_name);
+        struct stat st;
+        if(stat(dirpath, &st) != 0 || !S_ISDIR(st.st_mode)){
+            GRT_SAFE_FREE_PTR(dirpath);
+            continue;
+        }
+
+        sample = find_sac_in_dir(dirpath);
+        if(sample == NULL){
+            GRT_SAFE_FREE_PTR(dirpath);
+            continue;
+        }
+
+        SACTRACE *sac = grt_read_SACTRACE(sample, true);
+        bool depth_match = fabs(sac->hd.evdp - Ctrl->Depth.depsrc) <= match_tolerance
+            && fabs((-sac->hd.stel * 1e-3) - Ctrl->Depth.deprcv) <= match_tolerance;
+        bool dist_match = fabs(sac->hd.dist - Ctrl->R.dist) <= match_tolerance;
+        grt_free_SACTRACE(sac);
+        GRT_SAFE_FREE_PTR(sample);
+
+        if(depth_match && dist_match){
+            nmatch++;
+            GRT_SAFE_FREE_PTR(match);
+            match = dirpath;
+        } else {
+            GRT_SAFE_FREE_PTR(dirpath);
+        }
+    }
+    closedir(root);
+
+    if(nmatch == 0){
+        GRTRaiseError("No Green's-function subdirectory exactly matches depsrc=%.9g, deprcv=%.9g, dist=%.9g.",
+            Ctrl->Depth.depsrc, Ctrl->Depth.deprcv, Ctrl->R.dist);
+    }
+    if(nmatch > 1){
+        GRTRaiseError("Multiple Green's-function subdirectories match the requested depths and distance.");
+    }
+
+    GRT_SAFE_FREE_PTR(Ctrl->G.s_grnpath);
+    Ctrl->G.s_grnpath = match;
 }
 
 
@@ -871,4 +1126,3 @@ int syn_main(int argc, char **argv)
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;
 }
-

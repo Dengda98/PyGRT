@@ -25,46 +25,36 @@ from .utils import read_static_nc
 
 
 PathLike = Union[str, os.PathLike]
-DepthLike = Union[float, Sequence[float]]
+FloatOrSequence = Union[float, Sequence[float]]
 
 __all__ = ["PyModel1D"]
 
 
-def _normalize_dists(dists):
+def _normalize_float_array(
+    values: FloatOrSequence,
+    name: str,
+) -> np.ndarray:
     """
-    将 dists 规范为一维 float64 数组
+    将标量或一维浮点序列规范为 float64 数组
 
-    仅接受标量浮点数或一维浮点序列；字符串等类型直接拒绝
+    标量输入保持为 0 维数组，序列输入保持为 1 维数组
     """
-    if isinstance(dists, (str, bytes)):
-        raise TypeError("dists must be a float or a 1-D sequence of floats, not a string.")
-    arr = np.asarray(dists, dtype=np.float64)
-    if arr.ndim == 0:
-        return True, np.ascontiguousarray([float(arr)], dtype=np.float64)
-    if arr.ndim == 1:
-        return False, np.ascontiguousarray(arr, dtype=np.float64)
-    raise ValueError("dists must be a scalar or a 1-D sequence of floats.")
-
-
-def _normalize_depths(depths: DepthLike, name: str) -> np.ndarray:
-    """
-    将震源/接收深度规范为一维 float64 数组
-
-    接受标量或一维浮点序列；空数组与负深度会报错
-    """
-    if isinstance(depths, (str, bytes)):
+    if isinstance(values, (str, bytes)):
         raise TypeError(f"{name} must be a float or a 1-D sequence of floats, not a string.")
-    arr = np.asarray(depths, dtype=np.float64)
+    arr = np.asarray(values, dtype=np.float64)
     if arr.ndim == 0:
-        arr = np.ascontiguousarray([float(arr)], dtype=np.float64)
+        arr = np.asarray(arr, dtype=np.float64)
     elif arr.ndim == 1:
         arr = np.ascontiguousarray(arr, dtype=np.float64)
     else:
         raise ValueError(f"{name} must be a scalar or a 1-D sequence of floats.")
+
     if arr.size == 0:
         raise ValueError(f"{name} must not be empty.")
     if np.any(arr < 0.0):
         raise ValueError(f"{name} must be nonnegative.")
+    if arr.size > 1 and not np.all(np.diff(arr) > 0.0):
+        raise ValueError(f"{name} must be strictly ascending when multiple values are given.")
     return arr
 
 
@@ -146,7 +136,7 @@ class PyModel1D:
         *,
         depsrc: float,
         deprcv: float,
-        dists: Union[float, Sequence[float]],
+        dists: FloatOrSequence,
         modelpath: Optional[PathLike] = None,
     ):
         r"""
@@ -188,11 +178,9 @@ class PyModel1D:
             use_model = self.modelpath
 
         # 标量震中距返回 float，序列返回长度为 n 的数组
-        single, distances = _normalize_dists(dists)
-        if distances.size == 0 or np.any(distances < 0):
-            raise ValueError("dists must contain nonnegative distances.")
-        if distances.size > 1 and not np.all(np.diff(distances) > 0.0):
-            raise ValueError("dists must be strictly ascending.")
+        distances = _normalize_float_array(dists, "dists")
+        single = (distances.ndim == 0)
+        distances = np.atleast_1d(distances)
 
         carr = C_grt_compute_travt1d_from_file(
             use_model.encode("utf-8"),
@@ -214,9 +202,9 @@ class PyModel1D:
     def compute_grn(
         self,
         *,
-        depsrc: float,
-        deprcv: float,
-        dists: Union[float, Sequence[float]],
+        depsrc: FloatOrSequence,
+        deprcv: FloatOrSequence,
+        dists: FloatOrSequence,
         nt: int,
         dt: float,
         upsampling_n: int = 1,
@@ -250,8 +238,10 @@ class PyModel1D:
         model file is also copied into the ``grn`` root directory by the C module.
         All arguments must be passed by keyword.
 
-        :param    depsrc:            Source depth in km.
-        :param    deprcv:            Receiver depth in km.
+        :param    depsrc:            Source depth or strictly ascending source-depth
+                                     sequence in km.
+        :param    deprcv:            Receiver depth or strictly ascending
+                                     receiver-depth sequence in km.
         :param    dists:             Array of strictly ascending epicentral distances
                                      in km, or a single distance.
         :param    nt:                Number of time points. With the help of SciPy,
@@ -312,29 +302,31 @@ class PyModel1D:
             raise RuntimeError("Pass modelpath= to PyModel1D(...) before compute_grn().")
         if nt <= 0 or dt <= 0:
             raise ValueError("nt and dt must be positive.")
-        if depsrc < 0 or deprcv < 0:
-            raise ValueError("Source and receiver depths must be nonnegative.")
-
-        _, distances = _normalize_dists(dists)
-        if distances.size == 0 or np.any(distances < 0):
-            raise ValueError("dists must contain nonnegative distances.")
-        if distances.size > 1 and not np.all(np.diff(distances) > 0.0):
-            raise ValueError("dists must be strictly ascending.")
+        depsrcs = np.atleast_1d(_normalize_float_array(depsrc, "depsrc"))
+        deprcvs = np.atleast_1d(_normalize_float_array(deprcv, "deprcv"))
+        distances = np.atleast_1d(_normalize_float_array(dists, "dists"))
 
         try:
             freq1, freq2 = freqband
         except (TypeError, ValueError):
             raise ValueError("freqband must contain exactly two values (f1, f2).") from None
 
+        multi_depth = (depsrcs.size > 1) or (deprcvs.size > 1)
         command = {
             "subcommand": "greenfn",
             "M": f"-M{self.modelpath}",
-            "D": f"-D{format_float(depsrc)}/{format_float(deprcv)}",
+        }
+        if multi_depth:
+            command["Ds"] = f"-Ds{_format_depth_list(depsrcs)}"
+            command["Dr"] = f"-Dr{_format_depth_list(deprcvs)}"
+        else:
+            command["D"] = f"-D{format_float(float(depsrcs[0]))}/{format_float(float(deprcvs[0]))}"
+        command.update({
             "N": f"-N{nt}/{format_float(dt)}+w{format_float(zeta)}+n{upsampling_n}",
             "R": f"-R{','.join(format_float(distance) for distance in distances)}",
             "O": f"-O{self.grn}",
             "B": f"-B{self._boundary_option()}",
-        }
+        })
 
         # Build the -N option.
         if keepAllFreq:
@@ -401,11 +393,11 @@ class PyModel1D:
     def compute_static_grn(
         self,
         *,
-        depsrc: DepthLike,
-        deprcv: DepthLike,
+        depsrc: FloatOrSequence,
+        deprcv: FloatOrSequence,
+        dists: Optional[FloatOrSequence] = None,
         norths: Optional[Sequence[float]] = None,
         easts: Optional[Sequence[float]] = None,
-        dists: Optional[Union[float, Sequence[float]]] = None,
         keps: float = -1.0,
         k0: float = 50.0,
         use_kmax_ref: bool = False,
@@ -451,14 +443,14 @@ class PyModel1D:
                                      strictly ascending.
         :param    deprcv:            Receiver depth(s) in km. Multiple values must be
                                      strictly ascending.
-        :param    norths:            Three values defining the north-coordinate
-                                     option ``-Xstart/stop/step`` in km.
-        :param    easts:             Three values defining the east-coordinate
-                                     option ``-Ystart/stop/step`` in km.
         :param    dists:             Epicentral distance(s) in km. A scalar or
                                      strictly ascending sequence, equivalent to
                                      receivers with north = 0 and east = ``dists``.
                                      Mutually exclusive with ``norths`` / ``easts``.
+        :param    norths:            Three values defining the north-coordinate
+                                     option ``-Xstart/stop/step`` in km.
+        :param    easts:             Three values defining the east-coordinate
+                                     option ``-Ystart/stop/step`` in km.
         :param    keps:              Automatic convergence condition. See Yao and
                                      Harkrider (1983) for more details. A negative
                                      value disables this condition.
@@ -494,22 +486,14 @@ class PyModel1D:
         if self.modelpath is None:
             raise RuntimeError("Pass modelpath= to PyModel1D(...) before compute_static_grn().")
 
-        depsrcs = _normalize_depths(depsrc, "depsrc")
-        deprcvs = _normalize_depths(deprcv, "deprcv")
-        if depsrcs.size > 1 and not np.all(np.diff(depsrcs) > 0.0):
-            raise ValueError("depsrc must be strictly ascending when multiple values are given.")
-        if deprcvs.size > 1 and not np.all(np.diff(deprcvs) > 0.0):
-            raise ValueError("deprcv must be strictly ascending when multiple values are given.")
+        depsrcs = np.atleast_1d(_normalize_float_array(depsrc, "depsrc"))
+        deprcvs = np.atleast_1d(_normalize_float_array(deprcv, "deprcv"))
         multi_depth = (depsrcs.size > 1) or (deprcvs.size > 1)
 
         if dists is not None:
             if norths is not None or easts is not None:
                 raise ValueError("Use either dists or norths/easts.")
-            _, distances = _normalize_dists(dists)
-            if distances.size == 0 or np.any(distances < 0.0):
-                raise ValueError("dists must contain nonnegative distances.")
-            if distances.size > 1 and not np.all(np.diff(distances) > 0.0):
-                raise ValueError("dists must be strictly ascending.")
+            distances = np.atleast_1d(_normalize_float_array(dists, "dists"))
             command_grid = {
                 "R": f"-R{','.join(format_float(value) for value in distances)}"
             }
@@ -574,10 +558,13 @@ class PyModel1D:
     def compute_syn(
         self,
         *,
-        dist: float,
+        depsrc: Optional[float] = None,
+        deprcv: Optional[float] = None,
+        dist: Optional[float] = None,
         azimuth: float,
-        scale: float,
         output_path: PathLike,
+        scale: float,
+        scale_with_mu: bool = False,
         source: str = "EX",
         strike: Optional[float] = None,
         dip: Optional[float] = None,
@@ -587,7 +574,6 @@ class PyModel1D:
         time_function: Optional[str] = None,
         integrate_order: Optional[int] = None,
         differentiate_order: Optional[int] = None,
-        scale_with_mu: bool = False,
         zne: bool = False,
         calc_upar: bool = False,
         return_result: bool = False,
@@ -602,10 +588,12 @@ class PyModel1D:
         * ``R`` - radial outward
         * ``T`` - clockwise 90° from ``R``
 
-        Call :meth:`compute_grn` first (or point ``grn`` at an existing GF root).
-        The Green's function directory is located under ``grn`` by
-        matching ``dist`` in the subdirectory name. All arguments must be
-        passed by keyword.
+        Call :meth:`compute_grn` first (or point ``grn`` at an existing GF
+        root or subdirectory). When ``grn`` is a root, a selector is required
+        for a dimension with multiple values. For a singleton dimension it may
+        be omitted or explicitly set, but an explicit value must match. When
+        ``grn`` is a subdirectory, all three selectors must be omitted. No
+        interpolation is performed. All arguments must be passed by keyword.
 
         Choose one source type with ``source``:
 
@@ -616,18 +604,33 @@ class PyModel1D:
         * ``MT`` - moment tensor. Requires
           ``moment_tensor=(Mxx, Mxy, Mxz, Myy, Myz, Mzz)``.
 
-        :param    dist:                Epicentral distance in km. Used to locate the
-                                       Green's function directory under ``grn``.
+        :param    depsrc:              Source depth in km when ``grn`` is a GF root
+                                       with multiple source depths. It may be omitted
+                                       when the root has one source depth, but an
+                                       explicit value must match the root library.
+                                       It must be omitted when ``grn`` is a subdirectory.
+        :param    deprcv:              Receiver depth in km when ``grn`` is a GF root
+                                       with multiple receiver depths. It may be omitted
+                                       when the root has one receiver depth, but an
+                                       explicit value must match the root library.
+                                       It must be omitted when ``grn`` is a subdirectory.
+        :param    dist:                Epicentral distance in km when ``grn`` is a GF
+                                       root with multiple distances. It may be omitted
+                                       when the root has one distance, but an explicit
+                                       value must match the root library. It must be
+                                       omitted when ``grn`` is a subdirectory.
         :param    azimuth:             Azimuth from source to receiver in deg.
                                        North is 0°, clockwise positive.
+        :param    output_path:         Output directory for SAC files
+                                       ``{output_path}/{ch}.sac``.
         :param    scale:               Source scaling factor. For ``EX``, ``DC``,
                                        ``TS`` and ``MT``, this is the scalar seismic
                                        moment in dyne·cm. For ``SF``, the unit is dyne.
                                        If ``scale_with_mu`` is true, ``scale`` is
                                        treated as area × slip in cm³ and multiplied by
                                        the source-layer shear modulus :math:`\mu`.
-        :param    output_path:         Output directory for SAC files
-                                       ``{output_path}/{ch}.sac``.
+        :param    scale_with_mu:       If true, multiply ``scale`` by the source-layer
+                                       shear modulus :math:`\mu` (CLI ``-Su``).
         :param    source:              Source type. One of ``EX``, ``DC``, ``TS``,
                                        ``SF`` and ``MT``.
         :param    strike:              Fault strike in deg, in [0, 360]. North is 0°,
@@ -660,8 +663,6 @@ class PyModel1D:
                                        ``1`` yields step-like displacement.
         :param    differentiate_order: Number of time differentiations. For example,
                                        ``1`` yields velocity.
-        :param    scale_with_mu:       If true, multiply ``scale`` by the source-layer
-                                       shear modulus :math:`\mu` (CLI ``-Su``).
         :param    zne:                 If true, output ZNE instead of ZRT components.
         :param    calc_upar:           If true, also synthesize spatial derivatives of
                                        displacement. Derivative channel names are
@@ -673,17 +674,30 @@ class PyModel1D:
 
         :return: An ObsPy stream when ``return_result`` is true; otherwise ``None``.
         """
-        grn_path = self._dynamic_grn_dir(dist)
+        if self.grn is None:
+            raise RuntimeError("Pass grn= to PyModel1D(...) before compute_syn().")
+        if dist is not None and dist < 0:
+            raise ValueError("dist must be nonnegative.")
         output = Path(output_path)
         output.mkdir(parents=True, exist_ok=True)
 
         command = {
             "subcommand": "syn",
-            "G": f"-G{grn_path}",
+            "G": f"-G{self.grn}",
             "A": f"-A{format_float(azimuth)}",
             "S": f"-S{'u' if scale_with_mu else ''}{format_float(scale)}",
             "O": f"-O{output}",
         }
+        if depsrc is not None:
+            if depsrc < 0:
+                raise ValueError("depsrc must be nonnegative.")
+            command["Ds"] = f"-Ds{format_float(depsrc)}"
+        if deprcv is not None:
+            if deprcv < 0:
+                raise ValueError("deprcv must be nonnegative.")
+            command["Dr"] = f"-Dr{format_float(deprcv)}"
+        if dist is not None:
+            command["R"] = f"-R{format_float(dist)}"
         command.update(
             self._source_options(source, strike, dip, rake, force, moment_tensor)
         )
@@ -710,20 +724,20 @@ class PyModel1D:
     def compute_static_syn(
         self,
         *,
+        depsrc: Optional[float] = None,
+        deprcv: Optional[float] = None,
+        norths: Optional[Sequence[float]] = None,
+        easts: Optional[Sequence[float]] = None,
+        recv_points: Optional[PathLike] = None,
         output_path: PathLike,
         scale: Optional[float] = None,
+        scale_with_mu: bool = False,
         source: str = "EX",
         strike: Optional[float] = None,
         dip: Optional[float] = None,
         rake: Optional[float] = None,
         force: Optional[Sequence[float]] = None,
         moment_tensor: Optional[Sequence[float]] = None,
-        scale_with_mu: bool = False,
-        depsrc: Optional[float] = None,
-        deprcv: Optional[float] = None,
-        norths: Optional[Sequence[float]] = None,
-        easts: Optional[Sequence[float]] = None,
-        recv_points: Optional[PathLike] = None,
         finite_fault: Optional[PathLike] = None,
         subfault_size: Optional[Sequence[float]] = None,
         zne: bool = False,
@@ -771,6 +785,29 @@ class PyModel1D:
         * ``MT`` - moment tensor. Requires
           ``moment_tensor=(Mxx, Mxy, Mxz, Myy, Myz, Mzz)``.
 
+        :param    depsrc:            Point-source depth in km (CLI ``-Ds``). Required
+                                     when the library has multiple source depths;
+                                     optional when it has one, but an explicit value
+                                     must match the library. Forbidden when
+                                     ``finite_fault`` is set.
+        :param    deprcv:            Receiver depth in km for grid receivers
+                                     (CLI ``-Dr``). Required when the library has
+                                     multiple receiver depths and ``recv_points`` is
+                                     not used; optional when it has one, but an
+                                     explicit value must match the library. Do not set
+                                     it when using ``recv_points``.
+        :param    norths:            Optional new north grid as three values
+                                     ``(start, stop, step)`` in km. Must be set
+                                     together with ``easts``. Mutually exclusive
+                                     with ``recv_points``.
+        :param    easts:             Optional new east grid as three values
+                                     ``(start, stop, step)`` in km. Must be set
+                                     together with ``norths``. Mutually exclusive
+                                     with ``recv_points``.
+        :param    recv_points:       ASCII file of arbitrary receivers
+                                     (``north east depth`` in km; ``#`` comments).
+                                     Mutually exclusive with ``norths``/``easts``
+                                     and ``deprcv``.
         :param    output_path:       Output NetCDF file path.
         :param    scale:             Point-source scaling factor. For ``EX``, ``DC``,
                                      ``TS`` and ``MT``, this is the scalar seismic
@@ -780,6 +817,8 @@ class PyModel1D:
                                      the source-layer shear modulus :math:`\mu`.
                                      Required for point sources; ignored for
                                      ``finite_fault``.
+        :param    scale_with_mu:     If true, multiply ``scale`` by the source-layer
+                                     shear modulus :math:`\mu` (CLI ``-Su``).
         :param    source:            Point-source type. One of ``EX``, ``DC``,
                                      ``TS``, ``SF`` and ``MT``. Ignored when
                                      ``finite_fault`` is set.
@@ -797,29 +836,6 @@ class PyModel1D:
         :param    moment_tensor:     Six independent moment-tensor coefficients
                                      ``(Mxx, Mxy, Mxz, Myy, Myz, Mzz)`` for ``MT``.
                                      Subscripts x/y/z denote north/east/down.
-        :param    scale_with_mu:     If true, multiply ``scale`` by the source-layer
-                                     shear modulus :math:`\mu` (CLI ``-Su``).
-        :param    depsrc:            Point-source depth in km (CLI ``-Ds``). Required
-                                     when the library has multiple source depths;
-                                     forbidden for ``finite_fault``.
-        :param    deprcv:            Receiver depth in km for grid receivers
-                                     (CLI ``-Dr``). Required when the library has
-                                     multiple receiver depths and ``recv_points``
-                                     is not used; do not set it for a library
-                                     with one receiver depth or when using
-                                     ``recv_points``.
-        :param    norths:            Optional new north grid as three values
-                                     ``(start, stop, step)`` in km. Must be set
-                                     together with ``easts``. Mutually exclusive
-                                     with ``recv_points``.
-        :param    easts:             Optional new east grid as three values
-                                     ``(start, stop, step)`` in km. Must be set
-                                     together with ``norths``. Mutually exclusive
-                                     with ``recv_points``.
-        :param    recv_points:       ASCII file of arbitrary receivers
-                                     (``north east depth`` in km; ``#`` comments).
-                                     Mutually exclusive with ``norths``/``easts``
-                                     and ``deprcv``.
         :param    finite_fault:      Coulomb-format finite-fault file (CLI ``-C``).
                                      Mutually exclusive with point-source options;
                                      point-source arguments cause ``ValueError``.
@@ -916,27 +932,6 @@ class PyModel1D:
             return read_static_nc(output)
         return None
 
-    def _dynamic_grn_dir(self, dist: float) -> str:
-        """
-        在 grn 根目录下按震中距匹配格林函数子目录
-
-        子目录命名为 ``{model}_{depsrc}_{deprcv}_{dist}``
-        当前假设仅有一套震源/台站深度，故只需匹配 dist
-        """
-        if self.grn is None:
-            raise RuntimeError("Pass grn= to PyModel1D(...) before compute_syn().")
-        root = Path(self.grn)
-        if not root.is_dir():
-            raise FileNotFoundError(f"Dynamic Green's function root does not exist: {root}")
-
-        suffix = f"_{format_float(dist)}"
-        matches = [path for path in root.iterdir() if path.is_dir() and path.name.endswith(suffix)]
-        if not matches:
-            raise FileNotFoundError(f"No Green's function directory matching dist={format_float(dist)} under {root}.")
-        if len(matches) > 1:
-            names = ", ".join(path.name for path in sorted(matches))
-            raise RuntimeError(f"Multiple Green's function directories match dist={format_float(dist)} under {root}: {names}.")
-        return str(matches[0])
 
     def _boundary_option(self) -> str:
         return {
