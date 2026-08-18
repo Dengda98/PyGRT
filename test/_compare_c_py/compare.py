@@ -123,22 +123,21 @@ def run_py_dynamic(py_root: Path) -> None:
     )
 
     cases = [
-        ("syn_ex", "EX", {}, "t/0.2/0.2/0.4"),
-        ("syn_sf", "SF", {"force": (FN, FE, FZ)}, "t/0.1/0.3/0.6"),
-        ("syn_dc", "DC", {"strike": STK, "dip": DIP, "rake": RAK}, "p/0.6"),
-        ("syn_ts", "TS", {"strike": STK, "dip": DIP}, "p/0.6"),
-        ("syn_mt", "MT", {"moment_tensor": MT}, "r/3"),
+        ("syn_ex", {}, "t/0.2/0.2/0.4"),
+        ("syn_sf", {"force": (FN, FE, FZ)}, "t/0.1/0.3/0.6"),
+        ("syn_dc", {"strike": STK, "dip": DIP, "rake": RAK}, "p/0.6"),
+        ("syn_ts", {"strike": STK, "dip": DIP}, "p/0.6"),
+        ("syn_mt", {"moment_tensor": MT}, "r/3"),
     ]
     for zne in (False, True):
         suffix = "-N" if zne else ""
-        for name, source, kwargs, tf in cases:
+        for name, kwargs, tf in cases:
             out = py_root / f"{name}{suffix}"
             model.compute_syn(
                 dist=DIST,
                 azimuth=AZ,
                 scale=SCALE,
                 output_path=out,
-                source=source,
                 time_function=tf,
                 zne=zne,
                 calc_upar=True,
@@ -211,20 +210,19 @@ def run_py_static(py_root: Path) -> None:
     )
 
     cases = [
-        ("stsyn_ex", "EX", {}),
-        ("stsyn_sf", "SF", {"force": (FN, FE, FZ)}),
-        ("stsyn_dc", "DC", {"strike": STK, "dip": DIP, "rake": RAK}),
-        ("stsyn_ts", "TS", {"strike": STK, "dip": DIP}),
-        ("stsyn_mt", "MT", {"moment_tensor": MT}),
+        ("stsyn_ex", {}),
+        ("stsyn_sf", {"force": (FN, FE, FZ)}),
+        ("stsyn_dc", {"strike": STK, "dip": DIP, "rake": RAK}),
+        ("stsyn_ts", {"strike": STK, "dip": DIP}),
+        ("stsyn_mt", {"moment_tensor": MT}),
     ]
     for zne in (False, True):
         suffix = "-N" if zne else ""
-        for name, source, kwargs in cases:
+        for name, kwargs in cases:
             out = static_dir / f"{name}{suffix}.nc"
             model.compute_static_syn(
                 scale=SCALE,
                 output_path=out,
-                source=source,
                 zne=zne,
                 calc_upar=True,
                 **kwargs,

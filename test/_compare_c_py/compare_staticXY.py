@@ -104,20 +104,19 @@ def run_py(py_root: Path) -> None:
     )
 
     cases = [
-        ("stsyn_ex", "EX", {}),
-        ("stsyn_sf", "SF", {"force": (FN, FE, FZ)}),
-        ("stsyn_dc", "DC", {"strike": STK, "dip": DIP, "rake": RAK}),
-        ("stsyn_ts", "TS", {"strike": STK, "dip": DIP}),
-        ("stsyn_mt", "MT", {"moment_tensor": MT}),
+        ("stsyn_ex", {}),
+        ("stsyn_sf", {"force": (FN, FE, FZ)}),
+        ("stsyn_dc", {"strike": STK, "dip": DIP, "rake": RAK}),
+        ("stsyn_ts", {"strike": STK, "dip": DIP}),
+        ("stsyn_mt", {"moment_tensor": MT}),
     ]
     for zne in (False, True):
         suffix = "-N" if zne else ""
-        for name, source, kwargs in cases:
+        for name, kwargs in cases:
             out = static_dir / f"{name}{suffix}.nc"
             model.compute_static_syn(
                 scale=SCALE,
                 output_path=out,
-                source=source,
                 norths=NORTHS,
                 easts=EASTS,
                 zne=zne,

@@ -14,14 +14,14 @@ pymod.compute_static_grn(
 )
 
 pymod.compute_static_syn(
-    scale=1e20, output_path="stsyn.nc", source="EX", calc_upar=True,
+    scale=1e20, output_path="stsyn.nc", calc_upar=True,
 )
 pygrt.utils.compute_strain("stsyn.nc")
 pygrt.utils.compute_stress("stsyn.nc")
 pygrt.utils.compute_rotation("stsyn.nc")
 
 pymod.compute_static_syn(
-    scale=1e20, output_path="stsyn_zne.nc", source="EX",
+    scale=1e20, output_path="stsyn_zne.nc",
     zne=True, calc_upar=True,
 )
 pygrt.utils.compute_strain("stsyn_zne.nc")

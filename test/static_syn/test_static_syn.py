@@ -16,39 +16,39 @@ pymod.compute_static_grn(
 )
 
 pymod.compute_static_syn(
-    scale=1e20, output_path="stsyn.nc", source="EX",
+    scale=1e20, output_path="stsyn.nc",
 )
 pymod.compute_static_syn(
-    scale=1e16, output_path="stsyn.nc", source="SF", force=(-1, 2, -4),
+    scale=1e16, output_path="stsyn.nc", force=(-1, 2, -4),
 )
 pymod.compute_static_syn(
-    scale=1e20, output_path="stsyn.nc", source="DC",
+    scale=1e20, output_path="stsyn.nc",
     strike=33, dip=44, rake=55,
 )
 pymod.compute_static_syn(
-    scale=1e20, output_path="stsyn.nc", source="TS", strike=33, dip=44,
+    scale=1e20, output_path="stsyn.nc", strike=33, dip=44,
 )
 pymod.compute_static_syn(
-    scale=1e20, output_path="stsyn.nc", source="MT",
+    scale=1e20, output_path="stsyn.nc",
     moment_tensor=(1, -2, -5, 0.5, 3, 1.2),
 )
 
 # ZNE / 空间导数 / 新 XY 网格
 pymod.compute_static_syn(
-    scale=1e20, output_path="stsyn.nc", source="EX", zne=True, calc_upar=True,
+    scale=1e20, output_path="stsyn.nc", zne=True, calc_upar=True,
 )
 pymod.compute_static_syn(
-    scale=1e20, output_path="stsyn_xy.nc", source="EX",
+    scale=1e20, output_path="stsyn_xy.nc",
     norths=[-2.0, 2.0, 0.5], easts=[-1.0, 1.0, 0.5],
 )
 pymod.compute_static_syn(
-    scale=1e20, output_path="stsyn_single_explicit.nc", source="EX",
+    scale=1e20, output_path="stsyn_single_explicit.nc",
     depsrc=depsrc, deprcv=deprcv,
 )
 
 try:
     pymod.compute_static_syn(
-        scale=1e20, output_path="stsyn_bad.nc", source="EX", depsrc=depsrc + 0.1,
+        scale=1e20, output_path="stsyn_bad.nc", depsrc=depsrc + 0.1,
     )
     raise AssertionError("wrong single source depth should fail")
 except RuntimeError:
@@ -56,7 +56,7 @@ except RuntimeError:
 
 try:
     pymod.compute_static_syn(
-        scale=1e20, output_path="stsyn_bad.nc", source="EX", deprcv=deprcv + 0.1,
+        scale=1e20, output_path="stsyn_bad.nc", deprcv=deprcv + 0.1,
     )
     raise AssertionError("wrong single receiver depth should fail")
 except RuntimeError:
@@ -67,9 +67,9 @@ pymod_r = pygrt.PyModel1D(stgrn="stgrn_r.nc", modelpath=modname)
 pymod_r.compute_static_grn(
     depsrc=depsrc, deprcv=deprcv, dists=[0.0, 1.0, 2.0, 4.0, 8.0], calc_upar=True,
 )
-pymod_r.compute_static_syn(scale=1e20, output_path="stsyn_r.nc", source="EX")
+pymod_r.compute_static_syn(scale=1e20, output_path="stsyn_r.nc")
 pymod_r.compute_static_syn(
-    scale=1e20, output_path="stsyn_rxy.nc", source="EX",
+    scale=1e20, output_path="stsyn_rxy.nc",
     norths=[-3.0, 3.0, 1.0], easts=[-2.0, 2.0, 1.0], calc_upar=True,
 )
 
@@ -80,10 +80,10 @@ pymod_m.compute_static_grn(
     dists=[0.0, 1.0, 2.0, 4.0, 8.0], calc_upar=True,
 )
 pymod_m.compute_static_syn(
-    scale=1e16, output_path="stsyn_md.nc", source="EX", depsrc=2.0, scale_with_mu=True,
+    scale=1e16, output_path="stsyn_md.nc", depsrc=2.0, scale_with_mu=True,
 )
 pymod_m.compute_static_syn(
-    scale=1e16, output_path="stsyn_interp.nc", source="EX", depsrc=1.5,
+    scale=1e16, output_path="stsyn_interp.nc", depsrc=1.5,
     norths=[-2.0, 2.0, 1.0], easts=[-2.0, 2.0, 1.0],
     scale_with_mu=True, calc_upar=True,
 )
@@ -91,7 +91,7 @@ pymod_m.compute_static_syn(
 rcv = Path("rcv_pts.txt")
 rcv.write_text("# north east depth (km)\n0 0 0\n1 2 0\n-1 1 0\n")
 pymod_m.compute_static_syn(
-    scale=1e16, output_path="stsyn_q.nc", source="EX", depsrc=2.0, recv_points=rcv,
+    scale=1e16, output_path="stsyn_q.nc", depsrc=2.0, recv_points=rcv,
 )
 with netcdf_file("stsyn_q.nc", mmap=False) as f:
     assert "point" in f.dimensions
@@ -114,14 +114,14 @@ pymod_mr.compute_static_grn(
     depsrc=2.0, deprcv=[0.0, 0.5], dists=[0.0, 5.0], calc_upar=True,
 )
 pymod_mr.compute_static_syn(
-    scale=1e20, output_path="stsyn_dr.nc", source="EX",
+    scale=1e20, output_path="stsyn_dr.nc",
     deprcv=0.25, norths=[-2.0, 2.0, 1.0], easts=[-2.0, 2.0, 1.0],
 )
 
 # -------------------- 错误参数 --------------------
 try:
     pymod_m.compute_static_syn(
-        scale=1e20, output_path="stsyn_bad.nc", source="EX",
+        scale=1e20, output_path="stsyn_bad.nc",
         recv_points=rcv, norths=[-1.0, 1.0, 1.0], easts=[-1.0, 1.0, 1.0],
     )
     raise AssertionError("recv_points with norths/easts should raise")
@@ -130,7 +130,7 @@ except ValueError:
 
 try:
     pymod_m.compute_static_syn(
-        scale=1e20, output_path="stsyn_bad.nc", source="EX",
+        scale=1e20, output_path="stsyn_bad.nc",
         recv_points=rcv, deprcv=0.0,
     )
     raise AssertionError("recv_points with deprcv should raise")
@@ -139,7 +139,7 @@ except ValueError:
 
 try:
     pymod_m.compute_static_syn(
-        scale=1e20, output_path="stsyn_bad.nc", source="EX",
+        scale=1e20, output_path="stsyn_bad.nc",
         finite_fault=ff,
     )
     raise AssertionError("finite_fault with scale should raise")
