@@ -565,7 +565,6 @@ class PyModel1D:
         output_path: PathLike,
         scale: float,
         scale_with_mu: bool = False,
-        source: str = "EX",
         strike: Optional[float] = None,
         dip: Optional[float] = None,
         rake: Optional[float] = None,
@@ -595,14 +594,13 @@ class PyModel1D:
         ``grn`` is a subdirectory, all three selectors must be omitted. No
         interpolation is performed. All arguments must be passed by keyword.
 
-        Choose one source type with ``source``:
-
-        * ``EX`` - explosion. Only ``scale`` is required.
-        * ``DC`` - double-couple / shear. Requires ``strike``, ``dip`` and ``rake``.
-        * ``TS`` - tensile crack. Requires ``strike`` and ``dip``.
-        * ``SF`` - single force. Requires ``force=(fN, fE, fZ)``.
-        * ``MT`` - moment tensor. Requires
-          ``moment_tensor=(Mxx, Mxy, Mxz, Myy, Myz, Mzz)``.
+        The source type is inferred from the source-specific parameters. Leave
+        ``strike``, ``dip``, ``rake``, ``force`` and ``moment_tensor`` unset for
+        an explosion (``EX``). Supplying ``force`` selects a single force
+        (``SF``); supplying ``moment_tensor`` selects a moment tensor (``MT``);
+        supplying ``strike`` and ``dip`` selects a tensile crack (``TS``), or a
+        double-couple (``DC``) when ``rake`` is also supplied. Only one source
+        parameter group may be used at a time.
 
         :param    depsrc:              Source depth in km when ``grn`` is a GF root
                                        with multiple source depths. It may be omitted
@@ -623,30 +621,34 @@ class PyModel1D:
                                        North is 0°, clockwise positive.
         :param    output_path:         Output directory for SAC files
                                        ``{output_path}/{ch}.sac``.
-        :param    scale:               Source scaling factor. For ``EX``, ``DC``,
-                                       ``TS`` and ``MT``, this is the scalar seismic
-                                       moment in dyne·cm. For ``SF``, the unit is dyne.
+        :param    scale:               Source scaling factor. For explosion,
+                                       double-couple, tensile-crack and moment-tensor
+                                       sources, this is the scalar seismic moment in
+                                       dyne·cm. For a single force, the unit is dyne.
                                        If ``scale_with_mu`` is true, ``scale`` is
                                        treated as area × slip in cm³ and multiplied by
                                        the source-layer shear modulus :math:`\mu`.
         :param    scale_with_mu:       If true, multiply ``scale`` by the source-layer
                                        shear modulus :math:`\mu` (CLI ``-Su``).
-        :param    source:              Source type. One of ``EX``, ``DC``, ``TS``,
-                                       ``SF`` and ``MT``.
         :param    strike:              Fault strike in deg, in [0, 360]. North is 0°,
-                                       clockwise positive. Required for ``DC`` and
-                                       ``TS``.
+                                       clockwise positive. Set together with ``dip``
+                                       for ``TS`` or with ``dip`` and ``rake`` for
+                                       ``DC``.
         :param    dip:                 Fault dip in deg, in [0, 90]. Required for
-                                       ``DC`` and ``TS``.
+                                       ``TS`` and ``DC`` when the corresponding
+                                       source geometry is selected.
         :param    rake:                Slip rake in deg, in [-180, 180],
                                        counterclockwise positive on the fault plane.
-                                       Required for ``DC``.
+                                       Supplying it with ``strike`` and ``dip`` selects
+                                       ``DC``; omit it for ``TS``.
         :param    force:               Single-force coefficients ``(fN, fE, fZ)`` for
-                                       ``SF``. Directions are north, east and downward.
-                                       Each coefficient is multiplied by ``scale``.
+                                       the ``SF`` source. Directions are north, east
+                                       and downward. Each coefficient is multiplied by
+                                       ``scale``.
         :param    moment_tensor:       Six independent moment-tensor coefficients
-                                       ``(Mxx, Mxy, Mxz, Myy, Myz, Mzz)`` for ``MT``.
-                                       Subscripts x/y/z denote north/east/down.
+                                       ``(Mxx, Mxy, Mxz, Myy, Myz, Mzz)`` for the
+                                       ``MT`` source. Subscripts x/y/z denote
+                                       north/east/down.
         :param    time_function:       Time-function string passed to CLI ``-D``.
                                        Supported forms include:
 
@@ -698,9 +700,7 @@ class PyModel1D:
             command["Dr"] = f"-Dr{format_float(deprcv)}"
         if dist is not None:
             command["R"] = f"-R{format_float(dist)}"
-        command.update(
-            self._source_options(source, strike, dip, rake, force, moment_tensor)
-        )
+        command.update(self._source_options(strike, dip, rake, force, moment_tensor))
 
         # Build the time-function and operation-order options.
         if time_function is not None:
@@ -732,7 +732,6 @@ class PyModel1D:
         output_path: PathLike,
         scale: Optional[float] = None,
         scale_with_mu: bool = False,
-        source: str = "EX",
         strike: Optional[float] = None,
         dip: Optional[float] = None,
         rake: Optional[float] = None,
@@ -760,10 +759,15 @@ class PyModel1D:
         line (north = 0, east = R); set ``norths``/``easts`` or ``recv_points``
         to obtain a 2-D field.
 
-        Point sources use ``scale`` and ``source``. Finite faults use
-        ``finite_fault`` (Coulomb-format file, CLI ``-C``) instead; that path
-        requires a multi-source-depth library, automatically writes ZNE, and
-        rejects point-source options.
+        Point-source type is inferred from the source-specific parameters:
+        leaving ``strike``, ``dip``, ``rake``, ``force`` and ``moment_tensor``
+        unset selects an explosion (``EX``); ``force`` selects a single force
+        (``SF``); ``moment_tensor`` selects a moment tensor (``MT``); ``strike``
+        and ``dip`` select a tensile crack (``TS``), or a double-couple (``DC``)
+        when ``rake`` is also supplied. Only one source parameter group may be
+        used at a time. Finite faults use ``finite_fault`` (Coulomb-format file,
+        CLI ``-C``) instead; that path requires a multi-source-depth library,
+        automatically writes ZNE, and rejects point-source options.
 
         For each target receiver, the C module first synthesizes results at the
         surrounding epicentral-distance samples and combines those synthesized
@@ -775,15 +779,6 @@ class PyModel1D:
         arrays. If the library was generated with an explicit ``-X``/``-Y`` grid
         and the same grid is reused, the corresponding synthesized results can
         be used directly.
-
-        Choose one point-source type with ``source``:
-
-        * ``EX`` - explosion. Only ``scale`` is required.
-        * ``DC`` - double-couple / shear. Requires ``strike``, ``dip`` and ``rake``.
-        * ``TS`` - tensile crack. Requires ``strike`` and ``dip``.
-        * ``SF`` - single force. Requires ``force=(fN, fE, fZ)``.
-        * ``MT`` - moment tensor. Requires
-          ``moment_tensor=(Mxx, Mxy, Mxz, Myy, Myz, Mzz)``.
 
         :param    depsrc:            Point-source depth in km (CLI ``-Ds``). Required
                                      when the library has multiple source depths;
@@ -809,9 +804,10 @@ class PyModel1D:
                                      Mutually exclusive with ``norths``/``easts``
                                      and ``deprcv``.
         :param    output_path:       Output NetCDF file path.
-        :param    scale:             Point-source scaling factor. For ``EX``, ``DC``,
-                                     ``TS`` and ``MT``, this is the scalar seismic
-                                     moment in dyne·cm. For ``SF``, the unit is dyne.
+        :param    scale:             Point-source scaling factor. For explosion,
+                                     double-couple, tensile-crack and moment-tensor
+                                     sources, this is the scalar seismic moment in
+                                     dyne·cm. For a single force, the unit is dyne.
                                      If ``scale_with_mu`` is true, ``scale`` is
                                      treated as area × slip in cm³ and multiplied by
                                      the source-layer shear modulus :math:`\mu`.
@@ -819,23 +815,25 @@ class PyModel1D:
                                      ``finite_fault``.
         :param    scale_with_mu:     If true, multiply ``scale`` by the source-layer
                                      shear modulus :math:`\mu` (CLI ``-Su``).
-        :param    source:            Point-source type. One of ``EX``, ``DC``,
-                                     ``TS``, ``SF`` and ``MT``. Ignored when
-                                     ``finite_fault`` is set.
         :param    strike:            Fault strike in deg, in [0, 360]. North is 0°,
-                                     clockwise positive. Required for ``DC`` and
-                                     ``TS``.
+                                     clockwise positive. Set together with ``dip``
+                                     for ``TS`` or with ``dip`` and ``rake`` for
+                                     ``DC``.
         :param    dip:               Fault dip in deg, in [0, 90]. Required for
-                                     ``DC`` and ``TS``.
+                                     ``TS`` and ``DC`` when the corresponding
+                                     source geometry is selected.
         :param    rake:              Slip rake in deg, in [-180, 180],
                                      counterclockwise positive on the fault plane.
-                                     Required for ``DC``.
+                                     Supplying it with ``strike`` and ``dip`` selects
+                                     ``DC``; omit it for ``TS``.
         :param    force:             Single-force coefficients ``(fN, fE, fZ)`` for
-                                     ``SF``. Directions are north, east and downward.
-                                     Each coefficient is multiplied by ``scale``.
+                                     the ``SF`` source. Directions are north, east
+                                     and downward. Each coefficient is multiplied by
+                                     ``scale``.
         :param    moment_tensor:     Six independent moment-tensor coefficients
-                                     ``(Mxx, Mxy, Mxz, Myy, Myz, Mzz)`` for ``MT``.
-                                     Subscripts x/y/z denote north/east/down.
+                                     ``(Mxx, Mxy, Mxz, Myy, Myz, Mzz)`` for the
+                                     ``MT`` source. Subscripts x/y/z denote
+                                     north/east/down.
         :param    finite_fault:      Coulomb-format finite-fault file (CLI ``-C``).
                                      Mutually exclusive with point-source options;
                                      point-source arguments cause ``ValueError``.
@@ -863,16 +861,17 @@ class PyModel1D:
         use_ff = finite_fault is not None
         use_q = recv_points is not None
         use_xy = norths is not None or easts is not None
-        if use_ff and (
+        has_geometry = strike is not None or dip is not None or rake is not None
+        has_force = force is not None
+        has_moment_tensor = moment_tensor is not None
+        has_point_source_options = (
             scale is not None
-            or force is not None
-            or moment_tensor is not None
-            or strike is not None
-            or dip is not None
-            or rake is not None
             or scale_with_mu
-            or source.upper() != "EX"
-        ):
+            or has_geometry
+            or has_force
+            or has_moment_tensor
+        )
+        if use_ff and has_point_source_options:
             raise ValueError("finite_fault is mutually exclusive with point-source options.")
         if use_q and use_xy:
             raise ValueError("recv_points is mutually exclusive with norths/easts.")
@@ -908,9 +907,7 @@ class PyModel1D:
             if scale is None:
                 raise ValueError("scale is required for point-source synthesis.")
             command["S"] = f"-S{'u' if scale_with_mu else ''}{format_float(scale)}"
-            command.update(
-                self._source_options(source, strike, dip, rake, force, moment_tensor)
-            )
+            command.update(self._source_options(strike, dip, rake, force, moment_tensor))
             if depsrc is not None:
                 command["Ds"] = f"-Ds{format_float(depsrc)}"
 
@@ -954,30 +951,36 @@ class PyModel1D:
 
     @staticmethod
     def _source_options(
-        source: str,
         strike: Optional[float],
         dip: Optional[float],
         rake: Optional[float],
         force: Optional[Sequence[float]],
         moment_tensor: Optional[Sequence[float]],
     ) -> Dict[str, str]:
-        source = source.upper()
-        if source == "EX":
-            return {}
-        if source == "DC":
-            if strike is None or dip is None or rake is None:
-                raise ValueError("DC source requires strike, dip and rake.")
-            return {"M": f"-M{format_float(strike)}/{format_float(dip)}/{format_float(rake)}"}
-        if source == "TS":
-            if strike is None or dip is None:
-                raise ValueError("TS source requires strike and dip.")
-            return {"M": f"-M{format_float(strike)}/{format_float(dip)}"}
-        if source == "SF":
-            if force is None or len(force) != 3:
-                raise ValueError("SF source requires force=(fN, fE, fZ).")
+        has_strike = strike is not None
+        has_dip = dip is not None
+        has_rake = rake is not None
+        has_geometry = has_strike or has_dip or has_rake
+        has_force = force is not None
+        has_moment_tensor = moment_tensor is not None
+        if has_force:
+            if has_geometry or has_moment_tensor:
+                raise ValueError("force is mutually exclusive with strike/dip/rake and moment_tensor.")
+            if len(force) != 3:
+                raise ValueError("force must contain exactly three values: (fN, fE, fZ).")
             return {"F": "-F" + "/".join(format_float(value) for value in force)}
-        if source == "MT":
-            if moment_tensor is None or len(moment_tensor) != 6:
-                raise ValueError("MT source requires six moment-tensor values.")
+        if has_moment_tensor:
+            if has_geometry:
+                raise ValueError("moment_tensor is mutually exclusive with strike/dip/rake and force.")
+            if len(moment_tensor) != 6:
+                raise ValueError(
+                    "moment_tensor must contain exactly six values: (Mxx, Mxy, Mxz, Myy, Myz, Mzz)."
+                )
             return {"T": "-T" + "/".join(format_float(value) for value in moment_tensor)}
-        raise ValueError(f"Unsupported source type: {source}")
+        if not has_geometry:
+            return {}
+        if not has_strike or not has_dip:
+            raise ValueError("strike and dip must be supplied together.")
+        if has_rake:
+            return {"M": f"-M{format_float(strike)}/{format_float(dip)}/{format_float(rake)}"}
+        return {"M": f"-M{format_float(strike)}/{format_float(dip)}"}

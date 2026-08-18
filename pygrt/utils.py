@@ -126,28 +126,6 @@ def read_static_grn(path: PathLike) -> dict:
     return read_static_nc(path)
 
 
-def _okada_source_option(
-    source: str,
-    strike: Optional[float],
-    dip: Optional[float],
-    rake: Optional[float],
-) -> Optional[str]:
-    """Convert an Okada point-source type and geometry to the ``-M`` option."""
-
-    source = source.upper()
-    if source == "EX":
-        return None
-    if source == "DC":
-        if strike is None or dip is None or rake is None:
-            raise ValueError("DC source requires strike, dip and rake.")
-        return f"-M{format_float(strike)}/{format_float(dip)}/{format_float(rake)}"
-    if source == "TS":
-        if strike is None or dip is None:
-            raise ValueError("TS source requires strike and dip.")
-        return f"-M{format_float(strike)}/{format_float(dip)}"
-    raise ValueError("Okada source must be EX, DC or TS.")
-
-
 def compute_okada(
     *,
     modelparams: Sequence[float],
@@ -159,7 +137,6 @@ def compute_okada(
     output_path: PathLike,
     scale: Optional[float] = None,
     scale_with_mu: bool = False,
-    source: str = "EX",
     strike: Optional[float] = None,
     dip: Optional[float] = None,
     rake: Optional[float] = None,
@@ -177,15 +154,18 @@ def compute_okada(
     half-space model parameters ``(vp, vs, rho)`` and does not require a static
     Green's function file.
 
-    Point sources support three types:
+    The point-source type is inferred from the source-specific parameters:
 
-    * ``EX`` - explosion; only ``scale`` is required
-    * ``DC`` - double-couple; requires ``strike``, ``dip`` and ``rake``
-    * ``TS`` - tensile crack; requires ``strike`` and ``dip``
+    * no ``strike``, ``dip`` or ``rake`` - explosion (``EX``)
+    * ``strike`` and ``dip`` - tensile crack (``TS``), or double-couple (``DC``)
+      when ``rake`` is also supplied
 
     A Coulomb-format finite-fault file can be passed through ``finite_fault``.
     The finite fault is evaluated directly as Okada rectangular patches, so no
     ``subfault_size`` subdivision option is needed.
+
+    ``strike``, ``dip`` and ``rake`` must be supplied as a complete geometry
+    when they are used. They are mutually exclusive with ``finite_fault``.
 
     All arguments must be passed by keyword.
 
@@ -203,7 +183,6 @@ def compute_okada(
                                ``scale_with_mu`` is true. Not used for finite faults
     :param    scale_with_mu:    If true, pass ``-Su`` and treat ``scale`` as potency
                                or area times slip in cm^3
-    :param    source:           Point-source type: ``EX``, ``DC`` or ``TS``
     :param    strike:           Fault strike in degrees, in [0, 360]
     :param    dip:              Fault dip in degrees, in [0, 90]
     :param    rake:             Slip rake in degrees, in [-180, 180]
@@ -232,7 +211,20 @@ def compute_okada(
     use_ff = finite_fault is not None
     use_q = recv_points is not None
     use_xy = norths is not None or easts is not None
-    source = source.upper()
+    has_strike = strike is not None
+    has_dip = dip is not None
+    has_rake = rake is not None
+    has_geometry = has_strike or has_dip or has_rake
+    has_point_source_options = scale is not None or depsrc is not None or has_geometry or scale_with_mu
+
+    def source_option() -> Optional[str]:
+        if not has_geometry:
+            return None
+        if not has_strike or not has_dip:
+            raise ValueError("strike and dip must be supplied together.")
+        if has_rake:
+            return f"-M{format_float(strike)}/{format_float(dip)}/{format_float(rake)}"
+        return f"-M{format_float(strike)}/{format_float(dip)}"
 
     if use_q and use_xy:
         raise ValueError("recv_points is mutually exclusive with norths/easts.")
@@ -253,15 +245,7 @@ def compute_okada(
         f"-O{output}",
     ]
     if use_ff:
-        if (
-            scale is not None
-            or depsrc is not None
-            or source != "EX"
-            or strike is not None
-            or dip is not None
-            or rake is not None
-            or scale_with_mu
-        ):
+        if has_point_source_options:
             raise ValueError("finite_fault is mutually exclusive with point-source options.")
         command.append(f"-C{Path(finite_fault)}")
     else:
@@ -271,9 +255,9 @@ def compute_okada(
             raise ValueError("depsrc is required for point-source synthesis.")
         command.append(f"-S{'u' if scale_with_mu else ''}{format_float(scale)}")
         command.append(f"-Ds{format_float(depsrc)}")
-        source_option = _okada_source_option(source, strike, dip, rake)
-        if source_option is not None:
-            command.append(source_option)
+        geometry_option = source_option()
+        if geometry_option is not None:
+            command.append(geometry_option)
 
     if deprcv is not None:
         command.append(f"-Dr{format_float(deprcv)}")

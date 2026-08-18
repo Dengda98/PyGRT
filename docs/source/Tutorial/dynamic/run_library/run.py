@@ -26,7 +26,6 @@ pymod.compute_syn(
     dist=8.0,
     azimuth=30.0,
     scale=1e24,
-    source="EX",
     output_path="syn_python",
 )
 # END SYN

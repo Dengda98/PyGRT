@@ -354,7 +354,6 @@ def test_compute_syn_source_and_time_function_options():
             azimuth=12.0,
             scale=1e20,
             output_path=out / "sf",
-            source="SF",
             force=(2.0, -1.0, 4.0),
             time_function="t/0.1/0.3/0.6",
         )
@@ -371,7 +370,6 @@ def test_compute_syn_source_and_time_function_options():
             azimuth=1.0,
             scale=1e22,
             output_path=out / "dc",
-            source="DC",
             strike=77.0,
             dip=88.0,
             rake=99.0,
@@ -384,7 +382,6 @@ def test_compute_syn_source_and_time_function_options():
             azimuth=1.0,
             scale=1e22,
             output_path=out / "ts",
-            source="TS",
             strike=77.0,
             dip=88.0,
             time_function="p/0.6",
@@ -396,7 +393,6 @@ def test_compute_syn_source_and_time_function_options():
             azimuth=1.0,
             scale=1e22,
             output_path=out / "mt",
-            source="MT",
             moment_tensor=(1.0, -2.0, -5.0, 0.5, 3.0, 1.2),
             time_function="r/3",
         )
@@ -411,6 +407,94 @@ def test_compute_syn_source_and_time_function_options():
         _restore_run_grt(pygrt.pymod, original)
 
 
+def test_source_type_is_inferred_from_source_parameters():
+    import inspect
+
+    assert "source" not in inspect.signature(pygrt.PyModel1D.compute_syn).parameters
+    assert "source" not in inspect.signature(pygrt.PyModel1D.compute_static_syn).parameters
+    assert "source" not in inspect.signature(pygrt.utils.compute_okada).parameters
+
+    runner = CapturedRunner()
+    original_pymod = _patch_run_grt(pygrt.pymod, runner)
+    original_utils = _patch_run_grt(pygrt.utils, runner)
+    try:
+        model = pygrt.PyModel1D(grn=HERE / "_tmp_args_grn", stgrn=HERE / "_tmp_args_stgrn.nc", modelpath=MODEL)
+        model.compute_syn(
+            dist=10.0,
+            azimuth=1.0,
+            scale=1e20,
+            output_path=HERE / "_tmp_args_inferred_sf",
+            force=(1.0, 2.0, 3.0),
+        )
+        assert_command_has(runner.commands[-1], "-F1/2/3")
+
+        model.compute_static_syn(
+            scale=1e20,
+            output_path=HERE / "_tmp_args_inferred_dc.nc",
+            strike=33.0,
+            dip=50.0,
+            rake=120.0,
+        )
+        assert_command_has(runner.commands[-1], "-M33/50/120")
+
+        pygrt.utils.compute_okada(
+            modelparams=(6.0, 3.464, 2.7),
+            depsrc=2.0,
+            deprcv=0.0,
+            norths=(-1.0, 1.0, 1.0),
+            easts=(-1.0, 1.0, 1.0),
+            output_path=HERE / "_tmp_args_okada.nc",
+            scale=1e20,
+            strike=33.0,
+            dip=50.0,
+        )
+        assert_command_has(runner.commands[-1], "-M33/50")
+
+        try:
+            model.compute_syn(
+                dist=10.0,
+                azimuth=1.0,
+                scale=1e20,
+                output_path=HERE / "_tmp_args_invalid",
+                strike=33.0,
+            )
+        except ValueError as exc:
+            assert "strike and dip" in str(exc)
+        else:
+            raise AssertionError("incomplete source geometry should raise ValueError")
+
+        try:
+            model.compute_syn(
+                dist=10.0,
+                azimuth=1.0,
+                scale=1e20,
+                output_path=HERE / "_tmp_args_mixed_source",
+                force=(1.0, 2.0, 3.0),
+                strike=33.0,
+                dip=50.0,
+            )
+        except ValueError as exc:
+            assert "mutually exclusive" in str(exc)
+        else:
+            raise AssertionError("mixed source parameters should raise ValueError")
+
+        try:
+            model.compute_syn(
+                dist=10.0,
+                azimuth=1.0,
+                scale=1e20,
+                output_path=HERE / "_tmp_args_removed_source",
+                source="EX",
+            )
+        except TypeError as exc:
+            assert "source" in str(exc)
+        else:
+            raise AssertionError("source should no longer be a public synthesis argument")
+    finally:
+        _restore_run_grt(pygrt.pymod, original_pymod)
+        _restore_run_grt(pygrt.utils, original_utils)
+
+
 def test_compute_static_syn_and_tensor_postprocess_args():
     runner = CapturedRunner()
     original_pymod = _patch_run_grt(pygrt.pymod, runner)
@@ -422,7 +506,6 @@ def test_compute_static_syn_and_tensor_postprocess_args():
         model.compute_static_syn(
             scale=1e24,
             output_path=out,
-            source="DC",
             strike=33.0,
             dip=50.0,
             rake=120.0,
@@ -452,7 +535,6 @@ def test_compute_static_syn_and_tensor_postprocess_args():
         model.compute_static_syn(
             scale=1e20,
             output_path=out,
-            source="EX",
             depsrc=2.0,
             recv_points=HERE / "rcv.txt",
         )
@@ -470,7 +552,6 @@ def test_compute_static_syn_and_tensor_postprocess_args():
         model.compute_static_syn(
             scale=1e20,
             output_path=out,
-            source="EX",
             depsrc=2.0,
             deprcv=0.5,
             norths=[-2.0, 2.0, 1.0],
@@ -591,6 +672,7 @@ def main():
         test_compute_grn_default_and_optional_flags,
         test_compute_static_grn_xy_and_dists,
         test_compute_syn_source_and_time_function_options,
+        test_source_type_is_inferred_from_source_parameters,
         test_compute_static_syn_and_tensor_postprocess_args,
         test_tensor_return_result_reads_prefix_only,
     ]

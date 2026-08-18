@@ -70,7 +70,6 @@ pymod = pygrt.PyModel1D(stgrn="stgrn.nc")
 static_syn = pymod.compute_static_syn(
     scale=1e24,
     output_path="stsyn_ex.nc",
-    source="EX",
     zne=True,
     return_result=True,
 )
@@ -86,7 +85,6 @@ plot_static(static_syn, "syn_ex.svg")
 static_syn = pymod.compute_static_syn(
     scale=1e16,
     output_path="stsyn_sf.nc",
-    source="SF",
     force=(1, -0.5, 2),
     zne=True,
     return_result=True,
@@ -103,7 +101,6 @@ plot_static(static_syn, "syn_sf.svg")
 static_syn = pymod.compute_static_syn(
     scale=1e24,
     output_path="stsyn_dc.nc",
-    source="DC",
     strike=33,
     dip=50,
     rake=120,
@@ -121,7 +118,6 @@ plot_static(static_syn, "syn_dc.svg")
 static_syn = pymod.compute_static_syn(
     scale=1e24,
     output_path="stsyn_dc2.nc",
-    source="DC",
     strike=33,
     dip=90,
     rake=0,
@@ -139,7 +135,6 @@ plot_static(static_syn, "syn_dc2.svg")
 static_syn = pymod.compute_static_syn(
     scale=1e24,
     output_path="stsyn_ts.nc",
-    source="TS",
     strike=33,
     dip=50,
     zne=True,
@@ -157,7 +152,6 @@ plot_static(static_syn, "syn_ts.svg")
 static_syn = pymod.compute_static_syn(
     scale=1e24,
     output_path="stsyn_ts2.nc",
-    source="TS",
     strike=33,
     dip=90,
     zne=True,
@@ -175,7 +169,6 @@ plot_static(static_syn, "syn_ts2.svg")
 static_syn = pymod.compute_static_syn(
     scale=1e24,
     output_path="stsyn_mt.nc",
-    source="MT",
     moment_tensor=(0.1, -0.2, 1.0, 0.3, -0.5, -2.0),
     zne=True,
     return_result=True,
@@ -191,7 +184,6 @@ plot_static(static_syn, "syn_mt.svg")
 static_syn = pymod.compute_static_syn(
     scale=1e24,
     output_path="stsyn_mt2.nc",
-    source="MT",
     moment_tensor=(0, -0.2, 0, 0, 0, 0),
     zne=True,
     return_result=True,
@@ -208,7 +200,6 @@ plot_static(static_syn, "syn_mt2.svg")
 static_syn = pymod.compute_static_syn(
     scale=1e24,
     output_path="stsynXY_dc2.nc",
-    source="DC",
     strike=33,
     dip=90,
     rake=0,

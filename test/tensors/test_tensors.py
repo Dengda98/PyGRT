@@ -17,7 +17,7 @@ pymod.compute_grn(
 )
 
 pymod.compute_syn(
-    dist=dist, azimuth=az, scale=1e20, output_path="syn", source="EX",
+    dist=dist, azimuth=az, scale=1e20, output_path="syn",
     calc_upar=True,
 )
 pygrt.utils.compute_strain("syn")
@@ -25,7 +25,7 @@ pygrt.utils.compute_stress("syn")
 pygrt.utils.compute_rotation("syn")
 
 pymod.compute_syn(
-    dist=dist, azimuth=az, scale=1e20, output_path="syn_zne", source="EX",
+    dist=dist, azimuth=az, scale=1e20, output_path="syn_zne",
     zne=True, calc_upar=True,
 )
 pygrt.utils.compute_strain("syn_zne")
@@ -39,14 +39,14 @@ pymod_s.compute_static_grn(
     calc_upar=True,
 )
 pymod_s.compute_static_syn(
-    scale=1e20, output_path="stsyn.nc", source="EX", calc_upar=True,
+    scale=1e20, output_path="stsyn.nc", calc_upar=True,
 )
 pygrt.utils.compute_strain("stsyn.nc")
 pygrt.utils.compute_stress("stsyn.nc")
 pygrt.utils.compute_rotation("stsyn.nc")
 
 pymod_s.compute_static_syn(
-    scale=1e20, output_path="stsyn_zne.nc", source="EX", zne=True, calc_upar=True,
+    scale=1e20, output_path="stsyn_zne.nc", zne=True, calc_upar=True,
 )
 pygrt.utils.compute_strain("stsyn_zne.nc")
 pygrt.utils.compute_stress("stsyn_zne.nc")
@@ -55,7 +55,7 @@ pygrt.utils.compute_rotation("stsyn_zne.nc")
 rcv = Path("rcv_pts.txt")
 rcv.write_text("# north east depth (km)\n0 0 0\n1 2 0\n-1 1 0\n")
 pymod_s.compute_static_syn(
-    scale=1e20, output_path="stsyn_q.nc", source="EX",
+    scale=1e20, output_path="stsyn_q.nc",
     recv_points=rcv, calc_upar=True,
 )
 pygrt.utils.compute_strain("stsyn_q.nc")

@@ -137,7 +137,6 @@ pymod.compute_syn(
     azimuth=30.0,
     scale=1e24,
     output_path="syn_ex",
-    source="EX",
 )
 stsyn = read("syn_ex/?.sac")
 print(stsyn)
@@ -157,7 +156,6 @@ pymod.compute_syn(
     azimuth=30.0,
     scale=1e16,
     output_path="syn_sf",
-    source="SF",
     force=(1, -0.5, 2),
 )
 stsyn = read("syn_sf/?.sac")
@@ -179,7 +177,6 @@ pymod.compute_syn(
     azimuth=30.0,
     scale=1e24,
     output_path="syn_dc",
-    source="DC",
     strike=33,
     dip=50,
     rake=120,
@@ -203,7 +200,6 @@ pymod.compute_syn(
     azimuth=30.0,
     scale=1e24,
     output_path="syn_ts",
-    source="TS",
     strike=33,
     dip=50,
 )
@@ -225,7 +221,6 @@ pymod.compute_syn(
     azimuth=30.0,
     scale=1e24,
     output_path="syn_mt",
-    source="MT",
     moment_tensor=(0.1, -0.2, 1.0, 0.3, -0.5, -2.0),
 )
 stsyn = read("syn_mt/?.sac")
@@ -248,7 +243,6 @@ pymod.compute_syn(
     azimuth=30.0,
     scale=1e24,
     output_path="syn_dc_zne",
-    source="DC",
     strike=33,
     dip=50,
     rake=120,
@@ -275,7 +269,6 @@ pymod.compute_syn(
     azimuth=30.0,
     scale=1e16,
     output_path="syn_sf_trig",
-    source="SF",
     force=(1, -0.5, 2),
     time_function="t/0.3/0.3/0.6",
 )
@@ -294,7 +287,6 @@ pymod.compute_syn(
     azimuth=30.0,
     scale=1e24,
     output_path="syn_mt_intdif",
-    source="MT",
     moment_tensor=(0.1, -0.2, 1.0, 0.3, -0.5, -2.0),
 )
 stsyn = read("syn_mt_intdif/?.sac")

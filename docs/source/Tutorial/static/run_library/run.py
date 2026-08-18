@@ -21,7 +21,6 @@ pymod = pygrt.PyModel1D(stgrn="stgrn.nc")
 pymod.compute_static_syn(
     scale=1e24,
     output_path="stsyn.nc",
-    source="DC",
     strike=33.0,
     dip=50.0,
     rake=120.0,
