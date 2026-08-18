@@ -66,17 +66,12 @@ for isrc, src in enumerate(srctypes):
 x_vals = np.linspace(0, 0.4, 256)  # 和深度范围保持一致
 gray_values = gray_mapping(x_vals)
 # 创建自定义 colormap，使用灰色系
-cmap = LinearSegmentedColormap.from_list(
-    'custom_gray', 
-    [(g, g, g) for g in gray_values]
-)
+cmap = LinearSegmentedColormap.from_list('custom_gray',  [(g, g, g) for g in gray_values])
 
 # 添加色标棒
 cax = fig.add_axes([0.35, 0.91, 0.37, 0.01])
 sc = ax.scatter([], [], c=[], cmap=cmap, s=50)
-cbar = fig.colorbar(sc, cax=cax, orientation='horizontal', 
-                    ticks=[], 
-                    pad=0.04, aspect=30)
+cbar = fig.colorbar(sc, cax=cax, orientation='horizontal',  ticks=[],  pad=0.04, aspect=30)
 cbar.ax.text(-0.02, 0.5, 'Shallow', transform=cbar.ax.transAxes, ha='right', va='center', fontsize=14)
 cbar.ax.text(1.02, 0.5, 'Deep', transform=cbar.ax.transAxes, ha='left', va='center', fontsize=14)
 

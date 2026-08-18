@@ -47,11 +47,7 @@ pymod = pygrt.PyModel1D(stgrn="stgrn.nc", modelpath="milrow")
 
 norths = [2.0, 2.0, 1.0]
 easts = [2.0, 2.0, 1.0]
-pymod.compute_static_grn(
-    depsrc=depsrc, deprcv=deprcv,
-    norths=norths, easts=easts,
-    converg_method='PTAM', stats=True, k0=3, use_kmax_ref=True,
-)
+pymod.compute_static_grn(depsrc=depsrc, deprcv=deprcv, norths=norths, easts=easts, converg_method='PTAM', stats=True, k0=3, use_kmax_ref=True)
 
 ir = 0
 statsdata1, statsdata2, ptamdata, dist = pygrt.utils.read_statsfile_ptam(

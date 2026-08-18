@@ -18,13 +18,7 @@ from obspy import read
 pymod = pygrt.PyModel1D(grn="GRN", modelpath="milrow")
 
 # 结果写入 GRN/milrow_{depsrc}_{deprcv}_{dist}/
-pymod.compute_grn(
-    depsrc=2.0,
-    deprcv=0.0,
-    dists=[5, 8, 10],
-    nt=500,
-    dt=0.02,
-)
+pymod.compute_grn(depsrc=2.0, deprcv=0.0, dists=[5, 8, 10], nt=500, dt=0.02)
 # 需要时再显式读回；多震中距时需指定子目录，单震中距可用 GRN/*/*.sac
 stgrn = read("GRN/milrow_2_0_5/*.sac")
 
@@ -132,12 +126,7 @@ pymod = pygrt.PyModel1D(grn="GRN")
 # BEGIN SYN EX
 # 接之前的代码，使用震中距 10 km 的格林函数
 # ?.sac 匹配位移三分量文件名（Z/R/T 或 Z/N/E）
-pymod.compute_syn(
-    dist=10.0,
-    azimuth=30.0,
-    scale=1e24,
-    output_path="syn_ex",
-)
+pymod.compute_syn(dist=10.0, azimuth=30.0, scale=1e24, output_path="syn_ex")
 stsyn = read("syn_ex/?.sac")
 print(stsyn)
 # 3 Trace(s) in Stream:
@@ -151,13 +140,7 @@ plot_syn(stsyn, "syn_ex.svg")
 # -----------------------------------------------------------------------------------
 # BEGIN SYN SF
 # 接之前的代码
-pymod.compute_syn(
-    dist=10.0,
-    azimuth=30.0,
-    scale=1e16,
-    output_path="syn_sf",
-    force=(1, -0.5, 2),
-)
+pymod.compute_syn(dist=10.0, azimuth=30.0, scale=1e16, output_path="syn_sf", force=(1, -0.5, 2))
 stsyn = read("syn_sf/?.sac")
 print(stsyn)
 # 3 Trace(s) in Stream:
@@ -172,15 +155,7 @@ plot_syn(stsyn, "syn_sf.svg")
 # -----------------------------------------------------------------------------------
 # BEGIN SYN DC
 # 接之前的代码
-pymod.compute_syn(
-    dist=10.0,
-    azimuth=30.0,
-    scale=1e24,
-    output_path="syn_dc",
-    strike=33,
-    dip=50,
-    rake=120,
-)
+pymod.compute_syn(dist=10.0, azimuth=30.0, scale=1e24, output_path="syn_dc", strike=33, dip=50, rake=120)
 stsyn = read("syn_dc/?.sac")
 print(stsyn)
 # 3 Trace(s) in Stream:
@@ -195,14 +170,7 @@ plot_syn(stsyn, "syn_dc.svg")
 # -----------------------------------------------------------------------------------
 # BEGIN SYN TS
 # 接之前的代码
-pymod.compute_syn(
-    dist=10.0,
-    azimuth=30.0,
-    scale=1e24,
-    output_path="syn_ts",
-    strike=33,
-    dip=50,
-)
+pymod.compute_syn(dist=10.0, azimuth=30.0, scale=1e24, output_path="syn_ts", strike=33, dip=50)
 stsyn = read("syn_ts/?.sac")
 print(stsyn)
 # 3 Trace(s) in Stream:
@@ -216,13 +184,7 @@ plot_syn(stsyn, "syn_ts.svg")
 
 # -----------------------------------------------------------------------------------
 # BEGIN SYN MT
-pymod.compute_syn(
-    dist=10.0,
-    azimuth=30.0,
-    scale=1e24,
-    output_path="syn_mt",
-    moment_tensor=(0.1, -0.2, 1.0, 0.3, -0.5, -2.0),
-)
+pymod.compute_syn(dist=10.0, azimuth=30.0, scale=1e24, output_path="syn_mt", moment_tensor=(0.1, -0.2, 1.0, 0.3, -0.5, -2.0))
 stsyn = read("syn_mt/?.sac")
 print(stsyn)
 # 3 Trace(s) in Stream:
@@ -238,16 +200,7 @@ plot_syn(stsyn, "syn_mt.svg")
 # BEGIN ZNE
 # 接之前的代码
 # 设置 zne=True 可返回 ZNE 分量
-pymod.compute_syn(
-    dist=10.0,
-    azimuth=30.0,
-    scale=1e24,
-    output_path="syn_dc_zne",
-    strike=33,
-    dip=50,
-    rake=120,
-    zne=True,
-)
+pymod.compute_syn(dist=10.0, azimuth=30.0, scale=1e24, output_path="syn_dc_zne", strike=33, dip=50, rake=120, zne=True)
 stsyn = read("syn_dc_zne/?.sac")
 print(stsyn)
 # 3 Trace(s) in Stream:
@@ -264,14 +217,7 @@ plot_syn(stsyn, "syn_dc_zne.svg")
 # BEGIN TIME FUNC
 # time_function 对应 CLI -D；t1=t2 时梯形波退化为三角波
 # 卷积用的时间函数会以 sig.sac 保存在输出目录
-pymod.compute_syn(
-    dist=10.0,
-    azimuth=30.0,
-    scale=1e16,
-    output_path="syn_sf_trig",
-    force=(1, -0.5, 2),
-    time_function="t/0.3/0.3/0.6",
-)
+pymod.compute_syn(dist=10.0, azimuth=30.0, scale=1e16, output_path="syn_sf_trig", force=(1, -0.5, 2), time_function="t/0.3/0.3/0.6")
 stsyn = read("syn_sf_trig/?.sac")
 trig = read("syn_sf_trig/sig.sac")[0].data
 plot_syn(stsyn, "syn_sf_trig.svg", trig)
@@ -282,13 +228,7 @@ plot_syn(stsyn, "syn_sf_trig.svg", trig)
 
 # -----------------------------------------------------------------------------------
 # BEGIN INT DIF
-pymod.compute_syn(
-    dist=10.0,
-    azimuth=30.0,
-    scale=1e24,
-    output_path="syn_mt_intdif",
-    moment_tensor=(0.1, -0.2, 1.0, 0.3, -0.5, -2.0),
-)
+pymod.compute_syn(dist=10.0, azimuth=30.0, scale=1e24, output_path="syn_mt_intdif", moment_tensor=(0.1, -0.2, 1.0, 0.3, -0.5, -2.0))
 stsyn = read("syn_mt_intdif/?.sac")
 
 # 使用 inplace=False，防止原地修改

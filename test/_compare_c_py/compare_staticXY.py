@@ -96,12 +96,7 @@ def run_py(py_root: Path) -> None:
     static_dir = py_root / "static"
     static_dir.mkdir(parents=True)
     model = pygrt.PyModel1D(stgrn=static_dir / "stgrn.nc", modelpath=MODEL)
-    model.compute_static_grn(
-        depsrc=DEPSRC,
-        deprcv=DEPRCV,
-        dists=DISTS,
-        calc_upar=True,
-    )
+    model.compute_static_grn(depsrc=DEPSRC, deprcv=DEPRCV, dists=DISTS, calc_upar=True)
 
     cases = [
         ("stsyn_ex", {}),
@@ -114,15 +109,7 @@ def run_py(py_root: Path) -> None:
         suffix = "-N" if zne else ""
         for name, kwargs in cases:
             out = static_dir / f"{name}{suffix}.nc"
-            model.compute_static_syn(
-                scale=SCALE,
-                output_path=out,
-                norths=NORTHS,
-                easts=EASTS,
-                zne=zne,
-                calc_upar=True,
-                **kwargs,
-            )
+            model.compute_static_syn(scale=SCALE, output_path=out, norths=NORTHS, easts=EASTS, zne=zne, calc_upar=True, **kwargs)
             pygrt.utils.compute_strain(out)
             pygrt.utils.compute_rotation(out)
             pygrt.utils.compute_stress(out)
@@ -142,20 +129,12 @@ def main():
     run_py(py_root)
 
     errors = [
-        compare_nc_files(
-            py_root / "static" / "stgrn.nc",
-            c_root / "static" / "stgrn.nc",
-        )
+        compare_nc_files(py_root / "static" / "stgrn.nc", c_root / "static" / "stgrn.nc")
     ]
     for zne in (False, True):
         suffix = "-N" if zne else ""
         for name in ("stsyn_ex", "stsyn_sf", "stsyn_dc", "stsyn_ts", "stsyn_mt"):
-            errors.append(
-                compare_nc_files(
-                    py_root / "static" / f"{name}{suffix}.nc",
-                    c_root / "static" / f"{name}{suffix}.nc",
-                )
-            )
+            errors.append(compare_nc_files(py_root / "static" / f"{name}{suffix}.nc", c_root / "static" / f"{name}{suffix}.nc",))
 
     summarize_errors("staticXY", errors, THRESH)
     print("All staticXY comparisons passed.")

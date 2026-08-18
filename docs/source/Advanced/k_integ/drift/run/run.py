@@ -11,10 +11,7 @@ deprcv = 0.0
 nt = 500
 dt = 10
 
-pymod.compute_grn(
-    depsrc=depsrc, deprcv=deprcv, dists=[5000],
-    nt=nt, dt=dt, keepAllFreq=True, statsidxs=[0, 1, 2, 3, 4, 5],
-)
+pymod.compute_grn(depsrc=depsrc, deprcv=deprcv, dists=[5000], nt=nt, dt=dt, keepAllFreq=True, statsidxs=[0, 1, 2, 3, 4, 5])
 st_grn = read("GRN/*/*.sac")
 # END 1
 
@@ -25,10 +22,7 @@ CHANNEL = "SSR"
 # 绘制波形
 import matplotlib.pyplot as plt
 from obspy import *
-plt.rcParams.update({
-    "font.sans-serif": "Times New Roman",
-    "mathtext.fontset": "cm"
-})
+plt.rcParams.update({ "font.sans-serif": "Times New Roman", "mathtext.fontset": "cm" })
 
 t = np.arange(nt)*dt
 freqs = np.arange(nt//2 + 1)/(nt*dt)
@@ -117,9 +111,7 @@ fig.savefig("kernels.svg", bbox_inches='tight')
 
 # =================================================================
 # 跳过频段，重新计算
-pymod.compute_grn(
-    depsrc=depsrc, deprcv=deprcv, dists=[5000], nt=nt, dt=dt,
-)
+pymod.compute_grn(depsrc=depsrc, deprcv=deprcv, dists=[5000], nt=nt, dt=dt)
 st_grn3 = read("GRN/*/*.sac")
 
 srctypes = ['EX', 'VF', 'HF', 'DD', 'DS', 'SS']

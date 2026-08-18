@@ -35,8 +35,7 @@ pathLst.sort()
 
 
 # ====================== z ==============================
-fig, axs = plt.subplots(len(pathLst), 1, figsize=(10, 1*len(pathLst)), 
-                        gridspec_kw=dict(hspace=0), sharex=True)
+fig, axs = plt.subplots(len(pathLst), 1, figsize=(10, 1*len(pathLst)),  gridspec_kw=dict(hspace=0), sharex=True)
 
 for i, path in enumerate(pathLst):
     ax = axs[i]
@@ -47,8 +46,7 @@ fig.savefig("compare_z.svg", bbox_inches='tight')
 
 
 # ====================== r ==============================
-fig, axs = plt.subplots(len(pathLst), 1, figsize=(10, 1*len(pathLst)), 
-                        gridspec_kw=dict(hspace=0), sharex=True)
+fig, axs = plt.subplots(len(pathLst), 1, figsize=(10, 1*len(pathLst)),  gridspec_kw=dict(hspace=0), sharex=True)
 
 for i, path in enumerate(pathLst):
     ax = axs[i]

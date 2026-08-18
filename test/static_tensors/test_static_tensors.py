@@ -9,21 +9,14 @@ easts = [-2.0, 2.0, 0.2]
 modname = "../milrow"
 
 pymod = pygrt.PyModel1D(stgrn="stgrn.nc", modelpath=modname)
-pymod.compute_static_grn(
-    depsrc=depsrc, deprcv=deprcv, norths=norths, easts=easts, calc_upar=True,
-)
+pymod.compute_static_grn(depsrc=depsrc, deprcv=deprcv, norths=norths, easts=easts, calc_upar=True)
 
-pymod.compute_static_syn(
-    scale=1e20, output_path="stsyn.nc", calc_upar=True,
-)
+pymod.compute_static_syn(scale=1e20, output_path="stsyn.nc", calc_upar=True)
 pygrt.utils.compute_strain("stsyn.nc")
 pygrt.utils.compute_stress("stsyn.nc")
 pygrt.utils.compute_rotation("stsyn.nc")
 
-pymod.compute_static_syn(
-    scale=1e20, output_path="stsyn_zne.nc",
-    zne=True, calc_upar=True,
-)
+pymod.compute_static_syn(scale=1e20, output_path="stsyn_zne.nc", zne=True, calc_upar=True)
 pygrt.utils.compute_strain("stsyn_zne.nc")
 pygrt.utils.compute_stress("stsyn_zne.nc")
 pygrt.utils.compute_rotation("stsyn_zne.nc")

@@ -43,11 +43,9 @@ def plot_eigenfunction(path, title, scale, ax):
         ax.set_title(title)
 
         if isRayl:
-            ax.legend([Line2D([],[], **solidkwargs), Line2D([],[], **dashkwargs)], 
-                      ['Vertical', 'Radial'], loc='lower right', ncol=1)
+            ax.legend([Line2D([],[], **solidkwargs), Line2D([],[], **dashkwargs)],  ['Vertical', 'Radial'], loc='lower right', ncol=1)
         else:
-            ax.legend([Line2D([],[], **solidkwargs)], 
-                      ['Transverse'], loc='lower right', ncol=1)
+            ax.legend([Line2D([],[], **solidkwargs)],  ['Transverse'], loc='lower right', ncol=1)
 
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4), layout='constrained')
 plot_eigenfunction("egn_R.nc", "Rayleigh", 2, ax1)

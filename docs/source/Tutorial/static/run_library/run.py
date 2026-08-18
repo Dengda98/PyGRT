@@ -8,11 +8,7 @@ MODEL = Path("milrow")
 
 # BEGIN GRN
 pymod = pygrt.PyModel1D(stgrn="stgrn.nc", modelpath=MODEL)
-pymod.compute_static_grn(
-    depsrc=[2.0, 4.0],
-    deprcv=[0.0, 2.0],
-    dists=[0.0, 5.0, 10.0, 15.0],
-)
+pymod.compute_static_grn(depsrc=[2.0, 4.0], deprcv=[0.0, 2.0], dists=[0.0, 5.0, 10.0, 15.0])
 # END GRN
 
 

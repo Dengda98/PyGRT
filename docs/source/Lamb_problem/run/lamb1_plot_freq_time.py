@@ -42,9 +42,7 @@ modfile = "_halfspace_mod"
 np.savetxt(modfile, modarr)
 pymod = pygrt.PyModel1D(grn="GRN", modelpath=modfile)
 # 计算格林函数（仅一个震中距，可用通配符读回）
-pymod.compute_grn(
-    depsrc=depsrc, deprcv=deprcv, dists=rs, nt=nt, dt=dt,
-)
+pymod.compute_grn(depsrc=depsrc, deprcv=deprcv, dists=rs, nt=nt, dt=dt)
 st = read("GRN/*/*.sac")
 
 # 卷积阶跃函数

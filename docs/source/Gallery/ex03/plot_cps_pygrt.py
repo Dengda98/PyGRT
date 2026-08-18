@@ -15,15 +15,7 @@ dt = 0.01
 zeta = 0.8  
 
 # compute Green's Functions
-pymod.compute_grn(
-    depsrc=depsrc,
-    deprcv=deprcv,
-    dists=rs,
-    nt=nt,
-    dt=dt,
-    zeta=zeta,
-    Length=20,
-)
+pymod.compute_grn(depsrc=depsrc, deprcv=deprcv, dists=rs, nt=nt, dt=dt, zeta=zeta, Length=20)
 # 仅一个震中距，可用通配符读回
 st_grt = read("GRN_pygrt/*/*.sac")
 
