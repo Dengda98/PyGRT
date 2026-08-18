@@ -108,8 +108,8 @@ static_greenfn
 .. _-S:
 
 **-S**
-    输出波数积分过程中的核函数文件，保存目录为 ``stgrtstats`` 。该选项仅适用于
-    单个震源深度和单个接收深度；计算多深度格林函数时不会输出这些统计文件。
+    输出波数积分过程中的核函数文件，保存目录为 ``stgrtstats`` 。
+    该选项仅适用于单个震源深度和单个接收深度；计算多深度格林函数时不会输出这些统计文件。
     关于文件格式及其读取详见 :doc:`/Advanced/integ_converg/integ_converg` 。
 
     .. include:: explain_-Sstats.rst_

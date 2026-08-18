@@ -21,22 +21,23 @@ Okada (1985) 给出了地表位移的解析表达式，Okada (1992) 将结果推
 在 PyGRT 计算流程中的位置
 --------------------------
 
-PyGRT 的常规静态计算流程是先建立静态格林函数，再根据震源机制合成位移，最后由位移
-空间导数计算应变、旋转和应力。对于均匀半空间，:doc:`/Module/okada` 模块提供的是解析解，
+PyGRT 的常规静态计算流程是先建立静态格林函数，再根据震源机制合成位移，最后由位移空间导数计算应变、旋转和应力。
+对于均匀半空间，:doc:`/Module/okada` 模块提供的是解析解，
 它直接从介质参数和震源几何计算位移。这相当于替代了常规流程中的
 :doc:`/Module/static_greenfn` 和 :doc:`/Module/static_syn` 两个阶段，但输出仍然保留静态
 合成结果的 NetCDF 接口。
 
-因此如果还需要计算应变、旋转或应力等物理量，只需将 :doc:`/Module/okada` 生成的 NetCDF 文件交给相应的静态
-后处理模块即可。换言之，:doc:`/Module/okada` 与 :doc:`/Module/static_greenfn` + :doc:`/Module/static_syn` 
-在流程上是平级的，其他的后处理流程完全对 :doc:`/Module/okada` 的输出兼容。
+因此如果还需要计算应变、旋转或应力等物理量，只需将 :doc:`/Module/okada` 生成的 NetCDF 文件交给相应的静态后处理模块即可。
+换言之，:doc:`/Module/okada` 与 :doc:`/Module/static_greenfn` + :doc:`/Module/static_syn` 在流程上是平级的，
+其他的后处理流程完全对 :doc:`/Module/okada` 的输出兼容。
 
 
 PyGRT 如何引入 Okada 解析解
 ----------------------------
 
-PyGRT 在 C 代码层面实现了 Okada 点源和矩形有限断层的计算函数，并由 :doc:`/Module/okada`
-模块负责参数解析、坐标转换和 NetCDF 输出。计算过程可以概括为：
+PyGRT 在 C 代码层面实现了 Okada 点源和矩形有限断层的计算函数，
+并由 :doc:`/Module/okada` 模块负责参数解析、坐标转换和 NetCDF 输出。
+计算过程可以概括为：
 
 #. 将 PyGRT 的北向、东向、深度坐标转换为 Okada 局部坐标。Okada 的局部 ``X`` 沿断层
    走向，``Y`` 为上倾方向的水平投影，``Z`` 向上
@@ -65,8 +66,8 @@ PyGRT 在 C 代码层面实现了 Okada 点源和矩形有限断层的计算函�
 保持对齐，仅将静态格林函数输入替换为均匀半空间的 *vp*、*vs* 和 *rho* 参数，
 并直接计算点源或有限断层的静态位移。
 
-输出同样采用与 :doc:`/Module/static_syn` 对齐的 |NetCDF| 格式，包括位移、可选的位移
-空间导数以及坐标和介质属性。因此，Okada 结果可以直接应用到后续静态计算流程。
+输出同样采用与 :doc:`/Module/static_syn` 对齐的 |NetCDF| 格式，包括位移、可选的位移空间导数以及坐标和介质属性。
+因此，Okada 结果可以直接应用到后续静态计算流程。
 
 
 示例
