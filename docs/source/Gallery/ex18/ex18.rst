@@ -1,0 +1,86 @@
+:author: 朱邓达
+:date: 2026-08-17
+
+(18) 均匀半空间中 PyGRT 结果与 Okada 解析解的对比
+------------------------------------------------------
+
+下载示例： :download:`ex18.tar.gz`
+
+在均匀半空间中，分别使用 PyGRT 的 :doc:`/Module/static_greenfn` + :doc:`/Module/static_syn` 流程和
+Okada 解析解（:doc:`/Module/okada` 模块）计算点源和有限断层的静态位移。
+两种方法使用相同的介质参数和接收网格，并分别设置相同的震源、断层和接收深度。
+
+本例设置 :math:`V_P=6.0` km/s、:math:`V_S=3.464` km/s、:math:`\rho=2.7` g/cm\ :sup:`3`，
+并输出 ZNE 分量及位移空间导数。
+
+
+点源
+~~~~~~~~
+
+点源参数为 strike/dip/rake=33/44/55，源深度为 5 km，接收深度为 4 km。
+
+位移对比
+^^^^^^^^
+
+每一列对应一个位移分量，三行依次为 PyGRT 结果、Okada 结果和二者之差。
+
+.. figure:: compare_displacement.svg
+    :align: center
+
+    Z、N、E 位移对比
+
+
+位移偏导数对比
+^^^^^^^^^^^^^^
+
+位移偏导数共有 9 个分量。为便于展示，按照偏导坐标拆分为三个 3×3 图；
+每个图的三列为位移分量 Z、N、E，三行仍依次为 PyGRT、Okada 和差值。
+
+.. figure:: compare_upar_z.svg
+    :align: center
+
+    对坐标 Z 的位移偏导数对比
+
+.. figure:: compare_upar_n.svg
+    :align: center
+
+    对坐标 N 的位移偏导数对比
+
+.. figure:: compare_upar_e.svg
+    :align: center
+
+    对坐标 E 的位移偏导数对比
+
+
+有限断层对比
+~~~~~~~~~~~~~~
+
+有限断层采用走向为 0°、长度为 4 km、倾角为 60°、顶深和底深分别为 2 km 和 4 km 的矩形断层，
+右旋滑动为 0.03 m，逆冲滑动为 0.04 m。PyGRT 使用 0.5 km × 0.5 km 的子断层进行合成，
+Okada 直接计算同一矩形断层的解析解。
+
+.. figure:: compare_finite_displacement.svg
+    :align: center
+
+    有限断层 Z、N、E 位移对比
+
+
+有限断层位移偏导数对比
+^^^^^^^^^^^^^^^^^^^^^^
+
+有限断层的 9 个位移偏导数同样按照偏导坐标拆分为三个 3×3 图。
+
+.. figure:: compare_finite_upar_z.svg
+    :align: center
+
+    有限断层对坐标 Z 的位移偏导数对比
+
+.. figure:: compare_finite_upar_n.svg
+    :align: center
+
+    有限断层对坐标 N 的位移偏导数对比
+
+.. figure:: compare_finite_upar_e.svg
+    :align: center
+
+    有限断层对坐标 E 的位移偏导数对比

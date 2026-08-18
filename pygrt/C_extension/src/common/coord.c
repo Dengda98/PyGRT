@@ -111,3 +111,62 @@ void grt_rot_zrt2zxy_upar(const real_t theta, real_t u[3], real_t upar[3][3], co
     u[1] = u1*ct - u2*st;
     u[2] = u1*st + u2*ct;
 }
+
+
+
+/**
+ * 直角坐标 zxy 到柱坐标 zrt 的位移及位移偏导旋转
+ *
+ * 该函数与 grt_rot_zrt2zxy_upar 互为相反方向的坐标变换
+ */
+void grt_rot_zxy2zrt_upar(const real_t theta, real_t u[3], real_t upar[3][3], const real_t r){
+    real_t s00, s01, s02;
+    real_t s10, s11, s12;
+    real_t s20, s21, s22;
+
+    // 保存直角坐标下的位移偏导，行表示偏导坐标，列表示位移分量
+    s00 = upar[0][0];  s01 = upar[0][1];  s02 = upar[0][2];
+    s10 = upar[1][0];  s11 = upar[1][1];  s12 = upar[1][2];
+    s20 = upar[2][0];  s21 = upar[2][1];  s22 = upar[2][2];
+
+    real_t st = sin(theta);
+    real_t ct = cos(theta);
+    real_t sst = st * st;
+    real_t cct = ct * ct;
+    real_t sct = st * ct;
+
+    // 先将水平偏导的偏导方向和位移分量同时旋转到 r、theta
+    real_t hrr = s11 * cct + (s12 + s21) * sct + s22 * sst;
+    real_t hrt = -s11 * sct + s12 * cct - s21 * sst + s22 * sct;
+    real_t htr = -s11 * sct - s12 * sst + s21 * cct + s22 * sct;
+    real_t htt = s11 * sst - (s12 + s21) * sct + s22 * cct;
+
+    // 先旋转位移矢量，后续联络项需要使用 ur、ut 分量
+    grt_rot_zxy2zrt_vec(theta, u);
+
+    // 联络项使用 cm 作为 r 的长度单位，与位移的 cm 单位匹配
+    real_t ur_over_r, ut_over_r;
+    if(GRT_IS_ZERO(r * 1e-5)){  // cm → km 后再判零
+        ur_over_r = hrr;
+        ut_over_r = hrt;
+    } else {
+        ur_over_r = u[1] / r;
+        ut_over_r = u[2] / r;
+    }
+
+    // z 方向偏导只需要旋转位移分量
+    upar[0][0] = s00;
+    upar[0][1] = s01 * ct + s02 * st;
+    upar[0][2] = -s01 * st + s02 * ct;
+
+    // r、theta 方向对 z 分量的偏导只需要旋转偏导方向
+    upar[1][0] = s10 * ct + s20 * st;
+    upar[2][0] = -s10 * st + s20 * ct;
+
+    // 柱坐标偏导中补充位移基矢变化产生的联络项
+    upar[1][1] = hrr;
+    upar[1][2] = hrt;
+    upar[2][1] = htr + ut_over_r;
+    upar[2][2] = htt - ur_over_r;
+
+}

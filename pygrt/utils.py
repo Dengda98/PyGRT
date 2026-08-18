@@ -13,7 +13,7 @@ import os
 import glob
 from copy import deepcopy
 from pathlib import Path
-from typing import List, Union
+from typing import List, Optional, Sequence, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -26,13 +26,14 @@ from scipy.signal import oaconvolve
 from scipy.special import jv
 import numpy.ctypeslib as npct
 
-from .cli import run_grt
+from .cli import format_float, format_range, run_grt
 from .c_interfaces import C_grt_solve_lamb1
 
 
 __all__ = [
     "read_static_nc",
     "read_static_grn",
+    "compute_okada",
     "compute_strain",
     "compute_rotation",
     "compute_stress",
@@ -123,6 +124,177 @@ def read_static_grn(path: PathLike) -> dict:
     :return: A dictionary containing the NetCDF data and metadata.
     """
     return read_static_nc(path)
+
+
+def _okada_source_option(
+    source: str,
+    strike: Optional[float],
+    dip: Optional[float],
+    rake: Optional[float],
+) -> Optional[str]:
+    """Convert an Okada point-source type and geometry to the ``-M`` option."""
+
+    source = source.upper()
+    if source == "EX":
+        return None
+    if source == "DC":
+        if strike is None or dip is None or rake is None:
+            raise ValueError("DC source requires strike, dip and rake.")
+        return f"-M{format_float(strike)}/{format_float(dip)}/{format_float(rake)}"
+    if source == "TS":
+        if strike is None or dip is None:
+            raise ValueError("TS source requires strike and dip.")
+        return f"-M{format_float(strike)}/{format_float(dip)}"
+    raise ValueError("Okada source must be EX, DC or TS.")
+
+
+def compute_okada(
+    *,
+    modelparams: Sequence[float],
+    depsrc: Optional[float] = None,
+    deprcv: Optional[float] = None,
+    norths: Optional[Sequence[float]] = None,
+    easts: Optional[Sequence[float]] = None,
+    recv_points: Optional[PathLike] = None,
+    output_path: PathLike,
+    scale: Optional[float] = None,
+    scale_with_mu: bool = False,
+    source: str = "EX",
+    strike: Optional[float] = None,
+    dip: Optional[float] = None,
+    rake: Optional[float] = None,
+    finite_fault: Optional[PathLike] = None,
+    zne: bool = False,
+    calc_upar: bool = False,
+    return_result: bool = False,
+):
+    r"""
+    Synthesize static displacement with the Okada homogeneous half-space solution.
+
+    Results are written to the NetCDF file ``output_path``. The source, receiver
+    grid, component and derivative arguments are intentionally close to
+    :meth:`PyModel1D.compute_static_syn`, but Okada only needs the homogeneous
+    half-space model parameters ``(vp, vs, rho)`` and does not require a static
+    Green's function file.
+
+    Point sources support three types:
+
+    * ``EX`` - explosion; only ``scale`` is required
+    * ``DC`` - double-couple; requires ``strike``, ``dip`` and ``rake``
+    * ``TS`` - tensile crack; requires ``strike`` and ``dip``
+
+    A Coulomb-format finite-fault file can be passed through ``finite_fault``.
+    The finite fault is evaluated directly as Okada rectangular patches, so no
+    ``subfault_size`` subdivision option is needed.
+
+    All arguments must be passed by keyword.
+
+    :param    modelparams:      Homogeneous half-space parameters ``(vp, vs, rho)``;
+                               velocities are in km/s and density is in g/cm^3
+    :param    depsrc:           Point-source depth in km. Required for point
+                               sources and forbidden for finite faults
+    :param    deprcv:           Receiver depth in km for a regular grid. Forbidden
+                               when ``recv_points`` is used
+    :param    norths:           North grid range ``(start, stop, step)`` in km
+    :param    easts:            East grid range ``(start, stop, step)`` in km
+    :param    recv_points:      ASCII receiver file with ``north east depth`` in km
+    :param    output_path:      Output NetCDF file path
+    :param    scale:            Point-source scale in dyne-cm unless
+                               ``scale_with_mu`` is true. Not used for finite faults
+    :param    scale_with_mu:    If true, pass ``-Su`` and treat ``scale`` as potency
+                               or area times slip in cm^3
+    :param    source:           Point-source type: ``EX``, ``DC`` or ``TS``
+    :param    strike:           Fault strike in degrees, in [0, 360]
+    :param    dip:              Fault dip in degrees, in [0, 90]
+    :param    rake:             Slip rake in degrees, in [-180, 180]
+    :param    finite_fault:     Coulomb-format finite-fault file, mutually exclusive
+                               with point-source options
+    :param    zne:              If true, output ZNE instead of ZRT components
+    :param    calc_upar:        If true, also output spatial displacement derivatives
+    :param    return_result:    If true, read and return the generated NetCDF data
+
+    :return: The result from :func:`read_static_nc` when ``return_result`` is true;
+             otherwise ``None``
+    """
+
+    output = Path(output_path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+
+    if isinstance(modelparams, (str, bytes)):
+        raise TypeError("modelparams must be a sequence of (vp, vs, rho).")
+    try:
+        if len(modelparams) != 3:
+            raise ValueError("modelparams must contain exactly three values: (vp, vs, rho).")
+    except TypeError:
+        raise TypeError("modelparams must be a sequence of (vp, vs, rho).") from None
+    vp, vs, rho = modelparams
+
+    use_ff = finite_fault is not None
+    use_q = recv_points is not None
+    use_xy = norths is not None or easts is not None
+    source = source.upper()
+
+    if use_q and use_xy:
+        raise ValueError("recv_points is mutually exclusive with norths/easts.")
+    if use_xy and (norths is None or easts is None):
+        raise ValueError("norths and easts must be supplied together.")
+    if not use_q and not use_xy:
+        raise ValueError("Specify norths/easts or recv_points.")
+    if depsrc is not None and depsrc < 0.0:
+        raise ValueError("depsrc must be nonnegative.")
+    if deprcv is not None and deprcv < 0.0:
+        raise ValueError("deprcv must be nonnegative.")
+    if use_q and deprcv is not None:
+        raise ValueError("recv_points is mutually exclusive with deprcv.")
+
+    command = [
+        "okada",
+        f"-I{format_float(vp)}/{format_float(vs)}/{format_float(rho)}",
+        f"-O{output}",
+    ]
+    if use_ff:
+        if (
+            scale is not None
+            or depsrc is not None
+            or source != "EX"
+            or strike is not None
+            or dip is not None
+            or rake is not None
+            or scale_with_mu
+        ):
+            raise ValueError("finite_fault is mutually exclusive with point-source options.")
+        command.append(f"-C{Path(finite_fault)}")
+    else:
+        if scale is None:
+            raise ValueError("scale is required for point-source synthesis.")
+        if depsrc is None:
+            raise ValueError("depsrc is required for point-source synthesis.")
+        command.append(f"-S{'u' if scale_with_mu else ''}{format_float(scale)}")
+        command.append(f"-Ds{format_float(depsrc)}")
+        source_option = _okada_source_option(source, strike, dip, rake)
+        if source_option is not None:
+            command.append(source_option)
+
+    if deprcv is not None:
+        command.append(f"-Dr{format_float(deprcv)}")
+    elif not use_q:
+        raise ValueError("deprcv is required for grid receivers.")
+
+    if use_q:
+        command.append(f"-Q{Path(recv_points)}")
+    else:
+        command.append(f"-X{format_range(norths, 'norths')}")
+        command.append(f"-Y{format_range(easts, 'easts')}")
+
+    if zne:
+        command.append("-N")
+    if calc_upar:
+        command.append("-e")
+
+    run_grt(command)
+    if return_result:
+        return read_static_nc(output)
+    return None
 
 
 def _postprocess(path: PathLike, module: str, return_result: bool):

@@ -153,7 +153,7 @@
     - :doc:`ker2asc`
     - :doc:`travt`
     - :doc:`lamb1`
-
+    - :doc:`okada`
 
 .. toctree::
     :maxdepth: 1
@@ -178,4 +178,4 @@
     ker2asc
     travt
     lamb1
-
+    okada

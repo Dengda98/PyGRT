@@ -33,6 +33,7 @@
    .. grid-item-card::  附录
 
       - :doc:`Lamb_problem/index`
+      - :doc:`Okada_solution/okada`
       - :doc:`API/api`
       - :doc:`changelog`
       - :doc:`copyright`
@@ -79,6 +80,7 @@
    :maxdepth: 1
 
    Lamb_problem/index
+   Okada_solution/okada
    API/api
    changelog
    copyright

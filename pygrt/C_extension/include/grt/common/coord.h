@@ -56,3 +56,18 @@ void grt_rot_zxy2zrt_symtensor2odr(real_t theta, real_t A[6]);
  * @param[in]       r          r 坐标 (cm)；r=0 时联络项 u/r 改用 ∂_r u
  */
 void grt_rot_zrt2zxy_upar(const real_t theta, real_t u[3], real_t upar[3][3], const real_t r);
+
+
+/**
+ * 直角坐标 zxy 到柱坐标 zrt 的位移及位移偏导旋转
+ *
+ * 输入偏导矩阵为直角坐标分量对 z、x、y 的偏导
+ * 输出偏导矩阵为柱坐标分量对 z、r、theta 的偏导，第三行为 (1/r)∂_theta 对柱坐标位移分量的偏导
+ * 变换过程中包含位移基矢变化产生的联络项
+ *
+ * @param[in]       theta      r 轴相对 x 轴的旋转弧度
+ * @param[in,out]   u          待旋转的位移矢量
+ * @param[in,out]   upar       待旋转的位移偏导矩阵
+ * @param[in]       r          r 坐标，单位为 cm；r=0 时使用轴线上有限极限
+ */
+void grt_rot_zxy2zrt_upar(const real_t theta, real_t u[3], real_t upar[3][3], const real_t r);
