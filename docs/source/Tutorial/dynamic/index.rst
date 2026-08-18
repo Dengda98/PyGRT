@@ -71,3 +71,4 @@
    gfunc
    syn
    strain_stress
+   dynlib

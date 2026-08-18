@@ -48,3 +48,4 @@
    eigenvalue
    eigenfunction
    surface_wave
+   modlib
