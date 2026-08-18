@@ -57,9 +57,9 @@ C中指定格林函数路径有以下两种方式：
   本例中震源深度和台站深度各只有一个值，因此 **-Ds/-Dr** 可以省略；这里显式设置
   **-R10** 选择震中距为10km的子目录。
 
-本节的C示例使用第一种方式，脚本中也以注释形式给出了第二种方式。Python示例使用
-上节构造的格林函数根目录，并根据 ``dist`` 查找对应的格林函数；当根目录的对应维度
-只有一个值时，相应的选择参数可以省略，也可以显式设置正确的值。
+本节的C示例使用第一种方式，脚本中也以注释形式给出了第二种方式。
+Python示例使用上节构造的格林函数根目录，并根据 ``dist`` 查找对应的格林函数；
+当根目录的对应维度只有一个值时，相应的选择参数可以省略，也可以显式设置正确的值。
 
 Python 接口根据震源专用参数自动确定震源类型：不设置 ``strike``、``dip``、``rake``、
 ``force`` 和 ``moment_tensor`` 时为爆炸源；设置
@@ -251,8 +251,7 @@ Python 接口根据震源专用参数自动确定震源类型：不设置 ``stri
             :end-before: END TIME FUNC
 
         生成的时间函数会以SAC格式保存在对应路径中，文件名为 :file:`sig.sac`。
-        其它时间函数以及具体参数用法详见 :meth:`compute_syn() <pygrt.pymod.PyModel1D.compute_syn>`
-        的 ``time_function`` 参数。
+        其它时间函数以及具体参数用法详见 :meth:`compute_syn() <pygrt.pymod.PyModel1D.compute_syn>` 的 ``time_function`` 参数。
 
 .. figure:: run/syn_sf_trig.svg
    :align: center

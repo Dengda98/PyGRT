@@ -30,8 +30,7 @@
 
 对静态解，:math:`k_{\text{max,ref}} = k_0 \cdot \pi / h_s` 。
 
-默认情况下，程序在 :math:`[\Delta k, k_{\text{max,ref}}]` 内基于核函数振幅搜索
-实际积分上限 :math:`k_{\text{max}}` 。
+默认情况下，程序在 :math:`[\Delta k, k_{\text{max,ref}}]` 内基于核函数振幅搜索实际积分上限 :math:`k_{\text{max}}` 。
 同深度时判断核函数是否逼近常数，异深度时判断振幅是否衰减至 0 。
 若指定 ``use_kmax_ref=True`` （C 模块 **+f**），则直接使用 :math:`k_{\text{max,ref}}` 作为
 :math:`k_{\text{max}}` 。

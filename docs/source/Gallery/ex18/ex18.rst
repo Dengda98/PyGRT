@@ -6,8 +6,8 @@
 
 下载示例： :download:`ex18.tar.gz`
 
-在均匀半空间中，分别使用 PyGRT 的 :doc:`/Module/static_greenfn` + :doc:`/Module/static_syn` 流程和
-Okada 解析解（:doc:`/Module/okada` 模块）计算点源和有限断层的静态位移。
+在均匀半空间中，分别使用 PyGRT 的 :doc:`/Module/static_greenfn` + :doc:`/Module/static_syn`
+流程和 Okada 解析解（:doc:`/Module/okada` 模块）计算点源和有限断层的静态位移。
 两种方法使用相同的介质参数和接收网格，并分别设置相同的震源、断层和接收深度。
 
 本例设置 :math:`V_P=6.0` km/s、:math:`V_S=3.464` km/s、:math:`\rho=2.7` g/cm\ :sup:`3`，
