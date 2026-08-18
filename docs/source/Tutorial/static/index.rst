@@ -71,3 +71,4 @@
    static_gfunc
    static_syn
    static_strain_stress
+   stlib
