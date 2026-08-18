@@ -23,7 +23,7 @@ Okada 解是均匀弹性半空间中位错源产生静态变形的闭合解析�
 |-S|\ [**u**]\ *scale*
 **-Ds**\ *depsrc*
 |-O|\ *outgrid*
-[ |-M|\ *strike/dip*[/\ *rake*] ]
+[ |-M|\ *strike/dip*\ [/\ *rake*] ]
 [ **-Dr**\ *deprcv* ]
 [ |-X|\ *x1/x2/dx* ] [ |-Y|\ *y1/y2/dy* ] | [ **-Q**\ *file* ]
 [ |-N| ] [ **-e** ] [ **-s** ] [ **-h** ]
@@ -47,8 +47,7 @@ Okada 解是均匀弹性半空间中位错源产生静态变形的闭合解析�
 ----------
 
 **-I**\ *vp/vs/rho*
-    均匀半空间参数。*vp*、*vs* 的单位为 km/s，*rho* 的单位为 g/cm\ :sup:`3`，
-    并要求 :math:`V_P > \sqrt{2} V_S > 0` 且 :math:`\rho>0`。
+    均匀半空间参数。*vp*、*vs* 的单位为 km/s，*rho* 的单位为 g/cm\ :sup:`3`。
 
 .. include:: explain_-S.rst_
 
@@ -75,7 +74,7 @@ Okada 解是均匀弹性半空间中位错源产生静态变形的闭合解析�
 可选选项
 --------
 
-**-M**\ *strike/dip*[/\ *rake*]
+**-M**\ *strike/dip*\ [/\ *rake*]
     设置点源震源机制，角度单位为 °。未设置 **-M** 时为爆炸源；设置 *strike/dip* 时为
     张裂源；设置 *strike/dip/rake* 时为双力偶源。有限断层模式不能使用该选项。
 

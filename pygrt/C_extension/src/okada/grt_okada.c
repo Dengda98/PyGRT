@@ -9,6 +9,8 @@
 
 #include "grt.h"
 
+#undef I
+
 /** 该子模块的参数控制结构体 */
 typedef struct {
     /** 均匀半空间介质参数 */
@@ -17,7 +19,7 @@ typedef struct {
         real_t vp;
         real_t vs;
         real_t rho;
-    } Model;
+    } I;
     /** 点源放大系数 */
     struct {
         bool active;
@@ -223,10 +225,10 @@ static void parse_command(GRT_MODULE_CTRL *ctrl, int argc, char **argv)
             // 读取均匀半空间介质参数
             case 'I': {
                 char extra;
-                if(sscanf(optarg, "%lf/%lf/%lf%c", &ctrl->Model.vp, &ctrl->Model.vs, &ctrl->Model.rho, &extra) != 3){
+                if(sscanf(optarg, "%lf/%lf/%lf%c", &ctrl->I.vp, &ctrl->I.vs, &ctrl->I.rho, &extra) != 3){
                     GRTBadOptionError(I, "expected vp/vs/rho.");
                 }
-                ctrl->Model.active = true;
+                ctrl->I.active = true;
                 break;
             }
             // 设置输出 nc 文件
@@ -314,7 +316,7 @@ static void parse_command(GRT_MODULE_CTRL *ctrl, int argc, char **argv)
     }
 
     GRTCheckOptionSet(argc > 1);
-    if(!ctrl->Model.active) GRTRaiseError("Okada requires -I<vp>/<vs>/<rho>.\n");
+    if(!ctrl->I.active) GRTRaiseError("Okada requires -I<vp>/<vs>/<rho>.\n");
     if(!ctrl->O.active) GRTRaiseError("Okada requires -O<out>.\n");
     if(ctrl->X.active ^ ctrl->Y.active){
         GRTRaiseError("-X and -Y must be specified together.\n");
@@ -621,13 +623,10 @@ int okada_main(int argc, char **argv)
     GRT_MODULE_CTRL *ctrl = (GRT_MODULE_CTRL *)calloc(1, sizeof(*ctrl));
     parse_command(ctrl, argc, argv);
     OKADA_MEDIUM_PARAMS medium = {
-        .vp = ctrl->Model.vp,
-        .vs = ctrl->Model.vs,
-        .rho = ctrl->Model.rho,
+        .vp = ctrl->I.vp,
+        .vs = ctrl->I.vs,
+        .rho = ctrl->I.rho,
     };
-    if(medium.vp <= 0.0 || medium.vs <= 0.0 || medium.rho <= 0.0 || medium.vp <= sqrt(2.0) * medium.vs){
-        GRTRaiseError("Okada requires vp > sqrt(2) * vs > 0 and rho > 0.");
-    }
     // 速度单位为 km/s，密度单位为 g/cm^3，模量转换为 dyne/cm^2
     medium.alpha = 1.0 - (medium.vs / medium.vp) * (medium.vs / medium.vp);
     medium.mu = medium.rho * medium.vs * medium.vs * 1e10;
