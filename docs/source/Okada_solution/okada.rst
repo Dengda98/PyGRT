@@ -10,31 +10,26 @@ Okada (1985) 给出了地表位移的解析表达式，Okada (1992) 将结果推
 `DC3D0/DC3D 程序说明 <https://www.bosai.go.jp/e/dc3d.html>`__
 对点源、有限矩形断层、位移以及位移空间导数进行了整理。
 
-目前， Okada 解已经作为辅助模块引入到 PyGRT 中。
+**目前， Okada 解已经作为辅助模块引入到 PyGRT 中。**
 
 .. note::
 
-    Okada 解的适用介质是均匀各向同性弹性半空间。它不替代 PyGRT 针对水平分层模型的
-    波数积分静态解；在均匀半空间这个特殊模型中，它可以作为独立的解析计算分支和
-    数值结果的 benchmark。
+    Okada 解的适用介质是均匀各向同性弹性半空间。
+    在这个特殊模型中，它作为解析解可以为 PyGRT 的数值结果提供 benchmark。
 
 
 在 PyGRT 计算流程中的位置
 --------------------------
 
 PyGRT 的常规静态计算流程是先建立静态格林函数，再根据震源机制合成位移，最后由位移
-空间导数计算应变、旋转和应力。对于均匀半空间，:doc:`/Module/okada` 提供了另一条独立的静态
-位移计算路径：它直接从介质参数和震源几何计算位移，不读取 :doc:`/Module/static_greenfn` 生成的
-格林函数文件，也不进行分层介质中的波数积分。
-
-因此，使用 Okada 解时，:doc:`/Module/okada` 模块相当于替代了常规流程中的
+空间导数计算应变、旋转和应力。对于均匀半空间，:doc:`/Module/okada` 模块提供的是解析解，
+它直接从介质参数和震源几何计算位移。这相当于替代了常规流程中的
 :doc:`/Module/static_greenfn` 和 :doc:`/Module/static_syn` 两个阶段，但输出仍然保留静态
 合成结果的 NetCDF 接口。
-如果还需要计算应变、旋转或应力，只需将 :doc:`/Module/okada` 生成的 NetCDF 文件交给相应的静态
-后处理模块，不需要同时提供静态格林函数和 :doc:`/Module/static_syn` 的结果。换言之，
-:doc:`/Module/okada` 与由 :doc:`/Module/static_greenfn` 和 :doc:`/Module/static_syn` 组成的流程，
-是两种可替代的静态位移计算起点，之后的后处理流程
-可以统一进行。
+
+因此如果还需要计算应变、旋转或应力等物理量，只需将 :doc:`/Module/okada` 生成的 NetCDF 文件交给相应的静态
+后处理模块即可。换言之，:doc:`/Module/okada` 与 :doc:`/Module/static_greenfn` + :doc:`/Module/static_syn` 
+在流程上是平级的，其他的后处理流程完全对 :doc:`/Module/okada` 的输出兼容。
 
 
 PyGRT 如何引入 Okada 解析解
