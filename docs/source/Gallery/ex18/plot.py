@@ -153,9 +153,4 @@ def compare_case(
 
 
 compare_case(HERE / "static_syn.nc", HERE / "okada.nc", "", "Point-source")
-compare_case(
-    HERE / "finite_static_syn.nc",
-    HERE / "finite_okada.nc",
-    "finite",
-    "Finite-fault",
-)
+compare_case(HERE / "finite_static_syn.nc", HERE / "finite_okada.nc", "finite", "Finite-fault")

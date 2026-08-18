@@ -113,8 +113,7 @@ ax.set_title("Static displacements")
 ax = axs2[-1]
 ax.set_xlabel("Distance (km)")
 
-fig.text(0.0, 1.0, f"theoretical solution in an infinite space", 
-         ha='left', va='bottom', fontsize=12, bbox=dict(fc='w'))
+fig.text(0.0, 1.0, f"theoretical solution in an infinite space",  ha='left', va='bottom', fontsize=12, bbox=dict(fc='w'))
 
 fig.tight_layout()
 fig.savefig(f"theoretical.svg", bbox_inches='tight')

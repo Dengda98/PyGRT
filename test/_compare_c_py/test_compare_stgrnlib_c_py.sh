@@ -14,20 +14,16 @@ mkdir -p stgrnlib_cmp
 cd stgrnlib_cmp
 
 # (1) 单震源 + 单台站
-grt static greenfn -M../../${modname} -D2/0 \
-    -X$x1/$x2/$dx -Y$y1/$y2/$dy -e -Ostgrn_ss.nc
+grt static greenfn -M../../${modname} -D2/0 -X$x1/$x2/$dx -Y$y1/$y2/$dy -e -Ostgrn_ss.nc
 
 # (2) 多震源 + 单台站
-grt static greenfn -M../../${modname} -Ds1,2,3 -Dr0 \
-    -X$x1/$x2/$dx -Y$y1/$y2/$dy -e -Ostgrn_ms.nc
+grt static greenfn -M../../${modname} -Ds1,2,3 -Dr0 -X$x1/$x2/$dx -Y$y1/$y2/$dy -e -Ostgrn_ms.nc
 
 # (3) 单震源 + 多台站
-grt static greenfn -M../../${modname} -Ds2 -Dr0,0.5,1 \
-    -X$x1/$x2/$dx -Y$y1/$y2/$dy -e -Ostgrn_mr.nc
+grt static greenfn -M../../${modname} -Ds2 -Dr0,0.5,1 -X$x1/$x2/$dx -Y$y1/$y2/$dy -e -Ostgrn_mr.nc
 
 # (4) 多震源 + 多台站
-grt static greenfn -M../../${modname} -Ds1,2,3 -Dr0,0.5,1 \
-    -X$x1/$x2/$dx -Y$y1/$y2/$dy -e -Ostgrn_mm.nc
+grt static greenfn -M../../${modname} -Ds1,2,3 -Dr0,0.5,1 -X$x1/$x2/$dx -Y$y1/$y2/$dy -e -Ostgrn_mm.nc
 
 # 深度标签：整数写 0/1，小数点换成 p（与 compare_stgrnlib.py 一致）
 depth_tag() {
@@ -39,9 +35,7 @@ for zs in 1 2 3; do
     for zr in 0 0.5 1; do
         zs_tag=$(depth_tag "$zs")
         zr_tag=$(depth_tag "$zr")
-        grt static greenfn -M../../${modname} -D${zs}/${zr} \
-            -X$x1/$x2/$dx -Y$y1/$y2/$dy -e \
-            -Ostgrn_ref_zs${zs_tag}_zr${zr_tag}.nc
+        grt static greenfn -M../../${modname} -D${zs}/${zr} -X$x1/$x2/$dx -Y$y1/$y2/$dy -e -Ostgrn_ref_zs${zs_tag}_zr${zr_tag}.nc
     done
 done
 

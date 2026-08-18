@@ -56,15 +56,13 @@ def compare_nc_data(a: dict, b: dict, label: str) -> float:
     """逐通道比较，返回平均相对误差"""
     for key in ("depsrc", "deprcv", "north", "east"):
         if not np.allclose(a[key], b[key], rtol=RTOL, atol=ATOL):
-            raise ValueError(f"{label}: coordinate mismatch on '{key}'\n"
-                             f"  a={a[key]}\n  b={b[key]}")
+            raise ValueError(f"{label}: coordinate mismatch on '{key}'\n" f"  a={a[key]}\n  b={b[key]}")
 
     med_keys = ("src_va", "src_vb", "src_rho", "rcv_va", "rcv_vb", "rcv_rho")
     for key in med_keys:
         if key in a and key in b:
             if not np.allclose(a[key], b[key], rtol=RTOL, atol=ATOL):
-                raise ValueError(f"{label}: medium mismatch on '{key}'\n"
-                                 f"  a={a[key]}\n  b={b[key]}")
+                raise ValueError(f"{label}: medium mismatch on '{key}'\n" f"  a={a[key]}\n  b={b[key]}")
 
     skip = {"depsrc", "deprcv", "north", "east", "model", *med_keys}
     keys = sorted(set(a.keys()) & set(b.keys()) - skip)
@@ -121,9 +119,7 @@ def extract_slice(lib: dict, isrc: int, ircv: int) -> dict:
 
 def py_compute_to_nc(depsrcs, deprcvs, outpath: str):
     pymod = pygrt.PyModel1D(stgrn=outpath, modelpath=MODNAME)
-    pymod.compute_static_grn(
-        depsrc=depsrcs, deprcv=deprcvs, norths=NORTHS, easts=EASTS, calc_upar=True,
-    )
+    pymod.compute_static_grn(depsrc=depsrcs, deprcv=deprcvs, norths=NORTHS, easts=EASTS, calc_upar=True)
     assert Path(outpath).is_file()
 
 
@@ -189,10 +185,7 @@ def compare_syn_cli_py() -> list:
     py_out = CMPDIR / "stsyn_interp_py.nc"
     xy = ["-Ds1.5", "-Dr0.25", "-X-1/1/1", "-Y-1/1/1"]
     c_static_syn(grn, c_out, xy)
-    py_static_syn(
-        grn, py_out, depsrc=1.5, deprcv=0.25,
-        norths=(-1.0, 1.0, 1.0), easts=(-1.0, 1.0, 1.0),
-    )
+    py_static_syn(grn, py_out, depsrc=1.5, deprcv=0.25, norths=(-1.0, 1.0, 1.0), easts=(-1.0, 1.0, 1.0))
     errors.append(compare_nc_files(py_out, c_out))
 
     print("\n--- syn -Q points ---")
@@ -226,8 +219,7 @@ def compare_syn_multi_vs_single() -> list:
     ref_out = CMPDIR / "stsyn_ref_node.nc"
     c_static_syn(CMPDIR / "stgrn_mm.nc", mm_out, ["-Ds2", "-Dr0.5"])
     c_static_syn(CMPDIR / "stgrn_ref_zs2_zr0p5.nc", ref_out, [])
-    return [compare_syn_fields(load_syn_fields(mm_out), load_syn_fields(ref_out),
-                               "syn multi vs single [zs=2,zr=0.5]")]
+    return [compare_syn_fields(load_syn_fields(mm_out), load_syn_fields(ref_out), "syn multi vs single [zs=2,zr=0.5]")]
 
 
 def compare_syn_depth_linearity() -> list:

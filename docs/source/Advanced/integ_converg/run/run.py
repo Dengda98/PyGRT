@@ -11,11 +11,7 @@ pymod = pygrt.PyModel1D(grn="GRN", modelpath="milrow")
 
 # statsidxs 指定频率索引，核函数写入 GRN_grtstats/{model}_{depsrc}_{deprcv}/
 dists = [5,8,10]
-pymod.compute_grn(
-    depsrc=depsrc, deprcv=deprcv,
-    dists=dists, nt=500, dt=0.02,
-    statsidxs=[50,100],
-)
+pymod.compute_grn(depsrc=depsrc, deprcv=deprcv, dists=dists, nt=500, dt=0.02, statsidxs=[50,100])
 # END DGRN
 # -------------------------------------------------------------------
 
@@ -62,11 +58,7 @@ depsrc = 0.0
 deprcv = 0.0
 pymod = pygrt.PyModel1D(grn="GRN", modelpath="milrow")
 
-pymod.compute_grn(
-    depsrc=depsrc, deprcv=deprcv,
-    dists=dists, nt=500, dt=0.02, converg_method='none',
-    statsidxs=[50,100],
-)
+pymod.compute_grn(depsrc=depsrc, deprcv=deprcv, dists=dists, nt=500, dt=0.02, converg_method='none', statsidxs=[50,100])
 
 statsdir = f"GRN_grtstats/milrow_{format_float(depsrc)}_{format_float(deprcv)}"
 statsdata = pygrt.utils.read_statsfile(f"{statsdir}/K_0050_*")

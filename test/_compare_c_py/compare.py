@@ -112,15 +112,7 @@ def run_c_dynamic(c_root: Path) -> None:
 def run_py_dynamic(py_root: Path) -> None:
     """Python API 计算动态结果"""
     model = pygrt.PyModel1D(grn=py_root / "GRN", modelpath=MODEL, topbound="free", botbound="halfspace")
-    model.compute_grn(
-        depsrc=DEPSRC,
-        deprcv=DEPRCV,
-        dists=DIST,
-        nt=NT,
-        dt=DT,
-        calc_upar=True,
-        print_log=False,
-    )
+    model.compute_grn(depsrc=DEPSRC, deprcv=DEPRCV, dists=DIST, nt=NT, dt=DT, calc_upar=True, print_log=False)
 
     cases = [
         ("syn_ex", {}, "t/0.2/0.2/0.4"),
@@ -133,16 +125,7 @@ def run_py_dynamic(py_root: Path) -> None:
         suffix = "-N" if zne else ""
         for name, kwargs, tf in cases:
             out = py_root / f"{name}{suffix}"
-            model.compute_syn(
-                dist=DIST,
-                azimuth=AZ,
-                scale=SCALE,
-                output_path=out,
-                time_function=tf,
-                zne=zne,
-                calc_upar=True,
-                **kwargs,
-            )
+            model.compute_syn(dist=DIST, azimuth=AZ, scale=SCALE, output_path=out, time_function=tf, zne=zne, calc_upar=True, **kwargs)
             pygrt.utils.compute_strain(out)
             pygrt.utils.compute_rotation(out)
             pygrt.utils.compute_stress(out)
@@ -201,13 +184,7 @@ def run_py_static(py_root: Path) -> None:
     static_dir = py_root / "static"
     static_dir.mkdir(parents=True)
     model = pygrt.PyModel1D(stgrn=static_dir / "stgrn.nc", modelpath=MODEL)
-    model.compute_static_grn(
-        depsrc=DEPSRC,
-        deprcv=DEPRCV,
-        norths=NORTHS,
-        easts=EASTS,
-        calc_upar=True,
-    )
+    model.compute_static_grn(depsrc=DEPSRC, deprcv=DEPRCV, norths=NORTHS, easts=EASTS, calc_upar=True)
 
     cases = [
         ("stsyn_ex", {}),
@@ -220,13 +197,7 @@ def run_py_static(py_root: Path) -> None:
         suffix = "-N" if zne else ""
         for name, kwargs in cases:
             out = static_dir / f"{name}{suffix}.nc"
-            model.compute_static_syn(
-                scale=SCALE,
-                output_path=out,
-                zne=zne,
-                calc_upar=True,
-                **kwargs,
-            )
+            model.compute_static_syn(scale=SCALE, output_path=out, zne=zne, calc_upar=True, **kwargs)
             pygrt.utils.compute_strain(out)
             pygrt.utils.compute_rotation(out)
             pygrt.utils.compute_stress(out)
@@ -235,9 +206,7 @@ def run_py_static(py_root: Path) -> None:
 def compare_dynamic(c_root: Path, py_root: Path) -> list[float]:
     errors = []
     # 格林函数
-    errors.append(
-        compare_sac_dirs(_grn_subdir(py_root / "GRN"), _grn_subdir(c_root / "GRN"))
-    )
+    errors.append(compare_sac_dirs(_grn_subdir(py_root / "GRN"), _grn_subdir(c_root / "GRN")))
 
     for zne in (False, True):
         suffix = "-N" if zne else ""
@@ -258,18 +227,11 @@ def compare_dynamic(c_root: Path, py_root: Path) -> list[float]:
 
 def compare_static(c_root: Path, py_root: Path) -> list[float]:
     errors = []
-    errors.append(
-        compare_nc_files(py_root / "static" / "stgrn.nc", c_root / "static" / "stgrn.nc")
-    )
+    errors.append(compare_nc_files(py_root / "static" / "stgrn.nc", c_root / "static" / "stgrn.nc"))
     for zne in (False, True):
         suffix = "-N" if zne else ""
         for name in ("stsyn_ex", "stsyn_sf", "stsyn_dc", "stsyn_ts", "stsyn_mt"):
-            errors.append(
-                compare_nc_files(
-                    py_root / "static" / f"{name}{suffix}.nc",
-                    c_root / "static" / f"{name}{suffix}.nc",
-                )
-            )
+            errors.append(compare_nc_files(py_root / "static" / f"{name}{suffix}.nc", c_root / "static" / f"{name}{suffix}.nc",))
     return errors
 
 

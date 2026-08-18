@@ -15,32 +15,15 @@ modname = "../milrow"
 pymod = pygrt.PyModel1D(stgrn="stgrn.nc", modelpath=modname)
 
 pymod.compute_static_grn(depsrc=depsrc, deprcv=deprcv, norths=norths, easts=easts)
-pymod.compute_static_grn(
-    depsrc=depsrc, deprcv=deprcv, norths=norths, easts=easts, calc_upar=True,
-)
-pymod.compute_static_grn(
-    depsrc=depsrc, deprcv=deprcv, norths=norths, easts=easts, Length=20,
-)
+pymod.compute_static_grn(depsrc=depsrc, deprcv=deprcv, norths=norths, easts=easts, calc_upar=True)
+pymod.compute_static_grn(depsrc=depsrc, deprcv=deprcv, norths=norths, easts=easts, Length=20)
 
-pymod.compute_static_grn(
-    depsrc=depsrc, deprcv=deprcv, norths=norths, easts=easts,
-    Length=20, converg_method="DCM",
-)
-pymod.compute_static_grn(
-    depsrc=depsrc, deprcv=deprcv, norths=norths, easts=easts,
-    Length=20, converg_method="PTAM",
-)
-pymod.compute_static_grn(
-    depsrc=depsrc, deprcv=deprcv, norths=norths, easts=easts,
-    Length=20, converg_method="none",
-)
+pymod.compute_static_grn(depsrc=depsrc, deprcv=deprcv, norths=norths, easts=easts, Length=20, converg_method="DCM")
+pymod.compute_static_grn(depsrc=depsrc, deprcv=deprcv, norths=norths, easts=easts, Length=20, converg_method="PTAM")
+pymod.compute_static_grn(depsrc=depsrc, deprcv=deprcv, norths=norths, easts=easts, Length=20, converg_method="none")
 
-pymod.compute_static_grn(
-    depsrc=depsrc, deprcv=deprcv, norths=norths, easts=easts, k0=4, keps=1e-3,
-)
-pymod.compute_static_grn(
-    depsrc=depsrc, deprcv=deprcv, norths=norths, easts=easts, k0=4, stats=True,
-)
+pymod.compute_static_grn(depsrc=depsrc, deprcv=deprcv, norths=norths, easts=easts, k0=4, keps=1e-3)
+pymod.compute_static_grn(depsrc=depsrc, deprcv=deprcv, norths=norths, easts=easts, k0=4, stats=True)
 
 # 单深度输出应为 4D STGRNLIB（各深度维长度为 1）
 with netcdf_file("stgrn.nc", mmap=False) as f:
@@ -73,9 +56,7 @@ with netcdf_file("stgrn_py_multi.nc", mmap=False) as f:
 
 # 仅多震源深度
 pymod_ms = pygrt.PyModel1D(stgrn="stgrn_py_ms.nc", modelpath=modname)
-pymod_ms.compute_static_grn(
-    depsrc=[1.0, 2.0], deprcv=0.0, norths=norths_c, easts=easts_c, calc_upar=True,
-)
+pymod_ms.compute_static_grn(depsrc=[1.0, 2.0], deprcv=0.0, norths=norths_c, easts=easts_c, calc_upar=True)
 
 # 仅多台站深度
 pymod_mr = pygrt.PyModel1D(stgrn="stgrn_py_mr.nc", modelpath=modname)
@@ -83,9 +64,7 @@ pymod_mr.compute_static_grn(depsrc=2.0, deprcv=[0.0, 0.5], norths=norths_c, east
 
 # -R / dists 建库
 pymod_r = pygrt.PyModel1D(stgrn="stgrn_py_r.nc", modelpath=modname)
-pymod_r.compute_static_grn(
-    depsrc=2.0, deprcv=0.0, dists=[0.0, 1.0, 2.0, 4.0],
-)
+pymod_r.compute_static_grn(depsrc=2.0, deprcv=0.0, dists=[0.0, 1.0, 2.0, 4.0])
 with netcdf_file("stgrn_py_r.nc", mmap=False) as f:
     assert f.dimensions["north"] == 1
     assert f.dimensions["east"] == 4
@@ -119,9 +98,7 @@ except ValueError:
 with warnings.catch_warnings(record=True) as w:
     warnings.simplefilter("always")
     pymod_m = pygrt.PyModel1D(stgrn="stgrn_py_multi2.nc", modelpath=modname)
-    pymod_m.compute_static_grn(
-        depsrc=depsrcs, deprcv=deprcvs, norths=norths_c, easts=easts_c, stats=True,
-    )
+    pymod_m.compute_static_grn(depsrc=depsrcs, deprcv=deprcvs, norths=norths_c, easts=easts_c, stats=True)
     assert any("stats" in str(x.message) for x in w)
 
 for name in [

@@ -101,13 +101,7 @@ def test_compute_grn_default_and_optional_flags():
         model = pygrt.PyModel1D(grn=HERE / "_tmp_args_grn", modelpath=MODEL, topbound="free", botbound="halfspace")
 
         # 默认参数应显式带上 C 侧常用默认片段
-        model.compute_grn(
-            depsrc=2.0,
-            deprcv=0.0,
-            dists=[1.0, 2.5],
-            nt=32,
-            dt=0.05,
-        )
+        model.compute_grn(depsrc=2.0, deprcv=0.0, dists=[1.0, 2.5], nt=32, dt=0.05)
         cmd = runner.commands[-1]
         assert_command_equals(
             cmd,
@@ -189,13 +183,7 @@ def test_compute_grn_default_and_optional_flags():
             filonCut=1.0,
         )
         cmd = runner.commands[-1]
-        assert_command_has(
-            cmd,
-            "-N16/0.1+w0.8+n1",
-            "-L0+a0.0001+o1",
-            "-Cd",
-            "-Ep0.5",
-        )
+        assert_command_has(cmd, "-N16/0.1+w0.8+n1", "-L0+a0.0001+o1", "-Cd", "-Ep0.5")
 
         # 边界条件映射
         for top, bot, expected in [
@@ -204,24 +192,11 @@ def test_compute_grn_default_and_optional_flags():
             ("halfspace", "rigid", "-BhR"),
         ]:
             model2 = pygrt.PyModel1D(grn=HERE / "_tmp_args_grn2", modelpath=MODEL, topbound=top, botbound=bot)
-            model2.compute_grn(
-                depsrc=1.0,
-                deprcv=0.0,
-                dists=1.0,
-                nt=8,
-                dt=0.1,
-            )
+            model2.compute_grn(depsrc=1.0, deprcv=0.0, dists=1.0, nt=8, dt=0.1)
             assert_command_has(runner.commands[-1], expected)
 
         # NONE 收敛方法
-        model.compute_grn(
-            depsrc=1.0,
-            deprcv=0.0,
-            dists=1.0,
-            nt=8,
-            dt=0.1,
-            converg_method="NONE",
-        )
+        model.compute_grn(depsrc=1.0, deprcv=0.0, dists=1.0, nt=8, dt=0.1, converg_method="NONE")
         assert_command_has(runner.commands[-1], "-Cn")
     finally:
         _restore_run_grt(pygrt.pymod, original)
@@ -268,36 +243,16 @@ def test_compute_static_grn_xy_and_dists():
             ],
         )
 
-        model.compute_static_grn(
-            depsrc=1.0,
-            deprcv=0.0,
-            dists=[0.0, 1.5, 3.0],
-            safilonTol=1e-5,
-            converg_method="PTAM",
-        )
+        model.compute_static_grn(depsrc=1.0, deprcv=0.0, dists=[0.0, 1.5, 3.0], safilonTol=1e-5, converg_method="PTAM")
         cmd = runner.commands[-1]
-        assert_command_has(
-            cmd,
-            "static",
-            "greenfn",
-            "-R0,1.5,3",
-            "-L15+a1e-05",
-            "-Cp",
-            "-K+k50+e-1",
-        )
+        assert_command_has(cmd, "static", "greenfn", "-R0,1.5,3", "-L15+a1e-05", "-Cp", "-K+k50+e-1")
         assert "-X" not in " ".join(cmd)
         assert "-Y" not in " ".join(cmd)
 
         # 多深度：应拼出 -Ds/-Dr，且 stats 被忽略
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
-            model.compute_static_grn(
-                depsrc=[1.0, 2.0, 3.0],
-                deprcv=[0.0, 0.5],
-                norths=[-2.0, 2.0, 1.0],
-                easts=[-2.0, 2.0, 1.0],
-                stats=True,
-            )
+            model.compute_static_grn(depsrc=[1.0, 2.0, 3.0], deprcv=[0.0, 0.5], norths=[-2.0, 2.0, 1.0], easts=[-2.0, 2.0, 1.0], stats=True)
         assert any("stats" in str(w.message) for w in caught)
         cmd = runner.commands[-1]
         assert_command_has(cmd, "static", "greenfn", "-Ds1,2,3", "-Dr0,0.5", "-X-2/2/1", "-Y-2/2/1")
@@ -349,43 +304,14 @@ def test_compute_syn_source_and_time_function_options():
         )
 
         # 单力源
-        model.compute_syn(
-            dist=10.0,
-            azimuth=12.0,
-            scale=1e20,
-            output_path=out / "sf",
-            force=(2.0, -1.0, 4.0),
-            time_function="t/0.1/0.3/0.6",
-        )
-        assert_command_has(
-            runner.commands[-1],
-            "-F2/-1/4",
-            "-Dt/0.1/0.3/0.6",
-            "-S1e+20",
-        )
+        model.compute_syn(dist=10.0, azimuth=12.0, scale=1e20, output_path=out / "sf", force=(2.0, -1.0, 4.0), time_function="t/0.1/0.3/0.6")
+        assert_command_has(runner.commands[-1], "-F2/-1/4", "-Dt/0.1/0.3/0.6", "-S1e+20")
 
         # 剪切源 / 张裂源 / 矩张量
-        model.compute_syn(
-            dist=10.0,
-            azimuth=1.0,
-            scale=1e22,
-            output_path=out / "dc",
-            strike=77.0,
-            dip=88.0,
-            rake=99.0,
-            time_function="p/0.6",
-        )
+        model.compute_syn(dist=10.0, azimuth=1.0, scale=1e22, output_path=out / "dc", strike=77.0, dip=88.0, rake=99.0, time_function="p/0.6")
         assert_command_has(runner.commands[-1], "-M77/88/99", "-Dp/0.6")
 
-        model.compute_syn(
-            dist=10.0,
-            azimuth=1.0,
-            scale=1e22,
-            output_path=out / "ts",
-            strike=77.0,
-            dip=88.0,
-            time_function="p/0.6",
-        )
+        model.compute_syn(dist=10.0, azimuth=1.0, scale=1e22, output_path=out / "ts", strike=77.0, dip=88.0, time_function="p/0.6")
         assert_command_has(runner.commands[-1], "-M77/88", "-Dp/0.6")
 
         model.compute_syn(
@@ -397,12 +323,7 @@ def test_compute_syn_source_and_time_function_options():
             time_function="r/3",
         )
         cmd = runner.commands[-1]
-        assert_command_has(
-            cmd,
-            f"-G{grn_root}",
-            "-T1/-2/-5/0.5/3/1.2",
-            "-Dr/3",
-        )
+        assert_command_has(cmd, f"-G{grn_root}", "-T1/-2/-5/0.5/3/1.2", "-Dr/3")
     finally:
         _restore_run_grt(pygrt.pymod, original)
 
@@ -419,22 +340,10 @@ def test_source_type_is_inferred_from_source_parameters():
     original_utils = _patch_run_grt(pygrt.utils, runner)
     try:
         model = pygrt.PyModel1D(grn=HERE / "_tmp_args_grn", stgrn=HERE / "_tmp_args_stgrn.nc", modelpath=MODEL)
-        model.compute_syn(
-            dist=10.0,
-            azimuth=1.0,
-            scale=1e20,
-            output_path=HERE / "_tmp_args_inferred_sf",
-            force=(1.0, 2.0, 3.0),
-        )
+        model.compute_syn(dist=10.0, azimuth=1.0, scale=1e20, output_path=HERE / "_tmp_args_inferred_sf", force=(1.0, 2.0, 3.0))
         assert_command_has(runner.commands[-1], "-F1/2/3")
 
-        model.compute_static_syn(
-            scale=1e20,
-            output_path=HERE / "_tmp_args_inferred_dc.nc",
-            strike=33.0,
-            dip=50.0,
-            rake=120.0,
-        )
+        model.compute_static_syn(scale=1e20, output_path=HERE / "_tmp_args_inferred_dc.nc", strike=33.0, dip=50.0, rake=120.0)
         assert_command_has(runner.commands[-1], "-M33/50/120")
 
         pygrt.utils.compute_okada(
@@ -451,13 +360,7 @@ def test_source_type_is_inferred_from_source_parameters():
         assert_command_has(runner.commands[-1], "-M33/50")
 
         try:
-            model.compute_syn(
-                dist=10.0,
-                azimuth=1.0,
-                scale=1e20,
-                output_path=HERE / "_tmp_args_invalid",
-                strike=33.0,
-            )
+            model.compute_syn(dist=10.0, azimuth=1.0, scale=1e20, output_path=HERE / "_tmp_args_invalid", strike=33.0)
         except ValueError as exc:
             assert "strike and dip" in str(exc)
         else:
@@ -479,13 +382,7 @@ def test_source_type_is_inferred_from_source_parameters():
             raise AssertionError("mixed source parameters should raise ValueError")
 
         try:
-            model.compute_syn(
-                dist=10.0,
-                azimuth=1.0,
-                scale=1e20,
-                output_path=HERE / "_tmp_args_removed_source",
-                source="EX",
-            )
+            model.compute_syn(dist=10.0, azimuth=1.0, scale=1e20, output_path=HERE / "_tmp_args_removed_source", source="EX")
         except TypeError as exc:
             assert "source" in str(exc)
         else:
@@ -532,55 +429,16 @@ def test_compute_static_syn_and_tensor_postprocess_args():
         )
 
         # 多深度点源 + 任意接收点
-        model.compute_static_syn(
-            scale=1e20,
-            output_path=out,
-            depsrc=2.0,
-            recv_points=HERE / "rcv.txt",
-        )
-        assert_command_has(
-            runner.commands[-1],
-            "static", "syn",
-            f"-G{model.stgrn}",
-            f"-O{out}",
-            "-S1e+20",
-            "-Ds2",
-            f"-Q{HERE / 'rcv.txt'}",
-        )
+        model.compute_static_syn(scale=1e20, output_path=out, depsrc=2.0, recv_points=HERE / "rcv.txt")
+        assert_command_has(runner.commands[-1], "static", "syn", f"-G{model.stgrn}", f"-O{out}", "-S1e+20", "-Ds2", f"-Q{HERE / 'rcv.txt'}")
 
         # 多深度点源 + 新网格 + 台站深度
-        model.compute_static_syn(
-            scale=1e20,
-            output_path=out,
-            depsrc=2.0,
-            deprcv=0.5,
-            norths=[-2.0, 2.0, 1.0],
-            easts=[-2.0, 2.0, 1.0],
-        )
-        assert_command_has(
-            runner.commands[-1],
-            "static", "syn",
-            "-Ds2",
-            "-Dr0.5",
-            "-X-2/2/1",
-            "-Y-2/2/1",
-        )
+        model.compute_static_syn(scale=1e20, output_path=out, depsrc=2.0, deprcv=0.5, norths=[-2.0, 2.0, 1.0], easts=[-2.0, 2.0, 1.0])
+        assert_command_has(runner.commands[-1], "static", "syn", "-Ds2", "-Dr0.5", "-X-2/2/1", "-Y-2/2/1")
 
         # 有限断层
-        model.compute_static_syn(
-            output_path=out,
-            finite_fault=HERE / "cfaults.inp",
-            subfault_size=(1.0, 2.0),
-            calc_upar=True,
-        )
-        assert_command_has(
-            runner.commands[-1],
-            "static", "syn",
-            f"-G{model.stgrn}",
-            f"-O{out}",
-            f"-C{HERE / 'cfaults.inp'}+i1/2",
-            "-e",
-        )
+        model.compute_static_syn(output_path=out, finite_fault=HERE / "cfaults.inp", subfault_size=(1.0, 2.0), calc_upar=True)
+        assert_command_has(runner.commands[-1], "static", "syn", f"-G{model.stgrn}", f"-O{out}", f"-C{HERE / 'cfaults.inp'}+i1/2", "-e")
 
         # 张量后处理：目录走动态模块，文件走 static 模块
         dyn = HERE / "_tmp_tensor_dyn"
@@ -593,10 +451,7 @@ def test_compute_static_syn_and_tensor_postprocess_args():
         pygrt.utils.compute_rotation(dyn)
         assert_command_equals(runner.commands[-1], ["rotation", str(dyn)])
         pygrt.utils.compute_stress(stc)
-        assert_command_equals(
-            runner.commands[-1],
-            ["static", "stress", str(stc)],
-        )
+        assert_command_equals(runner.commands[-1], ["static", "stress", str(stc)])
     finally:
         _restore_run_grt(pygrt.pymod, original_pymod)
         _restore_run_grt(pygrt.utils, original_utils)

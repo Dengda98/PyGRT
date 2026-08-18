@@ -136,11 +136,7 @@ def assert_command_equals(command: Sequence[object], expected: Iterable[str]) ->
     actual = [str(item) for item in command]
     expect = [str(item) for item in expected]
     if actual != expect:
-        raise AssertionError(
-            "command mismatch:\n"
-            f"  actual:   {' '.join(actual)}\n"
-            f"  expected: {' '.join(expect)}"
-        )
+        raise AssertionError("command mismatch:\n" f"  actual:   {' '.join(actual)}\n" f"  expected: {' '.join(expect)}")
 
 
 def summarize_errors(name: str, errors: Sequence[float], threshold: float) -> float:
@@ -152,7 +148,5 @@ def summarize_errors(name: str, errors: Sequence[float], threshold: float) -> fl
     if arr.size:
         print(f"mean={mean:.6e}  min={np.min(arr):.6e}  max={np.max(arr):.6e}")
     if mean > threshold:
-        raise AssertionError(
-            f"{name} mean relative error {mean:.6e} exceeds {threshold:.6e}"
-        )
+        raise AssertionError(f"{name} mean relative error {mean:.6e} exceeds {threshold:.6e}")
     return mean

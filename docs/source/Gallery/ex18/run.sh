@@ -20,14 +20,11 @@ strike=33
 dip=44
 rake=55
 
-grt static greenfn -Mhalfspace -D$depsrc/$deprcv -e \
-    -X$x1/$x2/$dx -Y$y1/$y2/$dy -Ostatic_greenfn.nc
+grt static greenfn -Mhalfspace -D$depsrc/$deprcv -e -X$x1/$x2/$dx -Y$y1/$y2/$dy -Ostatic_greenfn.nc
 
-grt static syn -Gstatic_greenfn.nc -Su1e12 -M$strike/$dip/$rake -N -e \
-    -Ostatic_syn.nc -s
+grt static syn -Gstatic_greenfn.nc -Su1e12 -M$strike/$dip/$rake -N -e -Ostatic_syn.nc -s
 
-grt okada -I6/3.464/2.7 -Su1e12 -Ds$depsrc -Dr$deprcv \
-    -M$strike/$dip/$rake -N -e -X$x1/$x2/$dx -Y$y1/$y2/$dy -Ookada.nc -s
+grt okada -I6/3.464/2.7 -Su1e12 -Ds$depsrc -Dr$deprcv -M$strike/$dip/$rake -N -e -X$x1/$x2/$dx -Y$y1/$y2/$dy -Ookada.nc -s
 
 cat > finite_faults.inp <<EOF
   #   X-start    Y-start     X-fin     Y-fin    Kode  shear(m)  reverse(m)  dip angle   top(km)   bot(km)
@@ -35,14 +32,11 @@ xxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxx  xxxxxxxxxx  xxxxxxxxxx xxxx
   1     0.0000    -2.0000     0.0000     2.0000 100     0.0300      0.0400  60.0          2        4
 EOF
 
-grt static greenfn -Mhalfspace -Ds2/4/0.5 -Dr0 -e \
-    -R0/10/0.2 -Ofinite_greenfn.nc
+grt static greenfn -Mhalfspace -Ds2/4/0.5 -Dr0 -e -R0/10/0.2 -Ofinite_greenfn.nc
 
-grt static syn -Gfinite_greenfn.nc -Cfinite_faults.inp+i0.5/0.5 -N -e \
-    -X$x1/$x2/$dx -Y$y1/$y2/$dy -Ofinite_static_syn.nc -s
+grt static syn -Gfinite_greenfn.nc -Cfinite_faults.inp+i0.5/0.5 -N -e -X$x1/$x2/$dx -Y$y1/$y2/$dy -Ofinite_static_syn.nc -s
 
-grt okada -I6/3.464/2.7 -Cfinite_faults.inp -Dr0 \
-    -N -e -X$x1/$x2/$dx -Y$y1/$y2/$dy -Ofinite_okada.nc -s
+grt okada -I6/3.464/2.7 -Cfinite_faults.inp -Dr0 -N -e -X$x1/$x2/$dx -Y$y1/$y2/$dy -Ofinite_okada.nc -s
 
 python plot.py
 

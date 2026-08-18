@@ -36,16 +36,10 @@ else:
 modfile1 = f"mod_{bound1}_{bound2}"
 np.savetxt(modfile1, modarr)
 pymod1 = pygrt.PyModel1D(grn="GRN1", stgrn="stgrn1.nc", modelpath=modfile1, topbound=bound1, botbound=bound2)
-pymod1.compute_grn(
-    depsrc=depsrc, deprcv=deprcv, dists=rs, nt=nt, dt=dt,
-    keepAllFreq=True,
-)
+pymod1.compute_grn(depsrc=depsrc, deprcv=deprcv, dists=rs, nt=nt, dt=dt, keepAllFreq=True)
 st1 = read("GRN1/*/*.sac")
 pygrt.utils.stream_integral(st1)
-pymod1.compute_static_grn(
-    depsrc=depsrc, deprcv=deprcv,
-    norths=norths_rng, easts=easts_rng,
-)
+pymod1.compute_static_grn(depsrc=depsrc, deprcv=deprcv, norths=norths_rng, easts=easts_rng)
 static1 = pygrt.utils.read_static_nc("stgrn1.nc")
 
 # =============================================================
@@ -69,15 +63,9 @@ print(modarr2.shape, depsrc2, deprcv2)
 modfile2 = f"mod_{bound2}_{bound1}"
 np.savetxt(modfile2, modarr2)
 pymod2 = pygrt.PyModel1D(grn="GRN2", stgrn="stgrn2.nc", modelpath=modfile2, topbound=bound2, botbound=bound1)
-pymod2.compute_grn(
-    depsrc=depsrc2, deprcv=deprcv2, dists=rs, nt=nt, dt=dt,
-    keepAllFreq=True,
-)
+pymod2.compute_grn(depsrc=depsrc2, deprcv=deprcv2, dists=rs, nt=nt, dt=dt, keepAllFreq=True)
 st2 = read("GRN2/*/*.sac")
-pymod2.compute_static_grn(
-    depsrc=depsrc2, deprcv=deprcv2,
-    norths=norths_rng, easts=easts_rng,
-)
+pymod2.compute_static_grn(depsrc=depsrc2, deprcv=deprcv2, norths=norths_rng, easts=easts_rng)
 static2 = pygrt.utils.read_static_nc("stgrn2.nc")
 pygrt.utils.stream_integral(st2)
 
@@ -102,8 +90,7 @@ for i in range(5):
     ax.plot(t, data, **prop1)
     data = st2.select(channel=chLst[i])[0].data * sgn
     ax.plot(t, data, **prop2)
-    ax.text(0.96, 0.9, chLst[i], transform=ax.transAxes, 
-            ha='right', va='top', bbox=dict(fc='w'))
+    ax.text(0.96, 0.9, chLst[i], transform=ax.transAxes,  ha='right', va='top', bbox=dict(fc='w'))
 
     ax.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
     ax.grid()
@@ -113,8 +100,7 @@ for i in range(5):
     ax = axs2[i]
     ax.plot(easts, static1['variables'][chLst[i]]['data'][0, 0, 0], **prop1)
     ax.plot(easts, static2['variables'][chLst[i]]['data'][0, 0, 0] * sgn, **prop2)
-    ax.text(0.96, 0.9, chLst[i], transform=ax.transAxes, 
-            ha='right', va='top', bbox=dict(fc='w'))
+    ax.text(0.96, 0.9, chLst[i], transform=ax.transAxes,  ha='right', va='top', bbox=dict(fc='w'))
     ax.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
     ax.grid()
     ax.set_xmargin(0)
@@ -130,8 +116,7 @@ ax.set_title("Static displacements")
 ax = axs2[-1]
 ax.set_xlabel("Distance (km)")
 
-fig.text(0.0, 1.0, f"gray-solid:  {bound1} + {bound2}\n"
-                    f"black-dash:  {bound2} + {bound1}", 
+fig.text(0.0, 1.0, f"gray-solid:  {bound1} + {bound2}\n" f"black-dash:  {bound2} + {bound1}",
          ha='left', va='bottom', fontsize=12, bbox=dict(fc='w'))
 
 fig.tight_layout()
@@ -146,4 +131,3 @@ for name in [modfile1, modfile2, "GRN1", "GRN2", "stgrn1.nc", "stgrn2.nc"]:
         shutil.rmtree(p, ignore_errors=True)
     elif p.is_file():
         p.unlink(missing_ok=True)
-
