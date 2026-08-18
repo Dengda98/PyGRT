@@ -39,17 +39,17 @@ Okada 解析解（:doc:`/Module/okada` 模块）计算点源和有限断层的�
 .. figure:: compare_upar_z.svg
     :align: center
 
-    对坐标 Z 的位移偏导数对比
+    位移对坐标 Z 的偏导数对比
 
 .. figure:: compare_upar_n.svg
     :align: center
 
-    对坐标 N 的位移偏导数对比
+    位移对坐标 N 的偏导数对比
 
 .. figure:: compare_upar_e.svg
     :align: center
 
-    对坐标 E 的位移偏导数对比
+    位移对坐标 E 的偏导数对比
 
 
 有限断层对比
@@ -59,13 +59,16 @@ Okada 解析解（:doc:`/Module/okada` 模块）计算点源和有限断层的�
 右旋滑动为 0.03 m，逆冲滑动为 0.04 m。PyGRT 使用 0.5 km × 0.5 km 的子断层进行合成，
 Okada 直接计算同一矩形断层的解析解。
 
+位移对比
+^^^^^^^^
+
 .. figure:: compare_finite_displacement.svg
     :align: center
 
-    有限断层 Z、N、E 位移对比
+    Z、N、E 位移对比
 
 
-有限断层位移偏导数对比
+位移偏导数对比
 ^^^^^^^^^^^^^^^^^^^^^^
 
 有限断层的 9 个位移偏导数同样按照偏导坐标拆分为三个 3×3 图。
@@ -73,14 +76,14 @@ Okada 直接计算同一矩形断层的解析解。
 .. figure:: compare_finite_upar_z.svg
     :align: center
 
-    有限断层对坐标 Z 的位移偏导数对比
+    位移对坐标 Z 的偏导数对比
 
 .. figure:: compare_finite_upar_n.svg
     :align: center
 
-    有限断层对坐标 N 的位移偏导数对比
+    位移对坐标 N 的偏导数对比
 
 .. figure:: compare_finite_upar_e.svg
     :align: center
 
-    有限断层对坐标 E 的位移偏导数对比
+    位移对坐标 E 的偏导数对比
