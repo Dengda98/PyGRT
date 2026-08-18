@@ -59,7 +59,6 @@ pymod.compute_static_grn(
 pymod.compute_static_syn(
     scale=1e24,
     output_path="stsyn_dc_zne.nc",
-    source="DC",
     strike=33,
     dip=50,
     rake=120,

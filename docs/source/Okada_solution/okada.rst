@@ -59,6 +59,8 @@ PyGRT 在 C 代码层面实现了 Okada 点源和矩形有限断层的计算函�
 :func:`compute_okada() <pygrt.utils.compute_okada>`，其输入参数与
 :func:`compute_static_syn() <pygrt.pymod.PyModel1D.compute_static_syn>` 基本一致，
 不过需指定半空间模型的 P 波速度、S 波速度和密度。
+其中点源类型由 ``strike``、``dip`` 和 ``rake`` 自动确定：三个参数均不设置时为爆炸源，
+设置 ``strike`` 和 ``dip`` 时为张裂源，同时设置 ``rake`` 时为剪切源。
 
 
 输入与输出的兼容性

@@ -17,6 +17,12 @@ C模块为 :doc:`/Module/static_syn`。
 
 不同震源
 -------------
+Python 接口根据震源专用参数自动确定震源类型：不设置 ``strike``、``dip``、``rake``、
+``force`` 和 ``moment_tensor`` 时为爆炸源；设置
+``force`` 时为单力源；设置 ``moment_tensor`` 时为矩张量源；设置 ``strike`` 和
+``dip`` 时为张裂源，若同时设置 ``rake`` 则为剪切源。一次只能设置一组震源专用参数，
+不完整或混用参数会报错。有限断层使用 ``finite_fault`` 参数，与点源参数互斥。
+
 以下绘图使用 |GMT| 绘制。这里提供计算和绘图的 Python 脚本和 Shell 脚本供下载参考。
 
 :download:`Shell Scripts <run/run.sh>`

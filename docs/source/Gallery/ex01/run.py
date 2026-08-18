@@ -10,7 +10,7 @@ pymod.compute_grn(depsrc=5.0, deprcv=0.0, dists=[180], nt=1400, dt=0.1)
 # integrate_order=1 对应 CLI -I1，得到阶跃型位移
 pymod.compute_syn(
     dist=180.0, azimuth=39.2, scale=1e24, output_path="syn_dc",
-    source="DC", strike=77, dip=88, rake=99,
+    strike=77, dip=88, rake=99,
     integrate_order=1,
 )
 st = read("syn_dc/?.sac")
