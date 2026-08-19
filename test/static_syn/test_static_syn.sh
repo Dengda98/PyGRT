@@ -20,33 +20,29 @@ expect_fail() {
 grt static syn -h
 grt static_syn -h
 
-# -------------------- 单深度 XY 库 --------------------
-grt static greenfn -M../milrow -D2/0 -X-3/3/0.2 -Y-2/2/0.2 -e -Ostgrn.nc
+# -------------------- 单深度 -R 库 --------------------
+grt static greenfn -M../milrow -D2/0 -R0/8/1 -e -Ostgrn.nc
 
-grt static syn -S1e20 -Gstgrn.nc -Ostsyn.nc
-grt static syn -S1e20 -F2/-1/4    -Gstgrn.nc -Ostsyn.nc
-grt static syn -S1e20 -M77/88/111 -Gstgrn.nc -Ostsyn.nc
-grt static syn -S1e20 -Ds2 -Dr0 -Gstgrn.nc -Ostsyn.nc
-grt static syn -Su1e6 -M77/88/111 -Gstgrn.nc -Ostsyn.nc
-grt static syn -Su1e6 -M77/88 -Gstgrn.nc -Ostsyn.nc
-grt static syn -S1e20 -T1/-2/-5/0.5/3/1.2 -Gstgrn.nc -Ostsyn.nc
+# -R 建库后，在 static syn 中指定二维接收网格
+grt static syn -S1e20 -Gstgrn.nc -X-2/2/0.5 -Y-1/1/0.5 -Ostsyn.nc
+grt static syn -S1e20 -F2/-1/4    -Gstgrn.nc -X-2/2/0.5 -Y-1/1/0.5 -Ostsyn.nc
+grt static syn -S1e20 -M77/88/111 -Gstgrn.nc -X-2/2/0.5 -Y-1/1/0.5 -Ostsyn.nc
+grt static syn -S1e20 -Ds2 -Dr0 -Gstgrn.nc -X-2/2/0.5 -Y-1/1/0.5 -Ostsyn.nc
+grt static syn -Su1e6 -M77/88/111 -Gstgrn.nc -X-2/2/0.5 -Y-1/1/0.5 -Ostsyn.nc
+grt static syn -Su1e6 -M77/88 -Gstgrn.nc -X-2/2/0.5 -Y-1/1/0.5 -Ostsyn.nc
+grt static syn -S1e20 -T1/-2/-5/0.5/3/1.2 -Gstgrn.nc -X-2/2/0.5 -Y-1/1/0.5 -Ostsyn.nc
 
-grt static syn -S1e20 -F2/-1/4 -e -Gstgrn.nc -Ostsyn.nc
-grt static syn -S1e20 -F2/-1/4 -N -e -Gstgrn.nc -Ostsyn.nc
-
-# 合成时指定新 XY 网格（震中距插值）
-grt static syn -S1e20 -Gstgrn.nc -X-2/2/0.5 -Y-1/1/0.5 -Ostsyn_xy.nc
+grt static syn -S1e20 -F2/-1/4 -e -Gstgrn.nc -X-2/2/0.5 -Y-1/1/0.5 -Ostsyn.nc
+grt static syn -S1e20 -F2/-1/4 -N -e -Gstgrn.nc -X-2/2/0.5 -Y-1/1/0.5 -Ostsyn.nc
 
 # -------------------- -R 建库后合成 --------------------
 grt static greenfn -M../milrow -D2/0 -R0/8/1 -e -Ostgrn_r.nc
-# 延用库的震中距轴
-grt static syn -S1e20 -Gstgrn_r.nc -Ostsyn_r.nc
-# 指定新 XY 网格
-grt static syn -S1e20 -Gstgrn_r.nc -X-3/3/1 -Y-2/2/1 -e -Ostsyn_rxy.nc
+# 从 -R 库插值到二维接收网格
+grt static syn -S1e20 -Gstgrn_r.nc -X-2/2/1 -Y-2/2/1 -Ostsyn_r.nc
 
 # -------------------- 多深度库：点源 -Ds；深度插值；-Q --------------------
 grt static greenfn -M../milrow -Ds1,2,3 -Dr0 -R0/8/1 -e -Ostgrn_md.nc
-grt static syn -Gstgrn_md.nc -Su1e16 -Ds2 -Ostsyn_md.nc
+grt static syn -Gstgrn_md.nc -Su1e16 -Ds2 -X-2/2/1 -Y-2/2/1 -Ostsyn_md.nc
 # 震源深度插值（库节点之间）
 grt static syn -Gstgrn_md.nc -Su1e16 -Ds1.5 -X-2/2/1 -Y-2/2/1 -e -Ostsyn_interp.nc
 
@@ -69,7 +65,7 @@ cat > cfaults_tiny.inp <<'EOF'
 xxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxx  xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx
   1     0.0000     0.0000     2.0000     0.0000 100 0.1000     0.0000     90.00         1.2000    2.8000
 EOF
-grt static syn -Gstgrn_md.nc -Ccfaults_tiny.inp+i1/1 -Ostsyn_ff.nc
+grt static syn -Gstgrn_md.nc -Ccfaults_tiny.inp+i1/1 -X-2/2/1 -Y-2/2/1 -Ostsyn_ff.nc
 grt static syn -Gstgrn_md.nc -Ccfaults_tiny.inp+i1/1 -e -Qrcv_pts.txt -Ostsyn_ffq.nc
 
 # -------------------- 错误参数 --------------------

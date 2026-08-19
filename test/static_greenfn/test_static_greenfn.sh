@@ -48,16 +48,19 @@ grt static greenfn -h
 grt static_greenfn -h
 
 # -------------------- 单深度（旧 -D）--------------------
-grt static greenfn -M../milrow -D2/0 -X-3/3/0.2 -Y-2/2/0.2 -Ostgrn.nc
-grt static greenfn -M../milrow -D2/0 -X-3/3/0.2 -Y-2/2/0.2 -e -Ostgrn.nc
-grt static greenfn -M../milrow -D2/0 -X-3/3/0.2 -Y-2/2/0.2 -L20 -Ostgrn.nc
+grt static greenfn -M../milrow -D2/0 -R0/4/0.2 -Ostgrn.nc
+grt static greenfn -M../milrow -D2/0 -R0/4/0.2 -e -Ostgrn.nc
+grt static greenfn -M../milrow -D2/0 -R0/4/0.2 -L20 -Ostgrn.nc
 
-grt static greenfn -M../milrow -D0.2/0 -X-3/3/0.2 -Y-2/2/0.2 -L20 -Cd -Ostgrn.nc
-grt static greenfn -M../milrow -D0.2/0 -X-3/3/0.2 -Y-2/2/0.2 -L20 -Cp -Ostgrn.nc
-grt static greenfn -M../milrow -D0.2/0 -X-3/3/0.2 -Y-2/2/0.2 -L20 -Cn -Ostgrn.nc
+grt static greenfn -M../milrow -D0.2/0 -R0/4/0.2 -L20 -Cd -Ostgrn.nc
+grt static greenfn -M../milrow -D0.2/0 -R0/4/0.2 -L20 -Cp -Ostgrn.nc
+grt static greenfn -M../milrow -D0.2/0 -R0/4/0.2 -L20 -Cn -Ostgrn.nc
 
-grt static greenfn -M../milrow -D2/0 -X-3/3/0.2 -Y-2/2/0.2 -K+k4+e1e-3 -Ostgrn.nc
-grt static greenfn -M../milrow -D2/0 -X-3/3/0.2 -Y-2/2/0.2 -S -Ostgrn.nc
+grt static greenfn -M../milrow -D2/0 -R0/4/0.2 -K+k4+e1e-3 -Ostgrn.nc
+grt static greenfn -M../milrow -D2/0 -R0/4/0.2 -S -Ostgrn.nc
+
+# -X/-Y 仅保留一个二维网格输入测试
+grt static greenfn -M../milrow -D2/0 -X-3/3/0.2 -Y-2/2/0.2 -Ostgrn_xy.nc
 
 # -R
 grt static greenfn -M../milrow -D2/0 -R0/10/0.1 -Ostgrn.nc
@@ -67,53 +70,53 @@ rm -rf dists
 grt static greenfn -M../milrow -D2/0 -R2,3,5,8 -Ostgrn.nc
 
 # boundary
-grt static greenfn -M../milrow -D2/0 -X-3/3/0.2 -Y-2/2/0.2 -BrF -Ostgrn.nc
-grt static greenfn -M../milrow -D2/0 -X-3/3/0.2 -Y-2/2/0.2 -BhR -Ostgrn.nc
-grt static greenfn -M../milrow -D2/0 -X-3/3/0.2 -Y-2/2/0.2 -BrH -Ostgrn.nc
+grt static greenfn -M../milrow -D2/0 -R0/4/0.2 -BrF -Ostgrn.nc
+grt static greenfn -M../milrow -D2/0 -R0/4/0.2 -BhR -Ostgrn.nc
+grt static greenfn -M../milrow -D2/0 -R0/4/0.2 -BrH -Ostgrn.nc
 
 # -------------------- 多深度（-Ds / -Dr）--------------------
 # 逗号列表
-grt static greenfn -M../milrow -Ds1,2,3 -Dr0 -X-2/2/1 -Y-2/2/1 -Ostgrn_multi.nc
+grt static greenfn -M../milrow -Ds1,2,3 -Dr0 -R0/4/1 -Ostgrn_multi.nc
 # 等间距
-grt static greenfn -M../milrow -Ds1/3/1 -Dr0/1/1 -X-2/2/1 -Y-2/2/1 -Ostgrn_multi.nc
+grt static greenfn -M../milrow -Ds1/3/1 -Dr0/1/1 -R0/4/1 -Ostgrn_multi.nc
 # 单深度也可用 -Ds/-Dr
-grt static greenfn -M../milrow -Ds2 -Dr0 -X-2/2/1 -Y-2/2/1 -Ostgrn_multi.nc
+grt static greenfn -M../milrow -Ds2 -Dr0 -R0/4/1 -Ostgrn_multi.nc
 # 带位移偏导
-grt static greenfn -M../milrow -Ds1,2 -Dr0,0.5 -X-2/2/1 -Y-2/2/1 -e -Ostgrn_multi.nc
+grt static greenfn -M../milrow -Ds1,2 -Dr0,0.5 -R0/4/1 -e -Ostgrn_multi.nc
 # 从文件读深度
 printf "1\n2\n3\n" > depsrc_list
 printf "0\n0.5\n" > deprcv_list
-grt static greenfn -M../milrow -Dsdepsrc_list -Drdeprcv_list -X-2/2/1 -Y-2/2/1 -Ostgrn_multi.nc
+grt static greenfn -M../milrow -Dsdepsrc_list -Drdeprcv_list -R0/4/1 -Ostgrn_multi.nc
 rm -f depsrc_list deprcv_list
 
 # 多深度时 -S 应警告并忽略，但仍成功
 expect_warn "multi-depth -S ignored" "ignored" \
-    grt static greenfn -M../milrow -Ds1,2 -Dr0 -X-2/2/1 -Y-2/2/1 -S -Ostgrn_multi.nc
+    grt static greenfn -M../milrow -Ds1,2 -Dr0 -R0/4/1 -S -Ostgrn_multi.nc
 
 # -------------------- 错误参数（CLI）--------------------
 expect_fail "-D and -Ds/-Dr mutually exclusive" \
-    grt static greenfn -M../milrow -D2/0 -Ds1,2 -Dr0 -X-2/2/1 -Y-2/2/1 -Ostgrn_bad.nc
+    grt static greenfn -M../milrow -D2/0 -Ds1,2 -Dr0 -R0/4/1 -Ostgrn_bad.nc
 
 expect_fail "-Ds without -Dr" \
-    grt static greenfn -M../milrow -Ds1,2 -X-2/2/1 -Y-2/2/1 -Ostgrn_bad.nc
+    grt static greenfn -M../milrow -Ds1,2 -R0/4/1 -Ostgrn_bad.nc
 
 expect_fail "-Dr without -Ds" \
-    grt static greenfn -M../milrow -Dr0 -X-2/2/1 -Y-2/2/1 -Ostgrn_bad.nc
+    grt static greenfn -M../milrow -Dr0 -R0/4/1 -Ostgrn_bad.nc
 
 expect_fail "missing depth option" \
-    grt static greenfn -M../milrow -X-2/2/1 -Y-2/2/1 -Ostgrn_bad.nc
+    grt static greenfn -M../milrow -R0/4/1 -Ostgrn_bad.nc
 
 expect_fail "negative depth in -Ds" \
-    grt static greenfn -M../milrow -Ds-1,2 -Dr0 -X-2/2/1 -Y-2/2/1 -Ostgrn_bad.nc
+    grt static greenfn -M../milrow -Ds-1,2 -Dr0 -R0/4/1 -Ostgrn_bad.nc
 
 expect_fail "negative depth in -D" \
-    grt static greenfn -M../milrow -D-1/0 -X-2/2/1 -Y-2/2/1 -Ostgrn_bad.nc
+    grt static greenfn -M../milrow -D-1/0 -R0/4/1 -Ostgrn_bad.nc
 
 expect_fail "nonpositive depth spacing" \
-    grt static greenfn -M../milrow -Ds1/3/0 -Dr0 -X-2/2/1 -Y-2/2/1 -Ostgrn_bad.nc
+    grt static greenfn -M../milrow -Ds1/3/0 -Dr0 -R0/4/1 -Ostgrn_bad.nc
 
 expect_fail "depth start > end" \
-    grt static greenfn -M../milrow -Ds3/1/1 -Dr0 -X-2/2/1 -Y-2/2/1 -Ostgrn_bad.nc
+    grt static greenfn -M../milrow -Ds3/1/1 -Dr0 -R0/4/1 -Ostgrn_bad.nc
 
 expect_fail "non-ascending -R list" \
     grt static greenfn -M../milrow -D2/0 -R3,1,2 -Ostgrn_bad.nc
