@@ -174,6 +174,146 @@ const char* grt_get_basename(const char* path) {
 }
 
 
+/**
+ * 判断指定字符串区间是否表示一个有限实数
+ *
+ * 字符串区间左闭右开，调用方无需为区间补充字符串结束符
+ *
+ * @param[in]    begin    字符串区间的起始位置，包含该位置
+ * @param[in]    end      字符串区间的结束位置，不包含该位置
+ *
+ * @return   如果区间是一个有限实数则返回 true，否则返回 false
+ */
+static bool grt_is_numeric_field(const char *begin, const char *end)
+{
+    // 忽略数值字段两端的空白字符
+    while(begin < end && isspace((unsigned char)*begin)) ++begin;
+    while(end > begin && isspace((unsigned char)end[-1])) --end;
+    if(begin == end) return false;
+
+    // strtod 需要以字符串结束符结尾，因此复制指定的字符串区间
+    size_t length = (size_t)(end - begin);
+    char *value = (char *)calloc(length + 1, sizeof(char));
+    memcpy(value, begin, length);
+
+    // strtod 支持小数、科学计数法以及正负号
+    errno = 0;
+    char *value_end = NULL;
+    real_t number = strtod(value, &value_end);
+
+    // 要求完整解析字段，并排除溢出、下溢、无穷大和非数值
+    bool valid = (value_end != value) && (*value_end == '\0')
+        && (errno != ERANGE) && isfinite(number);
+
+    GRT_SAFE_FREE_PTR(value);
+    return valid;
+}
+
+
+/**
+ * 判断格林函数子目录名是否符合当前模型的命名格式
+ *
+ * 子目录名格式为 modelname_depsrc_deprcv_dist
+ * 数值字段从右侧分隔，避免模型名中的下划线参与解析
+ *
+ * @param[in]    name       待检查的子目录名
+ * @param[in]    modelname  当前模型文件名
+ *
+ * @return   如果名称符合当前模型的格林函数目录格式则返回 true，否则返回 false
+ */
+static bool grt_is_greenfn_subdir_name(const char *name, const char *modelname)
+{
+    size_t model_length = strlen(modelname);
+    size_t name_length = strlen(name);
+
+    // 先精确匹配模型名，并要求模型名后紧跟一个下划线
+    if(name_length <= model_length || strncmp(name, modelname, model_length) != 0 || name[model_length] != '_'){
+        return false;
+    }
+
+    const char *suffix = name + model_length + 1;
+    size_t suffix_length = name_length - model_length - 1;
+
+    // 从右侧寻找震中距和接收器深度之间的分隔符
+    const char *separator2_ptr = strrchr(suffix, '_');
+    if(separator2_ptr == NULL) return false;
+
+    size_t separator2 = (size_t)(separator2_ptr - suffix);
+    size_t separator1 = separator2;
+    // 继续向左寻找震源深度和接收器深度之间的分隔符
+    while(separator1 > 0 && suffix[separator1 - 1] != '_') --separator1;
+    if(separator1 == 0) return false;
+    --separator1;
+
+    return grt_is_numeric_field(suffix, suffix + separator1)
+        && grt_is_numeric_field(suffix + separator1 + 1, suffix + separator2)
+        && grt_is_numeric_field(suffix + separator2 + 1, suffix + suffix_length);
+}
+
+
+/**
+ * 检查动态和模态格林函数输出根目录中的文件和目录
+ *
+ * 根目录允许包含 command、当前模型副本，以及当前模型对应的格林函数子目录
+ * 调用方应在执行本函数前创建 output_dir
+ *
+ * @param[in]    output_dir  格林函数输出根目录
+ * @param[in]    modelname   当前模型文件名
+ */
+void grt_check_greenfn_output_dir(const char *output_dir, const char *modelname)
+{
+    // 目录应已由调用方创建，这里打开目录并检查其中的已有条目
+    DIR *dir = opendir(output_dir);
+    if(dir == NULL){
+        GRTRaiseError("Cannot open Green's function output directory \"%s\". Error code: %d\n", output_dir, errno);
+    }
+
+    errno = 0;
+    struct dirent *entry;
+    while((entry = readdir(dir)) != NULL){
+        // 跳过目录自身和父目录项
+        if(strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0){
+            continue;
+        }
+
+        // 使用完整路径检查条目类型
+        char *entry_path = NULL;
+        GRT_SAFE_ASPRINTF(&entry_path, "%s/%s", output_dir, entry->d_name);
+
+        struct stat entry_stat;
+        if(stat(entry_path, &entry_stat) != 0){
+            int error_code = errno;
+            closedir(dir);
+            GRTRaiseError("Cannot inspect Green's function output entry \"%s\". Error code: %d\n", entry_path, error_code);
+        }
+
+        // 根目录只允许 command、模型副本和当前模型的格林函数子目录
+        bool allowed = false;
+        if(strcmp(entry->d_name, "command") == 0 || strcmp(entry->d_name, modelname) == 0){
+            allowed = S_ISREG(entry_stat.st_mode);
+        } else if(S_ISDIR(entry_stat.st_mode)){
+            allowed = grt_is_greenfn_subdir_name(entry->d_name, modelname);
+        }
+
+        if(!allowed){
+            closedir(dir);
+            GRTRaiseError("The current model is \"%s\", but the output directory contains \"%s\". This is not allowed.\n", modelname, entry_path);
+        }
+
+        GRT_SAFE_FREE_PTR(entry_path);
+    }
+
+    // readdir 返回 NULL 时，通过 errno 区分正常结束和读取失败
+    if(errno != 0){
+        int error_code = errno;
+        closedir(dir);
+        GRTRaiseError("Cannot read Green's function output directory \"%s\". Error code: %d\n", output_dir, error_code);
+    }
+
+    closedir(dir);
+}
+
+
 void grt_trim_whitespace(char* str) {
     char* end;
     

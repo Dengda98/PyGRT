@@ -63,6 +63,22 @@ printf '6\n8\n10' > dists_no_newline
 grt greenfn -M../milrow -D2/0 -N600/0.02 -Rdists_no_newline -OGRN
 rm -f dists_no_newline
 
+# output directory validation
+mkdir -p GRN_BAD/other_model_2_0_5
+expect_fail "output directory contains another model" \
+    grt greenfn -M../milrow -D2/0 -N8/0.02 -R5 -OGRN_BAD
+test ! -e GRN_BAD/command
+mkdir -p GRN_BAD_FILE
+touch GRN_BAD_FILE/README
+expect_fail "output directory contains an unexpected file" \
+    grt greenfn -M../milrow -D2/0 -N8/0.02 -R5 -OGRN_BAD_FILE
+test ! -e GRN_BAD_FILE/command
+
+cp ../milrow ../mil_row
+grt greenfn -M../mil_row -D2/0 -N8/0.02 -R5 -OGRN_UNDERSCORE
+test -f GRN_UNDERSCORE/mil_row_2_0_5/EXZ.sac
+rm -f ../mil_row
+
 # multi source/receiver depths
 grt greenfn -M../milrow -Ds1,2 -Dr0,1 -N80/0.02 -R5 -OGRN_MULTI -s
 test -f GRN_MULTI/milrow_1_0_5/EXZ.sac
@@ -83,3 +99,4 @@ python -u test_greenfn.py
 rm -rf GRN
 rm -rf GRN_MULTI
 rm -rf GRN_grtstats
+rm -rf GRN_BAD GRN_BAD_FILE GRN_UNDERSCORE
