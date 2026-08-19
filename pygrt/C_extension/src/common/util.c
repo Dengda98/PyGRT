@@ -297,7 +297,7 @@ void grt_check_greenfn_output_dir(const char *output_dir, const char *modelname)
 
         if(!allowed){
             closedir(dir);
-            GRTRaiseError("Entry \"%s\" should not be in Green's function output directory \"%s\".\n", entry_path, output_dir);
+            GRTRaiseError("The current model is \"%s\", but the output directory contains \"%s\". This is not allowed.\n", modelname, entry_path);
         }
 
         GRT_SAFE_FREE_PTR(entry_path);
