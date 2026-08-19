@@ -804,6 +804,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 
     // 建立保存目录
     GRTCheckMakeDir(Ctrl->O.s_output_dir);
+    grt_check_greenfn_output_dir(Ctrl->O.s_output_dir, Ctrl->M.s_modelname);
 
     // 在目录中保留模型文件副本（basename），便于后续流程取用
     {

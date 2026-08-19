@@ -79,6 +79,14 @@ int grt_string_ncols(const char *string, const char* delim);
  */
 const char* grt_get_basename(const char* path);
 
+/**
+ * 检查动态格林函数输出根目录中的文件和目录
+ *
+ * @param[in]    output_dir    输出根目录
+ * @param[in]    modelname     当前模型文件名
+ */
+void grt_check_greenfn_output_dir(const char *output_dir, const char *modelname);
+
 
 /**
  * 去除字符串首尾空白

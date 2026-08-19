@@ -449,21 +449,6 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
         Ctrl->N.modes[0] = 0;
     }
     
-    // 建立保存目录
-    GRTCheckMakeDir(Ctrl->O.s_output_dir);
-
-    // 在目录中保留命令
-    char *dummy = NULL;
-    GRT_SAFE_ASPRINTF(&dummy, "%s/command", Ctrl->O.s_output_dir);
-    FILE *fp = GRTCheckOpenFile(dummy, "a");
-    fprintf(fp, GRT_MAIN_COMMAND " ");  // 主程序名
-    for(int i=0; i<argc; ++i){
-        fprintf(fp, "%s ", argv[i]);
-    }
-    fprintf(fp, "\n");
-    fclose(fp);
-    GRT_SAFE_FREE_PTR(dummy);
-
 }
 
 
@@ -642,6 +627,10 @@ int modsum_main(int argc, char **argv){
         exit(EXIT_FAILURE);
     }
 
+    // 建立保存目录并检查已有内容
+    GRTCheckMakeDir(Ctrl->O.s_output_dir);
+    grt_check_greenfn_output_dir(Ctrl->O.s_output_dir, grt_get_basename(modelpath));
+
     // 在输出根目录保留模型文件副本（basename），便于后续流程取用
     {
         char *model_copy = NULL;
@@ -649,6 +638,18 @@ int modsum_main(int argc, char **argv){
         grt_copy_file(modelpath, model_copy);
         GRT_SAFE_FREE_PTR(model_copy);
     }
+
+    // 在目录中保留命令
+    char *dummy = NULL;
+    GRT_SAFE_ASPRINTF(&dummy, "%s/command", Ctrl->O.s_output_dir);
+    FILE *fp = GRTCheckOpenFile(dummy, "a");
+    fprintf(fp, GRT_MAIN_COMMAND " ");  // 主程序名
+    for(int i=0; i<argc; ++i){
+        fprintf(fp, "%s ", argv[i]);
+    }
+    fprintf(fp, "\n");
+    fclose(fp);
+    GRT_SAFE_FREE_PTR(dummy);
 
     bool doEX = Ctrl->G.doEX;
     bool doVF = Ctrl->G.doVF;

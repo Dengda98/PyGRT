@@ -174,6 +174,101 @@ const char* grt_get_basename(const char* path) {
 }
 
 
+static bool grt_is_numeric_field(const char *begin, const char *end)
+{
+    while(begin < end && isspace((unsigned char)*begin)) ++begin;
+    while(end > begin && isspace((unsigned char)end[-1])) --end;
+    if(begin == end) return false;
+
+    size_t length = (size_t)(end - begin);
+    char *value = (char *)calloc(length + 1, sizeof(char));
+    memcpy(value, begin, length);
+
+    errno = 0;
+    char *value_end = NULL;
+    real_t number = strtod(value, &value_end);
+    bool valid = (value_end != value) && (*value_end == '\0')
+        && (errno != ERANGE) && isfinite(number);
+
+    GRT_SAFE_FREE_PTR(value);
+    return valid;
+}
+
+
+static bool grt_is_greenfn_subdir_name(const char *name, const char *modelname)
+{
+    size_t model_length = strlen(modelname);
+    size_t name_length = strlen(name);
+    if(name_length <= model_length || strncmp(name, modelname, model_length) != 0 || name[model_length] != '_'){
+        return false;
+    }
+
+    const char *suffix = name + model_length + 1;
+    size_t suffix_length = name_length - model_length - 1;
+    const char *separator2_ptr = strrchr(suffix, '_');
+    if(separator2_ptr == NULL) return false;
+
+    size_t separator2 = (size_t)(separator2_ptr - suffix);
+    size_t separator1 = separator2;
+    while(separator1 > 0 && suffix[separator1 - 1] != '_') --separator1;
+    if(separator1 == 0) return false;
+    --separator1;
+
+    return grt_is_numeric_field(suffix, suffix + separator1)
+        && grt_is_numeric_field(suffix + separator1 + 1, suffix + separator2)
+        && grt_is_numeric_field(suffix + separator2 + 1, suffix + suffix_length);
+}
+
+
+void grt_check_greenfn_output_dir(const char *output_dir, const char *modelname)
+{
+    DIR *dir = opendir(output_dir);
+    if(dir == NULL){
+        GRTRaiseError("Cannot open Green's function output directory \"%s\". Error code: %d\n", output_dir, errno);
+    }
+
+    errno = 0;
+    struct dirent *entry;
+    while((entry = readdir(dir)) != NULL){
+        if(strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0){
+            continue;
+        }
+
+        char *entry_path = NULL;
+        GRT_SAFE_ASPRINTF(&entry_path, "%s/%s", output_dir, entry->d_name);
+
+        struct stat entry_stat;
+        if(stat(entry_path, &entry_stat) != 0){
+            int error_code = errno;
+            closedir(dir);
+            GRTRaiseError("Cannot inspect Green's function output entry \"%s\". Error code: %d\n", entry_path, error_code);
+        }
+
+        bool allowed = false;
+        if(strcmp(entry->d_name, "command") == 0 || strcmp(entry->d_name, modelname) == 0){
+            allowed = S_ISREG(entry_stat.st_mode);
+        } else if(S_ISDIR(entry_stat.st_mode)){
+            allowed = grt_is_greenfn_subdir_name(entry->d_name, modelname);
+        }
+
+        if(!allowed){
+            closedir(dir);
+            GRTRaiseError("Entry \"%s\" should not be in Green's function output directory \"%s\".\n", entry_path, output_dir);
+        }
+
+        GRT_SAFE_FREE_PTR(entry_path);
+    }
+
+    if(errno != 0){
+        int error_code = errno;
+        closedir(dir);
+        GRTRaiseError("Cannot read Green's function output directory \"%s\". Error code: %d\n", output_dir, error_code);
+    }
+
+    closedir(dir);
+}
+
+
 void grt_trim_whitespace(char* str) {
     char* end;
     
