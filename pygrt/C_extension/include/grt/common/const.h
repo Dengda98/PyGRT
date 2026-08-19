@@ -103,10 +103,13 @@ typedef double complex cplx_t;
 })
 
 #define GRT_SAFE_ASPRINTF(ptr, fmt, ...) ({\
+    char *_tmp = NULL;\
     int res;\
-    if((res = asprintf(ptr, fmt, ##__VA_ARGS__)) == -1){\
+    if((res = asprintf(&_tmp, fmt, ##__VA_ARGS__)) == -1){\
         GRTRaiseError("Abnormal Error in function ‘asprintf’.\n");\
     };\
+    GRT_SAFE_FREE_PTR(*(ptr));\
+    *(ptr) = _tmp; \
 })
 
 // -----------------------------------------------------------------------------
