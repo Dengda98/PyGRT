@@ -41,6 +41,17 @@ grt modsum -Cphase_R.nc -Ds1,2 -Dr0,1 -R100 -N0 -OGRN_NM_MULTI -W2 -e
 test -f GRN_NM_MULTI/milrow_1_0_100/EXZ.sac
 test -f GRN_NM_MULTI/milrow_2_1_100/EXZ.sac
 
+# output directory validation
+mkdir -p GRN_NM_BAD/other_model_2_0_100
+expect_fail "output directory contains another model" \
+    grt modsum -Cphase_R.nc -D2/1 -R100 -N0 -OGRN_NM_BAD
+test ! -e GRN_NM_BAD/command
+mkdir -p GRN_NM_BAD_FILE
+touch GRN_NM_BAD_FILE/README
+expect_fail "output directory contains an unexpected file" \
+    grt modsum -Cphase_R.nc -D2/1 -R100 -N0 -OGRN_NM_BAD_FILE
+test ! -e GRN_NM_BAD_FILE/command
+
 expect_fail "-Ds without -Dr" \
     grt modsum -Cphase_R.nc -Ds1,2 -R100 -N0 -OGRN_bad
 
