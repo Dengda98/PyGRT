@@ -5,15 +5,9 @@ import pygrt
 
 pymod = pygrt.PyModel1D(stgrn="stgrn.nc", modelpath="milrow")
 
-# norths/easts 各为三个元素: start/stop/step (km)
-norths = [-3.0, 3.0, 0.15]
-easts = [-2.5, 2.5, 0.15]
-# 可以设置 dists 来指定震中距序列
-# pymod.compute_static_grn(
-#     depsrc=2.0, deprcv=0.0, dists=np.arange(0, 10+1e-8, 0.1),
-# )
-# 也可以设置 norths 和 easts 来指定 north/east 网格
-pymod.compute_static_grn(depsrc=2.0, deprcv=0.0, norths=norths, easts=easts)
+# 直接使用 dists 指定震中距序列
+dists = np.arange(0.0, 10.0 + 1e-8, 0.1)
+pymod.compute_static_grn(depsrc=2.0, deprcv=0.0, dists=dists)
 static_grn = pygrt.utils.read_static_nc("stgrn.nc")
 print(static_grn.keys())
 # dict_keys(['dimensions', 'variables', 'attributes'])
@@ -56,13 +50,23 @@ def plot_static(static_syn:dict, out:Union[str,None]=None):
 # BEGIN REUSE STGRN
 # 若仅使用已算好的静态格林函数做合成，构造时只需指定 stgrn，无需 modelpath
 pymod = pygrt.PyModel1D(stgrn="stgrn.nc")
+# static syn 使用 norths/easts 指定二维接收网格
+norths = [-3.0, 3.0, 0.15]
+easts = [-2.5, 2.5, 0.15]
 # END REUSE STGRN
 # ---------------------------------------------------------------------------------
 
 
 # ---------------------------------------------------------------------------------
 # BEGIN SYN EX
-static_syn = pymod.compute_static_syn(scale=1e24, output_path="stsyn_ex.nc", zne=True, return_result=True)
+static_syn = pymod.compute_static_syn(
+    scale=1e24,
+    output_path="stsyn_ex.nc",
+    norths=norths,
+    easts=easts,
+    zne=True,
+    return_result=True,
+)
 print(list(static_syn["variables"].keys()))
 # ['north', 'east', 'Z', 'N', 'E']
 plot_static(static_syn, "syn_ex.svg")
@@ -72,7 +76,15 @@ plot_static(static_syn, "syn_ex.svg")
 
 # ---------------------------------------------------------------------------------
 # BEGIN SYN SF
-static_syn = pymod.compute_static_syn(scale=1e16, output_path="stsyn_sf.nc", force=(1, -0.5, 2), zne=True, return_result=True)
+static_syn = pymod.compute_static_syn(
+    scale=1e16,
+    output_path="stsyn_sf.nc",
+    force=(1, -0.5, 2),
+    norths=norths,
+    easts=easts,
+    zne=True,
+    return_result=True,
+)
 print(list(static_syn["variables"].keys()))
 # ['north', 'east', 'Z', 'N', 'E']
 plot_static(static_syn, "syn_sf.svg")
@@ -82,7 +94,17 @@ plot_static(static_syn, "syn_sf.svg")
 
 # ---------------------------------------------------------------------------------
 # BEGIN SYN DC
-static_syn = pymod.compute_static_syn(scale=1e24, output_path="stsyn_dc.nc", strike=33, dip=50, rake=120, zne=True, return_result=True)
+static_syn = pymod.compute_static_syn(
+    scale=1e24,
+    output_path="stsyn_dc.nc",
+    strike=33,
+    dip=50,
+    rake=120,
+    norths=norths,
+    easts=easts,
+    zne=True,
+    return_result=True,
+)
 print(list(static_syn["variables"].keys()))
 # ['north', 'east', 'Z', 'N', 'E']
 plot_static(static_syn, "syn_dc.svg")
@@ -91,7 +113,17 @@ plot_static(static_syn, "syn_dc.svg")
 
 # ---------------------------------------------------------------------------------
 # BEGIN SYN DC2
-static_syn = pymod.compute_static_syn(scale=1e24, output_path="stsyn_dc2.nc", strike=33, dip=90, rake=0, zne=True, return_result=True)
+static_syn = pymod.compute_static_syn(
+    scale=1e24,
+    output_path="stsyn_dc2.nc",
+    strike=33,
+    dip=90,
+    rake=0,
+    norths=norths,
+    easts=easts,
+    zne=True,
+    return_result=True,
+)
 print(list(static_syn["variables"].keys()))
 # ['north', 'east', 'Z', 'N', 'E']
 plot_static(static_syn, "syn_dc2.svg")
@@ -100,7 +132,16 @@ plot_static(static_syn, "syn_dc2.svg")
 
 # ---------------------------------------------------------------------------------
 # BEGIN SYN TS
-static_syn = pymod.compute_static_syn(scale=1e24, output_path="stsyn_ts.nc", strike=33, dip=50, zne=True, return_result=True)
+static_syn = pymod.compute_static_syn(
+    scale=1e24,
+    output_path="stsyn_ts.nc",
+    strike=33,
+    dip=50,
+    norths=norths,
+    easts=easts,
+    zne=True,
+    return_result=True,
+)
 print(list(static_syn["variables"].keys()))
 # ['north', 'east', 'Z', 'N', 'E']
 plot_static(static_syn, "syn_ts.svg")
@@ -110,7 +151,16 @@ plot_static(static_syn, "syn_ts.svg")
 
 # ---------------------------------------------------------------------------------
 # BEGIN SYN TS2
-static_syn = pymod.compute_static_syn(scale=1e24, output_path="stsyn_ts2.nc", strike=33, dip=90, zne=True, return_result=True)
+static_syn = pymod.compute_static_syn(
+    scale=1e24,
+    output_path="stsyn_ts2.nc",
+    strike=33,
+    dip=90,
+    norths=norths,
+    easts=easts,
+    zne=True,
+    return_result=True,
+)
 print(list(static_syn["variables"].keys()))
 # ['north', 'east', 'Z', 'N', 'E']
 plot_static(static_syn, "syn_ts2.svg")
@@ -124,6 +174,8 @@ static_syn = pymod.compute_static_syn(
     scale=1e24,
     output_path="stsyn_mt.nc",
     moment_tensor=(0.1, -0.2, 1.0, 0.3, -0.5, -2.0),
+    norths=norths,
+    easts=easts,
     zne=True,
     return_result=True,
 )
@@ -135,32 +187,21 @@ plot_static(static_syn, "syn_mt.svg")
 
 # ---------------------------------------------------------------------------------
 # BEGIN SYN MT2
-static_syn = pymod.compute_static_syn(scale=1e24, output_path="stsyn_mt2.nc", moment_tensor=(0, -0.2, 0, 0, 0, 0), zne=True, return_result=True)
+static_syn = pymod.compute_static_syn(
+    scale=1e24,
+    output_path="stsyn_mt2.nc",
+    moment_tensor=(0, -0.2, 0, 0, 0, 0),
+    norths=norths,
+    easts=easts,
+    zne=True,
+    return_result=True,
+)
 print(list(static_syn["variables"].keys()))
 # ['north', 'east', 'Z', 'N', 'E']
 plot_static(static_syn, "syn_mt2.svg")
 # END SYN MT2
 # ---------------------------------------------------------------------------------
 
-
-# ---------------------------------------------------------------------------------
-# BEGIN NEW XY
-static_syn = pymod.compute_static_syn(
-    scale=1e24,
-    output_path="stsynXY_dc2.nc",
-    strike=33,
-    dip=90,
-    rake=0,
-    zne=True,
-    norths=[-3.0, 3.0, 0.2],
-    easts=[-2.5, 2.5, 0.25],
-    return_result=True,
-)
-print(list(static_syn["variables"].keys()))
-# ['north', 'east', 'Z', 'N', 'E']
-plot_static(static_syn, "synXY_dc2.svg")
-# END NEW XY
-# ---------------------------------------------------------------------------------
 
 # 删除中间计算结果，仅保留成图
 import shutil
@@ -169,7 +210,6 @@ for name in [
     "stgrn.nc",
     "stsyn_ex.nc", "stsyn_sf.nc", "stsyn_dc.nc", "stsyn_dc2.nc",
     "stsyn_ts.nc", "stsyn_ts2.nc", "stsyn_mt.nc", "stsyn_mt2.nc",
-    "stsynXY_dc2.nc",
 ]:
     p = Path(name)
     if p.is_file():

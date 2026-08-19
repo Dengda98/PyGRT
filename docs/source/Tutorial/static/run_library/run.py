@@ -8,12 +8,14 @@ MODEL = Path("milrow")
 
 # BEGIN GRN
 pymod = pygrt.PyModel1D(stgrn="stgrn.nc", modelpath=MODEL)
-pymod.compute_static_grn(depsrc=[2.0, 4.0], deprcv=[0.0, 2.0], dists=[0.0, 5.0, 10.0, 15.0])
+# 加上 calc_upar=True 表示计算位移格林函数的空间偏导
+pymod.compute_static_grn(depsrc=[2.0, 4.0], deprcv=[0.0, 2.0], dists=[0.0, 5.0, 10.0, 15.0], calc_upar=True)
 # END GRN
 
 
 # BEGIN SYN
 pymod = pygrt.PyModel1D(stgrn="stgrn.nc")
+# 加上 calc_upar=True 表示合成位移的空间偏导
 pymod.compute_static_syn(
     scale=1e24,
     output_path="stsyn.nc",
@@ -24,5 +26,6 @@ pymod.compute_static_syn(
     deprcv=1.0,
     norths=(-10.0, 10.0, 5.0),
     easts=(-10.0, 10.0, 5.0),
+    calc_upar=True
 )
 # END SYN

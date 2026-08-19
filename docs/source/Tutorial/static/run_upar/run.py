@@ -41,13 +41,29 @@ def plot6(data:dict, title:str, out:str|None=None):
 
 pymod = pygrt.PyModel1D(stgrn="stgrn.nc", modelpath="milrow")
 
-# norths/easts 各为三个元素: start/stop/step (km)
 # 传入 calc_upar=True 可计算空间导数
-pymod.compute_static_grn(depsrc=2.0, deprcv=0.0, norths=[-3.0, 3.0, 0.15], easts=[-2.5, 2.5, 0.15], calc_upar=True)
+pymod.compute_static_grn(
+    depsrc=2.0,
+    deprcv=0.0,
+    dists=np.arange(0.0, 10.0 + 1e-8, 0.15),
+    calc_upar=True,
+)
+norths = [-3.0, 3.0, 0.15]
+easts = [-2.5, 2.5, 0.15]
 
 # 传入 calc_upar=True 可计算空间导数
 # 传入 zne=True 返回 ZNE 分量
-pymod.compute_static_syn(scale=1e24, output_path="stsyn_dc_zne.nc", strike=33, dip=50, rake=120, zne=True, calc_upar=True)
+pymod.compute_static_syn(
+    scale=1e24,
+    output_path="stsyn_dc_zne.nc",
+    strike=33,
+    dip=50,
+    rake=120,
+    norths=norths,
+    easts=easts,
+    zne=True,
+    calc_upar=True,
+)
 
 # 计算应变 / 旋转 / 应力，结果写回同一 nc 文件
 static_strain = pygrt.utils.compute_strain("stsyn_dc_zne.nc", return_result=True)
