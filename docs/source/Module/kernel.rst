@@ -73,6 +73,8 @@ kernel
 
 .. include:: explain_-P.rst_
 
+.. _-e:
+
 **-e**
     改为输出位移对z偏导的核函数。
 
