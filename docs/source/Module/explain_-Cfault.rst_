@@ -1,3 +1,5 @@
+.. _-C:
+
 **-C**\ *faultparam*
     读取 `Coulomb 程序 <https://pubs.usgs.gov/of/2011/1060/>`_ 格式的有限断层。
     *faultparam* 通常是有限断层文件的路径名，支持 *.inp* 和 *.inr* 后缀。
