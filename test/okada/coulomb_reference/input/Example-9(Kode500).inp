@@ -1,0 +1,35 @@
+This is a test file for Kode 400 option with the Coulomb 3.2
+A single point source of expansion (note deflation is positive, units in m**3)
+#reg1=  0  #reg2=  0   #fixed=  1  sym=  1
+ PR1=       .250      PR2=       .250    DEPTH=        0.0
+  E1=   0.800000E+06   E2=   0.800000E+06
+XSYM=       .000     YSYM=       .000
+FRIC=       .000
+S1DR=    19.0001     S1DP=     -0.0001    S1IN=    100.000     S1GD=   .000000
+S3DR=    89.9999     S3DP=      89.999    S3IN=     30.000     S3GD=   .000000
+S2DR=   109.0001     S2DP=     -0.0001    S2IN=      0.000     S2GD=   .000000
+
+  #   X-start    Y-start     X-fin      Y-fin   Kode  rt.lat    reverse   dip angle     top      bot
+xxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx
+  1    0.0        0.00       3.0        3.00    500    0.0      -2.00E+7    90.00         0.0      5.00   pt.source
+
+    Grid Parameters
+  1  ----------------------------  Start-x =    -30.00000
+  2  ----------------------------  Start-y =    -30.00000
+  3  --------------------------   Finish-x =     30.01000
+  4  --------------------------   Finish-y =     30.00000
+  5  ------------------------  x-increment =     3.000000
+  6  ------------------------  y-increment =     3.000000
+     Size Parameters
+  1  --------------------------  Plot size =     3.000000
+  2  --------------  Shade/Color increment =     1.000000
+  3  ------  Exaggeration for disp.& dist. =     10000000
+
+Cross section default
+  1  ----------------------------  Start-x =    -16.00000
+  2  ----------------------------  Start-y =    -16.00000
+  3  --------------------------   Finish-x =     18.00000
+  4  --------------------------   Finish-y =     26.00000
+  5  ------------------  Distant-increment =     1.000000
+  6  ----------------------------  Z-depth =     30.00000
+  7  ------------------------  Z-increment =     1.000000

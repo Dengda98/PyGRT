@@ -1,0 +1,36 @@
+This is a test file for the Coulomb 2.0
+These two co-located tensile/shear-slip sources enable strike-slp, dip-slp, and opening to be imposed simultaneously
+#reg1=  0  #reg2=  0   #fixed=  2  sym=  1
+ PR1=       .250      PR2=       .250    DEPTH=        15.
+  E1=   0.800000E+06   E2=   0.800000E+06
+XSYM=       .000     YSYM=       .000
+FRIC=       .000
+S1DR=    19.0001     S1DP=     -0.0001    S1IN=    100.000     S1GD=   .000000
+S3DR=    89.9999     S3DP=      89.999    S3IN=     30.000     S3GD=   .000000
+S2DR=   109.0001     S2DP=     -0.0001    S2IN=      0.000     S2GD=   .000000
+
+  #   X-start    Y-start     X-fin      Y-fin   Kode  rt.lat    reverse   dip angle     top      bot
+xxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx
+  1   -15.1      -17.00     15.20       17.20   200   2.0000    1.0000      60.00         5.0     25.00   rt-lat + open
+  1   -15.1      -17.00     15.20       17.20   300   1.0000    2.0000      60.00         5.0     25.00   open + reverse
+
+    Grid Parameters
+  1  ----------------------------  Start-x =    -40.00000
+  2  ----------------------------  Start-y =    -40.00000
+  3  --------------------------   Finish-x =     40.10000
+  4  --------------------------   Finish-y =     40.10000
+  5  ------------------------  x-increment =     5.000000
+  6  ------------------------  y-increment =     5.000000
+     Size Parameters
+  1  --------------------------  Plot size =     2.000000
+  2  --------------  Shade/Color increment =     1.000000
+  3  ------  Exaggeration for disp.& dist. =     10000.00
+
+Cross section default
+  1  ----------------------------  Start-x =    -16.00000
+  2  ----------------------------  Start-y =    -16.00000
+  3  --------------------------   Finish-x =     18.00000
+  4  --------------------------   Finish-y =     26.00000
+  5  ------------------  Distant-increment =     1.000000
+  6  ----------------------------  Z-depth =     30.00000
+  7  ------------------------  Z-increment =     1.000000
