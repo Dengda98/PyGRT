@@ -82,6 +82,9 @@ typedef struct {
     real_t mu;
 } OKADA_MEDIUM_PARAMS;
 
+// 与 Coulomb 中用于避开点源奇异点的偏移量保持一致，单位为 km
+static const real_t OKADA_SINGULAR_OFFSET = 1.0e-4;
+
 /** 释放命令行参数结构体及其动态分配的成员
  *
  * @param[in,out] ctrl  命令行参数结构体
@@ -146,6 +149,8 @@ printf("\n"
 "\n"
 "    -C<path>      Coulomb finite-fault input file. Each row is evaluated as one rectangular fault.\n"
 "                  The analytic solution does not accept a +i<dL>/<dW> subdivision suffix.\n"
+"                  Kode 100/200/300 select rectangular shear/tensile components;\n"
+"                  Kode 400/500 select point sources at the fault-plane center.\n"
 "                  Positive Coulomb right-lateral slip is converted to negative Okada strike-slip\n"
 "                  dislocation. The finite-fault output is automatically rotated to ZNE.\n"
 "\n"
@@ -416,10 +421,30 @@ static void add_point_source(const GRT_MODULE_CTRL *ctrl, const OKADA_MEDIUM_PAR
         real_t cs = cos(strike * DEG1), ss = sin(strike * DEG1);
         real_t x = norths[i] * cs + easts[i] * ss;
         real_t y = norths[i] * ss - easts[i] * cs;
+        real_t z = -depths[i];
         real_t u[3], up[3][3], uw[3], dw[3][3];
-        int iret = grt_okada_dc3d0(medium->alpha, x, y, -depths[i], ctrl->depsrc, dip,
+        int iret = grt_okada_dc3d0(medium->alpha, x, y, z, ctrl->depsrc, dip,
             pot1, pot2, pot3, pot4, u, up);
-        if(iret != 0) GRTRaiseError("Okada point-source evaluation failed with return code %d at receiver %zu.", iret, i);
+        if(iret != 0){
+            const char *reason = iret == 1 ? "singular point" :
+                (iret == 2 ? "receiver is above the free surface" : "unknown error");
+            x += OKADA_SINGULAR_OFFSET;
+            GRTRaiseWarning(
+                "Okada point-source evaluation reached %s (return code %d) at receiver %zu/%zu "
+                "(north=%.6g km, east=%.6g km, depth=%.6g km); retry after shifting local X "
+                "by %.6g km.",
+                reason, iret, i + 1, npts, norths[i], easts[i], depths[i], OKADA_SINGULAR_OFFSET);
+            iret = grt_okada_dc3d0(medium->alpha, x, y, z, ctrl->depsrc, dip,
+                pot1, pot2, pot3, pot4, u, up);
+            if(iret != 0){
+                reason = iret == 1 ? "singular point" :
+                    (iret == 2 ? "receiver is above the free surface" : "unknown error");
+                GRTRaiseWarning(
+                    "Okada point-source retry still reached %s (return code %d) at receiver %zu/%zu; "
+                    "the contribution is set to zero.",
+                    reason, iret, i + 1, npts);
+            }
+        }
         for(int c = 0; c < 3; ++c){
             u[c] *= 1e-10;
             for(int d = 0; d < 3; ++d) up[d][c] *= 1e-15;
@@ -461,29 +486,86 @@ static void add_finite_faults(const GRT_MODULE_CTRL *ctrl, const OKADA_MEDIUM_PA
     real_t (*syn)[3], real_t (*syn_d)[3][3])
 {
     for(size_t nf = 0; nf < ctrl->C.nfault; ++nf){
-        // 每条 Coulomb 记录直接作为一个矩形断层调用 DC3D
         const FINITE_FAULT *fault = &ctrl->C.faults[nf];
         real_t strike = fault->strike;
         real_t dip = fault->dip;
         real_t length = hypot(fault->east_end - fault->east_begin, fault->north_end - fault->north_begin);
         real_t width = (fault->bot - fault->top) / sin(dip * DEG1);
-        real_t north0 = 0.5 * (fault->north_begin + fault->north_end);
-        real_t east0 = 0.5 * (fault->east_begin + fault->east_end);
-        // Coulomb 长度和滑动通常为 m，Okada 使用 km 和 cm
-        real_t disl1 = -100.0 * fault->right_lateral;
-        real_t disl2 = 100.0 * fault->reverse;
+        real_t coss = cos(strike * DEG1);
+        real_t sins = sin(strike * DEG1);
+        real_t north_mid = 0.5 * (fault->north_begin + fault->north_end);
+        real_t east_mid = 0.5 * (fault->east_begin + fault->east_end);
+        real_t depsrc = 0.5 * (fault->top + fault->bot);
+
+        // Coulomb 的 Kode=400/500 点源位于矩形断层面中心，而不是水平投影中心
+        real_t center_shift = 0.5 * width * cos(dip * DEG1);
+        real_t point_north = north_mid - center_shift * sins;
+        real_t point_east = east_mid + center_shift * coss;
+
+        real_t disl1 = 0.0;
+        real_t disl2 = 0.0;
+        real_t disl3 = 0.0;
+        real_t pot1 = 0.0;
+        real_t pot2 = 0.0;
+        real_t pot3 = 0.0;
+        real_t pot4 = 0.0;
+        if(fault->kode == KODE_RTLAT_REVERSE){
+            disl1 = -100.0 * fault->right_lateral;
+            disl2 = 100.0 * fault->reverse;
+        } else if(fault->kode == KODE_RTLAT_TENSILE){
+            disl1 = -100.0 * fault->right_lateral;
+            disl3 = 100.0 * fault->tensile;
+        } else if(fault->kode == KODE_TENSILE_REVERSE){
+            disl2 = 100.0 * fault->reverse;
+            disl3 = 100.0 * fault->tensile;
+        } else if(fault->kode == KODE_POINT_DC){
+            pot1 = -1e6 * fault->right_lateral;
+            pot2 = 1e6 * fault->reverse;
+        } else if(fault->kode == KODE_POINT_TENSILE_INFLATE){
+            pot3 = 1e6 * fault->tensile;
+            pot4 = 1e6 * fault->inflate;
+        } else {
+            GRTRaiseError("unsupported Coulomb Kode=%u.", fault->kode);
+        }
 
         for(size_t i = 0; i < npts; ++i){
-            real_t dn = norths[i] - north0;
-            real_t de = easts[i] - east0;
-            real_t x = dn * cos(strike * DEG1) + de * sin(strike * DEG1);
-            real_t y = dn * sin(strike * DEG1) - de * cos(strike * DEG1);
             real_t u[3], up[3][3], uw[3], dw[3][3];
-            int iret = grt_okada_dc3d(medium->alpha, x, y, -depths[i], fault->top, dip,
-                -0.5 * length, 0.5 * length, -width, 0.0, disl1, disl2, 0.0, u, up);
-            if(iret != 0) GRTRaiseError("Okada finite-fault evaluation failed with return code %d at receiver %zu.", iret, i);
-            for(int c = 0; c < 3; ++c){
-                for(int d = 0; d < 3; ++d) up[d][c] *= 1e-5;
+            int iret;
+            if(KODE_IS_FINITE(fault->kode)){
+                // 用顶边水平投影作为 DC3D 参考点，沿上倾方向的范围为 [-width, 0]
+                real_t dn = norths[i] - north_mid;
+                real_t de = easts[i] - east_mid;
+                real_t x = dn * coss + de * sins;
+                real_t y = dn * sins - de * coss;
+                iret = grt_okada_dc3d(medium->alpha, x, y, -depths[i], fault->top, dip,
+                    -0.5 * length, 0.5 * length, -width, 0.0, disl1, disl2, disl3, u, up);
+            } else {
+                real_t dn = norths[i] - point_north;
+                real_t de = easts[i] - point_east;
+                real_t x = dn * coss + de * sins;
+                real_t y = dn * sins - de * coss;
+                iret = grt_okada_dc3d0(medium->alpha, x, y, -depths[i], depsrc, dip,
+                    pot1, pot2, pot3, pot4, u, up);
+            }
+            if(iret != 0){
+                const char *reason = iret == 1 ? "singular point" :
+                    (iret == 2 ? "receiver is above the free surface" : "unknown error");
+                GRTRaiseError(
+                    "Okada finite-fault evaluation failed: %s (return code %d) at Coulomb fault row %zu/%zu "
+                    "(Kode=%u) and receiver %zu/%zu (north=%.6g km, east=%.6g km, depth=%.6g km).",
+                    reason, iret, nf + 1, ctrl->C.nfault, fault->kode,
+                    i + 1, npts, norths[i], easts[i], depths[i]);
+            }
+            if(KODE_IS_FINITE(fault->kode)){
+                for(int c = 0; c < 3; ++c){
+                    for(int d = 0; d < 3; ++d) up[d][c] *= 1e-5;
+                }
+            } else {
+                // 点源 potency 为 cm^3，水平坐标为 km
+                for(int c = 0; c < 3; ++c){
+                    u[c] *= 1e-10;
+                    for(int d = 0; d < 3; ++d) up[d][c] *= 1e-15;
+                }
             }
             local_to_zne(strike, u, up, uw, dw);
             for(int c = 0; c < 3; ++c) syn[i][c] += uw[c];

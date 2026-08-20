@@ -11,14 +11,48 @@
 
 #include "grt/common/const.h"
 
-/** Coulomb 程序格式的有限断层（及衍生量） */
+#define KODE_RTLAT_REVERSE          100  ///< 矩形右旋/逆冲断层
+#define KODE_RTLAT_TENSILE          200  ///< 矩形右旋/张裂断层
+#define KODE_TENSILE_REVERSE        300  ///< 矩形张裂/逆冲断层
+#define KODE_POINT_DC               400  ///< 点双力偶源
+#define KODE_POINT_TENSILE_INFLATE  500  ///< 点张裂/膨胀源
+#define KODE_IS_FINITE(kode)        ((kode) == KODE_RTLAT_REVERSE || (kode) == KODE_RTLAT_TENSILE || (kode) == KODE_TENSILE_REVERSE)
+#define KODE_IS_POINT(kode)         ((kode) == KODE_POINT_DC || (kode) == KODE_POINT_TENSILE_INFLATE)
+
+/**
+ * Coulomb 程序格式的有限断层（及衍生量）
+ *
+ * 原始断层数据区的 11 列依次为
+ * ID、X-start、Y-start、X-fin、Y-fin、Kode、slip1、slip2、dip、top、bot
+ * 其中 X/Y 在 PyGRT 中分别对应 east/north
+ *
+ * .inp 文件的 slip1/slip2 列含义为右旋/逆冲或 Kode 指定的物理量
+ * .inr 文件仅允许 Kode=100，slip1/slip2 列含义为 rake (degree)/net slip (m)
+ *
+ * Kode=100：矩形断层，slip1=右旋滑动 (m)，slip2=逆冲滑动 (m)
+ * Kode=200：矩形断层，slip1=右旋滑动 (m)，slip2=张裂开度 (m)
+ * Kode=300：矩形断层，slip1=张裂开度 (m)，slip2=逆冲滑动 (m)
+ * Kode=400：点双力偶，slip1=走向滑动 potency (m^3)，slip2=倾向滑动 potency (m^3)
+ * Kode=500：点张裂/膨胀源，slip1=张裂 potency (m^3)，slip2=膨胀 potency (m^3)
+ *
+ * value1/value2 保留文件第 7、8 列的值
+ * right_lateral/reverse/tensile/inflate 是按 Kode 解释后的量
+ */
 typedef struct {
     real_t east_begin;
     real_t north_begin;
     real_t east_end;
     real_t north_end;
-    real_t right_lateral;   ///< m
-    real_t reverse;         ///< m
+
+    unsigned int kode;      ///< Coulomb 标识符，只允许 100、200、300、400、500
+    bool rake_format;       ///< 是否按 rake/net slip 格式解释
+    real_t value1;          ///< 文件第 7 列，物理意义由 kode 决定
+    real_t value2;          ///< 文件第 8 列，物理意义由 kode 决定
+
+    real_t right_lateral;   ///< Kode 100/200 为 m，Kode 400 为 m^3
+    real_t reverse;         ///< Kode 100/300 为 m，Kode 400 为 m^3
+    real_t tensile;         ///< Kode 200/300 为 m，Kode 500 为 m^3
+    real_t inflate;         ///< Kode 500 为 m^3
     real_t dip;             ///< degree
     real_t top;             ///< km
     real_t bot;             ///< km
@@ -26,7 +60,7 @@ typedef struct {
     // 衍生量，由 grt_finite_fault_set_derived 填充
     real_t strike;          ///< degree
     real_t rake;            ///< degree
-    real_t slip;            ///< m, hypot(right_lateral, reverse)
+    real_t slip;            ///< Kode 100/200/300 的剪切滑动合量，单位 m
 } FINITE_FAULT;
 
 /** 剖分后的单个子断层（点源几何） */
@@ -49,8 +83,8 @@ void grt_finite_fault_set_derived(FINITE_FAULT *f);
 /**
  * 读取 Coulomb 格式有限断层文件
  *
- * 跳过前两行表头，逐行解析 11 列中的断层字段，并对每条调用
- * grt_finite_fault_set_derived。要求 dip ∈ (0, 90] 且 bot > top
+ * 跳过前两行表头，逐行读取断层数据，并对每条调用 grt_finite_fault_set_derived
+ * 支持 .inp 与 .inr，要求 dip ∈ (0, 90]、bot > top 且沿走向长度 > 0
  * 调用方负责 grt_finite_fault_free
  *
  * @param[in]   path     文件路径

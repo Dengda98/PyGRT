@@ -766,8 +766,10 @@ class PyModel1D:
         and ``dip`` select a tensile crack (``TS``), or a double-couple (``DC``)
         when ``rake`` is also supplied. Only one source parameter group may be
         used at a time. Finite faults use ``finite_fault`` (Coulomb-format file,
-        CLI ``-C``) instead; that path requires a multi-source-depth library,
-        automatically writes ZNE, and rejects point-source options.
+        CLI ``-C``) instead. Its ``Kode`` column selects rectangular shear/
+        tensile sources or point shear/expansion sources; ``.inr`` is supported
+        for Kode 100 rake/net-slip rows. That path requires a multi-source-depth
+        library, automatically writes ZNE, and rejects point-source options.
 
         For each target receiver, the C module first synthesizes results at the
         surrounding epicentral-distance samples and combines those synthesized
@@ -834,9 +836,9 @@ class PyModel1D:
                                      ``(Mxx, Mxy, Mxz, Myy, Myz, Mzz)`` for the
                                      ``MT`` source. Subscripts x/y/z denote
                                      north/east/down.
-        :param    finite_fault:      Coulomb-format finite-fault file (CLI ``-C``).
-                                     Mutually exclusive with point-source options;
-                                     point-source arguments cause ``ValueError``.
+        :param    finite_fault:      Coulomb-format finite-fault file (Kode 100/200/300/400/500;
+                                     ``.inr`` is allowed for Kode 100). Mutually exclusive with
+                                     point-source options; point-source arguments cause ``ValueError``.
         :param    subfault_size:     Optional ``(dL, dW)`` in km for finite-fault
                                      subdivision along strike / dip. If omitted,
                                      the C code uses ``min(dr, dz)`` of the library.

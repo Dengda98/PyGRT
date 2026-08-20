@@ -224,8 +224,11 @@ printf("\n"
 "\n"
 "    -C<path>[+i<dL>/<dW>]\n"
 "                  Finite faults in Coulomb input format.\n"
-"                  <path>: fault file (skip two header lines;\n"
-"                  each following line has 11 numeric columns).\n"
+"                  <path>: .inp or .inr file with an 11-column fault table.\n"
+"                  Kode 100/200/300 are rectangular shear/tensile sources;\n"
+"                  Kode 400 is a point double couple; Kode 500 is a point\n"
+"                  tensile/inflation source with potency in the two fields.\n"
+"                  .inr is restricted to Kode 100 rake/net-slip rows.\n"
 "                  Optional +i<dL>/<dW>: along-strike / along-dip\n"
 "                  subfault size (km). If omitted, both default to\n"
 "                  min(dr, dz) of the Green's function library\n"
@@ -435,7 +438,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 Ctrl->C.active = true;
                 {
                     Ctrl->computeType = GRT_SYN_DC;
-                    sprintf(Ctrl->s_computeType, "%s", "DC");
+                    sprintf(Ctrl->s_computeType, "%s", "FF");
                     char *optarg_copy = strdup(optarg);
                     char *filepath = strtok(optarg_copy, "+");
                     char *token = strtok(NULL, "+");
@@ -919,7 +922,7 @@ static void static_syn_from_gf_PS(
 
 
 /**
- * 单个有限断层：子源以 potency 传入，各 depsrc 邻点用对应 μ 合成后再 2D 组合
+ * 单个有限断层：按 Kode 拆分为 DC、TS、EX 源，再对各子源结果累加
  */
 static void static_syn_one_finite_fault(
     const STGRNLIB *lib, const FINITE_FAULT *fault,
@@ -929,13 +932,12 @@ static void static_syn_one_finite_fault(
     real_t (*syn)[GRT_CHANNEL_NUM],
     real_t (*syn_upar)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])
 {
-    real_t mchn[GRT_MECHANISM_NUM] = {0};
-    mchn[0] = fault->strike;
-    mchn[1] = fault->dip;
-    mchn[2] = fault->rake;
+    bool point_source = KODE_IS_POINT(fault->kode);
+    size_t loop_nW = point_source ? 1 : nW;
+    size_t loop_nL = point_source ? 1 : nL;
 
     // 按子源并行：各线程累加到私有缓冲，最后归约到 syn，避免对同一接收点写竞争
-    size_t nsub = nW * nL;
+    size_t nsub = loop_nW * loop_nL;
     #pragma omp parallel default(shared) if(nsub > 1)
     {
         real_t *rcv_norths = (real_t *)calloc(npts, sizeof(real_t));
@@ -947,24 +949,73 @@ static void static_syn_one_finite_fault(
                 npts, sizeof(real_t) * GRT_CHANNEL_NUM * GRT_CHANNEL_NUM);
 
         #pragma omp for collapse(2) schedule(guided)
-        for(size_t iW = 0; iW < nW; ++iW){
-            for(size_t iL = 0; iL < nL; ++iL){
+        for(size_t iW = 0; iW < loop_nW; ++iW){
+            for(size_t iL = 0; iL < loop_nL; ++iL){
                 FINITE_SUBFAULT sub;
-                grt_finite_fault_subfault(fault, dL, dW, W, L, iW, iL, &sub);
+                if(point_source){
+                    // 点源不随 +i 剖分，仍用有限断层面中心确定其位置和深度
+                    grt_finite_fault_subfault(fault, L, W, W, L, 0, 0, &sub);
+                } else {
+                    grt_finite_fault_subfault(fault, dL, dW, W, L, iW, iL, &sub);
+                }
 
                 for(size_t ipt = 0; ipt < npts; ++ipt){
                     rcv_norths[ipt] = norths[ipt] - sub.north;
                     rcv_easts[ipt] = easts[ipt] - sub.east;
                 }
 
-                static_syn_from_gf_PS(
-                    lib, sub.depsrc,
-                    npts, rcv_norths, rcv_easts, depths,
-                    shared_depth,
-                    GRT_SYN_DC, sub.potency, true, mchn,
-                    true, calc_upar,
-                    local_syn, local_syn_upar
-                );
+                real_t mchn[GRT_MECHANISM_NUM] = {0};
+                mchn[0] = fault->strike;
+                mchn[1] = fault->dip;
+                real_t area_scale = sub.width * sub.length * 1e12;
+
+                #define CALL_STATIC_SYN_FROM_GF_PS(source_type, m0) \
+                    static_syn_from_gf_PS( \
+                        lib, sub.depsrc, \
+                        npts, rcv_norths, rcv_easts, depths, \
+                        shared_depth, \
+                        source_type, m0, true, mchn, \
+                        true, calc_upar, \
+                        local_syn, local_syn_upar \
+                    )
+
+                if(fault->kode == KODE_RTLAT_REVERSE){
+                    mchn[2] = fault->rake;
+                    CALL_STATIC_SYN_FROM_GF_PS(GRT_SYN_DC, sub.potency);
+                } else if(fault->kode == KODE_RTLAT_TENSILE){
+                    if(fault->right_lateral != 0.0){
+                        mchn[2] = 180.0;
+                        CALL_STATIC_SYN_FROM_GF_PS(GRT_SYN_DC, fault->right_lateral * area_scale);
+                    }
+                    if(fault->tensile != 0.0){
+                        CALL_STATIC_SYN_FROM_GF_PS(GRT_SYN_TS, fault->tensile * area_scale);
+                    }
+                } else if(fault->kode == KODE_TENSILE_REVERSE){
+                    if(fault->tensile != 0.0){
+                        CALL_STATIC_SYN_FROM_GF_PS(GRT_SYN_TS, fault->tensile * area_scale);
+                    }
+                    if(fault->reverse != 0.0){
+                        mchn[2] = 90.0;
+                        CALL_STATIC_SYN_FROM_GF_PS(GRT_SYN_DC, fault->reverse * area_scale);
+                    }
+                } else if(fault->kode == KODE_POINT_DC){
+                    real_t potency = hypot(fault->right_lateral, fault->reverse) * 1e6;
+                    if(potency != 0.0){
+                        mchn[2] = fault->rake;
+                        CALL_STATIC_SYN_FROM_GF_PS(GRT_SYN_DC, potency);
+                    }
+                } else if(fault->kode == KODE_POINT_TENSILE_INFLATE){
+                    if(fault->tensile != 0.0){
+                        CALL_STATIC_SYN_FROM_GF_PS(GRT_SYN_TS, fault->tensile * 1e6);
+                    }
+                    if(fault->inflate != 0.0){
+                        CALL_STATIC_SYN_FROM_GF_PS(GRT_SYN_EX, fault->inflate * 1e6);
+                    }
+                } else {
+                    GRTRaiseError("unsupported Coulomb Kode=%u.", fault->kode);
+                }
+
+                #undef CALL_STATIC_SYN_FROM_GF_PS
             }
         }
 
@@ -1044,7 +1095,8 @@ static void static_syn_from_gf_FF(
         real_t W, L;
         size_t nW, nL;
         grt_finite_fault_subdiv(&f, dL, dW, &W, &L, &nW, &nL);
-        GRTRaiseInfo("finite fault[%zu/%zu]: nsubfaults = %zu", ifault + 1, nfault, nW * nL);
+        size_t nsub = KODE_IS_POINT(f.kode) ? 1 : nW * nL;
+        GRTRaiseInfo("finite fault[%zu/%zu]: nsubfaults = %zu", ifault + 1, nfault, nsub);
 
         static_syn_one_finite_fault(
             lib, &f, dL, dW, W, L, nW, nL,
@@ -1391,9 +1443,13 @@ int static_syn_main(int argc, char **argv){
     save_syn_nc(Ctrl->O.s_outgrid, Ctrl, lib, recv, depsrc, syn, syn_upar);
 
     if(!Ctrl->s.active){
-        GRTRaiseInfo(
-            "Synthetic static displacements of %s source saved in \"%s\".",
-            srcTypeFullName[Ctrl->computeType], Ctrl->O.s_outgrid);
+        if(Ctrl->isFiniteFault){
+            GRTRaiseInfo("Synthetic static displacements of Coulomb finite faults saved in \"%s\".", Ctrl->O.s_outgrid);
+        } else {
+            GRTRaiseInfo(
+                "Synthetic static displacements of %s source saved in \"%s\".",
+                srcTypeFullName[Ctrl->computeType], Ctrl->O.s_outgrid);
+        }
     }
 
     GRT_SAFE_FREE_PTR(syn);
