@@ -1020,15 +1020,13 @@ static bool okada_finite_singular(real_t q, real_t xi1, real_t xi2, real_t et1, 
  * @param[in]       xi      两个 X 方向角点坐标
  * @param[in]       et      两个倾向方向角点坐标
  * @param[in]       q       观测点到断层面的法向距离
- * @param[in]       kxi     X 方向对数项分支标志
- * @param[in]       ket     倾向方向对数项分支标志
  * @param[in]       disl1   走向滑动位错
  * @param[in]       disl2   倾向滑动位错
  * @param[in]       disl3   张裂位错
  * @param[in,out]   u       累加结果数组
  */
 static void okada_add_finite_real(const OKADA_MEDIUM *c,
-    real_t xi[2], real_t et[2], real_t q, int kxi[2], int ket[2],
+    real_t xi[2], real_t et[2], real_t q,
     real_t disl1, real_t disl2, real_t disl3, real_t u[12])
 {
     const real_t sd = c->sd, cd = c->cd;
@@ -1036,7 +1034,9 @@ static void okada_add_finite_real(const OKADA_MEDIUM *c,
         for(int j = 0; j < 2; ++j){
             OKADA_FINITE f;
             real_t dua[12], du[12];
-            DCCON2(c, &f, xi[j], et[k], q, kxi[k], ket[j]);
+            int kxi = xi[j] < 0.0 && q == 0.0 && et[k] == 0.0;
+            int ket = et[k] < 0.0 && q == 0.0 && xi[j] == 0.0;
+            DCCON2(c, &f, xi[j], et[k], q, kxi, ket);
             UA(c, &f, disl1, disl2, disl3, dua);
 
             for(int i = 0; i < 12; i += 3){
@@ -1063,15 +1063,13 @@ static void okada_add_finite_real(const OKADA_MEDIUM *c,
  * @param[in]       et      两个倾向方向角点坐标
  * @param[in]       q       观测点到断层面的法向距离
  * @param[in]       z       观测点 Z 坐标
- * @param[in]       kxi     X 方向对数项分支标志
- * @param[in]       ket     倾向方向对数项分支标志
  * @param[in]       disl1   走向滑动位错
  * @param[in]       disl2   倾向滑动位错
  * @param[in]       disl3   张裂位错
  * @param[in,out]   u       累加结果数组
  */
 static void okada_add_finite_image(const OKADA_MEDIUM *c,
-    real_t xi[2], real_t et[2], real_t q, real_t z, int kxi[2], int ket[2],
+    real_t xi[2], real_t et[2], real_t q, real_t z,
     real_t disl1, real_t disl2, real_t disl3, real_t u[12])
 {
     const real_t sd = c->sd, cd = c->cd;
@@ -1079,7 +1077,9 @@ static void okada_add_finite_image(const OKADA_MEDIUM *c,
         for(int j = 0; j < 2; ++j){
             OKADA_FINITE f;
             real_t dua[12], dub[12], duc[12], du[12];
-            DCCON2(c, &f, xi[j], et[k], q, kxi[k], ket[j]);
+            int kxi = xi[j] < 0.0 && q == 0.0 && et[k] == 0.0;
+            int ket = et[k] < 0.0 && q == 0.0 && xi[j] == 0.0;
+            DCCON2(c, &f, xi[j], et[k], q, kxi, ket);
             UA(c, &f, disl1, disl2, disl3, dua);
             UB(c, &f, disl1, disl2, disl3, dub);
             UC(c, &f, z, disl1, disl2, disl3, duc);
@@ -1133,8 +1133,6 @@ int grt_okada_dc3d(
     OKADA_MEDIUM c;
     real_t out[12];
     real_t xi[2], et[2];
-    int kxi[2] = {0, 0};
-    int ket[2] = {0, 0};
     int iret = 0;
 
     okada_zero_u(out);
@@ -1166,15 +1164,7 @@ int grt_okada_dc3d(
         return 1;
     }
 
-    real_t r12 = sqrt(xi[0]*xi[0]+et[1]*et[1]+q*q);
-    real_t r21 = sqrt(xi[1]*xi[1]+et[0]*et[0]+q*q);
-    real_t r22 = sqrt(xi[1]*xi[1]+et[1]*et[1]+q*q);
-    if(xi[0] < 0.0 && r21+xi[1] < OKADA_EPS) kxi[0] = 1;
-    if(xi[0] < 0.0 && r22+xi[1] < OKADA_EPS) kxi[1] = 1;
-    if(et[0] < 0.0 && r12+et[1] < OKADA_EPS) ket[0] = 1;
-    if(et[0] < 0.0 && r22+et[1] < OKADA_EPS) ket[1] = 1;
-
-    okada_add_finite_real(&c, xi, et, q, kxi, ket, disl1, disl2, disl3, out);
+    okada_add_finite_real(&c, xi, et, q, disl1, disl2, disl3, out);
 
     // 重新计算镜像断层面对应的角点坐标和分支标志
     d = depth - z;
@@ -1191,16 +1181,7 @@ int grt_okada_dc3d(
         return 1;
     }
 
-    kxi[0] = kxi[1] = ket[0] = ket[1] = 0;
-    r12 = sqrt(xi[0]*xi[0]+et[1]*et[1]+q*q);
-    r21 = sqrt(xi[1]*xi[1]+et[0]*et[0]+q*q);
-    r22 = sqrt(xi[1]*xi[1]+et[1]*et[1]+q*q);
-    if(xi[0] < 0.0 && r21+xi[1] < OKADA_EPS) kxi[0] = 1;
-    if(xi[0] < 0.0 && r22+xi[1] < OKADA_EPS) kxi[1] = 1;
-    if(et[0] < 0.0 && r12+et[1] < OKADA_EPS) ket[0] = 1;
-    if(et[0] < 0.0 && r22+et[1] < OKADA_EPS) ket[1] = 1;
-
-    okada_add_finite_image(&c, xi, et, q, z, kxi, ket, disl1, disl2, disl3, out);
+    okada_add_finite_image(&c, xi, et, q, z, disl1, disl2, disl3, out);
     okada_copy_output(out, u, upar);
     return iret;
 }

@@ -1,0 +1,37 @@
+This is an example for Coulomb 3.2.
+You can use first two lines (rows) for some comments or notes.
+#reg1=  0  #reg2=  0  #fixed=   3  sym=  1
+ PR1=       0.250     PR2=       0.250   DEPTH=       8.000
+  E1=      8.000e+05   E2=      8.000e+05
+XSYM=       .000     YSYM=       .000
+FRIC=          0.400
+S1DR=         89.900 S1DP=          0.000 S1IN=        100.000 S1GD=          0.000
+S2DR=         89.900 S2DP=         90.000 S2IN=         20.000 S2GD=          0.000
+S3DR=        179.900 S3DP=          0.000 S3IN=          0.000 S3GD=          0.000
+
+  #   X-start    Y-start     X-fin      Y-fin   Kode  rt.lat    reverse   dip angle     top      bot
+xxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx
+  1   -35.0000   -35.0100    35.0000    35.0100 100     2.0000     0.0000    90.0000     0.0000    12.0000    source test 1
+  1   -40.0000    -5.0100   -20.0100    25.0000 100     0.0000     0.0000    75.0000     5.0000    10.0000    receiver-1 test 1
+  1    39.1467    43.4480    49.4698    68.8256 100     0.0000     0.0000    45.0000     5.0000    10.0000    receiver-2 test 1
+
+    Grid Parameters
+  1  ----------------------------  Start-x =     -100.0000000
+  2  ----------------------------  Start-y =     -100.0000000
+  3  --------------------------   Finish-x =      100.0100021
+  4  --------------------------   Finish-y =      100.0100021
+  5  ------------------------  x-increment =        5.0000000
+  6  ------------------------  y-increment =        5.0000000
+     Size Parameters
+  1  --------------------------  Plot size =        1.0000000
+  2  --------------  Shade/Color increment =        0.2000000
+  3  ------  Exaggeration for disp.& dist. =    10000.0000000
+
+     Cross section default
+  1  ----------------------------  Start-x =       16.8000000
+  2  ----------------------------  Start-y =       23.6000000
+  3  --------------------------   Finish-x =       16.8000000
+  4  --------------------------   Finish-y =       25.2000000
+  5  ------------------  Distant-increment =        1.0000000
+  6  ----------------------------  Z-depth =      -30.0000000
+  7  ------------------------  Z-increment =        1.0000000

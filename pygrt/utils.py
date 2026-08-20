@@ -161,6 +161,8 @@ def compute_okada(
       when ``rake`` is also supplied
 
     A Coulomb-format finite-fault file can be passed through ``finite_fault``.
+    Its Kode column selects the rectangular or point-source interpretation of
+    the two slip columns; ``.inr`` is supported for Kode 100 rake/net-slip rows.
     The finite fault is evaluated directly as Okada rectangular patches, so no
     ``subfault_size`` subdivision option is needed.
 

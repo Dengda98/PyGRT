@@ -18,6 +18,9 @@
 /** 检查 dip ∈ (0, 90] 且 bot > top */
 static void check_fault_geometry(const FINITE_FAULT *f, const char *where)
 {
+    if(hypot(f->east_end - f->east_begin, f->north_end - f->north_begin) <= 0.0){
+        GRTRaiseError("%s: fault along-strike length must be positive.", where);
+    }
     if(f->dip <= 0.0 || f->dip > 90.0){
         GRTRaiseError("%s: dip (%.6g deg) must be in (0, 90].", where, f->dip);
     }
@@ -30,8 +33,54 @@ static void check_fault_geometry(const FINITE_FAULT *f, const char *where)
 void grt_finite_fault_set_derived(FINITE_FAULT *f)
 {
     f->strike = 1.0 / DEG1 * atan2(f->east_end - f->east_begin, f->north_end - f->north_begin);
-    f->rake = 1.0 / DEG1 * atan2(f->reverse, - f->right_lateral);
-    f->slip = hypot(f->right_lateral, f->reverse); // m
+    if(f->kode == KODE_POINT_TENSILE_INFLATE){
+        f->rake = 0.0;
+        f->slip = 0.0;
+    } else {
+        f->rake = 1.0 / DEG1 * atan2(f->reverse, -f->right_lateral);
+        f->slip = KODE_IS_POINT(f->kode) ? 0.0 : hypot(f->right_lateral, f->reverse);
+    }
+}
+
+/** 按 Kode 解释文件第 7、8 列 */
+static void set_fault_components(FINITE_FAULT *f, bool rake_format, const char *where)
+{
+    f->rake_format = rake_format;
+    if(rake_format && f->kode != KODE_RTLAT_REVERSE){
+        GRTRaiseError("%s: .inr rake/net slip format only supports Kode=100.", where);
+    }
+
+    switch(f->kode){
+        case KODE_RTLAT_REVERSE:
+            if(rake_format){
+                f->right_lateral = -f->value2 * cos(f->value1 * DEG1);
+                f->reverse = f->value2 * sin(f->value1 * DEG1);
+            } else {
+                f->right_lateral = f->value1;
+                f->reverse = f->value2;
+            }
+            break;
+        case KODE_RTLAT_TENSILE:
+            f->right_lateral = f->value1;
+            f->tensile = f->value2;
+            break;
+        case KODE_TENSILE_REVERSE:
+            f->tensile = f->value1;
+            f->reverse = f->value2;
+            break;
+        case KODE_POINT_DC:
+            f->right_lateral = f->value1;
+            f->reverse = f->value2;
+            break;
+        case KODE_POINT_TENSILE_INFLATE:
+            f->tensile = f->value1;
+            f->inflate = f->value2;
+            break;
+        default:
+            GRTRaiseError("%s: unsupported Coulomb Kode=%u, expected %u, %u, %u, %u or %u.", where,
+                f->kode, KODE_RTLAT_REVERSE, KODE_RTLAT_TENSILE, KODE_TENSILE_REVERSE,
+                KODE_POINT_DC, KODE_POINT_TENSILE_INFLATE);
+    }
 }
 
 
@@ -57,24 +106,50 @@ FINITE_FAULT *grt_finite_fault_load_coulomb(const char *path, size_t *nfault)
 
     FINITE_FAULT *faults = NULL;
     size_t n = 0;
+    size_t line_number = 2;
+    size_t path_length = strlen(path);
+    bool rake_format = path_length >= 4 && strcmp(path + path_length - 4, ".inr") == 0;
     while(grt_getline(&line, &nlen, fp) != -1){
-        faults = (FINITE_FAULT *)realloc(faults, sizeof(FINITE_FAULT) * (n + 1));
-        FINITE_FAULT *f = faults + n;
-        memset(f, 0, sizeof(*f));
+        ++line_number;
 
-        real_t dum1, dum2;
+        real_t dum1, kode_value;
+        real_t east_begin, north_begin, east_end, north_end;
+        real_t value1, value2, dip, top, bot;
         int nscan = sscanf(line, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",
-            &dum1, &f->east_begin, &f->north_begin, &f->east_end, &f->north_end,
-            &dum2, &f->right_lateral, &f->reverse, &f->dip, &f->top, &f->bot);
+            &dum1, &east_begin, &north_begin, &east_end, &north_end,
+            &kode_value, &value1, &value2, &dip, &top, &bot);
         if(nscan != 11){
             fclose(fp);
             GRT_SAFE_FREE_PTR(line);
             GRT_SAFE_FREE_PTR(faults);
-            GRTRaiseError("parse line %zu of %s failed.", n + 3, path);
+            GRTRaiseError("parse Coulomb fault data at line %zu of %s failed.", line_number, path);
         }
 
+        if(fabs(kode_value - round(kode_value)) > 1e-8 || kode_value < 0.0){
+            fclose(fp);
+            GRT_SAFE_FREE_PTR(line);
+            GRT_SAFE_FREE_PTR(faults);
+            GRTRaiseError("invalid Coulomb Kode at line %zu of %s.", line_number, path);
+        }
+
+        faults = (FINITE_FAULT *)realloc(faults, sizeof(FINITE_FAULT) * (n + 1));
+        FINITE_FAULT *f = faults + n;
+        memset(f, 0, sizeof(*f));
+
+        f->east_begin = east_begin;
+        f->north_begin = north_begin;
+        f->east_end = east_end;
+        f->north_end = north_end;
+        f->kode = (unsigned int)round(kode_value);
+        f->value1 = value1;
+        f->value2 = value2;
+        f->dip = dip;
+        f->top = top;
+        f->bot = bot;
+
         char where[256];
-        snprintf(where, sizeof(where), "in %s line %zu", path, n + 3);
+        snprintf(where, sizeof(where), "in %s line %zu", path, line_number);
+        set_fault_components(f, rake_format, where);
         check_fault_geometry(f, where);
 
         grt_finite_fault_set_derived(f);

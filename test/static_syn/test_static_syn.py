@@ -6,7 +6,7 @@ from scipy.io import netcdf_file
 
 depsrc = 2.0
 deprcv = 0.0
-dists = [0.0, 1.0, 2.0, 4.0, 8.0]
+dists = [0.0, 1.0, 2.0, 4.0, 8.0, 12.0]
 norths = [-2.0, 2.0, 0.5]
 easts = [-1.0, 1.0, 0.5]
 modname = "../milrow"
@@ -43,7 +43,7 @@ pymod_r.compute_static_syn(scale=1e20, output_path="stsyn_r.nc", norths=norths, 
 
 # -------------------- 多深度：点源 -Ds、深度插值、-Q、有限断层 --------------------
 pymod_m = pygrt.PyModel1D(stgrn="stgrn_md.nc", modelpath=modname)
-pymod_m.compute_static_grn(depsrc=[1.0, 2.0, 3.0], deprcv=0.0, dists=[0.0, 1.0, 2.0, 4.0, 8.0], calc_upar=True)
+pymod_m.compute_static_grn(depsrc=[1.0, 2.0, 3.0], deprcv=0.0, dists=dists, calc_upar=True)
 pymod_m.compute_static_syn(scale=1e16, output_path="stsyn_md.nc", depsrc=2.0, norths=norths, easts=easts, scale_with_mu=True)
 pymod_m.compute_static_syn(
     scale=1e16, output_path="stsyn_interp.nc", depsrc=1.5,
@@ -60,11 +60,6 @@ with netcdf_file("stsyn_q.nc", mmap=False) as f:
 
 ff = Path("cfaults_tiny.inp")
 # W=(2.8-1.2)/sin(90°)=1.6 km，dW=1 → 末块短于 dW，覆盖余数子断层中心
-ff.write_text(
-    "  #   X-start    Y-start     X-fin     Y-fin    Kode  shear(m)  reverse(m)  dip angle   top(km)   bot(km)\n"
-    "xxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxx  xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx\n"
-    "  1     0.0000     0.0000     2.0000     0.0000 100 0.1000     0.0000     90.00         1.2000    2.8000\n"
-)
 pymod_m.compute_static_syn(
     output_path="stsyn_ff.nc",
     finite_fault=ff,
@@ -72,6 +67,27 @@ pymod_m.compute_static_syn(
     norths=norths,
     easts=easts,
 )
+
+# The shared Coulomb fixtures cover every supported Kode and the .inr rake
+# format.  Besides checking that the files are accepted, require a finite
+# nonzero result so that a silently skipped source cannot pass the test.
+coulomb_kodes = Path("cfaults_kodes.inp")
+coulomb_rake = Path("cfaults_rake.inr")
+for output_path, finite_fault in [
+    ("stsyn_ff_kodes.nc", coulomb_kodes),
+    ("stsyn_ff_rake.nc", coulomb_rake),
+]:
+    pymod_m.compute_static_syn(
+        output_path=output_path,
+        finite_fault=finite_fault,
+        subfault_size=(1.0, 1.0),
+        norths=(-4.0, 4.0, 2.0),
+        easts=(-4.0, 4.0, 2.0),
+    )
+    with netcdf_file(output_path, mmap=False) as f:
+        z = f.variables["Z"].data
+        assert (z == z).all()
+        assert abs(z).max() > 0.0
 
 # 多台站深度必须给 deprcv
 pymod_mr = pygrt.PyModel1D(stgrn="stgrn_mr.nc", modelpath=modname)
@@ -98,11 +114,6 @@ except ValueError:
     pass
 
 bad_dip = Path("cfaults_bad_dip.inp")
-bad_dip.write_text(
-    "  #   X-start    Y-start     X-fin     Y-fin    Kode  shear(m)  reverse(m)  dip angle   top(km)   bot(km)\n"
-    "xxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxx  xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx\n"
-    "  1     0.0000     0.0000     2.0000     0.0000 100 0.1000     0.0000      0.00         1.2000    2.8000\n"
-)
 try:
     pymod_m.compute_static_syn(output_path="stsyn_bad.nc", finite_fault=bad_dip)
     raise AssertionError("dip=0 should fail in C")
@@ -110,11 +121,6 @@ except RuntimeError:
     pass
 
 bad_bot = Path("cfaults_bad_bot.inp")
-bad_bot.write_text(
-    "  #   X-start    Y-start     X-fin     Y-fin    Kode  shear(m)  reverse(m)  dip angle   top(km)   bot(km)\n"
-    "xxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxx  xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx\n"
-    "  1     0.0000     0.0000     2.0000     0.0000 100 0.1000     0.0000     90.00         2.8000    1.2000\n"
-)
 try:
     pymod_m.compute_static_syn(output_path="stsyn_bad.nc", finite_fault=bad_bot)
     raise AssertionError("bot < top should fail in C")
@@ -124,8 +130,10 @@ except RuntimeError:
 for name in [
     "stgrn.nc", "stgrn_r.nc", "stgrn_md.nc", "stgrn_mr.nc",
     "stsyn.nc", "stsyn_single_explicit.nc", "stsyn_r.nc",
-    "stsyn_md.nc", "stsyn_interp.nc", "stsyn_q.nc", "stsyn_ff.nc", "stsyn_dr.nc",
-    "rcv_pts.txt", "cfaults_tiny.inp", "cfaults_bad_dip.inp", "cfaults_bad_bot.inp",
+    "stsyn_md.nc", "stsyn_interp.nc", "stsyn_q.nc", "stsyn_ff.nc",
+    "stsyn_ff_kodes.nc", "stsyn_ff_rake.nc", "stsyn_dr.nc", "ff_kodes_q.nc",
+    "rcv_pts.txt", "cfaults_tiny.inp", "cfaults_kodes.inp", "cfaults_rake.inr",
+    "cfaults_bad_dip.inp", "cfaults_bad_bot.inp",
 ]:
     p = Path(name)
     if p.is_dir():
