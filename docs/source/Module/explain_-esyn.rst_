@@ -1,5 +1,3 @@
-.. _-e:
-
 **-e**
     在合成位移的同时，也合成其空间导数 
     :math:`\dfrac{\partial (u_z, u_r, u_\theta)}{\partial (z, r, \theta)}` 。
