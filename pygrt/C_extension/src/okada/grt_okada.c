@@ -528,6 +528,8 @@ static void add_finite_faults(const GRT_MODULE_CTRL *ctrl, const OKADA_MEDIUM_PA
             GRTRaiseError("unsupported Coulomb Kode=%u.", fault->kode);
         }
 
+        // 同一断层的各接收点只写入自身结果，断层之间保持串行累加
+        #pragma omp parallel for schedule(guided) default(shared) if(npts > 1)
         for(size_t i = 0; i < npts; ++i){
             real_t u[3], up[3][3], uw[3], dw[3][3];
             int iret;
@@ -572,6 +574,10 @@ static void add_finite_faults(const GRT_MODULE_CTRL *ctrl, const OKADA_MEDIUM_PA
             if(ctrl->e.active){
                 for(int d = 0; d < 3; ++d) for(int c = 0; c < 3; ++c) syn_d[i][d][c] += dw[d][c];
             }
+        }
+
+        if(!ctrl->s.active){
+            GRTRaiseInfo("finite fault[%zu/%zu]", nf + 1, ctrl->C.nfault);
         }
     }
 }
