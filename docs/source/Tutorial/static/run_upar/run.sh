@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# BEGIN
 set -euo pipefail
 
 rm -rf stgrn* stsyn* *.svg
 
+# BEGIN
 depsrc=2
 deprcv=0
 
@@ -15,6 +15,7 @@ dx=0.15
 y1=-2.5
 y2=2.5
 dy=0.15
+
 # -R 直接指定震中距，-e 表示计算空间导数
 grt static greenfn -Mmilrow -D${depsrc}/${deprcv} -R0/10/0.15 -e -Ostgrn.nc
 
