@@ -107,8 +107,8 @@ def plot6(st6:Stream, title:str, out:str|None=None):
 
 # --------------------------------------------------------------------------------------
 # BEGIN STRAIN
-# return_result=True 时按文件名前缀读回 strain_*.sac，避免与位移等混在一起
-st_strain = pygrt.utils.compute_strain("syn_dc_zne", return_result=True)
+pygrt.utils.compute_strain("syn_dc_zne")
+st_strain = read("syn_dc_zne/strain_*.sac")
 print(st_strain)
 # 6 Trace(s) in Stream:
 # .SYN..ZZ | ...
@@ -123,7 +123,8 @@ plot6(st_strain, "Strain", "strain.svg")
 
 # --------------------------------------------------------------------------------------
 # BEGIN ROTATION
-st_rotation = pygrt.utils.compute_rotation("syn_dc_zne", return_result=True)
+pygrt.utils.compute_rotation("syn_dc_zne")
+st_rotation = read("syn_dc_zne/rotation_*.sac")
 print(st_rotation)
 # 3 Trace(s) in Stream:
 # .SYN..ZN | ...
@@ -136,7 +137,8 @@ plot6(st_rotation, "Rotation", "rotation.svg")
 
 
 # BEGIN STRESS
-st_stress = pygrt.utils.compute_stress("syn_dc_zne", return_result=True)
+pygrt.utils.compute_stress("syn_dc_zne")
+st_stress = read("syn_dc_zne/stress_*.sac")
 print(st_stress)
 # 6 Trace(s) in Stream:
 # .SYN..ZZ | ...

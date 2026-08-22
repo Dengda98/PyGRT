@@ -48,157 +48,48 @@ Python中合成动态位移的主函数为 :meth:`compute_syn() <pygrt.pymod.PyM
 不同震源
 --------------
 
-C中指定格林函数路径有以下两种方式：
+CLI 和 Python 函数中根据设置的不同震源参数自动推断震源类型。
+一次只能设置一组震源专用参数，不完整或混用参数会报错。
 
-+ 直接将 **-G** 指向震中距10km的格林函数子目录，例如
-  ``-GGRN/milrow_2_0_10``。此时子目录已经确定了震源深度、台站深度和震中距，
-  不能再设置 **-Ds/-Dr/-R**。
-+ 将 **-G** 指向格林函数根目录，例如 ``-GGRN``，再使用必要的选项精确选择格林函数。
-  本例中震源深度和台站深度各只有一个值，因此 **-Ds/-Dr** 可以省略；这里显式设置
-  **-R10** 选择震中距为10km的子目录。
+脚本下载： :download:`Shell Scripts <run/run.sh>` | :download:`Python Scripts <run/run.py>`
 
-本节的C示例使用第一种方式，脚本中也以注释形式给出了第二种方式。
-Python示例使用上节构造的格林函数根目录，并根据 ``dist`` 查找对应的格林函数；
-当根目录的对应维度只有一个值时，相应的选择参数可以省略，也可以显式设置正确的值。
+.. tabs::
 
-Python 接口根据震源专用参数自动确定震源类型：不设置 ``strike``、``dip``、``rake``、
-``force`` 和 ``moment_tensor`` 时为爆炸源；设置
-``force`` 时为单力源；设置 ``moment_tensor`` 时为矩张量源；设置 ``strike`` 和
-``dip`` 时为张裂源，若同时设置 ``rake`` 则为剪切源。一次只能设置一组震源专用参数，
-不完整或混用参数会报错。
+    .. group-tab:: C
 
-以下绘图使用Python绘制，绘图函数如下：
+        C中指定格林函数路径有以下两种方式：
 
-.. literalinclude:: run/run.py
-    :language: python
-    :start-after: BEGIN plot func
-    :end-before: END plot func
+        + 直接将 **-G** 指向震中距10km的格林函数子目录，例如
+          ``-GGRN/milrow_2_0_10``。此时子目录已经确定了震源深度、台站深度和震中距，
+          不能再设置 **-Ds/-Dr/-R**。
+        + 将 **-G** 指向格林函数根目录，例如 ``-GGRN``，再使用必要的选项精确选择格林函数。
+          本例中震源深度和台站深度各只有一个值，因此 **-Ds/-Dr** 可以省略；这里显式设置
+          **-R10** 选择震中距为10km的子目录。
 
-
-爆炸源
-~~~~~~~~~~~~~~~~~
-标量矩 1e24 dyne·cm。
-
-.. tabs::  
-
-    .. group-tab:: C 
+        本节的C示例使用第一种方式，脚本中也以注释形式给出了第二种方式。
 
         .. literalinclude:: run/run.sh
             :language: bash
-            :start-after: BEGIN SYN EX
-            :end-before: END SYN EX
-
-    .. group-tab:: Python 
-
-        .. literalinclude:: run/run.py
-            :language: python
-            :start-after: BEGIN SYN EX
-            :end-before: END SYN EX
+            :start-after: BEGIN SYN SOURCES
+            :end-before: END SYN SOURCES
 
 
-.. figure:: run/syn_ex.svg
-   :align: center
+    .. group-tab:: Python
 
-
-
-单力源
-~~~~~~~~~~~~~~~~~
-北向力 :math:`f_N=1`，东向力 :math:`f_E=-0.5`，垂直向下的力 :math:`f_Z=2`，单位 1e16 dyne。
-
-.. tabs::  
-
-    .. group-tab:: C 
-
-        .. literalinclude:: run/run.sh
-            :language: bash
-            :start-after: BEGIN SYN SF
-            :end-before: END SYN SF
-
-    .. group-tab:: Python 
+        Python示例使用上节构造的格林函数根目录，并根据 ``dist`` 查找对应的格林函数；
+        当根目录的对应维度只有一个值时，相应的选择参数可以省略，也可以显式设置正确的值。
 
         .. literalinclude:: run/run.py
             :language: python
-            :start-after: BEGIN SYN SF
-            :end-before: END SYN SF
+            :start-after: BEGIN SYN SOURCES
+            :end-before: END SYN SOURCES
 
 
-.. figure:: run/syn_sf.svg
-   :align: center
-
-
-剪切源
-~~~~~~~~~~~~~~
-断层走向33°，倾角50°，滑动角120°，标量矩 1e24 dyne·cm。
-
-.. tabs::  
-
-    .. group-tab:: C 
-
-        .. literalinclude:: run/run.sh
-            :language: bash
-            :start-after: BEGIN SYN DC
-            :end-before: END SYN DC
-
-    .. group-tab:: Python 
-
-        .. literalinclude:: run/run.py
-            :language: python
-            :start-after: BEGIN SYN DC
-            :end-before: END SYN DC
-
-
-.. figure:: run/syn_dc.svg
-   :align: center
-
-
-张裂源
-~~~~~~~~~~~~~~
-断层走向33°，倾角50°，标量矩 1e24 dyne·cm。
-
-.. tabs::  
-
-    .. group-tab:: C 
-
-        .. literalinclude:: run/run.sh
-            :language: bash
-            :start-after: BEGIN SYN TS
-            :end-before: END SYN TS
-
-    .. group-tab:: Python 
-
-        .. literalinclude:: run/run.py
-            :language: python
-            :start-after: BEGIN SYN TS
-            :end-before: END SYN TS
-
-
-.. figure:: run/syn_ts.svg
-   :align: center
-
-
-矩张量源
-~~~~~~~~~~~~~~
-:math:`M_{xx}=0.1, M_{xy}=-0.2, M_{xz}=1.0, M_{yy}=0.3, M_{yz}=-0.5, M_{zz}=-2.0`，单位 1e24 dyne·cm， **其中X为北向，Y为东向，Z为垂直向下**。
-
-.. tabs::  
-
-    .. group-tab:: C 
-
-        .. literalinclude:: run/run.sh
-            :language: bash
-            :start-after: BEGIN SYN MT
-            :end-before: END SYN MT
-
-    .. group-tab:: Python 
-
-        .. literalinclude:: run/run.py
-            :language: python
-            :start-after: BEGIN SYN MT
-            :end-before: END SYN MT
-
-
-.. figure:: run/syn_mt.svg
-   :align: center
+.. figure:: run/syn_sources.svg
+    :align: center
+     
+    不同震源参数对应的 Z 分量位移
+     
 
 
 
