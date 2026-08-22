@@ -10,11 +10,38 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+#include <errno.h>
+#include <math.h>
 
 #include "grt/static/recv_points.h"
 #include "grt/common/checkerror.h"
 #include "grt/common/util.h"
 #include "grt/common/mynetcdf.h"
+
+/** 解析一行接收点数据，并返回有效数值列数 */
+static bool parse_receiver_point_line(
+    const char *line, real_t values[6], size_t *nvalues)
+{
+    const char *cursor = line;
+    *nvalues = 0;
+
+    while(true){
+        while(isspace((unsigned char)*cursor)) ++cursor;
+        if(*cursor == '\0' || *cursor == GRT_COMMENT_HEAD) break;
+        if(*nvalues >= 6) return false;
+
+        errno = 0;
+        char *end = NULL;
+        real_t value = strtod(cursor, &end);
+        if(end == cursor || errno == ERANGE || !isfinite(value)) return false;
+        values[*nvalues] = value;
+        (*nvalues)++;
+        cursor = end;
+    }
+
+    return *nvalues == 3 || *nvalues == 6;
+}
 
 GRT_RECV_POINTS *grt_recv_points_from_grid(
     size_t nnorth, const real_t *norths,
@@ -58,13 +85,37 @@ GRT_RECV_POINTS *grt_recv_points_from_file(const char *path)
         GRTRaiseError("Failed to open receiver points file \"%s\".", path);
     }
 
-    // 先统计有效行数
+    // 先统计有效行数并确定文件列数
     size_t npts = 0;
+    size_t ncolumns = 0;
     char *line = NULL;
     size_t nlen = 0;
+    size_t lineno = 0;
     while(grt_getline(&line, &nlen, fp) != -1){
+        lineno++;
         grt_trim_whitespace(line);
         if(grt_is_comment_or_empty(line)) continue;
+
+        real_t values[6];
+        size_t nvalues;
+        if(!parse_receiver_point_line(line, values, &nvalues)){
+            GRT_SAFE_FREE_PTR(line);
+            fclose(fp);
+            GRTRaiseError(
+                "Invalid receiver point at line %zu in \"%s\" "
+                "(expect exactly 3 or 6 numeric columns: "
+                "north east depth [strike dip rake]).",
+                lineno, path);
+        }
+        if(ncolumns != 0 && nvalues != ncolumns){
+            GRT_SAFE_FREE_PTR(line);
+            fclose(fp);
+            GRTRaiseError(
+                "Inconsistent receiver point column count at line %zu in \"%s\" "
+                "(all data lines must have either 3 or 6 columns).",
+                lineno, path);
+        }
+        ncolumns = nvalues;
         npts++;
     }
     if(npts == 0){
@@ -81,33 +132,46 @@ GRT_RECV_POINTS *grt_recv_points_from_file(const char *path)
     pts->norths = (real_t *)calloc(npts, sizeof(real_t));
     pts->easts  = (real_t *)calloc(npts, sizeof(real_t));
     pts->depths = (real_t *)calloc(npts, sizeof(real_t));
+    pts->has_geometry = ncolumns == 6;
+    if(pts->has_geometry){
+        pts->strikes = (real_t *)calloc(npts, sizeof(real_t));
+        pts->dips    = (real_t *)calloc(npts, sizeof(real_t));
+        pts->rakes   = (real_t *)calloc(npts, sizeof(real_t));
+    }
 
     rewind(fp);
     size_t ipt = 0;
-    size_t lineno = 0;
+    lineno = 0;
     while(grt_getline(&line, &nlen, fp) != -1){
         lineno++;
         grt_trim_whitespace(line);
         if(grt_is_comment_or_empty(line)) continue;
 
-        real_t n, e, d;
-        if(3 != sscanf(line, "%lf %lf %lf", &n, &e, &d)){
+        real_t values[6];
+        size_t nvalues;
+        if(!parse_receiver_point_line(line, values, &nvalues) || nvalues != ncolumns){
             GRT_SAFE_FREE_PTR(line);
             grt_recv_points_free(pts);
             fclose(fp);
             GRTRaiseError(
-                "Invalid receiver point at line %zu in \"%s\" (expect: north east depth).",
+                "Invalid receiver point at line %zu in \"%s\" "
+                "(expect the same 3 or 6 columns as the other data lines).",
                 lineno, path);
         }
-        if(d < 0.0){
+        if(values[2] < 0.0){
             GRT_SAFE_FREE_PTR(line);
             grt_recv_points_free(pts);
             fclose(fp);
             GRTRaiseError("Negative receiver depth at line %zu in \"%s\".", lineno, path);
         }
-        pts->norths[ipt] = n;
-        pts->easts[ipt]  = e;
-        pts->depths[ipt] = d;
+        pts->norths[ipt] = values[0];
+        pts->easts[ipt]  = values[1];
+        pts->depths[ipt] = values[2];
+        if(pts->has_geometry){
+            pts->strikes[ipt] = values[3];
+            pts->dips[ipt]    = values[4];
+            pts->rakes[ipt]   = values[5];
+        }
         ipt++;
     }
 
@@ -123,6 +187,9 @@ void grt_recv_points_free(GRT_RECV_POINTS *pts)
     GRT_SAFE_FREE_PTR(pts->norths);
     GRT_SAFE_FREE_PTR(pts->easts);
     GRT_SAFE_FREE_PTR(pts->depths);
+    GRT_SAFE_FREE_PTR(pts->strikes);
+    GRT_SAFE_FREE_PTR(pts->dips);
+    GRT_SAFE_FREE_PTR(pts->rakes);
     GRT_SAFE_FREE_PTR(pts);
 }
 

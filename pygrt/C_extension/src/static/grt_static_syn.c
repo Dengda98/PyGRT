@@ -253,9 +253,12 @@ printf("\n"
 "                 Mutually exclusive with -Q.\n"
 "\n"
 "    -Q<file>      Arbitrary receiver points from an ASCII file.\n"
-"                  Each line: north east depth (km); lines starting\n"
-"                  with # are comments. Mutually exclusive with\n"
-"                  -X/-Y and -Dr (depths come from the file).\n"
+"                  Each line contains north east depth (km), optionally\n"
+"                  followed by strike dip rake (degrees); lines starting\n"
+"                  with # are comments. If the three angles are present,\n"
+"                  they are saved as point variables but are not used in\n"
+"                  synthesis. Mutually exclusive with -X/-Y and -Dr\n"
+"                  (depths come from the file).\n"
 "\n"
 "    -N            Components of results will be Z, N, E.\n"
 "\n"
@@ -1254,6 +1257,7 @@ static void put_syn_points_meta(
     int point_dimid;
     int north_varid, east_varid, depth_varid;
     int rcv_va_varid, rcv_vb_varid, rcv_rho_varid;
+    int strike_varid = -1, dip_varid = -1, rake_varid = -1;
     int dimids[ndims];
 
     NC_CHECK(nc_def_dim(ncid, "point", recv->npts, &point_dimid));
@@ -1265,6 +1269,11 @@ static void put_syn_points_meta(
     NC_CHECK(nc_def_var(ncid, "rcv_va",  NC_REAL, ndims, dimids, &rcv_va_varid));
     NC_CHECK(nc_def_var(ncid, "rcv_vb",  NC_REAL, ndims, dimids, &rcv_vb_varid));
     NC_CHECK(nc_def_var(ncid, "rcv_rho", NC_REAL, ndims, dimids, &rcv_rho_varid));
+    if(recv->has_geometry){
+        NC_CHECK(nc_def_var(ncid, "strike", NC_REAL, ndims, dimids, &strike_varid));
+        NC_CHECK(nc_def_var(ncid, "dip",    NC_REAL, ndims, dimids, &dip_varid));
+        NC_CHECK(nc_def_var(ncid, "rake",   NC_REAL, ndims, dimids, &rake_varid));
+    }
 
     def_syn_channel_vars(ncid, ndims, dimids, chs, calc_upar, syn_varids, syn_upar_varids);
     NC_CHECK(nc_enddef(ncid));
@@ -1284,6 +1293,11 @@ static void put_syn_points_meta(
     NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, rcv_va_varid,  rcv_va));
     NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, rcv_vb_varid,  rcv_vb));
     NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, rcv_rho_varid, rcv_rho));
+    if(recv->has_geometry){
+        NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, strike_varid, recv->strikes));
+        NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, dip_varid,    recv->dips));
+        NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, rake_varid,   recv->rakes));
+    }
 
     GRT_SAFE_FREE_PTR(rcv_va);
     GRT_SAFE_FREE_PTR(rcv_vb);
