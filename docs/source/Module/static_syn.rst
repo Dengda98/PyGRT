@@ -95,13 +95,7 @@ static_syn
 
 .. include:: explain_-XYgrid.rst_
 
-.. _-Q:
-
-**-Q**\ *file*
-    从 ASCII 文件读取任意接收点。每行依次为北向坐标、东向坐标和接收深度 (km)，
-    以 ``#`` 开头的行作为注释。该选项与 **-X/-Y**、**-Dr** 互斥。
-
-    输出文件使用 ``points`` 布局，并保留每个接收点的 ``north``、``east`` 和 ``depth`` 变量。
+.. include:: explain_-Q.rst_
 
 .. include:: explain_-Cfault.rst_
 
