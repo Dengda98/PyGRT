@@ -753,7 +753,9 @@ class PyModel1D:
         Receivers default to the library north/east grid. Optionally redefine
         them with ``norths``/``easts`` (uniform ``deprcv`` when the library has
         multiple receiver depths), or with ``recv_points`` for an ASCII file of
-        arbitrary ``north east depth`` points (CLI ``-Q``). ``recv_points`` is
+        arbitrary ``north east depth`` points (CLI ``-Q``). Each row may append
+        ``strike dip rake`` in degrees; these angles are saved in the output but
+        are not used in synthesis. ``recv_points`` is
         mutually exclusive with ``norths``/``easts`` and ``deprcv``. If the
         library was built with ``dists`` / ``-R``, the default grid is a 1-D
         line (north = 0, east = R); set ``norths``/``easts`` or ``recv_points``
@@ -802,9 +804,11 @@ class PyModel1D:
                                      together with ``norths``. Mutually exclusive
                                      with ``recv_points``.
         :param    recv_points:       ASCII file of arbitrary receivers
-                                     (``north east depth`` in km; ``#`` comments).
-                                     Mutually exclusive with ``norths``/``easts``
-                                     and ``deprcv``.
+                                     (``north east depth`` in km, optionally
+                                     followed by ``strike dip rake`` in degrees;
+                                     ``#`` comments). All data rows must use the
+                                     same 3- or 6-column format. Mutually exclusive
+                                     with ``norths``/``easts`` and ``deprcv``.
         :param    output_path:       Output NetCDF file path.
         :param    scale:             Point-source scaling factor. For explosion,
                                      double-couple, tensile-crack and moment-tensor
