@@ -38,6 +38,11 @@
       - :doc:`changelog`
       - :doc:`copyright`
 
+.. note::
+
+   本文档内的所有示例脚本均在项目主页的
+   `docs/source <https://github.com/Dengda98/PyGRT/tree/main/docs/source>`_ 路径下，
+   可以克隆项目进行查看。
 
 .. note::
 
