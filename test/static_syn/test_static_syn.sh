@@ -57,6 +57,14 @@ cat > rcv_pts.txt <<'EOF'
 EOF
 grt static syn -Gstgrn_md.nc -Su1e16 -Ds2 -Qrcv_pts.txt -Ostsyn_q.nc
 
+cat > rcv_pts_6.txt <<'EOF'
+# north east depth strike dip rake
+0 0 0 10 20 30
+1 2 0 40 50 60
+-1 1 0 70 80 90
+EOF
+grt static syn -Gstgrn_md.nc -Su1e16 -Ds2 -Qrcv_pts_6.txt -Ostsyn_q6.nc
+
 # 多台站深度：必须 -Dr
 grt static greenfn -M../milrow -Ds2 -Dr0,0.5 -R0,5 -e -Ostgrn_mr.nc
 grt static syn -Gstgrn_mr.nc -S1e20 -Dr0.25 -X-2/2/1 -Y-2/2/1 -Ostsyn_dr.nc
@@ -135,5 +143,5 @@ expect_fail "finite fault bot must be greater than top" \
 
 python -u test_static_syn.py
 
-rm -rf *.nc rcv_pts.txt cfaults_tiny.inp cfaults_bad_dip.inp cfaults_bad_bot.inp
+rm -rf *.nc rcv_pts.txt rcv_pts_6.txt cfaults_tiny.inp cfaults_bad_dip.inp cfaults_bad_bot.inp
 rm -f cfaults_kodes.inp cfaults_rake.inr

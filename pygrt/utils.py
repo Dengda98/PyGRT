@@ -179,7 +179,9 @@ def compute_okada(
                                when ``recv_points`` is used
     :param    norths:           North grid range ``(start, stop, step)`` in km
     :param    easts:            East grid range ``(start, stop, step)`` in km
-    :param    recv_points:      ASCII receiver file with ``north east depth`` in km
+    :param    recv_points:      ASCII receiver file with either ``north east depth``
+                                or ``north east depth strike dip rake``; coordinates
+                                are in km and angles are in degrees
     :param    output_path:      Output NetCDF file path
     :param    scale:            Point-source scale in dyne-cm unless
                                ``scale_with_mu`` is true. Not used for finite faults

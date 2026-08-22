@@ -82,11 +82,7 @@ Okada 解是均匀弹性半空间中位错源产生静态变形的闭合解析�
 
 .. include:: explain_-XYgrid.rst_
 
-.. _-Q:
-
-**-Q**\ *file*
-    从 ASCII 文件读取任意接收点。每行依次为北向坐标、东向坐标和接收深度 (km)，
-    以 ``#`` 开头的行作为注释。该选项与 **-X**、**-Y** 和 **-Dr** 互斥。
+.. include:: explain_-Q.rst_
 
 .. include:: explain_rot2ZNE.rst_
 

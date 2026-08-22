@@ -161,7 +161,9 @@ printf("\n"
 "                  Mutually exclusive with -Q.\n"
 "\n"
 "    -Q<file>      Arbitrary receiver points from an ASCII file. Each line contains north east depth\n"
-"                  in km; lines beginning with # are comments. Mutually exclusive with -X/-Y/-Dr.\n"
+"                  in km, optionally followed by strike dip rake in degrees; lines beginning with\n"
+"                  # are comments. If present, the three angles are saved as point variables but\n"
+"                  are not used in the current calculation. Mutually exclusive with -X/-Y/-Dr.\n"
 "\n"
 "    -N            Output components are Z, N, E. Without -N, output is Z, R, T.\n"
 "\n"
@@ -639,6 +641,7 @@ static void save_nc(const GRT_MODULE_CTRL *ctrl, const OKADA_MEDIUM_PARAMS *medi
 
     int dimids[2], north_varid = -1, east_varid = -1, depth_varid = -1;
     int va_varid = -1, vb_varid = -1, rho_varid = -1;
+    int strike_varid = -1, dip_varid = -1, rake_varid = -1;
     int ndims;
     // 网格输出使用 north/east 两个维度，任意接收点使用 point 维度
     if(recv->is_grid){
@@ -660,6 +663,11 @@ static void save_nc(const GRT_MODULE_CTRL *ctrl, const OKADA_MEDIUM_PARAMS *medi
         NC_CHECK(nc_def_var(ncid, "rcv_va", NC_REAL, 1, dimids, &va_varid));
         NC_CHECK(nc_def_var(ncid, "rcv_vb", NC_REAL, 1, dimids, &vb_varid));
         NC_CHECK(nc_def_var(ncid, "rcv_rho", NC_REAL, 1, dimids, &rho_varid));
+        if(recv->has_geometry){
+            NC_CHECK(nc_def_var(ncid, "strike", NC_REAL, 1, dimids, &strike_varid));
+            NC_CHECK(nc_def_var(ncid, "dip",    NC_REAL, 1, dimids, &dip_varid));
+            NC_CHECK(nc_def_var(ncid, "rake",   NC_REAL, 1, dimids, &rake_varid));
+        }
     }
     define_channel_vars(ncid, ndims, dimids, channels, ctrl->e.active, vars, dvars);
     NC_CHECK(nc_enddef(ncid));
@@ -684,6 +692,11 @@ static void save_nc(const GRT_MODULE_CTRL *ctrl, const OKADA_MEDIUM_PARAMS *medi
         NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, va_varid, va));
         NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, vb_varid, vb));
         NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, rho_varid, rho));
+        if(recv->has_geometry){
+            NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, strike_varid, recv->strikes));
+            NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, dip_varid, recv->dips));
+            NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, rake_varid, recv->rakes));
+        }
         GRT_SAFE_FREE_PTR(va); GRT_SAFE_FREE_PTR(vb); GRT_SAFE_FREE_PTR(rho);
     }
 

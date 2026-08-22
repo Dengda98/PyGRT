@@ -20,9 +20,10 @@
 #define GRT_RECV_LAYOUT_POINTS "points"
 
 /**
- * 接收点坐标列表（三个分量各自连续存放）
+ * 接收点坐标列表（三个坐标分量各自连续存放）
  *
  * norths/easts/depths 长度均为 npts，单位 km
+ * 当输入文件包含接收断层几何时，strikes/dips/rakes 长度也均为 npts，单位为度
  * is_grid 为真时可由 nnorth/neast 还原二维网格，ipt = ieast + inorth*neast
  */
 typedef struct {
@@ -30,6 +31,11 @@ typedef struct {
     real_t *norths;
     real_t *easts;
     real_t *depths;
+
+    bool has_geometry;
+    real_t *strikes;
+    real_t *dips;
+    real_t *rakes;
 
     bool is_grid;
     size_t nnorth;
@@ -54,7 +60,8 @@ GRT_RECV_POINTS *grt_recv_points_from_grid(
 /**
  * 从 ASCII 文件读任意接收点（is_grid=false）
  *
- * 每行 north east depth (km)，# 开头为注释
+ * 每行可以是 north east depth (km)，也可以在其后增加
+ * strike dip rake (degree)，# 开头为注释
  *
  * @param[in]   path   文件路径
  * @return      新分配的 GRT_RECV_POINTS*
@@ -62,7 +69,7 @@ GRT_RECV_POINTS *grt_recv_points_from_grid(
 GRT_RECV_POINTS *grt_recv_points_from_file(const char *path);
 
 /**
- * 释放 GRT_RECV_POINTS（含 norths/easts/depths）
+ * 释放 GRT_RECV_POINTS（含坐标和可选接收断层几何）
  *
  * @param[in,out]  pts   可为 NULL
  */
