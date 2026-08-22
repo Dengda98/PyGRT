@@ -68,7 +68,8 @@ cat > cfaults_tiny.inp <<'EOF'
 xxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxx  xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx
   1     0.0000     0.0000     2.0000     0.0000 100 0.1000     0.0000     90.00         1.2000    2.8000
 EOF
-grt static syn -Gstgrn_md.nc -Ccfaults_tiny.inp+i1/1 -X-2/2/1 -Y-2/2/1 -Ostsyn_ff.nc
+grt static syn -Gstgrn_md.nc -Ccfaults_tiny.inp+i1/1 -e -X-2/2/1 -Y-2/2/1 -Ostsyn_ff_zrt_cli.nc
+grt static syn -Gstgrn_md.nc -Ccfaults_tiny.inp+i1/1 -N -e -X-2/2/1 -Y-2/2/1 -Ostsyn_ff_zne_cli.nc
 grt static syn -Gstgrn_md.nc -Ccfaults_tiny.inp+i1/1 -e -Qrcv_pts.txt -Ostsyn_ffq.nc
 
 # -------------------- Coulomb Kode 100/200/300/400/500 and .inr --------------------
