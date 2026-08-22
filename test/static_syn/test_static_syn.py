@@ -81,6 +81,16 @@ def assert_zne_zrt_equivalent(zne_path, zrt_path):
     for name, expected in converted.items():
         np.testing.assert_allclose(zne[name], expected, rtol=2.0e-11, atol=1.0e-12)
 
+
+def assert_receiver_geometry(path):
+    with netcdf_file(path, mmap=False) as dataset:
+        for name in ("strike", "dip", "rake"):
+            assert name in dataset.variables
+            assert dataset.variables[name].data.shape == (3,)
+        np.testing.assert_allclose(dataset.variables["strike"].data, [10.0, 40.0, 70.0])
+        np.testing.assert_allclose(dataset.variables["dip"].data, [20.0, 50.0, 80.0])
+        np.testing.assert_allclose(dataset.variables["rake"].data, [30.0, 60.0, 90.0])
+
 pymod = pygrt.PyModel1D(stgrn="stgrn.nc", modelpath=modname)
 pymod.compute_static_grn(depsrc=depsrc, deprcv=deprcv, dists=dists, calc_upar=True)
 
@@ -117,6 +127,7 @@ pymod_m.compute_static_grn(depsrc=[1.0, 2.0, 3.0], deprcv=0.0, dists=dists, calc
 
 # Compare the two CLI outputs generated above before exercising the Python API
 assert_zne_zrt_equivalent("stsyn_ff_zne_cli.nc", "stsyn_ff_zrt_cli.nc")
+assert_receiver_geometry("stsyn_q6.nc")
 
 pymod_m.compute_static_syn(scale=1e16, output_path="stsyn_md.nc", depsrc=2.0, norths=norths, easts=easts, scale_with_mu=True)
 pymod_m.compute_static_syn(
@@ -215,10 +226,10 @@ except RuntimeError:
 for name in [
     "stgrn.nc", "stgrn_r.nc", "stgrn_md.nc", "stgrn_mr.nc",
     "stsyn.nc", "stsyn_single_explicit.nc", "stsyn_r.nc",
-    "stsyn_md.nc", "stsyn_interp.nc", "stsyn_q.nc", "stsyn_ff.nc",
+    "stsyn_md.nc", "stsyn_interp.nc", "stsyn_q.nc", "stsyn_q6.nc", "stsyn_ff.nc",
     "stsyn_ff_zrt.nc", "stsyn_ff_zne.nc", "stsyn_ff_zrt_cli.nc", "stsyn_ff_zne_cli.nc",
     "stsyn_ff_kodes.nc", "stsyn_ff_rake.nc", "stsyn_dr.nc", "ff_kodes_q.nc",
-    "rcv_pts.txt", "cfaults_tiny.inp", "cfaults_kodes.inp", "cfaults_rake.inr",
+    "rcv_pts.txt", "rcv_pts_6.txt", "cfaults_tiny.inp", "cfaults_kodes.inp", "cfaults_rake.inr",
     "cfaults_bad_dip.inp", "cfaults_bad_bot.inp",
 ]:
     p = Path(name)

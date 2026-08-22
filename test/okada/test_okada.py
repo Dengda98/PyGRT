@@ -74,9 +74,20 @@ def assert_zne_zrt_equivalent(zne_path, zrt_path):
         np.testing.assert_allclose(zne[name], expected, rtol=2.0e-11, atol=1.0e-12)
 
 
+def assert_receiver_geometry(path):
+    fields, _ = read_okada_fields(path)
+    for name in ("strike", "dip", "rake"):
+        assert name in fields
+        assert fields[name].shape == (3,)
+    np.testing.assert_allclose(fields["strike"], [10.0, 40.0, 70.0])
+    np.testing.assert_allclose(fields["dip"], [20.0, 50.0, 80.0])
+    np.testing.assert_allclose(fields["rake"], [30.0, 60.0, 90.0])
+
+
 def main():
     # The shell commands above provide direct CLI coverage for both output modes
     assert_zne_zrt_equivalent("okada_ff_zne_cli.nc", "okada_ff_zrt_cli.nc")
+    assert_receiver_geometry("okada_q6.nc")
 
     compute_okada(
         modelparams=(6.0, 3.464, 2.7),
