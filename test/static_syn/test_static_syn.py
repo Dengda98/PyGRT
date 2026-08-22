@@ -1,6 +1,7 @@
 import shutil
 from pathlib import Path
 
+import numpy as np
 import pygrt
 from scipy.io import netcdf_file
 
@@ -10,6 +11,75 @@ dists = [0.0, 1.0, 2.0, 4.0, 8.0, 12.0]
 norths = [-2.0, 2.0, 0.5]
 easts = [-1.0, 1.0, 0.5]
 modname = "../milrow"
+
+
+def read_static_fields(path):
+    with netcdf_file(path, mmap=False) as dataset:
+        variables = {
+            name: np.array(variable.data, dtype=np.float64, copy=True)
+            for name, variable in dataset.variables.items()
+        }
+        attributes = {
+            name: getattr(dataset, name)
+            for name in ("rot2ZNE", "calc_upar")
+            if hasattr(dataset, name)
+        }
+    return variables, attributes
+
+
+def assert_zne_zrt_equivalent(zne_path, zrt_path):
+    zne, zne_attributes = read_static_fields(zne_path)
+    zrt, zrt_attributes = read_static_fields(zrt_path)
+    assert zne_attributes["rot2ZNE"] == 1
+    assert zrt_attributes["rot2ZNE"] == 0
+    assert zne_attributes["calc_upar"] == 1
+    assert zrt_attributes["calc_upar"] == 1
+    np.testing.assert_allclose(zne["north"], zrt["north"], rtol=0.0, atol=0.0)
+    np.testing.assert_allclose(zne["east"], zrt["east"], rtol=0.0, atol=0.0)
+
+    north = zrt["north"][:, None]
+    east = zrt["east"][None, :]
+    distance = np.hypot(north, east)
+    theta = np.where(distance == 0.0, 0.0, np.arctan2(east, north))
+    cosine = np.cos(theta)
+    sine = np.sin(theta)
+
+    np.testing.assert_allclose(zne["Z"], zrt["Z"], rtol=1.0e-12, atol=1.0e-12)
+    np.testing.assert_allclose(
+        zne["N"], zrt["R"] * cosine - zrt["T"] * sine,
+        rtol=1.0e-12, atol=1.0e-12,
+    )
+    np.testing.assert_allclose(
+        zne["E"], zrt["R"] * sine + zrt["T"] * cosine,
+        rtol=1.0e-12, atol=1.0e-12,
+    )
+
+    r = distance * 1.0e5
+    s00, s01, s02 = zrt["zZ"], zrt["zR"], zrt["zT"]
+    s10, s11, s12 = zrt["rZ"], zrt["rR"], zrt["rT"]
+    s20, s21, s22 = zrt["tZ"], zrt["tR"], zrt["tT"]
+    ur_over_r = np.array(s11, copy=True)
+    ut_over_r = np.array(s12, copy=True)
+    nonzero = r != 0.0
+    ur_over_r[nonzero] = zrt["R"][nonzero] / r[nonzero]
+    ut_over_r[nonzero] = zrt["T"][nonzero] / r[nonzero]
+    converted = {
+        "zZ": s00,
+        "zN": s01 * cosine - s02 * sine,
+        "zE": s01 * sine + s02 * cosine,
+        "nZ": s10 * cosine - s20 * sine,
+        "eZ": s10 * sine + s20 * cosine,
+        "nN": s11 * cosine**2 + s22 * sine**2 - (s12 + s21) * sine * cosine
+        + ur_over_r * sine**2 + ut_over_r * sine * cosine,
+        "nE": s12 * cosine**2 - s21 * sine**2 + (s11 - s22) * sine * cosine
+        - ur_over_r * sine * cosine + ut_over_r * sine**2,
+        "eN": s21 * cosine**2 - s12 * sine**2 + (s11 - s22) * sine * cosine
+        - ur_over_r * sine * cosine - ut_over_r * cosine**2,
+        "eE": s22 * cosine**2 + s11 * sine**2 + (s12 + s21) * sine * cosine
+        + ur_over_r * cosine**2 - ut_over_r * sine * cosine,
+    }
+    for name, expected in converted.items():
+        np.testing.assert_allclose(zne[name], expected, rtol=2.0e-11, atol=1.0e-12)
 
 pymod = pygrt.PyModel1D(stgrn="stgrn.nc", modelpath=modname)
 pymod.compute_static_grn(depsrc=depsrc, deprcv=deprcv, dists=dists, calc_upar=True)
@@ -44,6 +114,10 @@ pymod_r.compute_static_syn(scale=1e20, output_path="stsyn_r.nc", norths=norths, 
 # -------------------- 多深度：点源 -Ds、深度插值、-Q、有限断层 --------------------
 pymod_m = pygrt.PyModel1D(stgrn="stgrn_md.nc", modelpath=modname)
 pymod_m.compute_static_grn(depsrc=[1.0, 2.0, 3.0], deprcv=0.0, dists=dists, calc_upar=True)
+
+# Compare the two CLI outputs generated above before exercising the Python API
+assert_zne_zrt_equivalent("stsyn_ff_zne_cli.nc", "stsyn_ff_zrt_cli.nc")
+
 pymod_m.compute_static_syn(scale=1e16, output_path="stsyn_md.nc", depsrc=2.0, norths=norths, easts=easts, scale_with_mu=True)
 pymod_m.compute_static_syn(
     scale=1e16, output_path="stsyn_interp.nc", depsrc=1.5,
@@ -61,12 +135,23 @@ with netcdf_file("stsyn_q.nc", mmap=False) as f:
 ff = Path("cfaults_tiny.inp")
 # W=(2.8-1.2)/sin(90°)=1.6 km，dW=1 → 末块短于 dW，覆盖余数子断层中心
 pymod_m.compute_static_syn(
-    output_path="stsyn_ff.nc",
+    output_path="stsyn_ff_zrt.nc",
     finite_fault=ff,
     subfault_size=(1.0, 1.0),
     norths=norths,
     easts=easts,
+    calc_upar=True,
 )
+pymod_m.compute_static_syn(
+    output_path="stsyn_ff_zne.nc",
+    finite_fault=ff,
+    subfault_size=(1.0, 1.0),
+    norths=norths,
+    easts=easts,
+    zne=True,
+    calc_upar=True,
+)
+assert_zne_zrt_equivalent("stsyn_ff_zne.nc", "stsyn_ff_zrt.nc")
 
 # The shared Coulomb fixtures cover every supported Kode and the .inr rake
 # format.  Besides checking that the files are accepted, require a finite
@@ -131,6 +216,7 @@ for name in [
     "stgrn.nc", "stgrn_r.nc", "stgrn_md.nc", "stgrn_mr.nc",
     "stsyn.nc", "stsyn_single_explicit.nc", "stsyn_r.nc",
     "stsyn_md.nc", "stsyn_interp.nc", "stsyn_q.nc", "stsyn_ff.nc",
+    "stsyn_ff_zrt.nc", "stsyn_ff_zne.nc", "stsyn_ff_zrt_cli.nc", "stsyn_ff_zne_cli.nc",
     "stsyn_ff_kodes.nc", "stsyn_ff_rake.nc", "stsyn_dr.nc", "ff_kodes_q.nc",
     "rcv_pts.txt", "cfaults_tiny.inp", "cfaults_kodes.inp", "cfaults_rake.inr",
     "cfaults_bad_dip.inp", "cfaults_bad_bot.inp",

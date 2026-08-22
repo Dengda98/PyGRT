@@ -164,7 +164,7 @@ printf("\n"
 "    # Finite faults (Coulomb format)\n"
 "    grt static syn -G<ingrid.nc> -C<path>[+i<dL>/<dW>] -O<outgrid>\n"
 "              [-Dr<deprcv>] [-X<x1>/<x2>/<dx>] [-Y<y1>/<y2>/<dy>] | [-Q<file>]\n"
-"              [-e] [-s]\n"
+"              [-N] [-e] [-s]\n"
 "\n"
 "    -G always points to a single 4D STGRNLIB nc file.\n"
 "    Depth options (without -Q) depend on the library shape:\n"
@@ -233,7 +233,6 @@ printf("\n"
 "                  subfault size (km). If omitted, both default to\n"
 "                  min(dr, dz) of the Green's function library\n"
 "                  (epicentral-distance and source-depth sampling).\n"
-"                  Automatically enables -N (ZNE output).\n"
 "                  Each fault: dip in (0, 90], bot > top (km).\n"
 "                  Receiver locations default to the library grid;\n"
 "                  optional -X/-Y or -Q to redefine.\n"
@@ -580,11 +579,6 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     // -Q 时深度来自文件，禁止 -Dr
     if(Ctrl->Q.active && Ctrl->D.r_active){
         GRTRaiseError("Do not set -Dr with -Q; receiver depths come from the points file.\n");
-    }
-
-    // 有限断层：自动启用 -N；接收点默认延用库坐标，可用 -X/-Y 或 -Q 覆盖
-    if(isFiniteFault){
-        Ctrl->N.active = true;
     }
 
     Ctrl->isPointSource = isPointSource;
@@ -1437,6 +1431,19 @@ int static_syn_main(int argc, char **argv){
             recv->npts, recv->norths, recv->easts, recv->depths,
             recv->is_grid, Ctrl->e.active,
             syn, syn_upar);
+
+        // 有限断层先在全局 ZNE 中累加，再按 -N 决定最终保存的坐标系
+        if(!Ctrl->N.active){
+            for(size_t i = 0; i < recv->npts; ++i){
+                real_t dist = hypot(recv->norths[i], recv->easts[i]);
+                real_t theta = GRT_IS_ZERO(dist) ? 0.0 : atan2(recv->easts[i], recv->norths[i]);
+                if(Ctrl->e.active){
+                    grt_rot_zxy2zrt_upar(theta, syn[i], syn_upar[i], dist * 1e5);
+                } else {
+                    grt_rot_zxy2zrt_vec(theta, syn[i]);
+                }
+            }
+        }
     }
 
     // 写出 nc（接收介质只在此处按布局查询，不参与合成）

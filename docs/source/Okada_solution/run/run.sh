@@ -15,7 +15,7 @@ grt okada -I6/3.464/2.7 -Su1e12 -Ds5 -Dr0 -M33/44/55 -N -e -X-5/5/0.2 -Y-5/5/0.2
 # END POINT
 
 # BEGIN FINITE
-grt okada -I6/3.464/2.7 -Cfaults.inp -Dr0 -e -X-10/10/0.2 -Y-10/10/0.2 -Ookada_finite.nc
+grt okada -I6/3.464/2.7 -Cfaults.inp -Dr0 -N -e -X-10/10/0.2 -Y-10/10/0.2 -Ookada_finite.nc
 # END FINITE
 
 python plot.py

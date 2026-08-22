@@ -90,8 +90,6 @@ Okada 解是均匀弹性半空间中位错源产生静态变形的闭合解析�
 
 .. include:: explain_rot2ZNE.rst_
 
-有限断层模式自动输出 Z、N、E 分量。
-
 .. include:: explain_-esyn.rst_
 
 .. include:: explain_-silent.rst_

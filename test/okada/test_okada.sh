@@ -17,10 +17,12 @@ grt okada -I6/3.464/2.7 -Su1e12 -Ds50 -Dr0 -X-5/5/0.5 -Y-5/5/0.5 -Ookada_ex.nc
 grt okada -I6/3.464/2.7 -Su1e12 -Ds10 -Dr10 -X0/0/1 -Y0/0/1 -Ookada_singular.nc
 grt okada -I6/3.464/2.7 -Su1e16 -Ds10 -Dr0 -M100/20/80 -N -e -X-5/5/0.5 -Y-5/5/0.5 -Ookada_dc.nc
 grt okada -I6/3.464/2.7 -Su1e16 -Ds10 -Dr0 -M100/20 -N -X-5/5/0.5 -Y-5/5/0.5 -Ookada_ts.nc
-grt okada -I6/3.464/2.7 -Ccfaults.inp -Dr0 -N -e -X-5/5/0.5 -Y-5/5/0.5 -Ookada_ff.nc
+grt okada -I6/3.464/2.7 -Ccfaults.inp -Dr0 -e -X-5/5/0.5 -Y-5/5/0.5 -Ookada_ff_zrt_cli.nc
+grt okada -I6/3.464/2.7 -Ccfaults.inp -Dr0 -N -e -X-5/5/0.5 -Y-5/5/0.5 -Ookada_ff_zne_cli.nc
 
 python -u test_okada.py
 
 echo "test_okada.sh: all checks passed"
 
-rm -rf okada_ex.nc okada_singular.nc okada_dc.nc okada_ts.nc okada_ff.nc okada_python.nc okada_python_ff.nc cfaults.inp
+rm -rf okada_ex.nc okada_singular.nc okada_dc.nc okada_ts.nc okada_ff_zrt_cli.nc okada_ff_zne_cli.nc \
+    okada_python.nc okada_python_ff.nc okada_python_ff_zrt.nc okada_python_ff_zne.nc cfaults.inp

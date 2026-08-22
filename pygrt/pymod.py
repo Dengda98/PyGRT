@@ -769,7 +769,7 @@ class PyModel1D:
         CLI ``-C``) instead. Its ``Kode`` column selects rectangular shear/
         tensile sources or point shear/expansion sources; ``.inr`` is supported
         for Kode 100 rake/net-slip rows. That path requires a multi-source-depth
-        library, automatically writes ZNE, and rejects point-source options.
+        library and rejects point-source options.
 
         For each target receiver, the C module first synthesizes results at the
         surrounding epicentral-distance samples and combines those synthesized
@@ -843,7 +843,6 @@ class PyModel1D:
                                      subdivision along strike / dip. If omitted,
                                      the C code uses ``min(dr, dz)`` of the library.
         :param    zne:               If true, output ZNE instead of ZRT components.
-                                     Finite faults always write ZNE.
         :param    calc_upar:         If true, also synthesize spatial derivatives of
                                      displacement. Derivative variable names use
                                      prefixes ``z``/``r``/``t`` (ZRT) or

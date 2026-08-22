@@ -122,13 +122,12 @@ printf("\n"
 "\n"
 "    # Finite faults in Coulomb format\n"
 "    grt okada -I<vp>/<vs>/<rho> -C<path> -Dr<deprcv> -O<outgrid>\n"
-"              [-X<x1>/<x2>/<dx> -Y<y1>/<y2>/<dy> | -Q<file>] [-e] [-s]\n"
+"              [-X<x1>/<x2>/<dx> -Y<y1>/<y2>/<dy> | -Q<file>] [-N] [-e] [-s]\n"
 "\n"
 "    -I specifies <vp>/<vs>/<rho> for a homogeneous elastic half-space.\n"
 "    -C evaluates each Coulomb fault row as one exact rectangular Okada fault.\n"
 "    The direct rectangular solution does not use the static-syn +i subdivision suffix.\n"
 "    Point-source -Ds is required. Grid receivers require -Dr; -Q provides receiver depths.\n"
-"    Finite-fault output automatically uses Z, N, E components.\n"
 "\n"
 "Options:\n"
 "----------------------------------------------------------------\n"
@@ -152,7 +151,6 @@ printf("\n"
 "                  Kode 100/200/300 select rectangular shear/tensile components;\n"
 "                  Kode 400/500 select point sources at the fault-plane center.\n"
 "                  Positive Coulomb right-lateral slip is converted to negative Okada strike-slip\n"
-"                  dislocation. The finite-fault output is automatically rotated to ZNE.\n"
 "\n"
 "    -X<x1>/<x2>/<dx>\n"
 "                  Set equidistant receiver points in the north direction, in km.\n"
@@ -165,7 +163,7 @@ printf("\n"
 "    -Q<file>      Arbitrary receiver points from an ASCII file. Each line contains north east depth\n"
 "                  in km; lines beginning with # are comments. Mutually exclusive with -X/-Y/-Dr.\n"
 "\n"
-"    -N            Output components are Z, N, E. Without -N, point-source output is Z, R, T.\n"
+"    -N            Output components are Z, N, E. Without -N, output is Z, R, T.\n"
 "\n"
 "    -e            Also output displacement derivatives as nc variables with prefixes z/r/t or z/n/e.\n"
 "                  The derivative output can be used by static strain / stress / rotation modules.\n"
@@ -343,7 +341,6 @@ static void parse_command(GRT_MODULE_CTRL *ctrl, int argc, char **argv)
     if(!ctrl->Q.active && (!ctrl->X.active || !ctrl->Y.active || !ctrl->Drcv.active)){
         GRTRaiseError("Grid receivers require -X, -Y and -Dr, or use -Q<file>.\n");
     }
-    if(ctrl->C.active) ctrl->N.active = true;
 }
 
 /** 根据规则网格或接收点文件构造接收点数组 */
@@ -727,6 +724,18 @@ int okada_main(int argc, char **argv)
     // 按源类型计算位移场
     if(ctrl->C.active){
         add_finite_faults(ctrl, &medium, recv->npts, recv->norths, recv->easts, recv->depths, syn, syn_d);
+        // 有限断层先在全局 ZNE 中累加，再按 -N 决定最终保存的坐标系
+        if(!ctrl->N.active){
+            for(size_t i = 0; i < recv->npts; ++i){
+                real_t dist = hypot(recv->norths[i], recv->easts[i]);
+                real_t theta = GRT_IS_ZERO(dist) ? 0.0 : atan2(recv->easts[i], recv->norths[i]);
+                if(ctrl->e.active){
+                    grt_rot_zxy2zrt_upar(theta, syn[i], syn_d[i], dist * 1e5);
+                } else {
+                    grt_rot_zxy2zrt_vec(theta, syn[i]);
+                }
+            }
+        }
     } else {
         add_point_source(ctrl, &medium, recv->npts, recv->norths, recv->easts, recv->depths, syn, syn_d);
     }
