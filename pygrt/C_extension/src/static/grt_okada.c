@@ -87,17 +87,17 @@ static const real_t OKADA_SINGULAR_OFFSET = 1.0e-4;
 
 /** 释放命令行参数结构体及其动态分配的成员
  *
- * @param[in,out] ctrl  命令行参数结构体
+ * @param[in,out] Ctrl  命令行参数结构体
  */
-static void free_ctrl(GRT_MODULE_CTRL *ctrl)
+static void free_Ctrl(GRT_MODULE_CTRL *Ctrl)
 {
-    if(ctrl == NULL) return;
-    GRT_SAFE_FREE_PTR(ctrl->Q.path);
-    GRT_SAFE_FREE_PTR(ctrl->O.path);
-    GRT_SAFE_FREE_PTR(ctrl->X.values);
-    GRT_SAFE_FREE_PTR(ctrl->Y.values);
-    grt_finite_fault_free(ctrl->C.faults);
-    free(ctrl);
+    if(Ctrl == NULL) return;
+    GRT_SAFE_FREE_PTR(Ctrl->Q.path);
+    GRT_SAFE_FREE_PTR(Ctrl->O.path);
+    GRT_SAFE_FREE_PTR(Ctrl->X.values);
+    GRT_SAFE_FREE_PTR(Ctrl->Y.values);
+    grt_finite_fault_free(Ctrl->C.faults);
+    free(Ctrl);
 }
 
 /** 打印使用说明 */
@@ -218,11 +218,11 @@ static void parse_axis(const char *text, char option, size_t *n, real_t **values
 
 /** 读取并检查 Okada 模块的命令行参数
  *
- * @param[out]  ctrl    保存解析结果的参数结构体
+ * @param[out]  Ctrl    保存解析结果的参数结构体
  * @param[in]   argc    命令行参数数量
  * @param[in]   argv    命令行参数数组
  */
-static void parse_command(GRT_MODULE_CTRL *ctrl, int argc, char **argv)
+static void parse_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
 {
     int opt;
     while((opt = getopt(argc, argv, ":I:O:S:M:C:X:Y:D:Q:Nesh")) != -1){
@@ -230,43 +230,43 @@ static void parse_command(GRT_MODULE_CTRL *ctrl, int argc, char **argv)
             // 读取均匀半空间介质参数
             case 'I': {
                 char extra;
-                if(sscanf(optarg, "%lf/%lf/%lf%c", &ctrl->I.vp, &ctrl->I.vs, &ctrl->I.rho, &extra) != 3){
+                if(sscanf(optarg, "%lf/%lf/%lf%c", &Ctrl->I.vp, &Ctrl->I.vs, &Ctrl->I.rho, &extra) != 3){
                     GRTBadOptionError(I, "expected vp/vs/rho.");
                 }
-                ctrl->I.active = true;
+                Ctrl->I.active = true;
                 break;
             }
             // 设置输出 nc 文件
             case 'O':
-                ctrl->O.active = true;
-                ctrl->O.path = strdup(optarg);
+                Ctrl->O.active = true;
+                Ctrl->O.path = strdup(optarg);
                 break;
             // 设置点源放大系数
             case 'S': {
-                ctrl->S.active = true;
+                Ctrl->S.active = true;
                 char *value = optarg;
                 if(value[0] == 'u'){
-                    ctrl->S.mult_src_mu = true;
+                    Ctrl->S.mult_src_mu = true;
                     value++;
                 }
-                if(*value == '\0' || sscanf(value, "%lf", &ctrl->S.value) != 1){
+                if(*value == '\0' || sscanf(value, "%lf", &Ctrl->S.value) != 1){
                     GRTBadOptionError(S, "");
                 }
                 break;
             }
             // 设置点源走向、倾角和滑动角
             case 'M': {
-                int nscan = sscanf(optarg, "%lf/%lf/%lf", &ctrl->M.strike, &ctrl->M.dip, &ctrl->M.rake);
+                int nscan = sscanf(optarg, "%lf/%lf/%lf", &Ctrl->M.strike, &Ctrl->M.dip, &Ctrl->M.rake);
                 if(nscan != 2 && nscan != 3) GRTBadOptionError(M, "expected strike/dip[/rake].");
-                ctrl->M.active = true;
-                ctrl->M.has_rake = nscan == 3;
-                if(ctrl->M.strike < 0.0 || ctrl->M.strike > 360.0){
+                Ctrl->M.active = true;
+                Ctrl->M.has_rake = nscan == 3;
+                if(Ctrl->M.strike < 0.0 || Ctrl->M.strike > 360.0){
                     GRTBadOptionError(M, "strike must be in [0, 360].");
                 }
-                if(ctrl->M.dip < 0.0 || ctrl->M.dip > 90.0){
+                if(Ctrl->M.dip < 0.0 || Ctrl->M.dip > 90.0){
                     GRTBadOptionError(M, "dip must be in [0, 90].");
                 }
-                if(ctrl->M.has_rake && (ctrl->M.rake < -180.0 || ctrl->M.rake > 180.0)){
+                if(Ctrl->M.has_rake && (Ctrl->M.rake < -180.0 || Ctrl->M.rake > 180.0)){
                     GRTBadOptionError(M, "rake must be in [-180, 180].");
                 }
                 break;
@@ -276,34 +276,34 @@ static void parse_command(GRT_MODULE_CTRL *ctrl, int argc, char **argv)
                 if(strchr(optarg, '+') != NULL){
                     GRTBadOptionError(C, "subdivision suffix is not used by the direct rectangular Okada solution.");
                 }
-                ctrl->C.active = true;
-                ctrl->C.faults = grt_finite_fault_load_coulomb(optarg, &ctrl->C.nfault);
+                Ctrl->C.active = true;
+                Ctrl->C.faults = grt_finite_fault_load_coulomb(optarg, &Ctrl->C.nfault);
                 break;
             // 设置 North 方向规则坐标轴
             case 'X':
-                ctrl->X.active = true;
-                parse_axis(optarg, 'X', &ctrl->X.n, &ctrl->X.values);
+                Ctrl->X.active = true;
+                parse_axis(optarg, 'X', &Ctrl->X.n, &Ctrl->X.values);
                 break;
             // 设置 East 方向规则坐标轴
             case 'Y':
-                ctrl->Y.active = true;
-                parse_axis(optarg, 'Y', &ctrl->Y.n, &ctrl->Y.values);
+                Ctrl->Y.active = true;
+                parse_axis(optarg, 'Y', &Ctrl->Y.n, &Ctrl->Y.values);
                 break;
             // 读取任意接收点文件
             case 'Q':
-                ctrl->Q.active = true;
-                ctrl->Q.path = strdup(optarg);
+                Ctrl->Q.active = true;
+                Ctrl->Q.path = strdup(optarg);
                 break;
             // 设置点源深度或规则网格接收点深度
             case 'D':
                 if(optarg[0] == 's'){
-                    ctrl->Dsrc.active = true;
-                    if(sscanf(optarg + 1, "%lf", &ctrl->depsrc) != 1 || ctrl->depsrc < 0.0){
+                    Ctrl->Dsrc.active = true;
+                    if(sscanf(optarg + 1, "%lf", &Ctrl->depsrc) != 1 || Ctrl->depsrc < 0.0){
                         GRTBadOptionError(Ds, "source depth must be nonnegative.");
                     }
                 } else if(optarg[0] == 'r'){
-                    ctrl->Drcv.active = true;
-                    if(sscanf(optarg + 1, "%lf", &ctrl->deprcv) != 1 || ctrl->deprcv < 0.0){
+                    Ctrl->Drcv.active = true;
+                    if(sscanf(optarg + 1, "%lf", &Ctrl->deprcv) != 1 || Ctrl->deprcv < 0.0){
                         GRTBadOptionError(Dr, "receiver depth must be nonnegative.");
                     }
                 } else {
@@ -311,45 +311,45 @@ static void parse_command(GRT_MODULE_CTRL *ctrl, int argc, char **argv)
                 }
                 break;
             // 输出 ZNE 分量
-            case 'N': ctrl->N.active = true; break;
+            case 'N': Ctrl->N.active = true; break;
             // 输出位移偏导
-            case 'e': ctrl->e.active = true; break;
+            case 'e': Ctrl->e.active = true; break;
             // 静默输出信息
-            case 's': ctrl->s.active = true; break;
+            case 's': Ctrl->s.active = true; break;
             GRT_Common_Options_in_Switch((char)optopt);
         }
     }
 
     GRTCheckOptionSet(argc > 1);
-    if(!ctrl->I.active) GRTRaiseError("Okada requires -I<vp>/<vs>/<rho>.\n");
-    if(!ctrl->O.active) GRTRaiseError("Okada requires -O<out>.\n");
-    if(ctrl->X.active ^ ctrl->Y.active){
+    if(!Ctrl->I.active) GRTRaiseError("Okada requires -I<vp>/<vs>/<rho>.\n");
+    if(!Ctrl->O.active) GRTRaiseError("Okada requires -O<out>.\n");
+    if(Ctrl->X.active ^ Ctrl->Y.active){
         GRTRaiseError("-X and -Y must be specified together.\n");
     }
-    if(ctrl->Q.active && (ctrl->X.active || ctrl->Y.active || ctrl->Drcv.active)){
+    if(Ctrl->Q.active && (Ctrl->X.active || Ctrl->Y.active || Ctrl->Drcv.active)){
         GRTRaiseError("-Q is mutually exclusive with -X/-Y/-Dr.\n");
     }
 
-    bool point = ctrl->S.active || ctrl->M.active;
-    if(point == ctrl->C.active){
+    bool point = Ctrl->S.active || Ctrl->M.active;
+    if(point == Ctrl->C.active){
         GRTRaiseError("Specify either a point source (-S/-M) or a finite fault (-C).\n");
     }
     if(point){
-        if(!ctrl->S.active) GRTRaiseError("Point source requires -S<scale>.\n");
-        if(!ctrl->Dsrc.active) GRTRaiseError("Point source requires -Ds<depth>.\n");
+        if(!Ctrl->S.active) GRTRaiseError("Point source requires -S<scale>.\n");
+        if(!Ctrl->Dsrc.active) GRTRaiseError("Point source requires -Ds<depth>.\n");
     } else {
-        if(ctrl->Dsrc.active) GRTRaiseError("-Ds is not used for finite faults.\n");
+        if(Ctrl->Dsrc.active) GRTRaiseError("-Ds is not used for finite faults.\n");
     }
-    if(!ctrl->Q.active && (!ctrl->X.active || !ctrl->Y.active || !ctrl->Drcv.active)){
+    if(!Ctrl->Q.active && (!Ctrl->X.active || !Ctrl->Y.active || !Ctrl->Drcv.active)){
         GRTRaiseError("Grid receivers require -X, -Y and -Dr, or use -Q<file>.\n");
     }
 }
 
 /** 根据规则网格或接收点文件构造接收点数组 */
-static GRT_RECV_POINTS *build_receivers(const GRT_MODULE_CTRL *ctrl)
+static GRT_RECV_POINTS *build_receivers(const GRT_MODULE_CTRL *Ctrl)
 {
-    if(ctrl->Q.active) return grt_recv_points_from_file(ctrl->Q.path);
-    return grt_recv_points_from_grid(ctrl->X.n, ctrl->X.values, ctrl->Y.n, ctrl->Y.values, ctrl->deprcv);
+    if(Ctrl->Q.active) return grt_recv_points_from_file(Ctrl->Q.path);
+    return grt_recv_points_from_grid(Ctrl->X.n, Ctrl->X.values, Ctrl->Y.n, Ctrl->Y.values, Ctrl->deprcv);
 }
 
 /** 将 Okada 局部坐标中的位移和偏导转换到 PyGRT ZNE 坐标
@@ -387,7 +387,7 @@ static void local_to_zne(real_t strike, const real_t local_u[3], const real_t lo
 
 /** 计算一个点源在全部接收点上的位移和位移偏导
  *
- * @param[in]       ctrl      命令行参数结构体
+ * @param[in]       Ctrl      命令行参数结构体
  * @param[in]       medium    均匀半空间介质参数
  * @param[in]       npts      接收点数量
  * @param[in]       norths    接收点 North 坐标
@@ -396,23 +396,23 @@ static void local_to_zne(real_t strike, const real_t local_u[3], const real_t lo
  * @param[in,out]   syn       累加后的位移
  * @param[in,out]   syn_d     累加后的位移偏导
  */
-static void add_point_source(const GRT_MODULE_CTRL *ctrl, const OKADA_MEDIUM_PARAMS *medium,
+static void add_point_source(const GRT_MODULE_CTRL *Ctrl, const OKADA_MEDIUM_PARAMS *medium,
     size_t npts, const real_t *norths, const real_t *easts, const real_t *depths,
     real_t (*syn)[3], real_t (*syn_d)[3][3])
 {
     // 将 PyGRT 点源参数转换为 Okada 的四类 potency
-    real_t strike = ctrl->M.active ? ctrl->M.strike : 0.0;
-    real_t dip = ctrl->M.active ? ctrl->M.dip : 0.0;
+    real_t strike = Ctrl->M.active ? Ctrl->M.strike : 0.0;
+    real_t dip = Ctrl->M.active ? Ctrl->M.dip : 0.0;
     real_t pot1 = 0.0, pot2 = 0.0, pot3 = 0.0, pot4 = 0.0;
-    real_t scalar = ctrl->S.mult_src_mu ? ctrl->S.value : ctrl->S.value / medium->mu;
+    real_t scalar = Ctrl->S.mult_src_mu ? Ctrl->S.value : Ctrl->S.value / medium->mu;
 
-    if(!ctrl->M.active){
+    if(!Ctrl->M.active){
         pot4 = scalar;
-    } else if(ctrl->M.has_rake){
-        pot1 = scalar * cos(ctrl->M.rake * DEG1);
-        pot2 = scalar * sin(ctrl->M.rake * DEG1);
+    } else if(Ctrl->M.has_rake){
+        pot1 = scalar * cos(Ctrl->M.rake * DEG1);
+        pot2 = scalar * sin(Ctrl->M.rake * DEG1);
     } else {
-        pot3 = ctrl->S.mult_src_mu ? ctrl->S.value * medium->mu / medium->lambda : ctrl->S.value / medium->lambda;
+        pot3 = Ctrl->S.mult_src_mu ? Ctrl->S.value * medium->mu / medium->lambda : Ctrl->S.value / medium->lambda;
     }
 
     // Okada 点源输出的位移和偏导分别需要乘以 1e-10 和 1e-15
@@ -422,7 +422,7 @@ static void add_point_source(const GRT_MODULE_CTRL *ctrl, const OKADA_MEDIUM_PAR
         real_t y = norths[i] * ss - easts[i] * cs;
         real_t z = -depths[i];
         real_t u[3], up[3][3], uw[3], dw[3][3];
-        int iret = grt_okada_dc3d0(medium->alpha, x, y, z, ctrl->depsrc, dip,
+        int iret = grt_okada_dc3d0(medium->alpha, x, y, z, Ctrl->depsrc, dip,
             pot1, pot2, pot3, pot4, u, up);
         if(iret != 0){
             const char *reason = iret == 1 ? "singular point" :
@@ -433,7 +433,7 @@ static void add_point_source(const GRT_MODULE_CTRL *ctrl, const OKADA_MEDIUM_PAR
                 "(north=%.6g km, east=%.6g km, depth=%.6g km); retry after shifting local X "
                 "by %.6g km.",
                 reason, iret, i + 1, npts, norths[i], easts[i], depths[i], OKADA_SINGULAR_OFFSET);
-            iret = grt_okada_dc3d0(medium->alpha, x, y, z, ctrl->depsrc, dip,
+            iret = grt_okada_dc3d0(medium->alpha, x, y, z, Ctrl->depsrc, dip,
                 pot1, pot2, pot3, pot4, u, up);
             if(iret != 0){
                 reason = iret == 1 ? "singular point" :
@@ -449,9 +449,9 @@ static void add_point_source(const GRT_MODULE_CTRL *ctrl, const OKADA_MEDIUM_PAR
             for(int d = 0; d < 3; ++d) up[d][c] *= 1e-15;
         }
         local_to_zne(strike, u, up, uw, dw);
-        if(ctrl->N.active){
+        if(Ctrl->N.active){
             for(int c = 0; c < 3; ++c) syn[i][c] += uw[c];
-            if(ctrl->e.active){
+            if(Ctrl->e.active){
                 for(int d = 0; d < 3; ++d) for(int c = 0; c < 3; ++c) syn_d[i][d][c] += dw[d][c];
             }
         } else {
@@ -462,7 +462,7 @@ static void add_point_source(const GRT_MODULE_CTRL *ctrl, const OKADA_MEDIUM_PAR
             real_t radius = dist * 1e5;
             grt_rot_zxy2zrt_upar(theta, uw, dw, radius);
             for(int c = 0; c < 3; ++c) syn[i][c] += uw[c];
-            if(ctrl->e.active){
+            if(Ctrl->e.active){
                 for(int d = 0; d < 3; ++d) for(int c = 0; c < 3; ++c) syn_d[i][d][c] += dw[d][c];
             }
         }
@@ -471,7 +471,7 @@ static void add_point_source(const GRT_MODULE_CTRL *ctrl, const OKADA_MEDIUM_PAR
 
 /** 计算 Coulomb 有限断层在全部接收点上的位移和位移偏导
  *
- * @param[in]       ctrl      命令行参数结构体
+ * @param[in]       Ctrl      命令行参数结构体
  * @param[in]       medium    均匀半空间介质参数
  * @param[in]       npts      接收点数量
  * @param[in]       norths    接收点 North 坐标
@@ -480,12 +480,12 @@ static void add_point_source(const GRT_MODULE_CTRL *ctrl, const OKADA_MEDIUM_PAR
  * @param[in,out]   syn       累加后的位移
  * @param[in,out]   syn_d     累加后的位移偏导
  */
-static void add_finite_faults(const GRT_MODULE_CTRL *ctrl, const OKADA_MEDIUM_PARAMS *medium,
+static void add_finite_faults(const GRT_MODULE_CTRL *Ctrl, const OKADA_MEDIUM_PARAMS *medium,
     size_t npts, const real_t *norths, const real_t *easts, const real_t *depths,
     real_t (*syn)[3], real_t (*syn_d)[3][3])
 {
-    for(size_t nf = 0; nf < ctrl->C.nfault; ++nf){
-        const FINITE_FAULT *fault = &ctrl->C.faults[nf];
+    for(size_t nf = 0; nf < Ctrl->C.nfault; ++nf){
+        const FINITE_FAULT *fault = &Ctrl->C.faults[nf];
         real_t strike = fault->strike;
         real_t dip = fault->dip;
         real_t length = hypot(fault->east_end - fault->east_begin, fault->north_end - fault->north_begin);
@@ -554,7 +554,7 @@ static void add_finite_faults(const GRT_MODULE_CTRL *ctrl, const OKADA_MEDIUM_PA
                 GRTRaiseError(
                     "Okada finite-fault evaluation failed: %s (return code %d) at Coulomb fault row %zu/%zu "
                     "(Kode=%u) and receiver %zu/%zu (north=%.6g km, east=%.6g km, depth=%.6g km).",
-                    reason, iret, nf + 1, ctrl->C.nfault, fault->kode,
+                    reason, iret, nf + 1, Ctrl->C.nfault, fault->kode,
                     i + 1, npts, norths[i], easts[i], depths[i]);
             }
             if(KODE_IS_FINITE(fault->kode)){
@@ -570,13 +570,13 @@ static void add_finite_faults(const GRT_MODULE_CTRL *ctrl, const OKADA_MEDIUM_PA
             }
             local_to_zne(strike, u, up, uw, dw);
             for(int c = 0; c < 3; ++c) syn[i][c] += uw[c];
-            if(ctrl->e.active){
+            if(Ctrl->e.active){
                 for(int d = 0; d < 3; ++d) for(int c = 0; c < 3; ++c) syn_d[i][d][c] += dw[d][c];
             }
         }
 
-        if(!ctrl->s.active){
-            GRTRaiseInfo("finite fault[%zu/%zu]", nf + 1, ctrl->C.nfault);
+        if(!Ctrl->s.active){
+            GRTRaiseInfo("finite fault[%zu/%zu]", nf + 1, Ctrl->C.nfault);
         }
     }
 }
@@ -609,22 +609,22 @@ static void define_channel_vars(int ncid, int ndims, const int *dimids, const ch
 
 /** 将 Okada 结果写入与 static_syn 一致的 NetCDF 文件
  *
- * @param[in]   ctrl        命令行参数结构体
+ * @param[in]   Ctrl        命令行参数结构体
  * @param[in]   medium      均匀半空间介质参数
  * @param[in]   recv        接收点数组
  * @param[in]   syn         位移数组
  * @param[in]   syn_d       位移偏导数组
  */
-static void save_nc(const GRT_MODULE_CTRL *ctrl, const OKADA_MEDIUM_PARAMS *medium,
+static void save_nc(const GRT_MODULE_CTRL *Ctrl, const OKADA_MEDIUM_PARAMS *medium,
     const GRT_RECV_POINTS *recv, const real_t (*syn)[3], const real_t (*syn_d)[3][3])
 {
     // 选择输出分量以及 NetCDF 文件的布局
-    const char *channels = ctrl->N.active ? GRT_ZNE_CODES : GRT_ZRT_CODES;
+    const char *channels = Ctrl->N.active ? GRT_ZNE_CODES : GRT_ZRT_CODES;
     const char *layout = recv->is_grid ? GRT_RECV_LAYOUT_GRID : GRT_RECV_LAYOUT_POINTS;
-    const char *compute_type = ctrl->C.active ? "FF" : (ctrl->M.active ? (ctrl->M.has_rake ? "DC" : "TS") : "EX");
+    const char *compute_type = Ctrl->C.active ? "FF" : (Ctrl->M.active ? (Ctrl->M.has_rake ? "DC" : "TS") : "EX");
     const char *coordinate = "Okada X=strike,Y=up-dip horizontal,Z=up";
     int ncid, vars[3], dvars[3][3];
-    NC_CHECK(nc_create(ctrl->O.path, NC_CLOBBER, &ncid));
+    NC_CHECK(nc_create(Ctrl->O.path, NC_CLOBBER, &ncid));
     NC_CHECK(nc_put_att_text(ncid, NC_GLOBAL, "layout", strlen(layout), layout));
     NC_CHECK(nc_put_att_text(ncid, NC_GLOBAL, "computeType", strlen(compute_type), compute_type));
     NC_CHECK(nc_put_att_text(ncid, NC_GLOBAL, "coordinate", strlen(coordinate), coordinate));
@@ -632,12 +632,12 @@ static void save_nc(const GRT_MODULE_CTRL *ctrl, const OKADA_MEDIUM_PARAMS *medi
     NC_CHECK(NC_FUNC_REAL(nc_put_att)(ncid, NC_GLOBAL, "lambda", NC_REAL, 1, &medium->lambda));
     NC_CHECK(NC_FUNC_REAL(nc_put_att)(ncid, NC_GLOBAL, "mu", NC_REAL, 1, &medium->mu));
     {
-        int value = ctrl->e.active ? 1 : 0;
+        int value = Ctrl->e.active ? 1 : 0;
         NC_CHECK(nc_put_att_int(ncid, NC_GLOBAL, "calc_upar", NC_INT, 1, &value));
-        value = ctrl->N.active ? 1 : 0;
+        value = Ctrl->N.active ? 1 : 0;
         NC_CHECK(nc_put_att_int(ncid, NC_GLOBAL, "rot2ZNE", NC_INT, 1, &value));
     }
-    if(!ctrl->C.active) NC_CHECK(NC_FUNC_REAL(nc_put_att)(ncid, NC_GLOBAL, "depsrc", NC_REAL, 1, &ctrl->depsrc));
+    if(!Ctrl->C.active) NC_CHECK(NC_FUNC_REAL(nc_put_att)(ncid, NC_GLOBAL, "depsrc", NC_REAL, 1, &Ctrl->depsrc));
 
     int dimids[2], north_varid = -1, east_varid = -1, depth_varid = -1;
     int va_varid = -1, vb_varid = -1, rho_varid = -1;
@@ -669,7 +669,7 @@ static void save_nc(const GRT_MODULE_CTRL *ctrl, const OKADA_MEDIUM_PARAMS *medi
             NC_CHECK(nc_def_var(ncid, "rake",   NC_REAL, 1, dimids, &rake_varid));
         }
     }
-    define_channel_vars(ncid, ndims, dimids, channels, ctrl->e.active, vars, dvars);
+    define_channel_vars(ncid, ndims, dimids, channels, Ctrl->e.active, vars, dvars);
     NC_CHECK(nc_enddef(ncid));
 
     if(recv->is_grid){
@@ -704,7 +704,7 @@ static void save_nc(const GRT_MODULE_CTRL *ctrl, const OKADA_MEDIUM_PARAMS *medi
     for(int c = 0; c < 3; ++c){
         for(size_t i = 0; i < recv->npts; ++i) buffer[i] = syn[i][c];
         NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, vars[c], buffer));
-        if(ctrl->e.active){
+        if(Ctrl->e.active){
             for(int d = 0; d < 3; ++d){
                 for(size_t i = 0; i < recv->npts; ++i) buffer[i] = syn_d[i][d][c];
                 NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, dvars[d][c], buffer));
@@ -718,31 +718,31 @@ static void save_nc(const GRT_MODULE_CTRL *ctrl, const OKADA_MEDIUM_PARAMS *medi
 /** Okada 子模块主函数 */
 int okada_main(int argc, char **argv)
 {
-    GRT_MODULE_CTRL *ctrl = (GRT_MODULE_CTRL *)calloc(1, sizeof(*ctrl));
-    parse_command(ctrl, argc, argv);
+    GRT_MODULE_CTRL *Ctrl = (GRT_MODULE_CTRL *)calloc(1, sizeof(*Ctrl));
+    parse_command(Ctrl, argc, argv);
     OKADA_MEDIUM_PARAMS medium = {
-        .vp = ctrl->I.vp,
-        .vs = ctrl->I.vs,
-        .rho = ctrl->I.rho,
+        .vp = Ctrl->I.vp,
+        .vs = Ctrl->I.vs,
+        .rho = Ctrl->I.rho,
     };
     // 速度单位为 km/s，密度单位为 g/cm^3，模量转换为 dyne/cm^2
     medium.alpha = 1.0 - (medium.vs / medium.vp) * (medium.vs / medium.vp);
     medium.mu = medium.rho * medium.vs * medium.vs * 1e10;
     medium.lambda = medium.rho * (medium.vp * medium.vp - 2.0 * medium.vs * medium.vs) * 1e10;
-    GRT_RECV_POINTS *recv = build_receivers(ctrl);
+    GRT_RECV_POINTS *recv = build_receivers(Ctrl);
     real_t (*syn)[3] = (real_t (*)[3])calloc(recv->npts, sizeof(*syn));
     real_t (*syn_d)[3][3] = (real_t (*)[3][3])calloc(recv->npts, sizeof(*syn_d));
     if(syn == NULL || syn_d == NULL) GRTRaiseError("failed to allocate Okada output.");
 
     // 按源类型计算位移场
-    if(ctrl->C.active){
-        add_finite_faults(ctrl, &medium, recv->npts, recv->norths, recv->easts, recv->depths, syn, syn_d);
+    if(Ctrl->C.active){
+        add_finite_faults(Ctrl, &medium, recv->npts, recv->norths, recv->easts, recv->depths, syn, syn_d);
         // 有限断层先在全局 ZNE 中累加，再按 -N 决定最终保存的坐标系
-        if(!ctrl->N.active){
+        if(!Ctrl->N.active){
             for(size_t i = 0; i < recv->npts; ++i){
                 real_t dist = hypot(recv->norths[i], recv->easts[i]);
                 real_t theta = GRT_IS_ZERO(dist) ? 0.0 : atan2(recv->easts[i], recv->norths[i]);
-                if(ctrl->e.active){
+                if(Ctrl->e.active){
                     grt_rot_zxy2zrt_upar(theta, syn[i], syn_d[i], dist * 1e5);
                 } else {
                     grt_rot_zxy2zrt_vec(theta, syn[i]);
@@ -750,14 +750,14 @@ int okada_main(int argc, char **argv)
             }
         }
     } else {
-        add_point_source(ctrl, &medium, recv->npts, recv->norths, recv->easts, recv->depths, syn, syn_d);
+        add_point_source(Ctrl, &medium, recv->npts, recv->norths, recv->easts, recv->depths, syn, syn_d);
     }
-    save_nc(ctrl, &medium, recv, syn, syn_d);
+    save_nc(Ctrl, &medium, recv, syn, syn_d);
 
-    if(!ctrl->s.active) GRTRaiseInfo("Okada static displacements saved in \"%s\".", ctrl->O.path);
+    if(!Ctrl->s.active) GRTRaiseInfo("Okada static displacements saved in \"%s\".", Ctrl->O.path);
     GRT_SAFE_FREE_PTR(syn);
     GRT_SAFE_FREE_PTR(syn_d);
     grt_recv_points_free(recv);
-    free_ctrl(ctrl);
+    free_Ctrl(Ctrl);
     return EXIT_SUCCESS;
 }
