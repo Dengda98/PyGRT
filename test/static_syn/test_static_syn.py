@@ -3,6 +3,7 @@ from pathlib import Path
 
 import numpy as np
 import pygrt
+from pygrt.cli import run_grt
 from scipy.io import netcdf_file
 
 depsrc = 2.0
@@ -91,6 +92,91 @@ def assert_receiver_geometry(path):
         np.testing.assert_allclose(dataset.variables["dip"].data, [20.0, 50.0, 80.0])
         np.testing.assert_allclose(dataset.variables["rake"].data, [30.0, 60.0, 90.0])
 
+
+def read_fault_receiver(path):
+    with netcdf_file(path, mmap=False) as dataset:
+        layout = getattr(dataset, "layout")
+        if isinstance(layout, bytes):
+            layout = layout.decode()
+        assert layout == "points"
+        point = dataset.dimensions["point"]
+        nfault = dataset.dimensions["nfault"]
+        offset = np.array(dataset.variables["offset"].data, dtype=np.int64, copy=True)
+        assert offset.shape == (nfault,)
+        assert offset[-1] == point
+        point_fields = {
+            name: np.array(variable.data, dtype=np.float64, copy=True)
+            for name, variable in dataset.variables.items()
+            if variable.data.ndim == 1 and variable.data.shape[0] == point
+        }
+        faults = []
+        for ifault in range(nfault):
+            start = 0 if ifault == 0 else offset[ifault - 1]
+            end = offset[ifault]
+            coordinates = np.column_stack([
+                point_fields["north"][start:end],
+                point_fields["east"][start:end],
+                point_fields["depth"][start:end],
+            ])
+            fields = {name: values[start:end] for name, values in point_fields.items()}
+            faults.append({
+                "coordinates": coordinates,
+                "fields": fields,
+            })
+        geometry = {
+            name: np.array(dataset.variables[name].data, dtype=np.float64, copy=True)
+            for name in ("strike", "dip", "rake", "offset", "stksize", "dipsize")
+        }
+    return faults, geometry
+
+
+def write_receiver_points(path, faults):
+    coordinates = np.concatenate([fault["coordinates"] for fault in faults])
+    lines = ["# north east depth\n"]
+    lines.extend(f"{north:.15g} {east:.15g} {depth:.15g}\n" for north, east, depth in coordinates)
+    path.write_text("".join(lines))
+    return coordinates
+
+
+def assert_faults_match_points(fault_path, points_path, field_names, expected_subsizes=(9, 12)):
+    faults, geometry = read_fault_receiver(fault_path)
+    assert [fault["coordinates"].shape[0] for fault in faults] == list(expected_subsizes)
+    np.testing.assert_array_equal(geometry["offset"], np.cumsum(expected_subsizes))
+    assert geometry["strike"].shape == (2,)
+    assert geometry["dip"].shape == (2,)
+    assert geometry["rake"].shape == (2,)
+    assert geometry["stksize"].shape == (2,)
+    assert geometry["dipsize"].shape == (2,)
+    assert geometry["rake"][1] == -999.0
+
+    with netcdf_file(points_path, mmap=False) as dataset:
+        coordinates = np.column_stack([
+            np.array(dataset.variables[name].data, dtype=np.float64, copy=True)
+            for name in ("north", "east", "depth")
+        ])
+        assert coordinates.shape == (21, 3)
+        np.testing.assert_allclose(coordinates, np.concatenate([fault["coordinates"] for fault in faults]))
+        for name in field_names:
+            expected = np.concatenate([fault["fields"][name] for fault in faults])
+            np.testing.assert_allclose(
+                expected, np.array(dataset.variables[name].data, dtype=np.float64, copy=True),
+                rtol=1.0e-12, atol=1.0e-12,
+            )
+
+
+def compare_fault_postprocess(fault_path, points_path, prefix, component_pairs):
+    faults, _ = read_fault_receiver(fault_path)
+    with netcdf_file(points_path, mmap=False) as dataset:
+        for first, second in component_pairs:
+            name = f"{prefix}_{first}{second}"
+            expected = np.concatenate([
+                fault["fields"][name] for fault in faults
+            ])
+            np.testing.assert_allclose(
+                expected, np.array(dataset.variables[name].data, dtype=np.float64, copy=True),
+                rtol=1.0e-12, atol=1.0e-12,
+            )
+
 pymod = pygrt.PyModel1D(stgrn="stgrn.nc", modelpath=modname)
 pymod.compute_static_grn(depsrc=depsrc, deprcv=deprcv, dists=dists, calc_upar=True)
 
@@ -128,6 +214,48 @@ pymod_m.compute_static_grn(depsrc=[1.0, 2.0, 3.0], deprcv=0.0, dists=dists, calc
 # Compare the two CLI outputs generated above before exercising the Python API
 assert_zne_zrt_equivalent("stsyn_ff_zne_cli.nc", "stsyn_ff_zrt_cli.nc")
 assert_receiver_geometry("stsyn_q6.nc")
+
+syn_field_names = (
+    "Z", "R", "T", "zZ", "zR", "zT", "rZ", "rR", "rT", "tZ", "tR", "tT",
+)
+faults, fault_geometry = read_fault_receiver("stsyn_rf.nc")
+np.testing.assert_array_equal(fault_geometry["stksize"], [3, 3])
+np.testing.assert_array_equal(fault_geometry["dipsize"], [3, 4])
+default_faults, default_geometry = read_fault_receiver("stsyn_rf_default.nc")
+assert [fault["coordinates"].shape[0] for fault in default_faults] == [4, 6]
+np.testing.assert_array_equal(default_geometry["offset"], [4, 10])
+np.testing.assert_array_equal(default_geometry["stksize"], [2, 2])
+np.testing.assert_array_equal(default_geometry["dipsize"], [2, 3])
+assert default_geometry["rake"][1] == -999.0
+rcv_fault_q = Path("rcv_faults_q.txt")
+write_receiver_points(rcv_fault_q, faults)
+run_grt(
+    ["static", "syn", "-Gstgrn_rf.nc", "-Su1e16", "-Ds2", f"-Q{rcv_fault_q}", "-e", "-Ostsyn_rq.nc"],
+    print_log=False,
+)
+assert_faults_match_points("stsyn_rf.nc", "stsyn_rq.nc", syn_field_names)
+
+# Python API 的 -R 路径与命令行输出保持一致
+pymod_rf = pygrt.PyModel1D(stgrn="stgrn_rf.nc", modelpath=modname)
+pymod_rf.compute_static_syn(
+    scale=1e16, output_path="stsyn_rf_api.nc", depsrc=2.0,
+    rcv_fault="rcv_faults.inp", rcv_fault_size=(0.75, 0.75), scale_with_mu=True,
+    calc_upar=True,
+)
+api_faults, _ = read_fault_receiver("stsyn_rf_api.nc")
+for shell_fault, api_fault in zip(faults, api_faults):
+    np.testing.assert_allclose(shell_fault["coordinates"], api_fault["coordinates"])
+    for name in syn_field_names:
+        np.testing.assert_allclose(shell_fault["fields"][name], api_fault["fields"][name])
+
+for module, component_pairs in (
+    ("strain", (("Z", "Z"), ("Z", "R"), ("Z", "T"), ("R", "R"), ("R", "T"), ("T", "T"))),
+    ("stress", (("Z", "Z"), ("Z", "R"), ("Z", "T"), ("R", "R"), ("R", "T"), ("T", "T"))),
+    ("rotation", (("Z", "R"), ("Z", "T"), ("R", "T"))),
+):
+    run_grt(["static", module, "stsyn_rf.nc"], print_log=False)
+    run_grt(["static", module, "stsyn_rq.nc"], print_log=False)
+    compare_fault_postprocess("stsyn_rf.nc", "stsyn_rq.nc", module, component_pairs)
 
 pymod_m.compute_static_syn(scale=1e16, output_path="stsyn_md.nc", depsrc=2.0, norths=norths, easts=easts, scale_with_mu=True)
 pymod_m.compute_static_syn(
@@ -218,18 +346,20 @@ except RuntimeError:
 
 bad_bot = Path("cfaults_bad_bot.inp")
 try:
-    pymod_m.compute_static_syn(output_path="stsyn_bad.nc", finite_fault=bad_bot)
+    pymod_m.compute_static_syn(output_path="stsyn_bad.nc", src_fault=bad_bot)
     raise AssertionError("bot < top should fail in C")
 except RuntimeError:
     pass
 
 for name in [
     "stgrn.nc", "stgrn_r.nc", "stgrn_md.nc", "stgrn_mr.nc",
+    "stgrn_rf.nc",
     "stsyn.nc", "stsyn_single_explicit.nc", "stsyn_r.nc",
     "stsyn_md.nc", "stsyn_interp.nc", "stsyn_q.nc", "stsyn_q6.nc", "stsyn_ff.nc",
+    "stsyn_rf.nc", "stsyn_rf_default.nc", "stsyn_rq.nc", "stsyn_rf_api.nc",
     "stsyn_ff_zrt.nc", "stsyn_ff_zne.nc", "stsyn_ff_zrt_cli.nc", "stsyn_ff_zne_cli.nc",
     "stsyn_ff_kodes.nc", "stsyn_ff_rake.nc", "stsyn_dr.nc", "ff_kodes_q.nc",
-    "rcv_pts.txt", "rcv_pts_6.txt", "cfaults_tiny.inp", "cfaults_kodes.inp", "cfaults_rake.inr",
+    "rcv_pts.txt", "rcv_pts_6.txt", "rcv_faults_q.txt", "cfaults_tiny.inp", "cfaults_kodes.inp", "cfaults_rake.inr",
     "cfaults_bad_dip.inp", "cfaults_bad_bot.inp",
 ]:
     p = Path(name)
