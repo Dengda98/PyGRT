@@ -14,7 +14,11 @@ typedef struct {
     int dummy;
 } GRT_MODULE_CTRL;
 
-/** 释放结构体的内存 */
+/**
+ * 释放模块控制结构体
+ *
+ * @param[in,out]  Ctrl   模块控制结构体
+ */
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
     GRT_SAFE_FREE_PTR(Ctrl);
 }
@@ -23,11 +27,12 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
 static void print_help(){
 printf("\n"
 "[grt static strain] %s\n\n", GRT_VERSION);printf(
-"    Combine spatial derivatives of static displacements\n"
-"    into strain tensor, and write into the same nc file.\n"
-"    Input must be a static syn NetCDF computed with -e.\n"
-"    Both grid (-X/-Y) and points (-Q) layouts are supported.\n"
-"    Six components are written as strain_ZZ, strain_ZR, ...\n"
+"    Compute the static strain tensor from a static syn output file\n"
+"    and write the result back to the same nc file. The input must\n"
+"    be generated with -e.\n"
+"    Output variables are strain_ZZ, strain_ZR, strain_ZT, strain_RR,\n"
+"    strain_RT, and strain_TT for ZRT, or strain_ZZ, strain_ZN,\n"
+"    strain_ZE, strain_NN, strain_NE, and strain_EE for ZNE.\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
@@ -42,7 +47,13 @@ printf("\n"
 }
 
 
-/** 从命令行中读取选项，处理后记录到全局变量中 */
+/**
+ * 从命令行中读取选项
+ *
+ * @param[out]  Ctrl   模块控制结构体
+ * @param[in]   argc   命令行参数数量
+ * @param[in]   argv   命令行参数数组
+ */
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     (void)Ctrl;
     int opt;
@@ -55,7 +66,17 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     // 暂不支持设置其它参数
 }
 
-/** 由静态位移偏导合成应变张量 */
+/**
+ * 由静态位移偏导合成应变张量
+ *
+ * @param[in]   npts       接收点数量
+ * @param[in]   norths     接收点 North 坐标 (km)
+ * @param[in]   easts      接收点 East 坐标 (km)
+ * @param[in]   u          位移数组
+ * @param[in]   upar       位移偏导数组
+ * @param[out]  res        应变张量数组
+ * @param[in]   rot2ZNE    是否使用 ZNE 分量
+ */
 static void compute_strain(
     size_t npts, const real_t *norths, const real_t *easts,
     real_t *const u[GRT_CHANNEL_NUM],
@@ -125,64 +146,20 @@ int static_strain_main(int argc, char **argv){
         GRTRaiseError("Input grid didn't have displacement derivatives.");
     }
 
-    // 识别 grid / points 布局，展开为长度 npts 的坐标
-    bool is_points = grt_recv_nc_is_points(in_ncid);
-    size_t npts;
-    real_t *norths_flat = NULL, *easts_flat = NULL;
-    int out_ndims;
-    int out_dimids[2];
-
-    if(is_points){
-        int point_dimid, north_varid, east_varid;
-        NC_CHECK(nc_inq_dimid(in_ncid, "point", &point_dimid));
-        NC_CHECK(nc_inq_dimlen(in_ncid, point_dimid, &npts));
-        norths_flat = (real_t *)calloc(npts, sizeof(real_t));
-        easts_flat  = (real_t *)calloc(npts, sizeof(real_t));
-        NC_CHECK(nc_inq_varid(in_ncid, "north", &north_varid));
-        NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, north_varid, norths_flat));
-        NC_CHECK(nc_inq_varid(in_ncid, "east", &east_varid));
-        NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, east_varid, easts_flat));
-        out_ndims = 1;
-        out_dimids[0] = point_dimid;
-    } else {
-        int north_dimid, east_dimid, north_varid, east_varid;
-        size_t nnorth, neast;
-        NC_CHECK(nc_inq_dimid(in_ncid, "north", &north_dimid));
-        NC_CHECK(nc_inq_dimlen(in_ncid, north_dimid, &nnorth));
-        NC_CHECK(nc_inq_dimid(in_ncid, "east", &east_dimid));
-        NC_CHECK(nc_inq_dimlen(in_ncid, east_dimid, &neast));
-
-        real_t *norths = (real_t *)calloc(nnorth, sizeof(real_t));
-        real_t *easts  = (real_t *)calloc(neast, sizeof(real_t));
-        NC_CHECK(nc_inq_varid(in_ncid, "north", &north_varid));
-        NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, north_varid, norths));
-        NC_CHECK(nc_inq_varid(in_ncid, "east", &east_varid));
-        NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, east_varid, easts));
-
-        npts = nnorth * neast;
-        norths_flat = (real_t *)calloc(npts, sizeof(real_t));
-        easts_flat  = (real_t *)calloc(npts, sizeof(real_t));
-        for(size_t inorth = 0; inorth < nnorth; ++inorth){
-            for(size_t ieast = 0; ieast < neast; ++ieast){
-                size_t ipt = ieast + inorth * neast;
-                norths_flat[ipt] = norths[inorth];
-                easts_flat[ipt]  = easts[ieast];
-            }
-        }
-        GRT_SAFE_FREE_PTR(norths);
-        GRT_SAFE_FREE_PTR(easts);
-
-        out_ndims = 2;
-        out_dimids[0] = north_dimid;
-        out_dimids[1] = east_dimid;
-    }
+    // 识别 grid / points 布局，并将坐标展平供统一计算
+    GRT_RECV_NC_INFO recv_info;
+    grt_recv_nc_info_load(in_ncid, &recv_info);
+    size_t npts = recv_info.npts;
+    real_t *norths_flat = recv_info.norths;
+    real_t *easts_flat = recv_info.easts;
+    int out_ndims = (recv_info.layout == GRT_RECV_NC_LAYOUT_POINTS) ? 1 : 2;
+    int out_dimids[2] = {recv_info.dimids[0], recv_info.dimids[1]};
 
     // 读入合成位移偏导 varid
     for(int c=0; c<GRT_CHANNEL_NUM; ++c){
         char *s_title = NULL;
         GRT_SAFE_ASPRINTF(&s_title, "%c", toupper(chs[c]));
         NC_CHECK(nc_inq_varid(in_ncid, s_title, &in_syn_varids[c]));
-
         for(int c2=0; c2<GRT_CHANNEL_NUM; ++c2){
             GRT_SAFE_ASPRINTF(&s_title, "%c%c", tolower(chs[c2]), toupper(chs[c]));
             NC_CHECK(nc_inq_varid(in_ncid, s_title, &in_syn_upar_varids[c2][c]));
@@ -234,8 +211,7 @@ int static_strain_main(int argc, char **argv){
     // 关闭文件
     NC_CHECK(nc_close(in_ncid));
 
-    GRT_SAFE_FREE_PTR(norths_flat);
-    GRT_SAFE_FREE_PTR(easts_flat);
+    grt_recv_nc_info_free(&recv_info);
     GRT_SAFE_FREE_PTR(s_ingrid);
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;

@@ -109,7 +109,8 @@ void grt_stgrnlib_set_modarr(
     STGRNLIB *lib, size_t nlayer, const real_t (*modarr)[GRT_MODARR_NCOL]);
 
 /**
- * 由震中距与震源深度采样推断默认子断层尺寸 min(dr, dz)
+ * 由震中距、震源深度和接收深度采样推断默认子断层尺寸
+ * 即所有存在采样间隔中的最小正间隔
  *
  * @param[in]   lib   STGRNLIB
  * @return      默认 dL=dW (km)

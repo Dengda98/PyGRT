@@ -217,6 +217,7 @@ real_t grt_stgrnlib_default_subfault_size(const STGRNLIB *lib)
         GRTRaiseError("STGRNLIB distance metadata is missing.");
     }
 
+    // 分别计算震中距、震源深度和接收深度的最小正采样间隔
     real_t dr = -1.0;
     for(size_t i = 0; i + 1 < lib->nr; ++i){
         real_t d = lib->sort_rs[i + 1] - lib->sort_rs[i];
@@ -229,14 +230,25 @@ real_t grt_stgrnlib_default_subfault_size(const STGRNLIB *lib)
         if(d > atol && (dz < 0.0 || d < dz)) dz = d;
     }
 
-    if(dr < 0.0 && dz < 0.0){
+    real_t dzr = -1.0;
+    for(size_t i = 0; i + 1 < lib->ndeprcv; ++i){
+        real_t d = fabs(lib->deprcvs[i + 1] - lib->deprcvs[i]);
+        if((d > atol) && ((dzr < 0.0) || (d < dzr))) dzr = d;
+    }
+
+    // 忽略只有一个采样点的维度，从已有采样间隔中取最小值
+    real_t dmin = -1.0;
+    if(dr > 0.0) dmin = dr;
+    if((dz > 0.0) && ((dmin < 0.0) || (dz < dmin))) dmin = dz;
+    if((dzr > 0.0) && ((dmin < 0.0) || (dzr < dmin))) dmin = dzr;
+
+    if(dmin < 0.0){
         GRTRaiseError(
             "Cannot infer default subfault size: "
-            "need at least two distinct epicentral-distance or source-depth samples.");
+            "need at least two distinct epicentral-distance, source-depth, "
+            "or receiver-depth samples.");
     }
-    if(dr < 0.0) return dz;
-    if(dz < 0.0) return dr;
-    return GRT_MIN(dr, dz);
+    return dmin;
 }
 
 /** 读入一层 (is, ir) 的通道；ncid 已打开，变量为 4D */

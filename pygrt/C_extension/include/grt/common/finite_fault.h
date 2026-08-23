@@ -19,6 +19,9 @@
 #define KODE_IS_FINITE(kode)        ((kode) == KODE_RTLAT_REVERSE || (kode) == KODE_RTLAT_TENSILE || (kode) == KODE_TENSILE_REVERSE)
 #define KODE_IS_POINT(kode)         ((kode) == KODE_POINT_DC || (kode) == KODE_POINT_TENSILE_INFLATE)
 
+/** 滑动方向未定义时使用的 rake 值，超出合法角度范围 */
+#define GRT_FINITE_FAULT_UNDEFINED_RAKE (-999.0)
+
 /**
  * Coulomb 程序格式的有限断层（及衍生量）
  *
@@ -39,10 +42,10 @@
  * right_lateral/reverse/tensile/inflate 是按 Kode 解释后的量
  */
 typedef struct {
-    real_t east_begin;
-    real_t north_begin;
-    real_t east_end;
-    real_t north_end;
+    real_t east_begin;       ///< 上边界起点 east 坐标 (km)
+    real_t north_begin;      ///< 上边界起点 north 坐标 (km)
+    real_t east_end;         ///< 上边界终点 east 坐标 (km)
+    real_t north_end;        ///< 上边界终点 north 坐标 (km)
 
     unsigned int kode;      ///< Coulomb 标识符，只允许 100、200、300、400、500
     bool rake_format;       ///< 是否按 rake/net slip 格式解释
@@ -57,9 +60,9 @@ typedef struct {
     real_t top;             ///< km
     real_t bot;             ///< km
 
-    // 衍生量，由 grt_finite_fault_set_derived 填充
-    real_t strike;          ///< degree
-    real_t rake;            ///< degree
+    // 衍生量，由有限断层读取函数直接填充
+    real_t strike;          ///< 走向 (degree)
+    real_t rake;            ///< 滑动角 (degree)，未定义时为 GRT_FINITE_FAULT_UNDEFINED_RAKE
     real_t slip;            ///< Kode 100/200/300 的剪切滑动合量，单位 m
 } FINITE_FAULT;
 
@@ -74,16 +77,9 @@ typedef struct {
 } FINITE_SUBFAULT;
 
 /**
- * 由 Coulomb 原始字段计算 strike / rake / slip
- *
- * @param[in,out]  f   有限断层结构体
- */
-void grt_finite_fault_set_derived(FINITE_FAULT *f);
-
-/**
  * 读取 Coulomb 格式有限断层文件
  *
- * 跳过前两行表头，逐行读取断层数据，并对每条调用 grt_finite_fault_set_derived
+ * 跳过前两行表头，逐行读取断层数据并建立衍生量
  * 支持 .inp 与 .inr，要求 dip ∈ (0, 90]、bot > top 且沿走向长度 > 0
  * 调用方负责 grt_finite_fault_free
  *
@@ -92,6 +88,20 @@ void grt_finite_fault_set_derived(FINITE_FAULT *f);
  * @return      新分配的 FINITE_FAULT 数组，失败则报错退出
  */
 FINITE_FAULT *grt_finite_fault_load_coulomb(const char *path, size_t *nfault);
+
+/**
+ * 解析有限断层选项并读取 Coulomb 格式有限断层文件
+ *
+ * 选项格式为 <fault>[+i<dL>/<dW>]，不提供 +i 时将 dL/dW 置为非正值
+ * 返回的断层数组已经建立衍生量，调用方负责 grt_finite_fault_free
+ *
+ * @param[in]   option   有限断层选项值，不含 -C 或 -R 选项字符
+ * @param[out]  nfault   读入的断层段数
+ * @param[out]  dL       沿走向剖分尺寸 (km)，未指定时为非正值
+ * @param[out]  dW       沿倾向剖分尺寸 (km)，未指定时为非正值
+ * @return      新分配的 FINITE_FAULT 数组
+ */
+FINITE_FAULT *grt_finite_fault_from_option(const char *option, size_t *nfault, real_t *dL, real_t *dW);
 
 /**
  * 释放 grt_finite_fault_load_coulomb 返回的数组
@@ -103,7 +113,9 @@ void grt_finite_fault_free(FINITE_FAULT *faults);
 /**
  * 由断层几何与 dL/dW 得到倾向/走向长度及剖分数
  *
- * 要求 dip ∈ (0, 90]、bot > top，且 dL/dW > 0
+ * 要求 dip ∈ (0, 90]、bot > top
+ * dL/dW 均为非正值时不剖分，返回整个有限断层及 1×1 的剖分数量
+ * dL/dW 必须同时为正值或同时为非正值
  *
  * @param[in]   fault  有限断层（需已有 dip / 端点坐标）
  * @param[in]   dL     沿走向剖分间隔 (km)
@@ -120,7 +132,9 @@ void grt_finite_fault_subdiv(
 /**
  * 计算 (iW, iL) 子断层中心几何与矩势
  *
- * 要求 fault 已 set_derived，且 W/L/nW/nL 由 grt_finite_fault_subdiv 给出
+ * 要求 fault 已由有限断层读取函数建立衍生量，且 W/L/nW/nL
+ * 由 grt_finite_fault_subdiv 给出
+ * dL/dW 均为非正值时使用 W/L 作为单个子断层尺寸
  * 末块可短于 dL/dW，中心取该块中点：i*d + size/2
  *
  * @param[in]   fault  有限断层
