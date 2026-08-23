@@ -729,6 +729,8 @@ class PyModel1D:
         norths: Optional[Sequence[float]] = None,
         easts: Optional[Sequence[float]] = None,
         recv_points: Optional[PathLike] = None,
+        rcv_fault: Optional[PathLike] = None,
+        rcv_fault_size: Optional[Sequence[float]] = None,
         output_path: PathLike,
         scale: Optional[float] = None,
         scale_with_mu: bool = False,
@@ -760,6 +762,12 @@ class PyModel1D:
         library was built with ``dists`` / ``-R``, the default grid is a 1-D
         line (north = 0, east = R); set ``norths``/``easts`` or ``recv_points``
         to obtain a 2-D field.
+        A Coulomb-format finite receiver-fault file can be supplied through
+        ``rcv_fault`` (CLI ``-R``); without ``rcv_fault_size`` the subdivision
+        size defaults to the smallest positive sampling interval among epicentral
+        distance, source depth and receiver depth in the library. With
+        ``rcv_fault_size``, each fault is subdivided with ``(dL, dW)`` along
+        strike / dip.
 
         Point-source type is inferred from the source-specific parameters:
         leaving ``strike``, ``dip``, ``rake``, ``force`` and ``moment_tensor``
@@ -809,6 +817,19 @@ class PyModel1D:
                                      ``#`` comments). All data rows must use the
                                      same 3- or 6-column format. Mutually exclusive
                                      with ``norths``/``easts`` and ``deprcv``.
+        :param    rcv_fault:        Coulomb-format finite receiver-fault file
+                                     (CLI ``-R``). Without ``rcv_fault_size``,
+                                     the library sampling intervals determine the
+                                     default subdivision size. With that argument,
+                                     each fault contributes multiple subfault
+                                     centers. Mutually exclusive with
+                                     ``recv_points``, ``norths``/``easts`` and
+                                     ``deprcv``.
+        :param    rcv_fault_size:   Optional positive ``(dL, dW)`` in km for
+                                     receiver-fault subdivision along strike / dip;
+                                     if omitted, use the smallest positive interval
+                                     among epicentral distance, source depth and
+                                     receiver depth in the library.
         :param    output_path:       Output NetCDF file path.
         :param    scale:             Point-source scaling factor. For explosion,
                                      double-couple, tensile-crack and moment-tensor
@@ -867,6 +888,7 @@ class PyModel1D:
 
         use_ff = src_fault is not None
         use_q = recv_points is not None
+        use_r = rcv_fault is not None
         use_xy = norths is not None or easts is not None
         has_geometry = strike is not None or dip is not None or rake is not None
         has_force = force is not None
@@ -880,10 +902,12 @@ class PyModel1D:
         )
         if use_ff and has_point_source_options:
             raise ValueError("src_fault is mutually exclusive with point-source options.")
-        if use_q and use_xy:
-            raise ValueError("recv_points is mutually exclusive with norths/easts.")
-        if use_q and deprcv is not None:
-            raise ValueError("recv_points is mutually exclusive with deprcv.")
+        if ((use_q or use_r) and use_xy):
+            raise ValueError("recv_points/rcv_fault is mutually exclusive with norths/easts.")
+        if (use_q and use_r):
+            raise ValueError("recv_points and rcv_fault are mutually exclusive.")
+        if ((use_q or use_r) and (deprcv is not None)):
+            raise ValueError("recv_points/rcv_fault is mutually exclusive with deprcv.")
         if use_xy and (norths is None or easts is None):
             raise ValueError("norths and easts must be supplied together.")
         if depsrc is not None and depsrc < 0.0:
@@ -897,6 +921,13 @@ class PyModel1D:
                 raise ValueError("src_fault_size requires src_fault.")
             if len(src_fault_size) != 2:
                 raise ValueError("src_fault_size must be (dL, dW).")
+        if rcv_fault_size is not None:
+            if (not use_r):
+                raise ValueError("rcv_fault_size requires rcv_fault.")
+            if ((len(rcv_fault_size) != 2)
+                    or (rcv_fault_size[0] <= 0.0)
+                    or (rcv_fault_size[1] <= 0.0)):
+                raise ValueError("rcv_fault_size must contain positive (dL, dW).")
 
         command = {
             "module": "static",
@@ -922,6 +953,11 @@ class PyModel1D:
             command["Dr"] = f"-Dr{format_float(deprcv)}"
         if use_q:
             command["Q"] = f"-Q{Path(recv_points)}"
+        elif use_r:
+            r_opt = f"-R{Path(rcv_fault)}"
+            if rcv_fault_size is not None:
+                r_opt += f"+i{format_float(rcv_fault_size[0])}/{format_float(rcv_fault_size[1])}"
+            command["R"] = r_opt
         elif use_xy:
             command["X"] = f"-X{format_range(norths, 'norths')}"
             command["Y"] = f"-Y{format_range(easts, 'easts')}"
