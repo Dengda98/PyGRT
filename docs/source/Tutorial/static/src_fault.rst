@@ -14,7 +14,7 @@ PyGRT 静态解的合成阶段目前已支持传入
 ---------------
 以下使用一个垂直走滑断层作为示例，文件 ``fault.inp`` 的内容如下：
 
-.. literalinclude:: run_finite_fault/fault.inp
+.. literalinclude:: run_src_fault/fault.inp
     :language: text
 
 前两行是注释，程序读取时会固定跳过。
@@ -22,9 +22,9 @@ PyGRT 静态解的合成阶段目前已支持传入
 :doc:`/Module/okada` 模块。
 
 有限断层的空间展布大致如下
-（:download:`plot_fault.py <run_finite_fault/plot_fault.py>`）：
+（:download:`plot_fault.py <run_src_fault/plot_fault.py>`）：
 
-.. figure:: run_finite_fault/fault.svg
+.. figure:: run_src_fault/fault.svg
 
 
 计算静态格林函数库
@@ -37,14 +37,14 @@ PyGRT 静态解的合成阶段目前已支持传入
 
     .. group-tab:: C
 
-        .. literalinclude:: run_finite_fault/run.sh
+        .. literalinclude:: run_src_fault/run.sh
             :language: bash
             :start-after: BEGIN GRN
             :end-before: END GRN
 
     .. group-tab:: Python
 
-        .. literalinclude:: run_finite_fault/run.py
+        .. literalinclude:: run_src_fault/run.py
             :language: python
             :start-after: BEGIN GRN
             :end-before: END GRN
@@ -62,7 +62,7 @@ PyGRT 静态解的合成阶段目前已支持传入
 
     .. group-tab:: C
 
-        .. literalinclude:: run_finite_fault/run.sh
+        .. literalinclude:: run_src_fault/run.sh
             :language: bash
             :start-after: BEGIN SYN
             :end-before: END SYN
@@ -72,19 +72,19 @@ PyGRT 静态解的合成阶段目前已支持传入
 
     .. group-tab:: Python
 
-        .. literalinclude:: run_finite_fault/run.py
+        .. literalinclude:: run_src_fault/run.py
             :language: python
             :start-after: BEGIN SYN
             :end-before: END SYN
 
-:download:`Shell Scripts <run_finite_fault/run.sh>` | :download:`Python Scripts <run_finite_fault/run.py>`
+:download:`Shell Scripts <run_src_fault/run.sh>` | :download:`Python Scripts <run_src_fault/run.py>`
 
-.. literalinclude:: run_finite_fault/run.py
+.. literalinclude:: run_src_fault/run.py
     :language: python
     :start-after: BEGIN PLOT
     :end-before: END PLOT
 
-.. figure:: run_finite_fault/disp.svg
+.. figure:: run_src_fault/disp.svg
     :align: center
 
     颜色表示垂直位移 Z，箭头表示水平位移 E、N，粗黑线表示断层顶边走向
