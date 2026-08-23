@@ -72,4 +72,4 @@
    static_syn
    static_strain_stress
    stlib
-   finite_fault
+   src_fault
