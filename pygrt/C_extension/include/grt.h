@@ -64,7 +64,7 @@
 #include "grt/static/static_source.h"
 
 
-#include "grt/okada/okada.h"
+#include "grt/static/okada.h"
 
 
 #include "grt/integral/dcm.h"
