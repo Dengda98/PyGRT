@@ -20,7 +20,7 @@ grt static greenfn -Mmilrow -Ds0/8/0.5 -Dr0 -R0/60/0.5 -e -Ostgrn.nc
 # BEGIN SYN
 # 使用 -C 读取 Coulomb 格式的有限断层
 # 使用 -X/-Y 计算二维接收点网格，并使用 -N 输出 ZNE 分量
-grt static syn -Gstgrn.nc -Cfault.inp -N -X-20/20/1 -Y-20/20/1 -Ostsyn_ff.nc
+grt static syn -Gstgrn.nc -Cfault.inp -N -X-20/20/1 -Y-20/20/1 -Ostsyn_ff.nc -e
 # END SYN
 # ------------------------------------------------
 

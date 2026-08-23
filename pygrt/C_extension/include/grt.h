@@ -62,9 +62,10 @@
 #include "grt/static/stgrnlib.h"
 #include "grt/static/static_layer.h"
 #include "grt/static/static_source.h"
+#include "grt/static/static_output.h"
 
 
-#include "grt/okada/okada.h"
+#include "grt/static/okada.h"
 
 
 #include "grt/integral/dcm.h"

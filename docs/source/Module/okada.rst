@@ -25,7 +25,7 @@ Okada 解是均匀弹性半空间中位错源产生静态变形的闭合解析�
 |-O|\ *outgrid*
 [ |-M|\ *strike/dip*\ [/\ *rake*] ]
 [ **-Dr**\ *deprcv* ]
-[ |-X|\ *x1/x2/dx* ] [ |-Y|\ *y1/y2/dy* ] | [ **-Q**\ *file* ]
+[ [ |-X|\ *x1/x2/dx* ] [ |-Y|\ *y1/y2/dy* ] | [ **-Q**\ *file* ] | [ **-R**\ *faultparam* ] ]
 [ |-N| ] [ **-e** ] [ **-s** ] [ **-h** ]
 
 **grt okada** （有限断层）
@@ -33,7 +33,7 @@ Okada 解是均匀弹性半空间中位错源产生静态变形的闭合解析�
 |-C|\ *faultparam*
 |-O|\ *outgrid*
 [ **-Dr**\ *deprcv* ]
-[ |-X|\ *x1/x2/dx* ] [ |-Y|\ *y1/y2/dy* ] | [ **-Q**\ *file* ]
+[ [ |-X|\ *x1/x2/dx* ] [ |-Y|\ *y1/y2/dy* ] | [ **-Q**\ *file* ] | [ **-R**\ *faultparam* ] ]
 [ **-e** ] [ **-s** ] [ **-h** ]
 
 
@@ -62,7 +62,7 @@ Okada 解是均匀弹性半空间中位错源产生静态变形的闭合解析�
 
 **-Dr**\ *deprcv*
     设置规则网格接收点深度 (km)，要求非负。使用 **-Q** 时，接收点深度从文件读取，
-    因此不能同时设置 **-Dr**。
+    使用 **-R** 时接收点深度从有限断层几何读取，因此这两种模式均不能设置 **-Dr**。
 
 .. include:: explain_-Cfault.rst_
 
@@ -83,6 +83,8 @@ Okada 解是均匀弹性半空间中位错源产生静态变形的闭合解析�
 .. include:: explain_-XYgrid.rst_
 
 .. include:: explain_-Q.rst_
+
+.. include:: explain_-Rfault.rst_
 
 .. include:: explain_rot2ZNE.rst_
 

@@ -12,7 +12,7 @@
 #include <math.h>
 #include <string.h>
 
-#include "grt/okada/okada.h"
+#include "grt/static/okada.h"
 
 /** Okada 介质常数及倾角三角函数 */
 typedef struct {

@@ -15,7 +15,12 @@
 #include "grt/common/finite_fault.h"
 #include "grt/common/util.h"
 
-/** 检查 dip ∈ (0, 90] 且 bot > top */
+/**
+ * 检查有限断层的走向长度、倾角和深度范围
+ *
+ * @param[in]  f       有限断层结构体
+ * @param[in]  where   错误位置描述
+ */
 static void check_fault_geometry(const FINITE_FAULT *f, const char *where)
 {
     if(hypot(f->east_end - f->east_begin, f->north_end - f->north_begin) <= 0.0){
@@ -30,19 +35,29 @@ static void check_fault_geometry(const FINITE_FAULT *f, const char *where)
 }
 
 
-void grt_finite_fault_set_derived(FINITE_FAULT *f)
+/**
+ * 由 Coulomb 分量建立有限断层的走向、滑动角和滑动量
+ *
+ * @param[in,out]  f   有限断层结构体
+ */
+static void set_fault_derived(FINITE_FAULT *f)
 {
     f->strike = 1.0 / DEG1 * atan2(f->east_end - f->east_begin, f->north_end - f->north_begin);
-    if(f->kode == KODE_POINT_TENSILE_INFLATE){
-        f->rake = 0.0;
-        f->slip = 0.0;
+    if((f->right_lateral == 0.0) && (f->reverse == 0.0)){
+        f->rake = GRT_FINITE_FAULT_UNDEFINED_RAKE;
     } else {
         f->rake = 1.0 / DEG1 * atan2(f->reverse, -f->right_lateral);
-        f->slip = KODE_IS_POINT(f->kode) ? 0.0 : hypot(f->right_lateral, f->reverse);
     }
+    f->slip = KODE_IS_POINT(f->kode) ? 0.0 : hypot(f->right_lateral, f->reverse);
 }
 
-/** 按 Kode 解释文件第 7、8 列 */
+/**
+ * 按 Kode 解释文件第 7、8 列
+ *
+ * @param[out]  f             保存解释结果的有限断层结构体
+ * @param[in]   rake_format   是否使用 .inr 的 rake/net slip 格式
+ * @param[in]   where         错误位置描述
+ */
 static void set_fault_components(FINITE_FAULT *f, bool rake_format, const char *where)
 {
     f->rake_format = rake_format;
@@ -152,7 +167,7 @@ FINITE_FAULT *grt_finite_fault_load_coulomb(const char *path, size_t *nfault)
         set_fault_components(f, rake_format, where);
         check_fault_geometry(f, where);
 
-        grt_finite_fault_set_derived(f);
+        set_fault_derived(f);
         n++;
     }
 
@@ -168,6 +183,43 @@ FINITE_FAULT *grt_finite_fault_load_coulomb(const char *path, size_t *nfault)
 }
 
 
+FINITE_FAULT *grt_finite_fault_from_option(const char *option, size_t *nfault, real_t *dL, real_t *dW)
+{
+    if((option == NULL) || (nfault == NULL) || (dL == NULL) || (dW == NULL)){
+        GRTRaiseError("finite fault option is incomplete.");
+    }
+
+    char *option_copy = strdup(option);
+    // 将文件路径和可选的剖分尺寸拆分到独立字符串中
+    char *path = strtok(option_copy, "+");
+    char *token = strtok(NULL, "+");
+    if((path == NULL) || (*path == '\0') || (strtok(NULL, "+") != NULL)){
+        GRT_SAFE_FREE_PTR(option_copy);
+        GRTRaiseError("Error in finite fault option. expected <fault>[+i<dL>/<dW>]. Use \"-h\" for help.");
+    }
+
+    *dL = 0.0;
+    *dW = 0.0;
+    if(token != NULL){
+        // 解析 +i<dL>/<dW>，未提供时保留不剖分标记
+        char extra;
+        if((token[0] != 'i') || (sscanf(token + 1, "%lf/%lf%c", dL, dW, &extra) != 2)){
+            GRT_SAFE_FREE_PTR(option_copy);
+            GRTRaiseError("Error in finite fault option. expected +i<dL>/<dW>. Use \"-h\" for help.");
+        }
+        if((*dL <= 0.0) || (*dW <= 0.0)){
+            GRT_SAFE_FREE_PTR(option_copy);
+            GRTRaiseError("Error in finite fault option. dL and dW must be positive. Use \"-h\" for help.");
+        }
+    }
+
+    // 统一由有限断层模块读取文件，调用方只保留数组和剖分尺寸
+    FINITE_FAULT *faults = grt_finite_fault_load_coulomb(path, nfault);
+    GRT_SAFE_FREE_PTR(option_copy);
+    return faults;
+}
+
+
 void grt_finite_fault_free(FINITE_FAULT *faults)
 {
     free(faults);
@@ -178,8 +230,8 @@ void grt_finite_fault_subdiv(
     const FINITE_FAULT *fault, real_t dL, real_t dW,
     real_t *W, real_t *L, size_t *nW, size_t *nL)
 {
-    if(dL <= 0.0 || dW <= 0.0){
-        GRTRaiseError("dL and dW must be positive.");
+    if((dL <= 0.0) != (dW <= 0.0)){
+        GRTRaiseError("dL and dW must both be positive or both be omitted.");
     }
     check_fault_geometry(fault, "finite fault");
 
@@ -188,8 +240,13 @@ void grt_finite_fault_subdiv(
     if(*W <= 0.0 || *L <= 0.0){
         GRTRaiseError("fault along-dip/along-strike length must be positive (W=%.6g, L=%.6g).", *W, *L);
     }
-    *nW = GRT_MAX(1, (size_t)ceil(*W / dW));
-    *nL = GRT_MAX(1, (size_t)ceil(*L / dL));
+    if(dL <= 0.0){
+        *nW = 1;
+        *nL = 1;
+    } else {
+        *nW = GRT_MAX(1, (size_t)ceil(*W / dW));
+        *nL = GRT_MAX(1, (size_t)ceil(*L / dL));
+    }
 }
 
 
@@ -199,6 +256,15 @@ void grt_finite_fault_subfault(
     size_t iW, size_t iL,
     FINITE_SUBFAULT *sub)
 {
+    if((dL <= 0.0) != (dW <= 0.0)){
+        GRTRaiseError("dL and dW must both be positive or both be omitted.");
+    }
+    if(dL <= 0.0){
+        // 不剖分时，当前有限断层本身就是唯一的子断层
+        dL = L;
+        dW = W;
+    }
+
     // 末块可短于 dW/dL，中心取该块中点：i*d + size/2，而不是 (i+0.5)*size
     real_t width = GRT_MIN(dW, W - iW * dW);
     real_t length = GRT_MIN(dL, L - iL * dL);

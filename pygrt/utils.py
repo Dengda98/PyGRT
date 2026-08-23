@@ -134,13 +134,15 @@ def compute_okada(
     norths: Optional[Sequence[float]] = None,
     easts: Optional[Sequence[float]] = None,
     recv_points: Optional[PathLike] = None,
+    rcv_fault: Optional[PathLike] = None,
+    rcv_fault_size: Optional[Sequence[float]] = None,
     output_path: PathLike,
     scale: Optional[float] = None,
     scale_with_mu: bool = False,
     strike: Optional[float] = None,
     dip: Optional[float] = None,
     rake: Optional[float] = None,
-    finite_fault: Optional[PathLike] = None,
+    src_fault: Optional[PathLike] = None,
     zne: bool = False,
     calc_upar: bool = False,
     return_result: bool = False,
@@ -160,14 +162,14 @@ def compute_okada(
     * ``strike`` and ``dip`` - tensile crack (``TS``), or double-couple (``DC``)
       when ``rake`` is also supplied
 
-    A Coulomb-format finite-fault file can be passed through ``finite_fault``.
+    A Coulomb-format finite-fault file can be passed through ``src_fault``.
     Its Kode column selects the rectangular or point-source interpretation of
     the two slip columns; ``.inr`` is supported for Kode 100 rake/net-slip rows.
-    The finite fault is evaluated directly as Okada rectangular patches, so no
-    ``subfault_size`` subdivision option is needed.
+    The finite fault is evaluated directly as Okada rectangular patches, so
+    no source subdivision option is needed.
 
     ``strike``, ``dip`` and ``rake`` must be supplied as a complete geometry
-    when they are used. They are mutually exclusive with ``finite_fault``.
+    when they are used. They are mutually exclusive with ``src_fault``.
 
     All arguments must be passed by keyword.
 
@@ -182,6 +184,11 @@ def compute_okada(
     :param    recv_points:      ASCII receiver file with either ``north east depth``
                                 or ``north east depth strike dip rake``; coordinates
                                 are in km and angles are in degrees
+    :param    rcv_fault:        Coulomb-format finite receiver-fault file. Each
+                                fault contributes its center, or subfault centers
+                                when ``rcv_fault_size`` is supplied
+    :param    rcv_fault_size:   Optional ``(dL, dW)`` receiver subdivision size
+                                in km along strike / dip
     :param    output_path:      Output NetCDF file path
     :param    scale:            Point-source scale in dyne-cm unless
                                ``scale_with_mu`` is true. Not used for finite faults
@@ -190,8 +197,8 @@ def compute_okada(
     :param    strike:           Fault strike in degrees, in [0, 360]
     :param    dip:              Fault dip in degrees, in [0, 90]
     :param    rake:             Slip rake in degrees, in [-180, 180]
-    :param    finite_fault:     Coulomb-format finite-fault file, mutually exclusive
-                               with point-source options
+    :param    src_fault:        Coulomb-format finite-fault file, mutually exclusive
+                                with point-source options
     :param    zne:              If true, output ZNE instead of ZRT components
     :param    calc_upar:        If true, also output spatial displacement derivatives
     :param    return_result:    If true, read and return the generated NetCDF data
@@ -212,8 +219,9 @@ def compute_okada(
         raise TypeError("modelparams must be a sequence of (vp, vs, rho).") from None
     vp, vs, rho = modelparams
 
-    use_ff = finite_fault is not None
+    use_ff = src_fault is not None
     use_q = recv_points is not None
+    use_r = rcv_fault is not None
     use_xy = norths is not None or easts is not None
     has_strike = strike is not None
     has_dip = dip is not None
@@ -230,18 +238,27 @@ def compute_okada(
             return f"-M{format_float(strike)}/{format_float(dip)}/{format_float(rake)}"
         return f"-M{format_float(strike)}/{format_float(dip)}"
 
-    if use_q and use_xy:
-        raise ValueError("recv_points is mutually exclusive with norths/easts.")
+    if ((use_q or use_r) and use_xy):
+        raise ValueError("recv_points/rcv_fault is mutually exclusive with norths/easts.")
+    if (use_q and use_r):
+        raise ValueError("recv_points and rcv_fault are mutually exclusive.")
     if use_xy and (norths is None or easts is None):
         raise ValueError("norths and easts must be supplied together.")
-    if not use_q and not use_xy:
-        raise ValueError("Specify norths/easts or recv_points.")
+    if ((not use_q) and (not use_r) and (not use_xy)):
+        raise ValueError("Specify norths/easts, recv_points or rcv_fault.")
     if depsrc is not None and depsrc < 0.0:
         raise ValueError("depsrc must be nonnegative.")
     if deprcv is not None and deprcv < 0.0:
         raise ValueError("deprcv must be nonnegative.")
-    if use_q and deprcv is not None:
-        raise ValueError("recv_points is mutually exclusive with deprcv.")
+    if ((use_q or use_r) and (deprcv is not None)):
+        raise ValueError("recv_points/rcv_fault is mutually exclusive with deprcv.")
+    if rcv_fault_size is not None:
+        if (not use_r):
+            raise ValueError("rcv_fault_size requires rcv_fault.")
+        if ((len(rcv_fault_size) != 2)
+                or (rcv_fault_size[0] <= 0.0)
+                or (rcv_fault_size[1] <= 0.0)):
+            raise ValueError("rcv_fault_size must contain positive (dL, dW).")
 
     command = [
         "okada",
@@ -250,8 +267,8 @@ def compute_okada(
     ]
     if use_ff:
         if has_point_source_options:
-            raise ValueError("finite_fault is mutually exclusive with point-source options.")
-        command.append(f"-C{Path(finite_fault)}")
+            raise ValueError("src_fault is mutually exclusive with point-source options.")
+        command.append(f"-C{Path(src_fault)}")
     else:
         if scale is None:
             raise ValueError("scale is required for point-source synthesis.")
@@ -265,11 +282,16 @@ def compute_okada(
 
     if deprcv is not None:
         command.append(f"-Dr{format_float(deprcv)}")
-    elif not use_q:
+    elif (not use_q) and (not use_r):
         raise ValueError("deprcv is required for grid receivers.")
 
     if use_q:
         command.append(f"-Q{Path(recv_points)}")
+    elif use_r:
+        receiver_option = f"-R{Path(rcv_fault)}"
+        if rcv_fault_size is not None:
+            receiver_option += f"+i{format_float(rcv_fault_size[0])}/{format_float(rcv_fault_size[1])}"
+        command.append(receiver_option)
     else:
         command.append(f"-X{format_range(norths, 'norths')}")
         command.append(f"-Y{format_range(easts, 'easts')}")

@@ -84,10 +84,114 @@ def assert_receiver_geometry(path):
     np.testing.assert_allclose(fields["rake"], [30.0, 60.0, 90.0])
 
 
+def read_fault_receiver(path):
+    with netcdf_file(path, mmap=False) as dataset:
+        layout = getattr(dataset, "layout")
+        if isinstance(layout, bytes):
+            layout = layout.decode()
+        assert layout == "points"
+        point = dataset.dimensions["point"]
+        nfault = dataset.dimensions["nfault"]
+        offset = np.array(dataset.variables["offset"].data, dtype=np.int64, copy=True)
+        assert offset.shape == (nfault,)
+        assert offset[-1] == point
+        point_fields = {
+            name: np.array(variable.data, dtype=np.float64, copy=True)
+            for name, variable in dataset.variables.items()
+            if variable.data.ndim == 1 and variable.data.shape[0] == point
+        }
+        faults = []
+        for ifault in range(nfault):
+            start = 0 if ifault == 0 else offset[ifault - 1]
+            end = offset[ifault]
+            fields = {name: values[start:end] for name, values in point_fields.items()}
+            faults.append({
+                "coordinates": np.column_stack([
+                    fields["north"], fields["east"], fields["depth"],
+                ]),
+                "fields": fields,
+            })
+        geometry = {
+            name: np.array(dataset.variables[name].data, dtype=np.float64, copy=True)
+            for name in ("strike", "dip", "rake", "offset", "stksize", "dipsize")
+        }
+    return faults, geometry
+
+
+def write_receiver_points(path, faults):
+    coordinates = np.concatenate([fault["coordinates"] for fault in faults])
+    lines = ["# north east depth\n"]
+    lines.extend(f"{north:.15g} {east:.15g} {depth:.15g}\n" for north, east, depth in coordinates)
+    path.write_text("".join(lines))
+
+
+def assert_faults_match_points(fault_path, points_path, field_names, expected_subsizes=(9, 12)):
+    faults, geometry = read_fault_receiver(fault_path)
+    assert [fault["coordinates"].shape[0] for fault in faults] == list(expected_subsizes)
+    np.testing.assert_array_equal(geometry["offset"], np.cumsum(expected_subsizes))
+    assert geometry["rake"][1] == -999.0
+    with netcdf_file(points_path, mmap=False) as dataset:
+        coordinates = np.column_stack([
+            np.array(dataset.variables[name].data, dtype=np.float64, copy=True)
+            for name in ("north", "east", "depth")
+        ])
+        expected_coordinates = np.concatenate([fault["coordinates"] for fault in faults])
+        np.testing.assert_allclose(coordinates, expected_coordinates)
+        for name in field_names:
+            expected = np.concatenate([fault["fields"][name] for fault in faults])
+            np.testing.assert_allclose(
+                expected, np.array(dataset.variables[name].data, dtype=np.float64, copy=True),
+                rtol=1.0e-12, atol=1.0e-12,
+            )
+
+
 def main():
     # The shell commands above provide direct CLI coverage for both output modes
     assert_zne_zrt_equivalent("okada_ff_zne_cli.nc", "okada_ff_zrt_cli.nc")
     assert_receiver_geometry("okada_q6.nc")
+
+    zne_field_names = (
+        "Z", "N", "E", "zZ", "zN", "zE", "nZ", "nN", "nE", "eZ", "eN", "eE",
+    )
+    faults, fault_geometry = read_fault_receiver("okada_rf.nc")
+    np.testing.assert_array_equal(fault_geometry["stksize"], [3, 3])
+    np.testing.assert_array_equal(fault_geometry["dipsize"], [3, 4])
+    rcv_fault_q = Path("rcv_faults_q.txt")
+    write_receiver_points(rcv_fault_q, faults)
+    compute_okada(
+        modelparams=(6.0, 3.464, 2.7),
+        depsrc=10.0,
+        recv_points=rcv_fault_q,
+        output_path="okada_rq.nc",
+        scale=1.0e12,
+        scale_with_mu=True,
+        zne=True,
+        calc_upar=True,
+    )
+    assert_faults_match_points("okada_rf.nc", "okada_rq.nc", zne_field_names)
+    default_faults, default_geometry = read_fault_receiver("okada_rf_default.nc")
+    assert [fault["coordinates"].shape[0] for fault in default_faults] == [1, 1]
+    np.testing.assert_array_equal(default_geometry["offset"], [1, 2])
+    np.testing.assert_array_equal(default_geometry["stksize"], [1, 1])
+    np.testing.assert_array_equal(default_geometry["dipsize"], [1, 1])
+    assert default_geometry["rake"][1] == -999.0
+
+    compute_okada(
+        modelparams=(6.0, 3.464, 2.7),
+        depsrc=10.0,
+        rcv_fault="rcv_faults.inp",
+        rcv_fault_size=(0.75, 0.75),
+        output_path="okada_rf_api.nc",
+        scale=1.0e12,
+        scale_with_mu=True,
+        zne=True,
+        calc_upar=True,
+    )
+    api_faults, _ = read_fault_receiver("okada_rf_api.nc")
+    for shell_fault, api_fault in zip(faults, api_faults):
+        np.testing.assert_allclose(shell_fault["coordinates"], api_fault["coordinates"])
+        for name in zne_field_names:
+            np.testing.assert_allclose(shell_fault["fields"][name], api_fault["fields"][name])
 
     compute_okada(
         modelparams=(6.0, 3.464, 2.7),
@@ -104,7 +208,7 @@ def main():
         norths=(-5.0, 5.0, 0.5),
         easts=(-5.0, 5.0, 0.5),
         output_path="okada_python_ff_zrt.nc",
-        finite_fault="cfaults.inp",
+        src_fault="cfaults.inp",
         calc_upar=True,
     )
     compute_okada(
@@ -113,7 +217,7 @@ def main():
         norths=(-5.0, 5.0, 0.5),
         easts=(-5.0, 5.0, 0.5),
         output_path="okada_python_ff_zne.nc",
-        finite_fault="cfaults.inp",
+        src_fault="cfaults.inp",
         zne=True,
         calc_upar=True,
     )
@@ -125,6 +229,10 @@ def main():
     Path("okada_python_ff.nc").unlink(missing_ok=True)
     Path("okada_python_ff_zrt.nc").unlink(missing_ok=True)
     Path("okada_python_ff_zne.nc").unlink(missing_ok=True)
+    Path("okada_rq.nc").unlink(missing_ok=True)
+    Path("okada_rf_default.nc").unlink(missing_ok=True)
+    Path("okada_rf_api.nc").unlink(missing_ok=True)
+    Path("rcv_faults_q.txt").unlink(missing_ok=True)
 
 
 if __name__ == "__main__":

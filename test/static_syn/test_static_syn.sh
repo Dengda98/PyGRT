@@ -49,6 +49,8 @@ grt static syn -Gstgrn_md.nc -Su1e16 -Ds2 -X-2/2/1 -Y-2/2/1 -Ostsyn_md.nc
 # 震源深度插值（库节点之间）
 grt static syn -Gstgrn_md.nc -Su1e16 -Ds1.5 -X-2/2/1 -Y-2/2/1 -e -Ostsyn_interp.nc
 
+grt static greenfn -M../milrow -Ds1,3,5 -Dr0,1,2,3,4 -R0/12/2 -e -Ostgrn_rf.nc
+
 cat > rcv_pts.txt <<'EOF'
 # north east depth (km)
 0 0 0
@@ -64,6 +66,15 @@ cat > rcv_pts_6.txt <<'EOF'
 -1 1 0 70 80 90
 EOF
 grt static syn -Gstgrn_md.nc -Su1e16 -Ds2 -Qrcv_pts_6.txt -Ostsyn_q6.nc
+
+cat > rcv_faults.inp <<'EOF'
+  #   X-start    Y-start      X-fin      Y-fin   Kode  value1      value2       dip       top       bot
+xxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxx  xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx
+  1     0.0000     0.0000     2.0000     0.0000   100     0.1000      0.0000     90.00       1.0000     3.0000
+  2     0.0000     4.0000     2.0000     4.0000   200     0.0000      0.1000     60.00       1.0000     3.0000
+EOF
+grt static syn -Gstgrn_rf.nc -Su1e16 -Ds2 -Rrcv_faults.inp+i0.75/0.75 -e -Ostsyn_rf.nc
+grt static syn -Gstgrn_rf.nc -Su1e16 -Ds2 -Rrcv_faults.inp -e -Ostsyn_rf_default.nc
 
 # 多台站深度：必须 -Dr
 grt static greenfn -M../milrow -Ds2 -Dr0,0.5 -R0,5 -e -Ostgrn_mr.nc
@@ -119,6 +130,12 @@ expect_fail "-Q mutually exclusive with -X/-Y" \
 expect_fail "-Q mutually exclusive with -Dr" \
     grt static syn -Gstgrn_md.nc -S1e20 -Ds2 -Dr0 -Qrcv_pts.txt -Ostsyn_bad.nc
 
+expect_fail "-R mutually exclusive with -Q" \
+    grt static syn -Gstgrn_rf.nc -S1e20 -Ds2 -Qrcv_pts.txt -Rrcv_faults.inp -Ostsyn_bad.nc
+
+expect_fail "-R mutually exclusive with -Dr" \
+    grt static syn -Gstgrn_rf.nc -S1e20 -Ds2 -Dr0 -Rrcv_faults.inp -Ostsyn_bad.nc
+
 expect_fail "finite fault requires ndepsrc>1" \
     grt static syn -Gstgrn.nc -Ccfaults_tiny.inp -Ostsyn_bad.nc
 
@@ -143,5 +160,5 @@ expect_fail "finite fault bot must be greater than top" \
 
 python -u test_static_syn.py
 
-rm -rf *.nc rcv_pts.txt rcv_pts_6.txt cfaults_tiny.inp cfaults_bad_dip.inp cfaults_bad_bot.inp
+rm -rf *.nc rcv_pts.txt rcv_pts_6.txt rcv_faults.inp cfaults_tiny.inp cfaults_bad_dip.inp cfaults_bad_bot.inp
 rm -f cfaults_kodes.inp cfaults_rake.inr
