@@ -104,7 +104,7 @@ def main():
         norths=(-5.0, 5.0, 0.5),
         easts=(-5.0, 5.0, 0.5),
         output_path="okada_python_ff_zrt.nc",
-        finite_fault="cfaults.inp",
+        src_fault="cfaults.inp",
         calc_upar=True,
     )
     compute_okada(
@@ -113,7 +113,7 @@ def main():
         norths=(-5.0, 5.0, 0.5),
         easts=(-5.0, 5.0, 0.5),
         output_path="okada_python_ff_zne.nc",
-        finite_fault="cfaults.inp",
+        src_fault="cfaults.inp",
         zne=True,
         calc_upar=True,
     )

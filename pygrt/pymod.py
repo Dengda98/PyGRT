@@ -737,8 +737,8 @@ class PyModel1D:
         rake: Optional[float] = None,
         force: Optional[Sequence[float]] = None,
         moment_tensor: Optional[Sequence[float]] = None,
-        finite_fault: Optional[PathLike] = None,
-        subfault_size: Optional[Sequence[float]] = None,
+        src_fault: Optional[PathLike] = None,
+        src_fault_size: Optional[Sequence[float]] = None,
         zne: bool = False,
         calc_upar: bool = False,
         return_result: bool = False,
@@ -767,7 +767,7 @@ class PyModel1D:
         (``SF``); ``moment_tensor`` selects a moment tensor (``MT``); ``strike``
         and ``dip`` select a tensile crack (``TS``), or a double-couple (``DC``)
         when ``rake`` is also supplied. Only one source parameter group may be
-        used at a time. Finite faults use ``finite_fault`` (Coulomb-format file,
+        used at a time. Finite faults use ``src_fault`` (Coulomb-format file,
         CLI ``-C``) instead. Its ``Kode`` column selects rectangular shear/
         tensile sources or point shear/expansion sources; ``.inr`` is supported
         for Kode 100 rake/net-slip rows. That path requires a multi-source-depth
@@ -788,7 +788,7 @@ class PyModel1D:
                                      when the library has multiple source depths;
                                      optional when it has one, but an explicit value
                                      must match the library. Forbidden when
-                                     ``finite_fault`` is set.
+                                     ``src_fault`` is set.
         :param    deprcv:            Receiver depth in km for grid receivers
                                      (CLI ``-Dr``). Required when the library has
                                      multiple receiver depths and ``recv_points`` is
@@ -818,7 +818,7 @@ class PyModel1D:
                                      treated as area × slip in cm³ and multiplied by
                                      the source-layer shear modulus :math:`\mu`.
                                      Required for point sources; ignored for
-                                     ``finite_fault``.
+                                     ``src_fault``.
         :param    scale_with_mu:     If true, multiply ``scale`` by the source-layer
                                      shear modulus :math:`\mu` (CLI ``-Su``).
         :param    strike:            Fault strike in deg, in [0, 360]. North is 0°,
@@ -840,12 +840,14 @@ class PyModel1D:
                                      ``(Mxx, Mxy, Mxz, Myy, Myz, Mzz)`` for the
                                      ``MT`` source. Subscripts x/y/z denote
                                      north/east/down.
-        :param    finite_fault:      Coulomb-format finite-fault file (Kode 100/200/300/400/500;
+        :param    src_fault:         Coulomb-format finite-fault file (Kode 100/200/300/400/500;
                                      ``.inr`` is allowed for Kode 100). Mutually exclusive with
                                      point-source options; point-source arguments cause ``ValueError``.
-        :param    subfault_size:     Optional ``(dL, dW)`` in km for finite-fault
+        :param    src_fault_size:    Optional ``(dL, dW)`` in km for finite-fault
                                      subdivision along strike / dip. If omitted,
-                                     the C code uses ``min(dr, dz)`` of the library.
+                                     the C code uses the smallest positive interval
+                                     among epicentral distance, source depth and
+                                     receiver depth in the library.
         :param    zne:               If true, output ZNE instead of ZRT components.
         :param    calc_upar:         If true, also synthesize spatial derivatives of
                                      displacement. Derivative variable names use
@@ -863,7 +865,7 @@ class PyModel1D:
         output = Path(output_path)
         output.parent.mkdir(parents=True, exist_ok=True)
 
-        use_ff = finite_fault is not None
+        use_ff = src_fault is not None
         use_q = recv_points is not None
         use_xy = norths is not None or easts is not None
         has_geometry = strike is not None or dip is not None or rake is not None
@@ -877,7 +879,7 @@ class PyModel1D:
             or has_moment_tensor
         )
         if use_ff and has_point_source_options:
-            raise ValueError("finite_fault is mutually exclusive with point-source options.")
+            raise ValueError("src_fault is mutually exclusive with point-source options.")
         if use_q and use_xy:
             raise ValueError("recv_points is mutually exclusive with norths/easts.")
         if use_q and deprcv is not None:
@@ -889,12 +891,12 @@ class PyModel1D:
         if deprcv is not None and deprcv < 0.0:
             raise ValueError("deprcv must be nonnegative.")
         if use_ff and depsrc is not None:
-            raise ValueError("depsrc is forbidden when finite_fault is set.")
-        if subfault_size is not None:
+            raise ValueError("depsrc is forbidden when src_fault is set.")
+        if src_fault_size is not None:
             if not use_ff:
-                raise ValueError("subfault_size requires finite_fault.")
-            if len(subfault_size) != 2:
-                raise ValueError("subfault_size must be (dL, dW).")
+                raise ValueError("src_fault_size requires src_fault.")
+            if len(src_fault_size) != 2:
+                raise ValueError("src_fault_size must be (dL, dW).")
 
         command = {
             "module": "static",
@@ -904,9 +906,9 @@ class PyModel1D:
         }
 
         if use_ff:
-            c_opt = f"-C{Path(finite_fault)}"
-            if subfault_size is not None:
-                c_opt += f"+i{format_float(subfault_size[0])}/{format_float(subfault_size[1])}"
+            c_opt = f"-C{Path(src_fault)}"
+            if src_fault_size is not None:
+                c_opt += f"+i{format_float(src_fault_size[0])}/{format_float(src_fault_size[1])}"
             command["C"] = c_opt
         else:
             if scale is None:

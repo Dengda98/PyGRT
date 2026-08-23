@@ -437,7 +437,7 @@ def test_compute_static_syn_and_tensor_postprocess_args():
         assert_command_has(runner.commands[-1], "static", "syn", "-Ds2", "-Dr0.5", "-X-2/2/1", "-Y-2/2/1")
 
         # 有限断层
-        model.compute_static_syn(output_path=out, finite_fault=HERE / "cfaults.inp", subfault_size=(1.0, 2.0), calc_upar=True)
+        model.compute_static_syn(output_path=out, src_fault=HERE / "cfaults.inp", src_fault_size=(1.0, 2.0), calc_upar=True)
         assert_command_has(runner.commands[-1], "static", "syn", f"-G{model.stgrn}", f"-O{out}", f"-C{HERE / 'cfaults.inp'}+i1/2", "-e")
 
         # 张量后处理：目录走动态模块，文件走 static 模块

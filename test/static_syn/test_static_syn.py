@@ -147,16 +147,16 @@ ff = Path("cfaults_tiny.inp")
 # W=(2.8-1.2)/sin(90°)=1.6 km，dW=1 → 末块短于 dW，覆盖余数子断层中心
 pymod_m.compute_static_syn(
     output_path="stsyn_ff_zrt.nc",
-    finite_fault=ff,
-    subfault_size=(1.0, 1.0),
+    src_fault=ff,
+    src_fault_size=(1.0, 1.0),
     norths=norths,
     easts=easts,
     calc_upar=True,
 )
 pymod_m.compute_static_syn(
     output_path="stsyn_ff_zne.nc",
-    finite_fault=ff,
-    subfault_size=(1.0, 1.0),
+    src_fault=ff,
+    src_fault_size=(1.0, 1.0),
     norths=norths,
     easts=easts,
     zne=True,
@@ -169,14 +169,14 @@ assert_zne_zrt_equivalent("stsyn_ff_zne.nc", "stsyn_ff_zrt.nc")
 # nonzero result so that a silently skipped source cannot pass the test.
 coulomb_kodes = Path("cfaults_kodes.inp")
 coulomb_rake = Path("cfaults_rake.inr")
-for output_path, finite_fault in [
+for output_path, src_fault in [
     ("stsyn_ff_kodes.nc", coulomb_kodes),
     ("stsyn_ff_rake.nc", coulomb_rake),
 ]:
     pymod_m.compute_static_syn(
         output_path=output_path,
-        finite_fault=finite_fault,
-        subfault_size=(1.0, 1.0),
+        src_fault=src_fault,
+        src_fault_size=(1.0, 1.0),
         norths=(-4.0, 4.0, 2.0),
         easts=(-4.0, 4.0, 2.0),
     )
@@ -204,14 +204,14 @@ except ValueError:
     pass
 
 try:
-    pymod_m.compute_static_syn(scale=1e20, output_path="stsyn_bad.nc", finite_fault=ff)
-    raise AssertionError("finite_fault with scale should raise")
+    pymod_m.compute_static_syn(scale=1e20, output_path="stsyn_bad.nc", src_fault=ff)
+    raise AssertionError("src_fault with scale should raise")
 except ValueError:
     pass
 
 bad_dip = Path("cfaults_bad_dip.inp")
 try:
-    pymod_m.compute_static_syn(output_path="stsyn_bad.nc", finite_fault=bad_dip)
+    pymod_m.compute_static_syn(output_path="stsyn_bad.nc", src_fault=bad_dip)
     raise AssertionError("dip=0 should fail in C")
 except RuntimeError:
     pass

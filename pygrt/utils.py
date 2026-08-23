@@ -140,7 +140,7 @@ def compute_okada(
     strike: Optional[float] = None,
     dip: Optional[float] = None,
     rake: Optional[float] = None,
-    finite_fault: Optional[PathLike] = None,
+    src_fault: Optional[PathLike] = None,
     zne: bool = False,
     calc_upar: bool = False,
     return_result: bool = False,
@@ -160,14 +160,14 @@ def compute_okada(
     * ``strike`` and ``dip`` - tensile crack (``TS``), or double-couple (``DC``)
       when ``rake`` is also supplied
 
-    A Coulomb-format finite-fault file can be passed through ``finite_fault``.
+    A Coulomb-format finite-fault file can be passed through ``src_fault``.
     Its Kode column selects the rectangular or point-source interpretation of
     the two slip columns; ``.inr`` is supported for Kode 100 rake/net-slip rows.
     The finite fault is evaluated directly as Okada rectangular patches, so no
     ``subfault_size`` subdivision option is needed.
 
     ``strike``, ``dip`` and ``rake`` must be supplied as a complete geometry
-    when they are used. They are mutually exclusive with ``finite_fault``.
+    when they are used. They are mutually exclusive with ``src_fault``.
 
     All arguments must be passed by keyword.
 
@@ -190,8 +190,8 @@ def compute_okada(
     :param    strike:           Fault strike in degrees, in [0, 360]
     :param    dip:              Fault dip in degrees, in [0, 90]
     :param    rake:             Slip rake in degrees, in [-180, 180]
-    :param    finite_fault:     Coulomb-format finite-fault file, mutually exclusive
-                               with point-source options
+    :param    src_fault:        Coulomb-format finite-fault file, mutually exclusive
+                                with point-source options
     :param    zne:              If true, output ZNE instead of ZRT components
     :param    calc_upar:        If true, also output spatial displacement derivatives
     :param    return_result:    If true, read and return the generated NetCDF data
@@ -212,7 +212,7 @@ def compute_okada(
         raise TypeError("modelparams must be a sequence of (vp, vs, rho).") from None
     vp, vs, rho = modelparams
 
-    use_ff = finite_fault is not None
+    use_ff = src_fault is not None
     use_q = recv_points is not None
     use_xy = norths is not None or easts is not None
     has_strike = strike is not None
@@ -250,8 +250,8 @@ def compute_okada(
     ]
     if use_ff:
         if has_point_source_options:
-            raise ValueError("finite_fault is mutually exclusive with point-source options.")
-        command.append(f"-C{Path(finite_fault)}")
+            raise ValueError("src_fault is mutually exclusive with point-source options.")
+        command.append(f"-C{Path(src_fault)}")
     else:
         if scale is None:
             raise ValueError("scale is required for point-source synthesis.")

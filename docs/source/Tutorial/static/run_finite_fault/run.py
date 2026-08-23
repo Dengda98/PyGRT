@@ -27,10 +27,10 @@ pymod.compute_static_grn(
 
 # ------------------------------------------------------------------
 # BEGIN SYN
-# 设置 finite_fault 来传入 Coulomb 格式的有限断层文件
+# 设置 src_fault 来传入 Coulomb 格式的有限断层文件
 pymod.compute_static_syn(
     norths=(-20, 20, 1),
     easts=(-20, 20, 1),
-    finite_fault="fault.inp", output_path="stsyn_ff.nc", zne=True,
+    src_fault="fault.inp", output_path="stsyn_ff.nc", zne=True,
 )
 # END SYN
