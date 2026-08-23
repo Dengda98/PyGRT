@@ -8,9 +8,9 @@ pymod = pygrt.PyModel1D(stgrn="stgrn.nc", modelpath="milrow")
 
 # 设置多个震源深度
 pymod.compute_static_grn(
-    depsrc=np.arange(0, 8+1e-8, 0.5),
-    deprcv=0.0,
-    dists=np.arange(0, 60+1e-8, 0.5),
+    depsrc=5.0,
+    deprcv=np.arange(0, 10+1e-8, 0.5),
+    dists=np.arange(0, 20+1e-8, 0.5),
     calc_upar=True
 )
 # END GRN
@@ -18,11 +18,10 @@ pymod.compute_static_grn(
 
 # ------------------------------------------------------------------
 # BEGIN SYN
-# 设置 src_fault 来传入 Coulomb 格式的有限断层文件
+# 设置 rcv_fault 来传入 Coulomb 格式的有限断层文件来设置接收点
 pymod.compute_static_syn(
-    norths=(-20, 20, 1),
-    easts=(-20, 20, 1),
-    src_fault="fault.inp", output_path="stsyn_ff.nc",
+    rcv_fault="rcv_fault.inp",
+    scale=1e24, strike=33, dip=90, rake=0, output_path="stsyn_rf.nc",
     zne=True, calc_upar=True
 )
 # END SYN
