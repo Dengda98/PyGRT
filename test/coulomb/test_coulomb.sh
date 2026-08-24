@@ -73,7 +73,7 @@ grt static sproj -Gfinite_zrt.nc
 grt static coulomb -Gfinite_zrt.nc -F0.4
 ncdump -h finite_zrt.nc | rg 'coulomb\(point\)' >/dev/null
 
-conda run -n pygrt-dev python -u test_coulomb.py
+python -u test_coulomb.py
 
 rm -f rcv_pts.txt rcv_faults_defined.inp stgrn.nc \
     grid_zrt.nc grid_zne.nc points_zrt.nc finite_zrt.nc \

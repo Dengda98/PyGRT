@@ -165,7 +165,7 @@ expect_fail "defined finite rake rejects non-forcing -M" finite_defined_m.log \
     grt static sproj -Gfinite_defined.nc -M55
 grt static sproj -Gfinite_defined.nc -M55+f
 
-conda run -n pygrt-dev python -u test_sproj.py
+python -u test_sproj.py
 
 rm -f rcv_pts.txt rcv_pts_6.txt rcv_pts_new_6.txt rcv_pts_reordered_6.txt \
     rcv_faults_undefined.inp rcv_faults_defined.inp stgrn.nc \
