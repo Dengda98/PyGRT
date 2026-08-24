@@ -37,6 +37,8 @@ __all__ = [
     "compute_strain",
     "compute_rotation",
     "compute_stress",
+    "compute_sproj",
+    "compute_coulomb",
     "stream_convolve",
     "stream_integral",
     "stream_diff",
@@ -305,6 +307,92 @@ def compute_okada(
     if return_result:
         return read_static_nc(output)
     return None
+
+
+def _run_static_file_module(
+    path: PathLike,
+    module: str,
+    options: Sequence[object],
+    return_result: bool,
+):
+    """运行只处理静态 NetCDF 文件的模块，并按需读取处理结果"""
+    path = Path(path)
+    if path.is_dir():
+        raise ValueError(f"Only static synthesis files are supported: {path}")
+    if not path.is_file():
+        raise FileNotFoundError(f"Synthesis result does not exist: {path}")
+
+    run_grt(["static", module, f"-G{path}", *options])
+    return read_static_nc(path) if return_result else None
+
+
+def compute_sproj(
+    path: PathLike,
+    *,
+    strike: Optional[float] = None,
+    dip: Optional[float] = None,
+    rake: Optional[float] = None,
+    recv_points: Optional[PathLike] = None,
+    force_rake: bool = False,
+    return_result: bool = False,
+):
+    """
+    Project static stress tensors onto receiver-fault geometry in place.
+
+    The input ``path`` must be a static synthesis NetCDF file, not a dynamic
+    synthesis directory, and must contain the
+    six stress components produced by ``compute_stress``. For grid and ordinary
+    points layouts, pass ``strike``, ``dip`` and ``rake`` together. For finite
+    receiver points, pass only ``rake`` when the file has undefined rake values;
+    set ``force_rake=True`` to replace every rake. ``recv_points`` corresponds
+    to the C module's ``-Q`` option and must contain six columns per row.
+
+    Results are written back to ``path`` as ``sigma_n`` and ``tau_s``.
+
+    :param    path:         Static synthesis NetCDF file containing stress components.
+    :param    strike:       Manual receiver strike in degrees.
+    :param    dip:          Manual receiver dip in degrees.
+    :param    rake:         Manual receiver rake in degrees.
+    :param    recv_points:  Six-column receiver geometry file for the ``-Q`` option.
+    :param    force_rake:   If true, append ``+f`` and force the manual rake for all finite points.
+    :param    return_result: If true, return the processed NetCDF data.
+
+    :return: The result from :func:`read_static_nc` when ``return_result`` is true;
+             otherwise ``None``
+    """
+    options = []
+    geometry = [value for value in (strike, dip, rake) if value is not None]
+    if geometry:
+        geometry_text = "/".join(format_float(value) for value in geometry)
+        options.append(f"-M{geometry_text}{'+f' if force_rake else ''}")
+
+    if recv_points is not None:
+        options.append(f"-Q{Path(recv_points)}")
+
+    return _run_static_file_module(path, "sproj", options, return_result)
+
+
+def compute_coulomb(
+    path: PathLike,
+    friction: float,
+    *,
+    return_result: bool = False,
+):
+    """
+    Compute Coulomb stress change in a static synthesis NetCDF file.
+
+    The input file must already contain ``sigma_n`` and ``tau_s``, normally
+    produced by :func:`compute_sproj`. The result ``coulomb`` is written back
+    to the same file using ``tau_s + friction * sigma_n``.
+
+    :param    path:          Static synthesis NetCDF file containing ``sigma_n`` and ``tau_s``.
+    :param    friction:      Nonnegative dimensionless effective friction coefficient.
+    :param    return_result: If true, return the processed NetCDF data.
+
+    :return: The result from :func:`read_static_nc` when ``return_result`` is true;
+             otherwise ``None``
+    """
+    return _run_static_file_module(path, "coulomb", [f"-F{format_float(friction)}"], return_result)
 
 
 def _postprocess(path: PathLike, module: str, return_result: bool):
