@@ -60,48 +60,42 @@ xxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxx  xxxxxxxxxx xxxxxxxxxx xxxxx
   1     0.0000     0.0000     2.0000     0.0000   100     0.1000      0.1000     90.00       1.0000     3.0000
 EOF
 
-cat > finite_no_rake.cdl <<'EOF'
-netcdf finite_no_rake {
-dimensions:
-    point = 2;
-    nfault = 1;
-variables:
-    double north(point);
-    double east(point);
-    double depth(point);
-    double strike(nfault);
-    double dip(nfault);
-    int offset(nfault);
-    double stress_ZZ(point);
-    double stress_ZN(point);
-    double stress_ZE(point);
-    double stress_NN(point);
-    double stress_NE(point);
-    double stress_EE(point);
+python - <<'PY'
+import numpy as np
+from scipy.io import netcdf_file
 
-// global attributes:
-    :layout = "points";
-    :rot2ZNE = 1;
-data:
-    north = 0, 1;
-    east = 0, 1;
-    depth = 1, 1;
-    strike = 20;
-    dip = 45;
-    offset = 2;
-    stress_ZZ = 1, 2;
-    stress_ZN = 0, 0;
-    stress_ZE = 0, 0;
-    stress_NN = 3, 4;
-    stress_NE = 0, 0;
-    stress_EE = 5, 6;
-}
-EOF
+with netcdf_file("finite_no_rake.nc", mode="w") as nc:
+    nc.createDimension("point", 2)
+    nc.createDimension("nfault", 1)
+
+    point_data = {
+        "north": (0.0, 1.0),
+        "east": (0.0, 1.0),
+        "depth": (1.0, 1.0),
+        "stress_ZZ": (1.0, 2.0),
+        "stress_ZN": (0.0, 0.0),
+        "stress_ZE": (0.0, 0.0),
+        "stress_NN": (3.0, 4.0),
+        "stress_NE": (0.0, 0.0),
+        "stress_EE": (5.0, 6.0),
+    }
+    for name, values in point_data.items():
+        variable = nc.createVariable(name, "d", ("point",))
+        variable[:] = np.asarray(values, dtype=np.float64)
+
+    for name, value in {"strike": 20.0, "dip": 45.0}.items():
+        variable = nc.createVariable(name, "d", ("nfault",))
+        variable[:] = value
+
+    offset = nc.createVariable("offset", "i", ("nfault",))
+    offset[:] = 2
+    nc.layout = "points"
+    nc.rot2ZNE = 1
+PY
 
 # 统一使用包含多个接收深度的库，覆盖普通点和有限接收断层
 grt static greenfn -M../milrow -Ds2 -Dr0/3/1 -R0/8/1 -e -Ostgrn.nc
 
-ncgen -b -o finite_no_rake.nc finite_no_rake.cdl
 expect_fail "missing finite rake variable requires -M" finite_no_rake_no_m.log \
     grt static sproj -Gfinite_no_rake.nc
 grt static sproj -Gfinite_no_rake.nc -M40
@@ -184,7 +178,7 @@ rm -f rcv_pts.txt rcv_pts_6.txt rcv_pts_new_6.txt rcv_pts_reordered_6.txt \
     rcv_faults_undefined.inp rcv_faults_defined.inp stgrn.nc \
     grid_zrt.nc grid_zne.nc points_plain.nc points_plain_manual.nc \
     points_geometry.nc points_geometry_from_file.nc finite_no_rake.nc finite_undefined.nc \
-    finite_undefined_partial.nc finite_defined.nc finite_no_rake.cdl \
+    finite_undefined_partial.nc finite_defined.nc \
     grid_before.nc grid_no_m.log grid_overwrite.log \
     points_plain_no_geometry.log points_manual.log points_Q.log points_Q_3cols.log \
     points_Q_order.log finite_no_rake_no_m.log finite_no_m.log finite_force.log finite_defined_m.log
