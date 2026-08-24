@@ -15,6 +15,10 @@
 #include "grt/common/finite_fault.h"
 #include "grt/common/util.h"
 
+#define COULOMB_HEADER_MIN_TOKENS 11
+#define COULOMB_HEADER_MAX_TOKENS 12
+#define COULOMB_HEADER_TOKEN_SIZE 32
+
 /**
  * 检查有限断层的走向长度、倾角和深度范围
  *
@@ -55,14 +59,14 @@ static void set_fault_derived(FINITE_FAULT *f)
  * 按 Kode 解释文件第 7、8 列
  *
  * @param[out]  f             保存解释结果的有限断层结构体
- * @param[in]   rake_format   是否使用 .inr 的 rake/net slip 格式
+ * @param[in]   rake_format   是否使用表头标识的 rake/net slip 格式
  * @param[in]   where         错误位置描述
  */
 static void set_fault_components(FINITE_FAULT *f, bool rake_format, const char *where)
 {
     f->rake_format = rake_format;
     if(rake_format && f->kode != KODE_RTLAT_REVERSE){
-        GRTRaiseError("%s: .inr rake/net slip format only supports Kode=100.", where);
+        GRTRaiseError("%s: Coulomb rake/net slip format only supports Kode=100.", where);
     }
 
     switch(f->kode){
@@ -110,20 +114,49 @@ FINITE_FAULT *grt_finite_fault_load_coulomb(const char *path, size_t *nfault)
 
     char *line = NULL;
     size_t nlen = 0;
-    // 跳过两行表头（列名 + 占位行）
-    for(int ih = 0; ih < 2; ++ih){
-        if(grt_getline(&line, &nlen, fp) <= 0){
-            fclose(fp);
-            GRT_SAFE_FREE_PTR(line);
-            GRTRaiseError("read header of %s failed.", path);
-        }
+    if(grt_getline(&line, &nlen, fp) <= 0){
+        fclose(fp);
+        GRT_SAFE_FREE_PTR(line);
+        GRTRaiseError("read Coulomb fault header of %s failed.", path);
+    }
+
+    // Coulomb 表格有 11 个数值列；首行第一个 token 是 ID 列的 # 标记
+    char header[COULOMB_HEADER_MAX_TOKENS][COULOMB_HEADER_TOKEN_SIZE] = {{0}};
+    int nheader = sscanf(line,
+        "%31s %31s %31s %31s %31s %31s %31s %31s %31s %31s %31s %31s",
+        header[0], header[1], header[2], header[3], header[4], header[5],
+        header[6], header[7], header[8], header[9], header[10], header[11]);
+    if(nheader < COULOMB_HEADER_MIN_TOKENS || strcmp(header[0], "#") != 0){
+        fclose(fp);
+        GRT_SAFE_FREE_PTR(line);
+        GRTRaiseError("invalid Coulomb fault header in %s: expected # plus 10 field labels for 11 data columns.", path);
+    }
+
+    // 仅第 7 个数据列的完整 token "rake" 表示 rake/net-slip 格式
+    bool rake_format = strcmp(header[6], "rake") == 0;
+    size_t path_length = strlen(path);
+    bool suffix_rake = path_length >= 4 && strcmp(path + path_length - 4, ".inr") == 0;
+    if(suffix_rake && !rake_format){
+        GRTRaiseWarning(
+            "Coulomb file \"%s\" has .inr suffix but the seventh header column is \"%s\", "
+            "not the exact token \"rake\"; using the header-defined component format.",
+            path, header[6]);
+    } else if(!suffix_rake && rake_format){
+        GRTRaiseWarning(
+            "Coulomb file \"%s\" has the exact token \"rake\" in the seventh header column "
+            "but no .inr suffix; using the header-defined rake/net-slip format.", path);
+    }
+
+    // 第二行是与 11 个数据列对应的占位行
+    if(grt_getline(&line, &nlen, fp) <= 0){
+        fclose(fp);
+        GRT_SAFE_FREE_PTR(line);
+        GRTRaiseError("read Coulomb fault placeholder header of %s failed.", path);
     }
 
     FINITE_FAULT *faults = NULL;
     size_t n = 0;
     size_t line_number = 2;
-    size_t path_length = strlen(path);
-    bool rake_format = path_length >= 4 && strcmp(path + path_length - 4, ".inr") == 0;
     while(grt_getline(&line, &nlen, fp) != -1){
         ++line_number;
 
