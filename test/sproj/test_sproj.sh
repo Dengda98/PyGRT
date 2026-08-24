@@ -109,17 +109,25 @@ grt static sproj -Gfinite_no_rake.nc -M40
 # -------------------- grid：手动三要素，ZRT/ZNE --------------------
 grt static syn -Gstgrn.nc -S1e20 -Ds2 -Dr0 -e -X-2/2/1 -Y-1/1/1 -Ogrid_zrt.nc
 grt static stress grid_zrt.nc
-ncdump -v north,east,stress_ZZ grid_zrt.nc | sed -n '/^data:/,$p' > grid_before.txt
+cp grid_zrt.nc grid_before.nc
 expect_fail "grid requires -M" grid_no_m.log grt static sproj -Ggrid_zrt.nc
 grt static sproj -Ggrid_zrt.nc -M33/44/55
-ncdump -v north,east,stress_ZZ grid_zrt.nc | sed -n '/^data:/,$p' > grid_after.txt
-cmp grid_before.txt grid_after.txt
-ncdump -h grid_zrt.nc | rg 'sigma_n\(north, east\)' >/dev/null
-ncdump -h grid_zrt.nc | rg 'tau_s\(north, east\)' >/dev/null
+python - <<'PY'
+import numpy as np
+from scipy.io import netcdf_file
+
+with netcdf_file("grid_before.nc", mode="r", mmap=False) as before, netcdf_file(
+    "grid_zrt.nc", mode="r", mmap=False
+) as after:
+    for name in ("north", "east", "stress_ZZ"):
+        np.testing.assert_array_equal(before.variables[name][:], after.variables[name][:])
+    assert after.variables["sigma_n"].dimensions == ("north", "east")
+    assert after.variables["tau_s"].dimensions == ("north", "east")
+PY
 
 # 同一个文件再次运行，检查已有变量覆盖警告
 grt static sproj -Ggrid_zrt.nc -M33/44/55 > grid_overwrite.log 2>&1
-rg 'already exists and will be overwritten' grid_overwrite.log >/dev/null
+grep -Fq 'already exists and will be overwritten' grid_overwrite.log
 
 grt static syn -Gstgrn.nc -S1e20 -Ds2 -Dr0 -N -e -X-2/2/1 -Y-1/1/1 -Ogrid_zne.nc
 grt static stress grid_zne.nc
@@ -138,10 +146,10 @@ grt static stress points_geometry.nc
 grt static sproj -Gpoints_geometry.nc
 cp points_geometry.nc points_geometry_from_file.nc
 grt static sproj -Gpoints_geometry.nc -M120/35/-40 > points_manual.log 2>&1
-rg 'manual geometry' points_manual.log >/dev/null
+grep -Fq 'manual geometry' points_manual.log
 
 grt static sproj -Gpoints_plain.nc -Qrcv_pts_new_6.txt > points_Q.log 2>&1
-rg 'already exists and will be overwritten' points_Q.log >/dev/null
+grep -Fq 'already exists and will be overwritten' points_Q.log
 expect_fail "-Q requires six columns" points_Q_3cols.log \
     grt static sproj -Gpoints_plain.nc -Qrcv_pts.txt
 expect_fail "-Q point order must match" points_Q_order.log \
@@ -150,13 +158,18 @@ expect_fail "-Q point order must match" points_Q_order.log \
 # -------------------- 有限接收断层：未定义与已定义 rake --------------------
 grt static syn -Gstgrn.nc -S1e20 -Ds2 -Rrcv_faults_undefined.inp+i1/1 -e -Ofinite_undefined.nc
 grt static stress finite_undefined.nc
-ncdump -h finite_undefined.nc | rg 'nfault = ' >/dev/null
+python - <<'PY'
+from scipy.io import netcdf_file
+
+with netcdf_file("finite_undefined.nc", mode="r", mmap=False) as nc:
+    assert "nfault" in nc.dimensions
+PY
 expect_fail "finite receiver with undefined rake requires -M" finite_no_m.log \
 grt static sproj -Gfinite_undefined.nc
 grt static sproj -Gfinite_undefined.nc -M55
 cp finite_undefined.nc finite_undefined_partial.nc
 grt static sproj -Gfinite_undefined.nc -M55+f > finite_force.log 2>&1
-rg 'already exists and will be overwritten' finite_force.log >/dev/null
+grep -Fq 'already exists and will be overwritten' finite_force.log
 
 grt static syn -Gstgrn.nc -S1e20 -Ds2 -Rrcv_faults_defined.inp+i1/1 -e -Ofinite_defined.nc
 grt static stress finite_defined.nc
@@ -172,7 +185,7 @@ rm -f rcv_pts.txt rcv_pts_6.txt rcv_pts_new_6.txt rcv_pts_reordered_6.txt \
     grid_zrt.nc grid_zne.nc points_plain.nc points_plain_manual.nc \
     points_geometry.nc points_geometry_from_file.nc finite_no_rake.nc finite_undefined.nc \
     finite_undefined_partial.nc finite_defined.nc finite_no_rake.cdl \
-    grid_before.txt grid_after.txt grid_no_m.log grid_overwrite.log \
+    grid_before.nc grid_no_m.log grid_overwrite.log \
     points_plain_no_geometry.log points_manual.log points_Q.log points_Q_3cols.log \
     points_Q_order.log finite_no_rake_no_m.log finite_no_m.log finite_force.log finite_defined_m.log
 

@@ -36,7 +36,7 @@ grt static greenfn -M../milrow -Ds2 -Dr0/3/1 -R0/8/1 -e -Ostgrn.nc
 grt static syn -Gstgrn.nc -S1e20 -Ds2 -Dr0 -e -X-2/2/1 -Y-1/1/1 -Ogrid_zrt.nc
 grt static stress grid_zrt.nc
 grt static sproj -Ggrid_zrt.nc -M33/44/55
-ncdump -v sigma_n,tau_s grid_zrt.nc | sed -n '/^data:/,$p' > grid_zrt_before.txt
+cp grid_zrt.nc grid_zrt_before.nc
 expect_fail "missing friction coefficient" grid_no_f.log \
     grt static coulomb -Ggrid_zrt.nc
 expect_fail "negative friction coefficient" grid_negative_f.log \
@@ -44,40 +44,63 @@ expect_fail "negative friction coefficient" grid_negative_f.log \
 expect_fail "invalid friction coefficient" grid_invalid_f.log \
     grt static coulomb -Ggrid_zrt.nc -Fabc
 grt static coulomb -Ggrid_zrt.nc -F0.6
-ncdump -v sigma_n,tau_s grid_zrt.nc | sed -n '/^data:/,$p' > grid_zrt_after.txt
-cmp grid_zrt_before.txt grid_zrt_after.txt
-ncdump -h grid_zrt.nc | rg 'coulomb\(north, east\)' >/dev/null
+python - <<'PY'
+import numpy as np
+from scipy.io import netcdf_file
+
+with netcdf_file("grid_zrt_before.nc", mode="r", mmap=False) as before, netcdf_file(
+    "grid_zrt.nc", mode="r", mmap=False
+) as after:
+    for name in ("sigma_n", "tau_s"):
+        np.testing.assert_array_equal(before.variables[name][:], after.variables[name][:])
+    assert after.variables["coulomb"].dimensions == ("north", "east")
+PY
 
 # 再次运行检查已有 coulomb 变量的覆盖警告
 grt static coulomb -Ggrid_zrt.nc -F0.8 > grid_overwrite.log 2>&1
-rg 'already exists and will be overwritten' grid_overwrite.log >/dev/null
+grep -Fq 'already exists and will be overwritten' grid_overwrite.log
 
 # -------------------- grid：ZNE --------------------
 grt static syn -Gstgrn.nc -S1e20 -Ds2 -Dr0 -N -e -X-2/2/1 -Y-1/1/1 -Ogrid_zne.nc
 grt static stress grid_zne.nc
 grt static sproj -Ggrid_zne.nc -M33/44/55
 grt static coulomb -Ggrid_zne.nc -F0.6
-ncdump -h grid_zne.nc | rg 'coulomb\(north, east\)' >/dev/null
+python - <<'PY'
+from scipy.io import netcdf_file
+
+with netcdf_file("grid_zne.nc", mode="r", mmap=False) as nc:
+    assert nc.variables["coulomb"].dimensions == ("north", "east")
+PY
 
 # -------------------- 普通 points：ZRT --------------------
 grt static syn -Gstgrn.nc -S1e20 -Ds2 -Qrcv_pts.txt -e -Opoints_zrt.nc
 grt static stress points_zrt.nc
 grt static sproj -Gpoints_zrt.nc -M33/44/55
 grt static coulomb -Gpoints_zrt.nc -F0.25
-ncdump -h points_zrt.nc | rg 'coulomb\(point\)' >/dev/null
+python - <<'PY'
+from scipy.io import netcdf_file
+
+with netcdf_file("points_zrt.nc", mode="r", mmap=False) as nc:
+    assert nc.variables["coulomb"].dimensions == ("point",)
+PY
 
 # -------------------- 有限接收断层：ZRT --------------------
 grt static syn -Gstgrn.nc -S1e20 -Ds2 -Rrcv_faults_defined.inp+i1/1 -e -Ofinite_zrt.nc
 grt static stress finite_zrt.nc
 grt static sproj -Gfinite_zrt.nc
 grt static coulomb -Gfinite_zrt.nc -F0.4
-ncdump -h finite_zrt.nc | rg 'coulomb\(point\)' >/dev/null
+python - <<'PY'
+from scipy.io import netcdf_file
+
+with netcdf_file("finite_zrt.nc", mode="r", mmap=False) as nc:
+    assert nc.variables["coulomb"].dimensions == ("point",)
+PY
 
 python -u test_coulomb.py
 
 rm -f rcv_pts.txt rcv_faults_defined.inp stgrn.nc \
     grid_zrt.nc grid_zne.nc points_zrt.nc finite_zrt.nc \
-    grid_zrt_before.txt grid_zrt_after.txt grid_no_f.log \
+    grid_zrt_before.nc grid_no_f.log \
     grid_negative_f.log grid_invalid_f.log grid_overwrite.log
 
 echo "test_coulomb.sh: all checks passed"
