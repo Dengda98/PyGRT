@@ -10,6 +10,8 @@ PyGRT 静态解的合成阶段目前已支持传入
 得到多个子断层，并将每个子断层视为在中心点的点源，
 然后叠加各个子断层的合成结果，得到有限断层震源的合成结果。
 
+:download:`Shell Scripts <run_src_fault/run.sh>` | :download:`Python Scripts <run_src_fault/run.py>`
+
 有限断层文件
 ---------------
 以下使用一个垂直走滑断层作为示例，文件 ``fault.inp`` 的内容如下：
@@ -50,7 +52,7 @@ PyGRT 静态解的合成阶段目前已支持传入
             :start-after: BEGIN GRN
             :end-before: END GRN
 
-计算有限断层震源激发的位移
+计算位移及其空间偏导
 ------------------------------
 在合成时， CLI 和 Python 函数中都有对应传入有限断层文件的参数，
 此时点源相关的参数就不可再设置。
@@ -78,7 +80,6 @@ PyGRT 静态解的合成阶段目前已支持传入
             :start-after: BEGIN SYN
             :end-before: END SYN
 
-:download:`Shell Scripts <run_src_fault/run.sh>` | :download:`Python Scripts <run_src_fault/run.py>`
 
 .. literalinclude:: run_src_fault/run.py
     :language: python
@@ -90,5 +91,36 @@ PyGRT 静态解的合成阶段目前已支持传入
 
     颜色表示垂直位移 Z，箭头表示水平位移 E、N，粗黑线表示断层顶边走向
 
+计算库伦应力
+--------------------
 以上合成中使用 **-e** (C) 和 **calc_upar=True** (Python)，所以输出的 nc 文件中也包含位移偏导数，
 而输出格式与之前的点源的情况没什么不同，因此应力等物理量的计算方式而之前的介绍完全一致，这里不再重复。
+
+得到计算得到位移偏导数后，就可以计算应力张量 -> 指定接收断层形态对应力张量进行投影 -> 计算库伦应力。
+
+.. tabs::
+
+    .. group-tab:: C
+
+        .. literalinclude:: run_src_fault/run.sh
+            :language: bash
+            :start-after: BEGIN COULOMB
+            :end-before: END COULOMB
+
+        两个模块的详细说明请参见
+        :doc:`static_sproj </Module/static_sproj>` 和
+        :doc:`static_coulomb </Module/static_coulomb>`。
+
+    .. group-tab:: Python
+
+        .. literalinclude:: run_src_fault/run.py
+            :language: python
+            :start-after: BEGIN COULOMB
+            :end-before: END COULOMB
+
+        两个函数的详细说明请参见
+        :func:`compute_sproj() <pygrt.utils.compute_sproj>` 和
+        :func:`compute_coulomb() <pygrt.utils.compute_coulomb>`。
+
+.. figure:: run_src_fault/coulomb.svg
+    :align: center

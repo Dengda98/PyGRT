@@ -50,5 +50,58 @@ rm -f disp.pdf
 # END GMT
 # ------------------------------------------------
 
+
+# ------------------------------------------------
+# BEGIN COULOMB
+# 计算应力张量
+grt static stress stsyn_ff.nc
+# 将应力张量投影到指定形态的断层面上
+grt static sproj -Gstsyn_ff.nc -M59/90/180
+# 指定等效摩擦系数，计算库伦应力
+grt static coulomb -Gstsyn_ff.nc -F0.75
+# END COULOMB
+# ------------------------------------------------
+
+# ------------------------------------------------
+# BEGIN GMT COULOMB
+syn=stsyn_ff.nc
+region=$(gmt grdinfo -Ir "$syn?Z")
+
+gmt begin coulomb pdf
+    gmt set FONT_TITLE 15p
+    gmt set MAP_TITLE_OFFSET 2p
+    gmt makecpt -Cjet -T-0.4/0.4/0.01 -D -Z
+    cat > faultline <<EOF
+-10 -6
+10 6
+EOF
+
+    gmt basemap "$region" -JX9c/9c -Baf -BWSen+t"Shear Stress Change"
+    gmt grdmath "$syn?tau_s" 1e-7 MUL = tmp.nc
+    gmt grdimage tmp.nc -E
+    gmt plot -W4p faultline
+
+    gmt basemap "$region" -JX9c/9c -Baf -BWSen+t"Normal Stress Change" -X+w+2c
+    gmt grdmath "$syn?sigma_n" 1e-7 MUL = tmp.nc
+    gmt grdimage tmp.nc -E
+    gmt plot -W4p faultline
+    gmt colorbar -DJBC+w9c -Bx+l"MPa"
+
+    gmt basemap "$region" -JX9c/9c -Baf -BWSen+t"Coulomb Stress Change" -X+w+2c
+    gmt grdmath "$syn?coulomb" 1e-7 MUL = tmp.nc
+    gmt grdimage tmp.nc -E
+    gmt plot -W4p faultline
+
+    rm faultline tmp.nc
+gmt end
+
+pdf2svg coulomb.pdf coulomb.svg
+rm -f coulomb.pdf
+# END GMT COULOMB
+# ------------------------------------------------
+
+
+
+
 # 删除中间 NetCDF，仅保留用于文档的 SVG 图
 rm -f stgrn.nc stsyn_ff.nc

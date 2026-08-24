@@ -98,6 +98,50 @@ def plot_compare(
     print(f"saved: {output}")
 
 
+def plot_coulomb_compare(
+    north: np.ndarray,
+    east: np.ndarray,
+    pygrt: Dict[str, np.ndarray],
+    okada: Dict[str, np.ndarray],
+    output: Path,
+    title: str,
+) -> None:
+    """绘制 PyGRT 和 Okada 的库伦应力对比图"""
+
+    scale = 1e-7  # dyne/cm2 转为 MPa
+    diff = pygrt["coulomb"]*scale - okada["coulomb"]*scale
+    fields = (pygrt["coulomb"]*scale, okada["coulomb"]*scale, diff)
+    labels = ("PyGRT", "Okada", "PyGRT - Okada")
+    limit = max(np.nanmax(np.abs(field)) for field in fields)
+    if limit == 0.0:
+        limit = 1.0
+
+    fig, axes = plt.subplots(1, 3, figsize=(12, 4), layout="constrained")
+    extent = (east.min(), east.max(), north.min(), north.max())
+    for axis, field, label in zip(axes, fields, labels):
+        image = axis.imshow(
+            field,
+            extent=extent,
+            origin="lower",
+            aspect="equal",
+            cmap="seismic",
+            vmin=-limit,
+            vmax=limit,
+        )
+        axis.set_title(label)
+        axis.set_xlabel("East (km)")
+        axis.set_ylabel("North (km)")
+        colorbar = fig.colorbar(image, ax=axis, pad=0.03, shrink=0.7)
+        colorbar.set_label("Coulomb stress (MPa)", fontsize=8)
+        colorbar.ax.tick_params(labelsize=7)
+
+    fig.suptitle(title)
+    fig.savefig(output, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print(f"coulomb: max difference = {np.max(np.abs(diff)):.6e}")
+    print(f"saved: {output}")
+
+
 derivative_names = tuple(f"{direction.lower()}{component}" for direction in CHANNELS for component in CHANNELS)
 
 def compare_case(
@@ -152,5 +196,51 @@ def compare_case(
         )
 
 
+def compare_coulomb_case(
+    pygrt_path: Path,
+    okada_path: Path,
+    output: Path,
+    title: str,
+) -> None:
+    """检查并绘制一组库伦应力结果"""
+
+    north_okada, east_okada, okada, okada_rot2zne = read_nc(okada_path)
+    north_pygrt, east_pygrt, pygrt, pygrt_rot2zne = read_nc(pygrt_path)
+    if okada_rot2zne != pygrt_rot2zne:
+        raise RuntimeError(f"{title} 的输出坐标系不一致")
+    if okada_rot2zne != 1:
+        raise RuntimeError("本示例要求输出 ZNE 分量")
+
+    check_results(
+        north_okada,
+        east_okada,
+        north_pygrt,
+        east_pygrt,
+        okada,
+        pygrt,
+        ("coulomb",),
+    )
+    plot_coulomb_compare(
+        north_okada,
+        east_okada,
+        pygrt,
+        okada,
+        output,
+        title,
+    )
+
+
 compare_case(HERE / "static_syn.nc", HERE / "okada.nc", "", "Point-source")
 compare_case(HERE / "finite_static_syn.nc", HERE / "finite_okada.nc", "finite", "Finite-fault")
+compare_coulomb_case(
+    HERE / "static_syn.nc",
+    HERE / "okada.nc",
+    HERE / "compare_coulomb.svg",
+    "Point-source Coulomb stress comparison (ZNE)",
+)
+compare_coulomb_case(
+    HERE / "finite_static_syn.nc",
+    HERE / "finite_okada.nc",
+    HERE / "compare_finite_coulomb.svg",
+    "Finite-fault Coulomb stress comparison (ZNE)",
+)

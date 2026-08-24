@@ -27,3 +27,14 @@ pymod.compute_static_syn(
 )
 # END SYN
 # ------------------------------------------------------------------
+
+# ------------------------------------------------------------------
+# BEGIN COULOMB
+# 计算应力张量
+pygrt.utils.compute_stress("stsyn_ff.nc")
+# 将应力张量投影到指定形态的断层面上
+pygrt.utils.compute_sproj("stsyn_ff.nc", strike=59, dip=90, rake=180)
+# 指定等效摩擦系数，计算库伦应力
+pygrt.utils.compute_coulomb("stsyn_ff.nc", friction=0.75)
+# END COULOMB
+# ------------------------------------------------------------------
