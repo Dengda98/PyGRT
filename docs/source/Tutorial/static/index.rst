@@ -17,6 +17,8 @@
         EE(["utils.compute_strain()"])
         RR(["utils.compute_rotation()"])
         TT(["utils.compute_stress()"])
+        SP(["utils.compute_sproj()"])
+        CO(["utils.compute_coulomb()"])
 
         G["Compute Green's Functions
         (and its Spatial Derivatives)"]
@@ -25,15 +27,19 @@
         E["Compute Strain Tensor"]
         R["Compute Rotation Tensor"]
         T["Compute Stress Tensor"]
+        P["Project Stress Tensor"]
+        C["Compute Coulomb Stress"]
 
         GG --> G
         G --> SS --> S
         S --> EE --> E
         S --> RR --> R
         S --> TT --> T
+        T --> SP --> P
+        P --> CO --> C
         
         classDef cmdcls fill:#FBE8CE,stroke:#BFA28C,stroke-width:2px,color:#333;
-        class GG,SS,EE,RR,TT cmdcls
+        class GG,SS,EE,RR,TT,SP,CO cmdcls
 
 + C (module name)
 
@@ -46,6 +52,8 @@
         EE(["static_strain"])
         RR(["static_rotation"])
         TT(["static_stress"])
+        SP(["static_sproj"])
+        CO(["static_coulomb"])
 
         G["Compute Green's Functions
         (and its Spatial Derivatives)"]
@@ -54,15 +62,19 @@
         E["Compute Strain Tensor"]
         R["Compute Rotation Tensor"]
         T["Compute Stress Tensor"]
+        P["Project Stress Tensor"]
+        C["Compute Coulomb Stress"]
 
         GG --> G
         G --> SS --> S
         S --> EE --> E
         S --> RR --> R
         S --> TT --> T
+        T --> SP --> P
+        P --> CO --> C
         
         classDef cmdcls fill:#FBE8CE,stroke:#BFA28C,stroke-width:2px,color:#333;
-        class GG,SS,EE,RR,TT cmdcls
+        class GG,SS,EE,RR,TT,SP,CO cmdcls
 
 .. toctree::
    :hidden:

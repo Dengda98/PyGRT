@@ -106,10 +106,10 @@
     :gutter: 0
 
     .. grid-item::
-        :columns: 2
+        :columns: 1
 
     .. grid-item::
-        :columns: 7
+        :columns: 9
 
         .. container:: small-mermaid
 
@@ -122,14 +122,18 @@
                 EE(["static_strain"])
                 RR(["static_rotation"])
                 TT(["static_stress"])
+                SP(["static_sproj"])
+                CO(["static_coulomb"])
 
                 GG --> SS
                 SS --> EE
                 SS --> RR
                 SS --> TT
+                TT --> SP
+                SP --> CO
                 
                 classDef cmdcls fill:#FBE8CE,stroke:#BFA28C,stroke-width:2px,color:#333;
-                class GG,SS,EE,RR,TT cmdcls
+                class GG,SS,EE,RR,TT,SP,CO cmdcls
 
     .. grid-item::
         :columns: 2
@@ -141,6 +145,8 @@
         - :doc:`static_strain`
         - :doc:`static_stress`
         - :doc:`static_rotation`
+        - :doc:`static_sproj`
+        - :doc:`static_coulomb`
 
 
 **辅助模块**
@@ -173,6 +179,8 @@
     static_strain
     static_stress
     static_rotation
+    static_sproj
+    static_coulomb
     disp2asc
     sac2asc
     ker2asc
