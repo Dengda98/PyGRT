@@ -777,9 +777,10 @@ class PyModel1D:
         when ``rake`` is also supplied. Only one source parameter group may be
         used at a time. Finite faults use ``src_fault`` (Coulomb-format file,
         CLI ``-C``) instead. Its ``Kode`` column selects rectangular shear/
-        tensile sources or point shear/expansion sources; ``.inr`` is supported
-        for Kode 100 rake/net-slip rows. That path requires a multi-source-depth
-        library and rejects point-source options.
+        tensile sources or point shear/expansion sources. An exact ``rake``
+        token in the seventh header column selects Kode 100 rake/net-slip
+        rows; the filename suffix is not used to select the format. That path
+        requires a multi-source-depth library and rejects point-source options.
 
         For each target receiver, the C module first synthesizes results at the
         surrounding epicentral-distance samples and combines those synthesized
@@ -817,7 +818,9 @@ class PyModel1D:
                                      ``#`` comments). All data rows must use the
                                      same 3- or 6-column format. Mutually exclusive
                                      with ``norths``/``easts`` and ``deprcv``.
-        :param    rcv_fault:        Coulomb-format finite receiver-fault file
+        :param    rcv_fault:        Coulomb-format finite receiver-fault file with 11 data
+                                     columns; an exact ``rake`` token in the seventh header
+                                     column selects Kode 100 rake/net-slip interpretation
                                      (CLI ``-R``). Without ``rcv_fault_size``,
                                      the library sampling intervals determine the
                                      default subdivision size. With that argument,
@@ -861,9 +864,12 @@ class PyModel1D:
                                      ``(Mxx, Mxy, Mxz, Myy, Myz, Mzz)`` for the
                                      ``MT`` source. Subscripts x/y/z denote
                                      north/east/down.
-        :param    src_fault:         Coulomb-format finite-fault file (Kode 100/200/300/400/500;
-                                     ``.inr`` is allowed for Kode 100). Mutually exclusive with
-                                     point-source options; point-source arguments cause ``ValueError``.
+        :param    src_fault:         Coulomb-format finite-fault file with 11 data columns
+                                     (Kode 100/200/300/400/500). An exact ``rake`` token in
+                                     the seventh header column selects Kode 100 rake/net-slip
+                                     interpretation; the filename suffix is not used. Mutually
+                                     exclusive with point-source options; point-source arguments
+                                     cause ``ValueError``.
         :param    src_fault_size:    Optional ``(dL, dW)`` in km for finite-fault
                                      subdivision along strike / dip. If omitted,
                                      the C code uses the smallest positive interval

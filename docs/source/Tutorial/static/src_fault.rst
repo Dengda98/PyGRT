@@ -19,9 +19,11 @@ PyGRT 静态解的合成阶段目前已支持传入
 .. literalinclude:: run_src_fault/fault.inp
     :language: text
 
-前两行是注释，程序读取时会固定跳过。
-关于格式的细节，详见 :doc:`/Module/static_syn` 模块和
-:doc:`/Module/okada` 模块。
+前两行是 Coulomb 表头：第一行首个 token 必须为 ``#``，其后按顺序给出 10 个字段标签，
+第二行给出 11 个占位字段；常见表头中的 ``dip angle`` 可以是两个空白分隔的 token。
+第 7 列表头精确写为 ``rake`` 时，第 7、8 列才按 rake/net slip 解释；文件名后缀不参与判断。
+关于格式的细节，详见 :doc:`/Module/static_syn` 模块、
+:doc:`/Module/okada` 模块以及 `Coulomb 程序 <https://pubs.usgs.gov/of/2011/1060/>`_ 程序使用手册。
 
 有限断层的空间展布大致如下
 （:download:`plot_fault.py <run_src_fault/plot_fault.py>`）：

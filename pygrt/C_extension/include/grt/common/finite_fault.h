@@ -25,18 +25,21 @@
 /**
  * Coulomb 程序格式的有限断层（及衍生量）
  *
- * 原始断层数据区的 11 列依次为
- * ID、X-start、Y-start、X-fin、Y-fin、Kode、slip1、slip2、dip、top、bot
+ * Coulomb 表格的断层数据区严格包含 11 个数值列，依次为
+ * ID、X-start、Y-start、X-fin、Y-fin、Kode、value1、value2、dip、top、bot
  * 其中 X/Y 在 PyGRT 中分别对应 east/north
  *
- * .inp 文件的 slip1/slip2 列含义为右旋/逆冲或 Kode 指定的物理量
- * .inr 文件仅允许 Kode=100，slip1/slip2 列含义为 rake (degree)/net slip (m)
+ * 文件前两行是 Coulomb 表头：第一行首个 token 必须为 #，其后给出 X-start、Y-start、X-fin、Y-fin、
+ * Kode、value1、value2、dip、top、bot 共 10 个字段标签，第二行给出 11 个占位字段
+ * Coulomb 常见表头中的 "dip angle" 可写成两个空白分隔的 token，但数据区仍为 11 列
+ * 第一行第 7 个数据列的标签精确为 "rake" 时，value1/value2 按 rake (degree)/net slip (m) 解释
+ * 文件名后缀不参与格式选择，仅用于发现与表头标识不一致的情况
  *
- * Kode=100：矩形断层，slip1=右旋滑动 (m)，slip2=逆冲滑动 (m)
- * Kode=200：矩形断层，slip1=右旋滑动 (m)，slip2=张裂开度 (m)
- * Kode=300：矩形断层，slip1=张裂开度 (m)，slip2=逆冲滑动 (m)
- * Kode=400：点双力偶，slip1=走向滑动 potency (m^3)，slip2=倾向滑动 potency (m^3)
- * Kode=500：点张裂/膨胀源，slip1=张裂 potency (m^3)，slip2=膨胀 potency (m^3)
+ * Kode=100：矩形断层，value1=右旋滑动 (m)，value2=逆冲滑动 (m)
+ * Kode=200：矩形断层，value1=右旋滑动 (m)，value2=张裂开度 (m)
+ * Kode=300：矩形断层，value1=张裂开度 (m)，value2=逆冲滑动 (m)
+ * Kode=400：点双力偶，value1=右旋滑动 potency (m^3)，value2=逆冲滑动 potency (m^3)
+ * Kode=500：点张裂/膨胀源，value1=张裂 potency (m^3)，value2=膨胀 potency (m^3)
  *
  * value1/value2 保留文件第 7、8 列的值
  * right_lateral/reverse/tensile/inflate 是按 Kode 解释后的量
@@ -48,9 +51,9 @@ typedef struct {
     real_t north_end;        ///< 上边界终点 north 坐标 (km)
 
     unsigned int kode;      ///< Coulomb 标识符，只允许 100、200、300、400、500
-    bool rake_format;       ///< 是否按 rake/net slip 格式解释
-    real_t value1;          ///< 文件第 7 列，物理意义由 kode 决定
-    real_t value2;          ///< 文件第 8 列，物理意义由 kode 决定
+    bool rake_format;       ///< 是否按表头标识的 rake/net slip 格式解释
+    real_t value1;          ///< 文件第 7 列，物理意义由表头标识与 kode 共同决定
+    real_t value2;          ///< 文件第 8 列，物理意义由表头标识与 kode 共同决定
 
     real_t right_lateral;   ///< Kode 100/200 为 m，Kode 400 为 m^3
     real_t reverse;         ///< Kode 100/300 为 m，Kode 400 为 m^3
@@ -79,8 +82,10 @@ typedef struct {
 /**
  * 读取 Coulomb 格式有限断层文件
  *
- * 跳过前两行表头，逐行读取断层数据并建立衍生量
- * 支持 .inp 与 .inr，要求 dip ∈ (0, 90]、bot > top 且沿走向长度 > 0
+ * 第一行首个 token 为 #，其后给出 10 个字段标签；第二行为 11 个占位字段
+ * 读取前两行 Coulomb 表头，逐行读取 11 列断层数据并建立衍生量
+ * 第 7 个数据列的标签精确为 rake 时按 rake/net slip 格式解释
+ * 要求 dip ∈ (0, 90]、bot > top 且沿走向长度 > 0
  * 调用方负责 grt_finite_fault_free
  *
  * @param[in]   path     文件路径

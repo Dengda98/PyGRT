@@ -292,14 +292,18 @@ pymod_m.compute_static_syn(
 )
 assert_zne_zrt_equivalent("stsyn_ff_zne.nc", "stsyn_ff_zrt.nc")
 
-# The shared Coulomb fixtures cover every supported Kode and the .inr rake
-# format.  Besides checking that the files are accepted, require a finite
+# The shared Coulomb fixtures cover every supported Kode and the header rake
+# marker. Besides checking that the files are accepted, require a finite
 # nonzero result so that a silently skipped source cannot pass the test.
 coulomb_kodes = Path("cfaults_kodes.inp")
 coulomb_rake = Path("cfaults_rake.inr")
+coulomb_kodes_suffix = Path("cfaults_kodes_suffix.inr")
+coulomb_rake_suffix = Path("cfaults_rake_suffix.inp")
 for output_path, src_fault in [
     ("stsyn_ff_kodes.nc", coulomb_kodes),
     ("stsyn_ff_rake.nc", coulomb_rake),
+    ("stsyn_ff_kodes_suffix_api.nc", coulomb_kodes_suffix),
+    ("stsyn_ff_rake_suffix_api.nc", coulomb_rake_suffix),
 ]:
     pymod_m.compute_static_syn(
         output_path=output_path,
@@ -312,6 +316,14 @@ for output_path, src_fault in [
         z = f.variables["Z"].data
         assert (z == z).all()
         assert abs(z).max() > 0.0
+
+# The header marker, rather than the filename suffix, must select the format.
+component, _ = read_static_fields("stsyn_ff_kodes.nc")
+component_suffix, _ = read_static_fields("stsyn_ff_kodes_suffix_api.nc")
+rake, _ = read_static_fields("stsyn_ff_rake.nc")
+rake_suffix, _ = read_static_fields("stsyn_ff_rake_suffix_api.nc")
+np.testing.assert_allclose(component_suffix["Z"], component["Z"], rtol=1e-12, atol=1e-12)
+np.testing.assert_allclose(rake_suffix["Z"], rake["Z"], rtol=1e-12, atol=1e-12)
 
 # 多台站深度必须给 deprcv
 pymod_mr = pygrt.PyModel1D(stgrn="stgrn_mr.nc", modelpath=modname)
@@ -358,7 +370,9 @@ for name in [
     "stsyn_md.nc", "stsyn_interp.nc", "stsyn_q.nc", "stsyn_q6.nc", "stsyn_ff.nc",
     "stsyn_rf.nc", "stsyn_rf_default.nc", "stsyn_rq.nc", "stsyn_rf_api.nc",
     "stsyn_ff_zrt.nc", "stsyn_ff_zne.nc", "stsyn_ff_zrt_cli.nc", "stsyn_ff_zne_cli.nc",
-    "stsyn_ff_kodes.nc", "stsyn_ff_rake.nc", "stsyn_dr.nc", "ff_kodes_q.nc",
+    "stsyn_ff_kodes.nc", "stsyn_ff_rake.nc", "stsyn_ff_kodes_suffix.nc", "stsyn_ff_rake_suffix.nc",
+    "stsyn_ff_kodes_suffix_api.nc", "stsyn_ff_rake_suffix_api.nc", "stsyn_ff_case.nc",
+    "stsyn_dr.nc", "ff_kodes_q.nc",
     "rcv_pts.txt", "rcv_pts_6.txt", "rcv_faults_q.txt", "cfaults_tiny.inp", "cfaults_kodes.inp", "cfaults_rake.inr",
     "cfaults_bad_dip.inp", "cfaults_bad_bot.inp",
 ]:

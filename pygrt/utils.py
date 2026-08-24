@@ -166,7 +166,10 @@ def compute_okada(
 
     A Coulomb-format finite-fault file can be passed through ``src_fault``.
     Its Kode column selects the rectangular or point-source interpretation of
-    the two slip columns; ``.inr`` is supported for Kode 100 rake/net-slip rows.
+    the two slip columns. If the seventh header column is exactly ``rake``,
+    the two values are interpreted as rake/net slip; the filename suffix is
+    not used to select this format. The rake/net-slip interpretation supports
+    Kode 100 only.
     The finite fault is evaluated directly as Okada rectangular patches, so
     no source subdivision option is needed.
 
@@ -199,8 +202,10 @@ def compute_okada(
     :param    strike:           Fault strike in degrees, in [0, 360]
     :param    dip:              Fault dip in degrees, in [0, 90]
     :param    rake:             Slip rake in degrees, in [-180, 180]
-    :param    src_fault:        Coulomb-format finite-fault file, mutually exclusive
-                                with point-source options
+    :param    src_fault:        Coulomb-format finite-fault file with 11 data columns;
+                                an exact ``rake`` token in the seventh header column
+                                selects Kode 100 rake/net-slip interpretation. Mutually
+                                exclusive with point-source options
     :param    zne:              If true, output ZNE instead of ZRT components
     :param    calc_upar:        If true, also output spatial displacement derivatives
     :param    return_result:    If true, read and return the generated NetCDF data

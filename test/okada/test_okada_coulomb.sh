@@ -32,8 +32,8 @@ extract_faults() {
     local output=$2
 
     {
-        printf '# extracted Coulomb finite-fault table\n'
-        printf '# x-start y-start x-fin y-fin kode value1 value2 dip top bot\n'
+        printf '# x-start y-start x-fin y-fin kode value1 value2 dip angle top bot\n'
+        printf 'xxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx\n'
         awk '
             /X-start/ {
                 in_table = 1

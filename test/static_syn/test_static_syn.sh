@@ -91,7 +91,7 @@ grt static syn -Gstgrn_md.nc -Ccfaults_tiny.inp+i1/1 -e -X-2/2/1 -Y-2/2/1 -Ostsy
 grt static syn -Gstgrn_md.nc -Ccfaults_tiny.inp+i1/1 -N -e -X-2/2/1 -Y-2/2/1 -Ostsyn_ff_zne_cli.nc
 grt static syn -Gstgrn_md.nc -Ccfaults_tiny.inp+i1/1 -e -Qrcv_pts.txt -Ostsyn_ffq.nc
 
-# -------------------- Coulomb Kode 100/200/300/400/500 and .inr --------------------
+# -------------------- Coulomb Kode 100/200/300/400/500 and header rake marker --------------------
 # The local fixtures use top=1 km and bot=3 km, covered by stgrn_md.nc.
 cat > cfaults_kodes.inp <<'EOF'
   #   X-start    Y-start      X-fin      Y-fin   Kode  rt.lat    reverse   dip angle     top      bot
@@ -110,6 +110,27 @@ EOF
 grt static syn -Gstgrn_md.nc -Ccfaults_kodes.inp+i1/1 -X-4/4/2 -Y-4/4/2 -Ostsyn_ff_kodes.nc
 grt static syn -Gstgrn_md.nc -Ccfaults_kodes.inp+i1/1 -e -Qrcv_pts.txt -Off_kodes_q.nc
 grt static syn -Gstgrn_md.nc -Ccfaults_rake.inr+i1/1 -X-4/4/2 -Y-4/4/2 -Ostsyn_ff_rake.nc
+
+# 文件后缀与表头标识错位时，必须给出警告并以表头为准
+cp cfaults_kodes.inp cfaults_kodes_suffix.inr
+grt static syn -Gstgrn_md.nc -Ccfaults_kodes_suffix.inr+i1/1 -X-4/4/2 -Y-4/4/2 \
+    -Ostsyn_ff_kodes_suffix.nc > header_component_suffix.log 2>&1
+grep -Fq 'seventh header column is "rt.lat"' header_component_suffix.log
+
+cp cfaults_rake.inr cfaults_rake_suffix.inp
+grt static syn -Gstgrn_md.nc -Ccfaults_rake_suffix.inp+i1/1 -X-4/4/2 -Y-4/4/2 \
+    -Ostsyn_ff_rake_suffix.nc > header_rake_suffix.log 2>&1
+grep -Eq 'exact token "rake".*no \.inr suffix' header_rake_suffix.log
+
+# rake 的大小写必须精确匹配；非精确匹配仍按分量格式处理
+cat > cfaults_case.inr <<'EOF'
+  #   X-start    Y-start      X-fin      Y-fin   Kode  Rake      reverse   dip angle     top      bot
+xxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxx  xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx
+  1     -2.0000    -1.0000     3.0000     2.0000   200     0.0400      0.0800     55.00       1.0000     3.0000
+EOF
+grt static syn -Gstgrn_md.nc -Ccfaults_case.inr+i1/1 -X-4/4/2 -Y-4/4/2 \
+    -Ostsyn_ff_case.nc > header_case.log 2>&1
+grep -Fq 'seventh header column is "Rake"' header_case.log
 
 # -------------------- 错误参数 --------------------
 expect_fail "multi-src library requires -Ds" \
@@ -161,4 +182,5 @@ expect_fail "finite fault bot must be greater than top" \
 python -u test_static_syn.py
 
 rm -rf *.nc rcv_pts.txt rcv_pts_6.txt rcv_faults.inp cfaults_tiny.inp cfaults_bad_dip.inp cfaults_bad_bot.inp
-rm -f cfaults_kodes.inp cfaults_rake.inr
+rm -f cfaults_kodes.inp cfaults_rake.inr cfaults_kodes_suffix.inr cfaults_rake_suffix.inp cfaults_case.inr \
+    header_component_suffix.log header_rake_suffix.log header_case.log
