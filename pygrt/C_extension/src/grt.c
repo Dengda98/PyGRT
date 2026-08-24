@@ -29,6 +29,8 @@
     X(static_rotation)     \
     X(static_strain)       \
     X(static_stress)       \
+    X(static_sproj)        \
+    X(static_coulomb)      \
     /* other */            \
     X(disp2asc)            \
     X(ker2asc)             \

@@ -24,7 +24,8 @@ build:
     "nco",
     "gmt",
     "pdf2svg",
-    "bc"
+    "bc",
+    "ripgrep"
   ]
 
   jobs:

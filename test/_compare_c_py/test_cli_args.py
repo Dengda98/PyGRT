@@ -457,6 +457,42 @@ def test_compute_static_syn_and_tensor_postprocess_args():
         _restore_run_grt(pygrt.utils, original_utils)
 
 
+def test_compute_sproj_and_coulomb_args():
+    runner = CapturedRunner()
+    original = _patch_run_grt(pygrt.utils, runner)
+    static = HERE / "_tmp_args_sproj.nc"
+    receiver = HERE / "_tmp_args_sproj_q.txt"
+    dynamic = HERE / "_tmp_args_sproj_dir"
+    try:
+        static.write_bytes(b"placeholder")
+        receiver.write_text("0 0 0 33 44 55\n", encoding="utf-8")
+        dynamic.mkdir(exist_ok=True)
+
+        pygrt.utils.compute_sproj(static, strike=33.0, dip=44.0, rake=55.0)
+        assert_command_equals(runner.commands[-1], ["static", "sproj", f"-G{static}", "-M33/44/55"])
+
+        pygrt.utils.compute_sproj(static, rake=55.0, force_rake=True)
+        assert_command_equals(runner.commands[-1], ["static", "sproj", f"-G{static}", "-M55+f"])
+
+        pygrt.utils.compute_sproj(static, recv_points=receiver)
+        assert_command_equals(runner.commands[-1], ["static", "sproj", f"-G{static}", f"-Q{receiver}"])
+
+        pygrt.utils.compute_coulomb(static, 0.6)
+        assert_command_equals(runner.commands[-1], ["static", "coulomb", f"-G{static}", "-F0.6"])
+
+        try:
+            pygrt.utils.compute_sproj(dynamic)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("dynamic synthesis directories should be rejected")
+    finally:
+        _restore_run_grt(pygrt.utils, original)
+        static.unlink(missing_ok=True)
+        receiver.unlink(missing_ok=True)
+        dynamic.rmdir()
+
+
 def test_tensor_return_result_reads_prefix_only():
     """return_result=True 时只读对应前缀的 SAC，不与位移/其它张量混淆"""
     import shutil
@@ -529,6 +565,7 @@ def main():
         test_compute_syn_source_and_time_function_options,
         test_source_type_is_inferred_from_source_parameters,
         test_compute_static_syn_and_tensor_postprocess_args,
+        test_compute_sproj_and_coulomb_args,
         test_tensor_return_result_reads_prefix_only,
     ]
     for func in tests:
