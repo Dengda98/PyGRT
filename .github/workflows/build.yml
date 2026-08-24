@@ -381,7 +381,15 @@ jobs:
         run: |
           echo "$(pwd)/pygrt/C_extension/bin" >> "$GITHUB_PATH"
 
-      - name: Run all tests
+      - name: Run all tests (Windows)
+        if: contains(matrix.os, 'windows')
+        shell: msys2 {0}
+        working-directory: ${{ env.PACK_NAME }}/test
+        run: |
+          bash run_all.sh
+
+      - name: Run all tests (Unix)
+        if: ${{ !contains(matrix.os, 'windows') }}
         working-directory: ${{ env.PACK_NAME }}/test
         run: |
           bash run_all.sh
