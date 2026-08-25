@@ -8,7 +8,7 @@
 
 在 :doc:`/Tutorial/dynamic/strain_stress` 部分介绍的物理量需要计算位移对空间的偏导。
 位移对 :math:`z, r` 的偏导可在计算格林函数阶段完成，
-其中对 :math:`z` 的偏导涉及计算核函数对 :math:`z` 的偏导，相应公式已在 :doc:`/Formula/uiz` 给出。
+其中对 :math:`z` 的偏导涉及计算核函数对 :math:`z` 的偏导，相应公式已在 :doc:`/Formula/others/uiz` 给出。
 位移对 :math:`\theta` 的偏导已经转移到合成阶段。
 
 以下示例使用前向差分来验证位移对 :math:`z, r` 的偏导的理论计算结果，即

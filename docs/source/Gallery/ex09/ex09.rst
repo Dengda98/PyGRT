@@ -6,7 +6,7 @@
 
 下载示例： :download:`ex09.tar.gz`
 
-海底模型中存在固液界面，相关公式见 :doc:`/Formula/RT_liquid` 。
+海底模型中存在固液界面，相关公式见 :doc:`/Formula/RT/RT_liquid` 。
 
 示例海底模型如下：
 
