@@ -321,7 +321,7 @@ float * grt_get_custom_wave(int *Nt, const char *tfparams){
     int nt = 0;
     while(grt_getline(&line, &len, fp) != -1) {
         // 注释行
-        if(grt_is_comment_or_empty(line))  continue;
+        if(grt_is_comment_or_empty_line(line))  continue;
 
         tfarr = (float*)realloc(tfarr, sizeof(float)*(nt+1));
         if(sscanf(line, " %f", &tfarr[nt]) < 1){

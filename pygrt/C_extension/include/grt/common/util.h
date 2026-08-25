@@ -97,11 +97,27 @@ void grt_trim_whitespace(char* str);
 
 
 /**
+ * 检查是否为空行
+ *
+ * @param[in]     line    读入一行的字符串
+ */
+bool grt_is_empty_line(const char* line);
+
+
+/**
+ * 检查是否为注释行
+ *
+ * @param[in]     line    读入一行的字符串
+ */
+bool grt_is_comment_line(const char* line);
+
+
+/**
  * 检查是否为注释行或空行
  * 
  * @param[in]     line    读入一行的字符串
  */
-bool grt_is_comment_or_empty(const char* line);
+bool grt_is_comment_or_empty_line(const char* line);
 
 
 /**

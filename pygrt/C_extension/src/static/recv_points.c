@@ -100,7 +100,7 @@ GRT_RECV_POINTS *grt_recv_points_from_file(const char *path)
     while(grt_getline(&line, &nlen, fp) != -1){
         lineno++;
         grt_trim_whitespace(line);
-        if(grt_is_comment_or_empty(line)) continue;
+        if(grt_is_comment_or_empty_line(line)) continue;
 
         real_t values[6];
         size_t nvalues;
@@ -151,7 +151,7 @@ GRT_RECV_POINTS *grt_recv_points_from_file(const char *path)
     while(grt_getline(&line, &nlen, fp) != -1){
         lineno++;
         grt_trim_whitespace(line);
-        if(grt_is_comment_or_empty(line)) continue;
+        if(grt_is_comment_or_empty_line(line)) continue;
 
         real_t values[6];
         size_t nvalues;

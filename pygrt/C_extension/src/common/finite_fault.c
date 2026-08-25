@@ -156,9 +156,15 @@ FINITE_FAULT *grt_finite_fault_load_coulomb(const char *path, size_t *nfault)
 
     FINITE_FAULT *faults = NULL;
     size_t n = 0;
+    size_t nempty = 0;
     size_t line_number = 2;
     while(grt_getline(&line, &nlen, fp) != -1){
         ++line_number;
+
+        if(grt_is_empty_line(line)){
+            ++nempty;
+            continue;
+        }
 
         real_t dum1, kode_value;
         real_t east_begin, north_begin, east_end, north_end;
@@ -206,6 +212,10 @@ FINITE_FAULT *grt_finite_fault_load_coulomb(const char *path, size_t *nfault)
 
     GRT_SAFE_FREE_PTR(line);
     fclose(fp);
+
+    if(nempty > 0){
+        GRTRaiseWarning("skip %zu empty lines.", nempty);
+    }
 
     if(n == 0){
         GRTRaiseError("no fault in %s.", path);

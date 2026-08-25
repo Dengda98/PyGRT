@@ -117,7 +117,7 @@ real_t (* grt_read_modarr_from_file(
     char *line = NULL;
     while(grt_getline(&line, &len, fp) != -1){
         iline++;
-        if(grt_is_comment_or_empty(line)) continue;
+        if(grt_is_comment_or_empty_line(line)) continue;
 
         h = va = vb = rho = qa = qb = 0.0;
         int nscan = sscanf(line, "%lf %lf %lf %lf %lf %lf\n", &h, &va, &vb, &rho, &qa, &qb);

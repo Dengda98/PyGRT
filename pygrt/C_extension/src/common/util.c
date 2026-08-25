@@ -329,12 +329,26 @@ void grt_trim_whitespace(char* str) {
 }
 
 
-bool grt_is_comment_or_empty(const char* line) {
+bool grt_is_empty_line(const char* line) {
     // 跳过前导空白
     while (isspace((unsigned char)*line)) line++;
-    
-    // 检查是否为空行或注释行
-    return (*line == '\0' || *line == GRT_COMMENT_HEAD);
+
+    // 检查是否为空行
+    return *line == '\0';
+}
+
+
+bool grt_is_comment_line(const char* line) {
+    // 跳过前导空白
+    while (isspace((unsigned char)*line)) line++;
+
+    // 检查是否为注释行
+    return *line == GRT_COMMENT_HEAD;
+}
+
+
+bool grt_is_comment_or_empty_line(const char* line) {
+    return grt_is_empty_line(line) || grt_is_comment_line(line);
 }
 
 
