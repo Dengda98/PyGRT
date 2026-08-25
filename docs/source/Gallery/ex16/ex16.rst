@@ -6,7 +6,7 @@
 
 下载示例： :download:`ex16.tar.gz`
 
-在 :doc:`/Advanced/boundary/boundary` 部分和 :doc:`/Formula/boundary` 部分对边界条件和公式进行了介绍，
+在 :doc:`/Advanced/boundary/boundary` 部分和 :doc:`/Formula/RT/boundary` 部分对边界条件和公式进行了介绍，
 尽管顶、底界面对边界条件的处理有些区别，但经过适当配置源点场点深度以及模型参数，可形成两个 **上下翻转** 的系统，
 从而进行对比验证。
 
@@ -44,7 +44,7 @@
     :align: center
 
 以下为解析解，其中动态解公式参考《Quantitative Seismology》，
-静态解公式参考 :doc:`/Formula/static_uniform` 。与上图比较可见结果吻合。
+静态解公式参考 :doc:`/Formula/source/static_uniform` 。与上图比较可见结果吻合。
 
 .. figure:: theoretical.svg
     :align: center

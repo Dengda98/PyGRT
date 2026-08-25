@@ -82,12 +82,6 @@ PyGRT 静态解的合成阶段目前已支持传入
             :start-after: BEGIN SYN
             :end-before: END SYN
 
-
-.. literalinclude:: run_src_fault/run.py
-    :language: python
-    :start-after: BEGIN PLOT
-    :end-before: END PLOT
-
 .. figure:: run_src_fault/disp.svg
     :align: center
 

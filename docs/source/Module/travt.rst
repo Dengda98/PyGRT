@@ -16,7 +16,7 @@ travt
 |-M|\ *model*
 |-D|\ *depsrc/deprcv*
 |-R|\ *r1/r2/dr*\|\ *r1,r2,...*\|\ *file*
-
+[ **-h** ]
 
 描述
 --------
@@ -35,6 +35,11 @@ travt
 
 .. include:: explain_-R.rst_
 
+
+可选选项
+----------
+
+.. include:: explain_-h.rst_
 
 
 
