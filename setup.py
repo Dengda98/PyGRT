@@ -38,6 +38,6 @@ setup(
         'matplotlib>=3.5',
         'obspy>=1.4',
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.8',
     zip_safe=False,  # not compress the binary file
 )
