@@ -31,6 +31,8 @@
     X(static_stress)       \
     X(static_sproj)        \
     X(static_coulomb)      \
+    X(xy2geo)              \
+    X(geo2xy)              \
     /* other */            \
     X(disp2asc)            \
     X(ker2asc)             \

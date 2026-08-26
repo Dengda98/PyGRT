@@ -160,6 +160,8 @@
     - :doc:`travt`
     - :doc:`lamb1`
     - :doc:`okada`
+    - :doc:`xy2geo`
+    - :doc:`geo2xy`
 
 .. toctree::
     :maxdepth: 1
@@ -187,3 +189,5 @@
     travt
     lamb1
     okada
+    xy2geo
+    geo2xy
