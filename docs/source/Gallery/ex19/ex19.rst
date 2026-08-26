@@ -1,0 +1,108 @@
+:author: 朱邓达
+:date: 2026-08-26
+
+(19) 有限断层震源形成的同震位移场以及库伦应力变化
+------------------------------------------------------
+
+下载示例： :download:`ex19.tar.gz`
+
+2026 年 8 月 14 日 21:58:21 (UTC) 在印尼发生 Mw 7.7 级大地震。
+根据 USGS 提供的有限断层破裂模型
+（ `详情页面 <https://earthquake.usgs.gov/earthquakes/eventpage/us6000tkt2/finite-fault>`_ ）,
+我们可以利用 PyGRT 计算周边的同震位移场以及库伦应力变化。
+
+有限断层震源
+========================
+在以上详情页中，在最下方的 “Downloads” 中下载得到 Coulomb 程序格式的输入文件
+（ `下载链接 <https://earthquake.usgs.gov/pdl/products/urn:usgs-product:us:finite-fault:us6000tkt2_1:1787347333870/contents/coulomb.inp>`_ ）,
+其作为 Coulomb 程序完整的输入文件，包括了 Coulomb 程序所需的所有信息。
+不过 PyGRT 只需要对应的有限断层，因此我们需要复制文件后稍微做些手动调整，得到如下的文件 ``coulomb-fault.inp`` ：
+
+.. literalinclude:: coulomb-fault.inp.head
+    :language: text
+
+计算格林函数库
+=======================
+以下使用展平变换后的 PREM 模型（取前 20 层），接收深度为 0，震源深度从 1 km 到 36 km，间隔 2 km，
+震中距从 0 到 500 km，间隔 2 km。
+
+.. tabs::
+
+    .. group-tab:: C
+
+        .. literalinclude:: run_grn.sh
+            :language: bash
+
+    .. group-tab:: Python
+
+        .. literalinclude:: run_grn.py
+            :language: python
+
+合成结果
+====================
+定义水平接收网格，北向范围从 -200 km 到 200 km，间隔 10 km，
+东向范围从 -210 km 到 210 km，间隔 2 km。
+相对应的，也计算 Okada 解进行对比。
+
+其中值得一提的是，为了方便在地理坐标下绘图，在从局部笛卡尔系下计算完成后，
+可使用相应的模块或函数来转换到地理坐标系。
+这里使用的参考点的经纬度，从 Coulomb 程序完整输入文件的最底部的 “Map Information” 中提取。
+
+.. tabs::
+
+    .. group-tab:: C
+
+        .. literalinclude:: run_syn.sh
+            :language: bash
+
+        关于局部笛卡尔系和地理坐标系之间的转换，
+        详见辅助模块 :doc:`/Module/xy2geo` 和 :doc:`/Module/geo2xy` 。
+
+    .. group-tab:: Python
+
+        .. literalinclude:: run_syn.py
+            :language: python
+
+        关于局部笛卡尔系和地理坐标系之间的转换，
+        详见辅助函数 :func:`pygrt.utils.xy2geo() <pygrt.utils.xy2geo>`
+        和 :func:`pygrt.utils.geo2xy() <pygrt.utils.geo2xy>` 。
+
+同震位移场
+=======================
+
+绘图脚本基于 GMT，色标使用和 Coulomb 程序一样的 anatolia（已包含在压缩包中）。
+
+.. grid:: 2
+
+    .. grid-item::
+
+        .. figure:: layer_disp.png
+            :align: center
+
+            分层模型的同震位移场
+
+    .. grid-item::
+
+        .. figure:: halfspace_disp.png
+            :align: center
+
+            均匀半空间模型的同震位移场
+
+库伦应力变化
+===================
+
+见上方代码块的设置，假设等效摩擦系数 :math:`\mu^{'}=0.4`，
+接收断层的走向（90度）、倾角（32度）和滑动角（90度）基本和震源断层一致。
+
+.. figure:: layer_coulomb.png
+    :align: center
+
+    分层模型的库伦应力变化
+
+
+.. figure:: halfspace_coulomb.png
+    :align: center
+
+    均匀半空间模型的库伦应力变化
+
+
