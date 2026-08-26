@@ -8,13 +8,13 @@ version: 2
 build:
   os: ubuntu-22.04
   tools:
-    python: "3.10"
+    python: "miniconda3-3.12-24.9"
     # You can also specify other tool versions:
     # nodejs: "20"
     # rust: "1.70"
     # golang: "1.20"
 
-  # 这里通过 apt 下载的 gmt 是旧版，目前大概是 6.3，但对目前画的图够了 
+  # GMT 通过 conda-forge 安装，以使用较新的版本
   apt_packages: [
     "doxygen", 
     "build-essential", 
@@ -22,7 +22,6 @@ build:
     "libnetcdf-dev", 
     "netcdf-bin",
     "nco",
-    "gmt",
     "pdf2svg",
     "bc",
     "ripgrep"
@@ -37,6 +36,9 @@ build:
       # 由于此处多个命令之间隔离，只能写成一个脚本
       - cd docs && ./compile.sh && cd -
 
+conda:
+  environment: environment.yml
+
 
 # Build documentation in the "docs/" directory with Sphinx
 sphinx:
@@ -50,12 +52,3 @@ sphinx:
 # formats:
 #   - pdf
 #   - epub
-
-# Optional but recommended, declare the Python requirements required
-# to build your documentation
-# See https://docs.readthedocs.io/en/stable/guides/reproducible-builds.html
-python:
-  install:
-    - requirements: docs/requirements.txt
-
-  
