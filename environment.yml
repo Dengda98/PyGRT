@@ -1,0 +1,10 @@
+channels:
+  - conda-forge
+  - nodefaults
+
+dependencies:
+  - python=3.10
+  - gmt
+  - pip
+  - pip:
+      - -r docs/requirements.txt
