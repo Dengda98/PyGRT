@@ -71,10 +71,10 @@ class PyModel1D:
 
     1. Create :class:`PyModel1D` with the Green's function path(s) actually needed
        (``grn`` and/or ``stgrn``) and optional ``modelpath``.
-    2. Compute Green's functions with :meth:`compute_grn` or :meth:`compute_static_grn`
+    2. Compute Green's functions with :meth:`greenfn` or :meth:`static_greenfn`
        (requires ``modelpath``).
-    3. Synthesize waveforms or static fields with :meth:`compute_syn` or
-       :meth:`compute_static_syn` (only the corresponding GF path is required).
+    3. Synthesize waveforms or static fields with :meth:`syn` or
+       :meth:`static_syn` (only the corresponding GF path is required).
     """
 
     def __init__(
@@ -101,7 +101,7 @@ class PyModel1D:
         :param    modelpath:          Path to the layered model file. Required when
                                       computing Green's functions or travel times
                                       (unless ``modelpath`` is passed to
-                                      :meth:`compute_travt1d`).
+                                      :meth:`travt`).
         :param    topbound:           Top boundary condition. One of ``free``, ``rigid`` and ``halfspace``.
         :param    botbound:           Bottom boundary condition. One of ``free``, ``rigid`` and ``halfspace``.
         """
@@ -131,7 +131,7 @@ class PyModel1D:
             target.parent.mkdir(parents=True, exist_ok=True)
             self.stgrn = str(target)
 
-    def compute_travt1d(
+    def travt(
         self,
         *,
         depsrc: float,
@@ -167,14 +167,14 @@ class PyModel1D:
                 raise FileNotFoundError(f"Model file does not exist: {use_model}")
             if self.modelpath is not None:
                 warnings.warn(
-                    f"compute_travt1d uses temporary modelpath={use_model!r}; "
+                    f"travt uses temporary modelpath={use_model!r}; "
                     f"instance modelpath={self.modelpath!r} is unchanged.",
                     UserWarning,
                     stacklevel=2,
                 )
         else:
             if self.modelpath is None:
-                raise RuntimeError("Pass modelpath= to compute_travt1d() or set it in PyModel1D(...).")
+                raise RuntimeError("Pass modelpath= to travt() or set it in PyModel1D(...).")
             use_model = self.modelpath
 
         # 标量震中距返回 float，序列返回长度为 n 的数组
@@ -199,7 +199,11 @@ class PyModel1D:
             return float(arr[0, 0]), float(arr[0, 1])
         return arr[:, 0].copy(), arr[:, 1].copy()
 
-    def compute_grn(
+    def compute_travt1d(self, *args, **kwargs):
+        """Legacy interface renamed to :meth:`travt`; calling it raises an error."""
+        raise RuntimeError("compute_travt1d() has been renamed to travt(); use travt() instead.")
+
+    def greenfn(
         self,
         *,
         depsrc: FloatOrSequence,
@@ -297,9 +301,9 @@ class PyModel1D:
         :return: ``None``. Results are written to disk.
         """
         if self.grn is None:
-            raise RuntimeError("Pass grn= to PyModel1D(...) before compute_grn().")
+            raise RuntimeError("Pass grn= to PyModel1D(...) before greenfn().")
         if self.modelpath is None:
-            raise RuntimeError("Pass modelpath= to PyModel1D(...) before compute_grn().")
+            raise RuntimeError("Pass modelpath= to PyModel1D(...) before greenfn().")
         if nt <= 0 or dt <= 0:
             raise ValueError("nt and dt must be positive.")
         depsrcs = np.atleast_1d(_normalize_float_array(depsrc, "depsrc"))
@@ -390,7 +394,11 @@ class PyModel1D:
 
         run_grt(list(command.values()), print_log=print_log)
 
-    def compute_static_grn(
+    def compute_grn(self, *args, **kwargs):
+        """Legacy interface renamed to :meth:`greenfn`; calling it raises an error."""
+        raise RuntimeError("compute_grn() has been renamed to greenfn(); use greenfn() instead.")
+
+    def static_greenfn(
         self,
         *,
         depsrc: FloatOrSequence,
@@ -410,7 +418,7 @@ class PyModel1D:
         stats: bool = False,
     ):
         r"""
-        Compute static Green's functions with the ``grt static greenfn`` command.
+        Compute static Green's functions with the ``grt static_greenfn`` command.
 
         Requires ``stgrn`` and ``modelpath`` in the constructor. Results are written
         to the configured NetCDF file (4D STGRNLIB layout
@@ -425,7 +433,7 @@ class PyModel1D:
         For an ordinary Green's-function library, ``dists`` is the usual
         choice: it computes a one-dimensional distance list and stores it as
         ``north=0`` and ``east=dists``. This is also the most convenient
-        format for :meth:`compute_static_syn`, which synthesizes results at
+        format for :meth:`static_syn`, which synthesizes results at
         surrounding distance samples and combines those results with
         distance-based weights.
         Receiver locations can be specified in either of two ways:
@@ -482,9 +490,9 @@ class PyModel1D:
         :return: ``None``. Results are written to the configured NetCDF file.
         """
         if self.stgrn is None:
-            raise RuntimeError("Pass stgrn= to PyModel1D(...) before compute_static_grn().")
+            raise RuntimeError("Pass stgrn= to PyModel1D(...) before static_greenfn().")
         if self.modelpath is None:
-            raise RuntimeError("Pass modelpath= to PyModel1D(...) before compute_static_grn().")
+            raise RuntimeError("Pass modelpath= to PyModel1D(...) before static_greenfn().")
 
         depsrcs = np.atleast_1d(_normalize_float_array(depsrc, "depsrc"))
         deprcvs = np.atleast_1d(_normalize_float_array(deprcv, "deprcv"))
@@ -506,8 +514,7 @@ class PyModel1D:
             }
 
         command = {
-            "module": "static",
-            "subcommand": "greenfn",
+            "module": "static_greenfn",
             "M": f"-M{self.modelpath}",
         }
         if multi_depth:
@@ -555,7 +562,11 @@ class PyModel1D:
 
         run_grt(list(command.values()))
 
-    def compute_syn(
+    def compute_static_grn(self, *args, **kwargs):
+        """Legacy interface renamed to :meth:`static_greenfn`; calling it raises an error."""
+        raise RuntimeError("compute_static_grn() has been renamed to static_greenfn(); use static_greenfn() instead.")
+
+    def syn(
         self,
         *,
         depsrc: Optional[float] = None,
@@ -587,7 +598,7 @@ class PyModel1D:
         * ``R`` - radial outward
         * ``T`` - clockwise 90° from ``R``
 
-        Call :meth:`compute_grn` first (or point ``grn`` at an existing GF
+        Call :meth:`greenfn` first (or point ``grn`` at an existing GF
         root or subdirectory). When ``grn`` is a root, a selector is required
         for a dimension with multiple values. For a singleton dimension it may
         be omitted or explicitly set, but an explicit value must match. When
@@ -677,7 +688,7 @@ class PyModel1D:
         :return: An ObsPy stream when ``return_result`` is true; otherwise ``None``.
         """
         if self.grn is None:
-            raise RuntimeError("Pass grn= to PyModel1D(...) before compute_syn().")
+            raise RuntimeError("Pass grn= to PyModel1D(...) before syn().")
         if dist is not None and dist < 0:
             raise ValueError("dist must be nonnegative.")
         output = Path(output_path)
@@ -721,7 +732,11 @@ class PyModel1D:
             return read(str(output / "*.sac"))
         return None
 
-    def compute_static_syn(
+    def compute_syn(self, *args, **kwargs):
+        """Legacy interface renamed to :meth:`syn`; calling it raises an error."""
+        raise RuntimeError("compute_syn() has been renamed to syn(); use syn() instead.")
+
+    def static_syn(
         self,
         *,
         depsrc: Optional[float] = None,
@@ -746,10 +761,10 @@ class PyModel1D:
         return_result: bool = False,
     ):
         r"""
-        Synthesize static three-component displacement with ``grt static syn``.
+        Synthesize static three-component displacement with ``grt static_syn``.
 
         Results are written to the NetCDF file ``output_path``. Requires
-        ``stgrn`` (and typically a prior :meth:`compute_static_grn`).
+        ``stgrn`` (and typically a prior :meth:`static_greenfn`).
         All arguments must be passed by keyword.
 
         Receivers default to the library north/east grid. Optionally redefine
@@ -888,7 +903,7 @@ class PyModel1D:
                  otherwise ``None``.
         """
         if self.stgrn is None:
-            raise RuntimeError("Pass stgrn= to PyModel1D(...) before compute_static_syn().")
+            raise RuntimeError("Pass stgrn= to PyModel1D(...) before static_syn().")
         output = Path(output_path)
         output.parent.mkdir(parents=True, exist_ok=True)
 
@@ -936,8 +951,7 @@ class PyModel1D:
                 raise ValueError("rcv_fault_size must contain positive (dL, dW).")
 
         command = {
-            "module": "static",
-            "subcommand": "syn",
+            "module": "static_syn",
             "G": f"-G{self.stgrn}",
             "O": f"-O{output}",
         }
@@ -977,6 +991,10 @@ class PyModel1D:
         if return_result:
             return read_static_nc(output)
         return None
+
+    def compute_static_syn(self, *args, **kwargs):
+        """Legacy interface renamed to :meth:`static_syn`; calling it raises an error."""
+        raise RuntimeError("compute_static_syn() has been renamed to static_syn(); use static_syn() instead.")
 
 
     def _boundary_option(self) -> str:
