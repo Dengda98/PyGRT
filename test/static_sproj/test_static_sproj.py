@@ -4,11 +4,8 @@ import numpy as np
 from scipy.io import netcdf_file
 
 
-HERE = Path(__file__).resolve().parent
-
-
 def read_nc(name):
-    with netcdf_file(HERE / name, mode="r", mmap=False) as nc:
+    with netcdf_file(name, mode="r", mmap=False) as nc:
         data = {key: np.array(value[:], dtype=float, copy=True) for key, value in nc.variables.items()}
         dimensions = set(nc.dimensions)
     return data, dimensions
