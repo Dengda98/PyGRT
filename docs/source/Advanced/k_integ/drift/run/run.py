@@ -11,7 +11,7 @@ deprcv = 0.0
 nt = 500
 dt = 10
 
-pymod.compute_grn(depsrc=depsrc, deprcv=deprcv, dists=[5000], nt=nt, dt=dt, keepAllFreq=True, statsidxs=[0, 1, 2, 3, 4, 5])
+pymod.greenfn(depsrc=depsrc, deprcv=deprcv, dists=[5000], nt=nt, dt=dt, keepAllFreq=True, statsidxs=[0, 1, 2, 3, 4, 5])
 st_grn = read("GRN/*/*.sac")
 # END 1
 
@@ -111,7 +111,7 @@ fig.savefig("kernels.svg", bbox_inches='tight')
 
 # =================================================================
 # 跳过频段，重新计算
-pymod.compute_grn(depsrc=depsrc, deprcv=deprcv, dists=[5000], nt=nt, dt=dt)
+pymod.greenfn(depsrc=depsrc, deprcv=deprcv, dists=[5000], nt=nt, dt=dt)
 st_grn3 = read("GRN/*/*.sac")
 
 srctypes = ['EX', 'VF', 'HF', 'DD', 'DS', 'SS']

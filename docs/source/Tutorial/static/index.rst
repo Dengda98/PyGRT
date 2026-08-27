@@ -12,13 +12,13 @@
 
     flowchart TB 
 
-        GG(["compute_static_grn()"])
-        SS(["compute_static_syn()"])
-        EE(["utils.compute_strain()"])
-        RR(["utils.compute_rotation()"])
-        TT(["utils.compute_stress()"])
-        SP(["utils.compute_sproj()"])
-        CO(["utils.compute_coulomb()"])
+        GG(["static_greenfn()"])
+        SS(["static_syn()"])
+        EE(["utils.static_strain()"])
+        RR(["utils.static_rotation()"])
+        TT(["utils.static_stress()"])
+        SP(["utils.static_sproj()"])
+        CO(["utils.static_coulomb()"])
 
         G["Compute Green's Functions
         (and its Spatial Derivatives)"]

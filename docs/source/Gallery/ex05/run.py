@@ -16,7 +16,7 @@ modname="milrow"
 pymod = pygrt.PyModel1D(grn="GRN", modelpath=modname)
 
 # compute green functions
-pymod.compute_grn(depsrc=depsrc, deprcv=deprcv, dists=[dist], nt=nt, dt=dt)
+pymod.greenfn(depsrc=depsrc, deprcv=deprcv, dists=[dist], nt=nt, dt=dt)
 
 def plot_syn(stsyn:Stream, out:Union[str,None]=None, sigs:Union[np.ndarray,None]=None):
     traces = list(stsyn)
@@ -68,22 +68,22 @@ def plot_syn(stsyn:Stream, out:Union[str,None]=None, sigs:Union[np.ndarray,None]
 # time_function 对应 CLI -D，卷积用的时间函数保存在输出目录的 sig.sac
 S=1e24
 az=39.2
-pymod.compute_syn(dist=dist, azimuth=az, scale=S, output_path="syn_ex", time_function="t/0.2/0.2/0.4")
+pymod.syn(dist=dist, azimuth=az, scale=S, output_path="syn_ex", time_function="t/0.2/0.2/0.4")
 st = read("syn_ex/?.sac")
 sigs = read("syn_ex/sig.sac")[0].data
 plot_syn(st, "trig.svg", sigs)
 
-pymod.compute_syn(dist=dist, azimuth=az, scale=S, output_path="syn_sf", force=(2, -1, 4), time_function="t/0.1/0.3/0.6")
+pymod.syn(dist=dist, azimuth=az, scale=S, output_path="syn_sf", force=(2, -1, 4), time_function="t/0.1/0.3/0.6")
 st = read("syn_sf/?.sac")
 sigs = read("syn_sf/sig.sac")[0].data
 plot_syn(st, "trap.svg", sigs)
 
-pymod.compute_syn(dist=dist, azimuth=az, scale=S, output_path="syn_dc", strike=77, dip=88, rake=99, time_function="p/0.6")
+pymod.syn(dist=dist, azimuth=az, scale=S, output_path="syn_dc", strike=77, dip=88, rake=99, time_function="p/0.6")
 st = read("syn_dc/?.sac")
 sigs = read("syn_dc/sig.sac")[0].data
 plot_syn(st, "para.svg", sigs)
 
-pymod.compute_syn(dist=dist, azimuth=az, scale=S, output_path="syn_mt", moment_tensor=(1, -2, -5, 0.5, 3, 1.2), time_function="r/3")
+pymod.syn(dist=dist, azimuth=az, scale=S, output_path="syn_mt", moment_tensor=(1, -2, -5, 0.5, 3, 1.2), time_function="r/3")
 st = read("syn_mt/?.sac")
 sigs = read("syn_mt/sig.sac")[0].data
 plot_syn(st, "rick.svg", sigs)

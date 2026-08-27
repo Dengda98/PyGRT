@@ -7,7 +7,7 @@ import pygrt
 pymod = pygrt.PyModel1D(stgrn="stgrn.nc", modelpath="milrow")
 
 # 设置多个震源深度
-pymod.compute_static_grn(
+pymod.static_greenfn(
     depsrc=np.arange(0, 8+1e-8, 0.5),
     deprcv=0.0,
     dists=np.arange(0, 60+1e-8, 0.5),
@@ -19,7 +19,7 @@ pymod.compute_static_grn(
 # ------------------------------------------------------------------
 # BEGIN SYN
 # 设置 src_fault 来传入 Coulomb 格式的有限断层文件
-pymod.compute_static_syn(
+pymod.static_syn(
     norths=(-20, 20, 1),
     easts=(-20, 20, 1),
     src_fault="fault.inp", output_path="stsyn_ff.nc",
@@ -31,10 +31,10 @@ pymod.compute_static_syn(
 # ------------------------------------------------------------------
 # BEGIN COULOMB
 # 计算应力张量
-pygrt.utils.compute_stress("stsyn_ff.nc")
+pygrt.utils.static_stress("stsyn_ff.nc")
 # 将应力张量投影到指定形态的断层面上
-pygrt.utils.compute_sproj("stsyn_ff.nc", strike=59, dip=90, rake=180)
+pygrt.utils.static_sproj("stsyn_ff.nc", strike=59, dip=90, rake=180)
 # 指定等效摩擦系数，计算库伦应力
-pygrt.utils.compute_coulomb("stsyn_ff.nc", friction=0.75)
+pygrt.utils.static_coulomb("stsyn_ff.nc", friction=0.75)
 # END COULOMB
 # ------------------------------------------------------------------

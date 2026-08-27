@@ -18,7 +18,7 @@ from obspy import read
 pymod = pygrt.PyModel1D(grn="GRN", modelpath="milrow")
 
 # 结果写入 GRN/milrow_{depsrc}_{deprcv}_{dist}/
-pymod.compute_grn(depsrc=2.0, deprcv=0.0, dists=[5, 8, 10], nt=500, dt=0.02)
+pymod.greenfn(depsrc=2.0, deprcv=0.0, dists=[5, 8, 10], nt=500, dt=0.02)
 # END GRN
 # -----------------------------------------------------------------------------------
 
@@ -159,34 +159,34 @@ pymod = pygrt.PyModel1D(grn="GRN")
 # -----------------------------------------------------------------------------------
 # BEGIN SYN SOURCES
 # 爆炸源，标量矩 1e24 dyne·cm
-pymod.compute_syn(dist=10.0, azimuth=30.0, scale=1e24, output_path="syn_ex")
+pymod.syn(dist=10.0, azimuth=30.0, scale=1e24, output_path="syn_ex")
 
 # 单力源，(fN, fE, fZ)=(1, -0.5, 2)，标度 1e16 dyne
-pymod.compute_syn(
+pymod.syn(
     dist=10.0, azimuth=30.0, scale=1e16, output_path="syn_sf",
     force=(1, -0.5, 2),
 )
 
 # 剪切源，strike=33°，dip=50°，rake=120°，标量矩 1e24 dyne·cm
-pymod.compute_syn(
+pymod.syn(
     dist=10.0, azimuth=30.0, scale=1e24, output_path="syn_dc",
     strike=33, dip=50, rake=120,
 )
 
 # 走滑剪切源，strike=33°，dip=90°，rake=0°，标量矩 1e24 dyne·cm
-pymod.compute_syn(
+pymod.syn(
     dist=10.0, azimuth=30.0, scale=1e24, output_path="syn_dc2",
     strike=33, dip=90, rake=0,
 )
 
 # 张裂源，strike=33°，dip=50°，标量矩 1e24 dyne·cm
-pymod.compute_syn(
+pymod.syn(
     dist=10.0, azimuth=30.0, scale=1e24, output_path="syn_ts",
     strike=33, dip=50,
 )
 
 # 矩张量源，标量矩 1e24 dyne·cm
-pymod.compute_syn(
+pymod.syn(
     dist=10.0, azimuth=30.0, scale=1e24, output_path="syn_mt",
     moment_tensor=(0.1, -0.2, 1.0, 0.3, -0.5, -2.0),
 )
@@ -209,7 +209,7 @@ plot_syn_sources(source_streams, source_labels, "syn_sources.svg")
 # BEGIN ZNE
 # 接之前的代码
 # 设置 zne=True 可返回 ZNE 分量
-pymod.compute_syn(dist=10.0, azimuth=30.0, scale=1e24, output_path="syn_dc_zne", strike=33, dip=50, rake=120, zne=True)
+pymod.syn(dist=10.0, azimuth=30.0, scale=1e24, output_path="syn_dc_zne", strike=33, dip=50, rake=120, zne=True)
 # END ZNE
 # -----------------------------------------------------------------------------------
 
@@ -226,7 +226,7 @@ plot_syn(stsyn, "syn_dc_zne.svg")
 # BEGIN TIME FUNC
 # time_function 对应 CLI -D；t1=t2 时梯形波退化为三角波
 # 卷积用的时间函数会以 sig.sac 保存在输出目录
-pymod.compute_syn(dist=10.0, azimuth=30.0, scale=1e16, output_path="syn_sf_trig", force=(1, -0.5, 2), time_function="t/0.3/0.3/0.6")
+pymod.syn(dist=10.0, azimuth=30.0, scale=1e16, output_path="syn_sf_trig", force=(1, -0.5, 2), time_function="t/0.3/0.3/0.6")
 # END TIME FUNC
 # -----------------------------------------------------------------------------------
 
@@ -237,7 +237,7 @@ plot_syn(stsyn, "syn_sf_trig.svg", trig)
 
 # -----------------------------------------------------------------------------------
 # BEGIN INT DIF
-pymod.compute_syn(dist=10.0, azimuth=30.0, scale=1e24, output_path="syn_mt_intdif", moment_tensor=(0.1, -0.2, 1.0, 0.3, -0.5, -2.0))
+pymod.syn(dist=10.0, azimuth=30.0, scale=1e24, output_path="syn_mt_intdif", moment_tensor=(0.1, -0.2, 1.0, 0.3, -0.5, -2.0))
 stsyn = read("syn_mt_intdif/?.sac")
 
 # 使用 inplace=False，防止原地修改

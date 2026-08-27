@@ -20,8 +20,8 @@
 
     .. group-tab:: Python
 
-        :func:`compute_grn() <pygrt.pymod.PyModel1D.compute_grn>` 函数和 
-        :func:`compute_static_grn() <pygrt.pymod.PyModel1D.compute_static_grn>` 
+        :func:`greenfn() <pygrt.pymod.PyModel1D.greenfn>` 函数和
+        :func:`static_greenfn() <pygrt.pymod.PyModel1D.static_greenfn>`
         函数支持以下可选参数来使用自适应Filon积分，具体说明详见API。
 
         + ``Length:float``  定义离散波数积分的积分间隔 （见 :doc:`../kmax` 部分）

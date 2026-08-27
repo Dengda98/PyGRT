@@ -5,10 +5,10 @@ from typing import Union
 import pygrt
 
 pymod = pygrt.PyModel1D(grn="GRN", modelpath="milrow")
-pymod.compute_grn(depsrc=5.0, deprcv=0.0, dists=[180], nt=1400, dt=0.1)
+pymod.greenfn(depsrc=5.0, deprcv=0.0, dists=[180], nt=1400, dt=0.1)
 # ?.sac 匹配位移三分量文件名（Z/R/T）
 # integrate_order=1 对应 CLI -I1，得到阶跃型位移
-pymod.compute_syn(dist=180.0, azimuth=39.2, scale=1e24, output_path="syn_dc", strike=77, dip=88, rake=99, integrate_order=1)
+pymod.syn(dist=180.0, azimuth=39.2, scale=1e24, output_path="syn_dc", strike=77, dip=88, rake=99, integrate_order=1)
 st = read("syn_dc/?.sac")
 
 def plot_syn(stsyn:Stream, sigs:Union[np.ndarray,None]=None):

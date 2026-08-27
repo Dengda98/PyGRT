@@ -96,7 +96,7 @@
 
     .. group-tab:: Python
 
-        Python 的 ``compute_syn()`` 使用 ``depsrc``、``deprcv`` 和 ``dist`` 传入选择值，
+        Python 的 ``syn()`` 使用 ``depsrc``、``deprcv`` 和 ``dist`` 传入选择值，
         其含义与 C 模块的 **-Ds/-Dr/-R** 完全一致：
 
         .. literalinclude:: run_library/run.py
@@ -106,4 +106,4 @@
 
         由于动态合成不做深度或距离插值，如果目标值不在库中，应在建库时补充该采样值，或重新计算一个单独的格林函数。
         更完整的震源类型、时间函数和分量旋转选项见 :doc:`/Module/syn`，对应的 Python 接口见
-        :meth:`compute_syn() <pygrt.pymod.PyModel1D.compute_syn>`。
+        :meth:`syn() <pygrt.pymod.PyModel1D.syn>`。

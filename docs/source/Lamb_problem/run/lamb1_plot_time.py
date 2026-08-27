@@ -3,7 +3,7 @@ import pygrt
 import numpy as np
 
 ts = np.arange(0, 2, 1e-4)
-u = pygrt.utils.solve_lamb1(0.25, ts, 30)
+u = pygrt.utils.lamb1(0.25, ts, 30)
 # END LAMB1
 
 import matplotlib.pyplot as plt

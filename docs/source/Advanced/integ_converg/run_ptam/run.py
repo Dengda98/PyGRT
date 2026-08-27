@@ -10,7 +10,7 @@ pymod = pygrt.PyModel1D(grn="GRN", modelpath="milrow")
 
 dists = [5,8,10]
 # 设置 converg_method='PTAM' 进行收敛
-pymod.compute_grn(
+pymod.greenfn(
     depsrc=depsrc, deprcv=deprcv,
     dists=dists, nt=500, dt=0.02, converg_method='PTAM', k0=2, ampk=1.2, use_kmax_ref=True,
     statsidxs=[50,100],
@@ -47,7 +47,7 @@ pymod = pygrt.PyModel1D(stgrn="stgrn.nc", modelpath="milrow")
 
 norths = [2.0, 2.0, 1.0]
 easts = [2.0, 2.0, 1.0]
-pymod.compute_static_grn(depsrc=depsrc, deprcv=deprcv, norths=norths, easts=easts, converg_method='PTAM', stats=True, k0=3, use_kmax_ref=True)
+pymod.static_greenfn(depsrc=depsrc, deprcv=deprcv, norths=norths, easts=easts, converg_method='PTAM', stats=True, k0=3, use_kmax_ref=True)
 
 ir = 0
 statsdata1, statsdata2, ptamdata, dist = pygrt.utils.read_statsfile_ptam(

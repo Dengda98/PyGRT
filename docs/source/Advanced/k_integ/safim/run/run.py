@@ -3,7 +3,7 @@ import pygrt
 
 pymod = pygrt.PyModel1D(grn="GRN", modelpath="milrow")
 
-pymod.compute_grn(
+pymod.greenfn(
     depsrc=5.0,
     deprcv=0.0,
     dists=[2500],
