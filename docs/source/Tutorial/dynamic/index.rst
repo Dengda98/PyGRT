@@ -12,11 +12,11 @@
 
     flowchart TB 
 
-        GG(["greenfn()"])
-        SS(["syn()"])
-        EE(["utils.strain()"])
-        RR(["utils.rotation()"])
-        TT(["utils.stress()"])
+        GG(["pygrt.PyModel1D.greenfn()"])
+        SS(["pygrt.PyModel1D.syn()"])
+        EE(["pygrt.utils.strain()"])
+        RR(["pygrt.utils.rotation()"])
+        TT(["pygrt.utils.stress()"])
 
         G["Compute Green's Functions
         (and its Spatial Derivatives)"]
