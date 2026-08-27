@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import numpy as np
-from pygrt.utils import compute_okada
+from pygrt.utils import okada
 from scipy.io import netcdf_file
 
 
@@ -158,7 +158,7 @@ def main():
     np.testing.assert_array_equal(fault_geometry["dipsize"], [3, 4])
     rcv_fault_q = Path("rcv_faults_q.txt")
     write_receiver_points(rcv_fault_q, faults)
-    compute_okada(
+    okada(
         modelparams=(6.0, 3.464, 2.7),
         depsrc=10.0,
         recv_points=rcv_fault_q,
@@ -176,7 +176,7 @@ def main():
     np.testing.assert_array_equal(default_geometry["dipsize"], [1, 1])
     assert default_geometry["rake"][1] == -999.0
 
-    compute_okada(
+    okada(
         modelparams=(6.0, 3.464, 2.7),
         depsrc=10.0,
         rcv_fault="rcv_faults.inp",
@@ -193,7 +193,7 @@ def main():
         for name in zne_field_names:
             np.testing.assert_allclose(shell_fault["fields"][name], api_fault["fields"][name])
 
-    compute_okada(
+    okada(
         modelparams=(6.0, 3.464, 2.7),
         depsrc=50.0,
         deprcv=0.0,
@@ -202,7 +202,7 @@ def main():
         output_path="okada_python.nc",
         scale=1.0e12,
     )
-    compute_okada(
+    okada(
         modelparams=(6.0, 3.464, 2.7),
         deprcv=0.0,
         norths=(-5.0, 5.0, 0.5),
@@ -211,7 +211,7 @@ def main():
         src_fault="cfaults.inp",
         calc_upar=True,
     )
-    compute_okada(
+    okada(
         modelparams=(6.0, 3.464, 2.7),
         deprcv=0.0,
         norths=(-5.0, 5.0, 0.5),

@@ -112,7 +112,7 @@ def run_c_dynamic(c_root: Path) -> None:
 def run_py_dynamic(py_root: Path) -> None:
     """Python API 计算动态结果"""
     model = pygrt.PyModel1D(grn=py_root / "GRN", modelpath=MODEL, topbound="free", botbound="halfspace")
-    model.compute_grn(depsrc=DEPSRC, deprcv=DEPRCV, dists=DIST, nt=NT, dt=DT, calc_upar=True, print_log=False)
+    model.greenfn(depsrc=DEPSRC, deprcv=DEPRCV, dists=DIST, nt=NT, dt=DT, calc_upar=True, print_log=False)
 
     cases = [
         ("syn_ex", {}, "t/0.2/0.2/0.4"),
@@ -125,10 +125,10 @@ def run_py_dynamic(py_root: Path) -> None:
         suffix = "-N" if zne else ""
         for name, kwargs, tf in cases:
             out = py_root / f"{name}{suffix}"
-            model.compute_syn(dist=DIST, azimuth=AZ, scale=SCALE, output_path=out, time_function=tf, zne=zne, calc_upar=True, **kwargs)
-            pygrt.utils.compute_strain(out)
-            pygrt.utils.compute_rotation(out)
-            pygrt.utils.compute_stress(out)
+            model.syn(dist=DIST, azimuth=AZ, scale=SCALE, output_path=out, time_function=tf, zne=zne, calc_upar=True, **kwargs)
+            pygrt.utils.strain(out)
+            pygrt.utils.rotation(out)
+            pygrt.utils.stress(out)
 
 
 def run_c_static(c_root: Path) -> None:
@@ -174,9 +174,9 @@ def run_c_static(c_root: Path) -> None:
             if zne:
                 cmd.append("-N")
             run_grt(cmd)
-            run_grt(["static", "strain", str(out)])
-            run_grt(["static", "rotation", str(out)])
-            run_grt(["static", "stress", str(out)])
+            run_grt(["static_strain", str(out)])
+            run_grt(["static_rotation", str(out)])
+            run_grt(["static_stress", str(out)])
 
 
 def run_py_static(py_root: Path) -> None:
@@ -184,7 +184,7 @@ def run_py_static(py_root: Path) -> None:
     static_dir = py_root / "static"
     static_dir.mkdir(parents=True)
     model = pygrt.PyModel1D(stgrn=static_dir / "stgrn.nc", modelpath=MODEL)
-    model.compute_static_grn(depsrc=DEPSRC, deprcv=DEPRCV, norths=NORTHS, easts=EASTS, calc_upar=True)
+    model.static_greenfn(depsrc=DEPSRC, deprcv=DEPRCV, norths=NORTHS, easts=EASTS, calc_upar=True)
 
     cases = [
         ("stsyn_ex", {}),
@@ -197,10 +197,10 @@ def run_py_static(py_root: Path) -> None:
         suffix = "-N" if zne else ""
         for name, kwargs in cases:
             out = static_dir / f"{name}{suffix}.nc"
-            model.compute_static_syn(scale=SCALE, output_path=out, zne=zne, calc_upar=True, **kwargs)
-            pygrt.utils.compute_strain(out)
-            pygrt.utils.compute_rotation(out)
-            pygrt.utils.compute_stress(out)
+            model.static_syn(scale=SCALE, output_path=out, zne=zne, calc_upar=True, **kwargs)
+            pygrt.utils.static_strain(out)
+            pygrt.utils.static_rotation(out)
+            pygrt.utils.static_stress(out)
 
 
 def compare_dynamic(c_root: Path, py_root: Path) -> list[float]:

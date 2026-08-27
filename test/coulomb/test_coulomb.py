@@ -29,8 +29,8 @@ def check_coulomb(name, friction, dimensions):
 
 
 # 通过 Python API 重新执行一次静态投影和库伦应力写入
-pygrt.utils.compute_sproj("grid_zne.nc", strike=33.0, dip=44.0, rake=55.0)
-pygrt.utils.compute_coulomb("grid_zne.nc", 0.6)
+pygrt.utils.static_sproj("grid_zne.nc", strike=33.0, dip=44.0, rake=55.0)
+pygrt.utils.static_coulomb("grid_zne.nc", 0.6)
 
 check_coulomb("grid_zrt.nc", 0.8, {"north", "east"})
 check_coulomb("grid_zne.nc", 0.6, {"north", "east"})

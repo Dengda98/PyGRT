@@ -178,38 +178,38 @@ def compare_fault_postprocess(fault_path, points_path, prefix, component_pairs):
             )
 
 pymod = pygrt.PyModel1D(stgrn="stgrn.nc", modelpath=modname)
-pymod.compute_static_grn(depsrc=depsrc, deprcv=deprcv, dists=dists, calc_upar=True)
+pymod.static_greenfn(depsrc=depsrc, deprcv=deprcv, dists=dists, calc_upar=True)
 
-pymod.compute_static_syn(scale=1e20, output_path="stsyn.nc", norths=norths, easts=easts)
-pymod.compute_static_syn(scale=1e16, output_path="stsyn.nc", force=(-1, 2, -4), norths=norths, easts=easts)
-pymod.compute_static_syn(scale=1e20, output_path="stsyn.nc", strike=33, dip=44, rake=55, norths=norths, easts=easts)
-pymod.compute_static_syn(scale=1e20, output_path="stsyn.nc", strike=33, dip=44, norths=norths, easts=easts)
-pymod.compute_static_syn(scale=1e20, output_path="stsyn.nc", moment_tensor=(1, -2, -5, 0.5, 3, 1.2), norths=norths, easts=easts)
+pymod.static_syn(scale=1e20, output_path="stsyn.nc", norths=norths, easts=easts)
+pymod.static_syn(scale=1e16, output_path="stsyn.nc", force=(-1, 2, -4), norths=norths, easts=easts)
+pymod.static_syn(scale=1e20, output_path="stsyn.nc", strike=33, dip=44, rake=55, norths=norths, easts=easts)
+pymod.static_syn(scale=1e20, output_path="stsyn.nc", strike=33, dip=44, norths=norths, easts=easts)
+pymod.static_syn(scale=1e20, output_path="stsyn.nc", moment_tensor=(1, -2, -5, 0.5, 3, 1.2), norths=norths, easts=easts)
 
 # ZNE / 空间导数 / 二维接收网格
-pymod.compute_static_syn(scale=1e20, output_path="stsyn.nc", norths=norths, easts=easts, zne=True, calc_upar=True)
-pymod.compute_static_syn(scale=1e20, output_path="stsyn_single_explicit.nc", depsrc=depsrc, deprcv=deprcv, norths=norths, easts=easts)
+pymod.static_syn(scale=1e20, output_path="stsyn.nc", norths=norths, easts=easts, zne=True, calc_upar=True)
+pymod.static_syn(scale=1e20, output_path="stsyn_single_explicit.nc", depsrc=depsrc, deprcv=deprcv, norths=norths, easts=easts)
 
 try:
-    pymod.compute_static_syn(scale=1e20, output_path="stsyn_bad.nc", depsrc=depsrc + 0.1)
+    pymod.static_syn(scale=1e20, output_path="stsyn_bad.nc", depsrc=depsrc + 0.1)
     raise AssertionError("wrong single source depth should fail")
 except RuntimeError:
     pass
 
 try:
-    pymod.compute_static_syn(scale=1e20, output_path="stsyn_bad.nc", deprcv=deprcv + 0.1)
+    pymod.static_syn(scale=1e20, output_path="stsyn_bad.nc", deprcv=deprcv + 0.1)
     raise AssertionError("wrong single receiver depth should fail")
 except RuntimeError:
     pass
 
 # -------------------- -R 建库后合成 --------------------
 pymod_r = pygrt.PyModel1D(stgrn="stgrn_r.nc", modelpath=modname)
-pymod_r.compute_static_grn(depsrc=depsrc, deprcv=deprcv, dists=[0.0, 1.0, 2.0, 4.0, 8.0], calc_upar=True)
-pymod_r.compute_static_syn(scale=1e20, output_path="stsyn_r.nc", norths=norths, easts=easts)
+pymod_r.static_greenfn(depsrc=depsrc, deprcv=deprcv, dists=[0.0, 1.0, 2.0, 4.0, 8.0], calc_upar=True)
+pymod_r.static_syn(scale=1e20, output_path="stsyn_r.nc", norths=norths, easts=easts)
 
 # -------------------- 多深度：点源 -Ds、深度插值、-Q、有限断层 --------------------
 pymod_m = pygrt.PyModel1D(stgrn="stgrn_md.nc", modelpath=modname)
-pymod_m.compute_static_grn(depsrc=[1.0, 2.0, 3.0], deprcv=0.0, dists=dists, calc_upar=True)
+pymod_m.static_greenfn(depsrc=[1.0, 2.0, 3.0], deprcv=0.0, dists=dists, calc_upar=True)
 
 # Compare the two CLI outputs generated above before exercising the Python API
 assert_zne_zrt_equivalent("stsyn_ff_zne_cli.nc", "stsyn_ff_zrt_cli.nc")
@@ -230,14 +230,14 @@ assert default_geometry["rake"][1] == -999.0
 rcv_fault_q = Path("rcv_faults_q.txt")
 write_receiver_points(rcv_fault_q, faults)
 run_grt(
-    ["static", "syn", "-Gstgrn_rf.nc", "-Su1e16", "-Ds2", f"-Q{rcv_fault_q}", "-e", "-Ostsyn_rq.nc"],
+    ["static_syn", "-Gstgrn_rf.nc", "-Su1e16", "-Ds2", f"-Q{rcv_fault_q}", "-e", "-Ostsyn_rq.nc"],
     print_log=False,
 )
 assert_faults_match_points("stsyn_rf.nc", "stsyn_rq.nc", syn_field_names)
 
 # Python API 的 -R 路径与命令行输出保持一致
 pymod_rf = pygrt.PyModel1D(stgrn="stgrn_rf.nc", modelpath=modname)
-pymod_rf.compute_static_syn(
+pymod_rf.static_syn(
     scale=1e16, output_path="stsyn_rf_api.nc", depsrc=2.0,
     rcv_fault="rcv_faults.inp", rcv_fault_size=(0.75, 0.75), scale_with_mu=True,
     calc_upar=True,
@@ -253,12 +253,12 @@ for module, component_pairs in (
     ("stress", (("Z", "Z"), ("Z", "R"), ("Z", "T"), ("R", "R"), ("R", "T"), ("T", "T"))),
     ("rotation", (("Z", "R"), ("Z", "T"), ("R", "T"))),
 ):
-    run_grt(["static", module, "stsyn_rf.nc"], print_log=False)
-    run_grt(["static", module, "stsyn_rq.nc"], print_log=False)
+    run_grt([f"static_{module}", "stsyn_rf.nc"], print_log=False)
+    run_grt([f"static_{module}", "stsyn_rq.nc"], print_log=False)
     compare_fault_postprocess("stsyn_rf.nc", "stsyn_rq.nc", module, component_pairs)
 
-pymod_m.compute_static_syn(scale=1e16, output_path="stsyn_md.nc", depsrc=2.0, norths=norths, easts=easts, scale_with_mu=True)
-pymod_m.compute_static_syn(
+pymod_m.static_syn(scale=1e16, output_path="stsyn_md.nc", depsrc=2.0, norths=norths, easts=easts, scale_with_mu=True)
+pymod_m.static_syn(
     scale=1e16, output_path="stsyn_interp.nc", depsrc=1.5,
     norths=[-2.0, 2.0, 1.0], easts=[-2.0, 2.0, 1.0],
     scale_with_mu=True, calc_upar=True,
@@ -266,14 +266,14 @@ pymod_m.compute_static_syn(
 
 rcv = Path("rcv_pts.txt")
 rcv.write_text("# north east depth (km)\n0 0 0\n1 2 0\n-1 1 0\n")
-pymod_m.compute_static_syn(scale=1e16, output_path="stsyn_q.nc", depsrc=2.0, recv_points=rcv)
+pymod_m.static_syn(scale=1e16, output_path="stsyn_q.nc", depsrc=2.0, recv_points=rcv)
 with netcdf_file("stsyn_q.nc", mmap=False) as f:
     assert "point" in f.dimensions
     assert f.dimensions["point"] == 3
 
 ff = Path("cfaults_tiny.inp")
 # W=(2.8-1.2)/sin(90°)=1.6 km，dW=1 → 末块短于 dW，覆盖余数子断层中心
-pymod_m.compute_static_syn(
+pymod_m.static_syn(
     output_path="stsyn_ff_zrt.nc",
     src_fault=ff,
     src_fault_size=(1.0, 1.0),
@@ -281,7 +281,7 @@ pymod_m.compute_static_syn(
     easts=easts,
     calc_upar=True,
 )
-pymod_m.compute_static_syn(
+pymod_m.static_syn(
     output_path="stsyn_ff_zne.nc",
     src_fault=ff,
     src_fault_size=(1.0, 1.0),
@@ -305,7 +305,7 @@ for output_path, src_fault in [
     ("stsyn_ff_kodes_suffix_api.nc", coulomb_kodes_suffix),
     ("stsyn_ff_rake_suffix_api.nc", coulomb_rake_suffix),
 ]:
-    pymod_m.compute_static_syn(
+    pymod_m.static_syn(
         output_path=output_path,
         src_fault=src_fault,
         src_fault_size=(1.0, 1.0),
@@ -327,38 +327,38 @@ np.testing.assert_allclose(rake_suffix["Z"], rake["Z"], rtol=1e-12, atol=1e-12)
 
 # 多台站深度必须给 deprcv
 pymod_mr = pygrt.PyModel1D(stgrn="stgrn_mr.nc", modelpath=modname)
-pymod_mr.compute_static_grn(depsrc=2.0, deprcv=[0.0, 0.5], dists=[0.0, 5.0], calc_upar=True)
-pymod_mr.compute_static_syn(scale=1e20, output_path="stsyn_dr.nc", deprcv=0.25, norths=[-2.0, 2.0, 1.0], easts=[-2.0, 2.0, 1.0])
+pymod_mr.static_greenfn(depsrc=2.0, deprcv=[0.0, 0.5], dists=[0.0, 5.0], calc_upar=True)
+pymod_mr.static_syn(scale=1e20, output_path="stsyn_dr.nc", deprcv=0.25, norths=[-2.0, 2.0, 1.0], easts=[-2.0, 2.0, 1.0])
 
 # -------------------- 错误参数 --------------------
 try:
-    pymod_m.compute_static_syn(scale=1e20, output_path="stsyn_bad.nc", recv_points=rcv, norths=[-1.0, 1.0, 1.0], easts=[-1.0, 1.0, 1.0])
+    pymod_m.static_syn(scale=1e20, output_path="stsyn_bad.nc", recv_points=rcv, norths=[-1.0, 1.0, 1.0], easts=[-1.0, 1.0, 1.0])
     raise AssertionError("recv_points with norths/easts should raise")
 except ValueError:
     pass
 
 try:
-    pymod_m.compute_static_syn(scale=1e20, output_path="stsyn_bad.nc", recv_points=rcv, deprcv=0.0)
+    pymod_m.static_syn(scale=1e20, output_path="stsyn_bad.nc", recv_points=rcv, deprcv=0.0)
     raise AssertionError("recv_points with deprcv should raise")
 except ValueError:
     pass
 
 try:
-    pymod_m.compute_static_syn(scale=1e20, output_path="stsyn_bad.nc", src_fault=ff)
+    pymod_m.static_syn(scale=1e20, output_path="stsyn_bad.nc", src_fault=ff)
     raise AssertionError("src_fault with scale should raise")
 except ValueError:
     pass
 
 bad_dip = Path("cfaults_bad_dip.inp")
 try:
-    pymod_m.compute_static_syn(output_path="stsyn_bad.nc", src_fault=bad_dip)
+    pymod_m.static_syn(output_path="stsyn_bad.nc", src_fault=bad_dip)
     raise AssertionError("dip=0 should fail in C")
 except RuntimeError:
     pass
 
 bad_bot = Path("cfaults_bad_bot.inp")
 try:
-    pymod_m.compute_static_syn(output_path="stsyn_bad.nc", src_fault=bad_bot)
+    pymod_m.static_syn(output_path="stsyn_bad.nc", src_fault=bad_bot)
     raise AssertionError("bot < top should fail in C")
 except RuntimeError:
     pass

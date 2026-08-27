@@ -119,7 +119,7 @@ def extract_slice(lib: dict, isrc: int, ircv: int) -> dict:
 
 def py_compute_to_nc(depsrcs, deprcvs, outpath: str):
     pymod = pygrt.PyModel1D(stgrn=outpath, modelpath=MODNAME)
-    pymod.compute_static_grn(depsrc=depsrcs, deprcv=deprcvs, norths=NORTHS, easts=EASTS, calc_upar=True)
+    pymod.static_greenfn(depsrc=depsrcs, deprcv=deprcvs, norths=NORTHS, easts=EASTS, calc_upar=True)
     assert Path(outpath).is_file()
 
 
@@ -160,12 +160,12 @@ def compare_syn_fields(a: dict, b: dict, label: str) -> float:
 
 
 def c_static_syn(grn: Path, out: Path, extra: list) -> None:
-    run_grt(["static", "syn", f"-G{grn}", f"-S{format_float(SCALE)}", f"-O{out}", *extra, "-e"])
+    run_grt(["static_syn", f"-G{grn}", f"-S{format_float(SCALE)}", f"-O{out}", *extra, "-e"])
 
 
 def py_static_syn(grn: Path, out: Path, **kwargs) -> None:
     model = pygrt.PyModel1D(stgrn=grn, modelpath=MODNAME)
-    model.compute_static_syn(scale=SCALE, output_path=out, calc_upar=True, **kwargs)
+    model.static_syn(scale=SCALE, output_path=out, calc_upar=True, **kwargs)
 
 
 def compare_syn_cli_py() -> list:
@@ -202,12 +202,12 @@ def compare_syn_cli_py() -> list:
     py_ten = CMPDIR / "stsyn_ten_py.nc"
     c_static_syn(grn, c_ten, ["-Ds2", "-Dr0.5", "-N"])
     py_static_syn(grn, py_ten, depsrc=2.0, deprcv=0.5, zne=True)
-    run_grt(["static", "strain", str(c_ten)])
-    run_grt(["static", "rotation", str(c_ten)])
-    run_grt(["static", "stress", str(c_ten)])
-    pygrt.utils.compute_strain(py_ten)
-    pygrt.utils.compute_rotation(py_ten)
-    pygrt.utils.compute_stress(py_ten)
+    run_grt(["static_strain", str(c_ten)])
+    run_grt(["static_rotation", str(c_ten)])
+    run_grt(["static_stress", str(c_ten)])
+    pygrt.utils.static_strain(py_ten)
+    pygrt.utils.static_rotation(py_ten)
+    pygrt.utils.static_stress(py_ten)
     errors.append(compare_nc_files(py_ten, c_ten))
     return errors
 
