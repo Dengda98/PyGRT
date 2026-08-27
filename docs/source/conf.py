@@ -97,9 +97,9 @@ templates_path = ['_templates']
 exclude_patterns = []
 
 language = 'zh_CN'
-locale_dirs = ['../locales/']  # 存放翻译文件的目录
-gettext_uuid = False
-gettext_compact = False
+# locale_dirs = ['../locales/']  # 存放翻译文件的目录
+# gettext_uuid = False
+# gettext_compact = False
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
