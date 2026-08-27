@@ -2,7 +2,7 @@ import numpy as np
 import pygrt
 
 ts = np.arange(0, 2+1e-8, 1e-3)
-lamb1 = pygrt.utils.solve_lamb1(0.25, ts, 30)
+lamb1 = pygrt.utils.lamb1(0.25, ts, 30)
 
 # check results
 # Since the rounding error of ref_lamb1, the error will not be absolutely zero.

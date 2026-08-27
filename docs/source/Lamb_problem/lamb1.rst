@@ -24,7 +24,7 @@
 
    .. group-tab:: Python    
 
-      Python 提供了函数 :func:`solve_lamb1() <pygrt.utils.solve_lamb1>` 求解第一类 Lamb 问题。
+      Python 提供了函数 :func:`lamb1() <pygrt.utils.lamb1>` 求解第一类 Lamb 问题。
 
       .. literalinclude:: run/lamb1_plot_time.py
          :language: python

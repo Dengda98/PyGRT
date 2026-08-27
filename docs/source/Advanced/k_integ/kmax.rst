@@ -61,7 +61,7 @@
 
     .. group-tab:: Python
 
-        :func:`compute_grn() <pygrt.pymod.PyModel1D.compute_grn>` 函数支持以下可选参数来控制波数积分，
+        :func:`greenfn() <pygrt.pymod.PyModel1D.greenfn>` 函数支持以下可选参数来控制波数积分，
         具体说明详见API。
 
         + ``k0:float``, 对应公式中零频项的系数 :math:`k_0` ，默认为 50 
@@ -70,7 +70,7 @@
         + ``use_kmax_ref:bool`` 为 True 时直接使用 :math:`k_{\text{max,ref}}` 作为
           积分上限
         
-        :func:`compute_static_grn() <pygrt.pymod.PyModel1D.compute_static_grn>` 函数支持以下可选参数来控制波数积分，
+        :func:`static_greenfn() <pygrt.pymod.PyModel1D.static_greenfn>` 函数支持以下可选参数来控制波数积分，
         具体说明详见API。静态解无 ``ampk`` 参数。
 
         + ``k0:float``

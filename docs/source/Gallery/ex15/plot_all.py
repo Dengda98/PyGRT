@@ -16,7 +16,7 @@ pymod = pygrt.PyModel1D(grn="GRN", stgrn="stgrn.nc", modelpath=modname)
 # 零频频谱: nt=1 时只算 ω=0
 # C 反变换写 SAC 时乘了 df=1/(nt*dt)，故时域首点 * dt 即还原频域幅值
 dt = 500.0
-pymod.compute_grn(depsrc=depsrc, deprcv=deprcv, dists=dists.tolist(), nt=1, dt=dt, zeta=1.0, keepAllFreq=True)
+pymod.greenfn(depsrc=depsrc, deprcv=deprcv, dists=dists.tolist(), nt=1, dt=dt, zeta=1.0, keepAllFreq=True)
 # 多震中距：按子目录名末段解析 dist，再按 dists 顺序读入
 dist2st = {
     float(p.name.rsplit("_", 1)[-1]): read(str(p / "*.sac"))
@@ -25,7 +25,7 @@ dist2st = {
 stgrnLst = [dist2st[float(d)] for d in dists]
 
 # 静态解
-pymod.compute_static_grn(depsrc=depsrc, deprcv=deprcv, dists=dists.tolist())
+pymod.static_greenfn(depsrc=depsrc, deprcv=deprcv, dists=dists.tolist())
 static_grn = pygrt.utils.read_static_nc("stgrn.nc")
 
 # 绘制零频结果

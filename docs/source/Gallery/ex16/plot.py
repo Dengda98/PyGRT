@@ -36,10 +36,10 @@ else:
 modfile1 = f"mod_{bound1}_{bound2}"
 np.savetxt(modfile1, modarr)
 pymod1 = pygrt.PyModel1D(grn="GRN1", stgrn="stgrn1.nc", modelpath=modfile1, topbound=bound1, botbound=bound2)
-pymod1.compute_grn(depsrc=depsrc, deprcv=deprcv, dists=rs, nt=nt, dt=dt, keepAllFreq=True)
+pymod1.greenfn(depsrc=depsrc, deprcv=deprcv, dists=rs, nt=nt, dt=dt, keepAllFreq=True)
 st1 = read("GRN1/*/*.sac")
 pygrt.utils.stream_integral(st1)
-pymod1.compute_static_grn(depsrc=depsrc, deprcv=deprcv, norths=norths_rng, easts=easts_rng)
+pymod1.static_greenfn(depsrc=depsrc, deprcv=deprcv, norths=norths_rng, easts=easts_rng)
 static1 = pygrt.utils.read_static_nc("stgrn1.nc")
 
 # =============================================================
@@ -63,9 +63,9 @@ print(modarr2.shape, depsrc2, deprcv2)
 modfile2 = f"mod_{bound2}_{bound1}"
 np.savetxt(modfile2, modarr2)
 pymod2 = pygrt.PyModel1D(grn="GRN2", stgrn="stgrn2.nc", modelpath=modfile2, topbound=bound2, botbound=bound1)
-pymod2.compute_grn(depsrc=depsrc2, deprcv=deprcv2, dists=rs, nt=nt, dt=dt, keepAllFreq=True)
+pymod2.greenfn(depsrc=depsrc2, deprcv=deprcv2, dists=rs, nt=nt, dt=dt, keepAllFreq=True)
 st2 = read("GRN2/*/*.sac")
-pymod2.compute_static_grn(depsrc=depsrc2, deprcv=deprcv2, norths=norths_rng, easts=easts_rng)
+pymod2.static_greenfn(depsrc=depsrc2, deprcv=deprcv2, norths=norths_rng, easts=easts_rng)
 static2 = pygrt.utils.read_static_nc("stgrn2.nc")
 pygrt.utils.stream_integral(st2)
 

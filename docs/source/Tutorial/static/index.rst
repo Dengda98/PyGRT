@@ -12,13 +12,13 @@
 
     flowchart TB 
 
-        GG(["compute_static_grn()"])
-        SS(["compute_static_syn()"])
-        EE(["utils.compute_strain()"])
-        RR(["utils.compute_rotation()"])
-        TT(["utils.compute_stress()"])
-        SP(["utils.compute_sproj()"])
-        CO(["utils.compute_coulomb()"])
+        GG(["pygrt.PyModel1D.static_greenfn()"])
+        SS(["pygrt.PyModel1D.static_syn()"])
+        EE(["pygrt.utils.static_strain()"])
+        RR(["pygrt.utils.static_rotation()"])
+        TT(["pygrt.utils.static_stress()"])
+        SP(["pygrt.utils.static_sproj()"])
+        CO(["pygrt.utils.static_coulomb()"])
 
         G["Compute Green's Functions
         (and its Spatial Derivatives)"]

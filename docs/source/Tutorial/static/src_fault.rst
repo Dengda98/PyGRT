@@ -115,8 +115,8 @@ PyGRT 静态解的合成阶段目前已支持传入
             :end-before: END COULOMB
 
         两个函数的详细说明请参见
-        :func:`compute_sproj() <pygrt.utils.compute_sproj>` 和
-        :func:`compute_coulomb() <pygrt.utils.compute_coulomb>`。
+        :func:`static_sproj() <pygrt.utils.static_sproj>` 和
+        :func:`static_coulomb() <pygrt.utils.static_coulomb>`。
 
 .. figure:: run_src_fault/coulomb.svg
     :align: center

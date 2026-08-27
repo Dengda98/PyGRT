@@ -7,7 +7,7 @@ from obspy import read
 pymod = pygrt.PyModel1D(grn="GRN", modelpath="milrow")
 
 # 传入 calc_upar=True 计算空间导数
-pymod.compute_grn(depsrc=2.0, deprcv=0.0, dists=[10], nt=500, dt=0.02, calc_upar=True)
+pymod.greenfn(depsrc=2.0, deprcv=0.0, dists=[10], nt=500, dt=0.02, calc_upar=True)
 stgrn = read("GRN/*/*.sac")
 print(stgrn.__str__(extended=True))
 # 45 Trace(s) in Stream:
@@ -24,7 +24,7 @@ print(stgrn.__str__(extended=True))
 # BEGIN SYN DC
 # 传入 calc_upar=True 计算空间导数
 # ?.sac 为位移，[zrt]?.sac 为空间导数
-pymod.compute_syn(dist=10.0, azimuth=30.0, scale=1e24, output_path="syn_dc", strike=33, dip=50, rake=120, calc_upar=True)
+pymod.syn(dist=10.0, azimuth=30.0, scale=1e24, output_path="syn_dc", strike=33, dip=50, rake=120, calc_upar=True)
 stsyn = read("syn_dc/?.sac") + read("syn_dc/[zrt]?.sac")
 print(stsyn)
 # 12 Trace(s) in Stream:
@@ -40,7 +40,7 @@ print(stsyn)
 # BEGIN ZNE
 # 传入 zne=True 可返回 ZNE 分量
 # ?.sac 为位移，[zne]?.sac 为空间导数
-pymod.compute_syn(dist=10.0, azimuth=30.0, scale=1e24, output_path="syn_dc_zne", strike=33, dip=50, rake=120, calc_upar=True, zne=True)
+pymod.syn(dist=10.0, azimuth=30.0, scale=1e24, output_path="syn_dc_zne", strike=33, dip=50, rake=120, calc_upar=True, zne=True)
 stsyn = read("syn_dc_zne/?.sac") + read("syn_dc_zne/[zne]?.sac")
 print(stsyn)
 # 12 Trace(s) in Stream:
@@ -107,7 +107,7 @@ def plot6(st6:Stream, title:str, out:str|None=None):
 
 # --------------------------------------------------------------------------------------
 # BEGIN STRAIN
-pygrt.utils.compute_strain("syn_dc_zne")
+pygrt.utils.strain("syn_dc_zne")
 st_strain = read("syn_dc_zne/strain_*.sac")
 print(st_strain)
 # 6 Trace(s) in Stream:
@@ -123,7 +123,7 @@ plot6(st_strain, "Strain", "strain.svg")
 
 # --------------------------------------------------------------------------------------
 # BEGIN ROTATION
-pygrt.utils.compute_rotation("syn_dc_zne")
+pygrt.utils.rotation("syn_dc_zne")
 st_rotation = read("syn_dc_zne/rotation_*.sac")
 print(st_rotation)
 # 3 Trace(s) in Stream:
@@ -137,7 +137,7 @@ plot6(st_rotation, "Rotation", "rotation.svg")
 
 
 # BEGIN STRESS
-pygrt.utils.compute_stress("syn_dc_zne")
+pygrt.utils.stress("syn_dc_zne")
 st_stress = read("syn_dc_zne/stress_*.sac")
 print(st_stress)
 # 6 Trace(s) in Stream:

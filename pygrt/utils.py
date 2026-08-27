@@ -33,6 +33,15 @@ from .c_interfaces import C_grt_solve_lamb1
 __all__ = [
     "read_static_nc",
     "read_static_grn",
+    "okada",
+    "strain",
+    "rotation",
+    "stress",
+    "static_strain",
+    "static_rotation",
+    "static_stress",
+    "static_sproj",
+    "static_coulomb",
     "compute_okada",
     "compute_strain",
     "compute_rotation",
@@ -50,6 +59,7 @@ __all__ = [
     "read_statsfile_ptam",
     "plot_statsdata",
     "plot_statsdata_ptam",
+    "lamb1",
     "solve_lamb1",
 ]
 
@@ -130,7 +140,7 @@ def read_static_grn(path: PathLike) -> dict:
     return read_static_nc(path)
 
 
-def compute_okada(
+def okada(
     *,
     modelparams: Sequence[float],
     depsrc: Optional[float] = None,
@@ -156,7 +166,7 @@ def compute_okada(
 
     Results are written to the NetCDF file ``output_path``. The source, receiver
     grid, component and derivative arguments are intentionally close to
-    :meth:`PyModel1D.compute_static_syn`, but Okada only needs the homogeneous
+    :meth:`PyModel1D.static_syn`, but Okada only needs the homogeneous
     half-space model parameters ``(vp, vs, rho)`` and does not require a static
     Green's function file.
 
@@ -316,6 +326,11 @@ def compute_okada(
     return None
 
 
+def compute_okada(*args, **kwargs):
+    """Legacy interface renamed to :func:`okada`; calling it raises an error."""
+    raise RuntimeError("compute_okada() has been renamed to okada(); use okada() instead.")
+
+
 def _run_static_file_module(
     path: PathLike,
     module: str,
@@ -329,7 +344,7 @@ def _run_static_file_module(
     if not path.is_file():
         raise FileNotFoundError(f"Synthesis result does not exist: {path}")
 
-    run_grt(["static", module, f"-G{path}", *options])
+    run_grt([module, f"-G{path}", *options])
     return read_static_nc(path) if return_result else None
 
 
@@ -425,7 +440,7 @@ def geo2xy(
     _run_coordinate_transform("geo2xy", ingrid, qfile, outgrid, lat0, lon0)
 
 
-def compute_sproj(
+def static_sproj(
     path: PathLike,
     *,
     strike: Optional[float] = None,
@@ -440,7 +455,7 @@ def compute_sproj(
 
     The input ``path`` must be a static synthesis NetCDF file, not a dynamic
     synthesis directory, and must contain the
-    six stress components produced by ``compute_stress``. For grid and ordinary
+    six stress components produced by ``static_stress``. For grid and ordinary
     points layouts, pass ``strike``, ``dip`` and ``rake`` together. For finite
     receiver points, pass only ``rake`` when the file has undefined rake values;
     set ``force_rake=True`` to replace every rake. ``recv_points`` corresponds
@@ -468,10 +483,15 @@ def compute_sproj(
     if recv_points is not None:
         options.append(f"-Q{Path(recv_points)}")
 
-    return _run_static_file_module(path, "sproj", options, return_result)
+    return _run_static_file_module(path, "static_sproj", options, return_result)
 
 
-def compute_coulomb(
+def compute_sproj(*args, **kwargs):
+    """Legacy interface renamed to :func:`static_sproj`; calling it raises an error."""
+    raise RuntimeError("compute_sproj() has been renamed to static_sproj(); use static_sproj() instead.")
+
+
+def static_coulomb(
     path: PathLike,
     friction: float,
     *,
@@ -481,7 +501,7 @@ def compute_coulomb(
     Compute Coulomb stress change in a static synthesis NetCDF file.
 
     The input file must already contain ``sigma_n`` and ``tau_s``, normally
-    produced by :func:`compute_sproj`. The result ``coulomb`` is written back
+    produced by :func:`static_sproj`. The result ``coulomb`` is written back
     to the same file using ``tau_s + friction * sigma_n``.
 
     :param    path:          Static synthesis NetCDF file containing ``sigma_n`` and ``tau_s``.
@@ -491,107 +511,168 @@ def compute_coulomb(
     :return: The result from :func:`read_static_nc` when ``return_result`` is true;
              otherwise ``None``
     """
-    return _run_static_file_module(path, "coulomb", [f"-F{format_float(friction)}"], return_result)
+    return _run_static_file_module(path, "static_coulomb", [f"-F{format_float(friction)}"], return_result)
 
 
-def _postprocess(path: PathLike, module: str, return_result: bool):
+def compute_coulomb(*args, **kwargs):
+    """Legacy interface renamed to :func:`static_coulomb`; calling it raises an error."""
+    raise RuntimeError("compute_coulomb() has been renamed to static_coulomb(); use static_coulomb() instead.")
+
+
+def _run_dynamic_file_module(path: PathLike, module: str, return_result: bool):
+    """Run a dynamic SAC-directory module and optionally read its output"""
+    path = Path(path)
+    if path.is_file():
+        raise ValueError(f"Only dynamic synthesis directories are supported: {path}")
+    if not path.is_dir():
+        raise FileNotFoundError(f"Synthesis result does not exist: {path}")
+
+    run_grt([module, path])
+    return read(str(path / f"{module}_*.sac")) if return_result else None
+
+
+def _run_static_tensor_module(path: PathLike, module: str, return_result: bool):
+    """Run a static tensor module and optionally read its NetCDF output"""
     path = Path(path)
     if path.is_dir():
-        run_grt([module, path])
-        # 动态结果只能靠文件名前缀区分 strain/rotation/stress
-        return read(str(path / f"{module}_*.sac")) if return_result else None
-    if path.is_file():
-        run_grt(["static", module, path])
-        return read_static_nc(path) if return_result else None
-    raise FileNotFoundError(f"Synthesis result does not exist: {path}")
+        raise ValueError(f"Only static synthesis files are supported: {path}")
+    if not path.is_file():
+        raise FileNotFoundError(f"Synthesis result does not exist: {path}")
+
+    run_grt([module, path])
+    return read_static_nc(path) if return_result else None
 
 
-def compute_strain(
+def strain(
     path: PathLike,
     *,
     return_result: bool = False,
 ):
     """
-    Compute the strain tensor in place from synthetic spatial derivatives.
-
-    ``path`` may be either:
-
-    * a dynamic synthesis directory containing SAC files, processed by
-      ``grt strain``
-    * a static synthesis NetCDF file, processed by ``grt static strain``
+    Compute a dynamic strain tensor in place from synthetic spatial derivatives.
 
     The synthesis must have been computed with ``calc_upar=True``. Results are
-    written back to the same directory or file.
+    written back to the same SAC directory.
 
-    :param    path:               Dynamic SAC directory or static NetCDF file.
-    :param    return_result:      If true, read and return the processed result.
-                                  For a dynamic directory this reads
-                                  ``strain_*.sac`` only; for a static NetCDF file
-                                  this returns the full NetCDF dictionary.
+    :param    path:               Dynamic SAC synthesis directory.
+    :param    return_result:      If true, read and return ``strain_*.sac``.
 
-    :return: An :class:`obspy.Stream` or NetCDF dictionary when
-             ``return_result`` is true; otherwise ``None``.
+    :return: An :class:`obspy.Stream` when ``return_result`` is true;
+             otherwise ``None``.
     """
-    return _postprocess(path, "strain", return_result)
+    return _run_dynamic_file_module(path, "strain", return_result)
 
 
-def compute_rotation(
+def static_strain(
     path: PathLike,
     *,
     return_result: bool = False,
 ):
     """
-    Compute the rotation tensor in place from synthetic spatial derivatives.
-
-    ``path`` may be either:
-
-    * a dynamic synthesis directory containing SAC files, processed by
-      ``grt rotation``
-    * a static synthesis NetCDF file, processed by ``grt static rotation``
+    Compute a static strain tensor in place from synthetic spatial derivatives.
 
     The synthesis must have been computed with ``calc_upar=True``. Results are
-    written back to the same directory or file.
+    written back to the same NetCDF file.
 
-    :param    path:               Dynamic SAC directory or static NetCDF file.
-    :param    return_result:      If true, read and return the processed result.
-                                  For a dynamic directory this reads
-                                  ``rotation_*.sac`` only; for a static NetCDF file
-                                  this returns the full NetCDF dictionary.
+    :param    path:               Static synthesis NetCDF file.
+    :param    return_result:      If true, read and return the processed NetCDF data.
 
-    :return: An :class:`obspy.Stream` or NetCDF dictionary when
-             ``return_result`` is true; otherwise ``None``.
+    :return: A NetCDF dictionary when ``return_result`` is true; otherwise ``None``.
     """
-    return _postprocess(path, "rotation", return_result)
+    return _run_static_tensor_module(path, "static_strain", return_result)
 
 
-def compute_stress(
+def rotation(
     path: PathLike,
     *,
     return_result: bool = False,
 ):
     """
-    Compute the stress tensor in place from synthetic spatial derivatives.
-
-    ``path`` may be either:
-
-    * a dynamic synthesis directory containing SAC files, processed by
-      ``grt stress``
-    * a static synthesis NetCDF file, processed by ``grt static stress``
+    Compute a dynamic rotation tensor in place from synthetic spatial derivatives.
 
     The synthesis must have been computed with ``calc_upar=True``. Results are
-    written back to the same directory or file. Stress unit is
-    dyne/cm² (= 0.1 Pa).
+    written back to the same SAC directory.
 
-    :param    path:               Dynamic SAC directory or static NetCDF file.
-    :param    return_result:      If true, read and return the processed result.
-                                  For a dynamic directory this reads
-                                  ``stress_*.sac`` only; for a static NetCDF file
-                                  this returns the full NetCDF dictionary.
+    :param    path:               Dynamic SAC synthesis directory.
+    :param    return_result:      If true, read and return ``rotation_*.sac``.
 
-    :return: An :class:`obspy.Stream` or NetCDF dictionary when
-             ``return_result`` is true; otherwise ``None``.
+    :return: An :class:`obspy.Stream` when ``return_result`` is true;
+             otherwise ``None``.
     """
-    return _postprocess(path, "stress", return_result)
+    return _run_dynamic_file_module(path, "rotation", return_result)
+
+
+def static_rotation(
+    path: PathLike,
+    *,
+    return_result: bool = False,
+):
+    """
+    Compute a static rotation tensor in place from synthetic spatial derivatives.
+
+    The synthesis must have been computed with ``calc_upar=True``. Results are
+    written back to the same NetCDF file.
+
+    :param    path:               Static synthesis NetCDF file.
+    :param    return_result:      If true, read and return the processed NetCDF data.
+
+    :return: A NetCDF dictionary when ``return_result`` is true; otherwise ``None``.
+    """
+    return _run_static_tensor_module(path, "static_rotation", return_result)
+
+
+def stress(
+    path: PathLike,
+    *,
+    return_result: bool = False,
+):
+    """
+    Compute a dynamic stress tensor in place from synthetic spatial derivatives.
+
+    The synthesis must have been computed with ``calc_upar=True``. Results are
+    written back to the same SAC directory. Stress unit is dyne/cm² (= 0.1 Pa).
+
+    :param    path:               Dynamic SAC synthesis directory.
+    :param    return_result:      If true, read and return ``stress_*.sac``.
+
+    :return: An :class:`obspy.Stream` when ``return_result`` is true;
+             otherwise ``None``.
+    """
+    return _run_dynamic_file_module(path, "stress", return_result)
+
+
+def static_stress(
+    path: PathLike,
+    *,
+    return_result: bool = False,
+):
+    """
+    Compute a static stress tensor in place from synthetic spatial derivatives.
+
+    The synthesis must have been computed with ``calc_upar=True``. Results are
+    written back to the same NetCDF file. Stress unit is dyne/cm² (= 0.1 Pa).
+
+    :param    path:               Static synthesis NetCDF file.
+    :param    return_result:      If true, read and return the processed NetCDF data.
+
+    :return: A NetCDF dictionary when ``return_result`` is true; otherwise ``None``.
+    """
+    return _run_static_tensor_module(path, "static_stress", return_result)
+
+
+def compute_strain(*args, **kwargs):
+    """Legacy interface split into :func:`strain` and :func:`static_strain`; calling it raises an error."""
+    raise RuntimeError("compute_strain() was replaced by strain() or static_strain(); use the matching interface instead.")
+
+
+def compute_rotation(*args, **kwargs):
+    """Legacy interface split into :func:`rotation` and :func:`static_rotation`; calling it raises an error."""
+    raise RuntimeError("compute_rotation() was replaced by rotation() or static_rotation(); use the matching interface instead.")
+
+
+def compute_stress(*args, **kwargs):
+    """Legacy interface split into :func:`stress` and :func:`static_stress`; calling it raises an error."""
+    raise RuntimeError("compute_stress() was replaced by stress() or static_stress(); use the matching interface instead.")
 
 
 def stream_convolve(st0: Stream, signal0: np.ndarray, inplace: bool = True) -> Stream:
@@ -1119,7 +1200,7 @@ def plot_statsdata_ptam(statsdata1:np.ndarray, statsdata2:np.ndarray, statsdata_
 
 
 
-def solve_lamb1(nu:float, ts:np.ndarray, azimuth:float):
+def lamb1(nu:float, ts:np.ndarray, azimuth:float):
     r"""
         solve the first-kind Lamb's problem using the generalized closed-form solution, see：
 
@@ -1148,3 +1229,8 @@ def solve_lamb1(nu:float, ts:np.ndarray, azimuth:float):
     C_grt_solve_lamb1(nu, npct.as_ctypes(ts), nt, azimuth, npct.as_ctypes(u.ravel()))
 
     return u
+
+
+def solve_lamb1(*args, **kwargs):
+    """Legacy interface renamed to :func:`lamb1`; calling it raises an error."""
+    raise RuntimeError("solve_lamb1() has been renamed to lamb1(); use lamb1() instead.")

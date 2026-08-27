@@ -14,7 +14,7 @@ deprcv = 0.0
 # 不指定 statsidxs 索引时传空列表，输出全部频率点的积分过程文件
 # vmin_ref 显式给定参考速度（用于定义波数积分上限），避免使用PTAM
 # Length 给定波数积分间隔dk
-pymod.compute_grn(
+pymod.greenfn(
     depsrc=depsrc, deprcv=deprcv, dists=[1], nt=500, dt=0.02,
     vmin_ref=0.1, Length=20, use_kmax_ref=True, converg_method='none',
     statsidxs=[],

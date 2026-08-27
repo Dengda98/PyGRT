@@ -4,7 +4,7 @@
 合成静态位移
 =====================
 
-Python中合成静态位移的主函数为 :meth:`compute_static_syn() <pygrt.pymod.PyModel1D.compute_static_syn>` ，
+Python中合成静态位移的主函数为 :meth:`static_syn() <pygrt.pymod.PyModel1D.static_syn>` ，
 C模块为 :doc:`/Module/static_syn`。
 
 使用上节计算的格林函数，我们可以指定 **点源的震源机制** 以及 **接收点位置** 来合成静态位移。
@@ -47,7 +47,7 @@ C模块为 :doc:`/Module/static_syn`。
 
         可以设置 **norths, easts** 来指定二维接收网格。
         各种点源的震源参数设置用法详见 
-        :meth:`compute_static_syn() <pygrt.pymod.PyModel1D.compute_static_syn>`
+        :meth:`static_syn() <pygrt.pymod.PyModel1D.static_syn>`
         函数 API 说明。
 
 

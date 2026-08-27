@@ -4,7 +4,7 @@
 计算静态格林函数
 =================
 
-Python中计算静态格林函数的主函数为 :meth:`compute_static_grn() <pygrt.pymod.PyModel1D.compute_static_grn>` ，C模块为 :doc:`/Module/static_greenfn`。
+Python中计算静态格林函数的主函数为 :meth:`static_greenfn() <pygrt.pymod.PyModel1D.static_greenfn>` ，C模块为 :doc:`/Module/static_greenfn`。
 
 建议先阅读完 :doc:`/Tutorial/dynamic/gfunc` 部分。静态情况与动态情况采取的计算方法一致，只是推导细节会有不同，详见 |yao2026p| 。
 

@@ -4,7 +4,7 @@
 计算动态格林函数
 =================
 
-Python中计算动态格林函数的主函数为 :meth:`compute_grn() <pygrt.pymod.PyModel1D.compute_grn>` ，C模块为 :doc:`/Module/greenfn`。
+Python中计算动态格林函数的主函数为 :meth:`greenfn() <pygrt.pymod.PyModel1D.greenfn>` ，C模块为 :doc:`/Module/greenfn`。
 
 使用 **-R** 或 Python 接口的 ``dists`` 传入多个震中距时，数值必须严格递增，不能重复或倒序；
 单个震中距不受此限制。

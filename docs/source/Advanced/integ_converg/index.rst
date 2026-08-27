@@ -26,6 +26,6 @@
 
    .. group-tab:: Python
 
-      :func:`compute_grn() <pygrt.pymod.PyModel1D.compute_grn>` 
-      函数和 :func:`compute_static_grn() <pygrt.pymod.PyModel1D.compute_static_grn>` 
+      :func:`greenfn() <pygrt.pymod.PyModel1D.greenfn>`
+      函数和 :func:`static_greenfn() <pygrt.pymod.PyModel1D.static_greenfn>`
       函数支持设置 ``converg_method:str`` 来指定收敛方法（"AUTO", "NONE", "DCM", "PTAM"）。
