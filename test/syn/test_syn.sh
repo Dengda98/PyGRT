@@ -69,23 +69,35 @@ grt syn -GGRN/milrow_2_3_10 -A22 -Su1e10 -M33/44/55 -Osyn
 grt syn -GGRN/milrow_2_3_10 -A22 -Su1e10 -M33/44 -Osyn 
 grt syn -GGRN/milrow_2_3_10 -A22 -S1e20  -T1/-2/-5/0.5/3/1.2 -Osyn 
 
+# 所有时间函数使用面积归一化（除雷克子波使用最大幅值为1）
+# 自定义时间函数由用户自行保证序列和为1，程序不做归一化，仅在不满足时警告
 grt syn -GGRN/milrow_2_3_10 -A22 -S1e20 -Dp/0.6 -Osyn 
 grt syn -GGRN/milrow_2_3_10 -A22 -S1e20 -Dt/0.2/0.4/0.7 -Osyn 
 grt syn -GGRN/milrow_2_3_10 -A22 -S1e20 -Dt/0.4/0.4/0.8 -Osyn 
 grt syn -GGRN/milrow_2_3_10 -A22 -S1e20 -Dr/1.2 -Osyn 
 cat > tfile <<EOF
-0       0.0
-0.02    0.1
-0.04    0.2
-0.06    0.4
-0.08    0.4
-0.10    0.4
-0.12    0.2
-0.14    0.1
-0.16    0.0
+0.0
+0.1
+0.2
+0.1
+0.2
+0.2
+0.2
+0.0
 EOF
-grt syn -GGRN/milrow_2_3_10 -A22 -S1e20 -D0/tfile -Osyn 
-rm -rf tfile
+grt syn -GGRN/milrow_2_3_10 -A22 -S1e20 -D0/tfile -Osyn_custom
+cat > tfile_invalid <<EOF
+0.0 0.1
+EOF
+expect_fail "custom time function file must contain exactly one column" \
+    grt syn -GGRN/milrow_2_3_10 -A22 -S1e20 -D0/tfile_invalid -Osyn_custom_invalid
+cat > tfile_warning <<EOF
+-0.2
+0.6
+EOF
+grt syn -GGRN/milrow_2_3_10 -A22 -S1e20 -D0/tfile_warning -Osyn_custom_warning > custom_warning.log
+grep -q "Custom time function sequence sum" custom_warning.log
+rm -f tfile tfile_invalid tfile_warning custom_warning.log
 
 grt syn -GGRN/milrow_2_3_10 -A22 -S1e20 -M33/44/55 -I1 -Osyn 
 grt syn -GGRN/milrow_2_3_10 -A22 -S1e20 -M33/44/55 -J1 -Osyn 
@@ -99,6 +111,6 @@ python -u test_syn.py
 
 
 rm -rf GRN GRN_SINGLE GRN_SRC_MULTI GRN_RCV_MULTI GRN_DIST_MULTI \
-    syn syn_single syn_bad syn_src_multi syn_rcv_multi syn_dist_multi \
+    syn syn_custom syn_custom_warning syn_custom_invalid syn_single syn_bad syn_src_multi syn_rcv_multi syn_dist_multi \
     syn_single_explicit syn_src_multi_explicit syn_rcv_multi_explicit \
     syn_subdir_bad syn_multi_1_0_10 syn_multi_2_3_10
