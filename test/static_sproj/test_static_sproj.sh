@@ -172,7 +172,7 @@ expect_fail "defined finite rake rejects non-forcing -M" finite_defined_m.log \
     grt static sproj -Gfinite_defined.nc -M55
 grt static sproj -Gfinite_defined.nc -M55+f
 
-python -u test_sproj.py
+python -u test_static_sproj.py
 
 rm -f rcv_pts.txt rcv_pts_6.txt rcv_pts_new_6.txt rcv_pts_reordered_6.txt \
     rcv_faults_undefined.inp rcv_faults_defined.inp stgrn.nc \
@@ -183,4 +183,4 @@ rm -f rcv_pts.txt rcv_pts_6.txt rcv_pts_new_6.txt rcv_pts_reordered_6.txt \
     points_plain_no_geometry.log points_manual.log points_Q.log points_Q_3cols.log \
     points_Q_order.log finite_no_rake_no_m.log finite_no_m.log finite_force.log finite_defined_m.log
 
-echo "test_sproj.sh: all checks passed"
+echo "test_static_sproj.sh: all checks passed"

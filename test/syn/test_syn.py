@@ -1,6 +1,7 @@
 import shutil
 from pathlib import Path
 
+import numpy as np
 from obspy import read
 
 import pygrt
@@ -57,11 +58,26 @@ pymod.syn(azimuth=az, scale=1e20, output_path="syn", strike=33, dip=44, rake=55)
 pymod.syn(azimuth=az, scale=1e20, output_path="syn", strike=33, dip=44)
 pymod.syn(azimuth=az, scale=1e20, output_path="syn", moment_tensor=(1, -2, -5, 0.5, 3, 1.2))
 
-# 时间函数
-pymod.syn(azimuth=az, scale=1e20, output_path="syn", time_function="p/0.6")
-pymod.syn(azimuth=az, scale=1e20, output_path="syn", time_function="t/0.2/0.4/0.7")
-pymod.syn(azimuth=az, scale=1e20, output_path="syn", time_function="t/0.4/0.4/0.8")
+# 所有时间函数使用面积归一化（除雷克子波使用最大幅值为1）
+# 自定义时间函数由用户自行保证序列和为1，程序不做归一化，仅在不满足时警告
+custom_signal = read("syn_custom/sig.sac")[0].data
+assert np.isclose(np.sum(custom_signal), 1.0, rtol=1e-5, atol=1e-5)
+custom_warning_signal = read("syn_custom_warning/sig.sac")[0].data
+assert np.min(custom_warning_signal) < 0.0
+assert np.isclose(np.sum(custom_warning_signal), 0.4, rtol=1e-5, atol=1e-5)
+
+
+def trap_area(signal, dt):
+    return np.sum((signal[:-1] + signal[1:]) * 0.5 / dt)
+
+for time_function in ["p/0.6", "t/0.2/0.4/0.7", "t/0.4/0.4/0.8"]:
+    pymod.syn(azimuth=az, scale=1e20, output_path="syn", time_function=time_function)
+    trace = read("syn/sig.sac")[0]
+    assert np.isclose(trap_area(trace.data, trace.stats.delta), 1.0, rtol=1e-5, atol=1e-5)
+
 pymod.syn(azimuth=az, scale=1e20, output_path="syn", time_function="r/1.2")
+signal = read("syn/sig.sac")[0].data
+assert np.max(signal) <= 1.0 + 1e-5
 
 # 积分 / 微分
 pymod.syn(azimuth=az, scale=1e20, output_path="syn", integrate_order=1)
@@ -74,6 +90,7 @@ pymod.syn(azimuth=az, scale=1e20, output_path="syn", zne=True, calc_upar=True)
 
 for name in [
     "GRN", "GRN_SINGLE", "syn", "syn_single", "syn_single_explicit", "syn_bad",
+    "syn_custom", "syn_custom_warning",
     "syn_subdir_bad",
     "syn_multi_1_0_10", "syn_multi_2_3_10",
 ]:

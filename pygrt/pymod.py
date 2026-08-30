@@ -662,15 +662,19 @@ class PyModel1D:
                                        north/east/down.
         :param    time_function:       Time-function string passed to CLI ``-D``.
                                        Supported forms include:
-
                                        * ``p/t0`` - parabola lasting ``t0`` s
                                        * ``t/t1/t2/t3`` - trapezoid with rise,
                                          plateau and fall cutoffs in s
                                        * ``r/f0`` - Ricker wavelet with dominant
                                          frequency ``f0`` in Hz
-                                       * ``0/file`` - custom one-column amplitude file
-
-                                       The peak amplitude of the time function is 1.
+                                       * ``0/file`` - custom file with exactly one
+                                         amplitude column
+                                       All time functions use area normalization,
+                                       except the Ricker wavelet, which has a peak
+                                       amplitude of 1.
+                                       A custom sequence should sum to 1; it is not
+                                       normalized by the program, which only issues a
+                                       warning otherwise.
                                        Omit this argument for an impulse response.
         :param    integrate_order:     Number of time integrations. For example,
                                        ``1`` yields step-like displacement.

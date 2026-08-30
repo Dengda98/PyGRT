@@ -224,7 +224,9 @@ plot_syn(stsyn, "syn_dc_zne.svg")
 
 # -----------------------------------------------------------------------------------
 # BEGIN TIME FUNC
-# time_function 对应 CLI -D；t1=t2 时梯形波退化为三角波
+# time_function 对应 CLI -D
+# 所有时间函数使用面积归一化（除雷克子波使用最大幅值为1）
+# t1=t2 时梯形波退化为三角波
 # 卷积用的时间函数会以 sig.sac 保存在输出目录
 pymod.syn(dist=10.0, azimuth=30.0, scale=1e16, output_path="syn_sf_trig", force=(1, -0.5, 2), time_function="t/0.3/0.3/0.6")
 # END TIME FUNC

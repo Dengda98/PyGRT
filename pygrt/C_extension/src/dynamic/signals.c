@@ -8,7 +8,8 @@
  * 
  *    信号长度应能整除采样间隔。
  * 
- *    所有时间函数的最大值都是1.0
+ *    所有时间函数使用面积归一化（除雷克子波使用最大幅值为1）
+ *    自定义时间函数由用户自行保证序列和为1，程序不做归一化，序列和不为1时仅给出警告
  * 
  */
 
@@ -105,31 +106,31 @@ float * grt_get_time_function(int *TFnt, float dt, const char tftype, const char
 
 
 
-void linear_convolve_time_function(float *arr, int nt, float dt, const char tftype, const char *tfparams, float **TFarr, int *TFnt){
-    // 获得时间函数
-    float *tfarr=NULL;
-    int tfnt=0;
-    tfarr = grt_get_time_function(&tfnt, dt, tftype, tfparams);
+// void linear_convolve_time_function(float *arr, int nt, float dt, const char tftype, const char *tfparams, float **TFarr, int *TFnt){
+//     // 获得时间函数
+//     float *tfarr=NULL;
+//     int tfnt=0;
+//     tfarr = grt_get_time_function(&tfnt, dt, tftype, tfparams);
 
-    float *yarr = (float*)calloc(nt, sizeof(float));
-    // 线性卷积
-    grt_oaconvolve(arr, nt, tfarr, tfnt, yarr, nt, false);
+//     float *yarr = (float*)calloc(nt, sizeof(float));
+//     // 线性卷积
+//     grt_oaconvolve(arr, nt, tfarr, tfnt, yarr, nt, false);
 
-    // 原地更改
-    for(int i=0; i<nt; ++i){
-        arr[i] = yarr[i] * dt; // dt为卷积的系数
-    }
-    GRT_SAFE_FREE_PTR(yarr);
+//     // 原地更改
+//     for(int i=0; i<nt; ++i){
+//         arr[i] = yarr[i] * dt; // dt为卷积的系数
+//     }
+//     GRT_SAFE_FREE_PTR(yarr);
 
 
-    if(TFarr!=NULL || TFnt!=NULL){
-        if(TFarr!=NULL) *TFarr = tfarr;
-        if(TFnt!=NULL)  *TFnt  = tfnt;
-    } else {
-        GRT_SAFE_FREE_PTR(tfarr);
-    }   
+//     if(TFarr!=NULL || TFnt!=NULL){
+//         if(TFarr!=NULL) *TFarr = tfarr;
+//         if(TFnt!=NULL)  *TFnt  = tfnt;
+//     } else {
+//         GRT_SAFE_FREE_PTR(tfarr);
+//     }
 
-}
+// }
 
 
 void grt_oaconvolve(float *x, int nx, float *h, int nh, float *y, int ny, bool iscircular) {
@@ -159,6 +160,18 @@ float grt_trap_area(const float *x, int nx, float dt){
         area += (x[i] + x[i+1])*0.5/dt;
     }
     return area;
+}
+
+
+static void grt_normalize_time_function(float *x, int nx, float dt){
+    // 使用实际dt计算离散时间函数的梯形积分
+    float area = grt_trap_area(x, nx, dt);
+    if(area <= 0.0){
+        GRTRaiseError("Time function area should be larger than 0.\n");
+    }
+    for(int i=0; i<nx; ++i){
+        x[i] /= area;
+    }
 }
 
 
@@ -211,6 +224,8 @@ float * grt_get_parabola_wave(float dt, float *Tlen, int *Nt){
         arr[n] = 1.0 - (pha - 0.5)*(pha - 0.5)*4.0;
         pha += fac;
     }
+
+    grt_normalize_time_function(arr, nt, dt);
 
     *Tlen = tlen;
     *Nt = nt;
@@ -274,6 +289,8 @@ float * grt_get_trap_wave(float dt, float *T1, float *T2, float *T3, int *Nt){
         arr[n] = y;
         y -= fac;
     }
+
+    grt_normalize_time_function(arr, nt, dt);
     
 
     *T1 = t1;
@@ -302,6 +319,7 @@ float * grt_get_ricker_wave(float dt, float f0, int *Nt){
         t += dt;
     }
 
+    // 雷克子波使用最大幅值归一化
     *Nt = nt;
     return arr;
 }
@@ -319,14 +337,23 @@ float * grt_get_custom_wave(int *Nt, const char *tfparams){
     char *line = NULL;
 
     int nt = 0;
+    size_t lineno = 0;
+    double sum = 0.0;
     while(grt_getline(&line, &len, fp) != -1) {
+        lineno++;
         // 注释行
         if(grt_is_comment_or_empty_line(line))  continue;
 
-        tfarr = (float*)realloc(tfarr, sizeof(float)*(nt+1));
-        if(sscanf(line, " %f", &tfarr[nt]) < 1){
-            GRTRaiseError("custom time function file read error.\n");
+        // 每个非注释行只能包含一列振幅值
+        float value = 0.0;
+        char extra = '\0';
+        if(sscanf(line, " %f %c", &value, &extra) != 1){
+            GRTRaiseError("custom time function file should contain exactly one column at line %zu.\n", lineno);
         }
+
+        tfarr = (float*)realloc(tfarr, sizeof(float)*(nt+1));
+        tfarr[nt] = value;
+        sum += tfarr[nt];
         nt++;
     }
 
@@ -336,6 +363,10 @@ float * grt_get_custom_wave(int *Nt, const char *tfparams){
 
     fclose(fp);
     GRT_SAFE_FREE_PTR(line);
+
+    if(!isfinite(sum) || fabs(sum - 1.0) > 1e-5){
+        GRTRaiseWarning("Custom time function sequence sum is %.7g, expected 1.0.", sum);
+    }
 
     *Nt = nt;
     return tfarr;
