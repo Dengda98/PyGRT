@@ -208,7 +208,9 @@ printf("\n"
 "                  current directory.\n"
 "\n"
 "    -D<tftype>/<tfparams>\n"
-"                  Convolve a Time Function with a maximum value of 1.0.\n"
+"                  Convolve a Time Function. All time functions use area\n"
+"                  normalization except Ricker wavelet, which has a peak\n"
+"                  amplitude of 1.0.\n"
 "                  There are several options:\n"
 "                  + Parabolic wave (y = a*x^2 + b*x)\n"
 "                    set -D%c/<t0>, <t0> (secs) is the duration of wave.\n", GRT_SIG_PARABOLA); printf(
@@ -228,8 +230,10 @@ printf("\n"
 "                  + Custom wave\n"
 "                    set -D%c/<path>, <path> is the filepath to a custom\n", GRT_SIG_CUSTOM); printf(
 "                    Time Function ASCII file. The file has just one column\n"
-"                    of the amplitude. File header can write unlimited lines\n"
-"                    of comments with prefix \"#\".\n"
+"                    of amplitude and no other columns. Its sequence sum should\n"
+"                    be 1.0; the program only issues a warning when it is not.\n"
+"                    The file can contain unlimited comment lines with prefix\n"
+"                    \"#\".\n"
 "                    e.g. \n"
 "                         -D%c/tfunc.txt \n", GRT_SIG_CUSTOM); printf(
 "                  To match the time interval in Green's Functions, \n"
@@ -926,6 +930,7 @@ static void syn_postprocess_trace(SACTRACE *sac, SACTRACE *tfsac, int int_times,
     int nt = sac->hd.npts;
 
     if(tfsac != NULL){
+        // 卷积时间函数前先把虚频率的补偿撤回，这样似乎会更稳定
         float wI = sac->hd.user0;
         float fac = 1.0f;
         float dfac = expf(-wI * dt);
@@ -940,7 +945,7 @@ static void syn_postprocess_trace(SACTRACE *sac, SACTRACE *tfsac, int int_times,
         fac = 1.0f;
         dfac = expf(wI * dt);
         for(int n = 0; n < nt; ++n){
-            sac->data[n] = convarr[n] * fac * dt;
+            sac->data[n] = convarr[n] * fac;
             if(n < tfsac->hd.npts) tfsac->data[n] *= fac;
             fac *= dfac;
         }

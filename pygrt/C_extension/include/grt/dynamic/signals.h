@@ -30,6 +30,8 @@ bool grt_check_tftype_tfparams(const char tftype, const char *tfparams);
 
 /**
  * 获得时间函数，要求提前运行check_tftype_tfparams函数以检查参数
+ * 所有时间函数使用面积归一化（除雷克子波使用最大幅值为1）
+ * 自定义时间函数不做振幅归一化，序列和不为1时仅给出警告
  * 
  * @param[out]      TFnt       返回的点数
  * @param[in]       dt         时间间隔
@@ -163,7 +165,9 @@ float * grt_get_ricker_wave(float dt, float f0, int *Nt);
 
 
 /**
- * 从文件中读入自定义时间函数
+ * 从文件中读入自定义时间函数，每个非注释行只能包含一列振幅值
+ * 不做振幅归一化
+ * 序列和不为1时仅给出警告
  * 
  * @param[out]    Nt        返回的点数
  * @param[in]     tfparams  文件路径
