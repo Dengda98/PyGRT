@@ -65,7 +65,9 @@ def plot_syn(stsyn:Stream, out:Union[str,None]=None, sigs:Union[np.ndarray,None]
 
 # synthetic
 # ?.sac 匹配位移三分量文件名（Z/R/T）
-# time_function 对应 CLI -D，卷积用的时间函数保存在输出目录的 sig.sac
+# time_function 对应 CLI -D
+# 所有时间函数使用面积归一化（除雷克子波使用最大幅值为1）
+# 卷积用的时间函数保存在输出目录的 sig.sac
 S=1e24
 az=39.2
 pymod.syn(dist=dist, azimuth=az, scale=S, output_path="syn_ex", time_function="t/0.2/0.2/0.4")

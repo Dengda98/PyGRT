@@ -3,7 +3,7 @@
     :author:   Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
     :date:     2024-07-24
 
-    该文件包括一些常见的时间信号，最高幅值均为1
+    所有时间函数使用面积归一化（除雷克子波使用最大幅值为1）
 
 """
 

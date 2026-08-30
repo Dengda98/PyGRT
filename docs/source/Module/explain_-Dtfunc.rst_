@@ -1,14 +1,18 @@
 .. _-D:
 
 **-D**\ *tftype/tfparams*
-    将合成结果卷积最大振幅为 1 的时间函数，支持以下选项：
+    将合成结果卷积时间函数。
+    所有时间函数使用面积归一化（除雷克子波使用最大幅值为 1），
+    支持以下选项：
 
     + **-Dp**\ */t0* - 抛物波，*t0* (secs) 为持续时间，例如 **-Dp**\ */1.3*
     + **-Dt**\ */t1/t2/t3* - 梯形波， 三个时刻 (secs) 分别表示爬升期、平台期和下降期的截止时刻，
       例如 **-Dt**\ */0.1/0.2/0.4*, **-Dt**\ */0.4/0.4/0.6* （退化为三角波）
     + **-Dr**\ */f0* - 雷克子波， *f0* 为主频 (Hz) 。
-    + **-D0**\ */file* - （实验性质）自定义时间函数，文件 *file* 仅包含一列波形幅值。
-    
+    + **-D0**\ */file* - （实验性质）自定义时间函数，文件 *file* 有且只有一列波形幅值。
+
+    自定义的时间函数在程序内不会做处理，用户应保证序列和为 1；
+    否则程序仅给出警告。
     在卷积时为了匹配格林函数的时间间隔，会适当调整传入的时间函数参数。
     生成的时间函数也会以 SAC 格式保存在 *outdir* 目录下。
 
@@ -26,27 +30,32 @@
     grt greenfn -Mmod -D2/0 -N10/0.01 -R1 -OGRN
     GDIR="GRN/mod_2_0_1"
 
-    gmt set FONT_TITLE 13p,1
+
     gmt begin test png
-        gmt subplot begin 1x4 -Fs4c/4c -M0.2c -R0/2/0/1.5 -Baf -BWSen
+        gmt set FONT_TITLE 13p,1
+        gmt set FONT_LABEL 10p
+
+        scale="1e4"
+        label="\32710@+-4@+"
+        gmt subplot begin 1x4 -Fs4c/4c -M0.4c -R0/2/0/1 -Baf -BWSen
 
         gmt subplot set 0
         title="-Dp/2"
-        gmt basemap -B+t$title
+        gmt basemap -B+t$title -By+l"$label"
         grt syn -G$GDIR -S1e20 -A0 $title -OSYN
-        grt sac2asc SYN/sig.sac | gmt plot
+        grt sac2asc SYN/sig.sac | gmt plot -i0,1+s$scale
 
         gmt subplot set 1
         title="-Dt/0.2/0.9/1.8"
-        gmt basemap -B+t$title
+        gmt basemap -B+t$title -By+l"$label"
         grt syn -G$GDIR -S1e20 -A0 $title -OSYN
-        grt sac2asc SYN/sig.sac | gmt plot
+        grt sac2asc SYN/sig.sac | gmt plot -i0,1+s$scale
 
         gmt subplot set 2
         title="-Dt/1.5/1.5/2.0"
-        gmt basemap -B+t$title
+        gmt basemap -B+t$title -By+l"$label"
         grt syn -G$GDIR -S1e20 -A0 $title -OSYN
-        grt sac2asc SYN/sig.sac | gmt plot
+        grt sac2asc SYN/sig.sac | gmt plot -i0,1+s$scale
 
         gmt subplot set 3
         title="-Dr/1.2"
