@@ -43,19 +43,19 @@ bool grt_check_tftype_tfparams(const char tftype, const char *tfparams);
 float * grt_get_time_function(int *TFnt, float dt, const char tftype, const char *tfparams);
 
 
-/**
- * 时域线性卷积，要求提前运行check_tftype_tfparams函数以检查参数
- * 卷积结果会原地写入数组。
- * 
- * @param[in,out]  arr         待卷积的信号
- * @param[in]      nt          信号点数
- * @param[in]      dt          信号点时间间隔
- * @param[in]      tftype      单个字符，指代时间函数类型
- * @param[in]      tfparams    时间函数参数
- * @param[out]     TFarr       指向时间函数的指针的指针
- * @param[out]     TFnt        返回的时间函数点数
- */
-void grt_linear_convolve_time_function(float *arr, int nt, float dt, const char tftype, const char *tfparams, float **TFarr, int *TFnt);
+// /**
+//  * 时域线性卷积，要求提前运行check_tftype_tfparams函数以检查参数
+//  * 卷积结果会原地写入数组。
+//  *
+//  * @param[in,out]  arr         待卷积的信号
+//  * @param[in]      nt          信号点数
+//  * @param[in]      dt          信号点时间间隔
+//  * @param[in]      tftype      单个字符，指代时间函数类型
+//  * @param[in]      tfparams    时间函数参数
+//  * @param[out]     TFarr       指向时间函数的指针的指针
+//  * @param[out]     TFnt        返回的时间函数点数
+//  */
+// void grt_linear_convolve_time_function(float *arr, int nt, float dt, const char tftype, const char *tfparams, float **TFarr, int *TFnt);
 
 
 /**

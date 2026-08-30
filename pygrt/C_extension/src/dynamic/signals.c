@@ -106,31 +106,31 @@ float * grt_get_time_function(int *TFnt, float dt, const char tftype, const char
 
 
 
-void linear_convolve_time_function(float *arr, int nt, float dt, const char tftype, const char *tfparams, float **TFarr, int *TFnt){
-    // 获得时间函数
-    float *tfarr=NULL;
-    int tfnt=0;
-    tfarr = grt_get_time_function(&tfnt, dt, tftype, tfparams);
+// void linear_convolve_time_function(float *arr, int nt, float dt, const char tftype, const char *tfparams, float **TFarr, int *TFnt){
+//     // 获得时间函数
+//     float *tfarr=NULL;
+//     int tfnt=0;
+//     tfarr = grt_get_time_function(&tfnt, dt, tftype, tfparams);
 
-    float *yarr = (float*)calloc(nt, sizeof(float));
-    // 线性卷积
-    grt_oaconvolve(arr, nt, tfarr, tfnt, yarr, nt, false);
+//     float *yarr = (float*)calloc(nt, sizeof(float));
+//     // 线性卷积
+//     grt_oaconvolve(arr, nt, tfarr, tfnt, yarr, nt, false);
 
-    // 原地更改
-    for(int i=0; i<nt; ++i){
-        arr[i] = yarr[i] * dt; // dt为卷积的系数
-    }
-    GRT_SAFE_FREE_PTR(yarr);
+//     // 原地更改
+//     for(int i=0; i<nt; ++i){
+//         arr[i] = yarr[i] * dt; // dt为卷积的系数
+//     }
+//     GRT_SAFE_FREE_PTR(yarr);
 
 
-    if(TFarr!=NULL || TFnt!=NULL){
-        if(TFarr!=NULL) *TFarr = tfarr;
-        if(TFnt!=NULL)  *TFnt  = tfnt;
-    } else {
-        GRT_SAFE_FREE_PTR(tfarr);
-    }   
+//     if(TFarr!=NULL || TFnt!=NULL){
+//         if(TFarr!=NULL) *TFarr = tfarr;
+//         if(TFnt!=NULL)  *TFnt  = tfnt;
+//     } else {
+//         GRT_SAFE_FREE_PTR(tfarr);
+//     }
 
-}
+// }
 
 
 void grt_oaconvolve(float *x, int nx, float *h, int nh, float *y, int ny, bool iscircular) {
