@@ -96,11 +96,11 @@ with netcdf_file("finite_zrt.nc", mode="r", mmap=False) as nc:
     assert nc.variables["coulomb"].dimensions == ("point",)
 PY
 
-python -u test_coulomb.py
+python -u test_static_coulomb.py
 
 rm -f rcv_pts.txt rcv_faults_defined.inp stgrn.nc \
     grid_zrt.nc grid_zne.nc points_zrt.nc finite_zrt.nc \
     grid_zrt_before.nc grid_no_f.log \
     grid_negative_f.log grid_invalid_f.log grid_overwrite.log
 
-echo "test_coulomb.sh: all checks passed"
+echo "test_static_coulomb.sh: all checks passed"
