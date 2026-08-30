@@ -20,7 +20,7 @@ MILROW 模型定义如下，与文档中其它部分一致，
 
 .. tabs::  
 
-   .. group-tab:: C 
+   .. group-tab:: CLI
 
       使用如下命令计算格林函数，
    

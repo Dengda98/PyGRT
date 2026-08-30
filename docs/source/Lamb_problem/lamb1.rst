@@ -8,7 +8,7 @@
 
 .. tabs::  
 
-   .. group-tab:: C
+   .. group-tab:: CLI
       
       C 程序 :command:`grt` 提供了模块 :doc:`/Module/lamb1` 求解第一类 Lamb 问题。
 
@@ -48,5 +48,3 @@
 
 .. figure:: run/lamb1_compare_freq_time.svg
    :align: center
-
-

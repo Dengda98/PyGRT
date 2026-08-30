@@ -23,7 +23,7 @@
 
 .. tabs::
 
-    .. group-tab:: C
+    .. group-tab:: CLI
 
         .. literalinclude:: run_library/run.sh
             :language: bash
@@ -78,7 +78,7 @@
 
 .. tabs::
 
-    .. group-tab:: C
+    .. group-tab:: CLI
 
         下面的命令从根目录中选择 ``milrow_4_2_8``，然后合成爆炸源结果：
 

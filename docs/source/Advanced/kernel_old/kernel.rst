@@ -27,7 +27,7 @@
 
 .. tabs:: 
 
-    .. group-tab:: C 
+    .. group-tab:: CLI
 
         .. literalinclude:: run/run.sh
             :language: bash 

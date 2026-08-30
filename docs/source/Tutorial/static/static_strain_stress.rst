@@ -16,7 +16,7 @@ Python 接口接收静态合成 NetCDF 路径，并由 C CLI 原地写入张量�
 
 .. tabs:: 
 
-    .. group-tab:: C 
+    .. group-tab:: CLI
 
         计算结果会以新增变量的形式直接写入 nc 网格，可使用 ``ncdump -h`` 查看。
         

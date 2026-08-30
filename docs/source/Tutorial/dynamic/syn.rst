@@ -55,9 +55,9 @@ CLI 和 Python 函数中根据设置的不同震源参数自动推断震源类�
 
 .. tabs::
 
-    .. group-tab:: C
+    .. group-tab:: CLI
 
-        C中指定格林函数路径有以下两种方式：
+        C 程序在命令行指定格林函数路径有以下两种方式：
 
         + 直接将 **-G** 指向震中距10km的格林函数子目录，例如
           ``-GGRN/milrow_2_0_10``。此时子目录已经确定了震源深度、台站深度和震中距，
@@ -99,7 +99,7 @@ CLI 和 Python 函数中根据设置的不同震源参数自动推断震源类�
 
 .. tabs::  
 
-    .. group-tab:: C 
+    .. group-tab:: CLI
 
         .. literalinclude:: run/run.sh
             :language: bash
@@ -128,7 +128,7 @@ CLI 和 Python 函数中根据设置的不同震源参数自动推断震源类�
 
 .. tabs::  
 
-    .. group-tab:: C 
+    .. group-tab:: CLI
 
         .. literalinclude:: run/run.sh
             :language: bash
@@ -158,7 +158,7 @@ CLI 和 Python 函数中根据设置的不同震源参数自动推断震源类�
 
 .. tabs::  
 
-    .. group-tab:: C 
+    .. group-tab:: CLI
 
         .. literalinclude:: run/run.sh
             :language: bash

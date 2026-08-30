@@ -28,7 +28,7 @@
 
 .. tabs::
 
-    .. group-tab:: C
+    .. group-tab:: CLI
 
         .. literalinclude:: run_grn.sh
             :language: bash
@@ -50,7 +50,7 @@
 
 .. tabs::
 
-    .. group-tab:: C
+    .. group-tab:: CLI
 
         .. literalinclude:: run_syn.sh
             :language: bash
@@ -104,5 +104,4 @@
     :align: center
 
     均匀半空间模型的库伦应力变化
-
 
