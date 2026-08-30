@@ -21,7 +21,7 @@ Python中计算静态格林函数的主函数为 :meth:`static_greenfn() <pygrt.
 
 .. tabs::  
 
-    .. group-tab:: C 
+    .. group-tab:: CLI
 
         .. literalinclude:: run/run.sh
             :language: bash

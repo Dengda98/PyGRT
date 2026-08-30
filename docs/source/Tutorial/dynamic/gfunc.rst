@@ -30,7 +30,7 @@ Python中计算动态格林函数的主函数为 :meth:`greenfn() <pygrt.pymod.P
 
 .. tabs::  
 
-    .. group-tab:: C 
+    .. group-tab:: CLI
 
         .. literalinclude:: run/run.sh
             :language: bash
@@ -238,5 +238,3 @@ Python中计算动态格林函数的主函数为 :meth:`greenfn() <pygrt.pymod.P
 +----------+-------------------+--------------+----------------------+
 | SST      | 倾角90度走滑T分量 | :math:`m=2`  | :math:`-(p=1)+(p=3)` |
 +----------+-------------------+--------------+----------------------+
-
-

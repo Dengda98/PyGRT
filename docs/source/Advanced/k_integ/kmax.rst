@@ -55,7 +55,7 @@
 
 .. tabs:: 
 
-    .. group-tab:: C 
+    .. group-tab:: CLI
 
         详见 :doc:`/Module/greenfn` 和 :doc:`/Module/static_greenfn` 模块的 **-K** 选项。
 

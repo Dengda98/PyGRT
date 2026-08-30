@@ -28,7 +28,7 @@ C模块为 :doc:`/Module/static_syn`。
 
 .. tabs::  
 
-    .. group-tab:: C 
+    .. group-tab:: CLI
 
         .. literalinclude:: run/run.sh
             :language: bash
@@ -73,7 +73,7 @@ C模块为 :doc:`/Module/static_syn`。
 
 .. tabs::
 
-    .. group-tab:: C
+    .. group-tab:: CLI
 
         .. literalinclude:: run/run.sh
             :language: bash

@@ -40,7 +40,7 @@ PyGRT 静态解的合成阶段目前已支持传入
 
 .. tabs::
 
-    .. group-tab:: C
+    .. group-tab:: CLI
 
         .. literalinclude:: run_src_fault/run.sh
             :language: bash
@@ -65,7 +65,7 @@ PyGRT 静态解的合成阶段目前已支持传入
 
 .. tabs::
 
-    .. group-tab:: C
+    .. group-tab:: CLI
 
         .. literalinclude:: run_src_fault/run.sh
             :language: bash
@@ -89,14 +89,14 @@ PyGRT 静态解的合成阶段目前已支持传入
 
 计算库伦应力
 --------------------
-以上合成中使用 **-e** (C) 和 **calc_upar=True** (Python)，所以输出的 nc 文件中也包含位移偏导数，
+以上合成中使用 **-e** (CLI) 和 **calc_upar=True** (Python)，所以输出的 nc 文件中也包含位移偏导数，
 而输出格式与之前的点源的情况没什么不同，因此应力等物理量的计算方式而之前的介绍完全一致，这里不再重复。
 
 得到计算得到位移偏导数后，就可以计算应力张量 -> 指定接收断层形态对应力张量进行投影 -> 计算库伦应力。
 
 .. tabs::
 
-    .. group-tab:: C
+    .. group-tab:: CLI
 
         .. literalinclude:: run_src_fault/run.sh
             :language: bash

@@ -24,7 +24,7 @@
 
 .. tabs::  
 
-    .. group-tab:: C 
+    .. group-tab:: CLI
 
         .. literalinclude:: run_ptam/run.sh
             :language: bash
@@ -90,7 +90,7 @@
 
 .. tabs::  
 
-    .. group-tab:: C 
+    .. group-tab:: CLI
 
         .. literalinclude:: run_ptam/run.sh
             :language: bash
@@ -119,5 +119,3 @@
   
 .. figure:: run_ptam/SS_0_0.05_ptam_static.svg
     :align: center
-
-

@@ -15,7 +15,7 @@
 
 .. tabs:: 
 
-    .. group-tab:: C 
+    .. group-tab:: CLI
 
         .. literalinclude:: run_upar/run.sh
             :language: bash
@@ -52,7 +52,7 @@
 
 .. tabs:: 
 
-    .. group-tab:: C 
+    .. group-tab:: CLI
 
         .. literalinclude:: run_upar/run.sh
             :language: bash
@@ -75,7 +75,7 @@
 
 .. tabs:: 
 
-    .. group-tab:: C 
+    .. group-tab:: CLI
 
         .. literalinclude:: run_upar/run.sh
             :language: bash
@@ -128,7 +128,7 @@
 
 .. tabs:: 
 
-    .. group-tab:: C 
+    .. group-tab:: CLI
 
         .. literalinclude:: run_upar/run.sh
             :language: bash
@@ -163,7 +163,7 @@
 
 .. tabs:: 
 
-    .. group-tab:: C 
+    .. group-tab:: CLI
 
         .. literalinclude:: run_upar/run.sh
             :language: bash
@@ -199,7 +199,7 @@
 
 .. tabs:: 
 
-    .. group-tab:: C 
+    .. group-tab:: CLI
 
         .. literalinclude:: run_upar/run.sh
             :language: bash

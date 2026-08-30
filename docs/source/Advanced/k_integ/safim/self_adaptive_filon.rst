@@ -14,7 +14,7 @@
 
 .. tabs:: 
 
-    .. group-tab:: C 
+    .. group-tab:: CLI
 
         详见 :doc:`/Module/greenfn` 和 :doc:`/Module/static_greenfn` 模块的 **-L** 选项。
 
@@ -34,7 +34,7 @@
 
 .. tabs:: 
 
-    .. group-tab:: C 
+    .. group-tab:: CLI
 
         使用 ``-S`` 导出核函数文件，
 
