@@ -27,7 +27,10 @@ from scipy.special import jv
 import numpy.ctypeslib as npct
 
 from .cli import format_float, format_range, run_grt
-from .c_interfaces import C_grt_solve_lamb1
+from .c_interfaces import (
+    C_grt_solve_lamb1,
+    C_grt_solve_lamb2,
+)
 
 
 __all__ = [
@@ -61,6 +64,7 @@ __all__ = [
     "plot_statsdata_ptam",
     "lamb1",
     "solve_lamb1",
+    "lamb2",
 ]
 
 
@@ -1206,12 +1210,13 @@ def lamb1(nu:float, ts:np.ndarray, azimuth:float):
 
             张海明, 冯禧 著. 2024. 地震学中的 Lamb 问题（下）. 科学出版社
 
-        :param      nu:         possion ratio in (0, 0.5)
+        :param      nu:         Poisson ratio in (0, 0.5)
         :param      ts:         dimensionless time :math:`\bar{t}` ，:math:`\bar{t}=\dfrac{t}{r/\beta}`
         :param      azimuth:    azimuth in degree
 
-        :return:    Normalized solution with shape (nt, 3, 3). To get the physical solution, 
-                    divide by :math:`\pi^2 \mu r`
+        :return:    Dimensionless step-force Green function with shape (nt, 3, 3). To get
+                    the physical solution, divide by :math:`\pi^2 \mu r`, where
+                    :math:`\mu` is the shear modulus. The returned result is dimensionless.
     """
 
     # 检查数据
@@ -1234,3 +1239,55 @@ def lamb1(nu:float, ts:np.ndarray, azimuth:float):
 def solve_lamb1(*args, **kwargs):
     """Legacy interface renamed to :func:`lamb1`; calling it raises an error."""
     raise RuntimeError("solve_lamb1() has been renamed to lamb1(); use lamb1() instead.")
+
+
+def _prepare_lamb2_inputs(ts, theta, azimuth):
+    ts = np.asarray(ts)
+    if np.any(ts < 0.0):
+        raise ValueError("ts should be nonnegative.")
+    if theta <= 0.0 or theta >= 90.0:
+        raise ValueError("theta should be in (0, 90) degree.")
+    if azimuth < 0.0 or azimuth > 360.0:
+        raise ValueError("azimuth should be in [0, 360].")
+    return ts.astype(NPCT_REAL_TYPE)
+
+
+def lamb2(nu:float, ts:np.ndarray, theta:float, azimuth:float):
+    r"""
+        Solve the second-kind Lamb problem using the generalized closed-form solution.
+
+        The receiver is on the free surface and the source is underground. See:
+
+            张海明, 冯禧 著. 2024. 地震学中的 Lamb 问题（下）. 科学出版社
+
+        :param      nu:       Poisson ratio in ``(0, 0.5)``
+        :param      ts:       dimensionless time :math:`\bar{t}`
+        :param      theta:    source ray angle in degree, measured from the upward vertical
+        :param      azimuth:  azimuth in degree, from source to receiver
+        :return:    A tuple ``(G, dG_source, dG_receiver)``. ``G`` has shape
+                    ``(nt, 3, 3)`` and both derivative arrays have shape
+                    ``(nt, 3, 3, 3)`` with index order
+                    ``[time, coordinate, receiver_component, source_component]``.
+                    The normalized arrays satisfy ``G = pi^2 * mu * r * G^H``,
+                    ``dG_source = pi^2 * mu * r^2 * G^H_(,k')`` and
+                    ``dG_receiver = pi^2 * mu * r^2 * G^H_(,k)``.
+    """
+
+    ts = _prepare_lamb2_inputs(ts, theta, azimuth)
+    nt = len(ts)
+    G = np.zeros((nt, 3, 3), dtype=NPCT_REAL_TYPE)
+    dG_source = np.zeros((nt, 3, 3, 3), dtype=NPCT_REAL_TYPE)
+    dG_receiver = np.zeros((nt, 3, 3, 3), dtype=NPCT_REAL_TYPE)
+
+    C_grt_solve_lamb2(
+        nu,
+        npct.as_ctypes(ts),
+        nt,
+        theta,
+        azimuth,
+        npct.as_ctypes(G.ravel()),
+        npct.as_ctypes(dG_source.ravel()),
+        npct.as_ctypes(dG_receiver.ravel()),
+    )
+
+    return G, dG_source, dG_receiver

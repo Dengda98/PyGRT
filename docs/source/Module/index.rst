@@ -159,6 +159,7 @@
     - :doc:`ker2asc`
     - :doc:`travt`
     - :doc:`lamb1`
+    - :doc:`lamb2`
     - :doc:`okada`
     - :doc:`xy2geo`
     - :doc:`geo2xy`
@@ -188,6 +189,7 @@
     ker2asc
     travt
     lamb1
+    lamb2
     okada
     xy2geo
     geo2xy
