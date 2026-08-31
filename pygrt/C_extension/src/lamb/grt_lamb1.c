@@ -46,7 +46,7 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
 static void print_help(){
 printf("\n"
 "[grt lamb1] %s\n\n", GRT_VERSION);printf(
-"    Compute the exact closed-form solution for the first-kind Lamb problem\n"
+"    Compute the exact generalized closed-form solution for the first-kind Lamb problem\n"
 "    (both the source and receiver are on the surface).\n"
 "\n"
 "\n\n"
@@ -56,7 +56,7 @@ printf("\n"
 "\n\n"
 "Options:\n"
 "----------------------------------------------------------------\n"
-"    -P<nu>         Possion ratio of the halfspace, (0, 0.5).\n"
+"    -P<nu>         Poisson ratio of the halfspace, (0, 0.5).\n"
 "\n"
 "    -T<t1>/<t2>/<dt>\n"
 "                   Dimensionless time.\n"
@@ -67,6 +67,12 @@ printf("\n"
 "    -A<azimuth>    Azimuth in degree, from source to station.\n"
 "\n"
 "    -h             Display this help message.\n"
+"\n\n"
+"Output:\n"
+"----------------------------------------------------------------\n"
+"    The output is the dimensionless step-force displacement Green function.\n"
+"    The physical Green function is obtained as G^H = Gbar^H/(pi^2*mu*r),\n"
+"    where mu is the shear modulus and r is the source-receiver distance.\n"
 "\n\n"
 "Examples:\n"
 "----------------------------------------------------------------\n"
@@ -85,14 +91,17 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             // 模型参数， -P<nu>
             case 'P':
                 Ctrl->P.active = true;
-                if(1 != sscanf(optarg, "%lf", &Ctrl->P.nu)){
-                    GRTBadOptionError(P, "");
+                {
+                    char extra;
+                    if(1 != sscanf(optarg, "%lf%c", &Ctrl->P.nu, &extra)){
+                        GRTBadOptionError(P, "expected nu.");
+                    }
                 }
                 if(Ctrl->P.nu <= 0.0 || Ctrl->P.nu >= 0.5){
-                    GRTBadOptionError(P, "possion ratio (%lf) is out of bound.", Ctrl->P.nu);
+                    GRTBadOptionError(P, "poisson ratio (%lf) is out of bound.", Ctrl->P.nu);
                 }
                 break;
-            
+
             // 归一化时间序列, -Tt1/t2/dt
             case 'T':
                 Ctrl->T.active = true;
