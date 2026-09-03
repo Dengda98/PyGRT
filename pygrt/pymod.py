@@ -296,7 +296,8 @@ class PyModel1D:
         :param    statsidxs:         Frequency indexes for optional statistics output.
                                      ``None`` means no statistics files. An empty list means
                                      all frequency indexes (CLI bare ``-S``).
-        :param    print_log:         Whether to print calculation logs.
+        :param    print_log:         Whether to print calculation logs. Warnings
+                                     and diagnostics from ``grt`` are always printed.
 
         :return: ``None``. Results are written to disk.
         """
@@ -389,8 +390,6 @@ class PyModel1D:
         # Build the derivative and logging options.
         if calc_upar:
             command["e"] = "-e"
-        if not print_log:
-            command["s"] = "-s"
 
         run_grt(list(command.values()), print_log=print_log)
 

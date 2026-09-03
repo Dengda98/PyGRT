@@ -6,8 +6,11 @@
 
 from __future__ import annotations
 
+import io
+import subprocess
 import sys
 import warnings
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
 import pygrt
@@ -89,9 +92,56 @@ def test_print_log_forwarded_to_run_grt():
 
         model.greenfn(depsrc=1.0, deprcv=0.0, dists=1.0, nt=8, dt=0.1, print_log=False)
         assert runner.kwargs[-1].get("print_log") is False
-        assert "-s" in runner.commands[-1]
+        assert "-s" not in runner.commands[-1]
     finally:
         _restore_run_grt(pygrt.pymod, original)
+
+
+def test_run_grt_forwards_warnings_and_errors():
+    import pygrt.cli as cli
+
+    original_find_grt = cli.find_grt
+    original_run = cli.subprocess.run
+    responses = [
+        (0, "[INFO] regular log\n[WARNING] warning from grt\n", "stderr diagnostic\n"),
+        (1, "[INFO] partial output\n", "[ERROR] error from grt\n"),
+    ]
+
+    def fake_find_grt():
+        return "grt"
+
+    def fake_run(command, **kwargs):
+        returncode, stdout, stderr = responses.pop(0)
+        return subprocess.CompletedProcess(command, returncode, stdout=stdout, stderr=stderr)
+
+    cli.find_grt = fake_find_grt
+    cli.subprocess.run = fake_run
+    try:
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with redirect_stdout(stdout), redirect_stderr(stderr):
+            cli.run_grt(["warning"], print_log=False)
+        assert "[WARNING] warning from grt" in stdout.getvalue()
+        assert "[INFO] regular log" not in stdout.getvalue()
+        assert "stderr diagnostic" in stderr.getvalue()
+
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        try:
+            with redirect_stdout(stdout), redirect_stderr(stderr):
+                cli.run_grt(["failure"], print_log=False)
+        except RuntimeError as exc:
+            message = str(exc)
+            assert "exit code 1" in message
+            assert "[INFO] partial output" in message
+            assert "[ERROR] error from grt" in message
+        else:
+            raise AssertionError("failed grt command should raise RuntimeError")
+        assert "[INFO] partial output" in stdout.getvalue()
+        assert "[ERROR] error from grt" in stderr.getvalue()
+    finally:
+        cli.find_grt = original_find_grt
+        cli.subprocess.run = original_run
 
 
 def test_greenfn_default_and_optional_flags():
@@ -166,7 +216,6 @@ def test_greenfn_default_and_optional_flags():
             "-Gesh",
             "-S0,3,7",
             "-e",
-            "-s",
         )
 
         # ref_first_p 对应 -Ep
@@ -617,6 +666,7 @@ def main():
         test_format_helpers,
         test_invalid_gf_source_and_freqband_and_dists,
         test_print_log_forwarded_to_run_grt,
+        test_run_grt_forwards_warnings_and_errors,
         test_greenfn_default_and_optional_flags,
         test_static_greenfn_xy_and_dists,
         test_syn_source_and_time_function_options,
