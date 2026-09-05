@@ -13,26 +13,41 @@ typedef struct {
     /** 模型参数 */
     struct {
         bool active;
-        real_t nu;  ///< 泊松比
+        real_t nu; ///< 泊松比
     } P;
 
-    /** 归一化时间序列 */
+    /** 无量纲时间序列 tbar=t/(r/beta) */
     struct {
         bool active;
         real_t *ts;
         int nt;
     } T;
 
-    /** 震源射线角 */
+    /** 水平震中距 */
     struct {
         bool active;
-        real_t theta;  ///< 震源射线角，单位度
+        real_t distance;
+    } R;
+
+    /** 源点或接收点深度：-Ds 与 -Dr 互斥，未设置的一侧为 0 */
+    struct {
+        bool s_active;       ///< -Ds
+        bool r_active;       ///< -Dr
+        real_t source_depth;
+        real_t receiver_depth;
     } D;
+
+    /** 空间导数输出路径 */
+    struct {
+        bool active;
+        char *source_path;
+        char *receiver_path;
+    } S;
 
     /** 方位角 */
     struct {
         bool active;
-        real_t azimuth;  ///< 方位角，单位度
+        real_t azimuth;
     } A;
 
 } GRT_MODULE_CTRL;
@@ -41,67 +56,89 @@ typedef struct {
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl)
 {
     GRT_SAFE_FREE_PTR(Ctrl->T.ts);
+    GRT_SAFE_FREE_PTR(Ctrl->S.source_path);
+    GRT_SAFE_FREE_PTR(Ctrl->S.receiver_path);
     GRT_SAFE_FREE_PTR(Ctrl);
 }
+
 
 static void print_help(void)
 {
 printf("\n"
 "[grt lamb2] %s\n\n", GRT_VERSION);printf(
 "    Compute the exact generalized closed-form solution for the second-kind Lamb problem\n"
-"    (the receiver is on the surface and the source is underground).\n"
+"    (exactly one of the source and receiver is on the free surface).\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
-"    grt lamb2 -P<nu> -T<t1>/<t2>/<dt> -D<theta> -A<azimuth>\n"
+"    grt lamb2 -P<nu> -T<t1>/<t2>/<dt> -R<dist>\n"
+"              (-Ds<depsrc> | -Dr<deprcv>) -A<azimuth>\n"
+"              [-S+s<source-path>+r<receiver-path>]\n"
 "\n\n"
 "Options:\n"
 "----------------------------------------------------------------\n"
 "    -P<nu>         Poisson ratio of the halfspace, (0, 0.5).\n"
 "\n"
 "    -T<t1>/<t2>/<dt>\n"
-"                   Dimensionless time.\n"
+"                   Dimensionless time tbar = t/(r/beta) = beta*t/r.\n"
+"                   Here t is physical time, r is the direct source-receiver distance,\n"
+"                   and beta is the S-wave speed.\n"
 "                   <t1>: start time.\n"
 "                   <t2>: end time.\n"
 "                   <dt>: time interval.\n"
 "\n"
-"    -D<theta>      Source ray angle in degree, (0, 90).\n"
-"                   theta is measured from the upward vertical.\n"
+"    -R<dist>       Horizontal epicentral distance from source to receiver, positive.\n"
+"                   Values with R/r <= 1e-3 trigger a numerical-stability warning.\n"
 "\n"
-"    -A<azimuth>    Azimuth in degree, from source to station.\n"
+"    -Ds<depsrc>    Source depth, strictly positive. The receiver is then on the surface.\n"
+"                   Mutually exclusive with -Dr. Values with depsrc/r < 1e-3 trigger a\n"
+"                   numerical-stability warning.\n"
+"\n"
+"    -Dr<deprcv>    Receiver depth, strictly positive. The source is then on the surface.\n"
+"                   Mutually exclusive with -Ds. Values with deprcv/r < 1e-3 trigger a\n"
+"                   numerical-stability warning. This case is obtained from the buried-source\n"
+"                   solution by reciprocity.\n"
+"\n"
+"    -S+s<path>+r<path>\n"
+"                   Save source-coordinate derivatives to +s<path> and receiver-coordinate\n"
+"                   derivatives to +r<path>. Either suboption may be omitted.\n"
+"\n"
+"    -A<azimuth>    Azimuth in degree, from source to receiver, [0, 360].\n"
 "\n"
 "    -h             Display this help message.\n"
 "\n\n"
 "Output:\n"
 "----------------------------------------------------------------\n"
-"    The output is dimensionless step-force displacement Green functions.\n"
-"    The first 9 columns are Gij. They are followed by 27 source-coordinate\n"
-"    derivatives Gij,k' and 27 receiver-coordinate derivatives Gij,k, all in\n"
-"    row-major order. The physical Green function is G^H = Gbar^H/(pi^2*mu*r);\n"
-"    both physical spatial derivatives are obtained by dividing their normalized\n"
-"    results by pi^2*mu*r^2, where mu is the shear modulus.\n"
+"    Standard output contains dimensionless time and the 9 dimensionless step-force\n"
+"    displacement Green functions Gij. When -S is used, each specified derivative file\n"
+"    contains dimensionless time and the corresponding 27 dimensionless derivatives.\n"
+"    Here r=sqrt(R^2+h^2) is the straight source-receiver distance, \n"
+"    and h is the underground depth. Divide Gij by\n"
+"    pi^2*mu*r and derivatives by pi^2*mu*r^2 to recover physical quantities.\n"
 "\n\n"
 "Example:\n"
 "----------------------------------------------------------------\n"
-"    grt lamb2 -P0.25 -T0/3/1e-3 -D60 -A30\n"
-"\n\n\n"
-);
+"    grt lamb2 -P0.25 -T0/3/1e-3 -R10 -Ds5 -A30\n"
+"    grt lamb2 -P0.25 -T0/3/1e-3 -R10 -Dr5 -A30\n"
+"    grt lamb2 -P0.25 -T0/3/1e-3 -R10 -Ds5 -A30 -S+slamb2_source.txt+rlamb2_receiver.txt\n"
+"\n\n\n");
 }
+
 
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
 {
     int opt;
-    while((opt = getopt(argc, argv, ":P:T:D:A:h")) != -1){
-        switch(opt){
+    while ((opt = getopt(argc, argv, ":P:T:R:D:S:A:h")) != -1) {
+        switch (opt) {
             case 'P':
                 Ctrl->P.active = true;
                 {
                     char extra;
-                    if(1 != sscanf(optarg, "%lf%c", &Ctrl->P.nu, &extra)){
+                    if (1 != sscanf(optarg, "%lf%c", &Ctrl->P.nu, &extra)) {
                         GRTBadOptionError(P, "expected nu.");
                     }
                 }
-                if(Ctrl->P.nu <= 0.0 || Ctrl->P.nu >= 0.5){
+                if (Ctrl->P.nu <= 0.0 || Ctrl->P.nu >= 0.5) {
                     GRTBadOptionError(P, "poisson ratio (%lf) is out of bound.", Ctrl->P.nu);
                 }
                 break;
@@ -110,43 +147,77 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 Ctrl->T.active = true;
                 {
                     real_t t1, t2, dt;
-                    if(3 != sscanf(optarg, "%lf/%lf/%lf", &t1, &t2, &dt)){
+                    if (3 != sscanf(optarg, "%lf/%lf/%lf", &t1, &t2, &dt)) {
                         GRTBadOptionError(T, "");
                     }
-                    if(t1 < 0.0 || t2 < 0.0){
+                    if (t1 < 0.0 || t2 < 0.0) {
                         GRTBadOptionError(T, "t1 < 0.0 or t2 < 0.0.");
                     }
-                    if(dt <= 0.0){
+                    if (dt <= 0.0) {
                         GRTBadOptionError(T, "dt <= 0.0.");
                     }
-                    if(t1 > t2){
+                    if (t1 > t2) {
                         GRTBadOptionError(T, "t1(%f) > t2(%f).", t1, t2);
                     }
-                    Ctrl->T.nt = (int)floor((t2 - t1)/dt) + 1;
-                    Ctrl->T.ts = (real_t*)calloc((size_t)Ctrl->T.nt, sizeof(real_t));
-                    for(int i=0; i<Ctrl->T.nt; ++i){
-                        Ctrl->T.ts[i] = t1 + dt*i;
+                    Ctrl->T.nt = (int)floor((t2 - t1) / dt) + 1;
+                    Ctrl->T.ts = (real_t *)calloc((size_t)Ctrl->T.nt, sizeof(*Ctrl->T.ts));
+                    for (int i = 0; i < Ctrl->T.nt; ++i) {
+                        Ctrl->T.ts[i] = t1 + dt * i;
+                    }
+                }
+                break;
+
+            case 'R':
+                Ctrl->R.active = true;
+                {
+                    char extra;
+                    if (1 != sscanf(optarg, "%lf%c", &Ctrl->R.distance, &extra) || Ctrl->R.distance <= 0.0) {
+                        GRTBadOptionError(R, "horizontal distance should be positive.");
                     }
                 }
                 break;
 
             case 'D':
-                Ctrl->D.active = true;
-                if(1 != sscanf(optarg, "%lf", &Ctrl->D.theta)){
-                    GRTBadOptionError(D, "");
+                if (optarg[0] == 's') {
+                    Ctrl->D.s_active = true;
+                    {
+                        char extra;
+                        if (1 != sscanf(optarg + 1, "%lf%c", &Ctrl->D.source_depth, &extra) || Ctrl->D.source_depth <= 0.0) {
+                            GRTBadOptionError(Ds, "source depth should be strictly positive.");
+                        }
+                    }
+                } else if (optarg[0] == 'r') {
+                    Ctrl->D.r_active = true;
+                    {
+                        char extra;
+                        if (1 != sscanf(optarg + 1, "%lf%c", &Ctrl->D.receiver_depth, &extra) || Ctrl->D.receiver_depth <= 0.0) {
+                            GRTBadOptionError(Dr, "receiver depth should be strictly positive.");
+                        }
+                    }
+                } else {
+                    GRTBadOptionError(D, "use -Ds<depsrc> or -Dr<deprcv>.");
                 }
-                if(Ctrl->D.theta <= 0.0 || Ctrl->D.theta >= 90.0){
-                    GRTBadOptionError(D, "theta should be in (0, 90).\n");
+                break;
+
+            case 'S':
+                Ctrl->S.active = true;
+                grt_lamb_parse_derivative_paths(optarg, &Ctrl->S.source_path, &Ctrl->S.receiver_path);
+                if (Ctrl->S.source_path != NULL && Ctrl->S.receiver_path != NULL &&
+                    strcmp(Ctrl->S.source_path, Ctrl->S.receiver_path) == 0) {
+                    GRTBadOptionError(S, "source and receiver derivative paths must be different.");
                 }
                 break;
 
             case 'A':
                 Ctrl->A.active = true;
-                if(1 != sscanf(optarg, "%lf", &Ctrl->A.azimuth)){
-                    GRTBadOptionError(A, "");
-                }
-                if(Ctrl->A.azimuth < 0.0 || Ctrl->A.azimuth > 360.0){
-                    GRTBadOptionError(A, "azimuth should be in [0, 360].");
+                {
+                    char extra;
+                    if (1 != sscanf(optarg, "%lf%c", &Ctrl->A.azimuth, &extra)) {
+                        GRTBadOptionError(A, "");
+                    }
+                    if (Ctrl->A.azimuth < 0.0 || Ctrl->A.azimuth > 360.0) {
+                        GRTBadOptionError(A, "azimuth should be in [0, 360].");
+                    }
                 }
                 break;
 
@@ -157,15 +228,68 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
     GRTCheckOptionSet(argc > 1);
     GRTCheckOptionActive(Ctrl, P);
     GRTCheckOptionActive(Ctrl, T);
-    GRTCheckOptionActive(Ctrl, D);
+    GRTCheckOptionActive(Ctrl, R);
+    if (!Ctrl->D.s_active && !Ctrl->D.r_active) {
+        GRTRaiseError("Need set one of options \"-Ds\" and \"-Dr\". Use \"-h\" for help.\n");
+    }
+    if (Ctrl->D.s_active && Ctrl->D.r_active) {
+        GRTRaiseError("Options -Ds and -Dr are mutually exclusive in lamb2.\n");
+    }
     GRTCheckOptionActive(Ctrl, A);
 }
+
+
+static void run_lamb2_with_derivative_outputs(const GRT_MODULE_CTRL *Ctrl)
+{
+    const size_t nt = (size_t)Ctrl->T.nt;
+    real_t (*G)[3][3] = calloc(nt, sizeof(*G));
+    real_t (*dG_source)[3][3][3] = calloc(nt, sizeof(*dG_source));
+    real_t (*dG_receiver)[3][3][3] = calloc(nt, sizeof(*dG_receiver));
+    if (G == NULL || dG_source == NULL || dG_receiver == NULL) {
+        GRT_SAFE_FREE_PTR(G);
+        GRT_SAFE_FREE_PTR(dG_source);
+        GRT_SAFE_FREE_PTR(dG_receiver);
+        GRTRaiseError("Cannot allocate lamb2 output arrays.\n");
+    }
+
+    FILE *source_file = NULL;
+    FILE *receiver_file = NULL;
+    if (Ctrl->S.source_path != NULL) {
+        source_file = GRTCheckOpenFile(Ctrl->S.source_path, "w");
+    }
+    if (Ctrl->S.receiver_path != NULL) {
+        receiver_file = GRTCheckOpenFile(Ctrl->S.receiver_path, "w");
+    }
+
+    grt_solve_lamb2(Ctrl->P.nu, Ctrl->T.ts, Ctrl->T.nt, Ctrl->R.distance,
+        Ctrl->D.source_depth, Ctrl->D.receiver_depth, Ctrl->A.azimuth,
+        G, dG_source, dG_receiver);
+    grt_lamb_print_green_series(stdout, Ctrl->T.ts, Ctrl->T.nt, G);
+    if (source_file != NULL) {
+        grt_lamb_print_derivative_series(source_file, Ctrl->T.ts, Ctrl->T.nt, dG_source, true);
+        fclose(source_file);
+    }
+    if (receiver_file != NULL) {
+        grt_lamb_print_derivative_series(receiver_file, Ctrl->T.ts, Ctrl->T.nt, dG_receiver, false);
+        fclose(receiver_file);
+    }
+
+    GRT_SAFE_FREE_PTR(G);
+    GRT_SAFE_FREE_PTR(dG_source);
+    GRT_SAFE_FREE_PTR(dG_receiver);
+}
+
 
 int lamb2_main(int argc, char **argv)
 {
     GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
     getopt_from_command(Ctrl, argc, argv);
-    grt_solve_lamb2(Ctrl->P.nu, Ctrl->T.ts, Ctrl->T.nt, Ctrl->D.theta, Ctrl->A.azimuth, NULL, NULL, NULL);
+    if (Ctrl->S.active) {
+        run_lamb2_with_derivative_outputs(Ctrl);
+    } else {
+        grt_solve_lamb2(Ctrl->P.nu, Ctrl->T.ts, Ctrl->T.nt, Ctrl->R.distance,
+            Ctrl->D.source_depth, Ctrl->D.receiver_depth, Ctrl->A.azimuth, NULL, NULL, NULL);
+    }
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;
 }
