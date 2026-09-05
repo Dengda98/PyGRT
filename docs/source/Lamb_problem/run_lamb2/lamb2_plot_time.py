@@ -14,10 +14,13 @@ import pygrt
 import numpy as np
 import pygrt
 
-ts = np.arange(0, 2, 0.002)
-theta = 60.0
+tbar = np.arange(0, 2, 0.002)
+epicentral_distance = 10.0
+depsrc = 5.0
 azimuth = 30.0
-G, dG_source, dG_receiver = pygrt.utils.lamb2(0.25, ts, theta, azimuth)
+G, dG_source, dG_receiver = pygrt.utils.lamb2(
+    nu=0.25, tbar=tbar, R=epicentral_distance, depsrc=depsrc, azimuth=azimuth
+)
 # END LAMB2
 """
 
@@ -35,18 +38,10 @@ GREEN_YLIM = (-1.8, 2.2)
 
 # 一阶空间导数的振幅较大，分别采用适合三组导数的显示缩放
 DERIVATIVE_SCALES = {1: 1e-2, 2: 1e-2, 3: 1e-2}
-DERIVATIVE_OFFSETS = np.array([0.25, 0.15, 0.05, -0.05, -0.15, -0.25])
+DERIVATIVE_OFFSETS = np.array([0.25, 0.15, 0.05, -0.05, -0.15, -0.25]) * 1.4
 DERIVATIVE_YLIM = (-0.7, 1.3)
 
 COMPONENTS = [(i, j, f"{i + 1}{j + 1}") for i in range(3) for j in range(3)]
-
-
-def source_geometry(epicentral_distance: float, source_depth: float) -> tuple[float, float]:
-    if epicentral_distance <= 0.0 or source_depth <= 0.0:
-        raise ValueError("epicentral distance and source depth must be positive")
-    distance = float(np.hypot(epicentral_distance, source_depth))
-    theta = float(np.degrees(np.arctan2(epicentral_distance, source_depth)))
-    return distance, theta
 
 
 def component_label(component: str, derivative_coordinate: int | None = None) -> str:
@@ -61,8 +56,9 @@ def compute_lamb2_results() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     source_derivatives = np.empty((len(SOURCE_DEPTHS), len(ts), 3, 3, 3))
 
     for index, source_depth in enumerate(SOURCE_DEPTHS):
-        _, theta = source_geometry(EPICENTRAL_DISTANCE, source_depth)
-        G, dG_source, _ = pygrt.utils.lamb2(NU, ts, theta, AZIMUTH)
+        G, dG_source, _ = pygrt.utils.lamb2(
+            nu=NU, tbar=ts, R=EPICENTRAL_DISTANCE, depsrc=source_depth, azimuth=AZIMUTH
+        )
         greens[index] = G
         source_derivatives[index] = dG_source
 
