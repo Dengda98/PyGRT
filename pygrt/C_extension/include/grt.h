@@ -83,4 +83,5 @@
 #include "grt/lamb/elliptic.h"
 #include "grt/lamb/lamb1.h"
 #include "grt/lamb/lamb2.h"
+#include "grt/lamb/lamb3.h"
 #include "grt/lamb/lamb_util.h"

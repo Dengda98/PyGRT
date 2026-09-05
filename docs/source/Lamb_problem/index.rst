@@ -8,7 +8,7 @@ Lamb 问题
 并分别在上下两册中给出了频域解和时域解，过程之详细令人叹为观止。这里不再对 Lamb 问题及其解法做过多介绍，
 详见张海明老师的书 (|zhang2021|; |zhang2024|)（强烈推荐！！）
 
-得益于书中详细的推导过程，这里我对照下册书 **编程实现了第一、二类 Lamb 问题在时域的广义闭合解** 。
+得益于书中详细的推导过程，这里我对照下册书 **编程实现了第一、二、三类 Lamb 问题在时域的广义闭合解** 。
 以下简单示范用法以及绘图，其中复现了书中的一些结果，并和频域解进行了对比。
 
 .. toctree::
@@ -16,6 +16,7 @@ Lamb 问题
 
    lamb1
    lamb2
+   lamb3
 
 .. note::
 
@@ -33,4 +34,5 @@ Lamb 问题
     **如果使用了相关功能，您还需引用：**
 
     + Feng, X., Zhang, H., 2018. Exact closed-form solutions for lamb’s problem. Geophys. J. Int. 214, 444–459. https://doi.org/10.1093/gji/ggy131
+    + Feng, X., Zhang, H., 2021. Exact closed-form solutions for lamb’s problem—III: the case for buried source and receiver. Geophys. J. Int. 224, 517–532. https://doi.org/10.1093/gji/ggaa485
     + 张海明，冯禧，2024. 地震学中的Lamb问题（下）[M]. 北京：科学出版社.
