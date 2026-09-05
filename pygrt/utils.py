@@ -1204,34 +1204,35 @@ def plot_statsdata_ptam(statsdata1:np.ndarray, statsdata2:np.ndarray, statsdata_
 
 
 
-def lamb1(nu:float, ts:np.ndarray, azimuth:float):
+def lamb1(*, nu: float, tbar: np.ndarray, azimuth: float):
     r"""
         solve the first-kind Lamb's problem using the generalized closed-form solution, see：
 
             张海明, 冯禧 著. 2024. 地震学中的 Lamb 问题（下）. 科学出版社
 
         :param      nu:         Poisson ratio in (0, 0.5)
-        :param      ts:         dimensionless time :math:`\bar{t}` ，:math:`\bar{t}=\dfrac{t}{r/\beta}`
-        :param      azimuth:    azimuth in degree
+        :param      tbar:       dimensionless time :math:`\bar{t}=\dfrac{t}{T_S}=\dfrac{t}{r/\beta}=\dfrac{\beta t}{r}`,
+                                where :math:`T_S=r/\beta` is the S-wave time scale and :math:`r` is the direct source-receiver distance
+        :param      azimuth:    azimuth in degree, in ``[0, 360]``
 
         :return:    Dimensionless step-force Green function with shape (nt, 3, 3). To get
                     the physical solution, divide by :math:`\pi^2 \mu r`, where
                     :math:`\mu` is the shear modulus. The returned result is dimensionless.
     """
 
-    # 检查数据
-    if np.any(ts < 0.0):
-        raise ValueError("ts should be nonnegative.")
+    nu = _prepare_lamb_scalar(nu, "nu")
+    tbar = _prepare_lamb_time_series(tbar)
+    azimuth = _prepare_lamb_scalar(azimuth, "azimuth")
+    if nu <= 0.0 or nu >= 0.5:
+        raise ValueError("nu should be in (0, 0.5).")
     if azimuth < 0.0 or azimuth > 360.0:
         raise ValueError("azimuth should be in [0, 360].")
-    
-    ts = np.array(ts).astype(NPCT_REAL_TYPE)
-    
+
     # 定义结果数组
-    nt = len(ts)
+    nt = len(tbar)
     u = np.zeros((nt, 3, 3), dtype=NPCT_REAL_TYPE)
 
-    C_grt_solve_lamb1(nu, npct.as_ctypes(ts), nt, azimuth, npct.as_ctypes(u.ravel()))
+    C_grt_solve_lamb1(nu, npct.as_ctypes(tbar), nt, azimuth, npct.as_ctypes(u.ravel()))
 
     return u
 
@@ -1239,6 +1240,46 @@ def lamb1(nu:float, ts:np.ndarray, azimuth:float):
 def solve_lamb1(*args, **kwargs):
     """Legacy interface renamed to :func:`lamb1`; calling it raises an error."""
     raise RuntimeError("solve_lamb1() has been renamed to lamb1(); use lamb1() instead.")
+
+
+def _prepare_lamb_scalar(value, name):
+    try:
+        value = np.asarray(value)
+    except (TypeError, ValueError):
+        raise ValueError(f"{name} should be a finite real scalar.") from None
+    if value.ndim != 0:
+        raise ValueError(f"{name} should be a finite real scalar.")
+    try:
+        value = float(value)
+    except (TypeError, ValueError, OverflowError):
+        raise ValueError(f"{name} should be a finite real scalar.") from None
+    if not np.isfinite(value):
+        raise ValueError(f"{name} should be finite.")
+    return value
+
+
+def _prepare_lamb_time_series(tbar):
+    try:
+        tbar = np.asarray(tbar)
+    except (TypeError, ValueError, OverflowError):
+        raise ValueError("tbar should be a one-dimensional sequence of real numbers.") from None
+    if tbar.ndim != 1:
+        raise ValueError("tbar should be a one-dimensional sequence of real numbers.")
+    if np.iscomplexobj(tbar):
+        raise ValueError("tbar should contain real values.")
+    try:
+        tbar = tbar.astype(NPCT_REAL_TYPE, copy=False)
+    except (TypeError, ValueError, OverflowError):
+        raise ValueError("tbar should be a one-dimensional sequence of real numbers.") from None
+    if tbar.size == 0:
+        raise ValueError("tbar should not be empty.")
+    if not np.all(np.isfinite(tbar)):
+        raise ValueError("tbar should contain only finite values.")
+    if np.any(tbar < 0.0):
+        raise ValueError("tbar should be nonnegative.")
+    if tbar.size > 1 and np.any(np.diff(tbar) <= 0.0):
+        raise ValueError("tbar should be strictly increasing.")
+    return np.ascontiguousarray(tbar)
 
 
 def _prepare_lamb2_inputs(ts, theta, azimuth):

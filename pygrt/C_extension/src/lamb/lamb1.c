@@ -764,7 +764,21 @@ void grt_solve_lamb1(
 {
     // 检查泊松比范围
     if(nu <= 0.0 || nu >= 0.5){
-        GRTRaiseError("possion ratio (%lf) is out of bound.", nu);
+        GRTRaiseError("poisson ratio (%lf) is out of bound.", nu);
+    }
+    if(ts == NULL || nt <= 0){
+        GRTRaiseError("The time series for lamb1 should not be empty.\n");
+    }
+    if(azimuth < 0.0 || azimuth > 360.0){
+        GRTRaiseError("azimuth should be in [0, 360] degree for lamb1.\n");
+    }
+    for(int i = 0; i < nt; ++i){
+        if(ts[i] < 0.0){
+            GRTRaiseError("The time series for lamb1 should be nonnegative.\n");
+        }
+        if(i > 0 && ts[i] <= ts[i - 1]){
+            GRTRaiseError("The time series for lamb1 should be strictly increasing.\n");
+        }
     }
 
     // 根据情况判断是打印在屏幕还是记录到内存中
@@ -786,7 +800,7 @@ void grt_solve_lamb1(
 
     real_t phi = azimuth * DEG1;
     
-    real_t tbar_eps = GRT_MIN(1e-8, (ts[1]-ts[0]) * 1e-5);
+    real_t tbar_eps = nt > 1 ? GRT_MIN(1e-8, (ts[1]-ts[0]) * 1e-5) : 1e-8;
 
     // 初始化相关变量
     VARS V0 = {0};

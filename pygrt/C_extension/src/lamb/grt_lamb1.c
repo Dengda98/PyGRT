@@ -16,7 +16,7 @@ typedef struct {
         real_t nu;    ///<  泊松比
     } P;
 
-    /** 归一化时间序列 */
+    /** 无量纲时间序列 tbar=t/(r/beta) */
     struct {
         bool active;
         real_t *ts;
@@ -59,7 +59,9 @@ printf("\n"
 "    -P<nu>         Poisson ratio of the halfspace, (0, 0.5).\n"
 "\n"
 "    -T<t1>/<t2>/<dt>\n"
-"                   Dimensionless time.\n"
+"                   Dimensionless time tbar = t/(r/beta) = beta*t/r.\n"
+"                   Here t is physical time, r is the direct source-receiver distance,\n"
+"                   and beta is the S-wave speed.\n"
 "                   <t1>: start time.\n"
 "                   <t2>: end time.\n"
 "                   <dt>: time interval.\n"
@@ -102,7 +104,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 }
                 break;
 
-            // 归一化时间序列, -Tt1/t2/dt
+            // 无量纲时间序列 tbar, -Tt1/t2/dt
             case 'T':
                 Ctrl->T.active = true;
                 {

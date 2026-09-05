@@ -18,9 +18,9 @@
  * 使用广义闭合解求解第一类 Lamb 问题
  * 
  * @param[in]    nu        泊松比， (0, 0.5)
- * @param[in]    ts        归一化时间序列
+ * @param[in]    ts        无量纲时间序列 tbar=t/(r/beta)=beta*t/r
  * @param[in]    nt        时间序列点数
- * @param[in]    azimuth   方位角，单位度
+ * @param[in]    azimuth   方位角，单位度，[0, 360]
  * @param[out]   u         记录结果的指针，如果为NULL则输出到标准输出
  * 
  */
