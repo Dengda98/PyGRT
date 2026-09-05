@@ -1,4 +1,4 @@
-"""使用广义闭合解复现图 7.4.6、7.4.10、7.4.11 和 7.4.12"""
+"""使用广义闭合解复现图 8.4.10--8.4.12 和 8.4.16--8.4.24"""
 
 import matplotlib
 
@@ -10,18 +10,19 @@ import numpy as np
 import pygrt
 
 """
-# BEGIN LAMB2
+# BEGIN LAMB3
 import numpy as np
 import pygrt
 
 tbar = np.arange(0, 2, 0.002)
-epicentral_distance = 10.0
-depsrc = 5.0
+R = 10.0
+depsrc = 2.0
+deprcv = 1.0
 azimuth = 30.0
-G, dG_source, dG_receiver = pygrt.utils.lamb2(
-    nu=0.25, tbar=tbar, R=epicentral_distance, depsrc=depsrc, azimuth=azimuth
+G, dG_source, dG_receiver = pygrt.utils.lamb3(
+    nu=0.25, tbar=tbar, R=R, depsrc=depsrc, deprcv=deprcv, azimuth=azimuth
 )
-# END LAMB2
+# END LAMB3
 """
 
 EPICENTRAL_DISTANCE = 10.0
@@ -31,8 +32,8 @@ SOURCE_DEPTHS = np.array([0.1, 0.5, 1.0, 2.0, 5.0, 10.0])
 TMAX = 2.0
 DTBAR = 0.002
 
-# 图 7.4.6 中用纵向平移区分不同震源深度
-GREEN_SCALE = 0.4
+# 图 8.4.10 中用纵向平移区分不同震源深度
+GREEN_SCALE = 0.55
 GREEN_OFFSETS = np.array([1.25, 0.75, 0.25, -0.25, -0.75, -1.25])
 GREEN_YLIM = (-1.8, 2.2)
 
@@ -50,14 +51,15 @@ def component_label(component: str, derivative_coordinate: int | None = None) ->
     return rf"$\bar{{G}}^H_{{{component}}}$"
 
 
-def compute_lamb2_results() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def compute_lamb3_results(receiver_depth:float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     ts = np.arange(int(round(TMAX / DTBAR)) + 1, dtype=float) * DTBAR
     greens = np.empty((len(SOURCE_DEPTHS), len(ts), 3, 3))
     source_derivatives = np.empty((len(SOURCE_DEPTHS), len(ts), 3, 3, 3))
 
     for index, source_depth in enumerate(SOURCE_DEPTHS):
-        G, dG_source, _ = pygrt.utils.lamb2(
-            nu=NU, tbar=ts, R=EPICENTRAL_DISTANCE, depsrc=source_depth, azimuth=AZIMUTH
+        G, dG_source, _ = pygrt.utils.lamb3(
+            nu=NU, tbar=ts, R=EPICENTRAL_DISTANCE, depsrc=source_depth,
+            deprcv=receiver_depth, azimuth=AZIMUTH,
         )
         greens[index] = G
         source_derivatives[index] = dG_source
@@ -110,16 +112,17 @@ def plot_components(
     plt.close(fig)
 
 
-ts, greens, source_derivatives = compute_lamb2_results()
-plot_components(ts, greens, GREEN_SCALE, GREEN_OFFSETS, GREEN_YLIM, "lamb2.svg")
+for receiver_depth in [0.1, 1.0, 5.0]:
+    ts, greens, source_derivatives = compute_lamb3_results(receiver_depth)
+    plot_components(ts, greens, GREEN_SCALE, GREEN_OFFSETS, GREEN_YLIM, f"lamb3_{receiver_depth:.1f}.svg")
 
-for coordinate in (1, 2, 3):
-    plot_components(
-        ts,
-        source_derivatives[:, :, coordinate - 1],
-        DERIVATIVE_SCALES[coordinate],
-        DERIVATIVE_OFFSETS,
-        DERIVATIVE_YLIM,
-        f"lamb2_d{coordinate}.svg",
-        derivative_coordinate=coordinate,
-    )
+    for coordinate in (1, 2, 3):
+        plot_components(
+            ts,
+            source_derivatives[:, :, coordinate - 1],
+            DERIVATIVE_SCALES[coordinate],
+            DERIVATIVE_OFFSETS,
+            DERIVATIVE_YLIM,
+            f"lamb3_d{coordinate}_{receiver_depth:.1f}.svg",
+            derivative_coordinate=coordinate,
+        )

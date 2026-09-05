@@ -19,7 +19,7 @@ nu = 0.5 * (1 - 2*(Vs/Vp)**2) / (1 - (Vs/Vp)**2)
 
 # 模型数组，半无限空间
 modarr = np.array([
-    [0.,  Vp, Vs, Rho, 9e10, 9e10],
+    [0.,  Vp, Vs, Rho],
 ])
 
 # 剪切模量
@@ -36,7 +36,8 @@ dt = 0.005    # 采样时间间隔(s)
 idx = 0      # 震中距索引
 r = rs[idx]
 
-t = np.arange(0, nt)*dt * Vs/r 
+# 将频域解的物理时间转换为无量纲时间
+tbar = np.arange(0, nt)*dt * Vs/r
 
 modfile = "_halfspace_mod"
 np.savetxt(modfile, modarr)
@@ -50,7 +51,7 @@ pygrt.utils.stream_integral(st)
 
 
 # 时域解
-u = pygrt.utils.lamb1(nu, t, 0).reshape(-1, 9)
+u = pygrt.utils.lamb1(nu=nu, tbar=tbar, azimuth=0).reshape(-1, 9)
 u = u[:, [0,2,4,6,8]]
 u.shape
 
@@ -67,17 +68,18 @@ fig, axs = plt.subplots(5, 2, figsize=(10, 10), sharex=True)
 labels = [r"$\bar{{G}}^H_{11}$", r"$\bar{{G}}^H_{13}$", r"$\bar{{G}}^H_{22}$", r"$\bar{{G}}^H_{31}$", r"$\bar{{G}}^H_{33}$"]
 for i in range(5):
     ax = axs[i, 0]
-    ax.plot(t, u[:,i])
+    ax.plot(tbar, u[:,i], c='0.5', lw=1.5)
     ax.set_ylim(-2, 2)
     ax.set_xlim(0, 2)
-    ax.grid()
+    ax.grid(lw=0.4)
     ax.text(0.05, 0.92, labels[i], transform=ax.transAxes, ha='left', va='top', fontsize=12)
 
     ax = axs[i, 1]
-    ax.plot(t, v[:,i])
+    ax.plot(tbar, u[:,i], c='0.5', lw=1.5)
+    ax.plot(tbar, v[:,i], c='b', lw=0.7)
     ax.set_ylim(-2, 2)
     ax.set_xlim(0, 2)
-    ax.grid()
+    ax.grid(lw=0.4)
     ax.text(0.05, 0.92, labels[i], transform=ax.transAxes, ha='left', va='top', fontsize=12)
 
 axs[0,0].set_title("From Time-Domain")

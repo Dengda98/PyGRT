@@ -26,7 +26,7 @@ modarr = np.array([
 mu = Vs**2 * Rho
 
 depsrc = 5.0  # 震源深度 km
-deprcv = 0.0  # 台站深度 km
+deprcv = 0.1  # 台站深度 km
 
 rs = np.array([10]) # 震中距数组，km
 
@@ -36,7 +36,7 @@ dt = 0.005    # 采样时间间隔(s)
 idx = 0      # 震中距索引
 epicentral_distance = rs[idx]
 
-r_straight = np.hypot(epicentral_distance, depsrc)
+r_straight = np.hypot(epicentral_distance, depsrc - deprcv)
 # 将频域解的物理时间转换为无量纲时间
 tbar = np.arange(0, nt)*dt * Vs/r_straight
 
@@ -78,7 +78,7 @@ def plot(st, prefix, u, scale, sub, ylim):
         ax.set_xlim(0, 2)
         ax.grid(lw=0.4)
         ax.text(0.05, 0.92, labels[i], transform=ax.transAxes, ha='left', va='top', fontsize=12)
-
+    
         ax = axs[i, 1]
         ax.plot(tbar, u[:,i], c='0.5', lw=1.5)
         ax.plot(tbar, v[:,i], c='b', lw=0.7)
@@ -86,23 +86,25 @@ def plot(st, prefix, u, scale, sub, ylim):
         ax.set_xlim(0, 2)
         ax.grid(lw=0.4)
         ax.text(0.05, 0.92, labels[i], transform=ax.transAxes, ha='left', va='top', fontsize=12)
-
+        
     axs[0,0].set_title("From Time-Domain")
     axs[0,1].set_title("From Frequency-Domain")
 
-    fig.savefig(f"lamb2_compare_freq_time{prefix}.svg", bbox_inches='tight')
+    fig.savefig(f"lamb3_compare_freq_time{prefix}.svg", bbox_inches='tight')
 
 
 
 
 # 时域解
-u, _, ur = pygrt.utils.lamb2(nu=nu, tbar=tbar, R=epicentral_distance, depsrc=depsrc, azimuth=0.0)
+u, _, ur = pygrt.utils.lamb3(
+    nu=nu, tbar=tbar, R=epicentral_distance, depsrc=depsrc, deprcv=deprcv, azimuth=0.0
+)
 u = u.reshape(-1, 9)[:, [0,2,4,6,8]]
 ur = ur.reshape(-1, 3, 9)[:, :, [0,2,4,6,8]]
 
-plot(st, '', u, 1.0, "", (-2, 2))
-plot(st, '_z', ur[:, 2, :], - r_straight, ",3", (-4, 4))
-plot(st, '_r', ur[:, 0, :], r_straight, ",1", (-4, 4))
+plot(st, '', u, 1.0, "", (-1.3, 1.8))
+plot(st, '_z', ur[:, 2, :], - r_straight, ",3", (-6, 6))
+plot(st, '_r', ur[:, 0, :], r_straight, ",1", (-6, 6))
 
 # 删除中间计算结果，仅保留成图
 import shutil
