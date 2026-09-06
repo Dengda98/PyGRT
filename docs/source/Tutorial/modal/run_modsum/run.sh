@@ -37,4 +37,6 @@ python compare_wave.py 1
 python compare_wave.py 2
 python compare_wave.py all
 
+python run.py
+
 rm -rf GRN* *.nc

@@ -6,7 +6,7 @@
 
 本征值对应的位移应力解被称为本征函数，再基于变分理论计算出能量积分后可计算出群速度和频散敏感核 (|aki2009|; |yao2026|)。
 
-C 模块为 :doc:`/Module/eigenfn` （Python函数将于后续版本增加），
+C 模块为 :doc:`/Module/eigenfn`，Python 中对应 :meth:`PyModel1D.eigenfn() <pygrt.pymod.PyModel1D.eigenfn>`，
 计算将基于 :doc:`/Module/eigenv` 模块的频散结果及其内嵌的模型。
 
 以下示例基于 :doc:`eigenvalue` 部分计算的相速度频散结果。
@@ -16,14 +16,26 @@ C 模块为 :doc:`/Module/eigenfn` （Python函数将于后续版本增加），
 
 计算频率 1 Hz 时不同阶的本征函数，深度范围 [0, 50] km，间隔 0.1 km :
 
-.. literalinclude:: run/run.sh
-    :language: bash
-    :start-after: BEGIN EIGENFN
-    :end-before: END EIGENFN
+.. tabs::
 
-Python 提供了 :func:`read_eigenfunction() <pygrt.utils.read_eigenfunction>`
-将结果读入字典（``eigfn`` 等按阶号分组），以及 :func:`plot_eigenfunction() <pygrt.utils.plot_eigenfunction>`
-进行简易绘图。
+    .. group-tab:: CLI
+
+        .. literalinclude:: run/run.sh
+            :language: bash
+            :start-after: BEGIN EIGENFN
+            :end-before: END EIGENFN
+
+    .. group-tab:: Python
+
+        .. literalinclude:: run/run.py
+            :language: python
+            :start-after: BEGIN EIGENFN
+            :end-before: END EIGENFN
+
+        Python 提供了 :func:`read_eigenfunction() <pygrt.utils.read_eigenfunction>`
+        将结果读入字典（``eigfn`` 等按阶号分组），以及 :func:`plot_eigenfunction() <pygrt.utils.plot_eigenfunction>`
+        进行简易绘图。
+
 
 :download:`plot_eigenfunction.py <run/plot_eigenfunction.py>`
 
@@ -34,15 +46,28 @@ Python 提供了 :func:`read_eigenfunction() <pygrt.utils.read_eigenfunction>`
 
 计算所有阶的相速度对应的群速度 :
 
-.. literalinclude:: run/run.sh
-    :language: bash
-    :start-after: BEGIN GROUP
-    :end-before: END GROUP
+.. tabs::
 
-与 :doc:`eigenvalue` 中介绍的一致，可使用
-:func:`read_dispersion() <pygrt.utils.read_dispersion>` 和
-:func:`plot_dispersion() <pygrt.utils.plot_dispersion>` 读取并绘制；
-:doc:`/Module/disp2asc` 模块也可将 |NetCDF| 格式的频散转为文本格式。
+    .. group-tab:: CLI
+
+        .. literalinclude:: run/run.sh
+            :language: bash
+            :start-after: BEGIN GROUP
+            :end-before: END GROUP
+
+        :doc:`/Module/disp2asc` 模块也可将 |NetCDF| 格式的群速度频散转为文本格式。
+
+    .. group-tab:: Python
+
+        .. literalinclude:: run/run.py
+            :language: python
+            :start-after: BEGIN GROUP
+            :end-before: END GROUP
+
+        与 :doc:`eigenvalue` 中介绍的一致，可使用
+        :func:`read_dispersion() <pygrt.utils.read_dispersion>` 和
+        :func:`plot_dispersion() <pygrt.utils.plot_dispersion>` 读取群速度并绘制；
+
 以下同样提供两种方式的简易绘图脚本。
 
 :download:`plot_dispersion_group.py (基于 Matplotlib) <run/plot_dispersion_group.py>` | 
@@ -56,14 +81,25 @@ Python 提供了 :func:`read_eigenfunction() <pygrt.utils.read_eigenfunction>`
 
 计算不同频率下基阶频散曲线的相/群速度频散敏感核，深度间隔 0.2 km :
 
-.. literalinclude:: run/run.sh
-    :language: bash
-    :start-after: BEGIN SENS
-    :end-before: END SENS
+.. tabs::
 
-Python 提供了 :func:`read_sensitivity() <pygrt.utils.read_sensitivity>`
-将结果读入字典（``csens`` / ``usens`` 等按阶号分组），以及 :func:`plot_sensitivity() <pygrt.utils.plot_sensitivity>`
-进行简易绘图。
+    .. group-tab:: CLI
+
+        .. literalinclude:: run/run.sh
+            :language: bash
+            :start-after: BEGIN SENS
+            :end-before: END SENS
+
+    .. group-tab:: Python
+
+        .. literalinclude:: run/run.py
+            :language: python
+            :start-after: BEGIN SENS
+            :end-before: END SENS
+
+        Python 提供了 :func:`read_sensitivity() <pygrt.utils.read_sensitivity>`
+        将结果读入字典（``csens`` / ``usens`` 等按阶号分组），以及 :func:`plot_sensitivity() <pygrt.utils.plot_sensitivity>`
+        进行简易绘图。
 
 :download:`plot_sensitivity.py <run/plot_sensitivity.py>`
 

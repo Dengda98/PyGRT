@@ -23,4 +23,6 @@ grt modsum -Cphase_L.nc -Ds2,4 -Dr0,2 -R80,100,120 -N0 -OGRN -W4 -e
 grt syn -GGRN -Ds4 -Dr2 -R100 -S1e24 -A30 -M33/50/120 -Osyn -e
 # END SYN
 
+python run.py
+
 rm -rf GRN *.nc syn
