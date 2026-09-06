@@ -257,6 +257,11 @@ def test_modal_cli_argument_mapping():
     try:
         modal_dir = HERE / "_tmp_args_modal"
         phase = modal_dir / "phase_R.nc"
+        egn = modal_dir / "egn_R.nc"
+        group = modal_dir / "group_R.nc"
+        csens = modal_dir / "csens_R.nc"
+        usens = modal_dir / "usens_R.nc"
+        egy = modal_dir / "egy_R.nc"
         model = pygrt.PyModel1D(grn=HERE / "_tmp_args_modal_grn", modelpath=MODEL)
 
         model.eigenv(
@@ -294,6 +299,33 @@ def test_modal_cli_argument_mapping():
             ["eigenv", f"-M{MODEL}", "-SL", "-X1+c3/5.5+i0"],
         )
 
+        model.eigenfn(
+            phase_path=phase,
+            periods=(0.5, 1.5, 0.1),
+            modes=(0, 10, 2),
+            eigenfn_path=egn,
+            depths=(0.0, 50.0, 0.1),
+            group_path=group,
+            csens_path=csens,
+            usens_path=usens,
+            egy_path=egy,
+            sensitivity_dz=0.2,
+            print_log=False,
+        )
+        assert_command_equals(
+            runner.commands[-1],
+            [
+                "eigenfn",
+                f"-C{phase}",
+                "-F0.5/1.5/0.1+p",
+                "-N0/10/2",
+                f"-W{egn}+z0/50/0.1",
+                f"-U{group}",
+                f"-K+c{csens}+u{usens}+x{egy}+z0.2",
+            ],
+        )
+        assert runner.kwargs[-1].get("print_log") is False
+
         model.eigenv(
             wtype="R",
             periods=(1.0, 5.0, 1.0),
@@ -304,6 +336,19 @@ def test_modal_cli_argument_mapping():
         assert_command_equals(
             runner.commands[-1],
             ["eigenv", f"-M{MODEL}", "-SR", "-F1/5/1+p", f"-C{phase}", "-N2", "-s"],
+        )
+
+        model.eigenfn(
+            phase_path=phase,
+            freqs=(0.1, 0.8),
+            modes=0,
+            eigenfn_path=egn,
+            depths=1.0,
+            print_log=False,
+        )
+        assert_command_equals(
+            runner.commands[-1],
+            ["eigenfn", f"-C{phase}", "-F0.1/0.8", "-N0", f"-W{egn}+z1"],
         )
 
         try:
@@ -326,6 +371,20 @@ def test_modal_cli_argument_mapping():
             assert "freqs" in str(exc)
         else:
             raise AssertionError("eigenv should reject two-value freqs")
+
+        try:
+            model.eigenfn(phase_path=phase, all_modes=True, modes=0)
+        except ValueError as exc:
+            assert "mutually exclusive" in str(exc)
+        else:
+            raise AssertionError("eigenfn should reject mixed mode-selection options")
+
+        try:
+            model.eigenfn(phase_path=phase, eigenfn_path=egn, depths=0.0)
+        except ValueError as exc:
+            assert "depth" in str(exc)
+        else:
+            raise AssertionError("eigenfn should reject a single nonpositive depth")
     finally:
         _restore_run_grt(pygrt.pymod, original)
 
