@@ -20,7 +20,7 @@
  * @param[in]    filepath         输出路径
  * @param[in]    full_command     计算频散的完整命令
  * @param[in]    modelname        模型文件名（不含路径）
- * @param[in]    mod1d            模型，使用其中未插入虚拟层的原始 ``modarr``；写入 NC 时仅保存前四列
+ * @param[in]    mod1d            模型，使用其中未插入虚拟层的原始 ``modarr``
  * @param[in]    eigmet           频散数据结构体指针
  */
 void grt_output_cdisp(

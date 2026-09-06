@@ -39,7 +39,7 @@ eigenv
             freqmode = 13700 ;
             mode = 54 ;
             layer = 4 ;
-            model_param = 4 ;
+            model_param = 6 ;
     variables:
             double freq(freq) ;
             int cnum(freq) ;
@@ -66,7 +66,7 @@ eigenv
           可用 ``cnum`` 还原每个频率对应哪些点
         + ``mode`` - 当前结果包含的阶数个数
         + ``layer`` - 模型层数
-        + ``model_param`` - 模型参数列数（4列：Thk, Va, Vb, Rho）
+        + ``model_param`` - 模型参数列数（6列：Thk, Va, Vb, Rho, Qa, Qb）
     
     .. grid-item:: **变量（variables）**
         :columns: auto 
@@ -77,7 +77,7 @@ eigenv
           第 *i* 个频率的频散点对应 ``mode`` 的前 ``cnum[i]`` 个值
         + ``c`` - 每个频散点的相速度 (km/s)
         + ``ciref`` - 搜索对应相速度使用的久期函数层位
-        + ``model`` - 模型矩阵（仅前四列）
+        + ``model`` - 模型矩阵（Thk/Va/Vb/Rho/Qa/Qb）
     
     .. grid-item:: **全局属性（global attributes）**
         :columns: auto 

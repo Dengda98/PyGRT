@@ -113,28 +113,6 @@ static void nc_put_freq_freqmode(
     GRT_SAFE_FREE_PTR(ciref_flat);
 }
 
-/** 打包模型前四列，供写入 NC */
-static real_t (*pack_modarr_nc(size_t nlayer, const real_t (*modarr)[GRT_MODARR_NCOL]))[GRT_MODAL_MODARR_NCOL]
-{
-    real_t (*out)[GRT_MODAL_MODARR_NCOL] = (real_t (*)[GRT_MODAL_MODARR_NCOL])malloc(
-        sizeof(real_t) * GRT_MODAL_MODARR_NCOL * nlayer);
-    for(size_t i = 0; i < nlayer; ++i){
-        memcpy(out[i], modarr[i], sizeof(real_t) * GRT_MODAL_MODARR_NCOL);
-    }
-    return out;
-}
-
-/** 将 NC 中的四列模型展开为完整矩阵（Qa/Qb 置 0） */
-static real_t (*unpack_modarr_nc(size_t nlayer, const real_t (*in)[GRT_MODAL_MODARR_NCOL]))[GRT_MODARR_NCOL]
-{
-    real_t (*out)[GRT_MODARR_NCOL] = (real_t (*)[GRT_MODARR_NCOL])calloc(
-        nlayer, sizeof(real_t) * GRT_MODARR_NCOL);
-    for(size_t i = 0; i < nlayer; ++i){
-        memcpy(out[i], in[i], sizeof(real_t) * GRT_MODAL_MODARR_NCOL);
-    }
-    return out;
-}
-
 
 void grt_output_cdisp(
     const char *filepath, const char *full_command, const char *modelname,
@@ -169,7 +147,7 @@ void grt_output_cdisp(
     // 定义维度和变量
     nc_def_freq_freqmode(ncid, eigmet->nf, nfm, nmode, &f_dimid, &fm_dimid, &f_varid, &cnum_varid, &mode_varid);
     NC_CHECK(nc_def_dim(ncid, "layer", nlayer, &layer_dimid));
-    NC_CHECK(nc_def_dim(ncid, "model_param", GRT_MODAL_MODARR_NCOL, &param_dimid));
+    NC_CHECK(nc_def_dim(ncid, "model_param", GRT_MODARR_NCOL, &param_dimid));
     {
         int model_dimids[2] = {layer_dimid, param_dimid};
         NC_CHECK(nc_def_var(ncid, "model", NC_REAL, 2, model_dimids, &model_varid));
@@ -186,11 +164,7 @@ void grt_output_cdisp(
     nc_put_freq_freqmode(
         ncid, eigmet->nf, nfm, nmode, eigmet->freqs, eigv, NULL,
         f_varid, cnum_varid, mode_varid, c_varid, -1, ciref_varid);
-    {
-        real_t (*model_nc)[GRT_MODAL_MODARR_NCOL] = pack_modarr_nc(nlayer, modarr);
-        NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, model_varid, (const real_t *)model_nc));
-        GRT_SAFE_FREE_PTR(model_nc);
-    }
+    NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, model_varid, (const real_t *)modarr));
 
     // 关闭文件
     NC_CHECK(nc_close(ncid));
@@ -544,7 +518,7 @@ void grt_read_dispersion(
         }
     }
 
-    // 在相速度文件中读取模型名和模型数组（仅四列：Thk/Va/Vb/Rho）
+    // 在相速度文件中读取模型名和模型数组
     if(! isGroup){
         int layer_dimid, param_dimid, model_varid;
         size_t nlayer = 0, nparam = 0;
@@ -557,19 +531,17 @@ void grt_read_dispersion(
         }
         NC_CHECK(nc_inq_dimlen(ncid, layer_dimid, &nlayer));
         NC_CHECK(nc_inq_dimlen(ncid, param_dimid, &nparam));
-        if(nlayer == 0 || nparam != GRT_MODAL_MODARR_NCOL){
+        if(nlayer == 0 || nparam != GRT_MODARR_NCOL){
             NC_CHECK(nc_close(ncid));
             GRTRaiseError(
                 "Invalid dispersion nc \"%s\": layer=%zu, model_param=%zu "
                 "(expect layer>0, model_param=%d).",
-                filepath, nlayer, nparam, GRT_MODAL_MODARR_NCOL);
+                filepath, nlayer, nparam, GRT_MODARR_NCOL);
         }
         NC_CHECK(nc_inq_varid(ncid, "model", &model_varid));
-        real_t (*model_nc)[GRT_MODAL_MODARR_NCOL] = (real_t (*)[GRT_MODAL_MODARR_NCOL])malloc(
-            sizeof(real_t) * GRT_MODAL_MODARR_NCOL * nlayer);
-        NC_CHECK(NC_FUNC_REAL(nc_get_var)(ncid, model_varid, (real_t *)model_nc));
-        real_t (*modarr)[GRT_MODARR_NCOL] = unpack_modarr_nc(nlayer, (const real_t (*)[GRT_MODAL_MODARR_NCOL])model_nc);
-        GRT_SAFE_FREE_PTR(model_nc);
+        real_t (*modarr)[GRT_MODARR_NCOL] = (real_t (*)[GRT_MODARR_NCOL])malloc(
+            sizeof(real_t) * GRT_MODARR_NCOL * nlayer);
+        NC_CHECK(NC_FUNC_REAL(nc_get_var)(ncid, model_varid, (real_t *)modarr));
 
         size_t m_len = 0;
         NC_CHECK(nc_inq_attlen(ncid, NC_GLOBAL, "modelname", &m_len));

@@ -12,9 +12,6 @@
 
 #include "grt/common/const.h"
 
-/** 面波模块仅使用模型前四列：Thk, Va, Vb, Rho */
-#define GRT_MODAL_MODARR_NCOL  4
-
 /** 某频率的频散值 */
 typedef struct {
     real_t *c_roots;       ///< 本征值
