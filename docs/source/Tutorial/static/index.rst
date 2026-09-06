@@ -41,7 +41,7 @@
         classDef cmdcls fill:#FBE8CE,stroke:#BFA28C,stroke-width:2px,color:#333;
         class GG,SS,EE,RR,TT,SP,CO cmdcls
 
-+ C (module name)
++ CLI (module name)
 
 .. mermaid::
 

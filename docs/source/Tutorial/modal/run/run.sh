@@ -50,5 +50,6 @@ grt eigenfn -Cphase_L.nc -F0/0.5/0.1 -N0 -K+ccsens_L.nc+uusens_L.nc+z0.2
 
 python plot_sensitivity.py
 
+python run.py
 
 rm -rf *.nc secfunc_*

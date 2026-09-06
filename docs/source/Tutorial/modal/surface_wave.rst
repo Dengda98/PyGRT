@@ -7,7 +7,7 @@
 根据留数定理，本征值处对波数积分的贡献可以解析地表达。将多个本征值得到的贡献叠加起来就得到面波格林函数，
 这个方法也被称为 **模态叠加法（Modal Summation Method）** 。 |yao2026p| 给出了推导过程和具体公式，这里不再重复。
 
-C 模块为 :doc:`/Module/modsum` （Python函数将于后续版本增加），
+C 模块为 :doc:`/Module/modsum`，Python 中对应 :meth:`PyModel1D.modsum() <pygrt.pymod.PyModel1D.modsum>`，
 计算将基于 :doc:`/Module/eigenv` 模块的频散结果及其内嵌的模型。
 :doc:`/Module/modsum` 模块保存的波形格式与 :doc:`/Module/greenfn` 模块一致。
 
@@ -19,10 +19,25 @@ C 模块为 :doc:`/Module/modsum` （Python函数将于后续版本增加），
 其中面波波形的时域长度和间隔通过 :doc:`/Module/eigenv` 模块中频域的设置间接确定，
 即 *T = 1 / df* , *dt = 1 / (2\*fmax)* 。
 
-.. literalinclude:: run_modsum/run.sh
-    :language: bash
-    :start-after: BEGIN
-    :end-before: END
+.. tabs::
+
+    .. group-tab:: CLI
+
+        .. literalinclude:: run_modsum/run.sh
+            :language: bash
+            :start-after: BEGIN
+            :end-before: END
+
+    .. group-tab:: Python
+
+        **modsum** 未显式传入 *output_path* 时，会将结果写入构造
+        :class:`~pygrt.pymod.PyModel1D` 时指定的 *grn* 根目录。
+        下例与 CLI 一样为不同阶数指定了各自的输出目录。
+
+        .. literalinclude:: run_modsum/run.py
+            :language: python
+            :start-after: BEGIN
+            :end-before: END
 
 :download:`compare_wave.py <run_modsum/compare_wave.py>` （虚线为全波解，实线为面波解）
 
