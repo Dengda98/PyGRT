@@ -77,6 +77,8 @@ C_grt_solve_lamb2.argtypes = [
     c_int,
     REAL,
     REAL,
+    REAL,
+    REAL,
     PREAL,
     PREAL,
     PREAL,

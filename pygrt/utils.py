@@ -1282,29 +1282,73 @@ def _prepare_lamb_time_series(tbar):
     return np.ascontiguousarray(tbar)
 
 
-def _prepare_lamb2_inputs(ts, theta, azimuth):
-    ts = np.asarray(ts)
-    if np.any(ts < 0.0):
-        raise ValueError("ts should be nonnegative.")
-    if theta <= 0.0 or theta >= 90.0:
-        raise ValueError("theta should be in (0, 90) degree.")
+def _prepare_lamb_inputs(nu, tbar, R, azimuth):
+    nu = _prepare_lamb_scalar(nu, "nu")
+    tbar = _prepare_lamb_time_series(tbar)
+    R = _prepare_lamb_scalar(R, "R")
+    azimuth = _prepare_lamb_scalar(azimuth, "azimuth")
+    if nu <= 0.0 or nu >= 0.5:
+        raise ValueError("nu should be in (0, 0.5).")
+    if R <= 0.0:
+        raise ValueError("R should be positive.")
     if azimuth < 0.0 or azimuth > 360.0:
         raise ValueError("azimuth should be in [0, 360].")
-    return ts.astype(NPCT_REAL_TYPE)
+    return nu, tbar, R, azimuth
 
 
-def lamb2(nu:float, ts:np.ndarray, theta:float, azimuth:float):
+def _prepare_lamb2_inputs(nu, tbar, R, depsrc, deprcv, azimuth):
+    nu, tbar, R, azimuth = _prepare_lamb_inputs(nu, tbar, R, azimuth)
+    src_given = depsrc is not None
+    rcv_given = deprcv is not None
+    if src_given == rcv_given:
+        raise ValueError("exactly one of depsrc and deprcv should be set.")
+    if src_given:
+        depsrc = _prepare_lamb_scalar(depsrc, "depsrc")
+        if depsrc <= 0.0:
+            raise ValueError("depsrc should be strictly positive.")
+        deprcv = 0.0
+    else:
+        deprcv = _prepare_lamb_scalar(deprcv, "deprcv")
+        if deprcv <= 0.0:
+            raise ValueError("deprcv should be strictly positive.")
+        depsrc = 0.0
+    return nu, tbar, R, depsrc, deprcv, azimuth
+
+
+def lamb2(
+    *, nu: float, tbar: np.ndarray, R: float,
+    depsrc: Optional[float] = None, deprcv: Optional[float] = None, azimuth: float
+):
     r"""
         Solve the second-kind Lamb problem using the generalized closed-form solution.
 
-        The receiver is on the free surface and the source is underground. See:
+        Exactly one of the source and receiver is on the free surface.
+        Set ``depsrc`` to place the source underground and the receiver on the
+        surface; set ``deprcv`` to place the receiver underground and the source
+        on the surface, obtained from the buried-source solution by reciprocity.
+        Exactly one of ``depsrc`` and ``deprcv`` may be set. ``R`` is the
+        horizontal epicentral distance. The time array contains the dimensionless
+        time :math:`\bar{t}=t/T_S=t/(r/\beta)=\beta t/r`, where
+        :math:`T_S=r/\beta` and ``r = sqrt(R**2 + h**2)`` are the S-wave
+        time scale and the straight source-receiver distance, and ``h`` is the
+        nonzero depth. See:
 
             张海明, 冯禧 著. 2024. 地震学中的 Lamb 问题（下）. 科学出版社
 
-        :param      nu:       Poisson ratio in ``(0, 0.5)``
-        :param      ts:       dimensionless time :math:`\bar{t}`
-        :param      theta:    source ray angle in degree, measured from the upward vertical
-        :param      azimuth:  azimuth in degree, from source to receiver
+        :param      nu:           Poisson ratio in ``(0, 0.5)``; values within ``1e-3`` of either bound
+                                    trigger a numerical warning
+        :param      tbar:         dimensionless time :math:`\bar{t}=t/T_S=t/(r/\beta)=\beta t/r`,
+                                    where :math:`T_S=r/\beta`
+        :param      R:            positive horizontal epicentral distance from source to receiver;
+                                    when ``R / sqrt(R**2 + h**2) <= 1e-3``,
+                                    a numerical-stability warning is issued
+        :param      depsrc:       strictly positive source depth with the receiver on the surface;
+                                    mutually exclusive with ``deprcv``. Values below
+                                    ``1e-3 * r`` trigger a numerical warning
+        :param      deprcv:       strictly positive receiver depth with the source on the surface;
+                                    mutually exclusive with ``depsrc``. Values below
+                                    ``1e-3 * r`` trigger a numerical warning
+        :param      azimuth:      azimuth in degree, from source to receiver, in ``[0, 360]``
         :return:    A tuple ``(G, dG_source, dG_receiver)``. ``G`` has shape
                     ``(nt, 3, 3)`` and both derivative arrays have shape
                     ``(nt, 3, 3, 3)`` with index order
@@ -1314,17 +1358,19 @@ def lamb2(nu:float, ts:np.ndarray, theta:float, azimuth:float):
                     ``dG_receiver = pi^2 * mu * r^2 * G^H_(,k)``.
     """
 
-    ts = _prepare_lamb2_inputs(ts, theta, azimuth)
-    nt = len(ts)
+    nu, tbar, R, depsrc, deprcv, azimuth = _prepare_lamb2_inputs(nu, tbar, R, depsrc, deprcv, azimuth)
+    nt = len(tbar)
     G = np.zeros((nt, 3, 3), dtype=NPCT_REAL_TYPE)
     dG_source = np.zeros((nt, 3, 3, 3), dtype=NPCT_REAL_TYPE)
     dG_receiver = np.zeros((nt, 3, 3, 3), dtype=NPCT_REAL_TYPE)
 
     C_grt_solve_lamb2(
         nu,
-        npct.as_ctypes(ts),
+        npct.as_ctypes(tbar),
         nt,
-        theta,
+        R,
+        depsrc,
+        deprcv,
         azimuth,
         npct.as_ctypes(G.ravel()),
         npct.as_ctypes(dG_source.ravel()),
@@ -1332,3 +1378,5 @@ def lamb2(nu:float, ts:np.ndarray, theta:float, azimuth:float):
     )
 
     return G, dG_source, dG_receiver
+
+
