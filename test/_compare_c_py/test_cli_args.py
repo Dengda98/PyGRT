@@ -326,6 +326,39 @@ def test_modal_cli_argument_mapping():
         )
         assert runner.kwargs[-1].get("print_log") is False
 
+        model.modsum(
+            phase_path=phase,
+            depsrc=[2.0, 4.0],
+            deprcv=[0.0, 2.0],
+            dists=[80.0, 100.0],
+            freqband=(0.1, 0.8),
+            modes=(0, 2, 1),
+            upsampling_n=4,
+            delayT0=1.2,
+            delayV0=3.4,
+            gf_source=["EX", "VF", "HF", "DC"],
+            calc_upar=True,
+            print_log=False,
+        )
+        assert_command_equals(
+            runner.commands[-1],
+            [
+                "modsum",
+                f"-C{phase}",
+                "-Ds2,4",
+                "-Dr0,2",
+                "-R80,100",
+                f"-O{model.grn}",
+                "-F0.1/0.8",
+                "-N0/2/1",
+                "-E1.2/3.4",
+                "-Gevhs",
+                "-W4",
+                "-e",
+            ],
+        )
+        assert runner.kwargs[-1].get("print_log") is False
+
         model.eigenv(
             wtype="R",
             periods=(1.0, 5.0, 1.0),
@@ -349,6 +382,48 @@ def test_modal_cli_argument_mapping():
         assert_command_equals(
             runner.commands[-1],
             ["eigenfn", f"-C{phase}", "-F0.1/0.8", "-N0", f"-W{egn}+z1"],
+        )
+
+        model.modsum(
+            phase_path=phase,
+            depsrc=2.0,
+            deprcv=0.0,
+            dists=100.0,
+            modes=0,
+            print_log=False,
+        )
+        assert_command_equals(
+            runner.commands[-1],
+            ["modsum", f"-C{phase}", "-D2/0", "-R100", f"-O{model.grn}", "-N0"],
+        )
+
+        # ref_first_p 与 greenfn 一致：delayT0 可为非负数，delayV0 被忽略
+        model.modsum(
+            phase_path=phase,
+            depsrc=2.0,
+            deprcv=0.0,
+            dists=100.0,
+            delayT0=0.5,
+            delayV0=3.4,
+            ref_first_p=True,
+            print_log=False,
+        )
+        assert_command_equals(
+            runner.commands[-1],
+            ["modsum", f"-C{phase}", "-D2/0", "-R100", f"-O{model.grn}", "-Ep0.5"],
+        )
+
+        model.modsum(
+            phase_path=phase,
+            depsrc=2.0,
+            deprcv=0.0,
+            dists=100.0,
+            ref_first_p=True,
+            print_log=False,
+        )
+        assert_command_equals(
+            runner.commands[-1],
+            ["modsum", f"-C{phase}", "-D2/0", "-R100", f"-O{model.grn}", "-Ep0"],
         )
 
         try:
