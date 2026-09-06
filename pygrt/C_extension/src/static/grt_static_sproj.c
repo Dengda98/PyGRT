@@ -109,8 +109,8 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 // 先按 + 拆分主参数和可选的强制标记
                 char *string = strdup(optarg);
                 char *token = strtok(string, "+");
-                real_t strike = 0.0, dip = 0.0, rake = 0.0;
-                int nscan = token == NULL ? 0 : sscanf(token, "%lf/%lf/%lf", &strike, &dip, &rake);
+                real_t a1 = 0.0, a2 = 0.0, a3 = 0.0;
+                int nscan = (token == NULL) ? 0 : sscanf(token, "%lf/%lf/%lf", &a1, &a2, &a3);
                 if((nscan != 1) && (nscan != 3)){
                     GRT_SAFE_FREE_PTR(string);
                     GRTBadOptionError(M, "Expect <rake> or <strike>/<dip>/<rake>.");
@@ -119,21 +119,21 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 Ctrl->M.active = true;
                 Ctrl->M.has_geometry = nscan == 3;
                 if(nscan == 3){
-                    Ctrl->M.strike = strike;
-                    Ctrl->M.dip = dip;
-                    Ctrl->M.rake = rake;
-                    if(!isfinite(strike) || (strike < 0.0) || (strike > 360.0)){
+                    Ctrl->M.strike = a1;
+                    Ctrl->M.dip = a2;
+                    Ctrl->M.rake = a3;
+                    if(!isfinite(Ctrl->M.strike) || (Ctrl->M.strike < 0.0) || (Ctrl->M.strike > 360.0)){
                         GRT_SAFE_FREE_PTR(string);
                         GRTBadOptionError(M, "Strike must be in [0, 360].");
                     }
-                    if(!isfinite(dip) || (dip < 0.0) || (dip > 90.0)){
+                    if(!isfinite(Ctrl->M.dip) || (Ctrl->M.dip < 0.0) || (Ctrl->M.dip > 90.0)){
                         GRT_SAFE_FREE_PTR(string);
                         GRTBadOptionError(M, "Dip must be in [0, 90].");
                     }
                 } else {
-                    Ctrl->M.rake = rake;
+                    Ctrl->M.rake = a1;
                 }
-                if(!isfinite(rake) || (rake < -180.0) || (rake > 180.0)){
+                if(!isfinite(Ctrl->M.rake) || (Ctrl->M.rake < -180.0) || (Ctrl->M.rake > 180.0)){
                     GRT_SAFE_FREE_PTR(string);
                     GRTBadOptionError(M, "Rake must be in [-180, 180].");
                 }

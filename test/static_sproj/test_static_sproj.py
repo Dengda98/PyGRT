@@ -139,5 +139,10 @@ assert np.all(np.isfinite(finite_defined["sigma_n"]))
 assert np.all(np.isfinite(finite_defined["tau_s"]))
 assert np.all(np.isfinite(finite_no_rake["sigma_n"]))
 assert np.all(np.isfinite(finite_no_rake["tau_s"]))
+# -M40 只传入 rake，必须按 40° 而不是 0° 投影
+for index in range(finite_no_rake["sigma_n"].size):
+    expected_sigma, expected_tau = project_zne(finite_no_rake, 20.0, 45.0, 40.0, index)
+    np.testing.assert_allclose(finite_no_rake["sigma_n"].flat[index], expected_sigma, rtol=1e-12, atol=1e-8)
+    np.testing.assert_allclose(finite_no_rake["tau_s"].flat[index], expected_tau, rtol=1e-12, atol=1e-8)
 
 print("test_sproj.py: all checks passed")
