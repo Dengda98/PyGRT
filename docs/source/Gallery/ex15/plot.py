@@ -26,7 +26,7 @@ stgrnLst = [dist2st[float(d)] for d in dists]
 
 # 静态解
 pymod.static_greenfn(depsrc=depsrc, deprcv=deprcv, dists=dists.tolist())
-static_grn = pygrt.utils.read_static_nc("stgrn.nc")
+static_grn = pygrt.utils.read_nc_variables("stgrn.nc")
 
 # 绘制
 coef = 1e-20 * 1e25  # 1e25 为地震矩
@@ -43,8 +43,8 @@ for i, st in enumerate(stgrnLst):
 ax.plot(dists, dynamic_Z, 'k', label='Dynamic Z')
 ax.plot(dists, dynamic_R, 'k', label='Dynamic R')
 
-ax.plot(dists, static_grn['variables']['EXZ']['data'][0, 0, 0] * coef, 'ro', ms=4, label='Static Z')
-ax.plot(dists, static_grn['variables']['EXR']['data'][0, 0, 0] * coef, 'bo', ms=4, label='Static R')
+ax.plot(dists, static_grn['EXZ'][0, 0, 0] * coef, 'ro', ms=4, label='Static Z')
+ax.plot(dists, static_grn['EXR'][0, 0, 0] * coef, 'bo', ms=4, label='Static R')
 
 ax.set_xlim(0, 50)
 ax.set_xlabel('Distance (km)')

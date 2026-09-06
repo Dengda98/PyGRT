@@ -3,7 +3,7 @@
     :author:   Zhu Dengda (zhudengda@mail.iggcas.ac.cn)  
     :date:     2024-07-24  
 
-    该文件包含一些数据处理操作上的补充:   
+    该文件包含一些数据处理操作上的补充 
 
 """
 
@@ -35,8 +35,8 @@ from .c_interfaces import (
 
 
 __all__ = [
-    "read_static_nc",
-    "read_static_grn",
+    "read_nc",
+    "read_nc_variables",
     "okada",
     "strain",
     "rotation",
@@ -83,18 +83,9 @@ NPCT_REAL_TYPE = "f8"
 NPCT_CMPLX_TYPE = "c16"
 
 
-def _attribute_value(value):
-    """Convert a NetCDF attribute to a convenient Python value."""
-    if isinstance(value, np.ndarray) and value.ndim == 0:
-        return value.item()
-    if isinstance(value, bytes):
-        return value.decode("utf-8")
-    return value
-
-
-def read_static_nc(path: PathLike) -> dict:
+def read_nc(path: PathLike) -> dict:
     """
-    Read a static NetCDF grid produced by ``grt static`` modules.
+    Read a NetCDF file into a nested dictionary.
 
     The returned dictionary contains three top-level entries:
 
@@ -105,17 +96,25 @@ def read_static_nc(path: PathLike) -> dict:
 
     Variable arrays are available at ``variables[name]["data"]``.
 
-    :param    path:               Path to the static NetCDF file.
+    :param    path:               Path to the NetCDF file.
 
     :return: A dictionary containing the NetCDF data and metadata.
     """
+    def attribute_value(value):
+        # 将 NetCDF 属性转为更方便使用的 Python 值
+        if isinstance(value, np.ndarray) and value.ndim == 0:
+            return value.item()
+        if isinstance(value, bytes):
+            return value.decode("utf-8")
+        return value
+
     path = str(path)
     if not Path(path).is_file():
         raise FileNotFoundError(f"NetCDF file does not exist: {path}")
 
     with netcdf_file(path, mode="r", mmap=False) as dataset:
         dimensions = {name: int(length) for name, length in dataset.dimensions.items()}
-        attributes = {name: _attribute_value(getattr(dataset, name)) for name in dataset._attributes}
+        attributes = {name: attribute_value(getattr(dataset, name)) for name in dataset._attributes}
         variables = {}
         result = {
             "dimensions": dimensions,
@@ -124,7 +123,7 @@ def read_static_nc(path: PathLike) -> dict:
         }
         for name, variable in dataset.variables.items():
             data = np.array(variable[:], copy=True)
-            variable_attributes = {key: _attribute_value(value) for key, value in variable._attributes.items()}
+            variable_attributes = {key: attribute_value(value) for key, value in variable._attributes.items()}
             variables[name] = {
                 "dimensions": tuple(variable.dimensions),
                 "data": data,
@@ -133,17 +132,18 @@ def read_static_nc(path: PathLike) -> dict:
     return result
 
 
-def read_static_grn(path: PathLike) -> dict:
+def read_nc_variables(path: PathLike) -> dict:
     """
-    Read a static Green's function NetCDF file.
+    Read NetCDF variables as a name-to-array mapping.
 
-    This is an alias of :func:`read_static_nc`.
+    This is a simplified form of :func:`read_nc`. Global attributes and
+    dimension metadata are omitted.
 
-    :param    path:               Path to the static Green's function file.
+    :param    path:               Path to the NetCDF file.
 
-    :return: A dictionary containing the NetCDF data and metadata.
+    :return: A dictionary mapping each variable name to a ``numpy.ndarray``.
     """
-    return read_static_nc(path)
+    return {name: info["data"] for name, info in read_nc(path)["variables"].items()}
 
 
 def okada(
@@ -228,7 +228,7 @@ def okada(
     :param    calc_upar:        If true, also output spatial displacement derivatives
     :param    return_result:    If true, read and return the generated NetCDF data
 
-    :return: The result from :func:`read_static_nc` when ``return_result`` is true;
+    :return: The result from :func:`read_nc_variables` when ``return_result`` is true;
              otherwise ``None``
     """
 
@@ -328,7 +328,7 @@ def okada(
 
     run_grt(command)
     if return_result:
-        return read_static_nc(output)
+        return read_nc_variables(output)
     return None
 
 
@@ -351,7 +351,7 @@ def _run_static_file_module(
         raise FileNotFoundError(f"Synthesis result does not exist: {path}")
 
     run_grt([module, f"-G{path}", *options])
-    return read_static_nc(path) if return_result else None
+    return read_nc_variables(path) if return_result else None
 
 
 def _run_coordinate_transform(
@@ -477,7 +477,7 @@ def static_sproj(
     :param    force_rake:   If true, append ``+f`` and force the manual rake for all finite points.
     :param    return_result: If true, return the processed NetCDF data.
 
-    :return: The result from :func:`read_static_nc` when ``return_result`` is true;
+    :return: The result from :func:`read_nc_variables` when ``return_result`` is true;
              otherwise ``None``
     """
     options = []
@@ -514,7 +514,7 @@ def static_coulomb(
     :param    friction:      Nonnegative dimensionless effective friction coefficient.
     :param    return_result: If true, return the processed NetCDF data.
 
-    :return: The result from :func:`read_static_nc` when ``return_result`` is true;
+    :return: The result from :func:`read_nc_variables` when ``return_result`` is true;
              otherwise ``None``
     """
     return _run_static_file_module(path, "static_coulomb", [f"-F{format_float(friction)}"], return_result)
@@ -546,7 +546,7 @@ def _run_static_tensor_module(path: PathLike, module: str, return_result: bool):
         raise FileNotFoundError(f"Synthesis result does not exist: {path}")
 
     run_grt([module, path])
-    return read_static_nc(path) if return_result else None
+    return read_nc_variables(path) if return_result else None
 
 
 def strain(
