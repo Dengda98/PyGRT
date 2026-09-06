@@ -72,6 +72,16 @@ MODEL1D * grt_copy_mod1d(const MODEL1D *mod1d1)
         __MODEL1D_FOR_EACH_ARRAY
     #undef X
 
+    // 原始 modarr 不随虚拟层变化，需单独深拷贝
+    mod1d2->modarr = NULL;
+    mod1d2->nmodarr = 0;
+    if(mod1d1->modarr != NULL && mod1d1->nmodarr > 0){
+        mod1d2->modarr = (real_t (*)[GRT_MODARR_NCOL])malloc(
+            sizeof(real_t) * GRT_MODARR_NCOL * mod1d1->nmodarr);
+        memcpy(mod1d2->modarr, mod1d1->modarr, sizeof(real_t) * GRT_MODARR_NCOL * mod1d1->nmodarr);
+        mod1d2->nmodarr = mod1d1->nmodarr;
+    }
+
     return mod1d2;
 }
 
@@ -91,6 +101,7 @@ void grt_free_mod1d(MODEL1D *mod1d)
         __MODEL1D_FOR_EACH_ARRAY
     #undef X
 
+    GRT_SAFE_FREE_PTR(mod1d->modarr);
     GRT_SAFE_FREE_PTR(mod1d);
 }
 
@@ -172,6 +183,36 @@ real_t (* grt_read_modarr_from_file(
     return modarr;
 }
 
+void grt_write_modarr_to_file(
+    const char *filepath, size_t nlayer, const real_t (*modarr)[GRT_MODARR_NCOL])
+{
+    if(filepath == NULL || nlayer == 0 || modarr == NULL){
+        GRTRaiseError("Invalid arguments to write model file.");
+    }
+
+    // Qa/Qb 非正则按四列写出，与读入时允许省略 Q 列一致
+    bool writeQ = true;
+    for(size_t i = 0; i < nlayer; ++i){
+        if(modarr[i][4] <= 0.0 || modarr[i][5] <= 0.0){
+            writeQ = false;
+            break;
+        }
+    }
+
+    FILE *fp = GRTCheckOpenFile(filepath, "w");
+    for(size_t i = 0; i < nlayer; ++i){
+        if(writeQ){
+            fprintf(fp, "%g %g %g %g %g %g\n",
+                modarr[i][0], modarr[i][1], modarr[i][2],
+                modarr[i][3], modarr[i][4], modarr[i][5]);
+        } else {
+            fprintf(fp, "%g %g %g %g\n",
+                modarr[i][0], modarr[i][1], modarr[i][2], modarr[i][3]);
+        }
+    }
+    fclose(fp);
+}
+
 void grt_modarr_medium_at_depth(
     size_t nlayer, const real_t (*modarr)[GRT_MODARR_NCOL],
     real_t depth, real_t *va, real_t *vb, real_t *rho)
@@ -195,14 +236,33 @@ void grt_modarr_medium_at_depth(
     if(rho != NULL) *rho = modarr[i][3];
 }
 
-MODEL1D * grt_read_mod1d_from_file(const char *modelpath, real_t depsrc, real_t deprcv, bool allowLiquid)
+MODEL1D * grt_read_mod1d_from_modarr(
+    size_t nlayer, const real_t (*modarr)[GRT_MODARR_NCOL],
+    real_t depsrc, real_t deprcv, bool allowLiquid)
 {
     if(depsrc * deprcv < 0.0){
         GRTRaiseError("depsrc and deprcv should have the same sign.");
     }
+    if(nlayer == 0 || modarr == NULL){
+        GRTRaiseError("modarr is empty.");
+    }
 
-    size_t nlay = 0;
-    real_t (*modarr)[GRT_MODARR_NCOL] = grt_read_modarr_from_file(modelpath, &nlay, allowLiquid);
+    // 拷贝后再改末层厚度，避免改动调用方数组
+    real_t (*modarr_work)[GRT_MODARR_NCOL] = (real_t (*)[GRT_MODARR_NCOL])malloc(
+        sizeof(real_t) * GRT_MODARR_NCOL * nlayer);
+    memcpy(modarr_work, modarr, sizeof(real_t) * GRT_MODARR_NCOL * nlayer);
+
+    for(size_t i = 0; i < nlayer; ++i){
+        if(modarr_work[i][1] <= 0.0 || modarr_work[i][3] <= 0.0){
+            GRTRaiseError("In model layer %zu, nonpositive Vp or density is not supported.\n", i+1);
+        }
+        if(modarr_work[i][2] < 0.0){
+            GRTRaiseError("In model layer %zu, negative Vs is not supported.\n", i+1);
+        }
+        if(!allowLiquid && modarr_work[i][2] == 0.0){
+            GRTRaiseError("In model layer %zu, Vs==0.0 is not supported.\n", i+1);
+        }
+    }
 
     MODEL1D *mod1d = grt_init_mod1d(1);
     mod1d->io_depth = false;  // 已在 read_modarr 中转为厚度
@@ -227,17 +287,17 @@ MODEL1D * grt_read_mod1d_from_file(const char *modelpath, real_t depsrc, real_t 
     pimg_idx = pmin_idx;
 
     // 对最后一层的厚度做特殊处理
-    modarr[nlay-1][0] = depmax + 1e30; // 保证够厚即可，用于下面定义虚拟层，实际计算不会用到最后一层厚度
-    
-    size_t nlay0 = nlay;
-    nlay = 0;
+    modarr_work[nlayer-1][0] = depmax + 1e30; // 保证够厚即可，用于下面定义虚拟层，实际计算不会用到最后一层厚度
+
+    size_t nlay0 = nlayer;
+    size_t nlay = 0;
     for(size_t i=0; i<nlay0; ++i){
-        h = modarr[i][0];
-        va = modarr[i][1];
-        vb = modarr[i][2];
-        rho = modarr[i][3];
-        qa = modarr[i][4];
-        qb = modarr[i][5];
+        h = modarr_work[i][0];
+        va = modarr_work[i][1];
+        vb = modarr_work[i][2];
+        rho = modarr_work[i][3];
+        qa = modarr_work[i][4];
+        qb = modarr_work[i][5];
 
         // 允许最后一层厚度为任意值
         if(h <= 0.0 && i < nlay0-1 ) {
@@ -323,12 +383,26 @@ MODEL1D * grt_read_mod1d_from_file(const char *modelpath, real_t depsrc, real_t 
         depth += mod1d->Thk[iz];
     }
 
-    GRT_SAFE_FREE_PTR(modarr);
+    GRT_SAFE_FREE_PTR(modarr_work);
+
+    // 保存未做层插入的原始矩阵
+    mod1d->modarr = (real_t (*)[GRT_MODARR_NCOL])calloc(nlayer, sizeof(real_t) * GRT_MODARR_NCOL);
+    memcpy(mod1d->modarr, modarr, sizeof(real_t) * GRT_MODARR_NCOL * nlayer);
+    mod1d->nmodarr = nlayer;
 
     // 设置一个默认边界条件
     mod1d->topbound = GRT_BOUND_FREE;
     mod1d->botbound = GRT_BOUND_HALFSPACE;
 
+    return mod1d;
+}
+
+MODEL1D * grt_read_mod1d_from_file(const char *modelpath, real_t depsrc, real_t deprcv, bool allowLiquid)
+{
+    size_t nlay = 0;
+    real_t (*modarr)[GRT_MODARR_NCOL] = grt_read_modarr_from_file(modelpath, &nlay, allowLiquid);
+    MODEL1D *mod1d = grt_read_mod1d_from_modarr(nlay, modarr, depsrc, deprcv, allowLiquid);
+    GRT_SAFE_FREE_PTR(modarr);
     return mod1d;
 }
 
