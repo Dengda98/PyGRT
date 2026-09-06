@@ -251,6 +251,85 @@ def test_greenfn_default_and_optional_flags():
         _restore_run_grt(pygrt.pymod, original)
 
 
+def test_modal_cli_argument_mapping():
+    runner = CapturedRunner()
+    original = _patch_run_grt(pygrt.pymod, runner)
+    try:
+        modal_dir = HERE / "_tmp_args_modal"
+        phase = modal_dir / "phase_R.nc"
+        model = pygrt.PyModel1D(grn=HERE / "_tmp_args_modal_grn", modelpath=MODEL)
+
+        model.eigenv(
+            wtype="r",
+            freqs=(0.0, 1.0, 0.02),
+            phase_path=phase,
+            all_modes=True,
+            ctrl_kw={"tol": 3.0, "cgap": 7.0, "thrd": 4.0, "vgap": 7.0, "dc": 3.0},
+            print_log=False,
+        )
+        assert_command_equals(
+            runner.commands[-1],
+            [
+                "eigenv",
+                f"-M{MODEL}",
+                "-SR",
+                "-F0/1/0.02",
+                f"-C{phase}",
+                "-N",
+                "-T+t3+c7+r4+v7+u3",
+                "-s",
+            ],
+        )
+        assert runner.kwargs[-1].get("print_log") is False
+
+        model.eigenv(
+            wtype="L",
+            secular_freq=1.0,
+            cmin=3.0,
+            cmax=5.5,
+            iref=0,
+        )
+        assert_command_equals(
+            runner.commands[-1],
+            ["eigenv", f"-M{MODEL}", "-SL", "-X1+c3/5.5+i0"],
+        )
+
+        model.eigenv(
+            wtype="R",
+            periods=(1.0, 5.0, 1.0),
+            phase_path=phase,
+            max_order=2,
+            print_log=False,
+        )
+        assert_command_equals(
+            runner.commands[-1],
+            ["eigenv", f"-M{MODEL}", "-SR", "-F1/5/1+p", f"-C{phase}", "-N2", "-s"],
+        )
+
+        try:
+            model.eigenv(wtype="R", freqs=(0.0, 1.0, 0.1), phase_path=phase, secular_freq=1.0)
+        except ValueError as exc:
+            assert "secular_freq" in str(exc)
+        else:
+            raise AssertionError("eigenv should reject mixed dispersion and secular-function options")
+
+        try:
+            model.eigenv(wtype="R", freqs=1.0, periods=2.0, phase_path=phase)
+        except ValueError as exc:
+            assert "mutually exclusive" in str(exc)
+        else:
+            raise AssertionError("eigenv should reject mixed freqs and periods")
+
+        try:
+            model.eigenv(wtype="R", freqs=(0.1, 0.8), phase_path=phase)
+        except ValueError as exc:
+            assert "freqs" in str(exc)
+        else:
+            raise AssertionError("eigenv should reject two-value freqs")
+    finally:
+        _restore_run_grt(pygrt.pymod, original)
+
+
 def test_static_greenfn_xy_and_dists():
     runner = CapturedRunner()
     original = _patch_run_grt(pygrt.pymod, runner)
@@ -668,6 +747,7 @@ def main():
         test_print_log_forwarded_to_run_grt,
         test_run_grt_forwards_warnings_and_errors,
         test_greenfn_default_and_optional_flags,
+        test_modal_cli_argument_mapping,
         test_static_greenfn_xy_and_dists,
         test_syn_source_and_time_function_options,
         test_source_type_is_inferred_from_source_parameters,

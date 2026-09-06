@@ -13,10 +13,11 @@ import os
 import warnings
 from ctypes import c_size_t, cast, c_void_p
 from pathlib import Path
-from typing import Dict, Iterable, Optional, Sequence, Union
+from typing import Any, Dict, Iterable, Optional, Sequence, Union
 
 import numpy as np
 import numpy.ctypeslib as npct
+from numpy.typing import NDArray
 from obspy import read
 
 from .cli import format_float, format_range, run_grt
@@ -25,7 +26,7 @@ from .utils import read_nc_variables
 
 
 PathLike = Union[str, os.PathLike]
-FloatOrSequence = Union[float, Sequence[float]]
+FloatOrSequence = Union[float, Sequence[float], NDArray[np.floating[Any]]]
 
 __all__ = ["PyModel1D"]
 
@@ -63,6 +64,88 @@ def _format_depth_list(depths: np.ndarray) -> str:
     return ",".join(format_float(float(z)) for z in depths)
 
 
+def _format_slash_option(
+    values: FloatOrSequence,
+    name: str,
+    allowed_sizes: Sequence[int],
+    *,
+    kind: str,
+    period: bool = False,
+) -> str:
+    """将标量或起止(/间隔)序列格式化为斜杠分隔的 CLI 值
+
+    ``kind`` 只用于报错信息中的物理量名称，例如 frequency、period、depth
+    ``period`` 为真时在末尾附加 ``+p``
+    """
+    if isinstance(values, (str, bytes)):
+        raise TypeError(f"{name} must be a float or a 1-D sequence of floats, not a string.")
+    arr = np.asarray(values, dtype=np.float64)
+    if arr.ndim > 1:
+        raise ValueError(f"{name} must be a scalar or a 1-D sequence of floats.")
+    arr = np.atleast_1d(arr)
+    if arr.size not in allowed_sizes:
+        sizes = ", ".join(str(size) for size in allowed_sizes)
+        raise ValueError(f"{name} must contain {sizes} value(s).")
+    if not np.all(np.isfinite(arr)):
+        raise ValueError(f"{name} must contain finite values.")
+
+    # 单值必须为正；区间起点可为 0，终点和间隔必须为正
+    if arr.size == 1:
+        if arr[0] <= 0.0:
+            raise ValueError(f"{name} must contain a positive {kind}.")
+    else:
+        if arr[0] < 0.0 or arr[1] <= 0.0:
+            raise ValueError(f"{name} must contain a nonnegative start and positive end {kind}.")
+        if arr[0] > arr[1]:
+            raise ValueError(f"{name} start must not exceed its end.")
+        if arr.size == 3 and arr[2] <= 0.0:
+            raise ValueError(f"{name} interval must be positive.")
+
+    option = "/".join(format_float(float(value)) for value in arr)
+    if period:
+        option += "+p"
+    return option
+
+
+def _format_freqs_or_periods_option(
+    freqs: Optional[FloatOrSequence],
+    periods: Optional[FloatOrSequence],
+    allowed_sizes: Sequence[int] = (1, 3),
+    required: bool = False,
+) -> Optional[str]:
+    """将互斥的 freqs / periods 格式化为 ``-F`` 的值"""
+    if freqs is not None and periods is not None:
+        raise ValueError("freqs and periods are mutually exclusive.")
+    if freqs is not None:
+        return _format_slash_option(freqs, "freqs", allowed_sizes, kind="frequency")
+    if periods is not None:
+        return _format_slash_option(periods, "periods", allowed_sizes, kind="period", period=True)
+    if required:
+        raise ValueError("Either freqs or periods is required.")
+    return None
+
+
+def _normalize_integer(value: int, name: str, minimum: int = 0) -> int:
+    """规范化一个 CLI 整数参数"""
+    if isinstance(value, bool):
+        raise TypeError(f"{name} must be an integer.")
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        raise TypeError(f"{name} must be an integer.") from None
+    if not np.isfinite(number) or number != np.floor(number):
+        raise ValueError(f"{name} must be an integer.")
+    number = int(number)
+    if number < minimum:
+        raise ValueError(f"{name} must be at least {minimum}.")
+    return number
+
+
+def _ensure_parent(path: PathLike) -> None:
+    """确保输出文件的父目录存在"""
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
+
+
 class PyModel1D:
     """
     File-based 1D layered model for GRT calculations.
@@ -71,8 +154,9 @@ class PyModel1D:
 
     1. Create :class:`PyModel1D` with the Green's function path(s) actually needed
        (``grn`` and/or ``stgrn``) and optional ``modelpath``.
-    2. Compute Green's functions with :meth:`greenfn` or :meth:`static_greenfn`
-       (requires ``modelpath``).
+    2. Compute modal dispersion and Green's functions with :meth:`eigenv`,
+       :meth:`greenfn` or :meth:`static_greenfn` (the required paths
+       depend on the method).
     3. Synthesize waveforms or static fields with :meth:`syn` or
        :meth:`static_syn` (only the corresponding GF path is required).
     """
@@ -98,10 +182,11 @@ class PyModel1D:
 
         :param    grn:                Root directory for dynamic Green's functions.
         :param    stgrn:              NetCDF file path for static Green's functions.
-        :param    modelpath:          Path to the layered model file. Required when
-                                      computing Green's functions or travel times
-                                      (unless ``modelpath`` is passed to
-                                      :meth:`travt`).
+        :param    modelpath:          Path to the layered model file. Required by
+                                      :meth:`eigenv`, :meth:`greenfn` and
+                                      :meth:`static_greenfn`. Travel-time
+                                      calculations also need it, unless a per-call
+                                      ``modelpath`` is passed to :meth:`travt`.
         :param    topbound:           Top boundary condition. One of ``free``, ``rigid`` and ``halfspace``.
         :param    botbound:           Bottom boundary condition. One of ``free``, ``rigid`` and ``halfspace``.
         """
@@ -202,6 +287,165 @@ class PyModel1D:
     def compute_travt1d(self, *args, **kwargs):
         """Legacy interface renamed to :meth:`travt`; calling it raises an error."""
         raise RuntimeError("compute_travt1d() has been renamed to travt(); use travt() instead.")
+
+    def eigenv(
+        self,
+        *,
+        wtype: str,
+        freqs: Optional[FloatOrSequence] = None,
+        periods: Optional[FloatOrSequence] = None,
+        phase_path: Optional[PathLike] = None,
+        max_order: Optional[int] = None,
+        all_modes: bool = False,
+        secular_freq: Optional[float] = None,
+        cmin: Optional[float] = None,
+        cmax: Optional[float] = None,
+        iref: Optional[int] = None,
+        ctrl_kw: Optional[Dict[str, float]] = None,
+        print_log: bool = True,
+    ):
+        r"""
+        Compute surface-wave phase-velocity dispersion with ``grt eigenv``.
+
+        The ordinary workflow requires ``modelpath`` in the constructor and
+        writes a NetCDF dispersion file to ``phase_path``. Set ``secular_freq``
+        to use the C module's debug mode, which prints the secular function
+        instead and does not require ``freqs`` / ``periods`` or ``phase_path``.
+        All arguments must be passed by keyword.
+
+        :param    wtype:           Surface-wave type, ``"R"`` for Rayleigh or
+                                   ``"L"`` for Love.
+        :param    freqs:           One frequency, or ``(f1, f2, df)`` in Hz.
+                                   Mutually exclusive with ``periods``.
+        :param    periods:         One period, or ``(T1, T2, dT)`` in s.
+                                   Mutually exclusive with ``freqs``.
+        :param    phase_path:      Output NetCDF dispersion path. It is not used
+                                   in secular-function debug mode.
+        :param    max_order:       Maximum mode order. ``None`` leaves ``-N``
+                                   unspecified and computes the fundamental mode.
+        :param    all_modes:       If true, pass bare ``-N`` and compute as many
+                                   modes as possible. Mutually exclusive with
+                                   ``max_order``.
+        :param    secular_freq:    Debug frequency in Hz. When set, pass ``-X``
+                                   instead of ``-F`` and ``-C``.
+        :param    cmin:            Lower phase-velocity bound in km/s for debug
+                                   secular-function output.
+        :param    cmax:            Upper phase-velocity bound in km/s for debug
+                                   secular-function output.
+        :param    iref:            Layer index for debug secular-function output.
+        :param    ctrl_kw:         Optional dict of search-control parameters
+                                   for ``-T``. Allowed keys are ``tol``,
+                                   ``cgap``, ``thrd``, ``vgap`` and ``dc``.
+                                   ``tol``, ``cgap``, ``thrd`` and ``vgap`` are
+                                   decimal exponents of the CLI thresholds
+                                   (``tol=3`` means :math:`10^{-3}`), while
+                                   ``dc`` is a uniform search interval in km/s.
+        :param    print_log:       If false, pass ``-s`` and capture command
+                                   output on failure.
+
+        :return: ``None``. The dispersion file is written to ``phase_path`` in
+                 ordinary mode.
+        """
+        def format_ctrl_option(ctrl_kw: Optional[Dict[str, float]]) -> Optional[str]:
+            """将搜根控制参数格式化为 ``-T`` 选项"""
+            if ctrl_kw is None:
+                return None
+            if not isinstance(ctrl_kw, dict):
+                raise TypeError("ctrl_kw must be a dict.")
+
+            # CLI -T 中 tol/cgap/thrd/vgap 表示 10^{-x} 的指数
+            # dc 表示等间隔搜根的相速度步长 (km/s)
+            ctrl_keys = {
+                "tol": "t",
+                "cgap": "c",
+                "thrd": "r",
+                "vgap": "v",
+                "dc": "u",
+            }
+            unknown = [key for key in ctrl_kw if key not in ctrl_keys]
+            if unknown:
+                keys = ", ".join(sorted(str(key) for key in unknown))
+                allowed = ", ".join(ctrl_keys)
+                raise ValueError(f"Unsupported ctrl_kw keys: {keys}. Allowed: {allowed}.")
+
+            search_options = []
+            for name, flag in ctrl_keys.items():
+                if name not in ctrl_kw:
+                    continue
+                value = ctrl_kw[name]
+                try:
+                    value = float(value)
+                except (TypeError, ValueError):
+                    raise TypeError(f"ctrl_kw[{name!r}] must be a number.") from None
+                if not np.isfinite(value):
+                    raise ValueError(f"ctrl_kw[{name!r}] must be finite.")
+                search_options.append(f"+{flag}{format_float(value)}")
+            if not search_options:
+                return None
+            return "-T" + "".join(search_options)
+
+        if self.modelpath is None:
+            raise RuntimeError("Pass modelpath= to PyModel1D(...) before eigenv().")
+        if not isinstance(wtype, str) or wtype.upper() not in {"R", "L"}:
+            raise ValueError('wtype must be "R" or "L".')
+        if max_order is not None and all_modes:
+            raise ValueError("max_order and all_modes are mutually exclusive.")
+
+        is_secular = secular_freq is not None
+        if is_secular:
+            if freqs is not None or periods is not None or phase_path is not None:
+                raise ValueError("freqs, periods and phase_path cannot be set with secular_freq.")
+            try:
+                secular_freq = float(secular_freq)
+            except (TypeError, ValueError):
+                raise TypeError("secular_freq must be a positive number.") from None
+            if not np.isfinite(secular_freq) or secular_freq <= 0.0:
+                raise ValueError("secular_freq must be positive.")
+            if (cmin is None) != (cmax is None):
+                raise ValueError("cmin and cmax must be supplied together.")
+            if cmin is not None:
+                cmin = float(cmin)
+                cmax = float(cmax)
+                if not np.all(np.isfinite([cmin, cmax])) or cmin < 0.0 or cmax <= cmin:
+                    raise ValueError("cmin and cmax must satisfy 0 <= cmin < cmax.")
+            if iref is not None:
+                iref = _normalize_integer(iref, "iref")
+        else:
+            if phase_path is None:
+                raise ValueError("phase_path is required unless secular_freq is set.")
+            if cmin is not None or cmax is not None or iref is not None:
+                raise ValueError("cmin, cmax and iref require secular_freq.")
+
+        command = {
+            "subcommand": "eigenv",
+            "M": f"-M{self.modelpath}",
+            "S": f"-S{wtype.upper()}",
+        }
+        if is_secular:
+            option = format_float(secular_freq)
+            if cmin is not None:
+                option += f"+c{format_float(cmin)}/{format_float(cmax)}"
+            if iref is not None:
+                option += f"+i{iref}"
+            command["X"] = f"-X{option}"
+        else:
+            command["F"] = f"-F{_format_freqs_or_periods_option(freqs, periods, required=True)}"
+            _ensure_parent(phase_path)
+            command["C"] = f"-C{Path(phase_path)}"
+
+        if max_order is not None:
+            command["N"] = f"-N{_normalize_integer(max_order, 'max_order')}"
+        elif all_modes:
+            command["N"] = "-N"
+
+        ctrl_option = format_ctrl_option(ctrl_kw)
+        if ctrl_option is not None:
+            command["T"] = ctrl_option
+
+        if not print_log:
+            command["s"] = "-s"
+
+        run_grt(list(command.values()), print_log=print_log)
 
     def greenfn(
         self,
