@@ -17,9 +17,6 @@
 #include <stdbool.h>
 #include "grt/common/const.h"
 
-/** 静态解仅使用模型前四列：Thk, Va, Vb, Rho */
-#define GRT_STGRNLIB_MODARR_NCOL  4
-
 /**
  * 静态格林函数库
  *
@@ -62,7 +59,7 @@ typedef struct {
     real_t *rcv_rho;            ///< 各接收深度处密度
 
     size_t nlayer;              ///< 建库模型层数
-    real_t (*modarr)[GRT_MODARR_NCOL]; ///< 内存中为 [nlayer][6]；nc 仅保存前四列 Thk/Va/Vb/Rho
+    real_t (*modarr)[GRT_MODARR_NCOL]; ///< 模型矩阵 [nlayer][6]：Thk/Va/Vb/Rho/Qa/Qb
 
     realChnlGrid ***u;          ///< u[is][ir]，每个为 realChnlGrid[nr]
     realChnlGrid ***uiz;        ///< 可选，calc_upar=false 时为 NULL
@@ -106,7 +103,7 @@ void grt_stgrnlib_free(STGRNLIB *lib);
  *
  * @param[in,out]  lib      STGRNLIB
  * @param[in]      nlayer   层数，须 > 0
- * @param[in]      modarr   模型矩阵，每行 Thk/Va/Vb/Rho/Qa/Qb；写入 nc 时仅保存前四列
+ * @param[in]      modarr   模型矩阵，每行 Thk/Va/Vb/Rho/Qa/Qb
  */
 void grt_stgrnlib_set_modarr(
     STGRNLIB *lib, size_t nlayer, const real_t (*modarr)[GRT_MODARR_NCOL]);
