@@ -123,11 +123,11 @@ void grt_filter_eigenfn_info(
         eigvtmp->n = 0;
 
         EIGENV *in_eigv = &eigmet->eigv[iw];
+        // 第 iw 频只有前 in_eigv->n 个根，对应原 mode 数组下标 0 .. n-1
+        // idxs_modes 随原数组递增，一旦越界则后续阶在该频均不存在
         for(size_t i = 0; i < eigfnmet->nmode; ++i){
-            size_t mode = eigfnmet->modes[i];
-            if(mode >= in_eigv->n) break;
-
             size_t idx = idxs_modes[i];
+            if(idx >= in_eigv->n) break;
 
             eigvtmp->c_roots[eigvtmp->n] = in_eigv->c_roots[idx];
             eigvtmp->u_roots[eigvtmp->n] = in_eigv->u_roots[idx];

@@ -23,7 +23,7 @@ grt eigenv -M../milrow -F0/1/0.01 -SL -N -Cphase_L.nc
 # 模态叠加得到格林函数
 # 仅 0 阶
 grt modsum -Cphase_R.nc -D2/1 -R100 -N0 -OGRN_NM_0 -W5 -e
-# 输出根目录应保留模型文件副本（路径来自频散文件中记录的模型）
+# 输出根目录应保留由频散文件内嵌模型写出的模型文件
 test -f GRN_NM_0/milrow
 grt modsum -Cphase_L.nc -D2/1 -R100 -N0 -OGRN_NM_0 -W5 -e
 # 仅 1 阶

@@ -24,7 +24,7 @@ eigenfn
 描述
 --------
 
-基于 **eigenv** 模块计算的相速度频散结果， **以及其结果文件中保存的模型路径，** 
+基于 **eigenv** 模块计算的相速度频散结果及其内嵌的模型，
 **eigenfn** 模块可计算出多个物理量，各个量之间的依赖关系为
 
 .. container:: small-mermaid
@@ -58,18 +58,17 @@ eigenfn
       netcdf egn_R {
       dimensions:
               freq = 1 ;
+              freqmode = 11 ;
               mode = 11 ;
               z = 61 ;
               w = 8 ;
       variables:
               double freq(freq) ;
+              int cnum(freq) ;
               int mode(mode) ;
               double z(z) ;
-              int cnum(freq) ;
-              double c(freq, mode) ;
-                      c:_FillValue = 0. ;
-              double eigfn(freq, mode, z, w) ;
-                      eigfn:_FillValue = 0. ;
+              double c(freqmode) ;
+              double eigfn(freqmode, z, w) ;
 
       // global attributes:
                       :isRayl = 1 ;
@@ -82,7 +81,9 @@ eigenfn
           :columns: auto 
 
           + ``freq`` - 频率点数
-          + ``mode`` - 阶数点数
+          + ``freqmode`` - 全部频率下频散点展平后的总点数，
+            可用 ``cnum`` 还原每个频率对应哪些点
+          + ``mode`` - 当前结果包含的阶数个数
           + ``z`` - 深度点数
           + ``w`` - 本征函数个数 [#]_
       
@@ -90,11 +91,12 @@ eigenfn
           :columns: auto 
 
           + ``freq`` - 频率数组 (Hz)
-          + ``mode`` - 阶数数组
-          + ``z`` - 深度数组 (km)
           + ``cnum`` - 不同频率下的相速度点数
-          + ``c`` - 不同频率不同阶的相速度 (km/s)
-          + ``eigfn`` - 不同频率不同阶不同深度的本征函数
+          + ``mode`` - 各阶的阶号（经 |-N| 筛选后不一定从 0 开始）。
+            第 *i* 个频率的频散点对应 ``mode`` 的前 ``cnum[i]`` 个值
+          + ``z`` - 深度数组 (km)
+          + ``c`` - 每个频散点的相速度 (km/s)
+          + ``eigfn`` - 不同频散点、不同深度的本征函数
       
       .. grid-item:: **全局属性（global attributes）**
           :columns: auto 
@@ -104,7 +106,7 @@ eigenfn
   .. [#] ``w = 8`` 对应 Rayleigh 波，分别为
     :math:`\text{Re}[q],\text{Im}[q],\text{Re}[w],\text{Im}[w],\text{Re}[\sigma_R],\text{Im}[\sigma_R],\text{Re}[\tau_R],\text{Im}[\tau_R]` ，
     ``w = 4`` 对应 Love 波，分别为
-    :math:`\text{Re}[v],\text{Im}[v],\text{Re}[\tau_L],\text{Im}[\tau_L]`    
+    :math:`\text{Re}[v],\text{Im}[v],\text{Re}[\tau_L],\text{Im}[\tau_L]`
 
 + **群速度频散（Group-Velocity Dispersion）**： |-U|
 
@@ -115,15 +117,14 @@ eigenfn
       netcdf group_R {
       dimensions:
               freq = 1000 ;
-              mode = 49 ;
+              freqmode = 12345 ;
+              mode = 20 ;
       variables:
               double freq(freq) ;
-              int mode(mode) ;
               int cnum(freq) ;
-              double c(freq, mode) ;
-                      c:_FillValue = 0. ;
-              double u(freq, mode) ;
-                      u:_FillValue = 0. ;
+              int mode(mode) ;
+              double c(freqmode) ;
+              double u(freqmode) ;
 
       // global attributes:
                       :isRayl = 1 ;
@@ -136,22 +137,24 @@ eigenfn
           :columns: auto 
 
           + ``freq`` - 频率点数
-          + ``mode`` - 阶数点数
+          + ``freqmode`` - 全部频率下频散点展平后的总点数，
+            可用 ``cnum`` 还原每个频率对应哪些点
+          + ``mode`` - 当前结果包含的阶数个数
       
       .. grid-item:: **变量（variables）**
           :columns: auto 
 
           + ``freq`` - 频率数组 (Hz)
-          + ``mode`` - 阶数数组
           + ``cnum`` - 不同频率下的相速度点数
-          + ``c`` - 不同频率不同阶的相速度 (km/s)
-          + ``u`` - 不同频率不同阶的群速度 (km/s)
+          + ``mode`` - 各阶的阶号（经 |-N| 筛选后不一定从 0 开始）。
+            第 *i* 个频率的频散点对应 ``mode`` 的前 ``cnum[i]`` 个值
+          + ``c`` - 每个频散点的相速度 (km/s)
+          + ``u`` - 每个频散点的群速度 (km/s)
       
       .. grid-item:: **全局属性（global attributes）**
           :columns: auto 
 
           + ``isRayl`` - 是否为Rayleigh波结果
-
 
 + **能量积分（Energy Integrals）**：|-K|\ **+x**
   
@@ -162,16 +165,15 @@ eigenfn
       netcdf egy_R {
       dimensions:
               freq = 500 ;
+              freqmode = 500 ;
               mode = 1 ;
               e = 10 ;
       variables:
               double freq(freq) ;
-              int mode(mode) ;
               int cnum(freq) ;
-              double c(freq, mode) ;
-                      c:_FillValue = 0. ;
-              double egyint(freq, mode, e) ;
-                      egyint:_FillValue = 0. ;
+              int mode(mode) ;
+              double c(freqmode) ;
+              double egyint(freqmode, e) ;
 
       // global attributes:
                       :isRayl = 1 ;
@@ -184,16 +186,19 @@ eigenfn
           :columns: auto 
 
           + ``freq`` - 频率点数
-          + ``mode`` - 阶数点数
+          + ``freqmode`` - 全部频率下频散点展平后的总点数，
+            可用 ``cnum`` 还原每个频率对应哪些点
+          + ``mode`` - 当前结果包含的阶数个数
           + ``e`` - 能量积分个数 [#]_
       
       .. grid-item:: **变量（variables）**
           :columns: auto 
 
           + ``freq`` - 频率数组 (Hz)
-          + ``mode`` - 阶数数组
           + ``cnum`` - 不同频率下的相速度点数
-          + ``c`` - 不同频率不同阶的相速度 (km/s)
+          + ``mode`` - 各阶的阶号（经 |-N| 筛选后不一定从 0 开始）。
+            第 *i* 个频率的频散点对应 ``mode`` 的前 ``cnum[i]`` 个值
+          + ``c`` - 每个频散点的相速度 (km/s)
           + ``egyint`` - 能量积分结果
       
       .. grid-item:: **全局属性（global attributes）**
@@ -214,18 +219,17 @@ eigenfn
       netcdf csens_R {
       dimensions:
               freq = 500 ;
+              freqmode = 500 ;
               mode = 1 ;
               z = 31 ;
               k = 3 ;
       variables:
               double freq(freq) ;
+              int cnum(freq) ;
               int mode(mode) ;
               double z(z) ;
-              int cnum(freq) ;
-              double c(freq, mode) ;
-                      c:_FillValue = 0. ;
-              double csens(freq, mode, z, k) ;
-                      csens:_FillValue = 0. ;
+              double c(freqmode) ;
+              double csens(freqmode, z, k) ;
 
       // global attributes:
                       :isRayl = 1 ;
@@ -238,7 +242,9 @@ eigenfn
           :columns: auto 
 
           + ``freq`` - 频率点数
-          + ``mode`` - 阶数点数
+          + ``freqmode`` - 全部频率下频散点展平后的总点数，
+            可用 ``cnum`` 还原每个频率对应哪些点
+          + ``mode`` - 当前结果包含的阶数个数
           + ``z`` - 深度点数
           + ``k`` - 敏感核个数 [#]_
       
@@ -246,19 +252,20 @@ eigenfn
           :columns: auto 
 
           + ``freq`` - 频率数组 (Hz)
-          + ``mode`` - 阶数数组
-          + ``z`` - 深度数组 (km)
           + ``cnum`` - 不同频率下的相速度点数
+          + ``mode`` - 各阶的阶号（经 |-N| 筛选后不一定从 0 开始）。
+            第 *i* 个频率的频散点对应 ``mode`` 的前 ``cnum[i]`` 个值
+          + ``z`` - 深度数组 (km)
 
           对于相速度敏感核，变量包括：
 
-          + ``c`` - 不同频率不同阶的相速度 (km/s)
-          + ``csens`` - 不同频率不同阶不同深度的相速度敏感核
+          + ``c`` - 每个频散点的相速度 (km/s)
+          + ``csens`` - 不同频散点、不同深度的相速度敏感核
           
           对于群速度敏感核，变量包括：
 
-          + ``u`` - 不同频率不同阶的群速度 (km/s)
-          + ``usens`` - 不同频率不同阶不同深度的群速度敏感核
+          + ``u`` - 每个频散点的群速度 (km/s)
+          + ``usens`` - 不同频散点、不同深度的群速度敏感核
       
       .. grid-item:: **全局属性（global attributes）**
           :columns: auto 
@@ -267,7 +274,6 @@ eigenfn
 
   .. [#] 敏感核个数始终为3个，分别对应相/群速度对于 :math:`\alpha,\beta,\rho` 的无量纲化偏导；
       对于 Love 波结果，相/群速度对于 :math:`\alpha` 的偏导为 0 。
-
 
 必选选项
 ----------
@@ -317,3 +323,5 @@ eigenfn
 
 示例
 -------
+
++ :doc:`/Tutorial/modal/eigenfunction`

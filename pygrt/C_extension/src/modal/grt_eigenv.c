@@ -466,10 +466,8 @@ int eigenv_main(int argc, char **argv){
     // 传入参数 
     getopt_from_command(Ctrl, argc, argv);
 
-    // 读入模型文件（暂设置为不支持液体层）
-    if((Ctrl->M.mod1d = grt_read_mod1d_from_file(Ctrl->M.s_modelpath, -1.0, -1.0, true)) ==NULL){
-        exit(EXIT_FAILURE);
-    }
+    // 读入模型
+    Ctrl->M.mod1d = grt_read_mod1d_from_file(Ctrl->M.s_modelpath, -1.0, -1.0, true);
     MODEL1D *mod1d = Ctrl->M.mod1d;
 
     // 目前边界条件暂有限制
@@ -547,7 +545,9 @@ int eigenv_main(int argc, char **argv){
     // 寻找久期函数零点
     grt_get_secular_roots(mod1d, eigmet, !Ctrl->s.active);
 
-    if(Ctrl->X.active) goto FINISH;
+    if(Ctrl->X.active){
+        goto FINISH;
+    }
 
     // 如有需要，可打印计算久期函数次数
     // if(! Ctrl->s.active) printf("# Number of evaluation: %zu\n", eigmet->neval);
@@ -563,7 +563,7 @@ int eigenv_main(int argc, char **argv){
     }
 
     // 输出频散结果
-    grt_output_cdisp(Ctrl->C.s_phasepath, full_command, Ctrl->M.s_modelpath, eigmet);
+    grt_output_cdisp(Ctrl->C.s_phasepath, full_command, Ctrl->M.s_modelname, mod1d, eigmet);
     GRT_SAFE_FREE_PTR(full_command);
     
     grt_free_eigenv_info(eigmet);

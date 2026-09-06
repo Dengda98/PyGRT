@@ -8,7 +8,7 @@
 这个方法也被称为 **模态叠加法（Modal Summation Method）** 。 |yao2026p| 给出了推导过程和具体公式，这里不再重复。
 
 C 模块为 :doc:`/Module/modsum` （Python函数将于后续版本增加），
-计算将基于 :doc:`/Module/eigenv` 模块的频散结果以及模型路径。
+计算将基于 :doc:`/Module/eigenv` 模块的频散结果及其内嵌的模型。
 :doc:`/Module/modsum` 模块保存的波形格式与 :doc:`/Module/greenfn` 模块一致。
 
 示例程序

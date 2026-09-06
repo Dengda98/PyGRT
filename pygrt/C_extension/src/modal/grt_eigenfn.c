@@ -89,9 +89,9 @@ printf("\n"
 "    Compute eigenfunctions, group velocity, energy integrals and \n"
 "    dispersion sensitivity based on eigenvalues of surface waves.\n"
 "\n"
-"    The modelpath was stored in the dispersion result from \n"
-"    module `eigenv`, therefore this module requires the modelpath\n"
-"    to exist and will automatically read the model.\n"
+"    The 1-D model is stored in the dispersion result from \n"
+"    module `eigenv`, therefore this module will automatically\n"
+"    read the model from the nc file.\n"
 "\n\n"
 "Usage:\n"
 "---------------------------------------------------------------------\n"
@@ -518,17 +518,12 @@ int eigenfn_main(int argc, char **argv){
     // 传入参数 
     getopt_from_command(Ctrl, argc, argv);
 
-    // 读取频散
-    char *modelpath = NULL;
-    EIGENV_INFO *eigmet = (EIGENV_INFO *)calloc(1, sizeof(EIGENV_INFO));
-    grt_read_dispersion(Ctrl->C.s_filepath, eigmet, &modelpath);
-
-    // 读取模型（不插入震源和台站的虚拟层）
+    // 读取频散及其中保存的模型
+    char *modelname = NULL;
     MODEL1D *mod1d = NULL;
-    if((mod1d = grt_read_mod1d_from_file(modelpath, -1.0, -1.0, true)) ==NULL){
-        exit(EXIT_FAILURE);
-    }
-    GRT_SAFE_FREE_PTR(modelpath);
+    EIGENV_INFO *eigmet = (EIGENV_INFO *)calloc(1, sizeof(EIGENV_INFO));
+    grt_read_dispersion(Ctrl->C.s_filepath, eigmet, &modelname, &mod1d);
+    GRT_SAFE_FREE_PTR(modelname);
 
     // 根据命令行参数确定出所需的部分频散信息
     EIGENFN_INFO *eigfnmet = (EIGENFN_INFO *)calloc(1, sizeof(EIGENFN_INFO));
@@ -657,6 +652,7 @@ int eigenfn_main(int argc, char **argv){
     }
 
 
+    grt_free_mod1d(mod1d);
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;
 }

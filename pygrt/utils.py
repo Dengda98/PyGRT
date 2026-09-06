@@ -19,6 +19,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
+from matplotlib.lines import Line2D
 from obspy import Stream, read
 from scipy.interpolate import interpn
 from scipy.io import netcdf_file
@@ -63,6 +64,15 @@ __all__ = [
     "read_statsfile_ptam",
     "plot_statsdata",
     "plot_statsdata_ptam",
+    "read_dispersion",
+    "read_eigenfunction",
+    "read_energy_integral",
+    "read_sensitivity",
+    "read_secfunc",
+    "plot_dispersion",
+    "plot_eigenfunction",
+    "plot_sensitivity",
+    "plot_secfunc",
     "lamb1",
     "solve_lamb1",
     "lamb2",
@@ -144,6 +154,9 @@ def read_nc_variables(path: PathLike) -> dict:
     :return: A dictionary mapping each variable name to a ``numpy.ndarray``.
     """
     return {name: info["data"] for name, info in read_nc(path)["variables"].items()}
+
+
+
 
 
 def okada(
@@ -1446,3 +1459,570 @@ def lamb3(*, nu: float, tbar: np.ndarray, R: float, depsrc: float, deprcv: float
         npct.as_ctypes(dG_receiver.ravel()),
     )
     return G, dG_source, dG_receiver
+
+
+# ======================================================================================================
+#                                           面波辅助模块
+# ======================================================================================================
+
+
+def _is_rayl(data: dict) -> bool:
+    """从 attributes 或本征函数列数判断是否为 Rayleigh 波"""
+    val = data.get("attributes", {}).get("isRayl")
+    if val is not None:
+        return bool(np.asarray(val).reshape(-1)[0])
+    eigfn = data.get("eigfn")
+    if eigfn is None:
+        return True
+    if isinstance(eigfn, dict):
+        if not eigfn:
+            return True
+        eigfn = next(iter(eigfn.values()))
+    return int(np.asarray(eigfn).shape[-1]) >= 8
+
+
+def _as_modal_panels(data: dict, title: Optional[str] = None, required: Sequence[str] = ("freq",)) -> list[tuple[str, dict]]:
+    """将单个结果或 {标题: 结果} 统一成 [(title, data), ...]"""
+    def wave_title(data: dict) -> str:
+        attrs = data.get("attributes", {})
+        if "isRayl" in attrs:
+            return "Rayleigh" if _is_rayl(data) else "Love"
+        return ""
+
+    if not isinstance(data, dict) or not data:
+        raise TypeError("data must be a non-empty dict.")
+    if all(key in data for key in required):
+        if not title:
+            title = wave_title(data)
+        return [(title, data)]
+
+    panels = []
+    for key, val in data.items():
+        if not isinstance(val, dict) or not all(name in val for name in required):
+            raise ValueError("Mapping values must be dictionaries returned by the corresponding read function.")
+        panels.append((str(key), val))
+    return panels
+
+
+def _prepare_modal_axes(panels: list[tuple[str, dict]], ax: Optional[Axes], figsize: tuple[float, float]):
+    """创建或复用坐标轴，返回 (fig, axes_tuple)"""
+    n = len(panels)
+    if ax is not None:
+        if n != 1:
+            raise ValueError("ax can only be used with a single dataset.")
+        return ax.figure, (ax,)
+
+    fig, axs = plt.subplots(1, n, figsize=figsize, layout="constrained")
+    if n == 1:
+        axs = (axs,)
+    else:
+        axs = tuple(axs)
+    return fig, axs
+
+
+def _maybe_savefig(fig: Figure, outpath: Optional[PathLike]):
+    """若给定路径则保存图片"""
+    if outpath is not None:
+        fig.savefig(outpath)
+
+
+def _read_modal(path: PathLike, kind: str, required: Sequence[str], any_of: Sequence[str] = (), forbidden: Sequence[str] = ()) -> dict:
+    """读取面波 NetCDF，并将沿 freqmode 展平的变量按阶号分组"""
+    def group_by_mode(raw: dict, attributes: dict) -> dict:
+        freq = np.asarray(raw["freq"])
+        cnum = np.asarray(raw["cnum"])
+        mode = np.asarray(raw["mode"])
+        if freq.size != cnum.size:
+            raise ValueError("freq and cnum must have the same length.")
+
+        # 第 iw 个频率对应 mode 的前 cnum[iw] 个阶，频散点沿 freqmode 展平
+        freq_of: dict[int, list] = {}
+        idx_of: dict[int, list] = {}
+        k = 0
+        for iw, n in enumerate(cnum):
+            for ic in range(int(n)):
+                im = int(mode[ic])
+                freq_of.setdefault(im, []).append(float(freq[iw]))
+                idx_of.setdefault(im, []).append(k)
+                k += 1
+        nfm = k
+
+        result = {
+            "mode": np.array(sorted(idx_of), dtype=int),
+            "freq": {im: np.asarray(freq_of[im], dtype=float) for im in idx_of},
+        }
+        freqmode_vars = ("c", "u", "ciref", "eigfn", "csens", "usens", "egyint")
+        skip = {"freq", "cnum", "mode"}
+        for name, arr in raw.items():
+            if name in skip:
+                continue
+            arr = np.asarray(arr)
+            if name in freqmode_vars:
+                if arr.ndim < 1 or arr.shape[0] != nfm:
+                    raise ValueError(f"{name} length does not match sum(cnum).")
+                result[name] = {im: arr[np.asarray(idx_of[im])] for im in idx_of}
+            else:
+                result[name] = arr
+        result["attributes"] = dict(attributes)
+        return result
+
+    path = str(path)
+    nc = read_nc(path)
+    raw = {name: info["data"] for name, info in nc["variables"].items()}
+    missing = [name for name in required if name not in raw]
+    if missing:
+        raise ValueError(f"{path} is not a {kind} NetCDF file (missing {', '.join(missing)}).")
+    if any_of and not any(name in raw for name in any_of):
+        raise ValueError(f"{path} is not a {kind} NetCDF file (missing {'/'.join(any_of)}).")
+    hit = [name for name in forbidden if name in raw]
+    if hit:
+        raise ValueError(f"{path} is not a {kind} NetCDF file.")
+    return group_by_mode(raw, nc["attributes"])
+
+
+def read_dispersion(path: PathLike) -> dict:
+    """
+    Read a phase- or group-velocity dispersion NetCDF file.
+
+    Dispersion points are grouped by mode number. Typical keys:
+
+    * ``freq`` - mapping from mode number to frequency (Hz)
+    * ``c`` - mapping from mode number to phase velocity (km/s)
+    * ``u`` - mapping from mode number to group velocity when present
+    * ``mode`` - array of mode numbers present in the file
+    * ``attributes`` - global NetCDF attributes
+
+    :param    path:               Path to the dispersion NetCDF file.
+
+    :return: A dictionary of dispersion results grouped by mode.
+    """
+    return _read_modal(
+        path, "dispersion",
+        required=("freq", "cnum", "mode"),
+        any_of=("c", "u"),
+        forbidden=("eigfn", "csens", "usens", "egyint"),
+    )
+
+
+def read_eigenfunction(path: PathLike) -> dict:
+    """
+    Read an eigenfunction NetCDF file produced by ``grt eigenfn -W``.
+
+    Arrays along the flattened ``freqmode`` axis are grouped by mode.
+    Typical keys:
+
+    * ``freq`` - mapping from mode number to frequency (Hz)
+    * ``c`` - mapping from mode number to phase velocity (km/s)
+    * ``eigfn`` - mapping from mode number to array of shape ``(nf, nz, nw)``
+    * ``z`` - depth array (km)
+    * ``mode`` - array of mode numbers present in the file
+    * ``attributes`` - global NetCDF attributes
+
+    :param    path:               Path to the eigenfunction NetCDF file.
+
+    :return: A dictionary of eigenfunction results grouped by mode.
+    """
+    return _read_modal(
+        path, "eigenfunction",
+        required=("freq", "cnum", "mode", "z", "eigfn"),
+    )
+
+
+def read_energy_integral(path: PathLike) -> dict:
+    """
+    Read an energy-integral NetCDF file produced by ``grt eigenfn -K+x``.
+
+    Arrays along the flattened ``freqmode`` axis are grouped by mode.
+    Typical keys:
+
+    * ``freq`` - mapping from mode number to frequency (Hz)
+    * ``c`` - mapping from mode number to phase velocity (km/s)
+    * ``egyint`` - mapping from mode number to array of shape ``(nf, 10)``
+    * ``mode`` - array of mode numbers present in the file
+    * ``attributes`` - global NetCDF attributes
+
+    :param    path:               Path to the energy-integral NetCDF file.
+
+    :return: A dictionary of energy-integral results grouped by mode.
+    """
+    return _read_modal(
+        path, "energy-integral",
+        required=("freq", "cnum", "mode", "egyint"),
+        forbidden=("eigfn", "csens", "usens"),
+    )
+
+
+def read_sensitivity(path: PathLike) -> dict:
+    """
+    Read a phase- or group-velocity sensitivity-kernel NetCDF file.
+
+    Arrays along the flattened ``freqmode`` axis are grouped by mode.
+    Typical keys:
+
+    * ``freq`` - mapping from mode number to frequency (Hz)
+    * ``csens`` / ``usens`` - mapping from mode number to array of shape ``(nf, nz, 3)``
+    * ``z`` - depth array (km)
+    * ``mode`` - array of mode numbers present in the file
+    * ``attributes`` - global NetCDF attributes
+
+    :param    path:               Path to the sensitivity NetCDF file.
+
+    :return: A dictionary of sensitivity results grouped by mode.
+    """
+    return _read_modal(
+        path, "sensitivity",
+        required=("freq", "cnum", "mode", "z"),
+        any_of=("csens", "usens"),
+    )
+
+
+def read_secfunc(path: PathLike) -> list[dict]:
+    """
+    Read a secular-function text file produced by ``grt eigenv -X``.
+
+    Each comment line starting with ``#`` begins a new secular function
+    (typically one layer ``iref``). Data lines have three columns: phase
+    velocity (km/s), real part and imaginary part.
+
+    :param    path:               Path to the secular-function text file.
+
+    :return: A list of dictionaries. Each item contains ``c``, ``real``,
+             ``imag``, and header fields such as ``iref`` and ``freq``.
+    """
+    def parse_header(line: str) -> dict:
+        attrs = {}
+        for part in line.lstrip("#").split(","):
+            if "=" not in part:
+                continue
+            key, val = part.split("=", 1)
+            key = key.strip()
+            val = val.strip()
+            if key == "iref":
+                attrs["iref"] = int(float(val))
+            elif key == "f":
+                attrs["freq"] = float(val)
+            elif key in ("tol", "dc", "c1", "c2"):
+                attrs[key] = float(val)
+        return attrs
+
+    path = str(path)
+    if not Path(path).is_file():
+        raise FileNotFoundError(f"Secular-function file does not exist: {path}")
+
+    records = []
+    header = {}
+    c_list, re_list, im_list = [], [], []
+
+    def flush():
+        if not c_list:
+            return
+        rec = {
+            "c":    np.asarray(c_list, dtype=float),
+            "real": np.asarray(re_list, dtype=float),
+            "imag": np.asarray(im_list, dtype=float),
+        }
+        rec.update(header)
+        records.append(rec)
+        c_list.clear()
+        re_list.clear()
+        im_list.clear()
+
+    with open(path, "r") as fp:
+        for line in fp:
+            line = line.strip()
+            if not line:
+                continue
+            # 以 # 开头的注释行分隔不同层的久期函数
+            if line.startswith("#"):
+                flush()
+                header = parse_header(line)
+                continue
+            parts = line.split()
+            if len(parts) != 3:
+                raise ValueError(f"{path} is not a secular-function file (expect 3 columns).")
+            c_list.append(float(parts[0]))
+            re_list.append(float(parts[1]))
+            im_list.append(float(parts[2]))
+    flush()
+
+    if not records:
+        raise ValueError(f"{path} contains no secular-function data.")
+    return records
+
+
+def plot_dispersion(
+    data: dict,
+    *,
+    varname: Optional[str] = None,
+    title: Optional[str] = None,
+    ax: Optional[Axes] = None,
+    outpath: Optional[PathLike] = None,
+):
+    """
+    Plot phase- or group-velocity dispersion curves.
+
+    :param    data:               Dictionary from :func:`read_dispersion <pygrt.utils.read_dispersion>`,
+                                  or a mapping from panel title to such dictionaries
+                                  (drawn side by side).
+    :param    varname:            Variable to plot, ``c`` for phase velocity or ``u`` for group
+                                  velocity. Default is ``u`` when present, otherwise ``c``.
+    :param    title:              Panel title when ``data`` is a single dictionary.
+    :param    ax:                 Existing matplotlib Axes. Only valid for a single dataset.
+    :param    outpath:            If given, save the figure to this path.
+
+    :return:
+            - **fig** -                        matplotlib.Figure object
+            - **axs** -                        tuple of matplotlib.Axes
+    """
+    def resolve_varname(data: dict, varname: Optional[str]) -> str:
+        if varname is None:
+            varname = "u" if "u" in data else "c"
+        if varname not in ("c", "u"):
+            raise ValueError("varname must be 'c' or 'u'.")
+        if varname not in data:
+            raise KeyError(f"variable {varname!r} is not in the dispersion dictionary.")
+        return varname
+
+    def plot_on_ax(data: dict, ax: Axes, varname: str, title: str):
+        for im in sorted(data[varname]):
+            ax.plot(data["freq"][im], data[varname][im], lw=0.6, marker="o", ms=0, c="b")
+        ax.set_xlabel("Frequency (Hz)")
+        ax.set_ylabel("Group velocity (km/s)" if varname == "u" else "Phase velocity (km/s)")
+        if title:
+            ax.set_title(title)
+        ax.set_xmargin(0)
+        ax.set_xlim(xmin=0)
+
+    panels = _as_modal_panels(data, title)
+    varname = resolve_varname(panels[0][1], varname)
+    fig, axs = _prepare_modal_axes(panels, ax, figsize=(5.0 * max(len(panels), 1), 4.0))
+    for (panel_title, panel_data), axi in zip(panels, axs):
+        plot_on_ax(panel_data, axi, varname, panel_title)
+    _maybe_savefig(fig, outpath)
+    return fig, axs
+
+
+def plot_eigenfunction(
+    data: dict,
+    *,
+    scale: float = 2.0,
+    ifreq: int = 0,
+    title: Optional[str] = None,
+    ax: Optional[Axes] = None,
+    outpath: Optional[PathLike] = None,
+):
+    """
+    Plot eigenfunctions of different modes at one frequency.
+
+    Rayleigh-wave panels show the vertical component as a solid line and the
+    radial component as a dashed line. Love-wave panels show the transverse
+    component. Each mode is offset horizontally by its mode number.
+
+    :param    data:               Dictionary from
+                                  :func:`read_eigenfunction <pygrt.utils.read_eigenfunction>`,
+                                  or a mapping from panel title to such dictionaries
+                                  (drawn side by side).
+    :param    scale:              Amplitude scale of the plotted eigenfunctions.
+    :param    ifreq:              Index among frequencies that have at least one mode.
+                                  Default is the first frequency.
+    :param    title:              Panel title when ``data`` is a single dictionary.
+    :param    ax:                 Existing matplotlib Axes. Only valid for a single dataset.
+    :param    outpath:            If given, save the figure to this path.
+
+    :return:
+            - **fig** -                        matplotlib.Figure object
+            - **axs** -                        tuple of matplotlib.Axes
+    """
+    def plot_on_ax(data: dict, ax: Axes, title: str):
+        zarr = np.asarray(data["z"])
+        eigfn = data["eigfn"]
+        freq = data["freq"]
+        all_f = np.unique(np.concatenate([np.asarray(v, dtype=float) for v in freq.values()]))
+        ifreq_i = ifreq + all_f.size if ifreq < 0 else ifreq
+        if ifreq_i < 0 or ifreq_i >= all_f.size:
+            raise IndexError(f"ifreq={ifreq} is out of range for nf={all_f.size}.")
+        target = float(all_f[ifreq_i])
+
+        is_rayl = _is_rayl(data)
+        idx_vert, idx_horz = 2, 0
+        solidkwargs = dict(c="k", ls="-", lw=0.5)
+        dashkwargs = dict(c="k", ls="--", lw=0.5)
+
+        for im in sorted(eigfn):
+            loc = np.flatnonzero(np.isclose(np.asarray(freq[im], dtype=float), target))
+            if loc.size == 0:
+                continue
+            fn = np.asarray(eigfn[im][loc[0]])
+            if is_rayl:
+                trace = np.array(fn[:, idx_vert], dtype=float, copy=True)
+                norm = np.max(np.abs(trace))
+                if norm == 0.0:
+                    norm = 1.0
+                trace /= norm * scale
+                ax.plot(im + trace, zarr, **solidkwargs)
+                trace = np.array(fn[:, idx_horz], dtype=float, copy=True)
+                trace /= norm
+                ax.plot(im + trace, zarr, **dashkwargs)
+            else:
+                trace = np.array(fn[:, idx_horz], dtype=float, copy=True)
+                norm = np.max(np.abs(trace))
+                if norm == 0.0:
+                    norm = 1.0
+                trace /= norm * scale
+                ax.plot(im + trace, zarr, **solidkwargs)
+
+        ax.yaxis.set_inverted(True)
+        ax.grid()
+        ax.set_ymargin(0)
+        ax.set_ylabel("Depth (km)")
+        ax.set_xlabel("Order of modes")
+        if title:
+            ax.set_title(title)
+
+        if is_rayl:
+            ax.legend(
+                [Line2D([], [], **solidkwargs), Line2D([], [], **dashkwargs)],
+                ["Vertical", "Radial"],
+                loc="lower right", ncol=1,
+            )
+        else:
+            ax.legend([Line2D([], [], **solidkwargs)], ["Transverse"], loc="lower right", ncol=1)
+
+    if scale <= 0.0:
+        raise ValueError("scale must be positive.")
+    panels = _as_modal_panels(data, title, required=("freq", "eigfn"))
+    fig, axs = _prepare_modal_axes(panels, ax, figsize=(5.0 * max(len(panels), 1), 4.0))
+    for (panel_title, panel_data), axi in zip(panels, axs):
+        plot_on_ax(panel_data, axi, panel_title)
+    _maybe_savefig(fig, outpath)
+    return fig, axs
+
+
+def plot_sensitivity(
+    data: dict,
+    *,
+    modes: Union[int, Sequence[int], None] = 0,
+    title: Optional[str] = None,
+    outpath: Optional[PathLike] = None,
+):
+    r"""
+    Plot dimensionless phase- or group-velocity sensitivity kernels.
+
+    Three panels correspond to :math:`\alpha`, :math:`\beta` and :math:`\rho`.
+    By default only the fundamental mode (``modes=0``) is drawn; pass ``None``
+    to draw all modes.
+
+    :param    data:               Dictionary from
+                                  :func:`read_sensitivity <pygrt.utils.read_sensitivity>`.
+    :param    modes:              Mode number, a sequence of mode numbers, or ``None``
+                                  for all modes. Default is the fundamental mode.
+    :param    title:              Figure suptitle.
+    :param    outpath:            If given, save the figure to this path.
+
+    :return:
+            - **fig** -                        matplotlib.Figure object
+            - **axs** -                        tuple of matplotlib.Axes
+    """
+    def normalize_modes(modes) -> Optional[set[int]]:
+        if modes is None:
+            return None
+        if isinstance(modes, (int, np.integer)):
+            return {int(modes)}
+        return {int(m) for m in modes}
+
+    def plot_component(idx: int, ax: Axes):
+        zs = np.asarray(data["z"])
+        hLst = []
+        for im in sorted(sens):
+            if mode_set is not None and im not in mode_set:
+                continue
+            arr = np.asarray(sens[im])
+            farr = np.asarray(data["freq"][im])
+            for i in range(arr.shape[0]):
+                freq = float(farr[i])
+                if multi_mode:
+                    label = rf"$n={im},\ f={freq:.1f}\ \mathrm{{Hz}}$"
+                else:
+                    label = f"$f={freq:.1f} Hz$"
+                h, = ax.plot(arr[i, :, idx], zs, lw=0.3, marker="o", ms=2, label=label)
+                hLst.append(h)
+        ax.set_ymargin(0)
+        ax.yaxis.set_inverted(True)
+        return hLst
+
+    if not isinstance(data, dict) or "freq" not in data:
+        raise TypeError("data must be a dictionary returned by read_sensitivity().")
+    if "csens" in data:
+        char, sname = "c", "csens"
+    elif "usens" in data:
+        char, sname = "U", "usens"
+    else:
+        raise KeyError("dictionary has neither csens nor usens.")
+
+    sens = data[sname]
+    mode_set = normalize_modes(modes)
+    multi_mode = mode_set is None or len(mode_set) != 1
+    symbols = [r"\alpha", r"\beta", r"\rho"]
+
+    with plt.rc_context({"mathtext.fontset": "cm"}):
+        fig, axs = plt.subplots(1, 3, figsize=(5, 6), layout="constrained", sharey=True)
+        hLst = []
+        for i, axi in enumerate(axs):
+            handles = plot_component(i, axi)
+            axi.set_xlabel(rf"$\dfrac{{{symbols[i]}}}{{{char}}} \dfrac{{\partial {char}}}{{\partial {symbols[i]}}}$", fontsize=14)
+            if i == 1:
+                hLst = handles
+            if i == 0:
+                axi.set_ylabel("Depth (km)")
+        if hLst:
+            axs[1].legend(handles=hLst, loc="lower right", ncol=1)
+        if title:
+            fig.suptitle(title)
+        _maybe_savefig(fig, outpath)
+
+    return fig, axs
+
+
+def plot_secfunc(
+    data: dict,
+    *,
+    title: Optional[str] = None,
+    ax: Optional[Axes] = None,
+    outpath: Optional[PathLike] = None,
+):
+    """
+    Plot the real and imaginary parts of secular functions.
+
+    :param    data:               One dictionary from the list returned by
+                                  :func:`read_secfunc <pygrt.utils.read_secfunc>`
+                                  (index the list before passing), or a mapping
+                                  from panel title to such dictionaries
+                                  (drawn side by side).
+    :param    title:              Panel title when ``data`` is a single dictionary.
+    :param    ax:                 Existing matplotlib Axes. Only valid for a single dataset.
+    :param    outpath:            If given, save the figure to this path.
+
+    :return:
+            - **fig** -                        matplotlib.Figure object
+            - **axs** -                        tuple of matplotlib.Axes
+    """
+    def plot_on_ax(data: dict, ax: Axes, title: str):
+        carr = np.asarray(data["c"])
+        ax.plot(carr, np.asarray(data["real"]), "k-", lw=1, marker="o", ms=0, label="Real")
+        ax.plot(carr, np.asarray(data["imag"]), "k--", lw=1, marker="o", ms=0, label="Imaginary")
+        ax.set_xmargin(0)
+        ax.set_xlabel("Phase velocity (km/s)")
+        ax.set_ylabel("Secular function")
+        if title:
+            ax.set_title(title)
+        ax.legend(loc="upper right", handletextpad=0.3, borderaxespad=0.3, labelspacing=0.2)
+
+    if isinstance(data, (list, tuple)):
+        raise TypeError("plot_secfunc() expects a dictionary; index the list returned by read_secfunc().")
+
+    panels = _as_modal_panels(data, title, required=("c", "real", "imag"))
+    fig, axs = _prepare_modal_axes(panels, ax, figsize=(5.0 * max(len(panels), 1), 3.0))
+    for (panel_title, panel_data), axi in zip(panels, axs):
+        plot_on_ax(panel_data, axi, panel_title)
+    _maybe_savefig(fig, outpath)
+    return fig, axs
