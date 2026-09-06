@@ -40,10 +40,10 @@ Python 接口通过调用包内的 :command:`grt` 完成主计算；预构建安
 安装完成后即可在 Python 中 ``import pygrt`` 使用。程序会自动定位安装目录内的
 :rst:dir:`pygrt/C_extension/bin/grt` ，不必额外配置环境变量。
 
-仅使用命令行 :command:`grt`
+仅使用 :command:`grt` 命令
 --------------------------------
-如果你不想使用 Python，只想在终端以命令行形式运行 C 程序，也可从 |gr| 下载对应平台的
-``*.tar.gz`` 压缩包（Mac 用户：Apple 芯片选 ``macosx_11_0_arm64`` ，Intel 芯片选 ``macosx_10_9_x86_64`` ）。
+如果你不想使用 Python，只想在终端以命令行形式运行 :command:`grt` 命令，也可从 |gr| 下载对应平台的
+``*.tar.gz`` 压缩包，按文件名后缀选择对应平台。
 解压后，:rst:dir:`pygrt/C_extension/bin` 与 :rst:dir:`pygrt/C_extension/lib` 分别为预构建的可执行文件目录和库目录。
 此时需将 :rst:dir:`bin/` 加入环境变量 :envvar:`PATH` ，以便在终端直接调用 :command:`grt` 。
 

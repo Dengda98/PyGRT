@@ -439,17 +439,38 @@ jobs:
       - name: Display structure of downloaded files
         run: ls -R artifacts
 
-      # 对artifacts中的每个tar.gz文件，根据其内部的文件夹名重新命名压缩包
-      - name: Rename tar.gz files
+      # 将 tar.gz 的 pypi 平台后缀替换为用户可读的系统名
+      # wheel 仍保留 pypi 平台标签，否则文件名不再符合 PEP 427，无法 pip install
+      - name: Rename tar.gz files for GitHub Release
         run: |
+          set -euo pipefail
           mkdir -p release
+
+          # 将文件名中的 pypi 平台标签映射为用户可读名称
+          map_release_name() {
+            local name="$1"
+            if [[ "$name" == *manylinux2014_x86_64* ]]; then
+              echo "${name//manylinux2014_x86_64/Linux-x86_64}"
+            elif [[ "$name" == *macosx_10_9_x86_64* ]]; then
+              echo "${name//macosx_10_9_x86_64/macOS-Intel}"
+            elif [[ "$name" == *macosx_11_0_arm64* ]]; then
+              echo "${name//macosx_11_0_arm64/macOS-AppleSilicon}"
+            elif [[ "$name" == *win_amd64* ]]; then
+              echo "${name//win_amd64/Windows-x86_64}"
+            else
+              echo "Unknown platform suffix in: $name" >&2
+              return 1
+            fi
+          }
+
           for file in artifacts/*/*.tar.gz; do
             TEMP_FILE=tmp
             # 这里不能把tar合并到下方的管道中，在github actions中会报错
             tar -tzf $file > $TEMP_FILE
             PACK_NAME=$(head -n 1 $TEMP_FILE | cut -f 1 -d '/')
-            mv $file release/${PACK_NAME}.tar.gz
             rm $TEMP_FILE
+            RELEASE_NAME=$(map_release_name "$PACK_NAME")
+            mv $file release/${RELEASE_NAME}.tar.gz
           done
 
           ls -R release
