@@ -2,8 +2,8 @@
 import pygrt
 import numpy as np
 
-ts = np.arange(0, 2, 1e-4)
-u = pygrt.utils.lamb1(0.25, ts, 30)
+tbar = np.arange(0, 2, 1e-4)
+u = pygrt.utils.lamb1(nu=0.25, tbar=tbar, azimuth=30)
 # END LAMB1
 
 import matplotlib.pyplot as plt
@@ -12,7 +12,7 @@ fig, axs = plt.subplots(3, 3, figsize=(10, 5), sharex=True)
 for i in range(3):
     for j in range(3):
         ax = axs[i, j]
-        ax.plot(ts, u[:, i, j])
+        ax.plot(tbar, u[:, i, j])
         ax.set_xlim(0, 2)
         ax.set_ylim(-2, 2)
 
