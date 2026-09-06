@@ -6,7 +6,7 @@
 
 本征值对应的位移应力解被称为本征函数，再基于变分理论计算出能量积分后可计算出群速度和频散敏感核 (|aki2009|; |yao2026|)。
 
-C 模块为 :doc:`/Module/eigenfn`，Python 中对应 :meth:`PyModel1D.eigenfn() <pygrt.pymod.PyModel1D.eigenfn>`，
+:command:`grt` 模块为 :doc:`/Module/eigenfn`，Python 中对应 :meth:`PyModel1D.eigenfn() <pygrt.pymod.PyModel1D.eigenfn>`，
 计算将基于 :doc:`/Module/eigenv` 模块的频散结果及其内嵌的模型。
 
 以下示例基于 :doc:`eigenvalue` 部分计算的相速度频散结果。

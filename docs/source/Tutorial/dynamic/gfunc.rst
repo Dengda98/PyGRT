@@ -77,7 +77,7 @@ Python中计算动态格林函数的主函数为 :meth:`greenfn() <pygrt.pymod.P
         该根目录下还会保留一份模型文件副本（与 ``-M`` 的 basename 相同），便于后续取用。
 
         需要读回时使用 ObsPy 的 ``read`` ， :class:`Trace.stats.sac`
-        中保存了 SAC 头段变量，与 C 程序输出保持一致。
+        中保存了 SAC 头段变量，与 :command:`grt` 命令输出保持一致。
 
         .. literalinclude:: run/run.py
             :language: python

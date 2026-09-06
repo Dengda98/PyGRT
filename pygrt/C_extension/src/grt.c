@@ -3,7 +3,7 @@
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2025-08
  * 
- * C 程序的主函数，由此发起各个子模块的任务
+ * grt 主函数，由此发起各个子模块的任务
  * 
  */
 

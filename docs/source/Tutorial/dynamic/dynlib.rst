@@ -46,7 +46,7 @@
 
     .. group-tab:: Python
 
-        Python 接口使用列表表达相同的深度组合，并在内部调用同一个 C 模块：
+        Python 接口使用列表表达相同的深度组合，并在内部调用同一个 :command:`grt` 模块：
 
         .. literalinclude:: run_library/run.py
             :language: python
@@ -97,7 +97,7 @@
     .. group-tab:: Python
 
         Python 的 ``syn()`` 使用 ``depsrc``、``deprcv`` 和 ``dist`` 传入选择值，
-        其含义与 C 模块的 **-Ds/-Dr/-R** 完全一致：
+        其含义与 :doc:`/Module/syn` 模块的 **-Ds/-Dr/-R** 完全一致：
 
         .. literalinclude:: run_library/run.py
             :language: python
