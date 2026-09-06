@@ -1,5 +1,7 @@
 #!/bin/bash
 
+rm -f *.svg *.nc
+
 # BEGIN DISPERSION
 # Calculate Rayleigh-wave dispersion
 grt eigenv -Mmod2 -SR -F0/5/0.01 -N -Cphase_R.nc
@@ -8,7 +10,7 @@ grt eigenv -Mmod2 -SL -F0/5/0.01 -N -Cphase_L.nc
 # END DISPERSION
 
 python plot_dispersion.py
-bash plot_dispersion.sh
+# bash plot_dispersion.sh
 
 # BEGIN SECFUNC
 freq=1
@@ -37,7 +39,7 @@ grt eigenfn -Cphase_L.nc -N -Ugroup_L.nc
 # END GROUP
 
 python plot_dispersion_group.py
-bash   plot_dispersion_group.sh
+# bash   plot_dispersion_group.sh
 
 # BEGIN SENS
 # Calculate Rayleigh-wave dispersion sensitivity

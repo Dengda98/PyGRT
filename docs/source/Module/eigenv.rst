@@ -36,19 +36,21 @@ eigenv
     netcdf phase_R {
     dimensions:
             freq = 500 ;
+            freqmode = 13700 ;
             mode = 54 ;
+            layer = 4 ;
+            model_param = 4 ;
     variables:
             double freq(freq) ;
-            int mode(mode) ;
             int cnum(freq) ;
-            double c(freq, mode) ;
-                    c:_FillValue = 0. ;
-            int ciref(freq, mode) ;
-                    ciref:_FillValue = -1 ;
+            int mode(mode) ;
+            double model(layer, model_param) ;
+            double c(freqmode) ;
+            int ciref(freqmode) ;
 
     // global attributes:
                     :command = "grt eigenv -Mmod2 -SR -F0/5/0.01 -N -Cphase_R.nc" ;
-                    :model = "mod2" ;
+                    :modelname = "mod2" ;
                     :isRayl = 1 ;
     }
 
@@ -60,22 +62,28 @@ eigenv
         :columns: auto 
 
         + ``freq`` - 频率点数
-        + ``mode`` - 阶数点数
+        + ``freqmode`` - 全部频率下频散点展平后的总点数，
+          可用 ``cnum`` 还原每个频率对应哪些点
+        + ``mode`` - 当前结果包含的阶数个数
+        + ``layer`` - 模型层数
+        + ``model_param`` - 模型参数列数（4列：Thk, Va, Vb, Rho）
     
     .. grid-item:: **变量（variables）**
         :columns: auto 
 
         + ``freq`` - 频率数组 (Hz)
-        + ``mode`` - 阶数数组
         + ``cnum`` - 不同频率下的相速度点数
-        + ``c`` - 不同频率不同阶的相速度 (km/s)
+        + ``mode`` - 各阶的阶号，本模块写出为从 0 起的连续编号。
+          第 *i* 个频率的频散点对应 ``mode`` 的前 ``cnum[i]`` 个值
+        + ``c`` - 每个频散点的相速度 (km/s)
         + ``ciref`` - 搜索对应相速度使用的久期函数层位
+        + ``model`` - 模型矩阵（仅前四列）
     
     .. grid-item:: **全局属性（global attributes）**
         :columns: auto 
 
         + ``command`` - 生成该文件的命令
-        + ``model`` - 模型路径
+        + ``modelname`` - 模型文件名
         + ``isRayl`` - 是否为Rayleigh波结果
 
 
@@ -156,4 +164,5 @@ eigenv
 示例
 -------
 
++ :doc:`/Tutorial/modal/eigenvalue`
 

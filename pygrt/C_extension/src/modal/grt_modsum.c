@@ -123,9 +123,9 @@ printf("\n"
 "[grt modsum] %s\n\n", GRT_VERSION);printf(
 "    Compute the surface-wave Green's Functions using the Modal Summation.\n"
 "\n"
-"    The modelpath was stored in the dispersion result from \n"
-"    module `eigenv`, therefore this module requires the modelpath\n"
-"    to exist and will automatically read the model.\n"
+"    The 1-D model is stored in the dispersion result from \n"
+"    module `eigenv`, therefore this module will automatically\n"
+"    read the model from the nc file.\n"
 "\n"
 "    To apply IFFT, `eigenv` must use the form of -F<f1>/<f2>/<df>\n"
 "    to define the equidistant frequency points.\n"
@@ -155,7 +155,8 @@ printf("\n"
 "                 Must be paired with -Ds.\n"
 "\n"
 "    -O<outdir>   Directory path for saving output.\n"
-"                 The model file is also copied into <outdir>.\n"
+"                 The model stored in the nc file is written \n"
+"                 into <outdir> using the stored model name.\n"
 "\n"
 "    -R<r1>,<r2>[,...]|<r1>/<r2>/<dr>|<file>\n"
 "                 Multiple epicentral distances (km), support three ways:\n"
@@ -454,7 +455,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 
 /** 计算一个震源深度和台站深度组合的面波格林函数 */
 static void compute_modsum_one(
-    GRT_MODULE_CTRL *Ctrl, MODEL1D *mod1d, EIGENV_INFO *eigmet, const char *modelpath)
+    GRT_MODULE_CTRL *Ctrl, MODEL1D *mod1d, EIGENV_INFO *eigmet, const char *modelname)
 {
     // 不再插入虚拟层，直接记录震源和台站所在的真实层位
     mod1d->depsrc = Ctrl->D.depsrc;
@@ -561,7 +562,7 @@ static void compute_modsum_one(
 
         outputdirs[ir] = NULL;
         GRT_SAFE_ASPRINTF(&outputdirs[ir], "%s/%s_%s_%s_%s", 
-            Ctrl->O.s_output_dir, grt_get_basename(modelpath), Ctrl->D.s_depsrc, Ctrl->D.s_deprcv, Ctrl->R.s_rs[ir]);
+            Ctrl->O.s_output_dir, modelname, Ctrl->D.s_depsrc, Ctrl->D.s_deprcv, Ctrl->R.s_rs[ir]);
 
         // 计算理论走时
         travtPS[ir][0] = grt_compute_travt1d(mod1d->Thk, mod1d->Va, mod1d->n, mod1d->isrc, mod1d->ircv, dist);
@@ -616,26 +617,21 @@ int modsum_main(int argc, char **argv){
     // 传入参数
     getopt_from_command(Ctrl, argc, argv);
 
-    // 读取频散
-    char *modelpath = NULL;
-    EIGENV_INFO *eigmet = (EIGENV_INFO *)calloc(1, sizeof(EIGENV_INFO));
-    grt_read_dispersion(Ctrl->C.s_filepath, eigmet, &modelpath);
-
-    // 读取模型（不插入震源和台站的虚拟层）
+    // 读取频散及其中保存的模型
+    char *modelname = NULL;
     MODEL1D *mod1d = NULL;
-    if((mod1d = grt_read_mod1d_from_file(modelpath, -1.0, -1.0, true)) == NULL){
-        exit(EXIT_FAILURE);
-    }
+    EIGENV_INFO *eigmet = (EIGENV_INFO *)calloc(1, sizeof(EIGENV_INFO));
+    grt_read_dispersion(Ctrl->C.s_filepath, eigmet, &modelname, &mod1d);
 
     // 建立保存目录并检查已有内容
     GRTCheckMakeDir(Ctrl->O.s_output_dir);
-    grt_check_greenfn_output_dir(Ctrl->O.s_output_dir, grt_get_basename(modelpath));
+    grt_check_greenfn_output_dir(Ctrl->O.s_output_dir, modelname);
 
-    // 在输出根目录保留模型文件副本（basename），便于后续流程取用
+    // 将模型数组导出到输出根目录，便于后续流程取用
     {
         char *model_copy = NULL;
-        GRT_SAFE_ASPRINTF(&model_copy, "%s/%s", Ctrl->O.s_output_dir, grt_get_basename(modelpath));
-        grt_copy_file(modelpath, model_copy);
+        GRT_SAFE_ASPRINTF(&model_copy, "%s/%s", Ctrl->O.s_output_dir, modelname);
+        grt_write_modarr_to_file(model_copy, mod1d->nmodarr, mod1d->modarr);
         GRT_SAFE_FREE_PTR(model_copy);
     }
 
@@ -668,13 +664,13 @@ int modsum_main(int argc, char **argv){
             GRT_SAFE_FREE_PTR(Ctrl->D.s_deprcv);
             GRT_SAFE_ASPRINTF(&Ctrl->D.s_depsrc, "%g", Ctrl->D.depsrc);
             GRT_SAFE_ASPRINTF(&Ctrl->D.s_deprcv, "%g", Ctrl->D.deprcv);
-            compute_modsum_one(Ctrl, mod1d, eigmet, modelpath);
+            compute_modsum_one(Ctrl, mod1d, eigmet, modelname);
         }
     }
 
     grt_free_mod1d(mod1d);
     grt_free_eigenv_info(eigmet);
-    GRT_SAFE_FREE_PTR(modelpath);
+    GRT_SAFE_FREE_PTR(modelname);
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;
 }
