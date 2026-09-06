@@ -21,7 +21,7 @@ from obspy import read
 
 from .cli import format_float, format_range, run_grt
 from .c_interfaces import C_grt_compute_travt1d_from_file, C_grt_free, PREAL
-from .utils import read_static_nc
+from .utils import read_nc_variables
 
 
 PathLike = Union[str, os.PathLike]
@@ -900,7 +900,7 @@ class PyModel1D:
                                      ``z``/``n``/``e`` (ZNE). Set this when strain,
                                      stress or rotation will be computed later.
         :param    return_result:     If true, read the generated NetCDF file with
-                                     :func:`pygrt.utils.read_static_nc`.
+                                     :func:`pygrt.utils.read_nc_variables`.
 
         :return: The synthesized NetCDF data when ``return_result`` is true;
                  otherwise ``None``.
@@ -992,7 +992,7 @@ class PyModel1D:
 
         run_grt(list(command.values()))
         if return_result:
-            return read_static_nc(output)
+            return read_nc_variables(output)
         return None
 
     def compute_static_syn(self, *args, **kwargs):

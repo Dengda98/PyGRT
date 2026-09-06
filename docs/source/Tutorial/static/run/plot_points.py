@@ -5,12 +5,11 @@ from matplotlib.colors import Normalize
 
 
 def plot_static_points(static_syn, output_path):
-    variables = static_syn["variables"]
-    north = variables["north"]["data"]
-    east = variables["east"]["data"]
-    z = variables["Z"]["data"]
-    n = variables["N"]["data"]
-    e = variables["E"]["data"]
+    north = static_syn["north"]
+    east = static_syn["east"]
+    z = static_syn["Z"]
+    n = static_syn["N"]
+    e = static_syn["E"]
 
     zmax = max(float(np.max(np.abs(z))), np.finfo(float).eps)
 
@@ -45,5 +44,5 @@ def plot_static_points(static_syn, output_path):
     plt.close(fig)
 
 
-static_syn = pygrt.utils.read_static_nc("stsyn_points.nc")
+static_syn = pygrt.utils.read_nc_variables("stsyn_points.nc")
 plot_static_points(static_syn, "syn_points.svg")

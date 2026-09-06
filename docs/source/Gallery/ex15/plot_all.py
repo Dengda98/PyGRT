@@ -26,7 +26,7 @@ stgrnLst = [dist2st[float(d)] for d in dists]
 
 # 静态解
 pymod.static_greenfn(depsrc=depsrc, deprcv=deprcv, dists=dists.tolist())
-static_grn = pygrt.utils.read_static_nc("stgrn.nc")
+static_grn = pygrt.utils.read_nc_variables("stgrn.nc")
 
 # 绘制零频结果
 fig, axs = plt.subplots(2, 3, figsize=(12, 8), gridspec_kw=dict(hspace=0.3, wspace=0.3)) # 
@@ -55,12 +55,12 @@ for isrc, (src, src2) in enumerate(zip(srctypes,
     ms = 2
     lw = 0.8
     ax.plot(dists, dynamic_Z, 'k', lw=lw, label='Dynamic Z')
-    ax.plot(dists, static_grn['variables'][f'{src}Z']['data'][0, 0, 0] * coef, 'ro', ms=ms, label='Static Z')
+    ax.plot(dists, static_grn[f'{src}Z'][0, 0, 0] * coef, 'ro', ms=ms, label='Static Z')
     ax.plot(dists, dynamic_R, 'k', lw=lw, label='Dynamic R')
-    ax.plot(dists, static_grn['variables'][f'{src}R']['data'][0, 0, 0] * coef, 'bo', ms=ms, label='Static R')
+    ax.plot(dists, static_grn[f'{src}R'][0, 0, 0] * coef, 'bo', ms=ms, label='Static R')
     if src not in ['EX', 'VF', 'DD']:
         ax.plot(dists, dynamic_T, 'k', lw=lw, label='Dynamic T')
-        ax.plot(dists, static_grn['variables'][f'{src}T']['data'][0, 0, 0] * coef, 'go', ms=ms, label='Static T')
+        ax.plot(dists, static_grn[f'{src}T'][0, 0, 0] * coef, 'go', ms=ms, label='Static T')
 
     ax.set_xlim(0, 50)
     ax.set_xlabel('Distance (km)')

@@ -3,24 +3,23 @@ import numpy as np
 import pygrt
 
 def plot6(data:dict, title:str, out:str|None=None):
-    vars_ = data["variables"]
-    norths = vars_["north"]["data"]
-    easts = vars_["east"]["data"]
-    chs = sorted([k for k in vars_ if k.startswith(title.lower() + "_")], reverse=True)
+    norths = data["north"]
+    easts = data["east"]
+    chs = sorted([k for k in data if k.startswith(title.lower() + "_")], reverse=True)
     fig, axs = plt.subplots(len(chs)//3, 3, figsize=(10, len(chs)))
     axs = axs.ravel()
 
     MAX = 0
     for i in range(len(chs)):
         ch = chs[i]
-        m = np.max(np.abs(vars_[ch]["data"]))
+        m = np.max(np.abs(data[ch]))
         if m > MAX:
             MAX = m
 
     for i in range(len(chs)):
         ax = axs[i]
         ch = chs[i]
-        arr = vars_[ch]["data"]
+        arr = data[ch]
         vmin = vmax = None
         if np.max(np.abs(arr))/MAX < 1e-5:
             vmin = -1
@@ -68,7 +67,7 @@ pygrt.utils.static_stress("stsyn_dc_zne.nc")
 # ---------------------------------------------------------------
 
 
-static_tensor = pygrt.utils.read_static_nc("stsyn_dc_zne.nc")
+static_tensor = pygrt.utils.read_nc_variables("stsyn_dc_zne.nc")
 plot6(static_tensor, "Strain", 'static_strain.svg')
 plot6(static_tensor, "Rotation", 'static_rotation.svg')
 plot6(static_tensor, "Stress", 'static_stress.svg')
