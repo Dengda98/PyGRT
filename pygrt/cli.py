@@ -50,7 +50,7 @@ def run_grt(
     """
     command = [find_grt(), *(str(arg) for arg in args)]
     if print_log:
-        completed = subprocess.run(command, cwd=cwd, check=False)
+        completed = subprocess.run(command, cwd=cwd, check=False, stdout=sys.stdout, stderr=sys.stderr)
         if completed.returncode != 0:
             raise RuntimeError(f"grt command failed with exit code {completed.returncode}: {' '.join(command)}")
         return
