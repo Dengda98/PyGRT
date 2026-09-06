@@ -9,38 +9,47 @@
   <img alt="GitHub License" src="https://img.shields.io/github/license/Dengda98/PyGRT">
 </p>
 
-<p align="center">
-  <img src="./figs/example_ZRT.png" alt="Image 1" width="80%" />
-</p>
+<h3 align="center">
+  <strong><a href="https://github.com/Dengda98/PyGRT">PyGRT</a>: An integrated, efficient C/Python toolkit for theoretical simulation in layered half-space media</strong>
+</h3>
 
-[**Chinese Document**](https://pygrt.readthedocs.io/zh-cn/)  |  ~~English Document (no longer maintained)~~
-
-**[PyGRT](https://github.com/Dengda98/PyGRT)** : An Integrated, Efficient C/Python Toolkit to Compute Synthetic Seismograms and Static Deformation in Layered Media, including Displacement, Strain, Stress and Rotation.
-
- + **PyGRT** now can compute following properties in **both dynamic and static case.**  
-    ✔️ **Displacements and its spatial derivatives**  
-    ✔️ **Strain Tensor**  
-    ✔️ **Rotation Tensor**  
-    ✔️ **Stress Tensor**
-
-
- + **At present, PyGRT can run on**  
-    ✔️ **Linux**  
-    ✔️ **MacOS**  
-    ✔️ **Windows**
-
- + **PyGRT is extremely easy to install** by distributing pre-built binary files.
-
- + **PyGRT now supports the model with liquid layers.**
-
- + **PyGRT is still evolving**, and more features will be released in the future.
-
-
+<h4 align="center">
+  <a href="https://pygrt.readthedocs.io/zh-cn/"><strong>Chinese Document</strong></a>
+  &nbsp;|&nbsp;
+  <s>English Document (no longer maintained)</s>
+</h4>
 
 <p align="center">
-  <img src="./figs/diagram_cut.png" alt="Image 2" width="80%" />
+  <img src="./figs/example_ZRT.png" alt="Image 1" width="70%" />
 </p>
 
+# At a Glance
+
+- **Dynamic and static responses** (displacement, strain, stress, rotation, and related quantities)
+- **Surface-wave modal analysis** (dispersion curves, eigenfunctions, and related quantities)
+- **Auxiliary modules** (Green's functions, kernels, Lamb problem, Okada solution, and more)
+- **CLI and Python API** (modular `grt` command-line tool and Python interface)
+- **Actively maintained** — see the [documentation](https://pygrt.readthedocs.io/zh-cn/) for modules and tutorials
+
+# Quick Install
+
+**Pre-built binaries** are available for **Linux**, **macOS**, and **Windows**:
+
+```bash
+pip install pygrt-kit
+```
+
+Then in Python:
+
+```python
+import pygrt
+```
+
+PyGRT also provides the **`grt`** CLI. Run `grt -h` to list available modules, and `grt <module> -h` (e.g., `grt greenfn -h`) for module-specific usage.
+
+To use the CLI only (without Python), download the pre-built `*.tar.gz` archive for your platform from [GitHub Releases](https://github.com/Dengda98/PyGRT/releases).
+
+*(For conda environments, source builds, and troubleshooting, see the [installation guide](https://pygrt.readthedocs.io/zh-cn/install.html) (Chinese)).*
 
 # Contact
 If you have any questions or suggestions, feel free to reach out:
@@ -49,7 +58,7 @@ If you have any questions or suggestions, feel free to reach out:
 
 # Citation
 
-Since PyGRT has been under continuous maintenance and extension during the peer review, **its functions have exceeded the scope described in this paper.** For detailed usage of each function, please refer to the [**documentation**](https://pygrt.readthedocs.io/zh-cn/).
+Since PyGRT has been under continuous maintenance and extension during the peer review, **its functions have exceeded the scope described in this paper.** For detailed usage of each function, please see the [**documentation**](https://pygrt.readthedocs.io/zh-cn/).
 
 > Zhu, D., Wang, J., Hao, J., Yao, S., Xu, Y., Xu, T., and Yao, Z. (2025). PyGRT: An Efficient and Integrated Python Package for Computing Synthetic Seismograms in a Layered Half‐Space Model. Seismological Research Letters, 97(3), 2138–2153. doi: [10.1785/0220250057](https://doi.org/10.1785/0220250057)
 

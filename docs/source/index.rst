@@ -6,7 +6,7 @@
    :width: 50%
    :target: https://github.com/Dengda98/PyGRT
    
-   计算半无限水平层状介质中理论地震图的 **C/Python** 程序包
+   半无限水平层状介质中理论模拟的 C/Python 程序包
 
 
 .. grid:: 1 1 2 3
