@@ -61,4 +61,6 @@ expect_fail "-D and -Ds/-Dr are mutually exclusive" \
 expect_fail "non-ascending -R list" \
     grt modsum -Cphase_R.nc -D2/1 -R100,50 -N0 -OGRN_bad
 
+python -u test_modsum.py
+
 rm -rf GRN* *.nc
