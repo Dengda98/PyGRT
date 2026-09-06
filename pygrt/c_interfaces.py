@@ -85,6 +85,22 @@ C_grt_solve_lamb2.argtypes = [
 ]
 
 
+C_grt_solve_lamb3 = libgrt.grt_solve_lamb3
+"""使用广义闭合解求解第三类 Lamb 问题"""
+C_grt_solve_lamb3.restype = None
+C_grt_solve_lamb3.argtypes = [
+    REAL,
+    PREAL,
+    c_int,
+    REAL,
+    REAL,
+    REAL,
+    REAL,
+    PREAL,
+    PREAL,
+    PREAL,
+]
+
 C_grt_compute_travt1d_from_file = libgrt.grt_compute_travt1d_from_file
 """从模型文件计算多个震中距的初至 P/S 走时"""
 C_grt_compute_travt1d_from_file.restype = PREAL

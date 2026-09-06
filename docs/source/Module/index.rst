@@ -160,6 +160,7 @@
     - :doc:`travt`
     - :doc:`lamb1`
     - :doc:`lamb2`
+    - :doc:`lamb3`
     - :doc:`okada`
     - :doc:`xy2geo`
     - :doc:`geo2xy`
@@ -190,6 +191,7 @@
     travt
     lamb1
     lamb2
+    lamb3
     okada
     xy2geo
     geo2xy
