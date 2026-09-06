@@ -7,6 +7,7 @@
  *
  */
 
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
@@ -14,6 +15,29 @@
 #include "grt/common/mynetcdf.h"
 #include "grt/common/checkerror.h"
 #include "grt/common/search.h"
+
+
+/** 打包模型前四列，供写入 NC */
+static real_t (*pack_modarr_nc(size_t nlayer, const real_t (*modarr)[GRT_MODARR_NCOL]))[GRT_STGRNLIB_MODARR_NCOL]
+{
+    real_t (*out)[GRT_STGRNLIB_MODARR_NCOL] = (real_t (*)[GRT_STGRNLIB_MODARR_NCOL])malloc(
+        sizeof(real_t) * GRT_STGRNLIB_MODARR_NCOL * nlayer);
+    for(size_t i = 0; i < nlayer; ++i){
+        memcpy(out[i], modarr[i], sizeof(real_t) * GRT_STGRNLIB_MODARR_NCOL);
+    }
+    return out;
+}
+
+/** 将 NC 中的四列模型展开为完整矩阵（Qa/Qb 置 0） */
+static real_t (*unpack_modarr_nc(size_t nlayer, const real_t (*in)[GRT_STGRNLIB_MODARR_NCOL]))[GRT_MODARR_NCOL]
+{
+    real_t (*out)[GRT_MODARR_NCOL] = (real_t (*)[GRT_MODARR_NCOL])calloc(
+        nlayer, sizeof(real_t) * GRT_MODARR_NCOL);
+    for(size_t i = 0; i < nlayer; ++i){
+        memcpy(out[i], in[i], sizeof(real_t) * GRT_STGRNLIB_MODARR_NCOL);
+    }
+    return out;
+}
 
 /** 检查数组严格升序 */
 static void require_strictly_ascending(const real_t *a, size_t n, const char *name)
@@ -373,18 +397,20 @@ STGRNLIB *grt_stgrnlib_load_nc(const char *path)
         }
         NC_CHECK(nc_inq_dimlen(ncid, layer_dimid, &nlayer));
         NC_CHECK(nc_inq_dimlen(ncid, param_dimid, &nparam));
-        if(nlayer == 0 || nparam != GRT_MODARR_NCOL){
+        if(nlayer == 0 || nparam != GRT_STGRNLIB_MODARR_NCOL){
             NC_CHECK(nc_close(ncid));
             grt_stgrnlib_free(lib);
             GRTRaiseError(
                 "Invalid STGRNLIB nc \"%s\": layer=%zu, model_param=%zu "
                 "(expect layer>0, model_param=%d).",
-                path, nlayer, nparam, GRT_MODARR_NCOL);
+                path, nlayer, nparam, GRT_STGRNLIB_MODARR_NCOL);
         }
         NC_CHECK(nc_inq_varid(ncid, "model", &varid));
-        real_t (*modarr)[GRT_MODARR_NCOL] = (real_t (*)[GRT_MODARR_NCOL])malloc(
-            sizeof(real_t) * GRT_MODARR_NCOL * nlayer);
-        NC_CHECK(NC_FUNC_REAL(nc_get_var)(ncid, varid, (real_t *)modarr));
+        real_t (*model_nc)[GRT_STGRNLIB_MODARR_NCOL] = (real_t (*)[GRT_STGRNLIB_MODARR_NCOL])malloc(
+            sizeof(real_t) * GRT_STGRNLIB_MODARR_NCOL * nlayer);
+        NC_CHECK(NC_FUNC_REAL(nc_get_var)(ncid, varid, (real_t *)model_nc));
+        real_t (*modarr)[GRT_MODARR_NCOL] = unpack_modarr_nc(nlayer, (const real_t (*)[GRT_STGRNLIB_MODARR_NCOL])model_nc);
+        GRT_SAFE_FREE_PTR(model_nc);
         grt_stgrnlib_set_modarr(lib, nlayer, (const real_t (*)[GRT_MODARR_NCOL])modarr);
         GRT_SAFE_FREE_PTR(modarr);
     }
@@ -435,7 +461,7 @@ void grt_stgrnlib_save_nc(const STGRNLIB *lib, const char *path)
     NC_CHECK(nc_def_dim(ncid, "north", lib->nnorth, &north_dimid));
     NC_CHECK(nc_def_dim(ncid, "east", lib->neast, &east_dimid));
     NC_CHECK(nc_def_dim(ncid, "layer", lib->nlayer, &layer_dimid));
-    NC_CHECK(nc_def_dim(ncid, "model_param", GRT_MODARR_NCOL, &param_dimid));
+    NC_CHECK(nc_def_dim(ncid, "model_param", GRT_STGRNLIB_MODARR_NCOL, &param_dimid));
     dimids[0] = depsrc_dimid;
     dimids[1] = deprcv_dimid;
     dimids[2] = north_dimid;
@@ -486,7 +512,11 @@ void grt_stgrnlib_save_nc(const STGRNLIB *lib, const char *path)
     NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, rcv_va_varid, lib->rcv_va));
     NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, rcv_vb_varid, lib->rcv_vb));
     NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, rcv_rho_varid, lib->rcv_rho));
-    NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, model_varid, (const real_t *)lib->modarr));
+    {
+        real_t (*model_nc)[GRT_STGRNLIB_MODARR_NCOL] = pack_modarr_nc(lib->nlayer, lib->modarr);
+        NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, model_varid, (const real_t *)model_nc));
+        GRT_SAFE_FREE_PTR(model_nc);
+    }
 
     size_t nr = lib->nr;
     real_t *tmpdata = (real_t *)calloc(nr, sizeof(real_t));

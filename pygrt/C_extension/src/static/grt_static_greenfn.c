@@ -669,6 +669,7 @@ static void compute_stgrnlib_to_nc(
     size_t ntot = ndepsrc * ndeprcv;
     size_t idone = 0;
     const char *modelname = grt_get_basename(modelpath);
+    bool have_model = false;
 
     for(size_t is = 0; is < ndepsrc; ++is){
         for(size_t ir = 0; ir < ndeprcv; ++ir){
@@ -679,6 +680,11 @@ static void compute_stgrnlib_to_nc(
             if((mod1d = grt_read_mod1d_from_file(modelpath, zs, zr, false)) == NULL){
                 exit(EXIT_FAILURE);
             }
+            if(!have_model){
+                grt_stgrnlib_set_modarr(lib, mod1d->nmodarr, mod1d->modarr);
+                have_model = true;
+            }
+
             grt_set_mod1d_boundary(mod1d, topbound, botbound);
 
             // 拷贝模板，避免 integ 改写 cvgmet/dk 等影响后续深度
@@ -711,14 +717,6 @@ static void compute_stgrnlib_to_nc(
 
             grt_free_mod1d(mod1d);
         }
-    }
-
-    // 将模型矩阵写入库，供后续 syn/应力按深度查层
-    {
-        size_t nlayer = 0;
-        real_t (*modarr)[GRT_MODARR_NCOL] = grt_read_modarr_from_file(modelpath, &nlayer, false);
-        grt_stgrnlib_set_modarr(lib, nlayer, (const real_t (*)[GRT_MODARR_NCOL])modarr);
-        GRT_SAFE_FREE_PTR(modarr);
     }
 
     grt_stgrnlib_save_nc(lib, outpath);
