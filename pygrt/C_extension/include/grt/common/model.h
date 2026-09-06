@@ -39,6 +39,9 @@ typedef struct {
 
     GRT_BOUND_TYPE topbound;  ///< 顶界面的边界条件
     GRT_BOUND_TYPE botbound;  ///< 底界面的边界条件
+
+    size_t nmodarr;  ///< 原始模型层数（未插入震源/台站虚拟层）
+    real_t (*modarr)[GRT_MODARR_NCOL];  ///< 原始模型矩阵，每行 Thk/Va/Vb/Rho/Qa/Qb
 } MODEL1D;
 
 
@@ -139,6 +142,32 @@ MODEL1D * grt_read_mod1d_from_file(const char *modelpath, real_t depsrc, real_t 
  */
 real_t (* grt_read_modarr_from_file(
     const char *modelpath, size_t *nlayer, bool allowLiquid))[GRT_MODARR_NCOL];
+
+/**
+ * 由 ``nlayer × 6`` 模型矩阵构建 `MODEL1D`
+ * 不修改传入的 ``modarr``，并拷贝一份到 ``MODEL1D.modarr``
+ * 
+ * @param[in]    nlayer         层数
+ * @param[in]    modarr         模型矩阵，每行 Thk/Va/Vb/Rho/Qa/Qb
+ * @param[in]    depsrc         震源深度
+ * @param[in]    deprcv         接收深度
+ * @param[in]    allowLiquid    是否允许液体层
+ * @return    `MODEL1D` 结构体指针
+ */
+MODEL1D * grt_read_mod1d_from_modarr(
+    size_t nlayer, const real_t (*modarr)[GRT_MODARR_NCOL],
+    real_t depsrc, real_t deprcv, bool allowLiquid);
+
+/**
+ * 将 ``nlayer × 6`` 模型矩阵写出为文本模型文件
+ * 使用 ``%g`` 格式去掉末尾 0；Qa/Qb 非正则只写四列
+ * 
+ * @param[in]    filepath    输出路径
+ * @param[in]    nlayer      层数
+ * @param[in]    modarr      模型矩阵，每行 Thk/Va/Vb/Rho/Qa/Qb
+ */
+void grt_write_modarr_to_file(
+    const char *filepath, size_t nlayer, const real_t (*modarr)[GRT_MODARR_NCOL]);
 
 /**
  * 由 ``nlayer × 6`` 模型矩阵按深度查层介质
