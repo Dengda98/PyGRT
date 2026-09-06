@@ -168,6 +168,13 @@ def _normalize_integer(value: int, name: str, minimum: int = 0) -> int:
     return number
 
 
+def _nthreads_option(nthreads: Optional[int]) -> Optional[str]:
+    """将线程数格式化为 CLI ``-P`` 选项，``None`` 表示使用全部核心"""
+    if nthreads is None:
+        return None
+    return f"-P{_normalize_integer(nthreads, 'nthreads', minimum=1)}"
+
+
 def _ensure_parent(path: PathLike) -> None:
     """确保输出文件的父目录存在"""
     Path(path).parent.mkdir(parents=True, exist_ok=True)
@@ -329,6 +336,7 @@ class PyModel1D:
         cmax: Optional[float] = None,
         iref: Optional[int] = None,
         ctrl_kw: Optional[Dict[str, float]] = None,
+        nthreads: Optional[int] = None,
         print_log: bool = True,
     ):
         r"""
@@ -367,8 +375,11 @@ class PyModel1D:
                                    decimal exponents of the CLI thresholds
                                    (``tol=3`` means :math:`10^{-3}`), while
                                    ``dc`` is a uniform search interval in km/s.
-        :param    print_log:       If false, pass ``-s`` and capture command
-                                   output on failure.
+        :param    nthreads:        Number of OpenMP threads. ``None`` uses all
+                                   cores (CLI ``-P``).
+        :param    print_log:       If false, suppress command output and
+                                   capture it on failure. Warnings and
+                                   diagnostics from ``grt`` are still printed.
 
         :return: ``None``. The dispersion file is written to ``phase_path`` in
                  ordinary mode.
@@ -469,8 +480,9 @@ class PyModel1D:
         if ctrl_option is not None:
             command["T"] = ctrl_option
 
-        if not print_log:
-            command["s"] = "-s"
+        nthreads_option = _nthreads_option(nthreads)
+        if nthreads_option is not None:
+            command["P"] = nthreads_option
 
         run_grt(list(command.values()), print_log=print_log)
 
@@ -587,6 +599,7 @@ class PyModel1D:
         ref_first_p: bool = False,
         gf_source: Optional[Iterable[str]] = None,
         calc_upar: bool = False,
+        nthreads: Optional[int] = None,
         print_log: bool = True,
     ):
         r"""
@@ -624,8 +637,11 @@ class PyModel1D:
                                    ``HF`` and ``DC``. ``None`` means all types.
         :param    calc_upar:       If true, also compute spatial displacement
                                    derivatives.
+        :param    nthreads:        Number of OpenMP threads. ``None`` uses all
+                                   cores (CLI ``-P``).
         :param    print_log:       If false, suppress command output and capture it
-                                   on failure.
+                                   on failure. Warnings and diagnostics from
+                                   ``grt`` are still printed.
 
         :return: ``None``. Green's-function SAC files are written below the output root.
         """
@@ -694,6 +710,9 @@ class PyModel1D:
             command["W"] = f"-W{_normalize_integer(upsampling_n, 'upsampling_n', minimum=1)}"
         if calc_upar:
             command["e"] = "-e"
+        nthreads_option = _nthreads_option(nthreads)
+        if nthreads_option is not None:
+            command["P"] = nthreads_option
         run_grt(list(command.values()), print_log=print_log)
 
     def greenfn(
@@ -725,6 +744,7 @@ class PyModel1D:
         calc_upar: bool = False,
         gf_source: Optional[Iterable[str]] = None,
         statsidxs: Optional[Sequence[int]] = None,
+        nthreads: Optional[int] = None,
         print_log: bool = True,
     ):
         r"""
@@ -789,6 +809,8 @@ class PyModel1D:
         :param    statsidxs:         Frequency indexes for optional statistics output.
                                      ``None`` means no statistics files. An empty list means
                                      all frequency indexes (CLI bare ``-S``).
+        :param    nthreads:          Number of OpenMP threads. ``None`` uses all cores
+                                     (CLI ``-P``).
         :param    print_log:         Whether to print calculation logs. Warnings
                                      and diagnostics from ``grt`` are always printed.
 
@@ -880,9 +902,12 @@ class PyModel1D:
         if statsidxs is not None:
             command["S"] = "-S" + ",".join(str(index) for index in statsidxs)
 
-        # Build the derivative and logging options.
+        # Build the derivative and thread-count options.
         if calc_upar:
             command["e"] = "-e"
+        nthreads_option = _nthreads_option(nthreads)
+        if nthreads_option is not None:
+            command["P"] = nthreads_option
 
         run_grt(list(command.values()), print_log=print_log)
 

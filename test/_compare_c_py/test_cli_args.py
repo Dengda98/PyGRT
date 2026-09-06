@@ -93,6 +93,15 @@ def test_print_log_forwarded_to_run_grt():
         model.greenfn(depsrc=1.0, deprcv=0.0, dists=1.0, nt=8, dt=0.1, print_log=False)
         assert runner.kwargs[-1].get("print_log") is False
         assert "-s" not in runner.commands[-1]
+
+        model.eigenv(
+            wtype="R",
+            freqs=(0.0, 1.0, 0.1),
+            phase_path=HERE / "_tmp_args_phase.nc",
+            print_log=False,
+        )
+        assert runner.kwargs[-1].get("print_log") is False
+        assert "-s" not in runner.commands[-1]
     finally:
         _restore_run_grt(pygrt.pymod, original)
 
@@ -196,6 +205,7 @@ def test_greenfn_default_and_optional_flags():
             calc_upar=True,
             gf_source=["EX", "DC", "HF"],
             statsidxs=[0, 3, 7],
+            nthreads=4,
             print_log=False,
         )
         cmd = runner.commands[-1]
@@ -216,6 +226,7 @@ def test_greenfn_default_and_optional_flags():
             "-Gesh",
             "-S0,3,7",
             "-e",
+            "-P4",
         )
 
         # ref_first_p 对应 -Ep
@@ -270,6 +281,7 @@ def test_modal_cli_argument_mapping():
             phase_path=phase,
             all_modes=True,
             ctrl_kw={"tol": 3.0, "cgap": 7.0, "thrd": 4.0, "vgap": 7.0, "dc": 3.0},
+            nthreads=2,
             print_log=False,
         )
         assert_command_equals(
@@ -282,7 +294,7 @@ def test_modal_cli_argument_mapping():
                 f"-C{phase}",
                 "-N",
                 "-T+t3+c7+r4+v7+u3",
-                "-s",
+                "-P2",
             ],
         )
         assert runner.kwargs[-1].get("print_log") is False
@@ -338,6 +350,7 @@ def test_modal_cli_argument_mapping():
             delayV0=3.4,
             gf_source=["EX", "VF", "HF", "DC"],
             calc_upar=True,
+            nthreads=8,
             print_log=False,
         )
         assert_command_equals(
@@ -355,6 +368,7 @@ def test_modal_cli_argument_mapping():
                 "-Gevhs",
                 "-W4",
                 "-e",
+                "-P8",
             ],
         )
         assert runner.kwargs[-1].get("print_log") is False
@@ -368,7 +382,7 @@ def test_modal_cli_argument_mapping():
         )
         assert_command_equals(
             runner.commands[-1],
-            ["eigenv", f"-M{MODEL}", "-SR", "-F1/5/1+p", f"-C{phase}", "-N2", "-s"],
+            ["eigenv", f"-M{MODEL}", "-SR", "-F1/5/1+p", f"-C{phase}", "-N2"],
         )
 
         model.eigenfn(
@@ -460,6 +474,13 @@ def test_modal_cli_argument_mapping():
             assert "depth" in str(exc)
         else:
             raise AssertionError("eigenfn should reject a single nonpositive depth")
+
+        try:
+            model.greenfn(depsrc=1.0, deprcv=0.0, dists=1.0, nt=8, dt=0.1, nthreads=0)
+        except ValueError as exc:
+            assert "nthreads" in str(exc)
+        else:
+            raise AssertionError("greenfn should reject nonpositive nthreads")
     finally:
         _restore_run_grt(pygrt.pymod, original)
 
@@ -874,6 +895,19 @@ def test_format_helpers():
         raise AssertionError("format_range should reject non-3-length input")
 
 
+def test_read_statsfile_ptam_requires_prefix():
+    dummy = HERE / "K_dummy_stats"
+    dummy.write_bytes(b"not-ptam")
+    try:
+        pygrt.utils.read_statsfile_ptam(str(dummy))
+    except ValueError as exc:
+        assert "PTAM" in str(exc)
+    else:
+        raise AssertionError("read_statsfile_ptam should reject non-PTAM filenames")
+    finally:
+        dummy.unlink(missing_ok=True)
+
+
 def main():
     tests = [
         test_format_helpers,
@@ -889,6 +923,7 @@ def main():
         test_static_sproj_and_coulomb_args,
         test_tensor_return_result_reads_prefix_only,
         test_renamed_interfaces_fail_with_migration_message,
+        test_read_statsfile_ptam_requires_prefix,
     ]
     for func in tests:
         print(f"[RUN] {func.__name__}")
