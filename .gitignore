@@ -15,5 +15,6 @@
 /pygrt/C_extension/lib/
 /pygrt/C_extension/bin/
 /pygrt/C_extension/.clangd
+/pygrt/C_extension/compile_commands.json
 
 TODO
