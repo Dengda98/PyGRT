@@ -9,9 +9,9 @@
   <img alt="GitHub License" src="https://img.shields.io/github/license/Dengda98/PyGRT">
 </p>
 
-<h3 align="center">
-  <strong><a href="https://github.com/Dengda98/PyGRT">PyGRT</a>: An integrated, efficient C/Python toolkit for theoretical simulation in layered half-space media</strong>
-</h3>
+<h2 align="center">
+  <strong><a href="https://github.com/Dengda98/PyGRT">PyGRT</a>: An integrated, efficient C/Python toolkit for theoretical simulation <br>in layered half-space media</strong>
+</h2>
 
 <h4 align="center">
   <a href="https://pygrt.readthedocs.io/zh-cn/"><strong>Chinese Document</strong></a>
@@ -23,7 +23,7 @@
   <img src="./figs/example_ZRT.png" alt="Image 1" width="70%" />
 </p>
 
-# At a Glance
+# Features
 
 - **Dynamic and static responses** (displacement, strain, stress, rotation, and related quantities)
 - **Surface-wave modal analysis** (dispersion curves, eigenfunctions, and related quantities)
