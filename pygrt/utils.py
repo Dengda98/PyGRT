@@ -911,7 +911,9 @@ def read_statsfile_ptam(statsfile:str):
     '''
         read a statsfile from PTAM process  
 
-        :param    statsfile:       File path (Wildcards can be used to simplify input)
+        :param    statsfile:       PTAM stats file path. The basename must start
+                                   with ``PTAM``. Wildcards can be used to
+                                   simplify input.
 
         :return:
             - **data1** -     `numpy.ndarray <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_ custom type array, during DCM or (SA)FIM
@@ -924,11 +926,17 @@ def read_statsfile_ptam(statsfile:str):
         raise OSError(f"{statsfile} should only match one file, but {len(Lst)} matched.")
     statsfile = Lst[0]
 
+    # 必须是 PTAM 开头的统计文件，避免误读 K/C 核函数文件
+    PTAMname = os.path.basename(statsfile)
+    if not PTAMname.startswith("PTAM"):
+        raise ValueError(
+            f"{statsfile} is not a PTAM stats file; the basename must start with 'PTAM'."
+        )
+
     # 获得震中距
     dist = float(os.path.dirname(statsfile).split("_")[-1])
 
     # 从文件路径命名中，获得对应的K文件路径
-    PTAMname = os.path.basename(statsfile)
     if "_" in PTAMname:  # 动态解
         splits = PTAMname.split("_")
         splits[-3] = "K"
