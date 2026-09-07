@@ -9,7 +9,7 @@
 依赖
 ------------
 
-如果想使用 C 程序 :command:`grt` ，
+如果想使用 :command:`grt` 命令，
 
 + |FFTW| *（其静态库已链接到预构建版本）*
 + |NetCDF|  *（其静态库已链接到预构建版本）*
@@ -134,4 +134,4 @@ Python 接口通过调用包内的 :command:`grt` 完成主计算；预构建安
   在环境变量 :envvar:`C_INCLUDE_PATH` 中添加 FFTW 的头文件路径，
   或者在运行 :command:`make` 命令时通过 ``CFLAGS2`` 临时增加 :command:`gcc` 的头文件搜索路径，例如::
 
-    make CFLAGS="-I/usr/local/include -I<其它路径> -I<其它路径>"
+    make CFLAGS2="-I/usr/local/include -I<其它路径> -I<其它路径>"

@@ -16,7 +16,7 @@ Python 接口主要负责组织模型与输出路径，并调用 :command:`grt` 
 
     grt <module-name> [<module-options>]
 
-**C 程序的运行独立于 Python，不需要 Python 环境，从而满足了更多计算场景。**
+:command:`grt` **命令的运行独立于 Python，不需要 Python 环境，从而满足了更多计算场景。**
 
 
 建立模型文件
@@ -27,7 +27,7 @@ Python 接口主要负责组织模型与输出路径，并调用 :command:`grt` 
 
    一维层状模型示意图， :math:`z_S` 为震源层， :math:`z_R` 为接收层
 
-这里的选项卡 **CLI** 代表 **使用C程序** :command:`grt` 。后续的选项卡沿用此设定，不再解释。
+这里的选项卡 **CLI** 代表使用 :command:`grt` 命令。后续的选项卡沿用此设定，不再解释。
 
 .. tabs:: 
 
