@@ -1,6 +1,71 @@
 Changelog
 ====================
 
+## PyGRT v0.17.0
+
+This is a **major update** since v0.16.1—we are one step closer to the **v1.0.0** stable release. It expands PyGRT from wave-number Green's-function workflows into a more integrated toolkit for **multi-depth libraries**, **finite-fault synthesis**, **static stress / Coulomb analysis**, **Okada solutions**, and **surface-wave modal analysis**—with a cleaner, CLI-aligned Python API throughout.
+
+If you are upgrading from an earlier release, please skim the breaking changes below before updating scripts. The [online documentation](https://pygrt.readthedocs.io/zh-cn/) has been refreshed with new tutorials and examples for the features below.
+
+```bash
+pip install --upgrade pygrt-kit
+```
+
+---
+
+### New Features
+
+#### Multi-depth Green's function libraries & synthesis
+- **Dynamic** and **static** Green's function libraries now support multiple source/receiver depths in one build.
+- Synthesis supports **finite source faults** and **arbitrary receiver geometry** (including Coulomb-format fault files).
+- Static results can be output in **ZRT** or **ZNE** coordinates.
+- See the [dynamic](https://pygrt.readthedocs.io/zh-cn/Tutorial/dynamic/dynlib.html) and [static](https://pygrt.readthedocs.io/zh-cn/Tutorial/static/stlib.html) library tutorials, and the [finite-fault examples](https://pygrt.readthedocs.io/zh-cn/Tutorial/static/src_fault.html).
+
+#### Static stress, projection & Coulomb workflows
+- New post-processing chain: `static_stress` → `static_sproj` → `static_coulomb`.
+- Supports **finite receiver faults** and richer Coulomb input formats.
+- Walkthrough: [static solution tutorial](https://pygrt.readthedocs.io/zh-cn/Tutorial/static/index.html).
+
+#### Okada solution
+- New `okada` module (CLI: `grt okada`) for static displacement in a **uniform elastic half-space**, with point sources and Coulomb-format finite faults, plus optional parallel processing.
+- Background and examples: [Okada solution](https://pygrt.readthedocs.io/zh-cn/Okada_solution/okada.html).
+
+#### Surface-wave Python API
+- `PyModel1D.eigenv`, `PyModel1D.eigenfn`, and `PyModel1D.modsum` are now available in Python, matching the existing CLI modules.
+- Tutorial: [surface-wave modal analysis](https://pygrt.readthedocs.io/zh-cn/Tutorial/modal/surface_wave.html).
+
+#### Lamb problem extensions
+- **`lamb2`**: generalized solution with Cartesian geometry and buried-receiver reciprocity.
+- **`lamb3`**: generalized solution for buried source and receiver.
+- Overview: [Lamb problem](https://pygrt.readthedocs.io/zh-cn/Lamb_problem/index.html).
+
+#### Other additions
+- Coordinate conversion helpers: `xy2geo` and `geo2xy`.
+- `nthreads` exposed in Python wrappers for parallel runs.
+- Improved DCM / k-integration behavior, zero-distance handling, and diagnostic forwarding from `grt` to Python.
+
+---
+
+### Breaking API Changes
+
+> Old names are removed rather than silently aliased—calling them raises an error pointing to the new interface.
+
+| Area | What changed |
+|------|--------------|
+| **`PyModel1D` paths** | Constructor now takes keyword-only `grn` / `stgrn` / `modelpath` instead of the old path arguments. Only pass the paths you actually need. |
+| **Method names aligned with CLI** | e.g. `compute_grn` → `greenfn`, `compute_static_grn` → `static_greenfn`, `compute_syn` → `syn`, `compute_static_syn` → `static_syn`, `compute_travt1d` → `travt`. Same pattern for `strain`, `stress`, `rotation`, `okada`, `static_sproj`, `static_coulomb`, `lamb1`, … |
+| **Synthesis APIs** | Redundant source-related arguments removed; source parameters are set at synthesis time in the intended way. |
+| **Static grid coordinates** | Primary names are now `north` / `east` (with `xarr` / `yarr` kept for compatibility). |
+| **NetCDF I/O** | `read_static_nc` replaced by generic readers: `read_nc`, `read_nc_variables`, and modal helpers such as `read_dispersion`, `read_eigenfunction`, … |
+| **Modal NetCDF format** | 1-D model metadata is embedded in modal output files; dispersion data layout is flattened—update any custom readers accordingly. |
+| **`lamb1` / `lamb2`** | `lamb1` is keyword-only with validated dimensionless time; `lamb2` uses the new Cartesian geometry interface. |
+
+For module-level CLI options and Python signatures, see the [documentation home](https://pygrt.readthedocs.io/zh-cn/) and run `grt <module> -h`.
+
+---
+**Full Changelog**: [v0.16.1...v0.17.0](https://github.com/Dengda98/PyGRT/compare/v0.16.1...v0.17.0)
+
+
 ## PyGRT v0.16.1
 
 Bug fixed, feature enhanced
