@@ -485,7 +485,7 @@ void grt_update_mod1d_state_omega(MODEL1D_STATE *mstat, const cplx_t omega, cons
         mstat->atnb[i] = atnb;
         
         mstat->mu[i] = (Vb0*atnb)*(Vb0*atnb)*(mod1d->Rho[i]);
-        mstat->lambda[i] = (Va0*atnb)*(Va0*atnb)*(mod1d->Rho[i]) - 2*mstat->mu[i];
+        mstat->lambda[i] = (Va0*atna)*(Va0*atna)*(mod1d->Rho[i]) - 2*mstat->mu[i];
         mstat->delta[i] = (mstat->lambda[i] + mstat->mu[i]) / (mstat->lambda[i] + 3.0*mstat->mu[i]);
     }
 }
