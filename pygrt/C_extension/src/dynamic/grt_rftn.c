@@ -7,9 +7,10 @@
  *
  */
 
-#include "grt.h"
-
+#include <stdint.h>
 #include <float.h>
+
+#include "grt.h"
 
 #undef I    ///< 取消标准复数单位宏，避免与命令行选项 I 冲突
 #define IMAG _Complex_I   ///< 复数单位，避免与标准复数宏 I 冲突
