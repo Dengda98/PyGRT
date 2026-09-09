@@ -21,7 +21,7 @@ typedef struct {
     real_t k2;            ///< k^2
     real_t kp;            ///< kp=sqrt(1-k^2)
     real_t kp2;           ///< kp^2=1-k^2
-    real_t theta;         ///< 直接波射线角 theta=atan2(R,source_depth)
+    real_t theta;         ///< 直接波射线角 theta=atan2(R,depsrc)
     real_t phi;           ///< 水平面方位角 phi
     real_t st;            ///< sin(theta)
     real_t ct;            ///< cos(theta)

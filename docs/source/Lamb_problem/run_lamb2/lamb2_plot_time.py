@@ -27,7 +27,7 @@ G, dG_source, dG_receiver = pygrt.utils.lamb2(
 EPICENTRAL_DISTANCE = 10.0
 NU = 0.25
 AZIMUTH = 30.0
-SOURCE_DEPTHS = np.array([0.1, 0.5, 1.0, 2.0, 5.0, 10.0])
+DEPSRCS = np.array([0.1, 0.5, 1.0, 2.0, 5.0, 10.0])
 TMAX = 2.0
 DTBAR = 0.002
 
@@ -52,12 +52,12 @@ def component_label(component: str, derivative_coordinate: int | None = None) ->
 
 def compute_lamb2_results() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     ts = np.arange(int(round(TMAX / DTBAR)) + 1, dtype=float) * DTBAR
-    greens = np.empty((len(SOURCE_DEPTHS), len(ts), 3, 3))
-    source_derivatives = np.empty((len(SOURCE_DEPTHS), len(ts), 3, 3, 3))
+    greens = np.empty((len(DEPSRCS), len(ts), 3, 3))
+    source_derivatives = np.empty((len(DEPSRCS), len(ts), 3, 3, 3))
 
-    for index, source_depth in enumerate(SOURCE_DEPTHS):
+    for index, depsrc in enumerate(DEPSRCS):
         G, dG_source, _ = pygrt.utils.lamb2(
-            nu=NU, tbar=ts, R=EPICENTRAL_DISTANCE, depsrc=source_depth, azimuth=AZIMUTH
+            nu=NU, tbar=ts, R=EPICENTRAL_DISTANCE, depsrc=depsrc, azimuth=AZIMUTH
         )
         greens[index] = G
         source_derivatives[index] = dG_source
@@ -93,11 +93,11 @@ def plot_components(
             fontsize=11,
         )
 
-    for source_depth, offset in zip(SOURCE_DEPTHS, offsets):
+    for depsrc, offset in zip(DEPSRCS, offsets):
         axes[0, 0].text(
             0.03,
             offset,
-            f"{source_depth:g}",
+            f"{depsrc:g}",
             transform=axes[0, 0].get_yaxis_transform(),
             ha="left",
             va="bottom",

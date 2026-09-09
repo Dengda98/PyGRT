@@ -28,7 +28,7 @@ G, dG_source, dG_receiver = pygrt.utils.lamb3(
 EPICENTRAL_DISTANCE = 10.0
 NU = 0.25
 AZIMUTH = 30.0
-SOURCE_DEPTHS = np.array([0.1, 0.5, 1.0, 2.0, 5.0, 10.0])
+DEPSRCS = np.array([0.1, 0.5, 1.0, 2.0, 5.0, 10.0])
 TMAX = 2.0
 DTBAR = 0.002
 
@@ -51,15 +51,15 @@ def component_label(component: str, derivative_coordinate: int | None = None) ->
     return rf"$\bar{{G}}^H_{{{component}}}$"
 
 
-def compute_lamb3_results(receiver_depth:float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def compute_lamb3_results(deprcv:float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     ts = np.arange(int(round(TMAX / DTBAR)) + 1, dtype=float) * DTBAR
-    greens = np.empty((len(SOURCE_DEPTHS), len(ts), 3, 3))
-    source_derivatives = np.empty((len(SOURCE_DEPTHS), len(ts), 3, 3, 3))
+    greens = np.empty((len(DEPSRCS), len(ts), 3, 3))
+    source_derivatives = np.empty((len(DEPSRCS), len(ts), 3, 3, 3))
 
-    for index, source_depth in enumerate(SOURCE_DEPTHS):
+    for index, depsrc in enumerate(DEPSRCS):
         G, dG_source, _ = pygrt.utils.lamb3(
-            nu=NU, tbar=ts, R=EPICENTRAL_DISTANCE, depsrc=source_depth,
-            deprcv=receiver_depth, azimuth=AZIMUTH,
+            nu=NU, tbar=ts, R=EPICENTRAL_DISTANCE, depsrc=depsrc,
+            deprcv=deprcv, azimuth=AZIMUTH,
         )
         greens[index] = G
         source_derivatives[index] = dG_source
@@ -95,11 +95,11 @@ def plot_components(
             fontsize=11,
         )
 
-    for source_depth, offset in zip(SOURCE_DEPTHS, offsets):
+    for depsrc, offset in zip(DEPSRCS, offsets):
         axes[0, 0].text(
             0.03,
             offset,
-            f"{source_depth:g}",
+            f"{depsrc:g}",
             transform=axes[0, 0].get_yaxis_transform(),
             ha="left",
             va="bottom",
@@ -112,9 +112,9 @@ def plot_components(
     plt.close(fig)
 
 
-for receiver_depth in [0.1, 1.0, 5.0]:
-    ts, greens, source_derivatives = compute_lamb3_results(receiver_depth)
-    plot_components(ts, greens, GREEN_SCALE, GREEN_OFFSETS, GREEN_YLIM, f"lamb3_{receiver_depth:.1f}.svg")
+for deprcv in [0.1, 1.0, 5.0]:
+    ts, greens, source_derivatives = compute_lamb3_results(deprcv)
+    plot_components(ts, greens, GREEN_SCALE, GREEN_OFFSETS, GREEN_YLIM, f"lamb3_{deprcv:.1f}.svg")
 
     for coordinate in (1, 2, 3):
         plot_components(
@@ -123,6 +123,6 @@ for receiver_depth in [0.1, 1.0, 5.0]:
             DERIVATIVE_SCALES[coordinate],
             DERIVATIVE_OFFSETS,
             DERIVATIVE_YLIM,
-            f"lamb3_d{coordinate}_{receiver_depth:.1f}.svg",
+            f"lamb3_d{coordinate}_{deprcv:.1f}.svg",
             derivative_coordinate=coordinate,
         )

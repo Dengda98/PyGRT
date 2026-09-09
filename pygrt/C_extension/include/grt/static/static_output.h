@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "grt/static/recv_points.h"
+#include "grt/static/rcv_points.h"
 
 /**
  * 查询指定深度处的接收介质参数
@@ -37,7 +37,7 @@ typedef struct {
     real_t alpha;                                ///< 均匀半空间 alpha 参数
     real_t lambda;                               ///< 均匀半空间 lambda 参数
     real_t mu;                                   ///< 均匀半空间 mu 参数
-    const GRT_RECV_POINTS *recv;                 ///< 规则网格、任意点或有限接收断层点列表
+    const GRT_RCV_POINTS *rcv;                   ///< 规则网格、任意点或有限接收断层点列表
     GRT_STATIC_MEDIUM_FUNC get_medium;           ///< 接收介质查询回调函数
     void *medium_context;                        ///< 接收介质查询回调上下文
     const real_t (*syn)[GRT_CHANNEL_NUM];        ///< 位移数组

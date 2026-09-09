@@ -39,7 +39,7 @@ pygrt.utils.static_rotation("stsyn_zne.nc")
 
 rcv = Path("rcv_pts.txt")
 rcv.write_text("# north east depth (km)\n0 0 0\n1 2 0\n-1 1 0\n")
-pymod_s.static_syn(scale=1e20, output_path="stsyn_q.nc", recv_points=rcv, calc_upar=True)
+pymod_s.static_syn(scale=1e20, output_path="stsyn_q.nc", rcv_points=rcv, calc_upar=True)
 pygrt.utils.static_strain("stsyn_q.nc")
 pygrt.utils.static_stress("stsyn_q.nc")
 pygrt.utils.static_rotation("stsyn_q.nc")

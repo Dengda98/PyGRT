@@ -20,12 +20,12 @@ typedef struct {
     real_t kp;                  ///< kp=sqrt(1-k^2)
     real_t kp2;                 ///< kp^2=1-k^2
     real_t R;                   ///< 源点和接收点的水平距离 R
-    real_t r;                   ///< 直接路径长度 r=sqrt(R^2+(source_depth-receiver_depth)^2)
-    real_t rp;                  ///< 反射路径长度 rp=sqrt(R^2+(source_depth+receiver_depth)^2)
-    real_t source_depth;        ///< 源点深度 x3'
-    real_t receiver_depth;      ///< 接收点深度 x3
-    real_t theta;               ///< 直接波射线角 theta=atan2(R,source_depth-receiver_depth)
-    real_t theta_ref;           ///< 反射波射线角 theta_ref=atan2(R,source_depth+receiver_depth)
+    real_t r;                   ///< 直接路径长度 r=sqrt(R^2+(depsrc-deprcv)^2)
+    real_t rp;                  ///< 反射路径长度 rp=sqrt(R^2+(depsrc+deprcv)^2)
+    real_t depsrc;              ///< 源点深度 x3'
+    real_t deprcv;              ///< 接收点深度 x3
+    real_t theta;               ///< 直接波射线角 theta=atan2(R,depsrc-deprcv)
+    real_t theta_ref;           ///< 反射波射线角 theta_ref=atan2(R,depsrc+deprcv)
     real_t phi;                 ///< 水平面方位角 phi
     real_t st;                  ///< sin(theta)
     real_t ct;                  ///< cos(theta)
@@ -3530,8 +3530,8 @@ static void transform_lamb3_conversion_matrix(LAMB3_POLY_COEFF matrix[3][3]) {
 }
 
 static void make_lamb3_PS_coefficients(const LAMB3_VARS *V, const real_t z_minus_sign, const int make_vertical, LAMB3_CONVERSION_COEFF_SET *coeffs) {
-    const real_t z_plus = (V->source_depth + V->receiver_depth) / V->R;
-    const real_t z_minus = z_minus_sign * (V->receiver_depth - V->source_depth) / V->R;
+    const real_t z_plus = (V->depsrc + V->deprcv) / V->R;
+    const real_t z_minus = z_minus_sign * (V->deprcv - V->depsrc) / V->R;
     const real_t time_scale = V->r / V->R;
     const real_t k_prime = V->kp;
     const real_t k_prime2 = V->kp2;

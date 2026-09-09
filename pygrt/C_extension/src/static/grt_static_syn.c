@@ -1273,13 +1273,13 @@ static void resolve_finite_fault_subdiv(
  * @param[in]  lib    静态格林函数库
  * @return            新分配的接收点结构体
  */
-static GRT_RECV_POINTS *build_syn_recv(const GRT_MODULE_CTRL *Ctrl, const STGRNLIB *lib)
+static GRT_RCV_POINTS *build_syn_rcv(const GRT_MODULE_CTRL *Ctrl, const STGRNLIB *lib)
 {
     if(Ctrl->Q.active){
-        return grt_recv_points_from_file(Ctrl->Q.s_path);
+        return grt_rcv_points_from_file(Ctrl->Q.s_path);
     }
     if(Ctrl->R.active){
-        return grt_recv_points_from_faults(
+        return grt_rcv_points_from_faults(
             Ctrl->R.nfault, Ctrl->R.faults, Ctrl->R.dL, Ctrl->R.dW);
     }
 
@@ -1288,7 +1288,7 @@ static GRT_RECV_POINTS *build_syn_recv(const GRT_MODULE_CTRL *Ctrl, const STGRNL
     const real_t *norths = Ctrl->isnewNEgrid ? Ctrl->X.norths : lib->norths;
     const real_t *easts  = Ctrl->isnewNEgrid ? Ctrl->Y.easts  : lib->easts;
     real_t deprcv = Ctrl->D.r_active ? Ctrl->D.deprcv : lib->deprcvs[0];
-    return grt_recv_points_from_grid(nnorth, norths, neast, easts, deprcv);
+    return grt_rcv_points_from_grid(nnorth, norths, neast, easts, deprcv);
 }
 
 
@@ -1315,7 +1315,7 @@ static void static_syn_get_medium(
  * @param[in]  path         输出 NetCDF 文件路径
  * @param[in]  Ctrl         static_syn 命令行控制结构体
  * @param[in]  lib          静态格林函数库
- * @param[in]  recv         规则网格、任意点或有限接收断层点列表
+ * @param[in]  rcv          规则网格、任意点或有限接收断层点列表
  * @param[in]  depsrc       点源深度 (km)
  * @param[in]  syn          位移数组
  * @param[in]  syn_upar     位移偏导数组
@@ -1324,7 +1324,7 @@ static void save_syn_nc(
     const char *path,
     const GRT_MODULE_CTRL *Ctrl,
     const STGRNLIB *lib,
-    const GRT_RECV_POINTS *recv,
+    const GRT_RCV_POINTS *rcv,
     real_t depsrc,
     const real_t (*syn)[GRT_CHANNEL_NUM],
     const real_t (*syn_upar)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])
@@ -1345,7 +1345,7 @@ static void save_syn_nc(
         .has_depsrc = Ctrl->isPointSource,
         .depsrc = depsrc,
         .has_elastic_params = false,
-        .recv = recv,
+        .rcv = rcv,
         .get_medium = static_syn_get_medium,
         .medium_context = (void *)lib,
         .syn = syn,
@@ -1373,12 +1373,12 @@ int static_syn_main(int argc, char **argv){
     }
 
     // 接收点：网格、-Q 逐点或 -R 有限断层子断层中心
-    GRT_RECV_POINTS *recv = build_syn_recv(Ctrl, lib);
-    size_t npts = recv->npts;
-    const real_t *norths = recv->norths;
-    const real_t *easts = recv->easts;
-    const real_t *depths = recv->depths;
-    bool shared_depth = recv->is_grid;
+    GRT_RCV_POINTS *rcv = build_syn_rcv(Ctrl, lib);
+    size_t npts = rcv->npts;
+    const real_t *norths = rcv->norths;
+    const real_t *easts = rcv->easts;
+    const real_t *depths = rcv->depths;
+    bool shared_depth = rcv->is_grid;
 
     real_t (*syn)[GRT_CHANNEL_NUM] = (real_t (*)[GRT_CHANNEL_NUM])calloc(npts, sizeof(real_t) * GRT_CHANNEL_NUM);
     real_t (*syn_upar)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM] =
@@ -1419,7 +1419,7 @@ int static_syn_main(int argc, char **argv){
     }
 
     // 写出 nc（接收介质只在此处按布局查询，不参与合成）
-    save_syn_nc(Ctrl->O.s_outgrid, Ctrl, lib, recv, depsrc, syn, syn_upar);
+    save_syn_nc(Ctrl->O.s_outgrid, Ctrl, lib, rcv, depsrc, syn, syn_upar);
 
     if(!Ctrl->s.active){
         if(Ctrl->isFiniteFault){
@@ -1433,7 +1433,7 @@ int static_syn_main(int argc, char **argv){
 
     GRT_SAFE_FREE_PTR(syn);
     GRT_SAFE_FREE_PTR(syn_upar);
-    grt_recv_points_free(recv);
+    grt_rcv_points_free(rcv);
     grt_stgrnlib_free(lib);
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;

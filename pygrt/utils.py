@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import os
 import glob
+import warnings
 from copy import deepcopy
 from pathlib import Path
 from typing import List, Optional, Sequence, Union
@@ -81,6 +82,26 @@ __all__ = [
 
 
 PathLike = Union[str, os.PathLike]
+
+
+def _resolve_rcv_points(rcv_points: Optional[PathLike], kwargs: dict, function_name: str):
+    """解析 ``recv_points`` 兼容关键字并返回规范参数"""
+    if "recv_points" in kwargs:
+        legacy_points = kwargs.pop("recv_points")
+        if rcv_points is not None and legacy_points is not None:
+            raise TypeError(f"{function_name}() got both 'rcv_points' and deprecated 'recv_points'.")
+        warnings.warn(
+            "'recv_points' is deprecated; it is an alias of 'rcv_points'.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+        if rcv_points is None:
+            rcv_points = legacy_points
+
+    if kwargs:
+        name = next(iter(kwargs))
+        raise TypeError(f"{function_name}() got an unexpected keyword argument {name!r}.")
+    return rcv_points
 
 
 QWV_NUM = 3
@@ -166,7 +187,7 @@ def okada(
     deprcv: Optional[float] = None,
     norths: Optional[Sequence[float]] = None,
     easts: Optional[Sequence[float]] = None,
-    recv_points: Optional[PathLike] = None,
+    rcv_points: Optional[PathLike] = None,
     rcv_fault: Optional[PathLike] = None,
     rcv_fault_size: Optional[Sequence[float]] = None,
     output_path: PathLike,
@@ -179,6 +200,7 @@ def okada(
     zne: bool = False,
     calc_upar: bool = False,
     return_result: bool = False,
+    **kwargs,
 ):
     r"""
     Synthesize static displacement with the Okada homogeneous half-space solution.
@@ -210,14 +232,14 @@ def okada(
     All arguments must be passed by keyword.
 
     :param    modelparams:      Homogeneous half-space parameters ``(vp, vs, rho)``;
-                               velocities are in km/s and density is in g/cm^3
+                                velocities are in km/s and density is in g/cm^3
     :param    depsrc:           Point-source depth in km. Required for point
-                               sources and forbidden for finite faults
+                                sources and forbidden for finite faults
     :param    deprcv:           Receiver depth in km for a regular grid. Forbidden
-                               when ``recv_points`` is used
+                                when ``rcv_points`` is used
     :param    norths:           North grid range ``(start, stop, step)`` in km
     :param    easts:            East grid range ``(start, stop, step)`` in km
-    :param    recv_points:      ASCII receiver file with either ``north east depth``
+    :param    rcv_points:       ASCII receiver file with either ``north east depth``
                                 or ``north east depth strike dip rake``; coordinates
                                 are in km and angles are in degrees
     :param    rcv_fault:        Coulomb-format finite receiver-fault file. Each
@@ -227,9 +249,9 @@ def okada(
                                 in km along strike / dip
     :param    output_path:      Output NetCDF file path
     :param    scale:            Point-source scale in dyne-cm unless
-                               ``scale_with_mu`` is true. Not used for finite faults
+                                ``scale_with_mu`` is true. Not used for finite faults
     :param    scale_with_mu:    If true, pass ``-Su`` and treat ``scale`` as potency
-                               or area times slip in cm^3
+                                or area times slip in cm^3
     :param    strike:           Fault strike in degrees, in [0, 360]
     :param    dip:              Fault dip in degrees, in [0, 90]
     :param    rake:             Slip rake in degrees, in [-180, 180]
@@ -255,10 +277,11 @@ def okada(
             raise ValueError("modelparams must contain exactly three values: (vp, vs, rho).")
     except TypeError:
         raise TypeError("modelparams must be a sequence of (vp, vs, rho).") from None
+    rcv_points = _resolve_rcv_points(rcv_points, kwargs, "okada")
     vp, vs, rho = modelparams
 
     use_ff = src_fault is not None
-    use_q = recv_points is not None
+    use_q = rcv_points is not None
     use_r = rcv_fault is not None
     use_xy = norths is not None or easts is not None
     has_strike = strike is not None
@@ -277,19 +300,19 @@ def okada(
         return f"-M{format_float(strike)}/{format_float(dip)}"
 
     if ((use_q or use_r) and use_xy):
-        raise ValueError("recv_points/rcv_fault is mutually exclusive with norths/easts.")
+        raise ValueError("rcv_points/rcv_fault is mutually exclusive with norths/easts.")
     if (use_q and use_r):
-        raise ValueError("recv_points and rcv_fault are mutually exclusive.")
+        raise ValueError("rcv_points and rcv_fault are mutually exclusive.")
     if use_xy and (norths is None or easts is None):
         raise ValueError("norths and easts must be supplied together.")
     if ((not use_q) and (not use_r) and (not use_xy)):
-        raise ValueError("Specify norths/easts, recv_points or rcv_fault.")
+        raise ValueError("Specify norths/easts, rcv_points or rcv_fault.")
     if depsrc is not None and depsrc < 0.0:
         raise ValueError("depsrc must be nonnegative.")
     if deprcv is not None and deprcv < 0.0:
         raise ValueError("deprcv must be nonnegative.")
     if ((use_q or use_r) and (deprcv is not None)):
-        raise ValueError("recv_points/rcv_fault is mutually exclusive with deprcv.")
+        raise ValueError("rcv_points/rcv_fault is mutually exclusive with deprcv.")
     if rcv_fault_size is not None:
         if (not use_r):
             raise ValueError("rcv_fault_size requires rcv_fault.")
@@ -324,7 +347,7 @@ def okada(
         raise ValueError("deprcv is required for grid receivers.")
 
     if use_q:
-        command.append(f"-Q{Path(recv_points)}")
+        command.append(f"-Q{Path(rcv_points)}")
     elif use_r:
         receiver_option = f"-R{Path(rcv_fault)}"
         if rcv_fault_size is not None:
@@ -465,9 +488,10 @@ def static_sproj(
     strike: Optional[float] = None,
     dip: Optional[float] = None,
     rake: Optional[float] = None,
-    recv_points: Optional[PathLike] = None,
+    rcv_points: Optional[PathLike] = None,
     force_rake: bool = False,
     return_result: bool = False,
+    **kwargs,
 ):
     """
     Project static stress tensors onto receiver-fault geometry in place.
@@ -477,30 +501,31 @@ def static_sproj(
     six stress components produced by ``static_stress``. For grid and ordinary
     points layouts, pass ``strike``, ``dip`` and ``rake`` together. For finite
     receiver points, pass only ``rake`` when the file has undefined rake values;
-    set ``force_rake=True`` to replace every rake. ``recv_points`` corresponds
+    set ``force_rake=True`` to replace every rake. ``rcv_points`` corresponds
     to the C module's ``-Q`` option and must contain six columns per row.
 
     Results are written back to ``path`` as ``sigma_n`` and ``tau_s``.
 
-    :param    path:         Static synthesis NetCDF file containing stress components.
-    :param    strike:       Manual receiver strike in degrees.
-    :param    dip:          Manual receiver dip in degrees.
-    :param    rake:         Manual receiver rake in degrees.
-    :param    recv_points:  Six-column receiver geometry file for the ``-Q`` option.
-    :param    force_rake:   If true, append ``+f`` and force the manual rake for all finite points.
+    :param    path:          Static synthesis NetCDF file containing stress components.
+    :param    strike:        Manual receiver strike in degrees.
+    :param    dip:           Manual receiver dip in degrees.
+    :param    rake:          Manual receiver rake in degrees.
+    :param    rcv_points:    Six-column receiver geometry file for the ``-Q`` option.
+    :param    force_rake:    If true, append ``+f`` and force the manual rake for all finite points.
     :param    return_result: If true, return the processed NetCDF data.
 
     :return: The result from :func:`read_nc_variables` when ``return_result`` is true;
              otherwise ``None``
     """
+    rcv_points = _resolve_rcv_points(rcv_points, kwargs, "static_sproj")
     options = []
     geometry = [value for value in (strike, dip, rake) if value is not None]
     if geometry:
         geometry_text = "/".join(format_float(value) for value in geometry)
         options.append(f"-M{geometry_text}{'+f' if force_rake else ''}")
 
-    if recv_points is not None:
-        options.append(f"-Q{Path(recv_points)}")
+    if rcv_points is not None:
+        options.append(f"-Q{Path(rcv_points)}")
 
     return _run_static_file_module(path, "static_sproj", options, return_result)
 

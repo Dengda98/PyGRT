@@ -211,13 +211,13 @@ int static_coulomb_main(int argc, char **argv)
     int ncid;
     NC_CHECK(nc_open(Ctrl->G.s_ingrid, NC_WRITE, &ncid));
 
-    GRT_RECV_NC_INFO recv_info;
-    grt_recv_nc_info_load(ncid, &recv_info);
-    int ndims = (recv_info.layout == GRT_RECV_NC_LAYOUT_POINTS) ? 1 : 2;
-    size_t npts = recv_info.npts;
+    GRT_RCV_NC_INFO rcv_info;
+    grt_rcv_nc_info_load(ncid, &rcv_info);
+    int ndims = (rcv_info.layout == GRT_RCV_NC_LAYOUT_POINTS) ? 1 : 2;
+    size_t npts = rcv_info.npts;
 
-    int sigma_n_varid = get_projection_var(ncid, "sigma_n", ndims, recv_info.dimids);
-    int tau_s_varid = get_projection_var(ncid, "tau_s", ndims, recv_info.dimids);
+    int sigma_n_varid = get_projection_var(ncid, "sigma_n", ndims, rcv_info.dimids);
+    int tau_s_varid = get_projection_var(ncid, "tau_s", ndims, rcv_info.dimids);
     real_t *sigma_n = (real_t *)calloc(npts, sizeof(real_t));
     real_t *tau_s = (real_t *)calloc(npts, sizeof(real_t));
     real_t *coulomb = (real_t *)calloc(npts, sizeof(real_t));
@@ -229,10 +229,10 @@ int static_coulomb_main(int argc, char **argv)
         coulomb[i] = tau_s[i] + Ctrl->F.friction * sigma_n[i];
     }
 
-    write_coulomb_variable(ncid, ndims, recv_info.dimids, coulomb);
+    write_coulomb_variable(ncid, ndims, rcv_info.dimids, coulomb);
     NC_CHECK(nc_close(ncid));
 
-    grt_recv_nc_info_free(&recv_info);
+    grt_rcv_nc_info_free(&rcv_info);
     GRT_SAFE_FREE_PTR(sigma_n);
     GRT_SAFE_FREE_PTR(tau_s);
     GRT_SAFE_FREE_PTR(coulomb);

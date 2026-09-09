@@ -517,7 +517,7 @@ static real_t shift_lamb2_boundary(const real_t tbar, const LAMB2_VARS *V, const
 }
 
 void grt_solve_lamb2(
-    const real_t nu, const real_t *ts, const int nt, const real_t R, const real_t source_depth, const real_t receiver_depth,
+    const real_t nu, const real_t *ts, const int nt, const real_t R, const real_t depsrc, const real_t deprcv,
     const real_t azimuth, real_t (*G)[3][3], real_t (*dG_source)[3][3][3], real_t (*dG_receiver)[3][3][3])
 {
     if (nu <= 0.0 || nu >= 0.5) {
@@ -532,15 +532,15 @@ void grt_solve_lamb2(
     if (R <= 0.0) {
         GRTRaiseError("The horizontal distance R should be positive in lamb2.\n");
     }
-    if (source_depth < 0.0 || receiver_depth < 0.0) {
+    if (depsrc < 0.0 || deprcv < 0.0) {
         GRTRaiseError("The source and receiver depths should be nonnegative in lamb2.\n");
     }
-    const bool buried_source = source_depth > 0.0 && receiver_depth == 0.0;
-    const bool surface_source = source_depth == 0.0 && receiver_depth > 0.0;
+    const bool buried_source = depsrc > 0.0 && deprcv == 0.0;
+    const bool surface_source = depsrc == 0.0 && deprcv > 0.0;
     if (!buried_source && !surface_source) {
         GRTRaiseError("lamb2 requires exactly one of source and receiver depths to be strictly positive, and the other to be zero.\n");
     }
-    const real_t buried_depth = buried_source ? source_depth : receiver_depth;
+    const real_t buried_depth = buried_source ? depsrc : deprcv;
     real_t solve_azimuth = azimuth;
     if (surface_source) {
         solve_azimuth = azimuth + 180.0;

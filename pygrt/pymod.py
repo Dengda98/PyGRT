@@ -22,7 +22,7 @@ from obspy import read
 
 from .cli import format_float, format_range, run_grt
 from .c_interfaces import C_grt_compute_travt1d_from_file, C_grt_free, PREAL
-from .utils import read_nc_variables
+from .utils import _resolve_rcv_points, read_nc_variables
 
 
 PathLike = Union[str, os.PathLike]
@@ -1395,7 +1395,7 @@ class PyModel1D:
         deprcv: Optional[float] = None,
         norths: Optional[Sequence[float]] = None,
         easts: Optional[Sequence[float]] = None,
-        recv_points: Optional[PathLike] = None,
+        rcv_points: Optional[PathLike] = None,
         rcv_fault: Optional[PathLike] = None,
         rcv_fault_size: Optional[Sequence[float]] = None,
         output_path: PathLike,
@@ -1411,6 +1411,7 @@ class PyModel1D:
         zne: bool = False,
         calc_upar: bool = False,
         return_result: bool = False,
+        **kwargs,
     ):
         r"""
         Synthesize static three-component displacement with ``grt static_syn``.
@@ -1421,13 +1422,13 @@ class PyModel1D:
 
         Receivers default to the library north/east grid. Optionally redefine
         them with ``norths``/``easts`` (uniform ``deprcv`` when the library has
-        multiple receiver depths), or with ``recv_points`` for an ASCII file of
+        multiple receiver depths), or with ``rcv_points`` for an ASCII file of
         arbitrary ``north east depth`` points (CLI ``-Q``). Each row may append
         ``strike dip rake`` in degrees; these angles are saved in the output but
-        are not used in synthesis. ``recv_points`` is
+        are not used in synthesis. ``rcv_points`` is
         mutually exclusive with ``norths``/``easts`` and ``deprcv``. If the
         library was built with ``dists`` / ``-R``, the default grid is a 1-D
-        line (north = 0, east = R); set ``norths``/``easts`` or ``recv_points``
+        line (north = 0, east = R); set ``norths``/``easts`` or ``rcv_points``
         to obtain a 2-D field.
         A Coulomb-format finite receiver-fault file can be supplied through
         ``rcv_fault`` (CLI ``-R``); without ``rcv_fault_size`` the subdivision
@@ -1467,25 +1468,25 @@ class PyModel1D:
                                      ``src_fault`` is set.
         :param    deprcv:            Receiver depth in km for grid receivers
                                      (CLI ``-Dr``). Required when the library has
-                                     multiple receiver depths and ``recv_points`` is
+                                     multiple receiver depths and ``rcv_points`` is
                                      not used; optional when it has one, but an
                                      explicit value must match the library. Do not set
-                                     it when using ``recv_points``.
+                                     it when using ``rcv_points``.
         :param    norths:            Optional new north grid as three values
                                      ``(start, stop, step)`` in km. Must be set
                                      together with ``easts``. Mutually exclusive
-                                     with ``recv_points``.
+                                     with ``rcv_points``.
         :param    easts:             Optional new east grid as three values
                                      ``(start, stop, step)`` in km. Must be set
                                      together with ``norths``. Mutually exclusive
-                                     with ``recv_points``.
-        :param    recv_points:       ASCII file of arbitrary receivers
+                                     with ``rcv_points``.
+        :param    rcv_points:        ASCII file of arbitrary receivers
                                      (``north east depth`` in km, optionally
                                      followed by ``strike dip rake`` in degrees;
                                      ``#`` comments). All data rows must use the
                                      same 3- or 6-column format. Mutually exclusive
                                      with ``norths``/``easts`` and ``deprcv``.
-        :param    rcv_fault:        Coulomb-format finite receiver-fault file with 11 data
+        :param    rcv_fault:         Coulomb-format finite receiver-fault file with 11 data
                                      columns; an exact ``rake`` token in the seventh header
                                      column selects Kode 100 rake/net-slip interpretation
                                      (CLI ``-R``). Without ``rcv_fault_size``,
@@ -1493,9 +1494,9 @@ class PyModel1D:
                                      default subdivision size. With that argument,
                                      each fault contributes multiple subfault
                                      centers. Mutually exclusive with
-                                     ``recv_points``, ``norths``/``easts`` and
+                                     ``rcv_points``, ``norths``/``easts`` and
                                      ``deprcv``.
-        :param    rcv_fault_size:   Optional positive ``(dL, dW)`` in km for
+        :param    rcv_fault_size:    Optional positive ``(dL, dW)`` in km for
                                      receiver-fault subdivision along strike / dip;
                                      if omitted, use the smallest positive interval
                                      among epicentral distance, source depth and
@@ -1554,13 +1555,14 @@ class PyModel1D:
         :return: The synthesized NetCDF data when ``return_result`` is true;
                  otherwise ``None``.
         """
+        rcv_points = _resolve_rcv_points(rcv_points, kwargs, "PyModel1D.static_syn")
         if self.stgrn is None:
             raise RuntimeError("Pass stgrn= to PyModel1D(...) before static_syn().")
         output = Path(output_path)
         output.parent.mkdir(parents=True, exist_ok=True)
 
         use_ff = src_fault is not None
-        use_q = recv_points is not None
+        use_q = rcv_points is not None
         use_r = rcv_fault is not None
         use_xy = norths is not None or easts is not None
         has_geometry = strike is not None or dip is not None or rake is not None
@@ -1576,11 +1578,11 @@ class PyModel1D:
         if use_ff and has_point_source_options:
             raise ValueError("src_fault is mutually exclusive with point-source options.")
         if ((use_q or use_r) and use_xy):
-            raise ValueError("recv_points/rcv_fault is mutually exclusive with norths/easts.")
+            raise ValueError("rcv_points/rcv_fault is mutually exclusive with norths/easts.")
         if (use_q and use_r):
-            raise ValueError("recv_points and rcv_fault are mutually exclusive.")
+            raise ValueError("rcv_points and rcv_fault are mutually exclusive.")
         if ((use_q or use_r) and (deprcv is not None)):
-            raise ValueError("recv_points/rcv_fault is mutually exclusive with deprcv.")
+            raise ValueError("rcv_points/rcv_fault is mutually exclusive with deprcv.")
         if use_xy and (norths is None or easts is None):
             raise ValueError("norths and easts must be supplied together.")
         if depsrc is not None and depsrc < 0.0:
@@ -1624,7 +1626,7 @@ class PyModel1D:
         if deprcv is not None:
             command["Dr"] = f"-Dr{format_float(deprcv)}"
         if use_q:
-            command["Q"] = f"-Q{Path(recv_points)}"
+            command["Q"] = f"-Q{Path(rcv_points)}"
         elif use_r:
             r_opt = f"-R{Path(rcv_fault)}"
             if rcv_fault_size is not None:

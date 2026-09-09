@@ -387,19 +387,19 @@ static void project_stress(
  * 读取普通 points 布局的 depth 变量
  *
  * @param[in] ncid       NetCDF 文件 ID
- * @param[in] recv_info  接收点布局信息
+ * @param[in] rcv_info   接收点布局信息
  * @return 接收点深度数组
  */
-static real_t *read_point_depths(int ncid, const GRT_RECV_NC_INFO *recv_info)
+static real_t *read_point_depths(int ncid, const GRT_RCV_NC_INFO *rcv_info)
 {
     int depth_varid;
     // 深度只用于核对 -Q 文件中的点顺序，不参与应力投影
-    real_t *depths = (real_t *)calloc(recv_info->npts, sizeof(real_t));
+    real_t *depths = (real_t *)calloc(rcv_info->npts, sizeof(real_t));
     if(!find_optional_var(ncid, "depth", &depth_varid)){
         GRT_SAFE_FREE_PTR(depths);
         GRTRaiseError("Points input file does not contain variable \"depth\".");
     }
-    check_var_dimensions(ncid, depth_varid, "depth", 1, recv_info->dimids);
+    check_var_dimensions(ncid, depth_varid, "depth", 1, rcv_info->dimids);
     NC_CHECK(NC_FUNC_REAL(nc_get_var)(ncid, depth_varid, depths));
     return depths;
 }
@@ -423,37 +423,37 @@ static bool same_coordinate(real_t first, real_t second)
  * 从 -Q 文件读取并检查逐点接收断层形态
  *
  * @param[in]  ncid       输入 NetCDF 文件 ID
- * @param[in]  recv_info  输入接收点布局信息
+ * @param[in]  rcv_info   输入接收点布局信息
  * @param[in]  path       -Q 文件路径
  * @param[out] strikes    各接收点走向角
  * @param[out] dips       各接收点倾角
  * @param[out] rakes      各接收点滑动角
  */
 static void load_geometry_from_Q(
-    int ncid, const GRT_RECV_NC_INFO *recv_info, const char *path,
+    int ncid, const GRT_RCV_NC_INFO *rcv_info, const char *path,
     real_t *strikes, real_t *dips, real_t *rakes)
 {
-    GRT_RECV_POINTS *q_points = grt_recv_points_from_file(path);
+    GRT_RCV_POINTS *q_points = grt_rcv_points_from_file(path);
     if(!q_points->has_geometry){
-        grt_recv_points_free(q_points);
+        grt_rcv_points_free(q_points);
         GRTRaiseError("-Q file \"%s\" must contain exactly 6 columns.", path);
     }
-    if(q_points->npts != recv_info->npts){
+    if(q_points->npts != rcv_info->npts){
         size_t q_npts = q_points->npts;
-        grt_recv_points_free(q_points);
+        grt_rcv_points_free(q_points);
         GRTRaiseError(
             "-Q file \"%s\" has %zu points, but the input file has %zu points.",
-            path, q_npts, recv_info->npts);
+            path, q_npts, rcv_info->npts);
     }
 
     // 先读取输入文件深度，再逐点核对坐标、顺序和接收断层形态
-    real_t *depths = read_point_depths(ncid, recv_info);
-    for(size_t i = 0; i < recv_info->npts; ++i){
-        if(!same_coordinate(q_points->norths[i], recv_info->norths[i]) ||
-            !same_coordinate(q_points->easts[i], recv_info->easts[i]) ||
+    real_t *depths = read_point_depths(ncid, rcv_info);
+    for(size_t i = 0; i < rcv_info->npts; ++i){
+        if(!same_coordinate(q_points->norths[i], rcv_info->norths[i]) ||
+            !same_coordinate(q_points->easts[i], rcv_info->easts[i]) ||
             !same_coordinate(q_points->depths[i], depths[i])){
             GRT_SAFE_FREE_PTR(depths);
-            grt_recv_points_free(q_points);
+            grt_rcv_points_free(q_points);
             GRTRaiseError(
                 "-Q file \"%s\" does not have the same point order and coordinates "
                 "as the input file at point %zu.", path, i);
@@ -461,7 +461,7 @@ static void load_geometry_from_Q(
         if(!geometry_is_defined(
             q_points->strikes[i], q_points->dips[i], q_points->rakes[i])){
             GRT_SAFE_FREE_PTR(depths);
-            grt_recv_points_free(q_points);
+            grt_rcv_points_free(q_points);
             GRTRaiseError("Undefined or invalid receiver geometry in -Q at point %zu.", i);
         }
         strikes[i] = normalize_strike(q_points->strikes[i]);
@@ -469,7 +469,7 @@ static void load_geometry_from_Q(
         rakes[i] = q_points->rakes[i];
     }
     GRT_SAFE_FREE_PTR(depths);
-    grt_recv_points_free(q_points);
+    grt_rcv_points_free(q_points);
 }
 
 
@@ -477,14 +477,14 @@ static void load_geometry_from_Q(
  * 从普通 points 输入变量读取接收断层形态
  *
  * @param[in]  ncid       输入 NetCDF 文件 ID
- * @param[in]  recv_info  输入接收点布局信息
+ * @param[in]  rcv_info   输入接收点布局信息
  * @param[in]  Ctrl       参数控制结构体
  * @param[out] strikes    各接收点走向角
  * @param[out] dips       各接收点倾角
  * @param[out] rakes      各接收点滑动角
  */
 static void load_geometry_from_points(
-    int ncid, const GRT_RECV_NC_INFO *recv_info,
+    int ncid, const GRT_RCV_NC_INFO *rcv_info,
     const GRT_MODULE_CTRL *Ctrl,
     real_t *strikes, real_t *dips, real_t *rakes)
 {
@@ -496,9 +496,9 @@ static void load_geometry_from_points(
     bool has_any_geometry = has_strike || has_dip || has_rake;
     bool has_all_geometry = has_strike && has_dip && has_rake;
 
-    if(has_strike) check_var_dimensions(ncid, strike_varid, "strike", 1, recv_info->dimids);
-    if(has_dip) check_var_dimensions(ncid, dip_varid, "dip", 1, recv_info->dimids);
-    if(has_rake) check_var_dimensions(ncid, rake_varid, "rake", 1, recv_info->dimids);
+    if(has_strike) check_var_dimensions(ncid, strike_varid, "strike", 1, rcv_info->dimids);
+    if(has_dip) check_var_dimensions(ncid, dip_varid, "dip", 1, rcv_info->dimids);
+    if(has_rake) check_var_dimensions(ncid, rake_varid, "rake", 1, rcv_info->dimids);
 
     if(has_all_geometry){
         // 只有三要素完整时才从输入文件读取逐点形态
@@ -509,7 +509,7 @@ static void load_geometry_from_points(
 
     bool geometry_complete = has_all_geometry;
     if(has_all_geometry){
-        for(size_t i = 0; i < recv_info->npts; ++i){
+        for(size_t i = 0; i < rcv_info->npts; ++i){
             if(!geometry_is_defined(strikes[i], dips[i], rakes[i])){
                 geometry_complete = false;
                 break;
@@ -524,7 +524,7 @@ static void load_geometry_from_points(
                 "The input point receiver geometry is ignored; using the new "
                 "manual geometry from -M.");
         }
-        for(size_t i = 0; i < recv_info->npts; ++i){
+        for(size_t i = 0; i < rcv_info->npts; ++i){
             strikes[i] = Ctrl->M.strike;
             dips[i] = Ctrl->M.dip;
             rakes[i] = Ctrl->M.rake;
@@ -538,7 +538,7 @@ static void load_geometry_from_points(
             "Points input has no complete receiver geometry. Set -M<strike>/<dip>/<rake> "
             "or provide a 6-column -Q file.");
     }
-    for(size_t i = 0; i < recv_info->npts; ++i){
+    for(size_t i = 0; i < rcv_info->npts; ++i){
         strikes[i] = normalize_strike(strikes[i]);
     }
 }
@@ -548,7 +548,7 @@ static void load_geometry_from_points(
  * 从有限接收断层 points 输入变量读取接收断层形态
  *
  * @param[in]  ncid          输入 NetCDF 文件 ID
- * @param[in]  recv_info     输入接收点布局信息
+ * @param[in]  rcv_info      输入接收点布局信息
  * @param[in]  nfault_dimid  nfault 维度 ID
  * @param[in]  Ctrl          参数控制结构体
  * @param[out] strikes       各接收点走向角
@@ -556,7 +556,7 @@ static void load_geometry_from_points(
  * @param[out] rakes         各接收点滑动角
  */
 static void load_geometry_from_finite_points(
-    int ncid, const GRT_RECV_NC_INFO *recv_info,
+    int ncid, const GRT_RCV_NC_INFO *rcv_info,
     int nfault_dimid, const GRT_MODULE_CTRL *Ctrl,
     real_t *strikes, real_t *dips, real_t *rakes)
 {
@@ -633,7 +633,7 @@ static void load_geometry_from_finite_points(
     size_t start = 0;
     for(size_t ifault = 0; ifault < nfault; ++ifault){
         if((offsets[ifault] < 0) || ((size_t)offsets[ifault] <= start) ||
-            ((size_t)offsets[ifault] > recv_info->npts)){
+            ((size_t)offsets[ifault] > rcv_info->npts)){
             GRTRaiseError("Invalid offset for finite receiver fault %zu.", ifault);
         }
         size_t end = (size_t)offsets[ifault];
@@ -653,10 +653,10 @@ static void load_geometry_from_finite_points(
         }
         start = end;
     }
-    if(start != recv_info->npts){
+    if(start != rcv_info->npts){
         GRTRaiseError(
             "The last finite receiver offset (%zu) does not match point (%zu).",
-            start, recv_info->npts);
+            start, rcv_info->npts);
     }
 
     GRT_SAFE_FREE_PTR(fault_strikes);
@@ -670,7 +670,7 @@ static void load_geometry_from_finite_points(
  * 根据布局读取并确定每个接收点的断层形态
  *
  * @param[in]  ncid          输入 NetCDF 文件 ID
- * @param[in]  recv_info     输入接收点布局信息
+ * @param[in]  rcv_info      输入接收点布局信息
  * @param[in]  Ctrl          参数控制结构体
  * @param[in]  finite_points 是否为有限接收断层 points 布局
  * @param[in]  nfault_dimid  nfault 维度 ID
@@ -679,7 +679,7 @@ static void load_geometry_from_finite_points(
  * @param[out] rakes         各接收点滑动角
  */
 static void load_receiver_geometry(
-    int ncid, const GRT_RECV_NC_INFO *recv_info,
+    int ncid, const GRT_RCV_NC_INFO *rcv_info,
     const GRT_MODULE_CTRL *Ctrl, bool finite_points, int nfault_dimid,
     real_t *strikes, real_t *dips, real_t *rakes)
 {
@@ -692,12 +692,12 @@ static void load_receiver_geometry(
             GRTRaiseError("Finite receiver points require -M<rake> or -M<rake>+f.");
         }
         load_geometry_from_finite_points(
-            ncid, recv_info, nfault_dimid, Ctrl,
+            ncid, rcv_info, nfault_dimid, Ctrl,
             strikes, dips, rakes);
         return;
     }
 
-    if(recv_info->layout == GRT_RECV_NC_LAYOUT_GRID){
+    if(rcv_info->layout == GRT_RCV_NC_LAYOUT_GRID){
         // grid 没有逐点形态，只能使用完整的手动形态
         if(Ctrl->Q.active){
             GRTRaiseError("-Q can only be used with a points-layout input file.");
@@ -705,7 +705,7 @@ static void load_receiver_geometry(
         if(!Ctrl->M.active || !Ctrl->M.has_geometry || Ctrl->M.force_rake){
             GRTRaiseError("Grid input has no receiver geometry; set -M<strike>/<dip>/<rake>.");
         }
-        for(size_t i = 0; i < recv_info->npts; ++i){
+        for(size_t i = 0; i < rcv_info->npts; ++i){
             strikes[i] = Ctrl->M.strike;
             dips[i] = Ctrl->M.dip;
             rakes[i] = Ctrl->M.rake;
@@ -719,7 +719,7 @@ static void load_receiver_geometry(
     if(Ctrl->Q.active){
         // -Q 提供普通 points 的逐点新形态
         load_geometry_from_Q(
-            ncid, recv_info, Ctrl->Q.s_path, strikes, dips, rakes);
+            ncid, rcv_info, Ctrl->Q.s_path, strikes, dips, rakes);
         return;
     }
 
@@ -728,7 +728,7 @@ static void load_receiver_geometry(
         GRTRaiseError("Points input requires -M<strike>/<dip>/<rake>.");
     }
     load_geometry_from_points(
-        ncid, recv_info, Ctrl, strikes, dips, rakes);
+        ncid, rcv_info, Ctrl, strikes, dips, rakes);
 }
 
 
@@ -813,10 +813,10 @@ int static_sproj_main(int argc, char **argv)
     int ncid;
     NC_CHECK(nc_open(Ctrl->G.s_ingrid, NC_WRITE, &ncid));
 
-    GRT_RECV_NC_INFO recv_info;
-    grt_recv_nc_info_load(ncid, &recv_info);
-    int ndims = (recv_info.layout == GRT_RECV_NC_LAYOUT_POINTS) ? 1 : 2;
-    size_t npts = recv_info.npts;
+    GRT_RCV_NC_INFO rcv_info;
+    grt_rcv_nc_info_load(ncid, &rcv_info);
+    int ndims = (rcv_info.layout == GRT_RCV_NC_LAYOUT_POINTS) ? 1 : 2;
+    size_t npts = rcv_info.npts;
     // 通过 nfault 维度区分普通 points 和有限接收断层 points
     int nfault_dimid;
     int nfault_status = nc_inq_dimid(ncid, "nfault", &nfault_dimid);
@@ -824,7 +824,7 @@ int static_sproj_main(int argc, char **argv)
         NC_CHECK(nfault_status);
     }
     bool finite_points = (nfault_status == NC_NOERR);
-    if((recv_info.layout == GRT_RECV_NC_LAYOUT_GRID) && finite_points){
+    if((rcv_info.layout == GRT_RCV_NC_LAYOUT_GRID) && finite_points){
         GRTRaiseError("Grid input must not contain an nfault dimension.");
     }
 
@@ -832,14 +832,14 @@ int static_sproj_main(int argc, char **argv)
     const char *channels = rot2ZNE ? GRT_ZNE_CODES : GRT_ZRT_CODES;
     // 先把应力分量读入内存，避免在计算过程中反复访问 NetCDF
     real_t *stress6 = (real_t *)calloc(6 * npts, sizeof(real_t));
-    read_stress_components(ncid, channels, npts, ndims, recv_info.dimids, stress6);
+    read_stress_components(ncid, channels, npts, ndims, rcv_info.dimids, stress6);
 
     real_t *strikes = (real_t *)calloc(npts, sizeof(real_t));
     real_t *dips = (real_t *)calloc(npts, sizeof(real_t));
     real_t *rakes = (real_t *)calloc(npts, sizeof(real_t));
     // 根据布局和命令行选项确定每个 point 的接收断层形态
     load_receiver_geometry(
-        ncid, &recv_info, Ctrl, finite_points, nfault_dimid,
+        ncid, &rcv_info, Ctrl, finite_points, nfault_dimid,
         strikes, dips, rakes);
 
     real_t *sigma_n = (real_t *)calloc(npts, sizeof(real_t));
@@ -856,8 +856,8 @@ int static_sproj_main(int argc, char **argv)
         };
         if(!rot2ZNE){
             // ZRT 应力需要根据当前接收点方位角转换为 ZNE
-            real_t distance = hypot(recv_info.norths[i], recv_info.easts[i]);
-            real_t theta = GRT_IS_ZERO(distance) ? 0.0 : atan2(recv_info.easts[i], recv_info.norths[i]);
+            real_t distance = hypot(rcv_info.norths[i], rcv_info.easts[i]);
+            real_t theta = GRT_IS_ZERO(distance) ? 0.0 : atan2(rcv_info.easts[i], rcv_info.norths[i]);
             convert_zrt_stress_to_zne(theta, stress);
         }
 
@@ -867,11 +867,11 @@ int static_sproj_main(int argc, char **argv)
     }
 
     // 追加缺失的结果变量，或覆盖已有结果变量
-    write_projection_variables(ncid, ndims, recv_info.dimids, sigma_n, tau_s);
+    write_projection_variables(ncid, ndims, rcv_info.dimids, sigma_n, tau_s);
     NC_CHECK(nc_close(ncid));
 
     // 关闭文件后释放接收信息和计算缓存
-    grt_recv_nc_info_free(&recv_info);
+    grt_rcv_nc_info_free(&rcv_info);
     GRT_SAFE_FREE_PTR(stress6);
     GRT_SAFE_FREE_PTR(strikes);
     GRT_SAFE_FREE_PTR(dips);

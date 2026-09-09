@@ -41,7 +41,7 @@ typedef struct {
 
 /** 输入 NetCDF 文件中的坐标布局信息 */
 typedef struct {
-    GRT_RECV_NC_LAYOUT layout;
+    GRT_RCV_NC_LAYOUT layout;
     size_t first_count;
     size_t second_count;
 } GRT_COORD_INFO;
@@ -300,8 +300,8 @@ static void inspect_coordinate_layout(
     NC_CHECK(nc_inq_varid(ncid, first_name, &first_varid));
     NC_CHECK(nc_inq_varid(ncid, second_name, &second_varid));
 
-    info->layout = grt_recv_nc_get_layout(ncid);
-    if(info->layout == GRT_RECV_NC_LAYOUT_GRID){
+    info->layout = grt_rcv_nc_get_layout(ncid);
+    if(info->layout == GRT_RCV_NC_LAYOUT_GRID){
         int first_dimid, second_dimid;
         NC_CHECK(nc_inq_dimid(ncid, first_name, &first_dimid));
         NC_CHECK(nc_inq_dimid(ncid, second_name, &second_dimid));
@@ -462,7 +462,7 @@ static void check_target_name_available(int ncid, const char *name, bool is_dim)
  * @param[in]  direction 坐标转换方向
  */
 static void write_reference_and_rename_coordinates(
-    int ncid, GRT_RECV_NC_LAYOUT layout, const GRT_MODULE_CTRL *Ctrl,
+    int ncid, GRT_RCV_NC_LAYOUT layout, const GRT_MODULE_CTRL *Ctrl,
     GRT_TRANSFORM_DIRECTION direction)
 {
     const char *first_name, *second_name;
@@ -483,7 +483,7 @@ static void write_reference_and_rename_coordinates(
     check_target_name_available(ncid, target_second, false);
 
     int first_dimid = -1, second_dimid = -1;
-    if(layout == GRT_RECV_NC_LAYOUT_GRID){
+    if(layout == GRT_RCV_NC_LAYOUT_GRID){
         NC_CHECK(nc_inq_dimid(ncid, first_name, &first_dimid));
         NC_CHECK(nc_inq_dimid(ncid, second_name, &second_dimid));
         check_target_name_available(ncid, target_first, true);
@@ -495,7 +495,7 @@ static void write_reference_and_rename_coordinates(
         ncid, NC_GLOBAL, "lat0", NC_REAL, 1, &Ctrl->C.lat0));
     NC_CHECK(NC_FUNC_REAL(nc_put_att)(
         ncid, NC_GLOBAL, "lon0", NC_REAL, 1, &Ctrl->C.lon0));
-    if(layout == GRT_RECV_NC_LAYOUT_GRID){
+    if(layout == GRT_RCV_NC_LAYOUT_GRID){
         NC_CHECK(nc_rename_dim(ncid, first_dimid, target_first));
         NC_CHECK(nc_rename_dim(ncid, second_dimid, target_second));
     }

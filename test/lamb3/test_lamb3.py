@@ -20,11 +20,11 @@ else:
     raise ValueError("lamb3 should require a positive horizontal distance.")
 
 
-for source_depth, receiver_depth in ((0.0, 1.0), (1.0, 0.0), (0.0, 0.0)):
+for depsrc, deprcv in ((0.0, 1.0), (1.0, 0.0), (0.0, 0.0)):
     try:
         pygrt.utils.lamb3(
             nu=0.25, tbar=np.asarray([0.0]), R=10.0,
-            depsrc=source_depth, deprcv=receiver_depth, azimuth=0.0,
+            depsrc=depsrc, deprcv=deprcv, azimuth=0.0,
         )
     except ValueError:
         pass
@@ -54,8 +54,8 @@ for name, kwargs in invalid_lamb3_inputs:
 
 
 R = 10.0
-SOURCE_DEPTH = 2.0
-RECEIVER_DEPTH = 1.0
+DEPSRC = 2.0
+DEPRCV = 1.0
 AZIMUTH = 30.0
 # 固定 S 波速度只用于把物理时间换算为无量纲时间
 BETA = 1.0
@@ -63,7 +63,7 @@ TS = np.arange(0.0, 2.0 + 1e-8, 1e-2)
 
 
 G, dG_source, dG_receiver = pygrt.utils.lamb3(
-    nu=0.25, tbar=TS, R=R, depsrc=SOURCE_DEPTH, deprcv=RECEIVER_DEPTH, azimuth=AZIMUTH
+    nu=0.25, tbar=TS, R=R, depsrc=DEPSRC, deprcv=DEPRCV, azimuth=AZIMUTH
 )
 
 if G.shape != (len(TS), 3, 3):
@@ -83,11 +83,11 @@ def _check_lamb3_right_limit(boundary):
     epsilon = min(1e-8, dt * 1e-5)
     exact, _, _ = pygrt.utils.lamb3(
         nu=0.25, tbar=np.asarray([boundary, boundary + dt]), R=R,
-        depsrc=SOURCE_DEPTH, deprcv=RECEIVER_DEPTH, azimuth=AZIMUTH,
+        depsrc=DEPSRC, deprcv=DEPRCV, azimuth=AZIMUTH,
     )
     right, _, _ = pygrt.utils.lamb3(
         nu=0.25, tbar=np.asarray([boundary + epsilon]), R=R,
-        depsrc=SOURCE_DEPTH, deprcv=RECEIVER_DEPTH, azimuth=AZIMUTH,
+        depsrc=DEPSRC, deprcv=DEPRCV, azimuth=AZIMUTH,
     )
     if not np.allclose(exact[0], right[0], rtol=1e-10, atol=1e-12):
         raise ValueError(f"lamb3 does not use the right-hand value at tbar={boundary:g}.")
@@ -99,13 +99,13 @@ _check_lamb3_right_limit(1.0)
 
 
 reciprocal_closed, reciprocal_closed_source, _ = pygrt.utils.lamb3(
-    nu=0.25, tbar=TS, R=R, depsrc=RECEIVER_DEPTH, deprcv=SOURCE_DEPTH, azimuth=AZIMUTH + 180.0
+    nu=0.25, tbar=TS, R=R, depsrc=DEPRCV, deprcv=DEPSRC, azimuth=AZIMUTH + 180.0
 )
 expected_closed_vertical = np.transpose(reciprocal_closed_source[:, 2], (0, 2, 1))
 if not np.allclose(dG_receiver[:, 2], expected_closed_vertical, rtol=2e-6, atol=1e-5):
     raise ValueError("lamb3 receiver vertical derivatives violate reciprocity.")
 
-for source_depth, receiver_depth, azimuth in (
+for depsrc, deprcv, azimuth in (
     (0.8, 1.7, 0.0),
     (1.7, 0.8, 90.0),
     (4.0, 0.7, 210.0),
@@ -113,14 +113,14 @@ for source_depth, receiver_depth, azimuth in (
 ):
     angle_times = np.asarray([0.7, 1.2, 1.8])
     angle_G, angle_source, angle_receiver = pygrt.utils.lamb3(
-        nu=0.25, tbar=angle_times, R=R, depsrc=source_depth, deprcv=receiver_depth, azimuth=azimuth
+        nu=0.25, tbar=angle_times, R=R, depsrc=depsrc, deprcv=deprcv, azimuth=azimuth
     )
     swapped_G, swapped_source, _ = pygrt.utils.lamb3(
-        nu=0.25, tbar=angle_times, R=R, depsrc=receiver_depth, deprcv=source_depth,
+        nu=0.25, tbar=angle_times, R=R, depsrc=deprcv, deprcv=depsrc,
         azimuth=(azimuth + 180.0) % 360.0,
     )
     if not np.isfinite(angle_G).all() or not np.isfinite(angle_source).all() or not np.isfinite(angle_receiver).all():
-        raise ValueError(f"lamb3 returned a non-finite value at case {(source_depth, receiver_depth, azimuth)}.")
+        raise ValueError(f"lamb3 returned a non-finite value at case {(depsrc, deprcv, azimuth)}.")
     if not np.isfinite(swapped_G).all() or not np.isfinite(swapped_source).all():
         raise ValueError(f"lamb3 reciprocal case returned a non-finite value at azimuth={azimuth:g}.")
     expected_angle_vertical = np.transpose(swapped_source[:, 2], (0, 2, 1))
@@ -142,7 +142,7 @@ cli_result = subprocess.run(
         "-P0.25",
         "-T0/2/1e-2",
         f"-R{R}",
-        f"-D{SOURCE_DEPTH}/{RECEIVER_DEPTH}",
+        f"-D{DEPSRC}/{DEPRCV}",
         "-S+slamb3_source+rlamb3_receiver",
         f"-A{AZIMUTH}",
     ],
@@ -174,23 +174,23 @@ def _lamb3_geometry(source, receiver):
 
 def _lamb3_green_at_physical_time(physical_time, source, receiver):
     distance = np.linalg.norm(receiver - source)
-    horizontal_distance, source_depth, receiver_depth, azimuth = _lamb3_geometry(source, receiver)
+    horizontal_distance, depsrc, deprcv, azimuth = _lamb3_geometry(source, receiver)
     return pygrt.utils.lamb3(
         nu=0.25,
         tbar=np.asarray([physical_time * BETA / distance]),
         R=horizontal_distance,
-        depsrc=source_depth,
-        deprcv=receiver_depth,
+        depsrc=depsrc,
+        deprcv=deprcv,
         azimuth=azimuth,
     )[0][0]
 
 
-def _check_lamb3_geometry_derivatives(horizontal_distance, source_depth, receiver_depth):
-    source = np.array([0.0, 0.0, source_depth])
+def _check_lamb3_geometry_derivatives(horizontal_distance, depsrc, deprcv):
+    source = np.array([0.0, 0.0, depsrc])
     receiver = np.array([
         horizontal_distance * np.cos(np.deg2rad(AZIMUTH)),
         horizontal_distance * np.sin(np.deg2rad(AZIMUTH)),
-        receiver_depth,
+        deprcv,
     ])
     distance = np.linalg.norm(receiver - source)
     times = (0.70, 0.85, 1.20, 1.50, 1.80)
@@ -199,8 +199,8 @@ def _check_lamb3_geometry_derivatives(horizontal_distance, source_depth, receive
             nu=0.25,
             tbar=np.asarray([tbar - 1e-3, tbar, tbar + 1e-3]),
             R=horizontal_distance,
-            depsrc=source_depth,
-            deprcv=receiver_depth,
+            depsrc=depsrc,
+            deprcv=deprcv,
             azimuth=AZIMUTH,
         )
         expected_source = expected_source[1]
@@ -227,13 +227,13 @@ def _check_lamb3_geometry_derivatives(horizontal_distance, source_depth, receive
                 if not np.allclose(finite_difference, expected[coordinate], rtol=5e-3, atol=2e-3):
                     raise ValueError(
                         f"lamb3 {kind} derivative failed at case "
-                        f"({horizontal_distance:g}, {source_depth:g}, {receiver_depth:g}), "
+                        f"({horizontal_distance:g}, {depsrc:g}, {deprcv:g}), "
                         f"tbar={tbar:g}, coordinate={coordinate + 1}"
                     )
 
 
-for source_depth, receiver_depth in ((0.5, 0.1), (2.0, 1.0), (10.0, 5.0)):
-    _check_lamb3_geometry_derivatives(10.0, source_depth, receiver_depth)
+for depsrc, deprcv in ((0.5, 0.1), (2.0, 1.0), (10.0, 5.0)):
+    _check_lamb3_geometry_derivatives(10.0, depsrc, deprcv)
 
 shallow_ts = np.arange(1.49, 1.53 + 1e-8, 2e-3)
 _, shallow_source, shallow_receiver = pygrt.utils.lamb3(

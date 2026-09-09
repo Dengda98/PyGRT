@@ -161,7 +161,7 @@ def main():
     okada(
         modelparams=(6.0, 3.464, 2.7),
         depsrc=10.0,
-        recv_points=rcv_fault_q,
+        rcv_points=rcv_fault_q,
         output_path="okada_rq.nc",
         scale=1.0e12,
         scale_with_mu=True,

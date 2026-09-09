@@ -57,7 +57,7 @@
 #include "grt/modal/secular.h"
 
 
-#include "grt/static/recv_points.h"
+#include "grt/static/rcv_points.h"
 #include "grt/static/static_grn.h"
 #include "grt/static/stgrnlib.h"
 #include "grt/static/static_layer.h"
