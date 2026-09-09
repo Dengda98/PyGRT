@@ -164,6 +164,7 @@
     - :doc:`okada`
     - :doc:`xy2geo`
     - :doc:`geo2xy`
+    - :doc:`rftn`
 
 .. toctree::
     :maxdepth: 1
@@ -195,3 +196,4 @@
     okada
     xy2geo
     geo2xy
+    rftn
