@@ -39,4 +39,6 @@ expect_fail "one of -P and -I is required" \
 expect_fail "incidence angle must be below 90 degrees" \
     grt rftn -M../milrow -I90 -TP -N8/0.1 -OC_BAD
 
+python -u test_rftn.py
+
 rm -rf C_P C_S PY_P PY_S
