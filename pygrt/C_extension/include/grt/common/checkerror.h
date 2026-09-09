@@ -27,7 +27,7 @@
 
 // GRT自定义一般信息
 #define GRTRaiseInfo(ErrorMessage, ...) ({\
-    fprintf(stdout, REGULAR_GREEN "[INFO][%s] " ErrorMessage "\n" DEFAULT_RESTORE, GRT_MODULE_NAME, ##__VA_ARGS__);\
+    fprintf(stdout, "[INFO][%s] " ErrorMessage "\n", GRT_MODULE_NAME, ##__VA_ARGS__);\
     fflush(stdout);\
 })
 
