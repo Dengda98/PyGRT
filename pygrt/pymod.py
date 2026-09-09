@@ -188,9 +188,10 @@ class PyModel1D:
 
     1. Create :class:`PyModel1D` with the Green's function path(s) actually needed
        (``grn`` and/or ``stgrn``) and optional ``modelpath``.
-    2. Compute modal dispersion and Green's functions with :meth:`eigenv`,
-       :meth:`eigenfn`, :meth:`modsum`, :meth:`greenfn` or
-       :meth:`static_greenfn` (the required paths depend on the method).
+    2. Compute modal dispersion, receiver functions and Green's functions with
+       :meth:`eigenv`, :meth:`eigenfn`, :meth:`modsum`, :meth:`rftn`,
+       :meth:`greenfn` or :meth:`static_greenfn` (the required paths depend on
+       the method).
     3. Synthesize waveforms or static fields with :meth:`syn` or
        :meth:`static_syn` (only the corresponding GF path is required).
     """
@@ -914,6 +915,136 @@ class PyModel1D:
     def compute_grn(self, *args, **kwargs):
         """Legacy interface renamed to :meth:`greenfn`; calling it raises an error."""
         raise RuntimeError("compute_grn() has been renamed to greenfn(); use greenfn() instead.")
+
+    def rftn(
+        self,
+        *,
+        wtype: str,
+        nt: int,
+        dt: float,
+        output_path: PathLike,
+        rayp: Optional[float] = None,
+        inca: Optional[float] = None,
+        idx: Optional[int] = None,
+        zeta: float = 0.8,
+        upsampling_n: int = 1,
+        keepAllFreq: bool = False,
+        skipImagComps: bool = False,
+        alp: float = 1.0,
+        delay: float = 0.0,
+        write_components: bool = False,
+        print_log: bool = True,
+    ):
+        r"""
+        Compute receiver functions for a plane incident P or SV wave.
+
+        This method wraps the ``grt rftn`` command. The incident wave is
+        specified by either a horizontal ray parameter ``rayp`` or an upward
+        incidence angle ``inca`` at the selected reverse-indexed model layer.
+        Results are written as ``P_rftn.sac`` or ``S_rftn.sac`` below
+        ``output_path``; ``write_components=True`` also writes the corresponding
+        ``Z`` and ``R`` response files. All arguments must be passed by keyword.
+
+        :param    wtype:             Incident wave type, ``"P"`` or ``"S"``.
+        :param    nt:                Number of time samples.
+        :param    dt:                Time-sample interval in s.
+        :param    output_path:       Output directory for SAC files.
+        :param    rayp:              Horizontal ray parameter in s/km. Mutually
+                                     exclusive with ``inca``.
+        :param    inca:              Upgoing incidence angle in degrees in the
+                                     selected reverse-indexed layer. Mutually
+                                     exclusive with ``rayp``.
+        :param    idx:               Optional nonnegative reverse layer index
+                                     used with ``inca``; zero denotes the
+                                     halfspace.
+        :param    zeta:              Virtual-frequency coefficient in ``-N``.
+        :param    upsampling_n:      Time-domain upsampling factor in ``-N``.
+        :param    keepAllFreq:       If true, append ``+a`` to ``-N``.
+        :param    skipImagComps:     If true, append ``+f`` to ``-N`` and skip
+                                     virtual-frequency compensation.
+        :param    alp:               Gaussian low-pass filter parameter.
+        :param    delay:             Additional delay before the P arrival in s.
+                                     The program already applies an internal delay;
+                                     set this only when more delay is needed.
+        :param    write_components:  If true, also write absolute Z and R
+                                     response time series.
+        :param    print_log:         If false, suppress regular ``grt`` output
+                                     while preserving warnings and diagnostics.
+
+        :return: ``None``. SAC files are written below ``output_path``.
+        """
+        if self.modelpath is None:
+            raise RuntimeError("Pass modelpath= to PyModel1D(...) before rftn().")
+        if not isinstance(wtype, str) or wtype.upper() not in {"P", "S"}:
+            raise ValueError('wtype must be "P" or "S".')
+        if (rayp is None) == (inca is None):
+            raise ValueError("Set exactly one of rayp and inca.")
+        if idx is not None and inca is None:
+            raise ValueError("idx requires inca.")
+
+        nt = _normalize_integer(nt, "nt", minimum=1)
+        upsampling_n = _normalize_integer(upsampling_n, "upsampling_n", minimum=1)
+
+        def positive_finite(value: float, name: str) -> float:
+            try:
+                value = float(value)
+            except (TypeError, ValueError):
+                raise TypeError(f"{name} must be a positive number.") from None
+            if not np.isfinite(value) or value <= 0.0:
+                raise ValueError(f"{name} must be positive and finite.")
+            return value
+
+        dt = positive_finite(dt, "dt")
+        zeta = positive_finite(zeta, "zeta")
+        alp = positive_finite(alp, "alp")
+
+        try:
+            delay = float(delay)
+        except (TypeError, ValueError):
+            raise TypeError("delay must be finite.") from None
+        if not np.isfinite(delay):
+            raise ValueError("delay must be finite.")
+
+        command = {
+            "subcommand": "rftn",
+            "M": f"-M{self.modelpath}",
+        }
+        if rayp is not None:
+            rayp = positive_finite(rayp, "rayp")
+            command["P"] = f"-P{format_float(rayp)}"
+        else:
+            try:
+                inca = float(inca)
+            except (TypeError, ValueError):
+                raise TypeError("inca must be a finite number.") from None
+            if not np.isfinite(inca) or inca < 0.0 or inca >= 90.0:
+                raise ValueError("inca must be finite and satisfy 0 <= inca < 90.")
+            if idx is not None:
+                idx = _normalize_integer(idx, "idx", minimum=0)
+                inca_option = f"{format_float(inca)}/{idx}"
+            else:
+                inca_option = format_float(inca)
+            command["I"] = f"-I{inca_option}"
+
+        n_option = f"-N{nt}/{format_float(dt)}+w{format_float(zeta)}+n{upsampling_n}"
+        if keepAllFreq:
+            n_option += "+a"
+        if skipImagComps:
+            n_option += "+f"
+
+        command.update({
+            "T": f"-T{wtype.upper()}",
+            "N": n_option,
+            "A": f"-A{format_float(alp)}",
+            "E": f"-E{format_float(delay)}",
+        })
+        if write_components:
+            command["W"] = "-W"
+
+        output = Path(output_path)
+        output.mkdir(parents=True, exist_ok=True)
+        command["O"] = f"-O{output}"
+        run_grt(list(command.values()), print_log=print_log)
 
     def static_greenfn(
         self,

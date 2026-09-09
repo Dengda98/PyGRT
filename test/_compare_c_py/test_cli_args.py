@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import io
+import shutil
 import subprocess
 import sys
 import warnings
@@ -485,6 +486,82 @@ def test_modal_cli_argument_mapping():
         _restore_run_grt(pygrt.pymod, original)
 
 
+def test_rftn_cli_argument_mapping():
+    runner = CapturedRunner()
+    original = _patch_run_grt(pygrt.pymod, runner)
+    output = HERE / "_tmp_args_rftn"
+    try:
+        model = pygrt.PyModel1D(modelpath=MODEL)
+
+        model.rftn(
+            wtype="p",
+            rayp=0.12,
+            nt=128,
+            dt=0.05,
+            output_path=output,
+            zeta=0.9,
+            upsampling_n=4,
+            keepAllFreq=True,
+            skipImagComps=True,
+            alp=0.8,
+            delay=-1.2,
+            write_components=True,
+            print_log=False,
+        )
+        assert_command_equals(
+            runner.commands[-1],
+            [
+                "rftn",
+                f"-M{MODEL}",
+                "-P0.12",
+                "-TP",
+                "-N128/0.05+w0.9+n4+a+f",
+                "-A0.8",
+                "-E-1.2",
+                "-W",
+                f"-O{output}",
+            ],
+        )
+        assert runner.kwargs[-1].get("print_log") is False
+
+        model.rftn(
+            wtype="S",
+            inca=30.0,
+            idx=2,
+            nt=8,
+            dt=0.1,
+            output_path=output,
+        )
+        assert_command_equals(
+            runner.commands[-1],
+            [
+                "rftn",
+                f"-M{MODEL}",
+                "-I30/2",
+                "-TS",
+                "-N8/0.1+w0.8+n1",
+                "-A1",
+                "-E0",
+                f"-O{output}",
+            ],
+        )
+
+        for kwargs in (
+            {"rayp": 0.1, "inca": 20.0},
+            {"rayp": None, "inca": None},
+            {"rayp": 0.1, "idx": 1},
+        ):
+            try:
+                model.rftn(wtype="P", nt=8, dt=0.1, output_path=output, **kwargs)
+            except ValueError:
+                pass
+            else:
+                raise AssertionError(f"invalid rayp/inca arguments should fail: {kwargs}")
+    finally:
+        _restore_run_grt(pygrt.pymod, original)
+        shutil.rmtree(output, ignore_errors=True)
+
+
 def test_static_greenfn_xy_and_dists():
     runner = CapturedRunner()
     original = _patch_run_grt(pygrt.pymod, runner)
@@ -916,6 +993,7 @@ def main():
         test_run_grt_forwards_warnings_and_errors,
         test_greenfn_default_and_optional_flags,
         test_modal_cli_argument_mapping,
+        test_rftn_cli_argument_mapping,
         test_static_greenfn_xy_and_dists,
         test_syn_source_and_time_function_options,
         test_source_type_is_inferred_from_source_parameters,
