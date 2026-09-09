@@ -1,5 +1,5 @@
 /**
- * @file   recv_points.c
+ * @file   rcv_points.c
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2026-08
  *
@@ -13,7 +13,7 @@
 #include <ctype.h>
 #include <errno.h>
 
-#include "grt/static/recv_points.h"
+#include "grt/static/rcv_points.h"
 #include "grt/common/checkerror.h"
 #include "grt/common/util.h"
 #include "grt/common/mynetcdf.h"
@@ -49,7 +49,7 @@ static bool parse_receiver_point_line(
     return *nvalues == 3 || *nvalues == 6;
 }
 
-GRT_RECV_POINTS *grt_recv_points_from_grid(
+GRT_RCV_POINTS *grt_rcv_points_from_grid(
     size_t nnorth, const real_t *norths,
     size_t neast,  const real_t *easts,
     real_t depth)
@@ -61,7 +61,7 @@ GRT_RECV_POINTS *grt_recv_points_from_grid(
         GRTRaiseError("Negative receiver depth is not supported.");
     }
 
-    GRT_RECV_POINTS *pts = (GRT_RECV_POINTS *)calloc(1, sizeof(GRT_RECV_POINTS));
+    GRT_RCV_POINTS *pts = (GRT_RCV_POINTS *)calloc(1, sizeof(GRT_RCV_POINTS));
     pts->is_grid = true;
     pts->nnorth = nnorth;
     pts->neast = neast;
@@ -82,7 +82,7 @@ GRT_RECV_POINTS *grt_recv_points_from_grid(
 }
 
 
-GRT_RECV_POINTS *grt_recv_points_from_file(const char *path)
+GRT_RCV_POINTS *grt_rcv_points_from_file(const char *path)
 {
     GRTCheckFileExist(path);
 
@@ -130,7 +130,7 @@ GRT_RECV_POINTS *grt_recv_points_from_file(const char *path)
         GRTRaiseError("No receiver points found in \"%s\".", path);
     }
 
-    GRT_RECV_POINTS *pts = (GRT_RECV_POINTS *)calloc(1, sizeof(GRT_RECV_POINTS));
+    GRT_RCV_POINTS *pts = (GRT_RCV_POINTS *)calloc(1, sizeof(GRT_RCV_POINTS));
     pts->is_grid = false;
     pts->nnorth = 0;
     pts->neast = 0;
@@ -157,7 +157,7 @@ GRT_RECV_POINTS *grt_recv_points_from_file(const char *path)
         size_t nvalues;
         if(!parse_receiver_point_line(line, values, &nvalues) || nvalues != ncolumns){
             GRT_SAFE_FREE_PTR(line);
-            grt_recv_points_free(pts);
+            grt_rcv_points_free(pts);
             fclose(fp);
             GRTRaiseError(
                 "Invalid receiver point at line %zu in \"%s\" "
@@ -166,7 +166,7 @@ GRT_RECV_POINTS *grt_recv_points_from_file(const char *path)
         }
         if(values[2] < 0.0){
             GRT_SAFE_FREE_PTR(line);
-            grt_recv_points_free(pts);
+            grt_rcv_points_free(pts);
             fclose(fp);
             GRTRaiseError("Negative receiver depth at line %zu in \"%s\".", lineno, path);
         }
@@ -187,7 +187,7 @@ GRT_RECV_POINTS *grt_recv_points_from_file(const char *path)
 }
 
 
-void grt_recv_points_free(GRT_RECV_POINTS *pts)
+void grt_rcv_points_free(GRT_RCV_POINTS *pts)
 {
     if(pts == NULL) return;
     // 释放接收点坐标和任意点的逐点几何
@@ -209,7 +209,7 @@ void grt_recv_points_free(GRT_RECV_POINTS *pts)
 }
 
 
-GRT_RECV_POINTS *grt_recv_points_from_faults(
+GRT_RCV_POINTS *grt_rcv_points_from_faults(
     size_t nfault, const FINITE_FAULT *faults, real_t dL, real_t dW)
 {
     if((nfault == 0) || (faults == NULL)){
@@ -219,7 +219,7 @@ GRT_RECV_POINTS *grt_recv_points_from_faults(
         GRTRaiseError("finite receiver dL and dW must both be positive or both be omitted.");
     }
 
-    GRT_RECV_POINTS *pts = (GRT_RECV_POINTS *)calloc(1, sizeof(*pts));
+    GRT_RCV_POINTS *pts = (GRT_RCV_POINTS *)calloc(1, sizeof(*pts));
     pts->is_fault = true;
     pts->nfault = nfault;
     pts->nsubs = (size_t *)calloc(nfault, sizeof(*pts->nsubs));
@@ -268,7 +268,7 @@ GRT_RECV_POINTS *grt_recv_points_from_faults(
 }
 
 
-GRT_RECV_NC_LAYOUT grt_recv_nc_get_layout(int ncid)
+GRT_RCV_NC_LAYOUT grt_rcv_nc_get_layout(int ncid)
 {
     size_t len = 0;
     int status = nc_inq_attlen(ncid, NC_GLOBAL, "layout", &len);
@@ -280,11 +280,11 @@ GRT_RECV_NC_LAYOUT grt_recv_nc_get_layout(int ncid)
     char *layout = (char *)calloc(len + 1, 1);
     NC_CHECK(nc_get_att_text(ncid, NC_GLOBAL, "layout", layout));
 
-    GRT_RECV_NC_LAYOUT result;
-    if(strcmp(layout, GRT_RECV_LAYOUT_GRID) == 0){
-        result = GRT_RECV_NC_LAYOUT_GRID;
-    } else if(strcmp(layout, GRT_RECV_LAYOUT_POINTS) == 0){
-        result = GRT_RECV_NC_LAYOUT_POINTS;
+    GRT_RCV_NC_LAYOUT result;
+    if(strcmp(layout, GRT_RCV_LAYOUT_GRID) == 0){
+        result = GRT_RCV_NC_LAYOUT_GRID;
+    } else if(strcmp(layout, GRT_RCV_LAYOUT_POINTS) == 0){
+        result = GRT_RCV_NC_LAYOUT_POINTS;
     } else {
         GRTRaiseError("unsupported static receiver layout \"%s\".", layout);
     }
@@ -293,16 +293,16 @@ GRT_RECV_NC_LAYOUT grt_recv_nc_get_layout(int ncid)
 }
 
 
-void grt_recv_nc_info_load(int ncid, GRT_RECV_NC_INFO *info)
+void grt_rcv_nc_info_load(int ncid, GRT_RCV_NC_INFO *info)
 {
     if(info == NULL){
         GRTRaiseError("receiver NetCDF info is NULL.");
     }
     memset(info, 0, sizeof(*info));
     // 先确定文件布局，再按布局读取并组织接收坐标
-    info->layout = grt_recv_nc_get_layout(ncid);
+    info->layout = grt_rcv_nc_get_layout(ncid);
 
-    if(info->layout == GRT_RECV_NC_LAYOUT_GRID){
+    if(info->layout == GRT_RCV_NC_LAYOUT_GRID){
         size_t nnorth, neast;
         int north_varid, east_varid;
         NC_CHECK(nc_inq_dimid(ncid, "north", &info->dimids[0]));
@@ -332,7 +332,7 @@ void grt_recv_nc_info_load(int ncid, GRT_RECV_NC_INFO *info)
         return;
     }
 
-    if(info->layout == GRT_RECV_NC_LAYOUT_POINTS){
+    if(info->layout == GRT_RCV_NC_LAYOUT_POINTS){
         int north_varid, east_varid;
         // 一维接收点文件的坐标已经展平，可以直接读取到输出数组
         NC_CHECK(nc_inq_dimid(ncid, "point", &info->dimids[0]));
@@ -349,7 +349,7 @@ void grt_recv_nc_info_load(int ncid, GRT_RECV_NC_INFO *info)
 }
 
 
-void grt_recv_nc_info_free(GRT_RECV_NC_INFO *info)
+void grt_rcv_nc_info_free(GRT_RCV_NC_INFO *info)
 {
     if(info == NULL) return;
     // 坐标数组由该结构体管理，结构体本身由调用方管理
@@ -359,7 +359,7 @@ void grt_recv_nc_info_free(GRT_RECV_NC_INFO *info)
 }
 
 
-bool grt_recv_nc_is_points(int ncid)
+bool grt_rcv_nc_is_points(int ncid)
 {
-    return grt_recv_nc_get_layout(ncid) == GRT_RECV_NC_LAYOUT_POINTS;
+    return grt_rcv_nc_get_layout(ncid) == GRT_RCV_NC_LAYOUT_POINTS;
 }

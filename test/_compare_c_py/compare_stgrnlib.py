@@ -194,7 +194,7 @@ def compare_syn_cli_py() -> list:
     c_out = CMPDIR / "stsyn_q_c.nc"
     py_out = CMPDIR / "stsyn_q_py.nc"
     c_static_syn(grn, c_out, ["-Ds2", f"-Q{rcv}"])
-    py_static_syn(grn, py_out, depsrc=2.0, recv_points=rcv)
+    py_static_syn(grn, py_out, depsrc=2.0, rcv_points=rcv)
     errors.append(compare_nc_files(py_out, c_out))
 
     print("\n--- syn + strain/rotation/stress ---")

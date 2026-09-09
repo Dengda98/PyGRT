@@ -142,13 +142,13 @@ int static_rotation_main(int argc, char **argv){
     }
 
     // 识别 grid / points 布局，并将坐标展平供统一计算
-    GRT_RECV_NC_INFO recv_info;
-    grt_recv_nc_info_load(in_ncid, &recv_info);
-    size_t npts = recv_info.npts;
-    real_t *norths_flat = recv_info.norths;
-    real_t *easts_flat = recv_info.easts;
-    int out_ndims = (recv_info.layout == GRT_RECV_NC_LAYOUT_POINTS) ? 1 : 2;
-    int out_dimids[2] = {recv_info.dimids[0], recv_info.dimids[1]};
+    GRT_RCV_NC_INFO rcv_info;
+    grt_rcv_nc_info_load(in_ncid, &rcv_info);
+    size_t npts = rcv_info.npts;
+    real_t *norths_flat = rcv_info.norths;
+    real_t *easts_flat = rcv_info.easts;
+    int out_ndims = (rcv_info.layout == GRT_RCV_NC_LAYOUT_POINTS) ? 1 : 2;
+    int out_dimids[2] = {rcv_info.dimids[0], rcv_info.dimids[1]};
 
     // 读入合成位移偏导 varid
     for(int c=0; c<GRT_CHANNEL_NUM; ++c){
@@ -206,7 +206,7 @@ int static_rotation_main(int argc, char **argv){
     // 关闭文件
     NC_CHECK(nc_close(in_ncid));
 
-    grt_recv_nc_info_free(&recv_info);
+    grt_rcv_nc_info_free(&rcv_info);
     GRT_SAFE_FREE_PTR(s_ingrid);
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;

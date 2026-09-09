@@ -108,10 +108,10 @@ static void write_grid_layout(
     int ncid, const GRT_STATIC_NC_OUTPUT *output,
     int vars[GRT_CHANNEL_NUM], int dvars[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])
 {
-    const GRT_RECV_POINTS *recv = output->recv;
+    const GRT_RCV_POINTS *rcv = output->rcv;
     int dimids[2];
     int north_varid, east_varid;
-    real_t deprcv = recv->depths[0];
+    real_t deprcv = rcv->depths[0];
     real_t rcv_va, rcv_vb, rcv_rho;
 
     // 规则网格使用统一接收深度，将对应介质参数保存为全局属性
@@ -122,8 +122,8 @@ static void write_grid_layout(
     NC_CHECK(NC_FUNC_REAL(nc_put_att)(ncid, NC_GLOBAL, "rcv_vb", NC_REAL, 1, &rcv_vb));
     NC_CHECK(NC_FUNC_REAL(nc_put_att)(ncid, NC_GLOBAL, "rcv_rho", NC_REAL, 1, &rcv_rho));
 
-    NC_CHECK(nc_def_dim(ncid, "north", recv->nnorth, &dimids[0]));
-    NC_CHECK(nc_def_dim(ncid, "east", recv->neast, &dimids[1]));
+    NC_CHECK(nc_def_dim(ncid, "north", rcv->nnorth, &dimids[0]));
+    NC_CHECK(nc_def_dim(ncid, "east", rcv->neast, &dimids[1]));
     NC_CHECK(nc_def_var(ncid, "north", NC_REAL, 1, &dimids[0], &north_varid));
     NC_CHECK(nc_def_var(ncid, "east", NC_REAL, 1, &dimids[1], &east_varid));
     define_channel_vars(
@@ -131,20 +131,20 @@ static void write_grid_layout(
     // 结束定义模式后写入坐标轴和位移数据
     NC_CHECK(nc_enddef(ncid));
 
-    real_t *north_axis = (real_t *)calloc(recv->nnorth, sizeof(real_t));
-    real_t *east_axis = (real_t *)calloc(recv->neast, sizeof(real_t));
+    real_t *north_axis = (real_t *)calloc(rcv->nnorth, sizeof(real_t));
+    real_t *east_axis = (real_t *)calloc(rcv->neast, sizeof(real_t));
     // 接收点坐标在内存中按 point 展平，写网格文件时恢复为两个坐标轴
-    for(size_t inorth = 0; inorth < recv->nnorth; ++inorth){
-        north_axis[inorth] = recv->norths[inorth * recv->neast];
+    for(size_t inorth = 0; inorth < rcv->nnorth; ++inorth){
+        north_axis[inorth] = rcv->norths[inorth * rcv->neast];
     }
-    for(size_t ieast = 0; ieast < recv->neast; ++ieast){
-        east_axis[ieast] = recv->easts[ieast];
+    for(size_t ieast = 0; ieast < rcv->neast; ++ieast){
+        east_axis[ieast] = rcv->easts[ieast];
     }
     NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, north_varid, north_axis));
     NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, east_varid, east_axis));
     GRT_SAFE_FREE_PTR(north_axis);
     GRT_SAFE_FREE_PTR(east_axis);
-    write_fields(ncid, recv->npts, output->calc_upar, output->syn, output->syn_upar, vars, dvars);
+    write_fields(ncid, rcv->npts, output->calc_upar, output->syn, output->syn_upar, vars, dvars);
 }
 
 /**
@@ -159,12 +159,12 @@ static void write_points_layout(
     int ncid, const GRT_STATIC_NC_OUTPUT *output,
     int vars[GRT_CHANNEL_NUM], int dvars[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])
 {
-    const GRT_RECV_POINTS *recv = output->recv;
-    // 有限接收断层已经在 GRT_RECV_POINTS 中展开为一维点数组
-    size_t npts = recv->npts;
-    const real_t *norths = recv->norths;
-    const real_t *easts = recv->easts;
-    const real_t *depths = recv->depths;
+    const GRT_RCV_POINTS *rcv = output->rcv;
+    // 有限接收断层已经在 GRT_RCV_POINTS 中展开为一维点数组
+    size_t npts = rcv->npts;
+    const real_t *norths = rcv->norths;
+    const real_t *easts = rcv->easts;
+    const real_t *depths = rcv->depths;
     int point_dimid;
     int point_dimids[1];
     int north_varid, east_varid, depth_varid;
@@ -181,16 +181,16 @@ static void write_points_layout(
     NC_CHECK(nc_def_var(ncid, "rcv_va", NC_REAL, 1, point_dimids, &va_varid));
     NC_CHECK(nc_def_var(ncid, "rcv_vb", NC_REAL, 1, point_dimids, &vb_varid));
     NC_CHECK(nc_def_var(ncid, "rcv_rho", NC_REAL, 1, point_dimids, &rho_varid));
-    if(recv->is_fault){
+    if(rcv->is_fault){
         int fault_dimid;
-        NC_CHECK(nc_def_dim(ncid, "nfault", recv->nfault, &fault_dimid));
+        NC_CHECK(nc_def_dim(ncid, "nfault", rcv->nfault, &fault_dimid));
         NC_CHECK(nc_def_var(ncid, "strike", NC_REAL, 1, &fault_dimid, &strike_varid));
         NC_CHECK(nc_def_var(ncid, "dip", NC_REAL, 1, &fault_dimid, &dip_varid));
         NC_CHECK(nc_def_var(ncid, "rake", NC_REAL, 1, &fault_dimid, &rake_varid));
         NC_CHECK(nc_def_var(ncid, "offset", NC_INT, 1, &fault_dimid, &offset_varid));
         NC_CHECK(nc_def_var(ncid, "stksize", NC_INT, 1, &fault_dimid, &stksize_varid));
         NC_CHECK(nc_def_var(ncid, "dipsize", NC_INT, 1, &fault_dimid, &dipsize_varid));
-    } else if(recv->has_geometry){
+    } else if(rcv->has_geometry){
         NC_CHECK(nc_def_var(ncid, "strike", NC_REAL, 1, point_dimids, &strike_varid));
         NC_CHECK(nc_def_var(ncid, "dip", NC_REAL, 1, point_dimids, &dip_varid));
         NC_CHECK(nc_def_var(ncid, "rake", NC_REAL, 1, point_dimids, &rake_varid));
@@ -215,36 +215,36 @@ static void write_points_layout(
     NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, va_varid, rcv_va));
     NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, vb_varid, rcv_vb));
     NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, rho_varid, rcv_rho));
-    if(recv->is_fault){
+    if(rcv->is_fault){
         // offset 保存每条有限断层点范围的排他性结束索引，最后一个值等于 point
-        int *offsets = (int *)calloc(recv->nfault, sizeof(int));
-        int *stksizes = (int *)calloc(recv->nfault, sizeof(int));
-        int *dipsizes = (int *)calloc(recv->nfault, sizeof(int));
-        for(size_t ifault = 0; ifault < recv->nfault; ++ifault){
-            if(recv->offsets[ifault] > (size_t)INT_MAX){
+        int *offsets = (int *)calloc(rcv->nfault, sizeof(int));
+        int *stksizes = (int *)calloc(rcv->nfault, sizeof(int));
+        int *dipsizes = (int *)calloc(rcv->nfault, sizeof(int));
+        for(size_t ifault = 0; ifault < rcv->nfault; ++ifault){
+            if(rcv->offsets[ifault] > (size_t)INT_MAX){
                 GRTRaiseError("receiver point offset exceeds the NetCDF integer range.");
             }
-            if((recv->stksizes[ifault] > (size_t)INT_MAX) ||
-                (recv->dipsizes[ifault] > (size_t)INT_MAX)){
+            if((rcv->stksizes[ifault] > (size_t)INT_MAX) ||
+                (rcv->dipsizes[ifault] > (size_t)INT_MAX)){
                 GRTRaiseError("receiver fault subdivision count exceeds the NetCDF integer range.");
             }
-            offsets[ifault] = (int)recv->offsets[ifault];
-            stksizes[ifault] = (int)recv->stksizes[ifault];
-            dipsizes[ifault] = (int)recv->dipsizes[ifault];
+            offsets[ifault] = (int)rcv->offsets[ifault];
+            stksizes[ifault] = (int)rcv->stksizes[ifault];
+            dipsizes[ifault] = (int)rcv->dipsizes[ifault];
         }
-        NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, strike_varid, recv->fstrikes));
-        NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, dip_varid, recv->fdips));
-        NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, rake_varid, recv->frakes));
+        NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, strike_varid, rcv->fstrikes));
+        NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, dip_varid, rcv->fdips));
+        NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, rake_varid, rcv->frakes));
         NC_CHECK(nc_put_var_int(ncid, offset_varid, offsets));
         NC_CHECK(nc_put_var_int(ncid, stksize_varid, stksizes));
         NC_CHECK(nc_put_var_int(ncid, dipsize_varid, dipsizes));
         GRT_SAFE_FREE_PTR(offsets);
         GRT_SAFE_FREE_PTR(stksizes);
         GRT_SAFE_FREE_PTR(dipsizes);
-    } else if(recv->has_geometry){
-        NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, strike_varid, recv->strikes));
-        NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, dip_varid, recv->dips));
-        NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, rake_varid, recv->rakes));
+    } else if(rcv->has_geometry){
+        NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, strike_varid, rcv->strikes));
+        NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, dip_varid, rcv->dips));
+        NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, rake_varid, rcv->rakes));
     }
     GRT_SAFE_FREE_PTR(rcv_va);
     GRT_SAFE_FREE_PTR(rcv_vb);
@@ -263,7 +263,7 @@ void grt_static_save_nc(const GRT_STATIC_NC_OUTPUT *output)
     if((output == NULL) || (output->path == NULL)){
         GRTRaiseError("static NetCDF output description is incomplete.");
     }
-    if(output->recv == NULL){
+    if(output->rcv == NULL){
         GRTRaiseError("static NetCDF output has no receiver layout.");
     }
     if(output->get_medium == NULL){
@@ -272,10 +272,10 @@ void grt_static_save_nc(const GRT_STATIC_NC_OUTPUT *output)
 
     // 有限接收断层和任意接收点使用一维布局，规则网格使用二维布局
     const char *layout;
-    if(output->recv->is_grid && !output->recv->is_fault){
-        layout = GRT_RECV_LAYOUT_GRID;
+    if(output->rcv->is_grid && !output->rcv->is_fault){
+        layout = GRT_RCV_LAYOUT_GRID;
     } else {
-        layout = GRT_RECV_LAYOUT_POINTS;
+        layout = GRT_RCV_LAYOUT_POINTS;
     }
 
     int ncid;
@@ -310,7 +310,7 @@ void grt_static_save_nc(const GRT_STATIC_NC_OUTPUT *output)
     int vars[GRT_CHANNEL_NUM];
     int dvars[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
     // 根据接收点布局定义维度、坐标变量和结果变量并写入数据
-    if(output->recv->is_grid && !output->recv->is_fault){
+    if(output->rcv->is_grid && !output->rcv->is_fault){
         write_grid_layout(ncid, output, vars, dvars);
     } else {
         write_points_layout(ncid, output, vars, dvars);

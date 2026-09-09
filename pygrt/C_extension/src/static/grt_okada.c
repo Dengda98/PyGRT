@@ -382,14 +382,14 @@ static void parse_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
  * @param[in]  Ctrl   Okada 命令行控制结构体
  * @return            新分配的接收点结构体
  */
-static GRT_RECV_POINTS *build_receivers(const GRT_MODULE_CTRL *Ctrl)
+static GRT_RCV_POINTS *build_receivers(const GRT_MODULE_CTRL *Ctrl)
 {
-    if(Ctrl->Q.active) return grt_recv_points_from_file(Ctrl->Q.path);
+    if(Ctrl->Q.active) return grt_rcv_points_from_file(Ctrl->Q.path);
     if(Ctrl->R.active){
-        return grt_recv_points_from_faults(
+        return grt_rcv_points_from_faults(
             Ctrl->R.nfault, Ctrl->R.faults, Ctrl->R.dL, Ctrl->R.dW);
     }
-    return grt_recv_points_from_grid(Ctrl->X.n, Ctrl->X.values, Ctrl->Y.n, Ctrl->Y.values, Ctrl->deprcv);
+    return grt_rcv_points_from_grid(Ctrl->X.n, Ctrl->X.values, Ctrl->Y.n, Ctrl->Y.values, Ctrl->deprcv);
 }
 
 /** 将 Okada 局部坐标中的位移和偏导转换到 PyGRT ZNE 坐标
@@ -650,13 +650,13 @@ static void okada_get_medium(
  *
  * @param[in]  Ctrl         Okada 命令行控制结构体
  * @param[in]  medium       均匀半空间介质参数
- * @param[in]  recv         规则网格、任意点或有限接收断层点列表
+ * @param[in]  rcv          规则网格、任意点或有限接收断层点列表
  * @param[in]  syn          位移数组
  * @param[in]  syn_d        位移偏导数组
  */
 static void save_nc(
     const GRT_MODULE_CTRL *Ctrl, const OKADA_MEDIUM_PARAMS *medium,
-    const GRT_RECV_POINTS *recv,
+    const GRT_RCV_POINTS *rcv,
     const real_t (*syn)[3], const real_t (*syn_d)[3][3])
 {
     const char *channels;
@@ -690,7 +690,7 @@ static void save_nc(
         .alpha = medium->alpha,
         .lambda = medium->lambda,
         .mu = medium->mu,
-        .recv = recv,
+        .rcv = rcv,
         .get_medium = okada_get_medium,
         .medium_context = (void *)medium,
         .syn = (const real_t (*)[GRT_CHANNEL_NUM])syn,
@@ -712,11 +712,11 @@ int okada_main(int argc, char **argv)
     medium.alpha = 1.0 - (medium.vs / medium.vp) * (medium.vs / medium.vp);
     medium.mu = medium.rho * medium.vs * medium.vs * 1e10;
     medium.lambda = medium.rho * (medium.vp * medium.vp - 2.0 * medium.vs * medium.vs) * 1e10;
-    GRT_RECV_POINTS *recv = build_receivers(Ctrl);
-    size_t npts = recv->npts;
-    const real_t *norths = recv->norths;
-    const real_t *easts = recv->easts;
-    const real_t *depths = recv->depths;
+    GRT_RCV_POINTS *rcv = build_receivers(Ctrl);
+    size_t npts = rcv->npts;
+    const real_t *norths = rcv->norths;
+    const real_t *easts = rcv->easts;
+    const real_t *depths = rcv->depths;
     real_t (*syn)[3] = (real_t (*)[3])calloc(npts, sizeof(*syn));
     real_t (*syn_d)[3][3] = (real_t (*)[3][3])calloc(npts, sizeof(*syn_d));
     if((syn == NULL) || (syn_d == NULL)) GRTRaiseError("failed to allocate Okada output.");
@@ -739,12 +739,12 @@ int okada_main(int argc, char **argv)
     } else {
         add_point_source(Ctrl, &medium, npts, norths, easts, depths, syn, syn_d);
     }
-    save_nc(Ctrl, &medium, recv, syn, syn_d);
+    save_nc(Ctrl, &medium, rcv, syn, syn_d);
 
     if(!Ctrl->s.active) GRTRaiseInfo("Okada static displacements saved in \"%s\".", Ctrl->O.path);
     GRT_SAFE_FREE_PTR(syn);
     GRT_SAFE_FREE_PTR(syn_d);
-    grt_recv_points_free(recv);
+    grt_rcv_points_free(rcv);
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;
 }

@@ -306,8 +306,8 @@ static void make_coefficients(const LAMB3_VARS *V, const bool need_P, const bool
         LAMB3_CONVERSION_COEFF_SET *conversion_raw = calloc(1, sizeof(*conversion_raw));
         /* 接收点竖向导数对应交换深度后的 PS/SP 项 */
         LAMB3_VARS reciprocal = *V;
-        reciprocal.source_depth = V->receiver_depth;
-        reciprocal.receiver_depth = V->source_depth;
+        reciprocal.depsrc = V->deprcv;
+        reciprocal.deprcv = V->depsrc;
         if (need_PS) {
             make_lamb3_PS_coefficients(V, 1.0, 1, conversion_raw);
             make_conversion_pf_set(conversion_raw, V->rayleigh_ps, &coefficients->PS);
@@ -417,7 +417,7 @@ static real_t conversion_arrival(const real_t R, const real_t p_depth, const rea
     return (k * rp + rs) / direct_distance;
 }
 
-static void make_vars(const real_t nu, const real_t R, const real_t source_depth, const real_t receiver_depth, const real_t azimuth, LAMB3_VARS *V) {
+static void make_vars(const real_t nu, const real_t R, const real_t depsrc, const real_t deprcv, const real_t azimuth, LAMB3_VARS *V) {
     memset(V, 0, sizeof(*V));
     V->nu = nu;
     V->k2 = 0.5 * (1.0 - 2.0 * nu) / (1.0 - nu);
@@ -425,12 +425,12 @@ static void make_vars(const real_t nu, const real_t R, const real_t source_depth
     V->kp2 = 1.0 - V->k2;
     V->kp = sqrt(V->kp2);
     V->R = R;
-    V->source_depth = source_depth;
-    V->receiver_depth = receiver_depth;
-    V->r = hypot(R, source_depth - receiver_depth);
-    V->rp = hypot(R, source_depth + receiver_depth);
-    V->theta = atan2(R, source_depth - receiver_depth);
-    V->theta_ref = atan2(R, source_depth + receiver_depth);
+    V->depsrc = depsrc;
+    V->deprcv = deprcv;
+    V->r = hypot(R, depsrc - deprcv);
+    V->rp = hypot(R, depsrc + deprcv);
+    V->theta = atan2(R, depsrc - deprcv);
+    V->theta_ref = atan2(R, depsrc + deprcv);
     V->phi = azimuth * DEG1;
     V->st = sin(V->theta);
     V->ct = cos(V->theta);
@@ -452,9 +452,9 @@ static void make_vars(const real_t nu, const real_t R, const real_t source_depth
     V->angle_ratio = V->use_angle_ratio ? V->sf / V->cf : 0.0;
     V->supercritical = V->theta_ref > V->theta_c;
 
-    if (source_depth > 0.0 && receiver_depth > 0.0) {
-        V->tps = conversion_arrival(R, source_depth, receiver_depth, V->k, V->r);
-        V->tsp = conversion_arrival(R, receiver_depth, source_depth, V->k, V->r);
+    if (depsrc > 0.0 && deprcv > 0.0) {
+        V->tps = conversion_arrival(R, depsrc, deprcv, V->k, V->r);
+        V->tsp = conversion_arrival(R, deprcv, depsrc, V->k, V->r);
     } else {
         V->tps = INFINITY;
         V->tsp = INFINITY;
@@ -1185,8 +1185,8 @@ static void evaluate_reflection_wave(const real_t sbar, const real_t sbar2, cons
  */
 static void evaluate_conversion_term(const real_t tbar, const LAMB3_VARS *V, const LAMB3_CONVERSION_PF_SET *coeffs,
                                      const bool swap_depth, real_t F[3][3], real_t Fk_source[3][3][3], real_t Fk_receiver[3][3][3]) {
-    const real_t p_depth = swap_depth ? V->receiver_depth : V->source_depth;
-    const real_t s_depth = swap_depth ? V->source_depth : V->receiver_depth;
+    const real_t p_depth = swap_depth ? V->deprcv : V->depsrc;
+    const real_t s_depth = swap_depth ? V->depsrc : V->deprcv;
     LAMB3_PS_CTX P;
     make_PS_context(tbar, p_depth, s_depth, V, &P);
     LAMB3_PS_BASIS basis;
@@ -1522,7 +1522,7 @@ static void evaluate_time(const real_t tbar, const LAMB3_VARS *V, const LAMB3_RE
 }
 
 void grt_solve_lamb3(
-    const real_t nu, const real_t *ts, const int nt, const real_t R, const real_t source_depth, const real_t receiver_depth,
+    const real_t nu, const real_t *ts, const int nt, const real_t R, const real_t depsrc, const real_t deprcv,
     const real_t azimuth, real_t (*G)[3][3], real_t (*dG_source)[3][3][3], real_t (*dG_receiver)[3][3][3])
 {
     if (nu <= 0.0 || nu >= 0.5) {
@@ -1537,7 +1537,7 @@ void grt_solve_lamb3(
     if (R <= 0.0) {
         GRTRaiseError("The horizontal distance R should be positive in lamb3.\n");
     }
-    if (source_depth <= 0.0 || receiver_depth <= 0.0) {
+    if (depsrc <= 0.0 || deprcv <= 0.0) {
         GRTRaiseError("Source and receiver depths should be strictly positive in lamb3.\n");
     }
     if (azimuth < 0.0 || azimuth > 360.0) {
@@ -1553,18 +1553,18 @@ void grt_solve_lamb3(
     }
 
     LAMB3_VARS V;
-    make_vars(nu, R, source_depth, receiver_depth, azimuth, &V);
+    make_vars(nu, R, depsrc, deprcv, azimuth, &V);
     real_t horizontal_distance_ratio = R / V.rp;
-    real_t source_depth_ratio = source_depth / V.r;
-    real_t receiver_depth_ratio = receiver_depth / V.r;
+    real_t depsrc_ratio = depsrc / V.r;
+    real_t deprcv_ratio = deprcv / V.r;
     if (horizontal_distance_ratio <= LAMB3_SMALL_R_WARNING_RATIO) {
         GRTRaiseWarning(
             "The horizontal distance ratio R/r'=%e is small in lamb3; calculation is very likely to fail.", horizontal_distance_ratio);
     }
-    if (source_depth_ratio <= LAMB_SURFACE_DEPTH_WARNING_RATIO || receiver_depth_ratio <= LAMB_SURFACE_DEPTH_WARNING_RATIO) {
+    if (depsrc_ratio <= LAMB_SURFACE_DEPTH_WARNING_RATIO || deprcv_ratio <= LAMB_SURFACE_DEPTH_WARNING_RATIO) {
         GRTRaiseWarning(
             "Source or receiver depth ratio to direct distance is close to zero (source/r=%e, receiver/r=%e); calculation is very likely to fail.",
-            source_depth_ratio, receiver_depth_ratio);
+            depsrc_ratio, deprcv_ratio);
     }
     const real_t tbar_eps = nt > 1 ? GRT_MIN(1e-8, (ts[1] - ts[0]) * 1e-5) : 1e-8;
     /* 末点若正好落在波前上会被右移，用略大的 tEnd 判断以免漏构造系数 */

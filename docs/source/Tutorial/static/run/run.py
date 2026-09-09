@@ -76,9 +76,9 @@ pymod.static_syn(
 
 # ---------------------------------------------------------------------------------
 # BEGIN SYN POINTS
-# 设置 recv_points 来传入任意点坐标文件
+# 设置 rcv_points 来传入任意点坐标文件
 pymod.static_syn(
-    recv_points="rcv_pts.txt",
+    rcv_points="rcv_pts.txt",
     scale=1e24, strike=33, dip=90, rake=0, output_path="stsyn_points.nc", zne=True,
 )
 # END SYN POINTS

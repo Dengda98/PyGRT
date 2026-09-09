@@ -266,7 +266,7 @@ pymod_m.static_syn(
 
 rcv = Path("rcv_pts.txt")
 rcv.write_text("# north east depth (km)\n0 0 0\n1 2 0\n-1 1 0\n")
-pymod_m.static_syn(scale=1e16, output_path="stsyn_q.nc", depsrc=2.0, recv_points=rcv)
+pymod_m.static_syn(scale=1e16, output_path="stsyn_q.nc", depsrc=2.0, rcv_points=rcv)
 with netcdf_file("stsyn_q.nc", mmap=False) as f:
     assert "point" in f.dimensions
     assert f.dimensions["point"] == 3
@@ -332,14 +332,14 @@ pymod_mr.static_syn(scale=1e20, output_path="stsyn_dr.nc", deprcv=0.25, norths=[
 
 # -------------------- 错误参数 --------------------
 try:
-    pymod_m.static_syn(scale=1e20, output_path="stsyn_bad.nc", recv_points=rcv, norths=[-1.0, 1.0, 1.0], easts=[-1.0, 1.0, 1.0])
-    raise AssertionError("recv_points with norths/easts should raise")
+    pymod_m.static_syn(scale=1e20, output_path="stsyn_bad.nc", rcv_points=rcv, norths=[-1.0, 1.0, 1.0], easts=[-1.0, 1.0, 1.0])
+    raise AssertionError("rcv_points with norths/easts should raise")
 except ValueError:
     pass
 
 try:
-    pymod_m.static_syn(scale=1e20, output_path="stsyn_bad.nc", recv_points=rcv, deprcv=0.0)
-    raise AssertionError("recv_points with deprcv should raise")
+    pymod_m.static_syn(scale=1e20, output_path="stsyn_bad.nc", rcv_points=rcv, deprcv=0.0)
+    raise AssertionError("rcv_points with deprcv should raise")
 except ValueError:
     pass
 

@@ -39,10 +39,10 @@ for name, kwargs in invalid_lamb2_inputs:
 
 
 R = 10.0
-SOURCE_DEPTH = 5.0
+DEPSRC = 5.0
 AZIMUTH = 30.0
 ts = np.arange(0.0, 2.0 + 1e-8, 1e-2)
-G, dG_source, dG_receiver = pygrt.utils.lamb2(nu=0.25, tbar=ts, R=R, depsrc=SOURCE_DEPTH, azimuth=AZIMUTH)
+G, dG_source, dG_receiver = pygrt.utils.lamb2(nu=0.25, tbar=ts, R=R, depsrc=DEPSRC, azimuth=AZIMUTH)
 
 if not np.allclose(dG_receiver[:, :2], -dG_source[:, :2]):
     raise ValueError("Horizontal receiver and source derivatives violate translation invariance.")
@@ -55,7 +55,7 @@ if not np.allclose(dG_receiver[:, 2, 1, 1:], dG_source[:, 1, 2, 1:]):
 
 for azimuth in (0.0, 90.0, 180.0, 270.0):
     angle_G, angle_source, angle_receiver = pygrt.utils.lamb2(
-        nu=0.25, tbar=np.asarray([0.0, 0.65, 1.05, 1.8]), R=R, depsrc=SOURCE_DEPTH, azimuth=azimuth
+        nu=0.25, tbar=np.asarray([0.0, 0.65, 1.05, 1.8]), R=R, depsrc=DEPSRC, azimuth=azimuth
     )
     if not np.isfinite(angle_G).all() or not np.isfinite(angle_source).all() or not np.isfinite(angle_receiver).all():
         raise ValueError(f"lamb2 returned a non-finite value at azimuth={azimuth:g}.")
@@ -81,13 +81,13 @@ def _check_reciprocity(depth, azimuth):
 
 
 for azimuth in (0.0, 30.0, 90.0, 180.0, 210.0, 360.0):
-    _check_reciprocity(SOURCE_DEPTH, azimuth)
+    _check_reciprocity(DEPSRC, azimuth)
 for depth in (0.5, 2.0, 10.0):
     _check_reciprocity(depth, AZIMUTH)
 
 
 G_surface, dG_surface_source, dG_surface_receiver = pygrt.utils.lamb2(
-    nu=0.25, tbar=ts, R=R, deprcv=SOURCE_DEPTH, azimuth=AZIMUTH
+    nu=0.25, tbar=ts, R=R, deprcv=DEPSRC, azimuth=AZIMUTH
 )
 if not np.isfinite(G_surface).all() or not np.isfinite(dG_surface_source).all() or not np.isfinite(dG_surface_receiver).all():
     raise ValueError("lamb2 returned a non-finite value for the surface-source case.")
@@ -101,7 +101,7 @@ cli_result = subprocess.run(
         "-P0.25",
         "-T0/2/1e-2",
         f"-R{R}",
-        f"-Ds{SOURCE_DEPTH}",
+        f"-Ds{DEPSRC}",
         "-S+slamb2_source+rlamb2_receiver",
         f"-A{AZIMUTH}",
     ],
@@ -131,7 +131,7 @@ surface_cli_result = subprocess.run(
         "-P0.25",
         "-T0/2/1e-2",
         f"-R{R}",
-        f"-Dr{SOURCE_DEPTH}",
+        f"-Dr{DEPSRC}",
         "-S+slamb2_surface_source+rlamb2_surface_receiver",
         f"-A{AZIMUTH}",
     ],
@@ -170,10 +170,10 @@ def _check_lamb2_right_limit(boundary, **depth_kw):
 
 
 main_p_arrival = np.sqrt(0.5 * (1.0 - 2.0 * 0.25) / (1.0 - 0.25))
-for depth_kw in ({"depsrc": SOURCE_DEPTH}, {"deprcv": SOURCE_DEPTH}):
+for depth_kw in ({"depsrc": DEPSRC}, {"deprcv": DEPSRC}):
     _check_lamb2_right_limit(main_p_arrival, **depth_kw)
     _check_lamb2_right_limit(1.0, **depth_kw)
-    main_theta = np.arctan2(R, SOURCE_DEPTH)
+    main_theta = np.arctan2(R, DEPSRC)
     main_t_sp = np.cos(main_theta - np.arcsin(main_p_arrival))
     _check_lamb2_right_limit(main_t_sp, **depth_kw)
 
@@ -184,11 +184,11 @@ def _lamb2_g_over_r(nu, tbar, source, reference_radius):
     radius = np.linalg.norm(source_to_receiver)
     ray = source_to_receiver / radius
     horizontal_distance = np.hypot(source_to_receiver[0], source_to_receiver[1])
-    source_depth = source[2]
+    depsrc = source[2]
     azimuth = np.rad2deg(np.arctan2(ray[1], ray[0])) % 360.0
     G, _, _ = pygrt.utils.lamb2(
         nu=nu, tbar=tbar * reference_radius / radius, R=horizontal_distance,
-        depsrc=source_depth, azimuth=azimuth,
+        depsrc=depsrc, azimuth=azimuth,
     )
     return G / radius
 
@@ -254,11 +254,11 @@ def _lamb2_geometry(source, receiver):
 
 def _lamb2_green_at_physical_time(physical_time, source, receiver):
     distance = np.linalg.norm(receiver - source)
-    horizontal_distance, source_depth, receiver_depth, azimuth = _lamb2_geometry(source, receiver)
-    if source_depth > 0.0 and receiver_depth == 0.0:
-        depth_kw = {"depsrc": source_depth}
-    elif source_depth == 0.0 and receiver_depth > 0.0:
-        depth_kw = {"deprcv": receiver_depth}
+    horizontal_distance, depsrc, deprcv, azimuth = _lamb2_geometry(source, receiver)
+    if depsrc > 0.0 and deprcv == 0.0:
+        depth_kw = {"depsrc": depsrc}
+    elif depsrc == 0.0 and deprcv > 0.0:
+        depth_kw = {"deprcv": deprcv}
     else:
         raise ValueError("lamb2 finite-difference geometry must keep exactly one point underground.")
     return pygrt.utils.lamb2(
@@ -275,7 +275,7 @@ def _check_surface_source_receiver_derivatives():
     receiver = np.array([
         R * np.cos(np.deg2rad(AZIMUTH)),
         R * np.sin(np.deg2rad(AZIMUTH)),
-        SOURCE_DEPTH,
+        DEPSRC,
     ])
     distance = np.linalg.norm(receiver - source)
     times = (0.70, 1.20, 1.80)
@@ -284,7 +284,7 @@ def _check_surface_source_receiver_derivatives():
             nu=0.25,
             tbar=np.asarray([tbar - 1e-3, tbar, tbar + 1e-3]),
             R=R,
-            deprcv=SOURCE_DEPTH,
+            deprcv=DEPSRC,
             azimuth=AZIMUTH,
         )
         expected_receiver = expected_receiver[1]

@@ -787,7 +787,7 @@ def test_static_syn_and_tensor_postprocess_args():
         )
 
         # 多深度点源 + 任意接收点
-        model.static_syn(scale=1e20, output_path=out, depsrc=2.0, recv_points=HERE / "rcv.txt")
+        model.static_syn(scale=1e20, output_path=out, depsrc=2.0, rcv_points=HERE / "rcv.txt")
         assert_command_has(runner.commands[-1], "static_syn", f"-G{model.stgrn}", f"-O{out}", "-S1e+20", "-Ds2", f"-Q{HERE / 'rcv.txt'}")
 
         # 多深度点源 + 新网格 + 台站深度
@@ -850,7 +850,7 @@ def test_static_sproj_and_coulomb_args():
         pygrt.utils.static_sproj(static, rake=55.0, force_rake=True)
         assert_command_equals(runner.commands[-1], ["static_sproj", f"-G{static}", "-M55+f"])
 
-        pygrt.utils.static_sproj(static, recv_points=receiver)
+        pygrt.utils.static_sproj(static, rcv_points=receiver)
         assert_command_equals(runner.commands[-1], ["static_sproj", f"-G{static}", f"-Q{receiver}"])
 
         pygrt.utils.static_coulomb(static, 0.6)
@@ -867,6 +867,83 @@ def test_static_sproj_and_coulomb_args():
         static.unlink(missing_ok=True)
         receiver.unlink(missing_ok=True)
         dynamic.rmdir()
+
+
+def test_deprecated_recv_points_alias():
+    runner = CapturedRunner()
+    original_pymod = _patch_run_grt(pygrt.pymod, runner)
+    original_utils = _patch_run_grt(pygrt.utils, runner)
+    static = HERE / "_tmp_args_deprecated_sproj.nc"
+    receiver = HERE / "_tmp_args_deprecated_rcv_points.txt"
+
+    def assert_deprecation(caught):
+        assert len(caught) == 1
+        assert issubclass(caught[0].category, DeprecationWarning)
+        message = str(caught[0].message)
+        assert "recv_points" in message
+        assert "rcv_points" in message
+
+    try:
+        model = pygrt.PyModel1D(stgrn=HERE / "_tmp_args_deprecated_static.nc", modelpath=MODEL)
+        static.write_bytes(b"placeholder")
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            model.static_syn(
+                scale=1e20,
+                output_path=HERE / "_tmp_args_deprecated_syn.nc",
+                depsrc=2.0,
+                **{"recv_points": receiver},
+            )
+        assert_deprecation(caught)
+        assert_command_has(runner.commands[-1], "static_syn", f"-Q{receiver}")
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            pygrt.utils.okada(
+                modelparams=(6.0, 3.464, 2.7),
+                depsrc=2.0,
+                output_path=HERE / "_tmp_args_deprecated_okada.nc",
+                scale=1e20,
+                **{"recv_points": receiver},
+            )
+        assert_deprecation(caught)
+        assert_command_has(runner.commands[-1], "okada", f"-Q{receiver}")
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            pygrt.utils.static_sproj(static, **{"recv_points": receiver})
+        assert_deprecation(caught)
+        assert_command_has(runner.commands[-1], "static_sproj", f"-Q{receiver}")
+
+        try:
+            model.static_syn(
+                scale=1e20,
+                output_path=HERE / "_tmp_args_deprecated_conflict.nc",
+                depsrc=2.0,
+                rcv_points=receiver,
+                **{"recv_points": receiver},
+            )
+        except TypeError as exc:
+            assert "both" in str(exc)
+        else:
+            raise AssertionError("rcv_points and recv_points should not be accepted together")
+
+        try:
+            model.static_syn(
+                scale=1e20,
+                output_path=HERE / "_tmp_args_unexpected_keyword.nc",
+                unexpected=True,
+            )
+        except TypeError as exc:
+            assert "unexpected" in str(exc)
+        else:
+            raise AssertionError("unexpected static_syn keyword should raise TypeError")
+    finally:
+        _restore_run_grt(pygrt.pymod, original_pymod)
+        _restore_run_grt(pygrt.utils, original_utils)
+        static.unlink(missing_ok=True)
+        receiver.unlink(missing_ok=True)
 
 
 def test_tensor_return_result_reads_prefix_only():
@@ -999,6 +1076,7 @@ def main():
         test_source_type_is_inferred_from_source_parameters,
         test_static_syn_and_tensor_postprocess_args,
         test_static_sproj_and_coulomb_args,
+        test_deprecated_recv_points_alias,
         test_tensor_return_result_reads_prefix_only,
         test_renamed_interfaces_fail_with_migration_message,
         test_read_statsfile_ptam_requires_prefix,

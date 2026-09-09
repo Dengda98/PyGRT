@@ -33,8 +33,8 @@ typedef struct {
     struct {
         bool s_active;       ///< -Ds
         bool r_active;       ///< -Dr
-        real_t source_depth;
-        real_t receiver_depth;
+        real_t depsrc;
+        real_t deprcv;
     } D;
 
     /** 空间导数输出路径 */
@@ -182,7 +182,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                     Ctrl->D.s_active = true;
                     {
                         char extra;
-                        if (1 != sscanf(optarg + 1, "%lf%c", &Ctrl->D.source_depth, &extra) || Ctrl->D.source_depth <= 0.0) {
+                        if (1 != sscanf(optarg + 1, "%lf%c", &Ctrl->D.depsrc, &extra) || Ctrl->D.depsrc <= 0.0) {
                             GRTBadOptionError(Ds, "source depth should be strictly positive.");
                         }
                     }
@@ -190,7 +190,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                     Ctrl->D.r_active = true;
                     {
                         char extra;
-                        if (1 != sscanf(optarg + 1, "%lf%c", &Ctrl->D.receiver_depth, &extra) || Ctrl->D.receiver_depth <= 0.0) {
+                        if (1 != sscanf(optarg + 1, "%lf%c", &Ctrl->D.deprcv, &extra) || Ctrl->D.deprcv <= 0.0) {
                             GRTBadOptionError(Dr, "receiver depth should be strictly positive.");
                         }
                     }
@@ -262,7 +262,7 @@ static void run_lamb2_with_derivative_outputs(const GRT_MODULE_CTRL *Ctrl)
     }
 
     grt_solve_lamb2(Ctrl->P.nu, Ctrl->T.ts, Ctrl->T.nt, Ctrl->R.distance,
-        Ctrl->D.source_depth, Ctrl->D.receiver_depth, Ctrl->A.azimuth,
+        Ctrl->D.depsrc, Ctrl->D.deprcv, Ctrl->A.azimuth,
         G, dG_source, dG_receiver);
     grt_lamb_print_green_series(stdout, Ctrl->T.ts, Ctrl->T.nt, G);
     if (source_file != NULL) {
@@ -288,7 +288,7 @@ int lamb2_main(int argc, char **argv)
         run_lamb2_with_derivative_outputs(Ctrl);
     } else {
         grt_solve_lamb2(Ctrl->P.nu, Ctrl->T.ts, Ctrl->T.nt, Ctrl->R.distance,
-            Ctrl->D.source_depth, Ctrl->D.receiver_depth, Ctrl->A.azimuth, NULL, NULL, NULL);
+            Ctrl->D.depsrc, Ctrl->D.deprcv, Ctrl->A.azimuth, NULL, NULL, NULL);
     }
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;

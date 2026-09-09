@@ -29,8 +29,8 @@ typedef struct {
 
     struct {
         bool active;
-        real_t source_depth;
-        real_t receiver_depth;
+        real_t depsrc;
+        real_t deprcv;
     } D;
 
     struct {
@@ -178,11 +178,11 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 Ctrl->D.active = true;
                 {
                     char extra;
-                    if(2 != sscanf(optarg, "%lf/%lf%c", &Ctrl->D.source_depth, &Ctrl->D.receiver_depth, &extra)){
+                    if(2 != sscanf(optarg, "%lf/%lf%c", &Ctrl->D.depsrc, &Ctrl->D.deprcv, &extra)){
                         GRTBadOptionError(D, "expected source-depth/receiver-depth.");
                     }
                 }
-                if(Ctrl->D.source_depth <= 0.0 || Ctrl->D.receiver_depth <= 0.0){
+                if(Ctrl->D.depsrc <= 0.0 || Ctrl->D.deprcv <= 0.0){
                     GRTBadOptionError(D, "source and receiver depths should be strictly positive.");
                 }
                 break;
@@ -235,8 +235,8 @@ static void run_lamb3_with_derivative_outputs(const GRT_MODULE_CTRL *Ctrl)
         receiver_file = GRTCheckOpenFile(Ctrl->S.receiver_path, "w");
     }
 
-    grt_solve_lamb3(Ctrl->P.nu, Ctrl->T.ts, Ctrl->T.nt, Ctrl->R.distance, Ctrl->D.source_depth,
-        Ctrl->D.receiver_depth, Ctrl->A.azimuth, G, dG_source, dG_receiver);
+    grt_solve_lamb3(Ctrl->P.nu, Ctrl->T.ts, Ctrl->T.nt, Ctrl->R.distance, Ctrl->D.depsrc,
+        Ctrl->D.deprcv, Ctrl->A.azimuth, G, dG_source, dG_receiver);
     grt_lamb_print_green_series(stdout, Ctrl->T.ts, Ctrl->T.nt, G);
     if (source_file != NULL) {
         grt_lamb_print_derivative_series(source_file, Ctrl->T.ts, Ctrl->T.nt, dG_source, true);
@@ -260,8 +260,8 @@ int lamb3_main(int argc, char **argv)
     if (Ctrl->S.active) {
         run_lamb3_with_derivative_outputs(Ctrl);
     } else {
-        grt_solve_lamb3(Ctrl->P.nu, Ctrl->T.ts, Ctrl->T.nt, Ctrl->R.distance, Ctrl->D.source_depth,
-            Ctrl->D.receiver_depth, Ctrl->A.azimuth, NULL, NULL, NULL);
+        grt_solve_lamb3(Ctrl->P.nu, Ctrl->T.ts, Ctrl->T.nt, Ctrl->R.distance, Ctrl->D.depsrc,
+            Ctrl->D.deprcv, Ctrl->A.azimuth, NULL, NULL, NULL);
     }
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;
