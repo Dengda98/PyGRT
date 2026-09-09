@@ -4,7 +4,7 @@
 .. include:: common_OPTs.rst_
 
 
-rftn
+rcvfn
 =================
 
 :简介: 计算平面入射 P 或 SV 波的接收函数及自由表面位移响应
@@ -12,7 +12,7 @@ rftn
 语法
 -----------
 
-**grt rftn**
+**grt rcvfn**
 |-M|\ *model*
 ( |-P|\ *rayp* | |-I|\ *inca*\ [/\ *idx*] )
 |-T|\ **P|S**
@@ -28,11 +28,11 @@ rftn
 描述
 --------
 
-**rftn** 将入射波视为沿指定水平射线参数传播的单位平面波，在一维水平层状半空间中计算其到达自由表面后的 P-SV 响应。
+**rcvfn** 将入射波视为沿指定水平射线参数传播的单位平面波，在一维水平层状半空间中计算其到达自由表面后的 P-SV 响应。
 入射波从模型底部半空间，或 |-I| 指定的模型层，向上入射。
 
 默认只保存接收函数；设置 |-W| 后，还会保存单位入射位移对应的 Z/R 响应。
-具体公式详见 :doc:`/Formula/others/rftn`。
+具体公式详见 :doc:`/Formula/others/rcvfn`。
 
 SAC 头段中的 ``user0``、``user1``、``user2`` 分别记录虚频系数 :math:`\omega_I`、水平射线参数 *rayp* 和高斯滤波参数 *alp*。
 
@@ -100,4 +100,4 @@ SAC 头段中的 ``user0``、``user1``、``user2`` 分别记录虚频系数 :mat
 示例
 -------
 
-+ :doc:`/Tutorial/receiver_function/rftn`
++ :doc:`/Tutorial/receiver_function/rcvfn`

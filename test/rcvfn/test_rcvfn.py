@@ -34,8 +34,8 @@ def expect_value_error(callable_obj, message: str) -> None:
 
 model = pygrt.PyModel1D(modelpath=MODEL)
 
-# 与 test_rftn.sh 中的 C 命令对应的 P 波参数
-model.rftn(
+# 与 test_rcvfn.sh 中的 C 命令对应的 P 波参数
+model.rcvfn(
     wtype="P",
     rayp=0.12,
     nt=64,
@@ -47,11 +47,11 @@ model.rftn(
 compare_sac_dirs(
     Path("C_P"),
     Path("PY_P"),
-    {"P_rftn.sac", "P_Z.sac", "P_R.sac"},
+    {"P_rcvfn.sac", "P_Z.sac", "P_R.sac"},
 )
 
-# 与 test_rftn.sh 中的 C 命令对应的 SV 波参数
-model.rftn(
+# 与 test_rcvfn.sh 中的 C 命令对应的 SV 波参数
+model.rcvfn(
     wtype="S",
     inca=20.0,
     idx=2,
@@ -70,28 +70,28 @@ model.rftn(
 compare_sac_dirs(
     Path("C_S"),
     Path("PY_S"),
-    {"S_rftn.sac", "S_Z.sac", "S_R.sac"},
+    {"S_rcvfn.sac", "S_Z.sac", "S_R.sac"},
 )
 
 # Python 端输入检查
 expect_value_error(
-    lambda: model.rftn(wtype="P", nt=8, dt=0.1, output_path="bad", rayp=0.1, inca=20.0),
+    lambda: model.rcvfn(wtype="P", nt=8, dt=0.1, output_path="bad", rayp=0.1, inca=20.0),
     "rayp and inca should be mutually exclusive",
 )
 expect_value_error(
-    lambda: model.rftn(wtype="P", nt=8, dt=0.1, output_path="bad"),
+    lambda: model.rcvfn(wtype="P", nt=8, dt=0.1, output_path="bad"),
     "one of rayp and inca should be required",
 )
 expect_value_error(
-    lambda: model.rftn(wtype="P", nt=8, dt=0.1, output_path="bad", rayp=0.1, idx=1),
+    lambda: model.rcvfn(wtype="P", nt=8, dt=0.1, output_path="bad", rayp=0.1, idx=1),
     "idx should require inca",
 )
 expect_value_error(
-    lambda: model.rftn(wtype="P", nt=8, dt=0.1, output_path="bad", inca=90.0),
+    lambda: model.rcvfn(wtype="P", nt=8, dt=0.1, output_path="bad", inca=90.0),
     "inca should be below 90 degrees",
 )
 expect_value_error(
-    lambda: model.rftn(wtype="P", nt=8, dt=0.1, output_path="bad", rayp=0.0),
+    lambda: model.rcvfn(wtype="P", nt=8, dt=0.1, output_path="bad", rayp=0.0),
     "rayp should be positive",
 )
 

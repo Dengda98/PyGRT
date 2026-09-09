@@ -6,8 +6,8 @@
 
 基于相同的广义反射透射系数矩阵方法，
 **PyGRT** 可计算层状模型中单位平面入射 P 或 SV 波在自由表面的接收函数。
-C 模块见 :doc:`/Module/rftn`，Python 中对应 :meth:`PyModel1D.rftn() <pygrt.pymod.PyModel1D.rftn>`。
-具体公式详见 :doc:`/Formula/others/rftn`。
+C 模块见 :doc:`/Module/rcvfn`，Python 中对应 :meth:`PyModel1D.rcvfn() <pygrt.pymod.PyModel1D.rcvfn>`。
+具体公式详见 :doc:`/Formula/others/rcvfn`。
 
 以下示例使用如下模型文件：
 
@@ -28,8 +28,8 @@ C 模块见 :doc:`/Module/rftn`，Python 中对应 :meth:`PyModel1D.rftn() <pygr
 
         .. literalinclude:: run/run.sh
             :language: bash
-            :start-after: BEGIN CLI RFTN
-            :end-before: END CLI RFTN
+            :start-after: BEGIN CLI RCVFN
+            :end-before: END CLI RCVFN
 
         使用 **-W** 可以附加输出 Z/R 响应。
 
@@ -37,8 +37,8 @@ C 模块见 :doc:`/Module/rftn`，Python 中对应 :meth:`PyModel1D.rftn() <pygr
 
         .. literalinclude:: run/run.py
             :language: python
-            :start-after: BEGIN PYTHON RFTN
-            :end-before: END PYTHON RFTN
+            :start-after: BEGIN PYTHON RCVFN
+            :end-before: END PYTHON RCVFN
 
         设置 ``write_components=True`` 可以附加输出 Z/R 响应。
 
@@ -54,23 +54,23 @@ C 模块见 :doc:`/Module/rftn`，Python 中对应 :meth:`PyModel1D.rftn() <pygr
       - 附加输出（如果有设置）
       - 时间参考零点
     * - P
-      - *P_rftn.sac*
+      - *P_rcvfn.sac*
       - *P_Z.sac*、*P_R.sac*
       - P 波到时
     * - SV
-      - *S_rftn.sac*
+      - *S_rcvfn.sac*
       - *S_Z.sac*、*S_R.sac*
       - S 波到时
 
 以下结果图每个子图单独按最大绝对振幅归一化，仅用于比较波形形状；
 每幅图包含三行，依次为接收函数以及 Z/R 响应。
 
-.. figure:: run/rftn_P.svg
+.. figure:: run/P_rcvfn.svg
     :align: center
 
     入射 P 波
 
-.. figure:: run/rftn_S.svg
+.. figure:: run/S_rcvfn.svg
     :align: center
 
     入射 SV 波

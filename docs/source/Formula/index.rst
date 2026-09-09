@@ -46,7 +46,7 @@
 
     - :doc:`others/uiz`
     - :doc:`others/DS_zero`
-    - :doc:`others/rftn`
+    - :doc:`others/rcvfn`
 
 
 
@@ -67,4 +67,4 @@
 
     others/uiz
     others/DS_zero
-    others/rftn
+    others/rcvfn

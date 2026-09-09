@@ -17,7 +17,7 @@
 这里省略点源柱面谐展开的阶数下标 :math:`m`，沿用同一归一化记号：
 
 .. math::
-    :label: rftn-qw
+    :label: rcvfn-qw
 
     q=k\phi+\frac{\partial\psi}{\partial z},
     \qquad
@@ -53,7 +53,7 @@
 位移仍由 P 势函数的一次梯度和 SV 势函数的双旋度组成：
 
 .. math::
-    :label: rftn-potential
+    :label: rcvfn-potential
 
     \mathbf{u}
     =\nabla\phi
@@ -77,7 +77,7 @@
 水平和垂向位移分量分别为
 
 .. math::
-    :label: rftn-displacement
+    :label: rcvfn-displacement
 
     u_R
     &=\frac{\partial\phi}{\partial x}
@@ -104,13 +104,13 @@
 完成与点源相同的 R/T 矩阵递推后，在自由表面得到 :math:`q,w`。
 记两种入射波对应的自由表面响应为
 :math:`(q_P,w_P)` 和 :math:`(q_{SV},w_{SV})`。
-直接使用 :eq:`rftn-displacement`，即可得到对应分量响应，
+直接使用 :eq:`rcvfn-displacement`，即可得到对应分量响应，
 再按如下式子即可计算得到接收函数。
 
 P 入射时使用水平分量与垂向分量之比：
 
 .. math::
-    :label: rftn-ratio-p
+    :label: rcvfn-ratio-p
 
     R_P(\omega)
     =\frac{U_R^{(P)}}{U_Z^{(P)}}
@@ -119,7 +119,7 @@ P 入射时使用水平分量与垂向分量之比：
 SV 入射时使用垂向分量与水平分量之比：
 
 .. math::
-    :label: rftn-ratio-sv
+    :label: rcvfn-ratio-sv
 
     R_{SV}(\omega)
     =\frac{U_Z^{(SV)}}{U_R^{(SV)}}
@@ -141,5 +141,5 @@ R/T 递推得到的 :math:`q,w` 响应。
     =\frac{\widetilde V_S}{\omega}
     =\mathrm{i}\frac{\widetilde V_S}{\mathrm{i}\omega}.
 
-因此绝对分量只需在 :eq:`rftn-displacement` 的基础上乘以相应的单位入射位移因子；
+因此绝对分量只需在 :eq:`rcvfn-displacement` 的基础上乘以相应的单位入射位移因子；
 这不会改变上面的接收函数比值。

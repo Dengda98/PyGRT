@@ -189,7 +189,7 @@ class PyModel1D:
     1. Create :class:`PyModel1D` with the Green's function path(s) actually needed
        (``grn`` and/or ``stgrn``) and optional ``modelpath``.
     2. Compute modal dispersion, receiver functions and Green's functions with
-       :meth:`eigenv`, :meth:`eigenfn`, :meth:`modsum`, :meth:`rftn`,
+       :meth:`eigenv`, :meth:`eigenfn`, :meth:`modsum`, :meth:`rcvfn`,
        :meth:`greenfn` or :meth:`static_greenfn` (the required paths depend on
        the method).
     3. Synthesize waveforms or static fields with :meth:`syn` or
@@ -916,7 +916,7 @@ class PyModel1D:
         """Legacy interface renamed to :meth:`greenfn`; calling it raises an error."""
         raise RuntimeError("compute_grn() has been renamed to greenfn(); use greenfn() instead.")
 
-    def rftn(
+    def rcvfn(
         self,
         *,
         wtype: str,
@@ -938,10 +938,10 @@ class PyModel1D:
         r"""
         Compute receiver functions for a plane incident P or SV wave.
 
-        This method wraps the ``grt rftn`` command. The incident wave is
+        This method wraps the ``grt rcvfn`` command. The incident wave is
         specified by either a horizontal ray parameter ``rayp`` or an upward
         incidence angle ``inca`` at the selected reverse-indexed model layer.
-        Results are written as ``P_rftn.sac`` or ``S_rftn.sac`` below
+        Results are written as ``P_rcvfn.sac`` or ``S_rcvfn.sac`` below
         ``output_path``; ``write_components=True`` also writes the corresponding
         ``Z`` and ``R`` response files. All arguments must be passed by keyword.
 
@@ -974,7 +974,7 @@ class PyModel1D:
         :return: ``None``. SAC files are written below ``output_path``.
         """
         if self.modelpath is None:
-            raise RuntimeError("Pass modelpath= to PyModel1D(...) before rftn().")
+            raise RuntimeError("Pass modelpath= to PyModel1D(...) before rcvfn().")
         if not isinstance(wtype, str) or wtype.upper() not in {"P", "S"}:
             raise ValueError('wtype must be "P" or "S".')
         if (rayp is None) == (inca is None):
@@ -1006,7 +1006,7 @@ class PyModel1D:
             raise ValueError("delay must be finite.")
 
         command = {
-            "subcommand": "rftn",
+            "subcommand": "rcvfn",
             "M": f"-M{self.modelpath}",
         }
         if rayp is not None:

@@ -23,7 +23,7 @@
     X(eigenv)              \
     X(eigenfn)             \
     X(modsum)              \
-    X(rftn)                \
+    X(rcvfn)               \
     /* static */           \
     X(static_greenfn)      \
     X(static_syn)          \
