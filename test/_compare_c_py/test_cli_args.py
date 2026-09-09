@@ -486,14 +486,14 @@ def test_modal_cli_argument_mapping():
         _restore_run_grt(pygrt.pymod, original)
 
 
-def test_rftn_cli_argument_mapping():
+def test_rcvfn_cli_argument_mapping():
     runner = CapturedRunner()
     original = _patch_run_grt(pygrt.pymod, runner)
-    output = HERE / "_tmp_args_rftn"
+    output = HERE / "_tmp_args_rcvfn"
     try:
         model = pygrt.PyModel1D(modelpath=MODEL)
 
-        model.rftn(
+        model.rcvfn(
             wtype="p",
             rayp=0.12,
             nt=128,
@@ -511,7 +511,7 @@ def test_rftn_cli_argument_mapping():
         assert_command_equals(
             runner.commands[-1],
             [
-                "rftn",
+                "rcvfn",
                 f"-M{MODEL}",
                 "-P0.12",
                 "-TP",
@@ -524,7 +524,7 @@ def test_rftn_cli_argument_mapping():
         )
         assert runner.kwargs[-1].get("print_log") is False
 
-        model.rftn(
+        model.rcvfn(
             wtype="S",
             inca=30.0,
             idx=2,
@@ -535,7 +535,7 @@ def test_rftn_cli_argument_mapping():
         assert_command_equals(
             runner.commands[-1],
             [
-                "rftn",
+                "rcvfn",
                 f"-M{MODEL}",
                 "-I30/2",
                 "-TS",
@@ -552,7 +552,7 @@ def test_rftn_cli_argument_mapping():
             {"rayp": 0.1, "idx": 1},
         ):
             try:
-                model.rftn(wtype="P", nt=8, dt=0.1, output_path=output, **kwargs)
+                model.rcvfn(wtype="P", nt=8, dt=0.1, output_path=output, **kwargs)
             except ValueError:
                 pass
             else:
@@ -1070,7 +1070,7 @@ def main():
         test_run_grt_forwards_warnings_and_errors,
         test_greenfn_default_and_optional_flags,
         test_modal_cli_argument_mapping,
-        test_rftn_cli_argument_mapping,
+        test_rcvfn_cli_argument_mapping,
         test_static_greenfn_xy_and_dists,
         test_syn_source_and_time_function_options,
         test_source_type_is_inferred_from_source_parameters,

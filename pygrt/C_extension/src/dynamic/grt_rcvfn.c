@@ -1,5 +1,5 @@
 /**
- * @file   grt_rftn.c
+ * @file   grt_rcvfn.c
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2026-09
  *
@@ -15,24 +15,24 @@
 #undef I    ///< 取消标准复数单位宏，避免与命令行选项 I 冲突
 #define IMAG _Complex_I   ///< 复数单位，避免与标准复数宏 I 冲突
 
-#define GRT_RFTN_N_ZETA        0.8
-#define GRT_RFTN_N_UPSAMPLE    1
-#define GRT_RFTN_A_ALP         1.0
+#define GRT_RCVFN_N_ZETA        0.8
+#define GRT_RCVFN_N_UPSAMPLE    1
+#define GRT_RCVFN_A_ALP         1.0
 
 
 /** 入射波类型 */
 typedef enum {
-    GRT_RFTN_INCIDENT_P = 0,    ///< P 波
-    GRT_RFTN_INCIDENT_SV,       ///< SV 波
-} GRT_RFTN_INCIDENT;
+    GRT_RCVFN_INCIDENT_P = 0,    ///< P 波
+    GRT_RCVFN_INCIDENT_SV,       ///< SV 波
+} GRT_RCVFN_INCIDENT;
 
 
 /** 输出结果类型 */
 typedef enum {
-    GRT_RFTN_OUTPUT_RATIO = 0,  ///< 接收函数比值
-    GRT_RFTN_OUTPUT_Z,          ///< 垂向位移响应
-    GRT_RFTN_OUTPUT_R,          ///< 径向位移响应
-} GRT_RFTN_OUTPUT;
+    GRT_RCVFN_OUTPUT_RATIO = 0,  ///< 接收函数比值
+    GRT_RCVFN_OUTPUT_Z,          ///< 垂向位移响应
+    GRT_RCVFN_OUTPUT_R,          ///< 径向位移响应
+} GRT_RCVFN_OUTPUT;
 
 
 /** 接收函数子模块的参数控制结构体 */
@@ -69,7 +69,7 @@ typedef struct {
     /** 入射波类型选项 */
     struct {
         bool active;
-        GRT_RFTN_INCIDENT incident; ///< 入射波类型
+        GRT_RCVFN_INCIDENT incident; ///< 入射波类型
     } T;
     /** 高斯低通滤波选项 */
     struct {
@@ -95,7 +95,7 @@ typedef struct {
     struct {
         bool active;
     } s;
-} GRT_RFTN_CTRL;
+} GRT_MODULE_CTRL;
 
 
 /**
@@ -103,7 +103,7 @@ typedef struct {
  *
  * @param[in,out] Ctrl  接收函数模块参数控制结构体指针
  */
-static void free_Ctrl(GRT_RFTN_CTRL *Ctrl)
+static void free_Ctrl(GRT_MODULE_CTRL *Ctrl)
 {
     if(Ctrl == NULL) return;
     // 释放模型输入
@@ -119,12 +119,12 @@ static void free_Ctrl(GRT_RFTN_CTRL *Ctrl)
 static void print_help(void)
 {
 printf("\n"
-"[grt rftn] %s\n\n", GRT_VERSION); printf(
+"[grt rcvfn] %s\n\n", GRT_VERSION); printf(
 "    Compute receiver functions for a unit plane incident P or SV wave.\n\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
-"    grt rftn -M<model> (-P<rayp>|-I<inca>[/<idx>]) -T<P|S>\n"
+"    grt rcvfn -M<model> (-P<rayp>|-I<inca>[/<idx>]) -T<P|S>\n"
 "             -N<nt>/<dt>[+w<zeta>][+n<fac>][+a][+f]\n"
 "             [-A<alp>] [-E<delay>] [-W] -O<output_dir> [-s] [-h]\n\n"
 "\n"
@@ -146,7 +146,7 @@ printf("\n"
 "                 <dt>:   time interval (secs). \n"
 "                 +w<zeta>: define the coefficient of imaginary \n"
 "                           frequency wI=zeta*PI/T, where T=nt*dt.\n"
-"                           Default zeta=%.1f.\n", GRT_RFTN_N_ZETA); printf(
+"                           Default zeta=%.1f.\n", GRT_RCVFN_N_ZETA); printf(
 "                 +n<fac>:  upsampling factor (integer)\n"
 "                           i.e.  nt <-- nt * <fac>\n"
 "                                 dt <-- dt / <fac>\n"
@@ -156,7 +156,7 @@ printf("\n"
 "                 +f:       skip the amplitude compensation from \n"
 "                           imaginary frequency.\n"
 "\n"
-"    -A<alp>      Gaussian low-pass filter parameter (default %.1f).\n", GRT_RFTN_A_ALP); printf(
+"    -A<alp>      Gaussian low-pass filter parameter (default %.1f).\n", GRT_RCVFN_A_ALP); printf(
 "                 H(f)=exp[-(pi*f/alp)^2]; filter corner frequency ≈ alp/pi.\n"
 "\n"
 "    -E<delay>    Additional delay before the P arrival. The program\n"
@@ -174,11 +174,11 @@ printf("\n"
 
 
 /** 解析命令行选项 */
-static void getopt_from_command(GRT_RFTN_CTRL *Ctrl, int argc, char **argv)
+static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
 {
-    Ctrl->N.zeta = GRT_RFTN_N_ZETA;
-    Ctrl->N.upsample_n = GRT_RFTN_N_UPSAMPLE;
-    Ctrl->A.alp = GRT_RFTN_A_ALP;
+    Ctrl->N.zeta = GRT_RCVFN_N_ZETA;
+    Ctrl->N.upsample_n = GRT_RCVFN_N_UPSAMPLE;
+    Ctrl->A.alp = GRT_RCVFN_A_ALP;
 
     int opt;
     while((opt = getopt(argc, argv, ":M:P:I:N:T:A:E:O:Wsh")) != -1){
@@ -271,10 +271,10 @@ static void getopt_from_command(GRT_RFTN_CTRL *Ctrl, int argc, char **argv)
             // -T<P|S>
             case 'T':
                 if(strcmp(optarg, "P") == 0){
-                    Ctrl->T.incident = GRT_RFTN_INCIDENT_P;
+                    Ctrl->T.incident = GRT_RCVFN_INCIDENT_P;
                 }
                 else if(strcmp(optarg, "S") == 0){
-                    Ctrl->T.incident = GRT_RFTN_INCIDENT_SV;
+                    Ctrl->T.incident = GRT_RCVFN_INCIDENT_SV;
                 }
                 else{
                     GRTBadOptionError(T, "Use -TP or -TS.");
@@ -454,7 +454,7 @@ static real_t compute_vertical_travel_time(const MODEL1D *mod1d, const real_t ra
 
 
 /** 根据水平射线参数或入射角准备入射层和截取后的模型 */
-static void prepare_incidence(GRT_RFTN_CTRL *Ctrl)
+static void prepare_incidence(GRT_MODULE_CTRL *Ctrl)
 {
     MODEL1D *mod1d = Ctrl->M.mod1d;
     size_t original_nlayer = mod1d->n;
@@ -468,11 +468,11 @@ static void prepare_incidence(GRT_RFTN_CTRL *Ctrl)
         Ctrl->P.incident_idx = Ctrl->I.idx;
 
         size_t incident_layer = keep_nlayer - 1;
-        real_t velocity = (Ctrl->T.incident == GRT_RFTN_INCIDENT_P) ?
+        real_t velocity = (Ctrl->T.incident == GRT_RCVFN_INCIDENT_P) ?
             mod1d->Va[incident_layer] : mod1d->Vb[incident_layer];
         if(velocity <= 0.0){
             GRTRaiseError("The selected incident layer has no valid %s-wave velocity.",
-                Ctrl->T.incident == GRT_RFTN_INCIDENT_P ? "P" : "SV");
+                Ctrl->T.incident == GRT_RCVFN_INCIDENT_P ? "P" : "SV");
         }
         Ctrl->P.rayp = sin(Ctrl->I.inca*DEG1) / velocity;
     }
@@ -494,13 +494,13 @@ static void prepare_incidence(GRT_RFTN_CTRL *Ctrl)
 
     Ctrl->M.mod1d = truncate_model(mod1d, keep_nlayer);
 
-    real_t incident_velocity = (Ctrl->T.incident == GRT_RFTN_INCIDENT_P) ?
+    real_t incident_velocity = (Ctrl->T.incident == GRT_RCVFN_INCIDENT_P) ?
         Ctrl->M.mod1d->Va[Ctrl->M.mod1d->n - 1] : Ctrl->M.mod1d->Vb[Ctrl->M.mod1d->n - 1];
     real_t sin_inca = Ctrl->P.rayp * incident_velocity;
     if(sin_inca >= 1.0){
         GRTRaiseError(
             "The incident %s wave is not propagating in the selected layer for rayp %.9g.",
-            Ctrl->T.incident == GRT_RFTN_INCIDENT_P ? "P" : "SV", Ctrl->P.rayp);
+            Ctrl->T.incident == GRT_RCVFN_INCIDENT_P ? "P" : "SV", Ctrl->P.rayp);
     }
     Ctrl->P.inca = asin(sin_inca) / DEG1;
 
@@ -519,7 +519,7 @@ static void prepare_incidence(GRT_RFTN_CTRL *Ctrl)
  * @return                          矩阵求逆状态
  */
 static int compute_one_frequency(
-    MODEL1D_STATE *mstat, cplx_t k0, GRT_RFTN_INCIDENT incident,
+    MODEL1D_STATE *mstat, cplx_t k0, GRT_RCVFN_INCIDENT incident,
     cplx_t *q_m, cplx_t *w_m, cplx_t *incident_velocity)
 {
     if(!isfinite(creal(k0)) || !isfinite(cimag(k0)) || cabs(k0) == 0.0){
@@ -533,7 +533,7 @@ static int compute_one_frequency(
         return GRT_INVERSE_FAILURE;
     }
 
-    size_t incident_index = (incident == GRT_RFTN_INCIDENT_P) ? 0 : 1;
+    size_t incident_index = (incident == GRT_RCVFN_INCIDENT_P) ? 0 : 1;
     *q_m = R_EV[0][incident_index];
     *w_m = R_EV[1][incident_index];
     if(!isfinite(creal(*q_m)) || !isfinite(cimag(*q_m)) ||
@@ -542,7 +542,7 @@ static int compute_one_frequency(
     }
 
     size_t incident_layer = mstat->mod1d->n - 1;
-    if(incident == GRT_RFTN_INCIDENT_P){
+    if(incident == GRT_RCVFN_INCIDENT_P){
         *incident_velocity = mstat->mod1d->Va[incident_layer] * mstat->atna[incident_layer];
     }
     else{
@@ -567,7 +567,7 @@ static int compute_one_frequency(
  * @param[in]     wI                虚频系数
  */
 static void compute_frequency_responses(
-    MODEL1D *mod1d, const real_t rayp, const GRT_RFTN_INCIDENT incident,
+    MODEL1D *mod1d, const real_t rayp, const GRT_RCVFN_INCIDENT incident,
     cplx_t q_m[], cplx_t w_m[], cplx_t incident_velocity[],
     const size_t nf, const real_t df, const real_t wI)
 {
@@ -612,7 +612,7 @@ static void compute_frequency_responses(
  */
 static size_t assemble_spectrum(
     const cplx_t q_m[], const cplx_t w_m[], const cplx_t incident_velocity[],
-    const GRT_RFTN_INCIDENT incident, const GRT_RFTN_OUTPUT output,
+    const GRT_RCVFN_INCIDENT incident, const GRT_RCVFN_OUTPUT output,
     cplx_t spectrum[], const size_t nf, const real_t df,
     const real_t wI, const real_t alp)
 {
@@ -632,13 +632,13 @@ static size_t assemble_spectrum(
         real_t gauss = exp(-gauss_exponent);
 
         cplx_t response;
-        if(output == GRT_RFTN_OUTPUT_RATIO){
-            cplx_t denominator = (incident == GRT_RFTN_INCIDENT_P) ? w_m[iw] : q_m[iw];
+        if(output == GRT_RCVFN_OUTPUT_RATIO){
+            cplx_t denominator = (incident == GRT_RCVFN_INCIDENT_P) ? w_m[iw] : q_m[iw];
             if(cabs(denominator) == 0.0){
                 ++nfailed;
                 continue;
             }
-            response = (incident == GRT_RFTN_INCIDENT_P) ? IMAG*q_m[iw]/w_m[iw] : -IMAG*w_m[iw]/q_m[iw];
+            response = (incident == GRT_RCVFN_INCIDENT_P) ? IMAG*q_m[iw]/w_m[iw] : -IMAG*w_m[iw]/q_m[iw];
         }
         else{
             cplx_t omega = PI2*(iw*df) - IMAG*wI;
@@ -650,8 +650,8 @@ static size_t assemble_spectrum(
 
             // 将单位入射波势系数转换为单位位移
             cplx_t unit_displacement_factor = incident_velocity[iw]/(IMAG*omega);
-            cplx_t displacement = (output == GRT_RFTN_OUTPUT_Z) ? w_m[iw] : IMAG*q_m[iw];
-            if(incident == GRT_RFTN_INCIDENT_SV){
+            cplx_t displacement = (output == GRT_RCVFN_OUTPUT_Z) ? w_m[iw] : IMAG*q_m[iw];
+            if(incident == GRT_RCVFN_INCIDENT_SV){
                 // 应用 SV 入射波相位修正
                 displacement *= IMAG;
             }
@@ -688,7 +688,7 @@ static size_t assemble_spectrum(
  * @param[in] phase_time        频谱相位延迟
  */
 static void write_result_sac(
-    const GRT_RFTN_INCIDENT incident, const GRT_RFTN_OUTPUT output, const char *path,
+    const GRT_RCVFN_INCIDENT incident, const GRT_RCVFN_OUTPUT output, const char *path,
     const cplx_t spectrum[], const size_t nt, const real_t dt,
     const real_t rayp, const real_t alp, const bool skip_imag_comps,
     const size_t nf, const real_t df, const real_t wI,
@@ -707,11 +707,11 @@ static void write_result_sac(
     snprintf(sac->hd.kuser0, sizeof(sac->hd.kuser0), "wI");
     snprintf(sac->hd.kuser1, sizeof(sac->hd.kuser1), "rayp");
     snprintf(sac->hd.kuser2, sizeof(sac->hd.kuser2), "alp");
-    const char incident_name = (incident == GRT_RFTN_INCIDENT_P) ? 'P' : 'S';
-    if(output == GRT_RFTN_OUTPUT_RATIO){
-        snprintf(sac->hd.kcmpnm, sizeof(sac->hd.kcmpnm), "%c_RFTN", incident_name);
+    const char incident_name = (incident == GRT_RCVFN_INCIDENT_P) ? 'P' : 'S';
+    if(output == GRT_RCVFN_OUTPUT_RATIO){
+        snprintf(sac->hd.kcmpnm, sizeof(sac->hd.kcmpnm), "%c_RCVFN", incident_name);
     }
-    else if(output == GRT_RFTN_OUTPUT_Z){
+    else if(output == GRT_RCVFN_OUTPUT_Z){
         snprintf(sac->hd.kcmpnm, sizeof(sac->hd.kcmpnm), "%c_Z", incident_name);
     }
     else{
@@ -755,10 +755,10 @@ static void write_result_sac(
 }
 
 
-/** rftn 子模块主函数 */
-int rftn_main(int argc, char **argv)
+/** rcvfn 子模块主函数 */
+int rcvfn_main(int argc, char **argv)
 {
-    GRT_RFTN_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
+    GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
     getopt_from_command(Ctrl, argc, argv);
 
     Ctrl->M.mod1d = grt_read_mod1d_from_file(Ctrl->M.s_modelpath, -1.0, -1.0, true);
@@ -767,7 +767,7 @@ int rftn_main(int argc, char **argv)
         return EXIT_FAILURE;
     }
     prepare_incidence(Ctrl);
-    if(Ctrl->T.incident == GRT_RFTN_INCIDENT_SV && Ctrl->M.mod1d->isLiquid[Ctrl->M.mod1d->n - 1]){
+    if(Ctrl->T.incident == GRT_RCVFN_INCIDENT_SV && Ctrl->M.mod1d->isLiquid[Ctrl->M.mod1d->n - 1]){
         GRTRaiseError("SV incidence is not defined when the bottom halfspace is liquid.");
     }
 
@@ -784,7 +784,7 @@ int rftn_main(int argc, char **argv)
     real_t ts = NAN;
     real_t begin_time;
     real_t phase_components;
-    if(Ctrl->T.incident == GRT_RFTN_INCIDENT_P){
+    if(Ctrl->T.incident == GRT_RCVFN_INCIDENT_P){
         tp = compute_vertical_travel_time(Ctrl->M.mod1d, Ctrl->P.rayp, true);
         begin_time = delay;
     }
@@ -796,7 +796,7 @@ int rftn_main(int argc, char **argv)
     phase_components = tp + delay;
 
     if(!Ctrl->s.active){
-        const char *wave_name = (Ctrl->T.incident == GRT_RFTN_INCIDENT_P) ? "P" : "SV";
+        const char *wave_name = (Ctrl->T.incident == GRT_RCVFN_INCIDENT_P) ? "P" : "SV";
         const char *layer_name = (Ctrl->P.incident_idx == 0) ? "halfspace" : "layer";
 
         GRTRaiseInfo("Incident wave: %s", wave_name);
@@ -804,7 +804,7 @@ int rftn_main(int argc, char **argv)
         GRTRaiseInfo("incidence layer: reverse-%zu %s", Ctrl->P.incident_idx, layer_name);
         GRTRaiseInfo("incidence angle = %.6g deg.", Ctrl->P.inca);
 
-        if(Ctrl->T.incident == GRT_RFTN_INCIDENT_P){
+        if(Ctrl->T.incident == GRT_RCVFN_INCIDENT_P){
             GRTRaiseInfo("Vertical travel time: Tp = %.6g s", tp);
             GRTRaiseInfo("begin time = %.6g s", begin_time);
         }
@@ -828,15 +828,15 @@ int rftn_main(int argc, char **argv)
         Ctrl->M.mod1d, Ctrl->P.rayp, Ctrl->T.incident,
         q_m, w_m, incident_velocity, nf, df, wI);
 
-    const GRT_RFTN_OUTPUT output_types[] = {
-        GRT_RFTN_OUTPUT_RATIO, GRT_RFTN_OUTPUT_Z, GRT_RFTN_OUTPUT_R,
+    const GRT_RCVFN_OUTPUT output_types[] = {
+        GRT_RCVFN_OUTPUT_RATIO, GRT_RCVFN_OUTPUT_Z, GRT_RCVFN_OUTPUT_R,
     };
-    const char *output_names[] = {"rftn", "Z", "R"};
+    const char *output_names[] = {"rcvfn", "Z", "R"};
     const real_t phase_times[] = {begin_time, phase_components, phase_components};
     size_t noutputs = Ctrl->W.write_components ? 3 : 1;
-    const char incident_name = (Ctrl->T.incident == GRT_RFTN_INCIDENT_P) ? 'P' : 'S';
+    const char incident_name = (Ctrl->T.incident == GRT_RCVFN_INCIDENT_P) ? 'P' : 'S';
     for(size_t ioutput = 0; ioutput < noutputs; ++ioutput){
-        GRT_RFTN_OUTPUT output = output_types[ioutput];
+        GRT_RCVFN_OUTPUT output = output_types[ioutput];
         size_t nfailed = assemble_spectrum(
             q_m, w_m, incident_velocity, Ctrl->T.incident, output,
             spectrum, nf, df, wI, Ctrl->A.alp);
@@ -853,10 +853,10 @@ int rftn_main(int argc, char **argv)
             nf, df, wI, begin_time, phase_times[ioutput]);
 
         if(!Ctrl->s.active){
-            if(output == GRT_RFTN_OUTPUT_RATIO){
+            if(output == GRT_RCVFN_OUTPUT_RATIO){
                 GRTRaiseInfo("Saved receiver function to %s", path);
             }
-            else if(output == GRT_RFTN_OUTPUT_Z){
+            else if(output == GRT_RCVFN_OUTPUT_Z){
                 GRTRaiseInfo("Saved vertical response to %s", path);
             }
             else{

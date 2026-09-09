@@ -19,7 +19,7 @@
       - :doc:`Tutorial/dynamic/index`
       - :doc:`Tutorial/modal/index`
       - :doc:`Tutorial/static/index`
-      - :doc:`Tutorial/receiver_function/rftn`
+      - :doc:`Tutorial/receiver_function/rcvfn`
       - :doc:`Gallery/gallery`
 
    .. grid-item-card::  PyGRT 进阶
@@ -65,7 +65,7 @@
    Tutorial/dynamic/index
    Tutorial/modal/index
    Tutorial/static/index 
-   Tutorial/receiver_function/rftn
+   Tutorial/receiver_function/rcvfn
    Gallery/gallery
 
 .. toctree::

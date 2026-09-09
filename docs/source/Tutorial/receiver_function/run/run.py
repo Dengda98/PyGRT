@@ -4,10 +4,10 @@ import pygrt
 from obspy import read
 
 # -----------------------------------------------------------------------------------
-# BEGIN PYTHON RFTN
+# BEGIN PYTHON RCVFN
 model = pygrt.PyModel1D(modelpath="mod1")
 
-model.rftn(
+model.rcvfn(
     wtype="P",
     rayp=0.03,
     nt=500,
@@ -19,7 +19,7 @@ model.rftn(
     upsampling_n=5,
 )
 
-model.rftn(
+model.rcvfn(
     wtype="S",
     inca=10.0,
     idx=0,
@@ -31,7 +31,7 @@ model.rftn(
     write_components=True,
     upsampling_n=5,
 )
-# END PYTHON RFTN
+# END PYTHON RCVFN
 # -----------------------------------------------------------------------------------
 
 
@@ -39,7 +39,7 @@ model.rftn(
 ARRIVAL_TIME = 0.0
 PLOT_SPAN = 12.0
 OFFSET = 5.0
-RFTN_COLOR = "tab:red"
+RCVFN_COLOR = "tab:red"
 COMPONENT_COLOR = "tab:blue"
 PHASE_LINE_COLOR = "0.45"
 PLOT_CASES = (
@@ -82,7 +82,7 @@ def vertical_travel_times(velocity: np.ndarray, rayp: float, thickness: np.ndarr
 
 def phase_arrivals(case: dict):
     prefix = case["prefix"]
-    trace = read(f"PY_{prefix}/{prefix}_rftn.sac")[0]
+    trace = read(f"PY_{prefix}/{prefix}_rcvfn.sac")[0]
     rayp = float(trace.stats.sac.user1)
     thickness, vp, vs, depths = read_model("mod1")
     p_times = vertical_travel_times(vp, rayp, thickness)
@@ -114,7 +114,7 @@ def read_trace(directory: str, name: str):
 
 
 rows = (
-    ("{}_rftn.sac", "Receiver function", RFTN_COLOR),
+    ("{}_rcvfn.sac", "Receiver function", RCVFN_COLOR),
     ("{}_Z.sac", "Vertical response", COMPONENT_COLOR),
     ("{}_R.sac", "Radial response", COMPONENT_COLOR),
 )
@@ -164,7 +164,7 @@ def plot_case(case: dict) -> None:
         if irow == len(rows) - 1:
             ax.set_xlabel(case["xlabel"])
 
-    fig.savefig(f"rftn_{prefix}.svg", bbox_inches="tight")
+    fig.savefig(f"{prefix}_rcvfn.svg", bbox_inches="tight")
     plt.close(fig)
 
 
