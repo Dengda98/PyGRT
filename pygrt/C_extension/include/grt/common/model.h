@@ -49,7 +49,7 @@ typedef struct {
     MODEL1D *mod1d;
 
     cplx_t omega;   ///< 圆频率
-    real_t k;   ///< 波数
+    cplx_t k;   ///< 波数
     cplx_t c_phase;   ///< 当前相速度
 
     cplx_t *mu;       ///< mu[n] \f$ V_b^2 * \rho \f$
@@ -231,9 +231,9 @@ void grt_update_mod1d_state_omega(MODEL1D_STATE *mstat, const cplx_t omega, cons
  * 根据记录好的圆频率，给定波数，计算相速度和每层的 xa, xb, caca, cbcb
  * 
  * @param[in,out]      mstat     `MODEL1D_STATE` 结构体指针
- * @param[in]          k        波数
+ * @param[in]          k        复数波数
  */
-void grt_update_mod1d_state_k(MODEL1D_STATE *mstat, const real_t k);
+void grt_update_mod1d_state_k(MODEL1D_STATE *mstat, const cplx_t k);
 
 
 /**
@@ -276,4 +276,3 @@ bool grt_check_vel_in_mod(const MODEL1D *mod1d, const real_t vel, const real_t t
  * 
  */
 void grt_get_mod1d_vmin_vmax(const MODEL1D *mod1d, real_t *vmin, real_t *vmax);
-

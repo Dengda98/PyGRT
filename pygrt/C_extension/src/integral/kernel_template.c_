@@ -57,7 +57,7 @@
 #define __grt_wave2qwv_z_REV_SH   CONCAT_PREFIX(wave2qwv_z_REV_SH)
 
 
-void __GRT_MATRIX_FUNC__(MODEL1D_STATE *mstat, const real_t k)
+void __GRT_MATRIX_FUNC__(MODEL1D_STATE *mstat, const cplx_t k)
 {
     mstat->k = k;
     // 为动态解计算xa,xb,caca,cbcb
@@ -288,7 +288,7 @@ void __BUILD_QWV__(MODEL1D_STATE *mstat, cplxChnlGrid QWV, bool calc_uiz, cplxCh
 }
 
 
-void __KERNEL_FUNC__(MODEL1D_STATE *mstat, const real_t k, cplxChnlGrid QWV, bool calc_uiz, cplxChnlGrid QWV_uiz)
+void __KERNEL_FUNC__(MODEL1D_STATE *mstat, const cplx_t k, cplxChnlGrid QWV, bool calc_uiz, cplxChnlGrid QWV_uiz)
 {
     __GRT_MATRIX_FUNC__(mstat, k);
     __BUILD_QWV__(mstat, QWV, calc_uiz, QWV_uiz);

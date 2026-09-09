@@ -16,26 +16,26 @@
  * 计算所有层位的两个 P-SV 广义矩阵： RD_RL, RU_FR 
  * 
  * @param[in]      mstat        模型结构体指针
- * @param[in]      k            本征波数
+ * @param[in]      k            复数本征波数
  * @param[out]     Mall_RL      所有层的 RD_RL 矩阵
  * @param[out]     Mall_FR      所有层的 RU_FR 矩阵
  */
-void grt_GRT_matrix_allLayer_Rayl(MODEL1D_STATE *mstat, const real_t k, RT_MATRIX *Mall_RL, RT_MATRIX *Mall_FR);
+void grt_GRT_matrix_allLayer_Rayl(MODEL1D_STATE *mstat, const cplx_t k, RT_MATRIX *Mall_RL, RT_MATRIX *Mall_FR);
 
 /** 计算所有层位的两个  P-SV 广义矩阵： RD_RL, RU_FR  */
-void grt_GRT_matrix_allLayer_Love(MODEL1D_STATE *mstat, const real_t k, RT_MATRIX *Mall_RL, RT_MATRIX *Mall_FR);
+void grt_GRT_matrix_allLayer_Love(MODEL1D_STATE *mstat, const cplx_t k, RT_MATRIX *Mall_RL, RT_MATRIX *Mall_FR);
 
 /** 
  * 计算指定层位 iref 处的两个 SH 广义矩阵(标量)： RDL_RL, RUL_FR 
  * 
  * @param[in]      mstat        模型结构体指针
- * @param[in]      k            本征波数
+ * @param[in]      k            复数本征波数
  * @param[in]      iref         当前层位
  */
-void grt_GRT_matrix_Rayl(MODEL1D_STATE *mstat, const real_t k, const size_t iref);
+void grt_GRT_matrix_Rayl(MODEL1D_STATE *mstat, const cplx_t k, const size_t iref);
 
 /** 计算所有层位的两个 SH 广义矩阵(标量)： RDL_RL, RUL_FR   */
-void grt_GRT_matrix_Love(MODEL1D_STATE *mstat, const real_t k, const size_t iref);
+void grt_GRT_matrix_Love(MODEL1D_STATE *mstat, const cplx_t k, const size_t iref);
 
 
 

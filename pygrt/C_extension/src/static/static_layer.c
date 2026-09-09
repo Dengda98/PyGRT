@@ -70,7 +70,7 @@ void grt_static_topbound_RU_PSV(MODEL1D_STATE *mstat)
 {
     MODEL1D *mod1d = mstat->mod1d;
     cplx_t delta = mstat->delta[0];
-    real_t k = mstat->k;
+    real_t k = creal(mstat->k);
     if(mod1d->topbound == GRT_BOUND_FREE){
         mstat->M_top.stats = __freeBound_R_PSV(0.0, k, delta, mstat->M_top.RU);
     }
@@ -112,7 +112,7 @@ void grt_static_botbound_RD_PSV(MODEL1D_STATE *mstat)
     size_t nlay = mod1d->n;
     cplx_t delta = mstat->delta[nlay-2];
     real_t thk = mod1d->Thk[nlay-2];
-    real_t k = mstat->k;
+    real_t k = creal(mstat->k);
     if(mod1d->botbound == GRT_BOUND_FREE){
         mstat->M_bot.stats = __freeBound_R_PSV(thk, k, delta, mstat->M_bot.RD);
     }
@@ -140,7 +140,7 @@ void grt_static_botbound_RD_SH(MODEL1D_STATE *mstat)
     MODEL1D *mod1d = mstat->mod1d;
     size_t nlay = mod1d->n;
     real_t thk = mod1d->Thk[nlay-2];
-    real_t k = mstat->k;
+    real_t k = creal(mstat->k);
     if(mod1d->botbound == GRT_BOUND_FREE){
         mstat->M_bot.stats = __freeBound_R_SH(&mstat->M_bot.RDL);
     }
@@ -189,7 +189,7 @@ void grt_static_wave2qwv_REV_SH(MODEL1D_STATE *mstat)
 void grt_static_wave2qwv_z_REV_PSV(MODEL1D_STATE *mstat)
 {
     MODEL1D *mod1d = mstat->mod1d;
-    real_t k = mstat->k;
+    real_t k = creal(mstat->k);
     size_t ircv = mod1d->ircv;
     cplx_t delta1 = mstat->delta[ircv];
 
@@ -208,7 +208,7 @@ void grt_static_wave2qwv_z_REV_PSV(MODEL1D_STATE *mstat)
 
 void grt_static_wave2qwv_z_REV_SH(MODEL1D_STATE *mstat)
 {
-    real_t k = mstat->k;
+    real_t k = creal(mstat->k);
     // 新推导公式
     if(mstat->mod1d->ircvup){// 震源更深
         mstat->uiz_R_EVL = (1.0 - mstat->M_FA.RUL)*k;
@@ -223,7 +223,7 @@ void grt_static_RT_matrix_PSV(const MODEL1D_STATE *mstat, const size_t iy, RT_MA
     MODEL_2LAYS_ATTRIB(mstat, cplx_t, mu);
     MODEL_2LAYS_ATTRIB(mstat, cplx_t, delta);
     real_t thk = mstat->mod1d->Thk[iy-1];
-    real_t k = mstat->k;
+    real_t k = creal(mstat->k);
 
     // 公式(8.4.18)
     cplx_t dmu = mu1 - mu2;
@@ -281,7 +281,7 @@ void grt_static_RT_matrix_SH(const MODEL1D_STATE *mstat, const size_t iy, RT_MAT
 void grt_static_delay_RT_matrix(const MODEL1D_STATE *mstat, const size_t iy, RT_MATRIX *M)
 {
     real_t thk = mstat->mod1d->Thk[iy-1];
-    real_t k = mstat->k;
+    real_t k = creal(mstat->k);
     
     cplx_t ex, ex2;
     ex = exp(- k*thk);

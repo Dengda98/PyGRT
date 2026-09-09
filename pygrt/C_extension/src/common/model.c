@@ -43,6 +43,13 @@
     X(caca, cplx_t)\
     X(cbcb, cplx_t)\
 
+
+static cplx_t select_vertical_root(const cplx_t k, const cplx_t root)
+{
+    // 选择使垂向传播因子不增长的根
+    return (creal(k*root) < 0.0) ? -root : root;
+}
+
     
 MODEL1D * grt_init_mod1d(size_t n)
 {
@@ -491,7 +498,7 @@ void grt_update_mod1d_state_omega(MODEL1D_STATE *mstat, const cplx_t omega, cons
 }
 
 
-void grt_update_mod1d_state_k(MODEL1D_STATE *mstat, const real_t k)
+void grt_update_mod1d_state_k(MODEL1D_STATE *mstat, const cplx_t k)
 {
     MODEL1D *mod1d = mstat->mod1d;
     mstat->k = k;
@@ -523,12 +530,12 @@ void grt_update_mod1d_state_k(MODEL1D_STATE *mstat, const real_t k)
         caca = mstat->c_phase / (va*atna); 
         caca *= caca;
         mstat->caca[i] = caca;
-        mstat->xa[i] = sqrt(1.0 - caca);
+        mstat->xa[i] = select_vertical_root(k, sqrt(1.0 - caca));
         
         cbcb = (mod1d->isLiquid[i])? 0.0 : mstat->c_phase / (vb*atnb);  // 考虑液体层
         cbcb *= cbcb;
         mstat->cbcb[i] = cbcb;
-        mstat->xb[i] = sqrt(1.0 - cbcb);
+        mstat->xb[i] = select_vertical_root(k, sqrt(1.0 - cbcb));
     }
 }
 

@@ -183,7 +183,7 @@ static void energy_integrals_single_layer_Rayl(
     grt_cmatmxn_block_assign(2, 4, D2x4_uiz, 0, 2, 2, 2, D12_uiz);
     grt_cmatmxn_transpose(2, 4, D2x4_uiz, D4x2_uiz);
     
-    real_t k  = mstat->k;
+    real_t k  = creal(mstat->k);
     cplx_t xa = mstat->xa[iy];
     cplx_t xb = mstat->xb[iy];
 
@@ -250,7 +250,7 @@ static void energy_integrals_single_layer_Love(
 {
     cplx_t M[2][2] = {0};
 
-    real_t k  = mstat->k;
+    real_t k  = creal(mstat->k);
     cplx_t xb = mstat->xb[iy];
 
     // 1. (v)^2
@@ -346,7 +346,7 @@ void grt_energy_integrals_Rayl(
     ziref = last_ziref = -1;
     real_t dz=0.0, h=0.0;
 
-    real_t eigenK = mstat->k;
+    real_t eigenK = creal(mstat->k);
     size_t cpar_nz = eigfnmet->cpar_nz;
     size_t nlay = mstat->mod1d->n;
 
@@ -452,7 +452,7 @@ void grt_energy_integrals_Love(
     ziref = last_ziref = -1;
     real_t dz=0.0, h=0.0;
 
-    real_t eigenK = mstat->k;
+    real_t eigenK = creal(mstat->k);
     size_t cpar_nz = eigfnmet->cpar_nz;
     size_t nlay = mstat->mod1d->n;
 
@@ -558,5 +558,3 @@ void grt_energy_integrals(
         GRTRaiseError("Wrong execution.");
     }
 }
-
-

@@ -466,8 +466,9 @@ static void grt_eigenfn_egy_udisp_phaseK_util(
             real_t cphase = eigv->c_roots[ic];
             
             local_mstat->c_phase = cphase;
-            local_mstat->k = creal(omega)/cphase;
-            grt_update_mod1d_state_k(local_mstat, local_mstat->k);
+            real_t k = creal(omega)/cphase;
+            local_mstat->k = k;
+            grt_update_mod1d_state_k(local_mstat, k);
 
             size_t iref = eigv->c_roots_iref[ic];
 
@@ -497,7 +498,7 @@ static void grt_eigenfn_egy_udisp_phaseK_util(
                     local_mstat, eigfnmet->wtype, ncols, 
                     mod_potRaylLove_Down, mod_potRaylLove_Up, eigfnmet, &eigfnmet->eigfn[iw][ic]);
                 // 计算群速度
-                eigfnmet->eigv[iw].u_roots[ic] = grt_get_group_velocity(omega, local_mstat->k, eigfnmet->eigfn[iw][ic].egyint, eigfnmet->wtype);
+                eigfnmet->eigv[iw].u_roots[ic] = grt_get_group_velocity(omega, creal(local_mstat->k), eigfnmet->eigfn[iw][ic].egyint, eigfnmet->wtype);
             }
 
             GRT_SAFE_FREE_PTR(mod_potRaylLove_Down);

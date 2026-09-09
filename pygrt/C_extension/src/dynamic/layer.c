@@ -170,7 +170,7 @@ void grt_botbound_RD_PSV(MODEL1D_STATE *mstat)
     }
 
     // 时延 RD
-    real_t k = mstat->k;
+    cplx_t k = mstat->k;
     real_t thk = mod1d->Thk[nlay-2];
 
     cplx_t exa, exb, ex2a, ex2b, exab;
@@ -204,7 +204,7 @@ void grt_botbound_RD_SH(MODEL1D_STATE *mstat)
     }
 
     // 时延 RD
-    real_t k = mstat->k;
+    cplx_t k = mstat->k;
     real_t thk = mod1d->Thk[nlay-2];
 
     cplx_t exb, ex2b;
@@ -222,7 +222,7 @@ void grt_wave2qwv_REV_PSV(MODEL1D_STATE *mstat)
     cplx_t xa = mstat->xa[ircv];
     cplx_t xb = mstat->xb[ircv];
     bool   isLiquid = mod1d->isLiquid[ircv];
-    real_t k = mstat->k;
+    cplx_t k = mstat->k;
 
     cplx_t D11[2][2], D12[2][2];
     if( ! isLiquid){
@@ -256,7 +256,7 @@ void grt_wave2qwv_REV_SH(MODEL1D_STATE *mstat)
     MODEL1D *mod1d = mstat->mod1d;
     size_t ircv = mod1d->ircv;
     bool   isLiquid = mod1d->isLiquid[ircv];
-    real_t k = mstat->k;
+    cplx_t k = mstat->k;
 
     if( ! isLiquid){
         // 位于固体层
@@ -280,7 +280,7 @@ void grt_wave2qwv_z_REV_PSV(MODEL1D_STATE *mstat)
     cplx_t xa = mstat->xa[ircv];
     cplx_t xb = mstat->xb[ircv];
     bool   isLiquid = mod1d->isLiquid[ircv];
-    real_t k = mstat->k;
+    cplx_t k = mstat->k;
 
 
     // 将垂直波函数转为ui,z在(B_m, P_m, C_m)系下的分量
@@ -314,7 +314,7 @@ void grt_wave2qwv_z_REV_SH(MODEL1D_STATE *mstat)
     size_t ircv = mod1d->ircv;
     cplx_t xb = mstat->xb[ircv];
     bool   isLiquid = mod1d->isLiquid[ircv];
-    real_t k = mstat->k;
+    cplx_t k = mstat->k;
     
     // 将垂直波函数转为ui,z在(B_m, P_m, C_m)系下的分量
     // 新推导的公式
@@ -729,7 +729,7 @@ void grt_delay_RT_matrix(const MODEL1D_STATE *mstat, const size_t iy, RT_MATRIX 
     real_t thk = mod1d->Thk[iy-1];
     cplx_t xa1 = mstat->xa[iy-1];
     cplx_t xb1 = mstat->xb[iy-1];
-    real_t k   = mstat->k;
+    cplx_t k   = mstat->k;
 
     cplx_t exa, exb, ex2a, ex2b, exab;
     exa = exp(- k*thk*xa1);
@@ -760,7 +760,7 @@ void grt_delay_RT_matrix_PSV(const MODEL1D_STATE *mstat, const size_t iy, RT_MAT
     real_t thk = mod1d->Thk[iy-1];
     cplx_t xa1 = mstat->xa[iy-1];
     cplx_t xb1 = mstat->xb[iy-1];
-    real_t k   = mstat->k;
+    cplx_t k   = mstat->k;
 
     cplx_t exa, exb, ex2a, ex2b, exab;
     exa = exp(- k*thk*xa1);
@@ -784,7 +784,7 @@ void grt_delay_RT_matrix_SH(const MODEL1D_STATE *mstat, const size_t iy, RT_MATR
     MODEL1D *mod1d = mstat->mod1d;
     real_t thk = mod1d->Thk[iy-1];
     cplx_t xb1 = mstat->xb[iy-1];
-    real_t k   = mstat->k;
+    cplx_t k   = mstat->k;
 
     cplx_t exb, ex2b;
     exb = exp(- k*thk*xb1);
@@ -803,7 +803,7 @@ void grt_delay_GRT_matrix(const MODEL1D_STATE *mstat, const size_t iy, RT_MATRIX
     real_t thk = mod1d->Thk[iy-1];
     cplx_t xa1 = mstat->xa[iy-1];
     cplx_t xb1 = mstat->xb[iy-1];
-    real_t k   = mstat->k;
+    cplx_t k   = mstat->k;
     
     cplx_t exa, exb, ex2a, ex2b, exab;
     exa = exp(- k*thk*xa1);
@@ -830,8 +830,8 @@ void grt_delay_GRT_matrix(const MODEL1D_STATE *mstat, const size_t iy, RT_MATRIX
 void grt_get_layer_D(const MODEL1D_STATE *mstat, const size_t iy, bool inverse, int liquid_invtype, cplx_t D[4][4])
 {
     // 第iy层物理量
-    real_t k = mstat->k;
-    real_t kk = k*k;
+    cplx_t k = mstat->k;
+    cplx_t kk = k*k;
     cplx_t xa = mstat->xa[iy];
     cplx_t xb = mstat->xb[iy];
     cplx_t mu = mstat->mu[iy];
@@ -900,7 +900,7 @@ void grt_get_layer_D(const MODEL1D_STATE *mstat, const size_t iy, bool inverse, 
 
 void grt_get_layer_D11(const MODEL1D_STATE *mstat, const size_t iy, cplx_t D[2][2])
 {
-    real_t k = mstat->k;
+    cplx_t k = mstat->k;
     cplx_t xa = mstat->xa[iy];
     cplx_t xb = mstat->xb[iy];
     if(! mstat->mod1d->isLiquid[iy]){
@@ -915,7 +915,7 @@ void grt_get_layer_D11(const MODEL1D_STATE *mstat, const size_t iy, cplx_t D[2][
 
 void grt_get_layer_D12(const MODEL1D_STATE *mstat, const size_t iy, cplx_t D[2][2])
 {
-    real_t k = mstat->k;
+    cplx_t k = mstat->k;
     cplx_t xa = mstat->xa[iy];
     cplx_t xb = mstat->xb[iy];
     if(! mstat->mod1d->isLiquid[iy]){
@@ -929,7 +929,7 @@ void grt_get_layer_D12(const MODEL1D_STATE *mstat, const size_t iy, cplx_t D[2][
 
 void grt_get_layer_D11_uiz(const MODEL1D_STATE *mstat, const size_t iy, cplx_t D[2][2])
 {
-    real_t k = mstat->k;
+    cplx_t k = mstat->k;
     cplx_t xa = mstat->xa[iy];
     cplx_t xb = mstat->xb[iy];
     cplx_t a = k*xa;
@@ -946,7 +946,7 @@ void grt_get_layer_D11_uiz(const MODEL1D_STATE *mstat, const size_t iy, cplx_t D
 
 void grt_get_layer_D12_uiz(const MODEL1D_STATE *mstat, const size_t iy, cplx_t D[2][2])
 {
-    real_t k = mstat->k;
+    cplx_t k = mstat->k;
     cplx_t xa = mstat->xa[iy];
     cplx_t xb = mstat->xb[iy];
     cplx_t a = k*xa;
@@ -963,7 +963,7 @@ void grt_get_layer_D12_uiz(const MODEL1D_STATE *mstat, const size_t iy, cplx_t D
 
 void grt_get_layer_D21(const MODEL1D_STATE *mstat, const size_t iy, cplx_t D[2][2])
 {
-    real_t k = mstat->k;
+    cplx_t k = mstat->k;
     cplx_t xa = mstat->xa[iy];
     cplx_t xb = mstat->xb[iy];
     cplx_t mu = mstat->mu[iy];
@@ -983,7 +983,7 @@ void grt_get_layer_D21(const MODEL1D_STATE *mstat, const size_t iy, cplx_t D[2][
 
 void grt_get_layer_D22(const MODEL1D_STATE *mstat, const size_t iy, cplx_t D[2][2])
 {
-    real_t k = mstat->k;
+    cplx_t k = mstat->k;
     cplx_t xa = mstat->xa[iy];
     cplx_t xb = mstat->xb[iy];
     cplx_t mu = mstat->mu[iy];
@@ -1007,7 +1007,7 @@ void grt_get_layer_T(const MODEL1D_STATE *mstat, const size_t iy, bool inverse, 
         GRTRaiseError("Wrong execution.");
     }
 
-    real_t k = mstat->k;
+    cplx_t k = mstat->k;
     cplx_t xb = mstat->xb[iy];
     cplx_t mu = mstat->mu[iy];
 
