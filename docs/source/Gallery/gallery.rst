@@ -20,8 +20,10 @@
         .. figure:: ex{{ idx }}/cover.*
     {% endmacro %}
     
-    动态解
-    ------------
+    .. raw:: html
+
+        <strong style="font-size: 1.5em;">动态解</strong>
+        <br><br>
 
     .. grid:: 4
 
@@ -53,8 +55,10 @@
 
         {{ card('17')  | indent(8, first=true) }}
 
-    静态解
-    ------------
+    .. raw:: html
+
+        <strong style="font-size: 1.5em;">静态解</strong>
+        <br><br>
 
     .. grid:: 4
 
