@@ -48,7 +48,7 @@ static void grt_potential_propagate_UpDown_Rayl(
     cplx_t exa, exb;
     cplx_t E[2][2] = GRT_INIT_ZERO_2x2_MATRIX; 
     
-    real_t eigenK = mstat->k;
+    real_t eigenK = creal(mstat->k);
     exa = exp(- eigenK*thk0*xa0);
     exb = exp(- eigenK*thk0*xb0);
     E[0][0] = exa;
@@ -89,7 +89,7 @@ static void grt_potential_propagate_UpDown_Love(
 
     grt_RT_matrix_SH(mstat, iy, M);
 
-    real_t eigenK = mstat->k;
+    real_t eigenK = creal(mstat->k);
     real_t thk0 = mstat->mod1d->Thk[iy-1];
     cplx_t xb0 = mstat->xb[iy-1];
     bool *isLiquid = mstat->mod1d->isLiquid;
@@ -150,7 +150,7 @@ static void grt_potential_propagate_DownUp_Rayl(
     cplx_t exa, exb;
     cplx_t E[2][2] = GRT_INIT_ZERO_2x2_MATRIX; 
     
-    real_t eigenK = mstat->k;
+    real_t eigenK = creal(mstat->k);
     exa = exp(- eigenK*thk0*xa0);
     exb = exp(- eigenK*thk0*xb0);
     E[0][0] = exa;
@@ -199,7 +199,7 @@ static void grt_potential_propagate_DownUp_Love(
 
     grt_RT_matrix_SH(mstat, iy+1, M);
 
-    real_t eigenK = mstat->k;
+    real_t eigenK = creal(mstat->k);
     real_t thk0 = mstat->mod1d->Thk[iy];
     cplx_t xb0 = mstat->xb[iy];
 
@@ -235,7 +235,7 @@ void grt_get_mod_potential_Up_Down_Rayl(
     // 计算 RD_RL, RU_FR 矩阵
     RT_MATRIX *Mall_FR = (RT_MATRIX *)calloc(nlay, sizeof(RT_MATRIX));
     RT_MATRIX *Mall_RL = (RT_MATRIX *)calloc(nlay, sizeof(RT_MATRIX));
-    grt_GRT_matrix_allLayer_Rayl(mstat, mstat->k, Mall_RL, Mall_FR);
+    grt_GRT_matrix_allLayer_Rayl(mstat, creal(mstat->k), Mall_RL, Mall_FR);
 
     // 向下传播
     for(size_t iy = iref+1; iy < nlay; ++iy){
@@ -272,7 +272,7 @@ void grt_get_mod_potential_Up_Down_Love(
     // 计算 RDL_RL, RUL_FR 矩阵
     RT_MATRIX *Mall_FR = (RT_MATRIX *)calloc(nlay, sizeof(RT_MATRIX));
     RT_MATRIX *Mall_RL = (RT_MATRIX *)calloc(nlay, sizeof(RT_MATRIX));
-    grt_GRT_matrix_allLayer_Love(mstat, mstat->k, Mall_RL, Mall_FR);
+    grt_GRT_matrix_allLayer_Love(mstat, creal(mstat->k), Mall_RL, Mall_FR);
 
     // 向下传播
     for(size_t iy = iref + 1; iy < nlay; ++iy){
@@ -320,7 +320,7 @@ void grt_get_eigenfn_single_depth_Rayl(
     cplx_t xa=0.0, xb=0.0;
     memset(eigenfn, 0, sizeof(cplx_t)*4);
 
-    real_t eigenK = mstat->k;
+    real_t eigenK = creal(mstat->k);
     xa = mstat->xa[ziref];
     xb = mstat->xb[ziref];
 
@@ -360,7 +360,7 @@ void grt_get_eigenfn_single_depth_Love(
     cplx_t xb=0.0;
     memset(eigenfn, 0, sizeof(cplx_t)*4);
 
-    real_t eigenK = mstat->k;
+    real_t eigenK = creal(mstat->k);
     xb = mstat->xb[ziref];
 
     // 直接跳过液体层
@@ -453,4 +453,3 @@ void grt_get_eigenfn_depths(
         GRTRaiseError("Wrong execution.");
     }
 }
-

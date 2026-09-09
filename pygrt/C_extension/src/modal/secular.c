@@ -22,7 +22,7 @@
 #include "grt/modal/secular.h"
 
 
-void grt_GRT_matrix_allLayer_Rayl(MODEL1D_STATE *mstat, const real_t k, RT_MATRIX *Mall_RL, RT_MATRIX *Mall_FR)
+void grt_GRT_matrix_allLayer_Rayl(MODEL1D_STATE *mstat, const cplx_t k, RT_MATRIX *Mall_RL, RT_MATRIX *Mall_FR)
 {
     mstat->k = k;
     grt_update_mod1d_state_k(mstat, k);
@@ -83,7 +83,7 @@ void grt_GRT_matrix_allLayer_Rayl(MODEL1D_STATE *mstat, const real_t k, RT_MATRI
 }
 
 
-void grt_GRT_matrix_allLayer_Love(MODEL1D_STATE *mstat, const real_t k, RT_MATRIX *Mall_RL, RT_MATRIX *Mall_FR)
+void grt_GRT_matrix_allLayer_Love(MODEL1D_STATE *mstat, const cplx_t k, RT_MATRIX *Mall_RL, RT_MATRIX *Mall_FR)
 {
     mstat->k = k;
     grt_update_mod1d_state_k(mstat, k);
@@ -142,7 +142,7 @@ void grt_GRT_matrix_allLayer_Love(MODEL1D_STATE *mstat, const real_t k, RT_MATRI
     }
 }
 
-void grt_GRT_matrix_Rayl(MODEL1D_STATE *mstat, const real_t k, const size_t iref)
+void grt_GRT_matrix_Rayl(MODEL1D_STATE *mstat, const cplx_t k, const size_t iref)
 {
     mstat->k = k;
     grt_update_mod1d_state_k(mstat, k);
@@ -222,7 +222,7 @@ void grt_GRT_matrix_Rayl(MODEL1D_STATE *mstat, const real_t k, const size_t iref
 }
 
 
-void grt_GRT_matrix_Love(MODEL1D_STATE *mstat, const real_t k, const size_t iref)
+void grt_GRT_matrix_Love(MODEL1D_STATE *mstat, const cplx_t k, const size_t iref)
 {
     mstat->k = k;
     grt_update_mod1d_state_k(mstat, k);
@@ -406,7 +406,7 @@ void grt_secular_function_potential_Rayl(
         cplx_t RU_FA_delay[2][2] = {0};
         if(isLiquid[iref-1]){
             cref = GRT_MIN(Va[iref-1], Vb[iref]);
-            cplx_t ex2a = exp( - 2.0 * mstat->k * Thk[iref-1] * mstat->xa[iref-1]);
+            cplx_t ex2a = exp( - 2.0 * creal(mstat->k) * Thk[iref-1] * mstat->xa[iref-1]);
             R3[0][0] = RU_FA_delay[0][0] = ex2a * mstat->M_FA.RU[0][0];
             R3[1][1] = mstat->M_BL.RD[0][0];
             R3[1][2] = mstat->M_BL.RD[0][1];

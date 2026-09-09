@@ -18,7 +18,7 @@
 
 inline GCC_ALWAYS_INLINE void _source_PSV(
     const cplx_t xa, const cplx_t caca, 
-    const cplx_t xb, const cplx_t cbcb, const real_t k, cplxChnlGrid coefD, cplxChnlGrid coefU)
+    const cplx_t xb, const cplx_t cbcb, const cplx_t k, cplxChnlGrid coefD, cplxChnlGrid coefU)
 {
     cplx_t tmp;
 
@@ -47,7 +47,7 @@ inline GCC_ALWAYS_INLINE void _source_PSV(
 
 }
 
-inline GCC_ALWAYS_INLINE void _source_SH(const cplx_t xb, const cplx_t cbcb, const real_t k, cplxChnlGrid coefD, cplxChnlGrid coefU)
+inline GCC_ALWAYS_INLINE void _source_SH(const cplx_t xb, const cplx_t cbcb, const cplx_t k, cplxChnlGrid coefD, cplxChnlGrid coefU)
 {
     cplx_t tmp;
 
@@ -81,7 +81,7 @@ void grt_source_coef_PSV(const MODEL1D_STATE *mstat, cplxChnlGrid src_coefD, cpl
     cplx_t caca = mstat->caca[isrc];
     cplx_t xb = mstat->xb[isrc];
     cplx_t cbcb = mstat->cbcb[isrc];
-    real_t k = mstat->k;
+    cplx_t k = mstat->k;
 
     _source_PSV(xa, caca, xb, cbcb, k, src_coefD, src_coefU);
 }
@@ -92,9 +92,8 @@ void grt_source_coef_SH(const MODEL1D_STATE *mstat, cplxChnlGrid src_coefD, cplx
     size_t isrc = mstat->mod1d->isrc;
     cplx_t xb = mstat->xb[isrc];
     cplx_t cbcb = mstat->cbcb[isrc];
-    real_t k = mstat->k;
+    cplx_t k = mstat->k;
 
     _source_SH(xb, cbcb, k, src_coefD, src_coefU);
 }
-
 

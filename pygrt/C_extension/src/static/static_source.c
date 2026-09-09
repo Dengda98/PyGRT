@@ -76,7 +76,7 @@ void grt_static_source_coef_PSV(const MODEL1D_STATE *mstat, cplxChnlGrid src_coe
 {
     size_t isrc = mstat->mod1d->isrc;
     cplx_t delta = mstat->delta[isrc];
-    real_t k = mstat->k;
+    real_t k = creal(mstat->k);
 
     _source_PSV(delta, k, src_coefD, src_coefU);
 }
@@ -84,9 +84,7 @@ void grt_static_source_coef_PSV(const MODEL1D_STATE *mstat, cplxChnlGrid src_coe
 
 void grt_static_source_coef_SH(const MODEL1D_STATE *mstat, cplxChnlGrid src_coefD, cplxChnlGrid src_coefU)
 {
-    real_t k = mstat->k;
+    real_t k = creal(mstat->k);
     
     _source_SH(k, src_coefD, src_coefU);
 }
-
-

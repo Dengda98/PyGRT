@@ -24,7 +24,7 @@ void grt_modsum_grn_Rayl(
     size_t isrc = mstat->mod1d->isrc;
     size_t ircv = mstat->mod1d->ircv;
 
-    real_t eigenK = mstat->k;
+    real_t eigenK = creal(mstat->k);
 
     // 震源层物性参数
     cplx_t src_mu = mstat->mu[isrc];
@@ -67,7 +67,7 @@ void grt_modsum_grn_Rayl(
         cplx_t xa = mstat->xa[ircv];
         cplx_t xb = mstat->xb[ircv];
         bool   isLiquid = mstat->mod1d->isLiquid[ircv];
-        real_t k = mstat->k;
+        real_t k = creal(mstat->k);
 
         cplx_t ak = k*k*xa;
         cplx_t bk = k*k*xb;
@@ -130,7 +130,7 @@ void grt_modsum_grn_Love(
     size_t isrc = mstat->mod1d->isrc;
     size_t ircv = mstat->mod1d->ircv;
 
-    real_t eigenK = mstat->k;
+    real_t eigenK = creal(mstat->k);
 
     // 震源层物性参数
     cplx_t src_mu = mstat->mu[isrc];
@@ -167,7 +167,7 @@ void grt_modsum_grn_Love(
     if(grn->calc_upar){
         cplx_t xb = mstat->xb[ircv];
         bool   isLiquid = mstat->mod1d->isLiquid[ircv];
-        real_t k = mstat->k;
+        real_t k = creal(mstat->k);
 
         cplx_t bk = k*k*xb;
         cplx_t T0_z[GRT_LOVE_DIM][GRT_LOVE_DIM] = {{bk, -bk}};
@@ -267,8 +267,9 @@ void grt_modsum_grn_spec(MODEL1D *mod1d, const DISPER_TYPE wtype, EIGENFN_INFO *
             real_t cphase = eigv->c_roots[ic];
             
             local_mstat->c_phase = cphase;
-            local_mstat->k = creal(omega)/cphase;
-            grt_update_mod1d_state_k(local_mstat, local_mstat->k);
+            real_t k = creal(omega)/cphase;
+            local_mstat->k = k;
+            grt_update_mod1d_state_k(local_mstat, k);
 
             size_t iref = eigv->c_roots_iref[ic];
 
