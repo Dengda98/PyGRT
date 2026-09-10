@@ -182,7 +182,7 @@ int dispatch_command(GRT_MAIN_CTRL *Ctrl, int argc, char **argv) {
 /** 主函数 */
 int main(int argc, char **argv) {
     GRT_MODULE_NAME = GRT_MAIN_COMMAND;
-    GRT_MAIN_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
+    GRT_MAIN_CTRL *Ctrl = GRT_SAFE_CALLOC(1, sizeof(*Ctrl));
 
     if(argc <= 2){
         getopt_from_command(Ctrl, argc, argv);

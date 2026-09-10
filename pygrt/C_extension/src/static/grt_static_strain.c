@@ -109,7 +109,7 @@ static void compute_strain(
 
 /** 子模块主函数 */
 int static_strain_main(int argc, char **argv){
-    GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
+    GRT_MODULE_CTRL *Ctrl = GRT_SAFE_CALLOC(1, sizeof(*Ctrl));
 
     getopt_from_command(Ctrl, argc, argv);
 
@@ -190,11 +190,11 @@ int static_strain_main(int argc, char **argv){
     // 计算结果
     real_t *res[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
     for(int c=0; c<GRT_CHANNEL_NUM; ++c){
-        u[c] = (real_t *)calloc(npts, sizeof(real_t));
+        u[c] = GRT_SAFE_CALLOC(npts, sizeof(real_t));
         NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_syn_varids[c], u[c]));
         for(int c2=0; c2<GRT_CHANNEL_NUM; ++c2){
-            res[c2][c] = (real_t *)calloc(npts, sizeof(real_t));
-            upar[c2][c] = (real_t *)calloc(npts, sizeof(real_t));
+            res[c2][c] = GRT_SAFE_CALLOC(npts, sizeof(real_t));
+            upar[c2][c] = GRT_SAFE_CALLOC(npts, sizeof(real_t));
             NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_syn_upar_varids[c2][c], upar[c2][c]));
         }
     }

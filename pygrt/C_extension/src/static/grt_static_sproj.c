@@ -394,7 +394,7 @@ static real_t *read_point_depths(int ncid, const GRT_RCV_NC_INFO *rcv_info)
 {
     int depth_varid;
     // 深度只用于核对 -Q 文件中的点顺序，不参与应力投影
-    real_t *depths = (real_t *)calloc(rcv_info->npts, sizeof(real_t));
+    real_t *depths = GRT_SAFE_CALLOC(rcv_info->npts, sizeof(real_t));
     if(!find_optional_var(ncid, "depth", &depth_varid)){
         GRT_SAFE_FREE_PTR(depths);
         GRTRaiseError("Points input file does not contain variable \"depth\".");
@@ -579,10 +579,10 @@ static void load_geometry_from_finite_points(
     check_var_dimensions(ncid, dip_varid, "dip", 1, &nfault_dimid);
     check_var_dimensions(ncid, offset_varid, "offset", 1, &nfault_dimid);
 
-    real_t *fault_strikes = (real_t *)calloc(nfault, sizeof(real_t));
-    real_t *fault_dips = (real_t *)calloc(nfault, sizeof(real_t));
-    real_t *fault_rakes = (real_t *)calloc(nfault, sizeof(real_t));
-    int *offsets = (int *)calloc(nfault, sizeof(int));
+    real_t *fault_strikes = GRT_SAFE_CALLOC(nfault, sizeof(real_t));
+    real_t *fault_dips = GRT_SAFE_CALLOC(nfault, sizeof(real_t));
+    real_t *fault_rakes = GRT_SAFE_CALLOC(nfault, sizeof(real_t));
+    int *offsets = GRT_SAFE_CALLOC(nfault, sizeof(int));
     NC_CHECK(NC_FUNC_REAL(nc_get_var)(ncid, strike_varid, fault_strikes));
     NC_CHECK(NC_FUNC_REAL(nc_get_var)(ncid, dip_varid, fault_dips));
     NC_CHECK(nc_get_var_int(ncid, offset_varid, offsets));
@@ -804,7 +804,7 @@ static void write_projection_variables(
  */
 int static_sproj_main(int argc, char **argv)
 {
-    GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
+    GRT_MODULE_CTRL *Ctrl = GRT_SAFE_CALLOC(1, sizeof(*Ctrl));
     getopt_from_command(Ctrl, argc, argv);
 
     GRTCheckFileExist(Ctrl->G.s_ingrid);
@@ -831,19 +831,19 @@ int static_sproj_main(int argc, char **argv)
     bool rot2ZNE = get_input_rot2ZNE(ncid);
     const char *channels = rot2ZNE ? GRT_ZNE_CODES : GRT_ZRT_CODES;
     // 先把应力分量读入内存，避免在计算过程中反复访问 NetCDF
-    real_t *stress6 = (real_t *)calloc(6 * npts, sizeof(real_t));
+    real_t *stress6 = GRT_SAFE_CALLOC(6 * npts, sizeof(real_t));
     read_stress_components(ncid, channels, npts, ndims, rcv_info.dimids, stress6);
 
-    real_t *strikes = (real_t *)calloc(npts, sizeof(real_t));
-    real_t *dips = (real_t *)calloc(npts, sizeof(real_t));
-    real_t *rakes = (real_t *)calloc(npts, sizeof(real_t));
+    real_t *strikes = GRT_SAFE_CALLOC(npts, sizeof(real_t));
+    real_t *dips = GRT_SAFE_CALLOC(npts, sizeof(real_t));
+    real_t *rakes = GRT_SAFE_CALLOC(npts, sizeof(real_t));
     // 根据布局和命令行选项确定每个 point 的接收断层形态
     load_receiver_geometry(
         ncid, &rcv_info, Ctrl, finite_points, nfault_dimid,
         strikes, dips, rakes);
 
-    real_t *sigma_n = (real_t *)calloc(npts, sizeof(real_t));
-    real_t *tau_s = (real_t *)calloc(npts, sizeof(real_t));
+    real_t *sigma_n = GRT_SAFE_CALLOC(npts, sizeof(real_t));
+    real_t *tau_s = GRT_SAFE_CALLOC(npts, sizeof(real_t));
     // 逐点完成坐标转换、方向构造和应力投影
     for(size_t i = 0; i < npts; ++i){
         real_t stress[6] = {

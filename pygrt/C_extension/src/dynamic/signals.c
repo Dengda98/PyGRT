@@ -112,7 +112,7 @@ float * grt_get_time_function(int *TFnt, float dt, const char tftype, const char
 //     int tfnt=0;
 //     tfarr = grt_get_time_function(&tfnt, dt, tftype, tfparams);
 
-//     float *yarr = (float*)calloc(nt, sizeof(float));
+//     float *yarr = GRT_SAFE_CALLOC(nt, sizeof(float));
 //     // 线性卷积
 //     grt_oaconvolve(arr, nt, tfarr, tfnt, yarr, nt, false);
 
@@ -217,7 +217,7 @@ float * grt_get_parabola_wave(float dt, float *Tlen, int *Nt){
     nt += 2;
     tlen = (nt-1)*dt;
 
-    float *arr = (float*)calloc(nt, sizeof(float));
+    float *arr = GRT_SAFE_CALLOC(nt, sizeof(float));
     float fac=1.0/(nt-1);
     float pha=0.0;
     for(int n=0; n<nt; ++n){
@@ -266,7 +266,7 @@ float * grt_get_trap_wave(float dt, float *T1, float *T2, float *T3, int *Nt){
 
     // 总点数
     int nt = n1+n2+n3 - 2;
-    float *arr = (float*)calloc(nt, sizeof(float));
+    float *arr = GRT_SAFE_CALLOC(nt, sizeof(float));
 
     float fac=0.0, y=0.0;
     // 上坡
@@ -308,7 +308,7 @@ float * grt_get_ricker_wave(float dt, float f0, int *Nt){
 
     float t0 = 1.0/f0;
     int nt = (floorf(t0/dt) + 1) * 2; // 估计2倍长度够包含
-    float *arr = (float*)calloc(nt, sizeof(float));
+    float *arr = GRT_SAFE_CALLOC(nt, sizeof(float));
 
     float PPI = PI*PI;
     float ff0 = f0*f0;
@@ -326,7 +326,7 @@ float * grt_get_ricker_wave(float dt, float f0, int *Nt){
 
 
 float * grt_get_custom_wave(int *Nt, const char *tfparams){
-    float *tfarr = (float*)malloc(sizeof(float)*1);
+    float *tfarr = GRT_SAFE_MALLOC(sizeof(float)*1);
     FILE *fp;
     if((fp = fopen(tfparams, "r")) == NULL){
         GRTRaiseError("custom time function file open error.\n");
@@ -351,7 +351,7 @@ float * grt_get_custom_wave(int *Nt, const char *tfparams){
             GRTRaiseError("custom time function file should contain exactly one column at line %zu.\n", lineno);
         }
 
-        tfarr = (float*)realloc(tfarr, sizeof(float)*(nt+1));
+        tfarr = GRT_SAFE_REALLOC(tfarr, sizeof(float)*(nt+1));
         tfarr[nt] = value;
         sum += tfarr[nt];
         nt++;

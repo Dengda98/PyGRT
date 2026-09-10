@@ -209,8 +209,7 @@ int grt_argsort(
     if (n > (size_t)-1 / element_size ||
         n > (size_t)-1 / sizeof(GRTArgSortPair)) return -1;
 
-    GRTArgSortPair *pairs = malloc(n * sizeof(*pairs));
-    if (pairs == NULL) return -2;
+    GRTArgSortPair *pairs = GRT_SAFE_MALLOC(n * sizeof(*pairs));
 
     const unsigned char *bytes = base;
     for (size_t i = 0; i < n; i++) {

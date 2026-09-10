@@ -142,7 +142,7 @@ static void fill_mu_lam_from_global_atts(int ncid, size_t npts, real_t *mu, real
 
 /** 子模块主函数 */
 int static_stress_main(int argc, char **argv){
-    GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
+    GRT_MODULE_CTRL *Ctrl = GRT_SAFE_CALLOC(1, sizeof(*Ctrl));
 
     getopt_from_command(Ctrl, argc, argv);
 
@@ -189,15 +189,15 @@ int static_stress_main(int argc, char **argv){
     int out_dimids[2] = {rcv_info.dimids[0], rcv_info.dimids[1]};
 
     // 逐点物性参数 mu/lam
-    real_t *mu  = (real_t *)calloc(npts, sizeof(real_t));
-    real_t *lam = (real_t *)calloc(npts, sizeof(real_t));
+    real_t *mu  = GRT_SAFE_CALLOC(npts, sizeof(real_t));
+    real_t *lam = GRT_SAFE_CALLOC(npts, sizeof(real_t));
     if(rcv_info.layout == GRT_RCV_NC_LAYOUT_POINTS){
         int va_varid;
         if(nc_inq_varid(in_ncid, "rcv_va", &va_varid) == NC_NOERR){
             int vb_varid, rho_varid;
-            real_t *rcv_va  = (real_t *)calloc(npts, sizeof(real_t));
-            real_t *rcv_vb  = (real_t *)calloc(npts, sizeof(real_t));
-            real_t *rcv_rho = (real_t *)calloc(npts, sizeof(real_t));
+            real_t *rcv_va  = GRT_SAFE_CALLOC(npts, sizeof(real_t));
+            real_t *rcv_vb  = GRT_SAFE_CALLOC(npts, sizeof(real_t));
+            real_t *rcv_rho = GRT_SAFE_CALLOC(npts, sizeof(real_t));
             NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, va_varid, rcv_va));
             NC_CHECK(nc_inq_varid(in_ncid, "rcv_vb", &vb_varid));
             NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, vb_varid, rcv_vb));
@@ -253,11 +253,11 @@ int static_stress_main(int argc, char **argv){
     // 计算结果
     real_t *res[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
     for(int c=0; c<GRT_CHANNEL_NUM; ++c){
-        u[c] = (real_t *)calloc(npts, sizeof(real_t));
+        u[c] = GRT_SAFE_CALLOC(npts, sizeof(real_t));
         NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_syn_varids[c], u[c]));
         for(int c2=0; c2<GRT_CHANNEL_NUM; ++c2){
-            res[c2][c] = (real_t *)calloc(npts, sizeof(real_t));
-            upar[c2][c] = (real_t *)calloc(npts, sizeof(real_t));
+            res[c2][c] = GRT_SAFE_CALLOC(npts, sizeof(real_t));
+            upar[c2][c] = GRT_SAFE_CALLOC(npts, sizeof(real_t));
             NC_CHECK(NC_FUNC_REAL(nc_get_var) (in_ncid, in_syn_upar_varids[c2][c], upar[c2][c]));
         }
     }

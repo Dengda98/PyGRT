@@ -290,7 +290,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     }
 
                     Ctrl->F.nf = floor((a2-a1)/df) + 1;
-                    Ctrl->F.freqs = (real_t*)calloc(Ctrl->F.nf, sizeof(real_t));
+                    Ctrl->F.freqs = GRT_SAFE_CALLOC(Ctrl->F.nf, sizeof(real_t));
                     for(size_t i = 0; i < Ctrl->F.nf; ++i){
                         if(isperiod){
                             Ctrl->F.freqs[Ctrl->F.nf-1 - i] = 1.0/(a1 + df*i);
@@ -355,7 +355,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     if(Ctrl->F.freqs != NULL)  free(Ctrl->F.freqs);
                     // 仅申请单一频率，用于输出久期函数值
                     Ctrl->F.nf = 1;
-                    Ctrl->F.freqs = (real_t*)calloc(Ctrl->F.nf, sizeof(real_t));
+                    Ctrl->F.freqs = GRT_SAFE_CALLOC(Ctrl->F.nf, sizeof(real_t));
                     Ctrl->F.freqs[0] = fx;
 
                     GRT_SAFE_FREE_PTR(string);
@@ -461,7 +461,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 
 /** 子模块主函数 */
 int eigenv_main(int argc, char **argv){
-    GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
+    GRT_MODULE_CTRL *Ctrl = GRT_SAFE_CALLOC(1, sizeof(*Ctrl));
 
     // 传入参数 
     getopt_from_command(Ctrl, argc, argv);
@@ -476,9 +476,9 @@ int eigenv_main(int argc, char **argv){
     }
 
     // 将信息转入结构体
-    EIGENV_INFO *eigmet = (EIGENV_INFO *)calloc(1, sizeof(EIGENV_INFO));
+    EIGENV_INFO *eigmet = GRT_SAFE_CALLOC(1, sizeof(EIGENV_INFO));
     eigmet->nf = Ctrl->F.nf;
-    eigmet->freqs = (real_t *)calloc(eigmet->nf, sizeof(real_t));
+    eigmet->freqs = GRT_SAFE_CALLOC(eigmet->nf, sizeof(real_t));
     memcpy(eigmet->freqs, Ctrl->F.freqs, sizeof(real_t)*eigmet->nf);
     eigmet->nmode = Ctrl->N.nmode;
     eigmet->wtype = Ctrl->S.wtype;
@@ -489,7 +489,7 @@ int eigenv_main(int argc, char **argv){
     eigmet->rtol = Ctrl->T.rtol;
     eigmet->vgap = Ctrl->T.vgap;
     // 存储频散值的结构体
-    eigmet->eigv = (EIGENV *)calloc(eigmet->nf, sizeof(EIGENV));
+    eigmet->eigv = GRT_SAFE_CALLOC(eigmet->nf, sizeof(EIGENV));
 
     // 相速度搜索范围
     if(Ctrl->X.manual_crange)

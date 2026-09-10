@@ -40,7 +40,7 @@ static void recordin_GRN(
     realChnlGrid grn[nr])
 {
     // 局部变量，将某个频点的格林函数谱临时存放
-    cplxChnlGrid *tmp_grn = (cplxChnlGrid *)calloc(nr, sizeof(*tmp_grn));
+    cplxChnlGrid *tmp_grn = GRT_SAFE_CALLOC(nr, sizeof(*tmp_grn));
 
     for(size_t ir=0; ir<nr; ++ir){
         grt_merge_Pk(sumJ[ir], tmp_grn[ir]);
@@ -69,8 +69,8 @@ void grt_integ_static_grn(
 {
     // 根据静态解传入的震中距形式，有必要对震中距去重，从而减少不必要的计算量
     size_t uniq_nr = nr;
-    real_t *uniq_rs = (real_t *)calloc(nr, sizeof(real_t));
-    size_t *rs_refidx = (size_t *)calloc(nr, sizeof(size_t));
+    real_t *uniq_rs = GRT_SAFE_CALLOC(nr, sizeof(real_t));
+    size_t *rs_refidx = GRT_SAFE_CALLOC(nr, sizeof(size_t));
     memcpy(uniq_rs, rs, sizeof(real_t)*nr);
     uniq_nr = 1;
     for(size_t ir = 1; ir < nr; ++ir){

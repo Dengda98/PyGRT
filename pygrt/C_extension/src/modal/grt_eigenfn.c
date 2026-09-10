@@ -199,7 +199,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                         }
                     }
                     Ctrl->N.nmode = floor((a2-a1)/dif) + 1;
-                    Ctrl->N.modes = (size_t *)calloc(Ctrl->N.nmode, sizeof(size_t));
+                    Ctrl->N.modes = GRT_SAFE_CALLOC(Ctrl->N.nmode, sizeof(size_t));
                     for(size_t i=0; i < Ctrl->N.nmode; ++i){
                         Ctrl->N.modes[i] = a1 + dif*i;
                     }
@@ -260,7 +260,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 
                     if(nscan == 3 || nscan == 1){
                         Ctrl->F.nf = floor((a2-a1)/df) + 1;
-                        Ctrl->F.freqs = (real_t*)calloc(Ctrl->F.nf, sizeof(real_t));
+                        Ctrl->F.freqs = GRT_SAFE_CALLOC(Ctrl->F.nf, sizeof(real_t));
                         for(size_t i=0; i<Ctrl->F.nf; ++i){
                             if(isperiod){
                                 Ctrl->F.freqs[Ctrl->F.nf-1 - i] = 1.0/(a1 + df*i);
@@ -272,7 +272,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     else if(nscan == 2){
                         // 只约束最大值和最小值，内存申请由读取频散文件的过程中进行
                         Ctrl->F.nf = 2;
-                        Ctrl->F.freqs = (real_t*)calloc(Ctrl->F.nf, sizeof(real_t));
+                        Ctrl->F.freqs = GRT_SAFE_CALLOC(Ctrl->F.nf, sizeof(real_t));
                         Ctrl->F.freqs[0] = a1;
                         Ctrl->F.freqs[1] = a2;
                         Ctrl->F.def_range = true;
@@ -375,7 +375,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                                 }
 
                                 Ctrl->W.nz = floor((a2-a1)/dif) + 1;
-                                Ctrl->W.zs = (real_t*)calloc(Ctrl->W.nz, sizeof(real_t));
+                                Ctrl->W.zs = GRT_SAFE_CALLOC(Ctrl->W.nz, sizeof(real_t));
                                 for(size_t i=0; i<Ctrl->W.nz; ++i){
                                     Ctrl->W.zs[i] = a1 + dif*i;
                                 }
@@ -406,7 +406,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     // -N 的默认项，仅处理基阶
     if( ! Ctrl->N.active ){
         Ctrl->N.nmode = 1;
-        Ctrl->N.modes = (size_t *)calloc(Ctrl->N.nmode, sizeof(size_t));
+        Ctrl->N.modes = GRT_SAFE_CALLOC(Ctrl->N.nmode, sizeof(size_t));
         Ctrl->N.modes[0] = 0;
     }
 
@@ -473,9 +473,9 @@ static void grt_eigenfn_egy_udisp_phaseK_util(
             size_t iref = eigv->c_roots_iref[ic];
 
             // 模型每个物理层介质下方 z_j+ 的垂直波函数
-            cplx_t (*mod_potRaylLove_Down)[ncols] = (cplx_t (*)[ncols])calloc(nlay, sizeof(cplx_t)*ncols);
+            cplx_t (*mod_potRaylLove_Down)[ncols] = GRT_SAFE_CALLOC(nlay, sizeof(cplx_t)*ncols);
             // 模型每个物理层介质上方 z_j- 的垂直波函数，申请 n+1 的内存，方便后续不必讨论“半空间中的上行波场”
-            cplx_t (*mod_potRaylLove_Up)[ncols] = (cplx_t (*)[ncols])calloc(nlay + 1, sizeof(cplx_t)*ncols);
+            cplx_t (*mod_potRaylLove_Up)[ncols] = GRT_SAFE_CALLOC(nlay + 1, sizeof(cplx_t)*ncols);
 
             cplx_t potRaylLove[ncols];  memset(potRaylLove, 0, sizeof(cplx_t)*ncols);
             cplx_t potRaylLoveUp[ncols];  memset(potRaylLoveUp, 0, sizeof(cplx_t)*ncols);
@@ -514,7 +514,7 @@ static void grt_eigenfn_egy_udisp_phaseK_util(
 
 /* 子模块主函数 */
 int eigenfn_main(int argc, char **argv){
-    GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
+    GRT_MODULE_CTRL *Ctrl = GRT_SAFE_CALLOC(1, sizeof(*Ctrl));
 
     // 传入参数 
     getopt_from_command(Ctrl, argc, argv);
@@ -522,21 +522,21 @@ int eigenfn_main(int argc, char **argv){
     // 读取频散及其中保存的模型
     char *modelname = NULL;
     MODEL1D *mod1d = NULL;
-    EIGENV_INFO *eigmet = (EIGENV_INFO *)calloc(1, sizeof(EIGENV_INFO));
+    EIGENV_INFO *eigmet = GRT_SAFE_CALLOC(1, sizeof(EIGENV_INFO));
     grt_read_dispersion(Ctrl->C.s_filepath, eigmet, &modelname, &mod1d);
     GRT_SAFE_FREE_PTR(modelname);
 
     // 根据命令行参数确定出所需的部分频散信息
-    EIGENFN_INFO *eigfnmet = (EIGENFN_INFO *)calloc(1, sizeof(EIGENFN_INFO));
+    EIGENFN_INFO *eigfnmet = GRT_SAFE_CALLOC(1, sizeof(EIGENFN_INFO));
     grt_filter_eigenfn_info(
         Ctrl->F.nf, Ctrl->F.freqs, Ctrl->F.def_range,
         Ctrl->N.nmode, Ctrl->N.modes, eigmet, eigfnmet);
     
     // 初始化 eigfn
-    eigfnmet->eigfn = (EIGENFN **)calloc(eigfnmet->nf, sizeof(EIGENFN *));
+    eigfnmet->eigfn = GRT_SAFE_CALLOC(eigfnmet->nf, sizeof(EIGENFN *));
     for(size_t iw = 0; iw < eigfnmet->nf; ++iw){
         size_t cnum = eigfnmet->eigv[iw].n;
-        eigfnmet->eigfn[iw] = (EIGENFN *)calloc(cnum, sizeof(EIGENFN));
+        eigfnmet->eigfn[iw] = GRT_SAFE_CALLOC(cnum, sizeof(EIGENFN));
     }
 
     // 判断每个深度值对应的层位
@@ -544,13 +544,13 @@ int eigenfn_main(int argc, char **argv){
         // 若不指定等距深度，则使用模型界面深度
         if(Ctrl->W.nz == 0){
             Ctrl->W.nz = mod1d->n;
-            Ctrl->W.zs = (real_t *)calloc(Ctrl->W.nz, sizeof(real_t));
+            Ctrl->W.zs = GRT_SAFE_CALLOC(Ctrl->W.nz, sizeof(real_t));
             memcpy(Ctrl->W.zs, mod1d->Dep, sizeof(real_t)*mod1d->n);
         }
         eigfnmet->nz = Ctrl->W.nz;
-        eigfnmet->zs = (real_t *)calloc(eigfnmet->nz, sizeof(real_t));
+        eigfnmet->zs = GRT_SAFE_CALLOC(eigfnmet->nz, sizeof(real_t));
         memcpy(eigfnmet->zs, Ctrl->W.zs, sizeof(real_t)*eigfnmet->nz);
-        eigfnmet->z_irefs = (size_t *)calloc(eigfnmet->nz, sizeof(size_t));
+        eigfnmet->z_irefs = GRT_SAFE_CALLOC(eigfnmet->nz, sizeof(size_t));
         for(size_t iz = 0; iz < Ctrl->W.nz; ++iz){
             size_t ziref = 0;
             for(ziref=0; ziref < mod1d->n-1; ++ziref){
@@ -576,9 +576,9 @@ int eigenfn_main(int argc, char **argv){
                 // 避免一些因浮点误差而产生的极细层
                 if(fabs(thk - h) < dz*1e-5)  break;
 
-                eigfnmet->cpar_z_irefs = (size_t *)realloc(eigfnmet->cpar_z_irefs, sizeof(size_t)*(eigfnmet->cpar_nz+1));
+                eigfnmet->cpar_z_irefs = GRT_SAFE_REALLOC(eigfnmet->cpar_z_irefs, sizeof(size_t)*(eigfnmet->cpar_nz+1));
                 eigfnmet->cpar_z_irefs[eigfnmet->cpar_nz] = iy;
-                eigfnmet->cpar_zs = (real_t *)realloc(eigfnmet->cpar_zs, sizeof(real_t)*(eigfnmet->cpar_nz+1));
+                eigfnmet->cpar_zs = GRT_SAFE_REALLOC(eigfnmet->cpar_zs, sizeof(real_t)*(eigfnmet->cpar_nz+1));
                 eigfnmet->cpar_zs[eigfnmet->cpar_nz] = mod1d->Dep[iy] + h;
 
                 h += dz;
@@ -598,12 +598,12 @@ int eigenfn_main(int argc, char **argv){
 
             eigfntmp->eigenC = eigfnmet->eigv[iw].c_roots[ic];
             if(Ctrl->W.active){
-                eigfntmp->fn = (cplx_t (*)[4])calloc(eigfnmet->nz, sizeof(*eigfntmp->fn));
+                eigfntmp->fn = GRT_SAFE_CALLOC(eigfnmet->nz, sizeof(*eigfntmp->fn));
             }
             
             if(Ctrl->calc_egyint){
-                eigfntmp->csens = (cplx_t (*)[GRT_SNSTVTY_MAX])calloc(eigfnmet->cpar_nz, sizeof(*eigfntmp->csens));
-                eigfntmp->usens = (cplx_t (*)[GRT_SNSTVTY_MAX])calloc(eigfnmet->cpar_nz, sizeof(*eigfntmp->usens));
+                eigfntmp->csens = GRT_SAFE_CALLOC(eigfnmet->cpar_nz, sizeof(*eigfntmp->csens));
+                eigfntmp->usens = GRT_SAFE_CALLOC(eigfnmet->cpar_nz, sizeof(*eigfntmp->usens));
             }
         }
     }

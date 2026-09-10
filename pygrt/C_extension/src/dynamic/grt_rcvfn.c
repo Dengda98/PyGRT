@@ -758,7 +758,7 @@ static void write_result_sac(
 /** rcvfn 子模块主函数 */
 int rcvfn_main(int argc, char **argv)
 {
-    GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
+    GRT_MODULE_CTRL *Ctrl = GRT_SAFE_CALLOC(1, sizeof(*Ctrl));
     getopt_from_command(Ctrl, argc, argv);
 
     Ctrl->M.mod1d = grt_read_mod1d_from_file(Ctrl->M.s_modelpath, -1.0, -1.0, true);
@@ -818,10 +818,10 @@ int rcvfn_main(int argc, char **argv)
 
     size_t nt = Ctrl->N.nt*Ctrl->N.upsample_n;
     real_t dt = Ctrl->N.dt/Ctrl->N.upsample_n;
-    cplx_t *q_m = calloc(nf, sizeof(*q_m));
-    cplx_t *w_m = calloc(nf, sizeof(*w_m));
-    cplx_t *incident_velocity = calloc(nf, sizeof(*incident_velocity));
-    cplx_t *spectrum = calloc(nf, sizeof(*spectrum));
+    cplx_t *q_m = GRT_SAFE_CALLOC(nf, sizeof(*q_m));
+    cplx_t *w_m = GRT_SAFE_CALLOC(nf, sizeof(*w_m));
+    cplx_t *incident_velocity = GRT_SAFE_CALLOC(nf, sizeof(*incident_velocity));
+    cplx_t *spectrum = GRT_SAFE_CALLOC(nf, sizeof(*spectrum));
 
     // 频率递推只执行一次，后续输出复用 q_m 和 w_m
     compute_frequency_responses(

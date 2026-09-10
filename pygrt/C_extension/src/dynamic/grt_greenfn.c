@@ -452,8 +452,8 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     }
                     Ctrl->D.ndepsrc = 1;
                     Ctrl->D.ndeprcv = 1;
-                    Ctrl->D.depsrcs = (real_t *)calloc(1, sizeof(real_t));
-                    Ctrl->D.deprcvs = (real_t *)calloc(1, sizeof(real_t));
+                    Ctrl->D.depsrcs = GRT_SAFE_CALLOC(1, sizeof(real_t));
+                    Ctrl->D.deprcvs = GRT_SAFE_CALLOC(1, sizeof(real_t));
                     Ctrl->D.depsrcs[0] = depsrc;
                     Ctrl->D.deprcvs[0] = deprcv;
                 }
@@ -764,7 +764,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     Ctrl->S.s_raw = strdup(optarg);
                     Ctrl->S.s_statsidxs = grt_string_split(optarg, ",", &Ctrl->S.nstatsidxs);
                     // 转为浮点数
-                    Ctrl->S.statsidxs = (size_t*)realloc(Ctrl->S.statsidxs, sizeof(size_t)*(Ctrl->S.nstatsidxs));
+                    Ctrl->S.statsidxs = GRT_SAFE_REALLOC(Ctrl->S.statsidxs, sizeof(size_t)*(Ctrl->S.nstatsidxs));
                     for(size_t i=0; i<Ctrl->S.nstatsidxs; ++i){
                         int tmp = atoi(Ctrl->S.s_statsidxs[i]);
                         if(tmp < 0){
@@ -892,7 +892,7 @@ static void prepare_grn_spec(
 
     size_t nf = nt / 2 + 1;
     real_t df = 1.0 / winT;
-    real_t *freqs = (real_t *)malloc(nf * sizeof(real_t));
+    real_t *freqs = GRT_SAFE_MALLOC(nf * sizeof(real_t));
     for(size_t i = 0; i < nf; ++i){
         freqs[i] = i * df;
     }
@@ -985,7 +985,7 @@ static void compute_greenfn_one(GRT_MODULE_CTRL *Ctrl) {
     if(Ctrl->S.active && Ctrl->S.statsidxs == NULL){
         // 另外两个字符相关的指针仍指向 NULL
         Ctrl->S.nstatsidxs = grn->nf;
-        Ctrl->S.statsidxs = (size_t*)realloc(Ctrl->S.statsidxs, sizeof(size_t)*(Ctrl->S.nstatsidxs));
+        Ctrl->S.statsidxs = GRT_SAFE_REALLOC(Ctrl->S.statsidxs, sizeof(size_t)*(Ctrl->S.nstatsidxs));
         for(size_t i=0; i < Ctrl->S.nstatsidxs; ++i){
             Ctrl->S.statsidxs[i] = i;
         }
@@ -1039,9 +1039,9 @@ static void compute_greenfn_one(GRT_MODULE_CTRL *Ctrl) {
     sac->hd.user8 = mod1d->Rho[mod1d->isrc];
     
     // 为每个震中距设置对应的变量
-    real_t (*travtPS)[2] = (real_t (*)[2])calloc(grn->nr, sizeof(real_t)*2);
-    real_t *begintimes = (real_t *)calloc(grn->nr, sizeof(real_t));
-    char **outputdirs = (char **)calloc(grn->nr, sizeof(char *));
+    real_t (*travtPS)[2] = GRT_SAFE_CALLOC(grn->nr, sizeof(real_t)*2);
+    real_t *begintimes = GRT_SAFE_CALLOC(grn->nr, sizeof(real_t));
+    char **outputdirs = GRT_SAFE_CALLOC(grn->nr, sizeof(char *));
     for(size_t ir = 0; ir < Ctrl->R.nr; ++ir){
         real_t dist = Ctrl->R.rs[ir];
 
@@ -1096,7 +1096,7 @@ static void compute_greenfn_one(GRT_MODULE_CTRL *Ctrl) {
 
 /** 子模块主函数 */
 int greenfn_main(int argc, char **argv) {
-    GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
+    GRT_MODULE_CTRL *Ctrl = GRT_SAFE_CALLOC(1, sizeof(*Ctrl));
 
     getopt_from_command(Ctrl, argc, argv);
 

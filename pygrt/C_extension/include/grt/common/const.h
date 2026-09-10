@@ -12,6 +12,7 @@
 #include <complex.h> 
 #include <tgmath.h>
 #include <omp.h>
+#include <stdlib.h>
 
 #include "grt/common/checkerror.h"
 
@@ -82,6 +83,35 @@ typedef double complex cplx_t;
 #define GRT_SQUARE(x) ((x) * (x))  ///< 计算一个数的平方
 
 // 内存管理
+#define GRT_SAFE_MALLOC(size) ({ \
+    size_t grt_size_ = (size); \
+    void *grt_ptr_ = malloc(grt_size_); \
+    if(grt_ptr_ == NULL && grt_size_ != 0){ \
+        GRTRaiseError("malloc failed."); \
+    } \
+    grt_ptr_; \
+})
+
+#define GRT_SAFE_CALLOC(nmemb, size) ({ \
+    size_t grt_nmemb_ = (nmemb); \
+    size_t grt_size_ = (size); \
+    void *grt_ptr_ = calloc(grt_nmemb_, grt_size_); \
+    if(grt_ptr_ == NULL && grt_nmemb_ != 0 && \
+       grt_size_ != 0){ \
+        GRTRaiseError("calloc failed."); \
+    } \
+    grt_ptr_; \
+})
+
+#define GRT_SAFE_REALLOC(ptr, size) ({ \
+    size_t grt_size_ = (size); \
+    void *grt_ptr_ = realloc((ptr), grt_size_); \
+    if(grt_ptr_ == NULL && grt_size_ != 0){ \
+        GRTRaiseError("realloc failed."); \
+    } \
+    grt_ptr_; \
+})
+
 // 释放单个指针
 #define GRT_SAFE_FREE_PTR(ptr) ({\
     if(ptr!=NULL) {\

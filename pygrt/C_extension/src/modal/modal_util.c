@@ -73,11 +73,11 @@ static void nc_put_freq_freqmode(
 {
     NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, f_varid, freqs));
 
-    int *cnum = (int *)calloc(nf, sizeof(int));
-    int *mode_vals = (int *)calloc(nmode, sizeof(int));
-    real_t *c_flat = (real_t *)calloc(nfm, sizeof(real_t));
-    real_t *u_flat = (u_varid >= 0) ? (real_t *)calloc(nfm, sizeof(real_t)) : NULL;
-    int *ciref_flat = (ciref_varid >= 0) ? (int *)calloc(nfm, sizeof(int)) : NULL;
+    int *cnum = GRT_SAFE_CALLOC(nf, sizeof(int));
+    int *mode_vals = GRT_SAFE_CALLOC(nmode, sizeof(int));
+    real_t *c_flat = GRT_SAFE_CALLOC(nfm, sizeof(real_t));
+    real_t *u_flat = (u_varid >= 0) ? GRT_SAFE_CALLOC(nfm, sizeof(real_t)) : NULL;
+    int *ciref_flat = (ciref_varid >= 0) ? GRT_SAFE_CALLOC(nfm, sizeof(int)) : NULL;
 
     for(size_t i = 0; i < nmode; ++i){
         mode_vals[i] = (modes != NULL) ? (int)modes[i] : (int)i;
@@ -287,7 +287,7 @@ void grt_output_eigenfns(const char *filepath, const int ncols, EIGENFN_INFO *ei
     countp[1] = eigfnmet->nz;
     countp[2] = nw;
 
-    real_t (*realimag_part)[nw] = (real_t (*)[nw])calloc(eigfnmet->nz, sizeof(real_t)*nw);
+    real_t (*realimag_part)[nw] = GRT_SAFE_CALLOC(eigfnmet->nz, sizeof(real_t)*nw);
 
     size_t k = 0;
     for(size_t iw = 0; iw < eigfnmet->nf; ++iw){
@@ -359,7 +359,7 @@ void grt_output_energy_integrals(const char *filepath, EIGENFN_INFO *eigfnmet)
     startp[1] = 0;
     countp[1] = ne;
 
-    real_t (*realimag_part)[ne] = (real_t (*)[ne])calloc(nmode, sizeof(real_t)*ne);
+    real_t (*realimag_part)[ne] = GRT_SAFE_CALLOC(nmode, sizeof(real_t)*ne);
 
     size_t k = 0;
     for(size_t iw = 0; iw < eigfnmet->nf; ++iw){
@@ -457,7 +457,7 @@ void grt_output_sensitivity(const char *filepath, const char *char_uc, EIGENFN_I
     countp[1] = eigfnmet->cpar_nz;
     countp[2] = nk;
 
-    real_t (*real_part)[nk] = (real_t (*)[nk])calloc(eigfnmet->cpar_nz, sizeof(real_t)*nk);
+    real_t (*real_part)[nk] = GRT_SAFE_CALLOC(eigfnmet->cpar_nz, sizeof(real_t)*nk);
 
     size_t ifm = 0;
     for(size_t iw = 0; iw < eigfnmet->nf; ++iw){
@@ -539,13 +539,13 @@ void grt_read_dispersion(
                 filepath, nlayer, nparam, GRT_MODARR_NCOL);
         }
         NC_CHECK(nc_inq_varid(ncid, "model", &model_varid));
-        real_t (*modarr)[GRT_MODARR_NCOL] = (real_t (*)[GRT_MODARR_NCOL])malloc(
+        real_t (*modarr)[GRT_MODARR_NCOL] = GRT_SAFE_MALLOC(
             sizeof(real_t) * GRT_MODARR_NCOL * nlayer);
         NC_CHECK(NC_FUNC_REAL(nc_get_var)(ncid, model_varid, (real_t *)modarr));
 
         size_t m_len = 0;
         NC_CHECK(nc_inq_attlen(ncid, NC_GLOBAL, "modelname", &m_len));
-        char *modelname = (char *)calloc(m_len+1, sizeof(char));
+        char *modelname = GRT_SAFE_CALLOC(m_len+1, sizeof(char));
         NC_CHECK(nc_get_att_text(ncid, NC_GLOBAL, "modelname", modelname));
         modelname[m_len] = '\0';
 
@@ -585,11 +585,11 @@ void grt_read_dispersion(
         GRTRaiseError("Invalid dispersion nc \"%s\": empty mode dimension.", filepath);
     }
 
-    eigmet->freqs = (real_t *)calloc(eigmet->nf, sizeof(real_t));
+    eigmet->freqs = GRT_SAFE_CALLOC(eigmet->nf, sizeof(real_t));
     NC_CHECK(nc_inq_varid(ncid, "freq", &f_varid));
     NC_CHECK(NC_FUNC_REAL(nc_get_var)(ncid, f_varid, eigmet->freqs));
 
-    int *cnum = (int *)calloc(eigmet->nf, sizeof(int));
+    int *cnum = GRT_SAFE_CALLOC(eigmet->nf, sizeof(int));
     NC_CHECK(nc_inq_varid(ncid, "cnum", &cnum_varid));
     NC_CHECK(NC_FUNC_INT(nc_get_var)(ncid, cnum_varid, cnum));
 
@@ -613,10 +613,10 @@ void grt_read_dispersion(
             filepath, cnum_max, nmode);
     }
 
-    int *mode_vals = (int *)calloc(nmode, sizeof(int));
-    real_t *c_flat = (real_t *)calloc(nfm, sizeof(real_t));
-    real_t *u_flat = isGroup ? (real_t *)calloc(nfm, sizeof(real_t)) : NULL;
-    int *ciref_flat = (!isGroup) ? (int *)calloc(nfm, sizeof(int)) : NULL;
+    int *mode_vals = GRT_SAFE_CALLOC(nmode, sizeof(int));
+    real_t *c_flat = GRT_SAFE_CALLOC(nfm, sizeof(real_t));
+    real_t *u_flat = isGroup ? GRT_SAFE_CALLOC(nfm, sizeof(real_t)) : NULL;
+    int *ciref_flat = (!isGroup) ? GRT_SAFE_CALLOC(nfm, sizeof(int)) : NULL;
 
     NC_CHECK(nc_inq_varid(ncid, "mode", &mode_varid));
     NC_CHECK(NC_FUNC_INT(nc_get_var)(ncid, mode_varid, mode_vals));
@@ -630,15 +630,15 @@ void grt_read_dispersion(
         NC_CHECK(NC_FUNC_INT(nc_get_var)(ncid, ciref_varid, ciref_flat));
     }
 
-    eigmet->eigv = (EIGENV *)calloc(eigmet->nf, sizeof(EIGENV));
+    eigmet->eigv = GRT_SAFE_CALLOC(eigmet->nf, sizeof(EIGENV));
 
     // 按频率还原锯齿状频散；第 iw 频的阶为 mode[0 .. cnum[iw]-1]
     size_t k = 0;
     for(size_t iw = 0; iw < eigmet->nf; ++iw){
         eigmet->eigv[iw].n = (size_t)cnum[iw];
-        eigmet->eigv[iw].c_roots = (real_t *)calloc(cnum[iw], sizeof(real_t));
-        eigmet->eigv[iw].u_roots = (real_t *)calloc(cnum[iw], sizeof(real_t));
-        eigmet->eigv[iw].c_roots_iref = (size_t *)calloc(cnum[iw], sizeof(size_t));
+        eigmet->eigv[iw].c_roots = GRT_SAFE_CALLOC(cnum[iw], sizeof(real_t));
+        eigmet->eigv[iw].u_roots = GRT_SAFE_CALLOC(cnum[iw], sizeof(real_t));
+        eigmet->eigv[iw].c_roots_iref = GRT_SAFE_CALLOC(cnum[iw], sizeof(size_t));
 
         for(int ic = 0; ic < cnum[iw]; ++ic){
             eigmet->eigv[iw].c_roots[ic] = c_flat[k];
@@ -652,7 +652,7 @@ void grt_read_dispersion(
     }
 
     eigmet->nmode = nmode;
-    eigmet->modes = (size_t *)calloc(nmode, sizeof(size_t));
+    eigmet->modes = GRT_SAFE_CALLOC(nmode, sizeof(size_t));
     for(size_t i = 0; i < nmode; ++i){
         eigmet->modes[i] = (size_t)mode_vals[i];
     }

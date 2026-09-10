@@ -39,7 +39,7 @@ real_t grt_discrete_integ(
     bool iendk = true;
 
     // 每个震中距的k循环是否结束
-    bool *iendkrs = (bool *)calloc(nr, sizeof(bool)); // 自动初始化为 false
+    bool *iendkrs = GRT_SAFE_CALLOC(nr, sizeof(bool)); // 自动初始化为 false
     bool iendk0 = false;
 
     size_t nk = floor(kmax / dk) + 1L;

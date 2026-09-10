@@ -80,7 +80,7 @@ static void compute_rotation(
 
 /** 子模块主函数 */
 int rotation_main(int argc, char **argv){
-    GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
+    GRT_MODULE_CTRL *Ctrl = GRT_SAFE_CALLOC(1, sizeof(*Ctrl));
 
     getopt_from_command(Ctrl, argc, argv);
     
@@ -131,7 +131,7 @@ int rotation_main(int argc, char **argv){
             upar[c2][c] = insac->data;
             insac->data = NULL;
             grt_free_SACTRACE(insac);
-            res[c2][c] = calloc(npts, sizeof(*res[c2][c]));
+            res[c2][c] = GRT_SAFE_CALLOC(npts, sizeof(*res[c2][c]));
         }
     }
     compute_rotation(npts, dist, u, upar, res, rot2ZNE);

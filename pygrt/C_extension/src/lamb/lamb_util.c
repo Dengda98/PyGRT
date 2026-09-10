@@ -20,10 +20,7 @@ static bool is_derivative_suboption(const char *text)
 
 static char *copy_path(const char *start, const size_t length)
 {
-    char *path = calloc(length + 1, sizeof(*path));
-    if (path == NULL) {
-        GRTRaiseError("Cannot allocate a Lamb derivative output path.\n");
-    }
+    char *path = GRT_SAFE_CALLOC(length + 1, sizeof(*path));
     memcpy(path, start, length);
     return path;
 }

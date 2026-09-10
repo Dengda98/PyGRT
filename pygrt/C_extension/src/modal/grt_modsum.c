@@ -276,7 +276,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                         }
                     }
                     Ctrl->N.nmode = floor((a2-a1)/dif) + 1;
-                    Ctrl->N.modes = (size_t *)calloc(Ctrl->N.nmode, sizeof(size_t));
+                    Ctrl->N.modes = GRT_SAFE_CALLOC(Ctrl->N.nmode, sizeof(size_t));
                     for(size_t i=0; i < Ctrl->N.nmode; ++i){
                         Ctrl->N.modes[i] = a1 + dif*i;
                     }
@@ -286,7 +286,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             // 频率值 -Ff1/f2  指定频率范围
             case 'F':
                 Ctrl->F.active = true;
-                Ctrl->F.freqs = (real_t *)calloc(2, sizeof(real_t));
+                Ctrl->F.freqs = GRT_SAFE_CALLOC(2, sizeof(real_t));
                 if(2 != sscanf(optarg, "%lf/%lf", Ctrl->F.freqs, Ctrl->F.freqs+1)){
                     GRTBadOptionError(F, "");
                 };
@@ -321,8 +321,8 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     }
                     Ctrl->D.ndepsrc = 1;
                     Ctrl->D.ndeprcv = 1;
-                    Ctrl->D.depsrcs = (real_t *)calloc(1, sizeof(real_t));
-                    Ctrl->D.deprcvs = (real_t *)calloc(1, sizeof(real_t));
+                    Ctrl->D.depsrcs = GRT_SAFE_CALLOC(1, sizeof(real_t));
+                    Ctrl->D.deprcvs = GRT_SAFE_CALLOC(1, sizeof(real_t));
                     Ctrl->D.depsrcs[0] = depsrc;
                     Ctrl->D.deprcvs[0] = deprcv;
                 }
@@ -446,7 +446,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     // -N 的默认项，仅处理基阶
     if( ! Ctrl->N.active ){
         Ctrl->N.nmode = 1;
-        Ctrl->N.modes = (size_t *)calloc(Ctrl->N.nmode, sizeof(size_t));
+        Ctrl->N.modes = GRT_SAFE_CALLOC(Ctrl->N.nmode, sizeof(size_t));
         Ctrl->N.modes[0] = 0;
     }
     
@@ -475,7 +475,7 @@ static void compute_modsum_one(
     }
 
     // 根据命令行参数确定出所需的部分频散信息
-    EIGENFN_INFO *eigfnmet = (EIGENFN_INFO *)calloc(1, sizeof(EIGENFN_INFO));
+    EIGENFN_INFO *eigfnmet = GRT_SAFE_CALLOC(1, sizeof(EIGENFN_INFO));
     grt_filter_eigenfn_info(
         Ctrl->F.nf, Ctrl->F.freqs, true,
         Ctrl->N.nmode, Ctrl->N.modes, eigmet, eigfnmet);
@@ -493,10 +493,10 @@ static void compute_modsum_one(
     }
 
     // 初始化 eigfn
-    eigfnmet->eigfn = (EIGENFN **)calloc(eigfnmet->nf, sizeof(EIGENFN *));
+    eigfnmet->eigfn = GRT_SAFE_CALLOC(eigfnmet->nf, sizeof(EIGENFN *));
     for(size_t iw = 0; iw < eigfnmet->nf; ++iw){
         size_t cnum = eigfnmet->eigv[iw].n;
-        eigfnmet->eigfn[iw] = (EIGENFN *)calloc(cnum, sizeof(EIGENFN));
+        eigfnmet->eigfn[iw] = GRT_SAFE_CALLOC(cnum, sizeof(EIGENFN));
     }
 
     // FFT需要的参数，包括零频和区域外的（从原频散文件确定，因此本模块中 -F 的作用仅用于筛选频段）
@@ -509,7 +509,7 @@ static void compute_modsum_one(
     GRNSPEC *grn = &(GRNSPEC){0};
     {
         grn->nf = fft_nf;
-        grn->freqs = (real_t *)calloc(fft_nf, sizeof(real_t));   // 单独增加 0 频
+        grn->freqs = GRT_SAFE_CALLOC(fft_nf, sizeof(real_t));   // 单独增加 0 频
         memcpy(grn->freqs+1, eigmet->freqs, sizeof(real_t)*eigmet->nf);
         grn->nf1 = 0;
         grn->nf2 = fft_nf-1;
@@ -554,9 +554,9 @@ static void compute_modsum_one(
     sac->hd.user8 = mod1d->Rho[mod1d->isrc];
     
     // 为每个震中距设置对应的变量
-    real_t (*travtPS)[2] = (real_t (*)[2])calloc(grn->nr, sizeof(real_t)*2);
-    real_t *begintimes = (real_t *)calloc(grn->nr, sizeof(real_t));
-    char **outputdirs = (char **)calloc(grn->nr, sizeof(char *));
+    real_t (*travtPS)[2] = GRT_SAFE_CALLOC(grn->nr, sizeof(real_t)*2);
+    real_t *begintimes = GRT_SAFE_CALLOC(grn->nr, sizeof(real_t));
+    char **outputdirs = GRT_SAFE_CALLOC(grn->nr, sizeof(char *));
     for(size_t ir = 0; ir < Ctrl->R.nr; ++ir){
         real_t dist = Ctrl->R.rs[ir];
 
@@ -612,7 +612,7 @@ static void compute_modsum_one(
 
 /* 子模块主函数 */
 int modsum_main(int argc, char **argv){
-    GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
+    GRT_MODULE_CTRL *Ctrl = GRT_SAFE_CALLOC(1, sizeof(*Ctrl));
 
     // 传入参数
     getopt_from_command(Ctrl, argc, argv);
@@ -620,7 +620,7 @@ int modsum_main(int argc, char **argv){
     // 读取频散及其中保存的模型
     char *modelname = NULL;
     MODEL1D *mod1d = NULL;
-    EIGENV_INFO *eigmet = (EIGENV_INFO *)calloc(1, sizeof(EIGENV_INFO));
+    EIGENV_INFO *eigmet = GRT_SAFE_CALLOC(1, sizeof(EIGENV_INFO));
     grt_read_dispersion(Ctrl->C.s_filepath, eigmet, &modelname, &mod1d);
 
     // 建立保存目录并检查已有内容

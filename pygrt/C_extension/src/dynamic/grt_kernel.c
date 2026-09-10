@@ -189,8 +189,8 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
             // 震源和场点深度， -Ddepsrc/deprcv
             case 'D':
                 Ctrl->D.active = true;
-                Ctrl->D.s_depsrc = (char*)malloc(sizeof(char)*(strlen(optarg)+1));
-                Ctrl->D.s_deprcv = (char*)malloc(sizeof(char)*(strlen(optarg)+1));
+                Ctrl->D.s_depsrc = GRT_SAFE_MALLOC(sizeof(char)*(strlen(optarg)+1));
+                Ctrl->D.s_deprcv = GRT_SAFE_MALLOC(sizeof(char)*(strlen(optarg)+1));
                 if(2 != sscanf(optarg, "%[^/]/%s", Ctrl->D.s_depsrc, Ctrl->D.s_deprcv)){
                     GRTBadOptionError(D, "");
                 };
@@ -271,7 +271,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                     if(Ctrl->F.nf < 2){
                         GRTBadOptionError(F, "Too few frequency points, only %zu.", Ctrl->F.nf);
                     }
-                    Ctrl->F.freqs = (real_t *)calloc(Ctrl->F.nf, sizeof(real_t));
+                    Ctrl->F.freqs = GRT_SAFE_CALLOC(Ctrl->F.nf, sizeof(real_t));
                     for(size_t i=0; i<Ctrl->F.nf; ++i){
                         Ctrl->F.freqs[i] = a1 + df*i;
                     }
@@ -316,7 +316,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                         }
 
                         Ctrl->C.nc = floor((a2-a1)/df) + 1;
-                        Ctrl->C.c_phases = (real_t *)calloc(Ctrl->C.nc, sizeof(real_t));
+                        Ctrl->C.c_phases = GRT_SAFE_CALLOC(Ctrl->C.nc, sizeof(real_t));
                         for(size_t i=0; i<Ctrl->C.nc; ++i){
                             Ctrl->C.c_phases[i] = a1 + df*i;
                         }
@@ -374,7 +374,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
 /** 子模块主函数 */
 int kernel_main(int argc, char **argv)
 {
-    GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
+    GRT_MODULE_CTRL *Ctrl = GRT_SAFE_CALLOC(1, sizeof(*Ctrl));
 
     // 传入参数 
     getopt_from_command(Ctrl, argc, argv);
@@ -396,7 +396,7 @@ int kernel_main(int argc, char **argv)
         Ctrl->C.cmin = 0.8 * vmin;
         Ctrl->C.cmax = vmax;
         Ctrl->C.nc = floor((Ctrl->C.cmax - Ctrl->C.cmin)/Ctrl->C.dc) + 1;
-        Ctrl->C.c_phases = (real_t *)calloc(Ctrl->C.nc, sizeof(real_t));
+        Ctrl->C.c_phases = GRT_SAFE_CALLOC(Ctrl->C.nc, sizeof(real_t));
         for(size_t i=0; i<Ctrl->C.nc; ++i){
             Ctrl->C.c_phases[i] = Ctrl->C.cmin + Ctrl->C.dc*i;
         }

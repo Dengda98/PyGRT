@@ -314,8 +314,8 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     }
                     Ctrl->D.ndepsrc = 1;
                     Ctrl->D.ndeprcv = 1;
-                    Ctrl->D.depsrcs = (real_t *)calloc(1, sizeof(real_t));
-                    Ctrl->D.deprcvs = (real_t *)calloc(1, sizeof(real_t));
+                    Ctrl->D.depsrcs = GRT_SAFE_CALLOC(1, sizeof(real_t));
+                    Ctrl->D.deprcvs = GRT_SAFE_CALLOC(1, sizeof(real_t));
                     Ctrl->D.depsrcs[0] = depsrc;
                     Ctrl->D.deprcvs[0] = deprcv;
                 }
@@ -468,7 +468,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     }
 
                     Ctrl->X.nnorth = floor((a2-a1)/delta) + 1;
-                    Ctrl->X.norths = (real_t*)calloc(Ctrl->X.nnorth, sizeof(real_t));
+                    Ctrl->X.norths = GRT_SAFE_CALLOC(Ctrl->X.nnorth, sizeof(real_t));
                     for(size_t i=0; i<Ctrl->X.nnorth; ++i){
                         Ctrl->X.norths[i] = a1 + delta*i;
                     }
@@ -491,7 +491,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     }
 
                     Ctrl->Y.neast = floor((a2-a1)/delta) + 1;
-                    Ctrl->Y.easts = (real_t*)calloc(Ctrl->Y.neast, sizeof(real_t));
+                    Ctrl->Y.easts = GRT_SAFE_CALLOC(Ctrl->Y.neast, sizeof(real_t));
                     for(size_t i=0; i<Ctrl->Y.neast; ++i){
                         Ctrl->Y.easts[i] = a1 + delta*i;
                     }
@@ -505,7 +505,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 {
                     Ctrl->Y.easts = grt_parse_real_array(optarg, &Ctrl->Y.neast, NULL, 'R');
                     Ctrl->X.nnorth = 1;
-                    Ctrl->X.norths = (real_t*)calloc(Ctrl->X.nnorth, sizeof(real_t));
+                    Ctrl->X.norths = GRT_SAFE_CALLOC(Ctrl->X.nnorth, sizeof(real_t));
                     Ctrl->X.norths[0] = 0.0;
                 }
                 break;
@@ -548,7 +548,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 
     // 设置震中距数组
     Ctrl->nr = Ctrl->X.nnorth*Ctrl->Y.neast;
-    Ctrl->rs = (real_t*)calloc(Ctrl->nr, sizeof(real_t));
+    Ctrl->rs = GRT_SAFE_CALLOC(Ctrl->nr, sizeof(real_t));
     for(size_t inorth=0; inorth<Ctrl->X.nnorth; ++inorth){
         for(size_t ieast=0; ieast<Ctrl->Y.neast; ++ieast){
             Ctrl->rs[ieast + inorth*Ctrl->Y.neast] = hypot(Ctrl->X.norths[inorth], Ctrl->Y.easts[ieast]);
@@ -662,9 +662,9 @@ static void compute_stgrnlib_to_nc(
     size_t nr = lib->nr;
     real_t *rs = lib->rs;
 
-    realChnlGrid *grn = (realChnlGrid *)calloc(nr, sizeof(*grn));
-    realChnlGrid *grn_uiz = calc_upar ? (realChnlGrid *)calloc(nr, sizeof(*grn_uiz)) : NULL;
-    realChnlGrid *grn_uir = calc_upar ? (realChnlGrid *)calloc(nr, sizeof(*grn_uir)) : NULL;
+    realChnlGrid *grn = GRT_SAFE_CALLOC(nr, sizeof(*grn));
+    realChnlGrid *grn_uiz = calc_upar ? GRT_SAFE_CALLOC(nr, sizeof(*grn_uiz)) : NULL;
+    realChnlGrid *grn_uir = calc_upar ? GRT_SAFE_CALLOC(nr, sizeof(*grn_uir)) : NULL;
 
     size_t ntot = ndepsrc * ndeprcv;
     size_t idone = 0;
@@ -731,7 +731,7 @@ static void compute_stgrnlib_to_nc(
 
 /** 子模块主函数 */
 int static_greenfn_main(int argc, char **argv){
-    GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
+    GRT_MODULE_CTRL *Ctrl = GRT_SAFE_CALLOC(1, sizeof(*Ctrl));
 
     getopt_from_command(Ctrl, argc, argv);
 

@@ -14,20 +14,17 @@
 #define X(T, s, S) \
 static GRT_FFTW##S##_HOLDER *  grt_init_fftw##s##_holder(const size_t nt, const real_t dt, const size_t nf_valid, const real_t df)\
 {\
-    GRT_FFTW##S##_HOLDER *fh = (GRT_FFTW##S##_HOLDER*)calloc(1, sizeof(GRT_FFTW##S##_HOLDER));\
-    if (!fh) {\
-        GRTRaiseError("Failed to allocate memory.\n");\
-    }\
+    GRT_FFTW##S##_HOLDER *fh = GRT_SAFE_CALLOC(1, sizeof(GRT_FFTW##S##_HOLDER));\
     fh->nt = nt;\
     fh->dt = dt;\
     fh->nf_valid = nf_valid;\
     fh->nf = nt/2+1;\
     fh->df = df;\
-    fh->w_t = (T*)calloc(nt, sizeof(T));\
+    fh->w_t = GRT_SAFE_CALLOC(nt, sizeof(T));\
     fh->W_f = (fftw##s##_complex*)fftw##s##_malloc(sizeof(fftw##s##_complex) * fh->nf);\
     memset(fh->w_t, 0, sizeof(T)*nt);\
     memset(fh->W_f, 0, sizeof(fftw##s##_complex)*fh->nf);\
-    if (!fh->w_t || !fh->W_f) {\
+    if (!fh->W_f) {\
         GRTRaiseError("Failed to allocate arrays.\n");\
     }\
     return fh;\

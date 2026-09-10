@@ -66,7 +66,7 @@ typedef struct {
 
 /** 初始化区间栈 */
 static void stack_init(KIntervalStack *stack, size_t init_capacity) {
-    stack->data = (KInterval*)malloc(init_capacity * sizeof(KInterval));
+    stack->data = GRT_SAFE_MALLOC(init_capacity * sizeof(KInterval));
     stack->size = 0;
     stack->capacity = init_capacity;
 }
@@ -76,7 +76,7 @@ static void stack_push(KIntervalStack *stack, KInterval item) {
     // 扩容
     if(stack->size >= stack->capacity){
         stack->capacity *= 2;
-        stack->data = (KInterval*)realloc(stack->data, stack->capacity * sizeof(KInterval));
+        stack->data = GRT_SAFE_REALLOC(stack->data, stack->capacity * sizeof(KInterval));
     }
     stack->data[stack->size++] = item;
 }

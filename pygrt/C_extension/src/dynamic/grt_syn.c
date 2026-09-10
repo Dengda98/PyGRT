@@ -421,7 +421,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     }
                 } else {
                     Ctrl->D.active = true;
-                    Ctrl->D.tfparams = (char*)malloc(sizeof(char) * (strlen(optarg) + 1));
+                    Ctrl->D.tfparams = GRT_SAFE_MALLOC(sizeof(char) * (strlen(optarg) + 1));
                     if(optarg[1] != '/' || 1 != sscanf(optarg, "%c", &Ctrl->D.tftype) || 1 != sscanf(optarg + 2, "%s", Ctrl->D.tfparams)){
                         GRTBadOptionError(D, "");
                     }
@@ -588,10 +588,7 @@ static void append_unique_real(real_t **values, size_t *nvalues, real_t value, c
 {
     if(real_value_exists(*values, *nvalues, value, tolerance)) return;
 
-    real_t *new_values = (real_t *)realloc(*values, sizeof(real_t) * (*nvalues + 1));
-    if(new_values == NULL){
-        GRTRaiseError("Failed to allocate Green's-function directory metadata.");
-    }
+    real_t *new_values = GRT_SAFE_REALLOC(*values, sizeof(real_t) * (*nvalues + 1));
     new_values[*nvalues] = value;
     *values = new_values;
     *nvalues += 1;
@@ -940,7 +937,7 @@ static void syn_postprocess_trace(SACTRACE *sac, SACTRACE *tfsac, int int_times,
             fac *= dfac;
         }
 
-        float *convarr = (float *)calloc(nt, sizeof(float));
+        float *convarr = GRT_SAFE_CALLOC(nt, sizeof(float));
         grt_oaconvolve(sac->data, nt, tfsac->data, tfsac->hd.npts, convarr, nt, true);
         fac = 1.0f;
         dfac = expf(wI * dt);
@@ -964,7 +961,7 @@ static void syn_postprocess_trace(SACTRACE *sac, SACTRACE *tfsac, int int_times,
 /** 子模块主函数 */
 int syn_main(int argc, char **argv)
 {
-    GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
+    GRT_MODULE_CTRL *Ctrl = GRT_SAFE_CALLOC(1, sizeof(*Ctrl));
 
     getopt_from_command(Ctrl, argc, argv);
 

@@ -229,8 +229,7 @@ static void parse_axis(const char *text, char option, size_t *n, real_t **values
         GRTRaiseError("Error in \"-%c\". expected x1/x2/dx with x1 <= x2 and dx > 0. Use \"-h\" for help.\n", option);
     }
     *n = (size_t)floor((a2 - a1) / delta) + 1;
-    *values = (real_t *)calloc(*n, sizeof(real_t));
-    if(*values == NULL) GRTRaiseError("failed to allocate receiver axis.");
+    *values = GRT_SAFE_CALLOC(*n, sizeof(real_t));
     for(size_t i = 0; i < *n; ++i) (*values)[i] = a1 + i * delta;
 }
 
@@ -701,7 +700,7 @@ static void save_nc(
 /** Okada 子模块主函数 */
 int okada_main(int argc, char **argv)
 {
-    GRT_MODULE_CTRL *Ctrl = (GRT_MODULE_CTRL *)calloc(1, sizeof(*Ctrl));
+    GRT_MODULE_CTRL *Ctrl = GRT_SAFE_CALLOC(1, sizeof(*Ctrl));
     parse_command(Ctrl, argc, argv);
     OKADA_MEDIUM_PARAMS medium = {
         .vp = Ctrl->I.vp,
@@ -717,9 +716,8 @@ int okada_main(int argc, char **argv)
     const real_t *norths = rcv->norths;
     const real_t *easts = rcv->easts;
     const real_t *depths = rcv->depths;
-    real_t (*syn)[3] = (real_t (*)[3])calloc(npts, sizeof(*syn));
-    real_t (*syn_d)[3][3] = (real_t (*)[3][3])calloc(npts, sizeof(*syn_d));
-    if((syn == NULL) || (syn_d == NULL)) GRTRaiseError("failed to allocate Okada output.");
+    real_t (*syn)[3] = GRT_SAFE_CALLOC(npts, sizeof(*syn));
+    real_t (*syn_d)[3][3] = GRT_SAFE_CALLOC(npts, sizeof(*syn_d));
 
     // 按源类型计算位移场
     if(Ctrl->C.active){

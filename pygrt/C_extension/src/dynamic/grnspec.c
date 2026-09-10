@@ -16,15 +16,15 @@
 
 void grt_grnspec_allocate_u(GRNSPEC *grn)
 {
-    grn->u = (pcplxChnlGrid *) calloc(grn->nr, sizeof(*grn->u));
-    grn->uiz = (grn->calc_upar)? (pcplxChnlGrid *) calloc(grn->nr, sizeof(*grn->uiz)) : NULL;
-    grn->uir = (grn->calc_upar)? (pcplxChnlGrid *) calloc(grn->nr, sizeof(*grn->uir)) : NULL;
+    grn->u = GRT_SAFE_CALLOC(grn->nr, sizeof(*grn->u));
+    grn->uiz = (grn->calc_upar)? GRT_SAFE_CALLOC(grn->nr, sizeof(*grn->uiz)) : NULL;
+    grn->uir = (grn->calc_upar)? GRT_SAFE_CALLOC(grn->nr, sizeof(*grn->uir)) : NULL;
 
     for(size_t ir = 0; ir < grn->nr; ++ir){
         GRT_LOOP_ChnlGrid(im, c){
-            grn->u[ir][im][c] = (cplx_t*) calloc(grn->nf, sizeof(cplx_t));
-            if(grn->uiz)  grn->uiz[ir][im][c] = (cplx_t*)calloc(grn->nf, sizeof(cplx_t));
-            if(grn->uir)  grn->uir[ir][im][c] = (cplx_t*)calloc(grn->nf, sizeof(cplx_t));
+            grn->u[ir][im][c] = GRT_SAFE_CALLOC(grn->nf, sizeof(cplx_t));
+            if(grn->uiz)  grn->uiz[ir][im][c] = GRT_SAFE_CALLOC(grn->nf, sizeof(cplx_t));
+            if(grn->uir)  grn->uir[ir][im][c] = GRT_SAFE_CALLOC(grn->nf, sizeof(cplx_t));
         }
     }
 }

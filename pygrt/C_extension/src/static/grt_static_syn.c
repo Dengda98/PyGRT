@@ -497,7 +497,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     }
 
                     Ctrl->X.nnorth = floor((a2-a1)/delta) + 1;
-                    Ctrl->X.norths = (real_t*)calloc(Ctrl->X.nnorth, sizeof(real_t));
+                    Ctrl->X.norths = GRT_SAFE_CALLOC(Ctrl->X.nnorth, sizeof(real_t));
                     for(size_t i=0; i<Ctrl->X.nnorth; ++i){
                         Ctrl->X.norths[i] = a1 + delta*i;
                     }
@@ -520,7 +520,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     }
 
                     Ctrl->Y.neast = floor((a2-a1)/delta) + 1;
-                    Ctrl->Y.easts = (real_t*)calloc(Ctrl->Y.neast, sizeof(real_t));
+                    Ctrl->Y.easts = GRT_SAFE_CALLOC(Ctrl->Y.neast, sizeof(real_t));
                     for(size_t i=0; i<Ctrl->Y.neast; ++i){
                         Ctrl->Y.easts[i] = a1 + delta*i;
                     }
@@ -939,11 +939,8 @@ static void static_syn_from_gf_PS(
 
     // 单角点合成缓冲：共面时容量 npts，逐点时容量 1
     size_t nbuf = shared_depth ? npts : 1;
-    real_t (*tmp)[GRT_CHANNEL_NUM] =
-        (real_t (*)[GRT_CHANNEL_NUM])calloc(nbuf, sizeof(real_t) * GRT_CHANNEL_NUM);
-    real_t (*tmp_upar)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM] =
-        (real_t (*)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])calloc(
-            nbuf, sizeof(real_t) * GRT_CHANNEL_NUM * GRT_CHANNEL_NUM);
+    real_t (*tmp)[GRT_CHANNEL_NUM] = GRT_SAFE_CALLOC(nbuf, sizeof(real_t) * GRT_CHANNEL_NUM);
+    real_t (*tmp_upar)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM] = GRT_SAFE_CALLOC(nbuf, sizeof(real_t) * GRT_CHANNEL_NUM * GRT_CHANNEL_NUM);
 
     if(shared_depth){
         // 网格：统一深度 depths[0]，一次括号 + 批量震中距合成
@@ -1020,13 +1017,10 @@ static void static_syn_one_finite_fault(
     size_t nsub = loop_nW * loop_nL;
     #pragma omp parallel default(shared) if(nsub > 1)
     {
-        real_t *rcv_norths = (real_t *)calloc(npts, sizeof(real_t));
-        real_t *rcv_easts = (real_t *)calloc(npts, sizeof(real_t));
-        real_t (*local_syn)[GRT_CHANNEL_NUM] =
-            (real_t (*)[GRT_CHANNEL_NUM])calloc(npts, sizeof(real_t) * GRT_CHANNEL_NUM);
-        real_t (*local_syn_upar)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM] =
-            (real_t (*)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])calloc(
-                npts, sizeof(real_t) * GRT_CHANNEL_NUM * GRT_CHANNEL_NUM);
+        real_t *rcv_norths = GRT_SAFE_CALLOC(npts, sizeof(real_t));
+        real_t *rcv_easts = GRT_SAFE_CALLOC(npts, sizeof(real_t));
+        real_t (*local_syn)[GRT_CHANNEL_NUM] = GRT_SAFE_CALLOC(npts, sizeof(real_t) * GRT_CHANNEL_NUM);
+        real_t (*local_syn_upar)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM] = GRT_SAFE_CALLOC(npts, sizeof(real_t) * GRT_CHANNEL_NUM * GRT_CHANNEL_NUM);
 
         #pragma omp for collapse(2) schedule(guided)
         for(size_t iW = 0; iW < loop_nW; ++iW){
@@ -1355,7 +1349,7 @@ static void save_syn_nc(
 }
 /** 子模块主函数 */
 int static_syn_main(int argc, char **argv){
-    GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
+    GRT_MODULE_CTRL *Ctrl = GRT_SAFE_CALLOC(1, sizeof(*Ctrl));
     getopt_from_command(Ctrl, argc, argv);
 
     STGRNLIB *lib = grt_stgrnlib_load_nc(Ctrl->G.s_ingrid);
@@ -1380,9 +1374,8 @@ int static_syn_main(int argc, char **argv){
     const real_t *depths = rcv->depths;
     bool shared_depth = rcv->is_grid;
 
-    real_t (*syn)[GRT_CHANNEL_NUM] = (real_t (*)[GRT_CHANNEL_NUM])calloc(npts, sizeof(real_t) * GRT_CHANNEL_NUM);
-    real_t (*syn_upar)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM] =
-        (real_t (*)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])calloc(npts, sizeof(real_t) * GRT_CHANNEL_NUM * GRT_CHANNEL_NUM);
+    real_t (*syn)[GRT_CHANNEL_NUM] = GRT_SAFE_CALLOC(npts, sizeof(real_t) * GRT_CHANNEL_NUM);
+    real_t (*syn_upar)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM] = GRT_SAFE_CALLOC(npts, sizeof(real_t) * GRT_CHANNEL_NUM * GRT_CHANNEL_NUM);
 
     // depsrc 仅点源需要；有限断层由各子断层几何提供
     real_t depsrc = 0.0;
