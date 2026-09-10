@@ -397,14 +397,8 @@ static void convert_output_coordinates(
     NC_CHECK(nc_inq_varid(ncid, first_name, &first_varid));
     NC_CHECK(nc_inq_varid(ncid, second_name, &second_varid));
 
-    real_t *firsts = (real_t *)calloc(info->first_count, sizeof(real_t));
-    real_t *seconds = (real_t *)calloc(info->second_count, sizeof(real_t));
-    if(((firsts == NULL) && (info->first_count != 0)) ||
-        ((seconds == NULL) && (info->second_count != 0))){
-        GRT_SAFE_FREE_PTR(firsts);
-        GRT_SAFE_FREE_PTR(seconds);
-        GRTRaiseError("Unable to allocate memory for coordinate variables.");
-    }
+    real_t *firsts = GRT_SAFE_CALLOC(info->first_count, sizeof(real_t));
+    real_t *seconds = GRT_SAFE_CALLOC(info->second_count, sizeof(real_t));
     NC_CHECK(NC_FUNC_REAL(nc_get_var)(ncid, first_varid, firsts));
     NC_CHECK(NC_FUNC_REAL(nc_get_var)(ncid, second_varid, seconds));
 
@@ -636,7 +630,7 @@ static void convert_text_file(
 static int coordinate_transform_main(
     int argc, char **argv, GRT_TRANSFORM_DIRECTION direction)
 {
-    GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
+    GRT_MODULE_CTRL *Ctrl = GRT_SAFE_CALLOC(1, sizeof(*Ctrl));
     getopt_from_command(Ctrl, argc, argv, direction);
 
     const char *input_path = Ctrl->G.active ? Ctrl->G.s_path : Ctrl->Q.s_path;

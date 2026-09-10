@@ -61,14 +61,14 @@ GRT_RCV_POINTS *grt_rcv_points_from_grid(
         GRTRaiseError("Negative receiver depth is not supported.");
     }
 
-    GRT_RCV_POINTS *pts = (GRT_RCV_POINTS *)calloc(1, sizeof(GRT_RCV_POINTS));
+    GRT_RCV_POINTS *pts = GRT_SAFE_CALLOC(1, sizeof(GRT_RCV_POINTS));
     pts->is_grid = true;
     pts->nnorth = nnorth;
     pts->neast = neast;
     pts->npts = nnorth * neast;
-    pts->norths = (real_t *)calloc(pts->npts, sizeof(real_t));
-    pts->easts  = (real_t *)calloc(pts->npts, sizeof(real_t));
-    pts->depths = (real_t *)calloc(pts->npts, sizeof(real_t));
+    pts->norths = GRT_SAFE_CALLOC(pts->npts, sizeof(real_t));
+    pts->easts  = GRT_SAFE_CALLOC(pts->npts, sizeof(real_t));
+    pts->depths = GRT_SAFE_CALLOC(pts->npts, sizeof(real_t));
 
     for(size_t inorth = 0; inorth < nnorth; ++inorth){
         for(size_t ieast = 0; ieast < neast; ++ieast){
@@ -130,19 +130,19 @@ GRT_RCV_POINTS *grt_rcv_points_from_file(const char *path)
         GRTRaiseError("No receiver points found in \"%s\".", path);
     }
 
-    GRT_RCV_POINTS *pts = (GRT_RCV_POINTS *)calloc(1, sizeof(GRT_RCV_POINTS));
+    GRT_RCV_POINTS *pts = GRT_SAFE_CALLOC(1, sizeof(GRT_RCV_POINTS));
     pts->is_grid = false;
     pts->nnorth = 0;
     pts->neast = 0;
     pts->npts = npts;
-    pts->norths = (real_t *)calloc(npts, sizeof(real_t));
-    pts->easts  = (real_t *)calloc(npts, sizeof(real_t));
-    pts->depths = (real_t *)calloc(npts, sizeof(real_t));
+    pts->norths = GRT_SAFE_CALLOC(npts, sizeof(real_t));
+    pts->easts  = GRT_SAFE_CALLOC(npts, sizeof(real_t));
+    pts->depths = GRT_SAFE_CALLOC(npts, sizeof(real_t));
     pts->has_geometry = ncolumns == 6;
     if(pts->has_geometry){
-        pts->strikes = (real_t *)calloc(npts, sizeof(real_t));
-        pts->dips    = (real_t *)calloc(npts, sizeof(real_t));
-        pts->rakes   = (real_t *)calloc(npts, sizeof(real_t));
+        pts->strikes = GRT_SAFE_CALLOC(npts, sizeof(real_t));
+        pts->dips    = GRT_SAFE_CALLOC(npts, sizeof(real_t));
+        pts->rakes   = GRT_SAFE_CALLOC(npts, sizeof(real_t));
     }
 
     rewind(fp);
@@ -219,16 +219,16 @@ GRT_RCV_POINTS *grt_rcv_points_from_faults(
         GRTRaiseError("finite receiver dL and dW must both be positive or both be omitted.");
     }
 
-    GRT_RCV_POINTS *pts = (GRT_RCV_POINTS *)calloc(1, sizeof(*pts));
+    GRT_RCV_POINTS *pts = GRT_SAFE_CALLOC(1, sizeof(*pts));
     pts->is_fault = true;
     pts->nfault = nfault;
-    pts->nsubs = (size_t *)calloc(nfault, sizeof(*pts->nsubs));
-    pts->offsets = (size_t *)calloc(nfault, sizeof(*pts->offsets));
-    pts->fstrikes = (real_t *)calloc(nfault, sizeof(*pts->fstrikes));
-    pts->fdips = (real_t *)calloc(nfault, sizeof(*pts->fdips));
-    pts->frakes = (real_t *)calloc(nfault, sizeof(*pts->frakes));
-    pts->stksizes = (size_t *)calloc(nfault, sizeof(*pts->stksizes));
-    pts->dipsizes = (size_t *)calloc(nfault, sizeof(*pts->dipsizes));
+    pts->nsubs = GRT_SAFE_CALLOC(nfault, sizeof(*pts->nsubs));
+    pts->offsets = GRT_SAFE_CALLOC(nfault, sizeof(*pts->offsets));
+    pts->fstrikes = GRT_SAFE_CALLOC(nfault, sizeof(*pts->fstrikes));
+    pts->fdips = GRT_SAFE_CALLOC(nfault, sizeof(*pts->fdips));
+    pts->frakes = GRT_SAFE_CALLOC(nfault, sizeof(*pts->frakes));
+    pts->stksizes = GRT_SAFE_CALLOC(nfault, sizeof(*pts->stksizes));
+    pts->dipsizes = GRT_SAFE_CALLOC(nfault, sizeof(*pts->dipsizes));
 
     // 遍历每条有限断层，统一调用公共几何函数并追加子断层中心点
     for(size_t ifault = 0; ifault < nfault; ++ifault){
@@ -246,9 +246,9 @@ GRT_RCV_POINTS *grt_rcv_points_from_faults(
         pts->frakes[ifault] = fault->rake;
         pts->stksizes[ifault] = nL;
         pts->dipsizes[ifault] = nW;
-        pts->norths = (real_t *)realloc(pts->norths, new_npts * sizeof(*pts->norths));
-        pts->easts = (real_t *)realloc(pts->easts, new_npts * sizeof(*pts->easts));
-        pts->depths = (real_t *)realloc(pts->depths, new_npts * sizeof(*pts->depths));
+        pts->norths = GRT_SAFE_REALLOC(pts->norths, new_npts * sizeof(*pts->norths));
+        pts->easts = GRT_SAFE_REALLOC(pts->easts, new_npts * sizeof(*pts->easts));
+        pts->depths = GRT_SAFE_REALLOC(pts->depths, new_npts * sizeof(*pts->depths));
         pts->npts = new_npts;
 
         // 将当前有限断层的子断层中心按 point 顺序追加
@@ -277,7 +277,7 @@ GRT_RCV_NC_LAYOUT grt_rcv_nc_get_layout(int ncid)
     }
 
     // 所有静态输出文件都显式保存 layout 属性，直接按属性确定布局
-    char *layout = (char *)calloc(len + 1, 1);
+    char *layout = GRT_SAFE_CALLOC(len + 1, 1);
     NC_CHECK(nc_get_att_text(ncid, NC_GLOBAL, "layout", layout));
 
     GRT_RCV_NC_LAYOUT result;
@@ -310,11 +310,11 @@ void grt_rcv_nc_info_load(int ncid, GRT_RCV_NC_INFO *info)
         NC_CHECK(nc_inq_dimid(ncid, "east", &info->dimids[1]));
         NC_CHECK(nc_inq_dimlen(ncid, info->dimids[1], &neast));
         info->npts = nnorth * neast;
-        info->norths = (real_t *)calloc(info->npts, sizeof(real_t));
-        info->easts = (real_t *)calloc(info->npts, sizeof(real_t));
+        info->norths = GRT_SAFE_CALLOC(info->npts, sizeof(real_t));
+        info->easts = GRT_SAFE_CALLOC(info->npts, sizeof(real_t));
 
-        real_t *north_axis = (real_t *)calloc(nnorth, sizeof(real_t));
-        real_t *east_axis = (real_t *)calloc(neast, sizeof(real_t));
+        real_t *north_axis = GRT_SAFE_CALLOC(nnorth, sizeof(real_t));
+        real_t *east_axis = GRT_SAFE_CALLOC(neast, sizeof(real_t));
         // 网格文件按两个坐标轴保存，读取后展开为 point 顺序
         NC_CHECK(nc_inq_varid(ncid, "north", &north_varid));
         NC_CHECK(NC_FUNC_REAL(nc_get_var)(ncid, north_varid, north_axis));
@@ -337,8 +337,8 @@ void grt_rcv_nc_info_load(int ncid, GRT_RCV_NC_INFO *info)
         // 一维接收点文件的坐标已经展平，可以直接读取到输出数组
         NC_CHECK(nc_inq_dimid(ncid, "point", &info->dimids[0]));
         NC_CHECK(nc_inq_dimlen(ncid, info->dimids[0], &info->npts));
-        info->norths = (real_t *)calloc(info->npts, sizeof(real_t));
-        info->easts = (real_t *)calloc(info->npts, sizeof(real_t));
+        info->norths = GRT_SAFE_CALLOC(info->npts, sizeof(real_t));
+        info->easts = GRT_SAFE_CALLOC(info->npts, sizeof(real_t));
         NC_CHECK(nc_inq_varid(ncid, "north", &north_varid));
         NC_CHECK(NC_FUNC_REAL(nc_get_var)(ncid, north_varid, info->norths));
         NC_CHECK(nc_inq_varid(ncid, "east", &east_varid));

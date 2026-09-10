@@ -233,8 +233,8 @@ void grt_get_mod_potential_Up_Down_Rayl(
     memcpy(&mod_potRaylLove_Up[iref][0], potRaylLoveUp, sizeof(cplx_t)*GRT_RAYL_DIM);
 
     // 计算 RD_RL, RU_FR 矩阵
-    RT_MATRIX *Mall_FR = (RT_MATRIX *)calloc(nlay, sizeof(RT_MATRIX));
-    RT_MATRIX *Mall_RL = (RT_MATRIX *)calloc(nlay, sizeof(RT_MATRIX));
+    RT_MATRIX *Mall_FR = GRT_SAFE_CALLOC(nlay, sizeof(RT_MATRIX));
+    RT_MATRIX *Mall_RL = GRT_SAFE_CALLOC(nlay, sizeof(RT_MATRIX));
     grt_GRT_matrix_allLayer_Rayl(mstat, creal(mstat->k), Mall_RL, Mall_FR);
 
     // 向下传播
@@ -270,8 +270,8 @@ void grt_get_mod_potential_Up_Down_Love(
     memcpy(&mod_potRaylLove_Down[iref][0], potRaylLove, sizeof(cplx_t)*GRT_LOVE_DIM);
 
     // 计算 RDL_RL, RUL_FR 矩阵
-    RT_MATRIX *Mall_FR = (RT_MATRIX *)calloc(nlay, sizeof(RT_MATRIX));
-    RT_MATRIX *Mall_RL = (RT_MATRIX *)calloc(nlay, sizeof(RT_MATRIX));
+    RT_MATRIX *Mall_FR = GRT_SAFE_CALLOC(nlay, sizeof(RT_MATRIX));
+    RT_MATRIX *Mall_RL = GRT_SAFE_CALLOC(nlay, sizeof(RT_MATRIX));
     grt_GRT_matrix_allLayer_Love(mstat, creal(mstat->k), Mall_RL, Mall_FR);
 
     // 向下传播

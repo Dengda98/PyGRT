@@ -186,7 +186,7 @@ FINITE_FAULT *grt_finite_fault_load_coulomb(const char *path, size_t *nfault)
             GRTRaiseError("invalid Coulomb Kode at line %zu of %s.", line_number, path);
         }
 
-        faults = (FINITE_FAULT *)realloc(faults, sizeof(FINITE_FAULT) * (n + 1));
+        faults = GRT_SAFE_REALLOC(faults, sizeof(FINITE_FAULT) * (n + 1));
         FINITE_FAULT *f = faults + n;
         memset(f, 0, sizeof(*f));
 

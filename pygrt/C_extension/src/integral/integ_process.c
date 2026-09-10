@@ -29,7 +29,7 @@ void grt_KPROC_init_fstats(
 
     // 为当前频率创建波数积分记录文件
     // PTAM为每个震中距都创建波数积分记录文件
-    Kproc->ptam_fstatsnr = (FILE *(*)[2])calloc(nr, sizeof(*Kproc->ptam_fstatsnr));
+    Kproc->ptam_fstatsnr = GRT_SAFE_CALLOC(nr, sizeof(*Kproc->ptam_fstatsnr));
     char *fname = NULL;
     GRT_SAFE_ASPRINTF(&fname, "%s/K%s", statsstr, suffix);
     Kproc->fstats = fopen(fname, "wb");

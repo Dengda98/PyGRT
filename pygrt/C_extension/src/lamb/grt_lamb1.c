@@ -123,7 +123,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     }
 
                     Ctrl->T.nt = floor((a2-a1)/delta) + 1;
-                    Ctrl->T.ts = (real_t*)calloc(Ctrl->T.nt, sizeof(real_t));
+                    Ctrl->T.ts = GRT_SAFE_CALLOC(Ctrl->T.nt, sizeof(real_t));
                     for(int i=0; i<Ctrl->T.nt; ++i){
                         Ctrl->T.ts[i] = a1 + delta*i;
                     }
@@ -156,7 +156,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 
 /** 模块主函数 */
 int lamb1_main(int argc, char **argv){
-    GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
+    GRT_MODULE_CTRL *Ctrl = GRT_SAFE_CALLOC(1, sizeof(*Ctrl));
 
     // 传入参数 
     getopt_from_command(Ctrl, argc, argv);

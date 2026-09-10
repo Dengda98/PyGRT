@@ -33,9 +33,9 @@ static void require_strictly_ascending(const real_t *a, size_t n, const char *na
 static void fill_rs_meta(STGRNLIB *lib)
 {
     lib->nr = lib->nnorth * lib->neast;
-    lib->rs = (real_t *)malloc(lib->nr * sizeof(real_t));
-    lib->sort_rs = (real_t *)malloc(lib->nr * sizeof(real_t));
-    lib->sort_rs_idx = (size_t *)malloc(lib->nr * sizeof(size_t));
+    lib->rs = GRT_SAFE_MALLOC(lib->nr * sizeof(real_t));
+    lib->sort_rs = GRT_SAFE_MALLOC(lib->nr * sizeof(real_t));
+    lib->sort_rs_idx = GRT_SAFE_MALLOC(lib->nr * sizeof(size_t));
 
     for(size_t inorth = 0; inorth < lib->nnorth; ++inorth){
         for(size_t ieast = 0; ieast < lib->neast; ++ieast){
@@ -73,21 +73,21 @@ static void fill_rs_meta(STGRNLIB *lib)
 static void allocate_u(STGRNLIB *lib)
 {
     size_t nr = lib->nr;
-    lib->u = (realChnlGrid ***)calloc(lib->ndepsrc, sizeof(*lib->u));
-    lib->uiz = lib->calc_upar ? (realChnlGrid ***)calloc(lib->ndepsrc, sizeof(*lib->uiz)) : NULL;
-    lib->uir = lib->calc_upar ? (realChnlGrid ***)calloc(lib->ndepsrc, sizeof(*lib->uir)) : NULL;
+    lib->u = GRT_SAFE_CALLOC(lib->ndepsrc, sizeof(*lib->u));
+    lib->uiz = lib->calc_upar ? GRT_SAFE_CALLOC(lib->ndepsrc, sizeof(*lib->uiz)) : NULL;
+    lib->uir = lib->calc_upar ? GRT_SAFE_CALLOC(lib->ndepsrc, sizeof(*lib->uir)) : NULL;
 
     for(size_t is = 0; is < lib->ndepsrc; ++is){
-        lib->u[is] = (realChnlGrid **)calloc(lib->ndeprcv, sizeof(*lib->u[is]));
+        lib->u[is] = GRT_SAFE_CALLOC(lib->ndeprcv, sizeof(*lib->u[is]));
         if(lib->calc_upar){
-            lib->uiz[is] = (realChnlGrid **)calloc(lib->ndeprcv, sizeof(*lib->uiz[is]));
-            lib->uir[is] = (realChnlGrid **)calloc(lib->ndeprcv, sizeof(*lib->uir[is]));
+            lib->uiz[is] = GRT_SAFE_CALLOC(lib->ndeprcv, sizeof(*lib->uiz[is]));
+            lib->uir[is] = GRT_SAFE_CALLOC(lib->ndeprcv, sizeof(*lib->uir[is]));
         }
         for(size_t ir = 0; ir < lib->ndeprcv; ++ir){
-            lib->u[is][ir] = (realChnlGrid *)calloc(nr, sizeof(realChnlGrid));
+            lib->u[is][ir] = GRT_SAFE_CALLOC(nr, sizeof(realChnlGrid));
             if(lib->calc_upar){
-                lib->uiz[is][ir] = (realChnlGrid *)calloc(nr, sizeof(realChnlGrid));
-                lib->uir[is][ir] = (realChnlGrid *)calloc(nr, sizeof(realChnlGrid));
+                lib->uiz[is][ir] = GRT_SAFE_CALLOC(nr, sizeof(realChnlGrid));
+                lib->uir[is][ir] = GRT_SAFE_CALLOC(nr, sizeof(realChnlGrid));
             }
         }
     }
@@ -134,17 +134,17 @@ STGRNLIB *grt_stgrnlib_alloc(
     require_strictly_ascending(norths, nnorth, "norths");
     require_strictly_ascending(easts, neast, "easts");
 
-    STGRNLIB *lib = (STGRNLIB *)calloc(1, sizeof(*lib));
+    STGRNLIB *lib = GRT_SAFE_CALLOC(1, sizeof(*lib));
     lib->ndepsrc = ndepsrc;
     lib->ndeprcv = ndeprcv;
     lib->nnorth = nnorth;
     lib->neast = neast;
     lib->calc_upar = calc_upar;
 
-    lib->depsrcs = (real_t *)malloc(ndepsrc * sizeof(real_t));
-    lib->deprcvs = (real_t *)malloc(ndeprcv * sizeof(real_t));
-    lib->norths = (real_t *)malloc(nnorth * sizeof(real_t));
-    lib->easts = (real_t *)malloc(neast * sizeof(real_t));
+    lib->depsrcs = GRT_SAFE_MALLOC(ndepsrc * sizeof(real_t));
+    lib->deprcvs = GRT_SAFE_MALLOC(ndeprcv * sizeof(real_t));
+    lib->norths = GRT_SAFE_MALLOC(nnorth * sizeof(real_t));
+    lib->easts = GRT_SAFE_MALLOC(neast * sizeof(real_t));
     memcpy(lib->depsrcs, depsrcs, ndepsrc * sizeof(real_t));
     memcpy(lib->deprcvs, deprcvs, ndeprcv * sizeof(real_t));
     memcpy(lib->norths, norths, nnorth * sizeof(real_t));
@@ -153,12 +153,12 @@ STGRNLIB *grt_stgrnlib_alloc(
     fill_rs_meta(lib);
 
     // 介质参数由调用方随后填入
-    lib->src_va = (real_t *)calloc(ndepsrc, sizeof(real_t));
-    lib->src_vb = (real_t *)calloc(ndepsrc, sizeof(real_t));
-    lib->src_rho = (real_t *)calloc(ndepsrc, sizeof(real_t));
-    lib->rcv_va = (real_t *)calloc(ndeprcv, sizeof(real_t));
-    lib->rcv_vb = (real_t *)calloc(ndeprcv, sizeof(real_t));
-    lib->rcv_rho = (real_t *)calloc(ndeprcv, sizeof(real_t));
+    lib->src_va = GRT_SAFE_CALLOC(ndepsrc, sizeof(real_t));
+    lib->src_vb = GRT_SAFE_CALLOC(ndepsrc, sizeof(real_t));
+    lib->src_rho = GRT_SAFE_CALLOC(ndepsrc, sizeof(real_t));
+    lib->rcv_va = GRT_SAFE_CALLOC(ndeprcv, sizeof(real_t));
+    lib->rcv_vb = GRT_SAFE_CALLOC(ndeprcv, sizeof(real_t));
+    lib->rcv_rho = GRT_SAFE_CALLOC(ndeprcv, sizeof(real_t));
     lib->nlayer = 0;
     lib->modarr = NULL;
 
@@ -197,11 +197,7 @@ void grt_stgrnlib_set_modarr(
         GRTRaiseError("nlayer and modarr must be non-empty.");
     }
     GRT_SAFE_FREE_PTR(lib->modarr);
-    lib->modarr = (real_t (*)[GRT_MODARR_NCOL])malloc(
-        sizeof(real_t) * GRT_MODARR_NCOL * nlayer);
-    if(lib->modarr == NULL){
-        GRTRaiseError("Failed to allocate modarr.");
-    }
+    lib->modarr = GRT_SAFE_MALLOC(sizeof(real_t) * GRT_MODARR_NCOL * nlayer);
     memcpy(lib->modarr, modarr, sizeof(real_t) * GRT_MODARR_NCOL * nlayer);
     lib->nlayer = nlayer;
 }
@@ -255,7 +251,7 @@ real_t grt_stgrnlib_default_subfault_size(const STGRNLIB *lib)
 static void read_nc_channels_slice(STGRNLIB *lib, size_t is, size_t ir, int ncid)
 {
     size_t nr = lib->nr;
-    real_t *buf = (real_t *)calloc(nr, sizeof(real_t));
+    real_t *buf = GRT_SAFE_CALLOC(nr, sizeof(real_t));
     size_t start[4] = {is, ir, 0, 0};
     size_t count[4] = {1, 1, lib->nnorth, lib->neast};
 
@@ -323,10 +319,10 @@ STGRNLIB *grt_stgrnlib_load_nc(const char *path)
     NC_CHECK(nc_get_att_int(ncid, NC_GLOBAL, "calc_upar", &int_calc_upar));
 
     // 坐标轴读入后经 grt_stgrnlib_alloc 建壳
-    real_t *depsrcs = (real_t *)calloc(ndepsrc, sizeof(real_t));
-    real_t *deprcvs = (real_t *)calloc(ndeprcv, sizeof(real_t));
-    real_t *norths = (real_t *)calloc(nnorth, sizeof(real_t));
-    real_t *easts = (real_t *)calloc(neast, sizeof(real_t));
+    real_t *depsrcs = GRT_SAFE_CALLOC(ndepsrc, sizeof(real_t));
+    real_t *deprcvs = GRT_SAFE_CALLOC(ndeprcv, sizeof(real_t));
+    real_t *norths = GRT_SAFE_CALLOC(nnorth, sizeof(real_t));
+    real_t *easts = GRT_SAFE_CALLOC(neast, sizeof(real_t));
 
     int varid;
     NC_CHECK(nc_inq_varid(ncid, "depsrc", &varid));
@@ -382,8 +378,7 @@ STGRNLIB *grt_stgrnlib_load_nc(const char *path)
                 path, nlayer, nparam, GRT_MODARR_NCOL);
         }
         NC_CHECK(nc_inq_varid(ncid, "model", &varid));
-        real_t (*modarr)[GRT_MODARR_NCOL] = (real_t (*)[GRT_MODARR_NCOL])malloc(
-            sizeof(real_t) * GRT_MODARR_NCOL * nlayer);
+        real_t (*modarr)[GRT_MODARR_NCOL] = GRT_SAFE_MALLOC(sizeof(real_t) * GRT_MODARR_NCOL * nlayer);
         NC_CHECK(NC_FUNC_REAL(nc_get_var)(ncid, varid, (real_t *)modarr));
         grt_stgrnlib_set_modarr(lib, nlayer, (const real_t (*)[GRT_MODARR_NCOL])modarr);
         GRT_SAFE_FREE_PTR(modarr);
@@ -489,7 +484,7 @@ void grt_stgrnlib_save_nc(const STGRNLIB *lib, const char *path)
     NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, model_varid, (const real_t *)lib->modarr));
 
     size_t nr = lib->nr;
-    real_t *tmpdata = (real_t *)calloc(nr, sizeof(real_t));
+    real_t *tmpdata = GRT_SAFE_CALLOC(nr, sizeof(real_t));
     for(size_t is = 0; is < lib->ndepsrc; ++is){
         for(size_t ir = 0; ir < lib->ndeprcv; ++ir){
             size_t start[4] = {is, ir, 0, 0};

@@ -116,8 +116,8 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             // 震源和场点深度， -Ddepsrc/deprcv
             case 'D':
                 Ctrl->D.active = true;
-                Ctrl->D.s_depsrc = (char*)malloc(sizeof(char)*(strlen(optarg)+1));
-                Ctrl->D.s_deprcv = (char*)malloc(sizeof(char)*(strlen(optarg)+1));
+                Ctrl->D.s_depsrc = GRT_SAFE_MALLOC(sizeof(char)*(strlen(optarg)+1));
+                Ctrl->D.s_deprcv = GRT_SAFE_MALLOC(sizeof(char)*(strlen(optarg)+1));
                 if(2 != sscanf(optarg, "%[^/]/%s", Ctrl->D.s_depsrc, Ctrl->D.s_deprcv)){
                     GRTBadOptionError(D, "");
                 };
@@ -172,7 +172,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                         } while (place < 8);  // 最多小数点后 8 位
 
                         Ctrl->R.nr = floor((a2-a1)/delta) + 1;
-                        Ctrl->R.s_rs = (char **)calloc(Ctrl->R.nr, sizeof(char*) * Ctrl->R.nr);
+                        Ctrl->R.s_rs = GRT_SAFE_CALLOC(Ctrl->R.nr, sizeof(char*) * Ctrl->R.nr);
                         for(size_t ir = 0; ir < Ctrl->R.nr; ++ir){
                             GRT_SAFE_ASPRINTF(&Ctrl->R.s_rs[ir], "%.*f", place, a1 + delta*ir);
                         }
@@ -185,7 +185,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     }
                         
                     // 转为浮点数
-                    Ctrl->R.rs = (real_t*)realloc(Ctrl->R.rs, sizeof(real_t)*(Ctrl->R.nr));
+                    Ctrl->R.rs = GRT_SAFE_REALLOC(Ctrl->R.rs, sizeof(real_t)*(Ctrl->R.nr));
                     for(size_t i=0; i<Ctrl->R.nr; ++i){
                         Ctrl->R.rs[i] = atof(Ctrl->R.s_rs[i]);
                         if(Ctrl->R.rs[i] < 0.0){
@@ -216,7 +216,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 
 /** 子模块主函数 */
 int travt_main(int argc, char **argv){
-    GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
+    GRT_MODULE_CTRL *Ctrl = GRT_SAFE_CALLOC(1, sizeof(*Ctrl));
 
     getopt_from_command(Ctrl, argc, argv);
 

@@ -290,7 +290,7 @@ static void make_coefficients(const LAMB3_VARS *V, const bool need_P, const bool
                               LAMB3_PF_COEFFICIENTS *coefficients) {
     /* 原始和部分分式系数体积较大，统一放在堆上，并按到时跳过未用到的项 */
     if (need_P || need_S) {
-        LAMB3_COEFF_SET *reflection_raw = calloc(1, sizeof(*reflection_raw));
+        LAMB3_COEFF_SET *reflection_raw = GRT_SAFE_CALLOC(1, sizeof(*reflection_raw));
         if (need_P) {
             make_lamb3_P_coefficients(V, reflection_raw);
             make_reflection_pf_set(reflection_raw, V->rayleigh, V->kp2, &coefficients->P);
@@ -303,7 +303,7 @@ static void make_coefficients(const LAMB3_VARS *V, const bool need_P, const bool
     }
 
     if (need_PS || need_SP) {
-        LAMB3_CONVERSION_COEFF_SET *conversion_raw = calloc(1, sizeof(*conversion_raw));
+        LAMB3_CONVERSION_COEFF_SET *conversion_raw = GRT_SAFE_CALLOC(1, sizeof(*conversion_raw));
         /* 接收点竖向导数对应交换深度后的 PS/SP 项 */
         LAMB3_VARS reciprocal = *V;
         reciprocal.depsrc = V->deprcv;
@@ -1574,15 +1574,15 @@ void grt_solve_lamb3(
     const bool need_PS = tEnd >= V.tps;
     const bool need_SP = tEnd >= V.tsp;
     /* 大型部分分式系数工作区放在堆上，避免占用线程栈 */
-    LAMB3_PF_COEFFICIENTS *coefficients = calloc(1, sizeof(*coefficients));
+    LAMB3_PF_COEFFICIENTS *coefficients = GRT_SAFE_CALLOC(1, sizeof(*coefficients));
     make_coefficients(&V, need_P, need_S, need_PS, need_SP, coefficients);
 
     bool isprint = G == NULL && dG_source == NULL && dG_receiver == NULL;
-    real_t(*F)[3][3] = G != NULL ? G : calloc((size_t)nt, sizeof(*F));
-    real_t(*Fk_source)[3][3][3] = calloc((size_t)nt, sizeof(*Fk_source));
-    real_t(*Fk_receiver)[3][3][3] = calloc((size_t)nt, sizeof(*Fk_receiver));
-    real_t(*dG_source_tmp)[3][3][3] = dG_source != NULL ? dG_source : calloc((size_t)nt, sizeof(*dG_source_tmp));
-    real_t(*dG_receiver_tmp)[3][3][3] = dG_receiver != NULL ? dG_receiver : calloc((size_t)nt, sizeof(*dG_receiver_tmp));
+    real_t(*F)[3][3] = G != NULL ? G : GRT_SAFE_CALLOC((size_t)nt, sizeof(*F));
+    real_t(*Fk_source)[3][3][3] = GRT_SAFE_CALLOC((size_t)nt, sizeof(*Fk_source));
+    real_t(*Fk_receiver)[3][3][3] = GRT_SAFE_CALLOC((size_t)nt, sizeof(*Fk_receiver));
+    real_t(*dG_source_tmp)[3][3][3] = dG_source != NULL ? dG_source : GRT_SAFE_CALLOC((size_t)nt, sizeof(*dG_source_tmp));
+    real_t(*dG_receiver_tmp)[3][3][3] = dG_receiver != NULL ? dG_receiver : GRT_SAFE_CALLOC((size_t)nt, sizeof(*dG_receiver_tmp));
 
     for (int i = 0; i < nt; ++i) {
         LAMB3_F value;

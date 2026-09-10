@@ -148,7 +148,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                         GRTBadOptionError(T, "t1(%f) > t2(%f).", t1, t2);
                     }
                     Ctrl->T.nt = (int)floor((t2 - t1) / dt) + 1;
-                    Ctrl->T.ts = calloc((size_t)Ctrl->T.nt, sizeof(*Ctrl->T.ts));
+                    Ctrl->T.ts = GRT_SAFE_CALLOC((size_t)Ctrl->T.nt, sizeof(*Ctrl->T.ts));
                     for(int i = 0; i < Ctrl->T.nt; ++i){
                         Ctrl->T.ts[i] = t1 + dt * i;
                     }
@@ -216,15 +216,9 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
 static void run_lamb3_with_derivative_outputs(const GRT_MODULE_CTRL *Ctrl)
 {
     const size_t nt = (size_t)Ctrl->T.nt;
-    real_t (*G)[3][3] = calloc(nt, sizeof(*G));
-    real_t (*dG_source)[3][3][3] = calloc(nt, sizeof(*dG_source));
-    real_t (*dG_receiver)[3][3][3] = calloc(nt, sizeof(*dG_receiver));
-    if (G == NULL || dG_source == NULL || dG_receiver == NULL) {
-        GRT_SAFE_FREE_PTR(G);
-        GRT_SAFE_FREE_PTR(dG_source);
-        GRT_SAFE_FREE_PTR(dG_receiver);
-        GRTRaiseError("Cannot allocate lamb3 output arrays.\n");
-    }
+    real_t (*G)[3][3] = GRT_SAFE_CALLOC(nt, sizeof(*G));
+    real_t (*dG_source)[3][3][3] = GRT_SAFE_CALLOC(nt, sizeof(*dG_source));
+    real_t (*dG_receiver)[3][3][3] = GRT_SAFE_CALLOC(nt, sizeof(*dG_receiver));
 
     FILE *source_file = NULL;
     FILE *receiver_file = NULL;
@@ -255,7 +249,7 @@ static void run_lamb3_with_derivative_outputs(const GRT_MODULE_CTRL *Ctrl)
 
 int lamb3_main(int argc, char **argv)
 {
-    GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
+    GRT_MODULE_CTRL *Ctrl = GRT_SAFE_CALLOC(1, sizeof(*Ctrl));
     getopt_from_command(Ctrl, argc, argv);
     if (Ctrl->S.active) {
         run_lamb3_with_derivative_outputs(Ctrl);

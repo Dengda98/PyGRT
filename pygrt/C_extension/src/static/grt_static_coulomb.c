@@ -202,7 +202,7 @@ static void write_coulomb_variable(
  */
 int static_coulomb_main(int argc, char **argv)
 {
-    GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
+    GRT_MODULE_CTRL *Ctrl = GRT_SAFE_CALLOC(1, sizeof(*Ctrl));
     getopt_from_command(Ctrl, argc, argv);
 
     GRTCheckFileExist(Ctrl->G.s_ingrid);
@@ -218,9 +218,9 @@ int static_coulomb_main(int argc, char **argv)
 
     int sigma_n_varid = get_projection_var(ncid, "sigma_n", ndims, rcv_info.dimids);
     int tau_s_varid = get_projection_var(ncid, "tau_s", ndims, rcv_info.dimids);
-    real_t *sigma_n = (real_t *)calloc(npts, sizeof(real_t));
-    real_t *tau_s = (real_t *)calloc(npts, sizeof(real_t));
-    real_t *coulomb = (real_t *)calloc(npts, sizeof(real_t));
+    real_t *sigma_n = GRT_SAFE_CALLOC(npts, sizeof(real_t));
+    real_t *tau_s = GRT_SAFE_CALLOC(npts, sizeof(real_t));
+    real_t *coulomb = GRT_SAFE_CALLOC(npts, sizeof(real_t));
 
     // 读取两个投影应力分量，并按点应用 Coulomb 应力公式
     NC_CHECK(NC_FUNC_REAL(nc_get_var)(ncid, sigma_n_varid, sigma_n));

@@ -246,7 +246,7 @@ void grt_PTA_method(
 
     // 使用宏函数，方便定义
     #define __CALLOC_ARRAY(VAR, TYP, __ARR) \
-        TYP (*VAR)__ARR = (TYP (*)__ARR)calloc(nr, sizeof(*VAR));
+        TYP (*VAR)__ARR = GRT_SAFE_CALLOC(nr, sizeof(*VAR));
 
     // 用于接收F(ki,w)Jm(ki*r)ki
     // 存储采样的值，维度3表示通过连续3个点来判断波峰或波谷
@@ -282,8 +282,8 @@ void grt_PTA_method(
     #undef __ARR
     #undef __CALLOC_ARRAY
 
-    size_t *waits_max = (size_t *)calloc(nr, sizeof(*waits_max));
-    bool *iendkrs = (bool *)calloc(nr, sizeof(*iendkrs));
+    size_t *waits_max = GRT_SAFE_CALLOC(nr, sizeof(*waits_max));
+    bool *iendkrs = GRT_SAFE_CALLOC(nr, sizeof(*iendkrs));
     for(size_t ir = 0; ir < nr; ++ir){
         if(GRT_IS_ZERO(rs[ir]))  continue;
         waits_max[ir] = (size_t)ceil(PI/(rs[ir]*dk)) + 5;  // + 5 以防万一

@@ -66,17 +66,17 @@ void grt_filter_eigenfn_info(
 {
     // 先申请全部内存，然后再缩
     eigfnmet->nf = 0;
-    eigfnmet->freqs = (real_t *)calloc(eigmet->nf, sizeof(real_t));
+    eigfnmet->freqs = GRT_SAFE_CALLOC(eigmet->nf, sizeof(real_t));
     eigfnmet->nmode = 0;
-    eigfnmet->modes = (size_t *)calloc(eigmet->nmode, sizeof(size_t));
-    eigfnmet->eigv = (EIGENV *)calloc(eigmet->nf, sizeof(EIGENV));
+    eigfnmet->modes = GRT_SAFE_CALLOC(eigmet->nmode, sizeof(size_t));
+    eigfnmet->eigv = GRT_SAFE_CALLOC(eigmet->nf, sizeof(EIGENV));
     eigfnmet->wtype = eigmet->wtype;
 
     const real_t *in_freqs = eigmet->freqs;
 
     // 筛选阶次
     // 保存特定阶次在原数组中的索引位置
-    size_t *idxs_modes = (size_t *)calloc(eigmet->nmode, sizeof(size_t));
+    size_t *idxs_modes = GRT_SAFE_CALLOC(eigmet->nmode, sizeof(size_t));
     for(size_t i = 0; i < eigmet->nmode; ++i){
         bool match = false;
         if(modes == NULL){
@@ -93,8 +93,8 @@ void grt_filter_eigenfn_info(
         }
 
     }
-    eigfnmet->modes = (size_t *)realloc(eigfnmet->modes, sizeof(size_t)*eigfnmet->nmode);
-    idxs_modes = (size_t *)realloc(idxs_modes, sizeof(size_t)*eigfnmet->nmode);
+    eigfnmet->modes = GRT_SAFE_REALLOC(eigfnmet->modes, sizeof(size_t)*eigfnmet->nmode);
+    idxs_modes = GRT_SAFE_REALLOC(idxs_modes, sizeof(size_t)*eigfnmet->nmode);
 
     // 筛选频率
     for(size_t iw = 0; iw < eigmet->nf; ++iw){
@@ -117,9 +117,9 @@ void grt_filter_eigenfn_info(
 
         // 写入频散
         EIGENV *eigvtmp = &eigfnmet->eigv[eigfnmet->nf];
-        eigvtmp->c_roots = (real_t *)calloc(eigmet->nmode, sizeof(real_t));
-        eigvtmp->u_roots  = (real_t *)calloc(eigmet->nmode, sizeof(real_t));
-        eigvtmp->c_roots_iref = (size_t *)calloc(eigmet->nmode, sizeof(size_t));
+        eigvtmp->c_roots = GRT_SAFE_CALLOC(eigmet->nmode, sizeof(real_t));
+        eigvtmp->u_roots  = GRT_SAFE_CALLOC(eigmet->nmode, sizeof(real_t));
+        eigvtmp->c_roots_iref = GRT_SAFE_CALLOC(eigmet->nmode, sizeof(size_t));
         eigvtmp->n = 0;
 
         EIGENV *in_eigv = &eigmet->eigv[iw];
@@ -135,13 +135,13 @@ void grt_filter_eigenfn_info(
 
             eigvtmp->n++;
         }
-        eigvtmp->c_roots = (real_t *)realloc(eigvtmp->c_roots, sizeof(real_t)*eigvtmp->n);
-        eigvtmp->u_roots  = (real_t *)realloc(eigvtmp->u_roots, sizeof(real_t)*eigvtmp->n);
-        eigvtmp->c_roots_iref = (size_t *)realloc(eigvtmp->c_roots_iref, sizeof(size_t)*eigvtmp->n);
+        eigvtmp->c_roots = GRT_SAFE_REALLOC(eigvtmp->c_roots, sizeof(real_t)*eigvtmp->n);
+        eigvtmp->u_roots  = GRT_SAFE_REALLOC(eigvtmp->u_roots, sizeof(real_t)*eigvtmp->n);
+        eigvtmp->c_roots_iref = GRT_SAFE_REALLOC(eigvtmp->c_roots_iref, sizeof(size_t)*eigvtmp->n);
 
         eigfnmet->nf++;
     }
-    eigfnmet->freqs = (real_t *)realloc(eigfnmet->freqs, sizeof(real_t)*eigfnmet->nf);
+    eigfnmet->freqs = GRT_SAFE_REALLOC(eigfnmet->freqs, sizeof(real_t)*eigfnmet->nf);
 
     GRT_SAFE_FREE_PTR(idxs_modes);
 }

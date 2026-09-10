@@ -42,7 +42,7 @@
 static void recordin_GRN(size_t iw, size_t nr, cplx_t coef, cplxIntegGrid sumJ[nr], pcplxChnlGrid u[nr])
 {
     // 局部变量，将某个频点的格林函数谱临时存放
-    cplxChnlGrid *tmp_u = (cplxChnlGrid *)calloc(nr, sizeof(*tmp_u));
+    cplxChnlGrid *tmp_u = GRT_SAFE_CALLOC(nr, sizeof(*tmp_u));
 
     for(size_t ir=0; ir<nr; ++ir){
         grt_merge_Pk(sumJ[ir], tmp_u[ir]);
@@ -73,7 +73,7 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kproc, GRNSPEC *grn, co
     int progress=0;
 
     // 记录每个频率的计算中是否有除0错误
-    int *freq_invstats = (int *)calloc(grn->nf2 + 1, sizeof(int));
+    int *freq_invstats = GRT_SAFE_CALLOC(grn->nf2 + 1, sizeof(int));
 
     mod1d->omgref = PI2*grn->freqs[grn->nf2];
 

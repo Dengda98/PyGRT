@@ -53,10 +53,10 @@ static cplx_t select_vertical_root(const cplx_t k, const cplx_t root)
     
 MODEL1D * grt_init_mod1d(size_t n)
 {
-    MODEL1D *mod1d = (MODEL1D *)calloc(1, sizeof(MODEL1D));
+    MODEL1D *mod1d = GRT_SAFE_CALLOC(1, sizeof(MODEL1D));
     mod1d->n = n;
 
-    #define X(P, T)  mod1d->P = (T*)calloc(n, sizeof(T));
+    #define X(P, T)  mod1d->P = GRT_SAFE_CALLOC(n, sizeof(T));
         __MODEL1D_FOR_EACH_ARRAY
     #undef X
 
@@ -65,7 +65,7 @@ MODEL1D * grt_init_mod1d(size_t n)
 
 MODEL1D * grt_copy_mod1d(const MODEL1D *mod1d1)
 {
-    MODEL1D *mod1d2 = (MODEL1D *)calloc(1, sizeof(MODEL1D));
+    MODEL1D *mod1d2 = GRT_SAFE_CALLOC(1, sizeof(MODEL1D));
 
     // 先直接赋值，实现浅拷贝
     *mod1d2 = *mod1d1;
@@ -73,7 +73,7 @@ MODEL1D * grt_copy_mod1d(const MODEL1D *mod1d1)
     // 对指针部分再重新申请内存并赋值，实现深拷贝
     size_t n = mod1d1->n;
     #define X(P, T)  \
-        mod1d2->P = (T*)calloc(n, sizeof(T));\
+        mod1d2->P = GRT_SAFE_CALLOC(n, sizeof(T));\
         memcpy(mod1d2->P, mod1d1->P, sizeof(T)*n);\
 
         __MODEL1D_FOR_EACH_ARRAY
@@ -83,8 +83,7 @@ MODEL1D * grt_copy_mod1d(const MODEL1D *mod1d1)
     mod1d2->modarr = NULL;
     mod1d2->nmodarr = 0;
     if(mod1d1->modarr != NULL && mod1d1->nmodarr > 0){
-        mod1d2->modarr = (real_t (*)[GRT_MODARR_NCOL])malloc(
-            sizeof(real_t) * GRT_MODARR_NCOL * mod1d1->nmodarr);
+        mod1d2->modarr = GRT_SAFE_MALLOC(sizeof(real_t) * GRT_MODARR_NCOL * mod1d1->nmodarr);
         memcpy(mod1d2->modarr, mod1d1->modarr, sizeof(real_t) * GRT_MODARR_NCOL * mod1d1->nmodarr);
         mod1d2->nmodarr = mod1d1->nmodarr;
     }
@@ -96,7 +95,7 @@ void grt_realloc_mod1d(MODEL1D *mod1d, size_t n)
 {
     mod1d->n = n;
 
-    #define X(P, T)  mod1d->P = (T*)realloc(mod1d->P, n*sizeof(T));
+    #define X(P, T)  mod1d->P = GRT_SAFE_REALLOC(mod1d->P, n*sizeof(T));
         __MODEL1D_FOR_EACH_ARRAY
     #undef X
 }
@@ -158,7 +157,7 @@ real_t (* grt_read_modarr_from_file(
             GRTRaiseError("In model file, line %zu, Vs==0.0 is not supported.\n", iline);
         }
 
-        modarr = (real_t (*)[GRT_MODARR_NCOL])realloc(
+        modarr = GRT_SAFE_REALLOC(
             modarr, sizeof(real_t) * GRT_MODARR_NCOL * (nlay + 1));
         modarr[nlay][0] = h;
         modarr[nlay][1] = va;
@@ -255,8 +254,7 @@ MODEL1D * grt_read_mod1d_from_modarr(
     }
 
     // 拷贝后再改末层厚度，避免改动调用方数组
-    real_t (*modarr_work)[GRT_MODARR_NCOL] = (real_t (*)[GRT_MODARR_NCOL])malloc(
-        sizeof(real_t) * GRT_MODARR_NCOL * nlayer);
+    real_t (*modarr_work)[GRT_MODARR_NCOL] = GRT_SAFE_MALLOC(sizeof(real_t) * GRT_MODARR_NCOL * nlayer);
     memcpy(modarr_work, modarr, sizeof(real_t) * GRT_MODARR_NCOL * nlayer);
 
     for(size_t i = 0; i < nlayer; ++i){
@@ -393,7 +391,7 @@ MODEL1D * grt_read_mod1d_from_modarr(
     GRT_SAFE_FREE_PTR(modarr_work);
 
     // 保存未做层插入的原始矩阵
-    mod1d->modarr = (real_t (*)[GRT_MODARR_NCOL])calloc(nlayer, sizeof(real_t) * GRT_MODARR_NCOL);
+    mod1d->modarr = GRT_SAFE_CALLOC(nlayer, sizeof(real_t) * GRT_MODARR_NCOL);
     memcpy(mod1d->modarr, modarr, sizeof(real_t) * GRT_MODARR_NCOL * nlayer);
     mod1d->nmodarr = nlayer;
 
@@ -435,11 +433,11 @@ void grt_set_mod1d_boundary(MODEL1D *mod1d, GRT_BOUND_TYPE topbound, GRT_BOUND_T
 
 MODEL1D_STATE * grt_init_mod1d_state(MODEL1D *mod1d)
 {
-    MODEL1D_STATE *mstat = (MODEL1D_STATE *)calloc(1, sizeof(MODEL1D_STATE));
+    MODEL1D_STATE *mstat = GRT_SAFE_CALLOC(1, sizeof(MODEL1D_STATE));
     size_t n = mod1d->n;
     mstat->mod1d = mod1d;
 
-    #define X(P, T)  mstat->P = (T*)calloc(n, sizeof(T));
+    #define X(P, T)  mstat->P = GRT_SAFE_CALLOC(n, sizeof(T));
         __MODEL1D_STATE_FOR_EACH_ARRAY
     #undef X
 
@@ -449,7 +447,7 @@ MODEL1D_STATE * grt_init_mod1d_state(MODEL1D *mod1d)
 
 MODEL1D_STATE * grt_copy_mod1d_state(const MODEL1D_STATE *mstat1)
 {
-    MODEL1D_STATE *mstat2 = (MODEL1D_STATE *)calloc(1, sizeof(MODEL1D_STATE));
+    MODEL1D_STATE *mstat2 = GRT_SAFE_CALLOC(1, sizeof(MODEL1D_STATE));
 
     // 先直接赋值，实现浅拷贝
     *mstat2 = *mstat1;
@@ -457,7 +455,7 @@ MODEL1D_STATE * grt_copy_mod1d_state(const MODEL1D_STATE *mstat1)
     // 对指针部分再重新申请内存并赋值，实现深拷贝
     size_t n = mstat1->mod1d->n;
     #define X(P, T)  \
-        mstat2->P = (T*)calloc(n, sizeof(T));\
+        mstat2->P = GRT_SAFE_CALLOC(n, sizeof(T));\
         memcpy(mstat2->P, mstat1->P, sizeof(T)*n);\
 
         __MODEL1D_STATE_FOR_EACH_ARRAY

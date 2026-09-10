@@ -19,7 +19,7 @@ real_t grt_compute_travt1d(
     const size_t isrc, const size_t ircv, const real_t dist)
 {
     // 以防速度数组中存在零速度的情况，这里新建数组以去除0速度
-    real_t *Vel = (real_t*)malloc(sizeof(real_t)*nlay);
+    real_t *Vel = GRT_SAFE_MALLOC(sizeof(real_t)*nlay);
     for(size_t i=0; i<nlay; ++i){
         Vel[i] = (Vel0[i] <= 0.0)? 1e-6 : Vel0[i];  // 给一个极慢值
     }
@@ -389,11 +389,7 @@ real_t *grt_compute_travt1d_from_file(
     }
 
     // 按 [Tp0, Ts0, Tp1, Ts1, ...] 交错排列
-    real_t *out = (real_t*)malloc(sizeof(real_t) * nr * 2);
-    if(out == NULL){
-        grt_free_mod1d(mod1d);
-        return NULL;
-    }
+    real_t *out = GRT_SAFE_MALLOC(sizeof(real_t) * nr * 2);
 
     for(size_t i = 0; i < nr; ++i){
         out[2*i] = grt_compute_travt1d(

@@ -274,9 +274,9 @@ void grt_modsum_grn_spec(MODEL1D *mod1d, const DISPER_TYPE wtype, EIGENFN_INFO *
             size_t iref = eigv->c_roots_iref[ic];
 
             // 模型每个物理层介质下方 z_j+ 的垂直波函数
-            cplx_t (*mod_potRaylLove_Down)[ncols] = (cplx_t (*)[ncols])calloc(nlay, sizeof(cplx_t)*ncols);
+            cplx_t (*mod_potRaylLove_Down)[ncols] = GRT_SAFE_CALLOC(nlay, sizeof(cplx_t)*ncols);
             // 模型每个物理层介质上方 z_j- 的垂直波函数，申请 n+1 的内存，方便后续不必讨论“半空间中的上行波场”
-            cplx_t (*mod_potRaylLove_Up)[ncols] = (cplx_t (*)[ncols])calloc(nlay + 1, sizeof(cplx_t)*ncols);
+            cplx_t (*mod_potRaylLove_Up)[ncols] = GRT_SAFE_CALLOC(nlay + 1, sizeof(cplx_t)*ncols);
 
             cplx_t potRaylLove[ncols];  memset(potRaylLove, 0, sizeof(cplx_t)*ncols);
             cplx_t potRaylLoveUp[ncols];  memset(potRaylLoveUp, 0, sizeof(cplx_t)*ncols);

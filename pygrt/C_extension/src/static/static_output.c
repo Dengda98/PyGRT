@@ -76,7 +76,7 @@ static void write_fields(
     const int vars[GRT_CHANNEL_NUM],
     const int dvars[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])
 {
-    real_t *buffer = (real_t *)calloc(npts, sizeof(real_t));
+    real_t *buffer = GRT_SAFE_CALLOC(npts, sizeof(real_t));
     // NetCDF 变量按分量写入，临时数组用于提取每个分量的点序列
     for(int c = 0; c < GRT_CHANNEL_NUM; ++c){
         for(size_t i = 0; i < npts; ++i){
@@ -131,8 +131,8 @@ static void write_grid_layout(
     // 结束定义模式后写入坐标轴和位移数据
     NC_CHECK(nc_enddef(ncid));
 
-    real_t *north_axis = (real_t *)calloc(rcv->nnorth, sizeof(real_t));
-    real_t *east_axis = (real_t *)calloc(rcv->neast, sizeof(real_t));
+    real_t *north_axis = GRT_SAFE_CALLOC(rcv->nnorth, sizeof(real_t));
+    real_t *east_axis = GRT_SAFE_CALLOC(rcv->neast, sizeof(real_t));
     // 接收点坐标在内存中按 point 展平，写网格文件时恢复为两个坐标轴
     for(size_t inorth = 0; inorth < rcv->nnorth; ++inorth){
         north_axis[inorth] = rcv->norths[inorth * rcv->neast];
@@ -200,9 +200,9 @@ static void write_points_layout(
     // 完成变量定义后，按点查询接收介质参数并准备写入
     NC_CHECK(nc_enddef(ncid));
 
-    real_t *rcv_va = (real_t *)calloc(npts, sizeof(real_t));
-    real_t *rcv_vb = (real_t *)calloc(npts, sizeof(real_t));
-    real_t *rcv_rho = (real_t *)calloc(npts, sizeof(real_t));
+    real_t *rcv_va = GRT_SAFE_CALLOC(npts, sizeof(real_t));
+    real_t *rcv_vb = GRT_SAFE_CALLOC(npts, sizeof(real_t));
+    real_t *rcv_rho = GRT_SAFE_CALLOC(npts, sizeof(real_t));
     for(size_t i = 0; i < npts; ++i){
         output->get_medium(
             output->medium_context, depths[i], &rcv_va[i], &rcv_vb[i], &rcv_rho[i]);
@@ -217,9 +217,9 @@ static void write_points_layout(
     NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, rho_varid, rcv_rho));
     if(rcv->is_fault){
         // offset 保存每条有限断层点范围的排他性结束索引，最后一个值等于 point
-        int *offsets = (int *)calloc(rcv->nfault, sizeof(int));
-        int *stksizes = (int *)calloc(rcv->nfault, sizeof(int));
-        int *dipsizes = (int *)calloc(rcv->nfault, sizeof(int));
+        int *offsets = GRT_SAFE_CALLOC(rcv->nfault, sizeof(int));
+        int *stksizes = GRT_SAFE_CALLOC(rcv->nfault, sizeof(int));
+        int *dipsizes = GRT_SAFE_CALLOC(rcv->nfault, sizeof(int));
         for(size_t ifault = 0; ifault < rcv->nfault; ++ifault){
             if(rcv->offsets[ifault] > (size_t)INT_MAX){
                 GRTRaiseError("receiver point offset exceeds the NetCDF integer range.");

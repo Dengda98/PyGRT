@@ -21,33 +21,33 @@
 
 K_INTEG * grt_init_K_INTEG(const bool calc_upar, const size_t nr)
 {
-    K_INTEG *K = (K_INTEG *)calloc(1, sizeof(K_INTEG));
+    K_INTEG *K = GRT_SAFE_CALLOC(1, sizeof(K_INTEG));
     K->calc_upar = calc_upar;
     K->nr = nr;
-    K->sumJ  = (cplxIntegGrid *)calloc(nr, sizeof(cplxIntegGrid));
+    K->sumJ  = GRT_SAFE_CALLOC(nr, sizeof(cplxIntegGrid));
     K->sumJz = K->sumJr = NULL;
     if(calc_upar){
-        K->sumJz = (cplxIntegGrid *)calloc(nr, sizeof(cplxIntegGrid));
-        K->sumJr = (cplxIntegGrid *)calloc(nr, sizeof(cplxIntegGrid));
+        K->sumJz = GRT_SAFE_CALLOC(nr, sizeof(cplxIntegGrid));
+        K->sumJr = GRT_SAFE_CALLOC(nr, sizeof(cplxIntegGrid));
     }
     return K;
 }
 
 K_INTEG * grt_copy_K_INTEG(const K_INTEG *K)
 {
-    K_INTEG *K0 = (K_INTEG *)calloc(1, sizeof(K_INTEG));
+    K_INTEG *K0 = GRT_SAFE_CALLOC(1, sizeof(K_INTEG));
     // 先直接赋值，实现浅拷贝
     *K0 = *K;
 
     // 对指针部分再重新申请内存并赋值，实现深拷贝
     size_t nr = K->nr;
-    K0->sumJ  = (cplxIntegGrid *)calloc(nr, sizeof(cplxIntegGrid));
+    K0->sumJ  = GRT_SAFE_CALLOC(nr, sizeof(cplxIntegGrid));
     memcpy(K0->sumJ, K->sumJ, sizeof(cplxIntegGrid)*nr);
     K0->sumJz = K0->sumJr = NULL;
     if(K->calc_upar){
-        K0->sumJz = (cplxIntegGrid *)calloc(nr, sizeof(cplxIntegGrid));
+        K0->sumJz = GRT_SAFE_CALLOC(nr, sizeof(cplxIntegGrid));
         memcpy(K0->sumJz, K->sumJz, sizeof(cplxIntegGrid)*nr);
-        K0->sumJr = (cplxIntegGrid *)calloc(nr, sizeof(cplxIntegGrid));
+        K0->sumJr = GRT_SAFE_CALLOC(nr, sizeof(cplxIntegGrid));
         memcpy(K0->sumJr, K->sumJr, sizeof(cplxIntegGrid)*nr);
     }
     return K0;

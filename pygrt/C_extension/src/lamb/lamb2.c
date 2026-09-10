@@ -598,8 +598,8 @@ void grt_solve_lamb2(
     bool need_P = tEnd >= V.k;
     bool need_S = tEnd >= 1.0 || (V.supercritical && ts[0] < 1.0 && tEnd >= V.t_sp);
     /* 大型多项式系数工作区放在堆上，避免占用线程栈 */
-    LAMB2_COEFF_SET *coefficients = calloc(1, sizeof(*coefficients));
-    LAMB2_PF_COEFFICIENTS *pf_coefficients = calloc(1, sizeof(*pf_coefficients));
+    LAMB2_COEFF_SET *coefficients = GRT_SAFE_CALLOC(1, sizeof(*coefficients));
+    LAMB2_PF_COEFFICIENTS *pf_coefficients = GRT_SAFE_CALLOC(1, sizeof(*pf_coefficients));
     if (need_P) {
         make_lamb2_P_coefficients(&V, coefficients);
         make_partial_fraction_set(coefficients, V.y, V.kp2, false, V.use_angle_ratio, V.angle_ratio, &pf_coefficients->P);
@@ -611,11 +611,11 @@ void grt_solve_lamb2(
     GRT_SAFE_FREE_PTR(coefficients);
 
     bool isprint = (G == NULL && dG_source == NULL && dG_receiver == NULL);
-    real_t(*F)[3][3] = G != NULL ? G : calloc((size_t)nt, sizeof(*F));
-    real_t(*Fk_source)[3][3][3] = calloc((size_t)nt, sizeof(*Fk_source));
-    real_t(*Fk_receiver)[3][3][3] = calloc((size_t)nt, sizeof(*Fk_receiver));
-    real_t(*dG_source_tmp)[3][3][3] = dG_source != NULL ? dG_source : calloc((size_t)nt, sizeof(*dG_source_tmp));
-    real_t(*dG_receiver_tmp)[3][3][3] = dG_receiver != NULL ? dG_receiver : calloc((size_t)nt, sizeof(*dG_receiver_tmp));
+    real_t(*F)[3][3] = G != NULL ? G : GRT_SAFE_CALLOC((size_t)nt, sizeof(*F));
+    real_t(*Fk_source)[3][3][3] = GRT_SAFE_CALLOC((size_t)nt, sizeof(*Fk_source));
+    real_t(*Fk_receiver)[3][3][3] = GRT_SAFE_CALLOC((size_t)nt, sizeof(*Fk_receiver));
+    real_t(*dG_source_tmp)[3][3][3] = dG_source != NULL ? dG_source : GRT_SAFE_CALLOC((size_t)nt, sizeof(*dG_source_tmp));
+    real_t(*dG_receiver_tmp)[3][3][3] = dG_receiver != NULL ? dG_receiver : GRT_SAFE_CALLOC((size_t)nt, sizeof(*dG_receiver_tmp));
 
     for (int i = 0; i < nt; ++i) {
         real_t tbar = shift_lamb2_boundary(ts[i], &V, tbar_eps);

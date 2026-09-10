@@ -27,9 +27,9 @@ char ** grt_string_split(const char *string, const char *delim, size_t *size)
     *size = 0;
 
     while(token != NULL){
-        s_split = (char**)realloc(s_split, sizeof(char*)*(*size+1));
+        s_split = GRT_SAFE_REALLOC(s_split, sizeof(char*)*(*size+1));
         s_split[*size] = NULL;
-        s_split[*size] = (char*)realloc(s_split[*size], sizeof(char)*(strlen(token)+1));
+        s_split[*size] = GRT_SAFE_REALLOC(s_split[*size], sizeof(char)*(strlen(token)+1));
         strcpy(s_split[*size], token);
 
         token = strtok(NULL, delim);
@@ -43,7 +43,7 @@ char ** grt_string_split(const char *string, const char *delim, size_t *size)
 char ** grt_string_from_file(FILE *fp, size_t *size){
     char **s_split = NULL;
     *size = 0;
-    s_split = (char**)realloc(s_split, sizeof(char*)*(*size+1));
+    s_split = GRT_SAFE_REALLOC(s_split, sizeof(char*)*(*size+1));
     s_split[*size] = NULL;
 
     size_t len=0;
@@ -56,7 +56,7 @@ char ** grt_string_from_file(FILE *fp, size_t *size){
             s_split[*size][line_len - 1] = '\0';
         }
         (*size)++;
-        s_split = (char**)realloc(s_split, sizeof(char*)*(*size+1));
+        s_split = GRT_SAFE_REALLOC(s_split, sizeof(char*)*(*size+1));
         s_split[*size] = NULL;
     }
     return s_split;
@@ -81,7 +81,7 @@ real_t *grt_parse_real_array(const char *optarg, size_t *size, char ***s_values,
             GRTRaiseError("-%c: start (%f) > end (%f).", optname, a1, a2);
         }
         n = (size_t)floor((a2 - a1) / delta) + 1;
-        s_vals = (char **)calloc(n, sizeof(char *));
+        s_vals = GRT_SAFE_CALLOC(n, sizeof(char *));
         for(size_t i = 0; i < n; ++i){
             GRT_SAFE_ASPRINTF(&s_vals[i], "%.15g", a1 + delta * i);
         }
@@ -97,7 +97,7 @@ real_t *grt_parse_real_array(const char *optarg, size_t *size, char ***s_values,
         GRTRaiseError("-%c: empty value list.", optname);
     }
 
-    real_t *values = (real_t *)calloc(n, sizeof(real_t));
+    real_t *values = GRT_SAFE_CALLOC(n, sizeof(real_t));
     for(size_t i = 0; i < n; ++i){
         values[i] = atof(s_vals[i]);
         if(values[i] < 0.0){
@@ -193,7 +193,7 @@ static bool grt_is_numeric_field(const char *begin, const char *end)
 
     // strtod 需要以字符串结束符结尾，因此复制指定的字符串区间
     size_t length = (size_t)(end - begin);
-    char *value = (char *)calloc(length + 1, sizeof(char));
+    char *value = GRT_SAFE_CALLOC(length + 1, sizeof(char));
     memcpy(value, begin, length);
 
     // strtod 支持小数、科学计数法以及正负号
@@ -410,10 +410,7 @@ ssize_t grt_getline(char **lineptr, size_t *n, FILE *stream){
     // 如果缓冲区为空，分配初始缓冲区
     if (buf == NULL || size == 0) {
         size = 128;
-        buf = malloc(size);
-        if (buf == NULL) {
-            return -1;
-        }
+        buf = GRT_SAFE_MALLOC(size);
     }
     
     // 逐字符读取直到换行符或EOF
@@ -421,11 +418,7 @@ ssize_t grt_getline(char **lineptr, size_t *n, FILE *stream){
         // 检查是否需要扩展缓冲区
         if (len + 1 >= size) {
             size_t new_size = size * 2;
-            char *new_buf = realloc(buf, new_size);
-            if (new_buf == NULL) {
-                free(buf);
-                return -1;
-            }
+            char *new_buf = GRT_SAFE_REALLOC(buf, new_size);
             buf = new_buf;
             size = new_size;
         }

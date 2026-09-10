@@ -140,7 +140,7 @@ typedef struct {
 
 /** 初始化区间栈 */
 static void stack_init(IntervalStack *stack, int init_capacity) {
-    stack->data = (Interval*)malloc(init_capacity * sizeof(Interval));
+    stack->data = GRT_SAFE_MALLOC(init_capacity * sizeof(Interval));
     stack->size = 0;
     stack->capacity = init_capacity;
 }
@@ -150,7 +150,7 @@ static void stack_push(IntervalStack *stack, Interval item) {
     // 扩容
     if(stack->size >= stack->capacity){
         stack->capacity *= 2;
-        stack->data = (Interval*)realloc(stack->data, stack->capacity * sizeof(Interval));
+        stack->data = GRT_SAFE_REALLOC(stack->data, stack->capacity * sizeof(Interval));
     }
     stack->data[stack->size++] = item;
 }
@@ -398,8 +398,8 @@ static void grt_adaptive_step_secular_roots(
                 if(root_c > 0.0 && !grt_check_vel_in_mod(mstat->mod1d, root_c, eigmet->vgap)){
                     if(eigv->c_roots == NULL){
                         // 需初始化动态内存
-                        eigv->c_roots = (real_t *)realloc(eigv->c_roots, sizeof(real_t)*1);
-                        eigv->c_roots_iref = (size_t *)realloc(eigv->c_roots_iref, sizeof(size_t)*1);
+                        eigv->c_roots = GRT_SAFE_REALLOC(eigv->c_roots, sizeof(real_t)*1);
+                        eigv->c_roots_iref = GRT_SAFE_REALLOC(eigv->c_roots_iref, sizeof(size_t)*1);
                         eigv->c_roots[0] = root_c;
                         eigv->c_roots_iref[0] = iref;
                         eigv->n = 1;
@@ -412,8 +412,8 @@ static void grt_adaptive_step_secular_roots(
                             if(capacity <= 0){
                                 capacity = eigv->n+1;
                             }
-                            eigv->c_roots = (real_t *)realloc(eigv->c_roots, sizeof(real_t)*capacity);
-                            eigv->c_roots_iref = (size_t *)realloc(eigv->c_roots_iref, sizeof(size_t)*capacity);
+                            eigv->c_roots = GRT_SAFE_REALLOC(eigv->c_roots, sizeof(real_t)*capacity);
+                            eigv->c_roots_iref = GRT_SAFE_REALLOC(eigv->c_roots_iref, sizeof(size_t)*capacity);
 
                             ssize_t pos = grt_insertOrdered(eigv->c_roots, &eigv->n, capacity, &root_c, sizeof(real_t), true, grt_compare_real_t);
 
@@ -489,8 +489,8 @@ static void grt_fixed_step_secular_roots(
         if(root_c > 0.0 && !grt_check_vel_in_mod(mstat->mod1d, root_c, eigmet->vgap)){
             if(eigv->c_roots == NULL){
                 // 需初始化动态内存
-                eigv->c_roots = (real_t *)realloc(eigv->c_roots, sizeof(real_t)*1);
-                eigv->c_roots_iref = (size_t *)realloc(eigv->c_roots_iref, sizeof(size_t)*1);
+                eigv->c_roots = GRT_SAFE_REALLOC(eigv->c_roots, sizeof(real_t)*1);
+                eigv->c_roots_iref = GRT_SAFE_REALLOC(eigv->c_roots_iref, sizeof(size_t)*1);
                 eigv->c_roots[0] = root_c;
                 eigv->c_roots_iref[0] = iref;
                 eigv->n = 1;
@@ -503,8 +503,8 @@ static void grt_fixed_step_secular_roots(
                     if(capacity <= 0){
                         capacity = eigv->n+1;
                     }
-                    eigv->c_roots = (real_t *)realloc(eigv->c_roots, sizeof(real_t)*capacity);
-                    eigv->c_roots_iref = (size_t *)realloc(eigv->c_roots_iref, sizeof(size_t)*capacity);
+                    eigv->c_roots = GRT_SAFE_REALLOC(eigv->c_roots, sizeof(real_t)*capacity);
+                    eigv->c_roots_iref = GRT_SAFE_REALLOC(eigv->c_roots_iref, sizeof(size_t)*capacity);
 
                     ssize_t pos = grt_insertOrdered(eigv->c_roots, &eigv->n, capacity, &root_c, sizeof(real_t), true, grt_compare_real_t);
 
@@ -668,7 +668,7 @@ static void get_secular_roots_single_freq(MODEL1D_STATE *mstat, EIGENV_INFO *eig
     rn1 = grt_get_approx_nroots(mstat, freq, wtype, cmin);
     c2 = cmax;
     while(c1 < cmax){
-        cpred = (real_t *)realloc(cpred, sizeof(real_t)*(npred+1));
+        cpred = GRT_SAFE_REALLOC(cpred, sizeof(real_t)*(npred+1));
         cpred[npred++] = c1;
         c2 = GRT_MIN(c1 + dc, cmax);
         rn2 = grt_get_approx_nroots(mstat, freq, wtype, c2);
@@ -678,7 +678,7 @@ static void get_secular_roots_single_freq(MODEL1D_STATE *mstat, EIGENV_INFO *eig
         }
         c1 = c2; rn1 = rn2;
     }
-    cpred = (real_t *)realloc(cpred, sizeof(real_t)*(npred+1));
+    cpred = GRT_SAFE_REALLOC(cpred, sizeof(real_t)*(npred+1));
     cpred[npred++] = c2;
 
     if(! eigmet->manual_crange){
@@ -692,7 +692,7 @@ static void get_secular_roots_single_freq(MODEL1D_STATE *mstat, EIGENV_INFO *eig
             }
             if(iy < mstat->mod1d->n){
                 real_t target = grt_halfspace_Rayleigh_croot(mstat, iy);
-                cpred = (real_t *)realloc(cpred, sizeof(real_t)*(npred+2));
+                cpred = GRT_SAFE_REALLOC(cpred, sizeof(real_t)*(npred+2));
                 grt_insertOrdered(cpred, &npred, npred+1, &target, sizeof(real_t), true, grt_compare_real_t);
                 target *= 0.95;
                 grt_insertOrdered(cpred, &npred, npred+1, &target, sizeof(real_t), true, grt_compare_real_t);
@@ -713,7 +713,7 @@ static void get_secular_roots_single_freq(MODEL1D_STATE *mstat, EIGENV_INFO *eig
                         iref_liquid++;
                     }
                     real_t target = grt_halfspace_Scholte_croot(mstat, iref_liquid, iref_solid);
-                    cpred = (real_t *)realloc(cpred, sizeof(real_t)*(npred+2));
+                    cpred = GRT_SAFE_REALLOC(cpred, sizeof(real_t)*(npred+2));
                     grt_insertOrdered(cpred, &npred, npred+1, &target, sizeof(real_t), true, grt_compare_real_t);
                     target *= 0.95;
                     grt_insertOrdered(cpred, &npred, npred+1, &target, sizeof(real_t), true, grt_compare_real_t);

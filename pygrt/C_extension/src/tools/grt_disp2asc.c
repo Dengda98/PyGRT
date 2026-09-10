@@ -152,7 +152,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                         }
                     }
                     Ctrl->N.nmode = floor((a2-a1)/dif) + 1;
-                    Ctrl->N.modes = (size_t *)calloc(Ctrl->N.nmode, sizeof(size_t));
+                    Ctrl->N.modes = GRT_SAFE_CALLOC(Ctrl->N.nmode, sizeof(size_t));
                     for(size_t i=0; i < Ctrl->N.nmode; ++i){
                         Ctrl->N.modes[i] = a1 + dif*i;
                     }
@@ -213,7 +213,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 
                     if(nscan == 3 || nscan == 1){
                         Ctrl->F.nf = floor((a2-a1)/df) + 1;
-                        Ctrl->F.freqs = (real_t*)calloc(Ctrl->F.nf, sizeof(real_t));
+                        Ctrl->F.freqs = GRT_SAFE_CALLOC(Ctrl->F.nf, sizeof(real_t));
                         for(size_t i=0; i<Ctrl->F.nf; ++i){
                             if(isperiod){
                                 Ctrl->F.freqs[Ctrl->F.nf-1 - i] = 1.0/(a1 + df*i);
@@ -225,7 +225,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     else if(nscan == 2){
                         // 只约束最大值和最小值，内存申请由读取频散文件的过程中进行
                         Ctrl->F.nf = 2;
-                        Ctrl->F.freqs = (real_t*)calloc(Ctrl->F.nf, sizeof(real_t));
+                        Ctrl->F.freqs = GRT_SAFE_CALLOC(Ctrl->F.nf, sizeof(real_t));
                         Ctrl->F.freqs[0] = a1;
                         Ctrl->F.freqs[1] = a2;
                         Ctrl->F.def_range = true;
@@ -252,7 +252,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     // -N 的默认项，仅处理基阶
     if( ! Ctrl->N.active ){
         Ctrl->N.nmode = 1;
-        Ctrl->N.modes = (size_t *)calloc(Ctrl->N.nmode, sizeof(size_t));
+        Ctrl->N.modes = GRT_SAFE_CALLOC(Ctrl->N.nmode, sizeof(size_t));
         Ctrl->N.modes[0] = 0;
     }
 }
@@ -261,13 +261,13 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 /** 子模块主函数 */
 int disp2asc_main(int argc, char **argv)
 {
-    GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
+    GRT_MODULE_CTRL *Ctrl = GRT_SAFE_CALLOC(1, sizeof(*Ctrl));
 
     // 传入参数 
     getopt_from_command(Ctrl, argc, argv);
 
     // 读取频散
-    EIGENV_INFO *eigmet = (EIGENV_INFO *)calloc(1, sizeof(EIGENV_INFO));
+    EIGENV_INFO *eigmet = GRT_SAFE_CALLOC(1, sizeof(EIGENV_INFO));
 
     if(Ctrl->C.active){
         grt_read_dispersion(Ctrl->C.s_phasepath, eigmet, NULL, NULL);
@@ -279,7 +279,7 @@ int disp2asc_main(int argc, char **argv)
     
 
     // 根据命令行参数确定出所需的部分频散信息
-    EIGENFN_INFO *eigfnmet = (EIGENFN_INFO *)calloc(1, sizeof(EIGENFN_INFO));
+    EIGENFN_INFO *eigfnmet = GRT_SAFE_CALLOC(1, sizeof(EIGENFN_INFO));
     grt_filter_eigenfn_info(
         Ctrl->F.nf, Ctrl->F.freqs, Ctrl->F.def_range,
         Ctrl->N.nmode, Ctrl->N.modes, eigmet, eigfnmet);

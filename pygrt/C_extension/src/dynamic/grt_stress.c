@@ -87,8 +87,8 @@ static void compute_stress(
 
     // 联络项（1e-5: km→cm）：r≠0 用 u/r；r=0 改用 ∂_r u，与 syn 中 (1/r)∂_θ 有限部分配套
     // 时域先算好 ur_over_r / ut_over_r，再 FFT，避免频域再分支缩放
-    float *ur_over_r = (float *)malloc(sizeof(float)*npts);
-    float *ut_over_r = (float *)malloc(sizeof(float)*npts);
+    float *ur_over_r = GRT_SAFE_MALLOC(sizeof(float)*npts);
+    float *ut_over_r = GRT_SAFE_MALLOC(sizeof(float)*npts);
     for(size_t i=0; i<npts; ++i){
         ur_over_r[i] = GRT_IS_ZERO(dist) ? upar[1][1][i] : (u[1][i] / dist * 1e-5f);
         ut_over_r[i] = GRT_IS_ZERO(dist) ? upar[1][2][i] : (u[2][i] / dist * 1e-5f);
@@ -141,7 +141,7 @@ static void compute_stress(
 
 
 int stress_main(int argc, char **argv){
-    GRT_MODULE_CTRL *Ctrl = calloc(1, sizeof(*Ctrl));
+    GRT_MODULE_CTRL *Ctrl = GRT_SAFE_CALLOC(1, sizeof(*Ctrl));
 
     getopt_from_command(Ctrl, argc, argv);
     
@@ -201,7 +201,7 @@ int stress_main(int argc, char **argv){
             upar[c2][c] = insac->data;
             insac->data = NULL;
             grt_free_SACTRACE(insac);
-            res[c2][c] = calloc(npts, sizeof(*res[c2][c]));
+            res[c2][c] = GRT_SAFE_CALLOC(npts, sizeof(*res[c2][c]));
         }
     }
     compute_stress(npts, dt, dist, va, vb, rho, Qainv, Qbinv, u, upar, res, rot2ZNE);
