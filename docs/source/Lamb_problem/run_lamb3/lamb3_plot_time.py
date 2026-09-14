@@ -19,7 +19,7 @@ R = 10.0
 depsrc = 2.0
 deprcv = 1.0
 azimuth = 30.0
-G, dG_source, dG_receiver = pygrt.utils.lamb3(
+G, Gs, Gr, Grs = pygrt.utils.lamb3(
     nu=0.25, tbar=tbar, R=R, depsrc=depsrc, deprcv=deprcv, azimuth=azimuth
 )
 # END LAMB3
@@ -57,12 +57,12 @@ def compute_lamb3_results(deprcv:float) -> tuple[np.ndarray, np.ndarray, np.ndar
     source_derivatives = np.empty((len(DEPSRCS), len(ts), 3, 3, 3))
 
     for index, depsrc in enumerate(DEPSRCS):
-        G, dG_source, _ = pygrt.utils.lamb3(
+        G, Gs, Gr, Grs = pygrt.utils.lamb3(
             nu=NU, tbar=ts, R=EPICENTRAL_DISTANCE, depsrc=depsrc,
             deprcv=deprcv, azimuth=AZIMUTH,
         )
         greens[index] = G
-        source_derivatives[index] = dG_source
+        source_derivatives[index] = Gs
 
     return ts, greens, source_derivatives
 

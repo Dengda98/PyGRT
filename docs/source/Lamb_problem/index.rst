@@ -25,9 +25,11 @@ Lamb 问题
     + **无量纲时间** :math:`\bar{t} = \dfrac{t}{T_S} = \dfrac{t}{r/\beta} = \dfrac{\beta t}{r}`，
       其中 :math:`T_S = \dfrac{r}{\beta}` 是 S 波传播时间尺度，
       :math:`r` 为源点和接收点的两点直线距离，不是水平震中距
-    + **无量纲位移** 均为 :math:`\bar{\mathbf{G}}^H = \pi^2 \mu r \mathbf{G}^H`，
+    + **无量纲位移** :math:`\bar{\mathbf{G}}^H = \pi^2 \mu r \mathbf{G}^H`，
       上标 :math:`H` 表示已和阶跃函数卷积，下同
-    + **无量纲空间导数** 均为 :math:`\bar{\mathbf{G}}^H_{,k}=\pi^2\mu r^2\mathbf{G}^H_{,k}`
+    + **无量纲空间导数** :math:`\bar{\mathbf{G}}^H_{,k'}=\pi^2\mu r^2\mathbf{G}^H_{,k'}` 以及
+      :math:`\bar{\mathbf{G}}^H_{,k}=\pi^2\mu r^2\mathbf{G}^H_{,k}`
+    + **无量纲二阶混合导数** :math:`\bar{\mathbf{G}}^H_{,k,k'}=\pi^2\mu r^3\mathbf{G}^H_{,k,k'}`
 
 .. note::
 
