@@ -12,9 +12,9 @@
 #include "grt/lamb/lamb_util.h"
 
 
-static bool is_derivative_suboption(const char *text)
+static bool is_derivative_suboption(const char *text, const bool allow_mixed)
 {
-    return text[0] == '+' && (text[1] == 's' || text[1] == 'r');
+    return text[0] == '+' && (text[1] == 's' || text[1] == 'r' || (allow_mixed && text[1] == 'm'));
 }
 
 
@@ -26,26 +26,31 @@ static char *copy_path(const char *start, const size_t length)
 }
 
 
-void grt_lamb_parse_derivative_paths(const char *argument, char **source_path, char **receiver_path)
+static void parse_derivative_paths(
+    const char *argument, char **source_path, char **receiver_path, char **mixed_path, const bool allow_mixed)
 {
+    const char *option_names = allow_mixed ? "+s<path>, +r<path> or +m<path>" : "+s<path> and/or +r<path>";
     if (argument == NULL || argument[0] == '\0') {
-        GRTRaiseError("The -S argument should contain +s<path> and/or +r<path>.\n");
+        GRTRaiseError("The -S argument should contain %s.\n", option_names);
     }
 
     const char *cursor = argument;
     while (cursor[0] != '\0') {
-        if (!is_derivative_suboption(cursor)) {
-            GRTRaiseError("The -S argument should contain +s<path> and/or +r<path>.\n");
+        if (!is_derivative_suboption(cursor, allow_mixed)) {
+            GRTRaiseError("The -S argument should contain %s.\n", option_names);
         }
 
-        char **target = cursor[1] == 's' ? source_path : receiver_path;
+        char **target = cursor[1] == 's' ? source_path : cursor[1] == 'r' ? receiver_path : mixed_path;
+        if (target == NULL) {
+            GRTRaiseError("The derivative output path pointer is NULL.\n");
+        }
         if (*target != NULL) {
             GRTRaiseError("The -S argument contains a duplicated derivative output suboption.\n");
         }
 
         const char *path_start = cursor + 2;
         const char *next = path_start;
-        while (next[0] != '\0' && !is_derivative_suboption(next)) {
+        while (next[0] != '\0' && !is_derivative_suboption(next, allow_mixed)) {
             ++next;
         }
         if (next == path_start) {
@@ -55,93 +60,34 @@ void grt_lamb_parse_derivative_paths(const char *argument, char **source_path, c
         *target = copy_path(path_start, (size_t)(next - path_start));
         cursor = next;
     }
-}
 
-
-/** 创建常数多项式 */
-LAMB_POLY grt_lamb_poly_const(const cplx_t value)
-{
-    LAMB_POLY result = {0};
-    result.c[0] = value;
-    result.degree = 0;
-    return result;
-}
-
-LAMB_POLY grt_lamb_poly_x(void)
-{
-    LAMB_POLY result = {0};
-    result.c[1] = 1.0;
-    result.degree = 1;
-    return result;
-}
-
-void grt_lamb_poly_trim(LAMB_POLY *poly)
-{
-    while (poly->degree > 0 && cabs(poly->c[poly->degree]) < LAMB_POLY_EPS) {
-        poly->c[poly->degree] = 0.0;
-        --poly->degree;
+    if (source_path != NULL && receiver_path != NULL && *source_path != NULL && *receiver_path != NULL &&
+        strcmp(*source_path, *receiver_path) == 0) {
+        GRTRaiseError("The source and receiver derivative paths must be different.\n");
+    }
+    if (allow_mixed && source_path != NULL && mixed_path != NULL && *source_path != NULL && *mixed_path != NULL &&
+        strcmp(*source_path, *mixed_path) == 0) {
+        GRTRaiseError("The source and mixed derivative paths must be different.\n");
+    }
+    if (allow_mixed && receiver_path != NULL && mixed_path != NULL && *receiver_path != NULL && *mixed_path != NULL &&
+        strcmp(*receiver_path, *mixed_path) == 0) {
+        GRTRaiseError("The receiver and mixed derivative paths must be different.\n");
     }
 }
 
-LAMB_POLY grt_lamb_poly_mul(const LAMB_POLY a, const LAMB_POLY b)
+
+void grt_lamb_parse_derivative_paths(const char *argument, char **source_path, char **receiver_path)
 {
-    LAMB_POLY result = {0};
-    if (a.degree + b.degree >= LAMB_POLY_SIZE) {
-        GRTRaiseError("The polynomial degree is too large in the Lamb utilities.\n");
-    }
-    result.degree = a.degree + b.degree;
-    for (int i = 0; i <= a.degree; ++i) {
-        for (int j = 0; j <= b.degree; ++j) {
-            result.c[i + j] += a.c[i] * b.c[j];
-        }
-    }
-    grt_lamb_poly_trim(&result);
-    return result;
+    parse_derivative_paths(argument, source_path, receiver_path, NULL, false);
 }
 
-LAMB_POLY grt_lamb_poly_factor(const cplx_t root, const bool plus)
+
+void grt_lamb_parse_derivative_paths_with_mixed(
+    const char *argument, char **source_path, char **receiver_path, char **mixed_path)
 {
-    LAMB_POLY result = {0};
-    result.c[0] = plus ? root : -root;
-    result.c[2] = 1.0;
-    result.degree = 2;
-    return result;
+    parse_derivative_paths(argument, source_path, receiver_path, mixed_path, true);
 }
 
-cplx_t grt_lamb_poly_eval(const LAMB_POLY *poly, const cplx_t x)
-{
-    cplx_t result = 0.0;
-    for (int i = poly->degree; i >= 0; --i) {
-        result = result * x + poly->c[i];
-    }
-    return result;
-}
-
-void grt_lamb_poly_divide(
-    const LAMB_POLY numerator, const LAMB_POLY denominator,
-    LAMB_POLY *quotient, LAMB_POLY *remainder)
-{
-    *quotient = grt_lamb_poly_const(0.0);
-    *remainder = numerator;
-    grt_lamb_poly_trim(remainder);
-
-    if (denominator.degree <= 0 && cabs(denominator.c[0]) == 0.0) {
-        GRTRaiseError("The polynomial denominator is zero in the Lamb utilities.\n");
-    }
-
-    while (remainder->degree >= denominator.degree &&
-           !(remainder->degree == 0 && cabs(remainder->c[0]) < LAMB_POLY_EPS)) {
-        int offset = remainder->degree - denominator.degree;
-        cplx_t factor = remainder->c[remainder->degree] / denominator.c[denominator.degree];
-        quotient->c[offset] += factor;
-        quotient->degree = GRT_MAX(quotient->degree, offset);
-        for (int j = 0; j <= denominator.degree; ++j) {
-            remainder->c[j + offset] -= factor * denominator.c[j];
-        }
-        grt_lamb_poly_trim(remainder);
-    }
-    grt_lamb_poly_trim(quotient);
-}
 
 bool grt_lamb_is_real(const cplx_t value)
 {
@@ -260,6 +206,33 @@ void grt_lamb_differentiate_Fk(
     }
 }
 
+
+void grt_lamb_differentiate_Fkk(
+    const real_t *ts, const int nt, const real_t (*Fkk)[3][3][3][3],
+    real_t (*dG)[3][3][3][3])
+{
+    real_t (*input)[3][3][3] = GRT_SAFE_CALLOC((size_t)nt, sizeof(*input));
+    real_t (*first)[3][3][3] = GRT_SAFE_CALLOC((size_t)nt, sizeof(*first));
+    real_t (*second)[3][3][3] = GRT_SAFE_CALLOC((size_t)nt, sizeof(*second));
+
+    for (int k = 0; k < 3; ++k) {
+        for (int n = 0; n < nt; ++n) {
+            memcpy(input[n], Fkk[n][k], sizeof(input[n]));
+        }
+        grt_lamb_differentiate_Fk(ts, nt, input, first);
+        grt_lamb_differentiate_Fk(ts, nt, first, second);
+        for (int n = 0; n < nt; ++n) {
+            for (int kp = 0; kp < 3; ++kp) {
+                memcpy(dG[n][k][kp], second[n][kp], sizeof(second[n][kp]));
+            }
+        }
+    }
+
+    GRT_SAFE_FREE_PTR(input);
+    GRT_SAFE_FREE_PTR(first);
+    GRT_SAFE_FREE_PTR(second);
+}
+
 static void print_component_header(FILE *fp, const char *name)
 {
     fprintf(fp, "%14s", name);
@@ -310,6 +283,38 @@ void grt_lamb_print_derivative_series(FILE *fp, const real_t *ts, const int nt, 
             for (int i = 0; i < 3; ++i) {
                 for (int j = 0; j < 3; ++j) {
                     fprintf(fp, "%14.6e", dG[n][k][i][j]);
+                }
+            }
+        }
+        fprintf(fp, "\n");
+    }
+}
+
+
+void grt_lamb_print_mixed_derivative_series(FILE *fp, const real_t *ts, const int nt, const real_t (*dG)[3][3][3][3])
+{
+    fprintf(fp, "#%13s", "tbar");
+    for (int k = 0; k < 3; ++k) {
+        for (int kp = 0; kp < 3; ++kp) {
+            for (int i = 0; i < 3; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    char name[20];
+                    snprintf(name, sizeof(name), "G%d%d,%d,%d'", i + 1, j + 1, k + 1, kp + 1);
+                    print_component_header(fp, name);
+                }
+            }
+        }
+    }
+    fprintf(fp, "\n");
+
+    for (int n = 0; n < nt; ++n) {
+        fprintf(fp, "%14.6e", ts[n]);
+        for (int k = 0; k < 3; ++k) {
+            for (int kp = 0; kp < 3; ++kp) {
+                for (int i = 0; i < 3; ++i) {
+                    for (int j = 0; j < 3; ++j) {
+                        fprintf(fp, "%14.6e", dG[n][k][kp][i][j]);
+                    }
                 }
             }
         }

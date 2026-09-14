@@ -11,7 +11,6 @@
 #pragma once
 
 #include "grt/common/const.h"
-#include "grt/lamb/lamb_util.h"
 
 
 /**

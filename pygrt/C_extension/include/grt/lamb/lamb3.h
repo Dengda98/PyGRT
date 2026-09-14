@@ -26,11 +26,13 @@
  * @param[out]   G               无量纲阶跃力位移，G[time][i][j]
  * @param[out]   dG_source       无量纲源点导数，dG_source[time][k'][i][j]
  * @param[out]   dG_receiver     无量纲接收点导数，dG_receiver[time][k][i][j]
+ * @param[out]   dG_mixed        无量纲混合二阶导数，dG_mixed[time][k][k'][i][j]
  *
- * 当三个输出指针同时为 NULL 时，仅将时间和 G 输出到标准输出
+ * 当四个输出指针同时为 NULL 时，仅将时间和 G 输出到标准输出
+ * 其中 k 为接收点方向，k' 为源点方向
  */
 void grt_solve_lamb3(
     const real_t nu, const real_t *ts, const int nt,
     const real_t R, const real_t depsrc, const real_t deprcv,
     const real_t azimuth, real_t (*G)[3][3], real_t (*dG_source)[3][3][3],
-    real_t (*dG_receiver)[3][3][3]);
+    real_t (*dG_receiver)[3][3][3], real_t (*dG_mixed)[3][3][3][3]);

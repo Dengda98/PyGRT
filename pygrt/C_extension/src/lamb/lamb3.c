@@ -8,9 +8,9 @@
  *        张海明, 冯禧 著. 2024. 地震学中的 Lamb 问题（下）. 科学出版社
  *
  *    反射项和转换项的多项式系数在时间循环前预计算，并按到时跳过
- *    时间序列不会用到的 P/S/PS/SP 项；运行时只组合时间幂次与基本积分。
- *    源点和接收点导数均按第 8.1 节的矩阵关系实现，第 7 章中的基本积分
- *    直接复用 lamb_basic.c 的实现
+ *    时间序列不会用到的 P/S/PS/SP 项；运行时只组合时间幂次与基本积分
+ *    源点和接收点的一阶导数均按第 8.1 节的矩阵关系实现，混合导数在同一
+ *    方向因子上构造；第 7 章中的基本积分直接复用 lamb_basic.c 的实现
  */
 
 #include <float.h>
@@ -18,24 +18,23 @@
 #include "grt/lamb/elliptic.h"
 #include "grt/lamb/lamb3.h"
 #include "grt/lamb/lamb_basic.h"
+#include "grt/lamb/lamb_poly.h"
 #include "grt/lamb/lamb_util.h"
 #include "grt/lamb/qromb.h"
 
-// 预先计算好的多项式系数
+// 多项式系数构造
 #include "lamb3_coeffs.c_"
 
-#define LAMB3_TAIL_SIZE 7
+#define LAMB3_TAIL_SIZE 10
 #define LAMB3_QROMB_EPS 1e-6
 #define LAMB3_RATIO_EPS 1e-8
 /* 反射射线角过小时，闭合公式中的变量变换开始失去有效数字 */
 #define LAMB3_SMALL_R_WARNING_RATIO 1e-2
 
-typedef LAMB_POLY LAMB3_POLY;
-
 /** 一个有理分式的部分分式系数 */
 typedef struct {
     cplx_t pair[3][2];            ///< pair[i][0/1]，i=0,1,2 为根索引，0/1 为 x/常数系数
-    cplx_t pole[4];               ///< pole[i]，i=0,1,2,3 分别为 x^(-1)、x^(-2)、x^(-3)、x^(-4) 的主部系数
+    cplx_t pole[5];               ///< pole[i]，i=0,1,2,3,4 分别为 x^(-1) 至 x^(-5) 的主部系数
     cplx_t tail[LAMB3_TAIL_SIZE]; ///< tail[m]，m 为多项式商的 x 次数
     int npole;                    ///< x=0 处主部的有效项数
     int ntail;                    ///< 多项式商的有效项数
@@ -43,9 +42,9 @@ typedef struct {
 
 /** 按时间幂次保存的部分分式系数 */
 typedef struct {
-    cplx_t pair[3][2][LAMB3_TIME_SIZE];            ///< pair[i][0/1][r]，i 为根索引，0/1 为 x/常数项，r 为 tbar 次数
-    cplx_t pole[4][LAMB3_TIME_SIZE];               ///< pole[i][r]，i 为负幂阶数减一，r 为 tbar 次数
-    cplx_t tail[LAMB3_TAIL_SIZE][LAMB3_TIME_SIZE]; ///< tail[m][r]，m 为 x 次数，r 为 tbar 次数
+    cplx_t pair[3][2][LAMB_POLY_TBAR_SIZE];            ///< pair[i][0/1][r]，i 为根索引，0/1 为 x/常数项，r 为 tbar 次数
+    cplx_t pole[5][LAMB_POLY_TBAR_SIZE];               ///< pole[i][r]，i 为负幂阶数减一，r 为 tbar 次数
+    cplx_t tail[LAMB3_TAIL_SIZE][LAMB_POLY_TBAR_SIZE]; ///< tail[m][r]，m 为 x 次数，r 为 tbar 次数
     int npole;                                     ///< x=0 处主部的有效项数
     int ntail;                                     ///< 多项式商的有效项数
     int time_degree;                               ///< tbar 的最高次数
@@ -55,6 +54,7 @@ typedef struct {
 typedef struct {
     LAMB3_PF_COEFF M[2][3][3];                 ///< M[xi][i][j]，xi=0/1 对应 U/V，i,j=0,1,2 分别为接收点和源点分量
     LAMB3_PF_COEFF dM[3][2][3][3];             ///< dM[k][xi][i][j]，k=0,1,2 为源点坐标导数方向，xi=0/1 对应 U/V，i,j 为矩阵分量
+    LAMB3_PF_COEFF mixed[2][3][3][3][3];       ///< mixed[xi][k][k'][i][j]，混合接收点/源点坐标导数
 } LAMB3_REFLECTION_PF_SET;
 
 /** 转换项的一组部分分式系数 */
@@ -62,6 +62,7 @@ typedef struct {
     LAMB3_PF_COEFF M[3][3];                 ///< M[i][j]，i,j=0,1,2 分别为接收点和源点分量
     LAMB3_PF_COEFF dM[3][3][3];             ///< dM[k][i][j]，k=0,1,2 为源点坐标导数方向，i,j 为矩阵分量
     LAMB3_PF_COEFF receiver_vertical[3][3]; ///< receiver_vertical[i][j]，i,j 为矩阵分量
+    LAMB3_PF_COEFF mixed[3][3][3][3];       ///< mixed[k][k'][i][j]，混合接收点/源点坐标导数
 } LAMB3_CONVERSION_PF_SET;
 
 /** 一个几何排列对应的全部部分分式系数 */
@@ -88,7 +89,7 @@ typedef struct {
 /** 一个时间点的 PS 基本积分 */
 typedef struct {
     cplx_t pair[3][2]; ///< pair[i][0/1]，i=0,1,2 为根索引，0/1 为二次因子的两个基本积分
-    real_t V[11];      ///< V[j+4] 保存阶数 j=-4,...,6 的基本积分
+    real_t V[14];      ///< V[j+5] 保存阶数 j=-5,...,8 的基本积分
 } LAMB3_PS_BASIS;
 
 /** 一个时间点和一组反射积分对应的基本积分 */
@@ -102,6 +103,7 @@ typedef struct {
     real_t F[3][3];              ///< F[i][j] 是接收点分量 i 和源点分量 j 的矩阵
     real_t Fk_source[3][3][3];   ///< Fk_source[k'][i][j] 是源点坐标导数
     real_t Fk_receiver[3][3][3]; ///< Fk_receiver[k][i][j] 是接收点坐标导数
+    real_t Fkk[3][3][3][3];       ///< Fkk[k][k'][i][j] 是混合导数对应的二次时间积分项
 } LAMB3_F;
 
 /* phi -> phi + pi 后各矩阵分量的符号，索引为 [接收点分量][源点分量] */
@@ -111,19 +113,20 @@ static const int LAMB3_PHI_PI_SIGN[3][3] = {
     {-1, -1, 1},
 };
 
-static LAMB3_POLY make_denominator(const cplx_t roots[3], const int pole_order, const bool plus, const cplx_t scale) {
-    LAMB3_POLY denominator = grt_lamb_poly_const(scale);
-    LAMB3_POLY x = grt_lamb_poly_x();
-    LAMB3_POLY xpow = grt_lamb_poly_const(1.0);
+static LAMB_X_POLY make_denominator(const cplx_t roots[3], const int pole_order, const bool plus, const cplx_t scale) {
+    LAMB_X_POLY denominator = grt_lamb_x_poly_const(scale);
+    LAMB_X_POLY x = grt_lamb_x_poly_x();
+    LAMB_X_POLY xpow = grt_lamb_x_poly_const(1.0);
     for (int i = 0; i < pole_order; ++i) {
-        xpow = grt_lamb_poly_mul(xpow, x);
+        xpow = grt_lamb_x_poly_mul(xpow, x);
     }
-    denominator = grt_lamb_poly_mul(denominator, xpow);
+    denominator = grt_lamb_x_poly_mul(denominator, xpow);
     for (int i = 0; i < 3; ++i) {
-        denominator = grt_lamb_poly_mul(denominator, grt_lamb_poly_factor(roots[i], plus));
+        denominator = grt_lamb_x_poly_mul(denominator, grt_lamb_x_poly_factor(roots[i], plus));
     }
     return denominator;
 }
+
 
 /**
  * 对 x^p 乘三个二次因子的分母作部分分式分解
@@ -132,17 +135,17 @@ static LAMB3_POLY make_denominator(const cplx_t roots[3], const int pole_order, 
  * plus=false 对应 (x^2-y_i)
  * pole[i] 对应 x^(-(i+1))，tail[m] 对应 x^m
  */
-static void make_partial_fraction(const LAMB3_POLY *numerator, const cplx_t roots[3], const int pole_order, const bool plus, const cplx_t scale,
+static void make_partial_fraction(const LAMB_X_POLY *numerator, const cplx_t roots[3], const int pole_order, const bool plus, const cplx_t scale,
                                   LAMB3_PF *pf) {
-    LAMB3_POLY denominator = make_denominator(roots, pole_order, plus, scale);
-    LAMB3_POLY quotient;
-    LAMB3_POLY remainder;
-    grt_lamb_poly_divide(*numerator, denominator, &quotient, &remainder);
+    LAMB_X_POLY denominator = make_denominator(roots, pole_order, plus, scale);
+    LAMB_X_POLY quotient;
+    LAMB_X_POLY remainder;
+    grt_lamb_x_poly_divide(*numerator, denominator, &quotient, &remainder);
 
     memset(pf, 0, sizeof(*pf));
     pf->npole = pole_order;
     pf->ntail = quotient.degree + 1;
-    if (pf->npole > 4 || pf->ntail > LAMB3_TAIL_SIZE) {
+    if (pf->npole > 5 || pf->ntail > LAMB3_TAIL_SIZE) {
         GRTRaiseError("The partial-fraction degree is too large in lamb3.\n");
     }
     for (int i = 0; i < pf->ntail; ++i) {
@@ -150,11 +153,11 @@ static void make_partial_fraction(const LAMB3_POLY *numerator, const cplx_t root
     }
 
     /* x=0 处的主部系数 */
-    LAMB3_POLY even_denominator = grt_lamb_poly_const(scale);
+    LAMB_X_POLY even_denominator = grt_lamb_x_poly_const(scale);
     for (int i = 0; i < 3; ++i) {
-        even_denominator = grt_lamb_poly_mul(even_denominator, grt_lamb_poly_factor(roots[i], plus));
+        even_denominator = grt_lamb_x_poly_mul(even_denominator, grt_lamb_x_poly_factor(roots[i], plus));
     }
-    cplx_t series[LAMB3_POLY_SIZE] = {0};
+    cplx_t series[LAMB_POLY_X_SIZE] = {0};
     for (int n = 0; n < pole_order; ++n) {
         cplx_t value = n <= remainder.degree ? remainder.c[n] : 0.0;
         for (int j = 1; j <= n; ++j) {
@@ -166,36 +169,36 @@ static void make_partial_fraction(const LAMB3_POLY *numerator, const cplx_t root
 
     /* 每个二次因子的两个简单极点 */
     for (int i = 0; i < 3; ++i) {
-        LAMB3_POLY quotient_factor = grt_lamb_poly_const(scale);
-        LAMB3_POLY xpow = grt_lamb_poly_const(1.0);
-        LAMB3_POLY x = grt_lamb_poly_x();
+        LAMB_X_POLY quotient_factor = grt_lamb_x_poly_const(scale);
+        LAMB_X_POLY xpow = grt_lamb_x_poly_const(1.0);
+        LAMB_X_POLY x = grt_lamb_x_poly_x();
         for (int j = 0; j < pole_order; ++j) {
-            xpow = grt_lamb_poly_mul(xpow, x);
+            xpow = grt_lamb_x_poly_mul(xpow, x);
         }
-        quotient_factor = grt_lamb_poly_mul(quotient_factor, xpow);
+        quotient_factor = grt_lamb_x_poly_mul(quotient_factor, xpow);
         for (int j = 0; j < 3; ++j) {
             if (i != j) {
-                quotient_factor = grt_lamb_poly_mul(quotient_factor, grt_lamb_poly_factor(roots[j], plus));
+                quotient_factor = grt_lamb_x_poly_mul(quotient_factor, grt_lamb_x_poly_factor(roots[j], plus));
             }
         }
         cplx_t c = plus ? sqrt(-roots[i]) : sqrt(roots[i]);
         if (fabs(c) < 1e-14) {
             GRTRaiseError("A zero partial-fraction root is not supported in lamb3.\n");
         }
-        cplx_t value_plus = grt_lamb_poly_eval(&remainder, c) / grt_lamb_poly_eval(&quotient_factor, c);
-        cplx_t value_minus = grt_lamb_poly_eval(&remainder, -c) / grt_lamb_poly_eval(&quotient_factor, -c);
+        cplx_t value_plus = grt_lamb_x_poly_eval(&remainder, c) / grt_lamb_x_poly_eval(&quotient_factor, c);
+        cplx_t value_minus = grt_lamb_x_poly_eval(&remainder, -c) / grt_lamb_x_poly_eval(&quotient_factor, -c);
         pf->pair[i][0] = (value_plus - value_minus) / (2.0 * c);
         pf->pair[i][1] = 0.5 * (value_plus + value_minus);
     }
 }
 
-static void make_partial_fraction_coeff(const LAMB3_POLY_COEFF *numerator, const cplx_t roots[3], const int pole_order, const bool plus,
+static void make_partial_fraction_coeff(const LAMB_TBAR_X_POLY *numerator, const cplx_t roots[3], const int pole_order, const bool plus,
                                         const cplx_t scale, LAMB3_PF_COEFF *result) {
     memset(result, 0, sizeof(*result));
     result->npole = pole_order;
-    result->time_degree = numerator->time_degree;
-    for (int r = 0; r <= numerator->time_degree; ++r) {
-        LAMB3_POLY polynomial = {0};
+    result->time_degree = numerator->tbar_degree;
+    for (int r = 0; r <= numerator->tbar_degree; ++r) {
+        LAMB_X_POLY polynomial = {0};
         polynomial.degree = numerator->degree;
         for (int m = 0; m <= numerator->degree; ++m) {
             polynomial.c[m] = numerator->c[r][m];
@@ -217,12 +220,12 @@ static void make_partial_fraction_coeff(const LAMB3_POLY_COEFF *numerator, const
     }
 }
 
-static void make_partial_fraction_coeff_x(const LAMB3_POLY_COEFF *numerator, const cplx_t roots[3], const int pole_order, const bool plus,
+static void make_partial_fraction_coeff_x(const LAMB_TBAR_X_POLY *numerator, const cplx_t roots[3], const int pole_order, const bool plus,
                                           const cplx_t scale_x, const cplx_t scale_denominator, LAMB3_PF_COEFF *result) {
-    LAMB3_POLY_COEFF shifted = {0};
+    LAMB_TBAR_X_POLY shifted = {0};
     shifted.degree = numerator->degree + 1;
-    shifted.time_degree = numerator->time_degree;
-    for (int r = 0; r <= numerator->time_degree; ++r) {
+    shifted.tbar_degree = numerator->tbar_degree;
+    for (int r = 0; r <= numerator->tbar_degree; ++r) {
         for (int m = 0; m <= numerator->degree; ++m) {
             shifted.c[r][m + 1] = scale_x * numerator->c[r][m];
         }
@@ -230,7 +233,8 @@ static void make_partial_fraction_coeff_x(const LAMB3_POLY_COEFF *numerator, con
     make_partial_fraction_coeff(&shifted, roots, pole_order, plus, scale_denominator, result);
 }
 
-static void make_reflection_pf_set(const LAMB3_COEFF_SET *coeffs, const cplx_t roots[3], const real_t kp2, LAMB3_REFLECTION_PF_SET *result) {
+static void make_reflection_pf_set(const LAMB3_COEFF_SET *coeffs, const cplx_t roots[3], const real_t kp2,
+                                   const bool need_mixed, LAMB3_REFLECTION_PF_SET *result) {
     memset(result, 0, sizeof(*result));
     for (int xi = 0; xi < 2; ++xi) {
         for (int i = 0; i < 3; ++i) {
@@ -240,12 +244,22 @@ static void make_reflection_pf_set(const LAMB3_COEFF_SET *coeffs, const cplx_t r
                     make_partial_fraction_coeff(&coeffs->dM[k][xi][i][j], roots, 0, true, 16.0 * kp2, &result->dM[k][xi][i][j]);
                 }
                 make_partial_fraction_coeff_x(&coeffs->M[xi][i][j], roots, 0, true, -1.0, 16.0 * kp2, &result->dM[2][xi][i][j]);
+                if (need_mixed) {
+                    for (int receiver_direction = 0; receiver_direction < 3; ++receiver_direction) {
+                        for (int source_direction = 0; source_direction < 3; ++source_direction) {
+                            make_partial_fraction_coeff(
+                                &coeffs->d2M[xi][receiver_direction][source_direction][i][j], roots, 0, true, 16.0 * kp2,
+                                &result->mixed[xi][receiver_direction][source_direction][i][j]);
+                        }
+                    }
+                }
             }
         }
     }
 }
 
-static void make_conversion_pf_set(const LAMB3_CONVERSION_COEFF_SET *coeffs, const cplx_t roots[3], LAMB3_CONVERSION_PF_SET *result) {
+static void make_conversion_pf_set(const LAMB3_CONVERSION_COEFF_SET *coeffs, const cplx_t roots[3], const bool need_mixed,
+                                   LAMB3_CONVERSION_PF_SET *result) {
     memset(result, 0, sizeof(*result));
     for (int i = 0; i < 3; ++i) {
         for (int j = 0; j < 3; ++j) {
@@ -262,6 +276,15 @@ static void make_conversion_pf_set(const LAMB3_CONVERSION_COEFF_SET *coeffs, con
             /* 源点竖直导数使用系数阶段已生成的 dM[2] */
             if (!reuse_M) {
                 make_partial_fraction_coeff(&coeffs->dM[2][i][j], roots, 4, false, 1.0, &result->dM[2][i][j]);
+            }
+            if (need_mixed) {
+                for (int receiver_direction = 0; receiver_direction < 3; ++receiver_direction) {
+                    for (int source_direction = 0; source_direction < 3; ++source_direction) {
+                        make_partial_fraction_coeff(
+                            &coeffs->d2M[receiver_direction][source_direction][i][j], roots, 5, false, 1.0,
+                            &result->mixed[receiver_direction][source_direction][i][j]);
+                    }
+                }
             }
         }
     }
@@ -287,17 +310,19 @@ static void make_conversion_receiver_pf_set(const LAMB3_CONVERSION_COEFF_SET *pa
 }
 
 static void make_coefficients(const LAMB3_VARS *V, const bool need_P, const bool need_S, const bool need_PS, const bool need_SP,
-                              LAMB3_PF_COEFFICIENTS *coefficients) {
+                              const bool need_mixed,
+                              LAMB3_PF_COEFFICIENTS *coefficients)
+{
     /* 原始和部分分式系数体积较大，统一放在堆上，并按到时跳过未用到的项 */
     if (need_P || need_S) {
         LAMB3_COEFF_SET *reflection_raw = GRT_SAFE_CALLOC(1, sizeof(*reflection_raw));
         if (need_P) {
-            make_lamb3_P_coefficients(V, reflection_raw);
-            make_reflection_pf_set(reflection_raw, V->rayleigh, V->kp2, &coefficients->P);
+            make_lamb3_reflection_coefficients(V, false, need_mixed, reflection_raw);
+            make_reflection_pf_set(reflection_raw, V->rayleigh, V->kp2, need_mixed, &coefficients->P);
         }
         if (need_S) {
-            make_lamb3_S_coefficients(V, reflection_raw);
-            make_reflection_pf_set(reflection_raw, V->rayleigh_shifted, V->kp2, &coefficients->S);
+            make_lamb3_reflection_coefficients(V, true, need_mixed, reflection_raw);
+            make_reflection_pf_set(reflection_raw, V->rayleigh_shifted, V->kp2, need_mixed, &coefficients->S);
         }
         GRT_SAFE_FREE_PTR(reflection_raw);
     }
@@ -309,15 +334,15 @@ static void make_coefficients(const LAMB3_VARS *V, const bool need_P, const bool
         reciprocal.depsrc = V->deprcv;
         reciprocal.deprcv = V->depsrc;
         if (need_PS) {
-            make_lamb3_PS_coefficients(V, 1.0, 1, conversion_raw);
-            make_conversion_pf_set(conversion_raw, V->rayleigh_ps, &coefficients->PS);
-            make_lamb3_SP_coefficients(&reciprocal, conversion_raw);
+            make_lamb3_conversion_coefficients(V, false, need_mixed, conversion_raw);
+            make_conversion_pf_set(conversion_raw, V->rayleigh_ps, need_mixed, &coefficients->PS);
+            make_lamb3_conversion_coefficients(&reciprocal, true, need_mixed, conversion_raw);
             make_conversion_receiver_pf_set(conversion_raw, V->rayleigh_ps, &coefficients->PS);
         }
         if (need_SP) {
-            make_lamb3_SP_coefficients(V, conversion_raw);
-            make_conversion_pf_set(conversion_raw, V->rayleigh_ps, &coefficients->SP);
-            make_lamb3_PS_coefficients(&reciprocal, 1.0, 1, conversion_raw);
+            make_lamb3_conversion_coefficients(V, true, need_mixed, conversion_raw);
+            make_conversion_pf_set(conversion_raw, V->rayleigh_ps, need_mixed, &coefficients->SP);
+            make_lamb3_conversion_coefficients(&reciprocal, false, need_mixed, conversion_raw);
             make_conversion_receiver_pf_set(conversion_raw, V->rayleigh_ps, &coefficients->SP);
         }
         GRT_SAFE_FREE_PTR(conversion_raw);
@@ -549,49 +574,13 @@ static cplx_t numerical_reflection_V9(const LAMB_BASIC_CONTEXT *ctx) {
     return I * value;
 }
 
-static cplx_t basic_U(const int number, const LAMB_BASIC_CONTEXT *ctx) {
-    if (number <= 6) {
-        return grt_lamb_basic_U(number, 0.0, ctx);
-    }
-    if (ctx->term == LAMB_BASIC_SP_TERM) {
-        return 0.0;
-    }
-
-    int exponent = number - 3;
-    real_t m = ctx->m;
-    real_t n = ctx->n;
-    real_t value = 0.0;
-    for (int even_power = 0; even_power <= exponent; even_power += 2) {
-        int half_power = even_power / 2;
-        real_t moment = PI / 2.0 * tgamma((real_t)half_power + 0.5) / (sqrt(PI) * tgamma((real_t)half_power + 1.0));
-        value += tgamma((real_t)exponent + 1.0) / (tgamma((real_t)even_power + 1.0) * tgamma((real_t)(exponent - even_power) + 1.0)) *
-                 pow(m, exponent - even_power) * pow(n, even_power) * (half_power % 2 == 0 ? 1.0 : -1.0) * moment;
-    }
-    return I * value;
-}
-
-static void calculate_H7(const LAMB_BASIC_CONTEXT *ctx, real_t H[7]) {
-    grt_lamb_calculate_H(ctx, grt_ellipticK(ctx->m_elliptic), H);
-    real_t a;
-    if (ctx->term == LAMB_BASIC_P_TERM) {
-        a = 1.0 / ctx->z2sq;
-    } else if (ctx->term == LAMB_BASIC_S_TERM) {
-        a = -(ctx->z2sq + 1.0) / ctx->z2sq;
-    } else {
-        a = -ctx->c1 / ctx->c2;
-    }
-    real_t m = ctx->m_elliptic;
-    real_t gamma1 = 3.0 * m * a * a + 2.0 * a * (m + 1.0) + 1.0;
-    real_t gamma2 = m + 1.0 + 3.0 * m * a;
-    real_t gamma3 = a * (a + 1.0) * (a * m + 1.0);
-    H[5] = (7.0 * gamma1 * H[4] - 6.0 * gamma2 * H[3] + 5.0 * m * H[2]) / (8.0 * gamma3);
-    H[6] = (9.0 * gamma1 * H[5] - 8.0 * gamma2 * H[4] + 7.0 * m * H[3]) / (10.0 * gamma3);
-}
-
-/** 计算反射项的 V8、V9 基本积分 */
+/** 计算反射项的 V9 基本积分 */
 static real_t reflection_V_high(const int number, const LAMB_BASIC_CONTEXT *ctx) {
+    if (number != 9) {
+        GRTRaiseError("Wrong high-order V number in lamb3: %d.\n", number);
+    }
     real_t H[7];
-    calculate_H7(ctx, H);
+    grt_lamb_calculate_H6(ctx, H);
     real_t xi1 = ctx->xi1;
     real_t xi2 = ctx->xi2;
     real_t z2 = ctx->z2;
@@ -603,30 +592,19 @@ static real_t reflection_V_high(const int number, const LAMB_BASIC_CONTEXT *ctx)
     real_t z2m12 = z2m10 * z2m2;
     real_t beta11 = xi1 - xi2;
     real_t beta13 = xi1 - 3.0 * xi2;
-    real_t beta23 = 2.0 * xi1 - 3.0 * xi2;
     real_t beta57 = 5.0 * xi1 - 7.0 * xi2;
     real_t value;
 
     if (ctx->term == LAMB_BASIC_P_TERM || ctx->term == LAMB_BASIC_S_TERM) {
         /* P、S 两项只在奇次组合的符号上不同 */
         const real_t reflection_sign = ctx->term == LAMB_BASIC_P_TERM ? -1.0 : 1.0;
-        real_t A18 = xi1 * xi1 - 8.0 * xi1 * xi2 + 11.0 * xi2 * xi2;
-        real_t A110 = xi1 * xi1 - 10.0 * xi1 * xi2 + 17.0 * xi2 * xi2;
         real_t A167 = xi1 * xi1 - 6.0 * xi1 * xi2 + 7.0 * xi2 * xi2;
         real_t A326 = 3.0 * xi1 * xi1 - 26.0 * xi1 * xi2 + 43.0 * xi2 * xi2;
         real_t B133 = xi1 * xi1 * xi1 - 33.0 * xi1 * xi1 * xi2 + 183.0 * xi1 * xi2 * xi2 - 231.0 * xi2 * xi2 * xi2;
-        if (number == 8) {
-            value = pow(xi2, 5) * H[0] + 5.0 * reflection_sign * pow(xi2, 3) * beta11 * beta23 * z2m2 * H[1] +
-                    5.0 * xi2 * beta11 * beta11 * A18 * z2m4 * H[2] - 5.0 * reflection_sign * pow(beta11, 3) * A110 * z2m6 * H[3] -
-                    20.0 * pow(beta11, 4) * beta13 * z2m8 * H[4] - 16.0 * reflection_sign * pow(beta11, 5) * z2m10 * H[5];
-        } else if (number == 9) {
-            value = pow(xi2, 6) * H[0] + 3.0 * reflection_sign * pow(xi2, 4) * beta11 * beta57 * z2m2 * H[1] +
-                    15.0 * xi2 * xi2 * beta11 * beta11 * A167 * z2m4 * H[2] + reflection_sign * pow(beta11, 3) * B133 * z2m6 * H[3] +
-                    6.0 * pow(beta11, 4) * A326 * z2m8 * H[4] + 48.0 * reflection_sign * pow(beta11, 5) * beta13 * z2m10 * H[5] +
-                    32.0 * pow(beta11, 6) * z2m12 * H[6];
-        } else {
-            GRTRaiseError("Wrong %s-wave high-order V number in lamb3: %d.\n", ctx->term == LAMB_BASIC_P_TERM ? "P" : "S", number);
-        }
+        value = pow(xi2, 6) * H[0] + 3.0 * reflection_sign * pow(xi2, 4) * beta11 * beta57 * z2m2 * H[1] +
+                15.0 * xi2 * xi2 * beta11 * beta11 * A167 * z2m4 * H[2] + reflection_sign * pow(beta11, 3) * B133 * z2m6 * H[3] +
+                6.0 * pow(beta11, 4) * A326 * z2m8 * H[4] + 48.0 * reflection_sign * pow(beta11, 5) * beta13 * z2m10 * H[5] +
+                32.0 * pow(beta11, 6) * z2m12 * H[6];
     } else {
         real_t c1 = ctx->c1;
         real_t c2 = ctx->c2;
@@ -645,35 +623,44 @@ static real_t reflection_V_high(const int number, const LAMB_BASIC_CONTEXT *ctx)
         real_t M6 = PI * (2.0 * c1 - c2) *
                     (128.0 * pow(c1, 4) - 256.0 * pow(c1, 3) * c2 + 352.0 * c1 * c1 * c2 * c2 - 224.0 * c1 * pow(c2, 3) + 63.0 * pow(c2, 4)) /
                     (512.0 * pow(c1 * (c1 - c2), 5.5));
-        real_t A18 = xi1 * xi1 - 8.0 * xi1 * xi2 + 11.0 * xi2 * xi2;
-        real_t A110 = xi1 * xi1 - 10.0 * xi1 * xi2 + 17.0 * xi2 * xi2;
         real_t A167 = xi1 * xi1 - 6.0 * xi1 * xi2 + 7.0 * xi2 * xi2;
         real_t A326 = 3.0 * xi1 * xi1 - 26.0 * xi1 * xi2 + 43.0 * xi2 * xi2;
-        real_t A122 = xi1 * xi1 - 22.0 * xi1 * xi2 + 61.0 * xi2 * xi2;
         real_t A336 = 3.0 * xi1 * xi1 - 36.0 * xi1 * xi2 + 73.0 * xi2 * xi2;
         real_t B133 = xi1 * xi1 * xi1 - 33.0 * xi1 * xi1 * xi2 + 183.0 * xi1 * xi2 * xi2 - 231.0 * xi2 * xi2 * xi2;
         real_t beta25 = 2.0 * xi1 - 5.0 * xi2;
-        real_t beta313 = 3.0 * xi1 - 13.0 * xi2;
         real_t beta111 = xi1 - 11.0 * xi2;
         real_t beta14 = xi1 - 4.0 * xi2;
-        if (number == 8) {
-            value = -(pow(xi2, 5) * H[0] - 5.0 * pow(xi2, 3) * beta11 * beta23 * c2m1 * H[1] + 5.0 * xi2 * beta11 * beta11 * A18 * c2m2 * H[2] +
-                      5.0 * pow(beta11, 3) * A110 * c2m3 * H[3] - 20.0 * pow(beta11, 4) * beta13 * c2m4 * H[4] + 16.0 * pow(beta11, 5) * c2m5 * H[5] +
-                      beta11 * z2 *
-                          (5.0 * pow(xi2, 4) * M1 + 10.0 * xi2 * xi2 * beta11 * beta13 * M2 + beta11 * beta11 * A122 * M3 +
-                           4.0 * pow(beta11, 3) * beta313 * M4 + 16.0 * pow(beta11, 4) * M5));
-        } else if (number == 9) {
-            value = -(pow(xi2, 6) * H[0] - 3.0 * pow(xi2, 4) * beta11 * beta57 * c2m1 * H[1] +
-                      15.0 * xi2 * xi2 * beta11 * beta11 * A167 * c2m2 * H[2] - pow(beta11, 3) * B133 * c2m3 * H[3] +
-                      6.0 * pow(beta11, 4) * A326 * c2m4 * H[4] - 48.0 * pow(beta11, 5) * beta13 * c2m5 * H[5] + 32.0 * pow(beta11, 6) * c2m6 * H[6] +
-                      2.0 * beta11 * z2 *
-                          (3.0 * pow(xi2, 5) * M1 + 5.0 * pow(xi2, 3) * beta25 * beta11 * M2 + xi2 * beta11 * beta11 * A336 * M3 -
-                           3.0 * pow(beta11, 3) * beta13 * beta111 * M4 - 16.0 * pow(beta11, 4) * beta14 * M5 - 16.0 * pow(beta11, 5) * M6));
-        } else {
-            GRTRaiseError("Wrong S-P-wave high-order V number in lamb3: %d.\n", number);
-        }
+        value = -(pow(xi2, 6) * H[0] - 3.0 * pow(xi2, 4) * beta11 * beta57 * c2m1 * H[1] +
+                  15.0 * xi2 * xi2 * beta11 * beta11 * A167 * c2m2 * H[2] - pow(beta11, 3) * B133 * c2m3 * H[3] +
+                  6.0 * pow(beta11, 4) * A326 * c2m4 * H[4] - 48.0 * pow(beta11, 5) * beta13 * c2m5 * H[5] + 32.0 * pow(beta11, 6) * c2m6 * H[6] +
+                  2.0 * beta11 * z2 *
+                      (3.0 * pow(xi2, 5) * M1 + 5.0 * pow(xi2, 3) * beta25 * beta11 * M2 + xi2 * beta11 * beta11 * A336 * M3 -
+                       3.0 * pow(beta11, 3) * beta13 * beta111 * M4 - 16.0 * pow(beta11, 4) * beta14 * M5 - 16.0 * pow(beta11, 5) * M6));
     }
     return ctx->c_main * value;
+}
+
+
+typedef struct {
+    const LAMB_BASIC_CONTEXT *context;
+    int order;
+} LAMB3_SP_HIGH_CONTEXT;
+
+
+static real_t SP_high_integrand(real_t angle, void *userdata) {
+    const LAMB3_SP_HIGH_CONTEXT *C = userdata;
+    const LAMB_BASIC_CONTEXT *ctx = C->context;
+    const real_t sine = sin(angle);
+    const real_t root = grt_lamb_positive_sqrt(1.0 - ctx->m_elliptic * sine * sine, "S-P high-order V integral");
+    const real_t z = -ctx->z2 * root;
+    const real_t ratio = (ctx->xi2 * z - ctx->xi1) / (z - 1.0);
+    return pow(ratio, C->order) / root;
+}
+
+
+static real_t SP_high_V(const int number, const LAMB_BASIC_CONTEXT *ctx) {
+    LAMB3_SP_HIGH_CONTEXT C = {ctx, number - 3};
+    return -ctx->c_main * grt_lamb_qromb(SP_high_integrand, 0.0, HALFPI, LAMB3_QROMB_EPS, &C);
 }
 
 static cplx_t basic_V(const int number, const LAMB_BASIC_CONTEXT *ctx) {
@@ -695,8 +682,19 @@ static cplx_t basic_V(const int number, const LAMB_BASIC_CONTEXT *ctx) {
         }
         return I * value;
     }
-    if (number == 8 || number == 9) {
+    if (number == 8) {
+        return I * grt_lamb_tail_V8(ctx);
+    }
+    if (number == 9) {
         return I * reflection_V_high(number, ctx);
+    }
+    if (number >= 10 && (ctx->term == LAMB_BASIC_P_TERM || ctx->term == LAMB_BASIC_S_TERM)) {
+        real_t H[10] = {0};
+        grt_lamb_calculate_HN(ctx, grt_ellipticK(ctx->m_elliptic), H, number - 3);
+        return I * grt_lamb_tail_V_high(number, ctx, H);
+    }
+    if (number >= 10 && ctx->term == LAMB_BASIC_SP_TERM) {
+        return I * SP_high_V(number, ctx);
     }
     GRTRaiseError("Wrong V basic-integral number in lamb3: %d.\n", number);
 }
@@ -717,7 +715,7 @@ static void make_reflection_basis(const int ntail, const cplx_t roots[3], const 
         }
     }
     for (int i = 0; i < ntail; ++i) {
-        basis->tail[i] = use_U ? basic_U(i + 3, ctx) : basic_V(i + 3, ctx);
+        basis->tail[i] = use_U ? grt_lamb_basic_U(i + 3, 0.0, ctx) : basic_V(i + 3, ctx);
     }
 }
 
@@ -821,6 +819,26 @@ static void evaluate_reflection_set(const LAMB3_REFLECTION_PF_SET *coeffs, const
             Fk_receiver[0][i][j] = -Fk_source[0][i][j];
             Fk_receiver[1][i][j] = -Fk_source[1][i][j];
             Fk_receiver[2][i][j] = LAMB3_PHI_PI_SIGN[j][i] * Fk_source[2][j][i];
+        }
+    }
+}
+
+
+/** 直接评估反射项的混合二阶空间导数，不使用一阶导数的矩阵关系 */
+static void evaluate_reflection_mixed(const LAMB3_REFLECTION_PF_SET *coeffs, const LAMB3_REFLECTION_BASIS *basis_U,
+                                      const LAMB3_REFLECTION_BASIS *basis_V, const real_t t,
+                                      real_t result[3][3][3][3]) {
+    const bool use_U = basis_U != NULL;
+    for (int receiver_direction = 0; receiver_direction < 3; ++receiver_direction) {
+        for (int source_direction = 0; source_direction < 3; ++source_direction) {
+            for (int i = 0; i < 3; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    result[receiver_direction][source_direction][i][j] = evaluate_reflection_component(
+                        &coeffs->mixed[0][receiver_direction][source_direction][i][j],
+                        &coeffs->mixed[1][receiver_direction][source_direction][i][j],
+                        basis_U, basis_V, use_U, t);
+                }
+            }
         }
     }
 }
@@ -965,7 +983,7 @@ static cplx_t PS_pair(const int number, const cplx_t c, const LAMB3_PS_CTX *P) {
     return I * P->cps * (elliptic + (use_zeta ? -branch : branch));
 }
 
-static void calculate_PS_H(const LAMB3_PS_CTX *P, const int alpha, real_t H[7]) {
+static void calculate_PS_H(const LAMB3_PS_CTX *P, const int alpha, real_t H[9]) {
     real_t a = alpha == 1 ? P->xi1 * P->xi1 / (P->xi2 * P->xi2 * P->z2sq) : 1.0 / P->z2sq;
     real_t m = P->m;
     real_t K = grt_ellipticK(m);
@@ -979,11 +997,15 @@ static void calculate_PS_H(const LAMB3_PS_CTX *P, const int alpha, real_t H[7]) 
     H[2] = (gamma1 * H[1] - m * Hminus1) / (2.0 * gamma3);
     H[3] = (3.0 * gamma1 * H[2] - 2.0 * gamma2 * H[1] + m * H[0]) / (4.0 * gamma3);
     H[4] = (5.0 * gamma1 * H[3] - 4.0 * gamma2 * H[2] + 3.0 * m * H[1]) / (6.0 * gamma3);
-    H[5] = (7.0 * gamma1 * H[4] - 6.0 * gamma2 * H[3] + 5.0 * m * H[2]) / (8.0 * gamma3);
-    H[6] = (9.0 * gamma1 * H[5] - 8.0 * gamma2 * H[4] + 7.0 * m * H[3]) / (10.0 * gamma3);
+    for (int order = 5; order <= 8; ++order) {
+        H[order] = ((2.0 * order - 3.0) * gamma1 * H[order - 1] -
+                    2.0 * (order - 2.0) * gamma2 * H[order - 2] +
+                    (2.0 * order - 5.0) * m * H[order - 3]) /
+                   (2.0 * (order - 1.0) * gamma3);
+    }
 }
 
-static real_t PS_Vj_with_H(const int j, const LAMB3_PS_CTX *P, const real_t H1[7], const real_t H2[7]) {
+static real_t PS_Vj_with_H(const int j, const LAMB3_PS_CTX *P, const real_t H1[9], const real_t H2[9]) {
     real_t xi1 = P->xi1;
     real_t xi2 = P->xi2;
     real_t z2 = P->z2;
@@ -997,6 +1019,7 @@ static real_t PS_Vj_with_H(const int j, const LAMB3_PS_CTX *P, const real_t H1[7
     real_t xi2z2m4 = xi2z2m2 * xi2z2m2;
     real_t xi2z2m6 = xi2z2m4 * xi2z2m2;
     real_t xi2z2m8 = xi2z2m6 * xi2z2m2;
+    real_t xi2z2m10 = xi2z2m8 * xi2z2m2;
     real_t beta11 = xi1 - xi2;
     real_t beta12 = xi1 - 2.0 * xi2;
     real_t beta13 = xi1 - 3.0 * xi2;
@@ -1014,7 +1037,18 @@ static real_t PS_Vj_with_H(const int j, const LAMB3_PS_CTX *P, const real_t H1[7
     real_t A326 = 3.0 * xi1 * xi1 - 26.0 * xi1 * xi2 + 43.0 * xi2 * xi2;
     real_t value;
 
-    if ((j == -4 || j == -3 || j == -2) && fabs(P->asym_delta) < 1e-3) {
+    if (j >= 7) {
+        LAMB_BASIC_CONTEXT high = {0};
+        high.term = LAMB_BASIC_P_TERM;
+        high.xi1 = P->xi1;
+        high.xi2 = P->xi2;
+        high.z2 = P->z2;
+        high.c_main = P->cps;
+        return grt_lamb_tail_V_high(j + 3, &high, H2);
+    }
+
+    const real_t asymptotic_limit = j == -5 ? 2e-3 : 1e-3;
+    if ((j == -5 || j == -4 || j == -3 || j == -2) && fabs(P->asym_delta) < asymptotic_limit) {
         real_t K = H2[0];
         real_t E = grt_ellipticE(P->m);
         real_t I0 = K;
@@ -1025,7 +1059,12 @@ static real_t PS_Vj_with_H(const int j, const LAMB3_PS_CTX *P, const real_t H1[7
         real_t z22 = P->z2 * P->z2;
         real_t z24 = z22 * z22;
         real_t z26 = z24 * z22;
-        if (j == -4) {
+        if (j == -5) {
+            real_t delta2 = delta * delta;
+            value = pow(P->xi1, -5.0) * (I0 - 10.0 * z22 * I1 + 5.0 * z24 * I2 +
+                                         delta * (25.0 * z22 * I1 - 50.0 * z24 * I2 + 5.0 * z26 * I3) +
+                                         delta2 * (-15.0 * z22 * I1 + 150.0 * z24 * I2 - 75.0 * z26 * I3));
+        } else if (j == -4) {
             value = pow(P->xi1, -4.0) * (I0 - 2.0 * (1.0 - delta) * (3.0 - 5.0 * delta) * z22 * I1 +
                                          (1.0 - 6.0 * delta) * (1.0 - 10.0 * delta) * z24 * I2 - 10.0 * delta * delta * z26 * I3);
         } else if (j == -3) {
@@ -1036,7 +1075,13 @@ static real_t PS_Vj_with_H(const int j, const LAMB3_PS_CTX *P, const real_t H1[7
         return P->cps * value;
     }
 
-    if (j == -4) {
+    if (j == -5) {
+        value = pow(xi2, -5) * (H1[0] - 5.0 * beta11 * (3.0 * xi1 - 2.0 * xi2) * xi2z2m2 * H1[1] +
+                                5.0 * beta11 * beta11 * (11.0 * xi1 * xi1 - 8.0 * xi1 * xi2 + xi2 * xi2) * xi2z2m4 * H1[2] -
+                                5.0 * xi1 * pow(beta11, 3) * (17.0 * xi1 * xi1 - 10.0 * xi1 * xi2 + xi2 * xi2) * xi2z2m6 * H1[3] +
+                                20.0 * pow(xi1, 3) * pow(beta11, 4) * beta31 * xi2z2m8 * H1[4] -
+                                16.0 * pow(xi1, 5) * pow(beta11, 5) * xi2z2m10 * H1[5]);
+    } else if (j == -4) {
         value = pow(xi2, -4) * (H1[0] - 2.0 * beta11 * beta53 * xi2z2m2 * H1[1] +
                                 beta11 * beta11 * (25.0 * xi1 * xi1 - 14.0 * xi1 * xi2 + xi2 * xi2) * xi2z2m4 * H1[2] -
                                 8.0 * xi1 * xi1 * pow(beta11, 3) * beta31 * xi2z2m6 * H1[3] + 8.0 * pow(xi1, 4) * pow(beta11, 4) * xi2z2m8 * H1[4]);
@@ -1078,13 +1123,13 @@ static void make_PS_basis(const cplx_t roots[3], const LAMB3_PS_CTX *P, LAMB3_PS
         basis->pair[i][0] = PS_pair(1, roots[i], P);
         basis->pair[i][1] = PS_pair(2, roots[i], P);
     }
-    real_t H1[7];
-    real_t H2[7];
+    real_t H1[9];
+    real_t H2[9];
     calculate_PS_H(P, 1, H1);
     calculate_PS_H(P, 2, H2);
-    /* basis->V[j+4] 对应式 (8.3.12)-(8.3.17) 中的 V_j，j=-4,...,6 */
-    for (int j = -4; j <= 6; ++j) {
-        basis->V[j + 4] = PS_Vj_with_H(j, P, H1, H2);
+    /* basis->V[j+5] 对应式 (8.3.12)-(8.3.17) 中的 V_j，j=-5,...,8 */
+    for (int j = -5; j <= 8; ++j) {
+        basis->V[j + 5] = PS_Vj_with_H(j, P, H1, H2);
     }
 }
 
@@ -1094,12 +1139,13 @@ static cplx_t evaluate_conversion_pf(const LAMB3_PF_COEFF *coeff, const LAMB3_PS
         value += grt_lamb_eval_time_coeff(coeff->pair[i][0], coeff->time_degree, t) * basis->pair[i][0];
         value += grt_lamb_eval_time_coeff(coeff->pair[i][1], coeff->time_degree, t) * basis->pair[i][1];
     }
+    const int basis_offset = 5;
     for (int i = 0; i < coeff->npole; ++i) {
-        /* pole[i] 对应 V_(3-i)，即阶数 -(i+1) 的主部积分 */
-        value += I * grt_lamb_eval_time_coeff(coeff->pole[i], coeff->time_degree, t) * basis->V[3 - i];
+        /* pole[i] 对应 V_(-(i+1))，即阶数 -(i+1) 的主部积分 */
+        value += I * grt_lamb_eval_time_coeff(coeff->pole[i], coeff->time_degree, t) * basis->V[basis_offset - 1 - i];
     }
     for (int i = 0; i < coeff->ntail; ++i) {
-        value += I * grt_lamb_eval_time_coeff(coeff->tail[i], coeff->time_degree, t) * basis->V[i + 4];
+        value += I * grt_lamb_eval_time_coeff(coeff->tail[i], coeff->time_degree, t) * basis->V[i + basis_offset];
     }
     return value;
 }
@@ -1148,10 +1194,26 @@ static void evaluate_conversion_source_derivatives(const LAMB3_PF_COEFF numerato
     }
 }
 
-/** 计算一个 P 或 S 反射项，并累加其矩阵和两个坐标导数 */
+
+static void evaluate_conversion_mixed(const LAMB3_PF_COEFF numerator[3][3][3][3], const LAMB3_PS_BASIS *basis,
+                                      const real_t t, const real_t scale, real_t result[3][3][3][3]) {
+    for (int receiver_direction = 0; receiver_direction < 3; ++receiver_direction) {
+        for (int source_direction = 0; source_direction < 3; ++source_direction) {
+            for (int i = 0; i < 3; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    result[receiver_direction][source_direction][i][j] = scale * cimag(evaluate_conversion_pf(
+                        &numerator[receiver_direction][source_direction][i][j], basis, t));
+                }
+            }
+        }
+    }
+}
+
+/** 计算一个 P 或 S 反射项，并累加其矩阵、两个坐标导数和混合导数 */
 static void evaluate_reflection_wave(const real_t sbar, const real_t sbar2, const LAMB_BASIC_VARS *basic_vars, const LAMB3_VARS *V,
                                      const LAMB3_REFLECTION_PF_SET *coeffs, const cplx_t roots[3], const LAMB_BASIC_TERM term,
-                                     real_t F[3][3], real_t Fk_source[3][3][3], real_t Fk_receiver[3][3][3]) {
+                                     real_t F[3][3], real_t Fk_source[3][3][3], real_t Fk_receiver[3][3][3],
+                                     const bool need_mixed, real_t Fkk[3][3][3][3]) {
     LAMB_BASIC_CONTEXT ctx = {0};
     if (term == LAMB_BASIC_P_TERM) {
         grt_lamb_make_context_P(sbar, sbar2, basic_vars, &ctx);
@@ -1165,13 +1227,22 @@ static void evaluate_reflection_wave(const real_t sbar, const real_t sbar2, cons
     real_t value[3][3];
     real_t source[3][3][3];
     real_t receiver[3][3][3];
+    real_t mixed[3][3][3][3];
     evaluate_reflection_set(coeffs, &basis_U, &basis_V, true, term == LAMB_BASIC_S_TERM, sbar, V, value, source, receiver);
+    if (need_mixed) {
+        evaluate_reflection_mixed(coeffs, &basis_U, &basis_V, sbar, mixed);
+    }
     for (int i = 0; i < 3; ++i) {
         for (int j = 0; j < 3; ++j) {
             F[i][j] += value[i][j];
             for (int k = 0; k < 3; ++k) {
                 Fk_source[k][i][j] += source[k][i][j];
                 Fk_receiver[k][i][j] += receiver[k][i][j];
+                if (need_mixed) {
+                    for (int kp = 0; kp < 3; ++kp) {
+                        Fkk[k][kp][i][j] += mixed[k][kp][i][j];
+                    }
+                }
             }
         }
     }
@@ -1182,9 +1253,11 @@ static void evaluate_reflection_wave(const real_t sbar, const real_t sbar2, cons
  * F[i][j] 的索引分别表示接收点分量和源点分量
  * Fk_source[k'][i][j] 的索引依次表示源点坐标方向、接收点分量和源点分量
  * Fk_receiver[k][i][j] 的索引依次表示接收点坐标方向、接收点分量和源点分量
+ * Fkk[k][k'][i][j] 的索引依次表示接收点方向、源点方向、接收点分量和源点分量
  */
 static void evaluate_conversion_term(const real_t tbar, const LAMB3_VARS *V, const LAMB3_CONVERSION_PF_SET *coeffs,
-                                     const bool swap_depth, real_t F[3][3], real_t Fk_source[3][3][3], real_t Fk_receiver[3][3][3]) {
+                                     const bool swap_depth, real_t F[3][3], real_t Fk_source[3][3][3], real_t Fk_receiver[3][3][3],
+                                     const bool need_mixed, real_t Fkk[3][3][3][3]) {
     const real_t p_depth = swap_depth ? V->deprcv : V->depsrc;
     const real_t s_depth = swap_depth ? V->depsrc : V->deprcv;
     LAMB3_PS_CTX P;
@@ -1193,8 +1266,12 @@ static void evaluate_conversion_term(const real_t tbar, const LAMB3_VARS *V, con
     make_PS_basis(V->rayleigh_ps, &P, &basis);
     const real_t scale = V->conversion_scale;
     const real_t derivative_scale = V->conversion_dscale;
+    const real_t mixed_scale = V->kp * V->kp * V->kp2 * V->r / (64.0 * V->R);
     evaluate_conversion_matrix(coeffs->M, &basis, tbar, scale, F);
     evaluate_conversion_source_derivatives(coeffs->dM, &basis, tbar, derivative_scale, Fk_source);
+    if (need_mixed) {
+        evaluate_conversion_mixed(coeffs->mixed, &basis, tbar, mixed_scale, Fkk);
+    }
     for (int i = 0; i < 3; ++i) {
         for (int j = 0; j < 3; ++j) {
             Fk_receiver[0][i][j] = -Fk_source[0][i][j];
@@ -1212,27 +1289,30 @@ static void evaluate_conversion_term(const real_t tbar, const LAMB3_VARS *V, con
  * Fsps[i][j] 的索引分别表示接收点分量和源点分量
  * Fk_sps[k'][i][j] 的索引依次表示源点坐标方向、接收点分量和源点分量
  * Fk_sps_receiver[k][i][j] 的索引依次表示接收点坐标方向、接收点分量和源点分量
+ * Fkk_sps[k][k'][i][j] 的索引依次表示接收点方向、源点方向、接收点分量和源点分量
  */
 static void reflection_terms(const real_t tbar, const LAMB3_VARS *V, const LAMB3_REFLECTION_PF_SET *P_coeffs, const LAMB3_REFLECTION_PF_SET *S_coeffs,
                              real_t F[3][3], real_t Fk_source[3][3][3], real_t Fk_receiver[3][3][3], real_t Fsps[3][3], real_t Fk_sps[3][3][3],
-                             real_t Fk_sps_receiver[3][3][3]) {
+                             real_t Fk_sps_receiver[3][3][3], const bool need_mixed, real_t Fkk[3][3][3][3], real_t Fkk_sps[3][3][3][3]) {
     memset(F, 0, sizeof(real_t) * 3 * 3);
     memset(Fk_source, 0, sizeof(real_t) * 3 * 3 * 3);
     memset(Fk_receiver, 0, sizeof(real_t) * 3 * 3 * 3);
     memset(Fsps, 0, sizeof(real_t) * 3 * 3);
     memset(Fk_sps, 0, sizeof(real_t) * 3 * 3 * 3);
     memset(Fk_sps_receiver, 0, sizeof(real_t) * 3 * 3 * 3);
+    memset(Fkk, 0, sizeof(real_t) * 3 * 3 * 3 * 3);
+    memset(Fkk_sps, 0, sizeof(real_t) * 3 * 3 * 3 * 3);
 
     real_t sbar = V->varsigma * tbar;
     real_t sbar2 = sbar * sbar;
     LAMB_BASIC_VARS W = {V->k, V->k2, V->kp2, V->st_ref, V->ct_ref};
 
     if (sbar > V->k) {
-        evaluate_reflection_wave(sbar, sbar2, &W, V, P_coeffs, V->rayleigh, LAMB_BASIC_P_TERM, F, Fk_source, Fk_receiver);
+        evaluate_reflection_wave(sbar, sbar2, &W, V, P_coeffs, V->rayleigh, LAMB_BASIC_P_TERM, F, Fk_source, Fk_receiver, need_mixed, Fkk);
     }
 
     if (sbar > 1.0) {
-        evaluate_reflection_wave(sbar, sbar2, &W, V, S_coeffs, V->rayleigh_shifted, LAMB_BASIC_S_TERM, F, Fk_source, Fk_receiver);
+        evaluate_reflection_wave(sbar, sbar2, &W, V, S_coeffs, V->rayleigh_shifted, LAMB_BASIC_S_TERM, F, Fk_source, Fk_receiver, need_mixed, Fkk);
     }
 
     if (sbar < 1.0) {
@@ -1243,6 +1323,9 @@ static void reflection_terms(const real_t tbar, const LAMB3_VARS *V, const LAMB3
             LAMB3_REFLECTION_BASIS basis_V;
             make_reflection_basis(LAMB3_TAIL_SIZE, V->rayleigh_shifted, &ctx, false, &basis_V);
             evaluate_reflection_set(S_coeffs, NULL, &basis_V, false, true, sbar, V, Fsps, Fk_sps, Fk_sps_receiver);
+            if (need_mixed) {
+                evaluate_reflection_mixed(S_coeffs, NULL, &basis_V, sbar, Fkk_sps);
+            }
         }
     }
 }
@@ -1408,6 +1491,94 @@ static void set_direct_S(const real_t tbar, const LAMB3_VARS *V, real_t F[3][3],
     add_direct_S_vertical(tbar, st, ct, sf, cf, st2, ct2, b53, Fk_source[2]);
 }
 
+
+/** 计算直达 P/S 项的无量纲混合空间导数
+ *
+ * 直达项的时间积分矩阵可写成 F_ij=A(tbar)n_i n_j+B(tbar)delta_ij
+ * 其中 n 是从源点指向接收点的单位向量
+ * 这里使用径向 Hessian 的解析式，并计入 Green 函数公共的 1/r 因子
+ * 源点导数相对接收点导数带来一个负号，结果按接收点方向和源点方向存储
+ */
+static void add_direct_mixed_final(const real_t tbar, const real_t k2, const bool is_S, const real_t n[3],
+                                   real_t result[3][3][3][3]) {
+    const real_t A = is_S ? 1.0 - 3.0 * tbar * tbar : 3.0 * tbar * tbar - k2;
+    const real_t A1 = is_S ? 6.0 * tbar * tbar : -6.0 * tbar * tbar;
+    const real_t A2 = is_S ? -18.0 * tbar * tbar : 18.0 * tbar * tbar;
+    const real_t B = is_S ? tbar * tbar + 1.0 : -(tbar * tbar - k2);
+    const real_t B1 = is_S ? -2.0 * tbar * tbar : 2.0 * tbar * tbar;
+    const real_t B2 = is_S ? 6.0 * tbar * tbar : -6.0 * tbar * tbar;
+    const real_t A1_scaled = A1 - A;
+    const real_t A2_scaled = A2 - 2.0 * A1 + 2.0 * A;
+    const real_t B1_scaled = B1 - B;
+    const real_t B2_scaled = B2 - 2.0 * B1 + 2.0 * B;
+    real_t projection[3][3];
+    real_t second_unit[3][3][3];
+    for (int i = 0; i < 3; ++i) {
+        for (int k = 0; k < 3; ++k) {
+            projection[i][k] = (i == k ? 1.0 : 0.0) - n[i] * n[k];
+            for (int l = 0; l < 3; ++l) {
+                const real_t value = (i == k ? n[l] : 0.0) + (i == l ? n[k] : 0.0) + (k == l ? n[i] : 0.0) -
+                                     3.0 * n[i] * n[k] * n[l];
+                second_unit[i][k][l] = -value;
+            }
+        }
+    }
+    for (int k = 0; k < 3; ++k) {
+        for (int l = 0; l < 3; ++l) {
+            const real_t scalar_hessian = (A2_scaled - A1_scaled) * n[k] * n[l] + A1_scaled * (k == l ? 1.0 : 0.0);
+            const real_t scalar_B_hessian = (B2_scaled - B1_scaled) * n[k] * n[l] + B1_scaled * (k == l ? 1.0 : 0.0);
+            for (int i = 0; i < 3; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    real_t value = scalar_hessian * n[i] * n[j] + scalar_B_hessian * (i == j ? 1.0 : 0.0);
+                    value += A1_scaled * n[k] * (projection[i][l] * n[j] + n[i] * projection[j][l]);
+                    value += A1_scaled * n[l] * (projection[i][k] * n[j] + n[i] * projection[j][k]);
+                    value += A * (second_unit[i][k][l] * n[j] + projection[i][k] * projection[j][l] +
+                                  projection[i][l] * projection[j][k] + n[i] * second_unit[j][k][l]);
+                    result[k][l][i][j] -= value;
+                }
+            }
+        }
+    }
+}
+
+
+/** 将直达项的最终混合导数反积分两次，得到 evaluate_time 所需的时间积分量 */
+static void add_direct_mixed(const real_t tbar, const real_t arrival, const real_t k2, const bool is_S, const real_t n[3],
+                             real_t result[3][3][3][3]) {
+    /* 直达项最终混合导数只含常数项和 tbar^2 项，以下直接计算其二次反积分 */
+    real_t value_at_zero[3][3][3][3] = {0};
+    real_t value_at_one[3][3][3][3] = {0};
+    add_direct_mixed_final(0.0, k2, is_S, n, value_at_zero);
+    add_direct_mixed_final(1.0, k2, is_S, n, value_at_one);
+
+    const real_t tbar2 = tbar * tbar;
+    const real_t arrival2 = arrival * arrival;
+    const real_t dt = tbar - arrival;
+    const real_t constant_integral = 0.5 * dt * dt;
+    const real_t quadratic_integral = tbar2 * tbar2 / 12.0 - tbar * arrival2 * arrival / 3.0 + arrival2 * arrival2 / 4.0;
+    for (int k = 0; k < 3; ++k) {
+        for (int kp = 0; kp < 3; ++kp) {
+            for (int i = 0; i < 3; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    result[k][kp][i][j] += constant_integral * value_at_zero[k][kp][i][j] +
+                                           quadratic_integral * (value_at_one[k][kp][i][j] - value_at_zero[k][kp][i][j]);
+                }
+            }
+        }
+    }
+}
+
+
+static void set_direct_mixed(const real_t tbar, const LAMB3_VARS *V, real_t result[3][3][3][3]) {
+    const real_t n[3] = {V->st * V->cf, V->st * V->sf, -V->ct};
+    if (tbar > V->k) {
+        add_direct_mixed(tbar, V->k, V->k2, false, n, result);
+    }
+    if (tbar > 1.0) {
+        add_direct_mixed(tbar, 1.0, V->k2, true, n, result);
+    }
+}
+
 static void set_direct_receiver(const real_t tbar, const LAMB3_VARS *V, const real_t dF_source[3][3][3], real_t dF_receiver[3][3][3]) {
     for (int i = 0; i < 3; ++i) {
         for (int j = 0; j < 3; ++j) {
@@ -1436,23 +1607,26 @@ static void set_direct_receiver(const real_t tbar, const LAMB3_VARS *V, const re
 
 static void conversion_terms(const real_t tbar, const LAMB3_VARS *V, const LAMB3_CONVERSION_PF_SET *PS_coeffs,
                              const LAMB3_CONVERSION_PF_SET *SP_coeffs, real_t Fps[3][3], real_t Fk_ps[3][3][3], real_t Fk_ps_receiver[3][3][3],
-                             real_t Fsp[3][3], real_t Fk_sp[3][3][3], real_t Fk_sp_receiver[3][3][3]) {
+                             const bool need_mixed, real_t Fkk_ps[3][3][3][3], real_t Fsp[3][3], real_t Fk_sp[3][3][3],
+                             real_t Fk_sp_receiver[3][3][3], real_t Fkk_sp[3][3][3][3]) {
     memset(Fps, 0, sizeof(real_t) * 3 * 3);
     memset(Fk_ps, 0, sizeof(real_t) * 3 * 3 * 3);
     memset(Fk_ps_receiver, 0, sizeof(real_t) * 3 * 3 * 3);
+    memset(Fkk_ps, 0, sizeof(real_t) * 3 * 3 * 3 * 3);
     memset(Fsp, 0, sizeof(real_t) * 3 * 3);
     memset(Fk_sp, 0, sizeof(real_t) * 3 * 3 * 3);
     memset(Fk_sp_receiver, 0, sizeof(real_t) * 3 * 3 * 3);
+    memset(Fkk_sp, 0, sizeof(real_t) * 3 * 3 * 3 * 3);
     if (tbar <= V->tps && tbar <= V->tsp) {
         return;
     }
 
     if (tbar > V->tps) {
-        evaluate_conversion_term(tbar, V, PS_coeffs, false, Fps, Fk_ps, Fk_ps_receiver);
+        evaluate_conversion_term(tbar, V, PS_coeffs, false, Fps, Fk_ps, Fk_ps_receiver, need_mixed, Fkk_ps);
     }
 
     if (tbar > V->tsp) {
-        evaluate_conversion_term(tbar, V, SP_coeffs, true, Fsp, Fk_sp, Fk_sp_receiver);
+        evaluate_conversion_term(tbar, V, SP_coeffs, true, Fsp, Fk_sp, Fk_sp_receiver, need_mixed, Fkk_sp);
     }
 }
 
@@ -1469,11 +1643,12 @@ static real_t shift_lamb3_boundary(const real_t tbar, const LAMB3_VARS *V, const
 
 static void evaluate_time(const real_t tbar, const LAMB3_VARS *V, const LAMB3_REFLECTION_PF_SET *P_reflection,
                           const LAMB3_REFLECTION_PF_SET *S_reflection, const LAMB3_CONVERSION_PF_SET *PS_conversion,
-                          const LAMB3_CONVERSION_PF_SET *SP_conversion, LAMB3_F *out) {
+                          const LAMB3_CONVERSION_PF_SET *SP_conversion, const bool need_mixed, LAMB3_F *out) {
     memset(out, 0, sizeof(*out));
     real_t direct[3][3] = {0};
     real_t direct_source[3][3][3] = {0};
     real_t direct_receiver[3][3][3] = {0};
+    real_t direct_mixed[3][3][3][3] = {0};
     if (tbar > V->k) {
         set_direct_P(tbar, V, direct, direct_source);
     }
@@ -1481,6 +1656,9 @@ static void evaluate_time(const real_t tbar, const LAMB3_VARS *V, const LAMB3_RE
         set_direct_S(tbar, V, direct, direct_source);
     }
     set_direct_receiver(tbar, V, direct_source, direct_receiver);
+    if (need_mixed) {
+        set_direct_mixed(tbar, V, direct_mixed);
+    }
 
     real_t reflection[3][3];
     real_t reflection_source[3][3][3];
@@ -1488,7 +1666,10 @@ static void evaluate_time(const real_t tbar, const LAMB3_VARS *V, const LAMB3_RE
     real_t sps[3][3];
     real_t sps_source[3][3][3];
     real_t sps_receiver[3][3][3];
-    reflection_terms(tbar, V, P_reflection, S_reflection, reflection, reflection_source, reflection_receiver, sps, sps_source, sps_receiver);
+    real_t reflection_mixed[3][3][3][3];
+    real_t sps_mixed[3][3][3][3];
+    reflection_terms(tbar, V, P_reflection, S_reflection, reflection, reflection_source, reflection_receiver, sps, sps_source, sps_receiver,
+                     need_mixed, reflection_mixed, sps_mixed);
 
     real_t ps[3][3];
     real_t ps_source[3][3][3];
@@ -1496,7 +1677,9 @@ static void evaluate_time(const real_t tbar, const LAMB3_VARS *V, const LAMB3_RE
     real_t sp[3][3];
     real_t sp_source[3][3][3];
     real_t sp_receiver[3][3][3];
-    conversion_terms(tbar, V, PS_conversion, SP_conversion, ps, ps_source, ps_receiver, sp, sp_source, sp_receiver);
+    real_t ps_mixed[3][3][3][3];
+    real_t sp_mixed[3][3][3][3];
+    conversion_terms(tbar, V, PS_conversion, SP_conversion, ps, ps_source, ps_receiver, need_mixed, ps_mixed, sp, sp_source, sp_receiver, sp_mixed);
 
     real_t varsigma = V->varsigma;
     real_t reflection_indicator = V->supercritical ? 1.0 : 0.0;
@@ -1516,6 +1699,14 @@ static void evaluate_time(const real_t tbar, const LAMB3_VARS *V, const LAMB3_RE
                                              (QUARTERPI * direct_receiver[k][i][j] +
                                               varsigma * (reflection_receiver[k][i][j] - reflection_indicator * sps_receiver[k][i][j]) -
                                               4.0 * (ps_receiver[k][i][j] + sp_receiver[k][i][j]));
+                if (need_mixed) {
+                    for (int kp = 0; kp < 3; ++kp) {
+                        out->Fkk[k][kp][i][j] += output_scale *
+                                                (QUARTERPI * direct_mixed[k][kp][i][j] +
+                                                 varsigma * (reflection_mixed[k][kp][i][j] - reflection_indicator * sps_mixed[k][kp][i][j]) -
+                                                 4.0 * (ps_mixed[k][kp][i][j] + sp_mixed[k][kp][i][j]));
+                    }
+                }
             }
         }
     }
@@ -1523,7 +1714,8 @@ static void evaluate_time(const real_t tbar, const LAMB3_VARS *V, const LAMB3_RE
 
 void grt_solve_lamb3(
     const real_t nu, const real_t *ts, const int nt, const real_t R, const real_t depsrc, const real_t deprcv,
-    const real_t azimuth, real_t (*G)[3][3], real_t (*dG_source)[3][3][3], real_t (*dG_receiver)[3][3][3])
+    const real_t azimuth, real_t (*G)[3][3], real_t (*dG_source)[3][3][3], real_t (*dG_receiver)[3][3][3],
+    real_t (*dG_mixed)[3][3][3][3])
 {
     if (nu <= 0.0 || nu >= 0.5) {
         GRTRaiseError("poisson ratio (%lf) is out of bound in lamb3.\n", nu);
@@ -1573,27 +1765,37 @@ void grt_solve_lamb3(
     const bool need_S = tEnd >= V.reflection_S || (V.supercritical && ts[0] < V.reflection_S && tEnd >= V.t_sps);
     const bool need_PS = tEnd >= V.tps;
     const bool need_SP = tEnd >= V.tsp;
+    const bool need_mixed = dG_mixed != NULL;
     /* 大型部分分式系数工作区放在堆上，避免占用线程栈 */
     LAMB3_PF_COEFFICIENTS *coefficients = GRT_SAFE_CALLOC(1, sizeof(*coefficients));
-    make_coefficients(&V, need_P, need_S, need_PS, need_SP, coefficients);
+    make_coefficients(&V, need_P, need_S, need_PS, need_SP, need_mixed, coefficients);
 
-    bool isprint = G == NULL && dG_source == NULL && dG_receiver == NULL;
+    const bool isprint = G == NULL && dG_source == NULL && dG_receiver == NULL && dG_mixed == NULL;
     real_t(*F)[3][3] = G != NULL ? G : GRT_SAFE_CALLOC((size_t)nt, sizeof(*F));
     real_t(*Fk_source)[3][3][3] = GRT_SAFE_CALLOC((size_t)nt, sizeof(*Fk_source));
     real_t(*Fk_receiver)[3][3][3] = GRT_SAFE_CALLOC((size_t)nt, sizeof(*Fk_receiver));
+    real_t(*Fkk)[3][3][3][3] = need_mixed ? GRT_SAFE_CALLOC((size_t)nt, sizeof(*Fkk)) : NULL;
     real_t(*dG_source_tmp)[3][3][3] = dG_source != NULL ? dG_source : GRT_SAFE_CALLOC((size_t)nt, sizeof(*dG_source_tmp));
     real_t(*dG_receiver_tmp)[3][3][3] = dG_receiver != NULL ? dG_receiver : GRT_SAFE_CALLOC((size_t)nt, sizeof(*dG_receiver_tmp));
 
     for (int i = 0; i < nt; ++i) {
         LAMB3_F value;
         real_t tbar = shift_lamb3_boundary(ts[i], &V, tbar_eps);
-        evaluate_time(tbar, &V, &coefficients->P, &coefficients->S, &coefficients->PS, &coefficients->SP, &value);
+        evaluate_time(tbar, &V, &coefficients->P, &coefficients->S, &coefficients->PS, &coefficients->SP, need_mixed, &value);
         memcpy(F[i], value.F, sizeof(value.F));
         memcpy(Fk_source[i], value.Fk_source, sizeof(value.Fk_source));
         memcpy(Fk_receiver[i], value.Fk_receiver, sizeof(value.Fk_receiver));
+        if (need_mixed) {
+            memcpy(Fkk[i], value.Fkk, sizeof(value.Fkk));
+        }
     }
     grt_lamb_differentiate_Fk(ts, nt, Fk_source, dG_source_tmp);
     grt_lamb_differentiate_Fk(ts, nt, Fk_receiver, dG_receiver_tmp);
+
+    if (need_mixed) {
+        /* 混合分子对应二次时间积分项，连续求两次时间导数后得到 G_,kk' */
+        grt_lamb_differentiate_Fkk(ts, nt, Fkk, dG_mixed);
+    }
 
     GRT_SAFE_FREE_PTR(coefficients);
 
@@ -1606,6 +1808,7 @@ void grt_solve_lamb3(
     }
     GRT_SAFE_FREE_PTR(Fk_source);
     GRT_SAFE_FREE_PTR(Fk_receiver);
+    GRT_SAFE_FREE_PTR(Fkk);
     if (dG_source == NULL) {
         GRT_SAFE_FREE_PTR(dG_source_tmp);
     }

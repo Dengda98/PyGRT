@@ -7,7 +7,7 @@
  *
  *        张海明, 冯禧 著. 2024. 地震学中的 Lamb 问题（下）. 科学出版社
  *
- *    本实现直接使用预先推导的多项式系数，避免运行时构造多项式
+ *    本实现按书中公式构造多项式系数，并在时间循环前完成部分分式展开
  */
 
 #pragma once
@@ -27,10 +27,12 @@
  * @param[out]   G              无量纲阶跃力位移，G[time][i][j]
  * @param[out]   dG_source      无量纲源点导数，dG_source[time][k'][i][j]
  * @param[out]   dG_receiver    无量纲接收点导数，dG_receiver[time][k][i][j]
+ * @param[out]   dG_mixed       无量纲混合二阶导数，dG_mixed[time][k][k'][i][j]
  *
- * 当三个输出指针同时为 NULL 时，仅将时间和 G 输出到标准输出。
+ * 当四个输出指针同时为 NULL 时，仅将时间和 G 输出到标准输出
  */
 void grt_solve_lamb2(
     const real_t nu, const real_t *ts, const int nt,
     const real_t R, const real_t depsrc, const real_t deprcv, const real_t azimuth,
-    real_t (*G)[3][3], real_t (*dG_source)[3][3][3], real_t (*dG_receiver)[3][3][3]);
+    real_t (*G)[3][3], real_t (*dG_source)[3][3][3], real_t (*dG_receiver)[3][3][3],
+    real_t (*dG_mixed)[3][3][3][3]);

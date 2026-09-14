@@ -36,6 +36,15 @@ static int F2(const cplx_t z, const real_t z2sq) {
     return y < ymax;
 }
 
+/** 计算整数二项式系数 */
+static real_t binomial_integer(const int n, const int k) {
+    real_t result = 1.0;
+    for (int i = 1; i <= k; ++i) {
+        result *= (real_t)(n - k + i) / (real_t)i;
+    }
+    return result;
+}
+
 /** 式 (7.2.11)、(7.3.7) 和 (7.3.18) 中的分式线性变换参数 */
 void grt_lamb_make_context_P(const real_t tbar, const real_t tbar2, const LAMB_BASIC_VARS *V, LAMB_BASIC_CONTEXT *ctx) {
     ctx->term = LAMB_BASIC_P_TERM;
@@ -145,6 +154,20 @@ cplx_t grt_lamb_basic_U(const int number, const cplx_t c, const LAMB_BASIC_CONTE
         return I * PI / 4.0 * m * (2.0 * m * m - 3.0 * n * n);
     }
 
+    if (number >= 7) {
+        const int exponent = number - 3;
+        real_t value = 0.0;
+        for (int even_power = 0; even_power <= exponent; even_power += 2) {
+            const int half_power = even_power / 2;
+            const real_t binomial = binomial_integer(exponent, even_power);
+            const real_t moment = PI / 2.0 * tgamma((real_t)half_power + 0.5) /
+                                  (sqrt(PI) * tgamma((real_t)half_power + 1.0));
+            const real_t sign = half_power % 2 == 0 ? 1.0 : -1.0;
+            value += binomial * pow(m, exponent - even_power) * pow(n, even_power) * sign * moment;
+        }
+        return I * value;
+    }
+
     GRTRaiseError("Wrong U basic-integral number in the Lamb basic integrals: %d.\n", number);
 }
 
@@ -196,6 +219,156 @@ void grt_lamb_calculate_H(const LAMB_BASIC_CONTEXT *ctx, const real_t K, real_t 
     H[2] = H2;
     H[3] = H3;
     H[4] = H4;
+}
+
+void grt_lamb_calculate_H6(const LAMB_BASIC_CONTEXT *ctx, real_t H[7]) {
+    grt_lamb_calculate_HN(ctx, grt_ellipticK(ctx->m_elliptic), H, 6);
+}
+
+void grt_lamb_calculate_HN(const LAMB_BASIC_CONTEXT *ctx, const real_t K, real_t H[], const int max_order) {
+    if (max_order < 0) {
+        return;
+    }
+    grt_lamb_calculate_H(ctx, K, H);
+    if (max_order < 5) {
+        return;
+    }
+    real_t a;
+    if (ctx->term == LAMB_BASIC_P_TERM) {
+        a = 1.0 / ctx->z2sq;
+    } else if (ctx->term == LAMB_BASIC_S_TERM) {
+        a = -(ctx->z2sq + 1.0) / ctx->z2sq;
+    } else {
+        a = -ctx->c1 / ctx->c2;
+    }
+    const real_t m = ctx->m_elliptic;
+    const real_t gamma1 = 3.0 * m * a * a + 2.0 * a * (m + 1.0) + 1.0;
+    const real_t gamma2 = m + 1.0 + 3.0 * m * a;
+    const real_t gamma3 = a * (a + 1.0) * (a * m + 1.0);
+    for (int order = 5; order <= max_order; ++order) {
+        H[order] = ((2.0 * order - 3.0) * gamma1 * H[order - 1] -
+                    2.0 * (order - 2.0) * gamma2 * H[order - 2] +
+                    (2.0 * order - 5.0) * m * H[order - 3]) /
+                   (2.0 * (order - 1.0) * gamma3);
+    }
+}
+
+real_t grt_lamb_tail_V_high(const int number, const LAMB_BASIC_CONTEXT *ctx, const real_t H[]) {
+    if (number < 8 || ctx->term == LAMB_BASIC_SP_TERM) {
+        GRTRaiseError("The high-order P/S V basic integral is not applicable: %d.\n", number);
+    }
+    const int order = number - 3;
+    if (order > 9) {
+        GRTRaiseError("The high-order V basic-integral order is not supported: %d.\n", number);
+    }
+    cplx_t numerator[22] = {0};
+    cplx_t first[2] = {-ctx->xi1, I * ctx->xi2 * ctx->z2};
+    cplx_t second[2] = {-1.0, -I * ctx->z2};
+    numerator[0] = 1.0;
+    int degree = 0;
+    for (int i = 0; i < order; ++i) {
+        cplx_t next[20] = {0};
+        for (int j = 0; j <= degree; ++j) {
+            next[j] += numerator[j] * first[0] * second[0];
+            next[j + 1] += numerator[j] * (first[0] * second[1] + first[1] * second[0]);
+            next[j + 2] += numerator[j] * first[1] * second[1];
+        }
+        degree += 2;
+        for (int j = 0; j <= degree; ++j) {
+            numerator[j] = next[j];
+        }
+    }
+
+    real_t polynomial[11] = {0};
+    real_t z2sq = ctx->z2 * ctx->z2;
+    real_t z2_power = 1.0;
+    for (int j = 0; j <= order; ++j) {
+        polynomial[j] = creal(numerator[2 * j]) / z2_power;
+        z2_power *= z2sq;
+    }
+    const real_t quotient = polynomial[order];
+    real_t remainder[11] = {0};
+    for (int j = 0; j < order; ++j) {
+        remainder[j] = polynomial[j] - quotient * binomial_integer(order, j);
+    }
+    real_t result = quotient * H[0];
+    real_t z2_power_inverse = 1.0 / z2sq;
+    for (int pole_order = 1; pole_order <= order; ++pole_order) {
+        const int polynomial_order = order - pole_order;
+        real_t coefficient = 0.0;
+        for (int j = polynomial_order; j < order; ++j) {
+            coefficient += remainder[j] * binomial_integer(j, polynomial_order) *
+                           ((j - polynomial_order) % 2 == 0 ? 1.0 : -1.0);
+        }
+        const real_t sign = ctx->term == LAMB_BASIC_S_TERM && (pole_order % 2) != 0 ? -1.0 : 1.0;
+        result += coefficient * sign * z2_power_inverse * H[pole_order];
+        z2_power_inverse /= z2sq;
+    }
+    return ctx->c_main * result;
+}
+
+real_t grt_lamb_tail_V8(const LAMB_BASIC_CONTEXT *ctx) {
+    real_t H[7];
+    grt_lamb_calculate_H6(ctx, H);
+    const real_t xi1 = ctx->xi1;
+    const real_t xi2 = ctx->xi2;
+    const real_t z2 = ctx->z2;
+    const real_t z2m2 = 1.0 / (z2 * z2);
+    const real_t z2m4 = z2m2 * z2m2;
+    const real_t z2m6 = z2m4 * z2m2;
+    const real_t z2m8 = z2m6 * z2m2;
+    const real_t z2m10 = z2m8 * z2m2;
+    const real_t beta11 = xi1 - xi2;
+    const real_t beta13 = xi1 - 3.0 * xi2;
+    const real_t beta23 = 2.0 * xi1 - 3.0 * xi2;
+    real_t value;
+
+    if (ctx->term == LAMB_BASIC_P_TERM || ctx->term == LAMB_BASIC_S_TERM) {
+        const real_t reflection_sign = ctx->term == LAMB_BASIC_P_TERM ? -1.0 : 1.0;
+        const real_t A18 = xi1 * xi1 - 8.0 * xi1 * xi2 + 11.0 * xi2 * xi2;
+        const real_t A110 = xi1 * xi1 - 10.0 * xi1 * xi2 + 17.0 * xi2 * xi2;
+        value = xi2 * xi2 * xi2 * xi2 * xi2 * H[0] +
+                5.0 * reflection_sign * xi2 * xi2 * xi2 * beta11 * beta23 * z2m2 * H[1] +
+                5.0 * xi2 * beta11 * beta11 * A18 * z2m4 * H[2] -
+                5.0 * reflection_sign * beta11 * beta11 * beta11 * A110 * z2m6 * H[3] -
+                20.0 * beta11 * beta11 * beta11 * beta11 * beta13 * z2m8 * H[4] -
+                16.0 * reflection_sign * beta11 * beta11 * beta11 * beta11 * beta11 * z2m10 * H[5];
+    } else {
+        const real_t c1 = ctx->c1;
+        const real_t c2 = ctx->c2;
+        const real_t c2m1 = 1.0 / c2;
+        const real_t c2m2 = c2m1 * c2m1;
+        const real_t c2m3 = c2m2 * c2m1;
+        const real_t c2m4 = c2m3 * c2m1;
+        const real_t c2m5 = c2m4 * c2m1;
+        const real_t c1c1mc2 = c1 * (c1 - c2);
+        const real_t root = sqrt(c1c1mc2);
+        const real_t M1 = PI / (2.0 * root);
+        const real_t M2 = PI * (2.0 * c1 - c2) / (4.0 * c1c1mc2 * root);
+        const real_t M3 = PI * (8.0 * c1 * c1 - 8.0 * c1 * c2 + 3.0 * c2 * c2) /
+                          (16.0 * c1c1mc2 * c1c1mc2 * root);
+        const real_t M4 = PI * (2.0 * c1 - c2) * (8.0 * c1 * c1 - 8.0 * c1 * c2 + 5.0 * c2 * c2) /
+                          (32.0 * c1c1mc2 * c1c1mc2 * c1c1mc2 * root);
+        const real_t M5 = PI * (128.0 * c1 * c1 * c1 * c1 - 256.0 * c1 * c1 * c1 * c2 +
+                                288.0 * c1 * c1 * c2 * c2 - 160.0 * c1 * c2 * c2 * c2 + 35.0 * c2 * c2 * c2 * c2) /
+                          (256.0 * c1c1mc2 * c1c1mc2 * c1c1mc2 * c1c1mc2 * root);
+        const real_t A18 = xi1 * xi1 - 8.0 * xi1 * xi2 + 11.0 * xi2 * xi2;
+        const real_t A110 = xi1 * xi1 - 10.0 * xi1 * xi2 + 17.0 * xi2 * xi2;
+        const real_t A122 = xi1 * xi1 - 22.0 * xi1 * xi2 + 61.0 * xi2 * xi2;
+        const real_t beta313 = 3.0 * xi1 - 13.0 * xi2;
+        value = -(xi2 * xi2 * xi2 * xi2 * xi2 * H[0] -
+                  5.0 * xi2 * xi2 * xi2 * beta11 * beta23 * c2m1 * H[1] +
+                  5.0 * xi2 * beta11 * beta11 * A18 * c2m2 * H[2] +
+                  5.0 * beta11 * beta11 * beta11 * A110 * c2m3 * H[3] -
+                  20.0 * beta11 * beta11 * beta11 * beta11 * beta13 * c2m4 * H[4] +
+                  16.0 * beta11 * beta11 * beta11 * beta11 * beta11 * c2m5 * H[5] +
+                  beta11 * z2 * (5.0 * xi2 * xi2 * xi2 * xi2 * M1 +
+                                  10.0 * xi2 * xi2 * beta11 * beta13 * M2 +
+                                  beta11 * beta11 * A122 * M3 +
+                                  4.0 * beta11 * beta11 * beta11 * beta313 * M4 +
+                                  16.0 * beta11 * beta11 * beta11 * beta11 * M5));
+    }
+    return ctx->c_main * value;
 }
 
 real_t grt_lamb_tail_V_P(const int number, const LAMB_BASIC_CONTEXT *ctx, const real_t H[5]) {
