@@ -1,6 +1,35 @@
 Changelog
 ====================
 
+## PyGRT v0.17.1
+
++ Improve Lamb-problem calculations and derivative workflows.
++ Support second-order mixed derivatives in Lamb's problem (`lamb2/3 -S`)
++ Add a new module, support computing receiver functions (`rcvfn`)
+
+See [online documentation](https://pygrt.readthedocs.io/zh-cn/) for details, and run the command below to update.
+
+```bash
+pip install --upgrade pygrt-kit
+```
+
+
+### Pull requests
+* REFAC: support complex horizontal wavenumbers by [@Dengda98](https://github.com/Dengda98) in [#341](https://github.com/Dengda98/PyGRT/pull/341)
+* FEAT: add C module `rftn` for receiver-function calculation  by [@Dengda98](https://github.com/Dengda98) in [#342](https://github.com/Dengda98/PyGRT/pull/342)
+* FEAT: add Python receiver-function wrapper by [@Dengda98](https://github.com/Dengda98) in [#344](https://github.com/Dengda98/PyGRT/pull/344)
+* DOC: document receiver-function workflows and formulas by [@Dengda98](https://github.com/Dengda98) in [#345](https://github.com/Dengda98/PyGRT/pull/345)
+* DOC: fix gallery section heading rendering by [@Dengda98](https://github.com/Dengda98) in [#346](https://github.com/Dengda98/PyGRT/pull/346)
+* REFAC: standardize receiver identifiers as "rcv" by [@Dengda98](https://github.com/Dengda98) in [#347](https://github.com/Dengda98/PyGRT/pull/347)
+* REFAC: rename receiver-function module to "rcvfn" by [@Dengda98](https://github.com/Dengda98) in [#348](https://github.com/Dengda98/PyGRT/pull/348)
+* REFAC: centralize checked memory allocation macros by [@Dengda98](https://github.com/Dengda98) in [#349](https://github.com/Dengda98/PyGRT/pull/349)
+* REFAC: centralize Lamb polynomial coefficient construction by [@Dengda98](https://github.com/Dengda98) in [#350](https://github.com/Dengda98/PyGRT/pull/350)
+* FEAT: expose mixed spatial derivatives in Lamb APIs by [@Dengda98](https://github.com/Dengda98) in [#351](https://github.com/Dengda98/PyGRT/pull/351)
+* DOC: document mixed Lamb derivative workflows by [@Dengda98](https://github.com/Dengda98) in [#353](https://github.com/Dengda98/PyGRT/pull/353)
+
+
+**Full Changelog**: [v0.17.0...v0.17.1](https://github.com/Dengda98/PyGRT/compare/v0.17.0...v0.17.1)
+
 ## PyGRT v0.17.0
 
 This is a **major update** since v0.16.1—we are one step closer to the **v1.0.0** stable release. It expands PyGRT from wave-number Green's-function workflows into a more integrated toolkit for **multi-depth libraries**, **finite-fault synthesis**, **static stress / Coulomb analysis**, **Okada solutions**, and **surface-wave modal analysis**—with a cleaner, CLI-aligned Python API throughout.
