@@ -17,7 +17,9 @@
          :start-after: BEGIN LAMB1
          :end-before: END LAMB1
 
-      使用重定向将结果保存到文件 *lamb1.txt* 中，其内容格式类似于
+      使用重定向将结果保存到文件 *lamb1.txt* 中，其内容格式如下，
+      记录了无量纲时间 :math:`\bar{t}` 和无量纲 Green 函数 :math:`G_{ij}` ，
+      表示 :math:`j` 方向的力激发的 :math:`i` 方向的位移。
 
       .. literalinclude:: run/head_lamb1
          :language: text
@@ -25,13 +27,15 @@
    .. group-tab:: Python    
 
       Python 提供了函数 :func:`lamb1() <pygrt.utils.lamb1>` 求解第一类 Lamb 问题。
+      函数直接返回无量纲 Green 函数数组 ``G``
 
       .. literalinclude:: run/lamb1_plot_time.py
          :language: python
          :start-after: BEGIN LAMB1
          :end-before: END LAMB1
 
-最后绘制计算得到的格林函数。
+书中结果复现
+--------------------
 
 :download:`lamb1_plot_time.py <run/lamb1_plot_time.py>`
 

@@ -96,7 +96,9 @@ def plot(st, prefix, u, scale, sub, ylim):
 
 
 # 时域解
-u, _, ur = pygrt.utils.lamb2(nu=nu, tbar=tbar, R=epicentral_distance, depsrc=depsrc, azimuth=0.0)
+u, _, ur, _ = pygrt.utils.lamb2(
+    nu=nu, tbar=tbar, R=epicentral_distance, depsrc=depsrc, azimuth=0.0
+)
 u = u.reshape(-1, 9)[:, [0,2,4,6,8]]
 ur = ur.reshape(-1, 3, 9)[:, :, [0,2,4,6,8]]
 

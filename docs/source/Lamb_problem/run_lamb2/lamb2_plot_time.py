@@ -18,7 +18,7 @@ tbar = np.arange(0, 2, 0.002)
 epicentral_distance = 10.0
 depsrc = 5.0
 azimuth = 30.0
-G, dG_source, dG_receiver = pygrt.utils.lamb2(
+G, Gs, Gr, Grs = pygrt.utils.lamb2(
     nu=0.25, tbar=tbar, R=epicentral_distance, depsrc=depsrc, azimuth=azimuth
 )
 # END LAMB2
@@ -56,11 +56,11 @@ def compute_lamb2_results() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     source_derivatives = np.empty((len(DEPSRCS), len(ts), 3, 3, 3))
 
     for index, depsrc in enumerate(DEPSRCS):
-        G, dG_source, _ = pygrt.utils.lamb2(
+        G, Gs, Gr, Grs = pygrt.utils.lamb2(
             nu=NU, tbar=ts, R=EPICENTRAL_DISTANCE, depsrc=depsrc, azimuth=AZIMUTH
         )
         greens[index] = G
-        source_derivatives[index] = dG_source
+        source_derivatives[index] = Gs
 
     return ts, greens, source_derivatives
 
