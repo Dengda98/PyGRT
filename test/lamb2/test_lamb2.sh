@@ -47,9 +47,9 @@ expect_warn "lamb2 small horizontal distance" "horizontal distance ratio" grt la
 
 grt lamb2 -h
 
-grt lamb2 -P0.25 -T0/2/1e-3 -R10 -Ds5 -S+slamb2_source+rlamb2_receiver -A30 > lamb2
-grt lamb2 -P0.25 -T0/2/1e-3 -R10 -Dr5 -S+slamb2_surface_source+rlamb2_surface_receiver -A30 > lamb2_surface
+grt lamb2 -P0.25 -T0/2/1e-2 -R10 -Ds5 -S+slamb2_source+rlamb2_receiver+mlamb2_mixed -A30 > lamb2
+grt lamb2 -P0.25 -T0/2/1e-2 -R10 -Dr5 -S+slamb2_surface_source+rlamb2_surface_receiver -A30 > lamb2_surface
 
 python -u test_lamb2.py
 
-rm -f lamb2 lamb2_source lamb2_receiver lamb2_surface lamb2_surface_source lamb2_surface_receiver
+rm -f lamb2 lamb2_source lamb2_receiver lamb2_mixed lamb2_surface lamb2_surface_source lamb2_surface_receiver

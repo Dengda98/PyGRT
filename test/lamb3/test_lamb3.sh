@@ -39,8 +39,8 @@ expect_warn "lamb3 shallow source" "calculation is very likely to fail" grt lamb
 expect_warn "lamb3 small horizontal distance" "horizontal distance ratio" grt lamb3 -P0.25 -T0/0/1 -R1e-4 -D2/1 -A0
 
 grt lamb3 -h
-grt lamb3 -P0.25 -T0/2/1e-2 -R10 -D2/1 -S+slamb3_source+rlamb3_receiver -A30 > lamb3
+grt lamb3 -P0.25 -T0/2/1e-2 -R10 -D2/1 -S+slamb3_source+rlamb3_receiver+mlamb3_mixed -A30 > lamb3
 
 python -u test_lamb3.py
 
-rm -f lamb3 lamb3_source lamb3_receiver
+rm -f lamb3 lamb3_source lamb3_receiver lamb3_mixed

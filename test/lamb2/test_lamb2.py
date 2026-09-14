@@ -42,7 +42,9 @@ R = 10.0
 DEPSRC = 5.0
 AZIMUTH = 30.0
 ts = np.arange(0.0, 2.0 + 1e-8, 1e-2)
-G, dG_source, dG_receiver = pygrt.utils.lamb2(nu=0.25, tbar=ts, R=R, depsrc=DEPSRC, azimuth=AZIMUTH)
+G, dG_source, dG_receiver, dG_mixed = pygrt.utils.lamb2(
+    nu=0.25, tbar=ts, R=R, depsrc=DEPSRC, azimuth=AZIMUTH
+)
 
 if not np.allclose(dG_receiver[:, :2], -dG_source[:, :2]):
     raise ValueError("Horizontal receiver and source derivatives violate translation invariance.")
@@ -52,9 +54,11 @@ if not np.allclose(dG_receiver[:, 2, 1, 0], dG_source[:, 0, 2, 1]):
     raise ValueError("The vertical receiver derivative (2, 1) component is inconsistent.")
 if not np.allclose(dG_receiver[:, 2, 1, 1:], dG_source[:, 1, 2, 1:]):
     raise ValueError("The vertical receiver derivative second row is inconsistent.")
+if dG_mixed.shape != (len(ts), 3, 3, 3, 3) or not np.isfinite(dG_mixed).all():
+    raise ValueError(f"Unexpected lamb2 mixed derivative shape or values: {dG_mixed.shape}")
 
 for azimuth in (0.0, 90.0, 180.0, 270.0):
-    angle_G, angle_source, angle_receiver = pygrt.utils.lamb2(
+    angle_G, angle_source, angle_receiver, _ = pygrt.utils.lamb2(
         nu=0.25, tbar=np.asarray([0.0, 0.65, 1.05, 1.8]), R=R, depsrc=DEPSRC, azimuth=azimuth
     )
     if not np.isfinite(angle_G).all() or not np.isfinite(angle_source).all() or not np.isfinite(angle_receiver).all():
@@ -64,10 +68,10 @@ for azimuth in (0.0, 90.0, 180.0, 270.0):
 
 
 def _check_reciprocity(depth, azimuth):
-    buried_G, buried_source, buried_receiver = pygrt.utils.lamb2(
+    buried_G, buried_source, buried_receiver, buried_mixed = pygrt.utils.lamb2(
         nu=0.25, tbar=ts, R=R, depsrc=depth, azimuth=azimuth
     )
-    surface_G, surface_source, surface_receiver = pygrt.utils.lamb2(
+    surface_G, surface_source, surface_receiver, surface_mixed = pygrt.utils.lamb2(
         nu=0.25, tbar=ts, R=R, deprcv=depth, azimuth=(azimuth + 180.0) % 360.0
     )
     if not np.allclose(surface_G, np.swapaxes(buried_G, -2, -1), rtol=2e-6, atol=1e-5):
@@ -78,6 +82,8 @@ def _check_reciprocity(depth, azimuth):
         raise ValueError(f"lamb2 receiver-derivative reciprocity failed at azimuth={azimuth:g}.")
     if not np.allclose(surface_receiver[:, :2], -surface_source[:, :2]):
         raise ValueError(f"lamb2 surface-source horizontal derivatives violate translation invariance at azimuth={azimuth:g}.")
+    if not np.allclose(surface_mixed, np.transpose(buried_mixed, (0, 2, 1, 4, 3)), rtol=2e-6, atol=1e-5):
+        raise ValueError(f"lamb2 mixed-derivative reciprocity failed at azimuth={azimuth:g}.")
 
 
 for azimuth in (0.0, 30.0, 90.0, 180.0, 210.0, 360.0):
@@ -86,7 +92,7 @@ for depth in (0.5, 2.0, 10.0):
     _check_reciprocity(depth, AZIMUTH)
 
 
-G_surface, dG_surface_source, dG_surface_receiver = pygrt.utils.lamb2(
+G_surface, dG_surface_source, dG_surface_receiver, _ = pygrt.utils.lamb2(
     nu=0.25, tbar=ts, R=R, deprcv=DEPSRC, azimuth=AZIMUTH
 )
 if not np.isfinite(G_surface).all() or not np.isfinite(dG_surface_source).all() or not np.isfinite(dG_surface_receiver).all():
@@ -123,6 +129,11 @@ if not np.allclose(source_cli[:, 1:], dG_source.reshape(len(ts), 27), rtol=2e-6,
     raise ValueError("The lamb2 source derivative file and Python derivatives differ.")
 if not np.allclose(receiver_cli[:, 1:], dG_receiver.reshape(len(ts), 27), rtol=2e-6, atol=1e-5):
     raise ValueError("The lamb2 receiver derivative file and Python derivatives differ.")
+mixed_cli = np.loadtxt("lamb2_mixed")
+if mixed_cli.shape != (len(ts), 82) or not np.isfinite(mixed_cli).all():
+    raise ValueError(f"Unexpected lamb2 mixed derivative file shape or values: {mixed_cli.shape}")
+if not np.allclose(mixed_cli[:, 1:], dG_mixed.reshape(len(ts), 81), rtol=2e-6, atol=1e-5):
+    raise ValueError("The lamb2 mixed derivative file and Python derivatives differ.")
 
 surface_cli_result = subprocess.run(
     [
@@ -159,10 +170,10 @@ if not np.allclose(surface_receiver_cli[:, 1:], dG_surface_receiver.reshape(len(
 def _check_lamb2_right_limit(boundary, **depth_kw):
     dt = 1e-2
     epsilon = min(1e-8, dt * 1e-5)
-    exact, _, _ = pygrt.utils.lamb2(
+    exact, _, _, _ = pygrt.utils.lamb2(
         nu=0.25, tbar=np.asarray([boundary, boundary + dt]), R=R, azimuth=AZIMUTH, **depth_kw
     )
-    right, _, _ = pygrt.utils.lamb2(
+    right, _, _, _ = pygrt.utils.lamb2(
         nu=0.25, tbar=np.asarray([boundary + epsilon]), R=R, azimuth=AZIMUTH, **depth_kw
     )
     if not np.allclose(exact[0], right[0], rtol=1e-10, atol=1e-12):
@@ -186,7 +197,7 @@ def _lamb2_g_over_r(nu, tbar, source, reference_radius):
     horizontal_distance = np.hypot(source_to_receiver[0], source_to_receiver[1])
     depsrc = source[2]
     azimuth = np.rad2deg(np.arctan2(ray[1], ray[0])) % 360.0
-    G, _, _ = pygrt.utils.lamb2(
+    G, _, _, _ = pygrt.utils.lamb2(
         nu=nu, tbar=tbar * reference_radius / radius, R=horizontal_distance,
         depsrc=depsrc, azimuth=azimuth,
     )
@@ -202,7 +213,7 @@ source = np.array([
     np.cos(theta_rad),
 ])
 reference_radius = np.linalg.norm(source)
-_, dG_source_fd, _ = pygrt.utils.lamb2(
+_, dG_source_fd, _, _ = pygrt.utils.lamb2(
     nu=0.25, tbar=fd_ts, R=np.sin(theta_rad), depsrc=np.cos(theta_rad), azimuth=30.0
 )
 p_arrival = np.sqrt(0.5 * (1.0 - 2.0 * 0.25) / (1.0 - 0.25))
@@ -280,7 +291,7 @@ def _check_surface_source_receiver_derivatives():
     distance = np.linalg.norm(receiver - source)
     times = (0.70, 1.20, 1.80)
     for tbar in times:
-        _, _, expected_receiver = pygrt.utils.lamb2(
+        _, _, expected_receiver, _ = pygrt.utils.lamb2(
             nu=0.25,
             tbar=np.asarray([tbar - 1e-3, tbar, tbar + 1e-3]),
             R=R,
@@ -309,7 +320,57 @@ def _check_surface_source_receiver_derivatives():
                 )
 
 
+def _check_lamb2_mixed_geometry_derivatives():
+    source = np.array([0.0, 0.0, DEPSRC])
+    receiver = np.array([
+        R * np.cos(np.deg2rad(AZIMUTH)),
+        R * np.sin(np.deg2rad(AZIMUTH)),
+        0.0,
+    ])
+    distance = np.linalg.norm(receiver - source)
+    center = 0.95
+    physical_time = center * distance
+    _, _, _, expected_series = pygrt.utils.lamb2(
+        nu=0.25,
+        tbar=np.asarray([center - 2e-3, center, center + 2e-3]),
+        R=R,
+        depsrc=DEPSRC,
+        azimuth=AZIMUTH,
+    )
+    expected = expected_series[1, :2]
+    finite_difference = np.empty_like(expected)
+    step = 1e-2
+    for receiver_direction in range(2):
+        for source_direction in range(3):
+            source_plus = source.copy()
+            source_minus = source.copy()
+            receiver_plus = receiver.copy()
+            receiver_minus = receiver.copy()
+            source_plus[source_direction] += step
+            source_minus[source_direction] -= step
+            receiver_plus[receiver_direction] += step
+            receiver_minus[receiver_direction] -= step
+            distances = (
+                np.linalg.norm(receiver_plus - source_plus),
+                np.linalg.norm(receiver_minus - source_plus),
+                np.linalg.norm(receiver_plus - source_minus),
+                np.linalg.norm(receiver_minus - source_minus),
+            )
+            values = (
+                _lamb2_green_at_physical_time(physical_time, source_plus, receiver_plus) / distances[0],
+                _lamb2_green_at_physical_time(physical_time, source_plus, receiver_minus) / distances[1],
+                _lamb2_green_at_physical_time(physical_time, source_minus, receiver_plus) / distances[2],
+                _lamb2_green_at_physical_time(physical_time, source_minus, receiver_minus) / distances[3],
+            )
+            finite_difference[receiver_direction, source_direction] = (
+                values[0] - values[1] - values[2] + values[3]
+            ) * distance**3 / (4.0 * step**2)
+    if not np.allclose(finite_difference, expected, rtol=5e-3, atol=5e-3):
+        raise ValueError("lamb2 mixed derivatives fail the geometry finite-difference test.")
+
+
 _check_surface_source_receiver_derivatives()
-print("lamb2 surface-source receiver finite-difference test passed.")
+_check_lamb2_mixed_geometry_derivatives()
+print("lamb2 surface-source receiver and mixed finite-difference tests passed.")
 
 print("lamb2 C/Python interface test passed.")

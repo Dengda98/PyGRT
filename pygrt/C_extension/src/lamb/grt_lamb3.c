@@ -37,6 +37,7 @@ typedef struct {
         bool active;
         char *source_path;
         char *receiver_path;
+        char *mixed_path;
     } S;
 
     struct {
@@ -51,6 +52,7 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl)
     GRT_SAFE_FREE_PTR(Ctrl->T.ts);
     GRT_SAFE_FREE_PTR(Ctrl->S.source_path);
     GRT_SAFE_FREE_PTR(Ctrl->S.receiver_path);
+    GRT_SAFE_FREE_PTR(Ctrl->S.mixed_path);
     GRT_SAFE_FREE_PTR(Ctrl);
 }
 
@@ -61,12 +63,23 @@ printf("\n"
 "[grt lamb3] %s\n\n", GRT_VERSION);printf(
 "    Compute the generalized closed-form solution for the third-kind Lamb problem\n"
 "    (both the source and receiver are underground).\n"
+"\n"
+"    All outputs are dimensionless and convolved with the step function.\n"
+"    Standard output contains dimensionless time and the 9 displacement Green functions Gij.\n"
+"    Each requested derivative file contains dimensionless time and the corresponding\n"
+"    27 first derivatives or 81 mixed second derivatives.\n"
+"    To recover the physical quantities, you can:\n"
+"       + G_{ij} <- G_{ij} / (pi^2*mu*r)\n"
+"       + G_{ij,k'} <- G_{ij,k'} / (pi^2*mu*r^2)\n"
+"       + G_{ij,k}  <- G_{ij,k} / (pi^2*mu*r^2)\n"
+"       + G_{ij,k,k'}  <- G_{ij,k,k'} / (pi^2*mu*r^3)\n"
+"    where mu is the shear modulus and r is the source-receiver distance.\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
 "    grt lamb3 -P<nu> -T<t1>/<t2>/<dt> -R<dist>\n"
 "               -D<depsrc>/<deprcv> -A<azimuth>\n"
-"               [-S+s<source-path>+r<receiver-path>]\n"
+"               [-S[+s<source-path>][+r<receiver-path>][+m<mixed-path>]]\n"
 "\n\n"
 "Options:\n"
 "----------------------------------------------------------------\n"
@@ -86,28 +99,22 @@ printf("\n"
 "\n"
 "    -D<depsrc>/<deprcv>\n"
 "                   Source and receiver depths, both strictly positive.\n"
-"                   Values with depsrc/r or deprcv/r < 1e-3 trigger a numerical-stability warning.\n"
+"                   Values with depsrc/r or deprcv/r <= 1e-3 trigger a numerical-stability warning.\n"
 "\n"
-"    -S+s<path>+r<path>\n"
-"                   Save source-coordinate derivatives to +s<path> and receiver-coordinate\n"
-"                   derivatives to +r<path>. Either suboption may be omitted.\n"
+"    -S[+s<source-path>][+r<receiver-path>][+m<mixed-path>]\n"
+"                   +s<source-path>: save source-coordinate derivatives G_{ij,k'}\n"
+"                   +r<receiver-path>: save receiver-coordinate derivatives G_{ij,k}\n"
+"                   +m<mixed-path>: save mixed second derivatives G_{ij,k,k'}\n"
+"                   At least one suboption is required; multiple suboptions may be combined.\n"
 "\n"
 "    -A<azimuth>    Azimuth in degree, from source to receiver, [0, 360].\n"
 "\n"
 "    -h             Display this help message.\n"
 "\n\n"
-"Output:\n"
-"----------------------------------------------------------------\n"
-"    Standard output contains dimensionless time and the 9 dimensionless step-force\n"
-"    displacement Green functions Gij. When -S is used, each specified derivative file\n"
-"    contains dimensionless time and the corresponding 27 dimensionless derivatives.\n"
-"    Here r is the straight source-receiver distance sqrt(R^2+(depsrc-deprcv)^2).\n"
-"    Divide Gij by pi^2*mu*r and derivatives by pi^2*mu*r^2 to recover physical quantities.\n"
-"\n\n"
-"Example:\n"
+"Examples:\n"
 "----------------------------------------------------------------\n"
 "    grt lamb3 -P0.25 -T0/2/1e-3 -R10 -D2/1 -A30\n"
-"    grt lamb3 -P0.25 -T0/2/1e-3 -R10 -D2/1 -A30 -S+slamb3_source.txt+rlamb3_receiver.txt\n"
+"    grt lamb3 -P0.25 -T0/2/1e-3 -R10 -D2/1 -A30 -S+slamb3_source.txt+rlamb3_receiver.txt+mlamb3_mixed.txt\n"
 "\n\n\n"
 );
 }
@@ -167,11 +174,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
 
             case 'S':
                 Ctrl->S.active = true;
-                grt_lamb_parse_derivative_paths(optarg, &Ctrl->S.source_path, &Ctrl->S.receiver_path);
-                if(Ctrl->S.source_path != NULL && Ctrl->S.receiver_path != NULL &&
-                    strcmp(Ctrl->S.source_path, Ctrl->S.receiver_path) == 0){
-                    GRTBadOptionError(S, "source and receiver derivative paths must be different.");
-                }
+                grt_lamb_parse_derivative_paths_with_mixed(optarg, &Ctrl->S.source_path, &Ctrl->S.receiver_path, &Ctrl->S.mixed_path);
                 break;
 
             case 'D':
@@ -219,18 +222,23 @@ static void run_lamb3_with_derivative_outputs(const GRT_MODULE_CTRL *Ctrl)
     real_t (*G)[3][3] = GRT_SAFE_CALLOC(nt, sizeof(*G));
     real_t (*dG_source)[3][3][3] = GRT_SAFE_CALLOC(nt, sizeof(*dG_source));
     real_t (*dG_receiver)[3][3][3] = GRT_SAFE_CALLOC(nt, sizeof(*dG_receiver));
+    real_t (*dG_mixed)[3][3][3][3] = Ctrl->S.mixed_path != NULL ? GRT_SAFE_CALLOC(nt, sizeof(*dG_mixed)) : NULL;
 
     FILE *source_file = NULL;
     FILE *receiver_file = NULL;
+    FILE *mixed_file = NULL;
     if (Ctrl->S.source_path != NULL) {
         source_file = GRTCheckOpenFile(Ctrl->S.source_path, "w");
     }
     if (Ctrl->S.receiver_path != NULL) {
         receiver_file = GRTCheckOpenFile(Ctrl->S.receiver_path, "w");
     }
+    if (Ctrl->S.mixed_path != NULL) {
+        mixed_file = GRTCheckOpenFile(Ctrl->S.mixed_path, "w");
+    }
 
     grt_solve_lamb3(Ctrl->P.nu, Ctrl->T.ts, Ctrl->T.nt, Ctrl->R.distance, Ctrl->D.depsrc,
-        Ctrl->D.deprcv, Ctrl->A.azimuth, G, dG_source, dG_receiver, NULL);
+        Ctrl->D.deprcv, Ctrl->A.azimuth, G, dG_source, dG_receiver, dG_mixed);
     grt_lamb_print_green_series(stdout, Ctrl->T.ts, Ctrl->T.nt, G);
     if (source_file != NULL) {
         grt_lamb_print_derivative_series(source_file, Ctrl->T.ts, Ctrl->T.nt, dG_source, true);
@@ -240,10 +248,15 @@ static void run_lamb3_with_derivative_outputs(const GRT_MODULE_CTRL *Ctrl)
         grt_lamb_print_derivative_series(receiver_file, Ctrl->T.ts, Ctrl->T.nt, dG_receiver, false);
         fclose(receiver_file);
     }
+    if (mixed_file != NULL) {
+        grt_lamb_print_mixed_derivative_series(mixed_file, Ctrl->T.ts, Ctrl->T.nt, dG_mixed);
+        fclose(mixed_file);
+    }
 
     GRT_SAFE_FREE_PTR(G);
     GRT_SAFE_FREE_PTR(dG_source);
     GRT_SAFE_FREE_PTR(dG_receiver);
+    GRT_SAFE_FREE_PTR(dG_mixed);
 }
 
 
