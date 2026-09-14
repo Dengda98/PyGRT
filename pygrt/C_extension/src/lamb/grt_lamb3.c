@@ -230,7 +230,7 @@ static void run_lamb3_with_derivative_outputs(const GRT_MODULE_CTRL *Ctrl)
     }
 
     grt_solve_lamb3(Ctrl->P.nu, Ctrl->T.ts, Ctrl->T.nt, Ctrl->R.distance, Ctrl->D.depsrc,
-        Ctrl->D.deprcv, Ctrl->A.azimuth, G, dG_source, dG_receiver);
+        Ctrl->D.deprcv, Ctrl->A.azimuth, G, dG_source, dG_receiver, NULL);
     grt_lamb_print_green_series(stdout, Ctrl->T.ts, Ctrl->T.nt, G);
     if (source_file != NULL) {
         grt_lamb_print_derivative_series(source_file, Ctrl->T.ts, Ctrl->T.nt, dG_source, true);
@@ -255,7 +255,7 @@ int lamb3_main(int argc, char **argv)
         run_lamb3_with_derivative_outputs(Ctrl);
     } else {
         grt_solve_lamb3(Ctrl->P.nu, Ctrl->T.ts, Ctrl->T.nt, Ctrl->R.distance, Ctrl->D.depsrc,
-            Ctrl->D.deprcv, Ctrl->A.azimuth, NULL, NULL, NULL);
+            Ctrl->D.deprcv, Ctrl->A.azimuth, NULL, NULL, NULL, NULL);
     }
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;

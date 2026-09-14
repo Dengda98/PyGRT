@@ -75,6 +75,18 @@ void grt_lamb_make_U_pair(const cplx_t c, const LAMB_BASIC_CONTEXT *ctx, cplx_t 
 /** 根据椭圆积分参数递推计算 H0 至 H4 基本积分组合 */
 void grt_lamb_calculate_H(const LAMB_BASIC_CONTEXT *ctx, const real_t K, real_t H[5]);
 
+/** 计算 H0 至 H6 基本积分组合，供高阶 V 基本积分共用 */
+void grt_lamb_calculate_H6(const LAMB_BASIC_CONTEXT *ctx, real_t H[7]);
+
+/** 递推计算 H0 至指定阶次，供高阶 V 基本积分使用 */
+void grt_lamb_calculate_HN(const LAMB_BASIC_CONTEXT *ctx, const real_t K, real_t H[], const int max_order);
+
+/** 计算 P/S 反射项任意高阶的 V 基本积分，number>=8 */
+real_t grt_lamb_tail_V_high(const int number, const LAMB_BASIC_CONTEXT *ctx, const real_t H[]);
+
+/** 计算 P、S 和 S-P 项的 V8 基本积分 */
+real_t grt_lamb_tail_V8(const LAMB_BASIC_CONTEXT *ctx);
+
 /** 计算 P 波反射项的 V 基本积分尾项 */
 real_t grt_lamb_tail_V_P(const int number, const LAMB_BASIC_CONTEXT *ctx, const real_t H[5]);
 

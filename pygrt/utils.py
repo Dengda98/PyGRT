@@ -1423,6 +1423,7 @@ def lamb2(
         npct.as_ctypes(G.ravel()),
         npct.as_ctypes(dG_source.ravel()),
         npct.as_ctypes(dG_receiver.ravel()),
+        None,
     )
 
     return G, dG_source, dG_receiver
@@ -1490,6 +1491,7 @@ def lamb3(*, nu: float, tbar: np.ndarray, R: float, depsrc: float, deprcv: float
         npct.as_ctypes(G.ravel()),
         npct.as_ctypes(dG_source.ravel()),
         npct.as_ctypes(dG_receiver.ravel()),
+        None,
     )
     return G, dG_source, dG_receiver
 

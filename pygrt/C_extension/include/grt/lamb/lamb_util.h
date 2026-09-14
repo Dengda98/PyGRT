@@ -12,34 +12,9 @@
 
 #include "grt/common/const.h"
 
-#define LAMB_POLY_SIZE 17
-#define LAMB_POLY_EPS 1e-28
-
 /* 仅用于数值稳定性警告，不改变 Lamb 问题的数学定义域 */
 #define LAMB_NU_WARNING_MARGIN 1e-3
 #define LAMB_SURFACE_DEPTH_WARNING_RATIO 1e-3
-
-/** Lamb 模块共用的 x 多项式 */
-typedef struct {
-    cplx_t c[LAMB_POLY_SIZE];
-    int degree;
-} LAMB_POLY;
-
-LAMB_POLY grt_lamb_poly_const(const cplx_t value);
-
-LAMB_POLY grt_lamb_poly_x(void);
-
-void grt_lamb_poly_trim(LAMB_POLY *poly);
-
-LAMB_POLY grt_lamb_poly_mul(const LAMB_POLY a, const LAMB_POLY b);
-
-LAMB_POLY grt_lamb_poly_factor(const cplx_t root, const bool plus);
-
-cplx_t grt_lamb_poly_eval(const LAMB_POLY *poly, const cplx_t x);
-
-void grt_lamb_poly_divide(
-    const LAMB_POLY numerator, const LAMB_POLY denominator,
-    LAMB_POLY *quotient, LAMB_POLY *remainder);
 
 /** 判断复数的虚部是否可以视为零 */
 bool grt_lamb_is_real(const cplx_t value);
@@ -66,14 +41,27 @@ void grt_lamb_differentiate_Fk(
     const real_t *ts, const int nt, const real_t (*Fk)[3][3][3],
     real_t (*dG)[3][3][3]);
 
+/** 对 Fkk[time][k][k'][i][j] 连续求两次时间导数 */
+void grt_lamb_differentiate_Fkk(
+    const real_t *ts, const int nt, const real_t (*Fkk)[3][3][3][3],
+    real_t (*dG)[3][3][3][3]);
+
 /** 解析 Lamb 模块的空间导数输出路径 */
 void grt_lamb_parse_derivative_paths(const char *argument, char **source_path, char **receiver_path);
+
+/** 解析 Lamb 模块的源点、接收点和混合二阶导数输出路径 */
+void grt_lamb_parse_derivative_paths_with_mixed(
+    const char *argument, char **source_path, char **receiver_path, char **mixed_path);
 
 /** 输出 Lamb 模块的 Green 函数序列 */
 void grt_lamb_print_green_series(FILE *fp, const real_t *ts, const int nt, const real_t (*G)[3][3]);
 
 /** 输出 Lamb 模块的一类空间导数序列 */
 void grt_lamb_print_derivative_series(FILE *fp, const real_t *ts, const int nt, const real_t (*dG)[3][3][3], const bool source);
+
+/** 输出混合二阶空间导数序列，dG[time][k][k'][i][j] */
+void grt_lamb_print_mixed_derivative_series(
+    FILE *fp, const real_t *ts, const int nt, const real_t (*dG)[3][3][3][3]);
 
 /**
  * 求解如下一元三次形式的 Rayleigh 方程的根,  其中 \f$ \nu \f$ 为泊松比
