@@ -1263,9 +1263,10 @@ def lamb1(*, nu: float, tbar: np.ndarray, azimuth: float):
                                 where :math:`T_S=r/\beta` is the S-wave time scale and :math:`r` is the direct source-receiver distance
         :param      azimuth:    azimuth in degree, in ``[0, 360]``
 
-        :return:    Dimensionless step-force Green function with shape (nt, 3, 3). To get
-                    the physical solution, divide by :math:`\pi^2 \mu r`, where
-                    :math:`\mu` is the shear modulus. The returned result is dimensionless.
+        :return:    The normalized step-force Green function ``G`` with shape
+                    ``(nt, 3, 3)``. To obtain the physical solution, divide the
+                    returned array by :math:`\pi^2 \mu r`, where :math:`\mu` is
+                    the shear modulus and :math:`r` is the source-receiver distance.
     """
 
     nu = _prepare_lamb_scalar(nu, "nu")
@@ -1397,20 +1398,25 @@ def lamb2(
                                     mutually exclusive with ``depsrc``. Values below
                                     ``1e-3 * r`` trigger a numerical warning
         :param      azimuth:      azimuth in degree, from source to receiver, in ``[0, 360]``
-        :return:    A tuple ``(G, dG_source, dG_receiver)``. ``G`` has shape
-                    ``(nt, 3, 3)`` and both derivative arrays have shape
-                    ``(nt, 3, 3, 3)`` with index order
-                    ``[time, coordinate, receiver_component, source_component]``.
-                    The normalized arrays satisfy ``G = pi^2 * mu * r * G^H``,
-                    ``dG_source = pi^2 * mu * r^2 * G^H_(,k')`` and
-                    ``dG_receiver = pi^2 * mu * r^2 * G^H_(,k)``.
+        :return:    Four normalized arrays ``G, Gs, Gr, Grs``. ``G`` has shape
+                    ``(nt, 3, 3)`` and the first-derivative arrays have shape
+                    ``(nt, 3, 3, 3)``. ``Grs`` has shape ``(nt, 3, 3, 3, 3)``.
+                    The index order is ``[time, coordinate, receiver_component,
+                    source_component]`` for first derivatives and
+                    ``[time, receiver_coordinate, source_coordinate, receiver_component,
+                    source_component]`` for ``Grs``. To obtain the physical
+                    solutions, divide ``G`` by :math:`\pi^2 \mu r`, divide ``Gs``
+                    and ``Gr`` by :math:`\pi^2 \mu r^2`, and divide ``Grs`` by
+                    :math:`\pi^2 \mu r^3`, where :math:`\mu` is the shear modulus
+                    and :math:`r` is the source-receiver distance.
     """
 
     nu, tbar, R, depsrc, deprcv, azimuth = _prepare_lamb2_inputs(nu, tbar, R, depsrc, deprcv, azimuth)
     nt = len(tbar)
     G = np.zeros((nt, 3, 3), dtype=NPCT_REAL_TYPE)
-    dG_source = np.zeros((nt, 3, 3, 3), dtype=NPCT_REAL_TYPE)
-    dG_receiver = np.zeros((nt, 3, 3, 3), dtype=NPCT_REAL_TYPE)
+    Gr = np.zeros((nt, 3, 3, 3), dtype=NPCT_REAL_TYPE)
+    Gs = np.zeros((nt, 3, 3, 3), dtype=NPCT_REAL_TYPE)
+    Grs = np.zeros((nt, 3, 3, 3, 3), dtype=NPCT_REAL_TYPE)
 
     C_grt_solve_lamb2(
         nu,
@@ -1421,12 +1427,12 @@ def lamb2(
         deprcv,
         azimuth,
         npct.as_ctypes(G.ravel()),
-        npct.as_ctypes(dG_source.ravel()),
-        npct.as_ctypes(dG_receiver.ravel()),
-        None,
+        npct.as_ctypes(Gs.ravel()),
+        npct.as_ctypes(Gr.ravel()),
+        npct.as_ctypes(Grs.ravel()),
     )
 
-    return G, dG_source, dG_receiver
+    return G, Gs, Gr, Grs
 
 
 def _prepare_lamb3_inputs(nu, tbar, R, depsrc, deprcv, azimuth):
@@ -1466,20 +1472,25 @@ def lamb3(*, nu: float, tbar: np.ndarray, R: float, depsrc: float, deprcv: float
         :param      deprcv:       strictly positive receiver depth; values below ``1e-3 * r``
                                     trigger a numerical warning
         :param      azimuth:      azimuth in degree, from source to receiver, in ``[0, 360]``
-        :return:    A tuple ``(G, dG_source, dG_receiver)``. ``G`` has shape
-                    ``(nt, 3, 3)`` and both derivative arrays have shape
-                    ``(nt, 3, 3, 3)`` with index order
-                    ``[time, coordinate, receiver_component, source_component]``.
-                    The normalized arrays satisfy ``G = pi^2 * mu * r * G^H``,
-                    ``dG_source = pi^2 * mu * r^2 * G^H_(,k')`` and
-                    ``dG_receiver = pi^2 * mu * r^2 * G^H_(,k)``.
+        :return:    Four normalized arrays ``G, Gs, Gr, Grs``. ``G`` has shape
+                    ``(nt, 3, 3)`` and the first-derivative arrays have shape
+                    ``(nt, 3, 3, 3)``. ``Grs`` has shape ``(nt, 3, 3, 3, 3)``.
+                    The index order is ``[time, coordinate, receiver_component,
+                    source_component]`` for first derivatives and
+                    ``[time, receiver_coordinate, source_coordinate, receiver_component,
+                    source_component]`` for ``Grs``. To obtain the physical
+                    solutions, divide ``G`` by :math:`\pi^2 \mu r`, divide ``Gs``
+                    and ``Gr`` by :math:`\pi^2 \mu r^2`, and divide ``Grs`` by
+                    :math:`\pi^2 \mu r^3`, where :math:`\mu` is the shear modulus
+                    and :math:`r` is the source-receiver distance.
     """
 
     nu, tbar, R, depsrc, deprcv, azimuth = _prepare_lamb3_inputs(nu, tbar, R, depsrc, deprcv, azimuth)
     nt = len(tbar)
     G = np.zeros((nt, 3, 3), dtype=NPCT_REAL_TYPE)
-    dG_source = np.zeros((nt, 3, 3, 3), dtype=NPCT_REAL_TYPE)
-    dG_receiver = np.zeros((nt, 3, 3, 3), dtype=NPCT_REAL_TYPE)
+    Gr = np.zeros((nt, 3, 3, 3), dtype=NPCT_REAL_TYPE)
+    Gs = np.zeros((nt, 3, 3, 3), dtype=NPCT_REAL_TYPE)
+    Grs = np.zeros((nt, 3, 3, 3, 3), dtype=NPCT_REAL_TYPE)
     C_grt_solve_lamb3(
         nu,
         npct.as_ctypes(tbar),
@@ -1489,11 +1500,11 @@ def lamb3(*, nu: float, tbar: np.ndarray, R: float, depsrc: float, deprcv: float
         deprcv,
         azimuth,
         npct.as_ctypes(G.ravel()),
-        npct.as_ctypes(dG_source.ravel()),
-        npct.as_ctypes(dG_receiver.ravel()),
-        None,
+        npct.as_ctypes(Gs.ravel()),
+        npct.as_ctypes(Gr.ravel()),
+        npct.as_ctypes(Grs.ravel()),
     )
-    return G, dG_source, dG_receiver
+    return G, Gs, Gr, Grs
 
 
 # ======================================================================================================
