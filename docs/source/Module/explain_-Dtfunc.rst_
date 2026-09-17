@@ -36,27 +36,25 @@
         gmt set FONT_TITLE 13p,1
         gmt set FONT_LABEL 10p
 
-        scale="1e4"
-        label="\32710@+-4@+"
         gmt subplot begin 1x4 -Fs4c/4c -M0.4c -R0/2/0/1 -Baf -BWSen
 
         gmt subplot set 0
         title="-Dp/2"
-        gmt basemap -B+t$title -By+l"$label"
+        gmt basemap -B+t$title
         grt syn -G$GDIR -S1e20 -A0 $title -OSYN
-        grt sac2asc SYN/sig.sac | gmt plot -i0,1+s$scale
+        grt sac2asc SYN/sig.sac | gmt plot
 
         gmt subplot set 1
         title="-Dt/0.2/0.9/1.8"
-        gmt basemap -B+t$title -By+l"$label"
+        gmt basemap -B+t$title
         grt syn -G$GDIR -S1e20 -A0 $title -OSYN
-        grt sac2asc SYN/sig.sac | gmt plot -i0,1+s$scale
+        grt sac2asc SYN/sig.sac | gmt plot
 
         gmt subplot set 2
         title="-Dt/1.5/1.5/2.0"
-        gmt basemap -B+t$title -By+l"$label"
+        gmt basemap -B+t$title
         grt syn -G$GDIR -S1e20 -A0 $title -OSYN
-        grt sac2asc SYN/sig.sac | gmt plot -i0,1+s$scale
+        grt sac2asc SYN/sig.sac | gmt plot
 
         gmt subplot set 3
         title="-Dr/1.2"
