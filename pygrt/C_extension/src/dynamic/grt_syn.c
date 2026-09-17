@@ -231,7 +231,8 @@ printf("\n"
 "                    set -D%c/<path>, <path> is the filepath to a custom\n", GRT_SIG_CUSTOM); printf(
 "                    Time Function ASCII file. The file has just one column\n"
 "                    of amplitude and no other columns. Its sequence sum should\n"
-"                    be 1.0; the program only issues a warning when it is not.\n"
+"                    be 1/dt, where dt is the sampling interval; the program\n"
+"                    only issues a warning when it is not.\n"
 "                    The file can contain unlimited comment lines with prefix\n"
 "                    \"#\".\n"
 "                    e.g. \n"
@@ -938,11 +939,12 @@ static void syn_postprocess_trace(SACTRACE *sac, SACTRACE *tfsac, int int_times,
         }
 
         float *convarr = GRT_SAFE_CALLOC(nt, sizeof(float));
-        grt_oaconvolve(sac->data, nt, tfsac->data, tfsac->hd.npts, convarr, nt, true);
+        grt_oaconvolve(sac->data, nt, tfsac->data, tfsac->hd.npts, convarr, nt, false);
         fac = 1.0f;
         dfac = expf(wI * dt);
         for(int n = 0; n < nt; ++n){
-            sac->data[n] = convarr[n] * fac;
+            // 时间函数样本表示物理时间函数，连续卷积的离散积分因子为 dt
+            sac->data[n] = convarr[n] * fac * dt;
             if(n < tfsac->hd.npts) tfsac->data[n] *= fac;
             fac *= dfac;
         }

@@ -31,7 +31,7 @@ bool grt_check_tftype_tfparams(const char tftype, const char *tfparams);
 /**
  * 获得时间函数，要求提前运行check_tftype_tfparams函数以检查参数
  * 所有时间函数使用面积归一化（除雷克子波使用最大幅值为1）
- * 自定义时间函数不做振幅归一化，序列和不为1时仅给出警告
+ * 自定义时间函数不做处理，序列和不满足1/dt时仅给出警告
  * 
  * @param[out]      TFnt       返回的点数
  * @param[in]       dt         时间间隔
@@ -68,6 +68,8 @@ float * grt_get_time_function(int *TFnt, float dt, const char tftype, const char
  * @param[out]   y            输出数组
  * @param[in]    ny           输出数组点数
  * @param[in]    iscircular   是否使用循环卷积
+ *
+ * 该函数只进行离散样本求和，不包含连续卷积所需的 dt 因子
  */
 void grt_oaconvolve(float *x, int nx, float *h, int nh, float *y, int ny, bool iscircular);
 
@@ -166,8 +168,7 @@ float * grt_get_ricker_wave(float dt, float f0, int *Nt);
 
 /**
  * 从文件中读入自定义时间函数，每个非注释行只能包含一列振幅值
- * 不做振幅归一化
- * 序列和不为1时仅给出警告
+ * 序列和由调用方根据采样间隔检查
  * 
  * @param[out]    Nt        返回的点数
  * @param[in]     tfparams  文件路径

@@ -9,7 +9,7 @@
  *    信号长度应能整除采样间隔。
  * 
  *    所有时间函数使用面积归一化（除雷克子波使用最大幅值为1）
- *    自定义时间函数由用户自行保证序列和为1，程序不做归一化，序列和不为1时仅给出警告
+ *    自定义时间函数由用户自行保证序列和为1/dt，程序不做归一化，序列和不满足时仅给出警告
  * 
  */
 
@@ -98,6 +98,12 @@ float * grt_get_time_function(int *TFnt, float dt, const char tftype, const char
     // 自定义时间函数
     else if(GRT_SIG_CUSTOM == tftype){
         tfarr = grt_get_custom_wave(&tfnt, tfparams);
+        const float area = grt_trap_area(tfarr, tfnt, dt);
+        if(fabs(area - 1.0f) > 1e-5f){
+            GRTRaiseWarning(
+                "Custom time function sequence sum is %.7g, expected %.7g (1/dt).",
+                area/dt, 1.0/dt);
+        }
     }
 
     *TFnt = tfnt;
@@ -157,14 +163,14 @@ void grt_oaconvolve(float *x, int nx, float *h, int nh, float *y, int ny, bool i
 float grt_trap_area(const float *x, int nx, float dt){
     float area = 0.0;
     for(int i=0; i<nx-1; ++i){
-        area += (x[i] + x[i+1])*0.5/dt;
+        area += (x[i] + x[i+1]) * 0.5 * dt;
     }
     return area;
 }
 
 
 static void grt_normalize_time_function(float *x, int nx, float dt){
-    // 使用实际dt计算离散时间函数的梯形积分
+    // 使用实际dt计算内置时间函数的离散梯形积分
     float area = grt_trap_area(x, nx, dt);
     if(area <= 0.0){
         GRTRaiseError("Time function area should be larger than 0.\n");
@@ -338,7 +344,6 @@ float * grt_get_custom_wave(int *Nt, const char *tfparams){
 
     int nt = 0;
     size_t lineno = 0;
-    double sum = 0.0;
     while(grt_getline(&line, &len, fp) != -1) {
         lineno++;
         // 注释行
@@ -353,7 +358,6 @@ float * grt_get_custom_wave(int *Nt, const char *tfparams){
 
         tfarr = GRT_SAFE_REALLOC(tfarr, sizeof(float)*(nt+1));
         tfarr[nt] = value;
-        sum += tfarr[nt];
         nt++;
     }
 
@@ -363,10 +367,6 @@ float * grt_get_custom_wave(int *Nt, const char *tfparams){
 
     fclose(fp);
     GRT_SAFE_FREE_PTR(line);
-
-    if(!isfinite(sum) || fabs(sum - 1.0) > 1e-5){
-        GRTRaiseWarning("Custom time function sequence sum is %.7g, expected 1.0.", sum);
-    }
 
     *Nt = nt;
     return tfarr;
