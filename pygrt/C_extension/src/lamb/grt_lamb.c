@@ -7,7 +7,6 @@
  */
 
 #include "grt.h"
-#include "grt/common/const.h"
 
 /* 防止复数虚数单位宏替换积分次数成员名 */
 #undef I
@@ -37,11 +36,6 @@ typedef struct {
         real_t azrad;
         real_t backazimuth;
     } A;
-
-    /** 旋转到 Z、N、E */
-    struct {
-        bool active;
-    } N;
 
     /** 源强缩放 */
     struct {
@@ -99,7 +93,7 @@ typedef struct {
         int nt;
         real_t dt;
         real_t *tbar;
-    } Time;
+    } N;
 
     /** 源点和接收点深度 */
     struct {
@@ -114,6 +108,11 @@ typedef struct {
         bool active;
         real_t dist;
     } R;
+
+    /** 旋转到 Z、N、E */
+    struct {
+        bool active;
+    } n;
 
     /** 是否静默输出 */
     struct {
@@ -146,7 +145,7 @@ typedef struct {
 /** 释放结构体的内存 */
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl)
 {
-    GRT_SAFE_FREE_PTR(Ctrl->Time.tbar);
+    GRT_SAFE_FREE_PTR(Ctrl->N.tbar);
     GRT_SAFE_FREE_PTR(Ctrl->D.tfparams);
     GRT_SAFE_FREE_PTR(Ctrl->O.s_output_dir);
     GRT_SAFE_FREE_PTR(Ctrl);
@@ -329,9 +328,9 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 if (sscanf(optarg, "%d/%lf%c", &nt, &dt, &extra) != 2 || nt <= 0 || dt <= 0.0 || !isfinite(dt)) {
                     GRTBadOptionError(N, "expected positive nt/dt.");
                 }
-                Ctrl->Time.active = true;
-                Ctrl->Time.nt = nt;
-                Ctrl->Time.dt = dt;
+                Ctrl->N.active = true;
+                Ctrl->N.nt = nt;
+                Ctrl->N.dt = dt;
                 break;
             }
 
@@ -541,7 +540,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
 
             /* 是否旋转到 ZNE */
             case 'n':
-                Ctrl->N.active = true;
+                Ctrl->n.active = true;
                 break;
 
             /* 是否计算空间导数 */
@@ -560,7 +559,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
 
     GRTCheckOptionSet(argc > 1);
     GRTCheckOptionActive(Ctrl, H);
-    if (!Ctrl->Time.active) {
+    if (!Ctrl->N.active) {
         GRTRaiseError("Need set options \"-N\". Use \"-h\" for help.\n");
     }
     GRTCheckOptionActive(Ctrl, R);
@@ -894,6 +893,123 @@ static SACTRACE *new_lamb_trace(
         sac->hd.baz -= 360.0;
     }
     return sac;
+}
+
+
+enum {
+    LAMB_PHASE_P,                         ///< t0/kt0：直达 P 波
+    LAMB_PHASE_S,                         ///< t1/kt1：直达 S 波
+    LAMB_PHASE_R,                         ///< t2/kt2：Rayleigh 波参考到时
+    LAMB_PHASE_sP,                        ///< t3/kt3：滑行 sP 波
+    LAMB_PHASE_PP,                        ///< t4/kt4：反射 PP 波
+    LAMB_PHASE_SS,                        ///< t5/kt5：反射 SS 波
+    LAMB_PHASE_PS,                        ///< t6/kt6：PS 转换波
+    LAMB_PHASE_SP,                        ///< t7/kt7：SP 转换波
+    LAMB_PHASE_sPs,                       ///< t8/kt8：滑行 sPs 波
+    LAMB_PHASE_COUNT,                     ///< 已定义的 Lamb 震相数量
+    LAMB_SAC_PICK_COUNT = 10,             ///< SAC 用户震相槽位总数
+};
+
+
+/** 按 SAC 的 8 字节定长格式写入震相名称 */
+static void copy_lamb_phase_name(char target[9], const char *name)
+{
+    const size_t length = GRT_MIN(strlen(name), (size_t)SAC_HEADER_STRING_LENGTH_FILE);
+    memset(target, ' ', SAC_HEADER_STRING_LENGTH_FILE);
+    memcpy(target, name, length);
+    target[SAC_HEADER_STRING_LENGTH_FILE] = '\0';
+}
+
+
+/** 清空 Lamb SAC 记录中的震相到时及名称 */
+static void clear_lamb_arrivals(SACTRACE *sac)
+{
+    float *times[LAMB_SAC_PICK_COUNT] = {
+        &sac->hd.t0, &sac->hd.t1, &sac->hd.t2, &sac->hd.t3,
+        &sac->hd.t4, &sac->hd.t5, &sac->hd.t6, &sac->hd.t7,
+        &sac->hd.t8, &sac->hd.t9,
+    };
+    char *names[LAMB_SAC_PICK_COUNT] = {
+        sac->hd.kt0, sac->hd.kt1, sac->hd.kt2, sac->hd.kt3,
+        sac->hd.kt4, sac->hd.kt5, sac->hd.kt6, sac->hd.kt7,
+        sac->hd.kt8, sac->hd.kt9,
+    };
+    for (int i = 0; i < LAMB_SAC_PICK_COUNT; ++i) {
+        *times[i] = SAC_FLOAT_UNDEF;
+        copy_lamb_phase_name(names[i], SAC_CHAR8_UNDEF);
+    }
+}
+
+
+/** 将一个无量纲震相到时写入 SAC 头段 */
+static void set_lamb_arrival(
+    SACTRACE *sac, const int phase, const real_t tbar, const real_t time_scale, const char *name)
+{
+    if (phase < 0 || phase >= LAMB_PHASE_COUNT || tbar < 0.0 || !isfinite(tbar)) {
+        return;
+    }
+    float *times[LAMB_SAC_PICK_COUNT] = {
+        &sac->hd.t0, &sac->hd.t1, &sac->hd.t2, &sac->hd.t3,
+        &sac->hd.t4, &sac->hd.t5, &sac->hd.t6, &sac->hd.t7,
+        &sac->hd.t8, &sac->hd.t9,
+    };
+    char *names[LAMB_SAC_PICK_COUNT] = {
+        sac->hd.kt0, sac->hd.kt1, sac->hd.kt2, sac->hd.kt3,
+        sac->hd.kt4, sac->hd.kt5, sac->hd.kt6, sac->hd.kt7,
+        sac->hd.kt8, sac->hd.kt9,
+    };
+    *times[phase] = (float)(tbar * time_scale);
+    copy_lamb_phase_name(names[phase], name);
+}
+
+
+/** 根据源点和接收点位置写入 Lamb SAC 记录的震相到时 */
+static void set_lamb_arrivals(
+    SACTRACE *sac, const real_t nu, const real_t horizontal_distance,
+    const real_t source_depth, const real_t receiver_depth,
+    const real_t direct_distance, const real_t vs)
+{
+    clear_lamb_arrivals(sac);
+    const real_t time_scale = direct_distance / vs;
+    real_t tP;
+    real_t tR;
+    set_lamb_arrival(sac, LAMB_PHASE_S, 1.0, time_scale, "S");
+    grt_compute_lamb1_travt(nu, &tP, &tR);
+
+    if (source_depth > 0.0 && receiver_depth > 0.0) {
+        const real_t reflected_distance = hypot(horizontal_distance, source_depth + receiver_depth);
+        tR *= reflected_distance / direct_distance;
+    }
+    set_lamb_arrival(sac, LAMB_PHASE_R, tR, time_scale, "R");
+
+    if (is_surface_source_receiver(source_depth, receiver_depth)) {
+        set_lamb_arrival(sac, LAMB_PHASE_P, tP, time_scale, "P");
+        return;
+    }
+
+    if (source_depth > 0.0 && receiver_depth > 0.0) {
+        real_t tPP;
+        real_t tSS;
+        real_t tPS;
+        real_t tSP;
+        real_t t_sPs;
+        grt_compute_lamb3_travt(
+            nu, horizontal_distance, source_depth, receiver_depth,
+            &tP, &tPP, &tSS, &tPS, &tSP, &t_sPs);
+        set_lamb_arrival(sac, LAMB_PHASE_P, tP, time_scale, "P");
+        set_lamb_arrival(sac, LAMB_PHASE_PP, tPP, time_scale, "PP");
+        set_lamb_arrival(sac, LAMB_PHASE_SS, tSS, time_scale, "SS");
+        set_lamb_arrival(sac, LAMB_PHASE_PS, tPS, time_scale, "PS");
+        set_lamb_arrival(sac, LAMB_PHASE_SP, tSP, time_scale, "SP");
+        set_lamb_arrival(sac, LAMB_PHASE_sPs, t_sPs, time_scale, "sPs");
+        return;
+    }
+
+    real_t t_sP;
+    grt_compute_lamb2_travt(
+        nu, horizontal_distance, source_depth, receiver_depth, &tP, &t_sP);
+    set_lamb_arrival(sac, LAMB_PHASE_P, tP, time_scale, "P");
+    set_lamb_arrival(sac, LAMB_PHASE_sP, t_sP, time_scale, "sP");
 }
 
 
@@ -1310,7 +1426,7 @@ int lamb_main(int argc, char **argv)
     const real_t deprcv = Ctrl->Depth.deprcv;
     const real_t horizontal_distance = Ctrl->R.dist;
     const bool surface = is_surface_source_receiver(depsrc, deprcv);
-    const bool rot2ZNE = Ctrl->N.active;
+    const bool rot2ZNE = Ctrl->n.active;
     const bool calc_upar = Ctrl->e.active && !surface;
     const char *chs = rot2ZNE ? GRT_ZNE_CODES : GRT_ZRT_CODES;
     if (surface) {
@@ -1332,15 +1448,15 @@ int lamb_main(int argc, char **argv)
     } else if (Ctrl->E.delayV0 > 0.0) {
         begin_time += distance / Ctrl->E.delayV0;
     }
-    /* 以 S 波到时为尺度构造无量纲时间 tbar=vs*t/r */
-    Ctrl->Time.tbar = GRT_SAFE_CALLOC((size_t)Ctrl->Time.nt, sizeof(*Ctrl->Time.tbar));
-    for (int n = 0; n < Ctrl->Time.nt; ++n) {
-        Ctrl->Time.tbar[n] = n * Ctrl->Time.dt * Ctrl->H.vs / distance;
+    /* 按记录的实际物理时刻构造无量纲时间 tbar=vs*t/r */
+    Ctrl->N.tbar = GRT_SAFE_CALLOC((size_t)Ctrl->N.nt, sizeof(*Ctrl->N.tbar));
+    for (int n = 0; n < Ctrl->N.nt; ++n) {
+        Ctrl->N.tbar[n] = (begin_time + n * Ctrl->N.dt) * Ctrl->H.vs / distance;
     }
 
     LAMB_RESULT result = {0};
     make_lamb_result(
-        Ctrl->H.nu, Ctrl->Time.tbar, Ctrl->Time.nt, horizontal_distance, depsrc, deprcv,
+        Ctrl->H.nu, Ctrl->N.tbar, Ctrl->N.nt, horizontal_distance, depsrc, deprcv,
         Ctrl->A.azimuth, Ctrl->computeType, calc_upar, &result);
 
     /* 将无量纲闭合解恢复为物理量，导数阶数每增加一阶再除以一个 r */
@@ -1361,19 +1477,22 @@ int lamb_main(int argc, char **argv)
     if (Ctrl->D.active) {
         /* 时间函数与输出序列使用相同的物理采样间隔 */
         int time_function_nt;
-        float *values = grt_get_time_function(&time_function_nt, (float)Ctrl->Time.dt,
+        float *values = grt_get_time_function(&time_function_nt, (float)Ctrl->N.dt,
             Ctrl->D.tftype, Ctrl->D.tfparams);
         if (values == NULL) {
             GRTRaiseError("get time function error.\n");
         }
-        time_function = grt_new_SACTRACE((float)Ctrl->Time.dt, time_function_nt, 0.0f);
+        time_function = grt_new_SACTRACE((float)Ctrl->N.dt, time_function_nt, 0.0f);
         memcpy(time_function->data, values, sizeof(*values) * time_function_nt);
         GRT_SAFE_FREE_PTR(values);
     }
 
     SACTRACE *prototype = new_lamb_trace(
-        Ctrl->Time.nt, Ctrl->Time.dt, horizontal_distance, depsrc, deprcv,
+        Ctrl->N.nt, Ctrl->N.dt, horizontal_distance, depsrc, deprcv,
         Ctrl->A.azimuth, begin_time, Ctrl->H.vp, Ctrl->H.vs, Ctrl->H.rho);
+    set_lamb_arrivals(
+        prototype, Ctrl->H.nu, horizontal_distance, depsrc, deprcv,
+        distance, Ctrl->H.vs);
     SACTRACE *base[3] = {0};
     SACTRACE *derivative[3][3] = {{0}};
     allocate_lamb_traces(prototype, calc_upar, base, derivative);
@@ -1388,7 +1507,7 @@ int lamb_main(int argc, char **argv)
 
         fill_source_traces(
             rot2ZNE, horizontal_distance, Ctrl->computeType, source_scale, Ctrl->H.nu,
-            Ctrl->A.azrad, Ctrl->mchn, calc_upar, Ctrl->Time.nt, &result, source_index,
+            Ctrl->A.azrad, Ctrl->mchn, calc_upar, Ctrl->N.nt, &result, source_index,
             force_factor, moment_factor, force_derivative_factor, moment_derivative_factor,
             source_base, source_derivative);
         /* 先去除 Lamb 解自带的时间积分，再执行用户指定的时间操作 */
