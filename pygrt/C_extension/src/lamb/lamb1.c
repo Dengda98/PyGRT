@@ -756,6 +756,24 @@ static void build_R(real_t tbar, VARS *V, real_t u[3][3])
 }
 
 
+void grt_compute_lamb1_travt(const real_t nu, real_t *tP, real_t *tR)
+{
+    if (nu <= 0.0 || nu >= 0.5) {
+        GRTRaiseError("poisson ratio (%lf) is out of bound.", nu);
+    }
+
+    const real_t k2 = 0.5 * (1.0 - 2.0 * nu) / (1.0 - nu);
+    if (tP != NULL) {
+        *tP = sqrt(k2);
+    }
+    if (tR != NULL) {
+        cplx_t roots[3];
+        grt_rayleigh2_roots(k2, roots);
+        *tR = creal(roots[2]) > 0.0 ? sqrt(creal(roots[2])) : -1.0;
+    }
+}
+
+
 
 
 
@@ -772,10 +790,8 @@ void grt_solve_lamb1(
     if(azimuth < 0.0 || azimuth > 360.0){
         GRTRaiseError("azimuth should be in [0, 360] degree for lamb1.\n");
     }
+    /* 允许时间轴从发震时刻之前开始，因果解在发震前保持为零 */
     for(int i = 0; i < nt; ++i){
-        if(ts[i] < 0.0){
-            GRTRaiseError("The time series for lamb1 should be nonnegative.\n");
-        }
         if(i > 0 && ts[i] <= ts[i - 1]){
             GRTRaiseError("The time series for lamb1 should be strictly increasing.\n");
         }
@@ -803,10 +819,13 @@ void grt_solve_lamb1(
     real_t tbar_eps = nt > 1 ? GRT_MIN(1e-8, (ts[1]-ts[0]) * 1e-5) : 1e-8;
 
     // 初始化相关变量
+    real_t tP;
+    real_t tR;
+    grt_compute_lamb1_travt(nu, &tP, &tR);
     VARS V0 = {0};
     VARS *V = &V0;
-    V0.kk = 0.5 * (1.0 - 2.0*nu)/(1.0 - nu);
-    V0.k = sqrt(V0.kk);
+    V0.k = tP;
+    V0.kk = V0.k * V0.k;
     V0.nu = nu;
     V0.kpkp = 1.0 - V0.kk;
     V0.kp = sqrt(V0.kpkp);
@@ -826,17 +845,14 @@ void grt_solve_lamb1(
     }
 
     // 另一种形式的Rayleigh波函数
-    {   
-        cplx_t y3[3];
-        grt_rayleigh2_roots(V0.kk, y3);
-        
+    {
         V0.RaylQ[0][2] = V->cf;
         V0.RaylQ[1][2] = V->sf;
         V0.RaylQ[2][0] = - V0.RaylQ[0][2];
         V0.RaylQ[2][1] = - V0.RaylQ[1][2];
 
-        V0.kpakpa = creal(y3[2]);
-        V0.kpa = sqrt(V0.kpakpa);
+        V0.kpa = tR;
+        V0.kpakpa = V0.kpa * V0.kpa;
 
         real_t u0 = sqrt(V0.kpakpa - V0.kk);
         real_t v0 = sqrt(V0.kpakpa - 1.0);

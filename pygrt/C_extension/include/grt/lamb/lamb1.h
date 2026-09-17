@@ -14,6 +14,16 @@
 
 
 /**
+ * 计算第一类 Lamb 问题的无量纲震相到时
+ *
+ * @param[in]    nu        泊松比，(0, 0.5)
+ * @param[out]   tP        直达 P 波到时
+ * @param[out]   tR        Rayleigh 波到时
+ */
+void grt_compute_lamb1_travt(const real_t nu, real_t *tP, real_t *tR);
+
+
+/**
  * 使用广义闭合解求解第一类 Lamb 问题
  * 
  * @param[in]    nu        泊松比， (0, 0.5)

@@ -15,6 +15,21 @@
 #include "grt/common/const.h"
 
 /**
+ * 计算第二类 Lamb 问题的无量纲震相到时
+ *
+ * @param[in]    nu             泊松比，(0, 0.5)
+ * @param[in]    R              源点到接收点的水平距离
+ * @param[in]    depsrc         源点深度，与 deprcv 恰好一个大于零
+ * @param[in]    deprcv         接收点深度，与 depsrc 恰好一个大于零
+ * @param[out]   tP             直达 P 波到时
+ * @param[out]   t_sP           sP 波到时，不存在时为负数
+ */
+void grt_compute_lamb2_travt(
+    const real_t nu, const real_t R, const real_t depsrc, const real_t deprcv,
+    real_t *tP, real_t *t_sP);
+
+
+/**
  * 使用广义闭合解求解第二类 Lamb 问题
  *
  * @param[in]    nu             泊松比，(0, 0.5)，距任一边界小于 1e-3 时给出警告

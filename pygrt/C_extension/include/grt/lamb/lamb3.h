@@ -14,6 +14,25 @@
 
 
 /**
+ * 计算第三类 Lamb 问题的无量纲震相到时
+ *
+ * @param[in]    nu             泊松比，(0, 0.5)
+ * @param[in]    R              源点和接收点之间的水平距离
+ * @param[in]    depsrc         源点深度
+ * @param[in]    deprcv         接收点深度
+ * @param[out]   tP             直达 P 波到时
+ * @param[out]   tPP            反射 PP 波到时
+ * @param[out]   tSS            反射 SS 波到时
+ * @param[out]   tPS            PS 转换波到时
+ * @param[out]   tSP            SP 转换波到时
+ * @param[out]   t_sPs          sPs 波到时，不存在时为负数
+ */
+void grt_compute_lamb3_travt(
+    const real_t nu, const real_t R, const real_t depsrc, const real_t deprcv,
+    real_t *tP, real_t *tPP, real_t *tSS, real_t *tPS, real_t *tSP, real_t *t_sPs);
+
+
+/**
  * 使用广义闭合解求解第三类 Lamb 问题
  *
  * @param[in]    nu              泊松比，(0, 0.5)，距任一边界小于 1e-3 时给出警告

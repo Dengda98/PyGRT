@@ -39,7 +39,7 @@ typedef struct {
     real_t theta_c;                         ///< 临界角 theta_c=asin(k)
     real_t tps;                             ///< PS 转换项的归一化到时
     real_t tsp;                             ///< SP 转换项的归一化到时
-    real_t t_sps;                           ///< sPs 项的归一化到时
+    real_t t_sPs;                           ///< sPs 项的归一化到时
     real_t reflection_P;                    ///< 反射 P 波的归一化到时
     real_t reflection_S;                    ///< 反射 S 波的归一化到时
     real_t varsigma;                        ///< r/rp，反射项的时间缩放

@@ -34,7 +34,7 @@ typedef struct {
     real_t sf;                              ///< sin(phi)
     real_t cf;                              ///< cos(phi)
     real_t theta_c;                         ///< 临界角 theta_c=asin(k)
-    real_t t_sp;                             ///< S-P 项的归一化到时 cos(theta-theta_c)
+    real_t t_sP;                             ///< sP 项的归一化到时 cos(theta-theta_c)
     real_t angle_ratio;                      ///< sf/cf，|cf| 过小时为 0
     bool use_angle_ratio;                    ///< |cf| 是否足够大，可用 sf/cf 复用分量
     bool supercritical;                      ///< 射线角是否超过临界角
