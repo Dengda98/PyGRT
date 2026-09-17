@@ -1,6 +1,16 @@
 Changelog
 ====================
 
+## PyGRT v0.17.2
+
+This is primarily a **bug-fix release**. 
+
++ It fixes the incorrect `dt` factor in time-function convolution during dynamic synthesis and corrects coordinate transformations in Lamb derivative workflows. 
++ This release also introduces the new `lamb` module, which combines `lamb1`, `lamb2`, and `lamb3` to compute analytical dynamic full-wave solutions in a homogeneous half-space. Its SAC output follows the conventions of the `syn` module and includes the arrival times and names of relevant seismic phases. See the [Lamb problem documentation and example](https://pygrt.readthedocs.io/zh-cn/latest/Lamb_problem/lamb.html) for details.
+
+
+**Full Changelog**: [v0.17.1...v0.17.2](https://github.com/Dengda98/PyGRT/compare/v0.17.1...v0.17.2)
+
 ## PyGRT v0.17.1
 
 + Improve Lamb-problem calculations and derivative workflows.
