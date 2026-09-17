@@ -1320,9 +1320,9 @@ class PyModel1D:
                                        All time functions use area normalization,
                                        except the Ricker wavelet, which has a peak
                                        amplitude of 1.
-                                       A custom sequence should sum to 1; it is not
-                                       normalized by the program, which only issues a
-                                       warning otherwise.
+                                       A custom sequence should sum to 1/dt, where ``dt``
+                                       is the sampling interval; it is not normalized by
+                                       the program, which only issues a warning otherwise.
                                        Omit this argument for an impulse response.
         :param    integrate_order:     Number of time integrations. For example,
                                        ``1`` yields step-like displacement.
