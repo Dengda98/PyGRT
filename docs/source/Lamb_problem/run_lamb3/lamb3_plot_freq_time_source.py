@@ -48,6 +48,8 @@ SOURCE_COMPONENTS = {
 }
 SOURCE_NAMES = tuple(SOURCE_COMPONENTS)
 OUTPUT_COMPONENTS = ("Z", "N", "E")
+AXIS_MAP = (2, 0, 1)
+AXIS_SIGN = np.array((-1.0, 1.0, 1.0))
 
 
 def remove_calculation_results() -> None:
@@ -61,50 +63,54 @@ def remove_calculation_results() -> None:
 def convert_source_derivatives(dG_source: np.ndarray) -> np.ndarray:
     """将 lamb3 的 Gij,k' 转为 greenfn 的 EX、DD、DS、SS 分量
 
-    lamb3 的坐标顺序为 x1=R、x2=T、x3=Z_down，数组索引为
+    lamb3 的解使用全局 ZNE 坐标系，Z 轴向下；数组存储顺序为 N、E、Z_down
+    数组索引为
     [时间, 源点导数方向, 接收点分量, 源点分量]
     """
     if dG_source.ndim != 4 or dG_source.shape[1:] != (3, 3, 3):
         raise ValueError("dG_source must have shape (nt, 3, 3, 3).")
 
-    # 先在 lamb3 的 x1、x2、x3 坐标中构造四种震源分量
+    # 将 [N,E,Z_down] 重排为 [Z_down,N,E]，并将 Z_down 转为 Z_up
+    mapped = dG_source
+    for axis in (1, 2, 3):
+        mapped = np.take(mapped, AXIS_MAP, axis=axis)
+    mapped = mapped * (
+        AXIS_SIGN[None, :, None, None]
+        * AXIS_SIGN[None, None, :, None]
+        * AXIS_SIGN[None, None, None, :]
+    )
+
+    # 在 ZNE 坐标中构造四种震源分量
     nt = dG_source.shape[0]
     converted = np.zeros((nt, len(SOURCE_NAMES), 3))
 
     # EX = G_i1,1' + G_i2,2' + G_i3,3'
     converted[:, 0] = (
-        dG_source[:, 0, :, 0] + dG_source[:, 1, :, 1] + dG_source[:, 2, :, 2]
+        mapped[:, 0, :, 0] + mapped[:, 1, :, 1] + mapped[:, 2, :, 2]
     )
 
     # DD = 2 G_i3,3' - G_i1,1' - G_i2,2'
     converted[:, 1] = (
-        2.0 * dG_source[:, 2, :, 2]
-        - dG_source[:, 0, :, 0]
-        - dG_source[:, 1, :, 1]
+        2.0 * mapped[:, 0, :, 0]
+        - mapped[:, 1, :, 1]
+        - mapped[:, 2, :, 2]
     )
 
-    # DS 的 P-SV 部分使用 x1-z 剪切，SH 部分使用 x2-z 剪切
-    ds_radial = -(
-        dG_source[:, 0, :, 2] + dG_source[:, 2, :, 0]
-    )
-    ds_transverse = -(
-        dG_source[:, 1, :, 2] + dG_source[:, 2, :, 1]
-    )
-    converted[:, 2, 0] = ds_radial[:, 0]
-    converted[:, 2, 1] = ds_transverse[:, 1]
-    converted[:, 2, 2] = ds_radial[:, 2]
+    # DS 的 P-SV 部分使用 N-Z 剪切，SH 部分使用 E-Z 剪切
+    ds_n = mapped[:, 0, :, 1] + mapped[:, 1, :, 0]
+    ds_e = mapped[:, 0, :, 2] + mapped[:, 2, :, 0]
+    converted[:, 2, 0] = ds_n[:, 0]
+    converted[:, 2, 1] = ds_n[:, 1]
+    converted[:, 2, 2] = ds_e[:, 2]
 
     # SS 的 P-SV 部分为水平法向差，SH 部分为水平剪切
-    ss_radial = dG_source[:, 0, :, 0] - dG_source[:, 1, :, 1]
-    ss_transverse = dG_source[:, 0, :, 1] + dG_source[:, 1, :, 0]
-    converted[:, 3, 0] = ss_radial[:, 0]
-    converted[:, 3, 1] = ss_transverse[:, 1]
-    converted[:, 3, 2] = ss_radial[:, 2]
+    ss_n = mapped[:, 1, :, 1] - mapped[:, 2, :, 2]
+    ss_e = mapped[:, 2, :, 1] + mapped[:, 1, :, 2]
+    converted[:, 3, 0] = ss_n[:, 0]
+    converted[:, 3, 1] = ss_n[:, 1]
+    converted[:, 3, 2] = ss_e[:, 2]
 
-    # 转为 greenfn 的 ZRT 输出顺序对应的 ZNE 顺序，并将 Z_down 改为 Z_up
-    receiver_indices = (2, 0, 1)
-    receiver_signs = np.array((-1.0, 1.0, 1.0))
-    return converted[:, :, receiver_indices] * receiver_signs[None, None, :]
+    return converted
 
 
 def calculate_lamb3() -> tuple[np.ndarray, np.ndarray]:

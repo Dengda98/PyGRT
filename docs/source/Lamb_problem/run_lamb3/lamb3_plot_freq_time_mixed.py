@@ -75,24 +75,23 @@ def remove_calculation_results() -> None:
 def convert_mixed_derivatives(dG_mixed: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """将 lamb3 的混合导数转为 greenfn 的 z/r EX、DD、DS、SS 分量
 
-    lamb3 的坐标顺序为 x1=R、x2=T、x3=Z_down，方位角为 0 时对应
-    全局坐标 N、E、Z_down，数组索引为
+    lamb3 的解使用全局 ZNE 坐标系，Z 轴向下；数组存储顺序为 N、E、Z_down
+    数组索引为
     [时间, 接收点导数方向, 源点导数方向, 接收点分量, 源点分量]
     """
     if dG_mixed.ndim != 5 or dG_mixed.shape[1:] != (3, 3, 3, 3):
         raise ValueError("dG_mixed must have shape (nt, 3, 3, 3, 3).")
 
-    # 将接收点导数、源点导数、接收分量和源分量全部转换为 ZNE
+    # 将四个坐标轴从 [N,E,Z_down] 重排为 [Z_down,N,E]，并将 Z_down 转为 Z_up
     mapped = dG_mixed
     for axis in (1, 2, 3, 4):
         mapped = np.take(mapped, AXIS_MAP, axis=axis)
-    signs = (
+    mapped = mapped * (
         AXIS_SIGN[None, :, None, None, None]
         * AXIS_SIGN[None, None, :, None, None]
         * AXIS_SIGN[None, None, None, :, None]
         * AXIS_SIGN[None, None, None, None, :]
     )
-    mapped = mapped * signs
 
     # 在 ZNE 坐标中构造四种 greenfn 震源分量
     nt = dG_mixed.shape[0]
