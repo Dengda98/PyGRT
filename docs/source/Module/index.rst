@@ -161,6 +161,7 @@
     - :doc:`lamb1`
     - :doc:`lamb2`
     - :doc:`lamb3`
+    - :doc:`lamb`
     - :doc:`okada`
     - :doc:`xy2geo`
     - :doc:`geo2xy`
@@ -193,6 +194,7 @@
     lamb1
     lamb2
     lamb3
+    lamb
     okada
     xy2geo
     geo2xy
