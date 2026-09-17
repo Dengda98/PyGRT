@@ -442,13 +442,48 @@ static real_t conversion_arrival(const real_t R, const real_t p_depth, const rea
     return (k * rp + rs) / direct_distance;
 }
 
+void grt_compute_lamb3_travt(
+    const real_t nu, const real_t R, const real_t depsrc, const real_t deprcv,
+    real_t *tP, real_t *tPP, real_t *tSS, real_t *tPS, real_t *tSP, real_t *t_sPs)
+{
+    if (nu <= 0.0 || nu >= 0.5) {
+        GRTRaiseError("poisson ratio (%lf) is out of bound in lamb3.\n", nu);
+    }
+    if (R <= 0.0) {
+        GRTRaiseError("The horizontal distance R should be positive in lamb3.\n");
+    }
+    if (depsrc <= 0.0 || deprcv <= 0.0) {
+        GRTRaiseError("Source and receiver depths should be strictly positive in lamb3.\n");
+    }
+
+    const real_t k = sqrt(0.5 * (1.0 - 2.0 * nu) / (1.0 - nu));
+    const real_t r = hypot(R, depsrc - deprcv);
+    const real_t rp = hypot(R, depsrc + deprcv);
+    const real_t theta_ref = atan2(R, depsrc + deprcv);
+    const real_t theta_c = asin(k);
+    if (tP != NULL) {
+        *tP = k;
+    }
+    if (tPP != NULL) {
+        *tPP = k * rp / r;
+    }
+    if (tSS != NULL) {
+        *tSS = rp / r;
+    }
+    if (tPS != NULL) {
+        *tPS = conversion_arrival(R, depsrc, deprcv, k, r);
+    }
+    if (tSP != NULL) {
+        *tSP = conversion_arrival(R, deprcv, depsrc, k, r);
+    }
+    if (t_sPs != NULL) {
+        *t_sPs = theta_ref > theta_c ? cos(theta_ref - theta_c) * rp / r : -1.0;
+    }
+}
+
 static void make_vars(const real_t nu, const real_t R, const real_t depsrc, const real_t deprcv, const real_t azimuth, LAMB3_VARS *V) {
     memset(V, 0, sizeof(*V));
     V->nu = nu;
-    V->k2 = 0.5 * (1.0 - 2.0 * nu) / (1.0 - nu);
-    V->k = sqrt(V->k2);
-    V->kp2 = 1.0 - V->k2;
-    V->kp = sqrt(V->kp2);
     V->R = R;
     V->depsrc = depsrc;
     V->deprcv = deprcv;
@@ -463,27 +498,22 @@ static void make_vars(const real_t nu, const real_t R, const real_t depsrc, cons
     V->ct_ref = cos(V->theta_ref);
     V->sf = sin(V->phi);
     V->cf = cos(V->phi);
-    V->theta_c = asin(V->k);
     V->varsigma = V->r / V->rp;
     V->r_over_R = V->r / V->R;
+    grt_compute_lamb3_travt(
+        nu, R, depsrc, deprcv, &V->k, &V->reflection_P, &V->reflection_S,
+        &V->tps, &V->tsp, &V->t_sPs);
+    V->k2 = V->k * V->k;
+    V->kp2 = 1.0 - V->k2;
+    V->kp = sqrt(V->kp2);
+    V->theta_c = asin(V->k);
     V->kap1 = 1.0 / V->kp;
     V->kap2 = 1.0 / V->kp2;
-    V->reflection_P = V->k * V->rp / V->r;
-    V->reflection_S = V->rp / V->r;
-    V->t_sps = cos(V->theta_ref - V->theta_c) * V->reflection_S;
     V->conversion_scale = V->kp2 * V->r / (16.0 * V->R);
     V->conversion_dscale = V->kp * V->kp2 * V->r / (32.0 * V->R);
     V->use_angle_ratio = fabs(V->cf) > LAMB3_RATIO_EPS;
     V->angle_ratio = V->use_angle_ratio ? V->sf / V->cf : 0.0;
-    V->supercritical = V->theta_ref > V->theta_c;
-
-    if (depsrc > 0.0 && deprcv > 0.0) {
-        V->tps = conversion_arrival(R, depsrc, deprcv, V->k, V->r);
-        V->tsp = conversion_arrival(R, deprcv, depsrc, V->k, V->r);
-    } else {
-        V->tps = INFINITY;
-        V->tsp = INFINITY;
-    }
+    V->supercritical = V->t_sPs >= 0.0;
 
     grt_rayleigh1_roots(nu, V->rayleigh);
     for (int i = 0; i < 3; ++i) {
@@ -651,7 +681,7 @@ static real_t SP_high_integrand(real_t angle, void *userdata) {
     const LAMB3_SP_HIGH_CONTEXT *C = userdata;
     const LAMB_BASIC_CONTEXT *ctx = C->context;
     const real_t sine = sin(angle);
-    const real_t root = grt_lamb_positive_sqrt(1.0 - ctx->m_elliptic * sine * sine, "S-P high-order V integral");
+    const real_t root = grt_lamb_positive_sqrt(1.0 - ctx->m_elliptic * sine * sine, "sPs high-order V integral");
     const real_t z = -ctx->z2 * root;
     const real_t ratio = (ctx->xi2 * z - ctx->xi1) / (z - 1.0);
     return pow(ratio, C->order) / root;
@@ -1317,7 +1347,7 @@ static void reflection_terms(const real_t tbar, const LAMB3_VARS *V, const LAMB3
 
     if (sbar < 1.0) {
         /* sPs 变量替换只在反射射线角超过临界角时有效 */
-        if (V->supercritical && tbar > V->t_sps && tbar < V->reflection_S) {
+        if (V->supercritical && tbar > V->t_sPs && tbar < V->reflection_S) {
             LAMB_BASIC_CONTEXT ctx = {0};
             grt_lamb_make_context_SP(sbar, sbar2, &W, &ctx);
             LAMB3_REFLECTION_BASIS basis_V;
@@ -1635,7 +1665,7 @@ static real_t shift_lamb3_boundary(const real_t tbar, const LAMB3_VARS *V, const
     if (tbar == V->k || tbar == 1.0 || tbar == V->reflection_P || tbar == V->reflection_S || tbar == V->tps || tbar == V->tsp) {
         return tbar + tbar_eps;
     }
-    if (V->supercritical && tbar == V->t_sps) {
+    if (V->supercritical && tbar == V->t_sPs) {
         return tbar + tbar_eps;
     }
     return tbar;
@@ -1735,10 +1765,8 @@ void grt_solve_lamb3(
     if (azimuth < 0.0 || azimuth > 360.0) {
         GRTRaiseError("azimuth should be in [0, 360] degree for lamb3.\n");
     }
+    /* 允许时间轴从发震时刻之前开始，因果解在发震前保持为零 */
     for (int i = 0; i < nt; ++i) {
-        if (ts[i] < 0.0) {
-            GRTRaiseError("The time series for lamb3 should be nonnegative.\n");
-        }
         if (i > 0 && ts[i] <= ts[i - 1]) {
             GRTRaiseError("The time series for lamb3 should be strictly increasing.\n");
         }
@@ -1762,7 +1790,7 @@ void grt_solve_lamb3(
     /* 末点若正好落在波前上会被右移，用略大的 tEnd 判断以免漏构造系数 */
     const real_t tEnd = ts[nt - 1] + tbar_eps;
     const bool need_P = tEnd >= V.reflection_P;
-    const bool need_S = tEnd >= V.reflection_S || (V.supercritical && ts[0] < V.reflection_S && tEnd >= V.t_sps);
+    const bool need_S = tEnd >= V.reflection_S || (V.supercritical && ts[0] < V.reflection_S && tEnd >= V.t_sPs);
     const bool need_PS = tEnd >= V.tps;
     const bool need_SP = tEnd >= V.tsp;
     const bool need_mixed = dG_mixed != NULL;

@@ -346,7 +346,7 @@ static void evaluate_receiver_derivatives(const LAMB2_PF_SET *coeffs, const LAMB
 }
 
 /**
- * 计算一个 P、S 或 S-P 项，并按 sign 累加到当前时间点的输出
+ * 计算一个 P、S 或 sP 项，并按 sign 累加到当前时间点的输出
  * F[i][j] 的索引分别表示接收点分量和源点分量
  * Fk_source[k'][i][j] 的索引依次表示源点坐标方向、接收点分量和源点分量
  * Fk_receiver[k][i][j] 的索引依次表示接收点坐标方向、接收点分量和源点分量
@@ -403,7 +403,7 @@ static void evaluate_lamb2_term(const real_t tbar, const real_t tbar2, const LAM
 /**
  * 计算一个时间点的 F、F_(,k')、F_(,k) 和 F_(,kk')
  *
- * 这里直接对应式 (7.4.1.4)，P 项、S 项和 S-P 项共用同一套评估流程，
+ * 这里直接对应式 (7.4.1.4)，P 项、S 项和 sP 项共用同一套评估流程，
  * 仅由到时条件、根组、基本积分类型和累加符号区分；接收点导数的积分
  * 分子按接收点边界关系构造
  */
@@ -428,7 +428,7 @@ static void evaluate_lamb2_time(const real_t tbar, const LAMB2_VARS *V, const LA
         evaluate_lamb2_term(tbar, tbar2, &basic_vars, &coefficients->S, V->shifted_rayleigh_roots, LAMB_BASIC_S_TERM, true, 1.0, V, need_mixed, F,
                             Fk_source, Fk_receiver, Fkk);
     }
-    if (V->supercritical && tbar > V->t_sp && tbar < 1.0) {
+    if (V->supercritical && tbar > V->t_sP && tbar < 1.0) {
         evaluate_lamb2_term(tbar, tbar2, &basic_vars, &coefficients->S, V->shifted_rayleigh_roots, LAMB_BASIC_SP_TERM, false, -1.0, V, need_mixed, F,
                             Fk_source, Fk_receiver, Fkk);
     }
@@ -494,11 +494,39 @@ static void apply_lamb2_surface_source_reciprocity(
 
 static real_t shift_lamb2_boundary(const real_t tbar, const LAMB2_VARS *V, const real_t tbar_eps) {
     // 与 lamb1 一致，精确命中波前时使用下一阶段的右侧值
-    if (tbar == V->k || tbar == 1.0 || (V->supercritical && tbar == V->t_sp)) {
+    if (tbar == V->k || tbar == 1.0 || (V->supercritical && tbar == V->t_sP)) {
         return tbar + tbar_eps;
     }
     return tbar;
 }
+
+
+void grt_compute_lamb2_travt(
+    const real_t nu, const real_t R, const real_t depsrc, const real_t deprcv,
+    real_t *tP, real_t *t_sP)
+{
+    if (nu <= 0.0 || nu >= 0.5) {
+        GRTRaiseError("poisson ratio (%lf) is out of bound.", nu);
+    }
+    if (R <= 0.0) {
+        GRTRaiseError("The horizontal distance R should be positive in lamb2.\n");
+    }
+    if (depsrc < 0.0 || deprcv < 0.0 || (depsrc > 0.0) == (deprcv > 0.0)) {
+        GRTRaiseError("lamb2 requires exactly one of source and receiver depths to be strictly positive.\n");
+    }
+
+    const real_t k = sqrt(0.5 * (1.0 - 2.0 * nu) / (1.0 - nu));
+    const real_t buried_depth = depsrc > 0.0 ? depsrc : deprcv;
+    const real_t theta = atan2(R, buried_depth);
+    const real_t theta_c = asin(k);
+    if (tP != NULL) {
+        *tP = k;
+    }
+    if (t_sP != NULL) {
+        *t_sP = theta > theta_c ? cos(theta - theta_c) : -1.0;
+    }
+}
+
 
 void grt_solve_lamb2(
     const real_t nu, const real_t *ts, const int nt, const real_t R, const real_t depsrc, const real_t deprcv,
@@ -547,18 +575,19 @@ void grt_solve_lamb2(
     if (azimuth < 0.0 || azimuth > 360.0) {
         GRTRaiseError("azimuth should be in [0, 360] degree for lamb2.\n");
     }
+    /* 允许时间轴从发震时刻之前开始，因果解在发震前保持为零 */
     for (int i = 0; i < nt; ++i) {
-        if (ts[i] < 0.0) {
-            GRTRaiseError("The time series for lamb2 should be nonnegative.\n");
-        }
         if (i > 0 && ts[i] <= ts[i - 1]) {
             GRTRaiseError("The time series for lamb2 should be strictly increasing.\n");
         }
     }
+    real_t tP;
+    real_t t_sP;
+    grt_compute_lamb2_travt(nu, R, depsrc, deprcv, &tP, &t_sP);
     LAMB2_VARS V = {0};
     V.nu = nu;
-    V.k2 = 0.5 * (1.0 - 2.0 * nu) / (1.0 - nu);
-    V.k = sqrt(V.k2);
+    V.k = tP;
+    V.k2 = V.k * V.k;
     V.kp2 = 1.0 - V.k2;
     V.kp = sqrt(V.kp2);
     V.theta = atan2(R, buried_depth);
@@ -568,10 +597,10 @@ void grt_solve_lamb2(
     V.sf = sin(V.phi);
     V.cf = cos(V.phi);
     V.theta_c = asin(V.k);
-    V.t_sp = cos(V.theta - V.theta_c);
+    V.t_sP = t_sP;
     V.use_angle_ratio = fabs(V.cf) > LAMB2_RATIO_EPS;
     V.angle_ratio = V.use_angle_ratio ? V.sf / V.cf : 0.0;
-    V.supercritical = V.theta > V.theta_c;
+    V.supercritical = V.t_sP >= 0.0;
     const real_t tbar_eps = nt > 1 ? GRT_MIN(1e-8, (ts[1] - ts[0]) * 1e-5) : 1e-8;
     grt_rayleigh1_roots(V.nu, V.rayleigh_roots);
     for (int i = 0; i < 3; ++i) {
@@ -581,7 +610,7 @@ void grt_solve_lamb2(
     /* 末点若正好落在波前上会被右移，用略大的 tEnd 判断以免漏构造系数 */
     const real_t tEnd = ts[nt - 1] + tbar_eps;
     const bool need_P = tEnd >= V.k;
-    const bool need_S = tEnd >= 1.0 || (V.supercritical && ts[0] < 1.0 && tEnd >= V.t_sp);
+    const bool need_S = tEnd >= 1.0 || (V.supercritical && ts[0] < 1.0 && tEnd >= V.t_sP);
     const bool need_mixed = dG_mixed != NULL;
     /* 大型多项式系数工作区放在堆上，避免占用线程栈 */
     LAMB2_COEFF_SET *coefficients = GRT_SAFE_CALLOC(1, sizeof(*coefficients));

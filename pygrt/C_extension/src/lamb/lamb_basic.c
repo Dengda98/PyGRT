@@ -101,7 +101,7 @@ void grt_lamb_make_context_SP(const real_t tbar, const real_t tbar2, const LAMB_
 
     real_t d = (tbar2 - V->k2 + V->ct * V->ct) / ctx->m;
     real_t discriminant = d * d - 4.0 * V->kp2;
-    real_t root_gap = grt_lamb_positive_sqrt(discriminant, "S-P");
+    real_t root_gap = grt_lamb_positive_sqrt(discriminant, "sP");
     ctx->xi1 = 0.5 * (d + root_gap);
     ctx->xi2 = 0.5 * (d - root_gap);
     ctx->z1sq = ctx->xi1 / ctx->xi2;
@@ -488,7 +488,7 @@ real_t grt_lamb_tail_V_SP(const int number, const LAMB_BASIC_CONTEXT *ctx, const
                   4.0 * beta11 * z2 *
                       (xi2 * xi2 * xi2 * M1 + xi2 * beta11 * beta14 * M2 - beta11 * beta11 * beta15 * M3 - 2.0 * beta11 * beta11 * beta11 * M4));
     } else {
-        GRTRaiseError("Wrong S-P-wave V basic-integral number in the Lamb basic integrals: %d.\n", number);
+        GRTRaiseError("Wrong sP-wave V basic-integral number in the Lamb basic integrals: %d.\n", number);
     }
     return result;
 }
