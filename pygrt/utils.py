@@ -40,6 +40,7 @@ __all__ = [
     "read_nc",
     "read_nc_variables",
     "okada",
+    "lamb",
     "strain",
     "rotation",
     "stress",
@@ -1505,6 +1506,126 @@ def lamb3(*, nu: float, tbar: np.ndarray, R: float, depsrc: float, deprcv: float
         npct.as_ctypes(Grs.ravel()),
     )
     return G, Gs, Gr, Grs
+
+
+def lamb(
+    *,
+    modelparams: Sequence[float],
+    depsrc: float,
+    deprcv: float,
+    dist: float,
+    nt: int,
+    dt: float,
+    azimuth: float,
+    output_path: PathLike,
+    scale: float,
+    scale_with_mu: bool = False,
+    strike: Optional[float] = None,
+    dip: Optional[float] = None,
+    rake: Optional[float] = None,
+    force: Optional[Sequence[float]] = None,
+    moment_tensor: Optional[Sequence[float]] = None,
+    time_function: Optional[str] = None,
+    integrate_order: Optional[int] = None,
+    differentiate_order: Optional[int] = None,
+    delayT0: float = 0.0,
+    delayV0: float = 0.0,
+    ref_first_p: bool = False,
+    zne: bool = False,
+    calc_upar: bool = False,
+    print_log: bool = True,
+    return_result: bool = False,
+):
+    r"""
+    Synthesize dynamic displacement with the physical Lamb closed-form solution.
+
+    ``modelparams`` contains the homogeneous half-space parameters ``(vp, vs, rho)``.
+    The source and receiver depths determine which of the first-, second- or
+    third-kind Lamb solutions is used. Source and time-processing parameters
+    follow :meth:`PyModel1D.syn`, while time-delay parameters follow
+    :meth:`PyModel1D.greenfn`.
+    When both depths are zero, only ``force`` is supported and ``calc_upar`` is ignored.
+
+    :param    modelparams:      Homogeneous half-space parameters ``(vp, vs, rho)``;
+                                velocities are in km/s and density is in g/cm^3
+    :param    depsrc:           Source depth in km
+    :param    deprcv:           Receiver depth in km
+    :param    dist:             Horizontal source-receiver distance in km
+    :param    nt:               Number of time samples
+    :param    dt:               Time-sample interval in s
+    :param    azimuth:          Azimuth from source to receiver in degrees
+    :param    output_path:      Output directory for SAC files
+    :param    scale:            Source scaling factor
+    :param    scale_with_mu:    Whether to multiply ``scale`` by the source-layer
+                                shear modulus
+    :param    strike:           Fault strike in degrees
+    :param    dip:              Fault dip in degrees
+    :param    rake:             Slip rake in degrees
+    :param    force:            Single-force coefficients ``(fN, fE, fZ)``
+    :param    moment_tensor:    Moment-tensor coefficients
+                                ``(Mxx, Mxy, Mxz, Myy, Myz, Mzz)``
+    :param    time_function:    Time-function parameters passed to ``grt``
+    :param    integrate_order:  Number of time integrations
+    :param    differentiate_order: Number of time differentiations
+    :param    delayT0:          Time delay at zero distance in s
+    :param    delayV0:          Reference velocity for the time delay in km/s
+    :param    ref_first_p:      Whether to reference the delay to the direct P arrival
+    :param    zne:              Whether to output ZNE components
+    :param    calc_upar:        Whether to output spatial displacement derivatives
+    :param    print_log:        Whether to print regular ``grt`` output
+    :param    return_result:    Whether to read and return the generated SAC ``Stream``
+
+    :return: An ObsPy ``Stream`` when ``return_result`` is true; otherwise ``None``
+    """
+    vp, vs, rho = modelparams
+    output = Path(output_path)
+    command = [
+        "lamb",
+        f"-H{format_float(vp)}/{format_float(vs)}/{format_float(rho)}",
+        f"-N{nt}/{format_float(dt)}",
+        f"-R{format_float(dist)}",
+        f"-Ds{format_float(depsrc)}",
+        f"-Dr{format_float(deprcv)}",
+        f"-A{format_float(azimuth)}",
+        f"-S{'u' if scale_with_mu else ''}{format_float(scale)}",
+        f"-O{output}",
+    ]
+
+    has_geometry = strike is not None or dip is not None or rake is not None
+    if force is not None:
+        if has_geometry or moment_tensor is not None:
+            raise ValueError("force is mutually exclusive with strike/dip/rake and moment_tensor.")
+        command.append("-F" + "/".join(format_float(value) for value in force))
+    elif moment_tensor is not None:
+        if has_geometry:
+            raise ValueError("moment_tensor is mutually exclusive with strike/dip/rake and force.")
+        command.append("-T" + "/".join(format_float(value) for value in moment_tensor))
+    elif has_geometry:
+        if strike is None or dip is None:
+            raise ValueError("strike and dip must be supplied together.")
+        source = f"-M{format_float(strike)}/{format_float(dip)}"
+        if rake is not None:
+            source += f"/{format_float(rake)}"
+        command.append(source)
+
+    if time_function is not None:
+        command.append(f"-D{time_function}")
+    if ref_first_p:
+        command.append(f"-Ep{format_float(delayT0)}")
+    else:
+        command.append(f"-E{format_float(delayT0)}/{format_float(delayV0)}")
+    if integrate_order is not None:
+        command.append(f"-I{integrate_order}")
+    if differentiate_order is not None:
+        command.append(f"-J{differentiate_order}")
+    if zne:
+        command.append("-n")
+    if calc_upar:
+        command.append("-e")
+
+    output.mkdir(parents=True, exist_ok=True)
+    run_grt(command, print_log=print_log)
+    return read(str(output / "*.sac")) if return_result else None
 
 
 # ======================================================================================================
