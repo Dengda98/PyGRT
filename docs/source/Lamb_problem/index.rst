@@ -17,10 +17,11 @@ Lamb 问题
    lamb1
    lamb2
    lamb3
+   lamb
 
 .. note::
 
-    **程序输入的时间为无量纲时间，输出的位移为和阶跃函数卷积后的无量纲位移。**
+    **lamb1/2/3 模块输入的时间为无量纲时间，输出的位移为和阶跃函数卷积后的无量纲位移。**
 
     + **无量纲时间** :math:`\bar{t} = \dfrac{t}{T_S} = \dfrac{t}{r/\beta} = \dfrac{\beta t}{r}`，
       其中 :math:`T_S = \dfrac{r}{\beta}` 是 S 波传播时间尺度，
