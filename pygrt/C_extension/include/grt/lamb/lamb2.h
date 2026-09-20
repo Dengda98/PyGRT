@@ -22,11 +22,11 @@
  * @param[in]    depsrc         源点深度，与 deprcv 恰好一个大于零
  * @param[in]    deprcv         接收点深度，与 depsrc 恰好一个大于零
  * @param[out]   tP             直达 P 波到时
- * @param[out]   t_sP           sP 波到时，不存在时为负数
+ * @param[out]   tSP            SP 波到时，不存在时为负数
  */
 void grt_compute_lamb2_travt(
     const real_t nu, const real_t R, const real_t depsrc, const real_t deprcv,
-    real_t *tP, real_t *t_sP);
+    real_t *tP, real_t *tSP);
 
 
 /**
