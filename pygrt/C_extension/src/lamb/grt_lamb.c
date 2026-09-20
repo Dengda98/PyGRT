@@ -900,12 +900,11 @@ enum {
     LAMB_PHASE_P,                         ///< t0/kt0：直达 P 波
     LAMB_PHASE_S,                         ///< t1/kt1：直达 S 波
     LAMB_PHASE_R,                         ///< t2/kt2：Rayleigh 波参考到时
-    LAMB_PHASE_sP,                        ///< t3/kt3：滑行 sP 波
-    LAMB_PHASE_PP,                        ///< t4/kt4：反射 PP 波
-    LAMB_PHASE_SS,                        ///< t5/kt5：反射 SS 波
-    LAMB_PHASE_PS,                        ///< t6/kt6：PS 转换波
-    LAMB_PHASE_SP,                        ///< t7/kt7：SP 转换波
-    LAMB_PHASE_sPs,                       ///< t8/kt8：滑行 sPs 波
+    LAMB_PHASE_PP,                        ///< t3/kt3：反射 PP 波
+    LAMB_PHASE_SS,                        ///< t4/kt4：反射 SS 波
+    LAMB_PHASE_PS,                        ///< t5/kt5：PS 转换波
+    LAMB_PHASE_SP,                        ///< t6/kt6：SP 转换波
+    LAMB_PHASE_sPs,                       ///< t7/kt7：滑行 sPs 波
     LAMB_PHASE_COUNT,                     ///< 已定义的 Lamb 震相数量
     LAMB_SAC_PICK_COUNT = 10,             ///< SAC 用户震相槽位总数
 };
@@ -1005,11 +1004,16 @@ static void set_lamb_arrivals(
         return;
     }
 
-    real_t t_sP;
+    real_t t_sliding;
     grt_compute_lamb2_travt(
-        nu, horizontal_distance, source_depth, receiver_depth, &tP, &t_sP);
+        nu, horizontal_distance, source_depth, receiver_depth, &tP, &t_sliding);
     set_lamb_arrival(sac, LAMB_PHASE_P, tP, time_scale, "P");
-    set_lamb_arrival(sac, LAMB_PHASE_sP, t_sP, time_scale, "sP");
+    /* 地下源的滑行项沿互易路径为 SP，互易回地表源问题后为 PS */
+    if (source_depth > 0.0) {
+        set_lamb_arrival(sac, LAMB_PHASE_SP, t_sliding, time_scale, "SP");
+    } else {
+        set_lamb_arrival(sac, LAMB_PHASE_PS, t_sliding, time_scale, "PS");
+    }
 }
 
 
