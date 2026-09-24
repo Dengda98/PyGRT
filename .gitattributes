@@ -1,1 +1,5 @@
 *.ipynb linguist-documentation
+
+# 语言统计仅关注 pygrt/ 目录
+* linguist-detectable=false
+pygrt/** linguist-detectable=true
