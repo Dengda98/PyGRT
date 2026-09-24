@@ -50,11 +50,24 @@ static cplx_t select_vertical_root(const cplx_t k, const cplx_t root)
     return (creal(k*root) < 0.0) ? -root : root;
 }
 
+
+static char *copy_modelname(const char *modelname)
+{
+    if(modelname == NULL || modelname[0] == '\0'){
+        GRTRaiseError("modelname must be non-empty.");
+    }
+
+    char *copy = GRT_SAFE_MALLOC(strlen(modelname) + 1);
+    strcpy(copy, modelname);
+    return copy;
+}
+
     
-MODEL1D * grt_init_mod1d(size_t n)
+MODEL1D * grt_init_mod1d(size_t n, const char *modelname)
 {
     MODEL1D *mod1d = GRT_SAFE_CALLOC(1, sizeof(MODEL1D));
     mod1d->n = n;
+    mod1d->modelname = copy_modelname(modelname);
 
     #define X(P, T)  mod1d->P = GRT_SAFE_CALLOC(n, sizeof(T));
         __MODEL1D_FOR_EACH_ARRAY
@@ -69,6 +82,7 @@ MODEL1D * grt_copy_mod1d(const MODEL1D *mod1d1)
 
     // 先直接赋值，实现浅拷贝
     *mod1d2 = *mod1d1;
+    mod1d2->modelname = copy_modelname(mod1d1->modelname);
 
     // 对指针部分再重新申请内存并赋值，实现深拷贝
     size_t n = mod1d1->n;
@@ -107,6 +121,7 @@ void grt_free_mod1d(MODEL1D *mod1d)
         __MODEL1D_FOR_EACH_ARRAY
     #undef X
 
+    GRT_SAFE_FREE_PTR(mod1d->modelname);
     GRT_SAFE_FREE_PTR(mod1d->modarr);
     GRT_SAFE_FREE_PTR(mod1d);
 }
@@ -263,7 +278,7 @@ void grt_modarr_medium_at_depth(
 
 MODEL1D * grt_read_mod1d_from_modarr(
     size_t nlayer, const real_t (*modarr)[GRT_MODARR_NCOL],
-    real_t depsrc, real_t deprcv, bool allowLiquid)
+    const char *modelname, real_t depsrc, real_t deprcv, bool allowLiquid)
 {
     if(depsrc * deprcv < 0.0){
         GRTRaiseError("depsrc and deprcv should have the same sign.");
@@ -288,7 +303,7 @@ MODEL1D * grt_read_mod1d_from_modarr(
         }
     }
 
-    MODEL1D *mod1d = grt_init_mod1d(1);
+    MODEL1D *mod1d = grt_init_mod1d(1, modelname);
     mod1d->io_depth = false;  // 已在 read_modarr 中转为厚度
 
     real_t h, va, vb, rho, qa, qb;
@@ -428,7 +443,8 @@ MODEL1D * grt_read_mod1d_from_file(
     size_t nlay = 0;
     real_t (*modarr)[GRT_MODARR_NCOL] = grt_read_modarr_from_file(
         modelpath, &nlay, allowLiquid, warnIfQ);
-    MODEL1D *mod1d = grt_read_mod1d_from_modarr(nlay, modarr, depsrc, deprcv, allowLiquid);
+    MODEL1D *mod1d = grt_read_mod1d_from_modarr(
+        nlay, modarr, grt_get_basename(modelpath), depsrc, deprcv, allowLiquid);
     GRT_SAFE_FREE_PTR(modarr);
     return mod1d;
 }

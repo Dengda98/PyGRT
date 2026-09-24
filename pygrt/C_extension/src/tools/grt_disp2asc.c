@@ -270,9 +270,9 @@ int disp2asc_main(int argc, char **argv)
     EIGENV_INFO *eigmet = GRT_SAFE_CALLOC(1, sizeof(EIGENV_INFO));
 
     if(Ctrl->C.active){
-        grt_read_dispersion(Ctrl->C.s_phasepath, eigmet, NULL, NULL);
+        grt_read_dispersion(Ctrl->C.s_phasepath, eigmet, NULL);
     } else if(Ctrl->U.active) {
-        grt_read_dispersion(Ctrl->U.s_grouppath, eigmet, NULL, NULL);
+        grt_read_dispersion(Ctrl->U.s_grouppath, eigmet, NULL);
     } else {
         GRTRaiseError("Wrong Execution.");
     }

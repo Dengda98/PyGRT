@@ -40,6 +40,7 @@ typedef struct {
     GRT_BOUND_TYPE topbound;  ///< 顶界面的边界条件
     GRT_BOUND_TYPE botbound;  ///< 底界面的边界条件
 
+    char *modelname; ///< 模型名称，不含路径，由结构体拥有
     size_t nmodarr;  ///< 原始模型层数（未插入震源/台站虚拟层）
     real_t (*modarr)[GRT_MODARR_NCOL];  ///< 原始模型矩阵，每行 Thk/Va/Vb/Rho/Qa/Qb
 } MODEL1D;
@@ -88,10 +89,11 @@ typedef struct {
  * 初始化 `MODEL1D` 内存空间 
  * 
  * @param[in]    n        模型层数 
+ * @param[in]    modelname 模型名称，不含路径
  * @return    `MODEL1D` 结构体指针
  * 
  */
-MODEL1D * grt_init_mod1d(size_t n);
+MODEL1D * grt_init_mod1d(size_t n, const char *modelname);
 
 /**
  * 复制 `MODEL1D` 结构体
@@ -154,6 +156,7 @@ real_t (* grt_read_modarr_from_file(
  * 
  * @param[in]    nlayer         层数
  * @param[in]    modarr         模型矩阵，每行 Thk/Va/Vb/Rho/Qa/Qb
+ * @param[in]    modelname      模型名称，不含路径
  * @param[in]    depsrc         震源深度
  * @param[in]    deprcv         接收深度
  * @param[in]    allowLiquid    是否允许液体层
@@ -161,7 +164,7 @@ real_t (* grt_read_modarr_from_file(
  */
 MODEL1D * grt_read_mod1d_from_modarr(
     size_t nlayer, const real_t (*modarr)[GRT_MODARR_NCOL],
-    real_t depsrc, real_t deprcv, bool allowLiquid);
+    const char *modelname, real_t depsrc, real_t deprcv, bool allowLiquid);
 
 /**
  * 将 ``nlayer × 6`` 模型矩阵写出为文本模型文件

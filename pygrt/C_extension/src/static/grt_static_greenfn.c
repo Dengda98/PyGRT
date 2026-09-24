@@ -66,7 +66,6 @@ typedef struct {
     /** 波数积分过程的核函数文件 */
     struct {
         bool active;
-        char *s_statsdir;  ///< 保存目录，和当前目录同级
     } S;
     /** -X: north 坐标 */
     struct {
@@ -114,9 +113,6 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
     GRT_SAFE_FREE_PTR(Ctrl->O.s_outgrid);
 
     GRT_SAFE_FREE_PTR(Ctrl->rs);
-
-    // S
-    GRT_SAFE_FREE_PTR(Ctrl->S.s_statsdir);
 
     GRT_SAFE_FREE_PTR(Ctrl);
 }
@@ -644,7 +640,7 @@ static void compute_stgrnlib_to_nc(
     GRT_BOUND_TYPE topbound, GRT_BOUND_TYPE botbound,
     bool calc_upar,
     const char *outpath,
-    const char *statsstr)
+    bool write_stats)
 {
     if(modelpath == NULL || outpath == NULL || Kproc == NULL
        || depsrcs == NULL || deprcvs == NULL || norths == NULL || easts == NULL){
@@ -653,8 +649,8 @@ static void compute_stgrnlib_to_nc(
     if(ndepsrc == 0 || ndeprcv == 0 || nnorth == 0 || neast == 0){
         GRTRaiseError("empty dimension.");
     }
-    if(statsstr != NULL && (ndepsrc > 1 || ndeprcv > 1)){
-        GRTRaiseError("-S / statsstr is only available for a single source/receiver depth.");
+    if(write_stats && (ndepsrc > 1 || ndeprcv > 1)){
+        GRTRaiseError("-S is only available for a single source/receiver depth.");
     }
 
     STGRNLIB *lib = grt_stgrnlib_alloc(
@@ -668,8 +664,8 @@ static void compute_stgrnlib_to_nc(
 
     size_t ntot = ndepsrc * ndeprcv;
     size_t idone = 0;
-    const char *modelname = grt_get_basename(modelpath);
     bool have_model = false;
+    char *statsdir = NULL;
 
     for(size_t is = 0; is < ndepsrc; ++is){
         for(size_t ir = 0; ir < ndeprcv; ++ir){
@@ -683,6 +679,15 @@ static void compute_stgrnlib_to_nc(
             if(!have_model){
                 grt_stgrnlib_set_modarr(lib, mod1d->nmodarr, mod1d->modarr);
                 have_model = true;
+
+                if(write_stats){
+                    GRT_SAFE_ASPRINTF(&statsdir, "stgrtstats");
+                    GRTCheckMakeDir(statsdir);
+                    GRT_SAFE_ASPRINTF(
+                        &statsdir, "%s/%s_%g_%g", statsdir,
+                        mod1d->modelname, zs, zr);
+                    GRTCheckMakeDir(statsdir);
+                }
             }
 
             grt_set_mod1d_boundary(mod1d, topbound, botbound);
@@ -700,7 +705,7 @@ static void compute_stgrnlib_to_nc(
 
             grt_integ_static_grn(
                 mod1d, nr, rs, &local_K,
-                calc_upar, grn, grn_uiz, grn_uir, statsstr);
+                calc_upar, grn, grn_uiz, grn_uir, statsdir);
 
             lib->src_va[is] = mod1d->Va[mod1d->isrc];
             lib->src_vb[is] = mod1d->Vb[mod1d->isrc];
@@ -713,7 +718,7 @@ static void compute_stgrnlib_to_nc(
 
             idone++;
             GRTRaiseInfo("[%zu/%zu] depsrc=%.6g deprcv=%.6g (%s) done.",
-                idone, ntot, zs, zr, modelname);
+                idone, ntot, zs, zr, mod1d->modelname);
 
             grt_free_mod1d(mod1d);
         }
@@ -725,6 +730,7 @@ static void compute_stgrnlib_to_nc(
     GRT_SAFE_FREE_PTR(grn);
     GRT_SAFE_FREE_PTR(grn_uiz);
     GRT_SAFE_FREE_PTR(grn_uir);
+    GRT_SAFE_FREE_PTR(statsdir);
     grt_stgrnlib_free(lib);
 }
 
@@ -736,20 +742,10 @@ int static_greenfn_main(int argc, char **argv){
     getopt_from_command(Ctrl, argc, argv);
 
     bool multi_depth = (Ctrl->D.ndepsrc > 1) || (Ctrl->D.ndeprcv > 1);
-    if(Ctrl->S.active){
-        if(multi_depth){
-            GRTRaiseWarning("-S is ignored for multi-depth STGRNLIB computation.");
-        } else {
-            // 单深度：stgrtstats/<model>_<depsrc>_<deprcv>
-            GRT_SAFE_ASPRINTF(&Ctrl->S.s_statsdir, "stgrtstats");
-            GRTCheckMakeDir(Ctrl->S.s_statsdir);
-            GRT_SAFE_ASPRINTF(
-                &Ctrl->S.s_statsdir, "%s/%s_%g_%g",
-                Ctrl->S.s_statsdir,
-                grt_get_basename(Ctrl->M.s_modelpath),
-                Ctrl->D.depsrcs[0], Ctrl->D.deprcvs[0]);
-            GRTCheckMakeDir(Ctrl->S.s_statsdir);
-        }
+    bool write_stats = Ctrl->S.active;
+    if(write_stats && multi_depth){
+        GRTRaiseWarning("-S is ignored for multi-depth STGRNLIB computation.");
+        write_stats = false;
     }
 
     K_INTEG_PROCESS KPROC = {0};
@@ -774,7 +770,7 @@ int static_greenfn_main(int argc, char **argv){
         Ctrl->B.topbound, Ctrl->B.botbound,
         Ctrl->e.active,
         Ctrl->O.s_outgrid,
-        Ctrl->S.s_statsdir);
+        write_stats);
 
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;

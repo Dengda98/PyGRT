@@ -32,7 +32,6 @@ typedef struct {
     struct {
         bool active;
         char *s_modelpath;        ///< 模型路径
-        const char *s_modelname;  ///< 模型名称
         MODEL1D *mod1d;         ///< 模型结构体指针
     } M;
     /** 震源和接收器深度 */
@@ -430,7 +429,6 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             case 'M':
                 Ctrl->M.active = true;
                 Ctrl->M.s_modelpath = strdup(optarg);
-                Ctrl->M.s_modelname = grt_get_basename(Ctrl->M.s_modelpath);
                 break;
 
             // 震源和场点深度， -Ddepsrc/deprcv
@@ -802,17 +800,23 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     }
     Ctrl->D.active = true;
 
+}
+
+
+/** 建立输出目录并保存模型副本和命令 */
+static void prepare_greenfn_output(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
+{
+    MODEL1D *mod1d = Ctrl->M.mod1d;
+
     // 建立保存目录
     GRTCheckMakeDir(Ctrl->O.s_output_dir);
-    grt_check_greenfn_output_dir(Ctrl->O.s_output_dir, Ctrl->M.s_modelname);
+    grt_check_greenfn_output_dir(Ctrl->O.s_output_dir, mod1d->modelname);
 
-    // 在目录中保留模型文件副本（basename），便于后续流程取用
-    {
-        char *model_copy = NULL;
-        GRT_SAFE_ASPRINTF(&model_copy, "%s/%s", Ctrl->O.s_output_dir, Ctrl->M.s_modelname);
-        grt_copy_file(Ctrl->M.s_modelpath, model_copy);
-        GRT_SAFE_FREE_PTR(model_copy);
-    }
+    // 在目录中保留模型文件副本，便于后续流程取用
+    char *model_copy = NULL;
+    GRT_SAFE_ASPRINTF(&model_copy, "%s/%s", Ctrl->O.s_output_dir, mod1d->modelname);
+    grt_copy_file(Ctrl->M.s_modelpath, model_copy);
+    GRT_SAFE_FREE_PTR(model_copy);
 
     // 在目录中保留命令
     char *dummy = NULL;
@@ -825,7 +829,6 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     fprintf(fp, "\n");
     fclose(fp);
     GRT_SAFE_FREE_PTR(dummy);
-
 }
 
 
@@ -946,11 +949,6 @@ static void prepare_grn_spec(
 
 /** 计算一个震源深度和台站深度组合的格林函数 */
 static void compute_greenfn_one(GRT_MODULE_CTRL *Ctrl) {
-    // 读入模型文件
-    if((Ctrl->M.mod1d = grt_read_mod1d_from_file(
-        Ctrl->M.s_modelpath, Ctrl->D.depsrc, Ctrl->D.deprcv, true, false)) == NULL){
-        exit(EXIT_FAILURE);
-    }
     MODEL1D *mod1d = Ctrl->M.mod1d;
 
     // 边界条件
@@ -1000,7 +998,8 @@ static void compute_greenfn_one(GRT_MODULE_CTRL *Ctrl) {
         
         // 建立保存目录
         GRTCheckMakeDir(Ctrl->S.s_statsdir);
-        GRT_SAFE_ASPRINTF(&Ctrl->S.s_statsdir, "%s/%s_%s_%s", Ctrl->S.s_statsdir, Ctrl->M.s_modelname, Ctrl->D.s_depsrc, Ctrl->D.s_deprcv);
+        GRT_SAFE_ASPRINTF(&Ctrl->S.s_statsdir, "%s/%s_%s_%s",
+            Ctrl->S.s_statsdir, mod1d->modelname, Ctrl->D.s_depsrc, Ctrl->D.s_deprcv);
         GRTCheckMakeDir(Ctrl->S.s_statsdir);
     }
 
@@ -1048,7 +1047,8 @@ static void compute_greenfn_one(GRT_MODULE_CTRL *Ctrl) {
 
         outputdirs[ir] = NULL;
         GRT_SAFE_ASPRINTF(&outputdirs[ir], "%s/%s_%s_%s_%s", 
-            Ctrl->O.s_output_dir, Ctrl->M.s_modelname, Ctrl->D.s_depsrc, Ctrl->D.s_deprcv, Ctrl->R.s_rs[ir]);
+            Ctrl->O.s_output_dir, mod1d->modelname,
+            Ctrl->D.s_depsrc, Ctrl->D.s_deprcv, Ctrl->R.s_rs[ir]);
 
         // 计算理论走时
         travtPS[ir][0] = grt_compute_travt1d(mod1d->Thk, mod1d->Va, mod1d->n, mod1d->isrc, mod1d->ircv, dist);
@@ -1111,6 +1111,7 @@ int greenfn_main(int argc, char **argv) {
     bool doVF = Ctrl->G.doVF;
     bool doHF = Ctrl->G.doHF;
     bool doDC = Ctrl->G.doDC;
+    bool output_prepared = false;
 
     // 输出文件名中的深度字符串使用规范化后的浮点表示
     for(size_t is = 0; is < Ctrl->D.ndepsrc; ++is){
@@ -1125,6 +1126,12 @@ int greenfn_main(int argc, char **argv) {
             GRT_SAFE_FREE_PTR(Ctrl->D.s_deprcv);
             GRT_SAFE_ASPRINTF(&Ctrl->D.s_depsrc, "%g", Ctrl->D.depsrc);
             GRT_SAFE_ASPRINTF(&Ctrl->D.s_deprcv, "%g", Ctrl->D.deprcv);
+            Ctrl->M.mod1d = grt_read_mod1d_from_file(
+                Ctrl->M.s_modelpath, Ctrl->D.depsrc, Ctrl->D.deprcv, true, false);
+            if(!output_prepared){
+                prepare_greenfn_output(Ctrl, argc, argv);
+                output_prepared = true;
+            }
             compute_greenfn_one(Ctrl);
         }
     }

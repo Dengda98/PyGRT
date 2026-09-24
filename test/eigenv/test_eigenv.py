@@ -2,6 +2,7 @@ from contextlib import redirect_stdout
 from pathlib import Path
 
 import pygrt
+from scipy.io import netcdf_file
 
 modname = "../milrow"
 pymod = pygrt.PyModel1D(modelpath=modname)
@@ -11,6 +12,12 @@ pymod.eigenv(wtype="R", freqs=(0.0, 0.5, 0.05), phase_path="phase_R.nc", all_mod
 pymod.eigenv(wtype="L", freqs=(0.0, 0.5, 0.05), phase_path="phase_L.nc", all_modes=True)
 assert Path("phase_R.nc").is_file()
 assert Path("phase_L.nc").is_file()
+
+with netcdf_file("phase_R.nc", "r", mmap=False) as phase:
+    modelname = phase.modelname
+    if isinstance(modelname, bytes):
+        modelname = modelname.decode()
+    assert modelname == "milrow"
 
 # 单频、周期形式、最大阶数、搜根控制参数
 pymod.eigenv(wtype="R", freqs=1.0, phase_path="phase_R1.nc")
