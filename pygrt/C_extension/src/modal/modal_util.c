@@ -115,10 +115,9 @@ static void nc_put_freq_freqmode(
 
 
 void grt_output_cdisp(
-    const char *filepath, const char *full_command, const char *modelname,
-    const MODEL1D *mod1d, EIGENV_INFO *eigmet)
+    const char *filepath, const char *full_command, const MODEL1D *mod1d, EIGENV_INFO *eigmet)
 {
-    if(modelname == NULL || mod1d == NULL || mod1d->nmodarr == 0 || mod1d->modarr == NULL){
+    if(mod1d == NULL || mod1d->modelname == NULL || mod1d->nmodarr == 0 || mod1d->modarr == NULL){
         GRTRaiseError("modelname/modarr must be non-empty when writing dispersion.");
     }
 
@@ -142,7 +141,7 @@ void grt_output_cdisp(
 
     // 写入生成频散的命令和模型名
     NC_CHECK(nc_put_att_text(ncid, NC_GLOBAL, "command", strlen(full_command), full_command));
-    NC_CHECK(nc_put_att_text(ncid, NC_GLOBAL, "modelname", strlen(modelname), modelname));
+    NC_CHECK(nc_put_att_text(ncid, NC_GLOBAL, "modelname", strlen(mod1d->modelname), mod1d->modelname));
 
     // 定义维度和变量
     nc_def_freq_freqmode(ncid, eigmet->nf, nfm, nmode, &f_dimid, &fm_dimid, &f_varid, &cnum_varid, &mode_varid);
@@ -493,7 +492,7 @@ void grt_output_sensitivity(const char *filepath, const char *char_uc, EIGENFN_I
 
 /** 读取相/群速度频散结果 */
 void grt_read_dispersion(
-    const char *filepath, EIGENV_INFO *eigmet, char **pt_modelname, MODEL1D **pt_mod1d)
+    const char *filepath, EIGENV_INFO *eigmet, MODEL1D **pt_mod1d)
 {
     int ncid;
     int f_dimid, fm_dimid;
@@ -549,15 +548,14 @@ void grt_read_dispersion(
         NC_CHECK(nc_get_att_text(ncid, NC_GLOBAL, "modelname", modelname));
         modelname[m_len] = '\0';
 
-        if(pt_modelname != NULL)  *pt_modelname = modelname;
-        else GRT_SAFE_FREE_PTR(modelname);
         if(pt_mod1d != NULL){
-            *pt_mod1d = grt_read_mod1d_from_modarr(nlayer, modarr, -1.0, -1.0, true);
+            *pt_mod1d = grt_read_mod1d_from_modarr(
+                nlayer, modarr, modelname, -1.0, -1.0, true);
         }
+        GRT_SAFE_FREE_PTR(modelname);
         GRT_SAFE_FREE_PTR(modarr);
     } else {
         // 群速度文件不含内嵌模型
-        if(pt_modelname != NULL) *pt_modelname = NULL;
         if(pt_mod1d != NULL){
             GRTRaiseError(
                 "Group-velocity nc \"%s\" has no embedded model; use a phase-velocity file.",

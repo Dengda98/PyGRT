@@ -21,7 +21,6 @@ typedef struct {
     struct {
         bool active;
         char *s_modelpath;        ///< 模型路径
-        const char *s_modelname;  ///< 模型名称
         MODEL1D *mod1d;         ///< 模型结构体指针
     } M;
     /* 相速度频散结果输出路径 */
@@ -192,7 +191,6 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             case 'M':
                 Ctrl->M.active = true;
                 Ctrl->M.s_modelpath = strdup(optarg);
-                Ctrl->M.s_modelname = grt_get_basename(Ctrl->M.s_modelpath);
                 break;
 
             // -C<path>
@@ -563,7 +561,7 @@ int eigenv_main(int argc, char **argv){
     }
 
     // 输出频散结果
-    grt_output_cdisp(Ctrl->C.s_phasepath, full_command, Ctrl->M.s_modelname, mod1d, eigmet);
+    grt_output_cdisp(Ctrl->C.s_phasepath, full_command, mod1d, eigmet);
     GRT_SAFE_FREE_PTR(full_command);
     
     grt_free_eigenv_info(eigmet);

@@ -19,12 +19,11 @@
  * 
  * @param[in]    filepath         输出路径
  * @param[in]    full_command     计算频散的完整命令
- * @param[in]    modelname        模型文件名（不含路径）
  * @param[in]    mod1d            模型，使用其中未插入虚拟层的原始 ``modarr``
  * @param[in]    eigmet           频散数据结构体指针
  */
 void grt_output_cdisp(
-    const char *filepath, const char *full_command, const char *modelname,
+    const char *filepath, const char *full_command,
     const MODEL1D *mod1d, EIGENV_INFO *eigmet);
 
 /** 
@@ -82,10 +81,8 @@ void grt_group_sensitivity(EIGENFN_INFO *eigfnmet);
  * 
  * @param[in]     filepath         读入频散文件路径
  * @param[out]    eigmet           频散数据结构体指针
- * @param[out]    pt_modelname     模型文件名，可为 NULL
- *                                 群速度文件不含此项，非 NULL 时置为 NULL
  * @param[out]    pt_mod1d         由内嵌模型构建的 `MODEL1D`，可为 NULL；非 NULL 时由调用方释放
  *                                 群速度文件不含内嵌模型，此时若非 NULL 则报错
  */
 void grt_read_dispersion(
-    const char *filepath, EIGENV_INFO *eigmet, char **pt_modelname, MODEL1D **pt_mod1d);
+    const char *filepath, EIGENV_INFO *eigmet, MODEL1D **pt_mod1d);

@@ -18,7 +18,6 @@ typedef struct {
     struct {
         bool active;
         char *s_modelpath;        ///< 模型路径
-        const char *s_modelname;  ///< 模型名称
         MODEL1D *mod1d;         ///< 模型结构体指针
     } M;
     /** 震源和接收器深度 */
@@ -183,7 +182,6 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
             case 'M':
                 Ctrl->M.active = true;
                 Ctrl->M.s_modelpath = strdup(optarg);
-                Ctrl->M.s_modelname = grt_get_basename(Ctrl->M.s_modelpath);
                 break;
 
             // 震源和场点深度， -Ddepsrc/deprcv
@@ -408,7 +406,8 @@ int kernel_main(int argc, char **argv)
 
     // 保存目录
     char *s_output_dir = NULL;
-    GRT_SAFE_ASPRINTF(&s_output_dir, "%s/%s_%s_%s", Ctrl->O.s_output_dir, Ctrl->M.s_modelname, Ctrl->D.s_depsrc, Ctrl->D.s_deprcv);
+    GRT_SAFE_ASPRINTF(&s_output_dir, "%s/%s_%s_%s",
+        Ctrl->O.s_output_dir, mod1d->modelname, Ctrl->D.s_depsrc, Ctrl->D.s_deprcv);
     GRTCheckMakeDir(s_output_dir);
 
     const real_t Rho = mod1d->Rho[mod1d->isrc]; // 震源区密度

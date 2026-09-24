@@ -58,6 +58,7 @@ grt static greenfn -M../milrow -D0.2/0 -R0/4/0.2 -L20 -Cn -Ostgrn.nc
 
 grt static greenfn -M../milrow -D2/0 -R0/4/0.2 -K+k4+e1e-3 -Ostgrn.nc
 grt static greenfn -M../milrow -D2/0 -R0/4/0.2 -S -Ostgrn.nc
+test -d stgrtstats/milrow_2_0
 
 # -X/-Y 仅保留一个二维网格输入测试
 grt static greenfn -M../milrow -D2/0 -X-3/3/0.2 -Y-2/2/0.2 -Ostgrn_xy.nc

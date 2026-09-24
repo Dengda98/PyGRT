@@ -520,11 +520,9 @@ int eigenfn_main(int argc, char **argv){
     getopt_from_command(Ctrl, argc, argv);
 
     // 读取频散及其中保存的模型
-    char *modelname = NULL;
     MODEL1D *mod1d = NULL;
     EIGENV_INFO *eigmet = GRT_SAFE_CALLOC(1, sizeof(EIGENV_INFO));
-    grt_read_dispersion(Ctrl->C.s_filepath, eigmet, &modelname, &mod1d);
-    GRT_SAFE_FREE_PTR(modelname);
+    grt_read_dispersion(Ctrl->C.s_filepath, eigmet, &mod1d);
 
     // 根据命令行参数确定出所需的部分频散信息
     EIGENFN_INFO *eigfnmet = GRT_SAFE_CALLOC(1, sizeof(EIGENFN_INFO));

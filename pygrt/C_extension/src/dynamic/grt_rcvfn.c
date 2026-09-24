@@ -414,7 +414,7 @@ static MODEL1D *truncate_model(MODEL1D *mod1d, const size_t nlayer)
     }
 
     MODEL1D *truncated = grt_read_mod1d_from_modarr(
-        nlayer, (const real_t (*)[GRT_MODARR_NCOL])mod1d->modarr, -1.0, -1.0, true);
+        nlayer, (const real_t (*)[GRT_MODARR_NCOL])mod1d->modarr, mod1d->modelname, -1.0, -1.0, true);
     if(truncated == NULL){
         GRTRaiseError("Failed to truncate the model at the incident layer.");
     }
