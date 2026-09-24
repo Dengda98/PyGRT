@@ -19,6 +19,20 @@ COMMON_PARAMS = {
 with TemporaryDirectory(prefix="pygrt-lamb-") as temporary:
     output_root = Path(temporary)
 
+    try:
+        pygrt.utils.lamb(
+            **COMMON_PARAMS,
+            depsrc=5.0,
+            deprcv=0.0,
+            output_path=output_root / "empty_phases",
+            force=(0.5, -1.0, 2.0),
+            phases=[],
+        )
+    except ValueError:
+        pass
+    else:
+        raise ValueError("lamb should reject an empty phase list.")
+
     pygrt.utils.lamb(
         **COMMON_PARAMS,
         depsrc=0.0,
@@ -32,6 +46,14 @@ with TemporaryDirectory(prefix="pygrt-lamb-") as temporary:
         deprcv=0.0,
         output_path=output_root / "lamb2",
         moment_tensor=(1.0, -2.0, 3.0, 0.5, 1.2, -0.7),
+    )
+    pygrt.utils.lamb(
+        **COMMON_PARAMS,
+        depsrc=5.0,
+        deprcv=0.0,
+        output_path=output_root / "lamb2_phases",
+        moment_tensor=(1.0, -2.0, 3.0, 0.5, 1.2, -0.7),
+        phases=["P", "S", "SP"],
     )
     pygrt.utils.lamb(
         **COMMON_PARAMS,

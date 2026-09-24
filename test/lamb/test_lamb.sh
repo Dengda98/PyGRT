@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-OUTPUT_DIRS=(lamb_surface lamb2_source lamb2_receiver lamb3_force lamb3_mt lamb_E_zero lamb_E_shift)
+OUTPUT_DIRS=(lamb_surface lamb2_source lamb2_receiver lamb3_force lamb3_mt lamb_E_zero lamb_E_shift lamb_phase)
 SURFACE_LOG=$(mktemp)
 UNSUPPORTED_LOG=$(mktemp)
 ZERO_ASC=$(mktemp)
@@ -43,6 +43,11 @@ test -f "${OUTPUT_DIRS[1]}/zZ.sac"
 test -f "${OUTPUT_DIRS[1]}/nZ.sac"
 test -f "${OUTPUT_DIRS[1]}/eZ.sac"
 test -f "${OUTPUT_DIRS[2]}/Z.sac"
+
+# -Q accepts a comma-separated phase list in the merged Lamb module
+grt lamb -H8.0/4.62/3.3 -N16/0.01 -R10 -Ds5 -Dr0 -A30 -M100/30/70 -S1e20 \
+    -QP,S,SP -O"${OUTPUT_DIRS[7]}" -s
+test -f "${OUTPUT_DIRS[7]}/Z.sac"
 
 # 第三类 Lamb：单力源、矩张量源、时间函数、积分和微分
 grt lamb -H8.0/4.62/3.3 -N16/0.01 -R10 -Ds5 -Dr1 -A30 -F0.5/-1/2 -S1e15 -O"${OUTPUT_DIRS[3]}" -e -s

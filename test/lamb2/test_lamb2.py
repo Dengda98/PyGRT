@@ -22,6 +22,7 @@ expect_value_error("neither depsrc nor deprcv", nu=0.25, tbar=np.asarray([0.0]),
 expect_value_error("a non-positive horizontal distance", nu=0.25, tbar=np.asarray([0.0]), R=0.0, depsrc=5.0, azimuth=0.0)
 
 invalid_lamb2_inputs = (
+    ("an empty phase list", dict(nu=0.25, tbar=np.asarray([0.0]), R=10.0, depsrc=5.0, azimuth=0.0, phases=[])),
     ("an empty time series", dict(nu=0.25, tbar=np.asarray([]), R=10.0, depsrc=5.0, azimuth=0.0)),
     ("a multidimensional time series", dict(nu=0.25, tbar=np.asarray([[0.0]]), R=10.0, depsrc=5.0, azimuth=0.0)),
     ("a non-finite time series", dict(nu=0.25, tbar=np.asarray([0.0, np.nan]), R=10.0, depsrc=5.0, azimuth=0.0)),
@@ -92,13 +93,38 @@ for depth in (0.5, 2.0, 10.0):
     _check_reciprocity(depth, AZIMUTH)
 
 
-G_surface, dG_surface_source, dG_surface_receiver, _ = pygrt.utils.lamb2(
+G_surface, dG_surface_source, dG_surface_receiver, dG_surface_mixed = pygrt.utils.lamb2(
     nu=0.25, tbar=ts, R=R, deprcv=DEPSRC, azimuth=AZIMUTH
 )
 if not np.isfinite(G_surface).all() or not np.isfinite(dG_surface_source).all() or not np.isfinite(dG_surface_receiver).all():
     raise ValueError("lamb2 returned a non-finite value for the surface-source case.")
 if not np.allclose(dG_surface_receiver[:, :2], -dG_surface_source[:, :2]):
     raise ValueError("Surface-source horizontal receiver and source derivatives violate translation invariance.")
+
+# 地下源对应 SP，应用互易定理后地表源对应 PS
+buried_phase_results = [
+    pygrt.utils.lamb2(nu=0.25, tbar=ts, R=R, depsrc=DEPSRC, azimuth=AZIMUTH, phases=[phase])
+    for phase in ("P", "S", "SP")
+]
+for index, name in enumerate(("G", "source", "receiver", "mixed")):
+    if not np.allclose(sum(result[index] for result in buried_phase_results), (G, dG_source, dG_receiver, dG_mixed)[index], rtol=1e-10, atol=1e-10):
+        raise ValueError(f"The lamb2 buried-source phase-separated {name} results do not add up.")
+
+surface_phase_results = [
+    pygrt.utils.lamb2(nu=0.25, tbar=ts, R=R, deprcv=DEPSRC, azimuth=AZIMUTH, phases=[phase])
+    for phase in ("P", "S", "PS")
+]
+for index, name in enumerate(("G", "source", "receiver", "mixed")):
+    if not np.allclose(
+        sum(result[index] for result in surface_phase_results),
+        (G_surface, dG_surface_source, dG_surface_receiver, dG_surface_mixed)[index],
+        rtol=1e-10, atol=1e-10,
+    ):
+        raise ValueError(f"The lamb2 surface-source phase-separated {name} results do not add up.")
+
+empty = pygrt.utils.lamb2(nu=0.25, tbar=ts, R=R, depsrc=DEPSRC, azimuth=AZIMUTH, phases=["PS"])
+if any(np.any(values) for values in empty):
+    raise ValueError("The lamb2 result should be zero when no phase is available for the geometry.")
 
 cli_result = subprocess.run(
     [
@@ -165,6 +191,20 @@ if not np.allclose(surface_source_cli[:, 1:], dG_surface_source.reshape(len(ts),
     raise ValueError("The lamb2 surface-source derivative file and Python derivatives differ.")
 if not np.allclose(surface_receiver_cli[:, 1:], dG_surface_receiver.reshape(len(ts), 27), rtol=2e-6, atol=1e-5):
     raise ValueError("The lamb2 surface-receiver derivative file and Python derivatives differ.")
+
+phase_cli = np.loadtxt("lamb2_phases")[:, 1:].reshape(len(ts), 3, 3)
+phase_python = pygrt.utils.lamb2(
+    nu=0.25, tbar=ts, R=R, depsrc=DEPSRC, azimuth=AZIMUTH, phases=["P", "S", "SP"]
+)[0]
+if not np.allclose(phase_cli, phase_python, rtol=2e-6, atol=1e-5):
+    raise ValueError("The lamb2 phase-list CLI and Python results differ.")
+
+surface_phase_cli = np.loadtxt("lamb2_surface_phases")[:, 1:].reshape(len(ts), 3, 3)
+surface_phase_python = pygrt.utils.lamb2(
+    nu=0.25, tbar=ts, R=R, deprcv=DEPSRC, azimuth=AZIMUTH, phases=["P", "S", "PS"]
+)[0]
+if not np.allclose(surface_phase_cli, surface_phase_python, rtol=2e-6, atol=1e-5):
+    raise ValueError("The lamb2 surface phase-list CLI and Python results differ.")
 
 
 def _check_lamb2_right_limit(boundary, **depth_kw):

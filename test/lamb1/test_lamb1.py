@@ -20,6 +20,13 @@ for invalid_cbar in (0.0, -1e-6):
         continue
     raise RuntimeError(f"lamb1 should reject cbar={invalid_cbar}.")
 
+try:
+    pygrt.utils.lamb1(nu=nu, tbar=np.asarray([0.0]), azimuth=azimuth, phases=[])
+except ValueError:
+    pass
+else:
+    raise RuntimeError("lamb1 should reject an empty phase list.")
+
 
 fixed = pygrt.utils.lamb1(nu=nu, tbar=tbar, azimuth=azimuth)
 moving = pygrt.utils.lamb1(nu=nu, tbar=tbar, azimuth=azimuth, cbar=cbar)
@@ -38,5 +45,25 @@ require(np.allclose(fixed_cli[:, 1:].reshape(-1, 3, 3), fixed, rtol=1e-6, atol=1
         "fixed-source CLI and Python results should agree")
 require(np.allclose(moving_cli[:, 1:], moving, rtol=1e-6, atol=1e-6),
         "moving-source CLI and Python results should agree")
+
+phase_sum = sum(
+    pygrt.utils.lamb1(nu=nu, tbar=tbar, azimuth=azimuth, phases=[phase])
+    for phase in ("P", "S", "R")
+)
+require(np.allclose(phase_sum, fixed, rtol=1e-10, atol=1e-10),
+        "fixed-source phase-separated results should add up to the full solution")
+
+empty = pygrt.utils.lamb1(nu=nu, tbar=tbar, azimuth=azimuth, phases=["BAD"])
+require(np.all(empty == 0.0), "lamb1 should return zeros when no valid phase remains")
+
+phase_cli = np.loadtxt("lamb1_PS")[:, 1:].reshape(-1, 3, 3)
+phase_python = pygrt.utils.lamb1(nu=nu, tbar=tbar, azimuth=azimuth, phases=["P", "S"])
+require(np.allclose(phase_cli, phase_python, rtol=2e-6, atol=1e-5),
+        "lamb1 phase-list CLI and Python results should agree")
+
+rayleigh_cli = np.loadtxt("lamb1_R")[:, 1:].reshape(-1, 3, 3)
+rayleigh_python = pygrt.utils.lamb1(nu=nu, tbar=tbar, azimuth=azimuth, phases="R")
+require(np.allclose(rayleigh_cli, rayleigh_python, rtol=2e-6, atol=1e-5),
+        "lamb1 Rayleigh phase CLI and Python results should agree")
 
 print("lamb1 tests passed")
