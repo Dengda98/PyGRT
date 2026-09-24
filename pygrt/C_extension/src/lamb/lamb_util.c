@@ -7,9 +7,73 @@
  */
 
 #include <float.h>
+#include <ctype.h>
 #include <string.h>
 
 #include "grt/lamb/lamb_util.h"
+
+
+unsigned int grt_lamb_parse_phase_list(
+    const char *phase_list, const GRT_LAMB_PHASE_OPTION *options,
+    const size_t option_count, const char *available_names)
+{
+    unsigned int all_mask = 0u;
+    for (size_t i = 0; i < option_count; ++i) {
+        all_mask |= options[i].bit;
+    }
+    if (phase_list == NULL) {
+        return all_mask;
+    }
+
+    char *copy = strdup(phase_list);
+    if (copy == NULL) {
+        GRTRaiseError("Unable to allocate the Lamb phase selection.\n");
+    }
+
+    unsigned int mask = 0u;
+    char *token = strtok(copy, ",");
+    while (token != NULL) {
+        while (isspace((unsigned char)*token)) {
+            ++token;
+        }
+        char *end = token + strlen(token);
+        while (end > token && isspace((unsigned char)end[-1])) {
+            --end;
+            *end = '\0';
+        }
+
+        if (token[0] == '\0') {
+            GRTRaiseWarning(
+                "An empty Lamb phase name is ignored. Available phases: %s.", available_names);
+        } else {
+            unsigned int phase = 0u;
+            for (size_t i = 0; i < option_count; ++i) {
+                if (strcasecmp(token, options[i].name) == 0) {
+                    phase = options[i].bit;
+                    break;
+                }
+            }
+            if (phase == 0u) {
+                GRTRaiseWarning(
+                    "Unsupported Lamb phase %s is ignored. Available phases: %s.",
+                    token, available_names);
+            } else if ((mask & phase) != 0u) {
+                GRTRaiseWarning("Duplicated Lamb phase %s is ignored; it is recorded only once.", token);
+            } else {
+                mask |= phase;
+            }
+        }
+
+        token = strtok(NULL, ",");
+    }
+
+    GRT_SAFE_FREE_PTR(copy);
+    if (mask == 0u) {
+        GRTRaiseWarning(
+            "No valid Lamb phase remains; the output is all zeros. Available phases: %s.", available_names);
+    }
+    return mask;
+}
 
 
 static bool is_derivative_suboption(const char *text, const bool allow_mixed)

@@ -35,6 +35,12 @@ typedef struct {
         real_t cbar;  ///<  c/beta
     } C;
 
+    /** 选择输出的震相 */
+    struct {
+        bool active;
+        char *phase_list;
+    } Q;
+
 } GRT_MODULE_CTRL;
 
 
@@ -42,6 +48,7 @@ typedef struct {
 /** 释放结构体的内存 */
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
     GRT_SAFE_FREE_PTR(Ctrl->T.ts);
+    GRT_SAFE_FREE_PTR(Ctrl->Q.phase_list);
     GRT_SAFE_FREE_PTR(Ctrl);
 }
 
@@ -66,6 +73,7 @@ printf("\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
 "    grt lamb1 -P<nu> -T<t1>/<t2>/<dt> -A<azimuth> [-C<cbar>]\n"
+"               [-Q<phases>]\n"
 "\n\n"
 "Options:\n"
 "----------------------------------------------------------------\n"
@@ -86,6 +94,10 @@ printf("\n"
 "                   off the x1 axis. Output contains only u1, u2, u3. Without -C, output\n"
 "                   contains the 9 fixed-source Green functions.\n"
 "\n"
+"    -Q<phases>     Keep only selected phase terms in fixed-source mode. Use a\n"
+"                   comma-separated list of P, S and R. It is ignored with -C.\n"
+"                   If no valid phase remains, a warning is issued and the output is all zeros.\n"
+"\n"
 "    -h             Display this help message.\n"
 "\n\n"
 "Examples:\n"
@@ -101,7 +113,7 @@ printf("\n"
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     int opt;
 
-    while ((opt = getopt(argc, argv, ":P:T:A:C:h")) != -1) {
+    while ((opt = getopt(argc, argv, ":P:T:A:C:Q:h")) != -1) {
         switch (opt) {
             // 模型参数， -P<nu>
             case 'P':
@@ -167,6 +179,12 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     GRTBadOptionError(C, "cbar should be finite and positive.");
                 }
                 break;
+
+            case 'Q':
+                GRT_SAFE_FREE_PTR(Ctrl->Q.phase_list);
+                Ctrl->Q.phase_list = strdup(optarg);
+                Ctrl->Q.active = true;
+                break;
             
             GRT_Common_Options_in_Switch((char)(optopt)); 
         }
@@ -191,7 +209,8 @@ int lamb1_main(int argc, char **argv){
     // 运动源模式只输出竖向力源对应的三个位移分量
     if(Ctrl->C.active){
         real_t (*u)[3][3] = GRT_SAFE_CALLOC(Ctrl->T.nt, sizeof(*u));
-        grt_solve_lamb1(Ctrl->P.nu, Ctrl->T.ts, Ctrl->T.nt, Ctrl->A.azimuth, Ctrl->C.cbar, u);
+        grt_solve_lamb1(Ctrl->P.nu, Ctrl->T.ts, Ctrl->T.nt, Ctrl->A.azimuth,
+            Ctrl->C.cbar, Ctrl->Q.active ? Ctrl->Q.phase_list : NULL, u);
 
         printf("#%13s%14s%14s%14s\n", "tbar", "u1", "u2", "u3");
         for(int i=0; i<Ctrl->T.nt; ++i){
@@ -204,7 +223,8 @@ int lamb1_main(int argc, char **argv){
         GRT_SAFE_FREE_PTR(u);
     }
     else{
-        grt_solve_lamb1(Ctrl->P.nu, Ctrl->T.ts, Ctrl->T.nt, Ctrl->A.azimuth, 0.0, NULL);
+        grt_solve_lamb1(Ctrl->P.nu, Ctrl->T.ts, Ctrl->T.nt, Ctrl->A.azimuth,
+            0.0, Ctrl->Q.active ? Ctrl->Q.phase_list : NULL, NULL);
     }
 
     free_Ctrl(Ctrl);

@@ -44,6 +44,11 @@ typedef struct {
         bool active;
         real_t azimuth;
     } A;
+
+    struct {
+        bool active;
+        char *phase_list;
+    } Q;
 } GRT_MODULE_CTRL;
 
 
@@ -53,6 +58,7 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl)
     GRT_SAFE_FREE_PTR(Ctrl->S.source_path);
     GRT_SAFE_FREE_PTR(Ctrl->S.receiver_path);
     GRT_SAFE_FREE_PTR(Ctrl->S.mixed_path);
+    GRT_SAFE_FREE_PTR(Ctrl->Q.phase_list);
     GRT_SAFE_FREE_PTR(Ctrl);
 }
 
@@ -79,6 +85,7 @@ printf("\n"
 "----------------------------------------------------------------\n"
 "    grt lamb3 -P<nu> -T<t1>/<t2>/<dt> -R<dist>\n"
 "               -D<depsrc>/<deprcv> -A<azimuth>\n"
+"               [-Q<phases>]\n"
 "               [-S[+s<source-path>][+r<receiver-path>][+m<mixed-path>]]\n"
 "\n\n"
 "Options:\n"
@@ -109,11 +116,16 @@ printf("\n"
 "\n"
 "    -A<azimuth>    Azimuth in degree, from source to receiver, [0, 360].\n"
 "\n"
+"    -Q<phases>     Keep only selected phase terms. Use a comma-separated list\n"
+"                   of P, S, PP, SS, PS, SP and sPs.\n"
+"                   P/S are direct waves; SS and sPs are separate terms.\n"
+"\n"
 "    -h             Display this help message.\n"
 "\n\n"
 "Examples:\n"
 "----------------------------------------------------------------\n"
 "    grt lamb3 -P0.25 -T0/2/1e-3 -R10 -D2/1 -A30\n"
+"    grt lamb3 -P0.25 -T0/2/1e-3 -R10 -D2/1 -A30 -QP,PP\n"
 "    grt lamb3 -P0.25 -T0/2/1e-3 -R10 -D2/1 -A30 -S+slamb3_source.txt+rlamb3_receiver.txt+mlamb3_mixed.txt\n"
 "\n\n\n"
 );
@@ -123,7 +135,7 @@ printf("\n"
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
 {
     int opt;
-    while((opt = getopt(argc, argv, ":P:T:R:D:S:A:h")) != -1){
+    while((opt = getopt(argc, argv, ":P:T:R:D:S:A:Q:h")) != -1){
         switch(opt){
             case 'P':
                 Ctrl->P.active = true;
@@ -203,6 +215,12 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 }
                 break;
 
+            case 'Q':
+                GRT_SAFE_FREE_PTR(Ctrl->Q.phase_list);
+                Ctrl->Q.phase_list = strdup(optarg);
+                Ctrl->Q.active = true;
+                break;
+
             GRT_Common_Options_in_Switch((char)(optopt));
         }
     }
@@ -238,7 +256,8 @@ static void run_lamb3_with_derivative_outputs(const GRT_MODULE_CTRL *Ctrl)
     }
 
     grt_solve_lamb3(Ctrl->P.nu, Ctrl->T.ts, Ctrl->T.nt, Ctrl->R.distance, Ctrl->D.depsrc,
-        Ctrl->D.deprcv, Ctrl->A.azimuth, G, dG_source, dG_receiver, dG_mixed);
+        Ctrl->D.deprcv, Ctrl->A.azimuth, Ctrl->Q.active ? Ctrl->Q.phase_list : NULL,
+        G, dG_source, dG_receiver, dG_mixed);
     grt_lamb_print_green_series(stdout, Ctrl->T.ts, Ctrl->T.nt, G);
     if (source_file != NULL) {
         grt_lamb_print_derivative_series(source_file, Ctrl->T.ts, Ctrl->T.nt, dG_source, true);
@@ -268,7 +287,8 @@ int lamb3_main(int argc, char **argv)
         run_lamb3_with_derivative_outputs(Ctrl);
     } else {
         grt_solve_lamb3(Ctrl->P.nu, Ctrl->T.ts, Ctrl->T.nt, Ctrl->R.distance, Ctrl->D.depsrc,
-            Ctrl->D.deprcv, Ctrl->A.azimuth, NULL, NULL, NULL, NULL);
+            Ctrl->D.deprcv, Ctrl->A.azimuth, Ctrl->Q.active ? Ctrl->Q.phase_list : NULL,
+            NULL, NULL, NULL, NULL);
     }
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;
