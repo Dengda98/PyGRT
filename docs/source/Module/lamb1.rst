@@ -16,6 +16,7 @@ lamb1
 |-P|\ *nu*
 |-T|\ *t1/t2/dt*
 |-A|\ *azimuth*
+[ |-C|\ *cbar* ]
 [ **-h** ]
 
 
@@ -23,9 +24,11 @@ lamb1
 --------
 
 第一类 Lamb 问题指在半空间中，当源点和场点均位于地表时，求场点记录到的位移。
-**lamb1** 模块实现的理论基础来源于《地震学中的 Lamb 问题（下）》第 6 章。
-结果为与阶跃函数卷积后的无量纲位移，输出到标准输出。
-标准输出第一列为无量纲时间，随后按行优先顺序排列 9 个 :math:`G_{ij}` 分量。
+**lamb1** 模块的固定源和运动源部分分别参考了《地震学中的 Lamb 问题（下）》第 6 章和第 9 章的广义闭合解。
+未指定 **-C** 时，固定源结果为与阶跃函数卷积后的无量纲位移，标准输出第一列为无量纲时间，
+随后按行优先顺序排列 9 个 :math:`G_{ij}` 分量。指定 **-C<cbar>** 时启用垂直向下点力源的运动模式，
+标准输出仅含无量纲时间和三个未与阶跃函数卷积的无量纲位移 :math:`\bar{u}_1`、:math:`\bar{u}_2`、
+:math:`\bar{u}_3`。
 
 为了得到实际物理单位的解，可进行：
 
@@ -33,7 +36,8 @@ lamb1
 
    G^H = \frac{\bar{G}^H}{\pi^2\mu r}
 
-其中 :math:`r` 为震源到接收点的距离，:math:`\mu` 为剪切模量。
+其中 :math:`r` 为震源到接收点的距离，:math:`\mu` 为剪切模量。运动源三个位移分量使用
+相同归一化。
 
 必选选项
 -----------------
@@ -57,10 +61,20 @@ lamb1
 **-A**\ *azimuth*
     方位角，单位为度。
 
+.. _-C:
+
+**-C**\ *cbar*
+    指定沿 :math:`x_1` 正方向匀速运动的垂直向下点力源无量纲速度 :math:`\bar{c}`，即
+    :math:`c/\beta`，其中 :math:`c` 为实际速度，:math:`\beta` 为 S 波速度。
+    要求 :math:`0 < c/\beta < v_R/\beta`，其中 :math:`v_R` 为 Rayleigh 波速度。
+    此时台站不能位于 :math:`x_1` 轴上。此模式只输出时间和三个位移分量；
+
 参考文献
 --------------
 
 + Feng, X., Zhang, H., 2018. Exact closed-form solutions for lamb’s problem. Geophys. J. Int. 214, 444–459. https://doi.org/10.1093/gji/ggy131
++ Feng, X., Zhang, H., 2020. Exact closed-form solutions for Lamb’s problem—II: a moving
+  point load. *Geophys. J. Int.* 223, 1446–1459. https://doi.org/10.1093/gji/ggaa380
 + 张海明，冯禧，2024. 地震学中的Lamb问题（下）[M]. 北京：科学出版社.
 
 
