@@ -467,7 +467,7 @@ int eigenv_main(int argc, char **argv){
     getopt_from_command(Ctrl, argc, argv);
 
     // 读入模型
-    Ctrl->M.mod1d = grt_read_mod1d_from_file(Ctrl->M.s_modelpath, -1.0, -1.0, true);
+    Ctrl->M.mod1d = grt_read_mod1d_from_file(Ctrl->M.s_modelpath, -1.0, -1.0, true, !Ctrl->X.active);
     MODEL1D *mod1d = Ctrl->M.mod1d;
 
     // 目前边界条件暂有限制
@@ -572,7 +572,6 @@ FINISH:
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;
 }
-
 
 
 

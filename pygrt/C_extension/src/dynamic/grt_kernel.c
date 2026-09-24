@@ -380,7 +380,8 @@ int kernel_main(int argc, char **argv)
     getopt_from_command(Ctrl, argc, argv);
 
     // 读入模型文件
-    if((Ctrl->M.mod1d = grt_read_mod1d_from_file(Ctrl->M.s_modelpath, Ctrl->D.depsrc, Ctrl->D.deprcv, true)) == NULL){
+    if((Ctrl->M.mod1d = grt_read_mod1d_from_file(
+        Ctrl->M.s_modelpath, Ctrl->D.depsrc, Ctrl->D.deprcv, true, false)) == NULL){
         exit(EXIT_FAILURE);
     }
     MODEL1D *mod1d = Ctrl->M.mod1d;

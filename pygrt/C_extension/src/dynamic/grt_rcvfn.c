@@ -761,7 +761,7 @@ int rcvfn_main(int argc, char **argv)
     GRT_MODULE_CTRL *Ctrl = GRT_SAFE_CALLOC(1, sizeof(*Ctrl));
     getopt_from_command(Ctrl, argc, argv);
 
-    Ctrl->M.mod1d = grt_read_mod1d_from_file(Ctrl->M.s_modelpath, -1.0, -1.0, true);
+    Ctrl->M.mod1d = grt_read_mod1d_from_file(Ctrl->M.s_modelpath, -1.0, -1.0, true, false);
     if(Ctrl->M.mod1d == NULL){
         free_Ctrl(Ctrl);
         return EXIT_FAILURE;

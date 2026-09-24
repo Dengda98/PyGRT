@@ -383,7 +383,7 @@ real_t *grt_compute_travt1d_from_file(
         return NULL;
     }
 
-    MODEL1D *mod1d = grt_read_mod1d_from_file(modelpath, depsrc, deprcv, true);
+    MODEL1D *mod1d = grt_read_mod1d_from_file(modelpath, depsrc, deprcv, true, false);
     if(mod1d == NULL){
         return NULL;
     }

@@ -677,7 +677,7 @@ static void compute_stgrnlib_to_nc(
             real_t zr = deprcvs[ir];
 
             MODEL1D *mod1d = NULL;
-            if((mod1d = grt_read_mod1d_from_file(modelpath, zs, zr, false)) == NULL){
+            if((mod1d = grt_read_mod1d_from_file(modelpath, zs, zr, false, true)) == NULL){
                 exit(EXIT_FAILURE);
             }
             if(!have_model){
