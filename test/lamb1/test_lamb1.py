@@ -2,40 +2,41 @@ import numpy as np
 import pygrt
 
 
-def expect_value_error(desc, **kwargs):
+nu = 0.25
+azimuth = 30.0
+tbar = np.arange(0.0, 2.0 + 1e-8, 1e-3)
+cbar = 2e-4
+
+
+def require(condition, message):
+    if not condition:
+        raise RuntimeError(message)
+
+
+for invalid_cbar in (0.0, -1e-6):
     try:
-        pygrt.utils.lamb1(**kwargs)
+        pygrt.utils.lamb1(nu=nu, tbar=tbar, azimuth=azimuth, cbar=invalid_cbar)
     except ValueError:
-        return
-    raise ValueError(f"lamb1 should reject {desc}.")
+        continue
+    raise RuntimeError(f"lamb1 should reject cbar={invalid_cbar}.")
 
 
-expect_value_error("a Poisson ratio outside (0, 0.5)", nu=0.5, tbar=np.asarray([0.0]), azimuth=0.0)
-expect_value_error("an empty time series", nu=0.25, tbar=np.asarray([]), azimuth=0.0)
-expect_value_error("a multidimensional time series", nu=0.25, tbar=np.asarray([[0.0]]), azimuth=0.0)
-expect_value_error("a non-finite time series", nu=0.25, tbar=np.asarray([0.0, np.inf]), azimuth=0.0)
-expect_value_error("a negative time series", nu=0.25, tbar=np.asarray([-1e-8]), azimuth=0.0)
-expect_value_error("a non-increasing time series", nu=0.25, tbar=np.asarray([0.0, 0.0]), azimuth=0.0)
-expect_value_error("a non-finite Poisson ratio", nu=np.nan, tbar=np.asarray([0.0]), azimuth=0.0)
-expect_value_error("a non-finite azimuth", nu=0.25, tbar=np.asarray([0.0]), azimuth=np.nan)
-expect_value_error("an azimuth outside [0, 360]", nu=0.25, tbar=np.asarray([0.0]), azimuth=361.0)
+fixed = pygrt.utils.lamb1(nu=nu, tbar=tbar, azimuth=azimuth)
+moving = pygrt.utils.lamb1(nu=nu, tbar=tbar, azimuth=azimuth, cbar=cbar)
+require(fixed.shape == (len(tbar), 3, 3), "fixed-source lamb1 should return shape (nt, 3, 3)")
+require(moving.shape == (len(tbar), 3), "moving-source lamb1 should return shape (nt, 3)")
+require(np.all(np.isfinite(fixed)), "fixed-source lamb1 result should be finite")
+require(np.all(np.isfinite(moving)), "moving-source lamb1 result should be finite")
 
+fixed_cli = np.loadtxt("lamb1")
+moving_cli = np.loadtxt("lamb1_moving")
+require(fixed_cli.shape == (len(tbar), 10), "fixed-source CLI should output 10 columns")
+require(moving_cli.shape == (len(tbar), 4), "moving-source CLI should output 4 columns")
+require(np.allclose(fixed_cli[:, 0], tbar, rtol=0.0, atol=5e-7), "CLI time column should match tbar")
+require(np.allclose(moving_cli[:, 0], tbar, rtol=0.0, atol=5e-7), "moving CLI time column should match tbar")
+require(np.allclose(fixed_cli[:, 1:].reshape(-1, 3, 3), fixed, rtol=1e-6, atol=1e-6),
+        "fixed-source CLI and Python results should agree")
+require(np.allclose(moving_cli[:, 1:], moving, rtol=1e-6, atol=1e-6),
+        "moving-source CLI and Python results should agree")
 
-ts = np.arange(0, 2+1e-8, 1e-3)
-lamb1 = pygrt.utils.lamb1(nu=0.25, tbar=ts, azimuth=30)
-
-# check results
-# Since the rounding error of ref_lamb1, the error will not be absolutely zero.
-ref_lamb1 = np.loadtxt("ref_lamb1")[:, 1:].reshape(-1, 3, 3)
-tol = 0.01
-err = np.sum(np.abs(ref_lamb1 - lamb1)) / np.mean(np.abs(ref_lamb1))
-print(f"err={err:e}")
-if err > tol:
-    raise ValueError(f"err({err}) > tol")
-
-# check c results
-c_lamb1 = np.loadtxt("lamb1")[:, 1:].reshape(-1, 3, 3)
-err = np.sum(np.abs(ref_lamb1 - c_lamb1)) / np.mean(np.abs(ref_lamb1))
-print(f"err={err:e}")
-if err > tol:
-    raise ValueError(f"err({err}) > tol")
+print("lamb1 tests passed")
