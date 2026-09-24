@@ -79,6 +79,11 @@ grt greenfn -M../mil_row -D2/0 -N8/0.02 -R5 -OGRN_UNDERSCORE
 test -f GRN_UNDERSCORE/mil_row_2_0_5/EXZ.sac
 rm -f ../mil_row
 
+cp ../milrow command
+expect_fail "reserved model name command" \
+    grt greenfn -Mcommand -D2/0 -N8/0.02 -R5 -OGRN_COMMAND_BAD
+rm -f command
+
 # multi source/receiver depths
 grt greenfn -M../milrow -Ds1,2 -Dr0,1 -N80/0.02 -R5 -OGRN_MULTI -s
 test -f GRN_MULTI/milrow_1_0_5/EXZ.sac
@@ -100,3 +105,4 @@ rm -rf GRN
 rm -rf GRN_MULTI
 rm -rf GRN_grtstats
 rm -rf GRN_BAD GRN_BAD_FILE GRN_UNDERSCORE
+rm -rf GRN_COMMAND_BAD
