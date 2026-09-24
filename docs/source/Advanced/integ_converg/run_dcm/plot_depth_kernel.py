@@ -1,7 +1,9 @@
-import numpy as np
-import pygrt 
+import glob
+from pathlib import Path
+
 import matplotlib.pyplot as plt
-import glob, os
+import numpy as np
+import pygrt
 
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.axes import Axes
@@ -19,7 +21,11 @@ def _plot_one(ax:Axes, pattern:str, ktype:str):
     for path in glob.glob(pattern):
         data = pygrt.utils.read_statsfile(path)
 
-        evdp = float(path.split("/")[-2].split("_")[1])
+        stats_dir = Path(path).parent.name
+        fields = stats_dir.rsplit("_", 2)
+        if len(fields) != 3:
+            raise ValueError(f"Cannot parse source depth from statistics directory: {stats_dir}")
+        evdp = float(fields[-2])
 
         karr = data['k']
         Farr = data[ktype]

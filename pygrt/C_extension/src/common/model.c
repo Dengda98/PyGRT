@@ -116,6 +116,14 @@ real_t (* grt_read_modarr_from_file(
     const char *modelpath, size_t *nlayer, bool allowLiquid))[GRT_MODARR_NCOL]
 {
     GRTCheckFileExist(modelpath);
+
+    // `command` 与程序内部保存命令记录的文件重名，不能作为模型名称
+    if(strcmp(grt_get_basename(modelpath), "command") == 0){
+        GRTRaiseError(
+            "Due to internal program limitations, \"command\" cannot be used as a model name."
+        );
+    }
+
     if(nlayer == NULL){
         GRTRaiseError("nlayer is NULL.");
     }
