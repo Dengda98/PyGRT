@@ -45,7 +45,6 @@ typedef struct {
 } VARS;
 
 
-
 static void ckim_P(real_t tbar, VARS *V, cplx_t ckim[3][6][10])
 {
     real_t kk = V->kk;
@@ -777,12 +776,480 @@ void grt_compute_lamb1_travt(const real_t nu, real_t *tP, real_t *tR)
 
 
 
-void grt_solve_lamb1(
-    const real_t nu, const real_t *ts, const int nt, const real_t azimuth, real_t (*u)[3][3])
+static void make_vars(const real_t nu, const real_t azimuth, VARS *V)
 {
-    // 检查泊松比范围
+    real_t tP;
+    real_t tR;
+    grt_compute_lamb1_travt(nu, &tP, &tR);
+
+    memset(V, 0, sizeof(*V));
+    V->k = tP;
+    V->kk = V->k * V->k;
+    V->nu = nu;
+    V->kpkp = 1.0 - V->kk;
+    V->kp = sqrt(V->kpkp);
+    V->h1 = 2.0 * V->kk - 1.0;
+    V->h2 = V->kk * V->kpkp;
+    V->h3 = V->kpkp * V->h1 * V->h1;
+    V->b3 = 3.0 * V->kpkp - 1.0;
+    V->b6 = 6.0 * V->kpkp - 1.0;
+    V->c = 6.0 * V->h2 - 1.0;
+
+    const real_t phi = azimuth * DEG1;
+    V->sf = sin(phi);
+    V->cf = cos(phi);
+
+    grt_rayleigh1_roots(V->nu, V->ys);
+    for(int i=0; i<3; ++i){
+        V->ysp[i] = V->ys[i] - V->kpkp;
+    }
+
+    V->RaylQ[0][2] = V->cf;
+    V->RaylQ[1][2] = V->sf;
+    V->RaylQ[2][0] = -V->RaylQ[0][2];
+    V->RaylQ[2][1] = -V->RaylQ[1][2];
+    V->kpa = tR;
+    V->kpakpa = V->kpa * V->kpa;
+
+    const real_t u0 = sqrt(V->kpakpa - V->kk);
+    const real_t v0 = sqrt(V->kpakpa - 1.0);
+    const real_t R1 = (1.0 - 2.0 * V->kpakpa) * u0 * v0 + 2.0 * u0 * u0 * v0 * v0;
+    const real_t R2 = 2.0 * (1.0 - 2.0 * V->kpakpa) * u0 * v0 + 2.0 * u0 * u0 * v0 * v0
+                    + V->kpakpa * (u0 * u0 + v0 * v0);
+    V->RaylR = R1 / R2;
+}
+
+
+static void build_G(real_t tbar, const real_t tbar_eps, VARS *V, real_t G[3][3])
+{
+    memset(G, 0, 9 * sizeof(real_t));
+    if(tbar < 0.0){
+        return;
+    }
+    if(tbar == 1.0 || tbar == V->k || tbar == V->kpa){
+        tbar += tbar_eps;
+    }
+
+    real_t up[3][3] = {0};
+    real_t us1[3][3] = {0};
+    real_t us2[3][3] = {0};
+    real_t usp[3][3] = {0};
+    real_t uR[3][3] = {0};
+    build_P(tbar, V, up);
+    build_S1(tbar, V, us1);
+    build_S2_SP(tbar, V, us2, usp);
+    build_R(tbar, V, uR);
+
+    for(int i1=0; i1<3; ++i1){
+        for(int i2=0; i2<3; ++i2){
+            G[i1][i2] = up[i1][i2] + us1[i1][i2] + us2[i1][i2] + usp[i1][i2] + uR[i1][i2];
+        }
+    }
+}
+
+
+static cplx_t U1_c2(const cplx_t v, const real_t a, const real_t b)
+{
+    const real_t aa = a * a;
+    if(!grt_lamb_is_real(v) || creal(v) > aa){
+        const cplx_t xi = csqrt(v - aa);
+        return -catan((a - b) * xi / (v - a * (a - b))) / xi;
+    }
+
+    const real_t xi = sqrt(aa - creal(v));
+    return 0.5 / xi * log(fabs((b - xi) * (a + xi) / ((a - xi) * (b + xi))));
+}
+
+
+static cplx_t U2_c2(const cplx_t v, const real_t a, const real_t b, const real_t kp)
+{
+    // 式 (9.3.8) 经 x=a*sin(theta) 代换后的等价闭合表达
+    const real_t aa = a * a;
+    const real_t y0 = kp / b;
+    if(!grt_lamb_is_real(v)){
+        const cplx_t A = aa - v;
+        const cplx_t B = -v;
+        return catan(y0 * csqrt(A) / csqrt(B)) / (csqrt(A) * csqrt(B));
+    }
+
+    const real_t value = creal(v);
+    if(value < 0.0){
+        const real_t A = aa - value;
+        const real_t B = -value;
+        return atan(y0 * sqrt(A / B)) / sqrt(A * B);
+    }
+    if(value > aa){
+        const real_t A = value - aa;
+        return -atan(y0 * sqrt(A / value)) / sqrt(A * value);
+    }
+
+    const real_t A = sqrt(aa - value);
+    const real_t B = sqrt(value);
+    return 0.5 / (A * B) * log(fabs((y0 * A - B) / (y0 * A + B)));
+}
+
+
+static cplx_t V1_c2(const cplx_t v, const real_t a, const real_t kp)
+{
+    const real_t aa = a * a;
+    const real_t kpkp = kp * kp;
+    const cplx_t xi = csqrt(aa - v);
+    const cplx_t eta = csqrt(kpkp - v);
+    if(!grt_lamb_is_real(v) || (creal(v) > kpkp && creal(v) < aa)){
+        return catan(I * kp * xi / (a * eta)) / (I * xi * eta);
+    }
+
+    const cplx_t ratio = (v + a * kp + xi * eta) * (xi + eta) / ((v + a * kp - xi * eta) * (xi - eta));
+    return 0.5 / (xi * eta) * log(cabs(ratio));
+}
+
+
+static cplx_t V2_c2(const cplx_t v, const real_t a, const real_t kp)
+{
+    const real_t m = grt_lamb_clamp_elliptic_parameter(kp * kp / (a * a), 1e-10, "V2_c2");
+    return -grt_ellipticPi(kp * kp / v, m) / (a * v);
+}
+
+
+static cplx_t V3_c2(const real_t a, const real_t kp)
+{
+    const real_t m = grt_lamb_clamp_elliptic_parameter(kp * kp / (a * a), 1e-10, "V3_c2");
+    return grt_ellipticK(m) / a;
+}
+
+
+static cplx_t U1_c3(const cplx_t v, const real_t a, const real_t b)
+{
+    const real_t aa = a * a;
+    if(!grt_lamb_is_real(v) || creal(v) > aa){
+        const cplx_t xi = csqrt(v - aa);
+        return -catan(b / xi) / xi;
+    }
+
+    const real_t xi = sqrt(aa - creal(v));
+    return 0.5 / xi * log(fabs((xi + b) / (xi - b)));
+}
+
+
+static cplx_t U2_c3(const cplx_t v, const real_t a, const real_t b, const real_t kp)
+{
+    // 式 (9.3.13) 经 x=a*sin(theta) 代换后的等价闭合表达
+    const real_t aa = a * a;
+    const real_t y0 = kp / b;
+    if(!grt_lamb_is_real(v)){
+        const cplx_t A = aa - v;
+        const cplx_t B = -v;
+        return (M_PI_2 - catan(y0 * csqrt(A) / csqrt(B))) / (csqrt(A) * csqrt(B));
+    }
+
+    const real_t value = creal(v);
+    if(value < 0.0){
+        const real_t A = aa - value;
+        const real_t B = -value;
+        return (M_PI_2 - atan(y0 * sqrt(A / B))) / sqrt(A * B);
+    }
+    if(value > aa){
+        const real_t A = value - aa;
+        return -(M_PI_2 - atan(y0 * sqrt(A / value))) / sqrt(A * value);
+    }
+
+    const real_t A = sqrt(aa - value);
+    const real_t B = sqrt(value);
+    return 0.5 / (A * B) * log(fabs((y0 * A + B) / (y0 * A - B)));
+}
+
+
+static cplx_t V1_c3(const cplx_t v, const real_t a, const real_t kp)
+{
+    const real_t aa = a * a;
+    const real_t kpkp = kp * kp;
+    if(!grt_lamb_is_real(v) || creal(v) > aa || creal(v) < kpkp){
+        return M_PI / (2.0 * (kpkp - v)) * csqrt((kpkp - v) / (aa - v));
+    }
+    return 0.0;
+}
+
+
+static cplx_t V2_c3(const cplx_t v, const real_t a, const real_t b)
+{
+    const real_t aa = a * a;
+    const real_t m = grt_lamb_clamp_elliptic_parameter(b * b / aa, 1e-10, "V2_c3");
+    return grt_ellipticPi(b * b / (aa - v), m) / (a * (aa - v));
+}
+
+
+static void make_motion_D(
+    const int component, const int alpha, const real_t tbar, const real_t a2, const real_t cbar, VARS *V, cplx_t c[9])
+{
+    // 式 (9.3.1) 中 D_i^(alpha) 的 x 多项式系数
+    memset(c, 0, 9 * sizeof(*c));
+
+    const real_t kpkp = V->kpkp;
+    const real_t gamma0 = 1.0 - 2.0 * V->kk;
+    const real_t d = 1.0 - cbar * tbar * V->cf;
+    const real_t A10 = tbar * d * V->cf - cbar * a2 * V->sf * V->sf;
+    const real_t A11 = cbar * V->sf * V->sf;
+    const real_t A20 = (tbar * d + cbar * a2 * V->cf) * V->sf;
+    const real_t A21 = -cbar * V->cf * V->sf;
+
+    if(component == 2){
+        if(alpha == 1){
+            c[2] = I * d * gamma0 * gamma0;
+            c[4] = -4.0 * I * d * gamma0;
+            c[6] = 4.0 * I * d;
+        }
+        else if(alpha == 2){
+            c[3] = 4.0 * d * V->kk * kpkp;
+            c[5] = 4.0 * d * (kpkp - V->kk);
+            c[7] = -4.0 * d;
+        }
+        else {
+            GRTRaiseError("Wrong Cagniard integral type in lamb1.\n");
+        }
+        return;
+    }
+
+    const real_t A0 = component == 0 ? A10 : A20;
+    const real_t A1 = component == 0 ? A11 : A21;
+    if(alpha == 1){
+        const real_t B0 = gamma0 * gamma0 * gamma0;
+        const real_t B1 = -6.0 * gamma0 * gamma0 - 8.0 * V->kk * kpkp;
+        const real_t B2 = 12.0 * gamma0 - 8.0 * (kpkp - V->kk);
+        c[1] = A0 * B0;
+        c[3] = A0 * B1 + A1 * B0;
+        c[5] = A0 * B2 + A1 * B1;
+        c[7] = A1 * B2;
+    }
+    else if(alpha == 2){
+        const real_t B1 = gamma0 * kpkp;
+        const real_t B2 = -gamma0 - 2.0 * kpkp;
+        const real_t B3 = 2.0;
+        c[2] = -2.0 * I * A0 * B1;
+        c[4] = -2.0 * I * (A0 * B2 + A1 * B1);
+        c[6] = -2.0 * I * (A0 * B3 + A1 * B2);
+        c[8] = -2.0 * I * A1 * B3;
+    }
+    else {
+        GRTRaiseError("Wrong Cagniard integral type in lamb1.\n");
+    }
+}
+
+
+static void make_motion_E(const int alpha, const real_t tbar, const real_t cbar, VARS *V, cplx_t c[9])
+{
+    // 式 (9.3.11) 中 E^(alpha) 的 x 多项式系数
+    memset(c, 0, 9 * sizeof(*c));
+
+    const real_t gamma0 = 1.0 - 2.0 * V->kk;
+    const real_t d = 1.0 - cbar * tbar * V->cf;
+    if(alpha == 1){
+        c[2] = I * d * gamma0 * gamma0;
+        c[4] = -4.0 * I * d * gamma0;
+        c[6] = 4.0 * I * d;
+    }
+    else if(alpha == 2){
+        c[3] = -4.0 * I * d * V->kk * V->kpkp;
+        c[5] = 4.0 * I * d * (V->kk - V->kpkp);
+        c[7] = 4.0 * I * d;
+    }
+    else {
+        GRTRaiseError("Wrong Cagniard integral type in lamb1.\n");
+    }
+}
+
+
+static void make_motion_fraction(const cplx_t c[9], const cplx_t ys[4], const real_t zeta, cplx_t w[9])
+{
+    for(int i=0; i<4; ++i){
+        cplx_t denominator = zeta;
+        for(int j=0; j<4; ++j){
+            if(i != j){
+                denominator *= ys[i] - ys[j];
+            }
+        }
+        w[2*i] = grt_evalpoly2(c, 3, ys[i], 1) / denominator;
+        w[2*i+1] = grt_evalpoly2(c, 4, ys[i], 0) / denominator;
+    }
+    w[8] = c[8] / zeta;
+}
+
+
+static cplx_t combine_c1(const cplx_t u[9], const cplx_t v[9], const cplx_t ys[4], const real_t tbar, VARS *V)
+{
+    cplx_t value = v[8] * V_P(3, tbar, ys[0], V);
+    for(int i=0; i<4; ++i){
+        value += u[2*i] * U_P(1, tbar, ys[i], V) + u[2*i+1] * U_P(2, tbar, ys[i], V);
+        value += v[2*i] * V_P(1, tbar, ys[i], V) + v[2*i+1] * V_P(2, tbar, ys[i], V);
+    }
+    return value;
+}
+
+
+static cplx_t combine_c2(const cplx_t u[9], const cplx_t v[9], const cplx_t ys[4], const real_t a, const real_t b, VARS *V)
+{
+    cplx_t value = v[8] * V3_c2(a, V->kp);
+    for(int i=0; i<4; ++i){
+        value += u[2*i] * U1_c2(ys[i], a, b) + u[2*i+1] * U2_c2(ys[i], a, b, V->kp);
+        value += v[2*i] * V1_c2(ys[i], a, V->kp) + v[2*i+1] * V2_c2(ys[i], a, V->kp);
+    }
+    return value;
+}
+
+
+static cplx_t combine_c3(const cplx_t u[9], const cplx_t v[9], const cplx_t ys[4], const real_t a, const real_t b, VARS *V)
+{
+    cplx_t value = 0.0;
+    for(int i=0; i<4; ++i){
+        value += u[2*i] * U1_c3(ys[i], a, b) + u[2*i+1] * U2_c3(ys[i], a, b, V->kp);
+        value += v[2*i] * V1_c3(ys[i], a, V->kp) + v[2*i+1] * V2_c3(ys[i], a, b);
+    }
+    return value;
+}
+
+
+static void build_motion_C(const real_t tbar, const real_t cbar, VARS *V, real_t G[3])
+{
+    // 式 (9.3.2) 和式 (9.3.11) 的 Cagniard 路径闭合项
+    memset(G, 0, 3 * sizeof(*G));
+    if(tbar < V->k){
+        return;
+    }
+
+    const real_t a2 = tbar * tbar - V->kk;
+    const real_t a = sqrt(a2);
+    const real_t d = 1.0 - cbar * tbar * V->cf;
+    const real_t xi1 = cbar * cbar * V->sf * V->sf;
+    const real_t zeta = 16.0 * xi1 * V->kpkp;
+    cplx_t ys[4] = {V->ys[0], V->ys[1], V->ys[2], a2 + d * d / xi1};
+
+    for(int i=0; i<3; ++i){
+        cplx_t c1[9];
+        cplx_t c2[9];
+        cplx_t u[9];
+        cplx_t v[9];
+        make_motion_D(i, 1, tbar, a2, cbar, V, c1);
+        make_motion_D(i, 2, tbar, a2, cbar, V, c2);
+        make_motion_fraction(c1, ys, zeta, u);
+        make_motion_fraction(c2, ys, zeta, v);
+
+        cplx_t value;
+        if(tbar < 1.0){
+            value = combine_c1(u, v, ys, tbar, V);
+        }
+        else {
+            const real_t b = sqrt(tbar * tbar - 1.0);
+            value = combine_c2(u, v, ys, a, b, V);
+            if(i == 2){
+                cplx_t e1[9];
+                cplx_t e2[9];
+                cplx_t eu[9];
+                cplx_t ev[9];
+                make_motion_E(1, tbar, cbar, V, e1);
+                make_motion_E(2, tbar, cbar, V, e2);
+                make_motion_fraction(e1, ys, zeta, eu);
+                make_motion_fraction(e2, ys, zeta, ev);
+                value += combine_c3(eu, ev, ys, a, b, V);
+            }
+        }
+        G[i] = -cimag(value);
+    }
+}
+
+
+static void make_motion_F(const cplx_t p, const cplx_t q, const real_t cbar, VARS *V, cplx_t F[3], cplx_t *R)
+{
+    const cplx_t pp = p * p;
+    const cplx_t qq = q * q;
+    const cplx_t etaa = csqrt(V->kk + pp - qq);
+    const cplx_t etab = csqrt(1.0 + pp - qq);
+    const cplx_t gamma = 1.0 + 2.0 * (pp - qq);
+    const cplx_t motion = 1.0 + cbar * q * V->cf;
+    const cplx_t common = gamma - 2.0 * etaa * etab;
+
+    F[0] = -(q * V->cf * motion + cbar * pp * V->sf * V->sf) * common;
+    F[1] = -(q * motion - cbar * pp * V->cf) * common * V->sf;
+    F[2] = etaa * motion;
+    *R = gamma * gamma + 4.0 * etaa * etab * (qq - pp);
+}
+
+
+static void build_motion_R(const real_t tbar, const real_t cbar, VARS *V, real_t G[3])
+{
+    // 由式 (9.2.7) 的留数得到的 Rayleigh 极点项
+    memset(G, 0, 3 * sizeof(*G));
+    if(tbar < V->kpa){
+        return;
+    }
+
+    const real_t t2 = tbar * tbar;
+    const real_t d = 1.0 - cbar * tbar * V->cf;
+    const real_t W = d * d + cbar * cbar * (t2 - V->kpakpa) * V->sf * V->sf;
+    const real_t coef = M_PI_4 * V->RaylR / (sqrt(t2 - V->kpakpa) * W);
+    G[0] = coef * (tbar * d * V->cf - (t2 - V->kpakpa) * cbar * V->sf * V->sf);
+    // 式 (9.2.7b) 在 q=-tbar、p^2=tbar^2-kappa^2 的 Rayleigh 极点处的残数
+    G[1] = coef * (tbar * d + (t2 - V->kpakpa) * cbar * V->cf) * V->sf;
+}
+
+
+static void build_motion_pole(const real_t tbar, const real_t cbar, VARS *V, real_t G[3])
+{
+    // 式 (9.2.11) 的运动项极点贡献
+    memset(G, 0, 3 * sizeof(*G));
+    if(V->cf <= 0.0){
+        return;
+    }
+
+    const real_t tpole = 1.0 / (cbar * V->cf);
+    if(tbar <= tpole){
+        return;
+    }
+
+    const cplx_t p = I * V->cf / fabs(V->sf) * (tbar - tpole);
+    const cplx_t q = -tbar;
+    cplx_t F[3];
+    cplx_t R;
+    make_motion_F(p, q, cbar, V, F, &R);
+
+    const real_t coef = M_PI / (cbar * cbar * V->cf * fabs(V->sf) * (tbar - tpole));
+    for(int i=0; i<3; ++i){
+        G[i] = coef * cimag(F[i] / R);
+    }
+}
+
+
+static void build_motion_G(real_t tbar, const real_t tbar_eps, const real_t cbar, VARS *V, real_t G[3][3])
+{
+    memset(G, 0, 9 * sizeof(real_t));
+    if(tbar < 0.0){
+        return;
+    }
+    // 到时奇点取极小正偏移以获得单侧有限值
+    if(fabs(tbar - V->k) <= tbar_eps || fabs(tbar - 1.0) <= tbar_eps || fabs(tbar - V->kpa) <= tbar_eps){
+        tbar += GRT_MAX(tbar_eps, 1e-5);
+    }
+    const real_t pole_eps = GRT_MAX(tbar_eps, 1e-6);
+    if(V->cf > 0.0 && fabs(tbar - 1.0 / (cbar * V->cf)) <= pole_eps){
+        tbar += pole_eps;
+    }
+
+    real_t C[3];
+    real_t R[3];
+    real_t pole[3];
+    build_motion_C(tbar, cbar, V, C);
+    build_motion_R(tbar, cbar, V, R);
+    build_motion_pole(tbar, cbar, V, pole);
+    for(int i=0; i<3; ++i){
+        G[i][2] = C[i] + R[i] + pole[i];
+    }
+}
+
+
+void grt_solve_lamb1(
+    const real_t nu, const real_t *ts, const int nt, const real_t azimuth, const real_t cbar, real_t (*u)[3][3])
+{
+    // 检查输入参数范围
     if(nu <= 0.0 || nu >= 0.5){
-        GRTRaiseError("poisson ratio (%lf) is out of bound.", nu);
+        GRTRaiseError("poisson ratio (%lf) is out of bound.\n", nu);
     }
     if(ts == NULL || nt <= 0){
         GRTRaiseError("The time series for lamb1 should not be empty.\n");
@@ -790,107 +1257,67 @@ void grt_solve_lamb1(
     if(azimuth < 0.0 || azimuth > 360.0){
         GRTRaiseError("azimuth should be in [0, 360] degree for lamb1.\n");
     }
-    /* 允许时间轴从发震时刻之前开始，因果解在发震前保持为零 */
-    for(int i = 0; i < nt; ++i){
-        if(i > 0 && ts[i] <= ts[i - 1]){
+    if(!isfinite(cbar) || cbar < 0.0){
+        GRTRaiseError("cbar for lamb1 should be finite and nonnegative.\n");
+    }
+    for(int i=1; i<nt; ++i){
+        if(ts[i] <= ts[i-1]){
             GRTRaiseError("The time series for lamb1 should be strictly increasing.\n");
         }
     }
 
-    // 根据情况判断是打印在屏幕还是记录到内存中
-    bool isprint = (u == NULL);
+    const bool isprint = (u == NULL);
+    real_t (*result)[3][3] = u;
+    if(isprint){
+        result = GRT_SAFE_CALLOC(nt, sizeof(*result));
+    }
 
-    // 先打印标题
+    const real_t tbar_eps = nt > 1 ? GRT_MIN(1e-8, (ts[1] - ts[0]) * 1e-5) : 1e-8;
+    VARS V0 = {0};
+    VARS *V = &V0;
+    make_vars(nu, azimuth, V);
+
+    if(cbar == 0.0){
+        for(int i=0; i<nt; ++i){
+            build_G(ts[i], tbar_eps, V, result[i]);
+        }
+    }
+    else {
+        if(fabs(V->sf) <= 1e-8){
+            GRTRaiseError("The moving-source closed-form solution in lamb1 requires the station to be off the x1 axis.\n");
+        }
+        if(cbar >= 1.0 / V->kpa){
+            GRTRaiseError("cbar for lamb1 should be smaller than vR/beta.\n");
+        }
+
+#pragma omp parallel for
+        for(int i=0; i<nt; ++i){
+            build_motion_G(ts[i], tbar_eps, cbar, V, result[i]);
+        }
+    }
+
     if(isprint){
         char *stmp = NULL;
         printf("#");
         printf("%13s", "tbar");
         for(int i1=0; i1<3; ++i1){
-        for(int i2=0; i2<3; ++i2){
-            GRT_SAFE_ASPRINTF(&stmp, "G%d%d", i1+1, i2+1);
-            printf("%14s", stmp);
-        }}
+            for(int i2=0; i2<3; ++i2){
+                GRT_SAFE_ASPRINTF(&stmp, "G%d%d", i1+1, i2+1);
+                printf("%14s", stmp);
+            }
+        }
         GRT_SAFE_FREE_PTR(stmp);
         printf("\n");
-    }
 
-    real_t phi = azimuth * DEG1;
-    
-    real_t tbar_eps = nt > 1 ? GRT_MIN(1e-8, (ts[1]-ts[0]) * 1e-5) : 1e-8;
-
-    // 初始化相关变量
-    real_t tP;
-    real_t tR;
-    grt_compute_lamb1_travt(nu, &tP, &tR);
-    VARS V0 = {0};
-    VARS *V = &V0;
-    V0.k = tP;
-    V0.kk = V0.k * V0.k;
-    V0.nu = nu;
-    V0.kpkp = 1.0 - V0.kk;
-    V0.kp = sqrt(V0.kpkp);
-    V0.h1 = 2.0 * V0.kk - 1.0;
-    V0.h2 = V0.kk * V0.kpkp;
-    V0.h3 = V0.kpkp * V0.h1 * V0.h1;
-    V0.b3 = 3.0 * V0.kpkp - 1.0;
-    V0.b6 = 6.0 * V0.kpkp - 1.0;
-    V0.c = 6.0 * V0.h2 - 1.0;
-    V0.sf = sin(phi);
-    V0.cf = cos(phi);
-
-    // 求一元三次方程的根
-    grt_rayleigh1_roots(V0.nu, V0.ys);
-    for(int i=0; i<3; ++i){
-        V0.ysp[i] = V0.ys[i] - V0.kpkp;
-    }
-
-    // 另一种形式的Rayleigh波函数
-    {
-        V0.RaylQ[0][2] = V->cf;
-        V0.RaylQ[1][2] = V->sf;
-        V0.RaylQ[2][0] = - V0.RaylQ[0][2];
-        V0.RaylQ[2][1] = - V0.RaylQ[1][2];
-
-        V0.kpa = tR;
-        V0.kpakpa = V0.kpa * V0.kpa;
-
-        real_t u0 = sqrt(V0.kpakpa - V0.kk);
-        real_t v0 = sqrt(V0.kpakpa - 1.0);
-
-        real_t R1, R2;
-        R1 = (1.0 - 2.0*V0.kpakpa)*u0*v0 + 2.0*u0*u0*v0*v0;
-        R2 = 2.0*(1.0 - 2.0*V0.kpakpa)*u0*v0 + 2.0*u0*u0*v0*v0 + V0.kpakpa*(u0*u0 + v0*v0);
-        V0.RaylR = R1 / R2;
-    }
-
-    for(int i=0; i < nt; ++i){
-        real_t up[3][3] = {0};
-        real_t us1[3][3] = {0};
-        real_t us2[3][3] = {0};
-        real_t usp[3][3] = {0};
-        real_t uR[3][3] = {0};
-        real_t tbar = ts[i];
-
-        // 跳过一些震相到时处的奇点
-        if(tbar == 1.0 || tbar == V0.k || tbar == V0.kpa)   tbar += tbar_eps;
-
-        build_P(tbar,  V, up);
-        build_S1(tbar, V, us1);
-        build_S2_SP(tbar, V, us2, usp);
-        build_R(tbar, V, uR);
-
-        if(isprint){
-            printf("%14.6e", tbar);
+        for(int i=0; i<nt; ++i){
+            printf("%14.6e", ts[i]);
             for(int i1=0; i1<3; ++i1){
-            for(int i2=0; i2<3; ++i2){
-                printf("%14.6e", up[i1][i2] + us1[i1][i2] + us2[i1][i2] + usp[i1][i2] + uR[i1][i2]);
-            }}
+                for(int i2=0; i2<3; ++i2){
+                    printf("%14.6e", result[i][i1][i2]);
+                }
+            }
             printf("\n");
-        } else {
-            for(int i1=0; i1<3; ++i1){
-            for(int i2=0; i2<3; ++i2){
-                u[i][i1][i2] = up[i1][i2] + us1[i1][i2] + us2[i1][i2] + usp[i1][i2] + uR[i1][i2];
-            }}
         }
+        GRT_SAFE_FREE_PTR(result);
     }
 }

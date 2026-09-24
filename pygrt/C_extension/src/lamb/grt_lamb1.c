@@ -29,6 +29,12 @@ typedef struct {
         real_t azimuth;  ///<  方位角，单位为度
     } A;
 
+    /** 无量纲运动源速度 */
+    struct {
+        bool active;
+        real_t cbar;  ///<  c/beta
+    } C;
+
 } GRT_MODULE_CTRL;
 
 
@@ -49,16 +55,17 @@ printf("\n"
 "    Compute the exact generalized closed-form solution for the first-kind Lamb problem\n"
 "    (both the source and receiver are on the surface).\n"
 "\n"
-"    All outputs are dimensionless and convolved with the step function.\n"
-"    Standard output contains dimensionless time and the 9 displacement Green functions Gij.\n"
+"    Without -C, output contains dimensionless time and the 9 step-convolved fixed-source Green functions Gij.\n"
+"    With -C, output contains dimensionless time and the 3 vertical-force displacements u1, u2, u3.\n"
 "    To recover the physical quantities, you can:\n"
-"       + G_{ij} <- G_{ij} / (pi^2*mu*r)\n"
+"       + G_{ij} <- G_{ij} / (pi^2*mu*r) for fixed sources\n"
+"       + u_i <- u_i / (pi^2*mu*r) for moving sources\n"
 "    where mu is the shear modulus and r is the source-receiver distance.\n"
 "\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
-"    grt lamb1 -P<nu> -T<t1>/<t2>/<dt> -A<azimuth>\n"
+"    grt lamb1 -P<nu> -T<t1>/<t2>/<dt> -A<azimuth> [-C<cbar>]\n"
 "\n\n"
 "Options:\n"
 "----------------------------------------------------------------\n"
@@ -74,11 +81,17 @@ printf("\n"
 "\n"
 "    -A<azimuth>    Azimuth in degree, from source to station.\n"
 "\n"
+"    -C<cbar>      Enable the moving vertical point-force mode, where cbar = c/beta.\n"
+"                   cbar must be positive and smaller than vR/beta; the station must be\n"
+"                   off the x1 axis. Output contains only u1, u2, u3. Without -C, output\n"
+"                   contains the 9 fixed-source Green functions.\n"
+"\n"
 "    -h             Display this help message.\n"
 "\n\n"
 "Examples:\n"
 "----------------------------------------------------------------\n"
 "    grt lamb1 -P0.25 -T0/2/1e-3 -A30\n"
+"    grt lamb1 -P0.25 -T0/2/1e-3 -A30 -C0.1\n"
 "\n\n\n"
 );
 }
@@ -88,7 +101,7 @@ printf("\n"
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     int opt;
 
-    while ((opt = getopt(argc, argv, ":P:T:A:h")) != -1) {
+    while ((opt = getopt(argc, argv, ":P:T:A:C:h")) != -1) {
         switch (opt) {
             // 模型参数， -P<nu>
             case 'P':
@@ -140,6 +153,20 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     GRTBadOptionError(A, "azimuth should be in [0, 360].");
                 }
                 break;
+
+            // 无量纲运动源速度，-Ccbar
+            case 'C':
+                Ctrl->C.active = true;
+                {
+                    char extra;
+                    if(1 != sscanf(optarg, "%lf%c", &Ctrl->C.cbar, &extra)){
+                        GRTBadOptionError(C, "expected a positive cbar value.");
+                    }
+                }
+                if(!isfinite(Ctrl->C.cbar) || Ctrl->C.cbar <= 0.0){
+                    GRTBadOptionError(C, "cbar should be finite and positive.");
+                }
+                break;
             
             GRT_Common_Options_in_Switch((char)(optopt)); 
         }
@@ -161,8 +188,24 @@ int lamb1_main(int argc, char **argv){
     // 传入参数 
     getopt_from_command(Ctrl, argc, argv);
 
-    // 求解，输出到标准输出
-    grt_solve_lamb1(Ctrl->P.nu, Ctrl->T.ts, Ctrl->T.nt, Ctrl->A.azimuth, NULL);
+    // 运动源模式只输出竖向力源对应的三个位移分量
+    if(Ctrl->C.active){
+        real_t (*u)[3][3] = GRT_SAFE_CALLOC(Ctrl->T.nt, sizeof(*u));
+        grt_solve_lamb1(Ctrl->P.nu, Ctrl->T.ts, Ctrl->T.nt, Ctrl->A.azimuth, Ctrl->C.cbar, u);
+
+        printf("#%13s%14s%14s%14s\n", "tbar", "u1", "u2", "u3");
+        for(int i=0; i<Ctrl->T.nt; ++i){
+            printf("%14.6e", Ctrl->T.ts[i]);
+            for(int j=0; j<3; ++j){
+                printf("%14.6e", u[i][j][2]);
+            }
+            printf("\n");
+        }
+        GRT_SAFE_FREE_PTR(u);
+    }
+    else{
+        grt_solve_lamb1(Ctrl->P.nu, Ctrl->T.ts, Ctrl->T.nt, Ctrl->A.azimuth, 0.0, NULL);
+    }
 
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;

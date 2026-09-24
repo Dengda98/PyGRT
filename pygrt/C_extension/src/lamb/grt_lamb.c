@@ -834,7 +834,7 @@ static void make_lamb_result(
 
     /* 地表、单侧地下和双侧地下分别对应三类 Lamb 求解器 */
     if (surface) {
-        grt_solve_lamb1(nu, tbar, nt, azimuth_degree, result->G);
+        grt_solve_lamb1(nu, tbar, nt, azimuth_degree, 0.0, result->G);
     } else if (source_depth > 0.0 && receiver_depth > 0.0) {
         grt_solve_lamb3(nu, tbar, nt, horizontal_distance,
             source_depth, receiver_depth, azimuth_degree,
