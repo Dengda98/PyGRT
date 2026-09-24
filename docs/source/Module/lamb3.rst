@@ -18,6 +18,7 @@ lamb3
 |-R|\ *dist*
 |-D|\ *depsrc/deprcv*
 |-A|\ *azimuth*
+[ |-Q|\ *phases* ]
 [ |-S|\ [*+s<source-path>*][*+r<receiver-path>*][*+m<mixed-path>*] ]
 [ **-h** ]
 
@@ -84,6 +85,14 @@ lamb3
 
 可选选项
 --------------
+
+.. _-Q:
+
+**-Q**\ *phases*
+    仅保留指定震相项。*phases* 为由逗号分隔的 *P*、*S*、*PP*、*SS*、*PS*、
+    *SP* 和 *sPs*。其中 *P* 和 *S* 分别为直达
+    P、S 波，*PP*、*SS*、*PS* 和 *SP* 为自由表面反射或转换波，
+    *sPs* 为滑行波。
 
 .. _-S:
 

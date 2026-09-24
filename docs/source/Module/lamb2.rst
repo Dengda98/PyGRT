@@ -18,6 +18,7 @@ lamb2
 |-R|\ *dist*
 ( **-Ds**\ *depsrc* | **-Dr**\ *deprcv* )
 |-A|\ *azimuth*
+[ |-Q|\ *phases* ]
 [ |-S|\ [*+s<source-path>*][*+r<receiver-path>*][*+m<mixed-path>*] ]
 [ **-h** ]
 
@@ -91,6 +92,12 @@ lamb2
 
 可选选项
 --------------
+
+.. _-Q:
+
+**-Q**\ *phases*
+    仅保留指定震相项。*phases* 为由逗号分隔的 *P*、*S*、*SP* 和 *PS*。
+    地下源、地表接收时 *SP* 有效，地表源、地下接收时 *PS* 有效。
 
 .. _-S:
 
