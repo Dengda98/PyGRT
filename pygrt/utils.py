@@ -1253,7 +1253,32 @@ def plot_statsdata_ptam(statsdata1:np.ndarray, statsdata2:np.ndarray, statsdata_
 
 
 
-def lamb1(*, nu: float, tbar: np.ndarray, azimuth: float, cbar: Optional[float] = None):
+def _prepare_lamb_phases(phases: Optional[Union[str, Sequence[str]]]) -> Optional[str]:
+    """将 Python 侧的 Lamb 震相参数转换为逗号分隔的字符串"""
+    if phases is None:
+        return None
+    if isinstance(phases, str):
+        if phases == "":
+            raise ValueError("phases should not be empty.")
+        return phases
+    try:
+        phase_names = list(phases)
+    except TypeError:
+        raise TypeError("phases should be a string or a sequence of strings.") from None
+    if not phase_names:
+        raise ValueError("phases should contain at least one phase name.")
+    if any(not isinstance(phase_name, str) for phase_name in phase_names):
+        raise TypeError("each phase in phases should be a string.")
+    phase_list = ",".join(phase_names)
+    if phase_list == "":
+        raise ValueError("phases should contain at least one non-empty phase name.")
+    return phase_list
+
+
+def lamb1(
+    *, nu: float, tbar: np.ndarray, azimuth: float, cbar: Optional[float] = None,
+    phases: Optional[Union[str, Sequence[str]]] = None,
+):
     r"""
         solve the first-kind Lamb's problem using the generalized closed-form solution, see：
 
@@ -1266,6 +1291,8 @@ def lamb1(*, nu: float, tbar: np.ndarray, azimuth: float, cbar: Optional[float] 
         :param      cbar: dimensionless source velocity :math:`c/\beta` along positive ``x1``;
                                 when specified, it must be positive and uses the Chapter 9
                                 sub-Rayleigh moving-point-load solution for a vertical force source
+        :param      phases: optional comma-separated phase selection or a non-empty sequence of phase names;
+                                supported fixed-source phases are P, S and R
 
         :return:    Without ``cbar``, return the fixed-source Green function array ``G``
                     with shape ``(nt, 3, 3)``. When ``cbar`` is given, return the vertical-force
@@ -1287,12 +1314,23 @@ def lamb1(*, nu: float, tbar: np.ndarray, azimuth: float, cbar: Optional[float] 
         raise ValueError("cbar should be positive when specified.")
     if cbar > 0.0 and abs(np.sin(np.deg2rad(azimuth))) <= 1e-8:
         raise ValueError("the moving-source closed-form solution requires azimuth off the x1 axis.")
+    phase_list = _prepare_lamb_phases(phases)
+    if moving_source and phase_list is not None:
+        raise ValueError("phases is not supported with cbar.")
 
     # 定义结果数组
     nt = len(tbar)
     u = np.zeros((nt, 3, 3), dtype=NPCT_REAL_TYPE)
 
-    C_grt_solve_lamb1(nu, npct.as_ctypes(tbar), nt, azimuth, cbar, npct.as_ctypes(u.ravel()))
+    C_grt_solve_lamb1(
+        nu,
+        npct.as_ctypes(tbar),
+        nt,
+        azimuth,
+        cbar,
+        None if phase_list is None else phase_list.encode(),
+        npct.as_ctypes(u.ravel()),
+    )
 
     return u[:, :, 2].copy() if moving_source else u
 
@@ -1377,7 +1415,8 @@ def _prepare_lamb2_inputs(nu, tbar, R, depsrc, deprcv, azimuth):
 
 def lamb2(
     *, nu: float, tbar: np.ndarray, R: float,
-    depsrc: Optional[float] = None, deprcv: Optional[float] = None, azimuth: float
+    depsrc: Optional[float] = None, deprcv: Optional[float] = None, azimuth: float,
+    phases: Optional[Union[str, Sequence[str]]] = None,
 ):
     r"""
         Solve the second-kind Lamb problem using the generalized closed-form solution.
@@ -1408,7 +1447,9 @@ def lamb2(
         :param      deprcv:       strictly positive receiver depth with the source on the surface;
                                     mutually exclusive with ``depsrc``. Values below
                                     ``1e-3 * r`` trigger a numerical warning
-        :param      azimuth:      azimuth in degree, from source to receiver, in ``[0, 360]``
+       :param      azimuth:      azimuth in degree, from source to receiver, in ``[0, 360]``
+        :param      phases:       optional comma-separated phase selection or a non-empty sequence of phase names;
+                                    supported phases are P, S, SP and PS
         :return:    Four normalized arrays ``G, Gs, Gr, Grs``. ``G`` has shape
                     ``(nt, 3, 3)`` and the first-derivative arrays have shape
                     ``(nt, 3, 3, 3)``. ``Grs`` has shape ``(nt, 3, 3, 3, 3)``.
@@ -1429,6 +1470,7 @@ def lamb2(
     Gs = np.zeros((nt, 3, 3, 3), dtype=NPCT_REAL_TYPE)
     Grs = np.zeros((nt, 3, 3, 3, 3), dtype=NPCT_REAL_TYPE)
 
+    phase_list = _prepare_lamb_phases(phases)
     C_grt_solve_lamb2(
         nu,
         npct.as_ctypes(tbar),
@@ -1437,6 +1479,7 @@ def lamb2(
         depsrc,
         deprcv,
         azimuth,
+        None if phase_list is None else phase_list.encode(),
         npct.as_ctypes(G.ravel()),
         npct.as_ctypes(Gs.ravel()),
         npct.as_ctypes(Gr.ravel()),
@@ -1455,7 +1498,10 @@ def _prepare_lamb3_inputs(nu, tbar, R, depsrc, deprcv, azimuth):
     return nu, tbar, R, depsrc, deprcv, azimuth
 
 
-def lamb3(*, nu: float, tbar: np.ndarray, R: float, depsrc: float, deprcv: float, azimuth: float):
+def lamb3(
+    *, nu: float, tbar: np.ndarray, R: float, depsrc: float, deprcv: float, azimuth: float,
+    phases: Optional[Union[str, Sequence[str]]] = None,
+):
     r"""
         Solve the third-kind Lamb problem using the generalized closed-form solution.
 
@@ -1482,7 +1528,9 @@ def lamb3(*, nu: float, tbar: np.ndarray, R: float, depsrc: float, deprcv: float
                                     trigger a numerical warning
         :param      deprcv:       strictly positive receiver depth; values below ``1e-3 * r``
                                     trigger a numerical warning
-        :param      azimuth:      azimuth in degree, from source to receiver, in ``[0, 360]``
+       :param      azimuth:      azimuth in degree, from source to receiver, in ``[0, 360]``
+        :param      phases:       optional comma-separated phase selection or a non-empty sequence of phase names;
+                                    supported phases are P, S, PP, SS, PS, SP and sPs
         :return:    Four normalized arrays ``G, Gs, Gr, Grs``. ``G`` has shape
                     ``(nt, 3, 3)`` and the first-derivative arrays have shape
                     ``(nt, 3, 3, 3)``. ``Grs`` has shape ``(nt, 3, 3, 3, 3)``.
@@ -1502,6 +1550,7 @@ def lamb3(*, nu: float, tbar: np.ndarray, R: float, depsrc: float, deprcv: float
     Gr = np.zeros((nt, 3, 3, 3), dtype=NPCT_REAL_TYPE)
     Gs = np.zeros((nt, 3, 3, 3), dtype=NPCT_REAL_TYPE)
     Grs = np.zeros((nt, 3, 3, 3, 3), dtype=NPCT_REAL_TYPE)
+    phase_list = _prepare_lamb_phases(phases)
     C_grt_solve_lamb3(
         nu,
         npct.as_ctypes(tbar),
@@ -1510,6 +1559,7 @@ def lamb3(*, nu: float, tbar: np.ndarray, R: float, depsrc: float, deprcv: float
         depsrc,
         deprcv,
         azimuth,
+        None if phase_list is None else phase_list.encode(),
         npct.as_ctypes(G.ravel()),
         npct.as_ctypes(Gs.ravel()),
         npct.as_ctypes(Gr.ravel()),
@@ -1538,6 +1588,7 @@ def lamb(
     time_function: Optional[str] = None,
     integrate_order: Optional[int] = None,
     differentiate_order: Optional[int] = None,
+    phases: Optional[Union[str, Sequence[str]]] = None,
     delayT0: float = 0.0,
     delayV0: float = 0.0,
     ref_first_p: bool = False,
@@ -1576,7 +1627,9 @@ def lamb(
                                 ``(Mxx, Mxy, Mxz, Myy, Myz, Mzz)``
     :param    time_function:    Time-function parameters passed to ``grt``
     :param    integrate_order:  Number of time integrations
-    :param    differentiate_order: Number of time differentiations
+   :param    differentiate_order: Number of time differentiations
+    :param    phases:            Optional comma-separated phase selection or a non-empty sequence of phase names;
+                                the available names depend on the selected Lamb problem
     :param    delayT0:          Time delay at zero distance in s
     :param    delayV0:          Reference velocity for the time delay in km/s
     :param    ref_first_p:      Whether to reference the delay to the direct P arrival
@@ -1600,6 +1653,9 @@ def lamb(
         f"-S{'u' if scale_with_mu else ''}{format_float(scale)}",
         f"-O{output}",
     ]
+    phase_list = _prepare_lamb_phases(phases)
+    if phase_list is not None:
+        command.append(f"-Q{phase_list}")
 
     has_geometry = strike is not None or dip is not None or rake is not None
     if force is not None:

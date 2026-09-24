@@ -39,15 +39,18 @@ void grt_compute_lamb2_travt(
  * @param[in]    depsrc         源点深度，与 deprcv 恰好一个大于零
  * @param[in]    deprcv         接收点深度，与 depsrc 恰好一个大于零
  * @param[in]    azimuth        方位角，单位度，[0, 360]
+ * @param[in]    phase_list     以逗号分隔的震相名称，NULL 表示选择全部震相
  * @param[out]   G              无量纲阶跃力位移，G[time][i][j]
  * @param[out]   dG_source      无量纲源点导数，dG_source[time][k'][i][j]
  * @param[out]   dG_receiver    无量纲接收点导数，dG_receiver[time][k][i][j]
  * @param[out]   dG_mixed       无量纲混合二阶导数，dG_mixed[time][k][k'][i][j]
  *
  * 当四个输出指针同时为 NULL 时，仅将时间和 G 输出到标准输出
+ * 支持的震相为 P、S、SP 和 PS，但根据源点和接收点的位置只能使用 SP 或 PS 其中之一
+ * 使用 phase_list 后如果没有有效震相，输出全零波形并给出警告
  */
 void grt_solve_lamb2(
     const real_t nu, const real_t *ts, const int nt,
     const real_t R, const real_t depsrc, const real_t deprcv, const real_t azimuth,
-    real_t (*G)[3][3], real_t (*dG_source)[3][3][3], real_t (*dG_receiver)[3][3][3],
+    const char *phase_list, real_t (*G)[3][3], real_t (*dG_source)[3][3][3], real_t (*dG_receiver)[3][3][3],
     real_t (*dG_mixed)[3][3][3][3]);

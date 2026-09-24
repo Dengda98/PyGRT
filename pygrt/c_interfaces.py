@@ -65,6 +65,7 @@ C_grt_solve_lamb1.argtypes = [
     c_int,
     REAL,
     REAL,
+    c_char_p,
     PREAL,
 ]
 
@@ -80,6 +81,7 @@ C_grt_solve_lamb2.argtypes = [
     REAL,
     REAL,
     REAL,
+    c_char_p,
     PREAL,
     PREAL,
     PREAL,
@@ -98,6 +100,7 @@ C_grt_solve_lamb3.argtypes = [
     REAL,
     REAL,
     REAL,
+    c_char_p,
     PREAL,
     PREAL,
     PREAL,

@@ -33,6 +33,7 @@ for depsrc, deprcv in ((0.0, 1.0), (1.0, 0.0), (0.0, 0.0)):
 
 
 invalid_lamb3_inputs = (
+    ("an empty phase list", dict(nu=0.25, tbar=np.asarray([0.0]), R=10.0, depsrc=2.0, deprcv=1.0, azimuth=0.0, phases=[])),
     ("an empty time series", dict(nu=0.25, tbar=np.asarray([]), R=10.0, depsrc=2.0, deprcv=1.0, azimuth=0.0)),
     ("a multidimensional time series", dict(nu=0.25, tbar=np.asarray([[0.0]]), R=10.0, depsrc=2.0, deprcv=1.0, azimuth=0.0)),
     ("a non-finite time series", dict(nu=0.25, tbar=np.asarray([0.0, np.inf]), R=10.0, depsrc=2.0, deprcv=1.0, azimuth=0.0)),
@@ -78,6 +79,37 @@ if not np.isfinite(G).all() or not np.isfinite(dG_source).all() or not np.isfini
     raise ValueError("lamb3 returned a non-finite value.")
 if not np.allclose(dG_receiver[:, :2], -dG_source[:, :2]):
     raise ValueError("lamb3 horizontal receiver/source derivatives violate translation invariance.")
+
+# 七个震相项彼此独立
+phase_results = [
+    pygrt.utils.lamb3(
+        nu=0.25, tbar=TS, R=R, depsrc=DEPSRC, deprcv=DEPRCV, azimuth=AZIMUTH, phases=[phase]
+    )
+    for phase in ("P", "S", "PP", "SS", "PS", "SP", "sPs")
+]
+for index, name in enumerate(("G", "source", "receiver", "mixed")):
+    if not np.allclose(
+        sum(result[index] for result in phase_results),
+        (G, dG_source, dG_receiver, dG_mixed)[index], rtol=1e-9, atol=1e-9,
+    ):
+        raise ValueError(f"The lamb3 phase-separated {name} results do not add up to the full solution.")
+
+if not np.allclose(
+    phase_results[3][0] + phase_results[6][0],
+    pygrt.utils.lamb3(
+        nu=0.25, tbar=TS, R=R, depsrc=DEPSRC, deprcv=DEPRCV, azimuth=AZIMUTH,
+        phases=["SS", "sPs"],
+    )[0],
+    rtol=1e-9,
+    atol=1e-9,
+):
+    raise ValueError("The lamb3 SS and sPs selections are not independently composable.")
+
+empty = pygrt.utils.lamb3(
+    nu=0.25, tbar=TS, R=R, depsrc=DEPSRC, deprcv=DEPRCV, azimuth=AZIMUTH, phases=["BAD"]
+)
+if any(np.any(values) for values in empty):
+    raise ValueError("The lamb3 result should be zero when no valid phase remains.")
 
 
 def _check_lamb3_right_limit(boundary):
@@ -174,6 +206,14 @@ if mixed_cli.shape != (len(TS), 82) or not np.isfinite(mixed_cli).all():
     raise ValueError(f"Unexpected lamb3 mixed derivative file shape or values: {mixed_cli.shape}")
 if not np.allclose(mixed_cli[:, 1:], dG_mixed.reshape(len(TS), 81), rtol=2e-6, atol=1e-5):
     raise ValueError("The lamb3 mixed derivative file and Python derivatives differ.")
+
+phase_cli = np.loadtxt("lamb3_phases")[:, 1:].reshape(len(TS), 3, 3)
+phase_python = pygrt.utils.lamb3(
+    nu=0.25, tbar=TS, R=R, depsrc=DEPSRC, deprcv=DEPRCV, azimuth=AZIMUTH,
+    phases=["P", "S", "PP", "SS", "PS", "SP", "sPs"],
+)[0]
+if not np.allclose(phase_cli, phase_python, rtol=2e-6, atol=1e-5):
+    raise ValueError("The lamb3 phase-list CLI and Python results differ.")
 
 
 def _lamb3_geometry(source, receiver):

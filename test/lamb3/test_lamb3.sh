@@ -40,7 +40,11 @@ expect_warn "lamb3 small horizontal distance" "horizontal distance ratio" grt la
 
 grt lamb3 -h
 grt lamb3 -P0.25 -T0/2/1e-2 -R10 -D2/1 -S+slamb3_source+rlamb3_receiver+mlamb3_mixed -A30 > lamb3
+grt lamb3 -P0.25 -T0/2/1e-2 -R10 -D2/1 -A30 -QP,S,PP,SS,PS,SP,sPs > lamb3_phases
+expect_warn "lamb3 invalid phase" "Available phases: P, S, PP, SS, PS, SP, sPs" grt lamb3 -P0.25 -T0/0/1 -R10 -D2/1 -A0 -QBAD,P
+expect_warn "lamb3 duplicated phase" "recorded only once" grt lamb3 -P0.25 -T0/0/1 -R10 -D2/1 -A0 -QSS,SS
+expect_warn "lamb3 no valid phase" "output is all zeros" grt lamb3 -P0.25 -T0/0/1 -R10 -D2/1 -A0 -QBAD
 
 python -u test_lamb3.py
 
-rm -f lamb3 lamb3_source lamb3_receiver lamb3_mixed
+rm -f lamb3 lamb3_source lamb3_receiver lamb3_mixed lamb3_phases
