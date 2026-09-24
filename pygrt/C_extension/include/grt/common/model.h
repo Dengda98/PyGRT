@@ -126,10 +126,13 @@ void grt_free_mod1d(MODEL1D *mod1d);
  * @param[in]    depsrc         震源深度
  * @param[in]    deprcv         接收深度
  * @param[in]    allowLiquid    是否允许液体层
+ * @param[in]    warnIfQ        读到 Q 列时是否告警，不决定后续是否使用 Q
  * @return    `MODEL1D` 结构体指针
  * 
  */
-MODEL1D * grt_read_mod1d_from_file(const char *modelpath, real_t depsrc, real_t deprcv, bool allowLiquid);
+MODEL1D * grt_read_mod1d_from_file(
+    const char *modelpath, real_t depsrc, real_t deprcv,
+    bool allowLiquid, bool warnIfQ);
 
 /**
  * 从模型文件读取 ``nlayer × 6`` 矩阵（Thk, Va, Vb, Rho, Qa, Qb）
@@ -138,10 +141,12 @@ MODEL1D * grt_read_mod1d_from_file(const char *modelpath, real_t depsrc, real_t 
  * @param[in]     modelpath      模型文件路径
  * @param[out]    nlayer         层数
  * @param[in]     allowLiquid    是否允许液体层（Vs==0）
+ * @param[in]     warnIfQ        读到 Q 列时是否告警，不决定后续是否使用 Q
  * @return        新分配的矩阵，调用方负责 free
  */
 real_t (* grt_read_modarr_from_file(
-    const char *modelpath, size_t *nlayer, bool allowLiquid))[GRT_MODARR_NCOL];
+    const char *modelpath, size_t *nlayer,
+    bool allowLiquid, bool warnIfQ))[GRT_MODARR_NCOL];
 
 /**
  * 由 ``nlayer × 6`` 模型矩阵构建 `MODEL1D`

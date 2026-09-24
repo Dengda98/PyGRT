@@ -113,7 +113,8 @@ void grt_free_mod1d(MODEL1D *mod1d)
 
 
 real_t (* grt_read_modarr_from_file(
-    const char *modelpath, size_t *nlayer, bool allowLiquid))[GRT_MODARR_NCOL]
+    const char *modelpath, size_t *nlayer,
+    bool allowLiquid, bool warnIfQ))[GRT_MODARR_NCOL]
 {
     GRTCheckFileExist(modelpath);
     if(nlayer == NULL){
@@ -127,6 +128,7 @@ real_t (* grt_read_modarr_from_file(
     size_t iline = 0;
     size_t nlay = 0;
     bool io_depth = false;
+    bool hasQ = false;
     real_t (*modarr)[GRT_MODARR_NCOL] = NULL;
     real_t h, va, vb, rho, qa, qb;
 
@@ -140,6 +142,9 @@ real_t (* grt_read_modarr_from_file(
         int nscan = sscanf(line, "%lf %lf %lf %lf %lf %lf\n", &h, &va, &vb, &rho, &qa, &qb);
         if(ncols != nscan && ncols_noQ != nscan){
             GRTRaiseError("Model file read error in line %zu.\n", iline);
+        }
+        if(nscan == ncols){
+            hasQ = true;
         }
 
         // 首行首列为 0 时，首列表示层顶深度而非厚度
@@ -183,6 +188,12 @@ real_t (* grt_read_modarr_from_file(
             }
             modarr[i - 1][0] = tmp;
         }
+    }
+
+    if(hasQ && warnIfQ){
+        GRTRaiseWarning(
+            "Model file \"%s\" contains Q values, but this module does not support attenuation; "
+            "Q values will be ignored.", modelpath);
     }
 
     *nlayer = nlay;
@@ -402,10 +413,13 @@ MODEL1D * grt_read_mod1d_from_modarr(
     return mod1d;
 }
 
-MODEL1D * grt_read_mod1d_from_file(const char *modelpath, real_t depsrc, real_t deprcv, bool allowLiquid)
+MODEL1D * grt_read_mod1d_from_file(
+    const char *modelpath, real_t depsrc, real_t deprcv,
+    bool allowLiquid, bool warnIfQ)
 {
     size_t nlay = 0;
-    real_t (*modarr)[GRT_MODARR_NCOL] = grt_read_modarr_from_file(modelpath, &nlay, allowLiquid);
+    real_t (*modarr)[GRT_MODARR_NCOL] = grt_read_modarr_from_file(
+        modelpath, &nlay, allowLiquid, warnIfQ);
     MODEL1D *mod1d = grt_read_mod1d_from_modarr(nlay, modarr, depsrc, deprcv, allowLiquid);
     GRT_SAFE_FREE_PTR(modarr);
     return mod1d;
