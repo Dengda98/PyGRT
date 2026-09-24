@@ -1253,7 +1253,7 @@ def plot_statsdata_ptam(statsdata1:np.ndarray, statsdata2:np.ndarray, statsdata_
 
 
 
-def lamb1(*, nu: float, tbar: np.ndarray, azimuth: float):
+def lamb1(*, nu: float, tbar: np.ndarray, azimuth: float, cbar: Optional[float] = None):
     r"""
         solve the first-kind Lamb's problem using the generalized closed-form solution, see：
 
@@ -1263,28 +1263,38 @@ def lamb1(*, nu: float, tbar: np.ndarray, azimuth: float):
         :param      tbar:       dimensionless time :math:`\bar{t}=\dfrac{t}{T_S}=\dfrac{t}{r/\beta}=\dfrac{\beta t}{r}`,
                                 where :math:`T_S=r/\beta` is the S-wave time scale and :math:`r` is the direct source-receiver distance
         :param      azimuth:    azimuth in degree, in ``[0, 360]``
+        :param      cbar: dimensionless source velocity :math:`c/\beta` along positive ``x1``;
+                                when specified, it must be positive and uses the Chapter 9
+                                sub-Rayleigh moving-point-load solution for a vertical force source
 
-        :return:    The normalized step-force Green function ``G`` with shape
-                    ``(nt, 3, 3)``. To obtain the physical solution, divide the
-                    returned array by :math:`\pi^2 \mu r`, where :math:`\mu` is
-                    the shear modulus and :math:`r` is the source-receiver distance.
+        :return:    Without ``cbar``, return the fixed-source Green function array ``G``
+                    with shape ``(nt, 3, 3)``. When ``cbar`` is given, return the vertical-force
+                    displacement array ``u`` with shape ``(nt, 3)``. Divide either result by
+                    :math:`\pi^2 \mu r` to obtain the physical displacement, where :math:`\mu`
+                    is the shear modulus and :math:`r` is the source-receiver distance.
     """
 
     nu = _prepare_lamb_scalar(nu, "nu")
     tbar = _prepare_lamb_time_series(tbar)
     azimuth = _prepare_lamb_scalar(azimuth, "azimuth")
+    moving_source = cbar is not None
+    cbar = 0.0 if cbar is None else _prepare_lamb_scalar(cbar, "cbar")
     if nu <= 0.0 or nu >= 0.5:
         raise ValueError("nu should be in (0, 0.5).")
     if azimuth < 0.0 or azimuth > 360.0:
         raise ValueError("azimuth should be in [0, 360].")
+    if moving_source and cbar <= 0.0:
+        raise ValueError("cbar should be positive when specified.")
+    if cbar > 0.0 and abs(np.sin(np.deg2rad(azimuth))) <= 1e-8:
+        raise ValueError("the moving-source closed-form solution requires azimuth off the x1 axis.")
 
     # 定义结果数组
     nt = len(tbar)
     u = np.zeros((nt, 3, 3), dtype=NPCT_REAL_TYPE)
 
-    C_grt_solve_lamb1(nu, npct.as_ctypes(tbar), nt, azimuth, npct.as_ctypes(u.ravel()))
+    C_grt_solve_lamb1(nu, npct.as_ctypes(tbar), nt, azimuth, cbar, npct.as_ctypes(u.ravel()))
 
-    return u
+    return u[:, :, 2].copy() if moving_source else u
 
 
 def solve_lamb1(*args, **kwargs):

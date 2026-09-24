@@ -64,6 +64,7 @@ C_grt_solve_lamb1.argtypes = [
     PREAL,
     c_int,
     REAL,
+    REAL,
     PREAL,
 ]
 
