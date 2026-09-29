@@ -47,7 +47,7 @@ void grt_grnspec_free_u(GRNSPEC *grn)
 
 /** 将一条数据反变换回时间域再进行处理，保存到SAC文件 */
 static void write_one_to_sac(
-    const char *srcname, const char ch, GRT_FFTW_HOLDER *fh, const real_t wI, 
+    const char *srcname, const char ch, FFTW_HOLDER *fh, const real_t wI,
     SACTRACE *sac, const char *s_output_subdir, const char *s_prefix,
     const int sgn, bool skipImagComps, const cplx_t *grncplx)
 {
@@ -100,7 +100,7 @@ static void write_one_to_sac(
 
 
 void grt_grnspec_write_sac(
-    const GRNSPEC *grn, const real_t (*travtPS)[2], const real_t *begintimes, char **outputdirs, GRT_FFTW_HOLDER *fh, SACTRACE *sac, 
+    const GRNSPEC *grn, const real_t (*travtPS)[2], const real_t *begintimes, char **outputdirs, FFTW_HOLDER *fh, SACTRACE *sac,
     const char *validChnls, const bool skipImagComps, const bool saveEX, const bool saveVF, const bool saveHF, const bool saveDC)
 {
     // 做反傅里叶变换，保存SAC文件

@@ -1015,7 +1015,7 @@ static void compute_greenfn_one(GRT_MODULE_CTRL *Ctrl) {
 
     // 使用fftw3做反傅里叶变换，并保存到 SAC 
     // 其中考虑了升采样倍数
-    GRT_FFTW_HOLDER *fh = grt_create_fftw_holder_C2R_1D(Ctrl->N.nt*Ctrl->N.upsample_n, Ctrl->N.dt/Ctrl->N.upsample_n, grn->nf, df);
+    FFTW_HOLDER *fh = grt_create_fftw_holder_C2R_1D(Ctrl->N.nt*Ctrl->N.upsample_n, Ctrl->N.dt/Ctrl->N.upsample_n, grn->nf, df);
 
     // 建立 SAC 文件原型，包含必要的头变量
     SACTRACE *sac = grt_new_SACTRACE(fh->dt, fh->nt, 0.0);

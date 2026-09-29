@@ -1267,7 +1267,7 @@ static void resolve_finite_fault_subdiv(
  * @param[in]  lib    静态格林函数库
  * @return            新分配的接收点结构体
  */
-static GRT_RCV_POINTS *build_syn_rcv(const GRT_MODULE_CTRL *Ctrl, const STGRNLIB *lib)
+static RCV_POINTS *build_syn_rcv(const GRT_MODULE_CTRL *Ctrl, const STGRNLIB *lib)
 {
     if(Ctrl->Q.active){
         return grt_rcv_points_from_file(Ctrl->Q.s_path);
@@ -1318,7 +1318,7 @@ static void save_syn_nc(
     const char *path,
     const GRT_MODULE_CTRL *Ctrl,
     const STGRNLIB *lib,
-    const GRT_RCV_POINTS *rcv,
+    const RCV_POINTS *rcv,
     real_t depsrc,
     const real_t (*syn)[GRT_CHANNEL_NUM],
     const real_t (*syn_upar)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])
@@ -1330,7 +1330,7 @@ static void save_syn_nc(
         channels = GRT_ZRT_CODES;
     }
 
-    GRT_STATIC_NC_OUTPUT output = {
+    STATIC_NC_OUTPUT output = {
         .path = path,
         .channels = channels,
         .compute_type = Ctrl->s_computeType,
@@ -1367,7 +1367,7 @@ int static_syn_main(int argc, char **argv){
     }
 
     // 接收点：网格、-Q 逐点或 -R 有限断层子断层中心
-    GRT_RCV_POINTS *rcv = build_syn_rcv(Ctrl, lib);
+    RCV_POINTS *rcv = build_syn_rcv(Ctrl, lib);
     size_t npts = rcv->npts;
     const real_t *norths = rcv->norths;
     const real_t *easts = rcv->easts;

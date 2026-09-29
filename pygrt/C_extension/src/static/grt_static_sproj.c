@@ -390,7 +390,7 @@ static void project_stress(
  * @param[in] rcv_info   接收点布局信息
  * @return 接收点深度数组
  */
-static real_t *read_point_depths(int ncid, const GRT_RCV_NC_INFO *rcv_info)
+static real_t *read_point_depths(int ncid, const RCV_NC_INFO *rcv_info)
 {
     int depth_varid;
     // 深度只用于核对 -Q 文件中的点顺序，不参与应力投影
@@ -430,10 +430,10 @@ static bool same_coordinate(real_t first, real_t second)
  * @param[out] rakes      各接收点滑动角
  */
 static void load_geometry_from_Q(
-    int ncid, const GRT_RCV_NC_INFO *rcv_info, const char *path,
+    int ncid, const RCV_NC_INFO *rcv_info, const char *path,
     real_t *strikes, real_t *dips, real_t *rakes)
 {
-    GRT_RCV_POINTS *q_points = grt_rcv_points_from_file(path);
+    RCV_POINTS *q_points = grt_rcv_points_from_file(path);
     if(!q_points->has_geometry){
         grt_rcv_points_free(q_points);
         GRTRaiseError("-Q file \"%s\" must contain exactly 6 columns.", path);
@@ -484,7 +484,7 @@ static void load_geometry_from_Q(
  * @param[out] rakes      各接收点滑动角
  */
 static void load_geometry_from_points(
-    int ncid, const GRT_RCV_NC_INFO *rcv_info,
+    int ncid, const RCV_NC_INFO *rcv_info,
     const GRT_MODULE_CTRL *Ctrl,
     real_t *strikes, real_t *dips, real_t *rakes)
 {
@@ -556,7 +556,7 @@ static void load_geometry_from_points(
  * @param[out] rakes         各接收点滑动角
  */
 static void load_geometry_from_finite_points(
-    int ncid, const GRT_RCV_NC_INFO *rcv_info,
+    int ncid, const RCV_NC_INFO *rcv_info,
     int nfault_dimid, const GRT_MODULE_CTRL *Ctrl,
     real_t *strikes, real_t *dips, real_t *rakes)
 {
@@ -679,7 +679,7 @@ static void load_geometry_from_finite_points(
  * @param[out] rakes         各接收点滑动角
  */
 static void load_receiver_geometry(
-    int ncid, const GRT_RCV_NC_INFO *rcv_info,
+    int ncid, const RCV_NC_INFO *rcv_info,
     const GRT_MODULE_CTRL *Ctrl, bool finite_points, int nfault_dimid,
     real_t *strikes, real_t *dips, real_t *rakes)
 {
@@ -813,7 +813,7 @@ int static_sproj_main(int argc, char **argv)
     int ncid;
     NC_CHECK(nc_open(Ctrl->G.s_ingrid, NC_WRITE, &ncid));
 
-    GRT_RCV_NC_INFO rcv_info;
+    RCV_NC_INFO rcv_info;
     grt_rcv_nc_info_load(ncid, &rcv_info);
     int ndims = (rcv_info.layout == GRT_RCV_NC_LAYOUT_POINTS) ? 1 : 2;
     size_t npts = rcv_info.npts;

@@ -51,7 +51,7 @@ typedef struct {
     real_t *frakes;         ///< 每条有限接收断层的滑动角 (degree)
     size_t *stksizes;       ///< 每条有限接收断层沿走向的子断层数量
     size_t *dipsizes;       ///< 每条有限接收断层沿倾向的子断层数量
-} GRT_RCV_POINTS;
+} RCV_POINTS;
 
 /** 已打开 NetCDF 文件中的接收坐标及维度信息 */
 typedef struct {
@@ -61,7 +61,7 @@ typedef struct {
     real_t *easts;                 ///< 展平后的东向坐标数组 (km)
 
     int dimids[2];                 ///< 接收坐标对应的 NetCDF 维度 ID
-} GRT_RCV_NC_INFO;
+} RCV_NC_INFO;
 
 /**
  * 由 north/east 轴与单一深度展开为点列（is_grid=true）
@@ -71,9 +71,9 @@ typedef struct {
  * @param[in]   neast    east 方向点数
  * @param[in]   easts    east 坐标 (km)
  * @param[in]   depth    接收深度 (km)
- * @return      新分配的 GRT_RCV_POINTS*，调用方负责 grt_rcv_points_free
+ * @return      新分配的 RCV_POINTS*，调用方负责 grt_rcv_points_free
  */
-GRT_RCV_POINTS *grt_rcv_points_from_grid(
+RCV_POINTS *grt_rcv_points_from_grid(
     size_t nnorth, const real_t *norths,
     size_t neast,  const real_t *easts,
     real_t depth);
@@ -85,16 +85,16 @@ GRT_RCV_POINTS *grt_rcv_points_from_grid(
  * strike dip rake (degree)，# 开头为注释
  *
  * @param[in]   path   文件路径
- * @return      新分配的 GRT_RCV_POINTS*
+ * @return      新分配的 RCV_POINTS*
  */
-GRT_RCV_POINTS *grt_rcv_points_from_file(const char *path);
+RCV_POINTS *grt_rcv_points_from_file(const char *path);
 
 /**
- * 释放 GRT_RCV_POINTS（含坐标和可选接收断层几何）
+ * 释放 RCV_POINTS（含坐标和可选接收断层几何）
  *
  * @param[in,out]  pts   可为 NULL
  */
-void grt_rcv_points_free(GRT_RCV_POINTS *pts);
+void grt_rcv_points_free(RCV_POINTS *pts);
 
 /**
  * 从有限断层数组生成接收点列表
@@ -107,9 +107,9 @@ void grt_rcv_points_free(GRT_RCV_POINTS *pts);
  * @param[in]   faults   已读取并建立衍生量的有限断层数组
  * @param[in]   dL       沿走向子断层尺寸 (km)
  * @param[in]   dW       沿倾向子断层尺寸 (km)
- * @return      新分配的 GRT_RCV_POINTS*，调用方负责 grt_rcv_points_free
+ * @return      新分配的 RCV_POINTS*，调用方负责 grt_rcv_points_free
  */
-GRT_RCV_POINTS *grt_rcv_points_from_faults(
+RCV_POINTS *grt_rcv_points_from_faults(
     size_t nfault, const FINITE_FAULT *faults, real_t dL, real_t dW);
 
 /**
@@ -126,14 +126,14 @@ GRT_RCV_NC_LAYOUT grt_rcv_nc_get_layout(int ncid);
  * @param[in]   ncid   已打开的 NetCDF 文件 ID
  * @param[out]  info   接收坐标和维度信息
  */
-void grt_rcv_nc_info_load(int ncid, GRT_RCV_NC_INFO *info);
+void grt_rcv_nc_info_load(int ncid, RCV_NC_INFO *info);
 
 /**
- * 释放 GRT_RCV_NC_INFO
+ * 释放 RCV_NC_INFO
  *
  * @param[in,out]  info   接收坐标和维度信息
  */
-void grt_rcv_nc_info_free(GRT_RCV_NC_INFO *info);
+void grt_rcv_nc_info_free(RCV_NC_INFO *info);
 
 /**
  * 从已打开的 nc 判断是否为 points 布局

@@ -35,7 +35,7 @@ enum {
     LAMB2_PHASE_PS = 1u << 3,  ///< 地表源到地下接收点的 PS 波
 };
 
-static const GRT_LAMB_PHASE_OPTION LAMB2_PHASE_OPTIONS[] = {
+static const LAMB_PHASE_OPTION LAMB2_PHASE_OPTIONS[] = {
     {"P", LAMB2_PHASE_P},
     {"S", LAMB2_PHASE_S},
     {"SP", LAMB2_PHASE_SP},

@@ -50,7 +50,7 @@ enum {
     LAMB1_PHASE_R = 1u << 2,
 };
 
-static const GRT_LAMB_PHASE_OPTION LAMB1_PHASE_OPTIONS[] = {
+static const LAMB_PHASE_OPTION LAMB1_PHASE_OPTIONS[] = {
     {"P", LAMB1_PHASE_P},
     {"S", LAMB1_PHASE_S},
     {"R", LAMB1_PHASE_R},

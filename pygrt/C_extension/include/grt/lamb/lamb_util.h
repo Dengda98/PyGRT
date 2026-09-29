@@ -21,7 +21,7 @@
 typedef struct {
     const char *name;              ///< 震相名称
     unsigned int bit;              ///< 震相对应的位掩码
-} GRT_LAMB_PHASE_OPTION;
+} LAMB_PHASE_OPTION;
 
 /**
  * 解析 Lamb 震相列表
@@ -34,7 +34,7 @@ typedef struct {
  * @return 选择震相对应的位掩码；无效名称和重复名称会给出警告并被忽略，结果为零时表示输出全零波形
  */
 unsigned int grt_lamb_parse_phase_list(
-    const char *phase_list, const GRT_LAMB_PHASE_OPTION *options,
+    const char *phase_list, const LAMB_PHASE_OPTION *options,
     size_t option_count, const char *available_names);
 
 /** 判断复数的虚部是否可以视为零 */

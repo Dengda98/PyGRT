@@ -74,7 +74,7 @@ typedef struct {
 } LAMB3_PF_COEFFICIENTS;
 
 
-static const GRT_LAMB_PHASE_OPTION LAMB3_PHASE_OPTIONS[] = {
+static const LAMB_PHASE_OPTION LAMB3_PHASE_OPTIONS[] = {
     {"P", GRT_LAMB3_PHASE_P},
     {"S", GRT_LAMB3_PHASE_S},
     {"PP", GRT_LAMB3_PHASE_PP},

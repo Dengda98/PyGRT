@@ -44,7 +44,7 @@ typedef struct {
     GRT_RCV_NC_LAYOUT layout;
     size_t first_count;
     size_t second_count;
-} GRT_COORD_INFO;
+} COORD_INFO;
 
 /** 坐标转换方向 */
 typedef enum {
@@ -291,7 +291,7 @@ static void check_coordinate_var(
  * @param[out] info      坐标布局信息
  */
 static void inspect_coordinate_layout(
-    int ncid, GRT_TRANSFORM_DIRECTION direction, GRT_COORD_INFO *info)
+    int ncid, GRT_TRANSFORM_DIRECTION direction, COORD_INFO *info)
 {
     const char *first_name, *second_name;
     get_coordinate_names(direction, &first_name, &second_name);
@@ -387,7 +387,7 @@ static void transform_coordinate_pair(
  * @param[in]  direction 坐标转换方向
  */
 static void convert_output_coordinates(
-    int ncid, const GRT_COORD_INFO *info,
+    int ncid, const COORD_INFO *info,
     const GRT_MODULE_CTRL *Ctrl, GRT_TRANSFORM_DIRECTION direction)
 {
     const char *first_name, *second_name;
@@ -649,7 +649,7 @@ static int coordinate_transform_main(
     // 只在输出副本上读取和修改坐标
     int ncid;
     NC_CHECK(nc_open(Ctrl->O.s_path, NC_WRITE, &ncid));
-    GRT_COORD_INFO info;
+    COORD_INFO info;
     inspect_coordinate_layout(ncid, direction, &info);
 
     convert_output_coordinates(ncid, &info, Ctrl, direction);

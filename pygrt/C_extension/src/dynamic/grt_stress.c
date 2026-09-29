@@ -66,8 +66,8 @@ static void compute_stress(
     fftwf_complex *lam_ukk = fftwf_malloc(sizeof(*lam_ukk)*nf);
     fftwf_complex *lams = fftwf_malloc(sizeof(*lams)*nf);
     fftwf_complex *mus = fftwf_malloc(sizeof(*mus)*nf);
-    GRT_FFTWF_HOLDER *fwd = grt_create_fftwf_holder_R2C_1D(npts, dt, nf, df);
-    GRT_FFTWF_HOLDER *inv = grt_create_fftwf_holder_C2R_1D(npts, dt, nf, df);
+    FFTWF_HOLDER *fwd = grt_create_fftwf_holder_R2C_1D(npts, dt, nf, df);
+    FFTWF_HOLDER *inv = grt_create_fftwf_holder_C2R_1D(npts, dt, nf, df);
 
     memset(lam_ukk, 0, sizeof(*lam_ukk)*nf);
     for(size_t i=0; i<nf; ++i){
