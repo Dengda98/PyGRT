@@ -1293,36 +1293,22 @@ void grt_solve_lamb1(
         }
     }
 
-    const bool isprint = (u == NULL);
-    real_t (*result)[3][3] = u;
-    if(isprint){
-        result = GRT_SAFE_CALLOC(nt, sizeof(*result));
-    }
-
     const real_t tbar_eps = nt > 1 ? GRT_MIN(1e-8, (ts[1] - ts[0]) * 1e-5) : 1e-8;
     VARS V0 = {0};
     VARS *V = &V0;
     make_vars(nu, azimuth, V);
 
-    if(cbar == 0.0){
-        for(int i=0; i<nt; ++i){
-            build_G(ts[i], tbar_eps, phase_mask, V, result[i]);
-        }
-    }
-    else {
+    if(cbar != 0.0){
         if(fabs(V->sf) <= 1e-8){
             GRTRaiseError("The moving-source closed-form solution in lamb1 requires the station to be off the x1 axis.\n");
         }
         if(cbar >= 1.0 / V->kpa){
             GRTRaiseError("cbar for lamb1 should be smaller than vR/beta.\n");
         }
-
-#pragma omp parallel for
-        for(int i=0; i<nt; ++i){
-            build_motion_G(ts[i], tbar_eps, cbar, V, result[i]);
-        }
     }
 
+    // 根据情况判断是打印在屏幕还是记录到内存中
+    const bool isprint = (u == NULL);
     if(isprint){
         char *stmp = NULL;
         printf("#");
@@ -1335,16 +1321,26 @@ void grt_solve_lamb1(
         }
         GRT_SAFE_FREE_PTR(stmp);
         printf("\n");
+    }
 
-        for(int i=0; i<nt; ++i){
+    for(int i=0; i<nt; ++i){
+        real_t result[3][3];
+        real_t (*G)[3] = isprint ? result : u[i];
+        if(cbar == 0.0){
+            build_G(ts[i], tbar_eps, phase_mask, V, G);
+        }
+        else {
+            build_motion_G(ts[i], tbar_eps, cbar, V, G);
+        }
+
+        if(isprint){
             printf("%14.6e", ts[i]);
             for(int i1=0; i1<3; ++i1){
                 for(int i2=0; i2<3; ++i2){
-                    printf("%14.6e", result[i][i1][i2]);
+                    printf("%14.6e", G[i1][i2]);
                 }
             }
             printf("\n");
         }
-        GRT_SAFE_FREE_PTR(result);
     }
 }
