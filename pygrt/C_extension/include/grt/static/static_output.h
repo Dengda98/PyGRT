@@ -37,17 +37,17 @@ typedef struct {
     real_t alpha;                                ///< 均匀半空间 alpha 参数
     real_t lambda;                               ///< 均匀半空间 lambda 参数
     real_t mu;                                   ///< 均匀半空间 mu 参数
-    const GRT_RCV_POINTS *rcv;                   ///< 规则网格、任意点或有限接收断层点列表
+    const RCV_POINTS *rcv;                       ///< 规则网格、任意点或有限接收断层点列表
     GRT_STATIC_MEDIUM_FUNC get_medium;           ///< 接收介质查询回调函数
     void *medium_context;                        ///< 接收介质查询回调上下文
     const real_t (*syn)[GRT_CHANNEL_NUM];        ///< 位移数组
     const real_t (*syn_upar)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
                                                  ///< 位移偏导数组
-} GRT_STATIC_NC_OUTPUT;
+} STATIC_NC_OUTPUT;
 
 /**
  * 按公共 NetCDF 布局写出静态位移结果
  *
  * @param[in]  output   静态位移输出描述
  */
-void grt_static_save_nc(const GRT_STATIC_NC_OUTPUT *output);
+void grt_static_save_nc(const STATIC_NC_OUTPUT *output);

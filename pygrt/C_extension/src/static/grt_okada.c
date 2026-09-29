@@ -381,7 +381,7 @@ static void parse_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
  * @param[in]  Ctrl   Okada 命令行控制结构体
  * @return            新分配的接收点结构体
  */
-static GRT_RCV_POINTS *build_receivers(const GRT_MODULE_CTRL *Ctrl)
+static RCV_POINTS *build_receivers(const GRT_MODULE_CTRL *Ctrl)
 {
     if(Ctrl->Q.active) return grt_rcv_points_from_file(Ctrl->Q.path);
     if(Ctrl->R.active){
@@ -655,7 +655,7 @@ static void okada_get_medium(
  */
 static void save_nc(
     const GRT_MODULE_CTRL *Ctrl, const OKADA_MEDIUM_PARAMS *medium,
-    const GRT_RCV_POINTS *rcv,
+    const RCV_POINTS *rcv,
     const real_t (*syn)[3], const real_t (*syn_d)[3][3])
 {
     const char *channels;
@@ -676,7 +676,7 @@ static void save_nc(
         compute_type = "EX";
     }
 
-    GRT_STATIC_NC_OUTPUT output = {
+    STATIC_NC_OUTPUT output = {
         .path = Ctrl->O.path,
         .channels = channels,
         .compute_type = compute_type,
@@ -711,7 +711,7 @@ int okada_main(int argc, char **argv)
     medium.alpha = 1.0 - (medium.vs / medium.vp) * (medium.vs / medium.vp);
     medium.mu = medium.rho * medium.vs * medium.vs * 1e10;
     medium.lambda = medium.rho * (medium.vp * medium.vp - 2.0 * medium.vs * medium.vs) * 1e10;
-    GRT_RCV_POINTS *rcv = build_receivers(Ctrl);
+    RCV_POINTS *rcv = build_receivers(Ctrl);
     size_t npts = rcv->npts;
     const real_t *norths = rcv->norths;
     const real_t *easts = rcv->easts;

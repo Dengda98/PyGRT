@@ -55,7 +55,7 @@ typedef struct {\
     real_t f0; \
     /*最终不执行FFTW而使用最朴素的傅里叶逆变换*/\
     bool naive_inv; \
-} GRT_FFTW##S##_HOLDER;\
+} FFTW##S##_HOLDER;\
 \
 /**
  * 初始化 FFTW_HOLDER 结构体指针，进行复数频谱到实数序列的逆变换
@@ -68,22 +68,22 @@ typedef struct {\
  * @return    FFTW_HOLDER 结构体指针
  * 
  */\
-GRT_FFTW##S##_HOLDER * grt_create_fftw##s##_holder_C2R_1D(const size_t nt, const real_t dt, const size_t nf_valid, const real_t df); \
+FFTW##S##_HOLDER * grt_create_fftw##s##_holder_C2R_1D(const size_t nt, const real_t dt, const size_t nf_valid, const real_t df); \
 /** 初始化 FFTW_HOLDER 结构体指针，进行实数序列到复数频谱的正变换 */\
-GRT_FFTW##S##_HOLDER * grt_create_fftw##s##_holder_R2C_1D(const size_t nt, const real_t dt, const size_t nf_valid, const real_t df); \
+FFTW##S##_HOLDER * grt_create_fftw##s##_holder_R2C_1D(const size_t nt, const real_t dt, const size_t nf_valid, const real_t df); \
 \
 /** 将内部数据全部置零  */\
-void grt_reset_fftw##s##_holder_zero(GRT_FFTW##S##_HOLDER *fh);\
+void grt_reset_fftw##s##_holder_zero(FFTW##S##_HOLDER *fh);\
 \
 /** 清理函数：释放结构体内存，防止内存泄漏  */\
-void grt_destroy_fftw##s##_holder(GRT_FFTW##S##_HOLDER *fh);\
+void grt_destroy_fftw##s##_holder(FFTW##S##_HOLDER *fh);\
 \
 \
 /**
  * 最朴素的非均匀频域采样逆变换
  * 严格按照傅里叶逆变换定义：g(t) = \int G(f) * e^(i2πft) df
  */ \
-void grt_naive_inverse_transform_##T(GRT_FFTW##S##_HOLDER *fh);\
+void grt_naive_inverse_transform_##T(FFTW##S##_HOLDER *fh);\
 
 FOR_EACH_FFTW_TYPE
 #undef X

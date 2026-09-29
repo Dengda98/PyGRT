@@ -186,13 +186,13 @@ typedef struct {
     const unsigned char *element;
     size_t index;
     grt_compare_fn compare;
-} GRTArgSortPair;
+} ArgSortPair;
 
 // 标准 qsort 比较函数：先按元素值升序，再按原始索引排序以保持稳定性
 static int compare_argsort_pair(const void *a, const void *b)
 {
-    const GRTArgSortPair *pa = a;
-    const GRTArgSortPair *pb = b;
+    const ArgSortPair *pa = a;
+    const ArgSortPair *pb = b;
     int result = pa->compare(pa->element, pb->element);
 
     if (result != 0) return result;
@@ -207,9 +207,9 @@ int grt_argsort(
     if (n == 0) return 0;
     if (base == NULL || element_size == 0 || compare == NULL || indices == NULL) return -1;
     if (n > (size_t)-1 / element_size ||
-        n > (size_t)-1 / sizeof(GRTArgSortPair)) return -1;
+        n > (size_t)-1 / sizeof(ArgSortPair)) return -1;
 
-    GRTArgSortPair *pairs = GRT_SAFE_MALLOC(n * sizeof(*pairs));
+    ArgSortPair *pairs = GRT_SAFE_MALLOC(n * sizeof(*pairs));
 
     const unsigned char *bytes = base;
     for (size_t i = 0; i < n; i++) {

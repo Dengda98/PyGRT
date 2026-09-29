@@ -14,7 +14,7 @@
 
 
 unsigned int grt_lamb_parse_phase_list(
-    const char *phase_list, const GRT_LAMB_PHASE_OPTION *options,
+    const char *phase_list, const LAMB_PHASE_OPTION *options,
     const size_t option_count, const char *available_names)
 {
     unsigned int all_mask = 0u;

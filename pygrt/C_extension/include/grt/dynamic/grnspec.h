@@ -59,5 +59,5 @@ void grt_grnspec_free_u(GRNSPEC *grn);
  * 
  */
 void grt_grnspec_write_sac(
-    const GRNSPEC *grn, const real_t (*travtPS)[2], const real_t *begintimes, char **outputdirs, GRT_FFTW_HOLDER *fh, SACTRACE *sac, 
+    const GRNSPEC *grn, const real_t (*travtPS)[2], const real_t *begintimes, char **outputdirs, FFTW_HOLDER *fh, SACTRACE *sac,
     const char *validChnls, const bool skipImagComps, const bool saveEX, const bool saveVF, const bool saveHF, const bool saveDC);

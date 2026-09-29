@@ -12,9 +12,9 @@
 #include "grt/common/checkerror.h"
 
 #define X(T, s, S) \
-static GRT_FFTW##S##_HOLDER *  grt_init_fftw##s##_holder(const size_t nt, const real_t dt, const size_t nf_valid, const real_t df)\
+static FFTW##S##_HOLDER *  grt_init_fftw##s##_holder(const size_t nt, const real_t dt, const size_t nf_valid, const real_t df)\
 {\
-    GRT_FFTW##S##_HOLDER *fh = GRT_SAFE_CALLOC(1, sizeof(GRT_FFTW##S##_HOLDER));\
+    FFTW##S##_HOLDER *fh = GRT_SAFE_CALLOC(1, sizeof(FFTW##S##_HOLDER));\
     fh->nt = nt;\
     fh->dt = dt;\
     fh->nf_valid = nf_valid;\
@@ -31,30 +31,30 @@ static GRT_FFTW##S##_HOLDER *  grt_init_fftw##s##_holder(const size_t nt, const 
 }\
 \
 \
-void grt_reset_fftw##s##_holder_zero(GRT_FFTW##S##_HOLDER *fh)\
+void grt_reset_fftw##s##_holder_zero(FFTW##S##_HOLDER *fh)\
 {\
     memset(fh->w_t, 0, sizeof(T)*fh->nt);\
     memset(fh->W_f, 0, sizeof(fftw##s##_complex)*fh->nf);\
 }\
 \
 \
-GRT_FFTW##S##_HOLDER * grt_create_fftw##s##_holder_C2R_1D(const size_t nt, const real_t dt, const size_t nf_valid, const real_t df)\
+FFTW##S##_HOLDER * grt_create_fftw##s##_holder_C2R_1D(const size_t nt, const real_t dt, const size_t nf_valid, const real_t df)\
 {\
-    GRT_FFTW##S##_HOLDER * fh = grt_init_fftw##s##_holder(nt, dt, nf_valid, df);\
+    FFTW##S##_HOLDER * fh = grt_init_fftw##s##_holder(nt, dt, nf_valid, df);\
     fh->plan = fftw##s##_plan_dft_c2r_1d(nt, fh->W_f, fh->w_t, FFTW_ESTIMATE);\
     return fh;\
 }\
 \
 \
-GRT_FFTW##S##_HOLDER * grt_create_fftw##s##_holder_R2C_1D(const size_t nt, const real_t dt, const size_t nf_valid, const real_t df)\
+FFTW##S##_HOLDER * grt_create_fftw##s##_holder_R2C_1D(const size_t nt, const real_t dt, const size_t nf_valid, const real_t df)\
 {\
-    GRT_FFTW##S##_HOLDER * fh = grt_init_fftw##s##_holder(nt, dt, nf_valid, df);\
+    FFTW##S##_HOLDER * fh = grt_init_fftw##s##_holder(nt, dt, nf_valid, df);\
     fh->plan = fftw##s##_plan_dft_r2c_1d(nt, fh->w_t, fh->W_f, FFTW_ESTIMATE);\
     return fh;\
 }\
 \
 \
-void grt_destroy_fftw##s##_holder(GRT_FFTW##S##_HOLDER *fh)\
+void grt_destroy_fftw##s##_holder(FFTW##S##_HOLDER *fh)\
 {\
     if (fh) {\
         fftw##s##_destroy_plan(fh->plan);\
@@ -65,7 +65,7 @@ void grt_destroy_fftw##s##_holder(GRT_FFTW##S##_HOLDER *fh)\
 }\
 \
 \
-void grt_naive_inverse_transform_##T(GRT_FFTW##S##_HOLDER *fh)\
+void grt_naive_inverse_transform_##T(FFTW##S##_HOLDER *fh)\
 {\
     size_t nt = fh->nt;\
     size_t nf = fh->nf;\

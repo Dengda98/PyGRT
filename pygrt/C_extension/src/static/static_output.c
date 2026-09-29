@@ -105,10 +105,10 @@ static void write_fields(
  * @param[out]     dvars     位移偏导变量 ID 数组
  */
 static void write_grid_layout(
-    int ncid, const GRT_STATIC_NC_OUTPUT *output,
+    int ncid, const STATIC_NC_OUTPUT *output,
     int vars[GRT_CHANNEL_NUM], int dvars[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])
 {
-    const GRT_RCV_POINTS *rcv = output->rcv;
+    const RCV_POINTS *rcv = output->rcv;
     int dimids[2];
     int north_varid, east_varid;
     real_t deprcv = rcv->depths[0];
@@ -156,11 +156,11 @@ static void write_grid_layout(
  * @param[out]     dvars     位移偏导变量 ID 数组
  */
 static void write_points_layout(
-    int ncid, const GRT_STATIC_NC_OUTPUT *output,
+    int ncid, const STATIC_NC_OUTPUT *output,
     int vars[GRT_CHANNEL_NUM], int dvars[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])
 {
-    const GRT_RCV_POINTS *rcv = output->rcv;
-    // 有限接收断层已经在 GRT_RCV_POINTS 中展开为一维点数组
+    const RCV_POINTS *rcv = output->rcv;
+    // 有限接收断层已经在 RCV_POINTS 中展开为一维点数组
     size_t npts = rcv->npts;
     const real_t *norths = rcv->norths;
     const real_t *easts = rcv->easts;
@@ -258,7 +258,7 @@ static void write_points_layout(
  *
  * @param[in]  output   静态位移输出描述
  */
-void grt_static_save_nc(const GRT_STATIC_NC_OUTPUT *output)
+void grt_static_save_nc(const STATIC_NC_OUTPUT *output)
 {
     if((output == NULL) || (output->path == NULL)){
         GRTRaiseError("static NetCDF output description is incomplete.");

@@ -530,7 +530,7 @@ static void compute_modsum_one(
 
     // 使用fftw3做反傅里叶变换，并保存到 SAC 
     // 其中考虑了升采样倍数
-    GRT_FFTW_HOLDER *fh = grt_create_fftw_holder_C2R_1D(fft_nt*Ctrl->W.upsample_n, fft_dt/Ctrl->W.upsample_n, fft_nf, fft_df);
+    FFTW_HOLDER *fh = grt_create_fftw_holder_C2R_1D(fft_nt*Ctrl->W.upsample_n, fft_dt/Ctrl->W.upsample_n, fft_nf, fft_df);
     
     // 建立SAC头文件，包含必要的头变量
     SACTRACE *sac = grt_new_SACTRACE(fh->dt, fh->nt, 0.0);

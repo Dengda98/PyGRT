@@ -49,7 +49,7 @@ static bool parse_receiver_point_line(
     return *nvalues == 3 || *nvalues == 6;
 }
 
-GRT_RCV_POINTS *grt_rcv_points_from_grid(
+RCV_POINTS *grt_rcv_points_from_grid(
     size_t nnorth, const real_t *norths,
     size_t neast,  const real_t *easts,
     real_t depth)
@@ -61,7 +61,7 @@ GRT_RCV_POINTS *grt_rcv_points_from_grid(
         GRTRaiseError("Negative receiver depth is not supported.");
     }
 
-    GRT_RCV_POINTS *pts = GRT_SAFE_CALLOC(1, sizeof(GRT_RCV_POINTS));
+    RCV_POINTS *pts = GRT_SAFE_CALLOC(1, sizeof(RCV_POINTS));
     pts->is_grid = true;
     pts->nnorth = nnorth;
     pts->neast = neast;
@@ -82,7 +82,7 @@ GRT_RCV_POINTS *grt_rcv_points_from_grid(
 }
 
 
-GRT_RCV_POINTS *grt_rcv_points_from_file(const char *path)
+RCV_POINTS *grt_rcv_points_from_file(const char *path)
 {
     GRTCheckFileExist(path);
 
@@ -130,7 +130,7 @@ GRT_RCV_POINTS *grt_rcv_points_from_file(const char *path)
         GRTRaiseError("No receiver points found in \"%s\".", path);
     }
 
-    GRT_RCV_POINTS *pts = GRT_SAFE_CALLOC(1, sizeof(GRT_RCV_POINTS));
+    RCV_POINTS *pts = GRT_SAFE_CALLOC(1, sizeof(RCV_POINTS));
     pts->is_grid = false;
     pts->nnorth = 0;
     pts->neast = 0;
@@ -187,7 +187,7 @@ GRT_RCV_POINTS *grt_rcv_points_from_file(const char *path)
 }
 
 
-void grt_rcv_points_free(GRT_RCV_POINTS *pts)
+void grt_rcv_points_free(RCV_POINTS *pts)
 {
     if(pts == NULL) return;
     // 释放接收点坐标和任意点的逐点几何
@@ -209,7 +209,7 @@ void grt_rcv_points_free(GRT_RCV_POINTS *pts)
 }
 
 
-GRT_RCV_POINTS *grt_rcv_points_from_faults(
+RCV_POINTS *grt_rcv_points_from_faults(
     size_t nfault, const FINITE_FAULT *faults, real_t dL, real_t dW)
 {
     if((nfault == 0) || (faults == NULL)){
@@ -219,7 +219,7 @@ GRT_RCV_POINTS *grt_rcv_points_from_faults(
         GRTRaiseError("finite receiver dL and dW must both be positive or both be omitted.");
     }
 
-    GRT_RCV_POINTS *pts = GRT_SAFE_CALLOC(1, sizeof(*pts));
+    RCV_POINTS *pts = GRT_SAFE_CALLOC(1, sizeof(*pts));
     pts->is_fault = true;
     pts->nfault = nfault;
     pts->nsubs = GRT_SAFE_CALLOC(nfault, sizeof(*pts->nsubs));
@@ -293,7 +293,7 @@ GRT_RCV_NC_LAYOUT grt_rcv_nc_get_layout(int ncid)
 }
 
 
-void grt_rcv_nc_info_load(int ncid, GRT_RCV_NC_INFO *info)
+void grt_rcv_nc_info_load(int ncid, RCV_NC_INFO *info)
 {
     if(info == NULL){
         GRTRaiseError("receiver NetCDF info is NULL.");
@@ -349,7 +349,7 @@ void grt_rcv_nc_info_load(int ncid, GRT_RCV_NC_INFO *info)
 }
 
 
-void grt_rcv_nc_info_free(GRT_RCV_NC_INFO *info)
+void grt_rcv_nc_info_free(RCV_NC_INFO *info)
 {
     if(info == NULL) return;
     // 坐标数组由该结构体管理，结构体本身由调用方管理

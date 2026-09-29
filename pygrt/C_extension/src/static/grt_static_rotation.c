@@ -142,7 +142,7 @@ int static_rotation_main(int argc, char **argv){
     }
 
     // 识别 grid / points 布局，并将坐标展平供统一计算
-    GRT_RCV_NC_INFO rcv_info;
+    RCV_NC_INFO rcv_info;
     grt_rcv_nc_info_load(in_ncid, &rcv_info);
     size_t npts = rcv_info.npts;
     real_t *norths_flat = rcv_info.norths;

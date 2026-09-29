@@ -694,7 +694,7 @@ static void write_result_sac(
     const size_t nf, const real_t df, const real_t wI,
     const real_t begin_time, const real_t phase_time)
 {
-    GRT_FFTW_HOLDER *fh = grt_create_fftw_holder_C2R_1D(nt, dt, nf, df);
+    FFTW_HOLDER *fh = grt_create_fftw_holder_C2R_1D(nt, dt, nf, df);
     SACTRACE *sac = grt_new_SACTRACE(fh->dt, (int)fh->nt, begin_time);
 
     sac->hd.o = 0.0;

@@ -211,7 +211,7 @@ int static_coulomb_main(int argc, char **argv)
     int ncid;
     NC_CHECK(nc_open(Ctrl->G.s_ingrid, NC_WRITE, &ncid));
 
-    GRT_RCV_NC_INFO rcv_info;
+    RCV_NC_INFO rcv_info;
     grt_rcv_nc_info_load(ncid, &rcv_info);
     int ndims = (rcv_info.layout == GRT_RCV_NC_LAYOUT_POINTS) ? 1 : 2;
     size_t npts = rcv_info.npts;
