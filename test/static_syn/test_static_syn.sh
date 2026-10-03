@@ -73,8 +73,8 @@ xxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxx  xxxxxxxxxx xxxxxxxxxx xxxxx
   1     0.0000     0.0000     2.0000     0.0000   100     0.1000      0.0000     90.00       1.0000     3.0000
   2     0.0000     4.0000     2.0000     4.0000   200     0.0000      0.1000     60.00       1.0000     3.0000
 EOF
-grt static syn -Gstgrn_rf.nc -Su1e16 -Ds2 -Rrcv_faults.inp+i0.75/0.75 -e -Ostsyn_rf.nc
-grt static syn -Gstgrn_rf.nc -Su1e16 -Ds2 -Rrcv_faults.inp -e -Ostsyn_rf_default.nc
+grt static syn -Gstgrn_rf.nc -Su1e16 -Ds2 -Urcv_faults.inp+i0.75/0.75 -e -Ostsyn_rf.nc
+grt static syn -Gstgrn_rf.nc -Su1e16 -Ds2 -Urcv_faults.inp -e -Ostsyn_rf_default.nc
 
 # 多台站深度：必须 -Dr
 grt static greenfn -M../milrow -Ds2 -Dr0,0.5 -R0,5 -e -Ostgrn_mr.nc
@@ -151,11 +151,11 @@ expect_fail "-Q mutually exclusive with -X/-Y" \
 expect_fail "-Q mutually exclusive with -Dr" \
     grt static syn -Gstgrn_md.nc -S1e20 -Ds2 -Dr0 -Qrcv_pts.txt -Ostsyn_bad.nc
 
-expect_fail "-R mutually exclusive with -Q" \
-    grt static syn -Gstgrn_rf.nc -S1e20 -Ds2 -Qrcv_pts.txt -Rrcv_faults.inp -Ostsyn_bad.nc
+expect_fail "-U mutually exclusive with -Q" \
+    grt static syn -Gstgrn_rf.nc -S1e20 -Ds2 -Qrcv_pts.txt -Urcv_faults.inp -Ostsyn_bad.nc
 
-expect_fail "-R mutually exclusive with -Dr" \
-    grt static syn -Gstgrn_rf.nc -S1e20 -Ds2 -Dr0 -Rrcv_faults.inp -Ostsyn_bad.nc
+expect_fail "-U mutually exclusive with -Dr" \
+    grt static syn -Gstgrn_rf.nc -S1e20 -Ds2 -Dr0 -Urcv_faults.inp -Ostsyn_bad.nc
 
 expect_fail "finite fault requires ndepsrc>1" \
     grt static syn -Gstgrn.nc -Ccfaults_tiny.inp -Ostsyn_bad.nc

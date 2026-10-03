@@ -150,7 +150,7 @@ expect_fail "-Q point order must match" points_Q_order.log \
     grt static sproj -Gpoints_plain.nc -Qrcv_pts_reordered_6.txt
 
 # -------------------- 有限接收断层：未定义与已定义 rake --------------------
-grt static syn -Gstgrn.nc -S1e20 -Ds2 -Rrcv_faults_undefined.inp+i1/1 -e -Ofinite_undefined.nc
+grt static syn -Gstgrn.nc -S1e20 -Ds2 -Urcv_faults_undefined.inp+i1/1 -e -Ofinite_undefined.nc
 grt static stress finite_undefined.nc
 python - <<'PY'
 from scipy.io import netcdf_file
@@ -165,7 +165,7 @@ cp finite_undefined.nc finite_undefined_partial.nc
 grt static sproj -Gfinite_undefined.nc -M55+f > finite_force.log 2>&1
 grep -Fq 'already exists and will be overwritten' finite_force.log
 
-grt static syn -Gstgrn.nc -S1e20 -Ds2 -Rrcv_faults_defined.inp+i1/1 -e -Ofinite_defined.nc
+grt static syn -Gstgrn.nc -S1e20 -Ds2 -Urcv_faults_defined.inp+i1/1 -e -Ofinite_defined.nc
 grt static stress finite_defined.nc
 grt static sproj -Gfinite_defined.nc
 expect_fail "defined finite rake rejects non-forcing -M" finite_defined_m.log \

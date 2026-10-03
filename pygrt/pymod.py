@@ -1431,7 +1431,7 @@ class PyModel1D:
         line (north = 0, east = R); set ``norths``/``easts`` or ``rcv_points``
         to obtain a 2-D field.
         A Coulomb-format finite receiver-fault file can be supplied through
-        ``rcv_fault`` (CLI ``-R``); without ``rcv_fault_size`` the subdivision
+        ``rcv_fault`` (CLI ``-U``); without ``rcv_fault_size`` the subdivision
         size defaults to the smallest positive sampling interval among epicentral
         distance, source depth and receiver depth in the library. With
         ``rcv_fault_size``, each fault is subdivided with ``(dL, dW)`` along
@@ -1489,7 +1489,7 @@ class PyModel1D:
         :param    rcv_fault:         Coulomb-format finite receiver-fault file with 11 data
                                      columns; an exact ``rake`` token in the seventh header
                                      column selects Kode 100 rake/net-slip interpretation
-                                     (CLI ``-R``). Without ``rcv_fault_size``,
+                                     (CLI ``-U``). Without ``rcv_fault_size``,
                                      the library sampling intervals determine the
                                      default subdivision size. With that argument,
                                      each fault contributes multiple subfault
@@ -1563,7 +1563,7 @@ class PyModel1D:
 
         use_ff = src_fault is not None
         use_q = rcv_points is not None
-        use_r = rcv_fault is not None
+        use_u = rcv_fault is not None
         use_xy = norths is not None or easts is not None
         has_geometry = strike is not None or dip is not None or rake is not None
         has_force = force is not None
@@ -1577,11 +1577,11 @@ class PyModel1D:
         )
         if use_ff and has_point_source_options:
             raise ValueError("src_fault is mutually exclusive with point-source options.")
-        if ((use_q or use_r) and use_xy):
+        if ((use_q or use_u) and use_xy):
             raise ValueError("rcv_points/rcv_fault is mutually exclusive with norths/easts.")
-        if (use_q and use_r):
+        if (use_q and use_u):
             raise ValueError("rcv_points and rcv_fault are mutually exclusive.")
-        if ((use_q or use_r) and (deprcv is not None)):
+        if ((use_q or use_u) and (deprcv is not None)):
             raise ValueError("rcv_points/rcv_fault is mutually exclusive with deprcv.")
         if use_xy and (norths is None or easts is None):
             raise ValueError("norths and easts must be supplied together.")
@@ -1597,7 +1597,7 @@ class PyModel1D:
             if len(src_fault_size) != 2:
                 raise ValueError("src_fault_size must be (dL, dW).")
         if rcv_fault_size is not None:
-            if (not use_r):
+            if (not use_u):
                 raise ValueError("rcv_fault_size requires rcv_fault.")
             if ((len(rcv_fault_size) != 2)
                     or (rcv_fault_size[0] <= 0.0)
@@ -1627,11 +1627,11 @@ class PyModel1D:
             command["Dr"] = f"-Dr{format_float(deprcv)}"
         if use_q:
             command["Q"] = f"-Q{Path(rcv_points)}"
-        elif use_r:
-            r_opt = f"-R{Path(rcv_fault)}"
+        elif use_u:
+            u_opt = f"-U{Path(rcv_fault)}"
             if rcv_fault_size is not None:
-                r_opt += f"+i{format_float(rcv_fault_size[0])}/{format_float(rcv_fault_size[1])}"
-            command["R"] = r_opt
+                u_opt += f"+i{format_float(rcv_fault_size[0])}/{format_float(rcv_fault_size[1])}"
+            command["U"] = u_opt
         elif use_xy:
             command["X"] = f"-X{format_range(norths, 'norths')}"
             command["Y"] = f"-Y{format_range(easts, 'easts')}"
