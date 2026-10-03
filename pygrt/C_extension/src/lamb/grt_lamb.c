@@ -128,7 +128,7 @@ typedef struct {
     struct {
         bool active;
         char *phase_list;
-    } Q;
+    } L;
 
     /** 震源机制相关参数 */
     real_t mchn[GRT_MECHANISM_NUM];
@@ -154,7 +154,7 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl)
     GRT_SAFE_FREE_PTR(Ctrl->N.tbar);
     GRT_SAFE_FREE_PTR(Ctrl->D.tfparams);
     GRT_SAFE_FREE_PTR(Ctrl->O.s_output_dir);
-    GRT_SAFE_FREE_PTR(Ctrl->Q.phase_list);
+    GRT_SAFE_FREE_PTR(Ctrl->L.phase_list);
     GRT_SAFE_FREE_PTR(Ctrl);
 }
 
@@ -187,7 +187,7 @@ printf("\n"
 "              [-M<strike>/<dip>[/<rake>]]\n"
 "              [-T<Mxx>/<Mxy>/<Mxz>/<Myy>/<Myz>/<Mzz>] [-F<fn>/<fe>/<fz>]\n"
 "              [-D<tftype>/<tfparams>] [-E[p]<t0>[/<v0>]] [-I<odr>] [-J<odr>]\n"
-"              [-n] [-e] [-s] [-Q<P,S,R,PP,SS,PS,SP,sPs>]\n"
+"              [-n] [-e] [-s] [-L<P,S,R,PP,SS,PS,SP,sPs>]\n"
 "\n\n"
 "Options:\n"
 "----------------------------------------------------------------\n"
@@ -277,7 +277,7 @@ printf("\n"
 "    -e             Also write spatial derivatives with direction prefixes matching\n"
 "                  the output coordinates.\n"
 "\n"
-"    -Q<phases>     Keep only selected phase terms. Use a comma-separated list of\n"
+"    -L<phases>     Keep only selected phase terms. Use a comma-separated list of\n"
 "                  P, S, R, PP, SS, PS, SP and sPs.\n"
 "                  The applicable phase names depend on whether the selected\n"
 "                  Lamb problem is of the first, second or third kind.\n"
@@ -308,7 +308,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
     snprintf(Ctrl->s_computeType, sizeof(Ctrl->s_computeType), "%s", "EX");
 
     int opt;
-    while ((opt = getopt(argc, argv, ":H:N:R:A:S:M:F:T:O:D:E:I:J:Q:nesh")) != -1) {
+    while ((opt = getopt(argc, argv, ":H:N:R:A:S:M:F:T:O:D:E:I:J:L:nesh")) != -1) {
         switch (opt) {
             /* 半空间参数 */
             case 'H': {
@@ -562,10 +562,10 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 break;
 
             /* 选择输出的震相 */
-            case 'Q':
-                GRT_SAFE_FREE_PTR(Ctrl->Q.phase_list);
-                Ctrl->Q.phase_list = strdup(optarg);
-                Ctrl->Q.active = true;
+            case 'L':
+                GRT_SAFE_FREE_PTR(Ctrl->L.phase_list);
+                Ctrl->L.phase_list = strdup(optarg);
+                Ctrl->L.active = true;
                 break;
 
             /* 是否静默输出 */
@@ -1484,7 +1484,7 @@ int lamb_main(int argc, char **argv)
     make_lamb_result(
         Ctrl->H.nu, Ctrl->N.tbar, Ctrl->N.nt, horizontal_distance, depsrc, deprcv,
         Ctrl->A.azimuth, Ctrl->computeType, calc_upar,
-        Ctrl->Q.active ? Ctrl->Q.phase_list : NULL, &result);
+        Ctrl->L.active ? Ctrl->L.phase_list : NULL, &result);
 
     /* 将无量纲闭合解恢复为物理量，导数阶数每增加一阶再除以一个 r */
     const real_t mu = Ctrl->H.vs * Ctrl->H.vs * Ctrl->H.rho;

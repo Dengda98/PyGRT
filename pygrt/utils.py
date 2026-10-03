@@ -1655,7 +1655,7 @@ def lamb(
     ]
     phase_list = _prepare_lamb_phases(phases)
     if phase_list is not None:
-        command.append(f"-Q{phase_list}")
+        command.append(f"-L{phase_list}")
 
     has_geometry = strike is not None or dip is not None or rake is not None
     if force is not None:

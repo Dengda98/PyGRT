@@ -39,7 +39,7 @@ typedef struct {
     struct {
         bool active;
         char *phase_list;
-    } Q;
+    } L;
 
 } GRT_MODULE_CTRL;
 
@@ -48,7 +48,7 @@ typedef struct {
 /** 释放结构体的内存 */
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
     GRT_SAFE_FREE_PTR(Ctrl->T.ts);
-    GRT_SAFE_FREE_PTR(Ctrl->Q.phase_list);
+    GRT_SAFE_FREE_PTR(Ctrl->L.phase_list);
     GRT_SAFE_FREE_PTR(Ctrl);
 }
 
@@ -73,7 +73,7 @@ printf("\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
 "    grt lamb1 -P<nu> -T<t1>/<t2>/<dt> -A<azimuth> [-C<cbar>]\n"
-"               [-Q<phases>]\n"
+"               [-L<phases>]\n"
 "\n\n"
 "Options:\n"
 "----------------------------------------------------------------\n"
@@ -94,7 +94,7 @@ printf("\n"
 "                   off the x1 axis. Output contains only u1, u2, u3. Without -C, output\n"
 "                   contains the 9 fixed-source Green functions.\n"
 "\n"
-"    -Q<phases>     Keep only selected phase terms in fixed-source mode. Use a\n"
+"    -L<phases>     Keep only selected phase terms in fixed-source mode. Use a\n"
 "                   comma-separated list of P, S and R. It is ignored with -C.\n"
 "                   If no valid phase remains, a warning is issued and the output is all zeros.\n"
 "\n"
@@ -113,7 +113,7 @@ printf("\n"
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     int opt;
 
-    while ((opt = getopt(argc, argv, ":P:T:A:C:Q:h")) != -1) {
+    while ((opt = getopt(argc, argv, ":P:T:A:C:L:h")) != -1) {
         switch (opt) {
             // 模型参数， -P<nu>
             case 'P':
@@ -180,10 +180,10 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 }
                 break;
 
-            case 'Q':
-                GRT_SAFE_FREE_PTR(Ctrl->Q.phase_list);
-                Ctrl->Q.phase_list = strdup(optarg);
-                Ctrl->Q.active = true;
+            case 'L':
+                GRT_SAFE_FREE_PTR(Ctrl->L.phase_list);
+                Ctrl->L.phase_list = strdup(optarg);
+                Ctrl->L.active = true;
                 break;
             
             GRT_Common_Options_in_Switch((char)(optopt)); 
@@ -210,7 +210,7 @@ int lamb1_main(int argc, char **argv){
     if(Ctrl->C.active){
         real_t (*u)[3][3] = GRT_SAFE_CALLOC(Ctrl->T.nt, sizeof(*u));
         grt_solve_lamb1(Ctrl->P.nu, Ctrl->T.ts, Ctrl->T.nt, Ctrl->A.azimuth,
-            Ctrl->C.cbar, Ctrl->Q.active ? Ctrl->Q.phase_list : NULL, u);
+            Ctrl->C.cbar, Ctrl->L.active ? Ctrl->L.phase_list : NULL, u);
 
         printf("#%13s%14s%14s%14s\n", "tbar", "u1", "u2", "u3");
         for(int i=0; i<Ctrl->T.nt; ++i){
@@ -224,7 +224,7 @@ int lamb1_main(int argc, char **argv){
     }
     else{
         grt_solve_lamb1(Ctrl->P.nu, Ctrl->T.ts, Ctrl->T.nt, Ctrl->A.azimuth,
-            0.0, Ctrl->Q.active ? Ctrl->Q.phase_list : NULL, NULL);
+            0.0, Ctrl->L.active ? Ctrl->L.phase_list : NULL, NULL);
     }
 
     free_Ctrl(Ctrl);

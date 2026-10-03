@@ -55,7 +55,7 @@ typedef struct {
     struct {
         bool active;
         char *phase_list;
-    } Q;
+    } L;
 
 } GRT_MODULE_CTRL;
 
@@ -66,7 +66,7 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl)
     GRT_SAFE_FREE_PTR(Ctrl->S.source_path);
     GRT_SAFE_FREE_PTR(Ctrl->S.receiver_path);
     GRT_SAFE_FREE_PTR(Ctrl->S.mixed_path);
-    GRT_SAFE_FREE_PTR(Ctrl->Q.phase_list);
+    GRT_SAFE_FREE_PTR(Ctrl->L.phase_list);
     GRT_SAFE_FREE_PTR(Ctrl);
 }
 
@@ -93,7 +93,7 @@ printf("\n"
 "----------------------------------------------------------------\n"
 "    grt lamb2 -P<nu> -T<t1>/<t2>/<dt> -R<dist>\n"
 "              (-Ds<depsrc> | -Dr<deprcv>) -A<azimuth>\n"
-"              [-Q<phases>]\n"
+"              [-L<phases>]\n"
 "              [-S[+s<source-path>][+r<receiver-path>][+m<mixed-path>]]\n"
 "\n\n"
 "Options:\n"
@@ -128,7 +128,7 @@ printf("\n"
 "\n"
 "    -A<azimuth>    Azimuth in degree, from source to receiver, [0, 360].\n"
 "\n"
-"    -Q<phases>     Keep only selected phase terms. Use a comma-separated list\n"
+"    -L<phases>     Keep only selected phase terms. Use a comma-separated list\n"
 "                   of P, S, SP and PS. Only SP is\n"
 "                   available for an underground source; only PS is available\n"
 "                   for an underground receiver.\n"
@@ -148,7 +148,7 @@ printf("\n"
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
 {
     int opt;
-    while ((opt = getopt(argc, argv, ":P:T:R:D:S:A:Q:h")) != -1) {
+    while ((opt = getopt(argc, argv, ":P:T:R:D:S:A:L:h")) != -1) {
         switch (opt) {
             case 'P':
                 Ctrl->P.active = true;
@@ -238,10 +238,10 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 }
                 break;
 
-            case 'Q':
-                GRT_SAFE_FREE_PTR(Ctrl->Q.phase_list);
-                Ctrl->Q.phase_list = strdup(optarg);
-                Ctrl->Q.active = true;
+            case 'L':
+                GRT_SAFE_FREE_PTR(Ctrl->L.phase_list);
+                Ctrl->L.phase_list = strdup(optarg);
+                Ctrl->L.active = true;
                 break;
 
             GRT_Common_Options_in_Switch((char)(optopt));
@@ -285,7 +285,7 @@ static void run_lamb2_with_derivative_outputs(const GRT_MODULE_CTRL *Ctrl)
 
     grt_solve_lamb2(Ctrl->P.nu, Ctrl->T.ts, Ctrl->T.nt, Ctrl->R.distance,
         Ctrl->D.depsrc, Ctrl->D.deprcv, Ctrl->A.azimuth,
-        Ctrl->Q.active ? Ctrl->Q.phase_list : NULL,
+        Ctrl->L.active ? Ctrl->L.phase_list : NULL,
         G, dG_source, dG_receiver, dG_mixed);
     grt_lamb_print_green_series(stdout, Ctrl->T.ts, Ctrl->T.nt, G);
     if (source_file != NULL) {
@@ -317,7 +317,7 @@ int lamb2_main(int argc, char **argv)
     } else {
         grt_solve_lamb2(Ctrl->P.nu, Ctrl->T.ts, Ctrl->T.nt, Ctrl->R.distance,
             Ctrl->D.depsrc, Ctrl->D.deprcv, Ctrl->A.azimuth,
-            Ctrl->Q.active ? Ctrl->Q.phase_list : NULL, NULL, NULL, NULL, NULL);
+            Ctrl->L.active ? Ctrl->L.phase_list : NULL, NULL, NULL, NULL, NULL);
     }
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;
