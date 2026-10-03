@@ -34,8 +34,8 @@ grt okada -I6/3.464/2.7 -Su1e16 -Ds10 -Dr0 -M100/20 -N -X-5/5/0.5 -Y-5/5/0.5 -Oo
 grt okada -I6/3.464/2.7 -Su1e16 -Ds10 -Qrcv_pts_6.txt -N -Ookada_q6.nc
 grt okada -I6/3.464/2.7 -Ccfaults.inp -Dr0 -e -X-5/5/0.5 -Y-5/5/0.5 -Ookada_ff_zrt_cli.nc
 grt okada -I6/3.464/2.7 -Ccfaults.inp -Dr0 -N -e -X-5/5/0.5 -Y-5/5/0.5 -Ookada_ff_zne_cli.nc
-grt okada -I6/3.464/2.7 -Su1e12 -Ds10 -Rrcv_faults.inp+i0.75/0.75 -N -e -Ookada_rf.nc
-grt okada -I6/3.464/2.7 -Su1e12 -Ds10 -Rrcv_faults.inp -N -e -Ookada_rf_default.nc
+grt okada -I6/3.464/2.7 -Su1e12 -Ds10 -Urcv_faults.inp+i0.75/0.75 -N -e -Ookada_rf.nc
+grt okada -I6/3.464/2.7 -Su1e12 -Ds10 -Urcv_faults.inp -N -e -Ookada_rf_default.nc
 
 python -u test_okada.py
 

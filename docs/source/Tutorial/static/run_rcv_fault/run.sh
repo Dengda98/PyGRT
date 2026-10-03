@@ -16,8 +16,8 @@ grt static greenfn -Mmilrow -Ds5 -Dr0/10/0.5 -R0/20/0.5 -e -Ostgrn.nc
 
 # ------------------------------------------------
 # BEGIN SYN
-# 使用 -R 读取 Coulomb 格式的有限断层指定接收点
-grt static syn -Gstgrn.nc -S1e24 -M33/90/0 -Rrcv_fault.inp -N -Ostsyn_rf.nc -e
+# 使用 -U 读取 Coulomb 格式的有限断层指定接收点
+grt static syn -Gstgrn.nc -S1e24 -M33/90/0 -Urcv_fault.inp -N -Ostsyn_rf.nc -e
 # END SYN
 # ------------------------------------------------
 

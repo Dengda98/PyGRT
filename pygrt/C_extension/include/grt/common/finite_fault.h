@@ -100,7 +100,7 @@ FINITE_FAULT *grt_finite_fault_load_coulomb(const char *path, size_t *nfault);
  * 选项格式为 <fault>[+i<dL>/<dW>]，不提供 +i 时将 dL/dW 置为非正值
  * 返回的断层数组已经建立衍生量，调用方负责 grt_finite_fault_free
  *
- * @param[in]   option   有限断层选项值，不含 -C 或 -R 选项字符
+ * @param[in]   option   有限断层选项值，不含 -C 或 -U 选项字符
  * @param[out]  nfault   读入的断层段数
  * @param[out]  dL       沿走向剖分尺寸 (km)，未指定时为非正值
  * @param[out]  dW       沿倾向剖分尺寸 (km)，未指定时为非正值

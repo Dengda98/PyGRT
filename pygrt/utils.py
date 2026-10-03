@@ -283,7 +283,7 @@ def okada(
 
     use_ff = src_fault is not None
     use_q = rcv_points is not None
-    use_r = rcv_fault is not None
+    use_u = rcv_fault is not None
     use_xy = norths is not None or easts is not None
     has_strike = strike is not None
     has_dip = dip is not None
@@ -300,22 +300,22 @@ def okada(
             return f"-M{format_float(strike)}/{format_float(dip)}/{format_float(rake)}"
         return f"-M{format_float(strike)}/{format_float(dip)}"
 
-    if ((use_q or use_r) and use_xy):
+    if ((use_q or use_u) and use_xy):
         raise ValueError("rcv_points/rcv_fault is mutually exclusive with norths/easts.")
-    if (use_q and use_r):
+    if (use_q and use_u):
         raise ValueError("rcv_points and rcv_fault are mutually exclusive.")
     if use_xy and (norths is None or easts is None):
         raise ValueError("norths and easts must be supplied together.")
-    if ((not use_q) and (not use_r) and (not use_xy)):
+    if ((not use_q) and (not use_u) and (not use_xy)):
         raise ValueError("Specify norths/easts, rcv_points or rcv_fault.")
     if depsrc is not None and depsrc < 0.0:
         raise ValueError("depsrc must be nonnegative.")
     if deprcv is not None and deprcv < 0.0:
         raise ValueError("deprcv must be nonnegative.")
-    if ((use_q or use_r) and (deprcv is not None)):
+    if ((use_q or use_u) and (deprcv is not None)):
         raise ValueError("rcv_points/rcv_fault is mutually exclusive with deprcv.")
     if rcv_fault_size is not None:
-        if (not use_r):
+        if (not use_u):
             raise ValueError("rcv_fault_size requires rcv_fault.")
         if ((len(rcv_fault_size) != 2)
                 or (rcv_fault_size[0] <= 0.0)
@@ -344,13 +344,13 @@ def okada(
 
     if deprcv is not None:
         command.append(f"-Dr{format_float(deprcv)}")
-    elif (not use_q) and (not use_r):
+    elif (not use_q) and (not use_u):
         raise ValueError("deprcv is required for grid receivers.")
 
     if use_q:
         command.append(f"-Q{Path(rcv_points)}")
-    elif use_r:
-        receiver_option = f"-R{Path(rcv_fault)}"
+    elif use_u:
+        receiver_option = f"-U{Path(rcv_fault)}"
         if rcv_fault_size is not None:
             receiver_option += f"+i{format_float(rcv_fault_size[0])}/{format_float(rcv_fault_size[1])}"
         command.append(receiver_option)
@@ -1655,7 +1655,7 @@ def lamb(
     ]
     phase_list = _prepare_lamb_phases(phases)
     if phase_list is not None:
-        command.append(f"-Q{phase_list}")
+        command.append(f"-L{phase_list}")
 
     has_geometry = strike is not None or dip is not None or rake is not None
     if force is not None:

@@ -85,7 +85,7 @@ with netcdf_file("points_zrt.nc", mode="r", mmap=False) as nc:
 PY
 
 # -------------------- 有限接收断层：ZRT --------------------
-grt static syn -Gstgrn.nc -S1e20 -Ds2 -Rrcv_faults_defined.inp+i1/1 -e -Ofinite_zrt.nc
+grt static syn -Gstgrn.nc -S1e20 -Ds2 -Urcv_faults_defined.inp+i1/1 -e -Ofinite_zrt.nc
 grt static stress finite_zrt.nc
 grt static sproj -Gfinite_zrt.nc
 grt static coulomb -Gfinite_zrt.nc -F0.4

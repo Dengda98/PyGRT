@@ -66,7 +66,7 @@ typedef struct {
         real_t dW;
         size_t nfault;
         FINITE_FAULT *faults;
-    } R;
+    } U;
     /** 输出 nc 文件 */
     struct {
         bool active;
@@ -107,7 +107,7 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl)
     GRT_SAFE_FREE_PTR(Ctrl->X.values);
     GRT_SAFE_FREE_PTR(Ctrl->Y.values);
     grt_finite_fault_free(Ctrl->C.faults);
-    grt_finite_fault_free(Ctrl->R.faults);
+    grt_finite_fault_free(Ctrl->U.faults);
     free(Ctrl);
 }
 
@@ -133,11 +133,11 @@ printf("\n"
 "\n"
 "    # Finite faults in Coulomb format\n"
 "    grt okada -I<vp>/<vs>/<rho> -C<path> -O<outgrid>\n"
-"              [-X<x1>/<x2>/<dx> -Y<y1>/<y2>/<dy> | -Q<file> | -R<fault>[+i<dL>/<dW>]] [-N] [-e] [-s]\n"
+"              [-X<x1>/<x2>/<dx> -Y<y1>/<y2>/<dy> | -Q<file> | -U<fault>[+i<dL>/<dW>]] [-N] [-e] [-s]\n"
 "\n"
 "    -I specifies <vp>/<vs>/<rho> for a homogeneous elastic half-space.\n"
 "    -C evaluates each Coulomb fault row as one exact rectangular Okada fault.\n"
-"    Point-source -Ds is required. Grid receivers require -Dr; -Q/-R provide receiver depths.\n"
+"    Point-source -Ds is required. Grid receivers require -Dr; -Q/-U provide receiver depths.\n"
 "\n"
 "Options:\n"
 "----------------------------------------------------------------\n"
@@ -150,7 +150,7 @@ printf("\n"
 "\n"
 "    -Ds<depsrc>  Point-source depth in km.\n"
 "\n"
-"    -Dr<deprcv>  Regular-grid receiver depth in km. Forbidden with -Q/-R.\n"
+"    -Dr<deprcv>  Regular-grid receiver depth in km. Forbidden with -Q/-U.\n"
 "\n"
 "    -M<strike>/<dip>[/<rake>]\n"
 "                  Point-source geometry in degrees. Without rake, use a tensile source; with rake,\n"
@@ -166,18 +166,18 @@ printf("\n"
 "\n"
 "    -X<x1>/<x2>/<dx>\n"
 "                  Set equidistant receiver points in the north direction, in km.\n"
-"                  Mutually exclusive with -Q/-R.\n"
+"                  Mutually exclusive with -Q/-U.\n"
 "\n"
 "    -Y<y1>/<y2>/<dy>\n"
 "                  Set equidistant receiver points in the east direction, in km.\n"
-"                  Mutually exclusive with -Q/-R.\n"
+"                  Mutually exclusive with -Q/-U.\n"
 "\n"
 "    -Q<file>      Arbitrary receiver points from an ASCII file. Each line contains north east depth\n"
 "                  in km, optionally followed by strike dip rake in degrees; lines beginning with\n"
 "                  # are comments. If present, the three angles are saved as point variables but\n"
-"                  are not used in the current calculation. Mutually exclusive with -X/-Y/-Dr/-R.\n"
+"                  are not used in the current calculation. Mutually exclusive with -X/-Y/-Dr/-U.\n"
 "\n"
-"    -R<fault>[+i<dL>/<dW>]\n"
+"    -U<fault>[+i<dL>/<dW>]\n"
 "                  Coulomb-format finite receiver faults. Without +i, each\n"
 "                  fault contributes one point at its rectangular center.\n"
 "                  With +i, each fault is subdivided along strike/dip and\n"
@@ -242,7 +242,7 @@ static void parse_axis(const char *text, char option, size_t *n, real_t **values
 static void parse_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
 {
     int opt;
-    while((opt = getopt(argc, argv, ":I:O:S:M:C:X:Y:D:Q:R:Nesh")) != -1){
+    while((opt = getopt(argc, argv, ":I:O:S:M:C:X:Y:D:Q:U:Nesh")) != -1){
         switch(opt){
             // 读取均匀半空间介质参数
             case 'I': {
@@ -314,11 +314,11 @@ static void parse_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 Ctrl->Q.path = strdup(optarg);
                 break;
             // 读取 Coulomb 格式有限接收断层
-            case 'R': {
-                Ctrl->R.active = true;
-                grt_finite_fault_free(Ctrl->R.faults);
-                Ctrl->R.faults = grt_finite_fault_from_option(
-                    optarg, &Ctrl->R.nfault, &Ctrl->R.dL, &Ctrl->R.dW);
+            case 'U': {
+                Ctrl->U.active = true;
+                grt_finite_fault_free(Ctrl->U.faults);
+                Ctrl->U.faults = grt_finite_fault_from_option(
+                    optarg, &Ctrl->U.nfault, &Ctrl->U.dL, &Ctrl->U.dW);
                 break;
             }
             // 设置点源深度或规则网格接收点深度
@@ -353,11 +353,11 @@ static void parse_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
     if(Ctrl->X.active ^ Ctrl->Y.active){
         GRTRaiseError("-X and -Y must be specified together.\n");
     }
-    if((Ctrl->Q.active || Ctrl->R.active) && (Ctrl->X.active || Ctrl->Y.active || Ctrl->Drcv.active)){
-        GRTRaiseError("-Q and -R are mutually exclusive with -X/-Y/-Dr.\n");
+    if((Ctrl->Q.active || Ctrl->U.active) && (Ctrl->X.active || Ctrl->Y.active || Ctrl->Drcv.active)){
+        GRTRaiseError("-Q and -U are mutually exclusive with -X/-Y/-Dr.\n");
     }
-    if(Ctrl->Q.active && Ctrl->R.active){
-        GRTRaiseError("-Q and -R are mutually exclusive.\n");
+    if(Ctrl->Q.active && Ctrl->U.active){
+        GRTRaiseError("-Q and -U are mutually exclusive.\n");
     }
 
     bool point = Ctrl->S.active || Ctrl->M.active;
@@ -370,8 +370,8 @@ static void parse_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
     } else {
         if(Ctrl->Dsrc.active) GRTRaiseError("-Ds is not used for finite faults.\n");
     }
-    if((!Ctrl->Q.active) && (!Ctrl->R.active) && ((!Ctrl->X.active) || (!Ctrl->Y.active) || (!Ctrl->Drcv.active))){
-        GRTRaiseError("Grid receivers require -X, -Y and -Dr, or use -Q/-R.\n");
+    if((!Ctrl->Q.active) && (!Ctrl->U.active) && ((!Ctrl->X.active) || (!Ctrl->Y.active) || (!Ctrl->Drcv.active))){
+        GRTRaiseError("Grid receivers require -X, -Y and -Dr, or use -Q/-U.\n");
     }
 }
 
@@ -384,9 +384,9 @@ static void parse_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
 static RCV_POINTS *build_receivers(const GRT_MODULE_CTRL *Ctrl)
 {
     if(Ctrl->Q.active) return grt_rcv_points_from_file(Ctrl->Q.path);
-    if(Ctrl->R.active){
+    if(Ctrl->U.active){
         return grt_rcv_points_from_faults(
-            Ctrl->R.nfault, Ctrl->R.faults, Ctrl->R.dL, Ctrl->R.dW);
+            Ctrl->U.nfault, Ctrl->U.faults, Ctrl->U.dL, Ctrl->U.dW);
     }
     return grt_rcv_points_from_grid(Ctrl->X.n, Ctrl->X.values, Ctrl->Y.n, Ctrl->Y.values, Ctrl->deprcv);
 }

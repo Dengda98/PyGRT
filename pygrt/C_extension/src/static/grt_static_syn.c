@@ -64,14 +64,14 @@ typedef struct {
         bool active;
         char *s_path;
     } Q;
-    /** -R: Coulomb 格式有限接收断层 */
+    /** -U: Coulomb 格式有限接收断层 */
     struct {
         bool active;
         real_t dL;
         real_t dW;
         size_t nfault;
         FINITE_FAULT *faults;
-    } R;
+    } U;
     /** 输出 nc 文件名 */
     struct {
         bool active;
@@ -130,9 +130,9 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
     // Q
     GRT_SAFE_FREE_PTR(Ctrl->Q.s_path);
 
-    // R
-    grt_finite_fault_free(Ctrl->R.faults);
-    Ctrl->R.faults = NULL;
+    // U
+    grt_finite_fault_free(Ctrl->U.faults);
+    Ctrl->U.faults = NULL;
 
     // O
     GRT_SAFE_FREE_PTR(Ctrl->O.s_outgrid);
@@ -155,7 +155,7 @@ printf("\n"
 "    Receivers: by default reuse the library north/east grid (from\n"
 "    static greenfn -X/-Y or -R). Optionally redefine with -X/-Y (uniform\n"
 "    depth via -Dr when needed), -Q<file> for arbitrary points, or\n"
-"    -R<fault>[+i<dL>/<dW>] for finite receiver faults. -Q/-R are\n"
+"    -U<fault>[+i<dL>/<dW>] for finite receiver faults. -Q/-U are\n"
 "    mutually exclusive with -X/-Y and -Dr. If the library was built with -R, the default grid is\n"
 "    a 1-D line (north=0, east=R); set -X/-Y or -Q to get a 2-D field.\n"
 "    For each receiver, the module first synthesizes results at the\n"
@@ -174,16 +174,16 @@ printf("\n"
 "              [-M<strike>/<dip>[/<rake>]]\n"
 "              [-T<Mxx>/<Mxy>/<Mxz>/<Myy>/<Myz>/<Mzz>]\n"
 "              [-F<fn>/<fe>/<fz>] \n"
-"              [-X<x1>/<x2>/<dx>] [-Y<y1>/<y2>/<dy>] | [-Q<file>] | [-R<fault>[+i<dL>/<dW>]]\n"
+"              [-X<x1>/<x2>/<dx>] [-Y<y1>/<y2>/<dy>] | [-Q<file>] | [-U<fault>[+i<dL>/<dW>]]\n"
 "              [-N] [-e] [-s]\n"
 "\n"
 "    # Finite faults (Coulomb format)\n"
 "    grt static syn -G<ingrid.nc> -C<path>[+i<dL>/<dW>] -O<outgrid>\n"
-"              [-Dr<deprcv>] [-X<x1>/<x2>/<dx>] [-Y<y1>/<y2>/<dy>] | [-Q<file>] | [-R<fault>[+i<dL>/<dW>]]\n"
+"              [-Dr<deprcv>] [-X<x1>/<x2>/<dx>] [-Y<y1>/<y2>/<dy>] | [-Q<file>] | [-U<fault>[+i<dL>/<dW>]]\n"
 "              [-N] [-e] [-s]\n"
 "\n"
 "    -G always points to a single 4D STGRNLIB nc file.\n"
-"    Depth options (without -Q/-R) depend on the library shape:\n"
+"    Depth options (without -Q/-U) depend on the library shape:\n"
 "      ndepsrc=1, ndeprcv=1: -Ds/-Dr optional; finite faults forbidden\n"
 "      ndepsrc=1, ndeprcv>1: -Dr required; -Ds optional;\n"
 "                            finite faults forbidden\n"
@@ -192,7 +192,7 @@ printf("\n"
 "      ndepsrc>1, ndeprcv>1: -Ds required for point source;\n"
 "                            -Dr required; finite faults allowed\n"
 "    When an optional depth is set, it must be within the library range.\n"
-"    With -Q/-R, receiver depths come from the input; do not set -Dr.\n"
+"    With -Q/-U, receiver depths come from the input; do not set -Dr.\n"
 "\n"
 "\n\n"
 "Options:\n"
@@ -205,8 +205,8 @@ printf("\n"
 "                  it has one source depth. Forbidden for finite faults.\n"
 "\n"
 "    -Dr<deprcv>   Receiver depth (km) for grid receivers. Required\n"
-"                  when the library has multiple receiver depths and -Q/-R\n"
-"                  is not used; optional for one depth, but forbidden with -Q/-R.\n"
+"                  when the library has multiple receiver depths and -Q/-U\n"
+"                  is not used; optional for one depth, but forbidden with -Q/-U.\n"
 "\n"
 "    -S[u]<scale>  Scale factor to all kinds of point source. \n"
 "                  + For Explosion, Shear and Moment Tensor,\n"
@@ -254,7 +254,7 @@ printf("\n"
 "                  source-depth and receiver-depth sampling in the library.\n"
 "                  Each fault: dip in (0, 90], bot > top (km).\n"
 "                  Receiver locations default to the library grid;\n"
-"                  optional -X/-Y, -Q or -R to redefine.\n"
+"                  optional -X/-Y, -Q or -U to redefine.\n"
 "                  Requires a library with ndepsrc>1.\n"
 "\n"
 "    -X<x1>/<x2>/<dx>\n"
@@ -262,24 +262,24 @@ printf("\n"
 "                 <x1>: start coordinate (km).\n"
 "                 <x2>: end coordinate (km).\n"
 "                 <dx>: sampling interval (km).\n"
-"                 Mutually exclusive with -Q/-R.\n"
+"                 Mutually exclusive with -Q/-U.\n"
 "\n"
 "    -Y<y1>/<y2>/<dy>\n"
 "                 Set the equidistant points in the east direction.\n"
 "                 <y1>: start coordinate (km).\n"
 "                 <y2>: end coordinate (km).\n"
 "                 <dy>: sampling interval (km).\n"
-"                 Mutually exclusive with -Q/-R.\n"
+"                 Mutually exclusive with -Q/-U.\n"
 "\n"
 "    -Q<file>      Arbitrary receiver points from an ASCII file.\n"
 "                  Each line contains north east depth (km), optionally\n"
 "                  followed by strike dip rake (degrees); lines starting\n"
 "                  with # are comments. If the three angles are present,\n"
 "                  they are saved as point variables but are not used in\n"
-"                  synthesis. Mutually exclusive with -X/-Y/-Dr/-R\n"
+"                  synthesis. Mutually exclusive with -X/-Y/-Dr/-U\n"
 "                  (depths come from the file).\n"
 "\n"
-"    -R<fault>[+i<dL>/<dW>]\n"
+"    -U<fault>[+i<dL>/<dW>]\n"
 "                  Coulomb-format finite receiver faults. Without +i, dL=dW\n"
 "                  defaults to the smallest positive interval among the\n"
 "                  epicentral-distance, source-depth and receiver-depth\n"
@@ -288,7 +288,7 @@ printf("\n"
 "                  the receiver points are the subfault centers. The output\n"
 "                  uses one point dimension for all receivers and adds\n"
 "                  nfault-dimensional strike/dip/rake/offset/stksize/dipsize variables.\n"
-"                  -R is mutually exclusive with -Q, -X/-Y and -Dr.\n"
+"                  -U is mutually exclusive with -Q, -X/-Y and -Dr.\n"
 "\n"
 "    -N            Components of results will be Z, N, E.\n"
 "\n"
@@ -350,7 +350,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     sprintf(Ctrl->s_computeType, "%s", "EX");
 
     int opt;
-    while ((opt = getopt(argc, argv, ":G:O:S:M:F:T:C:X:Y:D:Q:R:Nesh")) != -1) {
+    while ((opt = getopt(argc, argv, ":G:O:S:M:F:T:C:X:Y:D:Q:U:Nesh")) != -1) {
         switch (opt) {
             // 输入 nc 文件名
             case 'G':
@@ -533,12 +533,12 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 Ctrl->Q.s_path = strdup(optarg);
                 break;
 
-            // 有限接收断层文件，-R<path>[+i<dL>/<dW>]
-            case 'R':
-                Ctrl->R.active = true;
-                grt_finite_fault_free(Ctrl->R.faults);
-                Ctrl->R.faults = grt_finite_fault_from_option(
-                    optarg, &Ctrl->R.nfault, &Ctrl->R.dL, &Ctrl->R.dW);
+            // 有限接收断层文件，-U<path>[+i<dL>/<dW>]
+            case 'U':
+                Ctrl->U.active = true;
+                grt_finite_fault_free(Ctrl->U.faults);
+                Ctrl->U.faults = grt_finite_fault_from_option(
+                    optarg, &Ctrl->U.nfault, &Ctrl->U.dL, &Ctrl->U.dW);
                 break;
 
             // 是否计算位移空间导数, 影响 calcUTypes 变量
@@ -578,12 +578,12 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
         GRTRaiseError("Only support at most one of \"-M\", \"-F\" and \"-T\". Use \"-h\" for help.\n");
     }
 
-    // -Q/-R 与 -X/-Y 互斥
-    if((Ctrl->Q.active || Ctrl->R.active) && (Ctrl->X.active || Ctrl->Y.active)){
-        GRTRaiseError("\"-Q\" and \"-R\" are mutually exclusive with \"-X\"/\"-Y\". Use \"-h\" for help.\n");
+    // -Q/-U 与 -X/-Y 互斥
+    if((Ctrl->Q.active || Ctrl->U.active) && (Ctrl->X.active || Ctrl->Y.active)){
+        GRTRaiseError("\"-Q\" and \"-U\" are mutually exclusive with \"-X\"/\"-Y\". Use \"-h\" for help.\n");
     }
-    if(Ctrl->Q.active && Ctrl->R.active){
-        GRTRaiseError("\"-Q\" and \"-R\" are mutually exclusive. Use \"-h\" for help.\n");
+    if(Ctrl->Q.active && Ctrl->U.active){
+        GRTRaiseError("\"-Q\" and \"-U\" are mutually exclusive. Use \"-h\" for help.\n");
     }
 
     // 指定新接收点网格时必须同时指定 -X 和 -Y
@@ -592,9 +592,9 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     }
     Ctrl->isnewNEgrid = Ctrl->X.active;
 
-    // -Q/-R 时深度来自文件，禁止 -Dr
-    if((Ctrl->Q.active || Ctrl->R.active) && Ctrl->D.r_active){
-        GRTRaiseError("Do not set -Dr with -Q/-R; receiver depths come from the input file.\n");
+    // -Q/-U 时深度来自文件，禁止 -Dr
+    if((Ctrl->Q.active || Ctrl->U.active) && Ctrl->D.r_active){
+        GRTRaiseError("Do not set -Dr with -Q/-U; receiver depths come from the input file.\n");
     }
 
     Ctrl->isPointSource = isPointSource;
@@ -1210,10 +1210,10 @@ static void check_syn_depth_options(const GRT_MODULE_CTRL *Ctrl, const STGRNLIB 
         GRTRaiseError("Do not set -Ds for finite faults; source depths come from the fault geometry.");
     }
 
-    if(Ctrl->Q.active || Ctrl->R.active){
-        // -Q/-R：深度来自文件，禁止 -Dr（getopt 已拦一道，此处再保险）
+    if(Ctrl->Q.active || Ctrl->U.active){
+        // -Q/-U：深度来自文件，禁止 -Dr（getopt 已拦一道，此处再保险）
         if(Ctrl->D.r_active){
-            GRTRaiseError("Do not set -Dr with -Q/-R; receiver depths come from the input file.");
+            GRTRaiseError("Do not set -Dr with -Q/-U; receiver depths come from the input file.");
         }
     } else {
         // 网格接收：多台站深度库必须 -Dr，单台站深度库可省略或显式设置
@@ -1260,7 +1260,7 @@ static void resolve_finite_fault_subdiv(
  * 构建接收点列表
  *
  * -Q：任意点（各点自有深度，is_grid=false）
- * -R：有限接收断层子断层中心（is_fault=true）
+ * -U：有限接收断层子断层中心（is_fault=true）
  * 否则：-X/-Y 或延用库水平网格，统一深度（-Dr 或库 deprcvs[0]），is_grid=true
  *
  * @param[in]  Ctrl   static_syn 命令行控制结构体
@@ -1272,9 +1272,9 @@ static RCV_POINTS *build_syn_rcv(const GRT_MODULE_CTRL *Ctrl, const STGRNLIB *li
     if(Ctrl->Q.active){
         return grt_rcv_points_from_file(Ctrl->Q.s_path);
     }
-    if(Ctrl->R.active){
+    if(Ctrl->U.active){
         return grt_rcv_points_from_faults(
-            Ctrl->R.nfault, Ctrl->R.faults, Ctrl->R.dL, Ctrl->R.dW);
+            Ctrl->U.nfault, Ctrl->U.faults, Ctrl->U.dL, Ctrl->U.dW);
     }
 
     size_t nnorth = Ctrl->isnewNEgrid ? Ctrl->X.nnorth : lib->nnorth;
@@ -1358,15 +1358,15 @@ int static_syn_main(int argc, char **argv){
         GRTRaiseError("Input grid didn't have displacement derivatives, you can't set -e.");
     }
 
-    // -C 和 -R 共用同一套格林函数库剖分间隔规则
+    // -C 和 -U 共用同一套格林函数库剖分间隔规则
     if(Ctrl->C.active){
         resolve_finite_fault_subdiv(lib, &Ctrl->C.dL, &Ctrl->C.dW, "finite fault");
     }
-    if(Ctrl->R.active){
-        resolve_finite_fault_subdiv(lib, &Ctrl->R.dL, &Ctrl->R.dW, "finite receiver fault");
+    if(Ctrl->U.active){
+        resolve_finite_fault_subdiv(lib, &Ctrl->U.dL, &Ctrl->U.dW, "finite receiver fault");
     }
 
-    // 接收点：网格、-Q 逐点或 -R 有限断层子断层中心
+    // 接收点：网格、-Q 逐点或 -U 有限断层子断层中心
     RCV_POINTS *rcv = build_syn_rcv(Ctrl, lib);
     size_t npts = rcv->npts;
     const real_t *norths = rcv->norths;

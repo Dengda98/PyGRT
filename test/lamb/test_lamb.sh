@@ -44,9 +44,9 @@ test -f "${OUTPUT_DIRS[1]}/nZ.sac"
 test -f "${OUTPUT_DIRS[1]}/eZ.sac"
 test -f "${OUTPUT_DIRS[2]}/Z.sac"
 
-# -Q accepts a comma-separated phase list in the merged Lamb module
+# -L accepts a comma-separated phase list in the merged Lamb module
 grt lamb -H8.0/4.62/3.3 -N16/0.01 -R10 -Ds5 -Dr0 -A30 -M100/30/70 -S1e20 \
-    -QP,S,SP -O"${OUTPUT_DIRS[7]}" -s
+    -LP,S,SP -O"${OUTPUT_DIRS[7]}" -s
 test -f "${OUTPUT_DIRS[7]}/Z.sac"
 
 # 第三类 Lamb：单力源、矩张量源、时间函数、积分和微分
