@@ -311,7 +311,6 @@ STGRNLIB *grt_stgrnlib_load_nc(const char *path)
     NC_CHECK(nc_inq_dimlen(ncid, east_dimid, &neast));
 
     if(ndepsrc == 0 || ndeprcv == 0 || nnorth == 0 || neast == 0){
-        NC_CHECK(nc_close(ncid));
         GRTRaiseError("Invalid STGRNLIB nc \"%s\": empty dimension.", path);
     }
 
@@ -360,8 +359,6 @@ STGRNLIB *grt_stgrnlib_load_nc(const char *path)
         size_t nlayer = 0, nparam = 0;
         if(nc_inq_dimid(ncid, "layer", &layer_dimid) != NC_NOERR ||
            nc_inq_dimid(ncid, "model_param", &param_dimid) != NC_NOERR){
-            NC_CHECK(nc_close(ncid));
-            grt_stgrnlib_free(lib);
             GRTRaiseError(
                 "Invalid STGRNLIB nc \"%s\": missing model dimensions "
                 "(layer, model_param); rebuild with current greenfn.",
@@ -370,8 +367,6 @@ STGRNLIB *grt_stgrnlib_load_nc(const char *path)
         NC_CHECK(nc_inq_dimlen(ncid, layer_dimid, &nlayer));
         NC_CHECK(nc_inq_dimlen(ncid, param_dimid, &nparam));
         if(nlayer == 0 || nparam != GRT_MODARR_NCOL){
-            NC_CHECK(nc_close(ncid));
-            grt_stgrnlib_free(lib);
             GRTRaiseError(
                 "Invalid STGRNLIB nc \"%s\": layer=%zu, model_param=%zu "
                 "(expect layer>0, model_param=%d).",

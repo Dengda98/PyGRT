@@ -115,8 +115,6 @@ FINITE_FAULT *grt_finite_fault_load_coulomb(const char *path, size_t *nfault)
     char *line = NULL;
     size_t nlen = 0;
     if(grt_getline(&line, &nlen, fp) <= 0){
-        fclose(fp);
-        GRT_SAFE_FREE_PTR(line);
         GRTRaiseError("read Coulomb fault header of %s failed.", path);
     }
 
@@ -127,8 +125,6 @@ FINITE_FAULT *grt_finite_fault_load_coulomb(const char *path, size_t *nfault)
         header[0], header[1], header[2], header[3], header[4], header[5],
         header[6], header[7], header[8], header[9], header[10], header[11]);
     if(nheader < COULOMB_HEADER_MIN_TOKENS || strcmp(header[0], "#") != 0){
-        fclose(fp);
-        GRT_SAFE_FREE_PTR(line);
         GRTRaiseError("invalid Coulomb fault header in %s: expected # plus 10 field labels for 11 data columns.", path);
     }
 
@@ -149,8 +145,6 @@ FINITE_FAULT *grt_finite_fault_load_coulomb(const char *path, size_t *nfault)
 
     // 第二行是与 11 个数据列对应的占位行
     if(grt_getline(&line, &nlen, fp) <= 0){
-        fclose(fp);
-        GRT_SAFE_FREE_PTR(line);
         GRTRaiseError("read Coulomb fault placeholder header of %s failed.", path);
     }
 
@@ -173,16 +167,10 @@ FINITE_FAULT *grt_finite_fault_load_coulomb(const char *path, size_t *nfault)
             &dum1, &east_begin, &north_begin, &east_end, &north_end,
             &kode_value, &value1, &value2, &dip, &top, &bot);
         if(nscan != 11){
-            fclose(fp);
-            GRT_SAFE_FREE_PTR(line);
-            GRT_SAFE_FREE_PTR(faults);
             GRTRaiseError("parse Coulomb fault data at line %zu of %s failed.", line_number, path);
         }
 
         if(fabs(kode_value - round(kode_value)) > 1e-8 || kode_value < 0.0){
-            fclose(fp);
-            GRT_SAFE_FREE_PTR(line);
-            GRT_SAFE_FREE_PTR(faults);
             GRTRaiseError("invalid Coulomb Kode at line %zu of %s.", line_number, path);
         }
 
@@ -237,7 +225,6 @@ FINITE_FAULT *grt_finite_fault_from_option(const char *option, size_t *nfault, r
     char *path = strtok(option_copy, "+");
     char *token = strtok(NULL, "+");
     if((path == NULL) || (*path == '\0') || (strtok(NULL, "+") != NULL)){
-        GRT_SAFE_FREE_PTR(option_copy);
         GRTRaiseError("Error in finite fault option. expected <fault>[+i<dL>/<dW>]. Use \"-h\" for help.");
     }
 
@@ -247,11 +234,9 @@ FINITE_FAULT *grt_finite_fault_from_option(const char *option, size_t *nfault, r
         // 解析 +i<dL>/<dW>，未提供时保留不剖分标记
         char extra;
         if((token[0] != 'i') || (sscanf(token + 1, "%lf/%lf%c", dL, dW, &extra) != 2)){
-            GRT_SAFE_FREE_PTR(option_copy);
             GRTRaiseError("Error in finite fault option. expected +i<dL>/<dW>. Use \"-h\" for help.");
         }
         if((*dL <= 0.0) || (*dW <= 0.0)){
-            GRT_SAFE_FREE_PTR(option_copy);
             GRTRaiseError("Error in finite fault option. dL and dW must be positive. Use \"-h\" for help.");
         }
     }
