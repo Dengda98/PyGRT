@@ -13,7 +13,9 @@ import os
 import glob
 import warnings
 from copy import deepcopy
+from contextlib import contextmanager
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import List, Optional, Sequence, Union
 
 import matplotlib.pyplot as plt
@@ -83,6 +85,21 @@ __all__ = [
 
 
 PathLike = Union[str, os.PathLike]
+
+
+@contextmanager
+def _temporary_distance_option(distances: Optional[np.ndarray]):
+    """将多个震中距通过临时文件传给 -R，退出上下文时自动清理"""
+    if distances is None:
+        yield None
+    elif distances.size == 1:
+        yield f"-R{format_float(distances[0])}"
+    else:
+        with TemporaryDirectory(prefix="pygrt_dists_") as tmpdir:
+            path = Path(tmpdir) / "dists.txt"
+            # 每行一个震中距，保持与直接传值时相同的数值精度
+            np.savetxt(path, distances, fmt="%.15g")
+            yield f"-R{path}"
 
 
 def _resolve_rcv_points(rcv_points: Optional[PathLike], kwargs: dict, function_name: str):

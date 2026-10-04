@@ -14,6 +14,7 @@ import warnings
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
+import numpy as np
 import pygrt
 from compare_func import assert_command_equals, assert_command_has
 
@@ -28,10 +29,19 @@ class CapturedRunner:
     def __init__(self):
         self.commands = []
         self.kwargs = []
+        self.distance_files = []
+        self.distances = []
 
     def __call__(self, command, **kwargs):
         self.commands.append([str(item) for item in command])
         self.kwargs.append(kwargs)
+        path = next((Path(str(item)[2:]) for item in command if str(item).startswith("-R")), None)
+        if path is not None and path.is_file():
+            self.distance_files.append(path)
+            self.distances.append(np.loadtxt(path, ndmin=1))
+        else:
+            self.distance_files.append(None)
+            self.distances.append(None)
 
 
 def _patch_run_grt(monkey_target, runner: CapturedRunner):
@@ -170,7 +180,7 @@ def test_greenfn_default_and_optional_flags():
                 f"-M{MODEL}",
                 "-D2/0",
                 "-N32/0.05+w0.8+n1",
-                "-R1,2.5",
+                f"-R{runner.distance_files[-1]}",
                 f"-O{model.grn}",
                 "-BfH",
                 "-H-1/-1",
@@ -179,6 +189,8 @@ def test_greenfn_default_and_optional_flags():
                 "-E0/0",
             ],
         )
+        np.testing.assert_array_equal(runner.distances[-1], [1.0, 2.5])
+        assert not runner.distance_files[-1].exists()
 
         # 各类可选参数拼接到正确的 CLI 选项
         model.greenfn(
@@ -361,7 +373,7 @@ def test_modal_cli_argument_mapping():
                 f"-C{phase}",
                 "-Ds2,4",
                 "-Dr0,2",
-                "-R80,100",
+                f"-R{runner.distance_files[-1]}",
                 f"-O{model.grn}",
                 "-F0.1/0.8",
                 "-N0/2/1",
@@ -372,6 +384,8 @@ def test_modal_cli_argument_mapping():
                 "-P8",
             ],
         )
+        np.testing.assert_array_equal(runner.distances[-1], [80.0, 100.0])
+        assert not runner.distance_files[-1].exists()
         assert runner.kwargs[-1].get("print_log") is False
 
         model.eigenv(
@@ -604,7 +618,9 @@ def test_static_greenfn_xy_and_dists():
 
         model.static_greenfn(depsrc=1.0, deprcv=0.0, dists=[0.0, 1.5, 3.0], safilonTol=1e-5, converg_method="PTAM")
         cmd = runner.commands[-1]
-        assert_command_has(cmd, "static_greenfn", "-R0,1.5,3", "-L15+a1e-05", "-Cp", "-K+k50+e-1")
+        assert_command_has(cmd, "static_greenfn", f"-R{runner.distance_files[-1]}", "-L15+a1e-05", "-Cp", "-K+k50+e-1")
+        np.testing.assert_array_equal(runner.distances[-1], [0.0, 1.5, 3.0])
+        assert not runner.distance_files[-1].exists()
         assert "-X" not in " ".join(cmd)
         assert "-Y" not in " ".join(cmd)
 
