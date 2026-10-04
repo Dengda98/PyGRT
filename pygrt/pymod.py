@@ -22,7 +22,7 @@ from obspy import read
 
 from .cli import format_float, format_range, run_grt
 from .c_interfaces import C_grt_compute_travt1d_from_file, C_grt_free, PREAL
-from .utils import _resolve_rcv_points, read_nc_variables
+from .utils import _resolve_rcv_points, _temporary_distance_option, read_nc_variables
 
 
 PathLike = Union[str, os.PathLike]
@@ -672,7 +672,7 @@ class PyModel1D:
             command["Dr"] = f"-Dr{_format_depth_list(deprcvs)}"
         else:
             command["D"] = f"-D{format_float(float(depsrcs[0]))}/{format_float(float(deprcvs[0]))}"
-        command["R"] = f"-R{','.join(format_float(float(distance)) for distance in distances)}"
+        command["R"] = ""
         command["O"] = f"-O{output}"
 
         if freqband is not None:
@@ -714,7 +714,9 @@ class PyModel1D:
         nthreads_option = _nthreads_option(nthreads)
         if nthreads_option is not None:
             command["P"] = nthreads_option
-        run_grt(list(command.values()), print_log=print_log)
+        with _temporary_distance_option(distances) as option:
+            command["R"] = option
+            run_grt(list(command.values()), print_log=print_log)
 
     def greenfn(
         self,
@@ -844,7 +846,7 @@ class PyModel1D:
             command["D"] = f"-D{format_float(float(depsrcs[0]))}/{format_float(float(deprcvs[0]))}"
         command.update({
             "N": f"-N{nt}/{format_float(dt)}+w{format_float(zeta)}+n{upsampling_n}",
-            "R": f"-R{','.join(format_float(distance) for distance in distances)}",
+            "R": "",
             "O": f"-O{self.grn}",
             "B": f"-B{self._boundary_option()}",
         })
@@ -910,7 +912,9 @@ class PyModel1D:
         if nthreads_option is not None:
             command["P"] = nthreads_option
 
-        run_grt(list(command.values()), print_log=print_log)
+        with _temporary_distance_option(distances) as option:
+            command["R"] = option
+            run_grt(list(command.values()), print_log=print_log)
 
     def compute_grn(self, *args, **kwargs):
         """Legacy interface renamed to :meth:`greenfn`; calling it raises an error."""
@@ -1150,10 +1154,9 @@ class PyModel1D:
             if norths is not None or easts is not None:
                 raise ValueError("Use either dists or norths/easts.")
             distances = np.atleast_1d(_normalize_float_array(dists, "dists"))
-            command_grid = {
-                "R": f"-R{','.join(format_float(value) for value in distances)}"
-            }
+            command_grid = {"R": ""}
         else:
+            distances = None
             if norths is None or easts is None:
                 raise ValueError("Set norths and easts, or set dists.")
             command_grid = {
@@ -1208,7 +1211,10 @@ class PyModel1D:
         if calc_upar:
             command["e"] = "-e"
 
-        run_grt(list(command.values()))
+        with _temporary_distance_option(distances) as option:
+            if option is not None:
+                command["R"] = option
+            run_grt(list(command.values()))
 
     def compute_static_grn(self, *args, **kwargs):
         """Legacy interface renamed to :meth:`static_greenfn`; calling it raises an error."""
