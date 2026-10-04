@@ -7,7 +7,7 @@
  *
  */
 
-#include "grt/static/static_output.h"
+#include "grt/static/static_nc.h"
 
 #include <ctype.h>
 #include <limits.h>

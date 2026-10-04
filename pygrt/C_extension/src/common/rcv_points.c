@@ -13,7 +13,7 @@
 #include <ctype.h>
 #include <errno.h>
 
-#include "grt/static/rcv_points.h"
+#include "grt/common/rcv_points.h"
 #include "grt/common/checkerror.h"
 #include "grt/common/util.h"
 #include "grt/common/mynetcdf.h"

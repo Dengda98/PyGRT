@@ -34,6 +34,7 @@
 #include "grt/common/mynetcdf.h"
 #include "grt/common/progressbar.h"
 #include "grt/common/radiation.h"
+#include "grt/common/rcv_points.h"
 #include "grt/common/sacio.h"
 #include "grt/common/search.h"
 #include "grt/common/travt.h"
@@ -57,12 +58,11 @@
 #include "grt/modal/secular.h"
 
 
-#include "grt/static/rcv_points.h"
 #include "grt/static/static_grn.h"
 #include "grt/static/stgrnlib.h"
 #include "grt/static/static_layer.h"
 #include "grt/static/static_source.h"
-#include "grt/static/static_output.h"
+#include "grt/static/static_nc.h"
 
 
 #include "grt/static/okada.h"

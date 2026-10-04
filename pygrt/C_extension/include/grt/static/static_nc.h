@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "grt/static/rcv_points.h"
+#include "grt/common/rcv_points.h"
 
 /**
  * 查询指定深度处的接收介质参数
