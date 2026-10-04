@@ -564,7 +564,6 @@ static void convert_text_file(
     }
     FILE *out = fopen(output_path, "w");
     if(out == NULL){
-        fclose(in);
         GRTFileOpenError(output_path);
     }
 

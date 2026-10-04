@@ -282,9 +282,7 @@ void grt_check_greenfn_output_dir(const char *output_dir, const char *modelname)
 
         struct stat entry_stat;
         if(stat(entry_path, &entry_stat) != 0){
-            int error_code = errno;
-            closedir(dir);
-            GRTRaiseError("Cannot inspect Green's function output entry \"%s\". Error code: %d\n", entry_path, error_code);
+            GRTRaiseError("Cannot inspect Green's function output entry \"%s\". Error code: %d\n", entry_path, errno);
         }
 
         // 根目录只允许 command、模型副本和当前模型的格林函数子目录
@@ -296,7 +294,6 @@ void grt_check_greenfn_output_dir(const char *output_dir, const char *modelname)
         }
 
         if(!allowed){
-            closedir(dir);
             GRTRaiseError("The current model is \"%s\", but the output directory contains \"%s\". This is not allowed.\n", modelname, entry_path);
         }
 
@@ -305,9 +302,7 @@ void grt_check_greenfn_output_dir(const char *output_dir, const char *modelname)
 
     // readdir 返回 NULL 时，通过 errno 区分正常结束和读取失败
     if(errno != 0){
-        int error_code = errno;
-        closedir(dir);
-        GRTRaiseError("Cannot read Green's function output directory \"%s\". Error code: %d\n", output_dir, error_code);
+        GRTRaiseError("Cannot read Green's function output directory \"%s\". Error code: %d\n", output_dir, errno);
     }
 
     closedir(dir);
@@ -381,14 +376,10 @@ void grt_copy_file(const char *src, const char *dst)
     size_t n;
     while((n = fread(buf, 1, sizeof(buf), fin)) > 0){
         if(fwrite(buf, 1, n, fout) != n){
-            fclose(fin);
-            fclose(fout);
             GRTRaiseError("Failed to write copy of \"%s\" to \"%s\".\n", src, dst);
         }
     }
     if(ferror(fin)){
-        fclose(fin);
-        fclose(fout);
         GRTRaiseError("Failed to read \"%s\" while copying to \"%s\".\n", src, dst);
     }
 

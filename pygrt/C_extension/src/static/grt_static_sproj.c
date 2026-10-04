@@ -112,7 +112,6 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 real_t a1 = 0.0, a2 = 0.0, a3 = 0.0;
                 int nscan = (token == NULL) ? 0 : sscanf(token, "%lf/%lf/%lf", &a1, &a2, &a3);
                 if((nscan != 1) && (nscan != 3)){
-                    GRT_SAFE_FREE_PTR(string);
                     GRTBadOptionError(M, "Expect <rake> or <strike>/<dip>/<rake>.");
                 }
 
@@ -123,18 +122,15 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                     Ctrl->M.dip = a2;
                     Ctrl->M.rake = a3;
                     if(!isfinite(Ctrl->M.strike) || (Ctrl->M.strike < 0.0) || (Ctrl->M.strike > 360.0)){
-                        GRT_SAFE_FREE_PTR(string);
                         GRTBadOptionError(M, "Strike must be in [0, 360].");
                     }
                     if(!isfinite(Ctrl->M.dip) || (Ctrl->M.dip < 0.0) || (Ctrl->M.dip > 90.0)){
-                        GRT_SAFE_FREE_PTR(string);
                         GRTBadOptionError(M, "Dip must be in [0, 90].");
                     }
                 } else {
                     Ctrl->M.rake = a1;
                 }
                 if(!isfinite(Ctrl->M.rake) || (Ctrl->M.rake < -180.0) || (Ctrl->M.rake > 180.0)){
-                    GRT_SAFE_FREE_PTR(string);
                     GRTBadOptionError(M, "Rake must be in [-180, 180].");
                 }
 
@@ -143,7 +139,6 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 token = strtok(NULL, "+");
                 if(token != NULL){
                     if(strcmp(token, "f") != 0 || (strtok(NULL, "+") != NULL)){
-                        GRT_SAFE_FREE_PTR(string);
                         GRTBadOptionError(M, "Only the +f modifier is supported.");
                     }
                     Ctrl->M.force_rake = true;
@@ -396,7 +391,6 @@ static real_t *read_point_depths(int ncid, const RCV_NC_INFO *rcv_info)
     // 深度只用于核对 -Q 文件中的点顺序，不参与应力投影
     real_t *depths = GRT_SAFE_CALLOC(rcv_info->npts, sizeof(real_t));
     if(!find_optional_var(ncid, "depth", &depth_varid)){
-        GRT_SAFE_FREE_PTR(depths);
         GRTRaiseError("Points input file does not contain variable \"depth\".");
     }
     check_var_dimensions(ncid, depth_varid, "depth", 1, rcv_info->dimids);
@@ -435,15 +429,12 @@ static void load_geometry_from_Q(
 {
     RCV_POINTS *q_points = grt_rcv_points_from_file(path);
     if(!q_points->has_geometry){
-        grt_rcv_points_free(q_points);
         GRTRaiseError("-Q file \"%s\" must contain exactly 6 columns.", path);
     }
     if(q_points->npts != rcv_info->npts){
-        size_t q_npts = q_points->npts;
-        grt_rcv_points_free(q_points);
         GRTRaiseError(
             "-Q file \"%s\" has %zu points, but the input file has %zu points.",
-            path, q_npts, rcv_info->npts);
+            path, q_points->npts, rcv_info->npts);
     }
 
     // 先读取输入文件深度，再逐点核对坐标、顺序和接收断层形态
@@ -452,16 +443,12 @@ static void load_geometry_from_Q(
         if(!same_coordinate(q_points->norths[i], rcv_info->norths[i]) ||
             !same_coordinate(q_points->easts[i], rcv_info->easts[i]) ||
             !same_coordinate(q_points->depths[i], depths[i])){
-            GRT_SAFE_FREE_PTR(depths);
-            grt_rcv_points_free(q_points);
             GRTRaiseError(
                 "-Q file \"%s\" does not have the same point order and coordinates "
                 "as the input file at point %zu.", path, i);
         }
         if(!geometry_is_defined(
             q_points->strikes[i], q_points->dips[i], q_points->rakes[i])){
-            GRT_SAFE_FREE_PTR(depths);
-            grt_rcv_points_free(q_points);
             GRTRaiseError("Undefined or invalid receiver geometry in -Q at point %zu.", i);
         }
         strikes[i] = normalize_strike(q_points->strikes[i]);
@@ -611,19 +598,11 @@ static void load_geometry_from_finite_points(
     }
 
     if(!Ctrl->M.active && any_undefined_rake){
-        GRT_SAFE_FREE_PTR(fault_strikes);
-        GRT_SAFE_FREE_PTR(fault_dips);
-        GRT_SAFE_FREE_PTR(fault_rakes);
-        GRT_SAFE_FREE_PTR(offsets);
         GRTRaiseError(
             "Finite receiver input has undefined rake. Set -M<rake> to fill it, "
             "or use -M<rake>+f to override all rakes.");
     }
     if(Ctrl->M.active && !Ctrl->M.force_rake && !any_undefined_rake){
-        GRT_SAFE_FREE_PTR(fault_strikes);
-        GRT_SAFE_FREE_PTR(fault_dips);
-        GRT_SAFE_FREE_PTR(fault_rakes);
-        GRT_SAFE_FREE_PTR(offsets);
         GRTRaiseError(
             "All finite receiver rakes are already defined; use -M<rake>+f "
             "to force a manual rake.");

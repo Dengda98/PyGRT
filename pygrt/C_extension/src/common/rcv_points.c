@@ -105,8 +105,6 @@ RCV_POINTS *grt_rcv_points_from_file(const char *path)
         real_t values[6];
         size_t nvalues;
         if(!parse_receiver_point_line(line, values, &nvalues)){
-            GRT_SAFE_FREE_PTR(line);
-            fclose(fp);
             GRTRaiseError(
                 "Invalid receiver point at line %zu in \"%s\" "
                 "(expect exactly 3 or 6 numeric columns: "
@@ -114,8 +112,6 @@ RCV_POINTS *grt_rcv_points_from_file(const char *path)
                 lineno, path);
         }
         if(ncolumns != 0 && nvalues != ncolumns){
-            GRT_SAFE_FREE_PTR(line);
-            fclose(fp);
             GRTRaiseError(
                 "Inconsistent receiver point column count at line %zu in \"%s\" "
                 "(all data lines must have either 3 or 6 columns).",
@@ -125,8 +121,6 @@ RCV_POINTS *grt_rcv_points_from_file(const char *path)
         npts++;
     }
     if(npts == 0){
-        GRT_SAFE_FREE_PTR(line);
-        fclose(fp);
         GRTRaiseError("No receiver points found in \"%s\".", path);
     }
 
@@ -156,18 +150,12 @@ RCV_POINTS *grt_rcv_points_from_file(const char *path)
         real_t values[6];
         size_t nvalues;
         if(!parse_receiver_point_line(line, values, &nvalues) || nvalues != ncolumns){
-            GRT_SAFE_FREE_PTR(line);
-            grt_rcv_points_free(pts);
-            fclose(fp);
             GRTRaiseError(
                 "Invalid receiver point at line %zu in \"%s\" "
                 "(expect the same 3 or 6 columns as the other data lines).",
                 lineno, path);
         }
         if(values[2] < 0.0){
-            GRT_SAFE_FREE_PTR(line);
-            grt_rcv_points_free(pts);
-            fclose(fp);
             GRTRaiseError("Negative receiver depth at line %zu in \"%s\".", lineno, path);
         }
         pts->norths[ipt] = values[0];
