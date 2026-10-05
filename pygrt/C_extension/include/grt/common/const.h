@@ -80,6 +80,8 @@ typedef double complex cplx_t;
 #define GRT_MAX(a, b) ((a) > (b) ? (a) : (b))  ///< 求两者较大值
 #define GRT_MIN(a, b) ((a) < (b) ? (a) : (b))  ///< 求两者较小值
 
+#define GRT_ISCLOSE(a, b) (fabs((a) - (b)) < GRT_MAX(1e-5, 1e-6 * fabs(a)))  ///< 比较两个浮点数是否接近，以 a 的大小确定容差
+
 #define GRT_SQUARE(x) ((x) * (x))  ///< 计算一个数的平方
 
 // 内存管理

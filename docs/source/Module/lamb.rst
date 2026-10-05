@@ -24,7 +24,7 @@ lamb
 [ |-F|\ *fn/fe/fz* ]
 [ |-M|\ *strike/dip[/rake]* ]
 [ |-T|\ *Mxx/Mxy/Mxz/Myy/Myz/Mzz* ]
-[ |-D|\ *tftype/tfparams* ]
+[ |-D|\ *tftype*\ [/*tfparams*][**+d**\ *delay*] ]
 [ |-E|\ [**p**]\ *t0*\ [/*v0*] ]
 [ |-I|\ *odr* ]
 [ |-J|\ *odr* ]

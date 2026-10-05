@@ -67,8 +67,7 @@ typedef struct {
     /** 时间函数 */
     struct {
         bool active;
-        char tftype;
-        char *tfparams;
+        char *option;  ///< 完整 -D 时间函数选项
     } D;
     /** 根目录检索时的震源和台站深度 */
     struct {
@@ -119,7 +118,7 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
     // O
     GRT_SAFE_FREE_PTR(Ctrl->O.s_output_dir);
     // D
-    GRT_SAFE_FREE_PTR(Ctrl->D.tfparams);
+    GRT_SAFE_FREE_PTR(Ctrl->D.option);
     GRT_SAFE_FREE_PTR(Ctrl);
 }
 
@@ -146,7 +145,7 @@ printf("\n"
 "            [-M<strike>/<dip>[/<rake>]]\n"
 "            [-T<Mxx>/<Mxy>/<Mxz>/<Myy>/<Myz>/<Mzz>]\n"
 "            [-F<fn>/<fe>/<fz>] \n"
-"            [-D<tftype>/<tfparams>] [-I<odr>] [-J<odr>]\n" 
+"            [-D<tftype>[/<tfparams>][+d<delay>]] [-I<odr>] [-J<odr>]\n"
 "            [-N] [-e] [-s]\n"
 "\n"
 "\n\n"
@@ -207,11 +206,13 @@ printf("\n"
 "    -O<outdir>    Directory of output for saving. Default is\n"
 "                  current directory.\n"
 "\n"
-"    -D<tftype>/<tfparams>\n"
+"    -D<tftype>[/<tfparams>][+d<delay>]\n"
 "                  Convolve a Time Function. All time functions use area\n"
 "                  normalization except Ricker wavelet, which has a peak\n"
 "                  amplitude of 1.0.\n"
 "                  There are several options:\n"
+"                  + Impulse\n"
+"                    set -D%c.\n", GRT_SIG_IMPULSE); printf(
 "                  + Parabolic wave (y = a*x^2 + b*x)\n"
 "                    set -D%c/<t0>, <t0> (secs) is the duration of wave.\n", GRT_SIG_PARABOLA); printf(
 "                    e.g. \n"
@@ -223,6 +224,7 @@ printf("\n"
 "                    e.g. \n"
 "                         -D%c/0.1/0.2/0.4\n", GRT_SIG_TRAPEZOID); printf(
 "                         -D%c/0.4/0.4/0.6 (become a triangle)\n", GRT_SIG_TRAPEZOID); printf(
+"                         -D%c/0/0.5/0.5 (become a rectangle)\n", GRT_SIG_TRAPEZOID); printf(
 "                  + Ricker wavelet\n"
 "                    set -D%c/<f0>, <f0> (Hz) is the dominant frequency.\n", GRT_SIG_RICKER); printf(
 "                    e.g. \n"
@@ -232,7 +234,7 @@ printf("\n"
 "                    Time Function ASCII file. The file has just one column\n"
 "                    of amplitude and no other columns. Its sequence sum should\n"
 "                    be 1/dt, where dt is the sampling interval; the program\n"
-"                    only issues a warning when it is not.\n"
+"                    normalizes it with a warning when it is not.\n"
 "                    The file can contain unlimited comment lines with prefix\n"
 "                    \"#\".\n"
 "                    e.g. \n"
@@ -241,6 +243,8 @@ printf("\n"
 "                  parameters of Time Function will be slightly modified.\n"
 "                  The corresponding Time Function will be saved\n"
 "                  as a SAC file under <outdir>.\n"
+"\n"
+"                  Append +d<delay> for rupture delay in seconds.\n"
 "\n"
 "    -I<odr>       Order of integration. Default not use\n"
 "\n"
@@ -421,14 +425,9 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                         GRTBadOptionError(Dr, "Negative receiver depth is not supported.");
                     }
                 } else {
+                    GRT_SAFE_FREE_PTR(Ctrl->D.option);
                     Ctrl->D.active = true;
-                    Ctrl->D.tfparams = GRT_SAFE_MALLOC(sizeof(char) * (strlen(optarg) + 1));
-                    if(optarg[1] != '/' || 1 != sscanf(optarg, "%c", &Ctrl->D.tftype) || 1 != sscanf(optarg + 2, "%s", Ctrl->D.tfparams)){
-                        GRTBadOptionError(D, "");
-                    }
-                    if(! grt_check_tftype_tfparams(Ctrl->D.tftype, Ctrl->D.tfparams)){
-                        GRTBadOptionError(D, "");
-                    }
+                    GRT_SAFE_ASPRINTF(&Ctrl->D.option, "-D%s", optarg);
                 }
                 break;
 
@@ -922,32 +921,39 @@ static SACTRACE *syn_load_one_gf(const char *dirpath, const char *prefix, int im
 
 
 /** 对一道合成结果做时间函数卷积 / 积分 / 微分 */
-static void syn_postprocess_trace(SACTRACE *sac, SACTRACE *tfsac, int int_times, int dif_times)
+static void syn_postprocess_trace(SACTRACE *sac, const SACTRACE *tfsac, int int_times, int dif_times)
 {
     float dt = sac->hd.delta;
     int nt = sac->hd.npts;
 
     if(tfsac != NULL){
+        // 各分量使用独立副本，避免虚频补偿反复改写共享时间函数
+        int tfnt = tfsac->hd.npts;
+        float *tfarr = GRT_SAFE_MALLOC(tfnt * sizeof(*tfarr));
+        memcpy(tfarr, tfsac->data, tfnt * sizeof(*tfarr));
+
         // 卷积时间函数前先把虚频率的补偿撤回，这样似乎会更稳定
         float wI = GRT_SACHEAD_GET_IMAG_FREQ(&sac->hd);
         float fac = 1.0f;
         float dfac = expf(-wI * dt);
         for(int n = 0; n < nt; ++n){
             sac->data[n] *= fac;
-            if(n < tfsac->hd.npts) tfsac->data[n] *= fac;
+            if(n < tfnt){
+                tfarr[n] *= fac;
+            }
             fac *= dfac;
         }
 
         float *convarr = GRT_SAFE_CALLOC(nt, sizeof(float));
-        grt_oaconvolve(sac->data, nt, tfsac->data, tfsac->hd.npts, convarr, nt, false);
+        grt_oaconvolve(sac->data, nt, tfarr, tfnt, convarr, nt, false);
         fac = 1.0f;
         dfac = expf(wI * dt);
         for(int n = 0; n < nt; ++n){
             // 时间函数样本表示物理时间函数，连续卷积的离散积分因子为 dt
             sac->data[n] = convarr[n] * fac * dt;
-            if(n < tfsac->hd.npts) tfsac->data[n] *= fac;
             fac *= dfac;
         }
+        GRT_SAFE_FREE_PTR(tfarr);
         GRT_SAFE_FREE_PTR(convarr);
     }
 
@@ -1042,7 +1048,7 @@ int syn_main(int argc, char **argv)
     SACTRACE *tfsac = NULL;
     if(Ctrl->D.active){
         int tfnt;
-        float *tfarr = grt_get_time_function(&tfnt, dt, Ctrl->D.tftype, Ctrl->D.tfparams);
+        float *tfarr = grt_time_function_from_option(Ctrl->D.option, dt, &tfnt);
         if(tfarr == NULL){
             GRTRaiseError("get time function error.\n");
         }

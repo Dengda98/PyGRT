@@ -1642,7 +1642,10 @@ def lamb(
     :param    force:            Single-force coefficients ``(fN, fE, fZ)``
     :param    moment_tensor:    Moment-tensor coefficients
                                 ``(Mxx, Mxy, Mxz, Myy, Myz, Mzz)``
-    :param    time_function:    Time-function parameters passed to ``grt``
+    :param    time_function:    Time-function parameters passed to ``grt``, without the ``-D`` prefix.
+                                Supported forms are ``i`` (impulse), ``p/t0``, ``t/t1/t2/t3``,
+                                ``r/f0`` or ``0/file``.
+                                Append ``+d<delay>`` for a delay in seconds, e.g. ``p/1.3+d0.4``.
     :param    integrate_order:  Number of time integrations
    :param    differentiate_order: Number of time differentiations
     :param    phases:            Optional comma-separated phase selection or a non-empty sequence of phase names;
