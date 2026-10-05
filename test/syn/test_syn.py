@@ -58,24 +58,20 @@ pymod.syn(azimuth=az, scale=1e20, output_path="syn", strike=33, dip=44, rake=55)
 pymod.syn(azimuth=az, scale=1e20, output_path="syn", strike=33, dip=44)
 pymod.syn(azimuth=az, scale=1e20, output_path="syn", moment_tensor=(1, -2, -5, 0.5, 3, 1.2))
 
-# 所有时间函数使用面积归一化（除雷克子波使用最大幅值为1）
-# 自定义时间函数由用户自行保证序列和为1/dt，程序不做归一化，仅在不满足时警告
-
-
-def trap_area(signal, dt):
-    return np.sum((signal[:-1] + signal[1:]) * 0.5 * dt)
+# 时间函数按矩形法进行面积归一化（雷克子波保留单位峰值）
+# 自定义时间函数检查 dt 乘样本和，非单位面积时警告并自动归一化
 
 
 custom_signal = read("syn_custom/sig.sac")[0].data
 assert np.isclose(np.sum(custom_signal), 1.0 / dt, rtol=1e-5, atol=1e-5)
 custom_warning_signal = read("syn_custom_warning/sig.sac")[0].data
 assert np.min(custom_warning_signal) < 0.0
-assert not np.isclose(np.sum(custom_warning_signal), 1.0 / dt, rtol=1e-5, atol=1e-5)
+assert np.isclose(np.sum(custom_warning_signal), 1.0 / dt, rtol=1e-5, atol=1e-5)
 
 for time_function in ["p/0.6", "t/0.2/0.4/0.7", "t/0.4/0.4/0.8"]:
     pymod.syn(azimuth=az, scale=1e20, output_path="syn", time_function=time_function)
     trace = read("syn/sig.sac")[0]
-    assert np.isclose(trap_area(trace.data, trace.stats.delta), 1.0, rtol=1e-5, atol=1e-5)
+    assert np.isclose(np.sum(trace.data)*dt, 1.0, rtol=1e-5, atol=1e-5)
 
 pymod.syn(azimuth=az, scale=1e20, output_path="syn", time_function="r/1.2")
 signal = read("syn/sig.sac")[0].data

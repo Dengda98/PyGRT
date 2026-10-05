@@ -75,8 +75,7 @@ typedef struct {
     /** 时间函数 */
     struct {
         bool active;
-        char tftype;
-        char *tfparams;
+        char *option;  ///< 完整 -D 时间函数选项
     } D;
 
     /** 时间延迟 */
@@ -152,7 +151,7 @@ typedef struct {
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl)
 {
     GRT_SAFE_FREE_PTR(Ctrl->N.tbar);
-    GRT_SAFE_FREE_PTR(Ctrl->D.tfparams);
+    GRT_SAFE_FREE_PTR(Ctrl->D.option);
     GRT_SAFE_FREE_PTR(Ctrl->O.s_output_dir);
     GRT_SAFE_FREE_PTR(Ctrl->L.phase_list);
     GRT_SAFE_FREE_PTR(Ctrl);
@@ -186,7 +185,7 @@ printf("\n"
 "              -A<azimuth> -S[u]<scale> -O<outdir>\n"
 "              [-M<strike>/<dip>[/<rake>]]\n"
 "              [-T<Mxx>/<Mxy>/<Mxz>/<Myy>/<Myz>/<Mzz>] [-F<fn>/<fe>/<fz>]\n"
-"              [-D<tftype>/<tfparams>] [-E[p]<t0>[/<v0>]] [-I<odr>] [-J<odr>]\n"
+"              [-D<tftype>[/<tfparams>][+d<delay>]] [-E[p]<t0>[/<v0>]] [-I<odr>] [-J<odr>]\n"
 "              [-n] [-e] [-s] [-L<P,S,R,PP,SS,PS,SP,sPs>]\n"
 "\n\n"
 "Options:\n"
@@ -224,11 +223,13 @@ printf("\n"
 "\n"
 "    -O<outdir>     Output directory.\n"
 "\n"
-"    -D<tftype>/<tfparams>\n"
+"    -D<tftype>[/<tfparams>][+d<delay>]\n"
 "                  Convolve a time function. All time functions use area\n"
 "                  normalization except Ricker wavelet, which has a peak\n"
 "                  amplitude of 1.0.\n"
 "                  There are several options:\n"
+"                  + Impulse\n"
+"                    set -D%c.\n", GRT_SIG_IMPULSE); printf(
 "                  + Parabolic wave (y = a*x^2 + b*x)\n"
 "                    set -D%c/<t0>, <t0> (secs) is the duration of wave.\n", GRT_SIG_PARABOLA); printf(
 "                    e.g.\n"
@@ -240,6 +241,7 @@ printf("\n"
 "                    e.g.\n"
 "                         -D%c/0.1/0.2/0.4\n", GRT_SIG_TRAPEZOID); printf(
 "                         -D%c/0.4/0.4/0.6 (become a triangle)\n", GRT_SIG_TRAPEZOID); printf(
+"                         -D%c/0/0.5/0.5 (become a rectangle)\n", GRT_SIG_TRAPEZOID); printf(
 "                  + Ricker wavelet\n"
 "                    set -D%c/<f0>, <f0> (Hz) is the dominant frequency.\n", GRT_SIG_RICKER); printf(
 "                    e.g.\n"
@@ -249,7 +251,7 @@ printf("\n"
 "                    Time Function ASCII file. The file has just one column\n"
 "                    of amplitude and no other columns. Its sequence sum should\n"
 "                    be 1/dt, where dt is the sampling interval; the program\n"
-"                    only issues a warning when it is not.\n"
+"                    normalizes it with a warning when it is not.\n"
 "                    The file can contain unlimited comment lines with prefix\n"
 "                    \"#\".\n"
 "                    e.g.\n"
@@ -257,6 +259,8 @@ printf("\n"
 "                  To match the physical time interval, parameters of the time\n"
 "                  function may be slightly modified. The corresponding time\n"
 "                  function is saved as a SAC file under <outdir>.\n"
+"\n"
+"                  Append +d<delay> for rupture delay in seconds.\n"
 "\n"
 "    -E[p]<t0>[/<v0>]\n"
 "                  Introduce a time shift in the output SAC records. The time\n"
@@ -483,16 +487,9 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                     }
                     Ctrl->Depth.r_active = true;
                 } else {
-                    if (optarg[0] == '\0' || optarg[1] != '/' || optarg[2] == '\0') {
-                        GRTBadOptionError(D, "expected tftype/tfparams.");
-                    }
-                    GRT_SAFE_FREE_PTR(Ctrl->D.tfparams);
-                    Ctrl->D.tftype = optarg[0];
-                    Ctrl->D.tfparams = strdup(optarg + 2);
-                    if (!grt_check_tftype_tfparams(Ctrl->D.tftype, Ctrl->D.tfparams)) {
-                        GRTBadOptionError(D, "invalid time function.");
-                    }
+                    GRT_SAFE_FREE_PTR(Ctrl->D.option);
                     Ctrl->D.active = true;
+                    GRT_SAFE_ASPRINTF(&Ctrl->D.option, "-D%s", optarg);
                 }
                 break;
 
@@ -1504,8 +1501,7 @@ int lamb_main(int argc, char **argv)
     if (Ctrl->D.active) {
         /* 时间函数与输出序列使用相同的物理采样间隔 */
         int time_function_nt;
-        float *values = grt_get_time_function(&time_function_nt, (float)Ctrl->N.dt,
-            Ctrl->D.tftype, Ctrl->D.tfparams);
+        float *values = grt_time_function_from_option(Ctrl->D.option, (float)Ctrl->N.dt, &time_function_nt);
         if (values == NULL) {
             GRTRaiseError("get time function error.\n");
         }

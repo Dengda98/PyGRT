@@ -21,7 +21,7 @@ syn
 [ |-F|\ *fn/fe/fz* ]
 [ |-M|\ *strike/dip/rake* ]
 [ |-T|\ *Mxx/Mxy/Mxz/Myy/Myz/Mzz* ]
-[ |-D|\ *tftype/tfparams* ]
+[ |-D|\ *tftype*\ [/*tfparams*][**+d**\ *delay*] ]
 [ |-I|\ *odr* ]
 [ |-J|\ *odr* ]
 [ |-N| ]

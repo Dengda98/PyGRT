@@ -3,13 +3,13 @@
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2024-12-2
  * 
- *    常见的时间函数，为了sac的兼容性，以下均使用float指针，
- *    并在函数内部使用malloc申请内存。
+ *    时间函数生成与信号处理
+ *    时间函数采样数组使用 float，与 SAC 格式保持一致
  * 
  *    信号长度应能整除采样间隔。
  * 
- *    所有时间函数使用面积归一化（除雷克子波使用最大幅值为1）
- *    自定义时间函数由用户自行保证序列和为1/dt，程序不做归一化，序列和不满足时仅给出警告
+ *    时间函数按矩形法进行面积归一化，以匹配离散卷积（雷克子波保留单位峰值）
+ *    自定义时间函数检查离散积分，非单位面积时警告并自动归一化
  * 
  */
 
@@ -26,40 +26,80 @@
 
 #include "grt/common/checkerror.h"
 
+/**
+ * 按矩形法将时间函数的面积归一化，返回归一化前的面积
+ *
+ * @param[in,out]  x   时间函数样本
+ * @param[in]      nx  样本数
+ * @param[in]      dt  采样间隔
+ */
+static real_t grt_normalize_time_function(float *x, int nx, float dt)
+{
+    // 使用与离散卷积相同的 dt 乘样本和，并检查非有限样本及正负幅值抵消
+    real_t area = 0.0, absarea = 0.0;
+    for(int n=0; n<nx; ++n) {
+        if(!isfinite(x[n])) {
+            GRTRaiseError("Time function contains a non-finite sample.");
+        }
+        area    += x[n] * (real_t)dt;
+        absarea += fabs(x[n]) * (real_t)dt;
+    }
+    if(!isfinite(area) || absarea == 0.0 || GRT_ISCLOSE(area / absarea, 0.0)) {
+        GRTRaiseError("Time function has zero or numerically singular integral.");
+    }
+    for(int n=0; n<nx; ++n) {
+        x[n] /= area;
+    }
+    return area;
+}
 
-bool grt_check_tftype_tfparams(const char tftype, const char *tfparams){
+/**
+ * 检查不含破裂延迟的时间函数参数
+ * @param[in] tftype    时间函数类型
+ * @param[in] tfparams  时间函数参数或自定义文件路径
+ */
+static bool check_time_function_base(const char tftype, const char *tfparams){
 
+    // 脉冲
+    if(GRT_SIG_IMPULSE == tftype) {
+        return !*tfparams;
+    }
     // 抛物波
-    if(GRT_SIG_PARABOLA == tftype){
-        float t0=0.0;
-        if(1 != sscanf(tfparams, "%f", &t0))  return false;
-        if(t0 <= 0){
+    else if(GRT_SIG_PARABOLA == tftype){
+        float t0 = 0.0;
+        if(1 != sscanf(tfparams, "%f", &t0)) {
+            return false;
+        }
+        if(!isfinite(t0) || t0 <= 0) {
             GRTRaiseError("t0(%s) should be larger than 0.\n", tfparams);
         }
     }
     // 梯形波
     else if(GRT_SIG_TRAPEZOID == tftype){
-        float t1=0.0, t2=0.0, t3=0.0;
-        if(3 != sscanf(tfparams, "%f/%f/%f", &t1, &t2, &t3))   return false;
-        if(t1 < 0.0 || t2 < 0.0 || t3 <= 0.0){
+        float t1 = 0.0, t2 = 0.0, t3 = 0.0;
+        if(3 != sscanf(tfparams, "%f/%f/%f", &t1, &t2, &t3)) {
+            return false;
+        }
+        if(!isfinite(t1) || !isfinite(t2) || !isfinite(t3) || t1 < 0.0 || t2 < 0.0 || t3 <= 0.0){
             GRTRaiseError("It should be t1>=0.0, t2>=0.0 and t3>0.0 (%s).\n", tfparams);
         }
-        if(! (t1 <= t2 && t2 < t3)){
-            GRTRaiseError("It should be t1<=t2<t3 (%s).\n", tfparams);
+        if(t1 > t2 || t2 > t3) {
+            GRTRaiseError("It should be t1<=t2<=t3 (%s).\n", tfparams);
         }
     }
     // 雷克子波
     else if(GRT_SIG_RICKER == tftype){
         float f0;
-        if(1 != sscanf(tfparams, "%f", &f0))  return false;
-        if(f0 <= 0){
+        if(1 != sscanf(tfparams, "%f", &f0)) {
+            return false;
+        }
+        if(!isfinite(f0) || f0 <= 0) {
             GRTRaiseError("f0(%s) should be larger than 0.\n", tfparams);
         }
     }
     // 自定义时间函数
     else if(GRT_SIG_CUSTOM == tftype){
-        // tfparams为存储自定义时间函数的文件名
-        // 检查文件是否存在
+        // tfparams 为自定义时间函数的文件名，检查文件是否存在
         if(access(tfparams, F_OK) != 0){
             GRTRaiseError("(%s) not exists.\n", tfparams);
         }
@@ -72,71 +112,128 @@ bool grt_check_tftype_tfparams(const char tftype, const char *tfparams){
     return true;
 }
 
+/**
+ * 分离时间函数参数与非负破裂延迟，返回独立参数副本
+ * @param[in]  params  含可选 +d 后缀的时间函数参数
+ * @param[out] delay   非负破裂延迟，s
+ */
+static char *split_time_delay(const char *params, real_t *delay)
+{
+    char *base = strdup(params ? params : "");
+    *delay = 0.0;
 
-float * grt_get_time_function(int *TFnt, float dt, const char tftype, const char *tfparams){
-    // 获得时间函数
-    float *tfarr=NULL;
-    int tfnt=0;
+    char *suffix = strstr(base, "+d");
+    if(suffix) {
+        char extra;
+        if(sscanf(suffix + 2, "%lf%c", delay, &extra) != 1 || !isfinite(*delay) || *delay < 0.0) {
+            GRTRaiseError("Time-function delay must be finite and nonnegative.");
+        }
+        *suffix = '\0';
+    }
+    return base;
+}
+
+bool grt_check_tftype_tfparams(const char tftype, const char *tfparams)
+{
+    real_t delay;
+    char *base = split_time_delay(tfparams, &delay);
+    bool good = check_time_function_base(tftype, base);
+    free(base);
+    return good;
+}
+
+float * grt_get_time_function(int *TFnt, float dt, const char tftype, const char *tfparams)
+{
+    if(!isfinite(dt) || dt <= 0.0) {
+        GRTRaiseError("Invalid time-function sampling interval.");
+    }
+
+    real_t delay;
+    char *base = split_time_delay(tfparams, &delay);
+    if(!check_time_function_base(tftype, base)) {
+        GRTRaiseError("Invalid time function.");
+    }
+
+    // 按类型生成时间函数
+    float *tfarr = NULL;
+    int tfnt = 0;
+    if(GRT_SIG_IMPULSE == tftype){
+        tfnt = 1;
+        tfarr = GRT_SAFE_CALLOC(tfnt, sizeof(*tfarr));
+        tfarr[0] = 1.0f / dt;
+    }
     // 抛物波
-    if(GRT_SIG_PARABOLA == tftype){
-        float t0=0.0;
-        sscanf(tfparams, "%f", &t0);
+    else if(GRT_SIG_PARABOLA == tftype){
+        float t0 = 0.0;
+        sscanf(base, "%f", &t0);
         tfarr = grt_get_parabola_wave(dt, &t0, &tfnt);
     }
+
     // 梯形波
     else if(GRT_SIG_TRAPEZOID == tftype){
-        float t1=0.0, t2=0.0, t3=0.0;
-        sscanf(tfparams, "%f/%f/%f", &t1, &t2, &t3);
+        float t1 = 0.0, t2 = 0.0, t3 = 0.0;
+        sscanf(base, "%f/%f/%f", &t1, &t2, &t3);
         tfarr = grt_get_trap_wave(dt, &t1, &t2, &t3, &tfnt);
     }
+
     // 雷克子波
     else if(GRT_SIG_RICKER == tftype){
-        float f0=0.0;
-        sscanf(tfparams, "%f", &f0);
+        float f0 = 0.0;
+        sscanf(base, "%f", &f0);
         tfarr = grt_get_ricker_wave(dt, f0, &tfnt);
     }
+
     // 自定义时间函数
     else if(GRT_SIG_CUSTOM == tftype){
-        tfarr = grt_get_custom_wave(&tfnt, tfparams);
-        const float area = grt_trap_area(tfarr, tfnt, dt);
-        if(fabs(area - 1.0f) > 1e-5f){
-            GRTRaiseWarning(
-                "Custom time function sequence sum is %.7g, expected %.7g (1/dt).",
+        tfarr = grt_get_custom_wave(&tfnt, base);
+
+        // 自定义时间函数共用矩形法归一化，原始面积不为 1 时提示用户
+        real_t area = grt_normalize_time_function(tfarr, tfnt, dt);
+        if(!GRT_ISCLOSE(area, 1.0)) {
+            GRTRaiseWarning("Custom time function sequence sum is %.7g, expected %.7g (1/dt); normalizing automatically.",
                 area/dt, 1.0/dt);
         }
     }
 
     *TFnt = tfnt;
+    free(base);
+
+    // 延迟取最近采样点，半采样点向上取整，再通过前导零平移时间函数
+    int shift = (int)llround(delay / dt);
+    if(shift) {
+        float *padded = GRT_SAFE_CALLOC(*TFnt + shift, sizeof(*padded));
+        memcpy(padded + shift, tfarr, *TFnt * sizeof(*tfarr));
+        free(tfarr);
+        tfarr = padded;
+        *TFnt += shift;
+    }
     return tfarr;
 }
 
+float *grt_time_function_from_option(const char *option, float dt, int *nt)
+{
+    // NULL 使用脉冲，否则解析完整 -D 选项
+    if(!option) {
+        option = "-Di";
+    }
+    if(strncmp(option, "-D", 2) != 0 || !option[2]) {
+        GRTRaiseError("Expected a complete -D time-function option.");
+    }
 
+    char type = option[2];
+    const char *params = option + 3;
+    if(*params == '/') {
+        ++params;
+        if(!*params || strncmp(params, "+d", 2) == 0) {
+            GRTRaiseError("Time-function parameters must follow '/'.");
+        }
+    } else if(*params && strncmp(params, "+d", 2) != 0) {
+        GRTRaiseError("Expected -Dtftype[/tfparams][+d<delay>].");
+    }
 
-// void linear_convolve_time_function(float *arr, int nt, float dt, const char tftype, const char *tfparams, float **TFarr, int *TFnt){
-//     // 获得时间函数
-//     float *tfarr=NULL;
-//     int tfnt=0;
-//     tfarr = grt_get_time_function(&tfnt, dt, tftype, tfparams);
+    return grt_get_time_function(nt, dt, type, params);
+}
 
-//     float *yarr = GRT_SAFE_CALLOC(nt, sizeof(float));
-//     // 线性卷积
-//     grt_oaconvolve(arr, nt, tfarr, tfnt, yarr, nt, false);
-
-//     // 原地更改
-//     for(int i=0; i<nt; ++i){
-//         arr[i] = yarr[i] * dt; // dt为卷积的系数
-//     }
-//     GRT_SAFE_FREE_PTR(yarr);
-
-
-//     if(TFarr!=NULL || TFnt!=NULL){
-//         if(TFarr!=NULL) *TFarr = tfarr;
-//         if(TFnt!=NULL)  *TFnt  = tfnt;
-//     } else {
-//         GRT_SAFE_FREE_PTR(tfarr);
-//     }
-
-// }
 
 
 void grt_oaconvolve(float *x, int nx, float *h, int nh, float *y, int ny, bool iscircular) {
@@ -169,18 +266,6 @@ float grt_trap_area(const float *x, int nx, float dt){
 }
 
 
-static void grt_normalize_time_function(float *x, int nx, float dt){
-    // 使用实际dt计算内置时间函数的离散梯形积分
-    float area = grt_trap_area(x, nx, dt);
-    if(area <= 0.0){
-        GRTRaiseError("Time function area should be larger than 0.\n");
-    }
-    for(int i=0; i<nx; ++i){
-        x[i] /= area;
-    }
-}
-
-
 void grt_trap_integral(float *x, int nx, float dt){
     // 矩形法
     // x[0] = 0.0; // 边界条件
@@ -200,6 +285,10 @@ void grt_trap_integral(float *x, int nx, float dt){
 
 
 void grt_differential(float *x, int nx, float dt){
+    if(nx == 1) {
+        x[0] = 0.0;
+        return;
+    }
     // 中心差分
     float tmp, x0=x[0];
     float h=2.0*dt;
@@ -214,155 +303,141 @@ void grt_differential(float *x, int nx, float dt){
 
 
 float * grt_get_parabola_wave(float dt, float *Tlen, int *Nt){
-    float tlen = *Tlen;
-    int nt = floorf(tlen/dt);
-    if(fabsf(tlen - nt*dt) <= 1e-6) nt--;
-    if(nt==0) {
-        GRTRaiseError("window length of time function is too short.\n");
+    if(!isfinite(dt) || dt <= 0.0f || !isfinite(*Tlen) || *Tlen <= 0.0f) {
+        GRTRaiseError("Parabolic duration and sampling interval must be finite and positive.");
     }
-    nt += 2;
-    tlen = (nt-1)*dt;
 
-    float *arr = GRT_SAFE_CALLOC(nt, sizeof(float));
-    float fac=1.0/(nt-1);
-    float pha=0.0;
-    for(int n=0; n<nt; ++n){
-        arr[n] = 1.0 - (pha - 0.5)*(pha - 0.5)*4.0;
-        pha += fac;
+    // 截止时刻向上对齐到采样网格，至少保留一个位于两个零端点之间的样本
+    real_t sample = (real_t)*Tlen / dt;
+    real_t nearest = round(sample);
+    int last = GRT_ISCLOSE(*Tlen, nearest * dt) ? (int)nearest : (int)ceil(sample);
+    if(last < 2) {
+        GRTRaiseError("Window length of time function is too short.");
+    }
+
+    // 归一化时间从 0 到 1，对应抛物线的两个零端点
+    int nt = last + 1;
+    float *arr = GRT_SAFE_CALLOC(nt, sizeof(*arr));
+    for(int n=0; n<nt; ++n) {
+        real_t phase = (real_t)n / last;
+        arr[n] = 4.0 * phase * (1.0 - phase);
     }
 
     grt_normalize_time_function(arr, nt, dt);
 
-    *Tlen = tlen;
+    *Tlen = last * dt;
     *Nt = nt;
     return arr;
 }
 
 
 float * grt_get_trap_wave(float dt, float *T1, float *T2, float *T3, int *Nt){
-    // 如果t1==t2，则退化为三角波
-    bool istriangle = (*T1==*T2)? true : false;
-
-    // 微调T1
-    float t1 = *T1;
-    int n1 = floorf(t1/dt);
-    if((fabsf(t1 - n1*dt)) <= 1e-6) n1--;
-    n1 += 2;
-    t1 = (n1-1)*dt;
-    // 微调T2
-    float t2;
-    int n2;
-    if(istriangle){
-        n2 = 1;
-        t2 = t1;
-    } else {
-        t2 = *T2;
-        n2 = floorf((t2-t1)/dt);
-        if((fabsf(t2-t1 - n2*dt)) <= 1e-6) n2--;
-        n2 += 2;
-        t2 = t1 + (n2-1)*dt;
+    float times[3] = {*T1, *T2, *T3};
+    if(!isfinite(dt) || dt <= 0.0f) {
+        GRTRaiseError("Invalid time-function sampling interval.");
     }
-    
-    // 微调T3
-    float t3 = *T3;
-    int n3 = floorf((t3-t2)/dt);
-    if((fabsf(t3-t2 - n3*dt)) <= 1e-6) n3--;
-    n3 += 2;
-    t3 = t2 + (n3-1)*dt;
-
-    // 总点数
-    int nt = n1+n2+n3 - 2;
-    float *arr = GRT_SAFE_CALLOC(nt, sizeof(float));
-
-    float fac=0.0, y=0.0;
-    // 上坡
-    fac = 1.0/(n1-1);
-    y = 0.0;
-    for(int n=0; n<n1; ++n){
-        arr[n] = y;
-        y += fac;
+    if(!isfinite(times[0]) || !isfinite(times[1]) || !isfinite(times[2]) ||
+       times[0] < 0.0f || times[0] > times[1] || times[1] > times[2] || times[2] <= 0.0f) {
+        GRTRaiseError("Trapezoidal cutoffs must satisfy 0 <= t1 <= t2 <= t3 and t3 > 0.");
     }
 
-    // 平台
-    for(int n=n1-1; n<n1+n2-1; ++n){
-        arr[n] = 1.0;
+    // 三个截止时刻向上对齐到采样网格，已接近网格点的时刻只消除浮点误差
+    int indices[3];
+    for(int k=0; k<3; ++k) {
+        real_t sample = (real_t)times[k] / dt;
+        real_t nearest = round(sample);
+        indices[k] = GRT_ISCLOSE(times[k], nearest * dt) ? (int)nearest : (int)ceil(sample);
     }
 
-    // 下坡
-    fac = 1.0/(n3-1);
-    y = 1.0;
-    for(int n=n1+n2-2; n<n1+n2+n3-2; ++n){
-        arr[n] = y;
-        y -= fac;
+    // i1、i2、i3 分别为上坡、平台、下坡的截止下标，零时长段共享截止下标
+    int i1 = *T1 > 0.0f ? GRT_MAX(1, indices[0]) : 0;
+    int i2 = GRT_ISCLOSE(*T1, *T2) ? i1 : GRT_MAX(i1, indices[1]);
+    int i3 = GRT_ISCLOSE(*T2, *T3) ? i2 : GRT_MAX(i2 + 1, indices[2]);
+
+    // 时间函数至少保留一个采样间隔
+    if(i3 == 0) {
+        i2 = i3 = 1;
+    }
+
+    int nt = i3 + 1;
+    float *arr = GRT_SAFE_CALLOC(nt, sizeof(*arr));
+    for(int n=0; n<nt; ++n) {
+        if(n < i1) {
+            arr[n] = (float)n / i1;                  // 上坡：从 0 线性升至 1
+        } else if(n <= i2) {
+            arr[n] = 1.0f;                          // 平台：三角波在这里仅有一个顶点
+        } else {
+            arr[n] = (float)(i3 - n) / (i3 - i2);    // 下坡：从 1 线性降至 0
+        }
     }
 
     grt_normalize_time_function(arr, nt, dt);
-    
 
-    *T1 = t1;
-    *T2 = t2;
-    *T3 = t3;
+    *T1 = i1 * dt;
+    *T2 = i2 * dt;
+    *T3 = i3 * dt;
     *Nt = nt;
     return arr;
 }
 
 
 float * grt_get_ricker_wave(float dt, float f0, int *Nt){
-    if(1.0/dt <= 2.0*f0) { // 在当前采样率下，主频f0过高
-        GRTRaiseError("Compare to sampling freq (%.3f), dominant freq (%.3f) is too high.\n", 1.0/dt, f0);
+    if(!isfinite(dt) || dt <= 0.0f || !isfinite(f0) || f0 <= 0.0f) {
+        GRTRaiseError("Ricker frequency and sampling interval must be finite and positive.");
+    }
+    if(1.0 / dt <= 2.0 * f0) {
+        GRTRaiseError("Compare to sampling freq (%.3f), dominant freq (%.3f) is too high.", 1.0 / dt, f0);
     }
 
-    float t0 = 1.0/f0;
-    int nt = (floorf(t0/dt) + 1) * 2; // 估计2倍长度够包含
-    float *arr = GRT_SAFE_CALLOC(nt, sizeof(float));
+    // 峰值时刻为 1/f0，采样窗口覆盖其前后各一个周期
+    float peak_time = 1.0f / f0;
+    int nt = 2 * ((int)floorf(peak_time / dt) + 1);
+    float *arr = GRT_SAFE_CALLOC(nt, sizeof(*arr));
 
-    float PPI = PI*PI;
-    float ff0 = f0*f0;
-    float a, t=0.0;
-    for(int i=0; i<nt; ++i){
-        a = PPI*ff0*(t-t0)*(t-t0);
-        arr[i] = (1.0 - 2.0*a)*expf(-a);
-        t += dt;
+    // 按下标直接计算时间，避免累加 dt 的舍入误差，保留解析波形的单位峰值
+    for(int n=0; n<nt; ++n) {
+        real_t phase = PI * f0 * ((real_t)n * dt - peak_time);
+        real_t phase2 = phase * phase;
+        arr[n] = (1.0 - 2.0 * phase2) * exp(-phase2);
     }
 
-    // 雷克子波使用最大幅值归一化
     *Nt = nt;
     return arr;
 }
 
 
 float * grt_get_custom_wave(int *Nt, const char *tfparams){
-    float *tfarr = GRT_SAFE_MALLOC(sizeof(float)*1);
-    FILE *fp;
-    if((fp = fopen(tfparams, "r")) == NULL){
-        GRTRaiseError("custom time function file open error.\n");
+    FILE *fp = fopen(tfparams, "r");
+    if(fp == NULL) {
+        GRTRaiseError("Custom time function file open error.");
     }
 
-    // 逐行读入
-    size_t len;
+    // 逐行读取一列振幅，跳过空行和注释行
+    float *tfarr = NULL;
     char *line = NULL;
-
-    int nt = 0;
+    size_t len = 0;
     size_t lineno = 0;
+    int nt = 0;
     while(grt_getline(&line, &len, fp) != -1) {
         lineno++;
-        // 注释行
-        if(grt_is_comment_or_empty_line(line))  continue;
+        if(grt_is_comment_or_empty_line(line)) {
+            continue;
+        }
 
         // 每个非注释行只能包含一列振幅值
         float value = 0.0;
         char extra = '\0';
-        if(sscanf(line, " %f %c", &value, &extra) != 1){
+        if(sscanf(line, " %f %c", &value, &extra) != 1) {
             GRTRaiseError("custom time function file should contain exactly one column at line %zu.\n", lineno);
         }
 
-        tfarr = GRT_SAFE_REALLOC(tfarr, sizeof(float)*(nt+1));
+        tfarr = GRT_SAFE_REALLOC(tfarr, (nt + 1) * sizeof(*tfarr));
         tfarr[nt] = value;
         nt++;
     }
 
-    if(nt == 0){
-        GRTRaiseError("custom time function file read error. Empty?\n");
+    if(nt == 0) {
+        GRTRaiseError("Custom time function file is empty.");
     }
 
     fclose(fp);

@@ -3,7 +3,7 @@
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2024-12
  * 
- *                   
+ *    时间函数生成与信号处理
  */
 
 
@@ -12,6 +12,7 @@
 #include <stdbool.h>
 
 
+#define GRT_SIG_IMPULSE  'i'   ///< 脉冲信号代号
 #define GRT_SIG_PARABOLA 'p'   ///< 抛物波代号
 #define GRT_SIG_TRAPEZOID 't'  ///< 梯形波代号
 #define GRT_SIG_RICKER   'r'   ///< 雷克子波信号
@@ -20,43 +21,42 @@
 
 /**
  * 检查时间函数的类型设置和参数设置是否符合要求
+ * 参数可附加 +d<delay> 指定延迟，单位为 s
  * 
- * @param[in]      tftype     单个字符，指代时间函数类型
- * @param[in]      tfparams   时间函数参数
+ * @param[in]      tftype     时间函数类型
+ * @param[in]      tfparams   时间函数参数，可包含 +d<delay> 后缀
  * 
  * @return     检查是否通过
  */
 bool grt_check_tftype_tfparams(const char tftype, const char *tfparams);
 
 /**
- * 获得时间函数，要求提前运行check_tftype_tfparams函数以检查参数
- * 所有时间函数使用面积归一化（除雷克子波使用最大幅值为1）
- * 自定义时间函数不做处理，序列和不满足1/dt时仅给出警告
+ * 根据类型和参数生成时间函数
+ * 时间函数按矩形法进行面积归一化，即 dt 乘样本和为 1（雷克子波保留单位峰值）
+ * 自定义时间函数按 dt 乘样本和归一化，非单位面积时警告
+ * 积分相对幅值绝对积分接近零时，无法归一化并报错
+ * 可在参数末尾追加 +d<delay> 指定延迟，单位为 s
  * 
- * @param[out]      TFnt       返回的点数
- * @param[in]       dt         时间间隔
- * @param[in]       tftype     单个字符，指代时间函数类型
- * @param[in]       tfparams   时间函数参数
+ * @param[out]      TFnt       返回的点数，包含延迟对应的前导零
+ * @param[in]       dt         时间间隔，s
+ * @param[in]       tftype     时间函数类型
+ * @param[in]       tfparams   时间函数参数，可包含 +d<delay> 后缀
  * 
  * @return     时间函数指针
  */
 float * grt_get_time_function(int *TFnt, float dt, const char tftype, const char *tfparams);
 
 
-// /**
-//  * 时域线性卷积，要求提前运行check_tftype_tfparams函数以检查参数
-//  * 卷积结果会原地写入数组。
-//  *
-//  * @param[in,out]  arr         待卷积的信号
-//  * @param[in]      nt          信号点数
-//  * @param[in]      dt          信号点时间间隔
-//  * @param[in]      tftype      单个字符，指代时间函数类型
-//  * @param[in]      tfparams    时间函数参数
-//  * @param[out]     TFarr       指向时间函数的指针的指针
-//  * @param[out]     TFnt        返回的时间函数点数
-//  */
-// void grt_linear_convolve_time_function(float *arr, int nt, float dt, const char tftype, const char *tfparams, float **TFarr, int *TFnt);
-
+/**
+ * 解析完整时间函数选项，返回包含整数采样延迟的时间函数
+ *
+ * 选项格式为 -Dtftype[/tfparams][+d<delay>]
+ *
+ * @param[in]  option         完整 -D 时间函数选项，NULL 为脉冲
+ * @param[in]  dt             采样间隔，s
+ * @param[out] nt             包含延迟的样本数
+ */
+float *grt_time_function_from_option(const char *option, float dt, int *nt);
 
 /**
  * 时间序列卷积函数，只卷积x的长度
@@ -109,9 +109,10 @@ void grt_differential(float *x, int nx, float dt);
 
 /**
  * 生成抛物线波
+ * 截止时刻向上对齐到采样网格，至少需要两个采样间隔，按矩形法进行面积归一化
  * 
  * @param[in]        dt        采样间隔
- * @param[in,out]    tlen      信号时长
+ * @param[in,out]    Tlen      信号时长，返回实际采样时长
  * @param[out]       Nt        返回的点数
  * 
  * @return   float指针
@@ -121,7 +122,12 @@ float * grt_get_parabola_wave(float dt, float *Tlen, int *Nt);
 
 
 /**
- * 生成梯形波或三角波
+ * 生成梯形波、三角波或矩形波
+ * T1=T2 时平台时长为零，退化为三角波
+ * T1=0 时上坡时长为零，T2=T3 时下坡时长为零，两者同时满足时退化为矩形波
+ * 截止时刻向上对齐到采样网格，接近网格点或相等的时刻按浮点容差处理
+ * 非零上坡和下坡至少保留一个采样间隔，矩形波也至少保留一个采样间隔
+ * 所有样本按分段函数直接取值，再按矩形法进行面积归一化以匹配离散卷积
  * 
  * @verbatim
  *   ^
@@ -141,9 +147,9 @@ float * grt_get_parabola_wave(float dt, float *Tlen, int *Nt);
  * 
  * 
  * @param[in]        dt        采样间隔
- * @param[in,out]    T1        上坡截止时刻
- * @param[in,out]    T2        平台截止时刻
- * @param[in,out]    T3        下坡截止时刻
+ * @param[in,out]    T1        上坡截止时刻，返回实际采样时刻
+ * @param[in,out]    T2        平台截止时刻，返回实际采样时刻
+ * @param[in,out]    T3        下坡截止时刻，返回实际采样时刻
  * @param[out]       Nt        返回的点数
  * 
  * @return   float指针
@@ -154,6 +160,7 @@ float * grt_get_trap_wave(float dt, float *T1, float *T2, float *T3, int *Nt);
 
 /**
  * 生成雷克子波
+ * 峰值时刻为 1/f0，保留解析波形的单位峰值
  * 
  * \f[ f(t)=(1-2 \pi^2 f_0^2 (t-t_0)^2 ) e^{ - \pi^2 f_0^2 (t-t_0)^2} \f]
  * 
