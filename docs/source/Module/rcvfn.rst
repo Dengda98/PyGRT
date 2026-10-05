@@ -34,7 +34,10 @@ rcvfn
 默认只保存接收函数；设置 |-W| 后，还会保存单位入射位移对应的 Z/R 响应。
 具体公式详见 :doc:`/Formula/others/rcvfn`。
 
-SAC 头段中的 ``user0``、``user1``、``user2`` 分别记录虚频系数 :math:`\omega_I`、水平射线参数 *rayp* 和高斯滤波参数 *alp*。
+SAC 头段中的 *user0* 保存虚频系数 :math:`\omega_I`，*resp0* 保存水平射线参数 *rayp* (s/km)。
+高斯滤波参数 *alp* (Hz) 保存到 *resp1*，入射类型和输出类型分别保存到 *resp2* 和 *resp3*。
+这些字段均为浮点类型。
+入射类型 0/1 对应 P/SV；输出类型 0/1/2 对应接收函数比值/垂向位移/径向位移。
 
 
 必选选项

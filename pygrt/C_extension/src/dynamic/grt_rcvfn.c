@@ -699,14 +699,11 @@ static void write_result_sac(
 
     sac->hd.o = 0.0;
     sac->hd.iztype = IO;
-    sac->hd.user0 = wI;
-    sac->hd.user1 = rayp;
-    sac->hd.user2 = alp;
-    sac->hd.user3 = (float)incident;
-    sac->hd.user4 = (float)output;
-    snprintf(sac->hd.kuser0, sizeof(sac->hd.kuser0), "wI");
-    snprintf(sac->hd.kuser1, sizeof(sac->hd.kuser1), "rayp");
-    snprintf(sac->hd.kuser2, sizeof(sac->hd.kuser2), "alp");
+    GRT_SACHEAD_SET_IMAG_FREQ(&sac->hd,         wI);
+    GRT_SACHEAD_SET_RCVFN_RAYP(&sac->hd,        rayp);
+    GRT_SACHEAD_SET_RCVFN_GAUSS_ALPHA(&sac->hd, alp);
+    GRT_SACHEAD_SET_RCVFN_INCIDENT(&sac->hd,    incident);
+    GRT_SACHEAD_SET_RCVFN_OUTPUT(&sac->hd,      output);
     const char incident_name = (incident == GRT_RCVFN_INCIDENT_P) ? 'P' : 'S';
     if(output == GRT_RCVFN_OUTPUT_RATIO){
         snprintf(sac->hd.kcmpnm, sizeof(sac->hd.kcmpnm), "%c_RCVFN", incident_name);

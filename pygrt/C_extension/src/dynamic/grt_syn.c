@@ -521,9 +521,9 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             }
 
             float va, vb, rho;  
-            va  = sac->hd.user6;
-            vb  = sac->hd.user7;
-            rho = sac->hd.user8;
+            va  = GRT_SACHEAD_GET_SRC_VP(&sac->hd);
+            vb  = GRT_SACHEAD_GET_SRC_VS(&sac->hd);
+            rho = GRT_SACHEAD_GET_SRC_RHO(&sac->hd);
             if(va <= 0.0 || vb < 0.0 || rho <= 0.0){
                 GRTRaiseError("Bad src_va, src_vb or src_rho in \"%s\" header.\n", entry->d_name);
             }
@@ -929,7 +929,7 @@ static void syn_postprocess_trace(SACTRACE *sac, SACTRACE *tfsac, int int_times,
 
     if(tfsac != NULL){
         // 卷积时间函数前先把虚频率的补偿撤回，这样似乎会更稳定
-        float wI = sac->hd.user0;
+        float wI = GRT_SACHEAD_GET_IMAG_FREQ(&sac->hd);
         float fac = 1.0f;
         float dfac = expf(-wI * dt);
         for(int n = 0; n < nt; ++n){

@@ -899,15 +899,15 @@ static SACTRACE *new_lamb_trace(
     sac->hd.evdp = source_depth;
     sac->hd.stel = -receiver_depth * 1e3;
     /* 直接时域解不使用 greenfn 的虚频率补偿，也不包含衰减 */
-    sac->hd.user0 = 0.0;
-    sac->hd.user1 = vp;
-    sac->hd.user2 = vs;
-    sac->hd.user3 = rho;
-    sac->hd.user4 = 0.0;
-    sac->hd.user5 = 0.0;
-    sac->hd.user6 = vp;
-    sac->hd.user7 = vs;
-    sac->hd.user8 = rho;
+    GRT_SACHEAD_SET_IMAG_FREQ(&sac->hd,  0.0);
+    GRT_SACHEAD_SET_RCV_VP(&sac->hd,     vp);
+    GRT_SACHEAD_SET_RCV_VS(&sac->hd,     vs);
+    GRT_SACHEAD_SET_RCV_RHO(&sac->hd,    rho);
+    GRT_SACHEAD_SET_RCV_QP_INV(&sac->hd, 0.0);
+    GRT_SACHEAD_SET_RCV_QS_INV(&sac->hd, 0.0);
+    GRT_SACHEAD_SET_SRC_VP(&sac->hd,     vp);
+    GRT_SACHEAD_SET_SRC_VS(&sac->hd,     vs);
+    GRT_SACHEAD_SET_SRC_RHO(&sac->hd,    rho);
 
     sac->hd.az = azimuth;
     sac->hd.baz = azimuth + 180.0;
