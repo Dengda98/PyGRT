@@ -83,7 +83,7 @@ def vertical_travel_times(velocity: np.ndarray, rayp: float, thickness: np.ndarr
 def phase_arrivals(case: dict):
     prefix = case["prefix"]
     trace = read(f"PY_{prefix}/{prefix}_rcvfn.sac")[0]
-    rayp = float(trace.stats.sac.user1)
+    rayp = float(trace.stats.sac.resp0)
     thickness, vp, vs, depths = read_model("mod1")
     p_times = vertical_travel_times(vp, rayp, thickness)
     s_times = vertical_travel_times(vs, rayp, thickness)
