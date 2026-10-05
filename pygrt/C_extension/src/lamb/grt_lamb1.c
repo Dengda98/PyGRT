@@ -175,8 +175,8 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                         GRTBadOptionError(C, "expected a positive cbar value.");
                     }
                 }
-                if(!isfinite(Ctrl->C.cbar) || Ctrl->C.cbar <= 0.0){
-                    GRTBadOptionError(C, "cbar should be finite and positive.");
+                if(Ctrl->C.cbar <= 0.0){
+                    GRTBadOptionError(C, "cbar should be positive.");
                 }
                 break;
 

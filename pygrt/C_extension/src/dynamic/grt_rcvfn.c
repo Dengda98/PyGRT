@@ -194,9 +194,8 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 Ctrl->P.active = true;
                 {
                     char extra;
-                    if(sscanf(optarg, "%lf%c", &Ctrl->P.rayp, &extra) != 1 ||
-                        !isfinite(Ctrl->P.rayp) || Ctrl->P.rayp <= 0.0){
-                        GRTBadOptionError(P, "rayp must be positive and finite.");
+                    if(sscanf(optarg, "%lf%c", &Ctrl->P.rayp, &extra) != 1 || Ctrl->P.rayp <= 0.0){
+                        GRTBadOptionError(P, "rayp must be positive.");
                     }
                 }
                 break;
@@ -209,10 +208,10 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                     if(nscan != 1 && nscan != 2){
                         GRTBadOptionError(I, "Use -I<inca>[/<idx>].");
                     }
-                    if(!isfinite(Ctrl->I.inca) || Ctrl->I.inca < 0.0 || Ctrl->I.inca >= 90.0){
+                    if(Ctrl->I.inca < 0.0 || Ctrl->I.inca >= 90.0){
                         GRTBadOptionError(I, "incidence angle must be in [0, 90) degrees.");
                     }
-                    if(nscan == 2 && (!isfinite(idx) || idx < 0.0 || idx != floor(idx) || idx > SIZE_MAX)){
+                    if(nscan == 2 && (idx < 0.0 || idx != floor(idx) || idx > SIZE_MAX)){
                         GRTBadOptionError(I, "idx must be a nonnegative integer.");
                     }
                     Ctrl->I.active = true;
@@ -226,8 +225,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 {
                     char *string = strdup(optarg);
                     char *token = strtok(string, "+");
-                    if(token == NULL || 2 != sscanf(token, "%zu/%lf", &Ctrl->N.nt, &Ctrl->N.dt) ||
-                        Ctrl->N.nt == 0 || Ctrl->N.dt <= 0.0 || !isfinite(Ctrl->N.dt)){
+                    if(token == NULL || 2 != sscanf(token, "%zu/%lf", &Ctrl->N.nt, &Ctrl->N.dt) || Ctrl->N.nt == 0 || Ctrl->N.dt <= 0.0){
                         GRTBadOptionError(N, "");
                     }
 
@@ -287,9 +285,8 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 Ctrl->A.active = true;
                 {
                     char extra;
-                    if(sscanf(optarg, "%lf%c", &Ctrl->A.alp, &extra) != 1 ||
-                        !isfinite(Ctrl->A.alp) || Ctrl->A.alp <= 0.0){
-                        GRTBadOptionError(A, "alp must be positive and finite.");
+                    if(sscanf(optarg, "%lf%c", &Ctrl->A.alp, &extra) != 1 || Ctrl->A.alp <= 0.0){
+                        GRTBadOptionError(A, "alp must be positive.");
                     }
                 }
                 break;
@@ -299,9 +296,8 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 Ctrl->E.active = true;
                 {
                     char extra;
-                    if(sscanf(optarg, "%lf%c", &Ctrl->E.delay, &extra) != 1 ||
-                        !isfinite(Ctrl->E.delay)){
-                        GRTBadOptionError(E, "delay must be finite.");
+                    if(sscanf(optarg, "%lf%c", &Ctrl->E.delay, &extra) != 1){
+                        GRTBadOptionError(E, "Invalid delay.");
                     }
                 }
                 break;
@@ -522,7 +518,7 @@ static int compute_one_frequency(
     MODEL1D_STATE *mstat, cplx_t k0, GRT_RCVFN_INCIDENT incident,
     cplx_t *q_m, cplx_t *w_m, cplx_t *incident_velocity)
 {
-    if(!isfinite(creal(k0)) || !isfinite(cimag(k0)) || cabs(k0) == 0.0){
+    if(cabs(k0) == 0.0){
         return GRT_INVERSE_FAILURE;
     }
 
@@ -536,10 +532,6 @@ static int compute_one_frequency(
     size_t incident_index = (incident == GRT_RCVFN_INCIDENT_P) ? 0 : 1;
     *q_m = R_EV[0][incident_index];
     *w_m = R_EV[1][incident_index];
-    if(!isfinite(creal(*q_m)) || !isfinite(cimag(*q_m)) ||
-        !isfinite(creal(*w_m)) || !isfinite(cimag(*w_m))){
-        return GRT_INVERSE_FAILURE;
-    }
 
     size_t incident_layer = mstat->mod1d->n - 1;
     if(incident == GRT_RCVFN_INCIDENT_P){
@@ -562,23 +554,17 @@ static int compute_one_frequency(
  * @param[out]    q_m               自由表面水平位移势响应数组
  * @param[out]    w_m               自由表面垂向位移势响应数组
  * @param[out]    incident_velocity 入射波速度因子数组
+ * @param[out]    valid             各频点是否求解成功
  * @param[in]     nf                频率点数
  * @param[in]     df                频率间隔
  * @param[in]     wI                虚频系数
  */
 static void compute_frequency_responses(
     MODEL1D *mod1d, const real_t rayp, const GRT_RCVFN_INCIDENT incident,
-    cplx_t q_m[], cplx_t w_m[], cplx_t incident_velocity[],
+    cplx_t q_m[], cplx_t w_m[], cplx_t incident_velocity[], bool valid[],
     const size_t nf, const real_t df, const real_t wI)
 {
     mod1d->omgref = PI2*(nf - 1)*df;
-    const cplx_t invalid = NAN + IMAG*NAN;
-
-    for(size_t iw = 0; iw < nf; ++iw){
-        q_m[iw] = invalid;
-        w_m[iw] = invalid;
-        incident_velocity[iw] = invalid;
-    }
 
     for(size_t iw = 0; iw < nf; ++iw){
         real_t freq = iw*df;
@@ -590,7 +576,7 @@ static void compute_frequency_responses(
         int status = compute_one_frequency(
             mstat, k0, incident, &q_m[iw], &w_m[iw], &incident_velocity[iw]);
         grt_free_mod1d_state(mstat);
-        if(status == GRT_INVERSE_FAILURE) continue;
+        valid[iw] = status == GRT_INVERSE_SUCCESS;
     }
 }
 
@@ -601,6 +587,7 @@ static void compute_frequency_responses(
  * @param[in]  q_m               自由表面水平位移势响应数组
  * @param[in]  w_m               自由表面垂向位移势响应数组
  * @param[in]  incident_velocity 入射波速度因子数组
+ * @param[in]  valid             各频点是否求解成功
  * @param[in]  incident          入射波类型
  * @param[in]  output            输出结果类型
  * @param[out] spectrum          频率响应数组
@@ -611,7 +598,7 @@ static void compute_frequency_responses(
  * @return                       组装失败的频率点数
  */
 static size_t assemble_spectrum(
-    const cplx_t q_m[], const cplx_t w_m[], const cplx_t incident_velocity[],
+    const cplx_t q_m[], const cplx_t w_m[], const cplx_t incident_velocity[], const bool valid[],
     const GRT_RCVFN_INCIDENT incident, const GRT_RCVFN_OUTPUT output,
     cplx_t spectrum[], const size_t nf, const real_t df,
     const real_t wI, const real_t alp)
@@ -621,8 +608,7 @@ static size_t assemble_spectrum(
     const real_t gauss_exponent_limit = -log(DBL_MIN);
 
     for(size_t iw = 0; iw < nf; ++iw){
-        if(!isfinite(creal(q_m[iw])) || !isfinite(cimag(q_m[iw])) ||
-            !isfinite(creal(w_m[iw])) || !isfinite(cimag(w_m[iw]))){
+        if(!valid[iw]) {
             ++nfailed;
             continue;
         }
@@ -642,8 +628,7 @@ static size_t assemble_spectrum(
         }
         else{
             cplx_t omega = PI2*(iw*df) - IMAG*wI;
-            if(!isfinite(creal(incident_velocity[iw])) ||
-                !isfinite(cimag(incident_velocity[iw])) || cabs(omega) == 0.0){
+            if(cabs(omega) == 0.0){
                 ++nfailed;
                 continue;
             }
@@ -659,10 +644,6 @@ static size_t assemble_spectrum(
         }
 
         spectrum[iw] = gauss*response;
-        if(!isfinite(creal(spectrum[iw])) || !isfinite(cimag(spectrum[iw]))){
-            spectrum[iw] = 0.0;
-            ++nfailed;
-        }
     }
 
     return nfailed;
@@ -769,8 +750,8 @@ int rcvfn_main(int argc, char **argv)
     }
 
     real_t winT = Ctrl->N.nt*Ctrl->N.dt;
-    if(!isfinite(winT) || winT <= 0.0){
-        GRTRaiseError("The time window must be finite and positive.");
+    if(winT <= 0.0){
+        GRTRaiseError("The time window must be positive.");
     }
     size_t nf = Ctrl->N.nt/2 + 1;
     real_t df = 1.0/winT;
@@ -818,12 +799,13 @@ int rcvfn_main(int argc, char **argv)
     cplx_t *q_m = GRT_SAFE_CALLOC(nf, sizeof(*q_m));
     cplx_t *w_m = GRT_SAFE_CALLOC(nf, sizeof(*w_m));
     cplx_t *incident_velocity = GRT_SAFE_CALLOC(nf, sizeof(*incident_velocity));
+    bool *valid = GRT_SAFE_CALLOC(nf, sizeof(*valid));
     cplx_t *spectrum = GRT_SAFE_CALLOC(nf, sizeof(*spectrum));
 
     // 频率递推只执行一次，后续输出复用 q_m 和 w_m
     compute_frequency_responses(
         Ctrl->M.mod1d, Ctrl->P.rayp, Ctrl->T.incident,
-        q_m, w_m, incident_velocity, nf, df, wI);
+        q_m, w_m, incident_velocity, valid, nf, df, wI);
 
     const GRT_RCVFN_OUTPUT output_types[] = {
         GRT_RCVFN_OUTPUT_RATIO, GRT_RCVFN_OUTPUT_Z, GRT_RCVFN_OUTPUT_R,
@@ -835,11 +817,11 @@ int rcvfn_main(int argc, char **argv)
     for(size_t ioutput = 0; ioutput < noutputs; ++ioutput){
         GRT_RCVFN_OUTPUT output = output_types[ioutput];
         size_t nfailed = assemble_spectrum(
-            q_m, w_m, incident_velocity, Ctrl->T.incident, output,
+            q_m, w_m, incident_velocity, valid, Ctrl->T.incident, output,
             spectrum, nf, df, wI, Ctrl->A.alp);
 
         if(nfailed > 0 && !Ctrl->s.active){
-            GRTRaiseWarning("%zu frequency points were singular or non-finite and were set to zero.", nfailed);
+            GRTRaiseWarning("%zu frequency points were singular and were set to zero.", nfailed);
         }
 
         char *path = NULL;
@@ -863,6 +845,7 @@ int rcvfn_main(int argc, char **argv)
         GRT_SAFE_FREE_PTR(path);
     }
 
+    GRT_SAFE_FREE_PTR(valid);
     GRT_SAFE_FREE_PTR(q_m);
     GRT_SAFE_FREE_PTR(w_m);
     GRT_SAFE_FREE_PTR(incident_velocity);

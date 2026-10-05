@@ -25,15 +25,9 @@ invalid_lamb2_inputs = (
     ("an empty phase list", dict(nu=0.25, tbar=np.asarray([0.0]), R=10.0, depsrc=5.0, azimuth=0.0, phases=[])),
     ("an empty time series", dict(nu=0.25, tbar=np.asarray([]), R=10.0, depsrc=5.0, azimuth=0.0)),
     ("a multidimensional time series", dict(nu=0.25, tbar=np.asarray([[0.0]]), R=10.0, depsrc=5.0, azimuth=0.0)),
-    ("a non-finite time series", dict(nu=0.25, tbar=np.asarray([0.0, np.nan]), R=10.0, depsrc=5.0, azimuth=0.0)),
     ("a non-increasing time series", dict(nu=0.25, tbar=np.asarray([0.0, 0.0]), R=10.0, depsrc=5.0, azimuth=0.0)),
-    ("a non-finite Poisson ratio", dict(nu=np.nan, tbar=np.asarray([0.0]), R=10.0, depsrc=5.0, azimuth=0.0)),
     ("a negative horizontal distance", dict(nu=0.25, tbar=np.asarray([0.0]), R=-1.0, depsrc=5.0, azimuth=0.0)),
     ("a zero horizontal distance", dict(nu=0.25, tbar=np.asarray([0.0]), R=0.0, depsrc=5.0, azimuth=0.0)),
-    ("a non-finite horizontal distance", dict(nu=0.25, tbar=np.asarray([0.0]), R=np.inf, depsrc=5.0, azimuth=0.0)),
-    ("a non-finite depsrc", dict(nu=0.25, tbar=np.asarray([0.0]), R=10.0, depsrc=np.nan, azimuth=0.0)),
-    ("a non-finite deprcv", dict(nu=0.25, tbar=np.asarray([0.0]), R=10.0, deprcv=np.nan, azimuth=0.0)),
-    ("a non-finite azimuth", dict(nu=0.25, tbar=np.asarray([0.0]), R=10.0, depsrc=5.0, azimuth=np.nan)),
 )
 for name, kwargs in invalid_lamb2_inputs:
     expect_value_error(name, **kwargs)

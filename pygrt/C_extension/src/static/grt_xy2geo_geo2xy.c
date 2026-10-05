@@ -134,10 +134,10 @@ static void parse_reference(GRT_MODULE_CTRL *Ctrl, const char *arg)
     if(sscanf(arg, "%lf/%lf %c", &lat0, &lon0, &extra) != 2){
         GRTBadOptionError(C, "Expect <latitude>/<longitude>.");
     }
-    if((!isfinite(lat0)) || (lat0 <= -90.0) || (lat0 >= 90.0)){
+    if((lat0 <= -90.0) || (lat0 >= 90.0)){
         GRTBadOptionError(C, "Latitude must be in (-90, 90).");
     }
-    if((!isfinite(lon0)) || (lon0 < -180.0) || (lon0 > 180.0)){
+    if((lon0 < -180.0) || (lon0 > 180.0)){
         GRTBadOptionError(C, "Longitude must be in [-180, 180].");
     }
     Ctrl->C.active = true;
@@ -353,18 +353,11 @@ static void transform_coordinate_pair(
     const real_t km_per_lat_deg = EARTH_RADIUS_KM * DEG1;
     const real_t km_per_lon_deg = EARTH_RADIUS_KM * cos(lat0 * DEG1) * DEG1;
 
-    if((!isfinite(first)) || (!isfinite(second))){
-        GRTRaiseError("Coordinate values must be finite.");
-    }
-
     if(direction == GRT_XY2GEO){
         real_t latitude = lat0 + first / km_per_lat_deg;
         real_t longitude = lon0 + second / km_per_lon_deg;
-        if((!isfinite(latitude)) || (latitude < -90.0) || (latitude > 90.0)){
+        if((latitude < -90.0) || (latitude > 90.0)){
             GRTRaiseError("Converted latitude is outside [-90, 90].");
-        }
-        if((!isfinite(longitude))){
-            GRTRaiseError("Converted longitude is not finite.");
         }
         *out_first = latitude;
         *out_second = normalize_longitude(longitude);
@@ -525,7 +518,7 @@ static void parse_text_coordinate_line(
     errno = 0;
     char *end = NULL;
     *first = strtod(cursor, &end);
-    if((end == cursor) || (errno == ERANGE) || (!isfinite(*first))){
+    if((end == cursor) || (errno == ERANGE)){
         GRTRaiseError(
             "Invalid coordinate line %zu in \"%s\" "
             "(expect at least two finite numeric columns).", lineno, path);
@@ -537,7 +530,7 @@ static void parse_text_coordinate_line(
     *second_start = cursor;
     errno = 0;
     *second = strtod(cursor, &end);
-    if((end == cursor) || (errno == ERANGE) || (!isfinite(*second))){
+    if((end == cursor) || (errno == ERANGE)){
         GRTRaiseError(
             "Invalid coordinate line %zu in \"%s\" "
             "(expect at least two finite numeric columns).", lineno, path);

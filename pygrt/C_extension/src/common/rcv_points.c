@@ -40,7 +40,7 @@ static bool parse_receiver_point_line(
         errno = 0;
         char *end = NULL;
         real_t value = strtod(cursor, &end);
-        if(end == cursor || errno == ERANGE || !isfinite(value)) return false;
+        if(end == cursor || errno == ERANGE) return false;
         values[*nvalues] = value;
         (*nvalues)++;
         cursor = end;

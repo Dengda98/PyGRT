@@ -428,11 +428,11 @@ def _run_coordinate_transform(
         lat0 = float(lat0)
         lon0 = float(lon0)
     except (TypeError, ValueError):
-        raise ValueError("lat0 and lon0 must be finite numbers.") from None
-    if not np.isfinite(lat0) or not (-90.0 < lat0 < 90.0):
-        raise ValueError("lat0 must be finite and in (-90, 90).")
-    if not np.isfinite(lon0) or not (-180.0 <= lon0 <= 180.0):
-        raise ValueError("lon0 must be finite and in [-180, 180].")
+        raise ValueError("lat0 and lon0 must be numbers.") from None
+    if not (-90.0 < lat0 < 90.0):
+        raise ValueError("lat0 must be in (-90, 90).")
+    if not (-180.0 <= lon0 <= 180.0):
+        raise ValueError("lon0 must be in [-180, 180].")
 
     input_path = Path(ingrid if ingrid is not None else qfile)
     if not input_path.is_file():
@@ -1361,15 +1361,13 @@ def _prepare_lamb_scalar(value, name):
     try:
         value = np.asarray(value)
     except (TypeError, ValueError):
-        raise ValueError(f"{name} should be a finite real scalar.") from None
+        raise ValueError(f"{name} should be a real scalar.") from None
     if value.ndim != 0:
-        raise ValueError(f"{name} should be a finite real scalar.")
+        raise ValueError(f"{name} should be a real scalar.")
     try:
         value = float(value)
     except (TypeError, ValueError, OverflowError):
-        raise ValueError(f"{name} should be a finite real scalar.") from None
-    if not np.isfinite(value):
-        raise ValueError(f"{name} should be finite.")
+        raise ValueError(f"{name} should be a real scalar.") from None
     return value
 
 
@@ -1388,8 +1386,6 @@ def _prepare_lamb_time_series(tbar):
         raise ValueError("tbar should be a one-dimensional sequence of real numbers.") from None
     if tbar.size == 0:
         raise ValueError("tbar should not be empty.")
-    if not np.all(np.isfinite(tbar)):
-        raise ValueError("tbar should contain only finite values.")
     if np.any(tbar < 0.0):
         raise ValueError("tbar should be nonnegative.")
     if tbar.size > 1 and np.any(np.diff(tbar) <= 0.0):

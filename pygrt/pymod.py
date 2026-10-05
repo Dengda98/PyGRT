@@ -87,8 +87,6 @@ def _format_slash_option(
     if arr.size not in allowed_sizes:
         sizes = ", ".join(str(size) for size in allowed_sizes)
         raise ValueError(f"{name} must contain {sizes} value(s).")
-    if not np.all(np.isfinite(arr)):
-        raise ValueError(f"{name} must contain finite values.")
 
     # 单值必须为正；区间起点可为 0，终点和间隔必须为正
     if arr.size == 1:
@@ -139,7 +137,7 @@ def _format_mode_option(values: IntOrSequence, name: str = "modes") -> str:
     arr = np.atleast_1d(arr)
     if arr.size not in {1, 2, 3}:
         raise ValueError(f"{name} must contain one, two or three values.")
-    if not np.all(np.isfinite(arr)) or not np.all(arr == np.floor(arr)):
+    if not np.all(arr == np.floor(arr)):
         raise ValueError(f"{name} must contain integers.")
 
     modes = [int(value) for value in arr]
@@ -160,7 +158,7 @@ def _normalize_integer(value: int, name: str, minimum: int = 0) -> int:
         number = float(value)
     except (TypeError, ValueError):
         raise TypeError(f"{name} must be an integer.") from None
-    if not np.isfinite(number) or number != np.floor(number):
+    if number != np.floor(number):
         raise ValueError(f"{name} must be an integer.")
     number = int(number)
     if number < minimum:
@@ -416,8 +414,6 @@ class PyModel1D:
                     value = float(value)
                 except (TypeError, ValueError):
                     raise TypeError(f"ctrl_kw[{name!r}] must be a number.") from None
-                if not np.isfinite(value):
-                    raise ValueError(f"ctrl_kw[{name!r}] must be finite.")
                 search_options.append(f"+{flag}{format_float(value)}")
             if not search_options:
                 return None
@@ -438,14 +434,14 @@ class PyModel1D:
                 secular_freq = float(secular_freq)
             except (TypeError, ValueError):
                 raise TypeError("secular_freq must be a positive number.") from None
-            if not np.isfinite(secular_freq) or secular_freq <= 0.0:
+            if secular_freq <= 0.0:
                 raise ValueError("secular_freq must be positive.")
             if (cmin is None) != (cmax is None):
                 raise ValueError("cmin and cmax must be supplied together.")
             if cmin is not None:
                 cmin = float(cmin)
                 cmax = float(cmax)
-                if not np.all(np.isfinite([cmin, cmax])) or cmin < 0.0 or cmax <= cmin:
+                if cmin < 0.0 or cmax <= cmin:
                     raise ValueError("cmin and cmax must satisfy 0 <= cmin < cmax.")
             if iref is not None:
                 iref = _normalize_integer(iref, "iref")
@@ -576,7 +572,7 @@ class PyModel1D:
                 sensitivity_options.append(f"+{key}{Path(path)}")
         if sensitivity_dz is not None:
             sensitivity_dz = float(sensitivity_dz)
-            if not np.isfinite(sensitivity_dz) or sensitivity_dz <= 0.0:
+            if sensitivity_dz <= 0.0:
                 raise ValueError("sensitivity_dz must be positive.")
             sensitivity_options.append(f"+z{format_float(sensitivity_dz)}")
         if sensitivity_options:
@@ -685,14 +681,12 @@ class PyModel1D:
         # -E 的拼法和 greenfn 一致：ref_first_p 时忽略 delayV0
         if ref_first_p:
             delayT0 = 0.0 if delayT0 is None else float(delayT0)
-            if not np.isfinite(delayT0):
-                raise ValueError("delayT0 must be finite.")
             command["E"] = f"-Ep{format_float(delayT0)}"
         elif delayT0 is not None or delayV0 is not None:
             delayT0 = 0.0 if delayT0 is None else float(delayT0)
             delayV0 = 0.0 if delayV0 is None else float(delayV0)
-            if not np.all(np.isfinite([delayT0, delayV0])) or delayV0 < 0.0:
-                raise ValueError("delayT0 and delayV0 must be finite, with delayV0 nonnegative.")
+            if delayV0 < 0.0:
+                raise ValueError("delayV0 must be nonnegative.")
             command["E"] = f"-E{format_float(delayT0)}/{format_float(delayV0)}"
 
         if gf_source is not None:
@@ -989,40 +983,38 @@ class PyModel1D:
         nt = _normalize_integer(nt, "nt", minimum=1)
         upsampling_n = _normalize_integer(upsampling_n, "upsampling_n", minimum=1)
 
-        def positive_finite(value: float, name: str) -> float:
+        def positive_number(value: float, name: str) -> float:
             try:
                 value = float(value)
             except (TypeError, ValueError):
                 raise TypeError(f"{name} must be a positive number.") from None
-            if not np.isfinite(value) or value <= 0.0:
-                raise ValueError(f"{name} must be positive and finite.")
+            if value <= 0.0:
+                raise ValueError(f"{name} must be positive.")
             return value
 
-        dt = positive_finite(dt, "dt")
-        zeta = positive_finite(zeta, "zeta")
-        alp = positive_finite(alp, "alp")
+        dt = positive_number(dt, "dt")
+        zeta = positive_number(zeta, "zeta")
+        alp = positive_number(alp, "alp")
 
         try:
             delay = float(delay)
         except (TypeError, ValueError):
-            raise TypeError("delay must be finite.") from None
-        if not np.isfinite(delay):
-            raise ValueError("delay must be finite.")
+            raise TypeError("delay must be a number.") from None
 
         command = {
             "subcommand": "rcvfn",
             "M": f"-M{self.modelpath}",
         }
         if rayp is not None:
-            rayp = positive_finite(rayp, "rayp")
+            rayp = positive_number(rayp, "rayp")
             command["P"] = f"-P{format_float(rayp)}"
         else:
             try:
                 inca = float(inca)
             except (TypeError, ValueError):
-                raise TypeError("inca must be a finite number.") from None
-            if not np.isfinite(inca) or inca < 0.0 or inca >= 90.0:
-                raise ValueError("inca must be finite and satisfy 0 <= inca < 90.")
+                raise TypeError("inca must be a number.") from None
+            if inca < 0.0 or inca >= 90.0:
+                raise ValueError("inca must satisfy 0 <= inca < 90.")
             if idx is not None:
                 idx = _normalize_integer(idx, "idx", minimum=0)
                 inca_option = f"{format_float(inca)}/{idx}"
