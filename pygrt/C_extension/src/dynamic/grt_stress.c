@@ -175,11 +175,11 @@ int stress_main(int argc, char **argv){
     int npts = insac->hd.npts;
     float dt = insac->hd.delta;
     float dist = insac->hd.dist;
-    float va = insac->hd.user1;
-    float vb = insac->hd.user2;
-    float rho = insac->hd.user3;
-    float Qainv = insac->hd.user4;
-    float Qbinv = insac->hd.user5;
+    float va = GRT_SACHEAD_GET_RCV_VP(&insac->hd);
+    float vb = GRT_SACHEAD_GET_RCV_VS(&insac->hd);
+    float rho = GRT_SACHEAD_GET_RCV_RHO(&insac->hd);
+    float Qainv = GRT_SACHEAD_GET_RCV_QP_INV(&insac->hd);
+    float Qbinv = GRT_SACHEAD_GET_RCV_QS_INV(&insac->hd);
     if(va <= 0.0 || vb < 0.0 || rho <= 0.0){
         GRTRaiseError("Bad rcv_va, rcv_vb or rcv_rho in \"%s\" header.\n", s_filepath);
     }

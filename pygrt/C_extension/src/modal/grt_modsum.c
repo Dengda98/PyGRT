@@ -541,17 +541,17 @@ static void compute_modsum_one(
     sac->hd.evdp = Ctrl->D.depsrc; // km
     sac->hd.stel = (-1.0)*Ctrl->D.deprcv*1e3; // m
     // 写入虚频率
-    sac->hd.user0 = 0.0;
+    GRT_SACHEAD_SET_IMAG_FREQ(&sac->hd, 0.0);
     // 写入接受点的Vp,Vs,rho
-    sac->hd.user1 = mod1d->Va[mod1d->ircv];
-    sac->hd.user2 = mod1d->Vb[mod1d->ircv];
-    sac->hd.user3 = mod1d->Rho[mod1d->ircv];
-    sac->hd.user4 = mod1d->Qainv[mod1d->ircv];
-    sac->hd.user5 = mod1d->Qbinv[mod1d->ircv];
+    GRT_SACHEAD_SET_RCV_VP(&sac->hd,     mod1d->Va[mod1d->ircv]);
+    GRT_SACHEAD_SET_RCV_VS(&sac->hd,     mod1d->Vb[mod1d->ircv]);
+    GRT_SACHEAD_SET_RCV_RHO(&sac->hd,    mod1d->Rho[mod1d->ircv]);
+    GRT_SACHEAD_SET_RCV_QP_INV(&sac->hd, mod1d->Qainv[mod1d->ircv]);
+    GRT_SACHEAD_SET_RCV_QS_INV(&sac->hd, mod1d->Qbinv[mod1d->ircv]);
     // 写入震源点的Vp,Vs,rho
-    sac->hd.user6 = mod1d->Va[mod1d->isrc];
-    sac->hd.user7 = mod1d->Vb[mod1d->isrc];
-    sac->hd.user8 = mod1d->Rho[mod1d->isrc];
+    GRT_SACHEAD_SET_SRC_VP(&sac->hd,  mod1d->Va[mod1d->isrc]);
+    GRT_SACHEAD_SET_SRC_VS(&sac->hd,  mod1d->Vb[mod1d->isrc]);
+    GRT_SACHEAD_SET_SRC_RHO(&sac->hd, mod1d->Rho[mod1d->isrc]);
     
     // 为每个震中距设置对应的变量
     real_t (*travtPS)[2] = GRT_SAFE_CALLOC(grn->nr, sizeof(real_t)*2);
