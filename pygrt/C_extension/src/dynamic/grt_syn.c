@@ -39,7 +39,7 @@ typedef struct {
     struct {
         bool active;
         bool mult_src_mu;
-        real_t M0;
+        real_t scale;
         real_t src_mu;
     } S;  
     /** 剪切源 */
@@ -103,8 +103,7 @@ typedef struct {
     realChnlGrid srcRadi;
 
     // 最终要计算的震源类型
-    GRT_SYN_TYPE computeType;
-    char s_computeType[3];
+    GRT_SYN_TYPE source_type;
 
 } GRT_MODULE_CTRL;
 
@@ -288,8 +287,7 @@ printf("\n"
 /** 从命令行中读取选项，处理后记录到全局变量中 */
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     // 先为个别参数设置非0初始值
-    Ctrl->computeType = GRT_SYN_EX;
-    sprintf(Ctrl->s_computeType, "%s", "EX");
+    Ctrl->source_type = GRT_SYN_EX;
 
     int opt;
     while ((opt = getopt(argc, argv, ":G:A:S:M:F:T:O:D:I:J:R:Nehs")) != -1) {
@@ -327,7 +325,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                         *upos = ' ';
                     }
                 }
-                if(0 == sscanf(optarg, "%lf", &Ctrl->S.M0)){
+                if(0 == sscanf(optarg, "%lf", &Ctrl->S.scale)){
                     GRTBadOptionError(S, "");
                 };
                 break;
@@ -339,8 +337,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     real_t strike=0.0, dip=0.0, rake=0.0;
                     int nscan = sscanf(optarg, "%lf/%lf/%lf", &strike, &dip, &rake);
                     if(nscan >= 2){
-                        Ctrl->computeType = GRT_SYN_TS;
-                        sprintf(Ctrl->s_computeType, "%s", "TS");
+                        Ctrl->source_type = GRT_SYN_TS;
                         if(strike < 0.0 || strike > 360.0){
                             GRTBadOptionError(M, "Strike must be in [0, 360].");
                         }
@@ -348,8 +345,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                             GRTBadOptionError(M, "Dip must be in [0, 90].");
                         }
                         if(nscan == 3){
-                            Ctrl->computeType = GRT_SYN_DC;
-                            sprintf(Ctrl->s_computeType, "%s", "DC");
+                            Ctrl->source_type = GRT_SYN_DC;
                             if(rake < -180.0 || rake > 180.0){
                                 GRTBadOptionError(M, "Rake must be in [-180, 180].");
                             }
@@ -368,10 +364,9 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             // 单力源
             case 'F':
                 Ctrl->F.active = true;
-                Ctrl->computeType = GRT_SYN_SF;
+                Ctrl->source_type = GRT_SYN_SF;
                 {
                     real_t fn, fe, fz;
-                    sprintf(Ctrl->s_computeType, "%s", "SF");
                     if(3 != sscanf(optarg, "%lf/%lf/%lf", &fn, &fe, &fz)){
                         GRTBadOptionError(F, "");
                     };
@@ -384,10 +379,9 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             // 张量震源
             case 'T':
                 Ctrl->T.active = true;
-                Ctrl->computeType = GRT_SYN_MT;
+                Ctrl->source_type = GRT_SYN_MT;
                 {
                     real_t Mxx, Mxy, Mxz, Myy, Myz, Mzz;
-                    sprintf(Ctrl->s_computeType, "%s", "MT");
                     if(6 != sscanf(optarg, "%lf/%lf/%lf/%lf/%lf/%lf", &Mxx, &Mxy, &Mxz, &Myy, &Myz, &Mzz)){
                         GRTBadOptionError(T, "");
                     };
@@ -536,7 +530,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                         "Use -S<scale> instead.\n" , entry->d_name);
                 }
                 Ctrl->S.src_mu = vb*vb*rho*1e10;
-                Ctrl->S.M0 *= Ctrl->S.src_mu;
+                Ctrl->S.scale *= Ctrl->S.src_mu;
             }
             
             grt_free_SACTRACE(sac);
@@ -746,15 +740,15 @@ static void save_to_sac(GRT_MODULE_CTRL *Ctrl, const char *pfx, const char ch, S
 
 
 /** 判断该震源类型是否参与合成 */
-static bool syn_need_src(GRT_SYN_TYPE computeType, int im)
+static bool syn_need_src(GRT_SYN_TYPE source_type, int im)
 {
-    if (computeType == GRT_SYN_EX) {
+    if (source_type == GRT_SYN_EX) {
         return im == GRT_SRC_M_EX_INDEX;
-    } else if (computeType == GRT_SYN_SF) {
+    } else if (source_type == GRT_SYN_SF) {
         return im == GRT_SRC_M_VF_INDEX || im == GRT_SRC_M_HF_INDEX;
-    } else if (computeType == GRT_SYN_DC) {
+    } else if (source_type == GRT_SYN_DC) {
         return im >= GRT_SRC_M_DD_INDEX;
-    } else if (computeType == GRT_SYN_TS || computeType == GRT_SYN_MT) {
+    } else if (source_type == GRT_SYN_TS || source_type == GRT_SYN_MT) {
         return im >= GRT_SRC_M_DD_INDEX || im == GRT_SRC_M_EX_INDEX;
     }
     return false;
@@ -801,7 +795,7 @@ static void syn_accum_from_gf(
 static void syn_from_gf(
     size_t npts, real_t dist,
     const prealChnlGrid gf, const prealChnlGrid gf_uiz, const prealChnlGrid gf_uir,
-    GRT_SYN_TYPE computeType, real_t M0, real_t VpVs_ratio, real_t *azrad,
+    GRT_SYN_TYPE source_type, real_t scale, real_t VpVs_ratio, real_t *azrad,
     const real_t mchn[GRT_MECHANISM_NUM],
     bool rot2ZNE, bool calc_upar,
     real_t *const syn[GRT_CHANNEL_NUM], real_t *const syn_upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])
@@ -860,7 +854,7 @@ static void syn_from_gf(
         }
 
         memset(srcRadi, 0, sizeof(srcRadi));
-        grt_set_source_radiation(srcRadi, computeType, (ityp == 3), M0, upar_scale, VpVs_ratio, az, mchn);
+        grt_set_source_radiation(srcRadi, source_type, (ityp == 3), scale, upar_scale, VpVs_ratio, az, mchn);
 
         real_t *out_ptrs[GRT_CHANNEL_NUM];
         if(ityp == 0){
@@ -987,7 +981,7 @@ int syn_main(int argc, char **argv)
 
     SACTRACE *tmpl = NULL;
     GRT_LOOP_ChnlGrid(im, c) {
-        if(!syn_need_src(Ctrl->computeType, im)) continue;
+        if(!syn_need_src(Ctrl->source_type, im)) continue;
         int modr = GRT_SRC_M_ORDERS[im];
         if(modr == 0 && GRT_ZRT_CODES[c] == 'T') continue;
 
@@ -1036,7 +1030,7 @@ int syn_main(int argc, char **argv)
     syn_from_gf(
         (size_t)npts, Ctrl->dist,
         gf, calc_upar ? gf_uiz : NULL, calc_upar ? gf_uir : NULL,
-        Ctrl->computeType, Ctrl->S.M0, Ctrl->VpVs_ratio, &Ctrl->A.azrad, Ctrl->mchn,
+        Ctrl->source_type, Ctrl->S.scale, Ctrl->VpVs_ratio, &Ctrl->A.azrad, Ctrl->mchn,
         false, calc_upar, syn, syn_upar);
 
     // C 可能因 r=0 强制 azrad=0，同步方位角头段
@@ -1116,7 +1110,7 @@ int syn_main(int argc, char **argv)
 
     if(!Ctrl->s.active){
         GRTRaiseInfo("Under \"%s\"", Ctrl->O.s_output_dir);
-        GRTRaiseInfo("Synthetic Seismograms of %-13s source done.", srcTypeFullName[Ctrl->computeType]);
+        GRTRaiseInfo("Synthetic Seismograms of %-13s source done.", srcTypeFullName[Ctrl->source_type]);
         if(tfsac != NULL) GRTRaiseInfo("Time Function saved.");
     }
 

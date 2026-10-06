@@ -14,25 +14,25 @@
 #include "grt/common/checkerror.h"
 
 void grt_set_source_radiation(
-    realChnlGrid srcRadi, const GRT_SYN_TYPE computeType, const bool par_theta,
-    const real_t M0, const real_t coef, const real_t VpVs_ratio, const real_t azrad, const real_t mchn[GRT_MECHANISM_NUM]
+    realChnlGrid srcRadi, const GRT_SYN_TYPE source_type, const bool par_theta,
+    const real_t scale, const real_t coef, const real_t VpVs_ratio, const real_t azrad, const real_t mchn[GRT_MECHANISM_NUM]
 ){
     real_t mult;
-    if(computeType == GRT_SYN_SF){
-        mult = 1e-15*M0*coef;
+    if(source_type == GRT_SYN_SF){
+        mult = 1e-15*scale*coef;
     } else {
-        mult = 1e-20*M0*coef;
+        mult = 1e-20*scale*coef;
     }
 
     real_t saz, caz;
     saz = sin(azrad);
     caz = cos(azrad);
 
-    if(computeType == GRT_SYN_EX){
+    if(source_type == GRT_SYN_EX){
         srcRadi[0][0] = srcRadi[0][1] = (par_theta)? 0.0 : mult; // Z/R
         srcRadi[0][2] = 0.0; // T
     }  
-    else if(computeType == GRT_SYN_SF){
+    else if(source_type == GRT_SYN_SF){
         real_t A0, A1, A4;
         real_t fn, fe, fz;
         fn=mchn[0];   fe=mchn[1];  fz=mchn[2];   
@@ -46,7 +46,7 @@ void grt_set_source_radiation(
         srcRadi[1][2] = 0.0; // VF, T
         srcRadi[2][2] = (par_theta)? -A1 : A4; // HF, T
     }
-    else if(computeType == GRT_SYN_DC){
+    else if(source_type == GRT_SYN_DC){
         real_t strike, dip, rake;
         strike=mchn[0];   dip=mchn[1];   rake=mchn[2];
         // 公式(4.8.35)
@@ -75,7 +75,7 @@ void grt_set_source_radiation(
         srcRadi[4][2] = (par_theta)? -A1 : A4;  // DS, T
         srcRadi[5][2] = (par_theta)? -2.0*A2 : A5;  // DS, T
     }
-    else if(computeType == GRT_SYN_TS){
+    else if(source_type == GRT_SYN_TS){
         real_t strike, dip;
         strike=mchn[0];   dip=mchn[1];
         // 公式(4.8.40)但修改了各向同性的量
@@ -104,7 +104,7 @@ void grt_set_source_radiation(
         srcRadi[4][2] = (par_theta)? -A1 : A4;  // DS, T
         srcRadi[5][2] = (par_theta)? -2.0*A2 : A5;  // DS, T
     }
-    else if(computeType == GRT_SYN_MT){
+    else if(source_type == GRT_SYN_MT){
         // 公式(4.9.7)但修改了各向同性的量
         real_t M11, M12, M13, M22, M23, M33;
         M11 = mchn[0];   M12 = mchn[1];   M13 = mchn[2];

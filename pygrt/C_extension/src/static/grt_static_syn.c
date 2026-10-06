@@ -24,7 +24,7 @@ typedef struct {
     struct {
         bool active;
         bool mult_src_mu;
-        real_t M0;
+        real_t scale;
         real_t src_mu;
     } S;  
     /** 剪切源 */
@@ -100,8 +100,7 @@ typedef struct {
     real_t mchn[GRT_MECHANISM_NUM];
 
     // 最终要计算的震源类型
-    GRT_SYN_TYPE computeType;
-    char s_computeType[3];
+    GRT_SYN_TYPE source_type;
 
     bool isPointSource;
     bool isFiniteFault;
@@ -346,8 +345,7 @@ printf("\n"
  */
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     // 先为个别参数设置非0初始值
-    Ctrl->computeType = GRT_SYN_EX;
-    sprintf(Ctrl->s_computeType, "%s", "EX");
+    Ctrl->source_type = GRT_SYN_EX;
 
     int opt;
     while ((opt = getopt(argc, argv, ":G:O:S:M:F:T:C:X:Y:D:Q:U:Nesh")) != -1) {
@@ -398,7 +396,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                         *upos = ' ';
                     }
                 }
-                if(0 == sscanf(optarg, "%lf", &Ctrl->S.M0)){
+                if(0 == sscanf(optarg, "%lf", &Ctrl->S.scale)){
                     GRTBadOptionError(S, "");
                 };
                 break;
@@ -410,8 +408,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     real_t strike=0.0, dip=0.0, rake=0.0;
                     int nscan = sscanf(optarg, "%lf/%lf/%lf", &strike, &dip, &rake);
                     if(nscan >= 2){
-                        Ctrl->computeType = GRT_SYN_TS;
-                        sprintf(Ctrl->s_computeType, "%s", "TS");
+                        Ctrl->source_type = GRT_SYN_TS;
                         if(strike < 0.0 || strike > 360.0){
                             GRTBadOptionError(M, "Strike must be in [0, 360].");
                         }
@@ -419,8 +416,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                             GRTBadOptionError(M, "Dip must be in [0, 90].");
                         }
                         if(nscan == 3){
-                            Ctrl->computeType = GRT_SYN_DC;
-                            sprintf(Ctrl->s_computeType, "%s", "DC");
+                            Ctrl->source_type = GRT_SYN_DC;
                             if(rake < -180.0 || rake > 180.0){
                                 GRTBadOptionError(M, "Rake must be in [-180, 180].");
                             }
@@ -439,10 +435,9 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             // 单力源
             case 'F':
                 Ctrl->F.active = true;
-                Ctrl->computeType = GRT_SYN_SF;
+                Ctrl->source_type = GRT_SYN_SF;
                 {
                     real_t fn, fe, fz;
-                    sprintf(Ctrl->s_computeType, "%s", "SF");
                     if(3 != sscanf(optarg, "%lf/%lf/%lf", &fn, &fe, &fz)){
                         GRTBadOptionError(F, "");
                     };
@@ -455,10 +450,9 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             // 张量震源
             case 'T':
                 Ctrl->T.active = true;
-                Ctrl->computeType = GRT_SYN_MT;
+                Ctrl->source_type = GRT_SYN_MT;
                 {
                     real_t Mxx, Mxy, Mxz, Myy, Myz, Mzz;
-                    sprintf(Ctrl->s_computeType, "%s", "MT");
                     if(6 != sscanf(optarg, "%lf/%lf/%lf/%lf/%lf/%lf", &Mxx, &Mxy, &Mxz, &Myy, &Myz, &Mzz)){
                         GRTBadOptionError(T, "");
                     };
@@ -474,8 +468,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             // 从文件中读取有限断层（Coulomb 程序所用格式）-C<path>[+i<dL>/<dW>]
             case 'C':
                 Ctrl->C.active = true;
-                Ctrl->computeType = GRT_SYN_DC;
-                sprintf(Ctrl->s_computeType, "%s", "FF");
+                Ctrl->source_type = GRT_SYN_DC;
                 grt_finite_fault_free(Ctrl->C.faults);
                 Ctrl->C.faults = grt_finite_fault_from_option(
                     optarg, &Ctrl->C.nfault, &Ctrl->C.dL, &Ctrl->C.dW);
@@ -605,25 +598,25 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 /**
  * 在单个震中距采样点上由静态格林函数合成三分量及可选空间偏导
  *
- * @param[in]   azrad       接收点方位角 (rad)
- * @param[in]   ir_pick     震中距采样点索引
- * @param[in]   dist0       震中距采样值 (km)
- * @param[in]   u           位移格林函数
- * @param[in]   uiz         位移对深度的偏导格林函数
- * @param[in]   uir         位移对震中距的偏导格林函数
- * @param[in]   computeType 震源类型
- * @param[in]   M0          标量矩或矩势
- * @param[in]   VpVs_ratio  P 波与 S 波速度比
- * @param[in]   mchn        震源机制参数
- * @param[in]   rot2ZNE     是否输出 ZNE 分量
- * @param[in]   calc_upar   是否计算位移偏导
- * @param[out]  syn         位移结果
- * @param[out]  syn_upar    位移偏导结果
+ * @param[in]   azrad        接收点方位角 (rad)
+ * @param[in]   ir_pick      震中距采样点索引
+ * @param[in]   dist0        震中距采样值 (km)
+ * @param[in]   u            位移格林函数
+ * @param[in]   uiz          位移对深度的偏导格林函数
+ * @param[in]   uir          位移对震中距的偏导格林函数
+ * @param[in]   source_type  震源类型
+ * @param[in]   scale        标量矩或矩势
+ * @param[in]   VpVs_ratio   P 波与 S 波速度比
+ * @param[in]   mchn         震源机制参数
+ * @param[in]   rot2ZNE      是否输出 ZNE 分量
+ * @param[in]   calc_upar    是否计算位移偏导
+ * @param[out]  syn          位移结果
+ * @param[out]  syn_upar     位移偏导结果
  */
 static void static_syn_from_gf_one(
     real_t azrad, size_t ir_pick, real_t dist0,
     const realChnlGrid *u, const realChnlGrid *uiz, const realChnlGrid *uir,
-    GRT_SYN_TYPE computeType, real_t M0, real_t VpVs_ratio, const real_t mchn[GRT_MECHANISM_NUM],
+    GRT_SYN_TYPE source_type, real_t scale, real_t VpVs_ratio, const real_t mchn[GRT_MECHANISM_NUM],
     bool rot2ZNE, bool calc_upar,
     real_t syn[GRT_CHANNEL_NUM], real_t syn_upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])
 {
@@ -663,7 +656,7 @@ static void static_syn_from_gf_one(
         }
 
         memset(tmpsyn, 0, sizeof(tmpsyn));
-        grt_set_source_radiation(srcRadi, computeType, (ityp == 3), M0, upar_scale, VpVs_ratio, azrad, mchn);
+        grt_set_source_radiation(srcRadi, source_type, (ityp == 3), scale, upar_scale, VpVs_ratio, azrad, mchn);
 
         GRT_LOOP_ChnlGrid(im, c){
             int modr = GRT_SRC_M_ORDERS[im];
@@ -701,19 +694,19 @@ static void static_syn_from_gf_one(
  * 数组布局：u[采样点][震源][分量]、syn[接收点][分量]、
  * syn_upar[接收点][偏导方向][分量]。uiz/uir 在 calc_upar=false 时可传 NULL
  *
- * @param[in]      nr0          震中距采样点数
- * @param[in]      sort_rs0     升序震中距采样值
- * @param[in]      sort_rs0_idx 升序采样值对应的原始索引
- * @param[in]      isUniform    震中距采样是否等间隔
- * @param[in]      dr           等间隔震中距步长 (km)
- * @param[in]      npts         接收点数量
- * @param[in]      norths       接收点 North 坐标 (km)
- * @param[in]      easts        接收点 East 坐标 (km)
- * @param[in]      u            位移格林函数
- * @param[in]      uiz          位移对深度的偏导格林函数
- * @param[in]      uir          位移对震中距的偏导格林函数
- * @param[in]      computeType  震源类型
- * @param[in]      M0            标量矩或矩势
+ * @param[in]      nr0           震中距采样点数
+ * @param[in]      sort_rs0      升序震中距采样值
+ * @param[in]      sort_rs0_idx  升序采样值对应的原始索引
+ * @param[in]      isUniform     震中距采样是否等间隔
+ * @param[in]      dr            等间隔震中距步长 (km)
+ * @param[in]      npts          接收点数量
+ * @param[in]      norths        接收点 North 坐标 (km)
+ * @param[in]      easts         接收点 East 坐标 (km)
+ * @param[in]      u             位移格林函数
+ * @param[in]      uiz           位移对深度的偏导格林函数
+ * @param[in]      uir           位移对震中距的偏导格林函数
+ * @param[in]      source_type   震源类型
+ * @param[in]      scale         标量矩或矩势
  * @param[in]      VpVs_ratio    P 波与 S 波速度比
  * @param[in]      mchn          震源机制参数
  * @param[in]      rot2ZNE       是否输出 ZNE 分量
@@ -726,7 +719,7 @@ static void static_syn_from_gf(
     bool isUniform, real_t dr,
     size_t npts, const real_t *norths, const real_t *easts,
     const realChnlGrid *u, const realChnlGrid *uiz, const realChnlGrid *uir,
-    GRT_SYN_TYPE computeType, real_t M0, real_t VpVs_ratio, const real_t mchn[GRT_MECHANISM_NUM],
+    GRT_SYN_TYPE source_type, real_t scale, real_t VpVs_ratio, const real_t mchn[GRT_MECHANISM_NUM],
     bool rot2ZNE, bool calc_upar,
     real_t (*syn)[GRT_CHANNEL_NUM], real_t (*syn_upar)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])
 {
@@ -773,7 +766,7 @@ static void static_syn_from_gf(
 
             size_t ir_pick = sort_rs0_idx[iir[j]];
             real_t dist0 = sort_rs0[iir[j]];
-            static_syn_from_gf_one(azrad, ir_pick, dist0, u, uiz, uir, computeType, M0, VpVs_ratio, mchn, rot2ZNE, calc_upar, syn2, syn2_upar);
+            static_syn_from_gf_one(azrad, ir_pick, dist0, u, uiz, uir, source_type, scale, VpVs_ratio, mchn, rot2ZNE, calc_upar, syn2, syn2_upar);
 
             for(int c = 0; c < GRT_CHANNEL_NUM; ++c){
                 syn[ir][c] += facr[j] * syn2[c];
@@ -803,9 +796,9 @@ static void static_syn_from_gf(
  * @param[in]      nloc             本次合成的接收点数
  * @param[in]      loc_n            水平 north 坐标 (km)，长度 nloc
  * @param[in]      loc_e            水平 east 坐标 (km)，长度 nloc
- * @param[in]      computeType      震源类型
- * @param[in]      M0               标量矩或 potency（见 scale_by_src_mu）
- * @param[in]      scale_by_src_mu  为真时用角点 μ 将 M0 转为矩
+ * @param[in]      source_type      震源类型
+ * @param[in]      scale            标量矩或 potency（见 scale_by_src_mu）
+ * @param[in]      scale_by_src_mu  为真时用角点 μ 将 scale 转为矩
  * @param[in]      mchn             震源机制参数数组
  * @param[in]      rot2ZNE          是否输出 ZNE
  * @param[in]      calc_upar        是否合成位移空间偏导
@@ -819,7 +812,7 @@ static void static_syn_ps_depth_corners(
     size_t is0, size_t is1, real_t ws, int na,
     size_t ir0, size_t ir1, real_t wr,
     size_t ipt0, size_t nloc, const real_t *loc_n, const real_t *loc_e,
-    GRT_SYN_TYPE computeType, real_t M0, bool scale_by_src_mu,
+    GRT_SYN_TYPE source_type, real_t scale, bool scale_by_src_mu,
     const real_t mchn[GRT_MECHANISM_NUM],
     bool rot2ZNE, bool calc_upar,
     real_t (*tmp)[GRT_CHANNEL_NUM],
@@ -849,9 +842,9 @@ static void static_syn_ps_depth_corners(
             real_t vb = lib->src_vb[is];
             real_t rho = lib->src_rho[is];
             real_t VpVs_ratio = (vb == 0.0) ? 0.0 : (va / vb);
-            real_t M0_use = M0;
+            real_t scale_use = scale;
             if(scale_by_src_mu){
-                M0_use = M0 * (vb * vb * rho * 1e10); // dyne/cm^2 * potency
+                scale_use = scale * (vb * vb * rho * 1e10); // dyne/cm^2 * potency
             }
 
             static_syn_from_gf(
@@ -860,7 +853,7 @@ static void static_syn_ps_depth_corners(
                 lib->u[is][ir],
                 calc_upar ? lib->uiz[is][ir] : NULL,
                 calc_upar ? lib->uir[is][ir] : NULL,
-                computeType, M0_use, VpVs_ratio, mchn,
+                source_type, scale_use, VpVs_ratio, mchn,
                 rot2ZNE, calc_upar,
                 tmp, tmp_upar
             );
@@ -887,31 +880,31 @@ static void static_syn_ps_depth_corners(
  * shared_depth 为真（-X/-Y 网格或延用库水平网格）：全部接收点共面，用 depths[0] 求一次 deprcv 括号后批量合成
  * shared_depth 为假（-Q 任意点）：逐点求 deprcv 括号并合成，不做深度归组
  * 各角点的 Vp/Vs（及可选 μ）取自对应 depsrcs 采样；
- * scale_by_src_mu 为真时，M0 为 potency，角点矩为 M0 * μ[is]
+ * scale_by_src_mu 为真时，scale 为 potency，角点矩为 scale * μ[is]
  *
  * 输出 syn / syn_upar 按原 npts 下标累加，调用方需事先清零（如 calloc）
  *
- * @param[in]      lib            静态格林函数库
- * @param[in]      depsrc        点源深度 (km)
- * @param[in]      npts          接收点数量
- * @param[in]      norths        接收点 North 坐标 (km)
- * @param[in]      easts         接收点 East 坐标 (km)
- * @param[in]      depths        接收点深度 (km)
- * @param[in]      shared_depth  是否所有接收点共面
- * @param[in]      computeType   震源类型
- * @param[in]      M0            标量矩或矩势
- * @param[in]      scale_by_src_mu 是否使用震源处剪切模量缩放矩势
- * @param[in]      mchn          震源机制参数
- * @param[in]      rot2ZNE       是否输出 ZNE 分量
- * @param[in]      calc_upar     是否计算位移偏导
- * @param[in,out]  syn           位移累加结果
- * @param[in,out]  syn_upar      位移偏导累加结果
+ * @param[in]      lib              静态格林函数库
+ * @param[in]      depsrc           点源深度 (km)
+ * @param[in]      npts             接收点数量
+ * @param[in]      norths           接收点 North 坐标 (km)
+ * @param[in]      easts            接收点 East 坐标 (km)
+ * @param[in]      depths           接收点深度 (km)
+ * @param[in]      shared_depth     是否所有接收点共面
+ * @param[in]      source_type      震源类型
+ * @param[in]      scale            标量矩或矩势
+ * @param[in]      scale_by_src_mu  是否使用震源处剪切模量缩放矩势
+ * @param[in]      mchn             震源机制参数
+ * @param[in]      rot2ZNE          是否输出 ZNE 分量
+ * @param[in]      calc_upar        是否计算位移偏导
+ * @param[in,out]  syn              位移累加结果
+ * @param[in,out]  syn_upar         位移偏导累加结果
  */
 static void static_syn_from_gf_PS(
     const STGRNLIB *lib, real_t depsrc,
     size_t npts, const real_t *norths, const real_t *easts, const real_t *depths,
     bool shared_depth,
-    GRT_SYN_TYPE computeType, real_t M0, bool scale_by_src_mu,
+    GRT_SYN_TYPE source_type, real_t scale, bool scale_by_src_mu,
     const real_t mchn[GRT_MECHANISM_NUM],
     bool rot2ZNE, bool calc_upar,
     real_t (*syn)[GRT_CHANNEL_NUM],
@@ -955,7 +948,7 @@ static void static_syn_from_gf_PS(
         static_syn_ps_depth_corners(
             lib, is0, is1, ws, na, ir0, ir1, wr,
             0, npts, norths, easts,
-            computeType, M0, scale_by_src_mu, mchn,
+            source_type, scale, scale_by_src_mu, mchn,
             rot2ZNE, calc_upar, tmp, tmp_upar, syn, syn_upar);
     } else {
         // 任意点：逐点括号与合成
@@ -971,7 +964,7 @@ static void static_syn_from_gf_PS(
             static_syn_ps_depth_corners(
                 lib, is0, is1, ws, na, ir0, ir1, wr,
                 ipt, 1, &norths[ipt], &easts[ipt],
-                computeType, M0, scale_by_src_mu, mchn,
+                source_type, scale, scale_by_src_mu, mchn,
                 rot2ZNE, calc_upar, tmp, tmp_upar, syn, syn_upar);
         }
     }
@@ -1309,7 +1302,8 @@ static void save_syn_nc(
     // 震源属性由本模块写入，公共层只接收布局、模型及结果
     int ncid;
     NC_CHECK(nc_create(path, NC_CLOBBER, &ncid));
-    NC_CHECK(nc_put_att_text(ncid, NC_GLOBAL, "computeType", strlen(Ctrl->s_computeType), Ctrl->s_computeType));
+    const char *compute_type = Ctrl->C.active ? "FF" : GRT_SYN_TYPE_NAMES[Ctrl->source_type];
+    NC_CHECK(nc_put_att_text(ncid, NC_GLOBAL, "computeType", strlen(compute_type), compute_type));
     if(Ctrl->isPointSource) {
         NC_CHECK(NC_FUNC_REAL(nc_put_att)(ncid, NC_GLOBAL, "depsrc", NC_REAL, 1, &depsrc));
     }
@@ -1367,7 +1361,7 @@ int static_syn_main(int argc, char **argv){
             lib, depsrc,
             npts, norths, easts, depths,
             shared_depth,
-            Ctrl->computeType, Ctrl->S.M0, Ctrl->S.mult_src_mu, Ctrl->mchn,
+            Ctrl->source_type, Ctrl->S.scale, Ctrl->S.mult_src_mu, Ctrl->mchn,
             Ctrl->N.active, Ctrl->e.active,
             syn, syn_upar);
     } else {
@@ -1402,7 +1396,7 @@ int static_syn_main(int argc, char **argv){
         } else {
             GRTRaiseInfo(
                 "Synthetic static displacements of %s source saved in \"%s\".",
-                srcTypeFullName[Ctrl->computeType], Ctrl->O.s_outgrid);
+                srcTypeFullName[Ctrl->source_type], Ctrl->O.s_outgrid);
         }
     }
 
