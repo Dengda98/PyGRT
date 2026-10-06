@@ -116,9 +116,6 @@ int rotation_main(int argc, char **argv){
 
     getopt_from_command(Ctrl, argc, argv);
 
-    // 检查是否存在该目录
-    GRTCheckDirExist(Ctrl->G.path);
-
     // ----------------------------------------------------------------------------------
     // 开始读取计算，输出3个量
     char c1, c2;

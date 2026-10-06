@@ -366,7 +366,7 @@ real_t grt_compute_travt1d(
 
     } // END 寻找投射位置
 
-    free(Vel);
+    GRT_SAFE_FREE_PTR(Vel);
 
     return travt;
 }

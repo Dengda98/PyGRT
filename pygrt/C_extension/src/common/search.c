@@ -224,7 +224,7 @@ int grt_argsort(
         indices[i] = pairs[i].index;
     }
 
-    free(pairs);
+    GRT_SAFE_FREE_PTR(pairs);
     return 0;
 }
 
