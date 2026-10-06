@@ -10,6 +10,7 @@
 #pragma once 
 
 #include <stdbool.h>
+#include "grt/common/const.h"
 #include "grt/common/sacio.h_"
 
 /**
@@ -53,14 +54,14 @@
 #define GRT_SACHEAD_SET_RCVFN_INCIDENT(hd, value)             do { GRT_SACHEAD_GET_RCVFN_INCIDENT(hd) = (value); } while(0)  ///< 设置接收函数入射波类型，GRT_RCVFN_INCIDENT
 #define GRT_SACHEAD_SET_RCVFN_OUTPUT(hd, value)               do { GRT_SACHEAD_GET_RCVFN_OUTPUT(hd) = (value); } while(0)  ///< 设置接收函数输出类型，GRT_RCVFN_OUTPUT
 
-/** 将 SAC 头段变量和数据体打包成一个结构体 */
+/** 内存中的 SAC 记录，头段保留文件格式，波形使用 real_t，仅读写时转换为 float */
 typedef struct {
-    SACHEAD hd;
-    float *data;
+    SACHEAD hd;     ///< SAC 格式头段
+    real_t *data;   ///< 工作波形，只读取头段时为 NULL
 } SACTRACE;
 
 /**
- * 读取SAC文件
+ * 读取 SAC 文件，将 float 波形转换为 real_t
  * 
  * @param[in]       path          SAC文件路径
  * @param[in]       headonly      是否只读取头段变量
@@ -87,9 +88,9 @@ SACTRACE * grt_copy_SACTRACE(SACTRACE *sac, bool zero_value);
  * 
  * @return     SACTRACE 指针
  */
-SACTRACE * grt_new_SACTRACE(float dt, int nt, float b0);
+SACTRACE * grt_new_SACTRACE(real_t dt, int nt, real_t b0);
 
-/** 将 SACTRACE 保存到本地 */
+/** 将 SACTRACE 保存到本地，临时转换为 float，不修改工作波形 */
 int grt_write_SACTRACE(const char *path, SACTRACE *sac);
 
 /** 释放 SACTRACE 指针 */

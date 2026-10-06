@@ -878,7 +878,7 @@ static SACTRACE *new_lamb_trace(
     const real_t vp, const real_t vs, const real_t rho)
 {
     /* 头段字段与 greenfn 输出的 SAC 原型保持一致 */
-    SACTRACE *sac = grt_new_SACTRACE((float)dt, nt, (float)begin_time);
+    SACTRACE *sac = grt_new_SACTRACE(dt, nt, begin_time);
     sac->hd.o = 0.0;
     sac->hd.iztype = IO;
     sac->hd.dist = horizontal_distance;
@@ -1034,7 +1034,7 @@ static void lamb_normalize_trace(SACTRACE *sac)
 {
     /* 闭合解和混合导数都带有一次时间积分，先恢复为脉冲型物理解 */
     if (sac->hd.npts <= 1) {
-        sac->data[0] = 0.0f;
+        sac->data[0] = 0.0;
         return;
     }
     grt_differential(sac->data, sac->hd.npts, sac->hd.delta);
@@ -1055,13 +1055,13 @@ static void lamb_postprocess_trace(
 {
     /* 单点序列无法进行稳定的差分，直接保留零值 */
     if (sac->hd.npts <= 1) {
-        sac->data[0] = 0.0f;
+        sac->data[0] = 0.0;
         return;
     }
 
     /* 时间函数卷积先于用户要求的积分和微分 */
     if (time_function != NULL) {
-        float *convolution = GRT_SAFE_CALLOC(sac->hd.npts, sizeof(*convolution));
+        real_t *convolution = GRT_SAFE_CALLOC(sac->hd.npts, sizeof(*convolution));
         grt_oaconvolve(sac->data, sac->hd.npts, time_function->data, time_function->hd.npts,
             convolution, sac->hd.npts, false);
         /* 时间函数样本表示物理时间函数，连续卷积的离散积分因子为 dt */
@@ -1377,7 +1377,7 @@ static void fill_source_traces(
             const real_t value = force
                 ? evaluate_force(result->G[n], coordinates.component_from_global, output_component, source_force_global)
                 : evaluate_moment(result->dG_source[n], coordinates.component_from_global, output_component, source_moment_global);
-            base[output_component]->data[n] = (float)(base_factor * value);
+            base[output_component]->data[n] = base_factor * value;
         }
     }
 
@@ -1421,7 +1421,7 @@ static void fill_source_traces(
                             direction, output_component, source_moment_global);
                     scale = derivative_factor;
                 }
-                derivative[direction][output_component]->data[n] = (float)(scale * value);
+                derivative[direction][output_component]->data[n] = scale * value;
             }
         }
     }
@@ -1490,11 +1490,11 @@ int lamb_main(int argc, char **argv)
     if (Ctrl->D.active) {
         /* 时间函数与输出序列使用相同的物理采样间隔 */
         int time_function_nt;
-        float *values = grt_time_function_from_option(Ctrl->D.option, (float)Ctrl->N.dt, &time_function_nt);
+        real_t *values = grt_time_function_from_option(Ctrl->D.option, Ctrl->N.dt, &time_function_nt);
         if (values == NULL) {
             GRTRaiseError("get time function error.\n");
         }
-        time_function = grt_new_SACTRACE((float)Ctrl->N.dt, time_function_nt, 0.0f);
+        time_function = grt_new_SACTRACE(Ctrl->N.dt, time_function_nt, 0.0);
         memcpy(time_function->data, values, sizeof(*values) * time_function_nt);
         GRT_SAFE_FREE_PTR(values);
     }

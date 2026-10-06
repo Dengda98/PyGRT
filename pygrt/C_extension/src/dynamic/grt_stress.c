@@ -55,88 +55,88 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 
 /** 在频域由位移偏导合成应力张量 */
 static void compute_stress(
-    size_t npts, float dt, float dist, float va, float vb, float rho,
-    float Qainv, float Qbinv, float *const u[GRT_CHANNEL_NUM],
-    float *const upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM],
-    float *const res[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM], bool rot2ZNE)
+    size_t npts, real_t dt, real_t dist, real_t va, real_t vb, real_t rho,
+    real_t Qainv, real_t Qbinv, real_t *const u[GRT_CHANNEL_NUM],
+    real_t *const upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM],
+    real_t *const res[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM], bool rot2ZNE)
 {
     const char *chs = rot2ZNE ? GRT_ZNE_CODES : GRT_ZRT_CODES;
     size_t nf = npts/2 + 1;
-    float df = 1.0f/(npts*dt);
-    fftwf_complex *lam_ukk = fftwf_malloc(sizeof(*lam_ukk)*nf);
-    fftwf_complex *lams = fftwf_malloc(sizeof(*lams)*nf);
-    fftwf_complex *mus = fftwf_malloc(sizeof(*mus)*nf);
-    FFTWF_HOLDER *fwd = grt_create_fftwf_holder_R2C_1D(npts, dt, nf, df);
-    FFTWF_HOLDER *inv = grt_create_fftwf_holder_C2R_1D(npts, dt, nf, df);
+    real_t df = 1.0/(npts*dt);
+    cplx_t *lam_ukk = fftw_malloc(sizeof(*lam_ukk)*nf);
+    cplx_t *lams = fftw_malloc(sizeof(*lams)*nf);
+    cplx_t *mus = fftw_malloc(sizeof(*mus)*nf);
+    FFTW_HOLDER *fwd = grt_create_fftw_holder_R2C_1D(npts, dt, nf, df);
+    FFTW_HOLDER *inv = grt_create_fftw_holder_C2R_1D(npts, dt, nf, df);
 
     memset(lam_ukk, 0, sizeof(*lam_ukk)*nf);
     for(size_t i=0; i<nf; ++i){
-        float freq = (i==0) ? 0.01f : df*i;
-        float w = PI2 * freq;
-        fftwf_complex atta = grt_attenuation_law(Qainv, PI2*(nf-1)*df, w);
-        fftwf_complex attb = grt_attenuation_law(Qbinv, PI2*(nf-1)*df, w);
-        mus[i] = vb*vb*attb*attb*rho*1e10f;
-        lams[i] = va*va*atta*atta*rho*1e10f - 2.0f*mus[i];
+        real_t freq = (i==0) ? 0.01 : df*i;
+        real_t w = PI2 * freq;
+        cplx_t atta = grt_attenuation_law(Qainv, PI2*(nf-1)*df, w);
+        cplx_t attb = grt_attenuation_law(Qbinv, PI2*(nf-1)*df, w);
+        mus[i] = vb*vb*attb*attb*rho*1e10;
+        lams[i] = va*va*atta*atta*rho*1e10 - 2.0*mus[i];
     }
 
     for(int c=0; c<GRT_CHANNEL_NUM; ++c){
-        memcpy(fwd->w_t, upar[c][c], sizeof(float)*npts);
-        fftwf_execute(fwd->plan);
+        memcpy(fwd->w_t, upar[c][c], sizeof(*fwd->w_t)*npts);
+        fftw_execute(fwd->plan);
         for(size_t i=0; i<nf; ++i)  lam_ukk[i] += fwd->W_f[i];
     }
 
     // 联络项（1e-5: km→cm）：r≠0 用 u/r；r=0 改用 ∂_r u，与 syn 中 (1/r)∂_θ 有限部分配套
     // 时域先算好 ur_over_r / ut_over_r，再 FFT，避免频域再分支缩放
-    float *ur_over_r = GRT_SAFE_MALLOC(sizeof(float)*npts);
-    float *ut_over_r = GRT_SAFE_MALLOC(sizeof(float)*npts);
+    real_t *ur_over_r = GRT_SAFE_MALLOC(sizeof(*ur_over_r)*npts);
+    real_t *ut_over_r = GRT_SAFE_MALLOC(sizeof(*ut_over_r)*npts);
     for(size_t i=0; i<npts; ++i){
-        ur_over_r[i] = GRT_IS_ZERO(dist) ? upar[1][1][i] : (u[1][i] / dist * 1e-5f);
-        ut_over_r[i] = GRT_IS_ZERO(dist) ? upar[1][2][i] : (u[2][i] / dist * 1e-5f);
+        ur_over_r[i] = GRT_IS_ZERO(dist) ? upar[1][1][i] : (u[1][i] / dist * 1e-5);
+        ut_over_r[i] = GRT_IS_ZERO(dist) ? upar[1][2][i] : (u[2][i] / dist * 1e-5);
     }
 
     if(!rot2ZNE){
-        memcpy(fwd->w_t, ur_over_r, sizeof(float)*npts);
-        fftwf_execute(fwd->plan);
+        memcpy(fwd->w_t, ur_over_r, sizeof(*fwd->w_t)*npts);
+        fftw_execute(fwd->plan);
         for(size_t i=0; i<nf; ++i)  lam_ukk[i] += fwd->W_f[i];
     }
     for(size_t i=0; i<nf; ++i)  lam_ukk[i] *= lams[i];
 
     for(int c=0; c<GRT_CHANNEL_NUM; ++c){
         for(int c2=c; c2<GRT_CHANNEL_NUM; ++c2){
-            memcpy(fwd->w_t, upar[c2][c], sizeof(float)*npts);
-            fftwf_execute(fwd->plan);
+            memcpy(fwd->w_t, upar[c2][c], sizeof(*fwd->w_t)*npts);
+            fftw_execute(fwd->plan);
             for(size_t i=0; i<nf; ++i)  inv->W_f[i] += fwd->W_f[i];
 
-            memcpy(fwd->w_t, upar[c][c2], sizeof(float)*npts);
-            fftwf_execute(fwd->plan);
+            memcpy(fwd->w_t, upar[c][c2], sizeof(*fwd->w_t)*npts);
+            fftw_execute(fwd->plan);
             for(size_t i=0; i<nf; ++i)  inv->W_f[i] = (inv->W_f[i] + fwd->W_f[i]) * mus[i];
             if(c == c2){
                 for(size_t i=0; i<nf; ++i)  inv->W_f[i] += lam_ukk[i];
             }
             if(chs[c]=='R' && chs[c2]=='T'){
-                memcpy(fwd->w_t, ut_over_r, sizeof(float)*npts);
-                fftwf_execute(fwd->plan);
+                memcpy(fwd->w_t, ut_over_r, sizeof(*fwd->w_t)*npts);
+                fftw_execute(fwd->plan);
                 for(size_t i=0; i<nf; ++i)  inv->W_f[i] -= mus[i]*fwd->W_f[i];
             }
             else if(chs[c]=='T' && chs[c2]=='T'){
-                memcpy(fwd->w_t, ur_over_r, sizeof(float)*npts);
-                fftwf_execute(fwd->plan);
-                for(size_t i=0; i<nf; ++i)  inv->W_f[i] += 2.0f*mus[i]*fwd->W_f[i];
+                memcpy(fwd->w_t, ur_over_r, sizeof(*fwd->w_t)*npts);
+                fftw_execute(fwd->plan);
+                for(size_t i=0; i<nf; ++i)  inv->W_f[i] += 2.0*mus[i]*fwd->W_f[i];
             }
-            fftwf_execute(inv->plan);
+            fftw_execute(inv->plan);
             for(size_t i=0; i<npts; ++i)  res[c2][c][i] = inv->w_t[i]/npts;
-            grt_reset_fftwf_holder_zero(inv);
+            grt_reset_fftw_holder_zero(inv);
         }
     }
 
     GRT_SAFE_FREE_PTR(ur_over_r);
     GRT_SAFE_FREE_PTR(ut_over_r);
 
-    grt_destroy_fftwf_holder(fwd);
-    grt_destroy_fftwf_holder(inv);
-    fftwf_free(lam_ukk);
-    fftwf_free(lams);
-    fftwf_free(mus);
+    grt_destroy_fftw_holder(fwd);
+    grt_destroy_fftw_holder(inv);
+    fftw_free(lam_ukk);
+    fftw_free(lams);
+    fftw_free(mus);
 }
 
 
@@ -173,22 +173,22 @@ int stress_main(int argc, char **argv){
     GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%c.sac", Ctrl->s_synpath, tolower(chs[0]), chs[0]);
     SACTRACE *insac = grt_read_SACTRACE(s_filepath, true);
     int npts = insac->hd.npts;
-    float dt = insac->hd.delta;
-    float dist = insac->hd.dist;
-    float va = GRT_SACHEAD_GET_RCV_VP(&insac->hd);
-    float vb = GRT_SACHEAD_GET_RCV_VS(&insac->hd);
-    float rho = GRT_SACHEAD_GET_RCV_RHO(&insac->hd);
-    float Qainv = GRT_SACHEAD_GET_RCV_QP_INV(&insac->hd);
-    float Qbinv = GRT_SACHEAD_GET_RCV_QS_INV(&insac->hd);
+    real_t dt = insac->hd.delta;
+    real_t dist = insac->hd.dist;
+    real_t va = GRT_SACHEAD_GET_RCV_VP(&insac->hd);
+    real_t vb = GRT_SACHEAD_GET_RCV_VS(&insac->hd);
+    real_t rho = GRT_SACHEAD_GET_RCV_RHO(&insac->hd);
+    real_t Qainv = GRT_SACHEAD_GET_RCV_QP_INV(&insac->hd);
+    real_t Qbinv = GRT_SACHEAD_GET_RCV_QS_INV(&insac->hd);
     if(va <= 0.0 || vb < 0.0 || rho <= 0.0){
         GRTRaiseError("Bad rcv_va, rcv_vb or rcv_rho in \"%s\" header.\n", s_filepath);
     }
     SACTRACE *outsac = grt_copy_SACTRACE(insac, true);
     grt_free_SACTRACE(insac);
 
-    float *u[GRT_CHANNEL_NUM];
-    float *upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
-    float *res[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
+    real_t *u[GRT_CHANNEL_NUM];
+    real_t *upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
+    real_t *res[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
     for(int c=0; c<GRT_CHANNEL_NUM; ++c){
         GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c.sac", Ctrl->s_synpath, chs[c]);
         insac = grt_read_SACTRACE(s_filepath, false);

@@ -55,21 +55,21 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 
 /** 由位移偏导合成旋转张量 */
 static void compute_rotation(
-    size_t npts, float dist, float *const u[GRT_CHANNEL_NUM],
-    float *const upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM],
-    float *const res[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM], bool rot2ZNE)
+    size_t npts, real_t dist, real_t *const u[GRT_CHANNEL_NUM],
+    real_t *const upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM],
+    real_t *const res[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM], bool rot2ZNE)
 {
     const char *chs = rot2ZNE ? GRT_ZNE_CODES : GRT_ZRT_CODES;
 
     for(size_t i=0; i<npts; ++i){
         // 联络项 u_θ/r（1e-5: km→cm）：r≠0 用 u_θ/r；r=0 改用 ∂_r u_θ
-        float ut_over_r = GRT_IS_ZERO(dist) ? upar[1][2][i] : (u[2][i] / dist * 1e-5f);
+        real_t ut_over_r = GRT_IS_ZERO(dist) ? upar[1][2][i] : (u[2][i] / dist * 1e-5);
 
         for(int c=0; c<GRT_CHANNEL_NUM; ++c){
             for(int c2=c+1; c2<GRT_CHANNEL_NUM; ++c2){
-                float val = 0.5f * (upar[c2][c][i] - upar[c][c2][i]);
+                real_t val = 0.5 * (upar[c2][c][i] - upar[c][c2][i]);
                 if(chs[c]=='R' && chs[c2]=='T'){
-                    val -= 0.5f * ut_over_r;
+                    val -= 0.5 * ut_over_r;
                 }
                 res[c2][c][i] = val;
             }
@@ -112,13 +112,13 @@ int rotation_main(int argc, char **argv){
     GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%c.sac", Ctrl->s_synpath, tolower(chs[0]), chs[0]);
     SACTRACE *insac = grt_read_SACTRACE(s_filepath, true);
     int npts = insac->hd.npts;
-    float dist = insac->hd.dist;
+    real_t dist = insac->hd.dist;
     SACTRACE *outsac = grt_copy_SACTRACE(insac, true);
     grt_free_SACTRACE(insac);
 
-    float *u[GRT_CHANNEL_NUM];
-    float *upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
-    float *res[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
+    real_t *u[GRT_CHANNEL_NUM];
+    real_t *upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
+    real_t *res[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
     for(int c=0; c<GRT_CHANNEL_NUM; ++c){
         GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c.sac", Ctrl->s_synpath, chs[c]);
         insac = grt_read_SACTRACE(s_filepath, false);

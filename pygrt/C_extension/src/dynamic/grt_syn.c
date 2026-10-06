@@ -519,7 +519,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     sac->hd.evdp, -sac->hd.stel * 1e-3, sac->hd.dist);
             }
 
-            float va, vb, rho;  
+            real_t va, vb, rho;
             va  = GRT_SACHEAD_GET_SRC_VP(&sac->hd);
             vb  = GRT_SACHEAD_GET_SRC_VS(&sac->hd);
             rho = GRT_SACHEAD_GET_SRC_RHO(&sac->hd);
@@ -763,8 +763,8 @@ static bool syn_need_src(GRT_SYN_TYPE computeType, int im)
 
 /** 线性叠加：out += coef * gf，跳过零系数；非零系数时 gf 不可为 NULL */
 static void syn_accum_from_gf(
-    size_t npts, const pfloatChnlGrid gf,
-    const realChnlGrid srcRadi, float *const out[GRT_CHANNEL_NUM])
+    size_t npts, const prealChnlGrid gf,
+    const realChnlGrid srcRadi, real_t *const out[GRT_CHANNEL_NUM])
 {
     GRT_LOOP_ChnlGrid(im, c) {
         int modr = GRT_SRC_M_ORDERS[im];
@@ -777,10 +777,10 @@ static void syn_accum_from_gf(
                 GRT_SRC_M_NAME_ABBR[im], GRT_ZRT_CODES[c]);
         }
 
-        float *dst = out[c];
-        const float *src = gf[im][c];
+        real_t *dst = out[c];
+        const real_t *src = gf[im][c];
         for(size_t n = 0; n < npts; ++n){
-            dst[n] += (float)(src[n] * coef);
+            dst[n] += src[n] * coef;
         }
     }
 }
@@ -799,12 +799,12 @@ static void syn_accum_from_gf(
  * @param[in,out]  azrad     方位角（弧度）；r=0 时写回 0
  */
 static void syn_from_gf(
-    size_t npts, float dist,
-    const pfloatChnlGrid gf, const pfloatChnlGrid gf_uiz, const pfloatChnlGrid gf_uir,
+    size_t npts, real_t dist,
+    const prealChnlGrid gf, const prealChnlGrid gf_uiz, const prealChnlGrid gf_uir,
     GRT_SYN_TYPE computeType, real_t M0, real_t VpVs_ratio, real_t *azrad,
     const real_t mchn[GRT_MECHANISM_NUM],
     bool rot2ZNE, bool calc_upar,
-    float *const syn[GRT_CHANNEL_NUM], float *const syn_upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])
+    real_t *const syn[GRT_CHANNEL_NUM], real_t *const syn_upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])
 {
     // r=0：方位角无定义，约定 e_r→N、e_θ→E，故强制 az=0
     if(GRT_IS_ZERO(dist)){
@@ -820,10 +820,10 @@ static void syn_from_gf(
 
     // 清零输出
     for(int c = 0; c < GRT_CHANNEL_NUM; ++c){
-        memset(syn[c], 0, npts * sizeof(float));
+        memset(syn[c], 0, npts * sizeof(*syn[c]));
         if(calc_upar){
             for(int c2 = 0; c2 < GRT_CHANNEL_NUM; ++c2){
-                memset(syn_upar[c][c2], 0, npts * sizeof(float));
+                memset(syn_upar[c][c2], 0, npts * sizeof(*syn_upar[c][c2]));
             }
         }
     }
@@ -847,7 +847,7 @@ static void syn_from_gf(
             }
         }
 
-        float *const (*up)[GRT_CHANNEL_NUM] = gf;
+        real_t *const (*up)[GRT_CHANNEL_NUM] = gf;
         if(ityp == 1){
             up = gf_uiz;
         } else if(ityp == 2){
@@ -862,7 +862,7 @@ static void syn_from_gf(
         memset(srcRadi, 0, sizeof(srcRadi));
         grt_set_source_radiation(srcRadi, computeType, (ityp == 3), M0, upar_scale, VpVs_ratio, az, mchn);
 
-        float *out_ptrs[GRT_CHANNEL_NUM];
+        real_t *out_ptrs[GRT_CHANNEL_NUM];
         if(ityp == 0){
             for(int c = 0; c < GRT_CHANNEL_NUM; ++c) out_ptrs[c] = syn[c];
         } else {
@@ -890,10 +890,10 @@ static void syn_from_gf(
                 grt_rot_zxy2zrt_vec(-az, dblsyn);
             }
             for(int i1 = 0; i1 < GRT_CHANNEL_NUM; ++i1){
-                syn[i1][n] = (float)dblsyn[i1];
+                syn[i1][n] = dblsyn[i1];
                 if(calc_upar){
                     for(int i2 = 0; i2 < GRT_CHANNEL_NUM; ++i2){
-                        syn_upar[i1][i2][n] = (float)dblupar[i1][i2];
+                        syn_upar[i1][i2][n] = dblupar[i1][i2];
                     }
                 }
             }
@@ -923,19 +923,19 @@ static SACTRACE *syn_load_one_gf(const char *dirpath, const char *prefix, int im
 /** 对一道合成结果做时间函数卷积 / 积分 / 微分 */
 static void syn_postprocess_trace(SACTRACE *sac, const SACTRACE *tfsac, int int_times, int dif_times)
 {
-    float dt = sac->hd.delta;
+    real_t dt = sac->hd.delta;
     int nt = sac->hd.npts;
 
     if(tfsac != NULL){
         // 各分量使用独立副本，避免虚频补偿反复改写共享时间函数
         int tfnt = tfsac->hd.npts;
-        float *tfarr = GRT_SAFE_MALLOC(tfnt * sizeof(*tfarr));
+        real_t *tfarr = GRT_SAFE_MALLOC(tfnt * sizeof(*tfarr));
         memcpy(tfarr, tfsac->data, tfnt * sizeof(*tfarr));
 
         // 卷积时间函数前先把虚频率的补偿撤回，这样似乎会更稳定
-        float wI = GRT_SACHEAD_GET_IMAG_FREQ(&sac->hd);
-        float fac = 1.0f;
-        float dfac = expf(-wI * dt);
+        real_t wI = GRT_SACHEAD_GET_IMAG_FREQ(&sac->hd);
+        real_t fac = 1.0;
+        real_t dfac = exp(-wI * dt);
         for(int n = 0; n < nt; ++n){
             sac->data[n] *= fac;
             if(n < tfnt){
@@ -944,10 +944,10 @@ static void syn_postprocess_trace(SACTRACE *sac, const SACTRACE *tfsac, int int_
             fac *= dfac;
         }
 
-        float *convarr = GRT_SAFE_CALLOC(nt, sizeof(float));
+        real_t *convarr = GRT_SAFE_CALLOC(nt, sizeof(*convarr));
         grt_oaconvolve(sac->data, nt, tfarr, tfnt, convarr, nt, false);
-        fac = 1.0f;
-        dfac = expf(wI * dt);
+        fac = 1.0;
+        dfac = exp(wI * dt);
         for(int n = 0; n < nt; ++n){
             // 时间函数样本表示物理时间函数，连续卷积的离散积分因子为 dt
             sac->data[n] = convarr[n] * fac * dt;
@@ -981,9 +981,9 @@ int syn_main(int argc, char **argv)
     SACTRACE *gf_sac[GRT_SRC_M_NUM][GRT_CHANNEL_NUM] = {{0}};
     SACTRACE *gf_uiz_sac[GRT_SRC_M_NUM][GRT_CHANNEL_NUM] = {{0}};
     SACTRACE *gf_uir_sac[GRT_SRC_M_NUM][GRT_CHANNEL_NUM] = {{0}};
-    pfloatChnlGrid gf = {{0}};
-    pfloatChnlGrid gf_uiz = {{0}};
-    pfloatChnlGrid gf_uir = {{0}};
+    prealChnlGrid gf = {{0}};
+    prealChnlGrid gf_uiz = {{0}};
+    prealChnlGrid gf_uir = {{0}};
 
     SACTRACE *tmpl = NULL;
     GRT_LOOP_ChnlGrid(im, c) {
@@ -1015,13 +1015,13 @@ int syn_main(int argc, char **argv)
     }
 
     int npts = tmpl->hd.npts;
-    float dt = tmpl->hd.delta;
+    real_t dt = tmpl->hd.delta;
 
     // 分配合成结果（与格林函数同头段，数据清零）
     SACTRACE *synsac[GRT_CHANNEL_NUM] = {0};
     SACTRACE *synparsac[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM] = {{0}};
-    float *syn[GRT_CHANNEL_NUM];
-    float *syn_upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM] = {{0}};
+    real_t *syn[GRT_CHANNEL_NUM];
+    real_t *syn_upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM] = {{0}};
     for(int c = 0; c < GRT_CHANNEL_NUM; ++c){
         synsac[c] = grt_copy_SACTRACE(tmpl, true);
         syn[c] = synsac[c]->data;
@@ -1048,12 +1048,12 @@ int syn_main(int argc, char **argv)
     SACTRACE *tfsac = NULL;
     if(Ctrl->D.active){
         int tfnt;
-        float *tfarr = grt_time_function_from_option(Ctrl->D.option, dt, &tfnt);
+        real_t *tfarr = grt_time_function_from_option(Ctrl->D.option, dt, &tfnt);
         if(tfarr == NULL){
             GRTRaiseError("get time function error.\n");
         }
         tfsac = grt_new_SACTRACE(dt, tfnt, 0.0);
-        memcpy(tfsac->data, tfarr, sizeof(float) * tfnt);
+        memcpy(tfsac->data, tfarr, sizeof(*tfarr) * tfnt);
         GRT_SAFE_FREE_PTR(tfarr);
     }
 
@@ -1085,10 +1085,10 @@ int syn_main(int argc, char **argv)
                 grt_rot_zxy2zrt_vec(-Ctrl->A.azrad, dblsyn);
             }
             for(int i1 = 0; i1 < GRT_CHANNEL_NUM; ++i1){
-                synsac[i1]->data[n] = (float)dblsyn[i1];
+                synsac[i1]->data[n] = dblsyn[i1];
                 if(calc_upar){
                     for(int i2 = 0; i2 < GRT_CHANNEL_NUM; ++i2){
-                        synparsac[i1][i2]->data[n] = (float)dblupar[i1][i2];
+                        synparsac[i1][i2]->data[n] = dblupar[i1][i2];
                     }
                 }
             }
