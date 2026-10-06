@@ -8,10 +8,9 @@
 """
 
 import os
-from ctypes import POINTER, c_char_p, c_double, c_float, c_int, c_size_t, c_void_p, cdll
+from ctypes import POINTER, c_char_p, c_double, c_int, c_size_t, c_void_p, cdll
 
 
-FPOINTER = POINTER(c_float)
 IPOINTER = POINTER(c_int)
 REAL = c_double
 PREAL = POINTER(REAL)
@@ -34,26 +33,26 @@ C_grt_free.argtypes = [c_void_p]
 
 C_grt_get_trap_wave = libgrt.grt_get_trap_wave
 """梯形波"""
-C_grt_get_trap_wave.restype = FPOINTER
+C_grt_get_trap_wave.restype = PREAL
 C_grt_get_trap_wave.argtypes = [
-    c_float,
-    FPOINTER,
-    FPOINTER,
-    FPOINTER,
+    REAL,
+    PREAL,
+    PREAL,
+    PREAL,
     IPOINTER,
 ]
 
 
 C_grt_get_parabola_wave = libgrt.grt_get_parabola_wave
 """抛物波"""
-C_grt_get_parabola_wave.restype = FPOINTER
-C_grt_get_parabola_wave.argtypes = [c_float, FPOINTER, IPOINTER]
+C_grt_get_parabola_wave.restype = PREAL
+C_grt_get_parabola_wave.argtypes = [REAL, PREAL, IPOINTER]
 
 
 C_grt_get_ricker_wave = libgrt.grt_get_ricker_wave
 """雷克子波"""
-C_grt_get_ricker_wave.restype = FPOINTER
-C_grt_get_ricker_wave.argtypes = [c_float, c_float, IPOINTER]
+C_grt_get_ricker_wave.restype = PREAL
+C_grt_get_ricker_wave.argtypes = [REAL, REAL, IPOINTER]
 
 
 C_grt_solve_lamb1 = libgrt.grt_solve_lamb1

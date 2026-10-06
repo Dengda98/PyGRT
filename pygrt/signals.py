@@ -30,7 +30,7 @@ def gen_triangle_wave(vlen, dt):
         :param    dt:      time interval (s)
 
         :return:
-            - **wave** -    amplitude sequence
+            - **wave** -    amplitude sequence (float64)
     '''
     return gen_trap_wave(vlen/2.0, vlen/2.0, vlen, dt)
 
@@ -43,9 +43,9 @@ def gen_parabola_wave(vlen, dt):
         :param    dt:      time interval (s)
 
         :return:
-            - **wave** -    amplitude sequence
+            - **wave** -    amplitude sequence (float64)
     '''
-    ct1 = c_float(vlen)
+    ct1 = REAL(vlen)
     cnt = c_int(0)
 
     carr = C_grt_get_parabola_wave(dt, byref(ct1), byref(cnt))
@@ -66,11 +66,11 @@ def gen_trap_wave(t1, t2, t3, dt):
         :param    dt:      time interval (s)
 
         :return:
-            - **wave** -    amplitude sequence
+            - **wave** -    amplitude sequence (float64)
     '''
-    ct1 = c_float(t1)
-    ct2 = c_float(t2)
-    ct3 = c_float(t3)
+    ct1 = REAL(t1)
+    ct2 = REAL(t2)
+    ct3 = REAL(t3)
     cnt = c_int(0)
 
     carr = C_grt_get_trap_wave(dt, byref(ct1), byref(ct2), byref(ct3), byref(cnt))
@@ -89,7 +89,7 @@ def gen_ricker_wave(f0:float, dt:float):
         :param    dt:      time interval (s)
 
         :return:
-            - **wave** -    amplitude sequence
+            - **wave** -    amplitude sequence (float64)
     '''
     cnt = c_int(0)
 

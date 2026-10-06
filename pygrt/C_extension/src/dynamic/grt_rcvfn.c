@@ -720,7 +720,7 @@ static void write_result_sac(
         imag_factor = exp(wI*fh->dt);
     }
     for(size_t it = 0; it < fh->nt; ++it){
-        sac->data[it] = (float)(fh->w_t[it]*coefficient);
+        sac->data[it] = fh->w_t[it]*coefficient;
         coefficient *= imag_factor;
     }
 
