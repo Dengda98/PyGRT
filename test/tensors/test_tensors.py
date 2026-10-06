@@ -1,4 +1,5 @@
 import shutil
+import subprocess
 from pathlib import Path
 
 import pygrt
@@ -23,6 +24,27 @@ pymod.syn(dist=dist, azimuth=az, scale=1e20, output_path="syn_zne", zne=True, ca
 pygrt.utils.strain("syn_zne")
 pygrt.utils.stress("syn_zne")
 pygrt.utils.rotation("syn_zne")
+
+# 检查 -G 的两种写法和旧接口警告，张量结果须逐字节一致
+for directory in ["syn", "syn_zne"]:
+    for module in ["strain", "stress", "rotation"]:
+        saved = {path: path.read_bytes() for path in Path(directory).glob(f"{module}_*.sac")}
+        for args, legacy in [([f"-G{directory}"], False), (["-G", directory], False), ([directory], True)]:
+            result = subprocess.run(["grt", module, *args], capture_output=True, text=True)
+            assert result.returncode == 0, result.stdout+result.stderr
+            if legacy:
+                assert "[WARNING]" in result.stdout and "deprecated" in result.stdout and "-G<syn_dir>" in result.stdout
+            else:
+                assert "[WARNING]" not in result.stdout
+            for path, content in saved.items():
+                assert path.read_bytes() == content
+
+        # 缺少目录、未知选项、混用两种目录参数和附加参数应在改写结果前失败
+        for args in [[], ["-G"], ["-x"], [directory, f"-G{directory}"], [f"-G{directory}", "unused_directory"]]:
+            result = subprocess.run(["grt", module, *args], capture_output=True, text=True)
+            assert result.returncode != 0, args
+            for path, content in saved.items():
+                assert path.read_bytes() == content
 
 # -------------------- 静态应变 / 应力 / 旋转 --------------------
 pymod_s = pygrt.PyModel1D(stgrn="stgrn.nc", modelpath=modname)

@@ -589,7 +589,7 @@ def _run_dynamic_file_module(path: PathLike, module: str, return_result: bool):
     if not path.is_dir():
         raise FileNotFoundError(f"Synthesis result does not exist: {path}")
 
-    run_grt([module, path])
+    run_grt([module, f"-G{path}"])
     return read(str(path / f"{module}_*.sac")) if return_result else None
 
 

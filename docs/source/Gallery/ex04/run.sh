@@ -24,9 +24,9 @@ rak=99
 az=30
 grt syn -G${out}/${modname}_${depsrc}_${deprcv}_${dist} -A$az -S$S -M$stk/$dip/$rak -Dp/0.6 -Osyn_dc -e
 
-grt strain syn_dc
-grt stress syn_dc
-grt rotation syn_dc
+grt strain -Gsyn_dc
+grt stress -Gsyn_dc
+grt rotation -Gsyn_dc
 
 python plot.py
 
