@@ -42,11 +42,15 @@ const char *srcTypeFullName[] = {
     "Moment Tensor", 
 };
 
+const char *const GRT_SYN_TYPE_NAMES[] = {"EX", "SF", "DC", "TS", "MT"};
+
 /** 在矩阵计算中是否使用高精度计算的一些技巧 */
 bool GRT_USE_HIGH_PRECISION = false;
 
 void grt_set_num_threads(int num_threads){
 #ifdef _OPENMP
     omp_set_num_threads(num_threads);
+#else
+    (void)num_threads;
 #endif
 }

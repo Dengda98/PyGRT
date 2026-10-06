@@ -259,6 +259,9 @@ typedef enum {
 /** 合成时可选的震源类型全称, 与 GRT_SYN_TYPE 一一对应 */
 extern const char *srcTypeFullName[];
 
+/** 合成震源类型缩写，与 GRT_SYN_TYPE 一一对应 */
+extern const char *const GRT_SYN_TYPE_NAMES[];
+
 /** 在矩阵计算中是否使用高精度计算的一些技巧 */
 extern bool GRT_USE_HIGH_PRECISION;
 #pragma omp threadprivate(GRT_USE_HIGH_PRECISION)

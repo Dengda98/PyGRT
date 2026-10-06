@@ -35,7 +35,7 @@ char ** grt_string_split(const char *string, const char *delim, size_t *size)
         token = strtok(NULL, delim);
         (*size)++;
     }
-    free(str_copy);
+    GRT_SAFE_FREE_PTR(str_copy);
 
     return s_split;
 }

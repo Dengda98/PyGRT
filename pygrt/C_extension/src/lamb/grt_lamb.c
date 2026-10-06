@@ -41,7 +41,7 @@ typedef struct {
     struct {
         bool active;
         bool mult_src_mu;
-        real_t M0;
+        real_t scale;
         real_t src_mu;
     } S;
 
@@ -133,8 +133,7 @@ typedef struct {
     real_t mchn[GRT_MECHANISM_NUM];
 
     /** 最终要计算的震源类型 */
-    GRT_SYN_TYPE computeType;
-    char s_computeType[3];
+    GRT_SYN_TYPE source_type;
 } GRT_MODULE_CTRL;
 
 
@@ -308,8 +307,7 @@ printf("\n"
  */
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
 {
-    Ctrl->computeType = GRT_SYN_EX;
-    snprintf(Ctrl->s_computeType, sizeof(Ctrl->s_computeType), "%s", "EX");
+    Ctrl->source_type = GRT_SYN_EX;
 
     int opt;
     while ((opt = getopt(argc, argv, ":H:N:R:A:S:M:F:T:O:D:E:I:J:L:nesh")) != -1) {
@@ -384,7 +382,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                     Ctrl->S.mult_src_mu = true;
                     ++scale;
                 }
-                if (sscanf(scale, "%lf%c", &Ctrl->S.M0, &extra) != 1) {
+                if (sscanf(scale, "%lf%c", &Ctrl->S.scale, &extra) != 1) {
                     GRTBadOptionError(S, "expected a numeric source scale.");
                 }
                 Ctrl->S.active = true;
@@ -408,9 +406,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 Ctrl->mchn[0] = strike;
                 Ctrl->mchn[1] = dip;
                 Ctrl->mchn[2] = count == 3 ? rake : 0.0;
-                Ctrl->computeType = count == 3 ? GRT_SYN_DC : GRT_SYN_TS;
-                snprintf(Ctrl->s_computeType, sizeof(Ctrl->s_computeType), "%s",
-                    count == 3 ? "DC" : "TS");
+                Ctrl->source_type = count == 3 ? GRT_SYN_DC : GRT_SYN_TS;
                 Ctrl->M.active = true;
                 break;
             }
@@ -426,8 +422,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 if (count != 3) {
                     GRTBadOptionError(F, "expected fn/fe/fz.");
                 }
-                Ctrl->computeType = GRT_SYN_SF;
-                snprintf(Ctrl->s_computeType, sizeof(Ctrl->s_computeType), "%s", "SF");
+                Ctrl->source_type = GRT_SYN_SF;
                 Ctrl->F.active = true;
                 break;
             }
@@ -444,8 +439,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 if (count != 6) {
                     GRTBadOptionError(T, "expected six moment-tensor components.");
                 }
-                Ctrl->computeType = GRT_SYN_MT;
-                snprintf(Ctrl->s_computeType, sizeof(Ctrl->s_computeType), "%s", "MT");
+                Ctrl->source_type = GRT_SYN_MT;
                 Ctrl->T.active = true;
                 break;
             }
@@ -613,26 +607,26 @@ static bool source_is_force(const int source_index)
 /**
  * 判断当前源项是否参与合成
  *
- * @param[in]      computeType   当前计算的震源类型
- * @param[in]      source_index  震源在源项数组中的索引
- * @param[in]      surface       源点和接收点是否均位于自由表面
+ * @param[in]  source_type   当前计算的震源类型
+ * @param[in]  source_index  震源在源项数组中的索引
+ * @param[in]  surface       源点和接收点是否均位于自由表面
  *
  * @return 需要输出当前源项时返回 true，否则返回 false
  */
 static bool lamb_need_src(
-    const GRT_SYN_TYPE computeType, const int source_index, const bool surface)
+    const GRT_SYN_TYPE source_type, const int source_index, const bool surface)
 {
     /* 根据几何类型和用户选择的震源类型筛选需要写出的源 */
     if (surface) {
-        return computeType == GRT_SYN_SF && source_is_force(source_index);
+        return source_type == GRT_SYN_SF && source_is_force(source_index);
     }
-    if (computeType == GRT_SYN_EX) {
+    if (source_type == GRT_SYN_EX) {
         return source_index == GRT_SRC_M_EX_INDEX;
     }
-    if (computeType == GRT_SYN_SF) {
+    if (source_type == GRT_SYN_SF) {
         return source_is_force(source_index);
     }
-    if (computeType == GRT_SYN_DC) {
+    if (source_type == GRT_SYN_DC) {
         return source_index >= GRT_SRC_M_DD_INDEX;
     }
     return source_index == GRT_SRC_M_EX_INDEX || source_index >= GRT_SRC_M_DD_INDEX;
@@ -784,17 +778,17 @@ static real_t evaluate_moment_derivative(
 /**
  * 计算当前距离阶数下各源项的辐射系数
  *
- * @param[in]      computeType   当前计算的震源类型
- * @param[in]      M0            源强缩放因子
- * @param[in]      nu            半空间泊松比
- * @param[in]      azrad         源点到接收点的方位角，弧度
- * @param[in]      mchn          震源机制参数数组
- * @param[in]      par_theta     是否计算方位角导数
- * @param[in]      coef          当前计算项的距离缩放因子
- * @param[out]     srcRadi       各源项和各输出分量的辐射系数
+ * @param[in]   source_type  当前计算的震源类型
+ * @param[in]   scale        源强缩放因子
+ * @param[in]   nu           半空间泊松比
+ * @param[in]   azrad        源点到接收点的方位角，弧度
+ * @param[in]   mchn         震源机制参数数组
+ * @param[in]   par_theta    是否计算方位角导数
+ * @param[in]   coef         当前计算项的距离缩放因子
+ * @param[out]  srcRadi      各源项和各输出分量的辐射系数
  */
 static void make_source_radiation(
-    const GRT_SYN_TYPE computeType, const real_t M0,
+    const GRT_SYN_TYPE source_type, const real_t scale,
     const real_t nu, const real_t azrad, const real_t mchn[GRT_MECHANISM_NUM],
     const bool par_theta, const real_t coef, realChnlGrid srcRadi)
 {
@@ -802,7 +796,7 @@ static void make_source_radiation(
     memset(srcRadi, 0, sizeof(realChnlGrid));
     /* grt_set_source_radiation 使用 vp/vs 作为水平分量和垂直分量的换算比 */
     grt_set_source_radiation(
-        srcRadi, computeType, par_theta, M0, coef,
+        srcRadi, source_type, par_theta, scale, coef,
         sqrt(2.0 * (1.0 - nu) / (1.0 - 2.0 * nu)), azrad, mchn);
 }
 
@@ -810,27 +804,27 @@ static void make_source_radiation(
 /**
  * 计算 Lamb 位移 Green 函数及按需计算其空间导数
  *
- * @param[in]      nu                    半空间泊松比
- * @param[in]      tbar                  无量纲时间序列
- * @param[in]      nt                    时间序列长度
- * @param[in]      horizontal_distance   源点与接收点的水平距离，km
- * @param[in]      source_depth          源点深度，km
- * @param[in]      receiver_depth        接收点深度，km
- * @param[in]      azimuth_degree        源点到接收点的方位角，度
- * @param[in]      computeType           当前计算的震源类型
- * @param[in]      calculate_derivatives 是否计算空间导数
- * @param[out]     result                Lamb Green 函数及其导数的结果结构体
+ * @param[in]   nu                     半空间泊松比
+ * @param[in]   tbar                   无量纲时间序列
+ * @param[in]   nt                     时间序列长度
+ * @param[in]   horizontal_distance    源点与接收点的水平距离，km
+ * @param[in]   source_depth           源点深度，km
+ * @param[in]   receiver_depth         接收点深度，km
+ * @param[in]   azimuth_degree         源点到接收点的方位角，度
+ * @param[in]   source_type            当前计算的震源类型
+ * @param[in]   calculate_derivatives  是否计算空间导数
+ * @param[out]  result                 Lamb Green 函数及其导数的结果结构体
  */
 static void make_lamb_result(
     const real_t nu, const real_t *tbar, const int nt, const real_t horizontal_distance,
     const real_t source_depth, const real_t receiver_depth, const real_t azimuth_degree,
-    const GRT_SYN_TYPE computeType, const bool calculate_derivatives, const char *phase_list,
+    const GRT_SYN_TYPE source_type, const bool calculate_derivatives, const char *phase_list,
     LAMB_RESULT *result)
 {
     /* 只有需要空间导数的源才分配相应的导数数组 */
     const bool surface = is_surface_source_receiver(source_depth, receiver_depth);
-    const bool moment = computeType != GRT_SYN_SF;
-    const bool force = computeType == GRT_SYN_SF;
+    const bool moment = source_type != GRT_SYN_SF;
+    const bool force = source_type == GRT_SYN_SF;
     const bool need_upar = calculate_derivatives && !surface;
     const size_t nt_size = (size_t)nt;
     result->G = GRT_SAFE_CALLOC(nt_size, sizeof(*result->G));
@@ -1327,27 +1321,27 @@ static void make_source_terms(
 
 /** 将一个源项合成为请求坐标下的记录及其空间导数
  *
- * @param[in]      rot2ZNE                  是否输出 Z、N、E 坐标
- * @param[in]      horizontal_distance      源点与接收点的水平距离，km
- * @param[in]      computeType              当前计算的震源类型
- * @param[in]      M0                       源强缩放因子
- * @param[in]      nu                       半空间泊松比
- * @param[in]      azrad                    源点到接收点的方位角，弧度
- * @param[in]      mchn                     震源机制参数数组
- * @param[in]      calc_upar                是否计算空间导数
- * @param[in]      nt                       时间序列长度
- * @param[in]      result                   Lamb Green 函数及其导数
- * @param[in]      source_index             震源在源项数组中的索引
- * @param[in]      force_factor             单力源位移的物理归一化因子
- * @param[in]      moment_factor            矩源位移的物理归一化因子
- * @param[in]      force_derivative_factor  单力源空间导数的物理归一化因子
- * @param[in]      moment_derivative_factor 矩源空间导数的物理归一化因子
- * @param[out]     base                     三个基本接收分量的 SAC 记录
- * @param[out]     derivative               三个导数方向和三个接收分量的 SAC 记录
+ * @param[in]   rot2ZNE                   是否输出 Z、N、E 坐标
+ * @param[in]   horizontal_distance       源点与接收点的水平距离，km
+ * @param[in]   source_type               当前计算的震源类型
+ * @param[in]   scale                     源强缩放因子
+ * @param[in]   nu                        半空间泊松比
+ * @param[in]   azrad                     源点到接收点的方位角，弧度
+ * @param[in]   mchn                      震源机制参数数组
+ * @param[in]   calc_upar                 是否计算空间导数
+ * @param[in]   nt                        时间序列长度
+ * @param[in]   result                    Lamb Green 函数及其导数
+ * @param[in]   source_index              震源在源项数组中的索引
+ * @param[in]   force_factor              单力源位移的物理归一化因子
+ * @param[in]   moment_factor             矩源位移的物理归一化因子
+ * @param[in]   force_derivative_factor   单力源空间导数的物理归一化因子
+ * @param[in]   moment_derivative_factor  矩源空间导数的物理归一化因子
+ * @param[out]  base                      三个基本接收分量的 SAC 记录
+ * @param[out]  derivative                三个导数方向和三个接收分量的 SAC 记录
  */
 static void fill_source_traces(
     const bool rot2ZNE, const real_t horizontal_distance,
-    const GRT_SYN_TYPE computeType, const real_t M0, const real_t nu,
+    const GRT_SYN_TYPE source_type, const real_t scale, const real_t nu,
     const real_t azrad, const real_t mchn[GRT_MECHANISM_NUM],
     const bool calc_upar, const int nt, const LAMB_RESULT *result,
     const int source_index, const real_t force_factor, const real_t moment_factor,
@@ -1362,7 +1356,7 @@ static void fill_source_traces(
     LAMB_COORDINATES coordinates;
     realChnlGrid baseRadiation;
     make_lamb_coordinates(azrad, rot2ZNE, &coordinates);
-    make_source_radiation(computeType, M0, nu, azrad, mchn, false, 1.0, baseRadiation);
+    make_source_radiation(source_type, scale, nu, azrad, mchn, false, 1.0, baseRadiation);
 
     real_t source_force_global[3];
     real_t source_moment_global[3][3];
@@ -1386,7 +1380,7 @@ static void fill_source_traces(
     }
 
     realChnlGrid receiverRadiation;
-    make_source_radiation(computeType, M0, nu, azrad, mchn, false, 1e-5, receiverRadiation);
+    make_source_radiation(source_type, scale, nu, azrad, mchn, false, 1e-5, receiverRadiation);
     make_source_terms(receiverRadiation, source_index, force, coordinates.local_from_global,
         source_force_global, source_moment_global);
 
@@ -1394,7 +1388,7 @@ static void fill_source_traces(
     real_t theta_force_global[3] = {0.0};
     real_t theta_moment_global[3][3] = {{0.0}};
     if (!rot2ZNE) {
-        make_source_radiation(computeType, M0, nu, azrad, mchn, true,
+        make_source_radiation(source_type, scale, nu, azrad, mchn, true,
             1e-5 / horizontal_distance, thetaRadiation);
         make_source_terms(thetaRadiation, source_index, force, coordinates.local_from_global,
             theta_force_global, theta_moment_global);
@@ -1443,7 +1437,7 @@ int lamb_main(int argc, char **argv)
     const char *chs = rot2ZNE ? GRT_ZNE_CODES : GRT_ZRT_CODES;
     if (surface) {
         /* 第一类 Lamb 解只支持由 -F 指定的地表单力源 */
-        if (Ctrl->computeType != GRT_SYN_SF) {
+        if (Ctrl->source_type != GRT_SYN_SF) {
             GRTRaiseError(
                 "When both source and receiver are on the free surface, only the single force source specified by -F is supported.\n");
         }
@@ -1469,7 +1463,7 @@ int lamb_main(int argc, char **argv)
     LAMB_RESULT result = {0};
     make_lamb_result(
         Ctrl->H.nu, Ctrl->N.tbar, Ctrl->N.nt, horizontal_distance, depsrc, deprcv,
-        Ctrl->A.azimuth, Ctrl->computeType, calc_upar,
+        Ctrl->A.azimuth, Ctrl->source_type, calc_upar,
         Ctrl->L.active ? Ctrl->L.phase_list : NULL, &result);
 
     /* 将无量纲闭合解恢复为物理量，导数阶数每增加一阶再除以一个 r */
@@ -1479,7 +1473,7 @@ int lamb_main(int argc, char **argv)
     const real_t moment_factor = factor / (distance * distance);
     const real_t force_derivative_factor = factor / (distance * distance);
     const real_t moment_derivative_factor = factor / (distance * distance * distance);
-    real_t source_scale = Ctrl->S.M0;
+    real_t source_scale = Ctrl->S.scale;
     SACTRACE *time_function = NULL;
 
     if (Ctrl->S.mult_src_mu) {
@@ -1510,7 +1504,7 @@ int lamb_main(int argc, char **argv)
     allocate_lamb_traces(prototype, calc_upar, base, derivative);
 
     for (int source_index = 0; source_index < GRT_SRC_M_NUM; ++source_index) {
-        if (!lamb_need_src(Ctrl->computeType, source_index, surface)) {
+        if (!lamb_need_src(Ctrl->source_type, source_index, surface)) {
             continue;
         }
         SACTRACE *source_base[3] = {0};
@@ -1518,7 +1512,7 @@ int lamb_main(int argc, char **argv)
         allocate_lamb_traces(prototype, calc_upar, source_base, source_derivative);
 
         fill_source_traces(
-            rot2ZNE, horizontal_distance, Ctrl->computeType, source_scale, Ctrl->H.nu,
+            rot2ZNE, horizontal_distance, Ctrl->source_type, source_scale, Ctrl->H.nu,
             Ctrl->A.azrad, Ctrl->mchn, calc_upar, Ctrl->N.nt, &result, source_index,
             force_factor, moment_factor, force_derivative_factor, moment_derivative_factor,
             source_base, source_derivative);
@@ -1553,7 +1547,7 @@ int lamb_main(int argc, char **argv)
 
     if (!Ctrl->s.active) {
         GRTRaiseInfo("Under \"%s\".", Ctrl->O.s_output_dir);
-        GRTRaiseInfo("Synthetic Seismograms of %-13s source done.", srcTypeFullName[Ctrl->computeType]);
+        GRTRaiseInfo("Synthetic Seismograms of %-13s source done.", srcTypeFullName[Ctrl->source_type]);
         if (Ctrl->D.active) {
             GRTRaiseInfo("Time Function saved.");
         }

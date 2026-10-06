@@ -134,7 +134,7 @@ bool grt_check_tftype_tfparams(const char tftype, const char *tfparams)
     real_t delay;
     char *base = split_time_delay(tfparams, &delay);
     bool good = check_time_function_base(tftype, base);
-    free(base);
+    GRT_SAFE_FREE_PTR(base);
     return good;
 }
 
@@ -192,7 +192,7 @@ real_t * grt_get_time_function(int *TFnt, real_t dt, const char tftype, const ch
     }
 
     *TFnt = tfnt;
-    free(base);
+    GRT_SAFE_FREE_PTR(base);
 
     // 延迟取最近采样点，半采样点向上取整，再通过前导零平移时间函数
     int shift = (int)llround(delay / dt);

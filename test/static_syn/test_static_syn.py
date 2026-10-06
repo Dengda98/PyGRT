@@ -180,11 +180,17 @@ def compare_fault_postprocess(fault_path, points_path, prefix, component_pairs):
 pymod = pygrt.PyModel1D(stgrn="stgrn.nc", modelpath=modname)
 pymod.static_greenfn(depsrc=depsrc, deprcv=deprcv, dists=dists, calc_upar=True)
 
-pymod.static_syn(scale=1e20, output_path="stsyn.nc", norths=norths, easts=easts)
-pymod.static_syn(scale=1e16, output_path="stsyn.nc", force=(-1, 2, -4), norths=norths, easts=easts)
-pymod.static_syn(scale=1e20, output_path="stsyn.nc", strike=33, dip=44, rake=55, norths=norths, easts=easts)
-pymod.static_syn(scale=1e20, output_path="stsyn.nc", strike=33, dip=44, norths=norths, easts=easts)
-pymod.static_syn(scale=1e20, output_path="stsyn.nc", moment_tensor=(1, -2, -5, 0.5, 3, 1.2), norths=norths, easts=easts)
+# 输出元数据应标记实际基本源型
+for source_type, mechanism in [
+    ("EX", {}),
+    ("SF", {"force": (-1, 2, -4)}),
+    ("DC", {"strike": 33, "dip": 44, "rake": 55}),
+    ("TS", {"strike": 33, "dip": 44}),
+    ("MT", {"moment_tensor": (1, -2, -5, 0.5, 3, 1.2)}),
+]:
+    pymod.static_syn(scale=1e16 if source_type == "SF" else 1e20, output_path="stsyn.nc", norths=norths, easts=easts, **mechanism)
+    with netcdf_file("stsyn.nc", mmap=False) as dataset:
+        assert dataset.computeType.decode() == source_type
 
 # ZNE / 空间导数 / 二维接收网格
 pymod.static_syn(scale=1e20, output_path="stsyn.nc", norths=norths, easts=easts, zne=True, calc_upar=True)

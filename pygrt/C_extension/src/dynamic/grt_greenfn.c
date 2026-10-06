@@ -789,12 +789,17 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     GRTCheckOptionActive(Ctrl, R);
     GRTCheckOptionActive(Ctrl, O);
 
+    // 成对深度选项 -D 与分别指定深度的 -Ds/-Dr 不能混用
     if(Ctrl->D.active && (Ctrl->D.s_active || Ctrl->D.r_active)){
         GRTRaiseError("Options -D and -Ds/-Dr are mutually exclusive.");
     }
+
+    // 分别指定深度时，源深度和接收深度必须同时给出
     if(Ctrl->D.s_active != Ctrl->D.r_active){
         GRTRaiseError("Options -Ds and -Dr must be set together.");
     }
+
+    // 至少需要一种深度设置方式
     if(!Ctrl->D.active && !Ctrl->D.s_active && !Ctrl->D.r_active){
         GRTRaiseError("Depth option required: -D<depsrc>/<deprcv> or -Ds... -Dr...");
     }

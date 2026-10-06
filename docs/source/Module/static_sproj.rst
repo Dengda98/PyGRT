@@ -91,5 +91,6 @@ static_sproj
     为普通 **points** 布局指定逐点接收断层形态。
     每行格式为 *north east depth strike dip rake*，单位分别为 km 和度。
     点数、坐标和顺序必须与输入文件一致，且必须恰好为六列。
+    在逐点投影前检查全部接收位置，任一位置不一致时直接中止，不改写输入文件。
 
 .. include:: explain_-h.rst_

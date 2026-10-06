@@ -8,7 +8,6 @@
  */
 
 #include <ctype.h>
-#include <limits.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -31,69 +30,6 @@ static const char *const coordinate_names[] = {"north", "east", "depth"};
 static const char *const medium_names[] = {"rcv_va", "rcv_vb", "rcv_rho"};
 static const char *const geometry_names[] = {"strike", "dip", "rake"};
 static const char *const fault_shape_names[] = {"offset", "stksize", "dipsize"};
-
-/**
- * 检查接收点数量、布局及有限断层的点序
- * @param[in]  receivers  接收布局
- */
-static void check_receiver_layout(const RCV_NC_INFO *receivers)
-{
-    if(receivers == NULL || receivers->rcv == NULL || receivers->npts == 0) {
-        GRTRaiseError("Static NetCDF output has no receivers.");
-    }
-    const RCV_POINTS *rcv = receivers->rcv;
-    if(receivers->npts != rcv->npts || rcv->norths == NULL || rcv->easts == NULL || rcv->depths == NULL) {
-        GRTRaiseError("Static NetCDF receiver coordinates are missing or have an inconsistent point count.");
-    }
-    if(receivers->layout == GRT_RCV_NC_LAYOUT_GRID) {
-        if(!rcv->is_grid || receivers->neast == 0 || receivers->nnorth == 0 ||
-           receivers->npts / receivers->neast != receivers->nnorth || receivers->npts % receivers->neast != 0) {
-            GRTRaiseError("Static NetCDF grid dimensions do not match the receiver count.");
-        }
-        // grid 必须能无损恢复为两个坐标轴及统一接收深度
-        for(size_t i = 0; i < receivers->npts; ++i) {
-            if(rcv->norths[i] != rcv->norths[i / receivers->neast * receivers->neast] ||
-               rcv->easts[i] != rcv->easts[i % receivers->neast] || rcv->depths[i] != rcv->depths[0]) {
-                GRTRaiseError("Static NetCDF grid receivers do not form a regular coordinate layout.");
-            }
-        }
-    } else if(receivers->layout == GRT_RCV_NC_LAYOUT_POINTS || receivers->layout == GRT_RCV_NC_LAYOUT_FAULTS) {
-        if(rcv->is_grid || receivers->nnorth != 0 || receivers->neast != 0) {
-            GRTRaiseError("Static NetCDF points and faults layouts must not have grid dimensions.");
-        }
-    } else {
-        GRTRaiseError("Unsupported static NetCDF receiver layout.");
-    }
-
-    if(receivers->layout == GRT_RCV_NC_LAYOUT_FAULTS) {
-        if(!rcv->is_fault || receivers->nfault == 0 || receivers->nfault != rcv->nfault || receivers->npts > INT_MAX ||
-           rcv->offsets == NULL || rcv->stksizes == NULL || rcv->dipsizes == NULL ||
-           rcv->fstrikes == NULL || rcv->fdips == NULL || rcv->frakes == NULL) {
-            GRTRaiseError("Static NetCDF receiver faults are missing or exceed the integer offset range.");
-        }
-        size_t offset = 0;
-        for(size_t f = 0; f < receivers->nfault; ++f) {
-            size_t nL = rcv->stksizes[f], nW = rcv->dipsizes[f];
-            if(nW == 0 || nL == 0 || nW > INT_MAX || nL > INT_MAX || nL > (receivers->npts - offset) / nW) {
-                GRTRaiseError("Static NetCDF receiver fault %zu has an invalid subdivision size.", f);
-            }
-            offset += nL * nW;
-            if(rcv->offsets[f] != offset) {
-                GRTRaiseError("Static NetCDF receiver fault offsets do not match the subdivision sizes.");
-            }
-        }
-        if(offset != receivers->npts) {
-            GRTRaiseError("Static NetCDF receiver fault sizes do not match the point count.");
-        }
-    } else {
-        if(rcv->is_fault || receivers->nfault != 0) {
-            GRTRaiseError("Static NetCDF grid and points layouts must not have receiver faults.");
-        }
-        if(rcv->has_geometry && (rcv->strikes == NULL || rcv->dips == NULL || rcv->rakes == NULL)) {
-            GRTRaiseError("Static NetCDF ordinary receivers have incomplete geometry.");
-        }
-    }
-}
 
 /**
  * 定义坐标、介质及可选机制变量，grid 的接收深度和介质保存为属性
@@ -288,7 +224,6 @@ void grt_static_nc_write(int ncid, const RCV_NC_INFO *receivers, size_t nlayer, 
                          bool rot2ZNE, bool calc_upar, const real_t (*syn)[GRT_CHANNEL_NUM],
                          const real_t (*syn_upar)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])
 {
-    check_receiver_layout(receivers);
     if(nlayer == 0 || modarr == NULL || syn == NULL || (calc_upar && syn_upar == NULL)) {
         GRTRaiseError("Static NetCDF model or displacement data are missing.");
     }
