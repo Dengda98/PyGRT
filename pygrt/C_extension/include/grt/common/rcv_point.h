@@ -1,5 +1,5 @@
 /**
- * @file   rcv_points.h
+ * @file   rcv_point.h
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2026-08
  *

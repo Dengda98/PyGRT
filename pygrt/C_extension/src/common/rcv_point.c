@@ -1,5 +1,5 @@
 /**
- * @file   rcv_points.c
+ * @file   rcv_point.c
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2026-08
  *
@@ -13,7 +13,7 @@
 #include <ctype.h>
 #include <errno.h>
 
-#include "grt/common/rcv_points.h"
+#include "grt/common/rcv_point.h"
 #include "grt/common/checkerror.h"
 #include "grt/common/util.h"
 

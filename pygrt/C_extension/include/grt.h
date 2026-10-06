@@ -34,7 +34,7 @@
 #include "grt/common/mynetcdf.h"
 #include "grt/common/progressbar.h"
 #include "grt/common/radiation.h"
-#include "grt/common/rcv_points.h"
+#include "grt/common/rcv_point.h"
 #include "grt/common/sacio.h"
 #include "grt/common/search.h"
 #include "grt/common/travt.h"

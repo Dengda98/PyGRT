@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "grt/common/rcv_points.h"
+#include "grt/common/rcv_point.h"
 
 /** layout 字符串：写入 nc 全局属性，读端据此分支 */
 #define GRT_RCV_LAYOUT_GRID   "grid"    ///< 静态 NetCDF 规则网格布局属性
