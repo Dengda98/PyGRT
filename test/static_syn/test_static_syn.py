@@ -98,7 +98,7 @@ def read_fault_receiver(path):
         layout = getattr(dataset, "layout")
         if isinstance(layout, bytes):
             layout = layout.decode()
-        assert layout == "points"
+        assert layout == "faults"
         point = dataset.dimensions["point"]
         nfault = dataset.dimensions["nfault"]
         offset = np.array(dataset.variables["offset"].data, dtype=np.int64, copy=True)

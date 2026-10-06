@@ -212,7 +212,7 @@ int static_coulomb_main(int argc, char **argv)
 
     RCV_NC_INFO rcv_info;
     grt_rcv_nc_info_load(ncid, &rcv_info);
-    int ndims = (rcv_info.layout == GRT_RCV_NC_LAYOUT_POINTS) ? 1 : 2;
+    int ndims = rcv_info.ndims;
     size_t npts = rcv_info.npts;
 
     int sigma_n_varid = get_projection_var(ncid, "sigma_n", ndims, rcv_info.dimids);

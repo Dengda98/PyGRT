@@ -1287,32 +1287,15 @@ static RCV_POINTS *build_syn_rcv(const GRT_MODULE_CTRL *Ctrl, const STGRNLIB *li
 
 
 /**
- * 查询分层介质中的接收介质参数
- *
- * @param[in]   context   静态格林函数库
- * @param[in]   depth     接收点深度 (km)
- * @param[out]  va        P 波速度 (km/s)
- * @param[out]  vb        S 波速度 (km/s)
- * @param[out]  rho       密度 (g/cm^3)
- */
-static void static_syn_get_medium(
-    void *context, real_t depth, real_t *va, real_t *vb, real_t *rho)
-{
-    const STGRNLIB *lib = (const STGRNLIB *)context;
-    grt_modarr_medium_at_depth(lib->nlayer, lib->modarr, depth, va, vb, rho);
-}
-
-
-/**
  * 使用公共静态 NetCDF 输出函数写出 static_syn 结果
  *
- * @param[in]  path         输出 NetCDF 文件路径
- * @param[in]  Ctrl         static_syn 命令行控制结构体
- * @param[in]  lib          静态格林函数库
- * @param[in]  rcv          规则网格、任意点或有限接收断层点列表
- * @param[in]  depsrc       点源深度 (km)
- * @param[in]  syn          位移数组
- * @param[in]  syn_upar     位移偏导数组
+ * @param[in]  path      输出 NetCDF 文件路径
+ * @param[in]  Ctrl      static_syn 命令行控制结构体
+ * @param[in]  lib       静态格林函数库
+ * @param[in]  rcv       规则网格、任意点或有限接收断层点列表
+ * @param[in]  depsrc    点源深度 (km)
+ * @param[in]  syn       位移数组
+ * @param[in]  syn_upar  位移偏导数组
  */
 static void save_syn_nc(
     const char *path,
@@ -1323,30 +1306,29 @@ static void save_syn_nc(
     const real_t (*syn)[GRT_CHANNEL_NUM],
     const real_t (*syn_upar)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])
 {
-    const char *channels;
-    if(Ctrl->N.active){
-        channels = GRT_ZNE_CODES;
-    } else {
-        channels = GRT_ZRT_CODES;
+    // 震源属性由本模块写入，公共层只接收布局、模型及结果
+    int ncid;
+    NC_CHECK(nc_create(path, NC_CLOBBER, &ncid));
+    NC_CHECK(nc_put_att_text(ncid, NC_GLOBAL, "computeType", strlen(Ctrl->s_computeType), Ctrl->s_computeType));
+    if(Ctrl->isPointSource) {
+        NC_CHECK(NC_FUNC_REAL(nc_put_att)(ncid, NC_GLOBAL, "depsrc", NC_REAL, 1, &depsrc));
     }
 
-    STATIC_NC_OUTPUT output = {
-        .path = path,
-        .channels = channels,
-        .compute_type = Ctrl->s_computeType,
-        .calc_upar = Ctrl->e.active,
-        .rot2ZNE = Ctrl->N.active,
-        .has_depsrc = Ctrl->isPointSource,
-        .depsrc = depsrc,
-        .has_elastic_params = false,
-        .rcv = rcv,
-        .get_medium = static_syn_get_medium,
-        .medium_context = (void *)lib,
-        .syn = syn,
-        .syn_upar = syn_upar,
+    RCV_NC_INFO receivers = {
+        .layout = rcv->is_fault ? GRT_RCV_NC_LAYOUT_FAULTS : rcv->is_grid ? GRT_RCV_NC_LAYOUT_GRID : GRT_RCV_NC_LAYOUT_POINTS,
+        .npts = rcv->npts, .rcv = rcv,
+
+        .nnorth = rcv->nnorth,
+        .neast  = rcv->neast,
+
+        .nfault = rcv->nfault,
     };
-    grt_static_save_nc(&output);
+    grt_static_nc_write(ncid, &receivers, lib->nlayer, lib->modarr, Ctrl->N.active, Ctrl->e.active, syn, syn_upar);
+    NC_CHECK(nc_close(ncid));
 }
+
+
+
 /** 子模块主函数 */
 int static_syn_main(int argc, char **argv){
     GRT_MODULE_CTRL *Ctrl = GRT_SAFE_CALLOC(1, sizeof(*Ctrl));

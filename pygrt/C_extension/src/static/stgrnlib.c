@@ -184,7 +184,7 @@ void grt_stgrnlib_free(STGRNLIB *lib)
     GRT_SAFE_FREE_PTR(lib->rcv_vb);
     GRT_SAFE_FREE_PTR(lib->rcv_rho);
     GRT_SAFE_FREE_PTR(lib->modarr);
-    free(lib);
+    GRT_SAFE_FREE_PTR(lib);
 }
 
 void grt_stgrnlib_set_modarr(

@@ -517,8 +517,8 @@ def static_sproj(
     The input ``path`` must be a static synthesis NetCDF file, not a dynamic
     synthesis directory, and must contain the
     six stress components produced by ``static_stress``. For grid and ordinary
-    points layouts, pass ``strike``, ``dip`` and ``rake`` together. For finite
-    receiver points, pass only ``rake`` when the file has undefined rake values;
+    points layouts, pass ``strike``, ``dip`` and ``rake`` together. For the
+    finite receiver ``faults`` layout, pass only ``rake`` when rake values are undefined;
     set ``force_rake=True`` to replace every rake. ``rcv_points`` corresponds
     to the C module's ``-Q`` option and must contain six columns per row.
 
