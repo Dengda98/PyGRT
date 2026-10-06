@@ -1,4 +1,7 @@
 from pathlib import Path
+import shutil
+import subprocess
+from tempfile import TemporaryDirectory
 
 import numpy as np
 from scipy.io import netcdf_file
@@ -144,5 +147,24 @@ for index in range(finite_no_rake["sigma_n"].size):
     expected_sigma, expected_tau = project_zne(finite_no_rake, 20.0, 45.0, 40.0, index)
     np.testing.assert_allclose(finite_no_rake["sigma_n"].flat[index], expected_sigma, rtol=1e-12, atol=1e-8)
     np.testing.assert_allclose(finite_no_rake["tau_s"].flat[index], expected_tau, rtol=1e-12, atol=1e-8)
+
+# -Q 最后一个点的任一坐标不匹配时，新结果和已有结果都不能被改写
+with TemporaryDirectory(prefix="pygrt-static-sproj-Q-") as temporary:
+    directory = Path(temporary)
+    geometry = np.column_stack([points_q[name] for name in ["north", "east", "depth"]] +
+                               [np.full(3, value) for value in [120, 35, -40]])
+    for source in ["points_Q_unprojected.nc", "points_plain.nc"]:
+        for coordinate in range(3):
+            target = directory/"points.nc"
+            shutil.copyfile(source, target)
+            before = target.read_bytes()
+            mismatched = geometry.copy()
+            mismatched[-1, coordinate] += .001
+            qfile = directory/"receivers.txt"
+            np.savetxt(qfile, mismatched, fmt="%.17g")
+            result = subprocess.run(["grt", "static_sproj", f"-G{target}", f"-Q{qfile}"], capture_output=True, text=True)
+            assert result.returncode != 0
+            assert "point 2" in result.stdout+result.stderr
+            assert target.read_bytes() == before
 
 print("test_sproj.py: all checks passed")

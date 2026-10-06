@@ -519,10 +519,18 @@ def static_sproj(
     """
     rcv_points = _resolve_rcv_points(rcv_points, kwargs, "static_sproj")
     options = []
-    geometry = [value for value in (strike, dip, rake) if value is not None]
-    if geometry:
-        geometry_text = "/".join(format_float(value) for value in geometry)
+    if strike is not None or dip is not None:
+        if strike is None or dip is None or rake is None:
+            raise ValueError("strike, dip and rake must be supplied together.")
+        if force_rake:
+            raise ValueError("force_rake requires rake alone.")
+        geometry_text = "/".join(format_float(value) for value in (strike, dip, rake))
+        options.append(f"-M{geometry_text}")
+    elif rake is not None:
+        geometry_text = format_float(rake)
         options.append(f"-M{geometry_text}{'+f' if force_rake else ''}")
+    elif force_rake:
+        raise ValueError("force_rake requires rake.")
 
     if rcv_points is not None:
         options.append(f"-Q{Path(rcv_points)}")

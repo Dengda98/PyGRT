@@ -866,6 +866,20 @@ def test_static_sproj_and_coulomb_args():
         pygrt.utils.static_sproj(static, rake=55.0, force_rake=True)
         assert_command_equals(runner.commands[-1], ["static_sproj", f"-G{static}", "-M55+f"])
 
+        # 缺失参数不能改变机制字段的含义，+f 仅适用于单独给定 rake
+        for function, path in [(pygrt.utils.static_sproj, static)]:
+            for options in [{"strike": 33.0}, {"dip": 44.0}, {"strike": 33.0, "rake": 55.0},
+                            {"dip": 44.0, "rake": 55.0}, {"strike": 33.0, "dip": 44.0},
+                            {"force_rake": True}, {"strike": 33.0, "dip": 44.0, "rake": 55.0, "force_rake": True}]:
+                count = len(runner.commands)
+                try:
+                    function(path, **options)
+                except ValueError:
+                    pass
+                else:
+                    raise AssertionError(f"incomplete or incompatible projection arguments accepted: {options}")
+                assert len(runner.commands) == count
+
         pygrt.utils.static_sproj(static, rcv_points=receiver)
         assert_command_equals(runner.commands[-1], ["static_sproj", f"-G{static}", f"-Q{receiver}"])
 

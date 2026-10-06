@@ -130,6 +130,7 @@ grt static sproj -Ggrid_zne.nc -M33/44/55
 # -------------------- 普通 points：无几何、文件几何、-Q 新几何 --------------------
 grt static syn -Gstgrn.nc -S1e20 -Ds2 -Qrcv_pts.txt -e -Opoints_plain.nc
 grt static stress points_plain.nc
+cp points_plain.nc points_Q_unprojected.nc
 expect_fail "plain points require -M or -Q" points_plain_no_geometry.log \
     grt static sproj -Gpoints_plain.nc
 grt static sproj -Gpoints_plain.nc -M33/44/55
@@ -177,7 +178,7 @@ python -u test_static_sproj.py
 rm -f rcv_pts.txt rcv_pts_6.txt rcv_pts_new_6.txt rcv_pts_reordered_6.txt \
     rcv_faults_undefined.inp rcv_faults_defined.inp stgrn.nc \
     grid_zrt.nc grid_zne.nc points_plain.nc points_plain_manual.nc \
-    points_geometry.nc points_geometry_from_file.nc finite_no_rake.nc finite_undefined.nc \
+    points_geometry.nc points_geometry_from_file.nc points_Q_unprojected.nc finite_no_rake.nc finite_undefined.nc \
     finite_undefined_partial.nc finite_defined.nc \
     grid_before.nc grid_no_m.log grid_overwrite.log \
     points_plain_no_geometry.log points_manual.log points_Q.log points_Q_3cols.log \
