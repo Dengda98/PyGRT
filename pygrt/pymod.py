@@ -18,11 +18,10 @@ from typing import Any, Dict, Iterable, Optional, Sequence, Union
 import numpy as np
 import numpy.ctypeslib as npct
 from numpy.typing import NDArray
-from obspy import read
 
 from .cli import format_float, format_range, run_grt
 from .c_interfaces import C_grt_compute_travt1d_from_file, C_grt_free, PREAL
-from .utils import _resolve_rcv_points, _temporary_distance_option, read_nc_variables
+from .utils import _resolve_rcv_points, _temporary_distance_option
 
 
 PathLike = Union[str, os.PathLike]
@@ -1232,8 +1231,7 @@ class PyModel1D:
         differentiate_order: Optional[int] = None,
         zne: bool = False,
         calc_upar: bool = False,
-        return_result: bool = False,
-    ):
+    ) -> None:
         r"""
         Synthesize dynamic three-component displacement with ``grt syn``.
 
@@ -1324,10 +1322,6 @@ class PyModel1D:
                                        prefixed with ``z``, ``r`` or ``t``. Set this
                                        when strain, stress or rotation will be computed
                                        later.
-        :param    return_result:       If true, read the generated SAC files into an
-                                       :class:`obspy.Stream`.
-
-        :return: An ObsPy stream when ``return_result`` is true; otherwise ``None``.
         """
         if self.grn is None:
             raise RuntimeError("Pass grn= to PyModel1D(...) before syn().")
@@ -1355,7 +1349,7 @@ class PyModel1D:
             command["R"] = f"-R{format_float(dist)}"
         command.update(self._source_options(strike, dip, rake, force, moment_tensor))
 
-        # Build the time-function and operation-order options.
+        # 设置时间函数以及时间积分、微分次数
         if time_function is not None:
             command["D"] = f"-D{time_function}"
         if integrate_order is not None:
@@ -1363,15 +1357,13 @@ class PyModel1D:
         if differentiate_order is not None:
             command["J"] = f"-J{differentiate_order}"
 
-        # Build the component and derivative options.
+        # 设置输出分量和空间导数
         if zne:
             command["N"] = "-N"
         if calc_upar:
             command["e"] = "-e"
 
         run_grt(list(command.values()))
-        if return_result:
-            return read(str(output / "*.sac"))
         return None
 
     def compute_syn(self, *args, **kwargs):
@@ -1400,9 +1392,8 @@ class PyModel1D:
         src_fault_size: Optional[Sequence[float]] = None,
         zne: bool = False,
         calc_upar: bool = False,
-        return_result: bool = False,
         **kwargs,
-    ):
+    ) -> None:
         r"""
         Synthesize static three-component displacement with ``grt static_syn``.
 
@@ -1539,11 +1530,6 @@ class PyModel1D:
                                      prefixes ``z``/``r``/``t`` (ZRT) or
                                      ``z``/``n``/``e`` (ZNE). Set this when strain,
                                      stress or rotation will be computed later.
-        :param    return_result:     If true, read the generated NetCDF file with
-                                     :func:`pygrt.utils.read_nc_variables`.
-
-        :return: The synthesized NetCDF data when ``return_result`` is true;
-                 otherwise ``None``.
         """
         rcv_points = _resolve_rcv_points(rcv_points, kwargs, "PyModel1D.static_syn")
         if self.stgrn is None:
@@ -1632,8 +1618,6 @@ class PyModel1D:
             command["e"] = "-e"
 
         run_grt(list(command.values()))
-        if return_result:
-            return read_nc_variables(output)
         return None
 
     def compute_static_syn(self, *args, **kwargs):

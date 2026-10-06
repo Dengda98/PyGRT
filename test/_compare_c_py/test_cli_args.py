@@ -962,51 +962,22 @@ def test_deprecated_recv_points_alias():
         receiver.unlink(missing_ok=True)
 
 
-def test_tensor_return_result_reads_prefix_only():
-    """return_result=True 时只读对应前缀的 SAC，不与位移/其它张量混淆"""
-    import shutil
-
-    import numpy as np
-    from obspy import Trace
+def test_file_modules_write_without_reading():
+    """文件处理接口只执行命令，读取结果由调用方显式完成"""
+    from tempfile import TemporaryDirectory
 
     runner = CapturedRunner()
     original = _patch_run_grt(pygrt.utils, runner)
-    dyn = HERE / "_tmp_tensor_return"
     try:
-        if dyn.exists():
-            shutil.rmtree(dyn)
-        dyn.mkdir()
+        with TemporaryDirectory(dir=HERE) as directory:
+            dyn = Path(directory)
+            for function in (pygrt.utils.strain, pygrt.utils.rotation, pygrt.utils.stress):
+                assert function(dyn) is None
+                assert_command_equals(runner.commands[-1], [function.__name__, f"-G{dyn}"])
 
-        # 同 channel 名 EE/NE，只能靠文件名前缀区分
-        samples = {
-            "Z.sac": np.array([1.0, 2.0], dtype=np.float32),
-            "strain_EE.sac": np.array([10.0, 20.0], dtype=np.float32),
-            "stress_EE.sac": np.array([100.0, 200.0], dtype=np.float32),
-            "rotation_NE.sac": np.array([3.0, 4.0], dtype=np.float32),
-        }
-        for name, data in samples.items():
-            tr = Trace(data=data.copy())
-            tr.stats.delta = 0.1
-            tr.stats.channel = name.split("_")[-1].removesuffix(".sac") if "_" in name else name[0]
-            tr.write(str(dyn / name), format="SAC")
-
-        st_strain = pygrt.utils.strain(dyn, return_result=True)
-        assert_command_equals(runner.commands[-1], ["strain", f"-G{dyn}"])
-        assert len(st_strain) == 1
-        assert np.allclose(st_strain[0].data, samples["strain_EE.sac"])
-
-        st_rot = pygrt.utils.rotation(dyn, return_result=True)
-        assert_command_equals(runner.commands[-1], ["rotation", f"-G{dyn}"])
-        assert len(st_rot) == 1
-        assert np.allclose(st_rot[0].data, samples["rotation_NE.sac"])
-
-        st_stress = pygrt.utils.stress(dyn, return_result=True)
-        assert_command_equals(runner.commands[-1], ["stress", f"-G{dyn}"])
-        assert len(st_stress) == 1
-        assert np.allclose(st_stress[0].data, samples["stress_EE.sac"])
+        assert "read_nc_variables" in pygrt.utils.__all__
     finally:
         _restore_run_grt(pygrt.utils, original)
-        shutil.rmtree(dyn, ignore_errors=True)
 
 
 def test_renamed_interfaces_fail_with_migration_message():
@@ -1093,7 +1064,7 @@ def main():
         test_static_syn_and_tensor_postprocess_args,
         test_static_sproj_and_coulomb_args,
         test_deprecated_recv_points_alias,
-        test_tensor_return_result_reads_prefix_only,
+        test_file_modules_write_without_reading,
         test_renamed_interfaces_fail_with_migration_message,
         test_read_statsfile_ptam_requires_prefix,
     ]
