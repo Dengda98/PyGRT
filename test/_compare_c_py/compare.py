@@ -104,9 +104,9 @@ def run_c_dynamic(c_root: Path) -> None:
             if zne:
                 cmd.append("-N")
             run_grt(cmd)
-            run_grt(["strain", str(out)])
-            run_grt(["rotation", str(out)])
-            run_grt(["stress", str(out)])
+            run_grt(["strain", f"-G{out}"])
+            run_grt(["rotation", f"-G{out}"])
+            run_grt(["stress", f"-G{out}"])
 
 
 def run_py_dynamic(py_root: Path) -> None:

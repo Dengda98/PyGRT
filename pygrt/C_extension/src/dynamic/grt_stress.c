@@ -1,5 +1,5 @@
 /**
- * @file   grt_strain.c
+ * @file   grt_stress.c
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2025-03-28
  * 
@@ -11,13 +11,16 @@
 
 /** 该子模块的参数控制结构体 */
 typedef struct {
-    char *s_synpath;
+    struct {
+        bool active;
+        char *path;  ///< 合成结果目录
+    } G;
 } GRT_MODULE_CTRL;
 
 
 /** 释放结构体的内存 */
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
-    GRT_SAFE_FREE_PTR(Ctrl->s_synpath);
+    GRT_SAFE_FREE_PTR(Ctrl->G.path);
     GRT_SAFE_FREE_PTR(Ctrl);
 }
 
@@ -33,24 +36,53 @@ printf("\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
-"    grt stress <syn_dir> [-h]\n"
-"\n\n\n"
+"    grt stress -G<syn_dir> [-h]\n"
+"\n"
+"Options:\n"
+"----------------------------------------------------------------\n"
+"    -G<syn_dir>   Input receiver directory or root of multiple receiver\n"
+"                  directories produced by `syn` with -e. Results are\n"
+"                  written to each receiver directory.\n"
+"\n"
+"    -h            Display this help message.\n"
+"\n\n"
 );
 }
 
 
-/** 从命令行中读取选项，处理后记录到全局变量中 */
+/** 从命令行中读取选项，处理后记录到参数控制结构体 */
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
-    (void)Ctrl;
+    // 仅为兼容旧命令保留模块名后的目录参数，帮助文档统一使用 -G
+    bool legacy_path = argc > 1 && argv[1][0] != '-';
+    if(legacy_path) {
+        Ctrl->G.active = true;
+        Ctrl->G.path = strdup(argv[1]);
+        optind = 2;
+    }
+
     int opt;
-    while ((opt = getopt(argc, argv, ":h")) != -1) {
-        switch (opt) {
-            GRT_Common_Options_in_Switch((char)(optopt));
+    while((opt = getopt(argc, argv, ":G:h")) != -1) {
+        switch(opt) {
+            case 'G':
+                if(legacy_path) {
+                    GRTRaiseError("Cannot combine -G with a positional directory. Use '-h' for help.");
+                }
+                Ctrl->G.active = true;
+                GRT_SAFE_FREE_PTR(Ctrl->G.path);
+                Ctrl->G.path = strdup(optarg);
+                break;
+
+            GRT_Common_Options_in_Switch((char)optopt);
         }
     }
 
-    // 检查必选项有没有设置
-    GRTCheckOptionSet(argc > 1);
+    GRTCheckOptionActive(Ctrl, G);
+    if(optind != argc) {
+        GRTRaiseError("Unexpected positional argument %s. Use '-h' for help.", argv[optind]);
+    }
+    if(legacy_path) {
+        GRTRaiseWarning("Passing the input directory as a positional argument is deprecated. Use \"grt %s -G<syn_dir>\" instead.", GRT_MODULE_NAME);
+    }
 }
 
 /** 在频域由位移偏导合成应力张量 */
@@ -144,12 +176,9 @@ int stress_main(int argc, char **argv){
     GRT_MODULE_CTRL *Ctrl = GRT_SAFE_CALLOC(1, sizeof(*Ctrl));
 
     getopt_from_command(Ctrl, argc, argv);
-    
-    // 合成地震图目录路径
-    Ctrl->s_synpath = strdup(argv[1]);
 
     // 检查是否存在该目录
-    GRTCheckDirExist(Ctrl->s_synpath);
+    GRTCheckDirExist(Ctrl->G.path);
 
     // ----------------------------------------------------------------------------------
     // 开始读取计算，输出6个量
@@ -162,7 +191,7 @@ int stress_main(int argc, char **argv){
     const char *chs = NULL;
 
     // 判断标志性文件是否存在，来判断输出使用ZNE还是ZRT
-    GRT_SAFE_ASPRINTF(&s_filepath, "%s/nN.sac", Ctrl->s_synpath);
+    GRT_SAFE_ASPRINTF(&s_filepath, "%s/nN.sac", Ctrl->G.path);
     rot2ZNE = (access(s_filepath, F_OK) == 0);
 
     // 指示特定的通道名
@@ -170,7 +199,7 @@ int stress_main(int argc, char **argv){
 
 
     // 读取一个头段变量，获得基本参数，分配数组内存
-    GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%c.sac", Ctrl->s_synpath, tolower(chs[0]), chs[0]);
+    GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%c.sac", Ctrl->G.path, tolower(chs[0]), chs[0]);
     SACTRACE *insac = grt_read_SACTRACE(s_filepath, true);
     int npts = insac->hd.npts;
     real_t dt = insac->hd.delta;
@@ -190,13 +219,13 @@ int stress_main(int argc, char **argv){
     real_t *upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
     real_t *res[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
     for(int c=0; c<GRT_CHANNEL_NUM; ++c){
-        GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c.sac", Ctrl->s_synpath, chs[c]);
+        GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c.sac", Ctrl->G.path, chs[c]);
         insac = grt_read_SACTRACE(s_filepath, false);
         u[c] = insac->data;
         insac->data = NULL;
         grt_free_SACTRACE(insac);
         for(int c2=0; c2<GRT_CHANNEL_NUM; ++c2){
-            GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%c.sac", Ctrl->s_synpath, tolower(chs[c2]), chs[c]);
+            GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%c.sac", Ctrl->G.path, tolower(chs[c2]), chs[c]);
             insac = grt_read_SACTRACE(s_filepath, false);
             upar[c2][c] = insac->data;
             insac->data = NULL;
@@ -213,7 +242,7 @@ int stress_main(int argc, char **argv){
             c2 = chs[i2];
             memcpy(outsac->data, res[i2][i1], sizeof(*outsac->data)*npts);
             sprintf(outsac->hd.kcmpnm, "%c%c", c1, c2);
-            GRT_SAFE_ASPRINTF(&s_filepath, "%s/stress_%c%c.sac", Ctrl->s_synpath, c1, c2);
+            GRT_SAFE_ASPRINTF(&s_filepath, "%s/stress_%c%c.sac", Ctrl->G.path, c1, c2);
             grt_write_SACTRACE(s_filepath, outsac);
         }
     }

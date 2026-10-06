@@ -26,7 +26,7 @@ grt greenfn -M${modname} -O${out} -N${nt}/${dt} -D${depsrc}/${deprcv} -R${dist} 
 # just give a test focal mechanism
 grt syn -G${out}/${modname}_${depsrc}_${deprcv}_${dist} -A40 -S1e20 -M100/55/120 -Osyn -e
 # compute stress
-grt stress syn
+grt stress -Gsyn
 
 # END
 

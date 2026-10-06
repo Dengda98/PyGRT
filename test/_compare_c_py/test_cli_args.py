@@ -821,9 +821,9 @@ def test_static_syn_and_tensor_postprocess_args():
         stc.write_bytes(b"placeholder")
 
         pygrt.utils.strain(dyn)
-        assert_command_equals(runner.commands[-1], ["strain", str(dyn)])
+        assert_command_equals(runner.commands[-1], ["strain", f"-G{dyn}"])
         pygrt.utils.rotation(dyn)
-        assert_command_equals(runner.commands[-1], ["rotation", str(dyn)])
+        assert_command_equals(runner.commands[-1], ["rotation", f"-G{dyn}"])
         pygrt.utils.static_strain(stc)
         assert_command_equals(runner.commands[-1], ["static_strain", str(stc)])
         pygrt.utils.static_rotation(stc)
@@ -991,17 +991,17 @@ def test_tensor_return_result_reads_prefix_only():
             tr.write(str(dyn / name), format="SAC")
 
         st_strain = pygrt.utils.strain(dyn, return_result=True)
-        assert_command_equals(runner.commands[-1], ["strain", str(dyn)])
+        assert_command_equals(runner.commands[-1], ["strain", f"-G{dyn}"])
         assert len(st_strain) == 1
         assert np.allclose(st_strain[0].data, samples["strain_EE.sac"])
 
         st_rot = pygrt.utils.rotation(dyn, return_result=True)
-        assert_command_equals(runner.commands[-1], ["rotation", str(dyn)])
+        assert_command_equals(runner.commands[-1], ["rotation", f"-G{dyn}"])
         assert len(st_rot) == 1
         assert np.allclose(st_rot[0].data, samples["rotation_NE.sac"])
 
         st_stress = pygrt.utils.stress(dyn, return_result=True)
-        assert_command_equals(runner.commands[-1], ["stress", str(dyn)])
+        assert_command_equals(runner.commands[-1], ["stress", f"-G{dyn}"])
         assert len(st_stress) == 1
         assert np.allclose(st_stress[0].data, samples["stress_EE.sac"])
     finally:

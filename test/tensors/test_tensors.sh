@@ -8,14 +8,14 @@ grt rotation -h
 
 grt greenfn -M../milrow -D2/3 -N600/0.02 -R10 -e -OGRN
 grt syn -GGRN/milrow_2_3_10 -A22 -S1e20 -e -Osyn 
-grt strain syn
-grt stress syn
-grt rotation syn
+grt strain -Gsyn
+grt stress -Gsyn
+grt rotation -Gsyn
 
 grt syn -GGRN/milrow_2_3_10 -A22 -S1e20 -e -N -Osyn_ZNE 
-grt strain syn_ZNE 
-grt stress syn_ZNE 
-grt rotation syn_ZNE 
+grt strain -Gsyn_ZNE
+grt stress -Gsyn_ZNE
+grt rotation -Gsyn_ZNE
 
 # -------------------- 静态应变 / 应力 / 旋转 --------------------
 grt static strain -h
