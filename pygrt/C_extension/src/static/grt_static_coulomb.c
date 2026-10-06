@@ -87,9 +87,8 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
             case 'F': {
                 char extra;
                 int nscan = sscanf(optarg, "%lf%c", &Ctrl->F.friction, &extra);
-                if((nscan != 1) || !isfinite(Ctrl->F.friction) ||
-                    (Ctrl->F.friction < 0.0)){
-                    GRTBadOptionError(F, "Friction must be a finite nonnegative number.");
+                if((nscan != 1) || (Ctrl->F.friction < 0.0)){
+                    GRTBadOptionError(F, "Friction must be a nonnegative number.");
                 }
                 Ctrl->F.active = true;
                 break;

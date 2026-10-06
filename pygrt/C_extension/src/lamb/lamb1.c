@@ -1277,8 +1277,8 @@ void grt_solve_lamb1(
     if(azimuth < 0.0 || azimuth > 360.0){
         GRTRaiseError("azimuth should be in [0, 360] degree for lamb1.\n");
     }
-    if(!isfinite(cbar) || cbar < 0.0){
-        GRTRaiseError("cbar for lamb1 should be finite and nonnegative.\n");
+    if(cbar < 0.0){
+        GRTRaiseError("cbar for lamb1 should be nonnegative.\n");
     }
     const unsigned int phase_mask = grt_lamb_parse_phase_list(
         cbar == 0.0 ? phase_list : NULL,

@@ -35,16 +35,13 @@
  */
 static real_t grt_normalize_time_function(float *x, int nx, float dt)
 {
-    // 使用与离散卷积相同的 dt 乘样本和，并检查非有限样本及正负幅值抵消
+    // 使用与离散卷积相同的 dt 乘样本和，并检查正负幅值抵消
     real_t area = 0.0, absarea = 0.0;
     for(int n=0; n<nx; ++n) {
-        if(!isfinite(x[n])) {
-            GRTRaiseError("Time function contains a non-finite sample.");
-        }
         area    += x[n] * (real_t)dt;
         absarea += fabs(x[n]) * (real_t)dt;
     }
-    if(!isfinite(area) || absarea == 0.0 || GRT_ISCLOSE(area / absarea, 0.0)) {
+    if(absarea == 0.0 || GRT_ISCLOSE(area / absarea, 0.0)) {
         GRTRaiseError("Time function has zero or numerically singular integral.");
     }
     for(int n=0; n<nx; ++n) {
@@ -70,7 +67,7 @@ static bool check_time_function_base(const char tftype, const char *tfparams){
         if(1 != sscanf(tfparams, "%f", &t0)) {
             return false;
         }
-        if(!isfinite(t0) || t0 <= 0) {
+        if(t0 <= 0) {
             GRTRaiseError("t0(%s) should be larger than 0.\n", tfparams);
         }
     }
@@ -80,7 +77,7 @@ static bool check_time_function_base(const char tftype, const char *tfparams){
         if(3 != sscanf(tfparams, "%f/%f/%f", &t1, &t2, &t3)) {
             return false;
         }
-        if(!isfinite(t1) || !isfinite(t2) || !isfinite(t3) || t1 < 0.0 || t2 < 0.0 || t3 <= 0.0){
+        if(t1 < 0.0 || t2 < 0.0 || t3 <= 0.0){
             GRTRaiseError("It should be t1>=0.0, t2>=0.0 and t3>0.0 (%s).\n", tfparams);
         }
         if(t1 > t2 || t2 > t3) {
@@ -93,7 +90,7 @@ static bool check_time_function_base(const char tftype, const char *tfparams){
         if(1 != sscanf(tfparams, "%f", &f0)) {
             return false;
         }
-        if(!isfinite(f0) || f0 <= 0) {
+        if(f0 <= 0) {
             GRTRaiseError("f0(%s) should be larger than 0.\n", tfparams);
         }
     }
@@ -125,8 +122,8 @@ static char *split_time_delay(const char *params, real_t *delay)
     char *suffix = strstr(base, "+d");
     if(suffix) {
         char extra;
-        if(sscanf(suffix + 2, "%lf%c", delay, &extra) != 1 || !isfinite(*delay) || *delay < 0.0) {
-            GRTRaiseError("Time-function delay must be finite and nonnegative.");
+        if(sscanf(suffix + 2, "%lf%c", delay, &extra) != 1 || *delay < 0.0) {
+            GRTRaiseError("Time-function delay must be nonnegative.");
         }
         *suffix = '\0';
     }
@@ -144,7 +141,7 @@ bool grt_check_tftype_tfparams(const char tftype, const char *tfparams)
 
 float * grt_get_time_function(int *TFnt, float dt, const char tftype, const char *tfparams)
 {
-    if(!isfinite(dt) || dt <= 0.0) {
+    if(dt <= 0.0) {
         GRTRaiseError("Invalid time-function sampling interval.");
     }
 
@@ -303,8 +300,8 @@ void grt_differential(float *x, int nx, float dt){
 
 
 float * grt_get_parabola_wave(float dt, float *Tlen, int *Nt){
-    if(!isfinite(dt) || dt <= 0.0f || !isfinite(*Tlen) || *Tlen <= 0.0f) {
-        GRTRaiseError("Parabolic duration and sampling interval must be finite and positive.");
+    if(dt <= 0.0f || *Tlen <= 0.0f) {
+        GRTRaiseError("Parabolic duration and sampling interval must be positive.");
     }
 
     // 截止时刻向上对齐到采样网格，至少保留一个位于两个零端点之间的样本
@@ -333,11 +330,10 @@ float * grt_get_parabola_wave(float dt, float *Tlen, int *Nt){
 
 float * grt_get_trap_wave(float dt, float *T1, float *T2, float *T3, int *Nt){
     float times[3] = {*T1, *T2, *T3};
-    if(!isfinite(dt) || dt <= 0.0f) {
+    if(dt <= 0.0f) {
         GRTRaiseError("Invalid time-function sampling interval.");
     }
-    if(!isfinite(times[0]) || !isfinite(times[1]) || !isfinite(times[2]) ||
-       times[0] < 0.0f || times[0] > times[1] || times[1] > times[2] || times[2] <= 0.0f) {
+    if(times[0] < 0.0f || times[0] > times[1] || times[1] > times[2] || times[2] <= 0.0f) {
         GRTRaiseError("Trapezoidal cutoffs must satisfy 0 <= t1 <= t2 <= t3 and t3 > 0.");
     }
 
@@ -382,8 +378,8 @@ float * grt_get_trap_wave(float dt, float *T1, float *T2, float *T3, int *Nt){
 
 
 float * grt_get_ricker_wave(float dt, float f0, int *Nt){
-    if(!isfinite(dt) || dt <= 0.0f || !isfinite(f0) || f0 <= 0.0f) {
-        GRTRaiseError("Ricker frequency and sampling interval must be finite and positive.");
+    if(dt <= 0.0f || f0 <= 0.0f) {
+        GRTRaiseError("Ricker frequency and sampling interval must be positive.");
     }
     if(1.0 / dt <= 2.0 * f0) {
         GRTRaiseError("Compare to sampling freq (%.3f), dominant freq (%.3f) is too high.", 1.0 / dt, f0);

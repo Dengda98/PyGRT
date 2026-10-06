@@ -121,16 +121,16 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                     Ctrl->M.strike = a1;
                     Ctrl->M.dip = a2;
                     Ctrl->M.rake = a3;
-                    if(!isfinite(Ctrl->M.strike) || (Ctrl->M.strike < 0.0) || (Ctrl->M.strike > 360.0)){
+                    if((Ctrl->M.strike < 0.0) || (Ctrl->M.strike > 360.0)){
                         GRTBadOptionError(M, "Strike must be in [0, 360].");
                     }
-                    if(!isfinite(Ctrl->M.dip) || (Ctrl->M.dip < 0.0) || (Ctrl->M.dip > 90.0)){
+                    if((Ctrl->M.dip < 0.0) || (Ctrl->M.dip > 90.0)){
                         GRTBadOptionError(M, "Dip must be in [0, 90].");
                     }
                 } else {
                     Ctrl->M.rake = a1;
                 }
-                if(!isfinite(Ctrl->M.rake) || (Ctrl->M.rake < -180.0) || (Ctrl->M.rake > 180.0)){
+                if((Ctrl->M.rake < -180.0) || (Ctrl->M.rake > 180.0)){
                     GRTBadOptionError(M, "Rake must be in [-180, 180].");
                 }
 
@@ -181,16 +181,14 @@ static real_t normalize_strike(real_t strike)
 
 
 /**
- * 检查一个接收断层几何是否定义且合法
+ * 检查接收断层的倾角和滑动角是否定义且合法
  *
- * @param[in] strike 走向角
  * @param[in] dip    倾角
  * @param[in] rake   滑动角
  * @return 几何有效且完整时返回 true
  */
-static bool geometry_is_defined(real_t strike, real_t dip, real_t rake)
+static bool geometry_is_defined(real_t dip, real_t rake)
 {
-    if(!isfinite(strike) || !isfinite(dip) || !isfinite(rake)) return false;
     if((dip < 0.0) || (dip > 90.0)) return false;
     if((rake == GRT_FINITE_FAULT_UNDEFINED_RAKE) ||
         (rake < -180.0) || (rake > 180.0)){
@@ -447,8 +445,7 @@ static void load_geometry_from_Q(
                 "-Q file \"%s\" does not have the same point order and coordinates "
                 "as the input file at point %zu.", path, i);
         }
-        if(!geometry_is_defined(
-            q_points->strikes[i], q_points->dips[i], q_points->rakes[i])){
+        if(!geometry_is_defined(q_points->dips[i], q_points->rakes[i])){
             GRTRaiseError("Undefined or invalid receiver geometry in -Q at point %zu.", i);
         }
         strikes[i] = normalize_strike(q_points->strikes[i]);
@@ -497,7 +494,7 @@ static void load_geometry_from_points(
     bool geometry_complete = has_all_geometry;
     if(has_all_geometry){
         for(size_t i = 0; i < rcv_info->npts; ++i){
-            if(!geometry_is_defined(strikes[i], dips[i], rakes[i])){
+            if(!geometry_is_defined(dips[i], rakes[i])){
                 geometry_complete = false;
                 break;
             }
@@ -583,14 +580,11 @@ static void load_geometry_from_finite_points(
     // 先统计未定义 rake，再判断是否必须使用或允许使用手动 rake
     bool any_undefined_rake = !has_rake;
     for(size_t ifault = 0; ifault < nfault; ++ifault){
-        if(!isfinite(fault_strikes[ifault]) ||
-            !isfinite(fault_dips[ifault]) ||
-            (fault_dips[ifault] <= 0.0) || (fault_dips[ifault] > 90.0)){
-            GRTRaiseError("Invalid strike or dip for finite receiver fault %zu.", ifault);
+        if((fault_dips[ifault] <= 0.0) || (fault_dips[ifault] > 90.0)){
+            GRTRaiseError("Invalid dip for finite receiver fault %zu.", ifault);
         }
         if(!has_rake) continue;
-        if(fault_rakes[ifault] == GRT_FINITE_FAULT_UNDEFINED_RAKE ||
-            !isfinite(fault_rakes[ifault])){
+        if(fault_rakes[ifault] == GRT_FINITE_FAULT_UNDEFINED_RAKE){
             any_undefined_rake = true;
         } else if((fault_rakes[ifault] < -180.0) || (fault_rakes[ifault] > 180.0)){
             GRTRaiseError("Invalid rake for finite receiver fault %zu.", ifault);
@@ -621,10 +615,7 @@ static void load_geometry_from_finite_points(
             dips[i] = fault_dips[ifault];
             if(Ctrl->M.active && Ctrl->M.force_rake){
                 rakes[i] = Ctrl->M.rake;
-            } else if(Ctrl->M.active &&
-                (!has_rake ||
-                 (fault_rakes[ifault] == GRT_FINITE_FAULT_UNDEFINED_RAKE) ||
-                 !isfinite(fault_rakes[ifault]))){
+            } else if(Ctrl->M.active && (!has_rake || (fault_rakes[ifault] == GRT_FINITE_FAULT_UNDEFINED_RAKE))){
                 rakes[i] = Ctrl->M.rake;
             } else {
                 rakes[i] = fault_rakes[ifault];

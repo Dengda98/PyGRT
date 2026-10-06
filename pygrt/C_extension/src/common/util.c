@@ -175,14 +175,14 @@ const char* grt_get_basename(const char* path) {
 
 
 /**
- * 判断指定字符串区间是否表示一个有限实数
+ * 判断指定字符串区间是否表示一个实数
  *
  * 字符串区间左闭右开，调用方无需为区间补充字符串结束符
  *
  * @param[in]    begin    字符串区间的起始位置，包含该位置
  * @param[in]    end      字符串区间的结束位置，不包含该位置
  *
- * @return   如果区间是一个有限实数则返回 true，否则返回 false
+ * @return   如果区间是一个实数则返回 true，否则返回 false
  */
 static bool grt_is_numeric_field(const char *begin, const char *end)
 {
@@ -199,11 +199,10 @@ static bool grt_is_numeric_field(const char *begin, const char *end)
     // strtod 支持小数、科学计数法以及正负号
     errno = 0;
     char *value_end = NULL;
-    real_t number = strtod(value, &value_end);
+    strtod(value, &value_end);
 
-    // 要求完整解析字段，并排除溢出、下溢、无穷大和非数值
-    bool valid = (value_end != value) && (*value_end == '\0')
-        && (errno != ERANGE) && isfinite(number);
+    // 要求完整解析字段，并排除溢出与下溢
+    bool valid = (value_end != value) && (*value_end == '\0') && (errno != ERANGE);
 
     GRT_SAFE_FREE_PTR(value);
     return valid;

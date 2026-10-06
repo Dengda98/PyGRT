@@ -322,12 +322,12 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 if (sscanf(optarg, "%lf/%lf/%lf%c", &vp, &vs, &rho, &extra) != 3) {
                     GRTBadOptionError(H, "expected vp/vs/rho.");
                 }
-                if (!isfinite(vp) || !isfinite(vs) || !isfinite(rho) || vp <= 0.0 || vs <= 0.0 || rho <= 0.0) {
+                if (vp <= 0.0 || vs <= 0.0 || rho <= 0.0) {
                     GRTBadOptionError(H, "vp, vs and rho should be positive.");
                 }
                 vp_vs_squared = GRT_SQUARE(vp / vs);
                 Ctrl->H.nu = (vp_vs_squared - 2.0) / (2.0 * (vp_vs_squared - 1.0));
-                if (!isfinite(Ctrl->H.nu) || Ctrl->H.nu <= 0.0 || Ctrl->H.nu >= 0.5) {
+                if (Ctrl->H.nu <= 0.0 || Ctrl->H.nu >= 0.5) {
                     GRTBadOptionError(H, "vp/vs gives an invalid Poisson ratio.");
                 }
                 Ctrl->H.active = true;
@@ -342,7 +342,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 char extra;
                 int nt;
                 real_t dt;
-                if (sscanf(optarg, "%d/%lf%c", &nt, &dt, &extra) != 2 || nt <= 0 || dt <= 0.0 || !isfinite(dt)) {
+                if (sscanf(optarg, "%d/%lf%c", &nt, &dt, &extra) != 2 || nt <= 0 || dt <= 0.0) {
                     GRTBadOptionError(N, "expected positive nt/dt.");
                 }
                 Ctrl->N.active = true;
@@ -354,8 +354,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
             /* 水平震中距 */
             case 'R': {
                 char extra;
-                if (sscanf(optarg, "%lf%c", &Ctrl->R.dist, &extra) != 1 || Ctrl->R.dist <= 0.0 ||
-                    !isfinite(Ctrl->R.dist)) {
+                if (sscanf(optarg, "%lf%c", &Ctrl->R.dist, &extra) != 1 || Ctrl->R.dist <= 0.0) {
                     GRTBadOptionError(R, "horizontal distance should be positive.");
                 }
                 Ctrl->R.active = true;
@@ -365,8 +364,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
             /* 方位角 */
             case 'A': {
                 char extra;
-                if (sscanf(optarg, "%lf%c", &Ctrl->A.azimuth, &extra) != 1 ||
-                    !isfinite(Ctrl->A.azimuth) || Ctrl->A.azimuth < 0.0 || Ctrl->A.azimuth > 360.0) {
+                if (sscanf(optarg, "%lf%c", &Ctrl->A.azimuth, &extra) != 1 || Ctrl->A.azimuth < 0.0 || Ctrl->A.azimuth > 360.0) {
                     GRTBadOptionError(A, "azimuth should be in [0, 360].");
                 }
                 Ctrl->A.backazimuth = Ctrl->A.azimuth + 180.0;
@@ -386,7 +384,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                     Ctrl->S.mult_src_mu = true;
                     ++scale;
                 }
-                if (sscanf(scale, "%lf%c", &Ctrl->S.M0, &extra) != 1 || !isfinite(Ctrl->S.M0)) {
+                if (sscanf(scale, "%lf%c", &Ctrl->S.M0, &extra) != 1) {
                     GRTBadOptionError(S, "expected a numeric source scale.");
                 }
                 Ctrl->S.active = true;
@@ -404,9 +402,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 if (count != 2 && count != 3) {
                     GRTBadOptionError(M, "expected strike/dip[/rake].");
                 }
-                if (!isfinite(strike) || !isfinite(dip) || (count == 3 && !isfinite(rake)) ||
-                    strike < 0.0 || strike > 360.0 || dip < 0.0 || dip > 90.0 ||
-                    (count == 3 && (rake < -180.0 || rake > 180.0))) {
+                if (strike < 0.0 || strike > 360.0 || dip < 0.0 || dip > 90.0 || (count == 3 && (rake < -180.0 || rake > 180.0))) {
                     GRTBadOptionError(M, "strike, dip or rake is out of bound.");
                 }
                 Ctrl->mchn[0] = strike;
@@ -427,8 +423,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 char extra;
                 int count = sscanf(optarg, "%lf/%lf/%lf%c",
                     &Ctrl->mchn[0], &Ctrl->mchn[1], &Ctrl->mchn[2], &extra);
-                if (count != 3 || !isfinite(Ctrl->mchn[0]) || !isfinite(Ctrl->mchn[1]) ||
-                    !isfinite(Ctrl->mchn[2])) {
+                if (count != 3) {
                     GRTBadOptionError(F, "expected fn/fe/fz.");
                 }
                 Ctrl->computeType = GRT_SYN_SF;
@@ -446,9 +441,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 int count = sscanf(optarg, "%lf/%lf/%lf/%lf/%lf/%lf%c",
                     &Ctrl->mchn[0], &Ctrl->mchn[1], &Ctrl->mchn[2],
                     &Ctrl->mchn[3], &Ctrl->mchn[4], &Ctrl->mchn[5], &extra);
-                if (count != 6 || !isfinite(Ctrl->mchn[0]) || !isfinite(Ctrl->mchn[1]) ||
-                    !isfinite(Ctrl->mchn[2]) || !isfinite(Ctrl->mchn[3]) ||
-                    !isfinite(Ctrl->mchn[4]) || !isfinite(Ctrl->mchn[5])) {
+                if (count != 6) {
                     GRTBadOptionError(T, "expected six moment-tensor components.");
                 }
                 Ctrl->computeType = GRT_SYN_MT;
@@ -471,8 +464,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                     if (Ctrl->Depth.s_active) {
                         GRTBadOptionError(Ds, "the option is duplicated.");
                     }
-                    if (sscanf(optarg + 1, "%lf%c", &Ctrl->Depth.depsrc, &extra) != 1 ||
-                        !isfinite(Ctrl->Depth.depsrc) || Ctrl->Depth.depsrc < 0.0) {
+                    if (sscanf(optarg + 1, "%lf%c", &Ctrl->Depth.depsrc, &extra) != 1 || Ctrl->Depth.depsrc < 0.0) {
                         GRTBadOptionError(Ds, "source depth should be nonnegative.");
                     }
                     Ctrl->Depth.s_active = true;
@@ -481,8 +473,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                     if (Ctrl->Depth.r_active) {
                         GRTBadOptionError(Dr, "the option is duplicated.");
                     }
-                    if (sscanf(optarg + 1, "%lf%c", &Ctrl->Depth.deprcv, &extra) != 1 ||
-                        !isfinite(Ctrl->Depth.deprcv) || Ctrl->Depth.deprcv < 0.0) {
+                    if (sscanf(optarg + 1, "%lf%c", &Ctrl->Depth.deprcv, &extra) != 1 || Ctrl->Depth.deprcv < 0.0) {
                         GRTBadOptionError(Dr, "receiver depth should be nonnegative.");
                     }
                     Ctrl->Depth.r_active = true;
@@ -499,8 +490,8 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 if (optarg[0] == 'p') {
                     char extra;
                     real_t delayT0;
-                    if (sscanf(optarg + 1, "%lf%c", &delayT0, &extra) != 1 || !isfinite(delayT0)) {
-                        GRTBadOptionError(E, "expected a finite t0 after -Ep.");
+                    if (sscanf(optarg + 1, "%lf%c", &delayT0, &extra) != 1) {
+                        GRTBadOptionError(E, "expected t0 after -Ep.");
                     }
                     if (delayT0 >= 0.0) {
                         GRTBadOptionError(E, "Can't set positive t0(%f) in -Ep.", delayT0);
@@ -513,9 +504,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                     real_t delayT0;
                     real_t delayV0 = 0.0;
                     int count = sscanf(optarg, "%lf/%lf%c", &delayT0, &delayV0, &extra);
-                    if ((count != 1 && count != 2) ||
-                        (count == 1 && sscanf(optarg, "%lf%c", &delayT0, &extra) != 1) ||
-                        !isfinite(delayT0) || !isfinite(delayV0)) {
+                    if ((count != 1 && count != 2) || (count == 1 && sscanf(optarg, "%lf%c", &delayT0, &extra) != 1)) {
                         GRTBadOptionError(E, "expected t0[/v0].");
                     }
                     if (delayV0 < 0.0) {
@@ -963,7 +952,7 @@ static void clear_lamb_arrivals(SACTRACE *sac)
 static void set_lamb_arrival(
     SACTRACE *sac, const int phase, const real_t tbar, const real_t time_scale, const char *name)
 {
-    if (phase < 0 || phase >= LAMB_PHASE_COUNT || tbar < 0.0 || !isfinite(tbar)) {
+    if (phase < 0 || phase >= LAMB_PHASE_COUNT || tbar < 0.0) {
         return;
     }
     float *times[LAMB_SAC_PICK_COUNT] = {
