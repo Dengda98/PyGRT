@@ -89,7 +89,7 @@ with netcdf_file("finite_no_rake.nc", mode="w") as nc:
 
     offset = nc.createVariable("offset", "i", ("nfault",))
     offset[:] = 2
-    nc.layout = "points"
+    nc.layout = "faults"
     nc.rot2ZNE = 1
 PY
 

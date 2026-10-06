@@ -37,7 +37,8 @@ static_sproj
 接收断层形态
 ------------------
 
-模块根据输入文件布局使用不同的接收断层形态来源。
+模块根据输入文件的 **layout** 属性区分 **grid**、**points** 和 **faults** 三种布局，
+并使用对应的接收断层形态来源。
 
 * **grid** 布局没有接收断层形态，必须设置
   **-M**\ *strike/dip/rake*。
@@ -53,7 +54,7 @@ static_sproj
   *north east depth strike dip rake*，且点数、坐标和顺序必须与输入文件一致。
   **-Q** 与 **-M** 不能同时设置。
 
-* 如果 **points** 布局包含 **nfault** 维度，则按有限接收断层处理。
+* **faults** 布局表示有限接收断层，包含 **point** 和 **nfault** 维度。
   此时输入文件中已经记录每个有限断层的 **strike** 和 **dip**，但 **rake** 可能未定义。
   若任意断层的 **rake** 未定义，必须设置 **-M**\ *rake*，此时未定义的 **rake** 使用手动值设置的值，
   已定义的 **rake** 仍使用文件值。若所有 **rake** 都已定义，设置 **-M**\ *rake* 会报错。
@@ -81,7 +82,7 @@ static_sproj
     对 **grid** 和普通 **points** 布局，格式为
     *strike/dip/rake*，单位为度。
 
-    对包含 **nfault** 维度的有限接收断层布局，格式为
+    对有限接收断层 **faults** 布局，格式为
     *rake* 或 *rake+f*，单位为度。**+f** 表示强制所有点使用该 rake。
 
 .. _-Q:

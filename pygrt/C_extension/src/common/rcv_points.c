@@ -16,7 +16,6 @@
 #include "grt/common/rcv_points.h"
 #include "grt/common/checkerror.h"
 #include "grt/common/util.h"
-#include "grt/common/mynetcdf.h"
 
 /**
  * 解析一行接收点数据并返回有效数值列数
@@ -253,101 +252,4 @@ RCV_POINTS *grt_rcv_points_from_faults(
         }
     }
     return pts;
-}
-
-
-GRT_RCV_NC_LAYOUT grt_rcv_nc_get_layout(int ncid)
-{
-    size_t len = 0;
-    int status = nc_inq_attlen(ncid, NC_GLOBAL, "layout", &len);
-    if((status != NC_NOERR) || (len == 0)){
-        GRTRaiseError("static receiver layout attribute is missing.");
-    }
-
-    // 所有静态输出文件都显式保存 layout 属性，直接按属性确定布局
-    char *layout = GRT_SAFE_CALLOC(len + 1, 1);
-    NC_CHECK(nc_get_att_text(ncid, NC_GLOBAL, "layout", layout));
-
-    GRT_RCV_NC_LAYOUT result;
-    if(strcmp(layout, GRT_RCV_LAYOUT_GRID) == 0){
-        result = GRT_RCV_NC_LAYOUT_GRID;
-    } else if(strcmp(layout, GRT_RCV_LAYOUT_POINTS) == 0){
-        result = GRT_RCV_NC_LAYOUT_POINTS;
-    } else {
-        GRTRaiseError("unsupported static receiver layout \"%s\".", layout);
-    }
-    GRT_SAFE_FREE_PTR(layout);
-    return result;
-}
-
-
-void grt_rcv_nc_info_load(int ncid, RCV_NC_INFO *info)
-{
-    if(info == NULL){
-        GRTRaiseError("receiver NetCDF info is NULL.");
-    }
-    memset(info, 0, sizeof(*info));
-    // 先确定文件布局，再按布局读取并组织接收坐标
-    info->layout = grt_rcv_nc_get_layout(ncid);
-
-    if(info->layout == GRT_RCV_NC_LAYOUT_GRID){
-        size_t nnorth, neast;
-        int north_varid, east_varid;
-        NC_CHECK(nc_inq_dimid(ncid, "north", &info->dimids[0]));
-        NC_CHECK(nc_inq_dimlen(ncid, info->dimids[0], &nnorth));
-        NC_CHECK(nc_inq_dimid(ncid, "east", &info->dimids[1]));
-        NC_CHECK(nc_inq_dimlen(ncid, info->dimids[1], &neast));
-        info->npts = nnorth * neast;
-        info->norths = GRT_SAFE_CALLOC(info->npts, sizeof(real_t));
-        info->easts = GRT_SAFE_CALLOC(info->npts, sizeof(real_t));
-
-        real_t *north_axis = GRT_SAFE_CALLOC(nnorth, sizeof(real_t));
-        real_t *east_axis = GRT_SAFE_CALLOC(neast, sizeof(real_t));
-        // 网格文件按两个坐标轴保存，读取后展开为 point 顺序
-        NC_CHECK(nc_inq_varid(ncid, "north", &north_varid));
-        NC_CHECK(NC_FUNC_REAL(nc_get_var)(ncid, north_varid, north_axis));
-        NC_CHECK(nc_inq_varid(ncid, "east", &east_varid));
-        NC_CHECK(NC_FUNC_REAL(nc_get_var)(ncid, east_varid, east_axis));
-        for(size_t inorth = 0; inorth < nnorth; ++inorth){
-            for(size_t ieast = 0; ieast < neast; ++ieast){
-                size_t ipt = ieast + inorth * neast;
-                info->norths[ipt] = north_axis[inorth];
-                info->easts[ipt] = east_axis[ieast];
-            }
-        }
-        GRT_SAFE_FREE_PTR(north_axis);
-        GRT_SAFE_FREE_PTR(east_axis);
-        return;
-    }
-
-    if(info->layout == GRT_RCV_NC_LAYOUT_POINTS){
-        int north_varid, east_varid;
-        // 一维接收点文件的坐标已经展平，可以直接读取到输出数组
-        NC_CHECK(nc_inq_dimid(ncid, "point", &info->dimids[0]));
-        NC_CHECK(nc_inq_dimlen(ncid, info->dimids[0], &info->npts));
-        info->norths = GRT_SAFE_CALLOC(info->npts, sizeof(real_t));
-        info->easts = GRT_SAFE_CALLOC(info->npts, sizeof(real_t));
-        NC_CHECK(nc_inq_varid(ncid, "north", &north_varid));
-        NC_CHECK(NC_FUNC_REAL(nc_get_var)(ncid, north_varid, info->norths));
-        NC_CHECK(nc_inq_varid(ncid, "east", &east_varid));
-        NC_CHECK(NC_FUNC_REAL(nc_get_var)(ncid, east_varid, info->easts));
-        return;
-    }
-
-}
-
-
-void grt_rcv_nc_info_free(RCV_NC_INFO *info)
-{
-    if(info == NULL) return;
-    // 坐标数组由该结构体管理，结构体本身由调用方管理
-    GRT_SAFE_FREE_PTR(info->norths);
-    GRT_SAFE_FREE_PTR(info->easts);
-    memset(info, 0, sizeof(*info));
-}
-
-
-bool grt_rcv_nc_is_points(int ncid)
-{
-    return grt_rcv_nc_get_layout(ncid) == GRT_RCV_NC_LAYOUT_POINTS;
 }

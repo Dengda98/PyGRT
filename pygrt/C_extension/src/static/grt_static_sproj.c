@@ -56,8 +56,8 @@ printf("\n"
 "    The input file must contain the six stress_* variables produced by\n"
 "    `static stress`. The result is written back to the same nc file as\n"
 "    sigma_n and tau_s. Existing result variables are overwritten.\n"
-"    Both grid and points layouts, and both ZNE and ZRT stress components,\n"
-"    are supported.\n"
+"    Grid, points and faults layouts, and both ZNE and ZRT stress\n"
+"    components, are supported.\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
@@ -533,22 +533,18 @@ static void load_geometry_from_points(
  *
  * @param[in]  ncid          输入 NetCDF 文件 ID
  * @param[in]  rcv_info      输入接收点布局信息
- * @param[in]  nfault_dimid  nfault 维度 ID
  * @param[in]  Ctrl          参数控制结构体
  * @param[out] strikes       各接收点走向角
  * @param[out] dips          各接收点倾角
  * @param[out] rakes         各接收点滑动角
  */
-static void load_geometry_from_finite_points(
+static void load_geometry_from_faults(
     int ncid, const RCV_NC_INFO *rcv_info,
-    int nfault_dimid, const GRT_MODULE_CTRL *Ctrl,
+    const GRT_MODULE_CTRL *Ctrl,
     real_t *strikes, real_t *dips, real_t *rakes)
 {
-    size_t nfault;
-    NC_CHECK(nc_inq_dimlen(ncid, nfault_dimid, &nfault));
-    if(nfault == 0){
-        GRTRaiseError("Finite receiver input has an empty nfault dimension.");
-    }
+    size_t nfault = rcv_info->nfault;
+    int nfault_dimid = rcv_info->nfault_dimid;
 
     int strike_varid, dip_varid, rake_varid, offset_varid;
     if(!find_optional_var(ncid, "strike", &strike_varid) ||
@@ -642,27 +638,25 @@ static void load_geometry_from_finite_points(
  * @param[in]  ncid          输入 NetCDF 文件 ID
  * @param[in]  rcv_info      输入接收点布局信息
  * @param[in]  Ctrl          参数控制结构体
- * @param[in]  finite_points 是否为有限接收断层 points 布局
- * @param[in]  nfault_dimid  nfault 维度 ID
  * @param[out] strikes       各接收点走向角
  * @param[out] dips          各接收点倾角
  * @param[out] rakes         各接收点滑动角
  */
 static void load_receiver_geometry(
     int ncid, const RCV_NC_INFO *rcv_info,
-    const GRT_MODULE_CTRL *Ctrl, bool finite_points, int nfault_dimid,
+    const GRT_MODULE_CTRL *Ctrl,
     real_t *strikes, real_t *dips, real_t *rakes)
 {
-    if(finite_points){
-        // nfault 存在时优先按有限接收断层规则处理
+    if(rcv_info->layout == GRT_RCV_NC_LAYOUT_FAULTS){
+        // faults 布局使用断层级形态，再映射到对应接收点
         if(Ctrl->Q.active){
-            GRTRaiseError("-Q cannot be used with finite receiver points.");
+            GRTRaiseError("-Q cannot be used with a faults-layout input file.");
         }
         if(Ctrl->M.active && Ctrl->M.has_geometry){
-            GRTRaiseError("Finite receiver points require -M<rake> or -M<rake>+f.");
+            GRTRaiseError("Faults input requires -M<rake> or -M<rake>+f.");
         }
-        load_geometry_from_finite_points(
-            ncid, rcv_info, nfault_dimid, Ctrl,
+        load_geometry_from_faults(
+            ncid, rcv_info, Ctrl,
             strikes, dips, rakes);
         return;
     }
@@ -785,21 +779,15 @@ int static_sproj_main(int argc, char **argv)
 
     RCV_NC_INFO rcv_info;
     grt_rcv_nc_info_load(ncid, &rcv_info);
-    int ndims = (rcv_info.layout == GRT_RCV_NC_LAYOUT_POINTS) ? 1 : 2;
+    int ndims = rcv_info.ndims;
     size_t npts = rcv_info.npts;
-    // 通过 nfault 维度区分普通 points 和有限接收断层 points
-    int nfault_dimid;
-    int nfault_status = nc_inq_dimid(ncid, "nfault", &nfault_dimid);
-    if((nfault_status != NC_NOERR) && (nfault_status != NC_EBADDIM)){
-        NC_CHECK(nfault_status);
-    }
-    bool finite_points = (nfault_status == NC_NOERR);
-    if((rcv_info.layout == GRT_RCV_NC_LAYOUT_GRID) && finite_points){
-        GRTRaiseError("Grid input must not contain an nfault dimension.");
-    }
 
     bool rot2ZNE = get_input_rot2ZNE(ncid);
     const char *channels = rot2ZNE ? GRT_ZNE_CODES : GRT_ZRT_CODES;
+    // 坐标只用于 ZRT 转换或 -Q 点序核对
+    if(!rot2ZNE || Ctrl->Q.active){
+        grt_rcv_nc_info_load_coordinates(ncid, &rcv_info);
+    }
     // 先把应力分量读入内存，避免在计算过程中反复访问 NetCDF
     real_t *stress6 = GRT_SAFE_CALLOC(6 * npts, sizeof(real_t));
     read_stress_components(ncid, channels, npts, ndims, rcv_info.dimids, stress6);
@@ -809,7 +797,7 @@ int static_sproj_main(int argc, char **argv)
     real_t *rakes = GRT_SAFE_CALLOC(npts, sizeof(real_t));
     // 根据布局和命令行选项确定每个 point 的接收断层形态
     load_receiver_geometry(
-        ncid, &rcv_info, Ctrl, finite_points, nfault_dimid,
+        ncid, &rcv_info, Ctrl,
         strikes, dips, rakes);
 
     real_t *sigma_n = GRT_SAFE_CALLOC(npts, sizeof(real_t));

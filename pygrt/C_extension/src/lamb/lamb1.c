@@ -1285,7 +1285,7 @@ void grt_solve_lamb1(
         LAMB1_PHASE_OPTIONS, sizeof(LAMB1_PHASE_OPTIONS) / sizeof(LAMB1_PHASE_OPTIONS[0]),
         "P, S, R");
     if (cbar != 0.0 && phase_list != NULL) {
-        GRTRaiseWarning("The -Q phase list is ignored in lamb1 moving-source mode.");
+        GRTRaiseWarning("The -L phase list is ignored in lamb1 moving-source mode.");
     }
     for(int i=1; i<nt; ++i){
         if(ts[i] <= ts[i-1]){

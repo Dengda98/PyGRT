@@ -625,46 +625,19 @@ static void add_finite_faults(const GRT_MODULE_CTRL *Ctrl, const OKADA_MEDIUM_PA
 }
 
 /**
- * 查询均匀介质中的接收介质参数
- *
- * @param[in]   context   均匀介质参数
- * @param[in]   depth     接收点深度 (km)，此处不参与查询
- * @param[out]  va        P 波速度 (km/s)
- * @param[out]  vb        S 波速度 (km/s)
- * @param[out]  rho       密度 (g/cm^3)
- */
-static void okada_get_medium(
-    void *context, real_t depth, real_t *va, real_t *vb, real_t *rho)
-{
-    const OKADA_MEDIUM_PARAMS *medium = (const OKADA_MEDIUM_PARAMS *)context;
-    (void)depth;
-    *va = medium->vp;
-    *vb = medium->vs;
-    *rho = medium->rho;
-}
-
-
-/**
  * 使用公共静态 NetCDF 输出函数写出 Okada 结果
  *
- * @param[in]  Ctrl         Okada 命令行控制结构体
- * @param[in]  medium       均匀半空间介质参数
- * @param[in]  rcv          规则网格、任意点或有限接收断层点列表
- * @param[in]  syn          位移数组
- * @param[in]  syn_d        位移偏导数组
+ * @param[in]  Ctrl    Okada 命令行控制结构体
+ * @param[in]  medium  均匀半空间介质参数
+ * @param[in]  rcv     规则网格、任意点或有限接收断层点列表
+ * @param[in]  syn     位移数组
+ * @param[in]  syn_d   位移偏导数组
  */
 static void save_nc(
     const GRT_MODULE_CTRL *Ctrl, const OKADA_MEDIUM_PARAMS *medium,
     const RCV_POINTS *rcv,
     const real_t (*syn)[3], const real_t (*syn_d)[3][3])
 {
-    const char *channels;
-    if(Ctrl->N.active){
-        channels = GRT_ZNE_CODES;
-    } else {
-        channels = GRT_ZRT_CODES;
-    }
-
     const char *compute_type;
     if(Ctrl->C.active){
         compute_type = "FF";
@@ -676,26 +649,31 @@ static void save_nc(
         compute_type = "EX";
     }
 
-    STATIC_NC_OUTPUT output = {
-        .path = Ctrl->O.path,
-        .channels = channels,
-        .compute_type = compute_type,
-        .coordinate = "Okada X=strike,Y=up-dip horizontal,Z=up",
-        .calc_upar = Ctrl->e.active,
-        .rot2ZNE = Ctrl->N.active,
-        .has_depsrc = (!Ctrl->C.active),
-        .depsrc = Ctrl->depsrc,
-        .has_elastic_params = true,
-        .alpha = medium->alpha,
-        .lambda = medium->lambda,
-        .mu = medium->mu,
-        .rcv = rcv,
-        .get_medium = okada_get_medium,
-        .medium_context = (void *)medium,
-        .syn = (const real_t (*)[GRT_CHANNEL_NUM])syn,
-        .syn_upar = (const real_t (*)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])syn_d,
+    // Okada 专属属性与公共接收布局分开写入
+    int ncid;
+    NC_CHECK(nc_create(Ctrl->O.path, NC_CLOBBER, &ncid));
+    const char *coordinate = "Okada X=strike,Y=up-dip horizontal,Z=up";
+    NC_CHECK(nc_put_att_text(ncid, NC_GLOBAL, "computeType", strlen(compute_type), compute_type));
+    NC_CHECK(nc_put_att_text(ncid, NC_GLOBAL, "coordinate", strlen(coordinate), coordinate));
+    NC_CHECK(NC_FUNC_REAL(nc_put_att)(ncid, NC_GLOBAL, "alpha", NC_REAL, 1, &medium->alpha));
+    NC_CHECK(NC_FUNC_REAL(nc_put_att)(ncid, NC_GLOBAL, "lambda", NC_REAL, 1, &medium->lambda));
+    NC_CHECK(NC_FUNC_REAL(nc_put_att)(ncid, NC_GLOBAL, "mu", NC_REAL, 1, &medium->mu));
+    if(!Ctrl->C.active) {
+        NC_CHECK(NC_FUNC_REAL(nc_put_att)(ncid, NC_GLOBAL, "depsrc", NC_REAL, 1, &Ctrl->depsrc));
+    }
+
+    RCV_NC_INFO receivers = {
+        .layout = rcv->is_fault ? GRT_RCV_NC_LAYOUT_FAULTS : rcv->is_grid ? GRT_RCV_NC_LAYOUT_GRID : GRT_RCV_NC_LAYOUT_POINTS,
+        .npts = rcv->npts, .rcv = rcv,
+
+        .nnorth = rcv->nnorth,
+        .neast  = rcv->neast,
+
+        .nfault = rcv->nfault,
     };
-    grt_static_save_nc(&output);
+    const real_t modarr[1][GRT_MODARR_NCOL] = {{0, medium->vp, medium->vs, medium->rho, 0, 0}};
+    grt_static_nc_write(ncid, &receivers, 1, modarr, Ctrl->N.active, Ctrl->e.active, syn, syn_d);
+    NC_CHECK(nc_close(ncid));
 }
 /** Okada 子模块主函数 */
 int okada_main(int argc, char **argv)

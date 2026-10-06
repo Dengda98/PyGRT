@@ -350,7 +350,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     }
 
                     // 如果freqs已经在-F中申请了内存，则先释放
-                    if(Ctrl->F.freqs != NULL)  free(Ctrl->F.freqs);
+                    GRT_SAFE_FREE_PTR(Ctrl->F.freqs);
                     // 仅申请单一频率，用于输出久期函数值
                     Ctrl->F.nf = 1;
                     Ctrl->F.freqs = GRT_SAFE_CALLOC(Ctrl->F.nf, sizeof(real_t));

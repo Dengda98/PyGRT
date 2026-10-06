@@ -113,7 +113,7 @@ assert_nc_roundtrip(
 
 assert_nc_roundtrip(
     "finite",
-    "points",
+    "faults",
     np.array([0.0, 10.0, 20.0, 30.0]),
     np.array([-2.0, -1.0, 1.0, 2.0]),
     10.0,

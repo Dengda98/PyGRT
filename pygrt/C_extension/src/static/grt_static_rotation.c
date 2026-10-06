@@ -141,13 +141,14 @@ int static_rotation_main(int argc, char **argv){
         GRTRaiseError("Input grid didn't have displacement derivatives.");
     }
 
-    // 识别 grid / points 布局，并将坐标展平供统一计算
+    // 识别接收布局，并将坐标展平供统一计算
     RCV_NC_INFO rcv_info;
     grt_rcv_nc_info_load(in_ncid, &rcv_info);
+    grt_rcv_nc_info_load_coordinates(in_ncid, &rcv_info);
     size_t npts = rcv_info.npts;
     real_t *norths_flat = rcv_info.norths;
     real_t *easts_flat = rcv_info.easts;
-    int out_ndims = (rcv_info.layout == GRT_RCV_NC_LAYOUT_POINTS) ? 1 : 2;
+    int out_ndims = rcv_info.ndims;
     int out_dimids[2] = {rcv_info.dimids[0], rcv_info.dimids[1]};
 
     // 读入合成位移偏导 varid

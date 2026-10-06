@@ -57,7 +57,7 @@ with netcdf_file("finite_local.nc", mode="w") as nc:
         variable[:] = values
     offset = nc.createVariable("offset", "i", ("nfault",))
     offset[:] = [2, 4]
-    nc.layout = "points"
+    nc.layout = "faults"
     nc.computeType = "test"
 PY
 

@@ -45,7 +45,8 @@ xy2geo
 
 对于 **grid** 布局，模块将 **north** 维度和坐标变量重命名为 **lat**，
 将 **east** 维度和坐标变量重命名为 **lon**。
-对于普通 **points** 布局和有限接收断层布局，模块保留 **point** 和 **nfault** 维度，
+对于 **points** 和有限接收断层 **faults** 布局，模块保留 **point** 维度，
+**faults** 布局还保留 **nfault** 维度，
 仅将一维坐标变量 **north(point)** 和 **east(point)** 重命名为 **lat(point)** 和 **lon(point)**。
 其他变量、维度、属性和数据都会复制到输出文件中。
 

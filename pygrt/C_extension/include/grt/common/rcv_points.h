@@ -16,16 +16,6 @@
 #include "grt/common/const.h"
 #include "grt/common/finite_fault.h"
 
-/** layout 字符串：写入 nc 全局属性，读端据此分支 */
-#define GRT_RCV_LAYOUT_GRID   "grid"
-#define GRT_RCV_LAYOUT_POINTS "points"
-
-/** NetCDF 接收点布局 */
-typedef enum {
-    GRT_RCV_NC_LAYOUT_GRID = 0,           ///< 规则网格布局
-    GRT_RCV_NC_LAYOUT_POINTS              ///< 一维接收点布局
-} GRT_RCV_NC_LAYOUT;
-
 /** 接收点坐标及可选的有限接收断层信息 */
 typedef struct {
     size_t npts;            ///< 接收点总数
@@ -52,16 +42,6 @@ typedef struct {
     size_t *stksizes;       ///< 每条有限接收断层沿走向的子断层数量
     size_t *dipsizes;       ///< 每条有限接收断层沿倾向的子断层数量
 } RCV_POINTS;
-
-/** 已打开 NetCDF 文件中的接收坐标及维度信息 */
-typedef struct {
-    GRT_RCV_NC_LAYOUT layout;     ///< 接收点布局类型
-    size_t npts;                   ///< 展平后的接收点总数
-    real_t *norths;                ///< 展平后的北向坐标数组 (km)
-    real_t *easts;                 ///< 展平后的东向坐标数组 (km)
-
-    int dimids[2];                 ///< 接收坐标对应的 NetCDF 维度 ID
-} RCV_NC_INFO;
 
 /**
  * 由 north/east 轴与单一深度展开为点列（is_grid=true）
@@ -111,36 +91,3 @@ void grt_rcv_points_free(RCV_POINTS *pts);
  */
 RCV_POINTS *grt_rcv_points_from_faults(
     size_t nfault, const FINITE_FAULT *faults, real_t dL, real_t dW);
-
-/**
- * 获取已打开 NetCDF 文件的接收布局
- *
- * @param[in]  ncid   已打开的 NetCDF 文件 ID
- * @return            接收布局类型
- */
-GRT_RCV_NC_LAYOUT grt_rcv_nc_get_layout(int ncid);
-
-/**
- * 读取已打开 NetCDF 文件中的接收坐标布局
- *
- * @param[in]   ncid   已打开的 NetCDF 文件 ID
- * @param[out]  info   接收坐标和维度信息
- */
-void grt_rcv_nc_info_load(int ncid, RCV_NC_INFO *info);
-
-/**
- * 释放 RCV_NC_INFO
- *
- * @param[in,out]  info   接收坐标和维度信息
- */
-void grt_rcv_nc_info_free(RCV_NC_INFO *info);
-
-/**
- * 从已打开的 nc 判断是否为 points 布局
- *
- * 读取全局属性 layout，输入文件必须显式保存该属性
- *
- * @param[in]   ncid   已打开的 nc id
- * @return      true 表示 points，false 表示 grid
- */
-bool grt_rcv_nc_is_points(int ncid);
