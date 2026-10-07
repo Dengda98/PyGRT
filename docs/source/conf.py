@@ -123,6 +123,8 @@ html_theme_options = {
 
 html_logo = "../../figs/logo_transparent.png"
 html_static_path = ['_static']
+# 将域名验证文件复制到 HTML 输出目录，并保留 .well-known 路径
+html_extra_path = ['_extra']
 html_css_files = ['my_theme.css']
 html_js_files = [
     'my_custom.js',
