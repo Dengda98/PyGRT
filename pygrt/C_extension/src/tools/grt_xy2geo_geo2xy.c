@@ -12,8 +12,6 @@
 
 #include <errno.h>
 
-#define EARTH_RADIUS_KM 6371.0
-
 /** 该子模块的参数控制结构体 */
 typedef struct {
     // 输入 NetCDF 文件
@@ -322,51 +320,24 @@ static void inspect_coordinate_layout(
 
 
 /**
- * 将经度规范化到 [-180, 180)
- *
- * @param[in] longitude 待规范化的经度
- * @return 规范化后的经度
- */
-static real_t normalize_longitude(real_t longitude)
-{
-    longitude = fmod(longitude + 180.0, 360.0);
-    if(longitude < 0.0) longitude += 360.0;
-    return longitude - 180.0;
-}
-
-
-/**
  * 对一个坐标点执行局部切平面转换
  *
- * @param[in]  first     第一坐标
- * @param[in]  second    第二坐标
- * @param[in]  lon0      参考点经度
- * @param[in]  lat0      参考点纬度
- * @param[in]  direction 坐标转换方向
- * @param[out] out_first 转换后的第一坐标
+ * @param[in]  first      第一坐标
+ * @param[in]  second     第二坐标
+ * @param[in]  lon0       参考点经度
+ * @param[in]  lat0       参考点纬度
+ * @param[in]  direction  坐标转换方向
+ * @param[out] out_first  转换后的第一坐标
  * @param[out] out_second 转换后的第二坐标
  */
 static void transform_coordinate_pair(
     real_t first, real_t second, real_t lon0, real_t lat0,
     GRT_TRANSFORM_DIRECTION direction, real_t *out_first, real_t *out_second)
 {
-    const real_t km_per_lat_deg = EARTH_RADIUS_KM * DEG1;
-    const real_t km_per_lon_deg = EARTH_RADIUS_KM * cos(lat0 * DEG1) * DEG1;
-
     if(direction == GRT_XY2GEO){
-        real_t latitude = lat0 + first / km_per_lat_deg;
-        real_t longitude = lon0 + second / km_per_lon_deg;
-        if((latitude < -90.0) || (latitude > 90.0)){
-            GRTRaiseError("Converted latitude is outside [-90, 90].");
-        }
-        *out_first = latitude;
-        *out_second = normalize_longitude(longitude);
+        grt_xy2geo(first, second, lat0, lon0, out_first, out_second);
     } else {
-        if((first < -90.0) || (first > 90.0)){
-            GRTRaiseError("Latitude must be in [-90, 90].");
-        }
-        *out_first = (first - lat0) * km_per_lat_deg;
-        *out_second = normalize_longitude(second - lon0) * km_per_lon_deg;
+        grt_geo2xy(first, second, lat0, lon0, out_first, out_second);
     }
 }
 

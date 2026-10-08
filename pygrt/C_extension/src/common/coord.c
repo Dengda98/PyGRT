@@ -11,6 +11,56 @@
 #include <tgmath.h>
 
 #include "grt/common/coord.h"
+#include "grt/common/checkerror.h"
+
+#define EARTH_RADIUS_KM 6371.0  ///< 地球半径，单位为 km
+
+
+/**
+ * 将经度规范化到 [-180, 180)
+ *
+ * @param[in] longitude 待规范化的经度，单位为度
+ * @return 规范化后的经度，单位为度
+ */
+static real_t normalize_longitude(real_t longitude)
+{
+    longitude = fmod(longitude + 180.0, 360.0);
+    if(longitude < 0.0){
+        longitude += 360.0;
+    }
+    return longitude - 180.0;
+}
+
+
+void grt_xy2geo(real_t north, real_t east, real_t lat0, real_t lon0, real_t *lat, real_t *lon)
+{
+    // 按参考点纬度计算北向和东向坐标对应的角度尺度
+    const real_t km_per_lat_deg = EARTH_RADIUS_KM * DEG1;
+    const real_t km_per_lon_deg = EARTH_RADIUS_KM * cos(lat0 * DEG1) * DEG1;
+
+    real_t latitude = lat0 + north / km_per_lat_deg;
+    real_t longitude = lon0 + east / km_per_lon_deg;
+    if((latitude < -90.0) || (latitude > 90.0)){
+        GRTRaiseError("Converted latitude is outside [-90, 90].");
+    }
+    *lat = latitude;
+    *lon = normalize_longitude(longitude);
+}
+
+
+void grt_geo2xy(real_t lat, real_t lon, real_t lat0, real_t lon0, real_t *north, real_t *east)
+{
+    // 经度差取规范化后的值，保留跨越日期变更线时的局部距离
+    const real_t km_per_lat_deg = EARTH_RADIUS_KM * DEG1;
+    const real_t km_per_lon_deg = EARTH_RADIUS_KM * cos(lat0 * DEG1) * DEG1;
+
+    if((lat < -90.0) || (lat > 90.0)){
+        GRTRaiseError("Latitude must be in [-90, 90].");
+    }
+    *north = (lat - lat0) * km_per_lat_deg;
+    *east = normalize_longitude(lon - lon0) * km_per_lon_deg;
+}
+
 
 void grt_rot_zxy2zrt_vec(real_t theta, real_t A[3]){
     real_t s1, s2, s3;
