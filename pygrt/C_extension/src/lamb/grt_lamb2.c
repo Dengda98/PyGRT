@@ -51,10 +51,10 @@ typedef struct {
         real_t azimuth;
     } A;
 
-    /** 选择输出的震相 */
+    /** 参数解析时确定的震相选择 */
     struct {
         bool active;
-        char *phase_list;
+        unsigned int phase_mask;
     } L;
 
 } GRT_MODULE_CTRL;
@@ -66,7 +66,6 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl)
     GRT_SAFE_FREE_PTR(Ctrl->S.source_path);
     GRT_SAFE_FREE_PTR(Ctrl->S.receiver_path);
     GRT_SAFE_FREE_PTR(Ctrl->S.mixed_path);
-    GRT_SAFE_FREE_PTR(Ctrl->L.phase_list);
     GRT_SAFE_FREE_PTR(Ctrl);
 }
 
@@ -147,6 +146,8 @@ printf("\n"
 
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
 {
+    const char *phase_list = NULL;
+
     int opt;
     while ((opt = getopt(argc, argv, ":P:T:R:D:S:A:L:h")) != -1) {
         switch (opt) {
@@ -239,9 +240,8 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 break;
 
             case 'L':
-                GRT_SAFE_FREE_PTR(Ctrl->L.phase_list);
-                Ctrl->L.phase_list = strdup(optarg);
                 Ctrl->L.active = true;
+                phase_list = optarg;
                 break;
 
             GRT_Common_Options_in_Switch((char)(optopt));
@@ -259,6 +259,9 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
         GRTRaiseError("Options -Ds and -Dr are mutually exclusive in lamb2.\n");
     }
     GRTCheckOptionActive(Ctrl, A);
+    const unsigned int supported = GRT_LAMB_PHASE_P | GRT_LAMB_PHASE_S |
+                             (Ctrl->D.depsrc > 0 ? GRT_LAMB_PHASE_SP : GRT_LAMB_PHASE_PS);
+    Ctrl->L.phase_mask = grt_lamb_parse_phase_list(phase_list, supported);
 }
 
 
@@ -285,7 +288,7 @@ static void run_lamb2_with_derivative_outputs(const GRT_MODULE_CTRL *Ctrl)
 
     grt_solve_lamb2(Ctrl->P.nu, Ctrl->T.ts, Ctrl->T.nt, Ctrl->R.distance,
         Ctrl->D.depsrc, Ctrl->D.deprcv, Ctrl->A.azimuth,
-        Ctrl->L.active ? Ctrl->L.phase_list : NULL,
+        Ctrl->L.phase_mask,
         G, dG_source, dG_receiver, dG_mixed);
     grt_lamb_print_green_series(stdout, Ctrl->T.ts, Ctrl->T.nt, G);
     if (source_file != NULL) {
@@ -317,7 +320,7 @@ int lamb2_main(int argc, char **argv)
     } else {
         grt_solve_lamb2(Ctrl->P.nu, Ctrl->T.ts, Ctrl->T.nt, Ctrl->R.distance,
             Ctrl->D.depsrc, Ctrl->D.deprcv, Ctrl->A.azimuth,
-            Ctrl->L.active ? Ctrl->L.phase_list : NULL, NULL, NULL, NULL, NULL);
+            Ctrl->L.phase_mask, NULL, NULL, NULL, NULL);
     }
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;

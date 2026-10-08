@@ -813,12 +813,13 @@ static void make_source_radiation(
  * @param[in]   azimuth_degree         源点到接收点的方位角，度
  * @param[in]   source_type            当前计算的震源类型
  * @param[in]   calculate_derivatives  是否计算空间导数
+ * @param[in]   phase_mask             震相筛选掩码
  * @param[out]  result                 Lamb Green 函数及其导数的结果结构体
  */
 static void make_lamb_result(
     const real_t nu, const real_t *tbar, const int nt, const real_t horizontal_distance,
     const real_t source_depth, const real_t receiver_depth, const real_t azimuth_degree,
-    const GRT_SYN_TYPE source_type, const bool calculate_derivatives, const char *phase_list,
+    const GRT_SYN_TYPE source_type, const bool calculate_derivatives, const unsigned int phase_mask,
     LAMB_RESULT *result)
 {
     /* 只有需要空间导数的源才分配相应的导数数组 */
@@ -834,16 +835,16 @@ static void make_lamb_result(
 
     /* 地表、单侧地下和双侧地下分别对应三类 Lamb 求解器 */
     if (surface) {
-        grt_solve_lamb1(nu, tbar, nt, azimuth_degree, 0.0, phase_list, result->G);
+        grt_solve_lamb1(nu, tbar, nt, azimuth_degree, 0.0, phase_mask, result->G);
     } else if (source_depth > 0.0 && receiver_depth > 0.0) {
         grt_solve_lamb3(nu, tbar, nt, horizontal_distance,
             source_depth, receiver_depth, azimuth_degree,
-            phase_list,
+            phase_mask,
             result->G, result->dG_source, result->dG_receiver, result->dG_mixed);
     } else {
         grt_solve_lamb2(nu, tbar, nt, horizontal_distance,
             source_depth, receiver_depth, azimuth_degree,
-            phase_list,
+            phase_mask,
             result->G, result->dG_source, result->dG_receiver, result->dG_mixed);
     }
 }
@@ -1292,6 +1293,31 @@ static void transform_source_moment(
 }
 
 
+/**
+ * 将处理后的完整响应裁剪到输出窗口，窗外样本补零
+ *
+ * @param[in,out]  sac      完整响应及 SAC 头段
+ * @param[in]      nt       输出采样点数
+ * @param[in]      begin    输出起点，s
+ * @param[in]      first    输出首点在内部序列中的索引
+ * @param[in]      tail     内部序列末端不参与输出的额外点数
+ */
+static void crop_lamb_trace(SACTRACE *sac, int nt, real_t begin, long long first, int tail)
+{
+    real_t *data = GRT_SAFE_CALLOC(nt, sizeof(*data));
+    for(int n = 0; n < nt; ++n) {
+        long long sample = first + n;
+        if(sample >= 0 && sample < sac->hd.npts - tail) {
+            data[n] = sac->data[sample];
+        }
+    }
+    GRT_SAFE_FREE_PTR(sac->data);
+    sac->data = data;
+    sac->hd.npts = nt;
+    grt_sachead_set_begin(&sac->hd, begin);
+}
+
+
 /** 将一个源项转换为全局坐标下的源力或源矩
  *
  * @param[in]      srcRadi            各源项和各分量的辐射系数
@@ -1454,17 +1480,29 @@ int lamb_main(int argc, char **argv)
     } else if (Ctrl->E.delayV0 > 0.0) {
         begin_time += distance / Ctrl->E.delayV0;
     }
-    /* 按记录的实际物理时刻构造无量纲时间 tbar=vs*t/r */
+    // 输出窗口只决定求解末时刻，固定内部起点以保留卷积、积分和微分所需的窗前响应
+    begin_time = grt_sample_aligned_time(begin_time, Ctrl->N.dt);
+    const int output_nt = Ctrl->N.nt;
+    const int margin = 3;
+    const int tail = margin + Ctrl->J.dif_times;
+    const long long first_output = llround(begin_time / Ctrl->N.dt);
+    Ctrl->N.nt = GRT_MAX(margin + tail + 1, first_output + output_nt + margin + tail);
+    const real_t work_begin = -margin * Ctrl->N.dt;
     Ctrl->N.tbar = GRT_SAFE_CALLOC((size_t)Ctrl->N.nt, sizeof(*Ctrl->N.tbar));
     for (int n = 0; n < Ctrl->N.nt; ++n) {
-        Ctrl->N.tbar[n] = (begin_time + n * Ctrl->N.dt) * Ctrl->H.vs / distance;
+        Ctrl->N.tbar[n] = (n - margin) * Ctrl->N.dt * Ctrl->H.vs / distance;
     }
+
+    const unsigned int supported = surface ? GRT_LAMB1_PHASES :
+        depsrc > 0 && deprcv > 0 ? GRT_LAMB3_PHASES :
+        GRT_LAMB_PHASE_P | GRT_LAMB_PHASE_S | (depsrc > 0 ? GRT_LAMB_PHASE_SP : GRT_LAMB_PHASE_PS);
+    const unsigned int phase_mask = grt_lamb_parse_phase_list(Ctrl->L.active ? Ctrl->L.phase_list : NULL, supported);
 
     LAMB_RESULT result = {0};
     make_lamb_result(
         Ctrl->H.nu, Ctrl->N.tbar, Ctrl->N.nt, horizontal_distance, depsrc, deprcv,
         Ctrl->A.azimuth, Ctrl->source_type, calc_upar,
-        Ctrl->L.active ? Ctrl->L.phase_list : NULL, &result);
+        phase_mask, &result);
 
     /* 将无量纲闭合解恢复为物理量，导数阶数每增加一阶再除以一个 r */
     const real_t mu = Ctrl->H.vs * Ctrl->H.vs * Ctrl->H.rho;
@@ -1495,7 +1533,7 @@ int lamb_main(int argc, char **argv)
 
     SACTRACE *prototype = new_lamb_trace(
         Ctrl->N.nt, Ctrl->N.dt, horizontal_distance, depsrc, deprcv,
-        Ctrl->A.azimuth, begin_time, Ctrl->H.vp, Ctrl->H.vs, Ctrl->H.rho);
+        Ctrl->A.azimuth, work_begin, Ctrl->H.vp, Ctrl->H.vs, Ctrl->H.rho);
     set_lamb_arrivals(
         prototype, Ctrl->H.nu, horizontal_distance, depsrc, deprcv,
         distance, Ctrl->H.vs);
@@ -1527,10 +1565,12 @@ int lamb_main(int argc, char **argv)
 
     /* 填充阶段已经按照请求的坐标系生成结果 */
     for (int component = 0; component < 3; ++component) {
+        crop_lamb_trace(base[component], output_nt, begin_time, first_output + margin, tail);
         save_to_sac(Ctrl->O.s_output_dir, "", chs[component], base[component]);
         if (calc_upar) {
             for (int direction = 0; direction < 3; ++direction) {
                 char prefix[2] = {(char)tolower(chs[direction]), '\0'};
+                crop_lamb_trace(derivative[direction][component], output_nt, begin_time, first_output + margin, tail);
                 save_to_sac(Ctrl->O.s_output_dir, prefix, chs[component], derivative[direction][component]);
             }
         }

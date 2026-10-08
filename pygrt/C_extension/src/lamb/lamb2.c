@@ -28,19 +28,6 @@
 /* 水平距离相对于直线距离过小时，闭合解的角向展开开始失去有效数字 */
 #define LAMB2_SMALL_R_WARNING_RATIO 1e-3
 
-enum {
-    LAMB2_PHASE_P  = 1u << 0,  ///< 直达 P 波
-    LAMB2_PHASE_S  = 1u << 1,  ///< 直达 S 波
-    LAMB2_PHASE_SP = 1u << 2,  ///< 地下源到地表接收点的 SP 波
-    LAMB2_PHASE_PS = 1u << 3,  ///< 地表源到地下接收点的 PS 波
-};
-
-static const LAMB_PHASE_OPTION LAMB2_PHASE_OPTIONS[] = {
-    {"P", LAMB2_PHASE_P},
-    {"S", LAMB2_PHASE_S},
-    {"SP", LAMB2_PHASE_SP},
-    {"PS", LAMB2_PHASE_PS},
-};
 
 /** 一个分母为三个二次因子的部分分式展开 */
 typedef struct {
@@ -435,15 +422,15 @@ static void evaluate_lamb2_time(const real_t tbar, const LAMB2_VARS *V, const LA
     const real_t tbar2 = tbar * tbar;
     const LAMB_BASIC_VARS basic_vars = {V->k, V->k2, V->kp2, V->st, V->ct};
 
-    if ((phase_mask & LAMB2_PHASE_P) != 0u && tbar > V->k) {
+    if ((phase_mask & GRT_LAMB_PHASE_P) != 0u && tbar > V->k) {
         evaluate_lamb2_term(tbar, tbar2, &basic_vars, &coefficients->P, V->rayleigh_roots, LAMB_BASIC_P_TERM, true, 1.0, V, need_mixed, F,
                             Fk_source, Fk_receiver, Fkk);
     }
-    if ((phase_mask & LAMB2_PHASE_S) != 0u && tbar > 1.0) {
+    if ((phase_mask & GRT_LAMB_PHASE_S) != 0u && tbar > 1.0) {
         evaluate_lamb2_term(tbar, tbar2, &basic_vars, &coefficients->S, V->shifted_rayleigh_roots, LAMB_BASIC_S_TERM, true, 1.0, V, need_mixed, F,
                             Fk_source, Fk_receiver, Fkk);
     }
-    if ((phase_mask & (LAMB2_PHASE_SP | LAMB2_PHASE_PS)) != 0u && V->supercritical && tbar > V->tSP && tbar < 1.0) {
+    if ((phase_mask & (GRT_LAMB_PHASE_SP | GRT_LAMB_PHASE_PS)) != 0u && V->supercritical && tbar > V->tSP && tbar < 1.0) {
         evaluate_lamb2_term(tbar, tbar2, &basic_vars, &coefficients->S, V->shifted_rayleigh_roots, LAMB_BASIC_SP_TERM, false, -1.0, V, need_mixed, F,
                             Fk_source, Fk_receiver, Fkk);
     }
@@ -545,7 +532,7 @@ void grt_compute_lamb2_travt(
 
 void grt_solve_lamb2(
     const real_t nu, const real_t *ts, const int nt, const real_t R, const real_t depsrc, const real_t deprcv,
-    const real_t azimuth, const char *phase_list, real_t (*G)[3][3], real_t (*dG_source)[3][3][3], real_t (*dG_receiver)[3][3][3],
+    const real_t azimuth, const unsigned int phase_mask, real_t (*G)[3][3], real_t (*dG_source)[3][3][3], real_t (*dG_receiver)[3][3][3],
     real_t (*dG_mixed)[3][3][3][3])
 {
     if (nu <= 0.0 || nu >= 0.5) {
@@ -568,22 +555,7 @@ void grt_solve_lamb2(
     if (!buried_source && !surface_source) {
         GRTRaiseError("lamb2 requires exactly one of source and receiver depths to be strictly positive, and the other to be zero.\n");
     }
-    unsigned int phase_mask = grt_lamb_parse_phase_list(
-        phase_list, LAMB2_PHASE_OPTIONS, sizeof(LAMB2_PHASE_OPTIONS) / sizeof(LAMB2_PHASE_OPTIONS[0]),
-        "P, S, SP, PS");
-    const unsigned int unavailable_phase = buried_source ? LAMB2_PHASE_PS : LAMB2_PHASE_SP;
-    const bool has_unavailable_phase = (phase_mask & unavailable_phase) != 0u;
-    if (phase_list != NULL && has_unavailable_phase) {
-        GRTRaiseWarning(
-            "Phase %s is unavailable for this lamb2 source-receiver geometry and is ignored; "
-            "use %s for the converted phase.",
-            buried_source ? "PS" : "SP", buried_source ? "SP" : "PS");
-    }
-    phase_mask &= ~unavailable_phase;
-    if (phase_list != NULL && has_unavailable_phase && phase_mask == 0u) {
-        GRTRaiseWarning(
-            "No available Lamb phase remains for this source-receiver geometry; the output is all zeros.");
-    }
+    const unsigned int selected_phases = phase_mask & ~(buried_source ? GRT_LAMB_PHASE_PS : GRT_LAMB_PHASE_SP);
     const real_t buried_depth = buried_source ? depsrc : deprcv;
     real_t solve_azimuth = azimuth;
     if (surface_source) {
@@ -640,9 +612,9 @@ void grt_solve_lamb2(
 
     /* 末点若正好落在波前上会被右移，用略大的 tEnd 判断以免漏构造系数 */
     const real_t tEnd = ts[nt - 1] + tbar_eps;
-    const bool need_P = (phase_mask & LAMB2_PHASE_P) != 0u && tEnd >= V.k;
-    const bool need_S = (phase_mask & LAMB2_PHASE_S) != 0u ||
-                        ((phase_mask & (LAMB2_PHASE_SP | LAMB2_PHASE_PS)) != 0u &&
+    const bool need_P = (selected_phases & GRT_LAMB_PHASE_P) != 0u && tEnd >= V.k;
+    const bool need_S = (selected_phases & GRT_LAMB_PHASE_S) != 0u ||
+                        ((selected_phases & (GRT_LAMB_PHASE_SP | GRT_LAMB_PHASE_PS)) != 0u &&
                          (tEnd >= 1.0 || (V.supercritical && ts[0] < 1.0 && tEnd >= V.tSP)));
     const bool need_mixed = dG_mixed != NULL;
     /* 大型多项式系数工作区放在堆上，避免占用线程栈 */
@@ -672,7 +644,7 @@ void grt_solve_lamb2(
 
     for (int i = 0; i < nt; ++i) {
         real_t tbar = shift_lamb2_boundary(ts[i], &V, tbar_eps);
-        evaluate_lamb2_time(tbar, &V, pf_coefficients, phase_mask, F[i], Fk_source[i], Fk_receiver[i], need_mixed,
+        evaluate_lamb2_time(tbar, &V, pf_coefficients, selected_phases, F[i], Fk_source[i], Fk_receiver[i], need_mixed,
                             need_mixed ? Fkk[i] : NULL);
     }
     grt_lamb_differentiate_Fk(ts, nt, Fk_source, dG_source_tmp);

@@ -51,9 +51,9 @@ grt lamb2 -P0.25 -T0/2/1e-2 -R10 -Ds5 -S+slamb2_source+rlamb2_receiver+mlamb2_mi
 grt lamb2 -P0.25 -T0/2/1e-2 -R10 -Dr5 -S+slamb2_surface_source+rlamb2_surface_receiver -A30 > lamb2_surface
 grt lamb2 -P0.25 -T0/2/1e-2 -R10 -Ds5 -A30 -LP,S,SP > lamb2_phases
 grt lamb2 -P0.25 -T0/2/1e-2 -R10 -Dr5 -A30 -LP,S,PS > lamb2_surface_phases
-expect_warn "lamb2 invalid phase" "Available phases: P, S, SP, PS" grt lamb2 -P0.25 -T0/0/1 -R10 -Ds5 -A0 -LBAD,P
+expect_warn "lamb2 invalid phase" "Available phases: P, S, SP" grt lamb2 -P0.25 -T0/0/1 -R10 -Ds5 -A0 -LBAD,P
 expect_warn "lamb2 duplicated phase" "recorded only once" grt lamb2 -P0.25 -T0/0/1 -R10 -Ds5 -A0 -LSP,SP
-expect_warn "lamb2 unavailable phase" "unavailable for this lamb2 source-receiver geometry" grt lamb2 -P0.25 -T0/0/1 -R10 -Ds5 -A0 -LPS
+expect_warn "lamb2 unavailable phase" "Unsupported Lamb phase PS is ignored" grt lamb2 -P0.25 -T0/0/1 -R10 -Ds5 -A0 -LPS
 expect_warn "lamb2 no valid phase" "output is all zeros" grt lamb2 -P0.25 -T0/0/1 -R10 -Ds5 -A0 -LBAD
 
 python -u test_lamb2.py

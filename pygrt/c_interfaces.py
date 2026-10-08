@@ -8,7 +8,7 @@
 """
 
 import os
-from ctypes import POINTER, c_char_p, c_double, c_int, c_size_t, c_void_p, cdll
+from ctypes import POINTER, c_char_p, c_double, c_int, c_size_t, c_uint, c_void_p, cdll
 
 
 IPOINTER = POINTER(c_int)
@@ -55,6 +55,12 @@ C_grt_get_ricker_wave.restype = PREAL
 C_grt_get_ricker_wave.argtypes = [REAL, REAL, IPOINTER]
 
 
+C_grt_lamb_parse_phase_list = libgrt.grt_lamb_parse_phase_list
+"""在调用 Lamb 求解器前将震相列表解析为固定掩码"""
+C_grt_lamb_parse_phase_list.restype = c_uint
+C_grt_lamb_parse_phase_list.argtypes = [c_char_p, c_uint]
+
+
 C_grt_solve_lamb1 = libgrt.grt_solve_lamb1
 """使用广义闭合解求解第一类 Lamb 问题"""
 C_grt_solve_lamb1.restype = None
@@ -64,7 +70,7 @@ C_grt_solve_lamb1.argtypes = [
     c_int,
     REAL,
     REAL,
-    c_char_p,
+    c_uint,
     PREAL,
 ]
 
@@ -80,7 +86,7 @@ C_grt_solve_lamb2.argtypes = [
     REAL,
     REAL,
     REAL,
-    c_char_p,
+    c_uint,
     PREAL,
     PREAL,
     PREAL,
@@ -99,7 +105,7 @@ C_grt_solve_lamb3.argtypes = [
     REAL,
     REAL,
     REAL,
-    c_char_p,
+    c_uint,
     PREAL,
     PREAL,
     PREAL,
