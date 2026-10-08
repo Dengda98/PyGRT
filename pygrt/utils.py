@@ -300,11 +300,11 @@ def okada(
     has_strike = strike is not None
     has_dip = dip is not None
     has_rake = rake is not None
-    has_geometry = has_strike or has_dip or has_rake
-    has_point_source_options = scale is not None or depsrc is not None or has_geometry or scale_with_mu
+    has_mechanism = has_strike or has_dip or has_rake
+    has_point_source_options = scale is not None or depsrc is not None or has_mechanism or scale_with_mu
 
     def source_option() -> Optional[str]:
-        if not has_geometry:
+        if not has_mechanism:
             return None
         if not has_strike or not has_dip:
             raise ValueError("strike and dip must be supplied together.")

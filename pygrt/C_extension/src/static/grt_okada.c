@@ -95,10 +95,7 @@ typedef struct {
 // 与 Coulomb 中用于避开点源奇异点的偏移量保持一致，单位为 km
 static const real_t OKADA_SINGULAR_OFFSET = 1.0e-4;
 
-/** 释放命令行参数结构体及其动态分配的成员
- *
- * @param[in,out] Ctrl  命令行参数结构体
- */
+/** 释放命令行参数结构体及其动态分配的成员 */
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl)
 {
     if(Ctrl == NULL) return;
@@ -235,9 +232,9 @@ static void parse_axis(const char *text, char option, size_t *n, real_t **values
 
 /** 读取并检查 Okada 模块的命令行参数
  *
- * @param[out]  Ctrl    保存解析结果的参数结构体
- * @param[in]   argc    命令行参数数量
- * @param[in]   argv    命令行参数数组
+ * @param[out]  Ctrl  保存解析结果的参数结构体
+ * @param[in]   argc  命令行参数数量
+ * @param[in]   argv  命令行参数数组
  */
 static void parse_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
 {
@@ -253,11 +250,13 @@ static void parse_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 Ctrl->I.active = true;
                 break;
             }
+
             // 设置输出 nc 文件
             case 'O':
                 Ctrl->O.active = true;
                 Ctrl->O.path = strdup(optarg);
                 break;
+
             // 设置点源放大系数
             case 'S': {
                 Ctrl->S.active = true;
@@ -271,6 +270,7 @@ static void parse_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 }
                 break;
             }
+
             // 设置点源走向、倾角和滑动角
             case 'M': {
                 int nscan = sscanf(optarg, "%lf/%lf/%lf", &Ctrl->M.strike, &Ctrl->M.dip, &Ctrl->M.rake);
@@ -337,39 +337,74 @@ static void parse_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                     GRTBadOptionError(D, "use -Ds<depth> or -Dr<depth>.");
                 }
                 break;
+
             // 输出 ZNE 分量
             case 'N': Ctrl->N.active = true; break;
+
             // 输出位移偏导
             case 'e': Ctrl->e.active = true; break;
+
             // 静默输出信息
             case 's': Ctrl->s.active = true; break;
             GRT_Common_Options_in_Switch((char)optopt);
         }
     }
 
+    // 检查命令行是否提供了选项
     GRTCheckOptionSet(argc > 1);
-    if(!Ctrl->I.active) GRTRaiseError("Okada requires -I<vp>/<vs>/<rho>.\n");
-    if(!Ctrl->O.active) GRTRaiseError("Okada requires -O<out>.\n");
+
+    // 必须提供均匀半空间介质参数
+    if(!Ctrl->I.active) {
+        GRTRaiseError("Okada requires -I<vp>/<vs>/<rho>.\n");
+    }
+
+    // 必须提供结果输出文件
+    if(!Ctrl->O.active) {
+        GRTRaiseError("Okada requires -O<out>.\n");
+    }
+
+    // 规则接收网格的北向和东向坐标轴必须同时给出
     if(Ctrl->X.active ^ Ctrl->Y.active){
         GRTRaiseError("-X and -Y must be specified together.\n");
     }
+
+    // 逐点文件和有限接收断层已包含坐标及深度，不能混用网格选项
     if((Ctrl->Q.active || Ctrl->U.active) && (Ctrl->X.active || Ctrl->Y.active || Ctrl->Drcv.active)){
         GRTRaiseError("-Q and -U are mutually exclusive with -X/-Y/-Dr.\n");
     }
+
+    // 逐点接收文件和有限接收断层不能同时指定
     if(Ctrl->Q.active && Ctrl->U.active){
         GRTRaiseError("-Q and -U are mutually exclusive.\n");
     }
 
+    // 必须在点源参数和有限震源文件之间选择一种震源方式
     bool point = Ctrl->S.active || Ctrl->M.active;
+
+    // 点源和有限震源互斥，并且至少需要指定一种
     if(point == Ctrl->C.active){
         GRTRaiseError("Specify either a point source (-S/-M) or a finite fault (-C).\n");
     }
+
+    // 点源需要强度和源深度，有限震源的深度来自断层文件
     if(point){
-        if(!Ctrl->S.active) GRTRaiseError("Point source requires -S<scale>.\n");
-        if(!Ctrl->Dsrc.active) GRTRaiseError("Point source requires -Ds<depth>.\n");
+        // 点源必须提供强度
+        if(!Ctrl->S.active) {
+            GRTRaiseError("Point source requires -S<scale>.\n");
+        }
+
+        // 点源必须提供源深度
+        if(!Ctrl->Dsrc.active) {
+            GRTRaiseError("Point source requires -Ds<depth>.\n");
+        }
     } else {
-        if(Ctrl->Dsrc.active) GRTRaiseError("-Ds is not used for finite faults.\n");
+        // 有限震源已经包含深度，不能再通过 -Ds 指定
+        if(Ctrl->Dsrc.active) {
+            GRTRaiseError("-Ds is not used for finite faults.\n");
+        }
     }
+
+    // 未使用接收文件时，规则网格必须包含两个水平坐标轴和接收深度
     if((!Ctrl->Q.active) && (!Ctrl->U.active) && ((!Ctrl->X.active) || (!Ctrl->Y.active) || (!Ctrl->Drcv.active))){
         GRTRaiseError("Grid receivers require -X, -Y and -Dr, or use -Q/-U.\n");
     }
@@ -393,11 +428,11 @@ static RCV_POINTS *build_receivers(const GRT_MODULE_CTRL *Ctrl)
 
 /** 将 Okada 局部坐标中的位移和偏导转换到 PyGRT ZNE 坐标
  *
- * @param[in]   strike  断层走向，单位为度
- * @param[in]   local_u Okada 局部位移
- * @param[in]   local_d Okada 局部位移偏导
- * @param[out]  world_u PyGRT ZNE 位移
- * @param[out]  world_d PyGRT ZNE 位移偏导
+ * @param[in]   strike   断层走向，单位为度
+ * @param[in]   local_u  Okada 局部位移
+ * @param[in]   local_d  Okada 局部位移偏导
+ * @param[out]  world_u  PyGRT ZNE 位移
+ * @param[out]  world_d  PyGRT ZNE 位移偏导
  */
 static void local_to_zne(real_t strike, const real_t local_u[3], const real_t local_d[3][3],
     real_t world_u[3], real_t world_d[3][3])
@@ -454,9 +489,10 @@ static void add_point_source(const GRT_MODULE_CTRL *Ctrl, const OKADA_MEDIUM_PAR
         pot3 = (Ctrl->S.mult_src_mu) ? Ctrl->S.value * medium->mu / medium->lambda : Ctrl->S.value / medium->lambda;
     }
 
+    real_t cs = cos(strike * DEG1), ss = sin(strike * DEG1);
+
     // Okada 点源输出的位移和偏导分别需要乘以 1e-10 和 1e-15
     for(size_t i = 0; i < npts; ++i){
-        real_t cs = cos(strike * DEG1), ss = sin(strike * DEG1);
         real_t x = norths[i] * cs + easts[i] * ss;
         real_t y = norths[i] * ss - easts[i] * cs;
         real_t z = -depths[i];

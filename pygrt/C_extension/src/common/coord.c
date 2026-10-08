@@ -170,3 +170,42 @@ void grt_rot_zxy2zrt_upar(const real_t theta, real_t u[3], real_t upar[3][3], co
     upar[2][2] = htt - ur_over_r;
 
 }
+void grt_fault_plane_vectors(const real_t strike, const real_t dip, const real_t rake, real_t nvec[3], real_t tvec[3])
+{
+    // 角度转为弧度后，按 N、E、Z-up 顺序构造平面法向和面内切向单位矢量
+    real_t stk = DEG1 * fmod(strike, 360.0);
+    real_t dipp = DEG1 * dip;
+    real_t rak = DEG1 * rake;
+
+    real_t sdip = sin(dipp);
+    real_t cdip = cos(dipp);
+    real_t sstk = sin(stk);
+    real_t cstk = cos(stk);
+    real_t srak = sin(rak);
+    real_t crak = cos(rak);
+
+    // 矢量顺序为 N、E、Z
+    nvec[0] = -sstk * sdip;
+    nvec[1] = cstk * sdip;
+    nvec[2] = cdip;
+
+    tvec[0] = crak * cstk + srak * cdip * sstk;
+    tvec[1] = crak * sstk - srak * cdip * cstk;
+    tvec[2] = srak * sdip;
+}
+
+void grt_project_stress_to_fault_plane(const real_t stress[6], const real_t nvec[3], const real_t tvec[3], real_t *sigma_n, real_t *tau_s)
+{
+    // stress 顺序为 ZZ、ZN、ZE、NN、NE、EE，矢量顺序为 N、E、Z
+    real_t traction[3];
+
+    // 先计算法向量上的牵引力，再分别取法向和 rake 方向分量
+    traction[0] = stress[3] * nvec[0] + stress[4] * nvec[1] + stress[1] * nvec[2];
+    traction[1] = stress[4] * nvec[0] + stress[5] * nvec[1] + stress[2] * nvec[2];
+    traction[2] = stress[1] * nvec[0] + stress[2] * nvec[1] + stress[0] * nvec[2];
+
+    *sigma_n = traction[0] * nvec[0] + traction[1] * nvec[1] + traction[2] * nvec[2];
+
+    // 剪应力沿接收断层滑动方向投影，正负由 rake 方向决定
+    *tau_s = traction[0] * tvec[0] + traction[1] * tvec[1] + traction[2] * tvec[2];
+}

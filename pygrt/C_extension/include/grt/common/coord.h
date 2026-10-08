@@ -71,3 +71,23 @@ void grt_rot_zrt2zxy_upar(const real_t theta, real_t u[3], real_t upar[3][3], co
  * @param[in]       r          r 坐标，单位为 cm；r=0 时使用轴线上有限极限
  */
 void grt_rot_zxy2zrt_upar(const real_t theta, real_t u[3], real_t upar[3][3], const real_t r);
+
+/**
+ * 根据断层三要素构造 N、E、Z-up 顺序的平面法向和面内切向单位矢量
+ * @param[in]  strike  走向，度
+ * @param[in]  dip     倾角，度
+ * @param[in]  rake    滑动角，度
+ * @param[out] nvec    平面法向单位矢量
+ * @param[out] tvec    沿滑动角方向的面内切向单位矢量
+ */
+void grt_fault_plane_vectors(real_t strike, real_t dip, real_t rake, real_t nvec[3], real_t tvec[3]);
+
+/**
+ * 将 ZNE 应力张量投影为接收断层面上的法向应力和沿滑动方向的剪应力
+ * @param[in]  stress   ZZ、ZN、ZE、NN、NE、EE
+ * @param[in]  nvec     N、E、Z 顺序的法向量
+ * @param[in]  tvec     N、E、Z 顺序的滑动方向
+ * @param[out] sigma_n  法向应力，张为正
+ * @param[out] tau_s    滑动方向剪应力
+ */
+void grt_project_stress_to_fault_plane(const real_t stress[6], const real_t nvec[3], const real_t tvec[3], real_t *sigma_n, real_t *tau_s);
