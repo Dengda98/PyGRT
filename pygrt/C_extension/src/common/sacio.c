@@ -15,6 +15,12 @@
 
 #include "sacio.c_"
 
+void grt_sachead_set_begin(SACHEAD *hd, real_t begin)
+{
+    hd->b = begin;
+    hd->e = hd->b + (hd->npts - 1) * hd->delta;
+}
+
 SACTRACE * grt_read_SACTRACE(const char *path, const bool headonly)
 {
     GRTCheckFileExist(path);
@@ -63,7 +69,7 @@ SACTRACE * grt_new_SACTRACE(real_t dt, int nt, real_t b0)
     return sac;
 }
 
-int grt_write_SACTRACE(const char *path, SACTRACE *sac)
+void grt_write_SACTRACE(const char *path, SACTRACE *sac)
 {
     // 仅写出时量化到 SAC 的存储精度，保留调用方的 real_t 波形
     size_t count = (size_t)sac->hd.npts * (sac->hd.iftype == IXY ? 2 : 1);
@@ -71,9 +77,10 @@ int grt_write_SACTRACE(const char *path, SACTRACE *sac)
     for(size_t n = 0; n < count; ++n) {
         data[n] = (float)sac->data[n];
     }
-    int status = write_sac(path, sac->hd, data);
+    if(write_sac(path, sac->hd, data) != 0) {
+        GRTRaiseError("Failed to write SAC file %s.", path);
+    }
     GRT_SAFE_FREE_PTR(data);
-    return status;
 }
 
 

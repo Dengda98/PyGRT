@@ -11,8 +11,8 @@
 #include <string.h>
 
 #include "grt/dynamic/grnspec.h"
-#include "grt/common/myfftw.h"
-#include "grt/common/sacio.h"
+#include "grt/dynamic/signals.h"
+#include "grt/common/checkerror.h"
 
 void grt_grnspec_allocate_u(GRNSPEC *grn)
 {
@@ -43,9 +43,19 @@ void grt_grnspec_free_u(GRNSPEC *grn)
     GRT_SAFE_FREE_PTR(grn->uir);
 }
 
-
-
-/** 将一条数据反变换回时间域再进行处理，保存到SAC文件 */
+/**
+ * 反变换一条格林函数，补偿虚频率并写出 SAC
+ * @param[in]      srcname          基本源型名称
+ * @param[in]      ch               输出分量
+ * @param[in,out]  fh               反傅里叶变换缓冲
+ * @param[in]      wI               虚频率
+ * @param[in,out]  sac              当前震中距 SAC 模板及波形缓冲
+ * @param[in]      s_output_subdir  SAC 输出目录
+ * @param[in]      s_prefix         位移或空间导数前缀
+ * @param[in]      sgn              分量符号
+ * @param[in]      skipImagComps    是否跳过虚频率补偿
+ * @param[in]      grncplx          当前分量频谱
+ */
 static void write_one_to_sac(
     const char *srcname, const char ch, FFTW_HOLDER *fh, const real_t wI,
     SACTRACE *sac, const char *s_output_subdir, const char *s_prefix,
@@ -56,55 +66,55 @@ static void write_one_to_sac(
     char *s_outpath = NULL;
     GRT_SAFE_ASPRINTF(&s_outpath, "%s/%s.sac", s_output_subdir, sac->hd.kcmpnm);
 
-    // 执行fft任务会修改数组，需重新置零
+    // 反变换会修改工作数组，每个分量都需先清零
     grt_reset_fftw_holder_zero(fh);
     
-    // 赋值复数，包括时移
+    // 将有效频谱复制到工作数组，并按 SAC 起点加入时间平移
     cplx_t cfac, ccoef;
-    cfac = exp(I*PI2*fh->df*sac->hd.b);
+    cfac = exp(I * PI2 * fh->df * sac->hd.b);
     ccoef = sgn;
-    // 只赋值有效长度，其余均为0
-    for(size_t i = 0; i < fh->nf_valid; ++i){
+    // 只赋值有效频点，其余频点保持为零
+    for(size_t i = 0; i < fh->nf_valid; ++i) {
         fh->W_f[i] = grncplx[i] * ccoef;
         ccoef *= cfac;
     }
 
-
-    if(! fh->naive_inv){
-        // 发起fft任务 
+    if(!fh->naive_inv) {
+        // 执行 FFT 反变换
         fftw_execute(fh->plan);
     } else {
         grt_naive_inverse_transform_double(fh);
     }
 
-    // 归一化，并处理虚频
-    // 并转为 SAC 需要的单精度类型
+    // 归一化并补偿虚频率，最后转为 SAC 所需的单精度波形
     real_t fac, coef;
     coef = fh->df;
     fac = 1.0;
-    if (! skipImagComps) {
+    if(!skipImagComps) {
         coef *= exp(sac->hd.b * wI);
-        fac = exp(wI*fh->dt);
+        fac = exp(wI * fh->dt);
     }
-    for(size_t i = 0; i < fh->nt; ++i){
+    for(size_t i = 0; i < fh->nt; ++i) {
         sac->data[i] = fh->w_t[i] * coef;
         coef *= fac;
     }
     
-
-    // 以sac文件保存到本地
+    // 按基本源型、空间导数前缀和分量名保存到输出目录
     grt_write_SACTRACE(s_outpath, sac);
 
     GRT_SAFE_FREE_PTR(s_outpath);
 }
 
-
-void grt_grnspec_write_sac(
-    const GRNSPEC *grn, const real_t (*travtPS)[2], const real_t *begintimes, char **outputdirs, FFTW_HOLDER *fh, SACTRACE *sac,
+void grt_grnspec_save_waveforms(
+    const SACHEAD *refhead, const GRNSPEC *grn, const real_t (*travtPS)[2], const real_t *begintimes,
+    char *const *outputdirs, FFTW_HOLDER *fh,
     const char *validChnls, const bool skipImagComps, const bool saveEX, const bool saveVF, const bool saveHF, const bool saveDC)
 {
-    // 做反傅里叶变换，保存SAC文件
-    for(size_t ir = 0; ir < grn->nr; ++ir){
+    SACTRACE *sac = grt_new_SACTRACE(fh->dt, fh->nt, 0);
+    sac->hd = *refhead;
+
+    // 频谱计算方式由求解器决定，反变换及 SAC 输出统一处理文件格式和分量符号
+    for(size_t ir = 0; ir < grn->nr; ++ir) {
         real_t dist = grn->rs[ir];
         sac->hd.dist = dist;
 
@@ -119,32 +129,33 @@ void grt_grnspec_write_sac(
         strcpy(sac->hd.kt1, "S");
 
         // 时间延迟
-        sac->hd.b = begintimes[ir];
+        grt_sachead_set_begin(&sac->hd, grt_sample_aligned_time(begintimes[ir], fh->dt));
 
-        GRT_LOOP_ChnlGrid(im, c){
+        GRT_LOOP_ChnlGrid(im, c) {
             if(strchr(validChnls, GRT_ZRT_CODES[c]) == NULL)  continue;
 
-            if(! saveEX && im==GRT_SRC_M_EX_INDEX)  continue;
-            if(! saveVF && im==GRT_SRC_M_VF_INDEX)  continue;
-            if(! saveHF && im==GRT_SRC_M_HF_INDEX)  continue;
-            if(! saveDC && im>=GRT_SRC_M_DD_INDEX)  continue;
+            if(!saveEX && im == GRT_SRC_M_EX_INDEX)  continue;
+            if(!saveVF && im == GRT_SRC_M_VF_INDEX)  continue;
+            if(!saveHF && im == GRT_SRC_M_HF_INDEX)  continue;
+            if(!saveDC && im >= GRT_SRC_M_DD_INDEX)  continue;
 
             int modr = GRT_SRC_M_ORDERS[im];
-            int sgn=1;  // 用于反转Z分量
+            int sgn = 1;
 
-            if(modr==0 && GRT_ZRT_CODES[c]=='T')  continue;  // 跳过输出0阶的T分量
+            // 零阶源型没有 T 分量，Z 分量统一使用向上的符号约定
+            if(modr == 0 && GRT_ZRT_CODES[c] == 'T')  continue;
 
-            // Z分量反转
-            sgn = (GRT_ZRT_CODES[c]=='Z') ? -1 : 1;
+            sgn = (GRT_ZRT_CODES[c] == 'Z') ? -1 : 1;
 
             char ch = GRT_ZRT_CODES[c];
 
             write_one_to_sac(GRT_SRC_M_NAME_ABBR[im], ch, fh, grn->wI, sac, dirpath, "", sgn, skipImagComps, grn->u[ir][im][c]);
 
-            if(grn->calc_upar){
+            if(grn->calc_upar) {
                 write_one_to_sac(GRT_SRC_M_NAME_ABBR[im], ch, fh, grn->wI, sac, dirpath, "z", sgn*(-1), skipImagComps, grn->uiz[ir][im][c]);
-                write_one_to_sac(GRT_SRC_M_NAME_ABBR[im], ch, fh, grn->wI, sac, dirpath, "r", sgn     , skipImagComps, grn->uir[ir][im][c]);
+                write_one_to_sac(GRT_SRC_M_NAME_ABBR[im], ch, fh, grn->wI, sac, dirpath, "r", sgn,      skipImagComps, grn->uir[ir][im][c]);
             }
         }
     }
+    grt_free_SACTRACE(sac);
 }

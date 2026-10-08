@@ -42,22 +42,22 @@ void grt_grnspec_allocate_u(GRNSPEC *grn);
 void grt_grnspec_free_u(GRNSPEC *grn);
 
 /**
- * 将频谱 u, uiz, uir 变换到时域后以 SAC 格式保存到本地
- * 
- * @param[in]    grn          格林函数频谱结构体
- * @param[in]    travtPS      不同震源距的初至P、S到时
- * @param[in]    begintimes   不同震中距的波形时移
- * @param[in]    outputdirs   不同震中距的保存目录
- * @param[in]    fh           控制反傅里叶变换的结构体
- * @param[in,out]   sac       SACTRACE 原型，在头段变量中记录了基本信息
- * @param[in]   validChnls    要保存的分量，例如全波解为 "ZRT"， Rayleigh面波解为 "ZR", Love面波解为 "T"
- * @param[in]   skipImagComps 跳过虚频率的补偿
- * @param[in]    saveEX       保存爆炸源结果
- * @param[in]    saveVF       保存垂直力源结果
- * @param[in]    saveHF       保存水平力源结果
- * @param[in]    saveDC       保存水平力源结果
- * 
+ * 对频谱执行 IFFT，按统一格式将时域波形保存为 SAC 文件
+ * 全波解和面波解共用此接口，refhead 保存当前源深和接收深度的介质头段
+ * @param[in]      refhead        当前源台深度组合的 SAC 参考头段
+ * @param[in]      grn            当前深度组合的格林函数频谱
+ * @param[in]      travtPS        各震中距的初至 P、S 到时
+ * @param[in]      begintimes     各震中距的波形起点，s
+ * @param[in]      outputdirs     各震中距的 SAC 输出目录
+ * @param[in,out]  fh             反傅里叶变换缓冲
+ * @param[in]      validChnls     保存的分量，全波解为 ZRT，Rayleigh 为 ZR，Love 为 T
+ * @param[in]      skipImagComps  是否跳过虚频率补偿
+ * @param[in]      saveEX         是否保存爆炸源
+ * @param[in]      saveVF         是否保存垂直力源
+ * @param[in]      saveHF         是否保存水平力源
+ * @param[in]      saveDC         是否保存剪切源
  */
-void grt_grnspec_write_sac(
-    const GRNSPEC *grn, const real_t (*travtPS)[2], const real_t *begintimes, char **outputdirs, FFTW_HOLDER *fh, SACTRACE *sac,
-    const char *validChnls, const bool skipImagComps, const bool saveEX, const bool saveVF, const bool saveHF, const bool saveDC);
+void grt_grnspec_save_waveforms(
+    const SACHEAD *refhead, const GRNSPEC *grn, const real_t (*travtPS)[2], const real_t *begintimes,
+    char *const *outputdirs, FFTW_HOLDER *fh,
+    const char *validChnls, bool skipImagComps, bool saveEX, bool saveVF, bool saveHF, bool saveDC);
