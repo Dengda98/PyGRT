@@ -26,7 +26,6 @@ from matplotlib.lines import Line2D
 from obspy import Stream
 from scipy.interpolate import interpn
 from scipy.io import netcdf_file
-from scipy.signal import oaconvolve
 from scipy.special import jv
 import numpy.ctypeslib as npct
 
@@ -673,7 +672,9 @@ def compute_stress(*args, **kwargs):
 
 def stream_convolve(st0: Stream, signal0: np.ndarray, inplace: bool = True) -> Stream:
     """
-    Convolve every trace with a discrete signal.
+    Circularly convolve every trace with a discrete signal using FFT.
+    Shorter inputs are zero-padded to the larger input length. The output length
+    is shared by all traces, and imaginary-frequency compensation is preserved.
 
     :param    st0:            Input ObsPy stream.
     :param    signal0:        Discrete convolution signal.
@@ -683,21 +684,23 @@ def stream_convolve(st0: Stream, signal0: np.ndarray, inplace: bool = True) -> S
     """
     st = st0 if inplace else deepcopy(st0)
     signal = np.asarray(signal0, dtype=float)
+    if signal.ndim != 1 or signal.size == 0:
+        raise ValueError("signal0 must be a nonempty one-dimensional array.")
+    npts = max([len(signal), *(trace.stats.npts for trace in st)])
     for trace in st:
         dt = trace.stats.delta
-        data = trace.data
-        if hasattr(trace.stats, "sac") and "user0" in trace.stats.sac:
-            npts = trace.stats.npts
-            w_i = trace.stats.sac["user0"]
-            factor = np.exp(np.arange(npts) * dt * w_i)
-            adjusted_signal = signal / factor[: len(signal)]
-            data[:] /= factor
-            data1 = np.pad(data, (len(signal) - 1, 0), mode="wrap")
-            data[:] = oaconvolve(data1, adjusted_signal, mode="valid")[:npts] * dt
-            data[:] *= factor
-        else:
-            data1 = np.pad(data, (len(signal) - 1, 0), mode="wrap")
-            data[:] = oaconvolve(data1, signal, mode="valid")[: len(data)] * dt
+        # 波形和时间函数先阻尼，未设置虚频率时因子为 1
+        w_i = trace.stats.get("sac", {}).get("user0", 0.0)
+        factor = np.exp(np.arange(npts) * dt * w_i)
+        data = trace.data / factor[:trace.stats.npts]
+        adjusted_signal = signal / factor[:signal.size]
+
+        # npts 点 FFT 自动补零，频谱相乘得到循环卷积，最后反阻尼
+        spectrum = np.fft.rfft(data, n=npts) * np.fft.rfft(adjusted_signal, n=npts)
+        trace.data = np.fft.irfft(spectrum, n=npts) * factor * dt
+        if hasattr(trace.stats, "sac"):
+            trace.stats.sac.npts = npts
+            trace.stats.sac.e = trace.stats.sac.get("b", 0) + (npts - 1) * dt
     return st
 
 
