@@ -62,12 +62,21 @@ real_t * grt_get_time_function(int *TFnt, real_t dt, const char tftype, const ch
 real_t *grt_time_function_from_option(const char *option, real_t dt, int *nt);
 
 /**
- * 时间序列卷积函数，只卷积x的长度
- * 
- * @param[in]    x            长信号数组
- * @param[in]    nx           长信号点数
- * @param[in]    h            短信号数组
- * @param[in]    nh           短信号点数
+ * 将时间量化到整数采样网格
+ * @param[in] time  原始时间，s
+ * @param[in] dt    最终输出采样间隔，s
+ */
+real_t grt_sample_aligned_time(real_t time, real_t dt);
+
+/**
+ * 在时域计算离散卷积
+ * 循环卷积以 ny 为周期，要求 ny 不小于 nx 和 nh，较短输入补零
+ * 线性卷积只返回前 ny 个样本，超出完整卷积长度的部分补零
+ *
+ * @param[in]    x            输入信号数组
+ * @param[in]    nx           输入信号点数
+ * @param[in]    h            卷积核数组
+ * @param[in]    nh           卷积核点数
  * @param[out]   y            输出数组
  * @param[in]    ny           输出数组点数
  * @param[in]    iscircular   是否使用循环卷积

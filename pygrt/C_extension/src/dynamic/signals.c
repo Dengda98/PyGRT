@@ -232,21 +232,35 @@ real_t *grt_time_function_from_option(const char *option, real_t dt, int *nt)
 
 
 
+real_t grt_sample_aligned_time(real_t time, real_t dt)
+{
+    return llround(time / dt) * dt;
+}
+
+
+
 void grt_oaconvolve(const real_t *x, int nx, const real_t *h, int nh, real_t *y, int ny, bool iscircular) {
     if(iscircular){
+        if(ny < nx || ny < nh) {
+            GRTRaiseError("Circular convolution length must cover both inputs.");
+        }
         for(int n=0; n<ny; ++n) {
             y[n] = 0.0;
             for(int k=0; k<nh; ++k) {
-                y[n] += x[(n - k + nx)%nx] * h[k];
+                int i = n - k;
+                if(i < 0) {
+                    i += ny;
+                }
+                if(i < nx) {
+                    y[n] += x[i] * h[k];
+                }
             }
         }
     } else {
         for(int n=0; n<ny; ++n) {
             y[n] = 0.0;
-            for(int k=0; k<nh; ++k) {
-                if (n - k >= 0 && n - k < nx) {
-                    y[n] += x[n - k] * h[k]; // 计算卷积值
-                }
+            for(int k=GRT_MAX(0, n - nx + 1); k<nh && k<=n; ++k) {
+                y[n] += x[n - k] * h[k];
             }
         }
     }
