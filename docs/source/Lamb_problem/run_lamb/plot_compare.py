@@ -27,7 +27,7 @@ pygrt.utils.lamb(
     strike=33.0,
     dip=50.0,
     rake=120.0,
-    time_function="t/0.1/0.1/0.2",
+    time_function="t/0.1/0/0.1",
     zne=True,
 )
 # END LAMB
@@ -47,7 +47,7 @@ pymod.syn(
     strike=33.0,
     dip=50.0,
     rake=120.0,
-    time_function="t/0.1/0.1/0.2",
+    time_function="t/0.1/0/0.1",
     zne=True,
 )
 

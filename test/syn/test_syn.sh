@@ -69,12 +69,13 @@ grt syn -GGRN/milrow_2_3_10 -A22 -Su1e10 -M33/44/55 -Osyn
 grt syn -GGRN/milrow_2_3_10 -A22 -Su1e10 -M33/44 -Osyn 
 grt syn -GGRN/milrow_2_3_10 -A22 -S1e20  -T1/-2/-5/0.5/3/1.2 -Osyn 
 
-# 时间函数按矩形法进行面积归一化（雷克子波保留单位峰值）
+# 震源时间函数按矩形法进行面积归一化
 # 自定义时间函数检查 dt 乘样本和，非单位面积时警告并自动归一化
 grt syn -GGRN/milrow_2_3_10 -A22 -S1e20 -Dp/0.6 -Osyn 
-grt syn -GGRN/milrow_2_3_10 -A22 -S1e20 -Dt/0.2/0.4/0.7 -Osyn 
-grt syn -GGRN/milrow_2_3_10 -A22 -S1e20 -Dt/0.4/0.4/0.8 -Osyn 
-grt syn -GGRN/milrow_2_3_10 -A22 -S1e20 -Dr/1.2 -Osyn 
+grt syn -GGRN/milrow_2_3_10 -A22 -S1e20 -Dt/0.2/0.2/0.3 -Osyn
+grt syn -GGRN/milrow_2_3_10 -A22 -S1e20 -Dt/0.4/0/0.4 -Osyn
+grt syn -GGRN/milrow_2_3_10 -A22 -S1e20 -Dc/0.2/0.4 -Osyn
+grt syn -GGRN/milrow_2_3_10 -A22 -S1e20 -Dr/1.2 -Osyn
 cat > tfile <<EOF
 0.0
 5.0

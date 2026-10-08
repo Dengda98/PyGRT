@@ -49,6 +49,12 @@ C_grt_get_parabola_wave.restype = PREAL
 C_grt_get_parabola_wave.argtypes = [REAL, PREAL, IPOINTER]
 
 
+C_grt_get_asymmetric_cosine_wave = libgrt.grt_get_asymmetric_cosine_wave
+"""非对称余弦波"""
+C_grt_get_asymmetric_cosine_wave.restype = PREAL
+C_grt_get_asymmetric_cosine_wave.argtypes = [REAL, PREAL, PREAL, IPOINTER]
+
+
 C_grt_get_ricker_wave = libgrt.grt_get_ricker_wave
 """雷克子波"""
 C_grt_get_ricker_wave.restype = PREAL

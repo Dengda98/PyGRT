@@ -206,9 +206,8 @@ printf("\n"
 "                  current directory.\n"
 "\n"
 "    -D<tftype>[/<tfparams>][+d<delay>]\n"
-"                  Convolve a Time Function. All time functions use area\n"
-"                  normalization except Ricker wavelet, which has a peak\n"
-"                  amplitude of 1.0.\n"
+"                  Convolve a time function. Source time functions use area\n"
+"                  normalization.\n"
 "                  There are several options:\n"
 "                  + Impulse\n"
 "                    set -D%c.\n", GRT_SIG_IMPULSE); printf(
@@ -217,17 +216,17 @@ printf("\n"
 "                    e.g. \n"
 "                         -D%c/1.3\n", GRT_SIG_PARABOLA); printf(
 "                  + Trapezoidal wave\n"
-"                    set -D%c/<t1>/<t2>/<t3>, <t1> is the end time of\n", GRT_SIG_TRAPEZOID); printf(
-"                    Rising, <t2> is the end time of Platform, and\n"
-"                    <t3> is the end time of Falling.\n"
+"                    set -D%c/<t1>/<t2>/<t3>, rise/plateau/fall durations in seconds.\n", GRT_SIG_TRAPEZOID); printf(
+"                    Durations must be nonnegative, with a positive total.\n"
+"                    t2=0 gives a triangle; t1=t3=0 gives a rectangle.\n"
 "                    e.g. \n"
-"                         -D%c/0.1/0.2/0.4\n", GRT_SIG_TRAPEZOID); printf(
-"                         -D%c/0.4/0.4/0.6 (become a triangle)\n", GRT_SIG_TRAPEZOID); printf(
-"                         -D%c/0/0.5/0.5 (become a rectangle)\n", GRT_SIG_TRAPEZOID); printf(
-"                  + Ricker wavelet\n"
-"                    set -D%c/<f0>, <f0> (Hz) is the dominant frequency.\n", GRT_SIG_RICKER); printf(
-"                    e.g. \n"
-"                         -D%c/0.5 \n", GRT_SIG_RICKER); printf(
+"                         -D%c/0.1/0.1/0.2\n", GRT_SIG_TRAPEZOID); printf(
+"                         -D%c/0.4/0/0.2 (become a triangle)\n", GRT_SIG_TRAPEZOID); printf(
+"                         -D%c/0/0.5/0 (become a rectangle)\n", GRT_SIG_TRAPEZOID); printf(
+"                  + AsymmetricCosine\n"
+"                    set -D%c/<t1>/<t2>, positive rise/fall durations in seconds.\n", GRT_SIG_ASYMMETRIC_COSINE); printf(
+"                    The peak is at t1 and the end is at t1+t2.\n"
+"                    e.g. -D%c/4.5/1.5+d43\n", GRT_SIG_ASYMMETRIC_COSINE); printf(
 "                  + Custom wave\n"
 "                    set -D%c/<path>, <path> is the filepath to a custom\n", GRT_SIG_CUSTOM); printf(
 "                    Time Function ASCII file. The file has just one column\n"
@@ -238,6 +237,10 @@ printf("\n"
 "                    \"#\".\n"
 "                    e.g. \n"
 "                         -D%c/tfunc.txt \n", GRT_SIG_CUSTOM); printf(
+"                  Also accepts a signed Ricker convolution wavelet:\n"
+"                  -D%c/<f0>, <f0> is the dominant frequency in Hz.\n", GRT_SIG_RICKER); printf(
+"                  Its analytic peak amplitude is 1, without area normalization;\n"
+"                  it is not a unit-slip source process.\n"
 "                  To match the time interval in Green's Functions, \n"
 "                  parameters of Time Function will be slightly modified.\n"
 "                  The corresponding Time Function will be saved\n"

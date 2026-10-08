@@ -32,8 +32,6 @@ cd .. && tar -czvf ${ex}.tar.gz ${ex} && mv ${ex}.tar.gz ${ex} && cd -
 # fn=2
 # fe=-1
 # fz=4
-# grt syn -G$G -Osyn_sf1 -A$az -S$S -F$fn/$fe/$fz -Dt/0.1/0.3/0.6
+# grt syn -G$G -Osyn_sf1 -A$az -S$S -F$fn/$fe/$fz -Dt/0.1/0.2/0.3
 # grt syn -G$G -Osyn_sf2 -A$az -S$S -F$fn/$fe/$fz -Dp/0.6
-# grt syn -G$G -Osyn_sf3 -A$az -S$S -F$fn/$fe/$fz -Dr/3
-
-
+# grt syn -G$G -Osyn_sf4 -A$az -S$S -F$fn/$fe/$fz -Dc/0.1/0.5
