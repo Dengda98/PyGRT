@@ -15,15 +15,15 @@
 #include "grt/common/finite_fault.h"
 #include "grt/common/util.h"
 
-#define COULOMB_HEADER_MIN_TOKENS 11
-#define COULOMB_HEADER_MAX_TOKENS 12
-#define COULOMB_HEADER_TOKEN_SIZE 32
+#define COULOMB_HEADER_MIN_TOKENS 11  ///< 表头至少包含 # 和十个字段标签
+#define COULOMB_HEADER_MAX_TOKENS 12  ///< 允许 dip angle 使用两个 token
+#define COULOMB_HEADER_TOKEN_SIZE 32  ///< 表头字段缓冲长度
 
 /**
  * 检查有限断层的走向长度、倾角和深度范围
  *
- * @param[in]  f       有限断层结构体
- * @param[in]  where   错误位置描述
+ * @param[in]  f      有限断层结构体
+ * @param[in]  where  错误位置描述
  */
 static void check_fault_geometry(const FINITE_FAULT *f, const char *where)
 {
@@ -32,6 +32,9 @@ static void check_fault_geometry(const FINITE_FAULT *f, const char *where)
     }
     if(f->dip <= 0.0 || f->dip > 90.0){
         GRTRaiseError("%s: dip (%.6g deg) must be in (0, 90].", where, f->dip);
+    }
+    if(f->top < 0.0) {
+        GRTRaiseError("%s: fault top depth must be nonnegative.", where);
     }
     if(!(f->bot > f->top)){
         GRTRaiseError("%s: bot (%.6g km) must be greater than top (%.6g km).", where, f->bot, f->top);
@@ -47,6 +50,9 @@ static void check_fault_geometry(const FINITE_FAULT *f, const char *where)
 static void set_fault_derived(FINITE_FAULT *f)
 {
     f->strike = 1.0 / DEG1 * atan2(f->east_end - f->east_begin, f->north_end - f->north_begin);
+    if(f->strike < 0.0) {
+        f->strike += 360.0;
+    }
     if((f->right_lateral == 0.0) && (f->reverse == 0.0)){
         f->rake = GRT_FINITE_FAULT_UNDEFINED_RAKE;
     } else {
@@ -67,6 +73,10 @@ static void set_fault_components(FINITE_FAULT *f, bool rake_format, const char *
     f->rake_format = rake_format;
     if(rake_format && f->kode != KODE_RTLAT_REVERSE){
         GRTRaiseError("%s: Coulomb rake/net slip format only supports Kode=100.", where);
+    }
+
+    if(rake_format && fabs(f->value1) > 180.0) {
+        GRTRaiseError("%s: rake must be in [-180, 180].", where);
     }
 
     switch(f->kode){
@@ -170,7 +180,8 @@ FINITE_FAULT *grt_finite_fault_load_coulomb(const char *path, size_t *nfault)
             GRTRaiseError("parse Coulomb fault data at line %zu of %s failed.", line_number, path);
         }
 
-        if(fabs(kode_value - round(kode_value)) > 1e-8 || kode_value < 0.0){
+        if(kode_value != KODE_RTLAT_REVERSE && kode_value != KODE_RTLAT_TENSILE && kode_value != KODE_TENSILE_REVERSE &&
+           kode_value != KODE_POINT_DC && kode_value != KODE_POINT_TENSILE_INFLATE){
             GRTRaiseError("invalid Coulomb Kode at line %zu of %s.", line_number, path);
         }
 
@@ -182,7 +193,7 @@ FINITE_FAULT *grt_finite_fault_load_coulomb(const char *path, size_t *nfault)
         f->north_begin = north_begin;
         f->east_end = east_end;
         f->north_end = north_end;
-        f->kode = (unsigned int)round(kode_value);
+        f->kode = (unsigned int)kode_value;
         f->value1 = value1;
         f->value2 = value2;
         f->dip = dip;

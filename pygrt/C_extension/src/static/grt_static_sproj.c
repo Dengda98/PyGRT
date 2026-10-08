@@ -24,7 +24,7 @@ typedef struct {
         real_t dip;
         real_t rake;
         bool force_rake;
-        bool has_geometry;
+        bool has_mechanism;
     } M;
     // 逐点接收断层形态文件
     struct {
@@ -33,11 +33,7 @@ typedef struct {
     } Q;
 } GRT_MODULE_CTRL;
 
-/**
- * 释放参数控制结构体及其动态成员
- *
- * @param[in,out] Ctrl 参数控制结构体
- */
+/** 释放参数控制结构体及其动态成员 */
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl)
 {
     if(Ctrl == NULL) return;
@@ -87,9 +83,9 @@ printf("\n"
 /**
  * 从命令行中读取模块选项
  *
- * @param[out] Ctrl 参数控制结构体
- * @param[in]  argc 命令行参数数量
- * @param[in]  argv 命令行参数数组
+ * @param[out] Ctrl  参数控制结构体
+ * @param[in]  argc  命令行参数数量
+ * @param[in]  argv  命令行参数数组
  */
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
 {
@@ -116,7 +112,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 }
 
                 Ctrl->M.active = true;
-                Ctrl->M.has_geometry = nscan == 3;
+                Ctrl->M.has_mechanism = nscan == 3;
                 if(nscan == 3){
                     Ctrl->M.strike = a1;
                     Ctrl->M.dip = a2;
@@ -160,6 +156,8 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
     // 输入文件必须通过 -G 指定，模块不接受位置参数
     GRTCheckOptionSet(argc > 1);
     GRTCheckOptionActive(Ctrl, G);
+
+    // 静态投影只通过 -G 接受输入文件，检查是否存在未解析的位置参数
     if(optind < argc){
         GRTRaiseError("Unexpected positional argument \"%s\". Use -G<ingrid>.\n", argv[optind]);
     }
@@ -169,7 +167,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
 /**
  * 规范化走向角到 [0, 360)
  *
- * @param[in] strike 原始走向角
+ * @param[in] strike  原始走向角
  * @return 规范化后的走向角
  */
 static real_t normalize_strike(real_t strike)
@@ -248,7 +246,7 @@ static bool find_optional_var(int ncid, const char *name, int *varid)
 /**
  * 从属性或应力变量名判断输入应力的坐标形式
  *
- * @param[in] ncid NetCDF 文件 ID
+ * @param[in] ncid  NetCDF 文件 ID
  * @return 输入应力为 ZNE 坐标时返回 true
  */
 static bool get_input_rot2ZNE(int ncid)
@@ -302,42 +300,6 @@ static void read_stress_components(
 
 
 /**
- * 根据断层几何三要素获得法向矢量和滑动矢量
- *
- * @param[in]  strike 走向角
- * @param[in]  dip    倾角
- * @param[in]  rake   滑动角
- * @param[out] nvec   接收断层法向矢量
- * @param[out] tvec   rake 方向滑动矢量
- */
-static void get_receiver_vectors(
-    const real_t strike, const real_t dip, const real_t rake,
-    real_t nvec[3], real_t tvec[3])
-{
-    // 角度转为弧度后，按 N、E、Z 顺序构造两个接收断层方向
-    real_t stk = DEG1 * normalize_strike(strike);
-    real_t dipp = DEG1 * dip;
-    real_t rak = DEG1 * rake;
-
-    real_t sdip = sin(dipp);
-    real_t cdip = cos(dipp);
-    real_t sstk = sin(stk);
-    real_t cstk = cos(stk);
-    real_t srak = sin(rak);
-    real_t crak = cos(rak);
-
-    // 矢量顺序为 N、E、Z
-    nvec[0] = -sstk * sdip;
-    nvec[1] = cstk * sdip;
-    nvec[2] = cdip;
-
-    tvec[0] = crak * cstk + srak * cdip * sstk;
-    tvec[1] = crak * sstk - srak * cdip * cstk;
-    tvec[2] = srak * sdip;
-}
-
-
-/**
  * 将一个 ZRT 应力张量转换为同一点的 ZNE 应力张量
  *
  * @param[in]     theta  R 轴相对 N 轴的方位角
@@ -347,32 +309,6 @@ static void convert_zrt_stress_to_zne(real_t theta, real_t stress[6])
 {
     // theta 为 R 轴相对 N 轴的方位角，逆旋转得到 N/E 分量
     grt_rot_zxy2zrt_symtensor2odr(-theta, stress);
-}
-
-
-/**
- * 在 ZNE 坐标下将应力张量投影到接收断层的法向和滑动方向
- *
- * @param[in]  stress    ZNE 应力张量分量
- * @param[in]  nvec      接收断层法向矢量
- * @param[in]  tvec      rake 方向滑动矢量
- * @param[out] sigma_n   法向应力投影
- * @param[out] tau_s     rake 方向剪应力投影
- */
-static void project_stress(
-    const real_t stress[6], const real_t nvec[3], const real_t tvec[3],
-    real_t *sigma_n, real_t *tau_s)
-{
-    // stress 顺序为 ZZ、ZN、ZE、NN、NE、EE，矢量顺序为 N、E、Z
-    real_t traction[3];
-    // 先计算法向量上的牵引力，再分别取法向和 rake 方向分量
-    traction[0] = stress[3] * nvec[0] + stress[4] * nvec[1] + stress[1] * nvec[2];
-    traction[1] = stress[4] * nvec[0] + stress[5] * nvec[1] + stress[2] * nvec[2];
-    traction[2] = stress[1] * nvec[0] + stress[2] * nvec[1] + stress[0] * nvec[2];
-
-    *sigma_n = traction[0] * nvec[0] + traction[1] * nvec[1] + traction[2] * nvec[2];
-    // 剪应力沿接收断层滑动方向投影，正负由 rake 方向决定
-    *tau_s = traction[0] * tvec[0] + traction[1] * tvec[1] + traction[2] * tvec[2];
 }
 
 
@@ -554,6 +490,7 @@ static void load_geometry_from_faults(
     if(!find_optional_var(ncid, "offset", &offset_varid)){
         GRTRaiseError("Finite receiver input must contain the offset variable.");
     }
+
     // 有限接收断层按 nfault 保存形态，再通过 offset 映射到 point
     check_var_dimensions(ncid, strike_varid, "strike", 1, &nfault_dimid);
     check_var_dimensions(ncid, dip_varid, "dip", 1, &nfault_dimid);
@@ -652,7 +589,7 @@ static void load_receiver_geometry(
         if(Ctrl->Q.active){
             GRTRaiseError("-Q cannot be used with a faults-layout input file.");
         }
-        if(Ctrl->M.active && Ctrl->M.has_geometry){
+        if(Ctrl->M.active && Ctrl->M.has_mechanism){
             GRTRaiseError("Faults input requires -M<rake> or -M<rake>+f.");
         }
         load_geometry_from_faults(
@@ -666,7 +603,7 @@ static void load_receiver_geometry(
         if(Ctrl->Q.active){
             GRTRaiseError("-Q can only be used with a points-layout input file.");
         }
-        if(!Ctrl->M.active || !Ctrl->M.has_geometry || Ctrl->M.force_rake){
+        if(!Ctrl->M.active || !Ctrl->M.has_mechanism || Ctrl->M.force_rake){
             GRTRaiseError("Grid input has no receiver geometry; set -M<strike>/<dip>/<rake>.");
         }
         for(size_t i = 0; i < rcv_info->npts; ++i){
@@ -688,7 +625,7 @@ static void load_receiver_geometry(
     }
 
     // 普通 points 在没有 -Q 时使用文件形态或统一的手动形态
-    if(Ctrl->M.active && (!Ctrl->M.has_geometry || Ctrl->M.force_rake)){
+    if(Ctrl->M.active && (!Ctrl->M.has_mechanism || Ctrl->M.force_rake)){
         GRTRaiseError("Points input requires -M<strike>/<dip>/<rake>.");
     }
     load_geometry_from_points(
@@ -759,13 +696,7 @@ static void write_projection_variables(
 }
 
 
-/**
- * 执行静态应力投影模块
- *
- * @param[in] argc 命令行参数数量
- * @param[in] argv 命令行参数数组
- * @return 模块执行状态
- */
+/** 执行静态应力投影模块 */
 int static_sproj_main(int argc, char **argv)
 {
     GRT_MODULE_CTRL *Ctrl = GRT_SAFE_CALLOC(1, sizeof(*Ctrl));
@@ -795,6 +726,7 @@ int static_sproj_main(int argc, char **argv)
     real_t *strikes = GRT_SAFE_CALLOC(npts, sizeof(real_t));
     real_t *dips = GRT_SAFE_CALLOC(npts, sizeof(real_t));
     real_t *rakes = GRT_SAFE_CALLOC(npts, sizeof(real_t));
+
     // 根据布局和命令行选项确定每个 point 的接收断层形态
     load_receiver_geometry(
         ncid, &rcv_info, Ctrl,
@@ -802,6 +734,7 @@ int static_sproj_main(int argc, char **argv)
 
     real_t *sigma_n = GRT_SAFE_CALLOC(npts, sizeof(real_t));
     real_t *tau_s = GRT_SAFE_CALLOC(npts, sizeof(real_t));
+
     // 逐点完成坐标转换、方向构造和应力投影
     for(size_t i = 0; i < npts; ++i){
         real_t stress[6] = {
@@ -820,8 +753,8 @@ int static_sproj_main(int argc, char **argv)
         }
 
         real_t nvec[3], tvec[3];
-        get_receiver_vectors(strikes[i], dips[i], rakes[i], nvec, tvec);
-        project_stress(stress, nvec, tvec, &sigma_n[i], &tau_s[i]);
+        grt_fault_plane_vectors(strikes[i], dips[i], rakes[i], nvec, tvec);
+        grt_project_stress_to_fault_plane(stress, nvec, tvec, &sigma_n[i], &tau_s[i]);
     }
 
     // 追加缺失的结果变量，或覆盖已有结果变量
