@@ -157,7 +157,7 @@ expect_fail "-U mutually exclusive with -Q" \
 expect_fail "-U mutually exclusive with -Dr" \
     grt static syn -Gstgrn_rf.nc -S1e20 -Ds2 -Dr0 -Urcv_faults.inp -Ostsyn_bad.nc
 
-expect_fail "finite fault requires ndepsrc>1" \
+expect_fail "finite fault sampled depth is outside the single-depth library" \
     grt static syn -Gstgrn.nc -Ccfaults_tiny.inp -Ostsyn_bad.nc
 
 expect_fail "finite fault mutually exclusive with -S" \

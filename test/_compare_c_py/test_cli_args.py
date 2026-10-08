@@ -814,6 +814,18 @@ def test_static_syn_and_tensor_postprocess_args():
         model.static_syn(output_path=out, src_fault=HERE / "cfaults.inp", src_fault_size=(1.0, 2.0), calc_upar=True)
         assert_command_has(runner.commands[-1], "static_syn", f"-G{model.stgrn}", f"-O{out}", f"-C{HERE / 'cfaults.inp'}+i1/2", "-e")
 
+        model.static_syn(output_path=out, src_fault=HERE / "cfaults.inp", nthreads=4)
+        assert_command_has(runner.commands[-1], "-P4", "-N")
+        for invalid in [0, -1, 1.5, True]:
+            count = len(runner.commands)
+            try:
+                model.static_syn(output_path=out, src_fault=HERE / "cfaults.inp", nthreads=invalid)
+            except ValueError:
+                pass
+            else:
+                raise AssertionError("Invalid static source thread count must be rejected")
+            assert len(runner.commands) == count
+
         # 张量后处理：动态模块处理 SAC 目录，静态模块处理 NetCDF 文件
         dyn = HERE / "_tmp_tensor_dyn"
         dyn.mkdir(exist_ok=True)
