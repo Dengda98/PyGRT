@@ -66,16 +66,16 @@ def plot_syn(stsyn:Stream, out:Union[str,None]=None, sigs:Union[np.ndarray,None]
 # synthetic
 # ?.sac 匹配位移三分量文件名（Z/R/T）
 # time_function 对应 CLI -D
-# 所有时间函数使用面积归一化（除雷克子波使用最大幅值为1）
+# 本例中的震源时间函数均使用面积归一化
 # 卷积用的时间函数保存在输出目录的 sig.sac
 S=1e24
 az=39.2
-pymod.syn(dist=dist, azimuth=az, scale=S, output_path="syn_ex", time_function="t/0.2/0.2/0.4")
+pymod.syn(dist=dist, azimuth=az, scale=S, output_path="syn_ex", time_function="t/0.2/0/0.2")
 st = read("syn_ex/?.sac")
 sigs = read("syn_ex/sig.sac")[0].data
 plot_syn(st, "trig.svg", sigs)
 
-pymod.syn(dist=dist, azimuth=az, scale=S, output_path="syn_sf", force=(2, -1, 4), time_function="t/0.1/0.3/0.6")
+pymod.syn(dist=dist, azimuth=az, scale=S, output_path="syn_sf", force=(2, -1, 4), time_function="t/0.1/0.2/0.3")
 st = read("syn_sf/?.sac")
 sigs = read("syn_sf/sig.sac")[0].data
 plot_syn(st, "trap.svg", sigs)
@@ -85,15 +85,15 @@ st = read("syn_dc/?.sac")
 sigs = read("syn_dc/sig.sac")[0].data
 plot_syn(st, "para.svg", sigs)
 
-pymod.syn(dist=dist, azimuth=az, scale=S, output_path="syn_mt", moment_tensor=(1, -2, -5, 0.5, 3, 1.2), time_function="r/3")
-st = read("syn_mt/?.sac")
-sigs = read("syn_mt/sig.sac")[0].data
-plot_syn(st, "rick.svg", sigs)
+pymod.syn(dist=dist, azimuth=az, scale=S, output_path="syn_cosine", strike=77, dip=88, rake=99, time_function="c/0.1/0.5")
+st = read("syn_cosine/?.sac")
+sigs = read("syn_cosine/sig.sac")[0].data
+plot_syn(st, "cosine.svg", sigs)
 
 # 删除中间计算结果，仅保留成图
 import shutil
 from pathlib import Path
-for name in ["GRN", "syn_ex", "syn_sf", "syn_dc", "syn_mt"]:
+for name in ["GRN", "syn_ex", "syn_sf", "syn_dc", "syn_cosine"]:
     p = Path(name)
     if p.is_dir():
         shutil.rmtree(p, ignore_errors=True)

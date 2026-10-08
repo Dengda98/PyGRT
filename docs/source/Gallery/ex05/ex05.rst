@@ -6,7 +6,7 @@
 
 下载示例： :download:`ex05.tar.gz`
 
-所有时间函数使用面积归一化（除雷克子波使用最大幅值为 1）。
+本例中的震源时间函数均使用面积归一化。
 
 三角波
 ~~~~~~~~~~~~
@@ -26,8 +26,8 @@
 .. figure:: para.svg
     :align: center
 
-雷克子波
+非对称余弦波
 ~~~~~~~~~~~~
 
-.. figure:: rick.svg
+.. figure:: cosine.svg
     :align: center

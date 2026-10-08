@@ -73,14 +73,23 @@ static bool check_time_function_base(const char tftype, const char *tfparams){
     // 梯形波
     else if(GRT_SIG_TRAPEZOID == tftype){
         real_t t1 = 0.0, t2 = 0.0, t3 = 0.0;
-        if(3 != sscanf(tfparams, "%lf/%lf/%lf", &t1, &t2, &t3)) {
+        char extra;
+        if(3 != sscanf(tfparams, "%lf/%lf/%lf %c", &t1, &t2, &t3, &extra)) {
             return false;
         }
-        if(t1 < 0.0 || t2 < 0.0 || t3 <= 0.0){
-            GRTRaiseError("It should be t1>=0.0, t2>=0.0 and t3>0.0 (%s).\n", tfparams);
+        if(t1 < 0.0 || t2 < 0.0 || t3 < 0.0 || t1 + t2 + t3 <= 0.0) {
+            GRTRaiseError("Trapezoidal durations must be nonnegative with a positive total duration (%s).", tfparams);
         }
-        if(t1 > t2 || t2 > t3) {
-            GRTRaiseError("It should be t1<=t2<=t3 (%s).\n", tfparams);
+    }
+    // 非对称余弦波
+    else if(GRT_SIG_ASYMMETRIC_COSINE == tftype){
+        real_t t1 = 0.0, t2 = 0.0;
+        char extra;
+        if(2 != sscanf(tfparams, "%lf/%lf %c", &t1, &t2, &extra)) {
+            return false;
+        }
+        if(t1 <= 0.0 || t2 <= 0.0) {
+            GRTRaiseError("Asymmetric cosine rise and fall durations must be positive (%s).", tfparams);
         }
     }
     // 雷克子波
@@ -170,6 +179,13 @@ real_t * grt_get_time_function(int *TFnt, real_t dt, const char tftype, const ch
         real_t t1 = 0.0, t2 = 0.0, t3 = 0.0;
         sscanf(base, "%lf/%lf/%lf", &t1, &t2, &t3);
         tfarr = grt_get_trap_wave(dt, &t1, &t2, &t3, &tfnt);
+    }
+
+    // 非对称余弦波
+    else if(GRT_SIG_ASYMMETRIC_COSINE == tftype){
+        real_t t1 = 0.0, t2 = 0.0;
+        sscanf(base, "%lf/%lf", &t1, &t2);
+        tfarr = grt_get_asymmetric_cosine_wave(dt, &t1, &t2, &tfnt);
     }
 
     // 雷克子波
@@ -346,27 +362,25 @@ real_t * grt_get_trap_wave(real_t dt, real_t *T1, real_t *T2, real_t *T3, int *N
     if(dt <= 0.0) {
         GRTRaiseError("Invalid time-function sampling interval.");
     }
-    if(times[0] < 0.0 || times[0] > times[1] || times[1] > times[2] || times[2] <= 0.0) {
-        GRTRaiseError("Trapezoidal cutoffs must satisfy 0 <= t1 <= t2 <= t3 and t3 > 0.");
+    if(times[0] < 0.0 || times[1] < 0.0 || times[2] < 0.0 || times[0] + times[1] + times[2] <= 0.0) {
+        GRTRaiseError("Trapezoidal durations must be nonnegative with a positive total duration.");
     }
 
-    // 三个截止时刻向上对齐到采样网格，已接近网格点的时刻只消除浮点误差
+    // 三段时长分别向上对齐到采样网格，非零时段至少保留一个采样间隔
     int indices[3];
     for(int k=0; k<3; ++k) {
         real_t sample = times[k] / dt;
         real_t nearest = round(sample);
         indices[k] = GRT_ISCLOSE(times[k], nearest * dt) ? (int)nearest : (int)ceil(sample);
+        if(times[k] > 0.0) {
+            indices[k] = GRT_MAX(1, indices[k]);
+        }
     }
 
-    // i1、i2、i3 分别为上坡、平台、下坡的截止下标，零时长段共享截止下标
-    int i1 = *T1 > 0.0 ? GRT_MAX(1, indices[0]) : 0;
-    int i2 = GRT_ISCLOSE(*T1, *T2) ? i1 : GRT_MAX(i1, indices[1]);
-    int i3 = GRT_ISCLOSE(*T2, *T3) ? i2 : GRT_MAX(i2 + 1, indices[2]);
-
-    // 时间函数至少保留一个采样间隔
-    if(i3 == 0) {
-        i2 = i3 = 1;
-    }
+    // 对齐后的时长累加为上升段、平台段、下降段的截止下标
+    int i1 = indices[0];
+    int i2 = i1 + indices[1];
+    int i3 = i2 + indices[2];
 
     int nt = i3 + 1;
     real_t *arr = GRT_SAFE_CALLOC(nt, sizeof(*arr));
@@ -382,9 +396,45 @@ real_t * grt_get_trap_wave(real_t dt, real_t *T1, real_t *T2, real_t *T3, int *N
 
     grt_normalize_time_function(arr, nt, dt);
 
-    *T1 = i1 * dt;
-    *T2 = i2 * dt;
-    *T3 = i3 * dt;
+    *T1 = indices[0] * dt;
+    *T2 = indices[1] * dt;
+    *T3 = indices[2] * dt;
+    *Nt = nt;
+    return arr;
+}
+
+
+real_t *grt_get_asymmetric_cosine_wave(real_t dt, real_t *T1, real_t *T2, int *Nt)
+{
+    if(dt <= 0.0 || *T1 <= 0.0 || *T2 <= 0.0) {
+        GRTRaiseError("Asymmetric cosine durations and sampling interval must be positive.");
+    }
+
+    // 两段时长分别向上对齐到采样网格，至少各保留一个采样间隔
+    real_t times[2] = {*T1, *T2};
+    int indices[2];
+    for(int k=0; k<2; ++k) {
+        real_t sample = times[k] / dt;
+        real_t nearest = round(sample);
+        indices[k] = GRT_ISCLOSE(times[k], nearest * dt) ? (int)nearest : (int)ceil(sample);
+    }
+    int peak = GRT_MAX(1, indices[0]);
+    int last = peak + GRT_MAX(1, indices[1]);
+    int nt = last + 1;
+    real_t *arr = GRT_SAFE_CALLOC(nt, sizeof(*arr));
+
+    // 按分段余弦函数采样，公共系数由离散面积归一化确定
+    for(int n=0; n<nt; ++n) {
+        if(n < peak) {
+            arr[n] = 1.0 - cos(PI * (real_t)n / peak);
+        } else {
+            arr[n] = 1.0 + cos(PI * (real_t)(n - peak) / (last - peak));
+        }
+    }
+    grt_normalize_time_function(arr, nt, dt);
+
+    *T1 = peak * dt;
+    *T2 = (last - peak) * dt;
     *Nt = nt;
     return arr;
 }

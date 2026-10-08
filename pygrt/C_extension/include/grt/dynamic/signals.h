@@ -15,11 +15,12 @@
 #include "grt/common/const.h"
 
 
-#define GRT_SIG_IMPULSE  'i'   ///< 脉冲信号代号
-#define GRT_SIG_PARABOLA 'p'   ///< 抛物波代号
-#define GRT_SIG_TRAPEZOID 't'  ///< 梯形波代号
-#define GRT_SIG_RICKER   'r'   ///< 雷克子波信号
-#define GRT_SIG_CUSTOM   '0'   ///< 自定义时间函数代码
+#define GRT_SIG_IMPULSE           'i'  ///< 脉冲信号代号
+#define GRT_SIG_PARABOLA          'p'  ///< 抛物波代号
+#define GRT_SIG_TRAPEZOID         't'  ///< 梯形波代号
+#define GRT_SIG_ASYMMETRIC_COSINE 'c'  ///< 非对称余弦波代号
+#define GRT_SIG_RICKER            'r'  ///< 雷克子波信号
+#define GRT_SIG_CUSTOM            '0'  ///< 自定义时间函数代码
 
 
 /**
@@ -135,10 +136,10 @@ real_t * grt_get_parabola_wave(real_t dt, real_t *Tlen, int *Nt);
 
 /**
  * 生成梯形波、三角波或矩形波
- * T1=T2 时平台时长为零，退化为三角波
- * T1=0 时上坡时长为零，T2=T3 时下坡时长为零，两者同时满足时退化为矩形波
- * 截止时刻向上对齐到采样网格，接近网格点或相等的时刻按浮点容差处理
- * 非零上坡和下坡至少保留一个采样间隔，矩形波也至少保留一个采样间隔
+ * T1、T2、T3 分别为上升段、平台段、下降段时长，均须非负且总时长大于零
+ * T2=0 时退化为三角波，T1=T3=0 时退化为矩形波
+ * 三段时长分别向上对齐到采样网格，接近网格点时只消除浮点误差
+ * 非零时段至少保留一个采样间隔，零时长段保持为零
  * 所有样本按分段函数直接取值，再按矩形法进行面积归一化以匹配离散卷积
  * 
  * @verbatim
@@ -153,20 +154,36 @@ real_t * grt_get_parabola_wave(real_t dt, real_t *Tlen, int *Nt);
  *   |  /                           \
  *   | /                             \
  *   |------+------------------+------+---------------->
- *  O       T1                 T2     T3                T
+ *  O       T1              T1+T2  T1+T2+T3             T
  * 
  * @endverbatim
  * 
  * 
  * @param[in]        dt        采样间隔
- * @param[in,out]    T1        上坡截止时刻，返回实际采样时刻
- * @param[in,out]    T2        平台截止时刻，返回实际采样时刻
- * @param[in,out]    T3        下坡截止时刻，返回实际采样时刻
+ * @param[in,out]    T1        上升段时长，返回实际采样时长，s
+ * @param[in,out]    T2        平台段时长，返回实际采样时长，s
+ * @param[in,out]    T3        下降段时长，返回实际采样时长，s
  * @param[out]       Nt        返回的点数
  * 
  * @return   real_t 指针
  */
 real_t * grt_get_trap_wave(real_t dt, real_t *T1, real_t *T2, real_t *T3, int *Nt);
+
+
+/**
+ * 生成非对称余弦滑移速率时间函数
+ * T1、T2 分别为上升段和下降段时长，均须大于零
+ * 两段时长分别向上对齐到采样网格，接近网格点时消除浮点误差
+ * 上升段和下降段至少各保留一个采样间隔，按矩形法进行面积归一化
+ *
+ * @param[in]        dt        采样间隔，s
+ * @param[in,out]    T1        上升段时长，返回实际采样时长，s
+ * @param[in,out]    T2        下降段时长，返回实际采样时长，s
+ * @param[out]       Nt        返回的点数
+ *
+ * @return   real_t 指针
+ */
+real_t *grt_get_asymmetric_cosine_wave(real_t dt, real_t *T1, real_t *T2, int *Nt);
 
 
 

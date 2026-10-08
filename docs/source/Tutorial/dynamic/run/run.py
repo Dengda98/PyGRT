@@ -225,16 +225,22 @@ plot_syn(stsyn, "syn_dc_zne.svg")
 # -----------------------------------------------------------------------------------
 # BEGIN TIME FUNC
 # time_function 对应 CLI -D
-# 所有时间函数使用面积归一化（除雷克子波使用最大幅值为1）
-# t1=t2 时梯形波退化为三角波
+# 本例中的震源时间函数均使用面积归一化
+# 平台段时长为零时梯形波退化为三角波
 # 卷积用的时间函数会以 sig.sac 保存在输出目录
-pymod.syn(dist=10.0, azimuth=30.0, scale=1e16, output_path="syn_sf_trig", force=(1, -0.5, 2), time_function="t/0.3/0.3/0.6")
+pymod.syn(dist=10.0, azimuth=30.0, scale=1e16, output_path="syn_sf_trig", force=(1, -0.5, 2), time_function="t/0.3/0/0.3")
+# 非对称余弦波，上升段时长/下降段时长
+pymod.syn(dist=10.0, azimuth=30.0, scale=1e16, output_path="syn_sf_cosine", force=(1, -0.5, 2), time_function="c/0.1/0.5")
 # END TIME FUNC
 # -----------------------------------------------------------------------------------
 
 stsyn = read("syn_sf_trig/?.sac")
 trig = read("syn_sf_trig/sig.sac")[0].data
 plot_syn(stsyn, "syn_sf_trig.svg", trig)
+
+stsyn = read("syn_sf_cosine/?.sac")
+cosine = read("syn_sf_cosine/sig.sac")[0].data
+plot_syn(stsyn, "syn_sf_cosine.svg", cosine)
 
 
 # -----------------------------------------------------------------------------------
@@ -257,7 +263,7 @@ from pathlib import Path
 for name in [
     "GRN",
     "syn_ex", "syn_sf", "syn_dc", "syn_dc2", "syn_ts", "syn_mt",
-    "syn_dc_zne", "syn_sf_trig", "syn_mt_intdif",
+    "syn_dc_zne", "syn_sf_trig", "syn_sf_cosine", "syn_mt_intdif",
 ]:
     p = Path(name)
     if p.is_dir():

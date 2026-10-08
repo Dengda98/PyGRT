@@ -1306,11 +1306,14 @@ class PyModel1D:
                                        north/east/down.
         :param    time_function:       Time-function parameters without the ``-D`` prefix.
                                        Supported forms are ``i`` (impulse), ``p/t0`` (parabola),
-                                       ``t/t1/t2/t3`` (trapezoid), ``r/f0`` (Ricker) and
-                                       ``0/file`` (custom).
-                                       Times are in seconds and ``f0`` is in Hz.
-                                       All time functions use area normalization, except Ricker,
-                                       which has a peak amplitude of 1.
+                                       ``t/t1/t2/t3`` (trapezoid), ``c/t1/t2`` (asymmetric cosine),
+                                       and ``0/file`` (custom), with area normalization.
+                                       For ``t/t1/t2/t3``, the parameters are nonnegative rise, plateau
+                                       and fall durations, with a positive total duration.
+                                       For ``c/t1/t2``, ``t1`` and ``t2`` are positive rise and fall durations.
+                                       Times are in seconds. ``r/f0`` additionally accepts a Ricker
+                                       convolution wavelet, with ``f0`` in Hz and analytic peak amplitude 1.
+                                       This signed wavelet is not an area-normalized unit-slip source process.
                                        Append ``+d<delay>`` for a delay in seconds, e.g. ``p/1.3+d0.4``.
         :param    integrate_order:     Number of time integrations. For example,
                                        ``1`` yields step-like displacement.

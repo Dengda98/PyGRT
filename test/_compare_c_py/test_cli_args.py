@@ -653,7 +653,7 @@ def test_syn_source_and_time_function_options():
             azimuth=39.2,
             scale=1e24,
             output_path=out / "ex",
-            time_function="t/0.2/0.2/0.4",
+            time_function="t/0.2/0/0.2",
             integrate_order=1,
             differentiate_order=2,
             scale_with_mu=True,
@@ -670,7 +670,7 @@ def test_syn_source_and_time_function_options():
                 "-Su1e+24",
                 f"-O{out / 'ex'}",
                 "-R10",
-                "-Dt/0.2/0.2/0.4",
+                "-Dt/0.2/0/0.2",
                 "-I1",
                 "-J2",
                 "-N",
@@ -679,8 +679,8 @@ def test_syn_source_and_time_function_options():
         )
 
         # 单力源
-        model.syn(dist=10.0, azimuth=12.0, scale=1e20, output_path=out / "sf", force=(2.0, -1.0, 4.0), time_function="t/0.1/0.3/0.6")
-        assert_command_has(runner.commands[-1], "-F2/-1/4", "-Dt/0.1/0.3/0.6", "-S1e+20")
+        model.syn(dist=10.0, azimuth=12.0, scale=1e20, output_path=out / "sf", force=(2.0, -1.0, 4.0), time_function="t/0.1/0.2/0.3")
+        assert_command_has(runner.commands[-1], "-F2/-1/4", "-Dt/0.1/0.2/0.3", "-S1e+20")
 
         # 剪切源 / 张裂源 / 矩张量
         model.syn(dist=10.0, azimuth=1.0, scale=1e22, output_path=out / "dc", strike=77.0, dip=88.0, rake=99.0, time_function="p/0.6")
@@ -695,10 +695,14 @@ def test_syn_source_and_time_function_options():
             scale=1e22,
             output_path=out / "mt",
             moment_tensor=(1.0, -2.0, -5.0, 0.5, 3.0, 1.2),
-            time_function="r/3",
+            time_function="c/0.1/0.5",
         )
         cmd = runner.commands[-1]
-        assert_command_has(cmd, f"-G{grn_root}", "-T1/-2/-5/0.5/3/1.2", "-Dr/3")
+        assert_command_has(cmd, f"-G{grn_root}", "-T1/-2/-5/0.5/3/1.2", "-Dc/0.1/0.5")
+
+        # 单独验证 Ricker 卷积子波的参数传递，不作为震源过程示例
+        model.syn(dist=10.0, azimuth=1.0, scale=1e22, output_path=out / "ricker", time_function="r/3")
+        assert_command_has(runner.commands[-1], f"-G{grn_root}", "-Dr/3")
     finally:
         _restore_run_grt(pygrt.pymod, original)
 

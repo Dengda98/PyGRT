@@ -77,8 +77,8 @@ def run_c_dynamic(c_root: Path) -> None:
 
     gdir = _grn_subdir(grn_root)
     cases = [
-        ("syn_ex", [], "t/0.2/0.2/0.4"),
-        ("syn_sf", [f"-F{format_float(FN)}/{format_float(FE)}/{format_float(FZ)}"], "t/0.1/0.3/0.6"),
+        ("syn_ex", [], "t/0.2/0/0.2"),
+        ("syn_sf", [f"-F{format_float(FN)}/{format_float(FE)}/{format_float(FZ)}"], "t/0.1/0.2/0.3"),
         ("syn_dc", [f"-M{format_float(STK)}/{format_float(DIP)}/{format_float(RAK)}"], "p/0.6"),
         ("syn_ts", [f"-M{format_float(STK)}/{format_float(DIP)}"], "p/0.6"),
         (
@@ -115,8 +115,8 @@ def run_py_dynamic(py_root: Path) -> None:
     model.greenfn(depsrc=DEPSRC, deprcv=DEPRCV, dists=DIST, nt=NT, dt=DT, calc_upar=True, print_log=False)
 
     cases = [
-        ("syn_ex", {}, "t/0.2/0.2/0.4"),
-        ("syn_sf", {"force": (FN, FE, FZ)}, "t/0.1/0.3/0.6"),
+        ("syn_ex", {}, "t/0.2/0/0.2"),
+        ("syn_sf", {"force": (FN, FE, FZ)}, "t/0.1/0.2/0.3"),
         ("syn_dc", {"strike": STK, "dip": DIP, "rake": RAK}, "p/0.6"),
         ("syn_ts", {"strike": STK, "dip": DIP}, "p/0.6"),
         ("syn_mt", {"moment_tensor": MT}, "r/3"),

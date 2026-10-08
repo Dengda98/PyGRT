@@ -1607,7 +1607,13 @@ def lamb(
                                 ``(Mxx, Mxy, Mxz, Myy, Myz, Mzz)``
     :param    time_function:    Time-function parameters passed to ``grt``, without the ``-D`` prefix.
                                 Supported forms are ``i`` (impulse), ``p/t0``, ``t/t1/t2/t3``,
-                                ``r/f0`` or ``0/file``.
+                                ``c/t1/t2`` (asymmetric cosine) or ``0/file``, with area normalization.
+                                For ``t/t1/t2/t3``, the parameters are nonnegative rise, plateau
+                                and fall durations in seconds, with a positive total duration.
+                                For ``c/t1/t2``, ``t1`` and ``t2`` are positive rise and fall durations in seconds.
+                                ``r/f0`` additionally accepts a signed Ricker convolution wavelet,
+                                with ``f0`` in Hz and analytic peak amplitude 1, without area normalization.
+                                It is not a unit-slip source process.
                                 Append ``+d<delay>`` for a delay in seconds, e.g. ``p/1.3+d0.4``.
     :param    integrate_order:  Number of time integrations
    :param    differentiate_order: Number of time differentiations
