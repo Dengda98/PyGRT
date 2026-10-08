@@ -90,8 +90,16 @@ SACTRACE * grt_copy_SACTRACE(SACTRACE *sac, bool zero_value);
  */
 SACTRACE * grt_new_SACTRACE(real_t dt, int nt, real_t b0);
 
-/** 将 SACTRACE 保存到本地，临时转换为 float，不修改工作波形 */
-int grt_write_SACTRACE(const char *path, SACTRACE *sac);
+/**
+ * 设置 SAC 起点，并根据采样点数和采样间隔更新终点
+ *
+ * @param[in,out]  hd     SAC 头段
+ * @param[in]      begin  新的开始时刻，s
+ */
+void grt_sachead_set_begin(SACHEAD *hd, real_t begin);
+
+/** 将 SACTRACE 保存到本地，临时转换为 float，不修改工作波形，写出失败直接报错 */
+void grt_write_SACTRACE(const char *path, SACTRACE *sac);
 
 /** 释放 SACTRACE 指针 */
 void grt_free_SACTRACE(SACTRACE *sac);

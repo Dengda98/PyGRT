@@ -533,25 +533,25 @@ static void compute_modsum_one(
     FFTW_HOLDER *fh = grt_create_fftw_holder_C2R_1D(fft_nt*Ctrl->W.upsample_n, fft_dt/Ctrl->W.upsample_n, fft_nf, fft_df);
     
     // 建立SAC头文件，包含必要的头变量
-    SACTRACE *sac = grt_new_SACTRACE(fh->dt, fh->nt, 0.0);
+    SACHEAD refhead = new_sac_head(fh->dt, fh->nt, 0);
     // 发震时刻作为参考时刻
-    sac->hd.o = 0.0; 
-    sac->hd.iztype = IO; 
+    refhead.o = 0.0;
+    refhead.iztype = IO;
     // 记录震源和台站深度
-    sac->hd.evdp = Ctrl->D.depsrc; // km
-    sac->hd.stel = (-1.0)*Ctrl->D.deprcv*1e3; // m
+    refhead.evdp = Ctrl->D.depsrc; // km
+    refhead.stel = (-1.0)*Ctrl->D.deprcv*1e3; // m
     // 写入虚频率
-    GRT_SACHEAD_SET_IMAG_FREQ(&sac->hd, 0.0);
+    GRT_SACHEAD_SET_IMAG_FREQ(&refhead, 0.0);
     // 写入接受点的Vp,Vs,rho
-    GRT_SACHEAD_SET_RCV_VP(&sac->hd,     mod1d->Va[mod1d->ircv]);
-    GRT_SACHEAD_SET_RCV_VS(&sac->hd,     mod1d->Vb[mod1d->ircv]);
-    GRT_SACHEAD_SET_RCV_RHO(&sac->hd,    mod1d->Rho[mod1d->ircv]);
-    GRT_SACHEAD_SET_RCV_QP_INV(&sac->hd, mod1d->Qainv[mod1d->ircv]);
-    GRT_SACHEAD_SET_RCV_QS_INV(&sac->hd, mod1d->Qbinv[mod1d->ircv]);
+    GRT_SACHEAD_SET_RCV_VP(&refhead,     mod1d->Va[mod1d->ircv]);
+    GRT_SACHEAD_SET_RCV_VS(&refhead,     mod1d->Vb[mod1d->ircv]);
+    GRT_SACHEAD_SET_RCV_RHO(&refhead,    mod1d->Rho[mod1d->ircv]);
+    GRT_SACHEAD_SET_RCV_QP_INV(&refhead, mod1d->Qainv[mod1d->ircv]);
+    GRT_SACHEAD_SET_RCV_QS_INV(&refhead, mod1d->Qbinv[mod1d->ircv]);
     // 写入震源点的Vp,Vs,rho
-    GRT_SACHEAD_SET_SRC_VP(&sac->hd,  mod1d->Va[mod1d->isrc]);
-    GRT_SACHEAD_SET_SRC_VS(&sac->hd,  mod1d->Vb[mod1d->isrc]);
-    GRT_SACHEAD_SET_SRC_RHO(&sac->hd, mod1d->Rho[mod1d->isrc]);
+    GRT_SACHEAD_SET_SRC_VP(&refhead,  mod1d->Va[mod1d->isrc]);
+    GRT_SACHEAD_SET_SRC_VS(&refhead,  mod1d->Vb[mod1d->isrc]);
+    GRT_SACHEAD_SET_SRC_RHO(&refhead, mod1d->Rho[mod1d->isrc]);
     
     // 为每个震中距设置对应的变量
     real_t (*travtPS)[2] = GRT_SAFE_CALLOC(grn->nr, sizeof(real_t)*2);
@@ -576,7 +576,7 @@ static void compute_modsum_one(
                 delayT = Ctrl->E.delayT0;
                 if(Ctrl->E.delayV0 > 0.0)   delayT += hypot( dist, Ctrl->D.deprcv - Ctrl->D.depsrc ) / Ctrl->E.delayV0;
             } else {
-                delayT = Ctrl->E.delayT0 + sac->hd.t0;
+                delayT = Ctrl->E.delayT0 + travtPS[ir][0];
             }
             begintimes[ir] = delayT;
         }
@@ -585,8 +585,8 @@ static void compute_modsum_one(
     const char *validChnls = (eigmet->wtype == GRT_DISPERSION_RAYL)? "ZR" : "T";
 
     // 反傅里叶变换后保存到SAC文件
-    grt_grnspec_write_sac(
-        grn, travtPS, begintimes, outputdirs, fh, sac, 
+    grt_grnspec_save_waveforms(
+        &refhead, grn, travtPS, begintimes, outputdirs, fh,
         validChnls, true, Ctrl->G.doEX, Ctrl->G.doVF, Ctrl->G.doHF, Ctrl->G.doDC);
 
     // 输出警告：当震源位于液体层中时，仅允许计算爆炸源对应的格林函数
@@ -606,7 +606,6 @@ static void compute_modsum_one(
     GRT_SAFE_FREE_PTR(grn->freqs);
     grt_grnspec_free_u(grn);
     grt_free_eigenfn_info(eigfnmet);
-    grt_free_SACTRACE(sac);
     grt_destroy_fftw_holder(fh);
 }
 

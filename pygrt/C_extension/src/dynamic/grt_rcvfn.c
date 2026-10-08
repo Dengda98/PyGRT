@@ -724,9 +724,7 @@ static void write_result_sac(
         coefficient *= imag_factor;
     }
 
-    if(grt_write_SACTRACE(path, sac) != 0){
-        GRTRaiseError("Failed to write SAC file %s.", path);
-    }
+    grt_write_SACTRACE(path, sac);
 
     grt_free_SACTRACE(sac);
     grt_destroy_fftw_holder(fh);
