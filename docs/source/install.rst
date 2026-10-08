@@ -16,7 +16,7 @@
 + `Seismic Analysis Code (SAC) <http://www.iris.edu/ds/nodes/dmc/forms/sac/>`_ ，需在对应网址申请下载。
   用于用户进一步处理 SAC 格式的输出波形（可选）。
 
-以 Python 脚本使用时，其余依赖已在 :file:`setup.py` 中写好，直接 :command:`pip` 安装即可。
+以 Python 脚本使用时，其余依赖已在 :file:`pyproject.toml` 中写好，直接 :command:`pip` 安装即可。
 Python 接口通过调用包内的 :command:`grt` 完成主计算；预构建安装包已按平台内置该可执行文件，
 安装后即可使用，**无需再配置** :envvar:`PATH` 。
 

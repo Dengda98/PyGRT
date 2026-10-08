@@ -1,4 +1,37 @@
-
 [build-system]
 requires = ["setuptools>=83.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "pygrt-kit"
+dynamic = ["version"]
+description = "An Efficient and Integrated Python Package for Computing Synthetic Seismograms in a Layered Half-Space Model"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [{name = "Zhu Dengda", email = "zhudengda@mail.iggcas.ac.cn"}]
+license = {text = "GPL-3.0"}
+dependencies = [
+    "numpy>=1.20, <2.0",
+    "scipy>=1.10",
+    "matplotlib>=3.5",
+    "obspy>=1.4",
+]
+
+[project.urls]
+Homepage = "https://github.com/Dengda98/PyGRT"
+Documentation = "https://pygrt.readthedocs.io/zh-cn/latest/"
+"Source Code" = "https://github.com/Dengda98/PyGRT"
+
+[tool.setuptools]
+include-package-data = true
+zip-safe = false
+
+[tool.setuptools.packages.find]
+include = ["pygrt*"]
+namespaces = false
+
+[tool.setuptools.package-data]
+pygrt = ["C_extension/*"]
+
+[tool.setuptools.dynamic]
+version = {attr = "pygrt._version.__version__"}

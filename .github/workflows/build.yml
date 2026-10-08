@@ -370,7 +370,8 @@ jobs:
       - name: Build the Python Wheel
         working-directory: ${{ env.PACK_NAME }}
         run: |
-          python setup.py bdist_wheel --plat-name=${{ env.SUFFIX_PLAT_NAME }}  # 只制作wheel，这里不打包源码 
+          # 只制作wheel，保留预构建二进制文件对应的平台标签
+          python -m build --wheel -C--build-option=--plat-name=${{ env.SUFFIX_PLAT_NAME }}
 
       - name: Upload artifact (*.whl)
         uses: actions/upload-artifact@v7
