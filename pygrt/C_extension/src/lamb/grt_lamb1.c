@@ -35,10 +35,10 @@ typedef struct {
         real_t cbar;  ///<  c/beta
     } C;
 
-    /** 选择输出的震相 */
+    /** 参数解析时确定的震相选择 */
     struct {
         bool active;
-        char *phase_list;
+        unsigned int phase_mask;
     } L;
 
 } GRT_MODULE_CTRL;
@@ -48,7 +48,6 @@ typedef struct {
 /** 释放结构体的内存 */
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
     GRT_SAFE_FREE_PTR(Ctrl->T.ts);
-    GRT_SAFE_FREE_PTR(Ctrl->L.phase_list);
     GRT_SAFE_FREE_PTR(Ctrl);
 }
 
@@ -111,6 +110,8 @@ printf("\n"
 
 /** 从命令行中读取选项，处理后记录到全局变量中 */
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
+    const char *phase_list = NULL;
+
     int opt;
 
     while ((opt = getopt(argc, argv, ":P:T:A:C:L:h")) != -1) {
@@ -181,9 +182,8 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 break;
 
             case 'L':
-                GRT_SAFE_FREE_PTR(Ctrl->L.phase_list);
-                Ctrl->L.phase_list = strdup(optarg);
                 Ctrl->L.active = true;
+                phase_list = optarg;
                 break;
             
             GRT_Common_Options_in_Switch((char)(optopt)); 
@@ -195,6 +195,10 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     GRTCheckOptionActive(Ctrl, P);
     GRTCheckOptionActive(Ctrl, T);
     GRTCheckOptionActive(Ctrl, A);
+    if(Ctrl->C.cbar != 0 && Ctrl->L.active) {
+        GRTRaiseWarning("The -L phase list is ignored in lamb1 moving-source mode.");
+    }
+    Ctrl->L.phase_mask = grt_lamb_parse_phase_list(Ctrl->C.cbar == 0 ? phase_list : NULL, GRT_LAMB1_PHASES);
 }
 
 
@@ -210,7 +214,7 @@ int lamb1_main(int argc, char **argv){
     if(Ctrl->C.active){
         real_t (*u)[3][3] = GRT_SAFE_CALLOC(Ctrl->T.nt, sizeof(*u));
         grt_solve_lamb1(Ctrl->P.nu, Ctrl->T.ts, Ctrl->T.nt, Ctrl->A.azimuth,
-            Ctrl->C.cbar, Ctrl->L.active ? Ctrl->L.phase_list : NULL, u);
+            Ctrl->C.cbar, Ctrl->L.phase_mask, u);
 
         printf("#%13s%14s%14s%14s\n", "tbar", "u1", "u2", "u3");
         for(int i=0; i<Ctrl->T.nt; ++i){
@@ -224,7 +228,7 @@ int lamb1_main(int argc, char **argv){
     }
     else{
         grt_solve_lamb1(Ctrl->P.nu, Ctrl->T.ts, Ctrl->T.nt, Ctrl->A.azimuth,
-            0.0, Ctrl->L.active ? Ctrl->L.phase_list : NULL, NULL);
+            0.0, Ctrl->L.phase_mask, NULL);
     }
 
     free_Ctrl(Ctrl);

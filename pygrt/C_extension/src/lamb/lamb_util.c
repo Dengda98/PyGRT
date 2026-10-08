@@ -13,16 +13,36 @@
 #include "grt/lamb/lamb_util.h"
 
 
-unsigned int grt_lamb_parse_phase_list(
-    const char *phase_list, const LAMB_PHASE_OPTION *options,
-    const size_t option_count, const char *available_names)
+/** 震相名称与公共掩码的对应关系，仅在解析参数时使用 */
+static const struct {
+    const char *name;
+    unsigned int bit;
+} PHASE_OPTIONS[] = {
+    {"P",   GRT_LAMB_PHASE_P},
+    {"S",   GRT_LAMB_PHASE_S},
+    {"R",   GRT_LAMB_PHASE_R},
+    {"PP",  GRT_LAMB_PHASE_PP},
+    {"SS",  GRT_LAMB_PHASE_SS},
+    {"PS",  GRT_LAMB_PHASE_PS},
+    {"SP",  GRT_LAMB_PHASE_SP},
+    {"sPs", GRT_LAMB_PHASE_SPS},
+};
+
+unsigned int grt_lamb_parse_phase_list(const char *phase_list, unsigned int supported)
 {
-    unsigned int all_mask = 0u;
-    for (size_t i = 0; i < option_count; ++i) {
-        all_mask |= options[i].bit;
+    if(phase_list == NULL) {
+        return supported;
     }
-    if (phase_list == NULL) {
-        return all_mask;
+
+    char available_names[64] = "";
+    const size_t option_count = sizeof(PHASE_OPTIONS) / sizeof(PHASE_OPTIONS[0]);
+    for(size_t i = 0; i < option_count; ++i) {
+        if(supported & PHASE_OPTIONS[i].bit) {
+            if(available_names[0]) {
+                strcat(available_names, ", ");
+            }
+            strcat(available_names, PHASE_OPTIONS[i].name);
+        }
     }
 
     char *copy = strdup(phase_list);
@@ -31,7 +51,8 @@ unsigned int grt_lamb_parse_phase_list(
     }
 
     unsigned int mask = 0u;
-    char *token = strtok(copy, ",");
+    char *state = NULL;
+    char *token = strtok_r(copy, ",", &state);
     while (token != NULL) {
         while (isspace((unsigned char)*token)) {
             ++token;
@@ -48,8 +69,8 @@ unsigned int grt_lamb_parse_phase_list(
         } else {
             unsigned int phase = 0u;
             for (size_t i = 0; i < option_count; ++i) {
-                if (strcasecmp(token, options[i].name) == 0) {
-                    phase = options[i].bit;
+                if (strcasecmp(token, PHASE_OPTIONS[i].name) == 0) {
+                    phase = PHASE_OPTIONS[i].bit & supported;
                     break;
                 }
             }
@@ -64,7 +85,7 @@ unsigned int grt_lamb_parse_phase_list(
             }
         }
 
-        token = strtok(NULL, ",");
+        token = strtok_r(NULL, ",", &state);
     }
 
     GRT_SAFE_FREE_PTR(copy);

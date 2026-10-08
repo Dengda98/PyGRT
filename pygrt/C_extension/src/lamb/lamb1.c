@@ -44,17 +44,6 @@ typedef struct {
     real_t RaylQ[3][3];
 } VARS;
 
-enum {
-    LAMB1_PHASE_P = 1u << 0,
-    LAMB1_PHASE_S = 1u << 1,
-    LAMB1_PHASE_R = 1u << 2,
-};
-
-static const LAMB_PHASE_OPTION LAMB1_PHASE_OPTIONS[] = {
-    {"P", LAMB1_PHASE_P},
-    {"S", LAMB1_PHASE_S},
-    {"R", LAMB1_PHASE_R},
-};
 
 
 static void ckim_P(real_t tbar, VARS *V, cplx_t ckim[3][6][10])
@@ -848,14 +837,14 @@ static void build_G(real_t tbar, const real_t tbar_eps, const unsigned int phase
     real_t us2[3][3] = {0};
     real_t usp[3][3] = {0};
     real_t uR[3][3] = {0};
-    if ((phase_mask & LAMB1_PHASE_P) != 0u) {
+    if ((phase_mask & GRT_LAMB_PHASE_P) != 0u) {
         build_P(tbar, V, up);
     }
-    if ((phase_mask & LAMB1_PHASE_S) != 0u) {
+    if ((phase_mask & GRT_LAMB_PHASE_S) != 0u) {
         build_S1(tbar, V, us1);
         build_S2_SP(tbar, V, us2, usp);
     }
-    if ((phase_mask & LAMB1_PHASE_R) != 0u) {
+    if ((phase_mask & GRT_LAMB_PHASE_R) != 0u) {
         build_R(tbar, V, uR);
     }
 
@@ -1265,7 +1254,7 @@ static void build_motion_G(real_t tbar, const real_t tbar_eps, const real_t cbar
 
 void grt_solve_lamb1(
     const real_t nu, const real_t *ts, const int nt, const real_t azimuth, const real_t cbar,
-    const char *phase_list, real_t (*u)[3][3])
+    const unsigned int phase_mask, real_t (*u)[3][3])
 {
     // 检查输入参数范围
     if(nu <= 0.0 || nu >= 0.5){
@@ -1279,13 +1268,6 @@ void grt_solve_lamb1(
     }
     if(cbar < 0.0){
         GRTRaiseError("cbar for lamb1 should be nonnegative.\n");
-    }
-    const unsigned int phase_mask = grt_lamb_parse_phase_list(
-        cbar == 0.0 ? phase_list : NULL,
-        LAMB1_PHASE_OPTIONS, sizeof(LAMB1_PHASE_OPTIONS) / sizeof(LAMB1_PHASE_OPTIONS[0]),
-        "P, S, R");
-    if (cbar != 0.0 && phase_list != NULL) {
-        GRTRaiseWarning("The -L phase list is ignored in lamb1 moving-source mode.");
     }
     for(int i=1; i<nt; ++i){
         if(ts[i] <= ts[i-1]){

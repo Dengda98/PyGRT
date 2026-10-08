@@ -14,6 +14,7 @@ import glob
 import warnings
 from copy import deepcopy
 from contextlib import contextmanager
+from enum import IntFlag
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import List, Optional, Sequence, Union
@@ -31,6 +32,7 @@ import numpy.ctypeslib as npct
 
 from .cli import format_float, format_range, run_grt
 from .c_interfaces import (
+    C_grt_lamb_parse_phase_list,
     C_grt_solve_lamb1,
     C_grt_solve_lamb2,
     C_grt_solve_lamb3,
@@ -1207,6 +1209,18 @@ def plot_statsdata_ptam(statsdata1:np.ndarray, statsdata2:np.ndarray, statsdata_
 
 
 
+class _LambPhase(IntFlag):
+    """与 C 的 GRT_LAMB_PHASE 保持一致的震相掩码"""
+    P   = 1 << 0
+    S   = 1 << 1
+    R   = 1 << 2
+    PP  = 1 << 3
+    SS  = 1 << 4
+    PS  = 1 << 5
+    SP  = 1 << 6
+    SPS = 1 << 7
+
+
 def _prepare_lamb_phases(phases: Optional[Union[str, Sequence[str]]]) -> Optional[str]:
     """将 Python 侧的 Lamb 震相参数转换为逗号分隔的字符串"""
     if phases is None:
@@ -1227,6 +1241,18 @@ def _prepare_lamb_phases(phases: Optional[Union[str, Sequence[str]]]) -> Optiona
     if phase_list == "":
         raise ValueError("phases should contain at least one non-empty phase name.")
     return phase_list
+
+
+def _prepare_lamb_phase_mask(phases: Optional[Union[str, Sequence[str]]], supported: _LambPhase) -> int:
+    """
+    规范震相列表并在求解前解析为掩码
+
+    :param    phases:     用户指定的震相列表，None 表示选择全部可用震相
+    :param    supported:  当前求解器支持的震相掩码
+    :return:             解析后的震相掩码
+    """
+    phase_list = _prepare_lamb_phases(phases)
+    return C_grt_lamb_parse_phase_list(None if phase_list is None else phase_list.encode(), int(supported))
 
 
 def lamb1(
@@ -1268,9 +1294,10 @@ def lamb1(
         raise ValueError("cbar should be positive when specified.")
     if cbar > 0.0 and abs(np.sin(np.deg2rad(azimuth))) <= 1e-8:
         raise ValueError("the moving-source closed-form solution requires azimuth off the x1 axis.")
-    phase_list = _prepare_lamb_phases(phases)
-    if moving_source and phase_list is not None:
+    if moving_source and phases is not None:
         raise ValueError("phases is not supported with cbar.")
+
+    phase_mask = _prepare_lamb_phase_mask(phases, _LambPhase.P | _LambPhase.S | _LambPhase.R)
 
     # 定义结果数组
     nt = len(tbar)
@@ -1282,7 +1309,7 @@ def lamb1(
         nt,
         azimuth,
         cbar,
-        None if phase_list is None else phase_list.encode(),
+        phase_mask,
         npct.as_ctypes(u.ravel()),
     )
 
@@ -1414,13 +1441,14 @@ def lamb2(
     """
 
     nu, tbar, R, depsrc, deprcv, azimuth = _prepare_lamb2_inputs(nu, tbar, R, depsrc, deprcv, azimuth)
+    supported = _LambPhase.P | _LambPhase.S | (_LambPhase.SP if depsrc > 0 else _LambPhase.PS)
+    phase_mask = _prepare_lamb_phase_mask(phases, supported)
     nt = len(tbar)
     G = np.zeros((nt, 3, 3), dtype=NPCT_REAL_TYPE)
     Gr = np.zeros((nt, 3, 3, 3), dtype=NPCT_REAL_TYPE)
     Gs = np.zeros((nt, 3, 3, 3), dtype=NPCT_REAL_TYPE)
     Grs = np.zeros((nt, 3, 3, 3, 3), dtype=NPCT_REAL_TYPE)
 
-    phase_list = _prepare_lamb_phases(phases)
     C_grt_solve_lamb2(
         nu,
         npct.as_ctypes(tbar),
@@ -1429,7 +1457,7 @@ def lamb2(
         depsrc,
         deprcv,
         azimuth,
-        None if phase_list is None else phase_list.encode(),
+        phase_mask,
         npct.as_ctypes(G.ravel()),
         npct.as_ctypes(Gs.ravel()),
         npct.as_ctypes(Gr.ravel()),
@@ -1495,12 +1523,13 @@ def lamb3(
     """
 
     nu, tbar, R, depsrc, deprcv, azimuth = _prepare_lamb3_inputs(nu, tbar, R, depsrc, deprcv, azimuth)
+    supported = _LambPhase.P | _LambPhase.S | _LambPhase.PP | _LambPhase.SS | _LambPhase.PS | _LambPhase.SP | _LambPhase.SPS
+    phase_mask = _prepare_lamb_phase_mask(phases, supported)
     nt = len(tbar)
     G = np.zeros((nt, 3, 3), dtype=NPCT_REAL_TYPE)
     Gr = np.zeros((nt, 3, 3, 3), dtype=NPCT_REAL_TYPE)
     Gs = np.zeros((nt, 3, 3, 3), dtype=NPCT_REAL_TYPE)
     Grs = np.zeros((nt, 3, 3, 3, 3), dtype=NPCT_REAL_TYPE)
-    phase_list = _prepare_lamb_phases(phases)
     C_grt_solve_lamb3(
         nu,
         npct.as_ctypes(tbar),
@@ -1509,7 +1538,7 @@ def lamb3(
         depsrc,
         deprcv,
         azimuth,
-        None if phase_list is None else phase_list.encode(),
+        phase_mask,
         npct.as_ctypes(G.ravel()),
         npct.as_ctypes(Gs.ravel()),
         npct.as_ctypes(Gr.ravel()),
@@ -1555,6 +1584,8 @@ def lamb(
     follow :meth:`PyModel1D.syn`, while time-delay parameters follow
     :meth:`PyModel1D.greenfn`.
     When both depths are zero, only ``force`` is supported and ``calc_upar`` is ignored.
+    The output start is aligned to the nearest sample. Convolution and time operators
+    retain the response from the origin time; the result is then cropped to the output window.
 
     :param    modelparams:      Homogeneous half-space parameters ``(vp, vs, rho)``;
                                 velocities are in km/s and density is in g/cm^3

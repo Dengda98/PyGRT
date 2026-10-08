@@ -74,15 +74,6 @@ typedef struct {
 } LAMB3_PF_COEFFICIENTS;
 
 
-static const LAMB_PHASE_OPTION LAMB3_PHASE_OPTIONS[] = {
-    {"P", GRT_LAMB3_PHASE_P},
-    {"S", GRT_LAMB3_PHASE_S},
-    {"PP", GRT_LAMB3_PHASE_PP},
-    {"SS", GRT_LAMB3_PHASE_SS},
-    {"PS", GRT_LAMB3_PHASE_PS},
-    {"SP", GRT_LAMB3_PHASE_SP},
-    {"sPs", GRT_LAMB3_PHASE_SPS},
-};
 
 /** 式 (8.3.12)-(8.3.17) 中的 PS 基本积分参数 */
 typedef struct {
@@ -1349,15 +1340,15 @@ static void reflection_terms(const real_t tbar, const LAMB3_VARS *V, const LAMB3
     real_t sbar2 = sbar * sbar;
     LAMB_BASIC_VARS W = {V->k, V->k2, V->kp2, V->st_ref, V->ct_ref};
 
-    if ((phase_mask & GRT_LAMB3_PHASE_PP) != 0u && sbar > V->k) {
+    if ((phase_mask & GRT_LAMB_PHASE_PP) != 0u && sbar > V->k) {
         evaluate_reflection_wave(sbar, sbar2, &W, V, P_coeffs, V->rayleigh, LAMB_BASIC_P_TERM, F, Fk_source, Fk_receiver, need_mixed, Fkk);
     }
 
-    if ((phase_mask & GRT_LAMB3_PHASE_SS) != 0u && sbar > 1.0) {
+    if ((phase_mask & GRT_LAMB_PHASE_SS) != 0u && sbar > 1.0) {
         evaluate_reflection_wave(sbar, sbar2, &W, V, S_coeffs, V->rayleigh_shifted, LAMB_BASIC_S_TERM, F, Fk_source, Fk_receiver, need_mixed, Fkk);
     }
 
-    if ((phase_mask & GRT_LAMB3_PHASE_SPS) != 0u && sbar < 1.0) {
+    if ((phase_mask & GRT_LAMB_PHASE_SPS) != 0u && sbar < 1.0) {
         /* sPs 变量替换只在反射射线角超过临界角时有效 */
         if (V->supercritical && tbar > V->t_sPs && tbar < V->reflection_S) {
             LAMB_BASIC_CONTEXT ctx = {0};
@@ -1614,10 +1605,10 @@ static void add_direct_mixed(const real_t tbar, const real_t arrival, const real
 static void set_direct_mixed(const real_t tbar, const LAMB3_VARS *V, const unsigned int phase_mask,
                              real_t result[3][3][3][3]) {
     const real_t n[3] = {V->st * V->cf, V->st * V->sf, -V->ct};
-    if ((phase_mask & GRT_LAMB3_PHASE_P) != 0u && tbar > V->k) {
+    if ((phase_mask & GRT_LAMB_PHASE_P) != 0u && tbar > V->k) {
         add_direct_mixed(tbar, V->k, V->k2, false, n, result);
     }
-    if ((phase_mask & GRT_LAMB3_PHASE_S) != 0u && tbar > 1.0) {
+    if ((phase_mask & GRT_LAMB_PHASE_S) != 0u && tbar > 1.0) {
         add_direct_mixed(tbar, 1.0, V->k2, true, n, result);
     }
 }
@@ -1636,10 +1627,10 @@ static void set_direct_receiver(const real_t tbar, const LAMB3_VARS *V, const un
     W.sf = -V->sf;
     W.cf = -V->cf;
     real_t vertical[3][3] = {0};
-    if ((phase_mask & GRT_LAMB3_PHASE_P) != 0u && tbar > V->k) {
+    if ((phase_mask & GRT_LAMB_PHASE_P) != 0u && tbar > V->k) {
         set_direct_P_vertical(tbar, &W, vertical);
     }
-    if ((phase_mask & GRT_LAMB3_PHASE_S) != 0u && tbar > 1.0) {
+    if ((phase_mask & GRT_LAMB_PHASE_S) != 0u && tbar > 1.0) {
         set_direct_S_vertical(tbar, &W, vertical);
     }
     for (int i = 0; i < 3; ++i) {
@@ -1661,16 +1652,16 @@ static void conversion_terms(const real_t tbar, const LAMB3_VARS *V, const LAMB3
     memset(Fk_sp, 0, sizeof(real_t) * 3 * 3 * 3);
     memset(Fk_sp_receiver, 0, sizeof(real_t) * 3 * 3 * 3);
     memset(Fkk_sp, 0, sizeof(real_t) * 3 * 3 * 3 * 3);
-    if ((phase_mask & (GRT_LAMB3_PHASE_PS | GRT_LAMB3_PHASE_SP)) == 0u ||
+    if ((phase_mask & (GRT_LAMB_PHASE_PS | GRT_LAMB_PHASE_SP)) == 0u ||
         (tbar <= V->tps && tbar <= V->tsp)) {
         return;
     }
 
-    if ((phase_mask & GRT_LAMB3_PHASE_PS) != 0u && tbar > V->tps) {
+    if ((phase_mask & GRT_LAMB_PHASE_PS) != 0u && tbar > V->tps) {
         evaluate_conversion_term(tbar, V, PS_coeffs, false, Fps, Fk_ps, Fk_ps_receiver, need_mixed, Fkk_ps);
     }
 
-    if ((phase_mask & GRT_LAMB3_PHASE_SP) != 0u && tbar > V->tsp) {
+    if ((phase_mask & GRT_LAMB_PHASE_SP) != 0u && tbar > V->tsp) {
         evaluate_conversion_term(tbar, V, SP_coeffs, true, Fsp, Fk_sp, Fk_sp_receiver, need_mixed, Fkk_sp);
     }
 }
@@ -1695,10 +1686,10 @@ static void evaluate_time(const real_t tbar, const LAMB3_VARS *V, const LAMB3_RE
     real_t direct_source[3][3][3] = {0};
     real_t direct_receiver[3][3][3] = {0};
     real_t direct_mixed[3][3][3][3] = {0};
-    if ((phase_mask & GRT_LAMB3_PHASE_P) != 0u && tbar > V->k) {
+    if ((phase_mask & GRT_LAMB_PHASE_P) != 0u && tbar > V->k) {
         set_direct_P(tbar, V, direct, direct_source);
     }
-    if ((phase_mask & GRT_LAMB3_PHASE_S) != 0u && tbar > 1.0) {
+    if ((phase_mask & GRT_LAMB_PHASE_S) != 0u && tbar > 1.0) {
         set_direct_S(tbar, V, direct, direct_source);
     }
     set_direct_receiver(tbar, V, phase_mask, direct_source, direct_receiver);
@@ -1730,7 +1721,7 @@ static void evaluate_time(const real_t tbar, const LAMB3_VARS *V, const LAMB3_RE
                      need_mixed, ps_mixed, sp, sp_source, sp_receiver, sp_mixed, phase_mask);
 
     real_t varsigma = V->varsigma;
-    const real_t sps_term = (phase_mask & GRT_LAMB3_PHASE_SPS) != 0u && V->supercritical ? -1.0 : 0.0;
+    const real_t sps_term = (phase_mask & GRT_LAMB_PHASE_SPS) != 0u && V->supercritical ? -1.0 : 0.0;
     /* 将第三类公式中的整体 2.0 归入与 lamb1/lamb2 一致的输出归一化 */
     const real_t output_scale = 1.0 / 2.0;
     for (int i = 0; i < 3; ++i) {
@@ -1762,7 +1753,7 @@ static void evaluate_time(const real_t tbar, const LAMB3_VARS *V, const LAMB3_RE
 
 void grt_solve_lamb3(
     const real_t nu, const real_t *ts, const int nt, const real_t R, const real_t depsrc, const real_t deprcv,
-    const real_t azimuth, const char *phase_list, real_t (*G)[3][3], real_t (*dG_source)[3][3][3], real_t (*dG_receiver)[3][3][3],
+    const real_t azimuth, const unsigned int phase_mask, real_t (*G)[3][3], real_t (*dG_source)[3][3][3], real_t (*dG_receiver)[3][3][3],
     real_t (*dG_mixed)[3][3][3][3])
 {
     if (nu <= 0.0 || nu >= 0.5) {
@@ -1783,9 +1774,6 @@ void grt_solve_lamb3(
     if (azimuth < 0.0 || azimuth > 360.0) {
         GRTRaiseError("azimuth should be in [0, 360] degree for lamb3.\n");
     }
-    const unsigned int phase_mask = grt_lamb_parse_phase_list(
-        phase_list, LAMB3_PHASE_OPTIONS, sizeof(LAMB3_PHASE_OPTIONS) / sizeof(LAMB3_PHASE_OPTIONS[0]),
-        "P, S, PP, SS, PS, SP, sPs");
     /* 允许时间轴从发震时刻之前开始，因果解在发震前保持为零 */
     for (int i = 0; i < nt; ++i) {
         if (i > 0 && ts[i] <= ts[i - 1]) {
@@ -1810,11 +1798,11 @@ void grt_solve_lamb3(
     const real_t tbar_eps = nt > 1 ? GRT_MIN(1e-8, (ts[1] - ts[0]) * 1e-5) : 1e-8;
     /* 末点若正好落在波前上会被右移，用略大的 tEnd 判断以免漏构造系数 */
     const real_t tEnd = ts[nt - 1] + tbar_eps;
-    const bool need_P = (phase_mask & GRT_LAMB3_PHASE_PP) != 0u && tEnd >= V.reflection_P;
-    const bool need_S = (phase_mask & (GRT_LAMB3_PHASE_SS | GRT_LAMB3_PHASE_SPS)) != 0u &&
+    const bool need_P = (phase_mask & GRT_LAMB_PHASE_PP) != 0u && tEnd >= V.reflection_P;
+    const bool need_S = (phase_mask & (GRT_LAMB_PHASE_SS | GRT_LAMB_PHASE_SPS)) != 0u &&
         (tEnd >= V.reflection_S || (V.supercritical && ts[0] < V.reflection_S && tEnd >= V.t_sPs));
-    const bool need_PS = (phase_mask & GRT_LAMB3_PHASE_PS) != 0u && tEnd >= V.tps;
-    const bool need_SP = (phase_mask & GRT_LAMB3_PHASE_SP) != 0u && tEnd >= V.tsp;
+    const bool need_PS = (phase_mask & GRT_LAMB_PHASE_PS) != 0u && tEnd >= V.tps;
+    const bool need_SP = (phase_mask & GRT_LAMB_PHASE_SP) != 0u && tEnd >= V.tsp;
     const bool need_mixed = dG_mixed != NULL;
     /* 大型部分分式系数工作区放在堆上，避免占用线程栈 */
     LAMB3_PF_COEFFICIENTS *coefficients = GRT_SAFE_CALLOC(1, sizeof(*coefficients));

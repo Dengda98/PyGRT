@@ -17,25 +17,31 @@
 #define LAMB_NU_WARNING_MARGIN 1e-3
 #define LAMB_SURFACE_DEPTH_WARNING_RATIO 1e-3
 
-/** Lamb 震相名称及其位掩码的对应关系 */
-typedef struct {
-    const char *name;              ///< 震相名称
-    unsigned int bit;              ///< 震相对应的位掩码
-} LAMB_PHASE_OPTION;
+/** 三类 Lamb 解共用的震相掩码 */
+typedef enum {
+    GRT_LAMB_PHASE_P   = 1u << 0,  ///< 直达 P 波
+    GRT_LAMB_PHASE_S   = 1u << 1,  ///< 直达 S 波
+    GRT_LAMB_PHASE_R   = 1u << 2,  ///< Rayleigh 波
+    GRT_LAMB_PHASE_PP  = 1u << 3,  ///< 自由表面反射 PP 波
+    GRT_LAMB_PHASE_SS  = 1u << 4,  ///< 自由表面反射 SS 波
+    GRT_LAMB_PHASE_PS  = 1u << 5,  ///< PS 转换波
+    GRT_LAMB_PHASE_SP  = 1u << 6,  ///< SP 转换波
+    GRT_LAMB_PHASE_SPS = 1u << 7,  ///< sPs 滑行波
+} GRT_LAMB_PHASE;
+
+#define GRT_LAMB1_PHASES    (GRT_LAMB_PHASE_P | GRT_LAMB_PHASE_S | GRT_LAMB_PHASE_R)
+#define GRT_LAMB2_PHASES    (GRT_LAMB_PHASE_P | GRT_LAMB_PHASE_S | GRT_LAMB_PHASE_PS | GRT_LAMB_PHASE_SP)
+#define GRT_LAMB3_PHASES    (GRT_LAMB2_PHASES | GRT_LAMB_PHASE_PP | GRT_LAMB_PHASE_SS | GRT_LAMB_PHASE_SPS)
+#define GRT_LAMB_ALL_PHASES (GRT_LAMB1_PHASES | GRT_LAMB3_PHASES)
 
 /**
- * 解析 Lamb 震相列表
+ * 在参数准备阶段解析震相列表，求解器仅接收解析后的掩码
  *
- * @param[in]    phase_list       以逗号分隔的震相名称，NULL 表示选择全部震相
- * @param[in]    options          当前 Lamb 模块支持的震相
- * @param[in]    option_count     options 中震相的数量
- * @param[in]    available_names  警告信息中显示的可选震相名称列表
- *
- * @return 选择震相对应的位掩码；无效名称和重复名称会给出警告并被忽略，结果为零时表示输出全零波形
+ * @param[in]  phase_list  以逗号分隔的震相名称，NULL 表示选择全部可用震相
+ * @param[in]  supported   当前求解器支持的震相掩码
+ * @return 选中的震相掩码，无效名称及重复名称给出警告并忽略，结果为零时输出全零波形
  */
-unsigned int grt_lamb_parse_phase_list(
-    const char *phase_list, const LAMB_PHASE_OPTION *options,
-    size_t option_count, const char *available_names);
+unsigned int grt_lamb_parse_phase_list(const char *phase_list, unsigned int supported);
 
 /** 判断复数的虚部是否可以视为零 */
 bool grt_lamb_is_real(const cplx_t value);
