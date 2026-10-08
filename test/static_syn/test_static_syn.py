@@ -28,59 +28,15 @@ def read_static_fields(path):
     return variables, attributes
 
 
-def assert_zne_zrt_equivalent(zne_path, zrt_path):
-    zne, zne_attributes = read_static_fields(zne_path)
-    zrt, zrt_attributes = read_static_fields(zrt_path)
-    assert zne_attributes["rot2ZNE"] == 1
-    assert zrt_attributes["rot2ZNE"] == 0
-    assert zne_attributes["calc_upar"] == 1
-    assert zrt_attributes["calc_upar"] == 1
-    np.testing.assert_allclose(zne["north"], zrt["north"], rtol=0.0, atol=0.0)
-    np.testing.assert_allclose(zne["east"], zrt["east"], rtol=0.0, atol=0.0)
-
-    north = zrt["north"][:, None]
-    east = zrt["east"][None, :]
-    distance = np.hypot(north, east)
-    theta = np.where(distance == 0.0, 0.0, np.arctan2(east, north))
-    cosine = np.cos(theta)
-    sine = np.sin(theta)
-
-    np.testing.assert_allclose(zne["Z"], zrt["Z"], rtol=1.0e-12, atol=1.0e-12)
-    np.testing.assert_allclose(
-        zne["N"], zrt["R"] * cosine - zrt["T"] * sine,
-        rtol=1.0e-12, atol=1.0e-12,
-    )
-    np.testing.assert_allclose(
-        zne["E"], zrt["R"] * sine + zrt["T"] * cosine,
-        rtol=1.0e-12, atol=1.0e-12,
-    )
-
-    r = distance * 1.0e5
-    s00, s01, s02 = zrt["zZ"], zrt["zR"], zrt["zT"]
-    s10, s11, s12 = zrt["rZ"], zrt["rR"], zrt["rT"]
-    s20, s21, s22 = zrt["tZ"], zrt["tR"], zrt["tT"]
-    ur_over_r = np.array(s11, copy=True)
-    ut_over_r = np.array(s12, copy=True)
-    nonzero = r != 0.0
-    ur_over_r[nonzero] = zrt["R"][nonzero] / r[nonzero]
-    ut_over_r[nonzero] = zrt["T"][nonzero] / r[nonzero]
-    converted = {
-        "zZ": s00,
-        "zN": s01 * cosine - s02 * sine,
-        "zE": s01 * sine + s02 * cosine,
-        "nZ": s10 * cosine - s20 * sine,
-        "eZ": s10 * sine + s20 * cosine,
-        "nN": s11 * cosine**2 + s22 * sine**2 - (s12 + s21) * sine * cosine
-        + ur_over_r * sine**2 + ut_over_r * sine * cosine,
-        "nE": s12 * cosine**2 - s21 * sine**2 + (s11 - s22) * sine * cosine
-        - ur_over_r * sine * cosine + ut_over_r * sine**2,
-        "eN": s21 * cosine**2 - s12 * sine**2 + (s11 - s22) * sine * cosine
-        - ur_over_r * sine * cosine - ut_over_r * cosine**2,
-        "eE": s22 * cosine**2 + s11 * sine**2 + (s12 + s21) * sine * cosine
-        + ur_over_r * cosine**2 - ut_over_r * sine * cosine,
-    }
-    for name, expected in converted.items():
-        np.testing.assert_allclose(zne[name], expected, rtol=2.0e-11, atol=1.0e-12)
+def assert_finite_source_zne(reference_path, actual_path):
+    reference, reference_attributes = read_static_fields(reference_path)
+    actual, actual_attributes = read_static_fields(actual_path)
+    assert reference_attributes == actual_attributes == {"rot2ZNE": 1, "calc_upar": 1}
+    assert set(reference) == set(actual)
+    assert {"Z", "N", "E", "zZ", "nN", "eE"} <= set(actual)
+    assert not {"R", "T", "rR", "tT"} & set(actual)
+    for name in reference:
+        np.testing.assert_allclose(actual[name], reference[name], rtol=2e-11, atol=1e-12)
 
 
 def assert_receiver_geometry(path):
@@ -218,7 +174,7 @@ pymod_m = pygrt.PyModel1D(stgrn="stgrn_md.nc", modelpath=modname)
 pymod_m.static_greenfn(depsrc=[1.0, 2.0, 3.0], deprcv=0.0, dists=dists, calc_upar=True)
 
 # Compare the two CLI outputs generated above before exercising the Python API
-assert_zne_zrt_equivalent("stsyn_ff_zne_cli.nc", "stsyn_ff_zrt_cli.nc")
+assert_finite_source_zne("stsyn_ff_zne_cli.nc", "stsyn_ff_zrt_cli.nc")
 assert_receiver_geometry("stsyn_q6.nc")
 
 syn_field_names = (
@@ -296,7 +252,7 @@ pymod_m.static_syn(
     zne=True,
     calc_upar=True,
 )
-assert_zne_zrt_equivalent("stsyn_ff_zne.nc", "stsyn_ff_zrt.nc")
+assert_finite_source_zne("stsyn_ff_zne.nc", "stsyn_ff_zrt.nc")
 
 # The shared Coulomb fixtures cover every supported Kode and the header rake
 # marker. Besides checking that the files are accepted, require a finite

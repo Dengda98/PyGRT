@@ -92,6 +92,11 @@ typedef struct {
         real_t depsrc;
         real_t deprcv;
     } D;
+    /** 多线程数 */
+    struct {
+        bool active;
+        int nthreads;  ///< 子源并行线程数
+    } P;
 
     // 是否使用 -X/-Y 指定的新接收点网格
     bool isnewNEgrid;
@@ -143,57 +148,51 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
 static void print_help(){
 printf("\n"
 "[grt static syn] %s\n\n", GRT_VERSION);printf(
-"    Compute static displacement with the outputs of \n"
-"    module `static_greenfn` , output to nc file.\n"
-"    Three components are:\n"
-"       + Up (Z),\n"
-"       + Radial Outward (R),\n"
-"       + Transverse Clockwise (T),\n"
-"    and the units are cm. You can add -N to rotate ZRT to ZNE.\n"
+"    Compute three-component static displacement from `static_greenfn` outputs.\n"
 "\n"
-"    Receivers: by default reuse the library north/east grid (from\n"
-"    static greenfn -X/-Y or -R). Optionally redefine with -X/-Y (uniform\n"
-"    depth via -Dr when needed), -Q<file> for arbitrary points, or\n"
-"    -U<fault>[+i<dL>/<dW>] for finite receiver faults. -Q/-U are\n"
-"    mutually exclusive with -X/-Y and -Dr. If the library was built with -R, the default grid is\n"
-"    a 1-D line (north=0, east=R); set -X/-Y or -Q to get a 2-D field.\n"
-"    For each receiver, the module first synthesizes results at the\n"
-"    surrounding epicentral-distance samples in the library, then combines\n"
-"    those results with weights from the requested epicentral distance.\n"
-"    When source or receiver depth-based weighting is needed, it performs the\n"
-"    same synthesis for each surrounding depth combination and combines those\n"
-"    synthesized results with depth-based weights. It combines synthesized\n"
-"    results, rather than directly interpolating Green's-function arrays.\n"
-"\n\n"
+"    Define five groups of information:\n"
+"      1. Green functions: -G selects a single NetCDF Green-function library.\n"
+"      2. Source location: a point source is at the horizontal origin; -Ds\n"
+"         selects its depth. For finite sources, -C supplies all locations.\n"
+"      3. Receiver locations: reuse the library horizontal grid, redefine it\n"
+"         with -X/-Y, read points with -Q, or read receiver faults with -U.\n"
+"         Grid receivers share the depth selected by -Dr; -Q/-U supply their\n"
+"         own depths and replace the grid options.\n"
+"      4. Source mechanism and strength: a point source requires -S; add at most\n"
+"         one of -M (shear/tensile), -F (force), or -T (moment tensor).\n"
+"         Without -M/-F/-T, use an explosion. -C supplies both location and\n"
+"         mechanism/strength, so omit -Ds/-S/-M/-F/-T when using source faults.\n"
+"      5. Output: -O sets the NetCDF file; -N selects ZNE and -e adds spatial\n"
+"         derivatives. Finite sources always output ZNE.\n"
+"\n"
+"    -Ds/-Dr may be inferred when the corresponding library depth has one value.\n"
+"    All coordinates share one horizontal origin. +i on -C/-U controls fault\n"
+"    subdivision; -P sets source threads. Results between library samples are\n"
+"    interpolated after source synthesis.\n"
+"    Displacements are in cm; default components are Z upward, R radial outward\n"
+"    and T clockwise from R.\n"
+"\n"
+"\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
 "    # Point source\n"
-"    grt static syn -G<ingrid.nc> -S[u]<scale> -O<outgrid> \n"
-"              [-Ds<depsrc>] [-Dr<deprcv>]\n"
-"              [-M<strike>/<dip>[/<rake>]]\n"
-"              [-T<Mxx>/<Mxy>/<Mxz>/<Myy>/<Myz>/<Mzz>]\n"
-"              [-F<fn>/<fe>/<fz>] \n"
-"              [-X<x1>/<x2>/<dx>] [-Y<y1>/<y2>/<dy>] | [-Q<file>] | [-U<fault>[+i<dL>/<dW>]]\n"
-"              [-N] [-e] [-s]\n"
+"    grt static_syn -G<ingrid.nc> -S[u]<scale> -O<outgrid.nc> [-Ds<depsrc>]\n"
+"                   [-M<strike>/<dip>[/<rake>] | -T<Mxx>/<Mxy>/<Mxz>/<Myy>/<Myz>/<Mzz>\n"
+"                    | -F<fn>/<fe>/<fz>] [receiver options] [common options]\n"
 "\n"
-"    # Finite faults (Coulomb format)\n"
-"    grt static syn -G<ingrid.nc> -C<path>[+i<dL>/<dW>] -O<outgrid>\n"
-"              [-Dr<deprcv>] [-X<x1>/<x2>/<dx>] [-Y<y1>/<y2>/<dy>] | [-Q<file>] | [-U<fault>[+i<dL>/<dW>]]\n"
-"              [-N] [-e] [-s]\n"
+"    # Finite source\n"
+"    grt static_syn -G<ingrid.nc> -C<fault>[+i<dL>/<dW>] -O<outgrid.nc>\n"
+"                   [receiver options] [common options]\n"
 "\n"
-"    -G always points to a single 4D STGRNLIB nc file.\n"
-"    Depth options (without -Q/-U) depend on the library shape:\n"
-"      ndepsrc=1, ndeprcv=1: -Ds/-Dr optional; finite faults forbidden\n"
-"      ndepsrc=1, ndeprcv>1: -Dr required; -Ds optional;\n"
-"                            finite faults forbidden\n"
-"      ndepsrc>1, ndeprcv=1: -Ds required for point source;\n"
-"                            -Dr optional; finite faults allowed\n"
-"      ndepsrc>1, ndeprcv>1: -Ds required for point source;\n"
-"                            -Dr required; finite faults allowed\n"
-"    When an optional depth is set, it must be within the library range.\n"
-"    With -Q/-U, receiver depths come from the input; do not set -Dr.\n"
+"    Receiver options (choose one mode; default is the library grid):\n"
+"      [-X<x1>/<x2>/<dx> -Y<y1>/<y2>/<dy>] [-Dr<deprcv>]\n"
+"      -Q<points>\n"
+"      -U<fault>[+i<dL>/<dW>]\n"
 "\n"
-"\n\n"
+"    Common options:\n"
+"      [-P<nthreads>] [-N] [-e] [-s] [-h]\n"
+"\n"
+"\n"
 "Options:\n"
 "----------------------------------------------------------------\n"
 "    -G<ingrid>    Filepath to a single STGRNLIB nc Green's function\n"
@@ -254,7 +253,7 @@ printf("\n"
 "                  Each fault: dip in (0, 90], bot > top (km).\n"
 "                  Receiver locations default to the library grid;\n"
 "                  optional -X/-Y, -Q or -U to redefine.\n"
-"                  Requires a library with ndepsrc>1.\n"
+"                  Source depths must be within the library range.\n"
 "\n"
 "    -X<x1>/<x2>/<dx>\n"
 "                 Set the equidistant points in the north direction.\n"
@@ -290,6 +289,7 @@ printf("\n"
 "                  -U is mutually exclusive with -Q, -X/-Y and -Dr.\n"
 "\n"
 "    -N            Components of results will be Z, N, E.\n"
+"                  Finite sources always output ZNE.\n"
 "\n"
 "    -e            Also synthesize spatial derivatives of displacement.\n"
 "                  Written as nc variables with prefixes z/r/t (ZRT)\n"
@@ -297,6 +297,8 @@ printf("\n"
 "                  static strain / stress / rotation.\n"
 "\n"
 "    -s            Silence all outputs.\n"
+"\n"
+"    -P<nthreads>  OpenMP source-subfault threads.\n"
 "\n"
 "    -h            Display this help message.\n"
 "\n\n"
@@ -324,7 +326,7 @@ printf("\n"
 "        grt static greenfn -Mmilrow -Ds1,2,3 -Dr0 -R0/7/0.1 -Ostgrn.nc\n"
 "        grt static syn -Gstgrn.nc -Su1e16 -Ds1.5 -X-5/5/0.5 -Y-5/5/0.5 -Ostsyn.nc\n"
 "\n"
-"    Finite faults (Coulomb format; library must have ndepsrc>1):\n"
+"    Finite faults (Coulomb format):\n"
 "        grt static syn -Gstgrn.nc -Cfaults.inp+i1/1 -X-5/5/0.5 -Y-5/5/0.5 -Ostsyn_ff.nc\n"
 "\n"
 "    Spatial derivatives for later strain/stress/rotation:\n"
@@ -348,7 +350,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     Ctrl->source_type = GRT_SYN_EX;
 
     int opt;
-    while ((opt = getopt(argc, argv, ":G:O:S:M:F:T:C:X:Y:D:Q:U:Nesh")) != -1) {
+    while ((opt = getopt(argc, argv, ":G:O:S:M:F:T:C:X:Y:D:Q:U:P:Nesh")) != -1) {
         switch (opt) {
             // 输入 nc 文件名
             case 'G':
@@ -534,6 +536,17 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     optarg, &Ctrl->U.nfault, &Ctrl->U.dL, &Ctrl->U.dW);
                 break;
 
+            // 多线程数
+            case 'P':
+                Ctrl->P.active = true;
+
+                char extra;
+                if(sscanf(optarg, "%d%c", &Ctrl->P.nthreads, &extra) != 1 || Ctrl->P.nthreads <= 0) {
+                    GRTBadOptionError(P, "Expected a positive thread count.");
+                }
+                grt_set_num_threads(Ctrl->P.nthreads);
+                break;
+
             // 是否计算位移空间导数, 影响 calcUTypes 变量
             case 'e':
                 Ctrl->e.active = true;
@@ -592,6 +605,12 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 
     Ctrl->isPointSource = isPointSource;
     Ctrl->isFiniteFault = isFiniteFault;
+
+    // 有限震源的各子源方位不同，叠加时统一使用 ZNE 坐标系
+    if(Ctrl->C.active && !Ctrl->N.active) {
+        GRTRaiseWarning("Finite sources (-C) require ZNE components; -N is enabled automatically.");
+        Ctrl->N.active = true;
+    }
 }
 
 
@@ -605,7 +624,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
  * @param[in]   uiz          位移对深度的偏导格林函数
  * @param[in]   uir          位移对震中距的偏导格林函数
  * @param[in]   source_type  震源类型
- * @param[in]   scale        标量矩或矩势
+ * @param[in]   scale        源强或矩势
  * @param[in]   VpVs_ratio   P 波与 S 波速度比
  * @param[in]   mchn         震源机制参数
  * @param[in]   rot2ZNE      是否输出 ZNE 分量
@@ -626,6 +645,7 @@ static void static_syn_from_gf_one(
 
     for(int ityp = 0; ityp < calcUTypes; ++ityp){
         real_t upar_scale = 1.0;
+
         // 求位移空间导数时，需调整比例系数（1e-5: km→cm）
         // ZRT 协变导数拆两步：此处合成 (1/r)∂_θ u，后处理再补 ±u/r。
         // r=0 时协变组合仍有限，两项分别换成有限极限（见下方 up 与后处理）。
@@ -634,6 +654,7 @@ static void static_syn_from_gf_one(
                 case 'Z': case 'R':
                     upar_scale = 1e-5;
                     break;
+
                 // (1/r)∂_θ：r≠0 时 scale∝1/r；r=0 时改用 ∂_r GF，scale 仅留 km→cm
                 case 'T':
                     upar_scale = GRT_IS_ZERO(dist0) ? 1e-5 : (1e-5 / dist0);
@@ -683,12 +704,11 @@ static void static_syn_from_gf_one(
     }
 }
 
-
 /**
  * 由静态格林函数合成三分量位移场及可选空间偏导
  *
  * GF 侧使用已准备好的升序震中距元数据
- * （sort_rs0 / sort_rs0_idx / isUniform / dr）；查询点为平坦 north/east 列表
+ * （sort_rs0 / sort_rs0_idx）；查询点为平坦 north/east 列表
  * r=0 时强制方位角为 0（e_r→N、e_θ→E）
  *
  * 数组布局：u[采样点][震源][分量]、syn[接收点][分量]、
@@ -697,8 +717,6 @@ static void static_syn_from_gf_one(
  * @param[in]      nr0           震中距采样点数
  * @param[in]      sort_rs0      升序震中距采样值
  * @param[in]      sort_rs0_idx  升序采样值对应的原始索引
- * @param[in]      isUniform     震中距采样是否等间隔
- * @param[in]      dr            等间隔震中距步长 (km)
  * @param[in]      npts          接收点数量
  * @param[in]      norths        接收点 North 坐标 (km)
  * @param[in]      easts         接收点 East 坐标 (km)
@@ -706,7 +724,7 @@ static void static_syn_from_gf_one(
  * @param[in]      uiz           位移对深度的偏导格林函数
  * @param[in]      uir           位移对震中距的偏导格林函数
  * @param[in]      source_type   震源类型
- * @param[in]      scale         标量矩或矩势
+ * @param[in]      scale         源强或矩势
  * @param[in]      VpVs_ratio    P 波与 S 波速度比
  * @param[in]      mchn          震源机制参数
  * @param[in]      rot2ZNE       是否输出 ZNE 分量
@@ -716,7 +734,6 @@ static void static_syn_from_gf_one(
  */
 static void static_syn_from_gf(
     size_t nr0, const real_t *sort_rs0, const size_t *sort_rs0_idx,
-    bool isUniform, real_t dr,
     size_t npts, const real_t *norths, const real_t *easts,
     const realChnlGrid *u, const realChnlGrid *uiz, const realChnlGrid *uir,
     GRT_SYN_TYPE source_type, real_t scale, real_t VpVs_ratio, const real_t mchn[GRT_MECHANISM_NUM],
@@ -739,23 +756,16 @@ static void static_syn_from_gf(
         // 检查是否越界（允许查询点为精确的零震中距）
         bool r_OutofBound = (dist < sort_rs0[0] - 1e-8 || dist > sort_rs0[nr0-1] + 1e-8);
         if(r_OutofBound){
-            GRTRaiseWarning("(north, east)=(%.3e, %.3e) is out of distance bounds, skip.", north, east);
-            continue;
+            GRTRaiseError("(north, east)=(%.9g, %.9g) is outside the distance library.", north, east);
         }
 
-        size_t sort_ir_pick = 0, sort_ir_pick1 = 0;
-        if(isUniform){
-            sort_ir_pick = (size_t)((dist - sort_rs0[0]) / dr);
-        } else {
-            for(sort_ir_pick = 0; sort_ir_pick < nr0-1; ++sort_ir_pick)   if(sort_rs0[sort_ir_pick+1] > dist)  break;
+        size_t sort_ir_pick, sort_ir_pick1;
+        real_t drs;
+        if(!grt_locateLinearInterp(sort_rs0, nr0, dist, &sort_ir_pick, &sort_ir_pick1, &drs)){
+            GRTRaiseError("Distance %.9g km is outside the library range.", dist);
         }
-        sort_ir_pick1 = GRT_MIN(sort_ir_pick + 1, nr0-1);
 
-        // 重复震中距时避免除零（-X/-Y 建库时对称点可能 r 相同）
-        real_t r0 = sort_rs0[sort_ir_pick];
-        real_t r1 = sort_rs0[sort_ir_pick1];
-        real_t drs = (sort_ir_pick == sort_ir_pick1 || fabs(r1 - r0) < 1e-15)
-            ? 0.0 : (dist - r0) / (r1 - r0);
+        real_t r0 = sort_rs0[sort_ir_pick], r1 = sort_rs0[sort_ir_pick1];
 
         real_t syn2[GRT_CHANNEL_NUM] = {0.0}, syn2_upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM] = {{0.0}};
 
@@ -797,7 +807,7 @@ static void static_syn_from_gf(
  * @param[in]      loc_n            水平 north 坐标 (km)，长度 nloc
  * @param[in]      loc_e            水平 east 坐标 (km)，长度 nloc
  * @param[in]      source_type      震源类型
- * @param[in]      scale            标量矩或 potency（见 scale_by_src_mu）
+ * @param[in]      scale            源强或矩势（见 scale_by_src_mu）
  * @param[in]      scale_by_src_mu  为真时用角点 μ 将 scale 转为矩
  * @param[in]      mchn             震源机制参数数组
  * @param[in]      rot2ZNE          是否输出 ZNE
@@ -848,7 +858,7 @@ static void static_syn_ps_depth_corners(
             }
 
             static_syn_from_gf(
-                lib->nr, lib->sort_rs, lib->sort_rs_idx, lib->isUniform, lib->dr,
+                lib->nr, lib->sort_rs, lib->sort_rs_idx,
                 nloc, loc_n, loc_e,
                 lib->u[is][ir],
                 calc_upar ? lib->uiz[is][ir] : NULL,
@@ -892,7 +902,7 @@ static void static_syn_ps_depth_corners(
  * @param[in]      depths           接收点深度 (km)
  * @param[in]      shared_depth     是否所有接收点共面
  * @param[in]      source_type      震源类型
- * @param[in]      scale            标量矩或矩势
+ * @param[in]      scale            源强或矩势
  * @param[in]      scale_by_src_mu  是否使用震源处剪切模量缩放矩势
  * @param[in]      mchn             震源机制参数
  * @param[in]      rot2ZNE          是否输出 ZNE 分量
@@ -1141,9 +1151,6 @@ static void static_syn_from_gf_FF(
     if(lib == NULL || lib->ndepsrc == 0 || lib->ndeprcv == 0){
         GRTRaiseError("empty STGRNLIB.");
     }
-    if(lib->ndepsrc <= 1){
-        GRTRaiseError("Finite faults require a Green's function library with ndepsrc > 1.");
-    }
     if(npts == 0 || norths == NULL || easts == NULL || depths == NULL){
         GRTRaiseError("empty receiver points.");
     }
@@ -1196,9 +1203,6 @@ static void check_syn_depth_options(const GRT_MODULE_CTRL *Ctrl, const STGRNLIB 
     bool multi_src = (lib->ndepsrc > 1);
     bool multi_rcv = (lib->ndeprcv > 1);
 
-    if(Ctrl->isFiniteFault && !multi_src){
-        GRTRaiseError("Finite faults require a Green's function library with ndepsrc > 1.");
-    }
     if(Ctrl->isFiniteFault && Ctrl->D.s_active){
         GRTRaiseError("Do not set -Ds for finite faults; source depths come from the fault geometry.");
     }
@@ -1336,7 +1340,16 @@ int static_syn_main(int argc, char **argv){
 
     // -C 和 -U 共用同一套格林函数库剖分间隔规则
     if(Ctrl->C.active){
-        resolve_finite_fault_subdiv(lib, &Ctrl->C.dL, &Ctrl->C.dW, "finite fault");
+        bool rectangles = false;
+        for(size_t i = 0; i < Ctrl->C.nfault; ++i) {
+            rectangles |= KODE_IS_FINITE(Ctrl->C.faults[i].kode);
+        }
+        if(!rectangles && Ctrl->C.dL <= 0) {
+            Ctrl->C.dL = Ctrl->C.dW = 1.0;
+        }
+        else {
+            resolve_finite_fault_subdiv(lib, &Ctrl->C.dL, &Ctrl->C.dW, "finite fault");
+        }
     }
     if(Ctrl->U.active){
         resolve_finite_fault_subdiv(lib, &Ctrl->U.dL, &Ctrl->U.dW, "finite receiver fault");
@@ -1372,19 +1385,6 @@ int static_syn_main(int argc, char **argv){
             npts, norths, easts, depths,
             shared_depth, Ctrl->e.active,
             syn, syn_upar);
-
-        // 有限断层先在全局 ZNE 中累加，再按 -N 决定最终保存的坐标系
-        if(!Ctrl->N.active){
-            for(size_t i = 0; i < npts; ++i){
-                real_t dist = hypot(norths[i], easts[i]);
-                real_t theta = (GRT_IS_ZERO(dist)) ? 0.0 : atan2(easts[i], norths[i]);
-                if(Ctrl->e.active){
-                    grt_rot_zxy2zrt_upar(theta, syn[i], syn_upar[i], dist * 1e5);
-                } else {
-                    grt_rot_zxy2zrt_vec(theta, syn[i]);
-                }
-            }
-        }
     }
 
     // 写出 nc（接收介质只在此处按布局查询，不参与合成）

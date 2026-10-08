@@ -1,7 +1,7 @@
 """
-    :file:     pymod.py  
-    :author:   Zhu Dengda (zhudengda@mail.iggcas.ac.cn)  
-    :date:     2024-07-24  
+    :file:     pymod.py
+    :author:   Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
+    :date:     2024-07-24
 
     该文件包括 Python 端使用的基于文件的模型 :class:`PyModel1D`
 
@@ -1390,69 +1390,49 @@ class PyModel1D:
         moment_tensor: Optional[Sequence[float]] = None,
         src_fault: Optional[PathLike] = None,
         src_fault_size: Optional[Sequence[float]] = None,
-        zne: bool = False,
+        zne: Optional[bool] = None,
+        nthreads: Optional[int] = None,
         calc_upar: bool = False,
         **kwargs,
     ) -> None:
         r"""
         Synthesize static three-component displacement with ``grt static_syn``.
 
-        Results are written to the NetCDF file ``output_path``. Requires
-        ``stgrn`` (and typically a prior :meth:`static_greenfn`).
-        All arguments must be passed by keyword.
+        A call defines five groups of information:
 
-        Receivers default to the library north/east grid. Optionally redefine
-        them with ``norths``/``easts`` (uniform ``deprcv`` when the library has
-        multiple receiver depths), or with ``rcv_points`` for an ASCII file of
-        arbitrary ``north east depth`` points (CLI ``-Q``). Each row may append
-        ``strike dip rake`` in degrees; these angles are saved in the output but
-        are not used in synthesis. ``rcv_points`` is
-        mutually exclusive with ``norths``/``easts`` and ``deprcv``. If the
-        library was built with ``dists`` / ``-R``, the default grid is a 1-D
-        line (north = 0, east = R); set ``norths``/``easts`` or ``rcv_points``
-        to obtain a 2-D field.
-        A Coulomb-format finite receiver-fault file can be supplied through
-        ``rcv_fault`` (CLI ``-U``); without ``rcv_fault_size`` the subdivision
-        size defaults to the smallest positive sampling interval among epicentral
-        distance, source depth and receiver depth in the library. With
-        ``rcv_fault_size``, each fault is subdivided with ``(dL, dW)`` along
-        strike / dip.
+        * Green functions: configure ``stgrn`` on :class:`PyModel1D` and compute
+          them with :meth:`static_greenfn`, or use an existing NetCDF library.
+        * Source location: a point source is at the horizontal origin, with
+          depth ``depsrc``. ``src_fault`` supplies the locations of finite sources.
+        * Receiver locations: reuse the library horizontal grid or redefine it
+          with ``norths``/``easts`` and a shared ``deprcv``; alternatively use
+          ``rcv_points`` or ``rcv_fault``. Receiver files supply their own depths
+          and replace the grid parameters.
+        * Source mechanism and strength: a point source requires ``scale``.
+          Choose ``strike``/``dip``/``rake`` for a double-couple, omit ``rake`` for
+          a tensile crack, or use ``force`` or ``moment_tensor`` instead.
+          Leaving all mechanism parameters unset selects an explosion.
+          ``src_fault`` supplies both location and mechanism/strength;
+          omit ``depsrc``, ``scale`` and all point-source mechanism parameters in this mode.
+        * Output: ``output_path`` sets the NetCDF file; ``zne`` selects ZNE
+          and ``calc_upar`` adds spatial derivatives. Finite sources always output ZNE.
 
-        Point-source type is inferred from the source-specific parameters:
-        leaving ``strike``, ``dip``, ``rake``, ``force`` and ``moment_tensor``
-        unset selects an explosion (``EX``); ``force`` selects a single force
-        (``SF``); ``moment_tensor`` selects a moment tensor (``MT``); ``strike``
-        and ``dip`` select a tensile crack (``TS``), or a double-couple (``DC``)
-        when ``rake`` is also supplied. Only one source parameter group may be
-        used at a time. Finite faults use ``src_fault`` (Coulomb-format file,
-        CLI ``-C``) instead. Its ``Kode`` column selects rectangular shear/
-        tensile sources or point shear/expansion sources. An exact ``rake``
-        token in the seventh header column selects Kode 100 rake/net-slip
-        rows; the filename suffix is not used to select the format. That path
-        requires a multi-source-depth library and rejects point-source options.
+        Point-source ``depsrc`` and grid-receiver ``deprcv`` can be inferred when the
+        corresponding library depth dimension has one value. All coordinates share
+        one horizontal origin and must lie within the library range.
 
-        For each target receiver, the C module first synthesizes results at the
-        surrounding epicentral-distance samples and combines those synthesized
-        results with weights based on the target distance. When a requested
-        source or receiver depth lies between samples, it performs the same
-        process for each surrounding depth combination and then combines those
-        synthesized results with depth-based weights. Thus, interpolation is
-        applied to synthesized results rather than directly to Green's-function
-        arrays. If the library was generated with an explicit ``-X``/``-Y`` grid
-        and the same grid is reused, the corresponding synthesized results can
-        be used directly.
+        ``src_fault_size`` and ``rcv_fault_size`` control fault subdivision;
+        ``nthreads`` sets the source thread count. All arguments are keyword-only.
+        Interpolation combines the results synthesized at surrounding library samples.
+        Displacements are in cm with Z upward, R radial outward and T clockwise from R
+        by default.
 
-        :param    depsrc:            Point-source depth in km (CLI ``-Ds``). Required
-                                     when the library has multiple source depths;
-                                     optional when it has one, but an explicit value
-                                     must match the library. Forbidden when
-                                     ``src_fault`` is set.
-        :param    deprcv:            Receiver depth in km for grid receivers
-                                     (CLI ``-Dr``). Required when the library has
-                                     multiple receiver depths and ``rcv_points`` is
-                                     not used; optional when it has one, but an
-                                     explicit value must match the library. Do not set
-                                     it when using ``rcv_points``.
+        :param    depsrc:            Point-source depth in km (CLI -Ds). Required for multiple library
+                                     source depths; inferred for one. Must lie within the library range.
+                                     Omit for source faults.
+        :param    deprcv:            Uniform grid receiver depth in km (CLI -Dr). Required for multiple
+                                     library receiver depths; inferred for one. Must lie within the
+                                     library range. Omit for receiver files.
         :param    norths:            Optional new north grid as three values
                                      ``(start, stop, step)`` in km. Must be set
                                      together with ``easts``. Mutually exclusive
@@ -1524,7 +1504,8 @@ class PyModel1D:
                                      the C code uses the smallest positive interval
                                      among epicentral distance, source depth and
                                      receiver depth in the library.
-        :param    zne:               If true, output ZNE instead of ZRT components.
+        :param    nthreads:          Positive OpenMP source-subfault thread count.
+        :param    zne:               If true, output ZNE instead of ZRT. Finite sources always use ZNE.
         :param    calc_upar:         If true, also synthesize spatial derivatives of
                                      displacement. Derivative variable names use
                                      prefixes ``z``/``r``/``t`` (ZRT) or
@@ -1541,13 +1522,13 @@ class PyModel1D:
         use_q = rcv_points is not None
         use_u = rcv_fault is not None
         use_xy = norths is not None or easts is not None
-        has_geometry = strike is not None or dip is not None or rake is not None
+        has_mechanism = strike is not None or dip is not None or rake is not None
         has_force = force is not None
         has_moment_tensor = moment_tensor is not None
         has_point_source_options = (
             scale is not None
             or scale_with_mu
-            or has_geometry
+            or has_mechanism
             or has_force
             or has_moment_tensor
         )
@@ -1586,7 +1567,14 @@ class PyModel1D:
             "O": f"-O{output}",
         }
 
+        if nthreads is not None:
+            if isinstance(nthreads, bool) or int(nthreads) != nthreads or nthreads <= 0:
+                raise ValueError("nthreads must be a positive integer.")
+            command["P"] = f"-P{int(nthreads)}"
         if use_ff:
+            if zne is False:
+                warnings.warn("Finite sources always output ZNE; zne=False is ignored.", stacklevel=2)
+            zne = True
             c_opt = f"-C{Path(src_fault)}"
             if src_fault_size is not None:
                 c_opt += f"+i{format_float(src_fault_size[0])}/{format_float(src_fault_size[1])}"
@@ -1655,24 +1643,24 @@ class PyModel1D:
         has_strike = strike is not None
         has_dip = dip is not None
         has_rake = rake is not None
-        has_geometry = has_strike or has_dip or has_rake
+        has_mechanism = has_strike or has_dip or has_rake
         has_force = force is not None
         has_moment_tensor = moment_tensor is not None
         if has_force:
-            if has_geometry or has_moment_tensor:
+            if has_mechanism or has_moment_tensor:
                 raise ValueError("force is mutually exclusive with strike/dip/rake and moment_tensor.")
             if len(force) != 3:
                 raise ValueError("force must contain exactly three values: (fN, fE, fZ).")
             return {"F": "-F" + "/".join(format_float(value) for value in force)}
         if has_moment_tensor:
-            if has_geometry:
+            if has_mechanism:
                 raise ValueError("moment_tensor is mutually exclusive with strike/dip/rake and force.")
             if len(moment_tensor) != 6:
                 raise ValueError(
                     "moment_tensor must contain exactly six values: (Mxx, Mxy, Mxz, Myy, Myz, Mzz)."
                 )
             return {"T": "-T" + "/".join(format_float(value) for value in moment_tensor)}
-        if not has_geometry:
+        if not has_mechanism:
             return {}
         if not has_strike or not has_dip:
             raise ValueError("strike and dip must be supplied together.")
