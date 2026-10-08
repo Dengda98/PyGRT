@@ -14,6 +14,38 @@
 #include "grt/common/const.h"
 
 /**
+ * 使用参考点处的局部切平面近似，将局部北向/东向坐标转换为纬度/经度
+ *
+ * 地球半径取 6371 km，输出经度规范化到 [-180, 180)
+ * 转换后的纬度超出 [-90, 90] 时终止程序并报错
+ *
+ * @param[in]  north 北向坐标，单位为 km
+ * @param[in]  east  东向坐标，单位为 km
+ * @param[in]  lat0  参考点纬度，单位为度，必须在 (-90, 90) 内
+ * @param[in]  lon0  参考点经度，单位为度，必须在 [-180, 180] 内
+ * @param[out] lat   转换后的纬度，单位为度
+ * @param[out] lon   转换后的经度，单位为度
+ */
+void grt_xy2geo(real_t north, real_t east, real_t lat0, real_t lon0, real_t *lat, real_t *lon);
+
+
+/**
+ * 使用参考点处的局部切平面近似，将纬度/经度转换为局部北向/东向坐标
+ *
+ * 地球半径取 6371 km，经度差规范化到 [-180, 180)
+ * 输入纬度超出 [-90, 90] 时终止程序并报错
+ *
+ * @param[in]  lat   纬度，单位为度
+ * @param[in]  lon   经度，单位为度
+ * @param[in]  lat0  参考点纬度，单位为度，必须在 (-90, 90) 内
+ * @param[in]  lon0  参考点经度，单位为度，必须在 [-180, 180] 内
+ * @param[out] north 转换后的北向坐标，单位为 km
+ * @param[out] east  转换后的东向坐标，单位为 km
+ */
+void grt_geo2xy(real_t lat, real_t lon, real_t lat0, real_t lon0, real_t *north, real_t *east);
+
+
+/**
  * 直角坐标zxy到柱坐标zrt的矢量旋转
  * 
  * @param[in]    theta        r轴相对x轴的旋转弧度(负数表示逆变换，即zrt->zxy)
