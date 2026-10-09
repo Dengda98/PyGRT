@@ -23,7 +23,7 @@ static_stress
 
 .. math:: 
 
-    \sigma_{ij} = \lambda \delta_{ij} e_{kk} + 2 \mu e_{ij} = \lambda \delta_{ij} u_{kk} + \mu \left( u_{i,j} + u_{j,i} \right)
+    \sigma_{ij} = \lambda \delta_{ij} e_{kk} + 2 \mu e_{ij} = \lambda \delta_{ij} u_{k,k} + \mu \left( u_{i,j} + u_{j,i} \right)
 
 参数 *ingrid* 为 :doc:`static_syn` 的输出文件。
 
@@ -38,4 +38,4 @@ static_stress
 
 详见教程：
 
-+ :doc:`/Tutorial/dynamic/strain_stress`
++ :doc:`/Tutorial/static/static_strain_stress`

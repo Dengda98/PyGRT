@@ -436,7 +436,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 if(optarg[0] == 's'){
                     Ctrl->D.s_active = true;
                     Ctrl->D.depsrcs = grt_parse_real_array(optarg + 1, &Ctrl->D.ndepsrc, NULL, 's');
-                } else if(optarg[0] == 'r' && optarg[1] != '/'){
+                } else if(optarg[0] == 'r'){
                     Ctrl->D.r_active = true;
                     Ctrl->D.deprcvs = grt_parse_real_array(optarg + 1, &Ctrl->D.ndeprcv, NULL, 'r');
                 } else {

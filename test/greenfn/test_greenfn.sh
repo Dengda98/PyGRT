@@ -90,6 +90,12 @@ grt greenfn -M../milrow -Ds1,2 -Dr0,1 -N80/0.02 -R5 -OGRN_MULTI -s
 test -f GRN_MULTI/milrow_1_0_5/EXZ.sac
 test -f GRN_MULTI/milrow_2_1_5/EXZ.sac
 
+# 通过绝对路径的文件传入多个深度
+printf '1\n2\n' > depsrcs
+printf '0\n1\n' > deprcvs
+grt greenfn -M../milrow -Ds"$PWD/depsrcs" -Dr"$PWD/deprcvs" -N80/0.02 -R5 -OGRN_MULTI -s
+rm -f depsrcs deprcvs
+
 expect_fail "non-ascending -R list" \
     grt greenfn -M../milrow -D2/0 -N600/0.02 -R3,1,2 -OGRN_bad
 

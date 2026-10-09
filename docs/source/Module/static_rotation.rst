@@ -39,4 +39,4 @@ static_rotation
 
 详见教程：
 
-+ :doc:`/Tutorial/dynamic/strain_stress`
++ :doc:`/Tutorial/static/static_strain_stress`

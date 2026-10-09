@@ -14,14 +14,14 @@ ker2asc
 语法
 -----------
 
-**grt ker2asc** *kernelfile*
+**grt ker2asc** *kernelfile* [ **-h** ]
 
 
 描述
 --------
 
 **ker2asc** 模块输出结果打印到标准输出，第一列为波数值，
-后面每两列的的命名方式为  ``{srcType}_{q/w/v}``，
+后面每两列的命名方式为  ``{srcType}_{q/w/v}``，
 与 :doc:`/Tutorial/dynamic/gfunc` 部分介绍的积分公式中的核函数 :math:`q_m, w_m, v_m` 保持一致。
 两列分别表示复数的实部和虚部。
 
@@ -46,5 +46,3 @@ ker2asc
         gmt plot stats -i0,2 -W0.5p,blue,-- -l"Imag"
         gmt legend -DjTL+w2c+o0.1c -F+gwhite+c0.2p+p1p
     gmt end show
-
-

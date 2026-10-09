@@ -10,7 +10,7 @@
 
 .. _-M:
 
-**-M**\ *strike/dip[/rake*]
+**-M**\ *strike/dip[/rake]*
     设置剪切源/张裂源参数，角度单位为 °
 
     + *strike* - 断层走向， 0~360
@@ -21,5 +21,5 @@
 
 **-T**\ *Mxx/Mxy/Mxz/Myy/Myz/Mzz*
     设置矩张量源的 6 个分量，其中下标代表 x （北向），y （东向），z （向下）。
+    每个分量均将乘以 |-S| 指定的 *scale*。
     关于 z 方向，详见 :ref:`Warning <warning_src_zdir>` 。
-

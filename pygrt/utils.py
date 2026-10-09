@@ -89,18 +89,18 @@ PathLike = Union[str, os.PathLike]
 
 
 @contextmanager
-def _temporary_distance_option(distances: Optional[np.ndarray]):
-    """将多个震中距通过临时文件传给 -R，退出上下文时自动清理"""
-    if distances is None:
+def _temporary_array_option(values: Optional[np.ndarray], flag: str):
+    """将多值数组通过临时文件传给 CLI 选项，退出上下文时自动清理"""
+    if values is None:
         yield None
-    elif distances.size == 1:
-        yield f"-R{format_float(distances[0])}"
+    elif values.size == 1:
+        yield f"-{flag}{format_float(values[0])}"
     else:
-        with TemporaryDirectory(prefix="pygrt_dists_") as tmpdir:
-            path = Path(tmpdir) / "dists.txt"
-            # 每行一个震中距，保持与直接传值时相同的数值精度
-            np.savetxt(path, distances, fmt="%.15g")
-            yield f"-R{path}"
+        with TemporaryDirectory(prefix=f"pygrt_{flag}_") as tmpdir:
+            path = Path(tmpdir) / "values.txt"
+            # 每行一个数值，保持与直接传值时相同的数值精度
+            np.savetxt(path, values, fmt="%.15g")
+            yield f"-{flag}{path}"
 
 
 def _resolve_rcv_points(rcv_points: Optional[PathLike], kwargs: dict, function_name: str):
@@ -1424,7 +1424,7 @@ def lamb2(
         :param      deprcv:       strictly positive receiver depth with the source on the surface;
                                     mutually exclusive with ``depsrc``. Values below
                                     ``1e-3 * r`` trigger a numerical warning
-       :param      azimuth:      azimuth in degree, from source to receiver, in ``[0, 360]``
+        :param      azimuth:      azimuth in degree, from source to receiver, in ``[0, 360]``
         :param      phases:       optional comma-separated phase selection or a non-empty sequence of phase names;
                                     supported phases are P, S, SP and PS
         :return:    Four normalized arrays ``G, Gs, Gr, Grs``. ``G`` has shape
@@ -1506,7 +1506,7 @@ def lamb3(
                                     trigger a numerical warning
         :param      deprcv:       strictly positive receiver depth; values below ``1e-3 * r``
                                     trigger a numerical warning
-       :param      azimuth:      azimuth in degree, from source to receiver, in ``[0, 360]``
+        :param      azimuth:      azimuth in degree, from source to receiver, in ``[0, 360]``
         :param      phases:       optional comma-separated phase selection or a non-empty sequence of phase names;
                                     supported phases are P, S, PP, SS, PS, SP and sPs
         :return:    Four normalized arrays ``G, Gs, Gr, Grs``. ``G`` has shape
