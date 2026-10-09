@@ -3,7 +3,7 @@
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2026-08
  *
- * 静态 syn / 后处理用的接收点列表
+ * 动态解和静态解共用的接收点列表
  * 网格 (-X/-Y 或延用库坐标) 与任意点文件 (-Q) 均展开为点列
  *
  */
@@ -16,78 +16,50 @@
 #include "grt/common/const.h"
 #include "grt/common/finite_fault.h"
 
-/** 接收点坐标及可选的有限接收断层信息 */
+/** 单个接收点，有限断层由调用方持有，须比点数组存活更久 */
 typedef struct {
-    size_t npts;            ///< 接收点总数
-    real_t *norths;         ///< 北向坐标数组 (km)
-    real_t *easts;          ///< 东向坐标数组 (km)
-    real_t *depths;         ///< 深度坐标数组 (km)
+    real_t north;               ///< 北向坐标，km
+    real_t east;                ///< 东向坐标，km
+    real_t depth;               ///< 深度，km
 
-    bool is_grid;           ///< 是否由二维规则网格展开
-    size_t nnorth;          ///< north 方向点数
-    size_t neast;           ///< east 方向点数
+    bool has_mechanism;         ///< 是否包含逐点机制，有限断层机制从 fault 获取
+    real_t strike;              ///< 逐点走向，degree
+    real_t dip;                 ///< 逐点倾角，degree
+    real_t rake;                ///< 逐点滑动角，degree
 
-    bool has_geometry;      ///< 任意接收点是否包含逐点几何
-    real_t *strikes;        ///< 任意接收点的走向 (degree)
-    real_t *dips;           ///< 任意接收点的倾角 (degree)
-    real_t *rakes;          ///< 任意接收点的滑动角 (degree)
-
-    bool is_fault;          ///< 是否由有限接收断层剖分得到
-    size_t nfault;          ///< 有限接收断层数量
-    size_t *nsubs;          ///< 每条有限接收断层的子断层数量
-    size_t *offsets;        ///< 每条有限接收断层在 point 数组中的排他性结束索引
-    real_t *fstrikes;       ///< 每条有限接收断层的走向 (degree)
-    real_t *fdips;          ///< 每条有限接收断层的倾角 (degree)
-    real_t *frakes;         ///< 每条有限接收断层的滑动角 (degree)
-    size_t *stksizes;       ///< 每条有限接收断层沿走向的子断层数量
-    size_t *dipsizes;       ///< 每条有限接收断层沿倾向的子断层数量
-} RCV_POINTS;
+    const FINITE_FAULT *fault;  ///< 所属有限断层，普通接收点为 NULL，借用指针
+    size_t isub;                ///< 剖分索引，沿走向变化最快
+} RCV_POINT;
 
 /**
- * 由 north/east 轴与单一深度展开为点列（is_grid=true）
- *
- * @param[in]   nnorth   north 方向点数
- * @param[in]   norths   north 坐标 (km)
- * @param[in]   neast    east 方向点数
- * @param[in]   easts    east 坐标 (km)
- * @param[in]   depth    接收深度 (km)
- * @return      新分配的 RCV_POINTS*，调用方负责 grt_rcv_points_free
+ * 由极坐标创建单个接收点，调用方用 free 释放
+ * @param[in]  dist     震中距，km
+ * @param[in]  azimuth  方位角，degree
+ * @param[in]  depth    接收深度，km
  */
-RCV_POINTS *grt_rcv_points_from_grid(
-    size_t nnorth, const real_t *norths,
-    size_t neast,  const real_t *easts,
-    real_t depth);
+RCV_POINT *grt_rcv_points_from_polar(real_t dist, real_t azimuth, real_t depth);
 
 /**
- * 从 ASCII 文件读任意接收点（is_grid=false）
- *
- * 每行可以是 north east depth (km)，也可以在其后增加
- * strike dip rake (degree)，# 开头为注释
- *
- * @param[in]   path   文件路径
- * @return      新分配的 RCV_POINTS*
+ * 将规则网格展开为接收点数组，沿 east 方向变化最快，调用方用 free 释放
+ * @param[in]  nnorth  north 方向点数
+ * @param[in]  norths  north 坐标，km
+ * @param[in]  neast   east 方向点数
+ * @param[in]  easts   east 坐标，km
+ * @param[in]  depth   接收深度，km
  */
-RCV_POINTS *grt_rcv_points_from_file(const char *path);
+RCV_POINT *grt_rcv_points_from_grid(size_t nnorth, const real_t *norths, size_t neast, const real_t *easts, real_t depth);
 
 /**
- * 释放 RCV_POINTS（含坐标和可选接收断层几何）
- *
- * @param[in,out]  pts   可为 NULL
+ * 从 ASCII 文件读取接收点，每行 north east depth [strike dip rake]，调用方用 free 释放
+ * @param[in]   path  文件路径
+ * @param[out]  npts  接收点数量
  */
-void grt_rcv_points_free(RCV_POINTS *pts);
+RCV_POINT *grt_rcv_points_from_file(const char *path, size_t *npts);
 
 /**
- * 从有限断层数组生成接收点列表
- *
- * dL/dW 均为非正值时不剖分，每条有限断层只生成一个中心点
- * dL/dW 均为正值时按沿走向/沿倾向尺寸剖分
- * 生成的点数组同时保存每条有限断层的索引和几何信息
- *
- * @param[in]   nfault   有限断层数量
- * @param[in]   faults   已读取并建立衍生量的有限断层数组
- * @param[in]   dL       沿走向子断层尺寸 (km)
- * @param[in]   dW       沿倾向子断层尺寸 (km)
- * @return      新分配的 RCV_POINTS*，调用方负责 grt_rcv_points_free
+ * 将已剖分的有限接收断层展开为中心点数组，调用方用 free 释放
+ * @param[in]   nfault  断层数量
+ * @param[in]   faults  已调用 grt_finite_fault_subdiv 的断层数组
+ * @param[out]  npts    接收点数量
  */
-RCV_POINTS *grt_rcv_points_from_faults(
-    size_t nfault, const FINITE_FAULT *faults, real_t dL, real_t dW);
+RCV_POINT *grt_rcv_points_from_faults(size_t nfault, const FINITE_FAULT *faults, size_t *npts);

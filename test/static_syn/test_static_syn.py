@@ -164,6 +164,42 @@ try:
 except RuntimeError:
     pass
 
+# 单节点限制应优先于剖分和几何检查，显式 +i 及点源 Kode 均不能绕过
+pymod_node = pygrt.PyModel1D(stgrn="stgrn_node.nc", modelpath=modname)
+pymod_node.static_syn(scale=1e20, output_path="stsyn_node_api.nc", calc_upar=True)
+for kode in (100, 400, 500):
+    for subdivision in ("", "+i2/2"):
+        try:
+            run_grt([
+                "static_syn", "-Gstgrn_node.nc", f"-Ccfaults_node_{kode}.inp{subdivision}",
+                "-Ostsyn_node_bad.nc",
+            ], print_log=False)
+        except RuntimeError as error:
+            assert "Finite sources (-C) require a Green-function library with at least two nodes." in str(error)
+        else:
+            raise AssertionError("single-node library should reject every -C source")
+        assert not Path("stsyn_node_bad.nc").exists()
+
+try:
+    pymod_node.static_syn(output_path="stsyn_node_bad.nc", src_fault="cfaults_node_400.inp", src_fault_size=(2.0, 2.0))
+    raise AssertionError("Python API should reject source faults with a single-node library")
+except RuntimeError:
+    pass
+assert not Path("stsyn_node_bad.nc").exists()
+
+# 只有一个水平点而深度轴包含多个采样时，仍属于多节点库
+for axis, source_depths, receiver_depths, distances in (
+    ("src", [1.0, 3.0], 0.0, [1.0]),
+    ("rcv", 2.0, [0.0, 1.0], [1.0]),
+    ("dist", 2.0, 0.0, [1.0, 2.0]),
+):
+    pymod_two = pygrt.PyModel1D(stgrn=f"stgrn_two_{axis}.nc", modelpath=modname)
+    pymod_two.static_greenfn(depsrc=source_depths, deprcv=receiver_depths, dists=distances)
+    for kode in (400, 500):
+        pymod_two.static_syn(
+            output_path=f"stsyn_two_{axis}_{kode}.nc", src_fault=f"cfaults_node_{kode}.inp", deprcv=0.0,
+        )
+
 # -------------------- -R 建库后合成 --------------------
 pymod_r = pygrt.PyModel1D(stgrn="stgrn_r.nc", modelpath=modname)
 pymod_r.static_greenfn(depsrc=depsrc, deprcv=deprcv, dists=[0.0, 1.0, 2.0, 4.0, 8.0], calc_upar=True)
@@ -184,10 +220,10 @@ faults, fault_geometry = read_fault_receiver("stsyn_rf.nc")
 np.testing.assert_array_equal(fault_geometry["stksize"], [3, 3])
 np.testing.assert_array_equal(fault_geometry["dipsize"], [3, 4])
 default_faults, default_geometry = read_fault_receiver("stsyn_rf_default.nc")
-assert [fault["coordinates"].shape[0] for fault in default_faults] == [4, 6]
-np.testing.assert_array_equal(default_geometry["offset"], [4, 10])
-np.testing.assert_array_equal(default_geometry["stksize"], [2, 2])
-np.testing.assert_array_equal(default_geometry["dipsize"], [2, 3])
+assert [fault["coordinates"].shape[0] for fault in default_faults] == [1, 1]
+np.testing.assert_array_equal(default_geometry["offset"], [1, 2])
+np.testing.assert_array_equal(default_geometry["stksize"], [1, 1])
+np.testing.assert_array_equal(default_geometry["dipsize"], [1, 1])
 assert default_geometry["rake"][1] == -999.0
 rcv_fault_q = Path("rcv_faults_q.txt")
 write_receiver_points(rcv_fault_q, faults)
@@ -328,6 +364,10 @@ except RuntimeError:
 for name in [
     "stgrn.nc", "stgrn_r.nc", "stgrn_md.nc", "stgrn_mr.nc",
     "stgrn_rf.nc",
+    "stgrn_node.nc", "stsyn_node.nc", "stsyn_node_api.nc",
+    "stgrn_two_src.nc", "stgrn_two_rcv.nc", "stgrn_two_dist.nc",
+    "stsyn_two_src_400.nc", "stsyn_two_src_500.nc", "stsyn_two_rcv_400.nc", "stsyn_two_rcv_500.nc",
+    "stsyn_two_dist_400.nc", "stsyn_two_dist_500.nc",
     "stsyn.nc", "stsyn_single_explicit.nc", "stsyn_r.nc",
     "stsyn_md.nc", "stsyn_interp.nc", "stsyn_q.nc", "stsyn_q6.nc", "stsyn_ff.nc",
     "stsyn_rf.nc", "stsyn_rf_default.nc", "stsyn_rq.nc", "stsyn_rf_api.nc",

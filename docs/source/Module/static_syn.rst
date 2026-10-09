@@ -18,7 +18,7 @@ static_syn
 |-S|\ [**u**]\ *scale*
 |-O|\ *outgrid*
 [ **-Ds**\ *depsrc* ] [ **-Dr**\ *deprcv* ]
-[ |-F|\ *fn/fe/fz* | |-M|\ *strike/dip/rake* | |-T|\ *Mxx/Mxy/Mxz/Myy/Myz/Mzz* ]
+[ |-F|\ *fn/fe/fz* | |-M|\ *strike/dip[/rake]* | |-T|\ *Mxx/Mxy/Mxz/Myy/Myz/Mzz* ]
 [ [ |-X|\ *x1/x2/dx* ] [ |-Y|\ *y1/y2/dy* ] | [ **-Q**\ *file* ] | [ **-U**\ *faultparam* ] ]
 [ |-N| ]
 [ |-P|\ *nthreads* ]
@@ -39,7 +39,7 @@ static_syn
 描述
 --------
 
-调用 **static_syn** 时，需要确定以下五类信息：
+调用 :doc:`static_syn` 时，需要确定以下五类信息：
 
 #. **格林函数输入**：|-G| 指定 :doc:`static_greenfn` 生成的单个四维 |NetCDF| 格林函数库
 #. **震源位置**：点源位于水平原点，用 **-Ds** 指定深度；有限震源用 |-C| 从断层文件读取各震源位置
@@ -58,10 +58,16 @@ static_syn
 库采样点之间的结果采用插值：先在相邻距离及深度节点上结合震源机制完成合成，
 再按目标位置加权组合。位移单位为 cm，默认 Z 垂直向上，R 径向向外，T 沿 R 顺时针旋转 90°。
 
-输出文件的全局 **layout** 属性区分三种接收布局：网格为 **grid**，
-|-Q| 的任意点列表为 **points**，|-U| 的有限接收断层为 **faults**。
-**grid** 的结果变量使用 **north/east** 二维布局；**points** 和 **faults** 的结果变量
-均使用一维 **point** 维度，**faults** 还保存断层级机制和剖分信息。
+输出文件的全局 **layout** 属性区分三种接收布局：
+
+* **grid**：规则网格，结果使用 **north/east** 二维布局
+* **points**：|-Q| 指定的任意点列表，结果使用一维 **point** 维度；
+  若提供接收断层形态，还会保存逐点 **strike**、**dip**、**rake** 变量
+* **faults**：|-U| 指定的有限接收断层，结果使用一维 **point** 维度，
+  并保存断层级形态和剖分信息。**nfault** 为断层数量，**offset** 为各断层接收点的结束索引，
+  **stksize**、**dipsize** 分别为沿走向、倾向的子断层数量
+
+**points** 和 **faults** 均保存各点的 **north**、**east** 和 **depth** 坐标。
 
 必选选项
 ----------
@@ -111,6 +117,8 @@ static_syn
 .. include:: explain_-esyn.rst_
 
 .. include:: explain_-P.rst_
+
+.. include:: explain_-silent.rst_
 
 .. include:: explain_-h.rst_
 

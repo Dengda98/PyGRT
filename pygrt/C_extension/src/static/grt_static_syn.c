@@ -101,28 +101,19 @@ typedef struct {
     // 是否使用 -X/-Y 指定的新接收点网格
     bool isnewNEgrid;
 
-    // 存储不同震源的震源机制相关参数的数组
-    real_t mchn[GRT_MECHANISM_NUM];
-
-    // 最终要计算的震源类型
-    GRT_SYN_TYPE source_type;
-
-    bool isPointSource;
-    bool isFiniteFault;
-
 } GRT_MODULE_CTRL;
 
 /**
  * 释放 static_syn 命令行参数结构体及其动态成员
  *
- * @param[in,out]  Ctrl   命令行参数结构体
+ * @param[in,out]  Ctrl  命令行参数结构体
  */
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
     // G
     GRT_SAFE_FREE_PTR(Ctrl->G.s_ingrid);
 
     // C
-    grt_finite_fault_free(Ctrl->C.faults);
+    grt_finite_fault_free(Ctrl->C.nfault, Ctrl->C.faults);
     Ctrl->C.faults = NULL;
 
     // X
@@ -135,7 +126,7 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
     GRT_SAFE_FREE_PTR(Ctrl->Q.s_path);
 
     // U
-    grt_finite_fault_free(Ctrl->U.faults);
+    grt_finite_fault_free(Ctrl->U.nfault, Ctrl->U.faults);
     Ctrl->U.faults = NULL;
 
     // O
@@ -278,10 +269,9 @@ printf("\n"
 "                  (depths come from the file).\n"
 "\n"
 "    -U<fault>[+i<dL>/<dW>]\n"
-"                  Coulomb-format finite receiver faults. Without +i, dL=dW\n"
-"                  defaults to the smallest positive interval among the\n"
-"                  epicentral-distance, source-depth and receiver-depth\n"
-"                  sampling in the Green's function library.\n"
+"                  Coulomb-format receiver faults. Without +i, use each\n"
+"                  fault center. Slip magnitude is ignored.\n"
+"                  Only Kode=100 is supported.\n"
 "                  With +i, each fault is subdivided along strike/dip and\n"
 "                  the receiver points are the subfault centers. The output\n"
 "                  uses one point dimension for all receivers and adds\n"
@@ -341,13 +331,14 @@ printf("\n"
 /**
  * 从命令行中读取选项并记录到控制结构体
  *
- * @param[out]  Ctrl   保存解析结果的控制结构体
- * @param[in]   argc   命令行参数数量
- * @param[in]   argv   命令行参数数组
+ * @param[out]  Ctrl  保存解析结果的控制结构体
+ * @param[in]   argc  命令行参数数量
+ * @param[in]   argv  命令行参数数组
  */
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     // 先为个别参数设置非0初始值
-    Ctrl->source_type = GRT_SYN_EX;
+    GRT_SYN_TYPE source_type = GRT_SYN_EX;
+    real_t mchn[GRT_MECHANISM_NUM] = {0};
 
     int opt;
     while ((opt = getopt(argc, argv, ":G:O:S:M:F:T:C:X:Y:D:Q:U:P:Nesh")) != -1) {
@@ -410,7 +401,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     real_t strike=0.0, dip=0.0, rake=0.0;
                     int nscan = sscanf(optarg, "%lf/%lf/%lf", &strike, &dip, &rake);
                     if(nscan >= 2){
-                        Ctrl->source_type = GRT_SYN_TS;
+                        source_type = GRT_SYN_TS;
                         if(strike < 0.0 || strike > 360.0){
                             GRTBadOptionError(M, "Strike must be in [0, 360].");
                         }
@@ -418,7 +409,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                             GRTBadOptionError(M, "Dip must be in [0, 90].");
                         }
                         if(nscan == 3){
-                            Ctrl->source_type = GRT_SYN_DC;
+                            source_type = GRT_SYN_DC;
                             if(rake < -180.0 || rake > 180.0){
                                 GRTBadOptionError(M, "Rake must be in [-180, 180].");
                             }
@@ -426,54 +417,53 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     } else {
                         GRTBadOptionError(M, "");
                     };
-                    
-                    
-                    Ctrl->mchn[0] = strike;
-                    Ctrl->mchn[1] = dip;
-                    Ctrl->mchn[2] = rake;
+
+
+                    mchn[0] = strike;
+                    mchn[1] = dip;
+                    mchn[2] = rake;
                 }
                 break;
 
             // 单力源
             case 'F':
                 Ctrl->F.active = true;
-                Ctrl->source_type = GRT_SYN_SF;
+                source_type = GRT_SYN_SF;
                 {
                     real_t fn, fe, fz;
                     if(3 != sscanf(optarg, "%lf/%lf/%lf", &fn, &fe, &fz)){
                         GRTBadOptionError(F, "");
                     };
-                    Ctrl->mchn[0] = fn;
-                    Ctrl->mchn[1] = fe;
-                    Ctrl->mchn[2] = fz;
+                    mchn[0] = fn;
+                    mchn[1] = fe;
+                    mchn[2] = fz;
                 }
                 break;
 
             // 张量震源
             case 'T':
                 Ctrl->T.active = true;
-                Ctrl->source_type = GRT_SYN_MT;
+                source_type = GRT_SYN_MT;
                 {
                     real_t Mxx, Mxy, Mxz, Myy, Myz, Mzz;
                     if(6 != sscanf(optarg, "%lf/%lf/%lf/%lf/%lf/%lf", &Mxx, &Mxy, &Mxz, &Myy, &Myz, &Mzz)){
                         GRTBadOptionError(T, "");
                     };
-                    Ctrl->mchn[0] = Mxx;
-                    Ctrl->mchn[1] = Mxy;
-                    Ctrl->mchn[2] = Mxz;
-                    Ctrl->mchn[3] = Myy;
-                    Ctrl->mchn[4] = Myz;
-                    Ctrl->mchn[5] = Mzz;
+                    mchn[0] = Mxx;
+                    mchn[1] = Mxy;
+                    mchn[2] = Mxz;
+                    mchn[3] = Myy;
+                    mchn[4] = Myz;
+                    mchn[5] = Mzz;
                 }
                 break;
 
             // 从文件中读取有限断层（Coulomb 程序所用格式）-C<path>[+i<dL>/<dW>]
             case 'C':
                 Ctrl->C.active = true;
-                Ctrl->source_type = GRT_SYN_DC;
-                grt_finite_fault_free(Ctrl->C.faults);
+                grt_finite_fault_free(Ctrl->C.nfault, Ctrl->C.faults);
                 Ctrl->C.faults = grt_finite_fault_from_option(
-                    optarg, &Ctrl->C.nfault, &Ctrl->C.dL, &Ctrl->C.dW);
+                    optarg, &Ctrl->C.nfault, &Ctrl->C.dL, &Ctrl->C.dW, true, 0, 1, NULL);
                 break;
 
             // X坐标数组，-Xx1/x2/dx
@@ -531,9 +521,9 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
             // 有限接收断层文件，-U<path>[+i<dL>/<dW>]
             case 'U':
                 Ctrl->U.active = true;
-                grt_finite_fault_free(Ctrl->U.faults);
+                grt_finite_fault_free(Ctrl->U.nfault, Ctrl->U.faults);
                 Ctrl->U.faults = grt_finite_fault_from_option(
-                    optarg, &Ctrl->U.nfault, &Ctrl->U.dL, &Ctrl->U.dW);
+                    optarg, &Ctrl->U.nfault, &Ctrl->U.dL, &Ctrl->U.dW, false, 0, 1, NULL);
                 break;
 
             // 多线程数
@@ -569,6 +559,8 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     // 要么通过 -S, -M/-F/-T 来指定点源，要么通过 -C 来指定有限断层
     bool isPointSource = Ctrl->S.active || Ctrl->M.active || Ctrl->F.active || Ctrl->T.active;
     bool isFiniteFault = Ctrl->C.active;
+
+    // 震源方式必须选择一种，不能同时给出点源与有限震源，也不能全部省略
     if(isPointSource == isFiniteFault){
         GRTRaiseError("You may set either a point source or finite faults — not both, and not neither. Use \"-h\" for help.\n");
     }
@@ -577,7 +569,11 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     GRTCheckOptionSet(argc > 1);
     GRTCheckOptionActive(Ctrl, G);
     GRTCheckOptionActive(Ctrl, O);
-    if(isPointSource) GRTCheckOptionActive(Ctrl, S);
+
+    // 点源需要显式给出强度，有限震源的强度来自断层文件
+    if(isPointSource) {
+        GRTCheckOptionActive(Ctrl, S);
+    }
 
     // 点源只能使用一种震源
     if(isPointSource && (Ctrl->M.active + Ctrl->F.active + Ctrl->T.active > 1)){
@@ -588,6 +584,8 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     if((Ctrl->Q.active || Ctrl->U.active) && (Ctrl->X.active || Ctrl->Y.active)){
         GRTRaiseError("\"-Q\" and \"-U\" are mutually exclusive with \"-X\"/\"-Y\". Use \"-h\" for help.\n");
     }
+
+    // 逐点接收文件和有限接收断层不能同时指定
     if(Ctrl->Q.active && Ctrl->U.active){
         GRTRaiseError("\"-Q\" and \"-U\" are mutually exclusive. Use \"-h\" for help.\n");
     }
@@ -603,8 +601,15 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
         GRTRaiseError("Do not set -Dr with -Q/-U; receiver depths come from the input file.\n");
     }
 
-    Ctrl->isPointSource = isPointSource;
-    Ctrl->isFiniteFault = isFiniteFault;
+    if(isFiniteFault && Ctrl->D.s_active) {
+        GRTRaiseError("Do not set -Ds for finite faults; source depths come from the fault geometry.");
+    }
+
+    // 参数解析完成后，点源与有限断层统一在 terms 中保存震源信息
+    if(!Ctrl->C.active) {
+        Ctrl->C.nfault = 1;
+        Ctrl->C.faults = grt_finite_fault_from_point(Ctrl->D.depsrc, source_type, Ctrl->S.scale, Ctrl->S.mult_src_mu, mchn, 0, 1, NULL);
+    }
 
     // 有限震源的各子源方位不同，叠加时统一使用 ZNE 坐标系
     if(Ctrl->C.active && !Ctrl->N.active) {
@@ -985,242 +990,150 @@ static void static_syn_from_gf_PS(
 
 
 /**
- * 将单个有限断层按 Kode 拆分为 DC、TS、EX 源并累加各子源结果
- *
- * @param[in]      lib           静态格林函数库
- * @param[in]      fault         当前有限断层
- * @param[in]      dL            沿走向子断层尺寸 (km)
- * @param[in]      dW            沿倾向子断层尺寸 (km)
- * @param[in]      W             当前断层沿倾向总长 (km)
- * @param[in]      L             当前断层沿走向总长 (km)
- * @param[in]      nW            倾向子断层数
- * @param[in]      nL            走向子断层数
- * @param[in]      npts          接收点数量
- * @param[in]      norths        接收点 North 坐标 (km)
- * @param[in]      easts         接收点 East 坐标 (km)
- * @param[in]      depths        接收点深度 (km)
- * @param[in]      shared_depth  是否所有接收点共面
- * @param[in]      calc_upar     是否计算位移偏导
- * @param[in,out]  syn           位移累加结果
- * @param[in,out]  syn_upar      位移偏导累加结果
+ * 使用通用源点列表合成静态位移及可选空间导数
+ * @param[in]      Ctrl       命令行参数
+ * @param[in]      lib        静态格林函数库
+ * @param[in]      srcs       已展开的通用源点列表
+ * @param[in]      nrcv       接收点数
+ * @param[in]      rcvs       通用接收点列表
+ * @param[in]      rot2ZNE    是否输出 ZNE 分量
+ * @param[in]      calc_upar  是否计算位移空间导数
+ * @param[in,out]  syn        位移累加结果
+ * @param[in,out]  syn_upar   位移偏导累加结果
  */
-static void static_syn_one_finite_fault(
-    const STGRNLIB *lib, const FINITE_FAULT *fault,
-    real_t dL, real_t dW, real_t W, real_t L, size_t nW, size_t nL,
-    size_t npts, const real_t *norths, const real_t *easts, const real_t *depths,
-    bool shared_depth, bool calc_upar,
-    real_t (*syn)[GRT_CHANNEL_NUM],
-    real_t (*syn_upar)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])
+static void static_syn_from_sources(const GRT_MODULE_CTRL *Ctrl, const STGRNLIB *lib, const SRC_POINT *srcs, size_t nrcv, const RCV_POINT *rcvs,
+                                    bool rot2ZNE, bool calc_upar, real_t (*syn)[GRT_CHANNEL_NUM],
+                                    real_t (*syn_upar)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])
 {
-    bool point_source = KODE_IS_POINT(fault->kode);
-    size_t loop_nW = point_source ? 1 : nW;
-    size_t loop_nL = point_source ? 1 : nL;
+    real_t *depths = GRT_SAFE_CALLOC(nrcv, sizeof(*depths));
+    for(size_t ir = 0; ir < nrcv; ++ir) {
+        depths[ir] = rcvs[ir].depth;
+    }
 
-    // 按子源并行：各线程累加到私有缓冲，最后归约到 syn，避免对同一接收点写竞争
-    size_t nsub = loop_nW * loop_nL;
-    #pragma omp parallel default(shared) if(nsub > 1)
-    {
-        real_t *rcv_norths = GRT_SAFE_CALLOC(npts, sizeof(real_t));
-        real_t *rcv_easts = GRT_SAFE_CALLOC(npts, sizeof(real_t));
-        real_t (*local_syn)[GRT_CHANNEL_NUM] = GRT_SAFE_CALLOC(npts, sizeof(real_t) * GRT_CHANNEL_NUM);
-        real_t (*local_syn_upar)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM] = GRT_SAFE_CALLOC(npts, sizeof(real_t) * GRT_CHANNEL_NUM * GRT_CHANNEL_NUM);
-
-        #pragma omp for collapse(2) schedule(guided)
-        for(size_t iW = 0; iW < loop_nW; ++iW){
-            for(size_t iL = 0; iL < loop_nL; ++iL){
-                FINITE_SUBFAULT sub;
-                if(point_source){
-                    // 点源不随 +i 剖分，仍用有限断层面中心确定其位置和深度
-                    grt_finite_fault_subfault(fault, L, W, W, L, 0, 0, &sub);
-                } else {
-                    grt_finite_fault_subfault(fault, dL, dW, W, L, iW, iL, &sub);
-                }
-
-                for(size_t ipt = 0; ipt < npts; ++ipt){
-                    rcv_norths[ipt] = norths[ipt] - sub.north;
-                    rcv_easts[ipt] = easts[ipt] - sub.east;
-                }
-
-                real_t mchn[GRT_MECHANISM_NUM] = {0};
-                mchn[0] = fault->strike;
-                mchn[1] = fault->dip;
-                real_t area_scale = sub.width * sub.length * 1e12;
-
-                #define CALL_STATIC_SYN_FROM_GF_PS(source_type, m0) \
-                    static_syn_from_gf_PS( \
-                        lib, sub.depsrc, \
-                        npts, rcv_norths, rcv_easts, depths, \
-                        shared_depth, \
-                        source_type, m0, true, mchn, \
-                        true, calc_upar, \
-                        local_syn, local_syn_upar \
-                    )
-
-                if(fault->kode == KODE_RTLAT_REVERSE){
-                    if(fault->slip != 0.0){
-                        mchn[2] = fault->rake;
-                        CALL_STATIC_SYN_FROM_GF_PS(GRT_SYN_DC, sub.potency);
-                    }
-                } else if(fault->kode == KODE_RTLAT_TENSILE){
-                    if(fault->right_lateral != 0.0){
-                        mchn[2] = 180.0;
-                        CALL_STATIC_SYN_FROM_GF_PS(GRT_SYN_DC, fault->right_lateral * area_scale);
-                    }
-                    if(fault->tensile != 0.0){
-                        CALL_STATIC_SYN_FROM_GF_PS(GRT_SYN_TS, fault->tensile * area_scale);
-                    }
-                } else if(fault->kode == KODE_TENSILE_REVERSE){
-                    if(fault->tensile != 0.0){
-                        CALL_STATIC_SYN_FROM_GF_PS(GRT_SYN_TS, fault->tensile * area_scale);
-                    }
-                    if(fault->reverse != 0.0){
-                        mchn[2] = 90.0;
-                        CALL_STATIC_SYN_FROM_GF_PS(GRT_SYN_DC, fault->reverse * area_scale);
-                    }
-                } else if(fault->kode == KODE_POINT_DC){
-                    real_t potency = hypot(fault->right_lateral, fault->reverse) * 1e6;
-                    if(potency != 0.0){
-                        mchn[2] = fault->rake;
-                        CALL_STATIC_SYN_FROM_GF_PS(GRT_SYN_DC, potency);
-                    }
-                } else if(fault->kode == KODE_POINT_TENSILE_INFLATE){
-                    if(fault->tensile != 0.0){
-                        CALL_STATIC_SYN_FROM_GF_PS(GRT_SYN_TS, fault->tensile * 1e6);
-                    }
-                    if(fault->inflate != 0.0){
-                        CALL_STATIC_SYN_FROM_GF_PS(GRT_SYN_EX, fault->inflate * 1e6);
-                    }
-                } else {
-                    GRTRaiseError("unsupported Coulomb Kode=%u.", fault->kode);
-                }
-
-                #undef CALL_STATIC_SYN_FROM_GF_PS
-            }
+    // 按断层分别归约震源点的计算结果，保持断层的累加顺序，点源也使用相同处理流程
+    size_t first = 0;
+    for(size_t parent = 0; parent < Ctrl->C.nfault; ++parent) {
+        size_t last = first + Ctrl->C.faults[parent].nW * Ctrl->C.faults[parent].nL;
+        int threads = grt_get_num_threads(last - first);
+        if(Ctrl->C.active) {
+            GRTRaiseInfo("finite fault[%zu/%zu]: nsubfaults = %zu", parent + 1, Ctrl->C.nfault, last - first);
         }
 
-        #pragma omp critical(static_syn_ff_reduce)
+        // 线程只拥有当前断层的累加缓冲，几何和机制从公共震源点列表读取
+        #pragma omp parallel num_threads(threads) if(last - first > 1)
         {
-            for(size_t ipt = 0; ipt < npts; ++ipt){
-                for(int c = 0; c < GRT_CHANNEL_NUM; ++c){
-                    syn[ipt][c] += local_syn[ipt][c];
-                    if(calc_upar){
-                        for(int c2 = 0; c2 < GRT_CHANNEL_NUM; ++c2){
-                            syn_upar[ipt][c][c2] += local_syn_upar[ipt][c][c2];
+            real_t *norths = GRT_SAFE_CALLOC(nrcv, sizeof(*norths));
+            real_t *easts = GRT_SAFE_CALLOC(nrcv, sizeof(*easts));
+            real_t (*local_syn)[GRT_CHANNEL_NUM] = GRT_SAFE_CALLOC(nrcv, sizeof(*local_syn));
+            real_t (*local_upar)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM] = GRT_SAFE_CALLOC(nrcv, sizeof(*local_upar));
+
+            #pragma omp for schedule(guided)
+            for(size_t is = first; is < last; ++is) {
+                if(!srcs[is].fault->nterms) {
+                    continue;
+                }
+
+                // 不同源点共用接收坐标，只在合成前计算相对水平位置
+                for(size_t ir = 0; ir < nrcv; ++ir) {
+                    norths[ir] = rcvs[ir].north - srcs[is].north;
+                    easts[ir] = rcvs[ir].east - srcs[is].east;
+                }
+                const FINITE_FAULT *fault = srcs[is].fault;
+                size_t isub = srcs[is].isub;
+                real_t area = KODE_IS_FINITE(fault->kode) ? fault->width[isub] * fault->length[isub] : 1;
+                for(int t = 0; t < fault->nterms; ++t) {
+                    const FINITE_SOURCE_TERM *term = &srcs[is].fault->terms[t];
+                    static_syn_from_gf_PS(lib, srcs[is].depth, nrcv, norths, easts, depths, !Ctrl->Q.active && !Ctrl->U.active,
+                                          term->type, term->scale * area, term->with_mu, term->mechanism,
+                                          rot2ZNE, calc_upar, local_syn, local_upar);
+                }
+            }
+
+            // 每个线程完成后一次性归约，避免多个子源同时写入同一接收点
+            #pragma omp critical(static_syn_src_reduce)
+            {
+                for(size_t ir = 0; ir < nrcv; ++ir) {
+                    for(int c = 0; c < GRT_CHANNEL_NUM; ++c) {
+                        syn[ir][c] += local_syn[ir][c];
+                        if(calc_upar) {
+                            for(int d = 0; d < GRT_CHANNEL_NUM; ++d) {
+                                syn_upar[ir][d][c] += local_upar[ir][d][c];
+                            }
                         }
                     }
                 }
             }
+            GRT_SAFE_FREE_PTR(norths);
+            GRT_SAFE_FREE_PTR(easts);
+            GRT_SAFE_FREE_PTR(local_syn);
+            GRT_SAFE_FREE_PTR(local_upar);
         }
-
-        GRT_SAFE_FREE_PTR(rcv_norths);
-        GRT_SAFE_FREE_PTR(rcv_easts);
-        GRT_SAFE_FREE_PTR(local_syn);
-        GRT_SAFE_FREE_PTR(local_syn_upar);
+        first = last;
     }
+    GRT_SAFE_FREE_PTR(depths);
 }
 
-
 /**
- * 基于 Coulomb 有限断层和 STGRNLIB 合成静态位移
- * 调用方应先统一确定 dL/dW
- * shared_depth 含义同 static_syn_from_gf_PS
- *
- * @param[in]      lib           静态格林函数库
- * @param[in]      nfault       有限断层数量
- * @param[in]      faults       有限断层数组
- * @param[in]      dL            沿走向子断层尺寸 (km)
- * @param[in]      dW            沿倾向子断层尺寸 (km)
- * @param[in]      npts          接收点数量
- * @param[in]      norths        接收点 North 坐标 (km)
- * @param[in]      easts         接收点 East 坐标 (km)
- * @param[in]      depths        接收点深度 (km)
- * @param[in]      shared_depth  是否所有接收点共面
- * @param[in]      calc_upar     是否计算位移偏导
- * @param[in,out]  syn           位移累加结果
- * @param[in,out]  syn_upar      位移偏导累加结果
+ * 在任何子源并行计算前检查通用源点及接收点的库覆盖范围
+ * @param[in]  Ctrl  命令行参数
+ * @param[in]  lib   静态格林函数库
+ * @param[in]  nsrc  震源点数
+ * @param[in]  srcs  已展开的通用源点列表
+ * @param[in]  nrcv  接收点数
+ * @param[in]  rcvs  接收点列表
  */
-static void static_syn_from_gf_FF(
-    const STGRNLIB *lib,
-    size_t nfault, const FINITE_FAULT *faults,
-    real_t dL, real_t dW,
-    size_t npts, const real_t *norths, const real_t *easts, const real_t *depths,
-    bool shared_depth, bool calc_upar,
-    real_t (*syn)[GRT_CHANNEL_NUM],
-    real_t (*syn_upar)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])
+static void check_syn_geometry(const GRT_MODULE_CTRL *Ctrl, const STGRNLIB *lib, size_t nsrc, const SRC_POINT *srcs, size_t nrcv,
+                                const RCV_POINT *rcvs)
 {
-    if(lib == NULL || lib->ndepsrc == 0 || lib->ndeprcv == 0){
-        GRTRaiseError("empty STGRNLIB.");
-    }
-    if(npts == 0 || norths == NULL || easts == NULL || depths == NULL){
-        GRTRaiseError("empty receiver points.");
-    }
-    if((dL <= 0.0) || (dW <= 0.0)){
-        GRTRaiseError("finite fault subdivision dL and dW must be positive.");
-    }
-    if(calc_upar && !lib->calc_upar){
-        GRTRaiseError("STGRNLIB has no displacement derivatives, cannot set calc_upar.");
-    }
-
-    // 预先检查所有接收深度均在库范围内
-    {
+    // 源点已完成一次剖分，预检和后续合成使用完全相同的坐标
+    for(size_t is = 0; is < nsrc; ++is) {
         size_t i0, i1;
         real_t w;
-        for(size_t ipt = 0; ipt < npts; ++ipt){
-            if(!grt_locateLinearInterp(lib->deprcvs, lib->ndeprcv, depths[ipt], &i0, &i1, &w)){
-                GRTRaiseError(
-                    "Receiver depth %.6g km is out of Green's function deprcv range [%.6g, %.6g].",
-                    depths[ipt], lib->deprcvs[0], lib->deprcvs[lib->ndeprcv - 1]);
+        if(!grt_locateLinearInterp(lib->depsrcs, lib->ndepsrc, srcs[is].depth, &i0, &i1, &w)) {
+            GRTRaiseError("Source depth %.9g km is outside the library range.", srcs[is].depth);
+        }
+        // 源介质约束只在预检阶段检查，合成阶段使用已确认的深度角点
+        size_t source_indices[2] = {i0, i1};
+        for(int k = 0; k < (i0 == i1 ? 1 : 2); ++k) {
+            const FINITE_FAULT *fault = srcs[is].fault;
+            for(int t = 0; t < fault->nterms; ++t) {
+                grt_check_source_medium(fault->terms[t].type, fault->terms[t].with_mu, lib->src_vb[source_indices[k]]);
+            }
+        }
+        for(size_t ir = 0; ir < nrcv; ++ir) {
+            real_t dist = hypot(rcvs[ir].north - srcs[is].north, rcvs[ir].east - srcs[is].east);
+            if(!grt_locateLinearInterp(lib->deprcvs, lib->ndeprcv, rcvs[ir].depth, &i0, &i1, &w) ||
+               !grt_locateLinearInterp(lib->sort_rs, lib->nr, dist, &i0, &i1, &w)) {
+                GRTRaiseError("Source %zu (parent %zu), receiver %zu is outside the library range.",
+                              is, (size_t)(srcs[is].fault - Ctrl->C.faults), ir);
             }
         }
     }
-
-    for(size_t ifault = 0; ifault < nfault; ++ifault){
-        const FINITE_FAULT *f = &faults[ifault];
-
-        real_t W, L;
-        size_t nW, nL;
-        grt_finite_fault_subdiv(f, dL, dW, &W, &L, &nW, &nL);
-        size_t nsub = KODE_IS_POINT(f->kode) ? 1 : nW * nL;
-        GRTRaiseInfo("finite fault[%zu/%zu]: nsubfaults = %zu", ifault + 1, nfault, nsub);
-
-        static_syn_one_finite_fault(
-            lib, f, dL, dW, W, L, nW, nL,
-            npts, norths, easts, depths,
-            shared_depth, calc_upar, syn, syn_upar
-        );
-    }
 }
-
 
 /**
  * 按格林函数库形态校验 -Ds、-Dr 和 -C 选项
  *
- * @param[in]  Ctrl   static_syn 命令行控制结构体
- * @param[in]  lib    静态格林函数库
+ * @param[in]  Ctrl  static_syn 命令行控制结构体
+ * @param[in]  lib   静态格林函数库
  */
-static void check_syn_depth_options(const GRT_MODULE_CTRL *Ctrl, const STGRNLIB *lib)
+static void check_syn_library_options(const GRT_MODULE_CTRL *Ctrl, const STGRNLIB *lib)
 {
     bool multi_src = (lib->ndepsrc > 1);
     bool multi_rcv = (lib->ndeprcv > 1);
 
-    if(Ctrl->isFiniteFault && Ctrl->D.s_active){
-        GRTRaiseError("Do not set -Ds for finite faults; source depths come from the fault geometry.");
+    // 单节点库禁止 -C，与断层类型及是否显式指定剖分尺寸无关
+    if(Ctrl->C.active && !multi_src && !multi_rcv && lib->nr == 1) {
+        GRTRaiseError("Finite sources (-C) require a Green-function library with at least two nodes.");
     }
 
-    if(Ctrl->Q.active || Ctrl->U.active){
-        // -Q/-U：深度来自文件，禁止 -Dr（getopt 已拦一道，此处再保险）
-        if(Ctrl->D.r_active){
-            GRTRaiseError("Do not set -Dr with -Q/-U; receiver depths come from the input file.");
-        }
-    } else {
-        // 网格接收：多台站深度库必须 -Dr，单台站深度库可省略或显式设置
-        if(multi_rcv && !Ctrl->D.r_active){
-            GRTRaiseError("Library has multiple receiver depths; -Dr<deprcv> is required.");
-        }
+    // 网格接收的深度选项是否必需，由库的采样轴决定
+    if(!Ctrl->Q.active && !Ctrl->U.active && multi_rcv && !Ctrl->D.r_active) {
+        GRTRaiseError("Library has multiple receiver depths; -Dr<deprcv> is required.");
     }
 
     // 点源：多震源深度必须 -Ds，单震源深度可省略或显式设置
-    if(Ctrl->isPointSource){
+    if(!Ctrl->C.active){
         if(multi_src && !Ctrl->D.s_active){
             GRTRaiseError("Library has multiple source depths; -Ds<depsrc> is required for point source.");
         }
@@ -1229,22 +1142,16 @@ static void check_syn_depth_options(const GRT_MODULE_CTRL *Ctrl, const STGRNLIB 
 
 
 /**
- * 统一确定有限震源断层或有限接收断层的剖分尺寸
+ * 确定有限震源断层的剖分尺寸
  *
- * @param[in]      lib      静态格林函数库
- * @param[in,out]  dL       沿走向剖分尺寸 (km)
- * @param[in,out]  dW       沿倾向剖分尺寸 (km)
- * @param[in]      label    输出信息中的断层类型
+ * @param[in]      lib    静态格林函数库
+ * @param[in,out]  dL     沿走向剖分尺寸 (km)
+ * @param[in,out]  dW     沿倾向剖分尺寸 (km)
+ * @param[in]      label  输出信息中的断层类型
  */
 static void resolve_finite_fault_subdiv(
     const STGRNLIB *lib, real_t *dL, real_t *dW, const char *label)
 {
-    if((lib == NULL) || (dL == NULL) || (dW == NULL)){
-        GRTRaiseError("finite fault subdivision arguments are incomplete.");
-    }
-    if((*dL <= 0.0) != (*dW <= 0.0)){
-        GRTRaiseError("finite fault dL and dW must both be positive or both be omitted.");
-    }
     if(*dL <= 0.0){
         // 未指定 +i 时统一使用格林函数库三个采样方向的最小正间隔
         *dL = *dW = grt_stgrnlib_default_subfault_size(lib);
@@ -1256,22 +1163,22 @@ static void resolve_finite_fault_subdiv(
 /**
  * 构建接收点列表
  *
- * -Q：任意点（各点自有深度，is_grid=false）
- * -U：有限接收断层子断层中心（is_fault=true）
- * 否则：-X/-Y 或延用库水平网格，统一深度（-Dr 或库 deprcvs[0]），is_grid=true
+ * -Q：任意点，各点自有深度
+ * -U：有限接收断层子断层中心
+ * 否则：-X/-Y 或延用库水平网格，统一深度（-Dr 或库 deprcvs[0]）
  *
- * @param[in]  Ctrl   static_syn 命令行控制结构体
- * @param[in]  lib    静态格林函数库
- * @return            新分配的接收点结构体
+ * @param[in,out]  Ctrl  static_syn 命令行控制结构体
+ * @param[in]      lib   静态格林函数库
+ * @param[out]     nrcv  展开后的接收点数
+ * @return         新分配的接收点数组
  */
-static RCV_POINTS *build_syn_rcv(const GRT_MODULE_CTRL *Ctrl, const STGRNLIB *lib)
+static RCV_POINT *build_syn_receivers(GRT_MODULE_CTRL *Ctrl, const STGRNLIB *lib, size_t *nrcv)
 {
     if(Ctrl->Q.active){
-        return grt_rcv_points_from_file(Ctrl->Q.s_path);
+        return grt_rcv_points_from_file(Ctrl->Q.s_path, nrcv);
     }
     if(Ctrl->U.active){
-        return grt_rcv_points_from_faults(
-            Ctrl->U.nfault, Ctrl->U.faults, Ctrl->U.dL, Ctrl->U.dW);
+        return grt_rcv_points_from_faults(Ctrl->U.nfault, Ctrl->U.faults, nrcv);
     }
 
     size_t nnorth = Ctrl->isnewNEgrid ? Ctrl->X.nnorth : lib->nnorth;
@@ -1279,6 +1186,7 @@ static RCV_POINTS *build_syn_rcv(const GRT_MODULE_CTRL *Ctrl, const STGRNLIB *li
     const real_t *norths = Ctrl->isnewNEgrid ? Ctrl->X.norths : lib->norths;
     const real_t *easts  = Ctrl->isnewNEgrid ? Ctrl->Y.easts  : lib->easts;
     real_t deprcv = Ctrl->D.r_active ? Ctrl->D.deprcv : lib->deprcvs[0];
+    *nrcv = nnorth * neast;
     return grt_rcv_points_from_grid(nnorth, norths, neast, easts, deprcv);
 }
 
@@ -1289,7 +1197,8 @@ static RCV_POINTS *build_syn_rcv(const GRT_MODULE_CTRL *Ctrl, const STGRNLIB *li
  * @param[in]  path      输出 NetCDF 文件路径
  * @param[in]  Ctrl      static_syn 命令行控制结构体
  * @param[in]  lib       静态格林函数库
- * @param[in]  rcv       规则网格、任意点或有限接收断层点列表
+ * @param[in]  nrcv      接收点数
+ * @param[in]  rcvs      规则网格、任意点或有限接收断层点列表
  * @param[in]  depsrc    点源深度 (km)
  * @param[in]  syn       位移数组
  * @param[in]  syn_upar  位移偏导数组
@@ -1298,7 +1207,7 @@ static void save_syn_nc(
     const char *path,
     const GRT_MODULE_CTRL *Ctrl,
     const STGRNLIB *lib,
-    const RCV_POINTS *rcv,
+    size_t nrcv, const RCV_POINT *rcvs,
     real_t depsrc,
     const real_t (*syn)[GRT_CHANNEL_NUM],
     const real_t (*syn_upar)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM])
@@ -1306,20 +1215,21 @@ static void save_syn_nc(
     // 震源属性由本模块写入，公共层只接收布局、模型及结果
     int ncid;
     NC_CHECK(nc_create(path, NC_CLOBBER, &ncid));
-    const char *compute_type = Ctrl->C.active ? "FF" : GRT_SYN_TYPE_NAMES[Ctrl->source_type];
+    const char *compute_type = Ctrl->C.active ? "FF" : GRT_SYN_TYPE_NAMES[Ctrl->C.faults[0].terms[0].type];
     NC_CHECK(nc_put_att_text(ncid, NC_GLOBAL, "computeType", strlen(compute_type), compute_type));
-    if(Ctrl->isPointSource) {
+    if(!Ctrl->C.active) {
         NC_CHECK(NC_FUNC_REAL(nc_put_att)(ncid, NC_GLOBAL, "depsrc", NC_REAL, 1, &depsrc));
     }
 
+    bool points = Ctrl->Q.active || Ctrl->U.active;
     RCV_NC_INFO receivers = {
-        .layout = rcv->is_fault ? GRT_RCV_NC_LAYOUT_FAULTS : rcv->is_grid ? GRT_RCV_NC_LAYOUT_GRID : GRT_RCV_NC_LAYOUT_POINTS,
-        .npts = rcv->npts, .rcv = rcv,
+        .layout = Ctrl->U.active ? GRT_RCV_NC_LAYOUT_FAULTS : points ? GRT_RCV_NC_LAYOUT_POINTS : GRT_RCV_NC_LAYOUT_GRID,
+        .npts = nrcv, .rcvs = rcvs,
 
-        .nnorth = rcv->nnorth,
-        .neast  = rcv->neast,
+        .nnorth = points ? 0 : Ctrl->isnewNEgrid ? Ctrl->X.nnorth : lib->nnorth,
+        .neast  = points ? 0 : Ctrl->isnewNEgrid ? Ctrl->Y.neast  : lib->neast,
 
-        .nfault = rcv->nfault,
+        .nfault = Ctrl->U.nfault, .faults = Ctrl->U.faults,
     };
     grt_static_nc_write(ncid, &receivers, lib->nlayer, lib->modarr, Ctrl->N.active, Ctrl->e.active, syn, syn_upar);
     NC_CHECK(nc_close(ncid));
@@ -1333,76 +1243,61 @@ int static_syn_main(int argc, char **argv){
     getopt_from_command(Ctrl, argc, argv);
 
     STGRNLIB *lib = grt_stgrnlib_load_nc(Ctrl->G.s_ingrid);
-    check_syn_depth_options(Ctrl, lib);
+    check_syn_library_options(Ctrl, lib);
     if(Ctrl->e.active && !lib->calc_upar){
         GRTRaiseError("Input grid didn't have displacement derivatives, you can't set -e.");
     }
 
-    // -C 和 -U 共用同一套格林函数库剖分间隔规则
+    // 矩形震源的默认剖分尺寸由格林函数库确定
     if(Ctrl->C.active){
         bool rectangles = false;
         for(size_t i = 0; i < Ctrl->C.nfault; ++i) {
             rectangles |= KODE_IS_FINITE(Ctrl->C.faults[i].kode);
         }
-        if(!rectangles && Ctrl->C.dL <= 0) {
-            Ctrl->C.dL = Ctrl->C.dW = 1.0;
-        }
-        else {
+        // Kode 400/500 保持单点，不需要填充剖分尺寸
+        if(rectangles) {
             resolve_finite_fault_subdiv(lib, &Ctrl->C.dL, &Ctrl->C.dW, "finite fault");
         }
     }
-    if(Ctrl->U.active){
-        resolve_finite_fault_subdiv(lib, &Ctrl->U.dL, &Ctrl->U.dW, "finite receiver fault");
-    }
 
     // 接收点：网格、-Q 逐点或 -U 有限断层子断层中心
-    RCV_POINTS *rcv = build_syn_rcv(Ctrl, lib);
-    size_t npts = rcv->npts;
-    const real_t *norths = rcv->norths;
-    const real_t *easts = rcv->easts;
-    const real_t *depths = rcv->depths;
-    bool shared_depth = rcv->is_grid;
+    size_t nsrc, nrcv;
+    RCV_POINT *rcvs = build_syn_receivers(Ctrl, lib, &nrcv);
 
-    real_t (*syn)[GRT_CHANNEL_NUM] = GRT_SAFE_CALLOC(npts, sizeof(real_t) * GRT_CHANNEL_NUM);
-    real_t (*syn_upar)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM] = GRT_SAFE_CALLOC(npts, sizeof(real_t) * GRT_CHANNEL_NUM * GRT_CHANNEL_NUM);
-
-    // depsrc 仅点源需要；有限断层由各子断层几何提供
-    real_t depsrc = 0.0;
-    if(Ctrl->isPointSource){
-        depsrc = Ctrl->D.s_active ? Ctrl->D.depsrc : lib->depsrcs[0];
-        static_syn_from_gf_PS(
-            lib, depsrc,
-            npts, norths, easts, depths,
-            shared_depth,
-            Ctrl->source_type, Ctrl->S.scale, Ctrl->S.mult_src_mu, Ctrl->mchn,
-            Ctrl->N.active, Ctrl->e.active,
-            syn, syn_upar);
-    } else {
-        static_syn_from_gf_FF(
-            lib,
-            Ctrl->C.nfault, Ctrl->C.faults,
-            Ctrl->C.dL, Ctrl->C.dW,
-            npts, norths, easts, depths,
-            shared_depth, Ctrl->e.active,
-            syn, syn_upar);
+    // 点源和有限断层使用同一源点列表，展开后同时用于预检和合成
+    real_t depsrc = Ctrl->D.s_active ? Ctrl->D.depsrc : lib->depsrcs[0];
+    if(!Ctrl->C.active) {
+        Ctrl->C.faults[0].top = Ctrl->C.faults[0].bot = depsrc;
     }
+    for(size_t i = 0; i < Ctrl->C.nfault; ++i) {
+        FINITE_FAULT *fault = &Ctrl->C.faults[i];
+        grt_finite_fault_subdiv(fault, KODE_IS_POINT(fault->kode) ? 0 : Ctrl->C.dL, KODE_IS_POINT(fault->kode) ? 0 : Ctrl->C.dW,
+                                0, NULL);
+    }
+    SRC_POINT *srcs = grt_src_points_from_faults(Ctrl->C.nfault, Ctrl->C.faults, &nsrc);
+    check_syn_geometry(Ctrl, lib, nsrc, srcs, nrcv, rcvs);
+
+    real_t (*syn)[GRT_CHANNEL_NUM] = GRT_SAFE_CALLOC(nrcv, sizeof(*syn));
+    real_t (*syn_upar)[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM] = GRT_SAFE_CALLOC(nrcv, sizeof(*syn_upar));
+    static_syn_from_sources(Ctrl, lib, srcs, nrcv, rcvs, Ctrl->N.active, Ctrl->e.active, syn, syn_upar);
 
     // 写出 nc（接收介质只在此处按布局查询，不参与合成）
-    save_syn_nc(Ctrl->O.s_outgrid, Ctrl, lib, rcv, depsrc, syn, syn_upar);
+    save_syn_nc(Ctrl->O.s_outgrid, Ctrl, lib, nrcv, rcvs, depsrc, syn, syn_upar);
 
     if(!Ctrl->s.active){
-        if(Ctrl->isFiniteFault){
+        if(Ctrl->C.active){
             GRTRaiseInfo("Synthetic static displacements of Coulomb finite faults saved in \"%s\".", Ctrl->O.s_outgrid);
         } else {
             GRTRaiseInfo(
                 "Synthetic static displacements of %s source saved in \"%s\".",
-                srcTypeFullName[Ctrl->source_type], Ctrl->O.s_outgrid);
+                srcTypeFullName[Ctrl->C.faults[0].terms[0].type], Ctrl->O.s_outgrid);
         }
     }
 
     GRT_SAFE_FREE_PTR(syn);
     GRT_SAFE_FREE_PTR(syn_upar);
-    grt_rcv_points_free(rcv);
+    GRT_SAFE_FREE_PTR(srcs);
+    GRT_SAFE_FREE_PTR(rcvs);
     grt_stgrnlib_free(lib);
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;

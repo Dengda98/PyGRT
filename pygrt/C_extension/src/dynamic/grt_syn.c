@@ -1045,7 +1045,18 @@ int syn_main(int argc, char **argv)
     SACTRACE *tfsac = NULL;
     if(Ctrl->D.active){
         int tfnt;
-        real_t *tfarr = grt_time_function_from_option(Ctrl->D.option, dt, &tfnt);
+        real_t stf_delay = 0.0;
+        real_t *tfarr = grt_time_function_from_option(Ctrl->D.option, dt, &tfnt, &stf_delay);
+
+        // 公共接口将延迟单独返回，此处补回前导零以保持点源合成行为
+        int shift = (int)llround(stf_delay / dt);
+        if(shift) {
+            real_t *padded = GRT_SAFE_CALLOC(tfnt + shift, sizeof(*padded));
+            memcpy(padded + shift, tfarr, tfnt * sizeof(*tfarr));
+            GRT_SAFE_FREE_PTR(tfarr);
+            tfarr = padded;
+            tfnt += shift;
+        }
         if(tfarr == NULL){
             GRTRaiseError("get time function error.\n");
         }

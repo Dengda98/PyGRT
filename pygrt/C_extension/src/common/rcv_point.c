@@ -3,7 +3,7 @@
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2026-08
  *
- * 静态 syn / 后处理用的接收点列表
+ * 动态解和静态解共用的接收点列表
  *
  */
 
@@ -16,6 +16,7 @@
 #include "grt/common/rcv_point.h"
 #include "grt/common/checkerror.h"
 #include "grt/common/util.h"
+
 
 /**
  * 解析一行接收点数据并返回有效数值列数
@@ -31,15 +32,24 @@ static bool parse_receiver_point_line(
     const char *cursor = line;
     *nvalues = 0;
 
+    // 逐个读取数值，空白分隔，遇到行尾或注释终止，只接受三列或六列
     while(true){
-        while(isspace((unsigned char)*cursor)) ++cursor;
-        if(*cursor == '\0' || *cursor == GRT_COMMENT_HEAD) break;
-        if(*nvalues >= 6) return false;
+        while(isspace((unsigned char)*cursor)) {
+            ++cursor;
+        }
+        if(*cursor == '\0' || *cursor == GRT_COMMENT_HEAD) {
+            break;
+        }
+        if(*nvalues >= 6) {
+            return false;
+        }
 
         errno = 0;
         char *end = NULL;
         real_t value = strtod(cursor, &end);
-        if(end == cursor || errno == ERANGE) return false;
+        if(end == cursor || errno == ERANGE) {
+            return false;
+        }
         values[*nvalues] = value;
         (*nvalues)++;
         cursor = end;
@@ -48,7 +58,17 @@ static bool parse_receiver_point_line(
     return *nvalues == 3 || *nvalues == 6;
 }
 
-RCV_POINTS *grt_rcv_points_from_grid(
+RCV_POINT *grt_rcv_points_from_polar(real_t dist, real_t azimuth, real_t depth)
+{
+    // 极坐标只在输入时转换，后续源台计算使用单点坐标
+    RCV_POINT *rcvs = GRT_SAFE_CALLOC(1, sizeof(*rcvs));
+    rcvs[0].north = dist * cos(azimuth * DEG1);
+    rcvs[0].east = dist * sin(azimuth * DEG1);
+    rcvs[0].depth = depth;
+    return rcvs;
+}
+
+RCV_POINT *grt_rcv_points_from_grid(
     size_t nnorth, const real_t *norths,
     size_t neast,  const real_t *easts,
     real_t depth)
@@ -56,33 +76,25 @@ RCV_POINTS *grt_rcv_points_from_grid(
     if(nnorth == 0 || neast == 0 || norths == NULL || easts == NULL){
         GRTRaiseError("empty receiver grid.");
     }
-    if(depth < 0.0){
-        GRTRaiseError("Negative receiver depth is not supported.");
-    }
-
-    RCV_POINTS *pts = GRT_SAFE_CALLOC(1, sizeof(RCV_POINTS));
-    pts->is_grid = true;
-    pts->nnorth = nnorth;
-    pts->neast = neast;
-    pts->npts = nnorth * neast;
-    pts->norths = GRT_SAFE_CALLOC(pts->npts, sizeof(real_t));
-    pts->easts  = GRT_SAFE_CALLOC(pts->npts, sizeof(real_t));
-    pts->depths = GRT_SAFE_CALLOC(pts->npts, sizeof(real_t));
-
+    // 网格按 east 方向最快变化的顺序展开为接收点列表
+    RCV_POINT *rcvs = GRT_SAFE_CALLOC(nnorth * neast, sizeof(*rcvs));
     for(size_t inorth = 0; inorth < nnorth; ++inorth){
         for(size_t ieast = 0; ieast < neast; ++ieast){
             size_t ipt = ieast + inorth * neast;
-            pts->norths[ipt] = norths[inorth];
-            pts->easts[ipt]  = easts[ieast];
-            pts->depths[ipt] = depth;
+            rcvs[ipt].north = norths[inorth];
+            rcvs[ipt].east  = easts[ieast];
+            rcvs[ipt].depth = depth;
         }
     }
-    return pts;
+    return rcvs;
 }
 
 
-RCV_POINTS *grt_rcv_points_from_file(const char *path)
+RCV_POINT *grt_rcv_points_from_file(const char *path, size_t *count)
 {
+    if(!count) {
+        GRTRaiseError("Receiver point count is NULL.");
+    }
     GRTCheckFileExist(path);
 
     FILE *fp = fopen(path, "r");
@@ -90,8 +102,10 @@ RCV_POINTS *grt_rcv_points_from_file(const char *path)
         GRTRaiseError("Failed to open receiver points file \"%s\".", path);
     }
 
-    // 先统计有效行数并确定文件列数
+    // 每行只解析一次，统一检查列数后直接追加一个接收点
+    RCV_POINT *rcvs = NULL;
     size_t npts = 0;
+    size_t capacity = 0;
     size_t ncolumns = 0;
     char *line = NULL;
     size_t nlen = 0;
@@ -99,7 +113,9 @@ RCV_POINTS *grt_rcv_points_from_file(const char *path)
     while(grt_getline(&line, &nlen, fp) != -1){
         lineno++;
         grt_trim_whitespace(line);
-        if(grt_is_comment_or_empty_line(line)) continue;
+        if(grt_is_comment_or_empty_line(line)) {
+            continue;
+        }
 
         real_t values[6];
         size_t nvalues;
@@ -110,6 +126,8 @@ RCV_POINTS *grt_rcv_points_from_file(const char *path)
                 "north east depth [strike dip rake]).",
                 lineno, path);
         }
+
+        // 整个接收文件必须使用相同列数，避免部分点缺失接收机制
         if(ncolumns != 0 && nvalues != ncolumns){
             GRTRaiseError(
                 "Inconsistent receiver point column count at line %zu in \"%s\" "
@@ -117,139 +135,59 @@ RCV_POINTS *grt_rcv_points_from_file(const char *path)
                 lineno, path);
         }
         ncolumns = nvalues;
-        npts++;
-    }
-    if(npts == 0){
-        GRTRaiseError("No receiver points found in \"%s\".", path);
-    }
 
-    RCV_POINTS *pts = GRT_SAFE_CALLOC(1, sizeof(RCV_POINTS));
-    pts->is_grid = false;
-    pts->nnorth = 0;
-    pts->neast = 0;
-    pts->npts = npts;
-    pts->norths = GRT_SAFE_CALLOC(npts, sizeof(real_t));
-    pts->easts  = GRT_SAFE_CALLOC(npts, sizeof(real_t));
-    pts->depths = GRT_SAFE_CALLOC(npts, sizeof(real_t));
-    pts->has_geometry = ncolumns == 6;
-    if(pts->has_geometry){
-        pts->strikes = GRT_SAFE_CALLOC(npts, sizeof(real_t));
-        pts->dips    = GRT_SAFE_CALLOC(npts, sizeof(real_t));
-        pts->rakes   = GRT_SAFE_CALLOC(npts, sizeof(real_t));
-    }
-
-    rewind(fp);
-    size_t ipt = 0;
-    lineno = 0;
-    while(grt_getline(&line, &nlen, fp) != -1){
-        lineno++;
-        grt_trim_whitespace(line);
-        if(grt_is_comment_or_empty_line(line)) continue;
-
-        real_t values[6];
-        size_t nvalues;
-        if(!parse_receiver_point_line(line, values, &nvalues) || nvalues != ncolumns){
-            GRTRaiseError(
-                "Invalid receiver point at line %zu in \"%s\" "
-                "(expect the same 3 or 6 columns as the other data lines).",
-                lineno, path);
+        // 按需扩大点集容量，避免每读一行都重新分配数组
+        if(npts == capacity) {
+            capacity = capacity ? 2 * capacity : 64;
+            rcvs = GRT_SAFE_REALLOC(rcvs, capacity * sizeof(*rcvs));
         }
+        size_t ipt = npts++;
+        rcvs[ipt] = (RCV_POINT){0};
         if(values[2] < 0.0){
             GRTRaiseError("Negative receiver depth at line %zu in \"%s\".", lineno, path);
         }
-        pts->norths[ipt] = values[0];
-        pts->easts[ipt]  = values[1];
-        pts->depths[ipt] = values[2];
-        if(pts->has_geometry){
-            pts->strikes[ipt] = values[3];
-            pts->dips[ipt]    = values[4];
-            pts->rakes[ipt]   = values[5];
+        rcvs[ipt].north = values[0];
+        rcvs[ipt].east  = values[1];
+        rcvs[ipt].depth = values[2];
+
+        // 六列格式的后三列作为接收机制，三列格式保持机制未定义
+        if(ncolumns == 6){
+            if(values[3] < 0 || values[3] > 360 || values[4] < 0 || values[4] > 90 || fabs(values[5]) > 180) {
+                GRTRaiseError("Invalid receiver mechanism at line %zu in \"%s\" (strike/dip/rake must be in [0,360]/[0,90]/[-180,180]).",
+                              lineno, path);
+            }
+            rcvs[ipt].has_mechanism = true;
+            rcvs[ipt].strike = values[3];
+            rcvs[ipt].dip    = values[4];
+            rcvs[ipt].rake   = values[5];
         }
-        ipt++;
     }
 
+    if(!npts) {
+        GRTRaiseError("No receiver points found in \"%s\".", path);
+    }
+    *count = npts;
     GRT_SAFE_FREE_PTR(line);
     fclose(fp);
-    return pts;
+    return rcvs;
 }
 
 
-void grt_rcv_points_free(RCV_POINTS *pts)
+RCV_POINT *grt_rcv_points_from_faults(size_t nfault, const FINITE_FAULT *faults, size_t *npts)
 {
-    if(pts == NULL) return;
-    // 释放接收点坐标和任意点的逐点几何
-    GRT_SAFE_FREE_PTR(pts->norths);
-    GRT_SAFE_FREE_PTR(pts->easts);
-    GRT_SAFE_FREE_PTR(pts->depths);
-    GRT_SAFE_FREE_PTR(pts->strikes);
-    GRT_SAFE_FREE_PTR(pts->dips);
-    GRT_SAFE_FREE_PTR(pts->rakes);
-    // 释放有限接收断层的索引、断层几何和子断层尺度
-    GRT_SAFE_FREE_PTR(pts->nsubs);
-    GRT_SAFE_FREE_PTR(pts->offsets);
-    GRT_SAFE_FREE_PTR(pts->fstrikes);
-    GRT_SAFE_FREE_PTR(pts->fdips);
-    GRT_SAFE_FREE_PTR(pts->frakes);
-    GRT_SAFE_FREE_PTR(pts->stksizes);
-    GRT_SAFE_FREE_PTR(pts->dipsizes);
-    GRT_SAFE_FREE_PTR(pts);
-}
-
-
-RCV_POINTS *grt_rcv_points_from_faults(
-    size_t nfault, const FINITE_FAULT *faults, real_t dL, real_t dW)
-{
-    if((nfault == 0) || (faults == NULL)){
-        GRTRaiseError("empty finite receiver faults.");
+    // 先统计全部剖分点，再按断层及断层内顺序一次性展开
+    *npts = 0;
+    for(size_t i = 0; i < nfault; ++i) {
+        *npts += faults[i].nW * faults[i].nL;
     }
-    if((dL <= 0.0) != (dW <= 0.0)){
-        GRTRaiseError("finite receiver dL and dW must both be positive or both be omitted.");
-    }
-
-    RCV_POINTS *pts = GRT_SAFE_CALLOC(1, sizeof(*pts));
-    pts->is_fault = true;
-    pts->nfault = nfault;
-    pts->nsubs = GRT_SAFE_CALLOC(nfault, sizeof(*pts->nsubs));
-    pts->offsets = GRT_SAFE_CALLOC(nfault, sizeof(*pts->offsets));
-    pts->fstrikes = GRT_SAFE_CALLOC(nfault, sizeof(*pts->fstrikes));
-    pts->fdips = GRT_SAFE_CALLOC(nfault, sizeof(*pts->fdips));
-    pts->frakes = GRT_SAFE_CALLOC(nfault, sizeof(*pts->frakes));
-    pts->stksizes = GRT_SAFE_CALLOC(nfault, sizeof(*pts->stksizes));
-    pts->dipsizes = GRT_SAFE_CALLOC(nfault, sizeof(*pts->dipsizes));
-
-    // 遍历每条有限断层，统一调用公共几何函数并追加子断层中心点
-    for(size_t ifault = 0; ifault < nfault; ++ifault){
-        const FINITE_FAULT *fault = &faults[ifault];
-        real_t W, L;
-        size_t nW, nL;
-        grt_finite_fault_subdiv(fault, dL, dW, &W, &L, &nW, &nL);
-        size_t nsubs = nW * nL;
-        size_t first_point = pts->npts;
-        size_t new_npts = first_point + nsubs;
-        pts->nsubs[ifault] = nsubs;
-        pts->offsets[ifault] = new_npts;
-        pts->fstrikes[ifault] = fault->strike;
-        pts->fdips[ifault] = fault->dip;
-        pts->frakes[ifault] = fault->rake;
-        pts->stksizes[ifault] = nL;
-        pts->dipsizes[ifault] = nW;
-        pts->norths = GRT_SAFE_REALLOC(pts->norths, new_npts * sizeof(*pts->norths));
-        pts->easts = GRT_SAFE_REALLOC(pts->easts, new_npts * sizeof(*pts->easts));
-        pts->depths = GRT_SAFE_REALLOC(pts->depths, new_npts * sizeof(*pts->depths));
-        pts->npts = new_npts;
-
-        // 将当前有限断层的子断层中心按 point 顺序追加
-        size_t ipt = first_point;
-        for(size_t iW = 0; iW < nW; ++iW){
-            for(size_t iL = 0; iL < nL; ++iL){
-                FINITE_SUBFAULT sub;
-                grt_finite_fault_subfault(fault, dL, dW, W, L, iW, iL, &sub);
-                pts->norths[ipt] = sub.north;
-                pts->easts[ipt] = sub.east;
-                pts->depths[ipt] = sub.depsrc;
-                ++ipt;
-            }
+    RCV_POINT *points = GRT_SAFE_MALLOC(*npts * sizeof(*points));
+    size_t ipt = 0;
+    for(size_t i = 0; i < nfault; ++i) {
+        const FINITE_FAULT *fault = &faults[i];
+        for(size_t isub = 0; isub < fault->nW * fault->nL; ++isub) {
+            points[ipt++] = (RCV_POINT){.north = fault->north[isub], .east = fault->east[isub], .depth = fault->depth[isub],
+                                       .fault = fault, .isub = isub};
         }
     }
-    return pts;
+    return points;
 }

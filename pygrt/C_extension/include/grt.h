@@ -37,6 +37,7 @@
 #include "grt/common/rcv_point.h"
 #include "grt/common/sacio.h"
 #include "grt/common/search.h"
+#include "grt/common/src_point.h"
 #include "grt/common/travt.h"
 #include "grt/common/util.h"
 #include "grt/common/version.h"

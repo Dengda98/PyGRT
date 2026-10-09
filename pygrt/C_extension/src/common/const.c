@@ -54,3 +54,22 @@ void grt_set_num_threads(int num_threads){
     (void)num_threads;
 #endif
 }
+
+int grt_get_num_threads(size_t ntasks)
+{
+    // 线程数不超过实际任务数，避免分配无用的累加缓冲
+    int threads = 1;
+#ifdef _OPENMP
+    threads = omp_get_max_threads();
+#endif
+    return GRT_MIN((size_t)threads, ntasks);
+}
+
+int grt_get_thread_index()
+{
+#ifdef _OPENMP
+    return omp_get_thread_num();
+#else
+    return 0;
+#endif
+}

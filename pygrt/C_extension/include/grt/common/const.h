@@ -275,6 +275,16 @@ typedef enum {
 /**
  * 设置OpenMP多线程数
  * 
- * @param[in]   num_threads        线程数
+ * @param[in]  num_threads  线程数
  */
 void grt_set_num_threads(int num_threads);
+
+/**
+ * 根据当前 OpenMP 配置和任务数量获取并行线程数，未启用 OpenMP 时返回 1
+ * @param[in]  ntasks  并行任务数量，必须为正
+ * @return     不超过任务数量的线程数
+ */
+int grt_get_num_threads(size_t ntasks);
+
+/** 获取当前线程编号，未启用 OpenMP 时返回 0 */
+int grt_get_thread_index();

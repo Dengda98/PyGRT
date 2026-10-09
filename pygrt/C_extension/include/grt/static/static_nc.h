@@ -23,11 +23,11 @@ typedef enum {
     GRT_RCV_NC_LAYOUT_FAULTS     ///< 有限接收断层布局
 } GRT_RCV_NC_LAYOUT;
 
-/** 静态 NetCDF 接收布局，写出时借用接收点列表，读入时按需分配坐标数组 */
+/** 静态 NetCDF 接收布局，写出时借用点列和断层，读入时按需分配坐标数组 */
 typedef struct {
     GRT_RCV_NC_LAYOUT layout;    ///< 接收点布局类型
     size_t npts;                 ///< 展平后的接收点总数
-    const RCV_POINTS *rcv;       ///< 写出时借用的接收点列表，grid 沿 east 方向变化最快
+    const RCV_POINT *rcvs;       ///< 写出时借用的点列，grid 沿 east 方向变化最快
 
     // grid 布局专用
     size_t nnorth;               ///< 网格 north 方向点数
@@ -35,6 +35,7 @@ typedef struct {
 
     // faults 布局专用
     size_t nfault;               ///< 有限接收断层数量
+    const FINITE_FAULT *faults;  ///< 写出时借用的断层数组，点列按断层及剖分索引排列
     int nfault_dimid;            ///< 读入文件中的 nfault 维度 ID，仅对该文件有效
 
     // 从 NetCDF 读入的维度信息，ID 仅对该文件有效
@@ -72,7 +73,7 @@ void grt_rcv_nc_info_load(int ncid, RCV_NC_INFO *info);
 void grt_rcv_nc_info_load_coordinates(int ncid, RCV_NC_INFO *info);
 
 /**
- * 释放自行分配的坐标数组并清空接收信息，不释放借用的接收点列表
+ * 释放自行分配的坐标数组并清空接收信息，不释放借用的点列和断层
  *
  * @param[in,out]  info   接收布局及坐标
  */

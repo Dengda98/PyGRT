@@ -51,7 +51,7 @@ cat > rcv_faults_undefined.inp <<'EOF'
   #   X-start    Y-start      X-fin      Y-fin   Kode  value1      value2       dip       top       bot
 xxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxx  xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx
   1     0.0000     0.0000     2.0000     0.0000   100     0.0000      0.0000     90.00       1.0000     3.0000
-  2     0.0000     3.0000     2.0000     3.0000   200     0.1000      0.1000     60.00       1.0000     3.0000
+  2     0.0000     3.0000     2.0000     3.0000   100     0.1000      0.1000     60.00       1.0000     3.0000
 EOF
 
 cat > rcv_faults_defined.inp <<'EOF'

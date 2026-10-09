@@ -103,9 +103,9 @@ static void free_Ctrl(GRT_MODULE_CTRL *Ctrl)
     GRT_SAFE_FREE_PTR(Ctrl->O.path);
     GRT_SAFE_FREE_PTR(Ctrl->X.values);
     GRT_SAFE_FREE_PTR(Ctrl->Y.values);
-    grt_finite_fault_free(Ctrl->C.faults);
-    grt_finite_fault_free(Ctrl->U.faults);
-    free(Ctrl);
+    grt_finite_fault_free(Ctrl->C.nfault, Ctrl->C.faults);
+    grt_finite_fault_free(Ctrl->U.nfault, Ctrl->U.faults);
+    GRT_SAFE_FREE_PTR(Ctrl);
 }
 
 /** 打印使用说明 */
@@ -177,6 +177,7 @@ printf("\n"
 "    -U<fault>[+i<dL>/<dW>]\n"
 "                  Coulomb-format finite receiver faults. Without +i, each\n"
 "                  fault contributes one point at its rectangular center.\n"
+"                  Slip magnitude is ignored. Only Kode=100 is supported.\n"
 "                  With +i, each fault is subdivided along strike/dip and\n"
 "                  the receiver points are the subfault centers. The output\n"
 "                  uses one point dimension for all receivers and adds\n"
@@ -288,39 +289,45 @@ static void parse_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 }
                 break;
             }
+
             // 读取 Coulomb 格式有限断层
             case 'C':
                 Ctrl->C.active = true;
-                grt_finite_fault_free(Ctrl->C.faults);
+                grt_finite_fault_free(Ctrl->C.nfault, Ctrl->C.faults);
                 Ctrl->C.faults = grt_finite_fault_from_option(
-                    optarg, &Ctrl->C.nfault, &Ctrl->C.dL, &Ctrl->C.dW);
+                    optarg, &Ctrl->C.nfault, &Ctrl->C.dL, &Ctrl->C.dW, true, 0, 1, NULL);
                 if(Ctrl->C.dL > 0.0){
                     GRTBadOptionError(C, "subdivision suffix is not used by the direct rectangular Okada solution.");
                 }
                 break;
+
             // 设置 North 方向规则坐标轴
             case 'X':
                 Ctrl->X.active = true;
                 parse_axis(optarg, 'X', &Ctrl->X.n, &Ctrl->X.values);
                 break;
+
             // 设置 East 方向规则坐标轴
             case 'Y':
                 Ctrl->Y.active = true;
                 parse_axis(optarg, 'Y', &Ctrl->Y.n, &Ctrl->Y.values);
                 break;
+
             // 读取任意接收点文件
             case 'Q':
                 Ctrl->Q.active = true;
                 Ctrl->Q.path = strdup(optarg);
                 break;
+
             // 读取 Coulomb 格式有限接收断层
             case 'U': {
                 Ctrl->U.active = true;
-                grt_finite_fault_free(Ctrl->U.faults);
+                grt_finite_fault_free(Ctrl->U.nfault, Ctrl->U.faults);
                 Ctrl->U.faults = grt_finite_fault_from_option(
-                    optarg, &Ctrl->U.nfault, &Ctrl->U.dL, &Ctrl->U.dW);
+                    optarg, &Ctrl->U.nfault, &Ctrl->U.dL, &Ctrl->U.dW, false, 0, 1, NULL);
                 break;
             }
+
             // 设置点源深度或规则网格接收点深度
             case 'D':
                 if(optarg[0] == 's'){
@@ -411,18 +418,20 @@ static void parse_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
 }
 
 /**
- * 根据规则网格或接收点文件构造接收点数组
- *
- * @param[in]  Ctrl   Okada 命令行控制结构体
- * @return            新分配的接收点结构体
+ * 构建规则网格、逐点文件或有限断层接收点列表
+ * @param[in,out]  Ctrl  命令行参数，保存接收断层剖分结果
+ * @param[out]     nrcv  展开后的接收点数
+ * @return         新分配的接收点数组
  */
-static RCV_POINTS *build_receivers(const GRT_MODULE_CTRL *Ctrl)
+static RCV_POINT *build_receivers(GRT_MODULE_CTRL *Ctrl, size_t *nrcv)
 {
-    if(Ctrl->Q.active) return grt_rcv_points_from_file(Ctrl->Q.path);
-    if(Ctrl->U.active){
-        return grt_rcv_points_from_faults(
-            Ctrl->U.nfault, Ctrl->U.faults, Ctrl->U.dL, Ctrl->U.dW);
+    if(Ctrl->Q.active) {
+        return grt_rcv_points_from_file(Ctrl->Q.path, nrcv);
     }
+    if(Ctrl->U.active){
+        return grt_rcv_points_from_faults(Ctrl->U.nfault, Ctrl->U.faults, nrcv);
+    }
+    *nrcv = Ctrl->X.n * Ctrl->Y.n;
     return grt_rcv_points_from_grid(Ctrl->X.n, Ctrl->X.values, Ctrl->Y.n, Ctrl->Y.values, Ctrl->deprcv);
 }
 
@@ -461,17 +470,15 @@ static void local_to_zne(real_t strike, const real_t local_u[3], const real_t lo
 
 /** 计算一个点源在全部接收点上的位移和位移偏导
  *
- * @param[in]       Ctrl      命令行参数结构体
- * @param[in]       medium    均匀半空间介质参数
- * @param[in]       npts      接收点数量
- * @param[in]       norths    接收点 North 坐标
- * @param[in]       easts     接收点 East 坐标
- * @param[in]       depths    接收点深度
- * @param[in,out]   syn       累加后的位移
- * @param[in,out]   syn_d     累加后的位移偏导
+ * @param[in]      Ctrl    命令行参数结构体
+ * @param[in]      medium  均匀半空间介质参数
+ * @param[in]      npts    接收点数量
+ * @param[in]      rcvs    接收点集合
+ * @param[in,out]  syn     累加后的位移
+ * @param[in,out]  syn_d   累加后的位移偏导
  */
 static void add_point_source(const GRT_MODULE_CTRL *Ctrl, const OKADA_MEDIUM_PARAMS *medium,
-    size_t npts, const real_t *norths, const real_t *easts, const real_t *depths,
+    size_t npts, const RCV_POINT *rcvs,
     real_t (*syn)[3], real_t (*syn_d)[3][3])
 {
     // 将 PyGRT 点源参数转换为 Okada 的四类 potency
@@ -493,9 +500,9 @@ static void add_point_source(const GRT_MODULE_CTRL *Ctrl, const OKADA_MEDIUM_PAR
 
     // Okada 点源输出的位移和偏导分别需要乘以 1e-10 和 1e-15
     for(size_t i = 0; i < npts; ++i){
-        real_t x = norths[i] * cs + easts[i] * ss;
-        real_t y = norths[i] * ss - easts[i] * cs;
-        real_t z = -depths[i];
+        real_t x = rcvs[i].north * cs + rcvs[i].east * ss;
+        real_t y = rcvs[i].north * ss - rcvs[i].east * cs;
+        real_t z = -rcvs[i].depth;
         real_t u[3], up[3][3], uw[3], dw[3][3];
         int iret = grt_okada_dc3d0(medium->alpha, x, y, z, Ctrl->depsrc, dip,
             pot1, pot2, pot3, pot4, u, up);
@@ -507,7 +514,7 @@ static void add_point_source(const GRT_MODULE_CTRL *Ctrl, const OKADA_MEDIUM_PAR
                 "Okada point-source evaluation reached %s (return code %d) at receiver %zu/%zu "
                 "(north=%.6g km, east=%.6g km, depth=%.6g km); retry after shifting local X "
                 "by %.6g km.",
-                reason, iret, i + 1, npts, norths[i], easts[i], depths[i], OKADA_SINGULAR_OFFSET);
+                reason, iret, i + 1, npts, rcvs[i].north, rcvs[i].east, rcvs[i].depth, OKADA_SINGULAR_OFFSET);
             iret = grt_okada_dc3d0(medium->alpha, x, y, z, Ctrl->depsrc, dip,
                 pot1, pot2, pot3, pot4, u, up);
             if(iret != 0){
@@ -532,8 +539,8 @@ static void add_point_source(const GRT_MODULE_CTRL *Ctrl, const OKADA_MEDIUM_PAR
         } else {
             // N、E 分量对应公共坐标变换中的 X、Y 分量
             // 与 static_syn 使用相同的零震中距约定，避免网格浮点误差造成任意方位角
-            real_t dist = hypot(norths[i], easts[i]);
-            real_t theta = (GRT_IS_ZERO(dist)) ? 0.0 : atan2(easts[i], norths[i]);
+            real_t dist = hypot(rcvs[i].north, rcvs[i].east);
+            real_t theta = (GRT_IS_ZERO(dist)) ? 0.0 : atan2(rcvs[i].east, rcvs[i].north);
             real_t radius = dist * 1e5;
             grt_rot_zxy2zrt_upar(theta, uw, dw, radius);
             for(int c = 0; c < 3; ++c) syn[i][c] += uw[c];
@@ -546,39 +553,32 @@ static void add_point_source(const GRT_MODULE_CTRL *Ctrl, const OKADA_MEDIUM_PAR
 
 /** 计算 Coulomb 有限断层在全部接收点上的位移和位移偏导
  *
- * @param[in]       Ctrl      命令行参数结构体
- * @param[in]       medium    均匀半空间介质参数
- * @param[in]       npts      接收点数量
- * @param[in]       norths    接收点 North 坐标
- * @param[in]       easts     接收点 East 坐标
- * @param[in]       depths    接收点深度
- * @param[in,out]   syn       累加后的位移
- * @param[in,out]   syn_d     累加后的位移偏导
+ * @param[in]      Ctrl    命令行参数结构体
+ * @param[in]      medium  均匀半空间介质参数
+ * @param[in]      npts    接收点数量
+ * @param[in]      rcvs    接收点集合
+ * @param[in,out]  syn     累加后的位移
+ * @param[in,out]  syn_d   累加后的位移偏导
  */
 static void add_finite_faults(const GRT_MODULE_CTRL *Ctrl, const OKADA_MEDIUM_PARAMS *medium,
-    size_t npts, const real_t *norths, const real_t *easts, const real_t *depths,
+    size_t npts, const RCV_POINT *rcvs,
     real_t (*syn)[3], real_t (*syn_d)[3][3])
 {
     for(size_t nf = 0; nf < Ctrl->C.nfault; ++nf){
         const FINITE_FAULT *fault = &Ctrl->C.faults[nf];
         real_t strike = fault->strike;
         real_t dip = fault->dip;
-        real_t width, length;
-        size_t nW, nL;
-        FINITE_SUBFAULT center;
-        grt_finite_fault_subdiv(fault, 0.0, 0.0, &width, &length, &nW, &nL);
-        (void)nW;
-        (void)nL;
-        grt_finite_fault_subfault(fault, 0.0, 0.0, width, length, 0, 0, &center);
+        real_t width = fault->width[0];
+        real_t length = fault->length[0];
         real_t coss = cos(strike * DEG1);
         real_t sins = sin(strike * DEG1);
         real_t north_mid = 0.5 * (fault->north_begin + fault->north_end);
         real_t east_mid = 0.5 * (fault->east_begin + fault->east_end);
-        real_t depsrc = center.depsrc;
+        real_t depsrc = fault->depth[0];
 
         // Coulomb 的 Kode=400/500 点源位于矩形断层面中心，而不是水平投影中心
-        real_t point_north = center.north;
-        real_t point_east = center.east;
+        real_t point_north = fault->north[0];
+        real_t point_east = fault->east[0];
 
         real_t disl1 = 0.0;
         real_t disl2 = 0.0;
@@ -613,18 +613,18 @@ static void add_finite_faults(const GRT_MODULE_CTRL *Ctrl, const OKADA_MEDIUM_PA
             int iret;
             if(KODE_IS_FINITE(fault->kode)){
                 // 用顶边水平投影作为 DC3D 参考点，沿上倾方向的范围为 [-width, 0]
-                real_t dn = norths[i] - north_mid;
-                real_t de = easts[i] - east_mid;
+                real_t dn = rcvs[i].north - north_mid;
+                real_t de = rcvs[i].east - east_mid;
                 real_t x = dn * coss + de * sins;
                 real_t y = dn * sins - de * coss;
-                iret = grt_okada_dc3d(medium->alpha, x, y, -depths[i], fault->top, dip,
+                iret = grt_okada_dc3d(medium->alpha, x, y, -rcvs[i].depth, fault->top, dip,
                     -0.5 * length, 0.5 * length, -width, 0.0, disl1, disl2, disl3, u, up);
             } else {
-                real_t dn = norths[i] - point_north;
-                real_t de = easts[i] - point_east;
+                real_t dn = rcvs[i].north - point_north;
+                real_t de = rcvs[i].east - point_east;
                 real_t x = dn * coss + de * sins;
                 real_t y = dn * sins - de * coss;
-                iret = grt_okada_dc3d0(medium->alpha, x, y, -depths[i], depsrc, dip,
+                iret = grt_okada_dc3d0(medium->alpha, x, y, -rcvs[i].depth, depsrc, dip,
                     pot1, pot2, pot3, pot4, u, up);
             }
             if(iret != 0){
@@ -634,7 +634,7 @@ static void add_finite_faults(const GRT_MODULE_CTRL *Ctrl, const OKADA_MEDIUM_PA
                     "Okada finite-fault evaluation failed: %s (return code %d) at Coulomb fault row %zu/%zu "
                     "(Kode=%u) and receiver %zu/%zu (north=%.6g km, east=%.6g km, depth=%.6g km).",
                     reason, iret, nf + 1, Ctrl->C.nfault, fault->kode,
-                    i + 1, npts, norths[i], easts[i], depths[i]);
+                    i + 1, npts, rcvs[i].north, rcvs[i].east, rcvs[i].depth);
             }
             if(KODE_IS_FINITE(fault->kode)){
                 for(int c = 0; c < 3; ++c){
@@ -665,13 +665,14 @@ static void add_finite_faults(const GRT_MODULE_CTRL *Ctrl, const OKADA_MEDIUM_PA
  *
  * @param[in]  Ctrl    Okada 命令行控制结构体
  * @param[in]  medium  均匀半空间介质参数
- * @param[in]  rcv     规则网格、任意点或有限接收断层点列表
+ * @param[in]  nrcv    接收点数
+ * @param[in]  rcvs    规则网格、任意点或有限接收断层点列表
  * @param[in]  syn     位移数组
  * @param[in]  syn_d   位移偏导数组
  */
 static void save_nc(
     const GRT_MODULE_CTRL *Ctrl, const OKADA_MEDIUM_PARAMS *medium,
-    const RCV_POINTS *rcv,
+    size_t nrcv, const RCV_POINT *rcvs,
     const real_t (*syn)[3], const real_t (*syn_d)[3][3])
 {
     const char *compute_type;
@@ -698,14 +699,15 @@ static void save_nc(
         NC_CHECK(NC_FUNC_REAL(nc_put_att)(ncid, NC_GLOBAL, "depsrc", NC_REAL, 1, &Ctrl->depsrc));
     }
 
+    bool points = Ctrl->Q.active || Ctrl->U.active;
     RCV_NC_INFO receivers = {
-        .layout = rcv->is_fault ? GRT_RCV_NC_LAYOUT_FAULTS : rcv->is_grid ? GRT_RCV_NC_LAYOUT_GRID : GRT_RCV_NC_LAYOUT_POINTS,
-        .npts = rcv->npts, .rcv = rcv,
+        .layout = Ctrl->U.active ? GRT_RCV_NC_LAYOUT_FAULTS : points ? GRT_RCV_NC_LAYOUT_POINTS : GRT_RCV_NC_LAYOUT_GRID,
+        .npts = nrcv, .rcvs = rcvs,
 
-        .nnorth = rcv->nnorth,
-        .neast  = rcv->neast,
+        .nnorth = points ? 0 : Ctrl->X.n,
+        .neast  = points ? 0 : Ctrl->Y.n,
 
-        .nfault = rcv->nfault,
+        .nfault = Ctrl->U.nfault, .faults = Ctrl->U.faults,
     };
     const real_t modarr[1][GRT_MODARR_NCOL] = {{0, medium->vp, medium->vs, medium->rho, 0, 0}};
     grt_static_nc_write(ncid, &receivers, 1, modarr, Ctrl->N.active, Ctrl->e.active, syn, syn_d);
@@ -721,26 +723,28 @@ int okada_main(int argc, char **argv)
         .vs = Ctrl->I.vs,
         .rho = Ctrl->I.rho,
     };
+
     // 速度单位为 km/s，密度单位为 g/cm^3，模量转换为 dyne/cm^2
     medium.alpha = 1.0 - (medium.vs / medium.vp) * (medium.vs / medium.vp);
     medium.mu = medium.rho * medium.vs * medium.vs * 1e10;
     medium.lambda = medium.rho * (medium.vp * medium.vp - 2.0 * medium.vs * medium.vs) * 1e10;
-    RCV_POINTS *rcv = build_receivers(Ctrl);
-    size_t npts = rcv->npts;
-    const real_t *norths = rcv->norths;
-    const real_t *easts = rcv->easts;
-    const real_t *depths = rcv->depths;
-    real_t (*syn)[3] = GRT_SAFE_CALLOC(npts, sizeof(*syn));
-    real_t (*syn_d)[3][3] = GRT_SAFE_CALLOC(npts, sizeof(*syn_d));
+    size_t nrcv;
+    RCV_POINT *rcvs = build_receivers(Ctrl, &nrcv);
+    real_t (*syn)[3] = GRT_SAFE_CALLOC(nrcv, sizeof(*syn));
+    real_t (*syn_d)[3][3] = GRT_SAFE_CALLOC(nrcv, sizeof(*syn_d));
 
     // 按源类型计算位移场
     if(Ctrl->C.active){
-        add_finite_faults(Ctrl, &medium, npts, norths, easts, depths, syn, syn_d);
+        for(size_t i = 0; i < Ctrl->C.nfault; ++i) {
+            grt_finite_fault_subdiv(&Ctrl->C.faults[i], 0.0, 0.0, 0, NULL);
+        }
+        add_finite_faults(Ctrl, &medium, nrcv, rcvs, syn, syn_d);
+
         // 有限断层先在全局 ZNE 中累加，再按 -N 决定最终保存的坐标系
         if(!Ctrl->N.active){
-            for(size_t i = 0; i < npts; ++i){
-                real_t dist = hypot(norths[i], easts[i]);
-                real_t theta = (GRT_IS_ZERO(dist)) ? 0.0 : atan2(easts[i], norths[i]);
+            for(size_t i = 0; i < nrcv; ++i){
+                real_t dist = hypot(rcvs[i].north, rcvs[i].east);
+                real_t theta = (GRT_IS_ZERO(dist)) ? 0.0 : atan2(rcvs[i].east, rcvs[i].north);
                 if(Ctrl->e.active){
                     grt_rot_zxy2zrt_upar(theta, syn[i], syn_d[i], dist * 1e5);
                 } else {
@@ -749,14 +753,14 @@ int okada_main(int argc, char **argv)
             }
         }
     } else {
-        add_point_source(Ctrl, &medium, npts, norths, easts, depths, syn, syn_d);
+        add_point_source(Ctrl, &medium, nrcv, rcvs, syn, syn_d);
     }
-    save_nc(Ctrl, &medium, rcv, syn, syn_d);
+    save_nc(Ctrl, &medium, nrcv, rcvs, syn, syn_d);
 
     if(!Ctrl->s.active) GRTRaiseInfo("Okada static displacements saved in \"%s\".", Ctrl->O.path);
     GRT_SAFE_FREE_PTR(syn);
     GRT_SAFE_FREE_PTR(syn_d);
-    grt_rcv_points_free(rcv);
+    GRT_SAFE_FREE_PTR(rcvs);
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;
 }
