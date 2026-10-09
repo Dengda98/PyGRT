@@ -43,7 +43,7 @@ static void define_receiver_vars(int ncid, const RCV_NC_INFO *receivers, size_t 
                                  const real_t (*modarr)[GRT_MODARR_NCOL], RCV_NC_VARS *vars)
 {
     if(receivers->layout == GRT_RCV_NC_LAYOUT_GRID) {
-        real_t depth = receivers->rcv->depths[0], medium[3];
+        real_t depth = receivers->rcvs[0].depth, medium[3];
         grt_modarr_medium_at_depth(nlayer, modarr, depth, &medium[0], &medium[1], &medium[2]);
         NC_CHECK(NC_FUNC_REAL(nc_put_att)(ncid, NC_GLOBAL, "deprcv", NC_REAL, 1, &depth));
         for(int c = 0; c < 3; ++c) {
@@ -68,7 +68,7 @@ static void define_receiver_vars(int ncid, const RCV_NC_INFO *receivers, size_t 
     }
 
     // 普通点机制使用 point 维，有限断层机制使用 nfault 维
-    if(receivers->layout == GRT_RCV_NC_LAYOUT_FAULTS || receivers->rcv->has_geometry) {
+    if(receivers->layout == GRT_RCV_NC_LAYOUT_FAULTS || receivers->rcvs[0].has_mechanism) {
         int geometry_dimid = vars->dimids[0];
         if(receivers->layout == GRT_RCV_NC_LAYOUT_FAULTS) {
             NC_CHECK(nc_def_dim(ncid, "nfault", receivers->nfault, &geometry_dimid));
@@ -121,28 +121,30 @@ static void define_channel_vars(int ncid, const RCV_NC_VARS *receivers, const ch
 static void write_receiver_coordinates(int ncid, const RCV_NC_INFO *receivers, size_t nlayer,
                                       const real_t (*modarr)[GRT_MODARR_NCOL], const RCV_NC_VARS *vars, real_t *buffer)
 {
-    const RCV_POINTS *rcv = receivers->rcv;
+    const RCV_POINT *rcvs = receivers->rcvs;
     if(receivers->layout == GRT_RCV_NC_LAYOUT_GRID) {
         for(size_t i = 0; i < receivers->nnorth; ++i) {
-            buffer[i] = rcv->norths[i * receivers->neast];
+            buffer[i] = rcvs[i * receivers->neast].north;
         }
         NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, vars->coordinate[0], buffer));
         for(size_t i = 0; i < receivers->neast; ++i) {
-            buffer[i] = rcv->easts[i];
+            buffer[i] = rcvs[i].east;
         }
         NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, vars->coordinate[1], buffer));
         return;
     }
 
-    const real_t *coordinates[] = {rcv->norths, rcv->easts, rcv->depths};
     for(int c = 0; c < 3; ++c) {
-        NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, vars->coordinate[c], coordinates[c]));
+        for(size_t i = 0; i < receivers->npts; ++i) {
+            buffer[i] = c == 0 ? rcvs[i].north : c == 1 ? rcvs[i].east : rcvs[i].depth;
+        }
+        NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, vars->coordinate[c], buffer));
     }
 
     // 各点只查询一次介质，再按变量提取；临时介质数组在本阶段结束时释放
     real_t (*medium)[3] = GRT_SAFE_CALLOC(receivers->npts, sizeof(*medium));
     for(size_t i = 0; i < receivers->npts; ++i) {
-        grt_modarr_medium_at_depth(nlayer, modarr, rcv->depths[i], &medium[i][0], &medium[i][1], &medium[i][2]);
+        grt_modarr_medium_at_depth(nlayer, modarr, rcvs[i].depth, &medium[i][0], &medium[i][1], &medium[i][2]);
     }
     for(int c = 0; c < 3; ++c) {
         for(size_t i = 0; i < receivers->npts; ++i) {
@@ -155,38 +157,46 @@ static void write_receiver_coordinates(int ncid, const RCV_NC_INFO *receivers, s
 
 /**
  * 写入逐点机制或有限断层机制及点范围
- * @param[in]  ncid       NetCDF 文件 ID
- * @param[in]  receivers  接收布局
- * @param[in]  vars       接收变量 ID
+ * @param[in]   ncid       NetCDF 文件 ID
+ * @param[in]   receivers  接收布局
+ * @param[in]   vars       接收变量 ID
+ * @param[out]  buffer     至少能容纳 npts 个实数的工作缓冲
  */
-static void write_receiver_geometry(int ncid, const RCV_NC_INFO *receivers, const RCV_NC_VARS *vars)
+static void write_receiver_geometry(int ncid, const RCV_NC_INFO *receivers, const RCV_NC_VARS *vars, real_t *buffer)
 {
-    const RCV_POINTS *rcv = receivers->rcv;
     if(receivers->layout == GRT_RCV_NC_LAYOUT_GRID ||
-       (receivers->layout == GRT_RCV_NC_LAYOUT_POINTS && !rcv->has_geometry)) {
+       (receivers->layout == GRT_RCV_NC_LAYOUT_POINTS && !receivers->rcvs[0].has_mechanism)) {
         return;
     }
-    bool faults = receivers->layout == GRT_RCV_NC_LAYOUT_FAULTS;
-    const real_t *geometry[] = {faults ? rcv->fstrikes : rcv->strikes,
-                               faults ? rcv->fdips    : rcv->dips,
-                               faults ? rcv->frakes   : rcv->rakes};
+    size_t count = receivers->layout == GRT_RCV_NC_LAYOUT_FAULTS ? receivers->nfault : receivers->npts;
     for(int c = 0; c < 3; ++c) {
-        NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, vars->geometry[c], geometry[c]));
+        for(size_t i = 0; i < count; ++i) {
+            if(receivers->layout == GRT_RCV_NC_LAYOUT_FAULTS) {
+                const FINITE_FAULT *fault = &receivers->faults[i];
+                buffer[i] = c == 0 ? fault->strike : c == 1 ? fault->dip : fault->rake;
+            } else {
+                const RCV_POINT *point = &receivers->rcvs[i];
+                buffer[i] = c == 0 ? point->strike : c == 1 ? point->dip : point->rake;
+            }
+        }
+        NC_CHECK(NC_FUNC_REAL(nc_put_var)(ncid, vars->geometry[c], buffer));
     }
-    if(!faults) {
+    if(receivers->layout != GRT_RCV_NC_LAYOUT_FAULTS) {
         return;
     }
 
     // offset 为各断层点范围的排他性结束索引，最后一个值等于 point
-    const size_t *shapes[] = {rcv->offsets, rcv->stksizes, rcv->dipsizes};
-    int *buffer = GRT_SAFE_CALLOC(receivers->nfault, sizeof(*buffer));
+    int *shape = GRT_SAFE_CALLOC(count, sizeof(*shape));
     for(int c = 0; c < 3; ++c) {
-        for(size_t i = 0; i < receivers->nfault; ++i) {
-            buffer[i] = (int)shapes[c][i];
+        size_t offset = 0;
+        for(size_t i = 0; i < count; ++i) {
+            const FINITE_FAULT *fault = &receivers->faults[i];
+            offset += fault->nL * fault->nW;
+            shape[i] = c == 0 ? offset : c == 1 ? fault->nL : fault->nW;
         }
-        NC_CHECK(nc_put_var_int(ncid, vars->fault_shape[c], buffer));
+        NC_CHECK(nc_put_var_int(ncid, vars->fault_shape[c], shape));
     }
-    GRT_SAFE_FREE_PTR(buffer);
+    GRT_SAFE_FREE_PTR(shape);
 }
 
 /**
@@ -245,7 +255,7 @@ void grt_static_nc_write(int ncid, const RCV_NC_INFO *receivers, size_t nlayer, 
 
     real_t *buffer = GRT_SAFE_CALLOC(receivers->npts, sizeof(*buffer));
     write_receiver_coordinates(ncid, receivers, nlayer, modarr, &rcv_vars, buffer);
-    write_receiver_geometry(ncid, receivers, &rcv_vars);
+    write_receiver_geometry(ncid, receivers, &rcv_vars, buffer);
     write_fields(ncid, receivers->npts, calc_upar, syn, syn_upar, vars, dvars, buffer);
     GRT_SAFE_FREE_PTR(buffer);
 }

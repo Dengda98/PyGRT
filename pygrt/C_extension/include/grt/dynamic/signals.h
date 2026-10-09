@@ -41,26 +41,28 @@ bool grt_check_tftype_tfparams(const char tftype, const char *tfparams);
  * 积分相对幅值绝对积分接近零时，无法归一化并报错
  * 可在参数末尾追加 +d<delay> 指定延迟，单位为 s
  * 
- * @param[out]      TFnt       返回的点数，包含延迟对应的前导零
+ * @param[out]      TFnt       返回的点数，不包含破裂延迟
  * @param[in]       dt         时间间隔，s
  * @param[in]       tftype     时间函数类型
  * @param[in]       tfparams   时间函数参数，可包含 +d<delay> 后缀
- * 
+ * @param[out]      delay      采样对齐后的破裂延迟，s，可为 NULL
+ *
  * @return     时间函数指针
  */
-real_t * grt_get_time_function(int *TFnt, real_t dt, const char tftype, const char *tfparams);
+real_t * grt_get_time_function(int *TFnt, real_t dt, const char tftype, const char *tfparams, real_t *delay);
 
 
 /**
- * 解析完整时间函数选项，返回包含整数采样延迟的时间函数
+ * 解析完整时间函数选项，分别返回无延迟的时间函数及采样对齐后的破裂延迟
  *
  * 选项格式为 -Dtftype[/tfparams][+d<delay>]
  *
  * @param[in]  option         完整 -D 时间函数选项，NULL 为脉冲
  * @param[in]  dt             采样间隔，s
- * @param[out] nt             包含延迟的样本数
+ * @param[out] nt             无延迟的样本数
+ * @param[out] delay          采样对齐后的破裂延迟，s，可为 NULL
  */
-real_t *grt_time_function_from_option(const char *option, real_t dt, int *nt);
+real_t *grt_time_function_from_option(const char *option, real_t dt, int *nt, real_t *delay);
 
 /**
  * 将时间量化到整数采样网格

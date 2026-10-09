@@ -139,3 +139,44 @@ void grt_set_source_radiation(
         GRTRaiseError("Unsupported source type.");
     }
 }
+
+
+void grt_source_moment_tensor(GRT_SYN_TYPE type, real_t scale, real_t VpVs_ratio, const real_t mchn[GRT_MECHANISM_NUM], real_t tensor[6])
+{
+    // 在方位角为零时，从 EX、DD、DS、SS 辐射系数恢复六个 NED 张量分量
+    realChnlGrid rad = {{0}};
+    // 用 coef 抵消辐射系数中的 1e-20 量纲换算
+    grt_set_source_radiation(rad, type, false, scale, 1e20, VpVs_ratio, 0, mchn);
+
+    // 以下关系式从上面的 “else if(source_type == GRT_SYN_MT)” 中反解得到
+    real_t e = rad[GRT_SRC_M_EX_INDEX][0], dd = rad[GRT_SRC_M_DD_INDEX][0], ss = rad[GRT_SRC_M_SS_INDEX][0];
+    tensor[0] = e - dd + ss;
+    tensor[3] = e - dd - ss;
+    tensor[5] = e + 2 * dd;
+    tensor[1] = rad[GRT_SRC_M_SS_INDEX][2];
+    tensor[2] = -rad[GRT_SRC_M_DS_INDEX][0];
+    tensor[4] = -rad[GRT_SRC_M_DS_INDEX][2];
+}
+
+
+bool grt_source_has_component(GRT_SYN_TYPE source_type, int im)
+{
+    // 按震源类型筛选所需基本源型，供格林函数按需加载
+    if(source_type == GRT_SYN_EX) {
+        return im == GRT_SRC_M_EX_INDEX;
+    } else if(source_type == GRT_SYN_SF) {
+        return im == GRT_SRC_M_VF_INDEX || im == GRT_SRC_M_HF_INDEX;
+    } else if(source_type == GRT_SYN_DC) {
+        return im >= GRT_SRC_M_DD_INDEX;
+    } else if(source_type == GRT_SYN_TS || source_type == GRT_SYN_MT) {
+        return im >= GRT_SRC_M_DD_INDEX || im == GRT_SRC_M_EX_INDEX;
+    }
+    return false;
+}
+
+void grt_check_source_medium(GRT_SYN_TYPE source_type, bool with_mu, real_t vs)
+{
+    if(vs == 0 && (source_type != GRT_SYN_EX || with_mu)) {
+        GRTRaiseError("Liquid source media support only explosion sources without -Su.");
+    }
+}

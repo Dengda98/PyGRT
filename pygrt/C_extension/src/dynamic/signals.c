@@ -147,7 +147,7 @@ bool grt_check_tftype_tfparams(const char tftype, const char *tfparams)
     return good;
 }
 
-real_t * grt_get_time_function(int *TFnt, real_t dt, const char tftype, const char *tfparams)
+real_t * grt_get_time_function(int *TFnt, real_t dt, const char tftype, const char *tfparams, real_t *delay_out)
 {
     if(dt <= 0.0) {
         GRTRaiseError("Invalid time-function sampling interval.");
@@ -210,19 +210,14 @@ real_t * grt_get_time_function(int *TFnt, real_t dt, const char tftype, const ch
     *TFnt = tfnt;
     GRT_SAFE_FREE_PTR(base);
 
-    // 延迟取最近采样点，半采样点向上取整，再通过前导零平移时间函数
-    int shift = (int)llround(delay / dt);
-    if(shift) {
-        real_t *padded = GRT_SAFE_CALLOC(*TFnt + shift, sizeof(*padded));
-        memcpy(padded + shift, tfarr, *TFnt * sizeof(*tfarr));
-        free(tfarr);
-        tfarr = padded;
-        *TFnt += shift;
+    // 破裂延迟仅保存为时间偏移，不改变时间函数的形状与样本数
+    if(delay_out) {
+        *delay_out = grt_sample_aligned_time(delay, dt);
     }
     return tfarr;
 }
 
-real_t *grt_time_function_from_option(const char *option, real_t dt, int *nt)
+real_t *grt_time_function_from_option(const char *option, real_t dt, int *nt, real_t *delay)
 {
     // NULL 使用脉冲，否则解析完整 -D 选项
     if(!option) {
@@ -243,10 +238,8 @@ real_t *grt_time_function_from_option(const char *option, real_t dt, int *nt)
         GRTRaiseError("Expected -Dtftype[/tfparams][+d<delay>].");
     }
 
-    return grt_get_time_function(nt, dt, type, params);
+    return grt_get_time_function(nt, dt, type, params, delay);
 }
-
-
 
 real_t grt_sample_aligned_time(real_t time, real_t dt)
 {

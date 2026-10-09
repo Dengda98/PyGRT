@@ -1435,7 +1435,10 @@ class PyModel1D:
         Point-source ``depsrc`` and grid-receiver ``deprcv`` can be inferred when the
         corresponding library depth dimension has one value. All coordinates share
         one horizontal origin and must lie within the library range.
-
+        Finite sources require at least two library nodes, including source files
+        containing only Kode 400/500 point records; ``src_fault_size`` does not
+        bypass this restriction.
+        
         ``src_fault_size`` and ``rcv_fault_size`` control fault subdivision;
         ``nthreads`` sets the source thread count. All arguments are keyword-only.
         Interpolation combines the results synthesized at surrounding library samples.
@@ -1463,30 +1466,32 @@ class PyModel1D:
                                      same 3- or 6-column format. Mutually exclusive
                                      with ``norths``/``easts`` and ``deprcv``.
         :param    rcv_fault:         Coulomb-format finite receiver-fault file with 11 data
-                                     columns; an exact ``rake`` token in the seventh header
-                                     column selects Kode 100 rake/net-slip interpretation
-                                     (CLI ``-U``). Without ``rcv_fault_size``,
-                                     the library sampling intervals determine the
-                                     default subdivision size. With that argument,
+                                     columns and Kode=100; an exact ``rake`` token in the seventh header
+                                     column supplies the rake even at zero slip;
+                                     otherwise the slip columns define direction.
+                                     Slip magnitude is ignored (CLI ``-U``).
+                                     Without ``rcv_fault_size``, use one center per fault.
+                                     With that argument,
                                      each fault contributes multiple subfault
                                      centers. Mutually exclusive with
                                      ``rcv_points``, ``norths``/``easts`` and
                                      ``deprcv``.
         :param    rcv_fault_size:    Optional positive ``(dL, dW)`` in km for
                                      receiver-fault subdivision along strike / dip;
-                                     if omitted, use the smallest positive interval
-                                     among epicentral distance, source depth and
-                                     receiver depth in the library.
+                                     if omitted, use one center point per fault.
         :param    output_path:       Output NetCDF file path.
         :param    scale:             Point-source scaling factor. For explosion,
                                      double-couple, tensile-crack and moment-tensor
-                                     sources, this is the scalar seismic moment in
-                                     dyne·cm. For a single force, the unit is dyne.
+                                     sources, the unit is dyne·cm. It is the scalar moment
+                                     for a double-couple; moment-tensor coefficients are
+                                     multiplied by it without normalization. For an explosion
+                                     it scales each diagonal tensor entry, and for a tensile
+                                     crack it represents :math:`\mu\Sigma D`.
+                                     For a single force, the unit is dyne.
                                      If ``scale_with_mu`` is true, ``scale`` is
                                      treated as area × slip in cm³ and multiplied by
                                      the source-layer shear modulus :math:`\mu`.
-                                     Required for point sources; ignored for
-                                     ``src_fault``.
+                                     Required for point sources; omit with ``src_fault``.
         :param    scale_with_mu:     If true, multiply ``scale`` by the source-layer
                                      shear modulus :math:`\mu` (CLI ``-Su``).
         :param    strike:            Fault strike in deg, in [0, 360]. North is 0°,

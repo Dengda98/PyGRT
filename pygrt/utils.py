@@ -260,9 +260,11 @@ def okada(
     :param    rcv_points:       ASCII receiver file with either ``north east depth``
                                 or ``north east depth strike dip rake``; coordinates
                                 are in km and angles are in degrees
-    :param    rcv_fault:        Coulomb-format finite receiver-fault file. Each
+    :param    rcv_fault:        Coulomb-format finite receiver-fault file with Kode=100. Each
                                 fault contributes its center, or subfault centers
-                                when ``rcv_fault_size`` is supplied
+                                when ``rcv_fault_size`` is supplied. Slip magnitude is ignored;
+                                an exact ``rake`` header preserves the angle even at zero slip,
+                                otherwise the slip columns define direction
     :param    rcv_fault_size:   Optional ``(dL, dW)`` receiver subdivision size
                                 in km along strike / dip
     :param    output_path:      Output NetCDF file path

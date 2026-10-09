@@ -361,35 +361,36 @@ static void load_geometry_from_Q(
     int ncid, const RCV_NC_INFO *rcv_info, const char *path,
     real_t *strikes, real_t *dips, real_t *rakes)
 {
-    RCV_POINTS *q_points = grt_rcv_points_from_file(path);
-    if(!q_points->has_geometry){
+    size_t npoints;
+    RCV_POINT *rcvs = grt_rcv_points_from_file(path, &npoints);
+    if(!rcvs[0].has_mechanism){
         GRTRaiseError("-Q file \"%s\" must contain exactly 6 columns.", path);
     }
-    if(q_points->npts != rcv_info->npts){
+    if(npoints != rcv_info->npts){
         GRTRaiseError(
             "-Q file \"%s\" has %zu points, but the input file has %zu points.",
-            path, q_points->npts, rcv_info->npts);
+            path, npoints, rcv_info->npts);
     }
 
     // 先读取输入文件深度，再逐点核对坐标、顺序和接收断层形态
     real_t *depths = read_point_depths(ncid, rcv_info);
     for(size_t i = 0; i < rcv_info->npts; ++i){
-        if(!same_coordinate(q_points->norths[i], rcv_info->norths[i]) ||
-            !same_coordinate(q_points->easts[i], rcv_info->easts[i]) ||
-            !same_coordinate(q_points->depths[i], depths[i])){
+        if(!same_coordinate(rcvs[i].north, rcv_info->norths[i]) ||
+            !same_coordinate(rcvs[i].east, rcv_info->easts[i]) ||
+            !same_coordinate(rcvs[i].depth, depths[i])){
             GRTRaiseError(
                 "-Q file \"%s\" does not have the same point order and coordinates "
                 "as the input file at point %zu.", path, i);
         }
-        if(!geometry_is_defined(q_points->dips[i], q_points->rakes[i])){
+        if(!geometry_is_defined(rcvs[i].dip, rcvs[i].rake)){
             GRTRaiseError("Undefined or invalid receiver geometry in -Q at point %zu.", i);
         }
-        strikes[i] = normalize_strike(q_points->strikes[i]);
-        dips[i] = q_points->dips[i];
-        rakes[i] = q_points->rakes[i];
+        strikes[i] = normalize_strike(rcvs[i].strike);
+        dips[i] = rcvs[i].dip;
+        rakes[i] = rcvs[i].rake;
     }
     GRT_SAFE_FREE_PTR(depths);
-    grt_rcv_points_free(q_points);
+    GRT_SAFE_FREE_PTR(rcvs);
 }
 
 

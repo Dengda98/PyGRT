@@ -15,27 +15,20 @@ static_sproj
 
 **grt static sproj**
 |-G|\ *ingrid*
-[|-M|\ *geometry*]
-[|-Q|\ *file*]
+[ |-M|\ *geometry* | |-Q|\ *file* ]
 [ **-h** ]
 
 
 描述
 --------
 
-**static sproj** 模块读取静态合成文件中的六个应力张量分量，
+**static sproj** 模块读取 :doc:`static_stress` 生成的六个应力张量分量，
 根据接收断层的走向、倾角和滑动角，计算每个接收点的法向应力变化
 :math:`\Delta \sigma_\text{n}` (**sigma_n**) 和沿 rake 方向的剪应力变化 :math:`\Delta \tau_\text{s}` (**tau_s**)，
 并将这两个变量写回输入文件。如果变量已经存在，模块会覆盖其数据并给出警告；其他已有变量和属性保持不变。
 
 **sigma_n** 采用张开为正的约定， **tau_s** 是牵引力在接收断层滑动方向上的有符号投影，
 与 rake 方向同向为正。结果单位与输入应力相同，即 dyne/cm²（0.1 Pa）。
-
-输入文件应先由 :doc:`static_stress` 模块计算应力张量。
-
-
-接收断层形态
-------------------
 
 模块根据输入文件的 **layout** 属性区分 **grid**、**points** 和 **faults** 三种布局，
 并使用对应的接收断层形态来源。
@@ -78,12 +71,9 @@ static_sproj
 
 **-M**\ *geometry*
     手动指定接收断层形态。
-
-    对 **grid** 和普通 **points** 布局，格式为
-    *strike/dip/rake*，单位为度。
-
-    对有限接收断层 **faults** 布局，格式为
-    *rake* 或 *rake+f*，单位为度。**+f** 表示强制所有点使用该 rake。
+    对 **grid** 和普通 **points** 布局，格式为 *strike/dip/rake*，单位为度。
+    对有限接收断层 **faults** 布局，格式为 *rake* 或 *rake+f*，单位为度。
+    **+f** 表示强制所有点使用该 rake。
 
 .. _-Q:
 

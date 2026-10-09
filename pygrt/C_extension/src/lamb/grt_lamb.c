@@ -1525,7 +1525,18 @@ int lamb_main(int argc, char **argv)
     if (Ctrl->D.active) {
         /* 时间函数与输出序列使用相同的物理采样间隔 */
         int time_function_nt;
-        real_t *values = grt_time_function_from_option(Ctrl->D.option, Ctrl->N.dt, &time_function_nt);
+        real_t stf_delay = 0.0;
+        real_t *values = grt_time_function_from_option(Ctrl->D.option, Ctrl->N.dt, &time_function_nt, &stf_delay);
+
+        // 公共接口将延迟单独返回，此处补回前导零以保持点源合成行为
+        int shift = (int)llround(stf_delay / Ctrl->N.dt);
+        if(shift) {
+            real_t *padded = GRT_SAFE_CALLOC(time_function_nt + shift, sizeof(*padded));
+            memcpy(padded + shift, values, time_function_nt * sizeof(*values));
+            GRT_SAFE_FREE_PTR(values);
+            values = padded;
+            time_function_nt += shift;
+        }
         if (values == NULL) {
             GRTRaiseError("get time function error.\n");
         }
