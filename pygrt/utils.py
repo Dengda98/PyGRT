@@ -1211,6 +1211,54 @@ def plot_statsdata_ptam(statsdata1:np.ndarray, statsdata2:np.ndarray, statsdata_
 
 
 
+def _dynamic_geometry_options(
+    *, dist, azimuth, deprcv, src_fault, src_fault_size, rcv_points, rcv_fault, rcv_fault_size, nthreads,
+) -> List[str]:
+    """
+    校验动态合成的接收几何，并格式化有限断层、任意点及线程参数
+
+    :param    dist:            极坐标接收点的震中距
+    :param    azimuth:         极坐标接收点的方位角
+    :param    deprcv:          极坐标接收点的深度
+    :param    src_fault:       震源断层文件
+    :param    src_fault_size:  震源断层的剖分尺寸
+    :param    rcv_points:      任意接收点文件
+    :param    rcv_fault:       接收断层文件
+    :param    rcv_fault_size:  接收断层的剖分尺寸
+    :param    nthreads:        子源计算线程数
+    :return:                  可直接传给 CLI 的选项列表
+    """
+    options = []
+    explicit = sum((rcv_points is not None, rcv_fault is not None))
+    if explicit > 1 or (explicit and (dist is not None or azimuth is not None)):
+        raise ValueError("Receiver geometry options are mutually exclusive.")
+    if (rcv_points is not None or rcv_fault is not None) and deprcv is not None:
+        raise ValueError("rcv_points/rcv_fault supply their own depths; omit deprcv.")
+
+    if not explicit and azimuth is None:
+        raise ValueError("A polar receiver requires azimuth.")
+    # 将有限断层或任意点参数直接加入命令
+    for flag, path, size in (("C", src_fault, src_fault_size), ("U", rcv_fault, rcv_fault_size)):
+        if size is not None and path is None:
+            raise ValueError("Subdivision size requires the corresponding fault file.")
+        if path is not None:
+            option = f"-{flag}{Path(path)}"
+            if size is not None:
+                if len(size) != 2 or any(value <= 0 for value in size):
+                    raise ValueError("Fault size must contain two positive values.")
+                option += f"+i{format_float(size[0])}/{format_float(size[1])}"
+            options.append(option)
+    if rcv_points is not None:
+        options.append(f"-Q{Path(rcv_points)}")
+
+    if nthreads is not None:
+        if isinstance(nthreads, bool) or int(nthreads) != nthreads or nthreads <= 0:
+            raise ValueError("nthreads must be a positive integer.")
+        options.append(f"-P{int(nthreads)}")
+    return options
+
+
+
 class _LambPhase(IntFlag):
     """与 C 的 GRT_LAMB_PHASE 保持一致的震相掩码"""
     P   = 1 << 0

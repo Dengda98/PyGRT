@@ -50,6 +50,7 @@ Python中合成动态位移的主函数为 :meth:`syn() <pygrt.pymod.PyModel1D.s
 
 CLI 和 Python 函数中根据设置的不同震源参数自动推断震源类型。
 一次只能设置一组震源专用参数，不完整或混用参数会报错。
+本节示例均为点源。
 
 脚本下载： :download:`Shell Scripts <run/run.sh>` | :download:`Python Scripts <run/run.py>`
 

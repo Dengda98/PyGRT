@@ -172,6 +172,23 @@ int grt_argsort(
  * @param[out]  w    权重，使值 = (1-w)*x[i0] + w*x[i1]
  * @return      是否在范围内
  */
-bool grt_locateLinearInterp(
-    const real_t *x, size_t n, real_t q,
-    size_t *i0, size_t *i1, real_t *w);
+bool grt_locateLinearInterp(const real_t *x, size_t n, real_t q, size_t *i0, size_t *i1, real_t *w);
+
+/** 升序采样轴的查询方式 */
+typedef enum {
+    GRT_SAMPLE_LINEAR = 0, ///< 线性插值
+    GRT_SAMPLE_NEAREST,    ///< 最近邻，等距离时取较小坐标
+    GRT_SAMPLE_EXACT       ///< 使用 GRT_ISCLOSE 精确匹配
+} GRT_SAMPLE_MODE;
+
+/**
+ * 在升序采样轴上查询精确、最近邻或线性节点
+ * @param[in]  x     升序采样轴
+ * @param[in]  n     采样数
+ * @param[in]  q     目标坐标
+ * @param[in]  mode  采样轴查询方式
+ * @param[out] i0    左节点索引
+ * @param[out] i1    右节点索引
+ * @param[out] w     右节点权重
+ */
+bool grt_locate_samples(const real_t *x, size_t n, real_t q, GRT_SAMPLE_MODE mode, size_t *i0, size_t *i1, real_t *w);

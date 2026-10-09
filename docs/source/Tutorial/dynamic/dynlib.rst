@@ -11,9 +11,11 @@
 动态格林函数使用 SAC 文件保存，目录结构为
 ``{outdir}/{model}_{depsrc}_{deprcv}_{dist}/{stype}.sac``。
 例如 ``GRN/milrow_4_2_8/`` 表示震源深度 4 km、台站深度 2 km、震中距 8 km。
-动态格林函数按震源深度、台站深度和震中距存储，合成时只能选择库中已经存在的精确采样值，不进行插值。
+动态格林函数按震源深度、台站深度和震中距存储，合成时默认对库内深度和距离插值，也可选择最近邻查询。
 
-**目录下要求只能有一个模型的结果，如果包含多个模型会对后续计算造成影响。**
+**目录下要求只能有一个模型的结果，必须包含震源深度、接收深度和震中距三个采样轴的全部组合，
+各轴可以非等距。**
+如需合成空间导数，建库时须使用 **-e** 或 *calc_upar=True*。
 
 快速上手
 ---------
@@ -58,7 +60,7 @@
 深度和距离的写法
 ------------------
 
-命令行支持三种列表形式，**-Ds**、**-Dr** 和 **-R** 的规则分别如下：
+**-Ds**、**-Dr** 和 **-R** 命令行支持三种列表形式，规则如下：
 
 * ``-Ds2/6/2``：生成 2、4、6 km
 * ``-Ds2,4,6``：直接给出逗号分隔的列表
@@ -68,42 +70,39 @@
 ``depsrc=[2, 4, 6]``、``deprcv=[0, 2]`` 和 ``dists=[5, 8, 10]``。
 程序会遍历所有震源深度和台站深度组合，再对每个组合计算所有震中距。
 
-从库中选择格林函数
+从格林函数库合成
 --------------------
 
-:doc:`/Module/syn` 模块进行合成时可以把 **-G** 指向库根目录，也可以直接指向某一个子目录。
-根目录模式适合脚本根据事件信息选择格林函数，此时当库中某个维度有多个值时，
-必须用 **-Ds**、**-Dr** 或 **-R** 明确指定；如果该维度只有一个值，可以省略对应选项。
-所有选择都要求与 SAC 头中的震源深度、台站深度和震中距精确相等。
+使用 :doc:`/Module/syn` 合成时，将 **-G** 指向库根目录，指定目标源深、台深和震中距即可。
+目标位置不必与库中的采样节点重合，只需位于库的采样范围内。
+可选择以下两种方式：
+
+* **线性插值（默认）**：根据相邻节点的合成结果插值，CLI 使用 **-i1**，Python 使用 *interpolate=True*
+* **最近邻**：使用最近的库节点，CLI 使用 **-i0**，Python 使用 *interpolate=False*
+
+若 **-G** 直接指定单个节点子目录，则直接使用该节点，无需选择插值方式。
+
+例如，上面建立的库覆盖源深 2～4 km、台深 0～2 km、震中距 5～10 km。
+下面在源深 3 km、台深 1 km、震中距 7 km 处合成爆炸源结果，
+该位置并非库中的节点，两种查询方式均可使用：
 
 .. tabs::
 
     .. group-tab:: CLI
 
-        下面的命令从根目录中选择 ``milrow_4_2_8``，然后合成爆炸源结果：
+        **-Ds/-Dr/-R** 分别指定目标源深、台深和震中距，两次合成仅改变查询方式和输出目录：
 
         .. literalinclude:: run_library/run.sh
             :language: bash
-            :start-after: BEGIN SYN ROOT
-            :end-before: END SYN ROOT
-
-        也可以直接指定子目录。子目录已经包含三个选择值，此时不能再设置 **-Ds/-Dr/-R**：
-
-        .. literalinclude:: run_library/run.sh
-            :language: bash
-            :start-after: BEGIN SYN SUBDIR
-            :end-before: END SYN SUBDIR
+            :start-after: BEGIN SYN
+            :end-before: END SYN
 
     .. group-tab:: Python
 
-        Python 的 ``syn()`` 使用 ``depsrc``、``deprcv`` 和 ``dist`` 传入选择值，
-        其含义与 :doc:`/Module/syn` 模块的 **-Ds/-Dr/-R** 完全一致：
+        *depsrc/deprcv/dist* 分别指定目标源深、台深和震中距，用 *interpolate* 选择查询方式：
 
         .. literalinclude:: run_library/run.py
             :language: python
             :start-after: BEGIN SYN
             :end-before: END SYN
 
-        由于动态合成不做深度或距离插值，如果目标值不在库中，应在建库时补充该采样值，或重新计算一个单独的格林函数。
-        更完整的震源类型、时间函数和分量旋转选项见 :doc:`/Module/syn`，对应的 Python 接口见
-        :meth:`syn() <pygrt.pymod.PyModel1D.syn>`。

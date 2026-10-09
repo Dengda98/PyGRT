@@ -44,7 +44,7 @@ try:
 except RuntimeError:
     pass
 
-# 根目录下存在多个深度和震中距时，-Ds/-Dr/-R 应精确选择目标子目录
+# 根目录查询位于节点上时，输出几何仍应对应指定位置
 for output_path, expected in [
     ("syn_multi_1_0_10", (1.0, 0.0, 10.0)),
     ("syn_multi_2_3_10", (2.0, 3.0, 10.0)),
@@ -53,6 +53,31 @@ for output_path, expected in [
     assert abs(sac.stats.sac.evdp - expected[0]) < 1e-5
     assert abs(sac.stats.sac.stel * -1e-3 - expected[1]) < 1e-5
     assert abs(sac.stats.sac.dist - expected[2]) < 1e-5
+
+# 根目录中未落在节点上的单点位置默认插值，也可选择最近邻
+for interpolate, output_path in [(True, "syn_root_linear"), (False, "syn_root_nearest")]:
+    reference = {path.name: read(str(path))[0].data for path in Path(output_path).glob("*.sac")}
+    options = {} if interpolate else dict(interpolate=False)
+    pymod_root.syn(depsrc=2, deprcv=3, dist=9, azimuth=az, scale=1e20, output_path=output_path, **options)
+    for name, data in reference.items():
+        np.testing.assert_array_equal(read(str(Path(output_path)/name))[0].data, data)
+assert not np.array_equal(read("syn_root_linear/Z.sac")[0].data, read("syn_root_nearest/Z.sac")[0].data)
+
+# 节点子目录的插值选项不起作用，与同位置的根目录合成一致
+node_model = pygrt.PyModel1D(grn="GRN/milrow_2_3_10/.", modelpath=modname)
+reference = read("syn_multi_2_3_10/Z.sac")[0].data
+for interpolate in [False, True]:
+    output_path = f"syn_node_i{int(interpolate)}"
+    np.testing.assert_array_equal(read(f"{output_path}/Z.sac")[0].data, reference)
+    node_model.syn(azimuth=az, scale=1e20, interpolate=interpolate, output_path=output_path)
+    np.testing.assert_array_equal(read(f"{output_path}/Z.sac")[0].data, reference)
+for option, value in [("depsrc", 2), ("deprcv", 3), ("dist", 10)]:
+    try:
+        node_model.syn(azimuth=az, scale=1e20, output_path="syn_subdir_bad", **{option: value})
+    except RuntimeError:
+        pass
+    else:
+        raise AssertionError(f"A node directory must reject {option}")
 pymod.syn(azimuth=az, scale=1e16, output_path="syn", force=(-1, 2, -4))
 pymod.syn(azimuth=az, scale=1e20, output_path="syn", strike=33, dip=44, rake=55)
 pymod.syn(azimuth=az, scale=1e20, output_path="syn", strike=33, dip=44)
@@ -91,6 +116,7 @@ for name in [
     "syn_custom", "syn_custom_warning",
     "syn_subdir_bad",
     "syn_multi_1_0_10", "syn_multi_2_3_10",
+    "syn_root_linear", "syn_root_nearest", "syn_node_i0", "syn_node_i1",
 ]:
     p = Path(name)
     if p.is_dir():
