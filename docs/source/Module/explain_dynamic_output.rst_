@@ -3,4 +3,4 @@
 * **极坐标单点** （|-R| 与 |-A|）：保存为 ``{outdir}/{component}.sac``
 * **接收文件** （|-Q| 或 |-U|）：保存为 ``{outdir}/{index}_{coord_N}_{coord_E}_{deprcv}/{component}.sac``
 
-SAC 头段保存实际接收坐标及 |-Q|、|-U| 提供的接收断层形态，供后续应力投影使用。
+SAC 头段保存实际接收坐标及 |-Q|、|-U| 提供的接收断层形态，供 :doc:`sproj` 模块使用。

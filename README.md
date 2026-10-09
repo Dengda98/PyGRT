@@ -25,9 +25,11 @@
 
 # Features
 
-- **Dynamic and static responses** (displacement, strain, stress, rotation, and related quantities)
-- **Surface-wave modal analysis** (dispersion curves, eigenfunctions, and related quantities)
-- **Auxiliary modules** (Green's functions, kernels, Lamb problem, Okada solution, and more)
+- **Dynamic full-wave solutions** (Green's functions, synthetic displacements, strain, stress, rotation, and dynamic Coulomb stress)
+- **Surface-wave modal solutions** (dispersion curves, eigenfunctions, and surface-wave synthesis)
+- **Static solutions** (static Green's functions, synthetic displacements, and Coulomb stress)
+- **Multiple source types** (explosion, single-force, double-couple, tensile, moment-tensor, and finite-fault sources)
+- **Auxiliary modules** (kernels, Lamb problem, Okada solution, and format conversions)
 - **CLI and Python API** (modular `grt` command-line tool and Python interface)
 - **Actively maintained** — see the [documentation](https://pygrt.readthedocs.io/zh-cn/) for modules and tutorials
 

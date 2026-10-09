@@ -36,9 +36,10 @@
                 SS --> EE
                 SS --> RR
                 SS --> TT
+                TT --> SP(["sproj"]) --> CO(["coulomb"])
                 
                 classDef cmdcls fill:#f9f2d9,stroke:#e8d174,stroke-width:2px,color:#333;
-                class GG,SS,EE,RR,TT cmdcls
+                class GG,SS,EE,RR,TT,SP,CO cmdcls
 
     .. grid-item::
         :columns: 2
@@ -49,6 +50,8 @@
         - :doc:`syn`
         - :doc:`strain`
         - :doc:`stress`
+        - :doc:`sproj`
+        - :doc:`coulomb`
         - :doc:`rotation`
         - :doc:`kernel`
     
@@ -84,11 +87,12 @@
                 SS --> EE
                 SS --> RR
                 SS --> TT
+                TT --> SP(["sproj"]) --> CO(["coulomb"])
                 
                 classDef cmdcls1 fill:#A1E3F9,stroke:#006BFF,stroke-width:2px,color:#333;
                 classDef cmdcls2 fill:#f9f2d9,stroke:#e8d174,stroke-width:2px,color:#333;
                 class VV,FN,MS cmdcls1 
-                class SS,EE,RR,TT cmdcls2
+                class SS,EE,RR,TT,SP,CO cmdcls2
 
     .. grid-item::
         :columns: 2
@@ -176,6 +180,8 @@
     strain
     stress
     rotation
+    sproj
+    coulomb
     kernel
     eigenv
     eigenfn

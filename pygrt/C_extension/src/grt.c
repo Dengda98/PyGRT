@@ -19,6 +19,8 @@
     X(rotation)            \
     X(strain)              \
     X(stress)              \
+    X(sproj)               \
+    X(coulomb)              \
     X(kernel)              \
     X(eigenv)              \
     X(eigenfn)             \
