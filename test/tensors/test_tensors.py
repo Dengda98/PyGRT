@@ -1,10 +1,7 @@
 import shutil
-import subprocess
 from unittest import TestCase
 
 import pygrt
-
-subprocess.run(["bash", "-ec", "source ../common.sh; create_test_files"], check=True)
 
 raises = TestCase().assertRaises
 
@@ -61,5 +58,3 @@ with raises(FileNotFoundError):
 
 for name in ["GRN", "syn", "syn_points", "syn_faults", "syn_plain"]:
     shutil.rmtree(name)
-
-subprocess.run(["bash", "-ec", "source ../common.sh; remove_test_files"], check=True)

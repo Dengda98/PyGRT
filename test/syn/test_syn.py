@@ -1,12 +1,9 @@
 import shutil
-import subprocess
 from pathlib import Path
 from unittest import TestCase
 
 import numpy as np
 import pygrt
-
-subprocess.run(["bash", "-ec", "source ../common.sh; create_test_files"], check=True)
 
 raises = TestCase().assertRaises
 
@@ -81,5 +78,3 @@ with raises(ValueError):
 for name in ["GRN", "GRN_MULTI", "syn", "syn_points", "syn_faults"]:
     shutil.rmtree(name)
 Path("time_function.txt").unlink()
-
-subprocess.run(["bash", "-ec", "source ../common.sh; remove_test_files"], check=True)

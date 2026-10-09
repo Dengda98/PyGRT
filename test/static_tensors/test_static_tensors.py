@@ -1,10 +1,7 @@
-import subprocess
 from pathlib import Path
 from unittest import TestCase
 
 import pygrt
-
-subprocess.run(["bash", "-ec", "source ../common.sh; create_test_files"], check=True)
 
 raises = TestCase().assertRaises
 
@@ -61,5 +58,3 @@ with raises(FileNotFoundError):
 
 for name in ["stgrn.nc", "stsyn.nc", "stsyn_points.nc", "stsyn_faults.nc", "stsyn_plain.nc"]:
     Path(name).unlink()
-
-subprocess.run(["bash", "-ec", "source ../common.sh; remove_test_files"], check=True)
