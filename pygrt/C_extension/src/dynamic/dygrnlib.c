@@ -175,7 +175,12 @@ DYGRNLIB *grt_dygrnlib_load(const char *root, bool calc_upar)
             GRT_SAFE_ASPRINTF(&path, "%s/%s", root, entry->d_name);
 
             struct stat st;
+            // Windows 使用 stat 检查目录，其他平台保持不跟随符号链接
+#if _TEST_WHETHER_WIN32_
+            if(stat(path, &st) != 0) {
+#else
             if(lstat(path, &st) != 0) {
+#endif
                 GRTRaiseError("Cannot inspect %s.", path);
             }
             if(S_ISDIR(st.st_mode)) {
