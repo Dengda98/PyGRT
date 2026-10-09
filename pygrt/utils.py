@@ -1600,20 +1600,26 @@ def lamb3(
 def lamb(
     *,
     modelparams: Sequence[float],
-    depsrc: float,
-    deprcv: float,
-    dist: float,
+    depsrc: Optional[float] = None,
+    deprcv: Optional[float] = None,
+    dist: Optional[float] = None,
     nt: int,
     dt: float,
-    azimuth: float,
+    azimuth: Optional[float] = None,
     output_path: PathLike,
-    scale: float,
+    scale: Optional[float] = None,
     scale_with_mu: bool = False,
     strike: Optional[float] = None,
     dip: Optional[float] = None,
     rake: Optional[float] = None,
     force: Optional[Sequence[float]] = None,
     moment_tensor: Optional[Sequence[float]] = None,
+    src_fault: Optional[PathLike] = None,
+    src_fault_size: Optional[Sequence[float]] = None,
+    rcv_fault: Optional[PathLike] = None,
+    rcv_fault_size: Optional[Sequence[float]] = None,
+    rcv_points: Optional[PathLike] = None,
+    nthreads: Optional[int] = None,
     time_function: Optional[str] = None,
     integrate_order: Optional[int] = None,
     differentiate_order: Optional[int] = None,
@@ -1621,30 +1627,73 @@ def lamb(
     delayT0: float = 0.0,
     delayV0: float = 0.0,
     ref_first_p: bool = False,
-    zne: bool = False,
+    zne: Optional[bool] = None,
     calc_upar: bool = False,
     print_log: bool = True,
 ) -> None:
     r"""
     Synthesize dynamic displacement with the physical Lamb closed-form solution.
 
-    ``modelparams`` contains the homogeneous half-space parameters ``(vp, vs, rho)``.
-    The source and receiver depths determine which of the first-, second- or
-    third-kind Lamb solutions is used. Source and time-processing parameters
-    follow :meth:`PyModel1D.syn`, while time-delay parameters follow
-    :meth:`PyModel1D.greenfn`.
-    When both depths are zero, only ``force`` is supported and ``calc_upar`` is ignored.
-    The output start is aligned to the nearest sample. Convolution and time operators
-    retain the response from the origin time; the result is then cropped to the output window.
+    A call defines five groups of information:
+
+    * Medium and sampling: ``modelparams`` gives ``(vp, vs, rho)`` for the homogeneous
+      half-space; ``nt`` and ``dt`` set the output sampling. No Green-function library is needed.
+    * Source location: a point source is at the horizontal origin, with depth ``depsrc``.
+      ``src_fault`` supplies the locations of finite sources.
+    * Receiver locations: choose polar coordinates (``dist``, ``azimuth``, ``deprcv``),
+      a point file (``rcv_points``), or receiver faults (``rcv_fault``).
+      Use one receiver mode per call; files supply their own depths.
+    * Source mechanism and strength: a point source requires ``scale``.
+      Choose ``strike``/``dip``/``rake`` for a double-couple, omit ``rake`` for a tensile crack,
+      or use ``force`` or ``moment_tensor`` instead. Leaving all mechanism parameters unset
+      selects an explosion. ``src_fault`` supplies both location and mechanism/strength;
+      omit ``depsrc``, ``scale`` and all point-source mechanism parameters in this mode.
+    * Output: ``output_path`` sets the SAC directory; ``zne`` selects ZNE
+      and ``calc_upar`` adds spatial derivatives. Finite sources always output ZNE.
+
+    Point sources require ``depsrc``; polar receivers require all three of ``dist``,
+    ``azimuth`` and ``deprcv``. All coordinates share one horizontal origin;
+    for finite sources, ``dist``/``azimuth`` locate the receiver relative to that origin.
+    Rectangular sources require ``src_fault_size``. Receiver subdivision is optional;
+    omit ``rcv_fault_size`` to use one center point per fault.
+
+    Optional ``time_function``, ``integrate_order`` and ``differentiate_order`` control
+    the time dependence. ``delayT0``, ``delayV0`` and ``ref_first_p`` set the output start;
+    ``phases`` selects phases and ``nthreads`` sets the source thread count.
+    The output sample count is the maximum of ``nt`` and the longest source time
+    function including rupture delay, shared by all receivers. Convolution is linear.
+    The source and receiver depths select the appropriate Lamb solution.
+    When both depths are zero, only ``force`` is supported. ``calc_upar`` is ignored
+    for a surface force with all receivers on the surface; a mixture of surface
+    and buried receivers with ``calc_upar=True`` raises an error.
+    All arguments are keyword-only. Results are displacements in cm with Z upward,
+    R radial outward and T clockwise from R by default. Polar receivers write directly
+    under the output path; receiver files always use indexed subdirectories, even for
+    one point. Finite-source ``sig.sac`` stores the total scalar moment rate
+    only when a row or global time function is explicitly specified.
+    A global ``time_function`` ignores all row-end contents in the source fault file.
+    Results are written to files; read SAC waveforms explicitly with :func:`obspy.read`.
+
+    Each receiver records its earliest P and S arrivals over nonzero source points,
+    including sampled explicit rupture delays. With multiple source points, later
+    phase picks are left undefined. Arrivals and output starts are determined after
+    fault subdivision. The internal start is fixed near the origin time; the output window
+    sets only the solve end time. Convolution and time integration/differentiation retain
+    the full response history, then the result is shifted by rupture delay and cropped.
 
     :param    modelparams:      Homogeneous half-space parameters ``(vp, vs, rho)``;
                                 velocities are in km/s and density is in g/cm^3
-    :param    depsrc:           Source depth in km
-    :param    deprcv:           Receiver depth in km
-    :param    dist:             Horizontal source-receiver distance in km
-    :param    nt:               Number of time samples
+    :param    depsrc:           Point-source depth in km. Required for a point source; omit for
+                                source faults.
+    :param    deprcv:           Polar receiver depth in km. Required for polar receivers; omit
+                                for receiver files.
+    :param    dist:             Positive polar receiver distance from the horizontal origin in
+                                km. Required for polar receivers; omit for receiver files.
+    :param    nt:               Minimum number of time samples; extended to cover the longest
+                                source time function including rupture delay, equally for all receivers
     :param    dt:               Time-sample interval in s
-    :param    azimuth:          Azimuth from source to receiver in degrees
+    :param    azimuth:          Polar receiver azimuth in degrees clockwise from north. Required
+                                for polar receivers; omit for receiver files.
     :param    output_path:      Output directory for SAC files
     :param    scale:            Source scaling factor
     :param    scale_with_mu:    Whether to multiply ``scale`` by the source-layer
@@ -1655,6 +1704,21 @@ def lamb(
     :param    force:            Single-force coefficients ``(fN, fE, fZ)``
     :param    moment_tensor:    Moment-tensor coefficients
                                 ``(Mxx, Mxy, Mxz, Myy, Myz, Mzz)``
+    :param    src_fault:        Coulomb source file supplying source positions, mechanisms and
+                                slip/potency. Append a complete ``-D`` option to each row
+                                to specify its rupture process.
+    :param    src_fault_size:   Positive along-strike/dip subdivision sizes (dL, dW) in km,
+                                required for rectangular sources. Point Kode records remain
+                                single points.
+    :param    rcv_points:       ASCII receiver file: north east depth in km, optionally followed
+                                by strike dip rake in degrees.
+    :param    rcv_fault:        Coulomb receiver file; only Kode=100 is supported and
+                                slip magnitude is ignored.
+                                An exact ``rake`` header preserves the angle even at zero slip;
+                                otherwise the slip columns define direction.
+    :param    rcv_fault_size:   Positive along-strike/dip receiver subdivision sizes (dL, dW) in
+                                km. Omit to use one center point per fault.
+    :param    nthreads:         Positive OpenMP source-subfault thread count.
     :param    time_function:    Time-function parameters passed to ``grt``, without the ``-D`` prefix.
                                 Supported forms are ``i`` (impulse), ``p/t0``, ``t/t1/t2/t3``,
                                 ``c/t1/t2`` (asymmetric cosine) or ``0/file``, with area normalization.
@@ -1666,13 +1730,16 @@ def lamb(
                                 It is not a unit-slip source process.
                                 Append ``+d<delay>`` for a delay in seconds, e.g. ``p/1.3+d0.4``.
     :param    integrate_order:  Number of time integrations
-   :param    differentiate_order: Number of time differentiations
+    :param    differentiate_order: Number of time differentiations
     :param    phases:            Optional comma-separated phase selection or a non-empty sequence of phase names;
                                 the available names depend on the selected Lamb problem
     :param    delayT0:          Time delay at zero distance in s
-    :param    delayV0:          Reference velocity for the time delay in km/s
-    :param    ref_first_p:      Whether to reference the delay to the direct P arrival
-    :param    zne:              Whether to output ZNE components
+    :param    delayV0:          Reference velocity in km/s. The reference distance is the shortest
+                                straight distance from a nonzero source point to the receiver.
+    :param    ref_first_p:      Whether to reference the output start to the earliest P arrival,
+                                including sampled rupture delays. Requires negative delayT0.
+    :param    zne:              If true, output ZNE instead of ZRT. Finite sources always use
+                                ZNE.
     :param    calc_upar:        Whether to output spatial displacement derivatives
     :param    print_log:        Whether to print regular ``grt`` output
     """
@@ -1682,27 +1749,40 @@ def lamb(
         "lamb",
         f"-H{format_float(vp)}/{format_float(vs)}/{format_float(rho)}",
         f"-N{nt}/{format_float(dt)}",
-        f"-R{format_float(dist)}",
-        f"-Ds{format_float(depsrc)}",
-        f"-Dr{format_float(deprcv)}",
-        f"-A{format_float(azimuth)}",
-        f"-S{'u' if scale_with_mu else ''}{format_float(scale)}",
         f"-O{output}",
     ]
+    command.extend(_dynamic_geometry_options(
+        dist=dist, azimuth=azimuth, deprcv=deprcv, src_fault=src_fault, src_fault_size=src_fault_size,
+        rcv_points=rcv_points, rcv_fault=rcv_fault, rcv_fault_size=rcv_fault_size, nthreads=nthreads,
+    ))
+    if src_fault is not None:
+        if any(value is not None for value in (depsrc, scale, strike, dip, rake, force, moment_tensor)) or scale_with_mu:
+            raise ValueError("src_fault is mutually exclusive with point-source parameters.")
+        if zne is False:
+            warnings.warn("Finite sources always output ZNE; zne=False is ignored.", stacklevel=2)
+        zne = True
+    elif scale is None:
+        raise ValueError("Point sources require scale.")
+    for flag, value in (("R", dist), ("Ds", depsrc), ("Dr", deprcv), ("A", azimuth)):
+        if value is not None:
+            command.append(f"-{flag}{format_float(value)}")
+    if scale is not None:
+        command.append(f"-S{'u' if scale_with_mu else ''}{format_float(scale)}")
     phase_list = _prepare_lamb_phases(phases)
     if phase_list is not None:
         command.append(f"-L{phase_list}")
 
-    has_geometry = strike is not None or dip is not None or rake is not None
+    # 点源机制由单力、矩张量或断层角度三种互斥输入确定
+    has_mechanism = strike is not None or dip is not None or rake is not None
     if force is not None:
-        if has_geometry or moment_tensor is not None:
+        if has_mechanism or moment_tensor is not None:
             raise ValueError("force is mutually exclusive with strike/dip/rake and moment_tensor.")
         command.append("-F" + "/".join(format_float(value) for value in force))
     elif moment_tensor is not None:
-        if has_geometry:
+        if has_mechanism:
             raise ValueError("moment_tensor is mutually exclusive with strike/dip/rake and force.")
         command.append("-T" + "/".join(format_float(value) for value in moment_tensor))
-    elif has_geometry:
+    elif has_mechanism:
         if strike is None or dip is None:
             raise ValueError("strike and dip must be supplied together.")
         source = f"-M{format_float(strike)}/{format_float(dip)}"

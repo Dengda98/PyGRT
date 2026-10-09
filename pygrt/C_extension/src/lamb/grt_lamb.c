@@ -33,16 +33,13 @@ typedef struct {
     struct {
         bool active;
         real_t azimuth;
-        real_t azrad;
-        real_t backazimuth;
     } A;
 
     /** 源强缩放 */
     struct {
         bool active;
-        bool mult_src_mu;
-        real_t scale;
-        real_t src_mu;
+        bool mult_src_mu;  ///< 是否将单点源强度乘以震源处的剪切模量
+        real_t scale;      ///< 源强
     } S;
 
     /** 剪切源 */
@@ -80,10 +77,10 @@ typedef struct {
 
     /** 时间延迟 */
     struct {
-        bool active;       ///< 是否设置时间延迟
-        real_t delayT0;    ///< 参考时间偏移，s
-        real_t delayV0;    ///< 参考速度，km/s
-        bool refFirstP;    ///< 是否参考初至 P
+        bool active;     ///< 是否设置时间延迟
+        real_t delayT0;  ///< 参考时间偏移，s
+        real_t delayV0;  ///< 参考速度，km/s
+        bool refFirstP;  ///< 是否参考初至 P
     } E;
 
     /** 物理时间序列 */
@@ -91,7 +88,6 @@ typedef struct {
         bool active;
         int nt;
         real_t dt;
-        real_t *tbar;
     } N;
 
     /** 源点和接收点深度 */
@@ -123,36 +119,80 @@ typedef struct {
         bool active;
     } e;
 
-    /** 选择输出的震相 */
+    /** 参数解析时确定的震相选择 */
     struct {
         bool active;
-        char *phase_list;
+        unsigned int phase_mask;
     } L;
 
-    /** 震源机制相关参数 */
-    real_t mchn[GRT_MECHANISM_NUM];
+    /** 接收点文件 */
+    struct {
+        bool active;
+        char *path;  ///< 接收点文件
+    } Q;
 
-    /** 最终要计算的震源类型 */
-    GRT_SYN_TYPE source_type;
+    /** 有限震源断层 */
+    struct {
+        bool active;
+        char *option;         ///< 有限震源选项，确定采样间隔后读入
+        FINITE_FAULT *faults;  ///< 震源断层数组
+        size_t nfault;         ///< 震源断层数量
+        real_t dL;             ///< 走向剖分间隔，km
+        real_t dW;             ///< 倾向剖分间隔，km
+    } C;
+
+    /** 有限接收断层 */
+    struct {
+        bool active;
+        FINITE_FAULT *faults;  ///< 接收断层数组
+        size_t nfault;         ///< 接收断层数量
+        real_t dL;             ///< 走向剖分间隔，km
+        real_t dW;             ///< 倾向剖分间隔，km
+    } U;
+
+    /** 子源并行线程数 */
+    struct {
+        bool active;
+        int nthreads;  ///< 子源并行线程数
+    } P;
+
+    /** 单点源临时参数 */
+    GRT_SYN_TYPE source_type;             ///< 单点源类型
+    real_t mechanism[GRT_MECHANISM_NUM];  ///< 单点源机制参数
+
 } GRT_MODULE_CTRL;
 
 
+/** 每个接收点的时间窗及多源初至 */
+typedef struct {
+    real_t begin;       ///< 采样对齐后的共同起点，s
+    real_t travtPS[2];  ///< 含破裂延迟的最早 P、S 初至，s，无有效源时为 INFINITY
+} LAMB_RECEIVER_TIMING;
+
 /** Lamb 求解器输出的各类数组 */
 typedef struct {
-    real_t (*G)[3][3];                    ///< 位移 Green 函数
-    real_t (*dG_source)[3][3][3];         ///< 源点一阶导数
-    real_t (*dG_receiver)[3][3][3];       ///< 接收点一阶导数
-    real_t (*dG_mixed)[3][3][3][3];       ///< 混合二阶导数
+    real_t (*G)[3][3];               ///< 位移 Green 函数
+    real_t (*dG_source)[3][3][3];    ///< 源点一阶导数
+    real_t (*dG_receiver)[3][3][3];  ///< 接收点一阶导数
+    real_t (*dG_mixed)[3][3][3][3];  ///< 混合二阶导数
 } LAMB_RESULT;
+
+/** Lamb 模块使用的坐标变换矩阵 */
+typedef struct {
+    real_t local_from_global[3][3];
+    real_t component_from_global[3][3];
+} LAMB_COORDINATES;
 
 
 /** 释放结构体的内存 */
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl)
 {
-    GRT_SAFE_FREE_PTR(Ctrl->N.tbar);
     GRT_SAFE_FREE_PTR(Ctrl->D.option);
     GRT_SAFE_FREE_PTR(Ctrl->O.s_output_dir);
-    GRT_SAFE_FREE_PTR(Ctrl->L.phase_list);
+    GRT_SAFE_FREE_PTR(Ctrl->Q.path);
+    GRT_SAFE_FREE_PTR(Ctrl->C.option);
+    grt_finite_fault_free(Ctrl->C.nfault, Ctrl->C.faults);
+    grt_finite_fault_free(Ctrl->U.nfault, Ctrl->U.faults);
     GRT_SAFE_FREE_PTR(Ctrl);
 }
 
@@ -162,31 +202,55 @@ static void print_help(void)
 {
 printf("\n"
 "[grt lamb] %s\n\n", GRT_VERSION);printf(
-"    Compute physical synthetic seismograms from Lamb's closed-form solutions.\n"
-"    The selected source components are combined into physical displacement records.\n"
-"    Output filenames follow module `syn`: Z, R, T or Z, N, E.  Prefixes z, r and t\n"
-"    (or z, n and e) contain spatial derivatives when -e is used.\n"
+"    Compute three-component dynamic displacement from Lamb closed-form solutions.\n"
 "\n"
-"    The Lamb solvers use the global ZNE coordinate system with Z positive downward.\n"
-"    This module converts it to Z-up/R/T by default; -n keeps the horizontal N/E\n"
-"    components in the output.\n"
+"    Define five groups of information:\n"
+"      1. Medium and sampling: -H gives vp/vs/rho for the homogeneous halfspace;\n"
+"         -N gives the minimum output sample count and time interval. No GF library is needed.\n"
+"      2. Source location: a point source is at the horizontal origin; -Ds\n"
+"         gives its depth. For finite sources, -C supplies all locations.\n"
+"      3. Receiver locations: choose polar coordinates (-R, -A, -Dr), a point\n"
+"         file (-Q), or receiver faults (-U). These three modes are exclusive.\n"
+"      4. Source mechanism and strength: a point source requires -S; add at most\n"
+"         one of -M (shear/tensile), -F (force), or -T (moment tensor).\n"
+"         Without -M/-F/-T, use an explosion. -C supplies both location and\n"
+"         mechanism/strength, so omit -Ds/-S/-M/-F/-T when using source faults.\n"
+"      5. Output: -O sets the SAC directory; -n selects ZNE and -e adds spatial\n"
+"         derivatives. Finite sources always output ZNE.\n"
 "\n"
-"    The analytic Lamb solutions are normalized by pi^2*mu*r.  The module applies\n"
-"    the corresponding physical normalization and source scale before writing SAC.\n"
-"    The absolute halfspace parameters are specified by -H<vp>/<vs>/<rho>; the\n"
-"    Poisson ratio required by the Lamb solvers is derived from vp/vs.\n"
-"    The -D, -I and -J options are applied in the time domain.\n"
-"\n\n"
+"    All coordinates share one horizontal origin; with -C, -R/-A locate the\n"
+"    receiver relative to that origin. Rectangular sources require explicit\n"
+"    subdivision sizes through +i on -C. Receiver subdivision with -U is optional.\n"
+"    Optional time controls: -D sets a time function, -E sets the output start,\n"
+"    -I/-J integrate or differentiate in time; -L selects phases and -P threads.\n"
+"    The source and receiver depths select the appropriate Lamb solution.\n"
+"    When both are on the free surface, only -F is supported and -e is ignored.\n"
+"    Displacements are in cm, with Z upward, R radial outward and T clockwise\n"
+"    from R by default; output filenames follow `syn`.\n"
+"\n"
+"\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
-"    grt lamb -H<vp>/<vs>/<rho> -N<nt>/<dt> -R<dist>\n"
-"              -Ds<depsrc> -Dr<deprcv>\n"
-"              -A<azimuth> -S[u]<scale> -O<outdir>\n"
-"              [-M<strike>/<dip>[/<rake>]]\n"
-"              [-T<Mxx>/<Mxy>/<Mxz>/<Myy>/<Myz>/<Mzz>] [-F<fn>/<fe>/<fz>]\n"
-"              [-D<tftype>[/<tfparams>][+d<delay>]] [-E[p]<t0>[/<v0>]] [-I<odr>] [-J<odr>]\n"
-"              [-n] [-e] [-s] [-L<P,S,R,PP,SS,PS,SP,sPs>]\n"
-"\n\n"
+"    # Point source\n"
+"    grt lamb -H<vp>/<vs>/<rho> -N<nt>/<dt> -Ds<depsrc> -S[u]<scale> -O<outdir>\n"
+"             [-M<strike>/<dip>[/<rake>] | -T<Mxx>/<Mxy>/<Mxz>/<Myy>/<Myz>/<Mzz>\n"
+"              | -F<fn>/<fe>/<fz>] <receiver options> [common options]\n"
+"\n"
+"    # Finite source\n"
+"    grt lamb -H<vp>/<vs>/<rho> -N<nt>/<dt> -C<fault>[+i<dL>/<dW>] -O<outdir>\n"
+"             <receiver options> [common options]\n"
+"\n"
+"    Receiver options (choose one mode):\n"
+"      -R<dist> -A<azimuth> -Dr<deprcv>\n"
+"      -Q<points>\n"
+"      -U<fault>+i<dL>/<dW>\n"
+"\n"
+"    Common options:\n"
+"      [-D<tftype>[/<tfparams>][+d<delay>]] [-E[p]<t0>[/<v0>]]\n"
+"      [-I<odr>] [-J<odr>] [-L<P,S,R,PP,SS,PS,SP,sPs>] [-P<nthreads>]\n"
+"      [-n] [-e] [-s] [-h]\n"
+"\n"
+"\n"
 "Options:\n"
 "----------------------------------------------------------------\n"
 "    -H<vp>/<vs>/<rho>\n"
@@ -194,19 +258,26 @@ printf("\n"
 "                  speeds in km/s, and rho is density in g/cm^3. The Poisson ratio\n"
 "                  is calculated from vp/vs, which must be greater than sqrt(2).\n"
 "\n"
-"    -N<nt>/<dt>   Number of samples and physical time interval in seconds.\n"
+"    -N<nt>/<dt>   Minimum sample count and physical time interval in seconds.\n"
+"                  Long source processes (including delay) extend nt for all receivers.\n"
+"                  Time functions use linear convolution.\n"
 "                  The time series starts at the origin time.\n"
 "\n"
 "    -R<dist>       Horizontal source-receiver distance in km, positive.\n"
+"                  With -C, measure from the common horizontal origin.\n"
+"                  -R/-A/-Dr, -Q and -U are mutually exclusive receiver modes.\n"
 "\n"
-"    -Ds<depsrc>    Required source depth in km, nonnegative.\n"
+"    -Ds<depsrc>    Required point-source depth in km, nonnegative; omit with -C.\n"
 "\n"
-"    -Dr<deprcv>    Required receiver depth in km, nonnegative.\n"
+"    -Dr<deprcv>    Required polar-receiver depth in km, nonnegative; omit with -Q/-U.\n"
 "\n"
 "    -A<azimuth>    Azimuth from source to receiver, in degree, [0, 360].\n"
+"                  With finite sources, this is the polar receiver azimuth\n"
+"                  from the common horizontal origin. Omit with -Q/-U.\n"
 "\n"
 "    -S[u]<scale>   Source scale.  Moment sources use dyne-cm and force sources\n"
 "                  use dyne.  `-Su` multiplies the scale by source shear modulus.\n"
+"                  Use -C instead of -S/-M/-F/-T for finite sources.\n"
 "\n"
 "    -M<strike>/<dip>[/<rake>]\n"
 "                  Shear source, or tensile source when rake is omitted.\n"
@@ -221,6 +292,12 @@ printf("\n"
 "                  only -F is supported; -e is ignored in this case.\n"
 "\n"
 "    -O<outdir>     Output directory.\n"
+"                  A polar receiver writes here directly; -Q/-U always use\n"
+"                  index_north_east_depth subdirectories. Finite-source sig.sac\n"
+"                  saves the complete scalar moment rate (dyne-cm/s) only\n"
+"                  when a time function is explicitly specified.\n"
+"                  Receiver coordinates/angles use SAC unused1..5; receiver index\n"
+"                  and fault grouping use unused10..14 (project C field names).\n"
 "\n"
 "    -D<tftype>[/<tfparams>][+d<delay>]\n"
 "                  Convolve a time function. Source time functions use area\n"
@@ -263,6 +340,8 @@ printf("\n"
 "                  function is saved as a SAC file under <outdir>.\n"
 "\n"
 "                  Append +d<delay> for rupture delay in seconds.\n"
+"                  Append a complete -D option at the end of each fault row\n"
+"                  to specify its rupture process.\n"
 "\n"
 "    -E[p]<t0>[/<v0>]\n"
 "                  Introduce a time shift in the output SAC records. The time\n"
@@ -270,15 +349,21 @@ printf("\n"
 "                  straight-line source-receiver distance. <v0> is a reference\n"
 "                  velocity in km/s; when omitted or zero, no distance correction\n"
 "                  is applied.\n"
-"                  -Ep<t0> starts the series at <t0> plus the direct P arrival\n"
-"                  in the homogeneous halfspace. For example, use -Ep-10.\n"
+"                  -Ep<t0> starts each receiver at <t0> plus its earliest P\n"
+"                  arrival, including the sampled rupture delay. Use -Ep-10.\n"
 "                  Without -E, the first time sample is the origin time.\n"
+"                  Faults are subdivided before computing arrivals and starts.\n"
+"                  Starts are rounded to the output sampling interval.\n"
+"                  -E sets the solve end time; the internal start is fixed.\n"
+"                  Convolution precedes cropping to the requested window.\n"
+"                  Multiple sources save only the earliest P/S arrival picks.\n"
 "\n"
 "    -I<odr>        Apply odr time integrations after physical normalization.\n"
 "\n"
 "    -J<odr>        Apply odr time differentiations after physical normalization.\n"
 "\n"
 "    -n             Write receiver components as Z, N and E; default is Z, R and T.\n"
+"                  Finite sources always output ZNE.\n"
 "\n"
 "    -e             Also write spatial derivatives with direction prefixes matching\n"
 "                  the output coordinates.\n"
@@ -291,29 +376,61 @@ printf("\n"
 "\n"
 "    -s             Do not print completion information.\n"
 "\n"
+"    -C<fault>[+i<dL>/<dW>]\n"
+"                  Coulomb source faults, including point-source Kode records.\n"
+"                  The file supplies location, mechanism and signed slip/potency;\n"
+"                  do not set -Ds/-S/-M/-F/-T. Finite sources always output ZNE.\n"
+"                  Kode 100/200/300: rectangular shear/tensile sources.\n"
+"                  Kode 400: point double couple; Kode 500: point tensile/inflation.\n"
+"                  Two header lines precede the 11 numeric columns. An exact\n"
+"                  \"rake\" token in the seventh header column selects rake/net\n"
+"                  slip for Kode 100; the filename suffix does not select format.\n"
+"                  +i gives along-strike/dip subdivision sizes (km).\n"
+"                  Point-source Kode records remain single points at fault centers.\n"
+"                  Rectangular sources require explicit +i subdivision sizes.\n"
+"\n"
+"    -Q<points>    ASCII rows: north east depth (km) [strike dip rake (degrees)].\n"
+"                  Lines starting with # are comments. Optional angles are saved\n"
+"                  for later stress projection and do not affect synthesis.\n"
+"\n"
+"    -U<fault>[+i<dL>/<dW>]\n"
+"                  Coulomb receiver faults. Receivers are subfault centers;\n"
+"                  no receiver-area averaging is performed.\n"
+"                  Without +i, use each fault center. Slip magnitude is ignored.\n"
+"                  Only Kode=100 is supported;\n"
+"                  receiver angles and grouping are saved.\n"
+"\n"
+"    -P<nthreads>  OpenMP source-point threads. Receivers are processed serially.\n"
+"\n"
 "    -h             Display this help message.\n"
 "\n\n"
 "Examples:\n"
 "----------------------------------------------------------------\n"
 "    grt lamb -H8.0/4.62/3.3 -N6000/0.001 -R10 -A30 -S1e24 -Ds5 -Dr0 -M100/20/80 -e -n -Ores\n"
 "\n\n\n"
+"    Finite sources with explicit receivers:\n"
+"        grt lamb -H6/3.464/2.7 -N1000/0.01 -Cfaults.inp+i1/1 -Qreceivers.txt -Osyn_ff\n"
+
 );
 }
-
 
 /**
  * 解析 Lamb 模块的命令行选项
  *
- * @param[in,out]  Ctrl      Lamb 模块参数控制结构体
- * @param[in]      argc      命令行参数个数
- * @param[in]      argv      命令行参数数组
+ * @param[in,out]  Ctrl  Lamb 模块参数控制结构体
+ * @param[in]      argc  命令行参数个数
+ * @param[in]      argv  命令行参数数组
  */
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
 {
+    const char *phase_list = NULL;
+
+    GRTCheckOptionSet(argc > 1);
     Ctrl->source_type = GRT_SYN_EX;
 
     int opt;
-    while ((opt = getopt(argc, argv, ":H:N:R:A:S:M:F:T:O:D:E:I:J:L:nesh")) != -1) {
+    char extra;
+    while ((opt = getopt(argc, argv, ":H:N:R:A:S:M:F:T:O:D:E:I:J:C:U:Q:L:P:nesh")) != -1) {
         switch (opt) {
             /* 半空间参数 */
             case 'H': {
@@ -368,11 +485,6 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 if (sscanf(optarg, "%lf%c", &Ctrl->A.azimuth, &extra) != 1 || Ctrl->A.azimuth < 0.0 || Ctrl->A.azimuth > 360.0) {
                     GRTBadOptionError(A, "azimuth should be in [0, 360].");
                 }
-                Ctrl->A.backazimuth = Ctrl->A.azimuth + 180.0;
-                if (Ctrl->A.backazimuth >= 360.0) {
-                    Ctrl->A.backazimuth -= 360.0;
-                }
-                Ctrl->A.azrad = Ctrl->A.azimuth * DEG1;
                 Ctrl->A.active = true;
                 break;
             }
@@ -400,15 +512,15 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 char extra;
                 real_t strike, dip, rake;
                 int count = sscanf(optarg, "%lf/%lf/%lf%c", &strike, &dip, &rake, &extra);
-                if (count != 2 && count != 3) {
+                if ((count != 2 && count != 3) || (count == 2 && sscanf(optarg, "%lf/%lf%c", &strike, &dip, &extra) != 2)) {
                     GRTBadOptionError(M, "expected strike/dip[/rake].");
                 }
                 if (strike < 0.0 || strike > 360.0 || dip < 0.0 || dip > 90.0 || (count == 3 && (rake < -180.0 || rake > 180.0))) {
                     GRTBadOptionError(M, "strike, dip or rake is out of bound.");
                 }
-                Ctrl->mchn[0] = strike;
-                Ctrl->mchn[1] = dip;
-                Ctrl->mchn[2] = count == 3 ? rake : 0.0;
+                Ctrl->mechanism[0] = strike;
+                Ctrl->mechanism[1] = dip;
+                Ctrl->mechanism[2] = count == 3 ? rake : 0.0;
                 Ctrl->source_type = count == 3 ? GRT_SYN_DC : GRT_SYN_TS;
                 Ctrl->M.active = true;
                 break;
@@ -421,7 +533,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 }
                 char extra;
                 int count = sscanf(optarg, "%lf/%lf/%lf%c",
-                    &Ctrl->mchn[0], &Ctrl->mchn[1], &Ctrl->mchn[2], &extra);
+                    &Ctrl->mechanism[0], &Ctrl->mechanism[1], &Ctrl->mechanism[2], &extra);
                 if (count != 3) {
                     GRTBadOptionError(F, "expected fn/fe/fz.");
                 }
@@ -437,8 +549,8 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 }
                 char extra;
                 int count = sscanf(optarg, "%lf/%lf/%lf/%lf/%lf/%lf%c",
-                    &Ctrl->mchn[0], &Ctrl->mchn[1], &Ctrl->mchn[2],
-                    &Ctrl->mchn[3], &Ctrl->mchn[4], &Ctrl->mchn[5], &extra);
+                    &Ctrl->mechanism[0], &Ctrl->mechanism[1], &Ctrl->mechanism[2],
+                    &Ctrl->mechanism[3], &Ctrl->mechanism[4], &Ctrl->mechanism[5], &extra);
                 if (count != 6) {
                     GRTBadOptionError(T, "expected six moment-tensor components.");
                 }
@@ -546,9 +658,8 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
 
             /* 选择输出的震相 */
             case 'L':
-                GRT_SAFE_FREE_PTR(Ctrl->L.phase_list);
-                Ctrl->L.phase_list = strdup(optarg);
                 Ctrl->L.active = true;
+                phase_list = optarg;
                 break;
 
             /* 是否静默输出 */
@@ -556,33 +667,106 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 Ctrl->s.active = true;
                 break;
 
+            // 任意接收点文件，包含坐标和可选接收机制
+            case 'Q':
+                Ctrl->Q.active = true;
+                GRT_SAFE_FREE_PTR(Ctrl->Q.path);
+                Ctrl->Q.path = strdup(optarg);
+                break;
+
+            // 有限震源文件，时间函数在确定采样间隔后统一读取
+            case 'C':
+                Ctrl->C.active = true;
+                GRT_SAFE_FREE_PTR(Ctrl->C.option);
+                Ctrl->C.option = strdup(optarg);
+                break;
+
+            // 有限接收断层文件，解析几何和可选剖分尺寸
+            case 'U':
+                Ctrl->U.active = true;
+                grt_finite_fault_free(Ctrl->U.nfault, Ctrl->U.faults);
+                Ctrl->U.faults = grt_finite_fault_from_option(optarg, &Ctrl->U.nfault, &Ctrl->U.dL, &Ctrl->U.dW, false, 0, 1, NULL);
+                break;
+
+            // 设置子源合成的线程数
+            case 'P':
+                Ctrl->P.active = true;
+                if(sscanf(optarg, "%d%c", &Ctrl->P.nthreads, &extra) != 1 || Ctrl->P.nthreads <= 0) {
+                    GRTBadOptionError(P, "Expected a positive thread count.");
+                }
+                grt_set_num_threads(Ctrl->P.nthreads);
+                break;
+
             GRT_Common_Options_in_Switch((char)(optopt));
         }
     }
 
-    GRTCheckOptionSet(argc > 1);
-    GRTCheckOptionActive(Ctrl, H);
-    if (!Ctrl->N.active) {
-        GRTRaiseError("Need set options \"-N\". Use \"-h\" for help.\n");
-    }
-    GRTCheckOptionActive(Ctrl, R);
-    if (!Ctrl->Depth.s_active) {
-        GRTRaiseError("Need set options \"-Ds\". Use \"-h\" for help.\n");
-    }
-    if (!Ctrl->Depth.r_active) {
-        GRTRaiseError("Need set options \"-Dr\". Use \"-h\" for help.\n");
-    }
-    GRTCheckOptionActive(Ctrl, A);
-    GRTCheckOptionActive(Ctrl, S);
+    // 输出目录、半空间介质和时间采样参数均为必选项
     GRTCheckOptionActive(Ctrl, O);
+    GRTCheckOptionActive(Ctrl, H);
+    GRTCheckOptionActive(Ctrl, N);
+
+    // 有限震源文件不能与点源强度、机制或源深度选项同时使用
+    if(Ctrl->C.active && (Ctrl->S.active || (Ctrl->M.active + Ctrl->F.active + Ctrl->T.active) || Ctrl->Depth.s_active)) {
+        GRTRaiseError("Finite sources and point-source parameters are mutually exclusive.");
+    }
+
+    // 点源必须显式指定震源强度
+    if (!Ctrl->C.active && !Ctrl->S.active) {
+        GRTRaiseError("Point sources require -S.");
+    }
+
+    // 点源机制最多只能选用 -M、-F、-T 中的一种
+    if((Ctrl->M.active + Ctrl->F.active + Ctrl->T.active) > 1) {
+        GRTRaiseError("Only one point-source mechanism may be selected.");
+    }
+
+    // 逐点文件、有限接收断层和极坐标接收点只能选择一种
+    int explicit_rcv = Ctrl->Q.active + Ctrl->U.active;
+
+    // -Q 和 -U 互斥，且不能与极坐标选项 -R/-A 混用
+    if(explicit_rcv > 1 || (explicit_rcv && (Ctrl->R.active || Ctrl->A.active))) {
+        GRTRaiseError("Receiver geometry options are mutually exclusive.");
+    }
+
+    // 接收文件已经包含深度，不能再用 -Dr 指定
+    if((Ctrl->Q.active || Ctrl->U.active) && Ctrl->Depth.r_active) {
+        GRTRaiseError("-Q/-U provide receiver depths; do not set -Dr.");
+    }
+
+    // 使用极坐标接收点时必须给出方位角
+    if(!explicit_rcv && !Ctrl->A.active) {
+        GRTRaiseError("A single polar receiver requires -A.");
+    }
+
+    // 点源必须给出源深度，有限震源的深度来自断层文件
+    if (!Ctrl->C.active && !Ctrl->Depth.s_active) {
+        GRTRaiseError("Lamb point source requires -Ds.");
+    }
+
+    // 极坐标接收点必须给出接收深度
+    if (!Ctrl->Q.active && !Ctrl->U.active && !Ctrl->Depth.r_active) {
+        GRTRaiseError("Lamb polar receiver requires -Dr.");
+    }
+
+    // Lamb 极坐标接收点必须显式给出震中距
+    if(!explicit_rcv && !Ctrl->R.active) {
+        GRTRaiseError("Lamb polar receiver requires -R.");
+    }
+
+    // 有限震源的各子源方位不同，叠加时统一使用 ZNE 坐标系
+    if(Ctrl->C.active) {
+        Ctrl->n.active = true;
+    }
+    Ctrl->L.phase_mask = grt_lamb_parse_phase_list(phase_list, GRT_LAMB_ALL_PHASES);
 }
 
 
 /**
  * 判断源点和接收点是否同时位于自由表面
  *
- * @param[in]      source_depth    源点深度，km
- * @param[in]      receiver_depth  接收点深度，km
+ * @param[in]  source_depth    源点深度，km
+ * @param[in]  receiver_depth  接收点深度，km
  *
  * @return 同时位于 z=0 时返回 true，否则返回 false
  */
@@ -594,61 +778,11 @@ static bool is_surface_source_receiver(const real_t source_depth, const real_t r
 
 
 /**
- * 判断源项是否为单力源
- *
- * @param[in]      source_index  震源在源项数组中的索引
- *
- * @return 源项为垂直力或水平力时返回 true，否则返回 false
- */
-static bool source_is_force(const int source_index)
-{
-    /* 垂直力和水平力使用位移 Green 函数，其他源使用其空间导数 */
-    return GRT_SRC_M_INDEX_IS_FORCE(source_index);
-}
-
-
-/**
- * 判断当前源项是否参与合成
- *
- * @param[in]  source_type   当前计算的震源类型
- * @param[in]  source_index  震源在源项数组中的索引
- * @param[in]  surface       源点和接收点是否均位于自由表面
- *
- * @return 需要输出当前源项时返回 true，否则返回 false
- */
-static bool lamb_need_src(
-    const GRT_SYN_TYPE source_type, const int source_index, const bool surface)
-{
-    /* 根据几何类型和用户选择的震源类型筛选需要写出的源 */
-    if (surface) {
-        return source_type == GRT_SYN_SF && source_is_force(source_index);
-    }
-    if (source_type == GRT_SYN_EX) {
-        return source_index == GRT_SRC_M_EX_INDEX;
-    }
-    if (source_type == GRT_SYN_SF) {
-        return source_is_force(source_index);
-    }
-    if (source_type == GRT_SYN_DC) {
-        return source_index >= GRT_SRC_M_DD_INDEX;
-    }
-    return source_index == GRT_SRC_M_EX_INDEX || source_index >= GRT_SRC_M_DD_INDEX;
-}
-
-
-/** Lamb 模块使用的坐标变换矩阵 */
-typedef struct {
-    real_t local_from_global[3][3];
-    real_t component_from_global[3][3];
-} LAMB_COORDINATES;
-
-
-/**
  * 创建 Lamb 求解器与输出所需的坐标变换矩阵
  *
- * @param[in]      azrad        源点到接收点的方位角，弧度
- * @param[in]      rot2ZNE      是否输出 Z、N、E 坐标
- * @param[out]     coordinates  坐标变换矩阵
+ * @param[in]   azrad        源点到接收点的方位角，弧度
+ * @param[in]   rot2ZNE      是否输出 Z、N、E 坐标
+ * @param[out]  coordinates  坐标变换矩阵
  *
  */
 static void make_lamb_coordinates(
@@ -684,10 +818,10 @@ static void make_lamb_coordinates(
 
 /** 计算单力源与位移 Green 函数的收缩结果
  *
- * @param[in]      G                       位移 Green 函数
- * @param[in]      component_from_global  输出分量坐标变换矩阵
- * @param[in]      output_component       输出分量索引
- * @param[in]      source                 全局坐标下的源力向量
+ * @param[in]  G                      位移 Green 函数
+ * @param[in]  component_from_global  输出分量坐标变换矩阵
+ * @param[in]  output_component       输出分量索引
+ * @param[in]  source                 全局坐标下的源力向量
  *
  * @return 收缩后的 Green 函数值
  */
@@ -706,10 +840,10 @@ static real_t evaluate_force(
 
 /** 计算矩源与源点一阶导数 Green 函数的收缩结果
  *
- * @param[in]      dG                      源点一阶导数 Green 函数
- * @param[in]      component_from_global  输出分量坐标变换矩阵
- * @param[in]      output_component       输出分量索引
- * @param[in]      source                  全局坐标下的源矩张量
+ * @param[in]  dG                     源点一阶导数 Green 函数
+ * @param[in]  component_from_global  输出分量坐标变换矩阵
+ * @param[in]  output_component       输出分量索引
+ * @param[in]  source                 全局坐标下的源矩张量
  *
  * @return 收缩后的 Green 函数值
  */
@@ -729,11 +863,11 @@ static real_t evaluate_moment(
 
 /** 计算单力源接收点空间导数与源力的收缩结果
  *
- * @param[in]      dG                      接收点一阶导数 Green 函数
- * @param[in]      component_from_global  坐标变换矩阵
- * @param[in]      derivative_direction   导数方向索引
- * @param[in]      output_component       输出分量索引
- * @param[in]      source                  全局坐标下的源力向量
+ * @param[in]  dG                     接收点一阶导数 Green 函数
+ * @param[in]  component_from_global  坐标变换矩阵
+ * @param[in]  derivative_direction   导数方向索引
+ * @param[in]  output_component       输出分量索引
+ * @param[in]  source                 全局坐标下的源力向量
  *
  * @return 收缩后的 Green 函数值
  */
@@ -754,11 +888,11 @@ static real_t evaluate_force_derivative(
 
 /** 计算矩源混合空间导数与源矩的收缩结果
  *
- * @param[in]      dG                      混合二阶导数 Green 函数
- * @param[in]      component_from_global  坐标变换矩阵
- * @param[in]      derivative_direction   接收点导数方向索引
- * @param[in]      output_component       输出分量索引
- * @param[in]      source                  全局坐标下的源矩张量
+ * @param[in]  dG                     混合二阶导数 Green 函数
+ * @param[in]  component_from_global  坐标变换矩阵
+ * @param[in]  derivative_direction   接收点导数方向索引
+ * @param[in]  output_component       输出分量索引
+ * @param[in]  source                 全局坐标下的源矩张量
  *
  * @return 收缩后的 Green 函数值
  */
@@ -853,55 +987,6 @@ static void make_lamb_result(
 }
 
 
-/**
- * 创建并初始化一个 Lamb 模块的 SAC 记录
- *
- * @param[in]      nt                   记录采样点数
- * @param[in]      dt                   记录采样间隔，s
- * @param[in]      horizontal_distance  源点与接收点的水平距离，km
- * @param[in]      source_depth         源点深度，km
- * @param[in]      receiver_depth       接收点深度，km
- * @param[in]      azimuth              源点到接收点的方位角，度
- * @param[in]      begin_time           SAC 记录起始时刻，s
- * @param[in]      vp                   半空间 P 波速度，km/s
- * @param[in]      vs                   半空间 S 波速度，km/s
- * @param[in]      rho                  半空间密度，g/cm^3
- *
- * @return 新创建的 SAC 记录
- */
-static SACTRACE *new_lamb_trace(
-    const int nt, const real_t dt, const real_t horizontal_distance,
-    const real_t source_depth, const real_t receiver_depth,
-    const real_t azimuth, const real_t begin_time,
-    const real_t vp, const real_t vs, const real_t rho)
-{
-    /* 头段字段与 greenfn 输出的 SAC 原型保持一致 */
-    SACTRACE *sac = grt_new_SACTRACE(dt, nt, begin_time);
-    sac->hd.o = 0.0;
-    sac->hd.iztype = IO;
-    sac->hd.dist = horizontal_distance;
-    sac->hd.evdp = source_depth;
-    sac->hd.stel = -receiver_depth * 1e3;
-    /* 直接时域解不使用 greenfn 的虚频率补偿，也不包含衰减 */
-    GRT_SACHEAD_SET_IMAG_FREQ(&sac->hd,  0.0);
-    GRT_SACHEAD_SET_RCV_VP(&sac->hd,     vp);
-    GRT_SACHEAD_SET_RCV_VS(&sac->hd,     vs);
-    GRT_SACHEAD_SET_RCV_RHO(&sac->hd,    rho);
-    GRT_SACHEAD_SET_RCV_QP_INV(&sac->hd, 0.0);
-    GRT_SACHEAD_SET_RCV_QS_INV(&sac->hd, 0.0);
-    GRT_SACHEAD_SET_SRC_VP(&sac->hd,     vp);
-    GRT_SACHEAD_SET_SRC_VS(&sac->hd,     vs);
-    GRT_SACHEAD_SET_SRC_RHO(&sac->hd,    rho);
-
-    sac->hd.az = azimuth;
-    sac->hd.baz = azimuth + 180.0;
-    if (sac->hd.baz >= 360.0) {
-        sac->hd.baz -= 360.0;
-    }
-    return sac;
-}
-
-
 enum {
     LAMB_PHASE_P,                         ///< t0/kt0：直达 P 波
     LAMB_PHASE_S,                         ///< t1/kt1：直达 S 波
@@ -948,7 +1033,7 @@ static void clear_lamb_arrivals(SACTRACE *sac)
 
 /** 将一个无量纲震相到时写入 SAC 头段 */
 static void set_lamb_arrival(
-    SACTRACE *sac, const int phase, const real_t tbar, const real_t time_scale, const char *name)
+    SACTRACE *sac, const int phase, const real_t tbar, const real_t time_scale, const real_t delay, const char *name)
 {
     if (phase < 0 || phase >= LAMB_PHASE_COUNT || tbar < 0.0) {
         return;
@@ -963,7 +1048,7 @@ static void set_lamb_arrival(
         sac->hd.kt4, sac->hd.kt5, sac->hd.kt6, sac->hd.kt7,
         sac->hd.kt8, sac->hd.kt9,
     };
-    *times[phase] = (float)(tbar * time_scale);
+    *times[phase] = (float)(tbar * time_scale + delay);
     copy_lamb_phase_name(names[phase], name);
 }
 
@@ -972,23 +1057,23 @@ static void set_lamb_arrival(
 static void set_lamb_arrivals(
     SACTRACE *sac, const real_t nu, const real_t horizontal_distance,
     const real_t source_depth, const real_t receiver_depth,
-    const real_t direct_distance, const real_t vs)
+    const real_t direct_distance, const real_t vs, const real_t delay)
 {
     clear_lamb_arrivals(sac);
     const real_t time_scale = direct_distance / vs;
     real_t tP;
     real_t tR;
-    set_lamb_arrival(sac, LAMB_PHASE_S, 1.0, time_scale, "S");
+    set_lamb_arrival(sac, LAMB_PHASE_S, 1.0, time_scale, delay, "S");
     grt_compute_lamb1_travt(nu, &tP, &tR);
 
     if (source_depth > 0.0 && receiver_depth > 0.0) {
         const real_t reflected_distance = hypot(horizontal_distance, source_depth + receiver_depth);
         tR *= reflected_distance / direct_distance;
     }
-    set_lamb_arrival(sac, LAMB_PHASE_R, tR, time_scale, "R");
+    set_lamb_arrival(sac, LAMB_PHASE_R, tR, time_scale, delay, "R");
 
     if (is_surface_source_receiver(source_depth, receiver_depth)) {
-        set_lamb_arrival(sac, LAMB_PHASE_P, tP, time_scale, "P");
+        set_lamb_arrival(sac, LAMB_PHASE_P, tP, time_scale, delay, "P");
         return;
     }
 
@@ -1001,214 +1086,24 @@ static void set_lamb_arrivals(
         grt_compute_lamb3_travt(
             nu, horizontal_distance, source_depth, receiver_depth,
             &tP, &tPP, &tSS, &tPS, &tSP, &t_sPs);
-        set_lamb_arrival(sac, LAMB_PHASE_P, tP, time_scale, "P");
-        set_lamb_arrival(sac, LAMB_PHASE_PP, tPP, time_scale, "PP");
-        set_lamb_arrival(sac, LAMB_PHASE_SS, tSS, time_scale, "SS");
-        set_lamb_arrival(sac, LAMB_PHASE_PS, tPS, time_scale, "PS");
-        set_lamb_arrival(sac, LAMB_PHASE_SP, tSP, time_scale, "SP");
-        set_lamb_arrival(sac, LAMB_PHASE_sPs, t_sPs, time_scale, "sPs");
+        set_lamb_arrival(sac, LAMB_PHASE_P, tP, time_scale, delay, "P");
+        set_lamb_arrival(sac, LAMB_PHASE_PP, tPP, time_scale, delay, "PP");
+        set_lamb_arrival(sac, LAMB_PHASE_SS, tSS, time_scale, delay, "SS");
+        set_lamb_arrival(sac, LAMB_PHASE_PS, tPS, time_scale, delay, "PS");
+        set_lamb_arrival(sac, LAMB_PHASE_SP, tSP, time_scale, delay, "SP");
+        set_lamb_arrival(sac, LAMB_PHASE_sPs, t_sPs, time_scale, delay, "sPs");
         return;
     }
 
     real_t t_sliding;
     grt_compute_lamb2_travt(
         nu, horizontal_distance, source_depth, receiver_depth, &tP, &t_sliding);
-    set_lamb_arrival(sac, LAMB_PHASE_P, tP, time_scale, "P");
+    set_lamb_arrival(sac, LAMB_PHASE_P, tP, time_scale, delay, "P");
     /* 地下源的滑行项沿互易路径为 SP，互易回地表源问题后为 PS */
     if (source_depth > 0.0) {
-        set_lamb_arrival(sac, LAMB_PHASE_SP, t_sliding, time_scale, "SP");
+        set_lamb_arrival(sac, LAMB_PHASE_SP, t_sliding, time_scale, delay, "SP");
     } else {
-        set_lamb_arrival(sac, LAMB_PHASE_PS, t_sliding, time_scale, "PS");
-    }
-}
-
-
-/**
- * 去除 Lamb 闭合解自带的一次时间积分
- *
- * @param[in,out]  sac     待恢复的 SAC 记录
- */
-static void lamb_normalize_trace(SACTRACE *sac)
-{
-    /* 闭合解和混合导数都带有一次时间积分，先恢复为脉冲型物理解 */
-    if (sac->hd.npts <= 1) {
-        sac->data[0] = 0.0;
-        return;
-    }
-    grt_differential(sac->data, sac->hd.npts, sac->hd.delta);
-}
-
-
-/**
- * 对 SAC 记录执行时间函数卷积及时间积分或微分
- *
- * @param[in,out]  sac                待处理的 SAC 记录
- * @param[in]      integration_order  时间积分次数
- * @param[in]      differential_order 时间微分次数
- * @param[in]      time_function      可选的时间函数记录，NULL 表示不进行卷积
- */
-static void lamb_postprocess_trace(
-    SACTRACE *sac, const int integration_order, const int differential_order,
-    const SACTRACE *time_function)
-{
-    /* 单点序列无法进行稳定的差分，直接保留零值 */
-    if (sac->hd.npts <= 1) {
-        sac->data[0] = 0.0;
-        return;
-    }
-
-    /* 时间函数卷积先于用户要求的积分和微分 */
-    if (time_function != NULL) {
-        real_t *convolution = GRT_SAFE_CALLOC(sac->hd.npts, sizeof(*convolution));
-        grt_oaconvolve(sac->data, sac->hd.npts, time_function->data, time_function->hd.npts,
-            convolution, sac->hd.npts, false);
-        /* 时间函数样本表示物理时间函数，连续卷积的离散积分因子为 dt */
-        for (int n = 0; n < sac->hd.npts; ++n) {
-            sac->data[n] = convolution[n] * sac->hd.delta;
-        }
-        GRT_SAFE_FREE_PTR(convolution);
-    }
-
-    for (int i = 0; i < integration_order; ++i) {
-        grt_trap_integral(sac->data, sac->hd.npts, sac->hd.delta);
-    }
-    for (int i = 0; i < differential_order; ++i) {
-        grt_differential(sac->data, sac->hd.npts, sac->hd.delta);
-    }
-}
-
-
-/**
- * 按模块命名规则写出一个 Lamb SAC 记录
- *
- * @param[in]      output_path       输出目录
- * @param[in]      derivative_prefix 空间导数方向前缀
- * @param[in]      channel           接收分量名称
- * @param[in,out]  sac               待写出的 SAC 记录
- */
-static void save_to_sac(
-    const char *output_path, const char *derivative_prefix,
-    const char channel, SACTRACE *sac)
-{
-    /* 文件名由导数方向和接收分量组成，与 syn 模块一致 */
-    char component[32];
-    char *path = NULL;
-    snprintf(component, sizeof(component), "%s%c", derivative_prefix, channel);
-    snprintf(sac->hd.kcmpnm, sizeof(sac->hd.kcmpnm), "%.8s", component);
-    GRT_SAFE_ASPRINTF(&path, "%s/%s.sac", output_path, component);
-    grt_write_SACTRACE(path, sac);
-    GRT_SAFE_FREE_PTR(path);
-}
-
-
-/**
- * 将一个 SAC 记录叠加到目标记录
- *
- * @param[in,out]  target  目标 SAC 记录
- * @param[in]      source  待叠加的 SAC 记录
- */
-static void accumulate_trace(SACTRACE *target, const SACTRACE *source)
-{
-    /* 将一个源分量的记录叠加到最终合成记录 */
-    for (int n = 0; n < target->hd.npts; ++n) {
-        target->data[n] += source->data[n];
-    }
-}
-
-
-/** 创建一组 SAC 记录及其空间导数记录
- *
- * @param[in]      prototype   SAC 记录原型
- * @param[in]      calc_upar   是否创建空间导数记录
- * @param[out]     base        三个基本接收分量的 SAC 记录
- * @param[out]     derivative  三个导数方向和三个接收分量的 SAC 记录
- */
-static void allocate_lamb_traces(
-    SACTRACE *prototype, const bool calc_upar, SACTRACE *base[3], SACTRACE *derivative[3][3])
-{
-    for (int component = 0; component < 3; ++component) {
-        base[component] = grt_copy_SACTRACE(prototype, true);
-        if (calc_upar) {
-            for (int direction = 0; direction < 3; ++direction) {
-                derivative[direction][component] = grt_copy_SACTRACE(prototype, true);
-            }
-        }
-    }
-}
-
-
-/** 释放一组 SAC 记录及其空间导数记录
- *
- * @param[in]      calc_upar   是否释放空间导数记录
- * @param[in,out]  base        三个基本接收分量的 SAC 记录
- * @param[in,out]  derivative  三个导数方向和三个接收分量的 SAC 记录
- */
-static void free_lamb_traces(
-    const bool calc_upar, SACTRACE *base[3], SACTRACE *derivative[3][3])
-{
-    for (int component = 0; component < 3; ++component) {
-        grt_free_SACTRACE(base[component]);
-        if (calc_upar) {
-            for (int direction = 0; direction < 3; ++direction) {
-                grt_free_SACTRACE(derivative[direction][component]);
-            }
-        }
-    }
-}
-
-
-/** 对一组 SAC 记录执行 Lamb 归一化、卷积、积分和微分
- *
- * @param[in]      calc_upar      是否处理空间导数记录
- * @param[in]      int_times      时间积分次数
- * @param[in]      dif_times      时间微分次数
- * @param[in]      time_function  可选的时间函数记录
- * @param[in,out]  base           三个基本接收分量的 SAC 记录
- * @param[in,out]  derivative     三个导数方向和三个接收分量的 SAC 记录
- */
-static void postprocess_lamb_traces(
-    const bool calc_upar, const int int_times, const int dif_times,
-    const SACTRACE *time_function, SACTRACE *base[3], SACTRACE *derivative[3][3])
-{
-    for (int component = 0; component < 3; ++component) {
-        lamb_normalize_trace(base[component]);
-        if (calc_upar) {
-            for (int direction = 0; direction < 3; ++direction) {
-                lamb_normalize_trace(derivative[direction][component]);
-            }
-        }
-    }
-
-    for (int component = 0; component < 3; ++component) {
-        lamb_postprocess_trace(base[component], int_times, dif_times, time_function);
-        if (calc_upar) {
-            for (int direction = 0; direction < 3; ++direction) {
-                lamb_postprocess_trace(derivative[direction][component], int_times, dif_times, time_function);
-            }
-        }
-    }
-}
-
-
-/** 将一组源项记录累加到合成记录
- *
- * @param[in]      calc_upar          是否累加空间导数记录
- * @param[in]      source_base        当前源项的基本接收分量记录
- * @param[in]      source_derivative 当前源项的空间导数记录
- * @param[in,out]  base               合成的基本接收分量记录
- * @param[in,out]  derivative         合成的空间导数记录
- */
-static void accumulate_lamb_traces(
-    const bool calc_upar, SACTRACE *source_base[3], SACTRACE *source_derivative[3][3],
-    SACTRACE *base[3], SACTRACE *derivative[3][3])
-{
-    for (int component = 0; component < 3; ++component) {
-        accumulate_trace(base[component], source_base[component]);
-        if (calc_upar) {
-            for (int direction = 0; direction < 3; ++direction) {
-                accumulate_trace(derivative[direction][component], source_derivative[direction][component]);
-            }
-        }
+        set_lamb_arrival(sac, LAMB_PHASE_PS, t_sliding, time_scale, delay, "PS");
     }
 }
 
@@ -1216,9 +1111,9 @@ static void accumulate_lamb_traces(
 /**
  * 将单力源辐射系数转换为源力向量
  *
- * @param[in]      srcRadi        各源项和各分量的辐射系数
- * @param[in]      source_index   震源在源项数组中的索引
- * @param[out]     source         R、T、Z_down 坐标下的源力向量
+ * @param[in]   srcRadi       各源项和各分量的辐射系数
+ * @param[in]   source_index  震源在源项数组中的索引
+ * @param[out]  source        R、T、Z_down 坐标下的源力向量
  */
 static void make_source_force(const realChnlGrid srcRadi, const int source_index, real_t source[3])
 {
@@ -1236,9 +1131,9 @@ static void make_source_force(const realChnlGrid srcRadi, const int source_index
 /**
  * 将矩源辐射系数转换为源矩张量
  *
- * @param[in]      srcRadi        各源项和各分量的辐射系数
- * @param[in]      source_index   震源在源项数组中的索引
- * @param[out]     source         R、T、Z_down 坐标下的源矩张量
+ * @param[in]   srcRadi       各源项和各分量的辐射系数
+ * @param[in]   source_index  震源在源项数组中的索引
+ * @param[out]  source        R、T、Z_down 坐标下的源矩张量
  */
 static void make_source_moment(const realChnlGrid srcRadi, const int source_index, real_t source[3][3])
 {
@@ -1262,9 +1157,9 @@ static void make_source_moment(const realChnlGrid srcRadi, const int source_inde
 
 /** 将局部坐标下的源力转换为全局坐标
  *
- * @param[in]      local_from_global  全局坐标到局部坐标的变换矩阵
- * @param[in]      source_local       局部坐标下的源力
- * @param[out]     source_global      全局坐标下的源力
+ * @param[in]   local_from_global  全局坐标到局部坐标的变换矩阵
+ * @param[in]   source_local       局部坐标下的源力
+ * @param[out]  source_global      全局坐标下的源力
  */
 static void transform_source_force(
     const real_t local_from_global[3][3], const real_t source_local[3], real_t source_global[3])
@@ -1279,9 +1174,9 @@ static void transform_source_force(
 
 /** 将局部坐标下的源矩转换为全局坐标
  *
- * @param[in]      local_from_global  全局坐标到局部坐标的变换矩阵
- * @param[in]      source_local       局部坐标下的源矩
- * @param[out]     source_global      全局坐标下的源矩
+ * @param[in]   local_from_global  全局坐标到局部坐标的变换矩阵
+ * @param[in]   source_local       局部坐标下的源矩
+ * @param[out]  source_global      全局坐标下的源矩
  */
 static void transform_source_moment(
     const real_t local_from_global[3][3], const real_t source_local[3][3], real_t source_global[3][3])
@@ -1296,46 +1191,19 @@ static void transform_source_moment(
 }
 
 
-/**
- * 将处理后的完整响应裁剪到输出窗口，窗外样本补零
- *
- * @param[in,out]  sac      完整响应及 SAC 头段
- * @param[in]      nt       输出采样点数
- * @param[in]      begin    输出起点，s
- * @param[in]      first    输出首点在内部序列中的索引
- * @param[in]      tail     内部序列末端不参与输出的额外点数
- */
-static void crop_lamb_trace(SACTRACE *sac, int nt, real_t begin, long long first, int tail)
-{
-    real_t *data = GRT_SAFE_CALLOC(nt, sizeof(*data));
-    for(int n = 0; n < nt; ++n) {
-        long long sample = first + n;
-        if(sample >= 0 && sample < sac->hd.npts - tail) {
-            data[n] = sac->data[sample];
-        }
-    }
-    GRT_SAFE_FREE_PTR(sac->data);
-    sac->data = data;
-    sac->hd.npts = nt;
-    grt_sachead_set_begin(&sac->hd, begin);
-}
-
-
 /** 将一个源项转换为全局坐标下的源力或源矩
  *
- * @param[in]      srcRadi            各源项和各分量的辐射系数
- * @param[in]      source_index       震源在源项数组中的索引
- * @param[in]      force              当前源项是否为单力源
- * @param[in]      local_from_global  全局坐标到局部坐标的变换矩阵
- * @param[out]     source_force      全局坐标下的源力
- * @param[out]     source_moment     全局坐标下的源矩
+ * @param[in]   srcRadi            各源项和各分量的辐射系数
+ * @param[in]   source_index       震源在源项数组中的索引
+ * @param[in]   force              当前源项是否为单力源
+ * @param[in]   local_from_global  全局坐标到局部坐标的变换矩阵
+ * @param[out]  source_force       全局坐标下的源力，单力源时写入
+ * @param[out]  source_moment      全局坐标下的源矩，矩源时写入
  */
 static void make_source_terms(
     const realChnlGrid srcRadi, const int source_index, const bool force,
     const real_t local_from_global[3][3], real_t source_force[3], real_t source_moment[3][3])
 {
-    memset(source_force, 0, sizeof(real_t) * 3);
-    memset(source_moment, 0, sizeof(real_t) * 3 * 3);
     if (force) {
         real_t source_local[3];
         make_source_force(srcRadi, source_index, source_local);
@@ -1348,108 +1216,414 @@ static void make_source_terms(
 }
 
 
-/** 将一个源项合成为请求坐标下的记录及其空间导数
+/** 将一个震源项的基本源型累加到共同响应
  *
- * @param[in]   rot2ZNE                   是否输出 Z、N、E 坐标
- * @param[in]   horizontal_distance       源点与接收点的水平距离，km
- * @param[in]   source_type               当前计算的震源类型
- * @param[in]   scale                     源强缩放因子
- * @param[in]   nu                        半空间泊松比
- * @param[in]   azrad                     源点到接收点的方位角，弧度
- * @param[in]   mchn                      震源机制参数数组
- * @param[in]   calc_upar                 是否计算空间导数
- * @param[in]   nt                        时间序列长度
- * @param[in]   result                    Lamb Green 函数及其导数
- * @param[in]   source_index              震源在源项数组中的索引
- * @param[in]   force_factor              单力源位移的物理归一化因子
- * @param[in]   moment_factor             矩源位移的物理归一化因子
- * @param[in]   force_derivative_factor   单力源空间导数的物理归一化因子
- * @param[in]   moment_derivative_factor  矩源空间导数的物理归一化因子
- * @param[out]  base                      三个基本接收分量的 SAC 记录
- * @param[out]  derivative                三个导数方向和三个接收分量的 SAC 记录
+ * @param[in]      rot2ZNE                   是否输出 Z、N、E 坐标
+ * @param[in]      horizontal_distance       源点与接收点的水平距离，km
+ * @param[in]      term                      震源项
+ * @param[in]      scale                     当前子源的源强
+ * @param[in]      nu                        半空间泊松比
+ * @param[in]      azrad                     源点到接收点的方位角，弧度
+ * @param[in]      calc_upar                 是否计算空间导数
+ * @param[in]      nt                        时间序列长度
+ * @param[in]      result                    Lamb Green 函数及其导数
+ * @param[in]      factor                    介质物理归一化因子
+ * @param[in]      distance                  源台直线距离，km
+ * @param[in,out]  traces                    输出累加数组，先位移、再按导数方向排列
  */
-static void fill_source_traces(
-    const bool rot2ZNE, const real_t horizontal_distance,
-    const GRT_SYN_TYPE source_type, const real_t scale, const real_t nu,
-    const real_t azrad, const real_t mchn[GRT_MECHANISM_NUM],
-    const bool calc_upar, const int nt, const LAMB_RESULT *result,
-    const int source_index, const real_t force_factor, const real_t moment_factor,
-    const real_t force_derivative_factor, const real_t moment_derivative_factor,
-    SACTRACE *base[3], SACTRACE *derivative[3][3])
+static void accumulate_lamb_term(
+    const bool rot2ZNE, const real_t horizontal_distance, const FINITE_SOURCE_TERM *term,
+    const real_t scale, const real_t nu, const real_t azrad, const bool calc_upar,
+    const int nt, const LAMB_RESULT *result, const real_t factor, const real_t distance, real_t **traces)
 {
-    /* 统一在全局 N、E、Z_down 坐标中收缩 Green 函数 */
-    const bool force = source_is_force(source_index);
-    const real_t base_factor = force ? force_factor : moment_factor;
-    const real_t derivative_factor = force ? force_derivative_factor : moment_derivative_factor;
-    const bool skip_transverse = !rot2ZNE && GRT_SRC_M_ORDERS[source_index] == 0;
     LAMB_COORDINATES coordinates;
-    realChnlGrid baseRadiation;
+    realChnlGrid baseRadiation, receiverRadiation, thetaRadiation;
     make_lamb_coordinates(azrad, rot2ZNE, &coordinates);
-    make_source_radiation(source_type, scale, nu, azrad, mchn, false, 1.0, baseRadiation);
+    make_source_radiation(term->type, scale, nu, azrad, term->mechanism, false, 1.0, baseRadiation);
+    if(calc_upar) {
+        make_source_radiation(term->type, scale, nu, azrad, term->mechanism, false, 1e-5, receiverRadiation);
+        if(!rot2ZNE) {
+            make_source_radiation(term->type, scale, nu, azrad, term->mechanism, true, 1e-5 / horizontal_distance, thetaRadiation);
+        }
+    }
 
-    real_t source_force_global[3];
-    real_t source_moment_global[3][3];
-    make_source_terms(baseRadiation, source_index, force, coordinates.local_from_global,
-        source_force_global, source_moment_global);
+    for(int source_index = 0; source_index < GRT_SRC_M_NUM; ++source_index) {
+        if(!grt_source_has_component(term->type, source_index)) continue;
+        const bool force = GRT_SRC_M_INDEX_IS_FORCE(source_index);
+        const real_t base_factor = force ? factor / distance : factor / (distance * distance);
+        const real_t derivative_factor = base_factor / distance;
+        const bool skip_transverse = !rot2ZNE && GRT_SRC_M_ORDERS[source_index] == 0;
+        real_t source_force_global[3];
+        real_t source_moment_global[3][3];
+        make_source_terms(baseRadiation, source_index, force, coordinates.local_from_global,
+            source_force_global, source_moment_global);
 
-    for (int output_component = 0; output_component < 3; ++output_component) {
-        if (skip_transverse && output_component == 2) {
+        for (int output_component = 0; output_component < 3; ++output_component) {
+            if (skip_transverse && output_component == 2) continue;
+            for (int n = 0; n < nt; ++n) {
+                const real_t value = force
+                    ? evaluate_force(result->G[n], coordinates.component_from_global, output_component, source_force_global)
+                    : evaluate_moment(result->dG_source[n], coordinates.component_from_global, output_component, source_moment_global);
+                traces[output_component][n] += base_factor * value;
+            }
+        }
+
+        if (!calc_upar) {
             continue;
         }
-        for (int n = 0; n < nt; ++n) {
-            const real_t value = force
-                ? evaluate_force(result->G[n], coordinates.component_from_global, output_component, source_force_global)
-                : evaluate_moment(result->dG_source[n], coordinates.component_from_global, output_component, source_moment_global);
-            base[output_component]->data[n] = base_factor * value;
+
+        make_source_terms(receiverRadiation, source_index, force, coordinates.local_from_global,
+            source_force_global, source_moment_global);
+
+        real_t theta_force_global[3] = {0.0};
+        real_t theta_moment_global[3][3] = {{0.0}};
+        if (!rot2ZNE) {
+            make_source_terms(thetaRadiation, source_index, force, coordinates.local_from_global,
+                theta_force_global, theta_moment_global);
         }
-    }
 
-    if (!calc_upar) {
-        return;
-    }
-
-    realChnlGrid receiverRadiation;
-    make_source_radiation(source_type, scale, nu, azrad, mchn, false, 1e-5, receiverRadiation);
-    make_source_terms(receiverRadiation, source_index, force, coordinates.local_from_global,
-        source_force_global, source_moment_global);
-
-    realChnlGrid thetaRadiation;
-    real_t theta_force_global[3] = {0.0};
-    real_t theta_moment_global[3][3] = {{0.0}};
-    if (!rot2ZNE) {
-        make_source_radiation(source_type, scale, nu, azrad, mchn, true,
-            1e-5 / horizontal_distance, thetaRadiation);
-        make_source_terms(thetaRadiation, source_index, force, coordinates.local_from_global,
-            theta_force_global, theta_moment_global);
-    }
-
-    for (int direction = 0; direction < 3; ++direction) {
-        for (int output_component = 0; output_component < 3; ++output_component) {
-            if (skip_transverse && output_component == 2) {
-                continue;
-            }
-            for (int n = 0; n < nt; ++n) {
-                real_t value;
-                real_t scale;
-                if (!rot2ZNE && direction == 2) {
-                    value = force
-                        ? evaluate_force(result->G[n], coordinates.component_from_global, output_component, theta_force_global)
-                        : evaluate_moment(result->dG_source[n], coordinates.component_from_global, output_component, theta_moment_global);
-                    scale = base_factor;
-                } else {
-                    value = force
-                        ? evaluate_force_derivative(result->dG_receiver[n], coordinates.component_from_global,
-                            direction, output_component, source_force_global)
-                        : evaluate_moment_derivative(result->dG_mixed[n], coordinates.component_from_global,
-                            direction, output_component, source_moment_global);
-                    scale = derivative_factor;
+        for (int direction = 0; direction < 3; ++direction) {
+            for (int output_component = 0; output_component < 3; ++output_component) {
+                if (skip_transverse && output_component == 2) continue;
+                for (int n = 0; n < nt; ++n) {
+                    real_t value;
+                    real_t component_factor;
+                    if (!rot2ZNE && direction == 2) {
+                        value = force
+                            ? evaluate_force(result->G[n], coordinates.component_from_global, output_component, theta_force_global)
+                            : evaluate_moment(result->dG_source[n], coordinates.component_from_global, output_component, theta_moment_global);
+                        component_factor = base_factor;
+                    } else {
+                        value = force
+                            ? evaluate_force_derivative(result->dG_receiver[n], coordinates.component_from_global,
+                                direction, output_component, source_force_global)
+                            : evaluate_moment_derivative(result->dG_mixed[n], coordinates.component_from_global,
+                                direction, output_component, source_moment_global);
+                        component_factor = derivative_factor;
+                    }
+                    traces[3 + 3 * direction + output_component][n] += component_factor * value;
                 }
-                derivative[direction][output_component]->data[n] = scale * value;
             }
         }
     }
 }
 
+/**
+ * 计算一对源台的物理 Lamb 脉冲响应
+ *
+ * @param[in]      nt          样本数
+ * @param[in]      dt          采样间隔，s
+ * @param[in]      begin       实际采样起点，s
+ * @param[in]      medium      vp、vs、rho
+ * @param[in]      nu          半空间泊松比
+ * @param[in]      zs          源深度，km
+ * @param[in]      zr          接收深度，km
+ * @param[in]      dist        震中距，km
+ * @param[in]      az          方位角，弧度
+ * @param[in]      fault       震源断层
+ * @param[in]      area        子断层面积，点源传 1
+ * @param[in]      zne         是否输出 ZNE
+ * @param[in]      upar        是否计算空间导数
+ * @param[in]      phase_mask  震相筛选掩码
+ * @param[in,out]  traces      输出累加数组，先位移、再按导数方向排列
+ */
+static void lamb_synthesis_samples(int nt, real_t dt, real_t begin, const real_t medium[3], real_t nu,
+                                   real_t zs, real_t zr, real_t dist, real_t az, const FINITE_FAULT *fault,
+                                   real_t area, bool zne, bool upar, unsigned int phase_mask, real_t **traces)
+{
+    real_t distance = hypot(dist, zs - zr);
+    real_t *tbar = GRT_SAFE_MALLOC(nt * sizeof(*tbar));
+    long long first_sample = llround(begin / dt);
+    for(int i = 0; i < nt; ++i) {
+        tbar[i] = (first_sample + i) * dt * medium[1] / distance;
+    }
+
+    // 同一断层的源项共用 Green 函数，有限断层的各源项均为矩源
+    LAMB_RESULT result = {0};
+    make_lamb_result(nu, tbar, nt, dist, zs, zr, az / DEG1, fault->terms[0].type, upar, phase_mask, &result);
+    real_t factor = 1.0 / (PI * PI * medium[1] * medium[1] * medium[2]);
+    real_t src_mu = medium[1] * medium[1] * medium[2] * 1e10;
+    for(int t = 0; t < fault->nterms; ++t) {
+        const FINITE_SOURCE_TERM *term = &fault->terms[t];
+        real_t scale = term->scale * area * (term->with_mu ? src_mu : 1);
+        accumulate_lamb_term(zne, dist, term, scale, nu, az, upar, nt, &result,
+                             factor, distance, traces);
+    }
+
+    // 闭合解和混合导数都带有一次时间积分，各源项累加后统一恢复为物理解
+    int nc = upar ? 12 : 3;
+    for(int c = 0; c < nc; ++c) {
+        grt_differential(traces[c], nt, dt);
+    }
+    GRT_SAFE_FREE_PTR(result.G);
+    GRT_SAFE_FREE_PTR(result.dG_source);
+    GRT_SAFE_FREE_PTR(result.dG_receiver);
+    GRT_SAFE_FREE_PTR(result.dG_mixed);
+    GRT_SAFE_FREE_PTR(tbar);
+}
+
+/**
+ * 检查震源剖分尺寸并展开为统一源点集合
+ *
+ * @param[in,out]  Ctrl    命令行参数，保存断层
+ * @param[in]      modarr  均匀半空间模型矩阵
+ * @param[out]     nsrc    展开后的震源点数
+ * @return         源点集合
+ */
+static SRC_POINT *build_lamb_sources(GRT_MODULE_CTRL *Ctrl, const real_t (*modarr)[GRT_MODARR_NCOL], size_t *nsrc)
+{
+    // Lamb 没有格林函数库提供默认间隔，矩形震源必须显式指定剖分尺寸
+    for(size_t i = 0; i < Ctrl->C.nfault; ++i) {
+        if(KODE_IS_FINITE(Ctrl->C.faults[i].kode) && Ctrl->C.dL <= 0) {
+            GRTRaiseError("Lamb finite rectangular sources require +idL/dW.");
+        }
+    }
+
+    // 在均匀半空间中逐条剖分震源，点源保持单个子源
+    for(size_t i = 0; i < Ctrl->C.nfault; ++i) {
+        FINITE_FAULT *fault = &Ctrl->C.faults[i];
+        grt_finite_fault_subdiv(fault, KODE_IS_POINT(fault->kode) ? 0 : Ctrl->C.dL, KODE_IS_POINT(fault->kode) ? 0 : Ctrl->C.dW, 1, modarr);
+    }
+    return grt_src_points_from_faults(Ctrl->C.nfault, Ctrl->C.faults, nsrc);
+}
+
+/**
+ * 将单点、逐点文件或有限接收断层统一为接收点集合
+ *
+ * @param[in,out]  Ctrl  命令行参数
+ * @param[out]     nrcv  展开后的接收点数
+ * @return         接收点集合
+ */
+static RCV_POINT *build_lamb_receivers(GRT_MODULE_CTRL *Ctrl, size_t *nrcv)
+{
+    // 逐点接收文件直接提供坐标和可选机制
+    if(Ctrl->Q.active) {
+        return grt_rcv_points_from_file(Ctrl->Q.path, nrcv);
+    }
+
+    // 接收断层在读入选项时已统一完成几何剖分
+    if(Ctrl->U.active) {
+        return grt_rcv_points_from_faults(Ctrl->U.nfault, Ctrl->U.faults, nrcv);
+    }
+
+    // 极坐标接收点转换为统一的北向、东向和深度坐标
+    *nrcv = 1;
+    return grt_rcv_points_from_polar(Ctrl->R.dist, Ctrl->A.azimuth, Ctrl->Depth.deprcv);
+}
+
+/**
+ * 检查全部源台几何的 Lamb 求解支持，先计算各接收点初至，再确定共同起点
+ *
+ * @param[in,out]  Ctrl  命令行参数，地表单力模式可能关闭空间导数
+ * @param[in]      nsrc  震源点数
+ * @param[in]      srcs  源点集合
+ * @param[in]      nrcv  接收点数
+ * @param[in]      rcvs  接收点集合
+ * @return         各接收点的时间窗及初至数组，调用方负责释放
+ */
+static LAMB_RECEIVER_TIMING *prepare_lamb_geometry_and_timing(GRT_MODULE_CTRL *Ctrl, size_t nsrc, const SRC_POINT *srcs, size_t nrcv, const RCV_POINT *rcvs)
+{
+    // 地表点力且所有接收点均在地表时使用第一类 Lamb 解，关闭不支持的空间导数
+    if(!Ctrl->C.active && srcs[0].fault->terms[0].type == GRT_SYN_SF && srcs[0].depth == 0) {
+        bool all_surface = true;
+        for(size_t i = 0; i < nrcv; ++i) {
+            all_surface &= rcvs[i].depth == 0;
+        }
+        if(all_surface && Ctrl->e.active) {
+            GRTRaiseWarning("Surface-force Lamb derivatives are not supported; -e is ignored.");
+            Ctrl->e.active = false;
+        }
+    }
+
+    // 震源读入和剖分已完成，按实际几何分别计算 P、S 最早到时
+    LAMB_RECEIVER_TIMING *timings = GRT_SAFE_CALLOC(nrcv, sizeof(*timings));
+    for(size_t ir = 0; ir < nrcv; ++ir) {
+        LAMB_RECEIVER_TIMING *timing = &timings[ir];
+        timing->travtPS[0] = timing->travtPS[1] = INFINITY;
+        real_t min_distance = INFINITY;
+        for(size_t is = 0; is < nsrc; ++is) {
+            real_t dist = hypot(rcvs[ir].north - srcs[is].north, rcvs[ir].east - srcs[is].east);
+            bool surface = srcs[is].depth == 0 && rcvs[ir].depth == 0;
+
+            // 所有源台组合必须有正的水平距离，以避开 Lamb 解的轴上奇点
+            if(dist <= 0) {
+                GRTRaiseError("Lamb horizontal distance must be positive at source %zu receiver %zu.", is, ir);
+            }
+
+            // 源台均在地表时，只支持通过 -F 指定的单力源
+            if(surface && (Ctrl->C.active || srcs[is].fault->terms[0].type != GRT_SYN_SF)) {
+                GRTRaiseError("When both source and receiver are on the free surface, only the single force source specified by -F is supported.");
+            }
+
+            // 含地表源台组合时，不允许计算尚未支持的空间导数
+            if(surface && Ctrl->e.active) {
+                GRTRaiseError("Lamb derivatives are unavailable for a surface source/receiver pair.");
+            }
+
+            // 只有非零源项参与最早初至和参考距离的计算，初至包含破裂延迟
+            if(srcs[is].fault->nterms) {
+                real_t distance = hypot(dist, srcs[is].depth - rcvs[ir].depth);
+                real_t delay = srcs[is].fault->stf_delay;
+                timing->travtPS[0] = fmin(timing->travtPS[0], distance / Ctrl->H.vp + delay);
+                timing->travtPS[1] = fmin(timing->travtPS[1], distance / Ctrl->H.vs + delay);
+                min_distance = fmin(min_distance, distance);
+            }
+        }
+
+        // -Ep 参考含破裂延迟的最早 P，普通 -E 的参考距离仍取非零源的最短直线距离
+        real_t begin = Ctrl->E.delayT0;
+        if(Ctrl->E.refFirstP && timing->travtPS[0] != INFINITY) {
+            begin += timing->travtPS[0];
+        } else if(Ctrl->E.delayV0 > 0 && min_distance != INFINITY) {
+            begin += min_distance / Ctrl->E.delayV0;
+        }
+        timing->begin = grt_sample_aligned_time(begin, Ctrl->N.dt);
+    }
+    return timings;
+}
+
+/**
+ * 在接收点共同时间窗内合成并卷积一个子源
+ *
+ * @param[in]      Ctrl      命令行参数
+ * @param[in]      source    当前源点
+ * @param[in]      receiver  当前接收点
+ * @param[in]      begin     当前接收点共同起点，s
+ * @param[in,out]  data      当前线程的接收波形，按分量连续排列
+ */
+static void lamb_one_pair(const GRT_MODULE_CTRL *Ctrl, const SRC_POINT *source, const RCV_POINT *receiver,
+                          real_t begin, real_t *data)
+{
+    int nt = Ctrl->N.nt, nc = Ctrl->e.active ? 12 : 3;
+    real_t dt = Ctrl->N.dt;
+
+    // 按实际源台坐标计算距离和方位角，各子源独立求解后统一叠加
+    real_t north = receiver->north - source->north, east = receiver->east - source->east;
+    real_t dist = hypot(north, east), az = atan2(east, north);
+    if(az < 0) {
+        az += 2 * PI;
+    }
+
+    // 矩形子源按面积换算强度，点源保持原强度
+    real_t area = KODE_IS_FINITE(source->fault->kode) ? source->fault->width[source->isub] * source->fault->length[source->isub] : 1;
+
+    const real_t *stf = source->fault->stfd;
+    int stf_npts = source->fault->stf_npts;
+
+    // 输出窗口只决定求解末时刻，内部起点始终固定，保留所有震相及卷积历史
+    // 最多两次求导恢复混合 Green 函数，再一次求导恢复物理解，两端各需三个额外采样点
+    long long first_output = llround((begin - source->fault->stf_delay) / dt);
+    long long last_output = first_output + nt - 1;
+    if(last_output < -3) {
+        return;
+    }
+    int margin = 3;
+    int tail = margin + Ctrl->J.dif_times;
+    int work_nt = GRT_MAX(margin + tail + 1, last_output + margin + tail + 1);
+    real_t b = -margin * dt;
+    real_t *response = GRT_SAFE_CALLOC((size_t)nc * work_nt, sizeof(*response));
+    real_t *convolution = GRT_SAFE_MALLOC(work_nt * sizeof(*convolution));
+
+    // 一个子源的全部源项先累加到同一响应，再统一卷积和执行时间算子
+    real_t medium[3] = {Ctrl->H.vp, Ctrl->H.vs, Ctrl->H.rho};
+    real_t *traces[12];
+    for(int c = 0; c < nc; ++c) {
+        traces[c] = response + (size_t)c * work_nt;
+    }
+    lamb_synthesis_samples(work_nt, dt, b, medium, Ctrl->H.nu, source->depth, receiver->depth, dist, az, source->fault,
+                           area, Ctrl->n.active, Ctrl->e.active, Ctrl->L.phase_mask, traces);
+    for(int c = 0; c < nc; ++c) {
+        grt_oaconvolve(traces[c], work_nt, stf, stf_npts, convolution, work_nt, false);
+
+        // 时间算子在完整响应上执行，最后才裁剪到输出窗口
+        for(int j = 0; j < Ctrl->I.int_times; ++j) {
+            grt_trap_integral(convolution, work_nt, dt);
+        }
+        for(int j = 0; j < Ctrl->J.dif_times; ++j) {
+            grt_differential(convolution, work_nt, dt);
+        }
+        for(int n = 0; n < nt; ++n) {
+            long long sample = first_output + n + margin;
+            if(sample >= 0 && sample < work_nt - tail) {
+                data[(size_t)c * nt + n] += convolution[sample] * dt;
+            }
+        }
+    }
+    GRT_SAFE_FREE_PTR(response);
+    GRT_SAFE_FREE_PTR(convolution);
+}
+
+/**
+ * 合成多点震源到单个接收点，并立即保存该点的结果
+ *
+ * @param[in]  Ctrl     命令行参数
+ * @param[in]  output   动态合成输出设置
+ * @param[in]  nsrc     震源点数
+ * @param[in]  srcs     源点集合
+ * @param[in]  ir       当前接收点索引
+ * @param[in]  timing   当前接收点的时间窗及最早初至
+ * @param[in]  threads  源点线程数
+ */
+static void lamb_one_receiver(const GRT_MODULE_CTRL *Ctrl, const DY_SYN_OUTPUT *output, size_t nsrc, const SRC_POINT *srcs,
+                              size_t ir, const LAMB_RECEIVER_TIMING *timing, int threads)
+{
+    const RCV_POINT *receiver = &output->rcvs[ir];
+    int nt = Ctrl->N.nt, nc = output->calc_upar ? 12 : 3;
+
+    // 每个线程独占一段完整接收波形，避免子源叠加时竞争写入
+    size_t samples = (size_t)nc * nt;
+    real_t *data = GRT_SAFE_CALLOC((size_t)threads * samples, sizeof(*data));
+
+    // 各线程独立求解和累加子源，共用只读几何及震源时间函数
+    #pragma omp parallel num_threads(threads) if(nsrc > 1)
+    {
+        int tid = grt_get_thread_index();
+        real_t *local = data + (size_t)tid * samples;
+
+        #pragma omp for schedule(guided)
+        for(size_t is = 0; is < nsrc; ++is) {
+            // 无有效源项的子源不参与计算和叠加
+            if(!srcs[is].fault->nterms) {
+                continue;
+            }
+            lamb_one_pair(Ctrl, &srcs[is], receiver, timing->begin, local);
+        }
+    }
+
+    // 按固定线程顺序归约，第一段缓冲保存最终结果
+    for(int t = 1; t < threads; ++t) {
+        for(size_t i = 0; i < samples; ++i) {
+            data[i] += data[(size_t)t * samples + i];
+        }
+    }
+
+    // 多源只记录 P、S 最早初至，单源保留其后续震相并计入相同破裂延迟
+    SACTRACE *trace = grt_new_SACTRACE(Ctrl->N.dt, nt, timing->begin);
+    GRT_SACHEAD_SET_IMAG_FREQ(&trace->hd, 0);
+    real_t modarr[1][GRT_MODARR_NCOL] = {{0, Ctrl->H.vp, Ctrl->H.vs, Ctrl->H.rho, 0, 0}};
+    grt_syn_output_set_receiver_header(output, ir, &trace->hd, Ctrl->C.active ? SAC_FLOAT_UNDEF : Ctrl->Depth.depsrc, 1, modarr);
+    clear_lamb_arrivals(trace);
+
+    // 单个有效子源保留完整震相信息，多源仅记录 P、S 最早初至
+    if(nsrc == 1 && srcs[0].fault->nterms) {
+        real_t dist = hypot(receiver->north - srcs[0].north, receiver->east - srcs[0].east);
+        real_t distance = hypot(dist, srcs[0].depth - receiver->depth);
+        set_lamb_arrivals(trace, Ctrl->H.nu, dist, srcs[0].depth, receiver->depth, distance, Ctrl->H.vs, srcs[0].fault->stf_delay);
+    }
+
+    // P 初至有效时写入头段，否则保留 SAC 未定义值
+    if(timing->travtPS[0] != INFINITY) {
+        set_lamb_arrival(trace, LAMB_PHASE_P, timing->travtPS[0], 1, 0, "P");
+    }
+
+    // S 初至有效时写入头段，否则保留 SAC 未定义值
+    if(timing->travtPS[1] != INFINITY) {
+        set_lamb_arrival(trace, LAMB_PHASE_S, timing->travtPS[1], 1, 0, "S");
+    }
+    grt_syn_output_save_receiver(output, ir, trace, data, Ctrl->N.dt, 0, 0);
+    grt_free_SACTRACE(trace);
+    GRT_SAFE_FREE_PTR(data);
+}
 
 /** 模块主函数 */
 int lamb_main(int argc, char **argv)
@@ -1457,161 +1631,49 @@ int lamb_main(int argc, char **argv)
     GRT_MODULE_CTRL *Ctrl = GRT_SAFE_CALLOC(1, sizeof(*Ctrl));
     getopt_from_command(Ctrl, argc, argv);
 
-    const real_t depsrc = Ctrl->Depth.depsrc;
-    const real_t deprcv = Ctrl->Depth.deprcv;
-    const real_t horizontal_distance = Ctrl->R.dist;
-    const bool surface = is_surface_source_receiver(depsrc, deprcv);
-    const bool rot2ZNE = Ctrl->n.active;
-    const bool calc_upar = Ctrl->e.active && !surface;
-    const char *chs = rot2ZNE ? GRT_ZNE_CODES : GRT_ZRT_CODES;
-    if (surface) {
-        /* 第一类 Lamb 解只支持由 -F 指定的地表单力源 */
-        if (Ctrl->source_type != GRT_SYN_SF) {
-            GRTRaiseError(
-                "When both source and receiver are on the free surface, only the single force source specified by -F is supported.\n");
-        }
-        if (Ctrl->e.active) {
-            GRTRaiseWarning("Both source and receiver are on the free surface; -e is ignored.");
-        }
+    // 读入时直接选择全局或行内时间函数，点源与有限源使用相同接口
+    if(Ctrl->C.active) {
+        Ctrl->C.faults = grt_finite_fault_from_option(Ctrl->C.option, &Ctrl->C.nfault, &Ctrl->C.dL, &Ctrl->C.dW, true, Ctrl->N.dt, 1, Ctrl->D.option);
+    } else {
+        Ctrl->C.nfault = 1;
+        Ctrl->C.faults = grt_finite_fault_from_point(Ctrl->Depth.depsrc, Ctrl->source_type, Ctrl->S.scale,
+                                                    Ctrl->S.mult_src_mu, Ctrl->mechanism, Ctrl->N.dt, 1, Ctrl->D.option);
     }
 
-    GRTCheckMakeDir(Ctrl->O.s_output_dir);
-    const real_t distance = hypot(horizontal_distance, depsrc - deprcv);
-    real_t begin_time = Ctrl->E.delayT0;
-    if (Ctrl->E.refFirstP) {
-        begin_time += distance / Ctrl->H.vp;
-    } else if (Ctrl->E.delayV0 > 0.0) {
-        begin_time += distance / Ctrl->E.delayV0;
-    }
-    // 输出窗口只决定求解末时刻，固定内部起点以保留卷积、积分和微分所需的窗前响应
-    begin_time = grt_sample_aligned_time(begin_time, Ctrl->N.dt);
-    const int output_nt = Ctrl->N.nt;
-    const int margin = 3;
-    const int tail = margin + Ctrl->J.dif_times;
-    const long long first_output = llround(begin_time / Ctrl->N.dt);
-    Ctrl->N.nt = GRT_MAX(margin + tail + 1, first_output + output_nt + margin + tail);
-    const real_t work_begin = -margin * Ctrl->N.dt;
-    Ctrl->N.tbar = GRT_SAFE_CALLOC((size_t)Ctrl->N.nt, sizeof(*Ctrl->N.tbar));
-    for (int n = 0; n < Ctrl->N.nt; ++n) {
-        Ctrl->N.tbar[n] = (n - margin) * Ctrl->N.dt * Ctrl->H.vs / distance;
-    }
+    // 统一展开震源和接收点，预检全部源台几何
+    size_t nsrc, nrcv;
+    real_t modarr[1][GRT_MODARR_NCOL] = {{0, Ctrl->H.vp, Ctrl->H.vs, Ctrl->H.rho, 0, 0}};
+    SRC_POINT *srcs = build_lamb_sources(Ctrl, modarr, &nsrc);
 
-    const unsigned int supported = surface ? GRT_LAMB1_PHASES :
-        depsrc > 0 && deprcv > 0 ? GRT_LAMB3_PHASES :
-        GRT_LAMB_PHASE_P | GRT_LAMB_PHASE_S | (depsrc > 0 ? GRT_LAMB_PHASE_SP : GRT_LAMB_PHASE_PS);
-    const unsigned int phase_mask = grt_lamb_parse_phase_list(Ctrl->L.active ? Ctrl->L.phase_list : NULL, supported);
+    // 长震源可扩展指定的输出点数，所有接收点共用同一长度，卷积仍使用线性卷积
+    Ctrl->N.nt = grt_syn_output_npts(Ctrl->N.nt, Ctrl->N.dt, Ctrl->C.nfault, Ctrl->C.faults);
+    RCV_POINT *rcvs = build_lamb_receivers(Ctrl, &nrcv);
+    LAMB_RECEIVER_TIMING *timings = prepare_lamb_geometry_and_timing(Ctrl, nsrc, srcs, nrcv, rcvs);
+    DY_SYN_OUTPUT output = {
+        .root = Ctrl->O.s_output_dir, .rcv_subdirs = Ctrl->Q.active || Ctrl->U.active, .rcvs = rcvs, .rcv_faults = Ctrl->U.faults,
+        .channels = Ctrl->n.active ? "ZNE" : "ZRT", .calc_upar = Ctrl->e.active,
+    };
 
-    LAMB_RESULT result = {0};
-    make_lamb_result(
-        Ctrl->H.nu, Ctrl->N.tbar, Ctrl->N.nt, horizontal_distance, depsrc, deprcv,
-        Ctrl->A.azimuth, Ctrl->source_type, calc_upar,
-        phase_mask, &result);
-
-    /* 将无量纲闭合解恢复为物理量，导数阶数每增加一阶再除以一个 r */
-    const real_t mu = Ctrl->H.vs * Ctrl->H.vs * Ctrl->H.rho;
-    const real_t factor = 1.0 / (PI * PI * mu);
-    const real_t force_factor = factor / distance;
-    const real_t moment_factor = factor / (distance * distance);
-    const real_t force_derivative_factor = factor / (distance * distance);
-    const real_t moment_derivative_factor = factor / (distance * distance * distance);
-    real_t source_scale = Ctrl->S.scale;
-    SACTRACE *time_function = NULL;
-
-    if (Ctrl->S.mult_src_mu) {
-        /* -Su 的输入单位是 potency，换算为带剪切模量的源强 */
-        Ctrl->S.src_mu = mu * 1e10;
-        source_scale *= Ctrl->S.src_mu;
-    }
-    if (Ctrl->D.active) {
-        /* 时间函数与输出序列使用相同的物理采样间隔 */
-        int time_function_nt;
-        real_t stf_delay = 0.0;
-        real_t *values = grt_time_function_from_option(Ctrl->D.option, Ctrl->N.dt, &time_function_nt, &stf_delay);
-
-        // 公共接口将延迟单独返回，此处补回前导零以保持点源合成行为
-        int shift = (int)llround(stf_delay / Ctrl->N.dt);
-        if(shift) {
-            real_t *padded = GRT_SAFE_CALLOC(time_function_nt + shift, sizeof(*padded));
-            memcpy(padded + shift, values, time_function_nt * sizeof(*values));
-            GRT_SAFE_FREE_PTR(values);
-            values = padded;
-            time_function_nt += shift;
-        }
-        if (values == NULL) {
-            GRTRaiseError("get time function error.\n");
-        }
-        time_function = grt_new_SACTRACE(Ctrl->N.dt, time_function_nt, 0.0);
-        memcpy(time_function->data, values, sizeof(*values) * time_function_nt);
-        GRT_SAFE_FREE_PTR(values);
+    // 逐个接收点合成并保存，仅内部的源点循环并行
+    int threads = grt_get_num_threads(nsrc);
+    for(size_t ir = 0; ir < nrcv; ++ir) {
+        lamb_one_receiver(Ctrl, &output, nsrc, srcs, ir, &timings[ir], threads);
     }
 
-    SACTRACE *prototype = new_lamb_trace(
-        Ctrl->N.nt, Ctrl->N.dt, horizontal_distance, depsrc, deprcv,
-        Ctrl->A.azimuth, work_begin, Ctrl->H.vp, Ctrl->H.vs, Ctrl->H.rho);
-    set_lamb_arrivals(
-        prototype, Ctrl->H.nu, horizontal_distance, depsrc, deprcv,
-        distance, Ctrl->H.vs);
-    SACTRACE *base[3] = {0};
-    SACTRACE *derivative[3][3] = {{0}};
-    allocate_lamb_traces(prototype, calc_upar, base, derivative);
-
-    for (int source_index = 0; source_index < GRT_SRC_M_NUM; ++source_index) {
-        if (!lamb_need_src(Ctrl->source_type, source_index, surface)) {
-            continue;
-        }
-        SACTRACE *source_base[3] = {0};
-        SACTRACE *source_derivative[3][3] = {{0}};
-        allocate_lamb_traces(prototype, calc_upar, source_base, source_derivative);
-
-        fill_source_traces(
-            rot2ZNE, horizontal_distance, Ctrl->source_type, source_scale, Ctrl->H.nu,
-            Ctrl->A.azrad, Ctrl->mchn, calc_upar, Ctrl->N.nt, &result, source_index,
-            force_factor, moment_factor, force_derivative_factor, moment_derivative_factor,
-            source_base, source_derivative);
-        /* 先去除 Lamb 解自带的时间积分，再执行用户指定的时间操作 */
-        postprocess_lamb_traces(
-            calc_upar, Ctrl->I.int_times, Ctrl->J.dif_times, time_function,
-            source_base, source_derivative);
-        accumulate_lamb_traces(
-            calc_upar, source_base, source_derivative, base, derivative);
-        free_lamb_traces(calc_upar, source_base, source_derivative);
+    // 总震源时间函数只保存一次，避免按接收点重复累加矩率
+    if(Ctrl->C.faults[0].stf_explicit) {
+        grt_syn_output_save_signal(output.root, Ctrl->N.dt, 1, Ctrl->C.nfault, Ctrl->C.faults, Ctrl->C.active);
     }
 
-    /* 填充阶段已经按照请求的坐标系生成结果 */
-    for (int component = 0; component < 3; ++component) {
-        crop_lamb_trace(base[component], output_nt, begin_time, first_output + margin, tail);
-        save_to_sac(Ctrl->O.s_output_dir, "", chs[component], base[component]);
-        if (calc_upar) {
-            for (int direction = 0; direction < 3; ++direction) {
-                char prefix[2] = {(char)tolower(chs[direction]), '\0'};
-                crop_lamb_trace(derivative[direction][component], output_nt, begin_time, first_output + margin, tail);
-                save_to_sac(Ctrl->O.s_output_dir, prefix, chs[component], derivative[direction][component]);
-            }
-        }
-    }
-    free_lamb_traces(calc_upar, base, derivative);
-
-    if (time_function != NULL) {
-        char *path = NULL;
-        GRT_SAFE_ASPRINTF(&path, "%s/sig.sac", Ctrl->O.s_output_dir);
-        grt_write_SACTRACE(path, time_function);
-        GRT_SAFE_FREE_PTR(path);
-        grt_free_SACTRACE(time_function);
-    }
-
+    // 非静默模式下报告展开后的源点数、接收点数和线程数
     if (!Ctrl->s.active) {
-        GRTRaiseInfo("Under \"%s\".", Ctrl->O.s_output_dir);
-        GRTRaiseInfo("Synthetic Seismograms of %-13s source done.", srcTypeFullName[Ctrl->source_type]);
-        if (Ctrl->D.active) {
-            GRTRaiseInfo("Time Function saved.");
-        }
+        GRTRaiseInfo("Synthesized %zu source point(s), %zu receiver(s), %d source thread(s).", nsrc, nrcv, threads);
     }
 
-    GRT_SAFE_FREE_PTR(result.G);
-    GRT_SAFE_FREE_PTR(result.dG_source);
-    GRT_SAFE_FREE_PTR(result.dG_receiver);
-    GRT_SAFE_FREE_PTR(result.dG_mixed);
-    grt_free_SACTRACE(prototype);
+    // 所有接收结果保存完成后，释放时间窗和源台点集
+    GRT_SAFE_FREE_PTR(timings);
+    GRT_SAFE_FREE_PTR(srcs);
+    GRT_SAFE_FREE_PTR(rcvs);
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;
 }

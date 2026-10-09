@@ -8,6 +8,7 @@ lamb 模块
 其底层由 :doc:`/Module/lamb1`、:doc:`/Module/lamb2` 和
 :doc:`/Module/lamb3` 支持，通过分量整理得到各类震源激发的三分量位移及其空间偏导数的 SAC 记录，
 输出的文件形式对标 :doc:`/Module/syn` 模块。
+也支持有限断层震源、任意点和有限断层接收。
 
 下面在 :math:`V_P=8.0` km/s、:math:`V_S=4.62` km/s、
 :math:`\rho=3.3` g/cm\ :sup:`3` 的均匀半空间中，计算震源深度为 5 km 的剪切源 (*strike/dip/rake=33/50/120*)，

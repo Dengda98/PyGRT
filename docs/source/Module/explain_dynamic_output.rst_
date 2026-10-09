@@ -1,4 +1,4 @@
-输出目录按接收点指定方式组织，:doc:`syn` 使用以下规则：
+输出目录按接收点指定方式组织，:doc:`syn` 与 :doc:`lamb` 使用相同规则：
 
 * **极坐标单点** （|-R| 与 |-A|）：保存为 ``{outdir}/{component}.sac``
 * **接收文件** （|-Q| 或 |-U|）：保存为 ``{outdir}/{index}_{coord_N}_{coord_E}_{deprcv}/{component}.sac``
