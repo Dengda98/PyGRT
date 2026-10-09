@@ -699,6 +699,7 @@ def test_syn_source_and_time_function_options():
                 "-A39.2",
                 "-Su1e+24",
                 f"-O{out / 'ex'}",
+                "-i1",
                 "-R10",
                 "-Dt/0.2/0/0.2",
                 "-I1",

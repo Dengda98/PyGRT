@@ -267,3 +267,34 @@ bool grt_locateLinearInterp(
     *w = (fabs(dx) < atol) ? 0.0 : (q - x[*i0]) / dx;
     return true;
 }
+
+bool grt_locate_samples(const real_t *x, size_t n, real_t q, GRT_SAMPLE_MODE mode, size_t *i0, size_t *i1, real_t *w)
+{
+    if(!x || !n) return false;
+    if((q < x[0] && !GRT_ISCLOSE(q, x[0])) || (q > x[n - 1] && !GRT_ISCLOSE(q, x[n - 1]))) return false;
+
+    // 二分定位左右节点，最近邻等距离时优先取较小坐标
+    size_t lo = 0, hi = n - 1;
+    while(hi > lo + 1) {
+        size_t mid = lo + (hi - lo) / 2;
+        if(x[mid] <= q) {
+            lo = mid;
+        } else {
+            hi = mid;
+        }
+    }
+
+
+    size_t nearest = fabs(q - x[lo]) <= fabs(x[hi] - q) ? lo : hi;
+    bool close = GRT_ISCLOSE(q, x[nearest]);
+    if(mode == GRT_SAMPLE_EXACT && !close) return false;
+    if(mode != GRT_SAMPLE_LINEAR || close) {
+        *i0 = *i1 = nearest;
+        *w = 0.0;
+    } else {
+        *i0 = lo;
+        *i1 = hi;
+        *w = (q - x[lo]) / (x[hi] - x[lo]);
+    }
+    return true;
+}

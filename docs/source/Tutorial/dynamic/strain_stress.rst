@@ -71,7 +71,11 @@
         通道名开头有"r"，"z"，"t"分别代表 :math:`\partial r`， :math:`\partial z`，:math:`\partial \theta / r`。
 
 
-以上计算的空间导数在柱坐标系下，即 :math:`\dfrac{\partial u(z,r,\theta)}{\partial(z,r,\theta)}`。如果需要 :math:`\dfrac{\partial u(z,x,y)}{\partial(z,x,y)}` （ :math:`x` 表示北向， :math:`y` 表示东向），传入适当参数即可，则输出结果开头的标识符从"z/r/t"变为"z/x/y"。
+以上计算的空间导数在柱坐标系下，角向项使用 :math:`r^{-1}\partial_\theta`。
+如果需要直角坐标系中的空间导数，可选择 ZNE 输出
+（:math:`x` 表示北向，:math:`y` 表示东向），
+此时文件名和通道名的前缀从 **z/r/t** 变为 **z/n/e**。
+有限震源会自动使用 ZNE，并在各子源的导数转换到同一坐标系后叠加。
 
 .. tabs:: 
 
@@ -193,7 +197,7 @@
 
 .. math:: 
 
-    \sigma_{ij} = \lambda \delta_{ij} e_{kk} + 2 \mu e_{ij} = \lambda \delta_{ij} u_{kk} + \mu \left( u_{i,j} + u_{j,i} \right)
+    \sigma_{ij} = \lambda \delta_{ij} e_{kk} + 2 \mu e_{ij} = \lambda \delta_{ij} u_{k,k} + \mu \left( u_{i,j} + u_{j,i} \right)
 
 
 

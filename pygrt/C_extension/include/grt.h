@@ -43,6 +43,8 @@
 #include "grt/common/version.h"
 
 
+#include "grt/dynamic/dygrnlib.h"
+#include "grt/dynamic/syn_output.h"
 #include "grt/dynamic/grn.h"
 #include "grt/dynamic/grnspec.h"
 #include "grt/dynamic/layer.h"

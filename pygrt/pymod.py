@@ -21,7 +21,7 @@ from numpy.typing import NDArray
 
 from .cli import format_float, format_range, run_grt
 from .c_interfaces import C_grt_compute_travt1d_from_file, C_grt_free, PREAL
-from .utils import _resolve_rcv_points, _temporary_array_option
+from .utils import _dynamic_geometry_options, _resolve_rcv_points, _temporary_array_option
 
 
 PathLike = Union[str, os.PathLike]
@@ -1229,69 +1229,100 @@ class PyModel1D:
         depsrc: Optional[float] = None,
         deprcv: Optional[float] = None,
         dist: Optional[float] = None,
-        azimuth: float,
+        azimuth: Optional[float] = None,
         output_path: PathLike,
-        scale: float,
+        scale: Optional[float] = None,
         scale_with_mu: bool = False,
         strike: Optional[float] = None,
         dip: Optional[float] = None,
         rake: Optional[float] = None,
         force: Optional[Sequence[float]] = None,
         moment_tensor: Optional[Sequence[float]] = None,
+        src_fault: Optional[PathLike] = None,
+        src_fault_size: Optional[Sequence[float]] = None,
+        rcv_fault: Optional[PathLike] = None,
+        rcv_fault_size: Optional[Sequence[float]] = None,
+        rcv_points: Optional[PathLike] = None,
+        interpolate: bool = True,
+        nthreads: Optional[int] = None,
         time_function: Optional[str] = None,
         integrate_order: Optional[int] = None,
         differentiate_order: Optional[int] = None,
-        zne: bool = False,
+        zne: Optional[bool] = None,
         calc_upar: bool = False,
     ) -> None:
         r"""
         Synthesize dynamic three-component displacement with ``grt syn``.
 
-        Results are written as SAC files under ``output_path``. By default the
-        synthetics are impulse-like displacements in cm with ZRT components:
+        A call defines five groups of information:
 
-        * ``Z`` - vertical upward
-        * ``R`` - radial outward
-        * ``T`` - clockwise 90° from ``R``
+        * Green functions: configure ``grn`` on :class:`PyModel1D` and compute
+          them with :meth:`greenfn`, or use an existing library.
+        * Source location: a point source is at the horizontal origin, with
+          depth ``depsrc``. ``src_fault`` supplies the locations of finite sources.
+        * Receiver locations: choose polar coordinates (``dist``, ``azimuth``,
+          ``deprcv``), a point file (``rcv_points``), or receiver faults
+          (``rcv_fault``). Use one receiver mode per call; files supply their own depths.
+        * Source mechanism and strength: a point source requires ``scale``.
+          Choose ``strike``/``dip``/``rake`` for a double-couple, omit ``rake`` for
+          a tensile crack, or use ``force`` or ``moment_tensor`` instead.
+          Leaving all mechanism parameters unset selects an explosion.
+          ``src_fault`` supplies both location and mechanism/strength;
+          omit ``depsrc``, ``scale`` and all point-source mechanism parameters in this mode.
+        * Output: ``output_path`` sets the SAC directory; ``zne`` selects ZNE
+          and ``calc_upar`` adds spatial derivatives. Finite sources always output ZNE.
 
-        Call :meth:`greenfn` first (or point ``grn`` at an existing GF
-        root or subdirectory). When ``grn`` is a root, a selector is required
-        for a dimension with multiple values. For a singleton dimension it may
-        be omitted or explicitly set, but an explicit value must match. When
-        ``grn`` is a subdirectory, all three selectors must be omitted. No
-        interpolation is performed. All arguments must be passed by keyword.
+        With a library root, point-source ``depsrc`` and polar-receiver ``dist``/``deprcv``
+        can be inferred when the corresponding library dimension has one value;
+        ``azimuth`` is still required for polar receivers. With a single GF node directory,
+        omit ``depsrc``, ``deprcv`` and ``dist`` and supply ``azimuth`` and the source mechanism.
+        Finite sources and receiver files require a library root.
+        Finite sources additionally require at least two GF nodes, including source files
+        containing only point-source Kode records; explicit subdivision sizes do not waive this rule.
+        With a node directory, ``interpolate`` is ignored and the node is used directly.
+        A library root must contain every combination of source depth, receiver depth
+        and distance. Each axis may be nonuniform; incomplete or duplicate geometry
+        raises an error before synthesis.
+        All coordinates share one horizontal origin; for finite sources, ``dist``/``azimuth``
+        locate the receiver relative to that origin. ``src_fault_size`` and ``rcv_fault_size``
+        control fault subdivision.
 
-        The source type is inferred from the source-specific parameters. Leave
-        ``strike``, ``dip``, ``rake``, ``force`` and ``moment_tensor`` unset for
-        an explosion (``EX``). Supplying ``force`` selects a single force
-        (``SF``); supplying ``moment_tensor`` selects a moment tensor (``MT``);
-        supplying ``strike`` and ``dip`` selects a tensile crack (``TS``), or a
-        double-couple (``DC``) when ``rake`` is also supplied. Only one source
-        parameter group may be used at a time.
+        Optional ``time_function``, ``integrate_order`` and ``differentiate_order``
+        control the time dependence. ``interpolate`` controls library interpolation
+        and ``nthreads`` sets the source thread count. All arguments are keyword-only.
+        The output sample count is the maximum of the Green-function length and
+        the longest source time function including rupture delay, shared by all receivers.
+        Convolution is circular in the time domain with shorter inputs zero-padded
+        to the output length; imaginary-frequency compensation is applied per GF node.
+        Results are displacements in cm with Z upward, R radial outward and T clockwise
+        from R by default. Polar receivers write directly under the output path;
+        receiver files always use indexed subdirectories, even for one point;
+        finite-source ``sig.sac`` stores the total scalar moment rate
+        only when a row or global time function is explicitly specified.
+        A global ``time_function`` ignores all row-end contents in the source fault file.
+        Results are written to files; read SAC waveforms explicitly with :func:`obspy.read`.
 
-        :param    depsrc:              Source depth in km when ``grn`` is a GF root
-                                       with multiple source depths. It may be omitted
-                                       when the root has one source depth, but an
-                                       explicit value must match the root library.
-                                       It must be omitted when ``grn`` is a subdirectory.
-        :param    deprcv:              Receiver depth in km when ``grn`` is a GF root
-                                       with multiple receiver depths. It may be omitted
-                                       when the root has one receiver depth, but an
-                                       explicit value must match the root library.
-                                       It must be omitted when ``grn`` is a subdirectory.
-        :param    dist:                Epicentral distance in km when ``grn`` is a GF
-                                       root with multiple distances. It may be omitted
-                                       when the root has one distance, but an explicit
-                                       value must match the root library. It must be
-                                       omitted when ``grn`` is a subdirectory.
-        :param    azimuth:             Azimuth from source to receiver in deg.
-                                       North is 0°, clockwise positive.
+        :param    depsrc:              Point-source depth in km (CLI -Ds). Required for multiple
+                                       library source depths; inferred for one. Omit for source
+                                       faults or a GF subdirectory.
+        :param    deprcv:              Polar receiver depth in km (CLI -Dr). Required for multiple
+                                       library receiver depths; inferred for one. Omit for receiver
+                                       files or a GF subdirectory.
+        :param    dist:                Polar receiver distance from the horizontal origin in km (CLI
+                                       -R). Required for multiple library distances; inferred for
+                                       one. Omit for receiver files or a GF subdirectory.
+        :param    azimuth:             Polar receiver azimuth in degrees clockwise from north.
+                                       Required for the polar receiver mode.
         :param    output_path:         Output directory for SAC files
                                        ``{output_path}/{ch}.sac``.
         :param    scale:               Source scaling factor. For explosion,
                                        double-couple, tensile-crack and moment-tensor
-                                       sources, this is the scalar seismic moment in
-                                       dyne·cm. For a single force, the unit is dyne.
+                                       sources, the unit is dyne·cm. It is the scalar moment
+                                       for a double-couple; moment-tensor coefficients are
+                                       multiplied by it without normalization. For an explosion
+                                       it scales each diagonal tensor entry, and for a tensile
+                                       crack it represents :math:`\mu\Sigma D`.
+                                       For a single force, the unit is dyne.
                                        If ``scale_with_mu`` is true, ``scale`` is
                                        treated as area × slip in cm³ and multiplied by
                                        the source-layer shear modulus :math:`\mu`.
@@ -1316,6 +1347,25 @@ class PyModel1D:
                                        ``(Mxx, Mxy, Mxz, Myy, Myz, Mzz)`` for the
                                        ``MT`` source. Subscripts x/y/z denote
                                        north/east/down.
+        :param    src_fault:           Coulomb source file supplying source positions, mechanisms and
+                                       slip/potency. Append a complete ``-D`` option to each row
+                                       to specify its rupture process.
+        :param    src_fault_size:      Along-strike/dip subdivision sizes (dL, dW) in km. Omit to
+                                       use the smallest positive library sampling interval. Point
+                                       Kode records remain single points.
+        :param    rcv_points:          ASCII receiver file: north east depth in km, optionally
+                                       followed by strike dip rake in degrees.
+        :param    rcv_fault:           Coulomb receiver file; only Kode=100 is supported and
+                                       slip magnitude is ignored.
+                                       An exact ``rake`` header preserves the angle even at zero slip;
+                                       otherwise the slip columns define direction.
+        :param    rcv_fault_size:      Along-strike/dip receiver subdivision sizes (dL, dW) in km.
+                                       Omit to use one center point per fault.
+        :param    interpolate:         Library-root query method: True (default, CLI -i1) linearly
+                                       combines synthesized corner results; False (CLI -i0) uses
+                                       nearest nodes, for both point sources and source faults.
+                                       Ignored when ``grn`` points directly to a node directory.
+        :param    nthreads:            Positive OpenMP source-subfault thread count.
         :param    time_function:       Time-function parameters without the ``-D`` prefix.
                                        Supported forms are ``i`` (impulse), ``p/t0`` (parabola),
                                        ``t/t1/t2/t3`` (trapezoid), ``c/t1/t2`` (asymmetric cosine),
@@ -1331,10 +1381,11 @@ class PyModel1D:
                                        ``1`` yields step-like displacement.
         :param    differentiate_order: Number of time differentiations. For example,
                                        ``1`` yields velocity.
-        :param    zne:                 If true, output ZNE instead of ZRT components.
+        :param    zne:                 If true, output ZNE instead of ZRT. Finite sources always use ZNE.
         :param    calc_upar:           If true, also synthesize spatial derivatives of
                                        displacement. Derivative channel names are
-                                       prefixed with ``z``, ``r`` or ``t``. Set this
+                                       prefixed with ``z``/``r``/``t`` (ZRT) or
+                                       ``z``/``n``/``e`` (ZNE). Set this
                                        when strain, stress or rotation will be computed
                                        later.
         """
@@ -1343,15 +1394,29 @@ class PyModel1D:
         if dist is not None and dist < 0:
             raise ValueError("dist must be nonnegative.")
         output = Path(output_path)
-        output.mkdir(parents=True, exist_ok=True)
 
         command = {
             "subcommand": "syn",
             "G": f"-G{self.grn}",
-            "A": f"-A{format_float(azimuth)}",
-            "S": f"-S{'u' if scale_with_mu else ''}{format_float(scale)}",
-            "O": f"-O{output}",
         }
+        geometry = _dynamic_geometry_options(
+            dist=dist, azimuth=azimuth, deprcv=deprcv, src_fault=src_fault, src_fault_size=src_fault_size,
+            rcv_points=rcv_points, rcv_fault=rcv_fault, rcv_fault_size=rcv_fault_size, nthreads=nthreads,
+        )
+        if src_fault is not None:
+            if any(value is not None for value in (depsrc, scale, strike, dip, rake, force, moment_tensor)) or scale_with_mu:
+                raise ValueError("src_fault is mutually exclusive with point-source parameters.")
+            if zne is False:
+                warnings.warn("Finite sources always output ZNE; zne=False is ignored.", stacklevel=2)
+            zne = True
+        elif scale is None:
+            raise ValueError("Point-source synthesis requires scale.")
+        if azimuth is not None:
+            command["A"] = f"-A{format_float(azimuth)}"
+        if scale is not None:
+            command["S"] = f"-S{'u' if scale_with_mu else ''}{format_float(scale)}"
+        command["O"] = f"-O{output}"
+        command["i"] = f"-i{int(interpolate)}"
         if depsrc is not None:
             if depsrc < 0:
                 raise ValueError("depsrc must be nonnegative.")
@@ -1378,7 +1443,8 @@ class PyModel1D:
         if calc_upar:
             command["e"] = "-e"
 
-        run_grt(list(command.values()))
+        output.mkdir(parents=True, exist_ok=True)
+        run_grt([*command.values(), *geometry])
         return None
 
     def compute_syn(self, *args, **kwargs):

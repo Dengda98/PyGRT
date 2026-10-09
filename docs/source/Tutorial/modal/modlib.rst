@@ -8,9 +8,6 @@
 再由 :doc:`/Module/modsum` 使用模态叠加法计算格林函数。由于 :doc:`/Module/modsum` 的输出目录格式与
 :doc:`/Module/greenfn` **完全相同**，因此建库和合成时的深度、震中距选择方式也相同，这里只进行简单介绍。
 
-面波建库可以直接使用 :class:`~pygrt.pymod.PyModel1D` 的
-:meth:`~pygrt.pymod.PyModel1D.eigenv` 和 :meth:`~pygrt.pymod.PyModel1D.modsum`。
-
 快速上手
 ---------
 
@@ -40,33 +37,13 @@ Rayleigh 波提供 Z、R 分量，Love 波提供 T 分量，最后得到完整�
 
 .. warning::
 
-   **eigenv** 计算频散时必须用 ``-Ff1/f2/df`` 生成等间隔频率，不能使用周期形式的 ``+p``。
-   这是 **modsum** 进行逆傅里叶变换的前提。
+   :doc:`/Module/eigenv` 计算频散时必须用 ``-Ff1/f2/df`` 生成等间隔频率，不能使用周期形式的 ``+p``。
+   这是 :doc:`/Module/modsum` 进行逆傅里叶变换的前提。
 
-合成阶段的选择
-----------------
+从面波格林函数库合成
+----------------------
 
-面波库生成后，使用动态合成模块 :doc:`/Module/syn`。当 **-G** 指向根目录时，
-对多深度、多距离库必须明确设置 **-Ds**、**-Dr** 和 **-R**；下例选择震源深度 4 km、台站深度 2 km、
-震中距 100 km：
+在相同的格林函数库目录结构下，面波库与动态全波库的合成阶段完全一致，
+具体用法见 :doc:`/Tutorial/dynamic/dynlib`。
 
-.. tabs::
-
-    .. group-tab:: CLI
-
-        .. literalinclude:: run_library/run.sh
-            :language: bash
-            :start-after: BEGIN SYN
-            :end-before: END SYN
-
-    .. group-tab:: Python
-
-        .. literalinclude:: run_library/run.py
-            :language: python
-            :start-after: BEGIN SYN
-            :end-before: END SYN
-
-选择规则是精确匹配，程序不会在相邻深度或距离之间插值。如果只想固定使用一个已经确定的库节点，
-也可以直接把 **-G** 指向 ``GRN/milrow_4_2_100``，此时不再设置三个选择选项。
-面波格林函数与动态全波格林函数的合成方式完全一致，详见
-:doc:`/Tutorial/dynamic/dynlib` 与 :doc:`/Module/syn` 的模块说明。
+若要计算空间导数及应力，建库时两个波型的 :doc:`/Module/modsum` 都须使用 **-e** 或 *calc_upar=True*。

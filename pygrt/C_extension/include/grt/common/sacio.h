@@ -43,6 +43,21 @@
 #define GRT_SACHEAD_SET_SRC_VS(hd, value)                     do { GRT_SACHEAD_GET_SRC_VS(hd) = (value); } while(0)  ///< 设置震源点 S 波速度，km/s
 #define GRT_SACHEAD_SET_SRC_RHO(hd, value)                    do { GRT_SACHEAD_GET_SRC_RHO(hd) = (value); } while(0)  ///< 设置震源点密度，g/cm^3
 
+/** 合成波形的接收点坐标、机制和有限接收断层索引 */
+#define GRT_SACHEAD_GET_RCV_NORTH(hd)                 ((hd)->unused1)         ///< 接收点北向坐标，km
+#define GRT_SACHEAD_GET_RCV_EAST(hd)                  ((hd)->unused2)         ///< 接收点东向坐标，km
+#define GRT_SACHEAD_GET_RCV_STRIKE(hd)                ((hd)->unused3)         ///< 接收机制走向，degree
+#define GRT_SACHEAD_GET_RCV_DIP(hd)                   ((hd)->unused4)         ///< 接收机制倾角，degree
+#define GRT_SACHEAD_GET_RCV_RAKE(hd)                  ((hd)->unused5)         ///< 接收机制滑动角，degree
+#define GRT_SACHEAD_GET_RCV_FAULT_INDEX(hd)           ((hd)->unused11)        ///< 所属接收断层索引，从 0 开始
+
+#define GRT_SACHEAD_SET_RCV_NORTH(hd, value)                  do { GRT_SACHEAD_GET_RCV_NORTH(hd) = (value); } while(0)  ///< 设置接收点北向坐标，km
+#define GRT_SACHEAD_SET_RCV_EAST(hd, value)                   do { GRT_SACHEAD_GET_RCV_EAST(hd) = (value); } while(0)  ///< 设置接收点东向坐标，km
+#define GRT_SACHEAD_SET_RCV_STRIKE(hd, value)                 do { GRT_SACHEAD_GET_RCV_STRIKE(hd) = (value); } while(0)  ///< 设置接收机制走向，degree
+#define GRT_SACHEAD_SET_RCV_DIP(hd, value)                    do { GRT_SACHEAD_GET_RCV_DIP(hd) = (value); } while(0)  ///< 设置接收机制倾角，degree
+#define GRT_SACHEAD_SET_RCV_RAKE(hd, value)                   do { GRT_SACHEAD_GET_RCV_RAKE(hd) = (value); } while(0)  ///< 设置接收机制滑动角，degree
+#define GRT_SACHEAD_SET_RCV_FAULT_INDEX(hd, value)            do { GRT_SACHEAD_GET_RCV_FAULT_INDEX(hd) = (value); } while(0)  ///< 设置所属接收断层索引，从 0 开始
+
 /** 接收函数专用参数 */
 #define GRT_SACHEAD_GET_RCVFN_RAYP(hd)                ((hd)->resp0)           ///< 接收函数水平射线参数，s/km
 #define GRT_SACHEAD_GET_RCVFN_GAUSS_ALPHA(hd)         ((hd)->resp1)           ///< 接收函数高斯滤波参数，Hz
