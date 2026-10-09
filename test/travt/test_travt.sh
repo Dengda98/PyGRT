@@ -1,34 +1,22 @@
 #!/bin/bash
 
 set -euo pipefail
+source ../common.sh
+create_test_files
 
-expect_fail() {
-    local desc="$1"
-    shift
-    set +e
-    "$@" >/dev/null 2>&1
-    local ret=$?
-    set -e
-    if [ "$ret" -eq 0 ]; then
-        echo "ERROR: expected failure but succeeded: $desc" >&2
-        exit 1
-    fi
-    echo "OK (failed as expected): $desc"
-}
-
-grt travt -h 
-
-grt travt -M../milrow -D2/0 -R2,3,4,5
-cat > dists <<EOF
-2
-3
-4
-5
-EOF
+grt travt -h
+grt travt -M../milrow -D2/0 -R5
+grt travt -M../milrow -D2/0 -R2,5,10
+grt travt -M../milrow -D2/0 -R2/10/4
 grt travt -M../milrow -D2/0 -Rdists
-rm -rf dists
 
-expect_fail "non-ascending -R list" \
-    grt travt -M../milrow -D2/0 -R3,1,2
+# 震中距列表不可包含逆序或重复值
+expect_fail grt travt -M../milrow -D2/0 -R5,2
+# 震源深度不可为负数
+expect_fail grt travt -M../milrow -D-1/0 -R5
+# 未指定模型文件
+expect_fail grt travt -D2/0 -R5
 
 python -u test_travt.py
+
+remove_test_files

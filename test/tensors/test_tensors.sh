@@ -1,50 +1,70 @@
 #!/bin/bash
 
 set -euo pipefail
+source ../common.sh
+create_test_files
 
 grt strain -h
 grt stress -h
 grt rotation -h
+grt sproj -h
+grt coulomb -h
 
-grt greenfn -M../milrow -D2/3 -N600/0.02 -R10 -e -OGRN
-grt syn -GGRN/milrow_2_3_10 -A22 -S1e20 -e -Osyn 
+grt greenfn -M../milrow -Ds2 -Dr0,1 -N16/0.1 -R1,6,12 -e -OGRN -s
+
+grt syn -GGRN -Ds2 -Dr0 -R6 -A22 -S1e20 -Osyn_plain
+# 未计算位移导数，不可计算应变
+expect_fail grt strain -Gsyn_plain
+
+# ZRT 和 ZNE 单台后处理
+grt syn -GGRN -Ds2 -Dr0 -R6 -A22 -S1e20 -e -Osyn
 grt strain -Gsyn
 grt stress -Gsyn
 grt rotation -Gsyn
+# 未指定接收断层几何
+expect_fail grt sproj -Gsyn
+# 未计算法向和剪切应力投影，不可计算 Coulomb 应力
+expect_fail grt coulomb -Gsyn -F0.4
+grt sproj -Gsyn -M33/44/55
+grt coulomb -Gsyn -F0.4
 
-grt syn -GGRN/milrow_2_3_10 -A22 -S1e20 -e -N -Osyn_ZNE 
-grt strain -Gsyn_ZNE
-grt stress -Gsyn_ZNE
-grt rotation -Gsyn_ZNE
+grt syn -GGRN -Ds2 -Dr0 -R6 -A22 -S1e20 -N -e -Osyn
+grt strain -Gsyn
+grt stress -Gsyn
+grt rotation -Gsyn
+grt sproj -Gsyn -M33/44/55
+grt coulomb -Gsyn -F0
 
-# -------------------- 静态应变 / 应力 / 旋转 --------------------
-grt static strain -h
-grt static stress -h
-grt static rotation -h
+# 多台站文件中的几何和外部几何
+grt syn -GGRN -Ds2 -S1e20 -Qrcv_geometry.txt -e -Osyn_points
+grt strain -Gsyn_points
+grt stress -Gsyn_points
+grt rotation -Gsyn_points
+grt sproj -Gsyn_points
+grt sproj -Gsyn_points -Qrcv_geometry.txt
+grt coulomb -Gsyn_points -F0.4
 
-grt static greenfn -M../milrow -D2/0 -X-3/3/1 -Y-2/2/1 -e -Ostgrn.nc
-grt static syn -Gstgrn.nc -S1e20 -e -Ostsyn.nc
-grt static strain stsyn.nc
-grt static stress stsyn.nc
-grt static rotation stsyn.nc
+# 有限接收断层的滑动角覆盖
+grt syn -GGRN -Ds2 -S1e20 -Urcv_faults.inr -e -Osyn_faults
+grt stress -Gsyn_faults
+grt sproj -Gsyn_faults
+grt sproj -Gsyn_faults -M55+f
+grt coulomb -Gsyn_faults -F0.4
 
-grt static syn -Gstgrn.nc -S1e20 -e -N -Ostsyn_ZNE.nc
-grt static strain stsyn_ZNE.nc
-grt static stress stsyn_ZNE.nc
-grt static rotation stsyn_ZNE.nc
+# 未指定动态合成目录
+expect_fail grt strain
+# 输入的动态合成目录不存在
+expect_fail grt stress -Gmissing
+# 不可设置不支持的选项 -x
+expect_fail grt rotation -Gsyn -x
+# 未指定接收断层的滑动角
+expect_fail grt sproj -Gsyn -M33/44
+# 摩擦系数不可为负数
+expect_fail grt coulomb -Gsyn -F-0.1
 
-# 任意接收点布局
-cat > rcv_pts.txt <<'EOF'
-# north east depth (km)
-0 0 0
-1 2 0
--1 1 0
-EOF
-grt static syn -Gstgrn.nc -S1e20 -e -Qrcv_pts.txt -Ostsyn_q.nc
-grt static strain stsyn_q.nc
-grt static stress stsyn_q.nc
-grt static rotation stsyn_q.nc
+rm -rf syn syn_points syn_faults
 
 python -u test_tensors.py
 
-rm -rf GRN syn* stgrn.nc stsyn*.nc rcv_pts.txt
+rm -rf GRN syn syn_points syn_faults syn_plain
+remove_test_files
