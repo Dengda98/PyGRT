@@ -18,17 +18,19 @@ stress
 描述
 --------------
 
-**stress** 模块计算动态应力张量，要求 :doc:`syn` 模块计算时使用 **-e** 以合成位移空间导数。公式为
+**stress** 模块计算动态应力张量，要求 :doc:`syn` 或 :doc:`lamb` 模块计算时使用 **-e** 以合成位移空间导数。公式为
 
 .. math:: 
 
-    \sigma_{ij} = \lambda \delta_{ij} e_{kk} + 2 \mu e_{ij} = \lambda \delta_{ij} u_{kk} + \mu \left( u_{i,j} + u_{j,i} \right)
+    \sigma_{ij} = \lambda \delta_{ij} e_{kk} + 2 \mu e_{ij} = \lambda \delta_{ij} u_{k,k} + \mu \left( u_{i,j} + u_{j,i} \right)
 
-输入目录 *syn_dir* 由 |-G| 指定，表示 :doc:`syn` 模块中使用 **-O** 指定的输出目录。
+输入目录 *syn_dir* 由 |-G| 指定，表示 :doc:`syn` 或 :doc:`lamb` 模块中使用 **-O** 指定的输出目录。
 **stress** 模块将合成的六个分量写入相同的目录 *syn_dir* 下，文件名为 ``stress_??.sac`` ,
 其中 ``??`` 代表六个分量名，即上述公式中的下标 :math:`ij` 。
 如果合成的位移使用 ZRT 分量，则六个分量分别为 *ZZ,ZR,ZT,RR,RT,TT* ；
 如果合成的位移使用 ZNE 分量，则六个分量分别为 *ZZ,ZN,ZE,NN,NE,EE* 。
+
+应力单位为 dyne/cm²（0.1 Pa）。
 
 
 必选参数
@@ -37,7 +39,7 @@ stress
 .. _-G:
 
 **-G**\ *syn_dir*
-    :doc:`syn` 模块中使用 **-O** 指定的输出目录，要求合成时使用 **-e**。
+    :doc:`syn` 或 :doc:`lamb` 模块中使用 **-O** 指定的输出目录，要求合成时使用 **-e**。
     可以指定单个接收目录或多台根目录；多台结果逐接收目录计算并写回。
 
 

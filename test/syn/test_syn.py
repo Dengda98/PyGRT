@@ -111,6 +111,27 @@ pymod.syn(azimuth=az, scale=1e20, output_path="syn", zne=True)
 pymod.syn(azimuth=az, scale=1e20, output_path="syn", calc_upar=True)
 pymod.syn(azimuth=az, scale=1e20, output_path="syn", zne=True, calc_upar=True)
 
+# 单台动态应力投影在水平面上应退化为 ZZ 法向应力和 ZN 剪应力
+pygrt.utils.stress("syn")
+pygrt.utils.sproj("syn", strike=0, dip=0, rake=0)
+normal = read("syn/sigma_n.sac")[0].data
+shear = read("syn/tau_s.sac")[0].data
+np.testing.assert_array_equal(normal, read("syn/stress_ZZ.sac")[0].data)
+np.testing.assert_array_equal(shear, read("syn/stress_ZN.sac")[0].data)
+pygrt.utils.coulomb("syn", 0.4)
+np.testing.assert_allclose(read("syn/coulomb.sac")[0].data, shear + 0.4*normal, rtol=2e-6, atol=np.max(np.abs(normal))*1e-7)
+
+# 同一接收面在 ZRT 和 ZNE 输入下应得到一致的投影
+pygrt.utils.sproj("syn", strike=33, dip=44, rake=55)
+reference = {name: read(f"syn/{name}.sac")[0].data for name in ["sigma_n", "tau_s"]}
+pymod.syn(azimuth=az, scale=1e20, output_path="syn_projection_zrt", calc_upar=True)
+pygrt.utils.stress("syn_projection_zrt")
+pygrt.utils.sproj("syn_projection_zrt", strike=33, dip=44, rake=55)
+for name, expected in reference.items():
+    np.testing.assert_allclose(read(f"syn_projection_zrt/{name}.sac")[0].data, expected,
+                               rtol=2e-5, atol=np.max(np.abs(expected))*2e-7)
+shutil.rmtree("syn_projection_zrt")
+
 for name in [
     "GRN", "GRN_SINGLE", "syn", "syn_single", "syn_single_explicit", "syn_bad",
     "syn_custom", "syn_custom_warning",

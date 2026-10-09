@@ -40,6 +40,8 @@ from .c_interfaces import (
 
 
 __all__ = [
+    "sproj",
+    "coulomb",
     "read_nc",
     "read_nc_variables",
     "okada",
@@ -539,6 +541,60 @@ def static_sproj(
         options.append(f"-Q{Path(rcv_points)}")
 
     _run_static_file_module(path, "static_sproj", options)
+
+
+def sproj(path: PathLike, *, strike: Optional[float] = None, dip: Optional[float] = None,
+          rake: Optional[float] = None, rcv_points: Optional[PathLike] = None,
+          force_rake: bool = False) -> None:
+    """
+    Project dynamic stress tensors onto receiver-fault geometry.
+
+    Accepts a single receiver directory or a multi-receiver root. Geometry is
+    read from SAC receiver headers unless supplied explicitly. Finite receivers
+    accept only ``rake``; ``force_rake`` overrides their existing rake values.
+    With ``rcv_points``, the point count and coordinates must match in receiver-directory
+    index order. All points are checked before any result is written.
+    Writes ``sigma_n.sac`` and ``tau_s.sac`` in dyne/cm².
+
+    :param    path:          Dynamic stress result directory.
+    :param    strike:        Manual receiver strike in degrees.
+    :param    dip:           Manual receiver dip in degrees.
+    :param    rake:          Manual receiver rake in degrees.
+    :param    rcv_points:    Six-column receiver geometry file in receiver-directory index order;
+                             supply one point for a single receiver directory.
+    :param    force_rake:    Force a manual rake for finite receivers.
+    """
+    path = Path(path)
+    command = ["sproj", f"-G{path}"]
+    # 显式机制和接收文件作为覆盖选项，缺省时由 C 模块读取 SAC 头段
+    if strike is not None or dip is not None:
+        if strike is None or dip is None or rake is None:
+            raise ValueError("strike, dip and rake must be supplied together.")
+        if force_rake:
+            raise ValueError("force_rake requires rake alone.")
+        command.append("-M" + "/".join(format_float(value) for value in (strike, dip, rake)))
+    elif rake is not None:
+        command.append(f"-M{format_float(rake)}{'+f' if force_rake else ''}")
+    elif force_rake:
+        raise ValueError("force_rake requires rake.")
+    if rcv_points is not None:
+        command.append(f"-Q{Path(rcv_points)}")
+    run_grt(command)
+    return None
+
+
+def coulomb(path: PathLike, friction: float) -> None:
+    """
+    Compute dynamic Coulomb stress change, ``tau_s + friction * sigma_n``.
+
+    Writes ``coulomb.sac`` in each receiver directory, in dyne/cm².
+
+    :param    path:          Single receiver directory or multi-receiver root.
+    :param    friction:      Nonnegative effective friction coefficient.
+    """
+    path = Path(path)
+    run_grt(["coulomb", f"-G{path}", f"-F{format_float(friction)}"])
+    return None
 
 
 def compute_sproj(*args, **kwargs):
@@ -1256,7 +1312,6 @@ def _dynamic_geometry_options(
             raise ValueError("nthreads must be a positive integer.")
         options.append(f"-P{int(nthreads)}")
     return options
-
 
 
 class _LambPhase(IntFlag):

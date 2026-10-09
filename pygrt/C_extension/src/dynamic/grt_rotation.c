@@ -117,72 +117,95 @@ int rotation_main(int argc, char **argv){
     getopt_from_command(Ctrl, argc, argv);
 
     // ----------------------------------------------------------------------------------
-    // 开始读取计算，输出3个量
-    char c1, c2;
-    char *s_filepath = NULL;
+    // 各接收目录独立读取、计算和保存
+    size_t nr;
+    char **dirs = grt_syn_output_receiver_directories(Ctrl->G.path, &nr);
+    for(size_t ir = 0; ir < nr; ++ir) {
+        // 开始读取计算，输出3个量
+        char c1, c2;
+        char *s_filepath = NULL;
 
-    // 输出分量格式，即是否需要旋转到ZNE
-    bool rot2ZNE = false;
-    // 三分量
-    const char *chs = NULL;
+        // 输出分量格式，即是否需要旋转到ZNE
+        bool rot2ZNE = false;
 
-    // 判断标志性文件是否存在，来判断输出使用ZNE还是ZRT
-    GRT_SAFE_ASPRINTF(&s_filepath, "%s/nN.sac", Ctrl->G.path);
-    rot2ZNE = (access(s_filepath, F_OK) == 0);
+        // 三分量
+        const char *chs = NULL;
 
-    // 指示特定的通道名
-    chs = (rot2ZNE)? GRT_ZNE_CODES : GRT_ZRT_CODES;
+        // 判断标志性文件是否存在，来判断输出使用ZNE还是ZRT
+        GRT_SAFE_ASPRINTF(&s_filepath, "%s/nN.sac", dirs[ir]);
+        rot2ZNE = (access(s_filepath, F_OK) == 0);
+        GRT_SAFE_FREE_PTR(s_filepath);
+
+        // 指示特定的通道名
+        chs = (rot2ZNE)? GRT_ZNE_CODES : GRT_ZRT_CODES;
 
 
-    // 读取一个头段变量，获得基本参数，分配数组内存
-    GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%c.sac", Ctrl->G.path, tolower(chs[0]), chs[0]);
-    SACTRACE *insac = grt_read_SACTRACE(s_filepath, true);
-    int npts = insac->hd.npts;
-    real_t dist = insac->hd.dist;
-    SACTRACE *outsac = grt_copy_SACTRACE(insac, true);
-    grt_free_SACTRACE(insac);
+        // 读取一个头段变量，获得基本参数，分配数组内存
+        GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%c.sac", dirs[ir], tolower(chs[0]), chs[0]);
 
-    real_t *u[GRT_CHANNEL_NUM];
-    real_t *upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
-    real_t *res[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
-    for(int c=0; c<GRT_CHANNEL_NUM; ++c){
-        GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c.sac", Ctrl->G.path, chs[c]);
-        insac = grt_read_SACTRACE(s_filepath, false);
-        u[c] = insac->data;
-        insac->data = NULL;
+        SACTRACE *insac = grt_read_SACTRACE(s_filepath, true);
+        GRT_SAFE_FREE_PTR(s_filepath);
+
+        int npts = insac->hd.npts;
+        real_t dist = insac->hd.dist;
+        SACTRACE *outsac = grt_copy_SACTRACE(insac, true);
         grt_free_SACTRACE(insac);
-        for(int c2=0; c2<GRT_CHANNEL_NUM; ++c2){
-            GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%c.sac", Ctrl->G.path, tolower(chs[c2]), chs[c]);
+
+        // 保存位移、九个空间导数及张量结果，数组下标依次表示求导方向和分量
+        real_t *u[GRT_CHANNEL_NUM];
+        real_t *upar[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
+        real_t *res[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
+        for(int c=0; c<GRT_CHANNEL_NUM; ++c){
+            GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c.sac", dirs[ir], chs[c]);
             insac = grt_read_SACTRACE(s_filepath, false);
-            upar[c2][c] = insac->data;
+            GRT_SAFE_FREE_PTR(s_filepath);
+            u[c] = insac->data;
             insac->data = NULL;
             grt_free_SACTRACE(insac);
-            res[c2][c] = GRT_SAFE_CALLOC(npts, sizeof(*res[c2][c]));
+            for(int c2=0; c2<GRT_CHANNEL_NUM; ++c2){
+                GRT_SAFE_ASPRINTF(&s_filepath, "%s/%c%c.sac", dirs[ir], tolower(chs[c2]), chs[c]);
+                insac = grt_read_SACTRACE(s_filepath, false);
+                GRT_SAFE_FREE_PTR(s_filepath);
+                upar[c2][c] = insac->data;
+                insac->data = NULL;
+                grt_free_SACTRACE(insac);
+                res[c2][c] = GRT_SAFE_CALLOC(npts, sizeof(*res[c2][c]));
+            }
         }
-    }
-    compute_rotation(npts, dist, u, upar, res, rot2ZNE);
 
-    // 写出3个分量
-    for(int i1=0; i1<2; ++i1){
-        c1 = chs[i1];
-        for(int i2=i1+1; i2<3; ++i2){
-            c2 = chs[i2];
-            memcpy(outsac->data, res[i2][i1], sizeof(*outsac->data)*npts);
-            sprintf(outsac->hd.kcmpnm, "%c%c", c1, c2);
-            GRT_SAFE_ASPRINTF(&s_filepath, "%s/rotation_%c%c.sac", Ctrl->G.path, c1, c2);
-            grt_write_SACTRACE(s_filepath, outsac);
+        // 所有位移和导数读取完毕，计算当前接收点的张量
+        compute_rotation(npts, dist, u, upar, res, rot2ZNE);
+
+        // 写出3个分量
+        for(int i1=0; i1<2; ++i1){
+            c1 = chs[i1];
+            for(int i2=i1+1; i2<3; ++i2){
+                c2 = chs[i2];
+                memcpy(outsac->data, res[i2][i1], sizeof(*outsac->data)*npts);
+                sprintf(outsac->hd.kcmpnm, "%c%c", c1, c2);
+                GRT_SAFE_ASPRINTF(&s_filepath, "%s/rotation_%c%c.sac", dirs[ir], c1, c2);
+                grt_write_SACTRACE(s_filepath, outsac);
+                GRT_SAFE_FREE_PTR(s_filepath);
+            }
         }
+
+        // 当前接收点的张量已保存，释放读取和计算时使用的数组
+        for(int c=0; c<GRT_CHANNEL_NUM; ++c){
+            GRT_SAFE_FREE_PTR(u[c]);
+            for(int c2=0; c2<GRT_CHANNEL_NUM; ++c2){
+                GRT_SAFE_FREE_PTR(upar[c2][c]);
+                GRT_SAFE_FREE_PTR(res[c2][c]);
+            }
+        }
+        grt_free_SACTRACE(outsac);
+        GRT_SAFE_FREE_PTR(s_filepath);
     }
 
-    for(int c=0; c<GRT_CHANNEL_NUM; ++c){
-        free(u[c]);
-        for(int c2=0; c2<GRT_CHANNEL_NUM; ++c2){
-            free(upar[c2][c]);
-            free(res[c2][c]);
-        }
+    // 释放所有接收目录路径
+    for(size_t ir = 0; ir < nr; ++ir) {
+        GRT_SAFE_FREE_PTR(dirs[ir]);
     }
-    grt_free_SACTRACE(outsac);
-    GRT_SAFE_FREE_PTR(s_filepath);
+    GRT_SAFE_FREE_PTR(dirs);
 
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;

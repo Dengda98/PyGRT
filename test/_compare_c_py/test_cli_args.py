@@ -901,8 +901,14 @@ def test_static_sproj_and_coulomb_args():
         pygrt.utils.static_sproj(static, rake=55.0, force_rake=True)
         assert_command_equals(runner.commands[-1], ["static_sproj", f"-G{static}", "-M55+f"])
 
+        pygrt.utils.sproj(dynamic, strike=33.0, dip=44.0, rake=55.0)
+        assert_command_equals(runner.commands[-1], ["sproj", f"-G{dynamic}", "-M33/44/55"])
+
+        pygrt.utils.sproj(dynamic, rake=55.0, force_rake=True)
+        assert_command_equals(runner.commands[-1], ["sproj", f"-G{dynamic}", "-M55+f"])
+
         # 缺失参数不能改变机制字段的含义，+f 仅适用于单独给定 rake
-        for function, path in [(pygrt.utils.static_sproj, static)]:
+        for function, path in [(pygrt.utils.sproj, dynamic), (pygrt.utils.static_sproj, static)]:
             for options in [{"strike": 33.0}, {"dip": 44.0}, {"strike": 33.0, "rake": 55.0},
                             {"dip": 44.0, "rake": 55.0}, {"strike": 33.0, "dip": 44.0},
                             {"force_rake": True}, {"strike": 33.0, "dip": 44.0, "rake": 55.0, "force_rake": True}]:
