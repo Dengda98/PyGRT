@@ -1060,6 +1060,17 @@ static void syn_one_receiver(const GRT_MODULE_CTRL *Ctrl, const DYGRNLIB *lib, c
         }
     }
 
+    // 爆炸点源和纯垂直单力点源具有轴对称性，ZRT 输出中的理论零分量不保留坐标转换的舍入残差
+    bool axisymmetric = !Ctrl->C.active && (Ctrl->source_type == GRT_SYN_EX ||
+                         (Ctrl->source_type == GRT_SYN_SF && Ctrl->mechanism[0] == 0 && Ctrl->mechanism[1] == 0));
+    if(axisymmetric && !Ctrl->N.active) {
+        const int zero_channels[] = {2, 5, 8, 9, 10, 11};  // T、zT、rT、tZ、tR、tT
+        int nzero = output->calc_upar ? 6 : 1;
+        for(int i = 0; i < nzero; ++i) {
+            memset(data + (size_t)zero_channels[i] * nt, 0, nt * sizeof(*data));
+        }
+    }
+
     // 使用共同时间窗创建输出头段，再填写接收位置、介质和最早初至
     SACTRACE *trace = grt_new_SACTRACE(lib->dt, nt, begin);
     GRT_SACHEAD_SET_IMAG_FREQ(&trace->hd, 0);
