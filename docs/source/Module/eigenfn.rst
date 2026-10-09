@@ -19,6 +19,7 @@ eigenfn
 [ |-W|\ *path*\ [**+z**\ *z1*\ [/\ *z2/dz*]] ]
 [ |-U|\ *path* ]
 [ |-K|\ [**+c**\ *path*][**+u**\ *path*][**+x**\ *path*][**+z**\ *dz*] ]
+[ **-s** ]
 [ **-h** ]
 
 描述
@@ -317,6 +318,8 @@ eigenfn
     + **+z**\ *dz* - 计算能量积分和相/群速度敏感核时使用的深度间隔（km），
       这相当于将层状模型进行阶梯式插值后再进行计算 [默认直接基于模型各层厚度]。
 
+
+.. include:: explain_-silent.rst_
 
 .. include:: explain_-h.rst_
 

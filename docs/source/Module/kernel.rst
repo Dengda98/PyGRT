@@ -18,6 +18,7 @@ kernel
 |-F|\ *f1/f2/df*\ [**+w**\ *zeta*]
 |-C|\ [*cmin/cmax/*]\ *dc*
 |-O|\ *outdir*
+[ |-B|\ **f|F|r|R|h|H** ]
 [ |-P|\ *nthreads* ]
 [ **-e** ]
 [ **-h** ]
@@ -70,6 +71,8 @@ kernel
 
 可选选项
 --------
+
+.. include:: explain_-Bbound.rst_
 
 .. include:: explain_-P.rst_
 

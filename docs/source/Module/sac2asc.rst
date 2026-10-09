@@ -13,7 +13,7 @@ sac2asc
 语法
 -----------
 
-**grt sac2asc** *sacfile*
+**grt sac2asc** *sacfile* [ **-h** ]
 
 
 描述

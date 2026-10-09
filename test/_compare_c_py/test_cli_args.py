@@ -31,6 +31,8 @@ class CapturedRunner:
         self.kwargs = []
         self.distance_files = []
         self.distances = []
+        self.depth_files = []
+        self.depths = []
 
     def __call__(self, command, **kwargs):
         self.commands.append([str(item) for item in command])
@@ -42,6 +44,15 @@ class CapturedRunner:
         else:
             self.distance_files.append(None)
             self.distances.append(None)
+        depth_files = {}
+        depths = {}
+        for flag in ("Ds", "Dr"):
+            path = next((Path(str(item)[3:]) for item in command if str(item).startswith(f"-{flag}")), None)
+            if path is not None and path.is_file():
+                depth_files[flag] = path
+                depths[flag] = np.loadtxt(path, ndmin=1)
+        self.depth_files.append(depth_files)
+        self.depths.append(depths)
 
 
 def _patch_run_grt(monkey_target, runner: CapturedRunner):
@@ -271,6 +282,17 @@ def test_greenfn_default_and_optional_flags():
         # NONE 收敛方法
         model.greenfn(depsrc=1.0, deprcv=0.0, dists=1.0, nt=8, dt=0.1, converg_method="NONE")
         assert_command_has(runner.commands[-1], "-Cn")
+
+        # 仅一侧为多深度时，另一侧仍直接传入单值
+        model.greenfn(depsrc=[1.0, 2.0], deprcv=0.0, dists=5.0, nt=8, dt=0.1)
+        assert_command_has(runner.commands[-1], f"-Ds{runner.depth_files[-1]['Ds']}", "-Dr0")
+        np.testing.assert_array_equal(runner.depths[-1]["Ds"], [1.0, 2.0])
+        assert not runner.depth_files[-1]["Ds"].exists()
+
+        model.greenfn(depsrc=2.0, deprcv=[0.0, 0.5], dists=5.0, nt=8, dt=0.1)
+        assert_command_has(runner.commands[-1], "-Ds2", f"-Dr{runner.depth_files[-1]['Dr']}")
+        np.testing.assert_array_equal(runner.depths[-1]["Dr"], [0.0, 0.5])
+        assert not runner.depth_files[-1]["Dr"].exists()
     finally:
         _restore_run_grt(pygrt.pymod, original)
 
@@ -371,8 +393,8 @@ def test_modal_cli_argument_mapping():
             [
                 "modsum",
                 f"-C{phase}",
-                "-Ds2,4",
-                "-Dr0,2",
+                f"-Ds{runner.depth_files[-1]['Ds']}",
+                f"-Dr{runner.depth_files[-1]['Dr']}",
                 f"-R{runner.distance_files[-1]}",
                 f"-O{model.grn}",
                 "-F0.1/0.8",
@@ -386,6 +408,9 @@ def test_modal_cli_argument_mapping():
         )
         np.testing.assert_array_equal(runner.distances[-1], [80.0, 100.0])
         assert not runner.distance_files[-1].exists()
+        np.testing.assert_array_equal(runner.depths[-1]["Ds"], [2.0, 4.0])
+        np.testing.assert_array_equal(runner.depths[-1]["Dr"], [0.0, 2.0])
+        assert all(not path.exists() for path in runner.depth_files[-1].values())
         assert runner.kwargs[-1].get("print_log") is False
 
         model.eigenv(
@@ -624,13 +649,18 @@ def test_static_greenfn_xy_and_dists():
         assert "-X" not in " ".join(cmd)
         assert "-Y" not in " ".join(cmd)
 
-        # 多深度：应拼出 -Ds/-Dr，且 stats 被忽略
+        # 多深度：通过临时文件传给 -Ds/-Dr，且 stats 被忽略
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
             model.static_greenfn(depsrc=[1.0, 2.0, 3.0], deprcv=[0.0, 0.5], norths=[-2.0, 2.0, 1.0], easts=[-2.0, 2.0, 1.0], stats=True)
         assert any("stats" in str(w.message) for w in caught)
         cmd = runner.commands[-1]
-        assert_command_has(cmd, "static_greenfn", "-Ds1,2,3", "-Dr0,0.5", "-X-2/2/1", "-Y-2/2/1")
+        assert_command_has(
+            cmd, "static_greenfn", f"-Ds{runner.depth_files[-1]['Ds']}", f"-Dr{runner.depth_files[-1]['Dr']}", "-X-2/2/1", "-Y-2/2/1",
+        )
+        np.testing.assert_array_equal(runner.depths[-1]["Ds"], [1.0, 2.0, 3.0])
+        np.testing.assert_array_equal(runner.depths[-1]["Dr"], [0.0, 0.5])
+        assert all(not path.exists() for path in runner.depth_files[-1].values())
         assert not any(str(tok) == "-S" for tok in cmd)
     finally:
         _restore_run_grt(pygrt.pymod, original)

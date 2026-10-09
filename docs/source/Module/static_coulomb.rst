@@ -47,9 +47,3 @@ static_coulomb
 
 **-F**\ *friction*
     无量纲等效摩擦系数，必须为有限的非负数。
-
-
-可选选项
-----------
-
-.. include:: explain_-h.rst_

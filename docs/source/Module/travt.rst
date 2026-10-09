@@ -34,12 +34,3 @@ travt
 .. include:: explain_-D.rst_
 
 .. include:: explain_-R.rst_
-
-
-可选选项
-----------
-
-.. include:: explain_-h.rst_
-
-
-

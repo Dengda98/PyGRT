@@ -1,7 +1,7 @@
 """
-    :file:     pymod.py
-    :author:   Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
-    :date:     2024-07-24
+    :file:     pymod.py  
+    :author:   Zhu Dengda (zhudengda@mail.iggcas.ac.cn)  
+    :date:     2024-07-24  
 
     该文件包括 Python 端使用的基于文件的模型 :class:`PyModel1D`
 
@@ -21,7 +21,7 @@ from numpy.typing import NDArray
 
 from .cli import format_float, format_range, run_grt
 from .c_interfaces import C_grt_compute_travt1d_from_file, C_grt_free, PREAL
-from .utils import _resolve_rcv_points, _temporary_distance_option
+from .utils import _resolve_rcv_points, _temporary_array_option
 
 
 PathLike = Union[str, os.PathLike]
@@ -57,11 +57,6 @@ def _normalize_float_array(
     if arr.size > 1 and not np.all(np.diff(arr) > 0.0):
         raise ValueError(f"{name} must be strictly ascending when multiple values are given.")
     return arr
-
-
-def _format_depth_list(depths: np.ndarray) -> str:
-    """将深度数组格式化为 CLI ``-Ds``/``-Dr`` 的逗号列表"""
-    return ",".join(format_float(float(z)) for z in depths)
 
 
 def _format_slash_option(
@@ -663,8 +658,8 @@ class PyModel1D:
             "C": f"-C{Path(phase_path)}",
         }
         if multi_depth:
-            command["Ds"] = f"-Ds{_format_depth_list(depsrcs)}"
-            command["Dr"] = f"-Dr{_format_depth_list(deprcvs)}"
+            command["Ds"] = ""
+            command["Dr"] = ""
         else:
             command["D"] = f"-D{format_float(float(depsrcs[0]))}/{format_float(float(deprcvs[0]))}"
         command["R"] = ""
@@ -707,7 +702,13 @@ class PyModel1D:
         nthreads_option = _nthreads_option(nthreads)
         if nthreads_option is not None:
             command["P"] = nthreads_option
-        with _temporary_distance_option(distances) as option:
+        # 多值深度和震中距通过临时文件传递，执行结束或失败后自动清理
+        with _temporary_array_option(depsrcs if multi_depth else None, "Ds") as src_option, \
+             _temporary_array_option(deprcvs if multi_depth else None, "Dr") as rcv_option, \
+             _temporary_array_option(distances, "R") as option:
+            if multi_depth:
+                command["Ds"] = src_option
+                command["Dr"] = rcv_option
             command["R"] = option
             run_grt(list(command.values()), print_log=print_log)
 
@@ -757,8 +758,7 @@ class PyModel1D:
                                      receiver-depth sequence in km.
         :param    dists:             Array of strictly ascending epicentral distances
                                      in km, or a single distance.
-        :param    nt:                Number of time points. With the help of SciPy,
-                                     ``nt`` no longer needs to be a power of 2.
+        :param    nt:                Number of time points; it need not be a power of 2.
         :param    dt:                Time interval in s.
         :param    upsampling_n:      Upsampling factor applied after inverse FFT.
         :param    freqband:          Frequency range ``(f1, f2)`` in Hz. Negative values mean
@@ -833,8 +833,8 @@ class PyModel1D:
             "M": f"-M{self.modelpath}",
         }
         if multi_depth:
-            command["Ds"] = f"-Ds{_format_depth_list(depsrcs)}"
-            command["Dr"] = f"-Dr{_format_depth_list(deprcvs)}"
+            command["Ds"] = ""
+            command["Dr"] = ""
         else:
             command["D"] = f"-D{format_float(float(depsrcs[0]))}/{format_float(float(deprcvs[0]))}"
         command.update({
@@ -905,7 +905,13 @@ class PyModel1D:
         if nthreads_option is not None:
             command["P"] = nthreads_option
 
-        with _temporary_distance_option(distances) as option:
+        # 多值深度和震中距通过临时文件传递，执行结束或失败后自动清理
+        with _temporary_array_option(depsrcs if multi_depth else None, "Ds") as src_option, \
+             _temporary_array_option(deprcvs if multi_depth else None, "Dr") as rcv_option, \
+             _temporary_array_option(distances, "R") as option:
+            if multi_depth:
+                command["Ds"] = src_option
+                command["Dr"] = rcv_option
             command["R"] = option
             run_grt(list(command.values()), print_log=print_log)
 
@@ -1071,7 +1077,7 @@ class PyModel1D:
         ``depsrc`` / ``deprcv`` may be a scalar or a 1-D sequence:
 
         * Single depth pair: CLI ``-Ddepsrc/deprcv``.
-        * Multiple depths: CLI ``-Ds...`` / ``-Dr...`` (comma-separated list).
+        * Multiple depths: CLI ``-Ds...`` / ``-Dr...`` (automatic temporary files).
 
         For an ordinary Green's-function library, ``dists`` is the usual
         choice: it computes a one-dimensional distance list and stores it as
@@ -1160,8 +1166,8 @@ class PyModel1D:
             "M": f"-M{self.modelpath}",
         }
         if multi_depth:
-            command["Ds"] = f"-Ds{_format_depth_list(depsrcs)}"
-            command["Dr"] = f"-Dr{_format_depth_list(deprcvs)}"
+            command["Ds"] = ""
+            command["Dr"] = ""
         else:
             command["D"] = f"-D{format_float(float(depsrcs[0]))}/{format_float(float(deprcvs[0]))}"
         command["O"] = f"-O{self.stgrn}"
@@ -1202,7 +1208,13 @@ class PyModel1D:
         if calc_upar:
             command["e"] = "-e"
 
-        with _temporary_distance_option(distances) as option:
+        # 多值深度和震中距通过临时文件传递，执行结束或失败后自动清理
+        with _temporary_array_option(depsrcs if multi_depth else None, "Ds") as src_option, \
+             _temporary_array_option(deprcvs if multi_depth else None, "Dr") as rcv_option, \
+             _temporary_array_option(distances, "R") as option:
+            if multi_depth:
+                command["Ds"] = src_option
+                command["Dr"] = rcv_option
             if option is not None:
                 command["R"] = option
             run_grt(list(command.values()))
