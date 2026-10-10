@@ -6,11 +6,11 @@
 
     .. code-block:: text
     
-        Index   X-start   Y-start   X-fin   Y-fin   Kode   value1   value2   dip angle   top   bot
+        #   X-start   Y-start   X-fin   Y-fin   Kode   value1   value2   dip angle   top   bot
 
     第一行首个字段须为 **#**，其后为各列标签（**dip angle** 可占两个字段），
     第二行为占位表头。文件后缀不决定滑动量的解释方式。
-    *Index* 为索引号，不参与计算；起点和终点定义断层走向。
+    数据第一列为占位符，全部填 **1** 即可，不参与计算；起点和终点定义断层走向。
     X 为东向、Y 为北向，坐标及顶深 *top*、底深 *bot* 的单位为 km，
     倾角 *dip* 的单位为 °。注意此处 X/Y 与静态合成中 **-X/-Y** 的方向相反。
     起点和终点表示断层顶边，两点不能重合；断层向走向的右侧下倾。

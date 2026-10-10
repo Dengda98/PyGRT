@@ -17,14 +17,15 @@ EOF
 1.0
 EOF
 
+    # The first numeric column in every Coulomb fault row is a placeholder, always 1
     cat > faults.inp <<'EOF'
   #     X-start     Y-start       X-fin       Y-fin  Kode      rt.lat     reverse   dip angle         top         bot
 xxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx   xxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx
   1           0           0           1           0   100         0.1         0.2          32           1           2
-  2           0           0           1           0   200         0.1         0.2          47           1           2
-  3           0           0           1           0   300         0.1         0.2          61           1           2
-  4           0           0           1           0   400         1e6         2e6          38           1           2
-  5           0           0           1           0   500         1e6         2e6          54           1           2
+  1           0           0           1           0   200         0.1         0.2          47           1           2
+  1           0           0           1           0   300         0.1         0.2          61           1           2
+  1           0           0           1           0   400         1e6         2e6          38           1           2
+  1           0           0           1           0   500         1e6         2e6          54           1           2
 EOF
 
     cat > faults.inr <<'EOF'
@@ -43,8 +44,8 @@ EOF
   #     X-start     Y-start       X-fin       Y-fin  Kode        rake     netslip   dip angle         top         bot  time_function
 xxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx   xxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxxxxx
   1           0           0           1           0   100          35        0.12          39           1           2  -Dp/0.5+d0.2
-  2           0           0           1           0   100         -25        0.08          56           1           2  -Dc/0.2/0.3+d0.4
-  3           0           0           1           0   100          70        0.15          48           1           2  -D0/time_function.txt+d0.3
+  1           0           0           1           0   100         -25        0.08          56           1           2  -Dc/0.2/0.3+d0.4
+  1           0           0           1           0   100          70        0.15          48           1           2  -D0/time_function.txt+d0.3
 EOF
 
     sed '4s/  *-D.*//' faults_rupture.inr > faults_partial.inr
