@@ -341,7 +341,7 @@ def okada(
 
     command = [
         "okada",
-        f"-I{format_float(vp)}/{format_float(vs)}/{format_float(rho)}",
+        f"-H{format_float(vp)}/{format_float(vs)}/{format_float(rho)}",
         f"-O{output}",
     ]
     if use_ff:

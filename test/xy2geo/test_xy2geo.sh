@@ -12,13 +12,13 @@ grt xy2geo -Qrcv_points.txt -Ogeo.txt -C35/179.5
 grt geo2xy -Qgeo.txt -Olocal.txt -C35/179.5
 
 # 用普通模块准备网格、任意接收点和接收断层文件
-grt okada -I6/3.464/2.7 -S1e20 -Ds10 -Dr0 -X-2/2/2 -Y-2/2/2 -Ogrid.nc
+grt okada -H6/3.464/2.7 -S1e20 -Ds10 -Dr0 -X-2/2/2 -Y-2/2/2 -Ogrid.nc
 grt xy2geo -Ggrid.nc -Ogeo.nc -C35/179.5
 grt geo2xy -Ggeo.nc -Olocal.nc -C35/179.5
-grt okada -I6/3.464/2.7 -S1e20 -Ds10 -Qrcv_points.txt -Opoints.nc
+grt okada -H6/3.464/2.7 -S1e20 -Ds10 -Qrcv_points.txt -Opoints.nc
 grt xy2geo -Gpoints.nc -Ogeo.nc -C-20/-179.5
 grt geo2xy -Ggeo.nc -Olocal.nc -C-20/-179.5
-grt okada -I6/3.464/2.7 -S1e20 -Ds10 -Urcv_faults.inr -Ofaults.nc
+grt okada -H6/3.464/2.7 -S1e20 -Ds10 -Urcv_faults.inr -Ofaults.nc
 grt xy2geo -Gfaults.nc -Ogeo.nc -C40/10
 grt geo2xy -Ggeo.nc -Olocal.nc -C40/10
 
