@@ -20,6 +20,10 @@ pygrt.utils.okada(modelparams=medium, scale=1e20, depsrc=10, rcv_fault="rcv_faul
 pygrt.utils.xy2geo("faults.nc", outgrid="geo.nc", lat0=40, lon0=10)
 pygrt.utils.geo2xy("geo.nc", outgrid="local.nc", lat0=40, lon0=10)
 
+# 输入和输出不可使用同一个文件
+with raises(RuntimeError):
+    pygrt.utils.xy2geo(qfile="rcv_points.txt", outgrid="rcv_points.txt", lat0=35, lon0=10)
+
 # 参考经度不可超出 [-180, 180] 度
 with raises(ValueError):
     pygrt.utils.xy2geo(qfile="rcv_points.txt", outgrid="geo.txt", lat0=35, lon0=181)

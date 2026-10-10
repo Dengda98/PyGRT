@@ -24,7 +24,7 @@ model.greenfn(depsrc=2, deprcv=0, dists=5, nt=32, dt=0.1)
 
 # 频带下限不可超过上限
 with raises(RuntimeError):
-    model.greenfn(depsrc=2, deprcv=0, dists=5, nt=32, dt=0.1, freqband=[2, 0.5])
+    model.greenfn(depsrc=2, deprcv=0, dists=5, nt=32, dt=0.1, freqband=[2, 0.5], print_log=False)
 # 不可同时设置 FIM 和 SAFIM
 with raises(RuntimeError):
     model.greenfn(depsrc=2, deprcv=0, dists=5, nt=32, dt=0.1, filonLength=10, safilonTol=1e-3)

@@ -355,7 +355,7 @@ void grt_copy_file(const char *src, const char *dst)
         char dst_full[_MAX_PATH];
         if(_fullpath(src_full, src, _MAX_PATH) != NULL
            && _fullpath(dst_full, dst, _MAX_PATH) != NULL
-           && strcmp(src_full, dst_full) == 0){
+           && _stricmp(src_full, dst_full) == 0){
             return;
         }
 #else

@@ -22,6 +22,11 @@ grt okada -I6/3.464/2.7 -S1e20 -Ds10 -Urcv_faults.inr -Ofaults.nc
 grt xy2geo -Gfaults.nc -Ogeo.nc -C40/10
 grt geo2xy -Ggeo.nc -Olocal.nc -C40/10
 
+# 输入和输出不可使用同一个文件
+expect_fail grt xy2geo -Qrcv_points.txt -Orcv_points.txt -C35/10
+# 输入和输出不可通过不同路径指向同一个文件
+expect_fail grt geo2xy -Qgeo.txt -O./geo.txt -C35/10
+
 # 不可同时设置 NetCDF 文件和文本坐标文件
 expect_fail grt xy2geo -Ggrid.nc -Qrcv_points.txt -Ogeo.nc -C35/10
 # 参考纬度不可达到或超过 ±90 度
