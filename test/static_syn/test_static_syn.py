@@ -24,13 +24,21 @@ model.static_syn(scale=1e20, depsrc=2, rcv_fault="rcv_faults.inr", rcv_fault_siz
 model.static_syn(src_fault="faults.inp", src_fault_size=[1, 1], deprcv=0, calc_upar=True, output_path="stsyn.nc")
 model.static_syn(src_fault="faults.inr", rcv_points="rcv_points.txt", output_path="stsyn.nc")
 
+# 显式不再剖分，每条矩形源及接收断层只取一个中心点
+model.static_syn(src_fault="faults.inp", src_fault_size=(0, 0), rcv_fault="rcv_faults.inr",
+                 rcv_fault_size=(0, 0), calc_upar=True, output_path="stsyn.nc")
+
+# 剖分尺寸须同时为零或同时为正数
+with raises(ValueError):
+    model.static_syn(src_fault="faults.inp", src_fault_size=(1, 0), rcv_points="rcv_points.txt", output_path="stsyn.nc")
+
 # 未指定点源源强
 with raises(ValueError):
     model.static_syn(depsrc=2, deprcv=0, output_path="stsyn.nc")
 # 使用接收点文件时，不可再设置接收深度
 with raises(ValueError):
     model.static_syn(scale=1e20, depsrc=2, deprcv=0, rcv_points="rcv_points.txt", output_path="stsyn.nc")
-# 接收断层的剖分尺寸不可为零或负数
+# 接收断层的剖分尺寸须同时为零或同时为正数
 with raises(ValueError):
     model.static_syn(scale=1e20, depsrc=2, rcv_fault="rcv_faults.inr", rcv_fault_size=[0, 1], output_path="stsyn.nc")
 

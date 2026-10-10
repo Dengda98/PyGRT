@@ -37,6 +37,10 @@ model.syn(depsrc=2, scale=1e20, rcv_fault="rcv_faults.inr", output_path="syn_fau
 model.syn(src_fault="faults.inp", src_fault_size=[1, 1], rcv_points="rcv_points.txt", output_path="syn_points")
 model.syn(src_fault="faults.inr", rcv_fault="rcv_faults.inr", rcv_fault_size=[1, 1], output_path="syn_faults")
 
+# 显式不再剖分，每条矩形源及接收断层只取一个中心点
+model.syn(src_fault="faults.inp", src_fault_size=(0, 0), rcv_fault="rcv_faults.inr",
+          rcv_fault_size=(0, 0), calc_upar=True, output_path="syn_faults")
+
 # 各断层的破裂过程和延迟，以及全局时间函数覆盖行末设置
 model.syn(src_fault="faults_rupture.inr", src_fault_size=[1, 1], rcv_points="rcv_points.txt", output_path="syn_points")
 model.syn(src_fault="faults_rupture.inr", src_fault_size=[1, 1], rcv_points="rcv_points.txt",
@@ -50,6 +54,10 @@ with raises(RuntimeError):
 # 破裂延迟不可为负数
 with raises(RuntimeError):
     model.syn(src_fault="faults_negative_delay.inr", src_fault_size=[1, 1], rcv_points="rcv_points.txt", output_path="syn_points")
+
+# 剖分尺寸须同时为零或同时为正数
+with raises(ValueError):
+    model.syn(src_fault="faults.inp", src_fault_size=(0, 1), rcv_points="rcv_points.txt", output_path="syn_points")
 
 # 未指定点源源强
 with raises(ValueError):

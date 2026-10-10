@@ -64,6 +64,9 @@ grt syn -GGRN_MULTI -Ds2 -S1e20 -Urcv_faults.inr -Osyn_faults
 grt syn -GGRN_MULTI -Cfaults.inp+i1/1 -Qrcv_points.txt -e -Osyn_points
 grt syn -GGRN_MULTI -Cfaults.inr -Urcv_faults.inr+i1/1 -Osyn_faults
 
+# 显式不再剖分，每条矩形源及接收断层只取一个中心点
+grt syn -GGRN_MULTI -Cfaults.inp+i0/0 -Urcv_faults.inr+i0/0 -e -Osyn_faults
+
 # 各断层的破裂过程和延迟，以及全局时间函数覆盖行末设置
 grt syn -GGRN_MULTI -Cfaults_rupture.inr+i1/1 -Qrcv_points.txt -Osyn_points
 grt syn -GGRN_MULTI -Cfaults_rupture.inr+i1/1 -Qrcv_points.txt -Dp/0.4+d0.1 -Osyn_points
@@ -82,6 +85,9 @@ expect_fail grt syn -GGRN_MULTI -Ds2 -Dr0 -R13 -A22 -S1e20 -Osyn
 expect_fail grt syn -GGRN -A22 -S1e20 -F1/2/3 -M33/44/55 -Osyn
 # 不可同时设置接收点文件和接收断层文件
 expect_fail grt syn -GGRN_MULTI -Ds2 -S1e20 -Qrcv_points.txt -Urcv_faults.inr -Osyn
+
+# 剖分尺寸须同时为零或同时为正数
+expect_fail grt syn -GGRN_MULTI -Cfaults.inp+i0/1 -Qrcv_points.txt -Osyn_points
 
 # 未指定点源源强
 expect_fail grt syn -GGRN -A22 -Osyn

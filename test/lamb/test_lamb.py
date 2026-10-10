@@ -36,6 +36,10 @@ pygrt.utils.lamb(modelparams=medium, nt=16, dt=dt, src_fault="faults.inp", src_f
 pygrt.utils.lamb(modelparams=medium, nt=16, dt=dt, src_fault="faults.inr", src_fault_size=[1, 1],
                  rcv_fault="rcv_faults.inr", print_log=False, output_path="lamb_faults")
 
+# 显式不再剖分，每条矩形源及接收断层只取一个中心点
+pygrt.utils.lamb(modelparams=medium, nt=16, dt=dt, src_fault="faults.inp", src_fault_size=(0, 0),
+                 rcv_fault="rcv_faults.inr", rcv_fault_size=(0, 0), print_log=False, output_path="lamb_faults")
+
 # 各断层的破裂过程和延迟，以及全局时间函数覆盖行末设置
 pygrt.utils.lamb(modelparams=medium, nt=16, dt=dt, src_fault="faults_rupture.inr", src_fault_size=[1, 1],
                  rcv_points="rcv_points.txt", print_log=False, output_path="lamb_points")
@@ -49,6 +53,11 @@ with raises(RuntimeError):
 # 破裂延迟不可为负数
 with raises(RuntimeError):
     pygrt.utils.lamb(modelparams=medium, nt=16, dt=dt, src_fault="faults_negative_delay.inr", src_fault_size=[1, 1],
+                     rcv_points="rcv_points.txt", output_path="lamb_points")
+
+# 剖分尺寸不可为负数
+with raises(ValueError):
+    pygrt.utils.lamb(modelparams=medium, nt=16, dt=dt, src_fault="faults.inp", src_fault_size=(-1, -1),
                      rcv_points="rcv_points.txt", output_path="lamb_points")
 
 # 未指定点源源强

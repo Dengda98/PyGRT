@@ -134,6 +134,7 @@ typedef struct {
     /** 有限震源断层 */
     struct {
         bool active;
+        bool has_i;           ///< 是否显式指定 +i
         char *option;         ///< 有限震源选项，确定采样间隔后读入
         FINITE_FAULT *faults;  ///< 震源断层数组
         size_t nfault;         ///< 震源断层数量
@@ -144,6 +145,7 @@ typedef struct {
     /** 有限接收断层 */
     struct {
         bool active;
+        bool has_i;           ///< 是否显式指定 +i
         FINITE_FAULT *faults;  ///< 接收断层数组
         size_t nfault;         ///< 接收断层数量
         real_t dL;             ///< 走向剖分间隔，km
@@ -220,7 +222,7 @@ printf("\n"
 "\n"
 "    All coordinates share one horizontal origin; with -C, -R/-A locate the\n"
 "    receiver relative to that origin. Rectangular sources require explicit\n"
-"    subdivision sizes through +i on -C. Receiver subdivision with -U is optional.\n"
+"    +i on -C (use +i0/0 for no subdivision). Receiver subdivision with -U is optional.\n"
 "    Optional time controls: -D sets a time function, -E sets the output start,\n"
 "    -I/-J integrate or differentiate in time; -L selects phases and -P threads.\n"
 "    The source and receiver depths select the appropriate Lamb solution.\n"
@@ -384,6 +386,8 @@ printf("\n"
 "                  \"rake\" token in the seventh header column selects rake/net\n"
 "                  slip for Kode 100; the filename suffix does not select format.\n"
 "                  +i gives along-strike/dip subdivision sizes (km).\n"
+"                  Sizes must both be positive or both be zero. +i0/0 uses\n"
+"                  one center point source weighted by the whole fault area.\n"
 "                  Point-source Kode records remain single points at fault centers.\n"
 "                  Rectangular sources require explicit +i subdivision sizes.\n"
 "\n"
@@ -394,7 +398,8 @@ printf("\n"
 "    -U<fault>[+i<dL>/<dW>]\n"
 "                  Coulomb receiver faults. Receivers are subfault centers;\n"
 "                  no receiver-area averaging is performed.\n"
-"                  Without +i, use each fault center. Slip magnitude is ignored.\n"
+"                  Without +i or with +i0/0, use each fault center.\n"
+"                  Slip magnitude is ignored.\n"
 "                  Only Kode=100 is supported;\n"
 "                  receiver angles and grouping are saved.\n"
 "\n"
@@ -683,7 +688,8 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
             case 'U':
                 Ctrl->U.active = true;
                 grt_finite_fault_free(Ctrl->U.nfault, Ctrl->U.faults);
-                Ctrl->U.faults = grt_finite_fault_from_option(optarg, &Ctrl->U.nfault, &Ctrl->U.dL, &Ctrl->U.dW, false, 0, 1, NULL);
+                Ctrl->U.faults = grt_finite_fault_from_option(optarg, &Ctrl->U.nfault, &Ctrl->U.has_i, &Ctrl->U.dL, &Ctrl->U.dW,
+                                                              false, 0, 1, NULL);
                 break;
 
             // 设置子源合成的线程数
@@ -1370,9 +1376,9 @@ static void lamb_synthesis_samples(int nt, real_t dt, real_t begin, const real_t
  */
 static SRC_POINT *build_lamb_sources(GRT_MODULE_CTRL *Ctrl, const real_t (*modarr)[GRT_MODARR_NCOL], size_t *nsrc)
 {
-    // Lamb 没有格林函数库提供默认间隔，矩形震源必须显式指定剖分尺寸
+    // Lamb 没有格林函数库提供默认间隔，矩形震源必须显式指定 +i，0/0 表示不再剖分
     for(size_t i = 0; i < Ctrl->C.nfault; ++i) {
-        if(KODE_IS_FINITE(Ctrl->C.faults[i].kode) && Ctrl->C.dL <= 0) {
+        if(KODE_IS_FINITE(Ctrl->C.faults[i].kode) && !Ctrl->C.has_i) {
             GRTRaiseError("Lamb finite rectangular sources require +idL/dW.");
         }
     }
@@ -1631,7 +1637,8 @@ int lamb_main(int argc, char **argv)
 
     // 读入时直接选择全局或行内时间函数，点源与有限源使用相同接口
     if(Ctrl->C.active) {
-        Ctrl->C.faults = grt_finite_fault_from_option(Ctrl->C.option, &Ctrl->C.nfault, &Ctrl->C.dL, &Ctrl->C.dW, true, Ctrl->N.dt, 1, Ctrl->D.option);
+        Ctrl->C.faults = grt_finite_fault_from_option(Ctrl->C.option, &Ctrl->C.nfault, &Ctrl->C.has_i, &Ctrl->C.dL, &Ctrl->C.dW,
+                                                      true, Ctrl->N.dt, 1, Ctrl->D.option);
     } else {
         Ctrl->C.nfault = 1;
         Ctrl->C.faults = grt_finite_fault_from_point(Ctrl->Depth.depsrc, Ctrl->source_type, Ctrl->S.scale,

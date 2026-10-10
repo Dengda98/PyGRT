@@ -14,6 +14,7 @@ pygrt.utils.okada(modelparams=medium, scale=1e16, depsrc=10, deprcv=0,
                   norths=[-2, 2, 2], easts=[-2, 2, 2], strike=100, dip=20, output_path="okada.nc")
 pygrt.utils.okada(modelparams=medium, scale=1e12, depsrc=10, rcv_points="rcv_geometry.txt", output_path="okada.nc")
 pygrt.utils.okada(modelparams=medium, scale=1e12, depsrc=10, rcv_fault="rcv_faults.inr", output_path="okada.nc")
+pygrt.utils.okada(modelparams=medium, scale=1e12, depsrc=10, rcv_fault="rcv_faults.inr", rcv_fault_size=(0, 0), output_path="okada.nc")
 pygrt.utils.okada(modelparams=medium, scale=1e12, depsrc=10, rcv_fault="rcv_faults.inr", rcv_fault_size=[1, 1], output_path="okada.nc")
 pygrt.utils.okada(modelparams=medium, src_fault="faults.inp", deprcv=0,
                   norths=[-2, 2, 2], easts=[-2, 2, 2], zne=True, calc_upar=True, output_path="okada.nc")

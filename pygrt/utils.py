@@ -262,7 +262,8 @@ def okada(
                                 an exact ``rake`` header preserves the angle even at zero slip,
                                 otherwise the slip columns define direction
     :param    rcv_fault_size:   Optional ``(dL, dW)`` receiver subdivision size
-                                in km along strike / dip
+                                in km along strike / dip. Both values must be positive or zero.
+                                Omit or set ``(0, 0)`` to use each fault center
     :param    output_path:      Output NetCDF file path
     :param    scale:            Point-source scale in dyne-cm unless
                                 ``scale_with_mu`` is true. Not used for finite faults
@@ -328,10 +329,8 @@ def okada(
     if rcv_fault_size is not None:
         if (not use_u):
             raise ValueError("rcv_fault_size requires rcv_fault.")
-        if ((len(rcv_fault_size) != 2)
-                or (rcv_fault_size[0] <= 0.0)
-                or (rcv_fault_size[1] <= 0.0)):
-            raise ValueError("rcv_fault_size must contain positive (dL, dW).")
+        if len(rcv_fault_size) != 2 or not (all(value == 0 for value in rcv_fault_size) or all(value > 0 for value in rcv_fault_size)):
+            raise ValueError("rcv_fault_size must contain two zeros or two positive values.")
 
     command = [
         "okada",
@@ -1210,8 +1209,8 @@ def _dynamic_geometry_options(
         if path is not None:
             option = f"-{flag}{Path(path)}"
             if size is not None:
-                if len(size) != 2 or any(value <= 0 for value in size):
-                    raise ValueError("Fault size must contain two positive values.")
+                if len(size) != 2 or not (all(value == 0 for value in size) or all(value > 0 for value in size)):
+                    raise ValueError("Fault size must contain two zeros or two positive values.")
                 option += f"+i{format_float(size[0])}/{format_float(size[1])}"
             options.append(option)
     if rcv_points is not None:
@@ -1619,8 +1618,9 @@ def lamb(
     Point sources require ``depsrc``; polar receivers require all three of ``dist``,
     ``azimuth`` and ``deprcv``. All coordinates share one horizontal origin;
     for finite sources, ``dist``/``azimuth`` locate the receiver relative to that origin.
-    Rectangular sources require ``src_fault_size``. Receiver subdivision is optional;
-    omit ``rcv_fault_size`` to use one center point per fault.
+    Rectangular sources require ``src_fault_size``; set ``(0, 0)`` to use one center
+    point source weighted by the whole fault area. Receiver subdivision is optional;
+    omit ``rcv_fault_size`` or set ``(0, 0)`` to use one center point per fault.
 
     Optional ``time_function``, ``integrate_order`` and ``differentiate_order`` control
     the time dependence. ``delayT0``, ``delayV0`` and ``ref_first_p`` set the output start;
@@ -1672,17 +1672,19 @@ def lamb(
     :param    src_fault:        Coulomb source file supplying source positions, mechanisms and
                                 slip/potency. Append a complete ``-D`` option to each row
                                 to specify its rupture process.
-    :param    src_fault_size:   Positive along-strike/dip subdivision sizes (dL, dW) in km,
-                                required for rectangular sources. Point Kode records remain
-                                single points.
+    :param    src_fault_size:   Along-strike/dip subdivision sizes (dL, dW) in km,
+                                required for rectangular sources. Both values must be positive
+                                or zero; ``(0, 0)`` disables further subdivision.
+                                Point Kode records remain single points.
     :param    rcv_points:       ASCII receiver file: north east depth in km, optionally followed
                                 by strike dip rake in degrees.
     :param    rcv_fault:        Coulomb receiver file; only Kode=100 is supported and
                                 slip magnitude is ignored.
                                 An exact ``rake`` header preserves the angle even at zero slip;
                                 otherwise the slip columns define direction.
-    :param    rcv_fault_size:   Positive along-strike/dip receiver subdivision sizes (dL, dW) in
-                                km. Omit to use one center point per fault.
+    :param    rcv_fault_size:   Along-strike/dip receiver subdivision sizes (dL, dW) in km.
+                                Both values must be positive or zero.
+                                Omit or set ``(0, 0)`` to use one center point per fault.
     :param    nthreads:         Positive OpenMP source-subfault thread count.
     :param    time_function:    Time-function parameters passed to ``grt``, without the ``-D`` prefix.
                                 Supported forms are ``i`` (impulse), ``p/t0``, ``t/t1/t2/t3``,
