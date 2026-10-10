@@ -34,7 +34,8 @@ typedef struct {
  * Coulomb 程序格式的有限断层（及衍生量）
  *
  * Coulomb 表格的断层数据区严格包含 11 个数值列，依次为
- * ID、X-start、Y-start、X-fin、Y-fin、Kode、value1、value2、dip、top、bot
+ * 占位符、X-start、Y-start、X-fin、Y-fin、Kode、value1、value2、dip、top、bot
+ * 第一列为占位符，约定全部填 1，不参与计算
  * 其中 X/Y 在 PyGRT 中分别对应 east/north
  *
  * 文件前两行是 Coulomb 表头：第一行首个 token 必须为 #，其后给出 X-start、Y-start、X-fin、Y-fin、

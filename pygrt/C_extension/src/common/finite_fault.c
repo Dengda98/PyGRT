@@ -201,7 +201,7 @@ FINITE_FAULT *grt_finite_fault_load_coulomb(const char *path, size_t *nfault, bo
         GRTRaiseError("read Coulomb fault header of %s failed.", path);
     }
 
-    // Coulomb 表格有 11 个数值列；首行第一个 token 是 ID 列的 # 标记
+    // Coulomb 表格有 11 个数值列；第一列为占位符，首行对应 # 标记
     char header[COULOMB_HEADER_MAX_TOKENS][COULOMB_HEADER_TOKEN_SIZE] = {{0}};
     int nheader = sscanf(line,
         "%31s %31s %31s %31s %31s %31s %31s %31s %31s %31s %31s %31s",
@@ -252,11 +252,11 @@ FINITE_FAULT *grt_finite_fault_load_coulomb(const char *path, size_t *nfault, bo
             continue;
         }
 
-        real_t dum1, kode_value;
+        real_t ID, kode_value;  // 第一列为占位符，约定填 1，不参与计算
         real_t east_begin, north_begin, east_end, north_end;
         real_t value1, value2, dip, top, bot;
         int nscan = sscanf(line, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",
-            &dum1, &east_begin, &north_begin, &east_end, &north_end,
+            &ID, &east_begin, &north_begin, &east_end, &north_end,
             &kode_value, &value1, &value2, &dip, &top, &bot);
         if(nscan != 11){
             GRTRaiseError("parse Coulomb fault data at line %zu of %s failed.", line_number, path);
