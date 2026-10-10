@@ -1,8 +1,6 @@
 import shutil
-from pathlib import Path
 from unittest import TestCase
 
-import numpy as np
 import pygrt
 
 raises = TestCase().assertRaises
@@ -24,9 +22,11 @@ pygrt.utils.lamb(modelparams=medium, nt=32, dt=dt, dist=10, depsrc=5, deprcv=1, 
 pygrt.utils.lamb(modelparams=medium, nt=32, dt=dt, dist=10, depsrc=5, deprcv=1,
                  azimuth=30, scale=1e20, ref_first_p=True, delayT0=-1, output_path="lamb")
 # 自定义时间函数按 dt 采样
-np.savetxt("time_function.txt", np.array([0, 1, 2, 1, 0]) / (4 * dt), fmt="%.6f")
 pygrt.utils.lamb(modelparams=medium, nt=32, dt=dt, dist=10, depsrc=5, deprcv=1,
                  azimuth=30, scale=1e20, time_function="0/time_function.txt+d0.2", output_path="lamb")
+# 两列时间、振幅输入支持非等距采样
+pygrt.utils.lamb(modelparams=medium, nt=32, dt=dt, dist=10, depsrc=5, deprcv=1,
+                 azimuth=30, scale=1e20, time_function="0/time_function_nonuniform.txt+d0.2", output_path="lamb")
 pygrt.utils.lamb(modelparams=medium, nt=16, dt=dt, depsrc=5, scale=1e20,
                  rcv_points="rcv_geometry.txt", calc_upar=True, nthreads=2, output_path="lamb_points")
 pygrt.utils.lamb(modelparams=medium, nt=16, dt=dt, depsrc=5, scale=1e20,
@@ -71,4 +71,3 @@ with raises(ValueError):
 
 for name in ["lamb", "lamb_points", "lamb_faults"]:
     shutil.rmtree(name)
-Path("time_function.txt").unlink()

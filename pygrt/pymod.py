@@ -1370,6 +1370,10 @@ class PyModel1D:
                                        Supported forms are ``i`` (impulse), ``p/t0`` (parabola),
                                        ``t/t1/t2/t3`` (trapezoid), ``c/t1/t2`` (asymmetric cosine),
                                        and ``0/file`` (custom), with area normalization.
+                                       Custom files support one amplitude column or two columns: time (s)
+                                       and amplitude. Two-column data are linearly interpolated to the
+                                       Green's function ``dt``. Custom time functions are automatically
+                                       area-normalized.
                                        For ``t/t1/t2/t3``, the parameters are nonnegative rise, plateau
                                        and fall durations, with a positive total duration.
                                        For ``c/t1/t2``, ``t1`` and ``t2`` are positive rise and fall durations.

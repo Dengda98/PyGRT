@@ -197,7 +197,7 @@ real_t * grt_get_time_function(int *TFnt, real_t dt, const char tftype, const ch
 
     // 自定义时间函数
     else if(GRT_SIG_CUSTOM == tftype){
-        tfarr = grt_get_custom_wave(&tfnt, base);
+        tfarr = grt_get_custom_wave(dt, &tfnt, base);
 
         // 自定义时间函数共用矩形法归一化，原始面积不为 1 时提示用户
         real_t area = grt_normalize_time_function(tfarr, tfnt, dt);
@@ -458,33 +458,57 @@ real_t * grt_get_ricker_wave(real_t dt, real_t f0, int *Nt){
 }
 
 
-real_t * grt_get_custom_wave(int *Nt, const char *tfparams){
+real_t * grt_get_custom_wave(real_t dt, int *Nt, const char *tfparams){
+    if(dt <= 0.0) {
+        GRTRaiseError("Invalid time-function sampling interval.");
+    }
     FILE *fp = fopen(tfparams, "r");
     if(fp == NULL) {
         GRTRaiseError("Custom time function file open error.");
     }
 
-    // 逐行读取一列振幅，跳过空行和注释行
+    // 逐行读取一列振幅或两列时间、振幅，跳过空行和注释行
     real_t *tfarr = NULL;
+    real_t *times = NULL;
     char *line = NULL;
     size_t len = 0;
     size_t lineno = 0;
     int nt = 0;
+    int ncols = 0;
     while(grt_getline(&line, &len, fp) != -1) {
         lineno++;
         if(grt_is_comment_or_empty_line(line)) {
             continue;
         }
 
-        // 每个非注释行只能包含一列振幅值
-        real_t value = 0.0;
+        // 所有数据行必须具有相同列数，且不允许额外字符
+        real_t values[2] = {0.0, 0.0};
         char extra = '\0';
-        if(sscanf(line, " %lf %c", &value, &extra) != 1) {
-            GRTRaiseError("custom time function file should contain exactly one column at line %zu.\n", lineno);
+        int count = grt_string_ncols(line, " \t\r\n");
+        int parsed = count == 1 ? sscanf(line, " %lf %c", &values[0], &extra) :
+                                 sscanf(line, " %lf %lf %c", &values[0], &values[1], &extra);
+        if((count != 1 && count != 2) || parsed != count) {
+            GRTRaiseError("Custom time function file must contain one or two numeric columns at line %zu.", lineno);
+        }
+        if(nt == 0) {
+            ncols = count;
+        } else if(count != ncols) {
+            GRTRaiseError("Custom time function file has inconsistent column counts at line %zu.", lineno);
+        }
+
+        if(ncols == 2) {
+            if(nt == 0 && values[0] != 0.0) {
+                GRTRaiseError("Custom time function must start at time 0.0 at line %zu.", lineno);
+            }
+            if(nt > 0 && values[0] <= times[nt - 1]) {
+                GRTRaiseError("Custom time function times must be strictly increasing at line %zu.", lineno);
+            }
+            times = GRT_SAFE_REALLOC(times, (nt + 1) * sizeof(*times));
+            times[nt] = values[0];
         }
 
         tfarr = GRT_SAFE_REALLOC(tfarr, (nt + 1) * sizeof(*tfarr));
-        tfarr[nt] = value;
+        tfarr[nt] = values[ncols - 1];
         nt++;
     }
 
@@ -494,6 +518,34 @@ real_t * grt_get_custom_wave(int *Nt, const char *tfparams){
 
     fclose(fp);
     GRT_SAFE_FREE_PTR(line);
+
+    if(ncols == 2) {
+        if(nt < 2) {
+            GRTRaiseError("Two-column custom time function requires at least two samples.");
+        }
+
+        // 两列数据直接线性插值到 dt 采样
+        int newnt = (int)ceil(times[nt - 1] / dt) + 1;
+        real_t *arr = GRT_SAFE_CALLOC(newnt, sizeof(*arr));
+
+        int j = 0;
+        for(int i=0; i<newnt; ++i) {
+            real_t time = (real_t)i * dt;
+            if(time > times[nt - 1]) {
+                continue;
+            }
+            while(j < nt - 2 && time > times[j + 1]) {
+                ++j;
+            }
+            real_t weight = (time - times[j]) / (times[j + 1] - times[j]);
+            arr[i] = (1.0 - weight) * tfarr[j] + weight * tfarr[j + 1];
+        }
+        GRTRaiseWarning("Custom time function is linearly resampled to dt=%.7g s before area normalization.", dt);
+        GRT_SAFE_FREE_PTR(times);
+        GRT_SAFE_FREE_PTR(tfarr);
+        tfarr = arr;
+        nt = newnt;
+    }
 
     *Nt = nt;
     return tfarr;

@@ -304,12 +304,10 @@ printf("\n"
 "                    e.g. -D%c/4.5/1.5+d43\n", GRT_SIG_ASYMMETRIC_COSINE); printf(
 "                  + Custom wave\n"
 "                    set -D%c/<path>, <path> is the filepath to a custom\n", GRT_SIG_CUSTOM); printf(
-"                    Time Function ASCII file. The file has just one column\n"
-"                    of amplitude and no other columns. Its sequence sum should\n"
-"                    be 1/dt, where dt is the sampling interval; the program\n"
-"                    normalizes it with a warning when it is not.\n"
-"                    The file can contain unlimited comment lines with prefix\n"
-"                    \"#\".\n"
+"                    Time Function ASCII file with one amplitude column sampled\n"
+"                    at dt, or two columns: time (s) and amplitude. Two-column\n"
+"                    data are linearly interpolated to dt. Custom time functions\n"
+"                    are automatically area-normalized.\n"
 "                    e.g. \n"
 "                         -D%c/tfunc.txt \n", GRT_SIG_CUSTOM); printf(
 "                  Also accepts a signed Ricker convolution wavelet:\n"

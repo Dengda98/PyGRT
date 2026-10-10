@@ -1687,6 +1687,9 @@ def lamb(
     :param    time_function:    Time-function parameters passed to ``grt``, without the ``-D`` prefix.
                                 Supported forms are ``i`` (impulse), ``p/t0``, ``t/t1/t2/t3``,
                                 ``c/t1/t2`` (asymmetric cosine) or ``0/file``, with area normalization.
+                                Custom files support one amplitude column or two columns: time (s) and
+                                amplitude. Two-column data are linearly interpolated to ``dt``.
+                                Custom time functions are automatically area-normalized.
                                 For ``t/t1/t2/t3``, the parameters are nonnegative rise, plateau
                                 and fall durations in seconds, with a positive total duration.
                                 For ``c/t1/t2``, ``t1`` and ``t2`` are positive rise and fall durations in seconds.

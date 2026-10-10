@@ -20,8 +20,37 @@ grt syn -GGRN -A22 -S1e20 -Dt/0.2/0.2/0.3 -Osyn
 grt syn -GGRN -A22 -S1e20 -Dc/0.2/0.4 -Osyn
 grt syn -GGRN -A22 -S1e20 -Dr/1.2 -Osyn
 # 时间函数按格林函数的 dt 采样
-awk -v dt="$dt" 'BEGIN { for (i = 0; i <= 4; i++) printf "%.6f\n", (i <= 2 ? i : 4 - i) / (4 * dt) }' > time_function.txt
+cat > time_function.txt <<'EOF'
+0.0
+2.5
+5.0
+2.5
+0.0
+EOF
 grt syn -GGRN -A22 -S1e20 -D0/time_function.txt -Osyn
+# 两列输入从 0.0 开始，支持不同采样间隔和非等距采样
+cat > time_function_times.txt <<'EOF'
+0.00  0.0
+0.05  1.0
+0.10  2.0
+0.15  3.0
+0.20  4.0
+0.25  3.0
+0.30  2.0
+0.35  1.0
+0.40  0.0
+EOF
+cat > time_function_nonuniform.txt <<'EOF'
+# time amplitude
+
+0.00  0.0
+0.07  1.0
+0.23  3.0
+0.45  0.0
+EOF
+grt syn -GGRN -A22 -S1e20 -D0/time_function_times.txt -Osyn
+grt syn -GGRN -A22 -S1e20 -D0/time_function_nonuniform.txt+d0.2 -Osyn
+
 grt syn -GGRN -A22 -S1e20 -I1 -Osyn
 grt syn -GGRN -A22 -S1e20 -J1 -N -e -Osyn
 
@@ -38,6 +67,7 @@ grt syn -GGRN_MULTI -Cfaults.inr -Urcv_faults.inr+i1/1 -Osyn_faults
 # 各断层的破裂过程和延迟，以及全局时间函数覆盖行末设置
 grt syn -GGRN_MULTI -Cfaults_rupture.inr+i1/1 -Qrcv_points.txt -Osyn_points
 grt syn -GGRN_MULTI -Cfaults_rupture.inr+i1/1 -Qrcv_points.txt -Dp/0.4+d0.1 -Osyn_points
+grt syn -GGRN_MULTI -Cfaults_rupture.inr+i1/1 -Qrcv_points.txt -D0/time_function_nonuniform.txt -Osyn_points
 
 # 有限断层的时间函数不可只设置在部分记录中
 expect_fail grt syn -GGRN_MULTI -Cfaults_partial.inr+i1/1 -Qrcv_points.txt -Osyn_points
@@ -65,4 +95,5 @@ expect_fail grt syn -GGRN -A22 -S1e20 -Dp/0 -Osyn
 python -u test_syn.py
 
 rm -rf GRN GRN_MULTI syn syn_points syn_faults time_function.txt
+rm -f time_function_times.txt time_function_nonuniform.txt
 remove_test_files
