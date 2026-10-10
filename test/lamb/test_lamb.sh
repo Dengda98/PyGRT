@@ -19,8 +19,22 @@ grt lamb -H8/4.62/3.3 -N32/"$dt" -R10 -Ds5 -Dr0 -A30 -S1e20 -LP,S,SP -Olamb
 grt lamb -H8/4.62/3.3 -N32/"$dt" -R10 -Ds5 -Dr1 -A30 -S1e20 -Dp/0.5 -I1 -J1 -E0.2/9 -Olamb
 grt lamb -H8/4.62/3.3 -N32/"$dt" -R10 -Ds5 -Dr1 -A30 -S1e20 -Ep-1 -Olamb
 # 自定义时间函数按 dt 采样
-awk -v dt="$dt" 'BEGIN { for (i = 0; i <= 4; i++) printf "%.6f\n", (i <= 2 ? i : 4 - i) / (4 * dt) }' > time_function.txt
+cat > time_function.txt <<'EOF'
+0.0
+2.5
+5.0
+2.5
+0.0
+EOF
 grt lamb -H8/4.62/3.3 -N32/"$dt" -R10 -Ds5 -Dr1 -A30 -S1e20 -D0/time_function.txt+d0.2 -Olamb
+# 两列时间、振幅输入支持非等距采样
+cat > time_function_nonuniform.txt <<'EOF'
+0.00  0.0
+0.07  1.0
+0.23  3.0
+0.45  0.0
+EOF
+grt lamb -H8/4.62/3.3 -N32/"$dt" -R10 -Ds5 -Dr1 -A30 -S1e20 -D0/time_function_nonuniform.txt+d0.2 -Olamb
 
 # 任意接收点、有限震源和接收断层
 grt lamb -H8/4.62/3.3 -N16/"$dt" -Ds5 -S1e20 -Qrcv_geometry.txt -e -P2 -Olamb_points
@@ -51,5 +65,5 @@ expect_fail grt lamb -H8/4.62/3.3 -N16/"$dt" -Cfaults.inr -Qrcv_points.txt -Olam
 
 python -u test_lamb.py
 
-rm -rf lamb lamb_points lamb_faults time_function.txt
+rm -rf lamb lamb_points lamb_faults time_function.txt time_function_nonuniform.txt
 remove_test_files

@@ -1,8 +1,6 @@
 import shutil
-from pathlib import Path
 from unittest import TestCase
 
-import numpy as np
 import pygrt
 
 raises = TestCase().assertRaises
@@ -21,8 +19,10 @@ model.syn(azimuth=22, scale=1e20, time_function="t/0.2/0.2/0.3", output_path="sy
 model.syn(azimuth=22, scale=1e20, time_function="c/0.2/0.4", output_path="syn")
 model.syn(azimuth=22, scale=1e20, time_function="r/1.2", output_path="syn")
 # 时间函数按格林函数的 dt 采样
-np.savetxt("time_function.txt", np.array([0, 1, 2, 1, 0]) / (4 * dt), fmt="%.6f")
 model.syn(azimuth=22, scale=1e20, time_function="0/time_function.txt", output_path="syn")
+# 两列输入从 0.0 开始，支持不同采样间隔和非等距采样
+model.syn(azimuth=22, scale=1e20, time_function="0/time_function_times.txt", output_path="syn")
+model.syn(azimuth=22, scale=1e20, time_function="0/time_function_nonuniform.txt+d0.2", output_path="syn")
 model.syn(azimuth=22, scale=1e20, integrate_order=1, output_path="syn")
 model.syn(azimuth=22, scale=1e20, differentiate_order=1, zne=True, calc_upar=True, output_path="syn")
 
@@ -41,6 +41,8 @@ model.syn(src_fault="faults.inr", rcv_fault="rcv_faults.inr", rcv_fault_size=[1,
 model.syn(src_fault="faults_rupture.inr", src_fault_size=[1, 1], rcv_points="rcv_points.txt", output_path="syn_points")
 model.syn(src_fault="faults_rupture.inr", src_fault_size=[1, 1], rcv_points="rcv_points.txt",
           time_function="p/0.4+d0.1", output_path="syn_points")
+model.syn(src_fault="faults_rupture.inr", src_fault_size=[1, 1], rcv_points="rcv_points.txt",
+          time_function="0/time_function_nonuniform.txt", output_path="syn_points")
 
 # 有限断层的时间函数不可只设置在部分记录中
 with raises(RuntimeError):
@@ -77,4 +79,3 @@ with raises(ValueError):
 
 for name in ["GRN", "GRN_MULTI", "syn", "syn_points", "syn_faults"]:
     shutil.rmtree(name)
-Path("time_function.txt").unlink()

@@ -205,15 +205,16 @@ real_t * grt_get_ricker_wave(real_t dt, real_t f0, int *Nt);
 
 
 /**
- * 从文件中读入自定义时间函数，每个非注释行只能包含一列振幅值
- * 序列和由调用方根据采样间隔检查
+ * 从文件中读入自定义时间函数，支持一列振幅或两列时间、振幅
+ * 两列数据线性插值到 dt 采样，调用方自动进行面积归一化
  * 
+ * @param[in]     dt        采样间隔，s
  * @param[out]    Nt        返回的点数
  * @param[in]     tfparams  文件路径
  * 
  * @return   real_t 指针
  */
-real_t * grt_get_custom_wave(int *Nt, const char *tfparams);
+real_t * grt_get_custom_wave(real_t dt, int *Nt, const char *tfparams);
 
 /**
  * 释放 C 侧 malloc 的一维数组
