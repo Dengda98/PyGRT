@@ -42,9 +42,9 @@ pymod.greenfn(depsrc=depsrc, deprcv=deprcv, dists=rs, nt=nt, dt=dt, converg_meth
 st_ptam = read("GRN/*/*.sac")
 
 # 卷积阶跃函数
-pygrt.utils.stream_integral(st_none)
-pygrt.utils.stream_integral(st_dcm)
-pygrt.utils.stream_integral(st_ptam)
+st_none.integrate()
+st_dcm.integrate()
+st_ptam.integrate()
 
 coef = np.pi * np.pi * mu * r 
 

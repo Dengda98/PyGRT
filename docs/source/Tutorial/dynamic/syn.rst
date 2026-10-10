@@ -177,6 +177,7 @@ CLI 和 Python 函数中根据设置的不同震源参数自动推断震源类�
             :start-after: BEGIN INT DIF
             :end-before: END INT DIF
 
+        可通过设置 **-I** / **-J** 来指定积分/微分次数。
 
     .. group-tab:: Python 
 
@@ -185,10 +186,8 @@ CLI 和 Python 函数中根据设置的不同震源参数自动推断震源类�
             :start-after: BEGIN INT DIF
             :end-before: END INT DIF
 
-        Python 示例在合成后使用 :func:`stream_integral() <pygrt.utils.stream_integral>` /
-        :func:`stream_diff() <pygrt.utils.stream_diff>` 做积分与微分。
-        若希望在合成阶段完成，也可传入 ``integrate_order`` / ``differentiate_order``
-        （分别对应 CLI 的 ``-I`` / ``-J``）。
+        可通过设置 **integrate_order** / **differentiate_order** 来指定积分/微分次数。
+        也可以不指定然后使用 Obspy 的函数来进行单独处理。
 
 .. figure:: run/syn_mt_intdif_Z.svg
    :align: center

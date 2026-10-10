@@ -146,7 +146,7 @@ def calculate_greenfn() -> tuple[Stream, float]:
     st = read(str(GREEN_ROOT / "*" / "*.sac"))
 
     # greenfn 输出的是脉冲型格林函数，积分一次后与 lamb3 的阶跃型结果对应
-    pygrt.utils.stream_integral(st)
+    st.integrate()
 
     scale = np.pi**2 * MU * STRAIGHT_DISTANCE**2
     return st, scale
