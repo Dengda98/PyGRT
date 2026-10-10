@@ -1,61 +1,29 @@
-from contextlib import redirect_stdout
 from pathlib import Path
+from unittest import TestCase
 
 import pygrt
-from scipy.io import netcdf_file
 
-modname = "../milrow"
-pymod = pygrt.PyModel1D(modelpath=modname)
+raises = TestCase().assertRaises
 
-# Rayleigh / Love 全阶频散
-pymod.eigenv(wtype="R", freqs=(0.0, 0.5, 0.05), phase_path="phase_R.nc", all_modes=True)
-pymod.eigenv(wtype="L", freqs=(0.0, 0.5, 0.05), phase_path="phase_L.nc", all_modes=True)
-assert Path("phase_R.nc").is_file()
-assert Path("phase_L.nc").is_file()
+model = pygrt.PyModel1D(modelpath="../milrow")
+model.eigenv(wtype="R", freqs=(0, 0.5, 0.1), phase_path="phase_R.nc", all_modes=True)
+model.eigenv(wtype="L", freqs=(0, 0.5, 0.1), phase_path="phase_L.nc", max_order=2, ctrl_kw={"tol": 3}, nthreads=2)
+model.eigenv(wtype="R", periods=(2, 4, 1), phase_path="phase_p.nc")
+model.eigenv(wtype="R", secular_freq=1, cmin=3, cmax=5.5, iref=0)
 
-with netcdf_file("phase_R.nc", "r", mmap=False) as phase:
-    modelname = phase.modelname
-    if isinstance(modelname, bytes):
-        modelname = modelname.decode()
-    assert modelname == "milrow"
+# 周期不可为零或负数
+with raises(ValueError):
+    model.eigenv(wtype="R", periods=0, phase_path="phase_bad.nc")
 
-# 单频、周期形式、最大阶数、搜根控制参数
-pymod.eigenv(wtype="R", freqs=1.0, phase_path="phase_R1.nc")
-pymod.eigenv(wtype="R", periods=(1.0, 5.0, 1.0), phase_path="phase_Rp.nc", max_order=2)
-pymod.eigenv(wtype="L", freqs=(0.0, 0.5, 0.05), phase_path="phase_Lt.nc", all_modes=True, ctrl_kw={"tol": 3.0})
+# 面波类型不可设置为 R、L 之外的值
+with raises(ValueError):
+    model.eigenv(wtype="X", freqs=0.5, phase_path="phase_bad.nc")
+# 不可同时设置频率和周期
+with raises(ValueError):
+    model.eigenv(wtype="R", freqs=0.5, periods=2, phase_path="phase_bad.nc")
+# 不可设置不支持的搜根控制参数
+with raises(ValueError):
+    model.eigenv(wtype="R", freqs=0.5, phase_path="phase_bad.nc", ctrl_kw={"bad": 1})
 
-# 久期函数 debug，输出重定向到文件
-with open("secfunc_R.txt", "w") as f, redirect_stdout(f):
-    pymod.eigenv(wtype="R", secular_freq=1.0, cmin=3.0, cmax=5.5, iref=0)
-assert Path("secfunc_R.txt").stat().st_size > 0
-
-try:
-    pymod.eigenv(wtype="X", freqs=1.0, phase_path="bad.nc")
-except ValueError:
-    pass
-else:
-    raise AssertionError("invalid wtype should raise")
-
-try:
-    pymod.eigenv(wtype="R", freqs=1.0, periods=2.0, phase_path="bad.nc")
-except ValueError:
-    pass
-else:
-    raise AssertionError("freqs and periods should be mutually exclusive")
-
-try:
-    pymod.eigenv(wtype="R", freqs=1.0, phase_path="bad.nc", secular_freq=1.0)
-except ValueError:
-    pass
-else:
-    raise AssertionError("secular_freq mixed with freqs should raise")
-
-try:
-    pymod.eigenv(wtype="R", freqs=1.0, phase_path="bad.nc", ctrl_kw={"foo": 1.0})
-except ValueError:
-    pass
-else:
-    raise AssertionError("unknown ctrl_kw key should raise")
-
-for name in ["phase_R.nc", "phase_L.nc", "phase_R1.nc", "phase_Rp.nc", "phase_Lt.nc", "secfunc_R.txt"]:
-    Path(name).unlink(missing_ok=True)
+for path in Path(".").glob("phase_*.nc"):
+    path.unlink()

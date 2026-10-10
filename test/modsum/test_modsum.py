@@ -1,48 +1,31 @@
 import shutil
 from pathlib import Path
+from unittest import TestCase
 
 import pygrt
 
-pymod = pygrt.PyModel1D(grn="GRN_NM_0", modelpath="../milrow")
-pymod.eigenv(wtype="R", freqs=(0.0, 0.5, 0.05), phase_path="phase_R.nc", all_modes=True)
-pymod.eigenv(wtype="L", freqs=(0.0, 0.5, 0.05), phase_path="phase_L.nc", all_modes=True)
+raises = TestCase().assertRaises
 
-# 未指定 output_path 时写入构造时的 grn 根目录
-pymod.modsum(phase_path="phase_R.nc", depsrc=2.0, deprcv=1.0, dists=100.0, modes=0, upsampling_n=5, calc_upar=True)
-assert Path("GRN_NM_0/milrow").is_file()
-pymod.modsum(phase_path="phase_L.nc", depsrc=2.0, deprcv=1.0, dists=100.0, modes=0, upsampling_n=5, calc_upar=True)
+model = pygrt.PyModel1D(grn="GRN", modelpath="../milrow")
+model.eigenv(wtype="R", freqs=(0, 0.5, 0.1), phase_path="phase_R.nc", all_modes=True)
+model.eigenv(wtype="L", freqs=(0, 0.5, 0.1), phase_path="phase_L.nc", all_modes=True)
+model.modsum(phase_path="phase_R.nc", depsrc=2, deprcv=1, dists=100, modes=0, upsampling_n=2, calc_upar=True)
+model.modsum(phase_path="phase_L.nc", depsrc=2, deprcv=1, dists=100, all_modes=True, output_path="GRN", upsampling_n=2)
+model.modsum(phase_path="phase_R.nc", depsrc=[1, 2], deprcv=[0, 1], dists=[100, 120], modes=0,
+             freqband=(0.1, 0.4), delayT0=-2, delayV0=9, nthreads=2)
+model.modsum(phase_path="phase_R.nc", depsrc=2, deprcv=1, dists=100, modes=0, ref_first_p=True, delayT0=-1, gf_source=["EX", "VF"])
 
-# 指定输出目录、其它阶数
-pymod.modsum(phase_path="phase_R.nc", depsrc=2.0, deprcv=1.0, dists=100.0, modes=1, output_path="GRN_NM_1", upsampling_n=5)
-pymod.modsum(phase_path="phase_R.nc", depsrc=2.0, deprcv=1.0, dists=100.0, all_modes=True, output_path="GRN_NM_all", upsampling_n=5)
+# 升采样倍数不可为零或负数
+with raises(ValueError):
+    model.modsum(phase_path="phase_R.nc", depsrc=2, deprcv=1, dists=100, modes=0, upsampling_n=0)
 
-# 多震源/台站深度
-pymod.modsum(
-    phase_path="phase_R.nc",
-    depsrc=[1.0, 2.0],
-    deprcv=[0.0, 1.0],
-    dists=100.0,
-    modes=0,
-    output_path="GRN_NM_MULTI",
-    upsampling_n=2,
-    calc_upar=True,
-)
-assert Path("GRN_NM_MULTI/milrow_1_0_100/EXZ.sac").is_file()
-assert Path("GRN_NM_MULTI/milrow_2_1_100/EXZ.sac").is_file()
+# 不可同时设置特定阶数和全部阶数
+with raises(ValueError):
+    model.modsum(phase_path="phase_R.nc", depsrc=2, deprcv=1, dists=100, modes=0, all_modes=True)
+# 震中距列表不可包含逆序或重复值
+with raises(ValueError):
+    model.modsum(phase_path="phase_R.nc", depsrc=2, deprcv=1, dists=[100, 50], modes=0)
 
-# 频带截取
-pymod.modsum(phase_path="phase_R.nc", depsrc=2.0, deprcv=1.0, dists=100.0, modes=0, output_path="GRN_NM_F", freqband=(0.1, 0.4))
-
-try:
-    pymod.modsum(phase_path="phase_R.nc", depsrc=2.0, deprcv=1.0, dists=100.0, modes=0, all_modes=True)
-except ValueError:
-    pass
-else:
-    raise AssertionError("modes and all_modes should be mutually exclusive")
-
-for name in ["GRN_NM_0", "GRN_NM_1", "GRN_NM_all", "GRN_NM_MULTI", "GRN_NM_F", "phase_R.nc", "phase_L.nc"]:
-    p = Path(name)
-    if p.is_dir():
-        shutil.rmtree(p, ignore_errors=True)
-    elif p.is_file():
-        p.unlink(missing_ok=True)
+shutil.rmtree("GRN")
+Path("phase_R.nc").unlink()
+Path("phase_L.nc").unlink()

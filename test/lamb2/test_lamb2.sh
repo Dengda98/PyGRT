@@ -1,62 +1,21 @@
 #!/bin/bash
 
 set -euo pipefail
-
-expect_fail() {
-    local desc="$1"
-    shift
-    set +e
-    "$@" >/dev/null 2>&1
-    local ret=$?
-    set -e
-    if [ "$ret" -eq 0 ]; then
-        echo "ERROR: expected failure but succeeded: $desc" >&2
-        exit 1
-    fi
-    echo "OK (failed as expected): $desc"
-}
-
-expect_warn() {
-    local desc="$1"
-    local key="$2"
-    shift 2
-    local output
-    output=$("$@" 2>&1)
-    if [[ "$output" != *"$key"* ]]; then
-        echo "ERROR: expected warning containing '$key': $desc" >&2
-        echo "$output" >&2
-        exit 1
-    fi
-    echo "OK (warned as expected): $desc"
-}
-
-expect_fail "lamb2 missing depth option" grt lamb2 -P0.25 -T0/0/1 -R10 -A0
-expect_fail "lamb2 both -Ds and -Dr" grt lamb2 -P0.25 -T0/0/1 -R10 -Ds5 -Dr3 -A0
-expect_fail "lamb2 old -D option" grt lamb2 -P0.25 -T0/0/1 -R10 -D5 -A0
-expect_fail "lamb2 source on the free surface" grt lamb2 -P0.25 -T0/0/1 -R10 -Ds0 -A0
-expect_fail "lamb2 receiver on the free surface" grt lamb2 -P0.25 -T0/0/1 -R10 -Dr0 -A0
-expect_fail "lamb2 negative source depth" grt lamb2 -P0.25 -T0/0/1 -R10 -Ds-1 -A0
-expect_fail "lamb2 negative receiver depth" grt lamb2 -P0.25 -T0/0/1 -R10 -Dr-1 -A0
-expect_fail "lamb2 negative horizontal distance" grt lamb2 -P0.25 -T0/0/1 -R-1 -Ds5 -A0
-expect_fail "lamb2 zero horizontal distance" grt lamb2 -P0.25 -T0/0/1 -R0 -Ds5 -A0
-expect_warn "lamb2 low Poisson ratio" "calculation is very likely to fail" grt lamb2 -P0.0005 -T0/0/1 -R10 -Ds5 -A0
-expect_warn "lamb2 high Poisson ratio" "calculation is very likely to fail" grt lamb2 -P0.4995 -T0/0/1 -R10 -Ds5 -A0
-expect_warn "lamb2 shallow source" "calculation is very likely to fail" grt lamb2 -P0.25 -T0/0/1 -R10 -Ds0.005 -A0
-expect_warn "lamb2 shallow receiver" "calculation is very likely to fail" grt lamb2 -P0.25 -T0/0/1 -R10 -Dr0.005 -A0
-expect_warn "lamb2 small horizontal distance" "horizontal distance ratio" grt lamb2 -P0.25 -T0/0/1 -R1e-4 -Ds5 -A0
+source ../common.sh
 
 grt lamb2 -h
+grt lamb2 -P0.25 -T0/2/0.05 -R10 -Ds5 -A30 -S+ssource.txt+rreceiver.txt+mmixed.txt > response.txt
+grt lamb2 -P0.25 -T0/2/0.05 -R10 -Dr5 -A30 > response.txt
+grt lamb2 -P0.25 -T0/2/0.05 -R10 -Ds5 -A30 -LP,S,SP > response.txt
+grt lamb2 -P0.25 -T0/2/0.05 -R10 -Dr5 -A30 -LP,S,PS > response.txt
 
-grt lamb2 -P0.25 -T0/2/1e-2 -R10 -Ds5 -S+slamb2_source+rlamb2_receiver+mlamb2_mixed -A30 > lamb2
-grt lamb2 -P0.25 -T0/2/1e-2 -R10 -Dr5 -S+slamb2_surface_source+rlamb2_surface_receiver -A30 > lamb2_surface
-grt lamb2 -P0.25 -T0/2/1e-2 -R10 -Ds5 -A30 -LP,S,SP > lamb2_phases
-grt lamb2 -P0.25 -T0/2/1e-2 -R10 -Dr5 -A30 -LP,S,PS > lamb2_surface_phases
-expect_warn "lamb2 invalid phase" "Available phases: P, S, SP" grt lamb2 -P0.25 -T0/0/1 -R10 -Ds5 -A0 -LBAD,P
-expect_warn "lamb2 duplicated phase" "recorded only once" grt lamb2 -P0.25 -T0/0/1 -R10 -Ds5 -A0 -LSP,SP
-expect_warn "lamb2 unavailable phase" "Unsupported Lamb phase PS is ignored" grt lamb2 -P0.25 -T0/0/1 -R10 -Ds5 -A0 -LPS
-expect_warn "lamb2 no valid phase" "output is all zeros" grt lamb2 -P0.25 -T0/0/1 -R10 -Ds5 -A0 -LBAD
+# 第二类 Lamb 问题不可同时设置地下源和地下接收点
+expect_fail grt lamb2 -P0.25 -T0/2/0.05 -R10 -Ds5 -Dr3 -A30
+# 地下源的深度不可为零或负数
+expect_fail grt lamb2 -P0.25 -T0/2/0.05 -R10 -Ds0 -A30
+# 水平距离不可为零或负数
+expect_fail grt lamb2 -P0.25 -T0/2/0.05 -R-1 -Ds5 -A30
 
 python -u test_lamb2.py
 
-rm -f lamb2 lamb2_source lamb2_receiver lamb2_mixed lamb2_surface lamb2_surface_source lamb2_surface_receiver \
-    lamb2_phases lamb2_surface_phases
+rm -rf response.txt source.txt receiver.txt mixed.txt

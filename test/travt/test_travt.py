@@ -1,23 +1,16 @@
+from unittest import TestCase
+
 import pygrt
 
-depsrc = 2.0
-deprcv = 0.0
-modname = "../milrow"
+raises = TestCase().assertRaises
 
-pymod = pygrt.PyModel1D(modelpath=modname)
+model = pygrt.PyModel1D(modelpath="../milrow")
+print(model.travt(depsrc=2, deprcv=0, dists=5))
+print(model.travt(depsrc=2, deprcv=0, dists=[2, 5, 10]))
 
-for dist in [2, 3, 4, 5]:
-    tp, ts = pymod.travt(depsrc=depsrc, deprcv=deprcv, dists=dist)
-    print(dist, tp, ts)
-
-# 多个震中距一次计算，分别返回 Tp、Ts 数组
-tp, ts = pymod.travt(depsrc=depsrc, deprcv=deprcv, dists=[2, 3, 4, 5])
-print(tp)
-print(ts)
-
-try:
-    pymod.travt(depsrc=depsrc, deprcv=deprcv, dists=[2, 1])
-except ValueError:
-    pass
-else:
-    raise AssertionError("non-ascending dists should raise")
+# 震中距列表不可包含逆序或重复值
+with raises(ValueError):
+    model.travt(depsrc=2, deprcv=0, dists=[5, 2])
+# 震源深度不可为负数
+with raises(ValueError):
+    model.travt(depsrc=-1, deprcv=0, dists=5)

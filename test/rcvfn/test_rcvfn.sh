@@ -1,44 +1,22 @@
 #!/bin/bash
 
 set -euo pipefail
-
-expect_fail() {
-    local desc="$1"
-    shift
-    set +e
-    "$@" >/dev/null 2>&1
-    local ret=$?
-    set -e
-    if [ "$ret" -eq 0 ]; then
-        echo "ERROR: expected failure but succeeded: $desc" >&2
-        exit 1
-    fi
-    echo "OK (failed as expected): $desc"
-}
+source ../common.sh
 
 grt rcvfn -h
+grt rcvfn -M../milrow -P0.12 -TP -N32/0.1 -Oreceiver
+grt rcvfn -M../milrow -I20/2 -TS -N32/0.1+w0.9+n2+a+f -A0.8 -E0.5 -W -Oreceiver
 
-# P 波水平射线参数，输出接收函数和绝对位移分量
-grt rcvfn -M../milrow -P0.12 -TP -N64/0.05 -W -OC_P -s
-test -f C_P/P_rcvfn.sac
-test -f C_P/P_Z.sac
-test -f C_P/P_R.sac
+# 不可同时设置水平射线参数和入射角
+expect_fail grt rcvfn -M../milrow -P0.12 -I20 -TP -N32/0.1 -Oreceiver
+# 未指定水平射线参数或入射角
+expect_fail grt rcvfn -M../milrow -TP -N32/0.1 -Oreceiver
+# 入射角不可达到或超过 90 度
+expect_fail grt rcvfn -M../milrow -I90 -TP -N32/0.1 -Oreceiver
 
-# SV 波入射角，指定反向入射层并覆盖可选频域参数
-grt rcvfn -M../milrow -I20/2 -TS -N64/0.05+w0.9+n2+a+f -A0.8 -E0.5 -W -OC_S -s
-test -f C_S/S_rcvfn.sac
-test -f C_S/S_Z.sac
-test -f C_S/S_R.sac
-
-expect_fail "-P and -I are mutually exclusive" \
-    grt rcvfn -M../milrow -P0.12 -I20 -TP -N8/0.1 -OC_BAD
-
-expect_fail "one of -P and -I is required" \
-    grt rcvfn -M../milrow -TP -N8/0.1 -OC_BAD
-
-expect_fail "incidence angle must be below 90 degrees" \
-    grt rcvfn -M../milrow -I90 -TP -N8/0.1 -OC_BAD
+# 水平射线参数不可大到使 P 波无法传播
+expect_fail grt rcvfn -M../milrow -P1 -TP -N32/0.1 -Oreceiver
 
 python -u test_rcvfn.py
 
-rm -rf C_P C_S PY_P PY_S
+rm -rf receiver

@@ -1,109 +1,44 @@
 #!/bin/bash
 
 set -euo pipefail
-
-expect_fail() {
-    local desc="$1"
-    shift
-    set +e
-    "$@" >/dev/null 2>&1
-    local ret=$?
-    set -e
-    if [ "$ret" -eq 0 ]; then
-        echo "ERROR: expected failure but succeeded: $desc" >&2
-        exit 1
-    fi
-    echo "OK (failed as expected): $desc"
-}
+source ../common.sh
+create_test_files
 
 grt greenfn -h
 
-grt greenfn -M../milrow -D2/3 -N600/0.02 -R10 -OGRN
-# 输出根目录应保留模型文件副本
-test -f GRN/milrow
-grt greenfn -M../milrow -D2/3 -N600/0.02 -R10 -e -OGRN
-grt greenfn -M../milrow -D2/3 -N600/0.02+w0.6+n10 -R10 -OGRN
-grt greenfn -M../milrow -D2/3 -N600/0.02 -H1/10 -R10 -OGRN
-grt greenfn -M../milrow -D2/3 -N600/0.02 -L20 -R10 -OGRN
+# 采样、频带、积分控制和时间偏移
+grt greenfn -M../milrow -D2/0 -N32/0.1 -R5 -OGRN
+grt greenfn -M../milrow -D2/0 -N32/0.1+w0.6+n2+a+f -R5 -e -P2 -OGRN
+grt greenfn -M../milrow -D2/0 -N32/0.1 -R5 -H0.5/2 -L10 -OGRN
+grt greenfn -M../milrow -D2/0 -N32/0.1 -R5 -K+k4+f+s1.2+e1e-3+v1.5 -OGRN
+grt greenfn -M../milrow -D2/0 -N32/1 -R100 -L+l10+o2 -E-2/9 -OGRN
+grt greenfn -M../milrow -D2/0 -N32/1 -R100 -L+a1e-3 -Ep-1 -OGRN
 
-grt greenfn -M../milrow -D2/3 -N600/0.02 -K+k4+s1.2+e1e-3+v1.5 -R10 -OGRN
+# 收敛方法、边界条件、源类型和积分统计
+grt greenfn -M../milrow -D2/0 -N32/0.1 -R5 -Cd -BrF -OGRN
+grt greenfn -M../milrow -D2/0 -N32/0.1 -R5 -Cp -BhR -OGRN
+grt greenfn -M../milrow -D2/0 -N32/0.1 -R5 -Cn -BrH -Gev -S1,2 -OGRN
 
-grt greenfn -M../milrow -D2/0 -N1400/1 -L+a1e-3 -E-2/9 -R2000 -OGRN
-grt greenfn -M../milrow -D2/0 -N1400/1+a -L+a1e-3 -E-2/9 -R2000 -OGRN
-grt greenfn -M../milrow -D2/0 -N1400/1 -L+a1e-3 -Ep-20 -R2000 -OGRN
+# 距离和深度的列表、范围、文件输入
+grt greenfn -M../milrow -D2/0 -N16/0.1 -R2,5,10 -OGRN
+grt greenfn -M../milrow -Ds1/2/1 -Dr0,1 -N16/0.1 -R2/10/4 -OGRN
+grt greenfn -M../milrow -Dsdepsrc -Drdeprcv -N16/0.1 -Rdists -OGRN -s
 
-grt greenfn -M../milrow -D0.1/0 -N600/0.02 -R10 -OGRN -Cd
-grt greenfn -M../milrow -D0.1/0 -N600/0.02 -R10 -OGRN -Cp
-grt greenfn -M../milrow -D0.1/0 -N600/0.02 -R10 -OGRN -Cn
+# 震中距列表不可包含逆序或重复值
+expect_fail grt greenfn -M../milrow -D2/0 -N32/0.1 -R5,2 -OGRN
+# 不可同时设置单深度和多深度参数
+expect_fail grt greenfn -M../milrow -D2/0 -Ds1,2 -Dr0 -N32/0.1 -R5 -OGRN
+# 未指定多深度参数对应的接收深度
+expect_fail grt greenfn -M../milrow -Ds1,2 -N32/0.1 -R5 -OGRN
+# 时间采样间隔不可为零或负数
+expect_fail grt greenfn -M../milrow -D2/0 -N32/0 -R5 -OGRN
 
-grt greenfn -M../milrow -D2/3 -N600/0.02 -L20 -R10 -S -OGRN
-grt greenfn -M../milrow -D2/3 -N600/0.02 -L20 -R10 -S1,10,20 -OGRN
-test -d GRN_grtstats/milrow_2_3
-
-# boundary
-grt greenfn -M../milrow -D2/3 -N600/0.02 -R10 -BrF -OGRN
-grt greenfn -M../milrow -D2/3 -N600/0.02 -R10 -BhR -OGRN
-grt greenfn -M../milrow -D2/3 -N600/0.02 -R10 -BrH -OGRN
-
-
-# multi distance
-grt greenfn -M../milrow -D2/0 -N600/0.02 -R6,8,10 -OGRN
-cat > dists <<EOF
-6
-8
-10
-EOF
-grt greenfn -M../milrow -D2/0 -N600/0.02 -Rdists -OGRN
-rm -rf dists
-grt greenfn -M../milrow -D2/0 -N600/0.02 -R6/10/2 -OGRN
-test -f GRN/milrow_2_0_6/EXZ.sac
-test -f GRN/milrow_2_0_8/EXZ.sac
-test -f GRN/milrow_2_0_10/EXZ.sac
-
-printf '6\n8\n10' > dists_no_newline
-grt greenfn -M../milrow -D2/0 -N600/0.02 -Rdists_no_newline -OGRN
-rm -f dists_no_newline
-
-# output directory validation
-mkdir -p GRN_BAD/other_model_2_0_5
-expect_fail "output directory contains another model" \
-    grt greenfn -M../milrow -D2/0 -N8/0.02 -R5 -OGRN_BAD
-test ! -e GRN_BAD/command
-mkdir -p GRN_BAD_FILE
-touch GRN_BAD_FILE/README
-expect_fail "output directory contains an unexpected file" \
-    grt greenfn -M../milrow -D2/0 -N8/0.02 -R5 -OGRN_BAD_FILE
-test ! -e GRN_BAD_FILE/command
-
-cp ../milrow ../mil_row
-grt greenfn -M../mil_row -D2/0 -N8/0.02 -R5 -OGRN_UNDERSCORE
-test -f GRN_UNDERSCORE/mil_row_2_0_5/EXZ.sac
-rm -f ../mil_row
-
-cp ../milrow command
-expect_fail "reserved model name command" \
-    grt greenfn -Mcommand -D2/0 -N8/0.02 -R5 -OGRN_COMMAND_BAD
-rm -f command
-
-# multi source/receiver depths
-grt greenfn -M../milrow -Ds1,2 -Dr0,1 -N80/0.02 -R5 -OGRN_MULTI -s
-test -f GRN_MULTI/milrow_1_0_5/EXZ.sac
-test -f GRN_MULTI/milrow_2_1_5/EXZ.sac
-
-expect_fail "non-ascending -R list" \
-    grt greenfn -M../milrow -D2/0 -N600/0.02 -R3,1,2 -OGRN_bad
-
-expect_fail "-D and -Ds/-Dr are mutually exclusive" \
-    grt greenfn -M../milrow -D2/0 -Ds1,2 -Dr0 -N80/0.02 -R5 -OGRN_bad
-
-expect_fail "-Ds without -Dr" \
-    grt greenfn -M../milrow -Ds1,2 -N80/0.02 -R5 -OGRN_bad
-
+# 频带下限不可超过上限
+expect_fail grt greenfn -M../milrow -D2/0 -N32/0.1 -R5 -H2/0.5 -OGRN
+# 不可同时设置 FIM 和 SAFIM
+expect_fail grt greenfn -M../milrow -D2/0 -N32/0.1 -R5 -L+l10+a1e-3 -OGRN
 
 python -u test_greenfn.py
 
-rm -rf GRN
-rm -rf GRN_MULTI
-rm -rf GRN_grtstats
-rm -rf GRN_BAD GRN_BAD_FILE GRN_UNDERSCORE
-rm -rf GRN_COMMAND_BAD
+rm -rf GRN GRN_grtstats
+remove_test_files

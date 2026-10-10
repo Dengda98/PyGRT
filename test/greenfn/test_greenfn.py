@@ -1,48 +1,43 @@
 import shutil
-from pathlib import Path
+from unittest import TestCase
 
 import pygrt
 
-dist = 10.0
-depsrc = 2.0
-deprcv = 3.0
-nt = 600
-dt = 0.02
-modname = "../milrow"
+raises = TestCase().assertRaises
 
-pymod = pygrt.PyModel1D(grn="GRN", modelpath=modname)
+model = pygrt.PyModel1D(grn="GRN", modelpath="../milrow")
+model.greenfn(depsrc=2, deprcv=0, dists=5, nt=32, dt=0.1)
+model.greenfn(depsrc=2, deprcv=0, dists=5, nt=32, dt=0.1, calc_upar=True, upsampling_n=2, zeta=0.6, nthreads=2)
+model.greenfn(depsrc=2, deprcv=0, dists=5, nt=32, dt=0.1, freqband=[0.5, 2], Length=10, keepAllFreq=True, skipImagComps=True)
+model.greenfn(depsrc=2, deprcv=0, dists=5, nt=32, dt=0.1, k0=4, use_kmax_ref=True, ampk=1.2, keps=1e-3, vmin_ref=1.5)
+model.greenfn(depsrc=2, deprcv=0, dists=100, nt=32, dt=1, filonLength=10, filonCut=2, delayT0=-2, delayV0=9)
+model.greenfn(depsrc=2, deprcv=0, dists=100, nt=32, dt=1, safilonTol=1e-3, ref_first_p=True, delayT0=-1)
+model.greenfn(depsrc=2, deprcv=0, dists=5, nt=32, dt=0.1, converg_method="DCM")
+model.greenfn(depsrc=2, deprcv=0, dists=5, nt=32, dt=0.1, converg_method="PTAM")
+model.greenfn(depsrc=2, deprcv=0, dists=5, nt=32, dt=0.1, converg_method="none", gf_source=["EX", "VF"], statsidxs=[1, 2])
+model.greenfn(depsrc=[1, 2], deprcv=[0, 1], dists=[2, 5, 10], nt=16, dt=0.1, print_log=False)
 
-pymod.greenfn(depsrc=depsrc, deprcv=deprcv, dists=dist, nt=nt, dt=dt)
-pymod.greenfn(depsrc=depsrc, deprcv=deprcv, dists=dist, nt=nt, dt=dt, calc_upar=True)
-pymod.greenfn(depsrc=depsrc, deprcv=deprcv, dists=dist, nt=nt, dt=dt, zeta=0.6, upsampling_n=10)
-pymod.greenfn(depsrc=depsrc, deprcv=deprcv, dists=dist, nt=nt, dt=dt, freqband=[1, 10])
-pymod.greenfn(depsrc=depsrc, deprcv=deprcv, dists=dist, nt=nt, dt=dt, Length=20)
-pymod.greenfn(depsrc=depsrc, deprcv=deprcv, dists=dist, nt=nt, dt=dt, k0=4, ampk=1.2, keps=1e-3, vmin_ref=1.5)
+model = pygrt.PyModel1D(grn="GRN", modelpath="../milrow", topbound="rigid", botbound="free")
+model.greenfn(depsrc=2, deprcv=0, dists=5, nt=32, dt=0.1)
+model = pygrt.PyModel1D(grn="GRN", modelpath="../milrow", topbound="halfspace", botbound="rigid")
+model.greenfn(depsrc=2, deprcv=0, dists=5, nt=32, dt=0.1)
 
-pymod.greenfn(depsrc=depsrc, deprcv=0.0, dists=2000, nt=1400, dt=1.0, safilonTol=1e-3)
-pymod.greenfn(depsrc=depsrc, deprcv=0.0, dists=2000, nt=1400, dt=1.0, safilonTol=1e-3, keepAllFreq=True)
+# 频带下限不可超过上限
+with raises(RuntimeError):
+    model.greenfn(depsrc=2, deprcv=0, dists=5, nt=32, dt=0.1, freqband=[2, 0.5], print_log=False)
+# 不可同时设置 FIM 和 SAFIM
+with raises(RuntimeError):
+    model.greenfn(depsrc=2, deprcv=0, dists=5, nt=32, dt=0.1, filonLength=10, safilonTol=1e-3)
 
-pymod.greenfn(depsrc=depsrc, deprcv=deprcv, dists=dist, nt=nt, dt=dt, Length=20, converg_method="DCM")
-pymod.greenfn(depsrc=depsrc, deprcv=deprcv, dists=dist, nt=nt, dt=dt, Length=20, converg_method="PTAM")
-pymod.greenfn(depsrc=depsrc, deprcv=deprcv, dists=dist, nt=nt, dt=dt, Length=20, converg_method="none")
+# 震中距列表不可包含逆序或重复值
+with raises(ValueError):
+    model.greenfn(depsrc=2, deprcv=0, dists=[5, 2], nt=32, dt=0.1)
+# 时间采样间隔不可为零或负数
+with raises(ValueError):
+    model.greenfn(depsrc=2, deprcv=0, dists=5, nt=32, dt=0)
+# 不可设置不支持的收敛方法
+with raises(ValueError):
+    model.greenfn(depsrc=2, deprcv=0, dists=5, nt=32, dt=0.1, converg_method="bad")
 
-pymod.greenfn(depsrc=depsrc, deprcv=deprcv, dists=dist, nt=nt, dt=dt, Length=20, statsidxs=[1, 10, 20])
-
-# multi distances
-pymod.greenfn(depsrc=depsrc, deprcv=0.0, dists=[6, 8, 10], nt=nt, dt=dt)
-pymod.greenfn(depsrc=[1.0, 2.0], deprcv=[0.0, 1.0], dists=5.0, nt=80, dt=0.02)
-
-# boundary condition
-pymod = pygrt.PyModel1D(grn="GRN", modelpath=modname, topbound="free", botbound="free")
-pymod.greenfn(depsrc=depsrc, deprcv=deprcv, dists=dist, nt=nt, dt=dt)
-
-pymod = pygrt.PyModel1D(grn="GRN", modelpath=modname, topbound="halfspace", botbound="free")
-pymod.greenfn(depsrc=depsrc, deprcv=deprcv, dists=dist, nt=nt, dt=dt)
-
-pymod = pygrt.PyModel1D(grn="GRN", modelpath=modname, topbound="rigid", botbound="rigid")
-pymod.greenfn(depsrc=depsrc, deprcv=deprcv, dists=dist, nt=nt, dt=dt)
-
-for name in ["GRN", "GRN_grtstats"]:
-    p = Path(name)
-    if p.is_dir():
-        shutil.rmtree(p, ignore_errors=True)
+shutil.rmtree("GRN")
+shutil.rmtree("GRN_grtstats")

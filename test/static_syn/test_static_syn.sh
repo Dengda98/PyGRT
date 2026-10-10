@@ -1,223 +1,47 @@
 #!/bin/bash
 
 set -euo pipefail
-
-HERE=$(cd "$(dirname "$0")" && pwd)
-cd "$HERE"
-
-expect_fail() {
-    # 期望命令失败；成功则报错退出
-    local desc="$1"
-    shift
-    set +e
-    "$@" >/dev/null 2>&1
-    local ret=$?
-    set -e
-    if [ "$ret" -eq 0 ]; then
-        echo "ERROR: expected failure but succeeded: $desc" >&2
-        exit 1
-    fi
-    echo "OK (failed as expected): $desc"
-}
+source ../common.sh
+create_test_files
 
 grt static syn -h
-grt static_syn -h
+grt static greenfn -M../milrow -D2/0 -R0/12/3 -e -Ostgrn.nc
 
-# -------------------- 单深度 -R 库 --------------------
-grt static greenfn -M../milrow -D2/0 -R0/8/1 -e -Ostgrn.nc
+# 点源机制、源强、坐标分量和位移导数
+grt static syn -Gstgrn.nc -S1e20 -Ostsyn.nc
+grt static syn -Gstgrn.nc -S1e20 -F2/-1/4 -Ostsyn.nc
+grt static syn -Gstgrn.nc -S1e20 -M33/44/55 -Ostsyn.nc
+grt static syn -Gstgrn.nc -Su1e6 -M33/44 -Ostsyn.nc
+grt static syn -Gstgrn.nc -S1e20 -T1/-2/-5/0.5/3/1.2 -N -e -Ostsyn.nc
+grt static syn -Gstgrn.nc -S1e20 -X-2/2/2 -Y-2/2/2 -Ostsyn.nc
 
-# -R 建库后，在 static syn 中指定二维接收网格
-grt static syn -S1e20 -Gstgrn.nc -X-2/2/0.5 -Y-1/1/0.5 -Ostsyn.nc
-grt static syn -S1e20 -F2/-1/4    -Gstgrn.nc -X-2/2/0.5 -Y-1/1/0.5 -Ostsyn.nc
-grt static syn -S1e20 -M77/88/111 -Gstgrn.nc -X-2/2/0.5 -Y-1/1/0.5 -Ostsyn.nc
-grt static syn -S1e20 -Ds2 -Dr0 -Gstgrn.nc -X-2/2/0.5 -Y-1/1/0.5 -Ostsyn.nc
-grt static syn -Su1e6 -M77/88/111 -Gstgrn.nc -X-2/2/0.5 -Y-1/1/0.5 -Ostsyn.nc
-grt static syn -Su1e6 -M77/88 -Gstgrn.nc -X-2/2/0.5 -Y-1/1/0.5 -Ostsyn.nc
-grt static syn -S1e20 -T1/-2/-5/0.5/3/1.2 -Gstgrn.nc -X-2/2/0.5 -Y-1/1/0.5 -Ostsyn.nc
+# 多深度库、任意接收点、有限震源和接收断层
+grt static greenfn -M../milrow -Ds1,2 -Dr0,1 -R0/12/3 -e -Ostgrn_multi.nc
+grt static syn -Gstgrn_multi.nc -S1e20 -Ds1.5 -Dr0.5 -X-2/2/2 -Y-2/2/2 -P2 -Ostsyn.nc
+grt static syn -Gstgrn_multi.nc -S1e20 -Ds2 -Qrcv_points.txt -Ostsyn.nc
+grt static syn -Gstgrn_multi.nc -S1e20 -Ds2 -Qrcv_geometry.txt -N -e -Ostsyn.nc
+grt static syn -Gstgrn_multi.nc -S1e20 -Ds2 -Urcv_faults.inr -Ostsyn.nc
+grt static syn -Gstgrn_multi.nc -S1e20 -Ds2 -Urcv_faults.inr+i1/1 -Ostsyn.nc
+grt static syn -Gstgrn_multi.nc -Cfaults.inp+i1/1 -Dr0 -X-2/2/2 -Y-2/2/2 -e -Ostsyn.nc
+grt static syn -Gstgrn_multi.nc -Cfaults.inr -Qrcv_points.txt -Ostsyn.nc
 
-grt static syn -S1e20 -F2/-1/4 -e -Gstgrn.nc -X-2/2/0.5 -Y-1/1/0.5 -Ostsyn.nc
-grt static syn -S1e20 -F2/-1/4 -N -e -Gstgrn.nc -X-2/2/0.5 -Y-1/1/0.5 -Ostsyn.nc
+# 未指定多深度库对应的震源深度和接收深度
+expect_fail grt static syn -Gstgrn_multi.nc -S1e20 -Ostsyn.nc
+# 震源深度不可超出格林函数库范围
+expect_fail grt static syn -Gstgrn_multi.nc -S1e20 -Ds3 -Dr0 -Ostsyn.nc
+# 不可同时设置有限震源文件和点源源强
+expect_fail grt static syn -Gstgrn_multi.nc -S1e20 -Cfaults.inp -Ostsyn.nc
+# 不可同时设置接收点文件和接收网格
+expect_fail grt static syn -Gstgrn_multi.nc -S1e20 -Ds2 -Qrcv_points.txt -X-2/2/2 -Y-2/2/2 -Ostsyn.nc
 
-# -------------------- -R 建库后合成 --------------------
-grt static greenfn -M../milrow -D2/0 -R0/8/1 -e -Ostgrn_r.nc
-# 从 -R 库插值到二维接收网格
-grt static syn -S1e20 -Gstgrn_r.nc -X-2/2/1 -Y-2/2/1 -Ostsyn_r.nc
-
-# 单节点库仍可合成普通点源，但所有 -C 输入均须拒绝
-grt static greenfn -M../milrow -D2/0 -R1 -e -Ostgrn_node.nc
-grt static syn -Gstgrn_node.nc -S1e20 -e -Ostsyn_node.nc
-for kode in 100 400 500; do
-    cat > "cfaults_node_${kode}.inp" <<EOF
-# X-start Y-start X-fin Y-fin Kode value1 value2 dip angle top bot
-# ------- ------- ----- ----- ---- ------ ------ --------- --- ---
-1 -1 0 1 0 $kode 0.1 0.2 90 1 3
-EOF
-    for subdivision in '' '+i2/2'; do
-        expect_fail "single-node library rejects Kode $kode with subdivision '$subdivision'" \
-            grt static syn -Gstgrn_node.nc "-Ccfaults_node_${kode}.inp${subdivision}" -Ostsyn_node_bad.nc
-    done
-done
-
-# -------------------- 多深度库：点源 -Ds；深度插值；-Q --------------------
-grt static greenfn -M../milrow -Ds1,2,3 -Dr0 -R0/12/1 -e -Ostgrn_md.nc
-grt static syn -Gstgrn_md.nc -Su1e16 -Ds2 -X-2/2/1 -Y-2/2/1 -Ostsyn_md.nc
-# 震源深度插值（库节点之间）
-grt static syn -Gstgrn_md.nc -Su1e16 -Ds1.5 -X-2/2/1 -Y-2/2/1 -e -Ostsyn_interp.nc
-
-grt static greenfn -M../milrow -Ds1,3,5 -Dr0,1,2,3,4 -R0/12/2 -e -Ostgrn_rf.nc
-
-cat > rcv_pts.txt <<'EOF'
-# north east depth (km)
-0 0 0
-1 2 0
--1 1 0
-EOF
-grt static syn -Gstgrn_md.nc -Su1e16 -Ds2 -Qrcv_pts.txt -Ostsyn_q.nc
-
-cat > rcv_pts_6.txt <<'EOF'
-# north east depth strike dip rake
-0 0 0 10 20 30
-1 2 0 40 50 60
--1 1 0 70 80 90
-EOF
-grt static syn -Gstgrn_md.nc -Su1e16 -Ds2 -Qrcv_pts_6.txt -Ostsyn_q6.nc
-
-cat > rcv_faults.inp <<'EOF'
-  #   X-start    Y-start      X-fin      Y-fin   Kode  value1      value2       dip       top       bot
-xxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxx  xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx
-  1     0.0000     0.0000     2.0000     0.0000   100     0.1000      0.0000     90.00       1.0000     3.0000
-  2     0.0000     4.0000     2.0000     4.0000   100     0.0000      0.0000     60.00       1.0000     3.0000
-EOF
-grt static syn -Gstgrn_rf.nc -Su1e16 -Ds2 -Urcv_faults.inp+i0.75/0.75 -e -Ostsyn_rf.nc
-grt static syn -Gstgrn_rf.nc -Su1e16 -Ds2 -Urcv_faults.inp -e -Ostsyn_rf_default.nc
-
-# Kode=100 的 rake 接收断层在零滑动量时仍保留滑动角，省略剖分时取中心点
-cat > rcv_faults_rake.inr <<'EOF'
-# X-start Y-start X-fin Y-fin Kode rake netslip dip top bot
-xxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx
-1 0 0 2 0 100 45 0 90 1 3
-2 0 4 2 4 100 -30 1 60 1 3
-3 0 0 2 0 100 90 0 90 1 3
-EOF
-grt static syn -Gstgrn_rf.nc -Su1e16 -Ds2 -Urcv_faults_rake.inr -Ostsyn_rcv_center.nc
-grt static syn -Gstgrn_rf.nc -Su1e16 -Ds2 -Urcv_faults_rake.inr+i1/1 -Ostsyn_rcv_subdiv.nc
-sed 's/ 100 / 200 /g' rcv_faults_rake.inr > rcv_faults_bad.inr
-expect_fail "rake receiver faults require Kode=100" \
-    grt static syn -Gstgrn_rf.nc -Su1e16 -Ds2 -Urcv_faults_bad.inr -Ostsyn_bad.nc
-rm -f rcv_faults_bad.inr
-rm -f rcv_faults_rake.inr stsyn_rcv_center.nc stsyn_rcv_subdiv.nc
-
-# 分量格式的接收文件同样只允许 Kode=100
-sed 's/   100 /   200 /g' rcv_faults.inp > rcv_faults_bad.inp
-expect_fail "component receiver faults require Kode=100" \
-    grt static syn -Gstgrn_rf.nc -Su1e16 -Ds2 -Urcv_faults_bad.inp -Ostsyn_bad.nc
-rm -f rcv_faults_bad.inp
-
-# 多台站深度：必须 -Dr
-grt static greenfn -M../milrow -Ds2 -Dr0,0.5 -R0,5 -e -Ostgrn_mr.nc
-grt static syn -Gstgrn_mr.nc -S1e20 -Dr0.25 -X-2/2/1 -Y-2/2/1 -Ostsyn_dr.nc
-
-# -------------------- 有限断层（库震源深度覆盖断层 top/bot）--------------------
-# W=(2.8-1.2)/sin(90°)=1.6 km，dW=1 → 末块短于 dW，用于覆盖余数子断层中心
-cat > cfaults_tiny.inp <<'EOF'
-  #   X-start    Y-start     X-fin     Y-fin    Kode  shear(m)  reverse(m)  dip angle   top(km)   bot(km)
-xxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxx  xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx
-  1     0.0000     0.0000     2.0000     0.0000 100 0.1000     0.0000     90.00         1.2000    2.8000
-EOF
-grt static syn -Gstgrn_md.nc -Ccfaults_tiny.inp+i1/1 -e -X-2/2/1 -Y-2/2/1 -Ostsyn_ff_zrt_cli.nc
-grt static syn -Gstgrn_md.nc -Ccfaults_tiny.inp+i1/1 -N -e -X-2/2/1 -Y-2/2/1 -Ostsyn_ff_zne_cli.nc
-grt static syn -Gstgrn_md.nc -Ccfaults_tiny.inp+i1/1 -e -Qrcv_pts.txt -Ostsyn_ffq.nc
-
-# -------------------- Coulomb Kode 100/200/300/400/500 and header rake marker --------------------
-# The local fixtures use top=1 km and bot=3 km, covered by stgrn_md.nc.
-cat > cfaults_kodes.inp <<'EOF'
-  #   X-start    Y-start      X-fin      Y-fin   Kode  rt.lat    reverse   dip angle     top      bot
-xxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx
-  1    -2.0000    -1.0000     3.0000     2.0000   100     0.1200     0.2300     55.00       1.0000     3.0000
-  2    -2.0000    -1.0000     3.0000     2.0000   200     0.0400     0.0800     55.00       1.0000     3.0000
-  3    -2.0000    -1.0000     3.0000     2.0000   300     0.0700    -0.0300     55.00       1.0000     3.0000
-  4    -2.0000    -1.0000     3.0000     2.0000   400  4.0000e+06 -3.0000e+06  55.00       1.0000     3.0000
-  5    -2.0000    -1.0000     3.0000     2.0000   500  2.0000e+06  5.0000e+06   55.00       1.0000     3.0000
-EOF
-cat > cfaults_rake.inr <<'EOF'
-  #   X-start    Y-start      X-fin      Y-fin   Kode  rake      netslip   dip angle     top      bot
-xxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx
-  1    -2.0000    -1.0000     3.0000     2.0000   100     35.0000     0.5000     55.00       1.0000     3.0000
-EOF
-grt static syn -Gstgrn_md.nc -Ccfaults_kodes.inp+i1/1 -X-4/4/2 -Y-4/4/2 -Ostsyn_ff_kodes.nc
-grt static syn -Gstgrn_md.nc -Ccfaults_kodes.inp+i1/1 -e -Qrcv_pts.txt -Off_kodes_q.nc
-grt static syn -Gstgrn_md.nc -Ccfaults_rake.inr+i1/1 -X-4/4/2 -Y-4/4/2 -Ostsyn_ff_rake.nc
-
-# 文件后缀与表头标识错位时，必须给出警告并以表头为准
-cp cfaults_kodes.inp cfaults_kodes_suffix.inr
-grt static syn -Gstgrn_md.nc -Ccfaults_kodes_suffix.inr+i1/1 -X-4/4/2 -Y-4/4/2 \
-    -Ostsyn_ff_kodes_suffix.nc > header_component_suffix.log 2>&1
-grep -Fq 'seventh header column is "rt.lat"' header_component_suffix.log
-
-cp cfaults_rake.inr cfaults_rake_suffix.inp
-grt static syn -Gstgrn_md.nc -Ccfaults_rake_suffix.inp+i1/1 -X-4/4/2 -Y-4/4/2 \
-    -Ostsyn_ff_rake_suffix.nc > header_rake_suffix.log 2>&1
-grep -Eq 'exact token "rake".*no \.inr suffix' header_rake_suffix.log
-
-# rake 的大小写必须精确匹配；非精确匹配仍按分量格式处理
-cat > cfaults_case.inr <<'EOF'
-  #   X-start    Y-start      X-fin      Y-fin   Kode  Rake      reverse   dip angle     top      bot
-xxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxx  xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx
-  1     -2.0000    -1.0000     3.0000     2.0000   200     0.0400      0.0800     55.00       1.0000     3.0000
-EOF
-grt static syn -Gstgrn_md.nc -Ccfaults_case.inr+i1/1 -X-4/4/2 -Y-4/4/2 \
-    -Ostsyn_ff_case.nc > header_case.log 2>&1
-grep -Fq 'seventh header column is "Rake"' header_case.log
-
-# -------------------- 错误参数 --------------------
-expect_fail "multi-src library requires -Ds" \
-    grt static syn -Gstgrn_md.nc -S1e20 -Ostsyn_bad.nc
-
-expect_fail "multi-rcv library requires -Dr" \
-    grt static syn -Gstgrn_mr.nc -S1e20 -Ostsyn_bad.nc
-
-expect_fail "wrong single receiver depth is rejected" \
-    grt static syn -Gstgrn.nc -S1e20 -Dr0.1 -Ostsyn_bad.nc
-
-expect_fail "wrong single source depth is rejected" \
-    grt static syn -Gstgrn.nc -S1e20 -Ds2.1 -Ostsyn_bad.nc
-
-expect_fail "-Q mutually exclusive with -X/-Y" \
-    grt static syn -Gstgrn_md.nc -S1e20 -Ds2 -Qrcv_pts.txt -X-1/1/1 -Y-1/1/1 -Ostsyn_bad.nc
-
-expect_fail "-Q mutually exclusive with -Dr" \
-    grt static syn -Gstgrn_md.nc -S1e20 -Ds2 -Dr0 -Qrcv_pts.txt -Ostsyn_bad.nc
-
-expect_fail "-U mutually exclusive with -Q" \
-    grt static syn -Gstgrn_rf.nc -S1e20 -Ds2 -Qrcv_pts.txt -Urcv_faults.inp -Ostsyn_bad.nc
-
-expect_fail "-U mutually exclusive with -Dr" \
-    grt static syn -Gstgrn_rf.nc -S1e20 -Ds2 -Dr0 -Urcv_faults.inp -Ostsyn_bad.nc
-
-expect_fail "finite fault sampled depth is outside the single-depth library" \
-    grt static syn -Gstgrn.nc -Ccfaults_tiny.inp -Ostsyn_bad.nc
-
-expect_fail "finite fault mutually exclusive with -S" \
-    grt static syn -Gstgrn_md.nc -S1e20 -Ccfaults_tiny.inp -Ostsyn_bad.nc
-
-cat > cfaults_bad_dip.inp <<'EOF'
-  #   X-start    Y-start     X-fin     Y-fin    Kode  shear(m)  reverse(m)  dip angle   top(km)   bot(km)
-xxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxx  xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx
-  1     0.0000     0.0000     2.0000     0.0000 100 0.1000     0.0000      0.00         1.2000    2.8000
-EOF
-expect_fail "finite fault dip must be in (0, 90]" \
-    grt static syn -Gstgrn_md.nc -Ccfaults_bad_dip.inp -Ostsyn_bad.nc
-
-cat > cfaults_bad_bot.inp <<'EOF'
-  #   X-start    Y-start     X-fin     Y-fin    Kode  shear(m)  reverse(m)  dip angle   top(km)   bot(km)
-xxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxx  xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx
-  1     0.0000     0.0000     2.0000     0.0000 100 0.1000     0.0000     90.00         2.8000    1.2000
-EOF
-expect_fail "finite fault bot must be greater than top" \
-    grt static syn -Gstgrn_md.nc -Ccfaults_bad_bot.inp -Ostsyn_bad.nc
+# 未指定点源源强
+expect_fail grt static syn -Gstgrn.nc -Ostsyn.nc
+# 使用接收点文件时，不可再设置接收深度
+expect_fail grt static syn -Gstgrn_multi.nc -S1e20 -Ds2 -Dr0 -Qrcv_points.txt -Ostsyn.nc
+# 接收断层的剖分尺寸不可为零或负数
+expect_fail grt static syn -Gstgrn_multi.nc -S1e20 -Ds2 -Urcv_faults.inr+i0/1 -Ostsyn.nc
 
 python -u test_static_syn.py
 
-rm -rf *.nc rcv_pts.txt rcv_pts_6.txt rcv_faults.inp cfaults_tiny.inp cfaults_bad_dip.inp cfaults_bad_bot.inp
-rm -f cfaults_kodes.inp cfaults_rake.inr cfaults_kodes_suffix.inr cfaults_rake_suffix.inp cfaults_case.inr \
-    header_component_suffix.log header_rake_suffix.log header_case.log cfaults_node_*.inp
+rm -rf stgrn.nc stgrn_multi.nc stsyn.nc
+remove_test_files

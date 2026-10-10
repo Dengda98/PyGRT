@@ -224,16 +224,26 @@ static void getopt_from_command(
  */
 static void check_output_path(const char *input_path, const char *output_path)
 {
-    struct stat input_stat, output_stat;
     if(strcmp(input_path, output_path) == 0){
         GRTRaiseError("Input and output files must be different.\n");
     }
+
+#if _TEST_WHETHER_WIN32_
+    // Windows 下展开相对路径，并忽略路径大小写
+    char input_full[_MAX_PATH], output_full[_MAX_PATH];
+    if(_fullpath(input_full, input_path, _MAX_PATH) != NULL &&
+       _fullpath(output_full, output_path, _MAX_PATH) != NULL && _stricmp(input_full, output_full) == 0){
+        GRTRaiseError("Input and output files must be different.\n");
+    }
+#else
+    struct stat input_stat, output_stat;
     if(((stat(input_path, &input_stat) == 0) &&
         (stat(output_path, &output_stat) == 0)) &&
         ((input_stat.st_dev == output_stat.st_dev) &&
         (input_stat.st_ino == output_stat.st_ino))){
         GRTRaiseError("Input and output files must be different.\n");
     }
+#endif
 }
 
 

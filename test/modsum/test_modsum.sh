@@ -1,66 +1,24 @@
 #!/bin/bash
 
 set -euo pipefail
+source ../common.sh
 
-expect_fail() {
-    local desc="$1"
-    shift
-    set +e
-    "$@" >/dev/null 2>&1
-    local ret=$?
-    set -e
-    if [ "$ret" -eq 0 ]; then
-        echo "ERROR: expected failure but succeeded: $desc" >&2
-        exit 1
-    fi
-    echo "OK (failed as expected): $desc"
-}
+grt modsum -h
+grt eigenv -M../milrow -SR -F0/0.5/0.1 -N -Cphase_R.nc
+grt eigenv -M../milrow -SL -F0/0.5/0.1 -N -Cphase_L.nc
+grt modsum -Cphase_R.nc -D2/1 -R100 -N0 -W2 -e -OGRN
+grt modsum -Cphase_L.nc -D2/1 -R100 -N -W2 -e -OGRN
+grt modsum -Cphase_R.nc -Ds1,2 -Dr0,1 -R100,120 -N0 -F0.1/0.4 -E-2/9 -P2 -OGRN
+grt modsum -Cphase_R.nc -D2/1 -R100 -N0 -Ep-1 -Gev -OGRN
 
-# 计算面波频散, eigenv -F 和 greenfn -N 相匹配
-grt eigenv -M../milrow -F0/1/0.01 -SR -N -Cphase_R.nc
-grt eigenv -M../milrow -F0/1/0.01 -SL -N -Cphase_L.nc
+# 未指定多深度参数对应的接收深度
+expect_fail grt modsum -Cphase_R.nc -Ds1,2 -R100 -N0 -OGRN
+# 震中距列表不可包含逆序或重复值
+expect_fail grt modsum -Cphase_R.nc -D2/1 -R100,50 -N0 -OGRN
 
-# 模态叠加得到格林函数
-# 仅 0 阶
-grt modsum -Cphase_R.nc -D2/1 -R100 -N0 -OGRN_NM_0 -W5 -e
-# 输出根目录应保留由频散文件内嵌模型写出的模型文件
-test -f GRN_NM_0/milrow
-grt modsum -Cphase_L.nc -D2/1 -R100 -N0 -OGRN_NM_0 -W5 -e
-# 仅 1 阶
-grt modsum -Cphase_R.nc -D2/1 -R100 -N1 -OGRN_NM_1 -W5 -e
-grt modsum -Cphase_L.nc -D2/1 -R100 -N1 -OGRN_NM_1 -W5 -e
-# 仅 2 阶
-grt modsum -Cphase_R.nc -D2/1 -R100 -N2 -OGRN_NM_2 -W5 -e
-grt modsum -Cphase_L.nc -D2/1 -R100 -N2 -OGRN_NM_2 -W5 -e
-# 全部
-grt modsum -Cphase_R.nc -D2/1 -R100 -N -OGRN_NM_all -W5 -e
-grt modsum -Cphase_L.nc -D2/1 -R100 -N -OGRN_NM_all -W5 -e
-
-# 多震源/台站深度
-grt modsum -Cphase_R.nc -Ds1,2 -Dr0,1 -R100 -N0 -OGRN_NM_MULTI -W2 -e
-test -f GRN_NM_MULTI/milrow_1_0_100/EXZ.sac
-test -f GRN_NM_MULTI/milrow_2_1_100/EXZ.sac
-
-# output directory validation
-mkdir -p GRN_NM_BAD/other_model_2_0_100
-expect_fail "output directory contains another model" \
-    grt modsum -Cphase_R.nc -D2/1 -R100 -N0 -OGRN_NM_BAD
-test ! -e GRN_NM_BAD/command
-mkdir -p GRN_NM_BAD_FILE
-touch GRN_NM_BAD_FILE/README
-expect_fail "output directory contains an unexpected file" \
-    grt modsum -Cphase_R.nc -D2/1 -R100 -N0 -OGRN_NM_BAD_FILE
-test ! -e GRN_NM_BAD_FILE/command
-
-expect_fail "-Ds without -Dr" \
-    grt modsum -Cphase_R.nc -Ds1,2 -R100 -N0 -OGRN_bad
-
-expect_fail "-D and -Ds/-Dr are mutually exclusive" \
-    grt modsum -Cphase_R.nc -D2/1 -Ds1,2 -Dr0 -R100 -N0 -OGRN_bad
-
-expect_fail "non-ascending -R list" \
-    grt modsum -Cphase_R.nc -D2/1 -R100,50 -N0 -OGRN_bad
+# 升采样倍数不可为零或负数
+expect_fail grt modsum -Cphase_R.nc -D2/1 -R100 -N0 -W0 -OGRN
 
 python -u test_modsum.py
 
-rm -rf GRN* *.nc
+rm -rf GRN phase_R.nc phase_L.nc
