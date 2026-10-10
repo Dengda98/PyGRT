@@ -42,6 +42,9 @@ grt lamb -H8/4.62/3.3 -N16/"$dt" -Ds5 -S1e20 -Urcv_faults.inr+i1/1 -Olamb_faults
 grt lamb -H8/4.62/3.3 -N16/"$dt" -Cfaults.inp+i1/1 -Qrcv_points.txt -Olamb_points -s
 grt lamb -H8/4.62/3.3 -N16/"$dt" -Cfaults.inr+i1/1 -Urcv_faults.inr -Olamb_faults -s
 
+# 显式不再剖分，每条矩形源及接收断层只取一个中心点
+grt lamb -H8/4.62/3.3 -N16/"$dt" -Cfaults.inp+i0/0 -Urcv_faults.inr+i0/0 -Olamb_faults -s
+
 # 各断层的破裂过程和延迟，以及全局时间函数覆盖行末设置
 grt lamb -H8/4.62/3.3 -N16/"$dt" -Cfaults_rupture.inr+i1/1 -Qrcv_points.txt -Olamb_points -s
 grt lamb -H8/4.62/3.3 -N16/"$dt" -Cfaults_rupture.inr+i1/1 -Qrcv_points.txt -Dt/0.2/0.1/0.3+d0.1 -Olamb_points -s
@@ -57,6 +60,9 @@ expect_fail grt lamb -H8/4.62/3.3 -N16/"$dt" -R10 -Ds0 -Dr0 -A30 -S1e20 -Olamb
 expect_fail grt lamb -H8/4.62/3.3 -N16/"$dt" -R0 -Ds5 -Dr1 -A30 -S1e20 -Olamb
 # 不可同时设置接收点文件和接收断层文件
 expect_fail grt lamb -H8/4.62/3.3 -N16/"$dt" -Ds5 -S1e20 -Qrcv_points.txt -Urcv_faults.inr -Olamb
+
+# 剖分尺寸不可为负数
+expect_fail grt lamb -H8/4.62/3.3 -N16/"$dt" -Cfaults.inp+i-1/-1 -Qrcv_points.txt -Olamb_points
 
 # 未指定点源源强
 expect_fail grt lamb -H8/4.62/3.3 -N16/"$dt" -R10 -Ds5 -Dr1 -A30 -Olamb

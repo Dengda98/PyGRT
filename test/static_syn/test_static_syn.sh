@@ -25,6 +25,9 @@ grt static syn -Gstgrn_multi.nc -S1e20 -Ds2 -Urcv_faults.inr+i1/1 -Ostsyn.nc
 grt static syn -Gstgrn_multi.nc -Cfaults.inp+i1/1 -Dr0 -X-2/2/2 -Y-2/2/2 -e -Ostsyn.nc
 grt static syn -Gstgrn_multi.nc -Cfaults.inr -Qrcv_points.txt -Ostsyn.nc
 
+# 显式不再剖分，每条矩形源及接收断层只取一个中心点
+grt static syn -Gstgrn_multi.nc -Cfaults.inp+i0/0 -Urcv_faults.inr+i0/0 -e -Ostsyn.nc
+
 # 未指定多深度库对应的震源深度和接收深度
 expect_fail grt static syn -Gstgrn_multi.nc -S1e20 -Ostsyn.nc
 # 震源深度不可超出格林函数库范围
@@ -34,11 +37,14 @@ expect_fail grt static syn -Gstgrn_multi.nc -S1e20 -Cfaults.inp -Ostsyn.nc
 # 不可同时设置接收点文件和接收网格
 expect_fail grt static syn -Gstgrn_multi.nc -S1e20 -Ds2 -Qrcv_points.txt -X-2/2/2 -Y-2/2/2 -Ostsyn.nc
 
+# 剖分尺寸须同时为零或同时为正数
+expect_fail grt static syn -Gstgrn_multi.nc -Cfaults.inp+i1/0 -Qrcv_points.txt -Ostsyn.nc
+
 # 未指定点源源强
 expect_fail grt static syn -Gstgrn.nc -Ostsyn.nc
 # 使用接收点文件时，不可再设置接收深度
 expect_fail grt static syn -Gstgrn_multi.nc -S1e20 -Ds2 -Dr0 -Qrcv_points.txt -Ostsyn.nc
-# 接收断层的剖分尺寸不可为零或负数
+# 接收断层的剖分尺寸须同时为零或同时为正数
 expect_fail grt static syn -Gstgrn_multi.nc -S1e20 -Ds2 -Urcv_faults.inr+i0/1 -Ostsyn.nc
 
 python -u test_static_syn.py

@@ -42,10 +42,11 @@ typedef struct {
     /** 对应 Coulomb 程序版本的有限断层 */
     struct {
         bool active;
-        real_t dL;   // 沿走向方向的剖分间隔，<=0 表示用默认
-        real_t dW;   // 沿倾向方向的剖分间隔，<=0 表示用默认
-        size_t nfault;
-        FINITE_FAULT *faults;
+        bool has_i;            ///< 是否显式指定 +i
+        real_t dL;             ///< 走向剖分间隔，km
+        real_t dW;             ///< 倾向剖分间隔，km
+        size_t nfault;         ///< 震源断层数量
+        FINITE_FAULT *faults;  ///< 震源断层数组
     } C;
     /** -X: north 坐标 */
     struct {
@@ -67,10 +68,11 @@ typedef struct {
     /** -U: Coulomb 格式有限接收断层 */
     struct {
         bool active;
-        real_t dL;
-        real_t dW;
-        size_t nfault;
-        FINITE_FAULT *faults;
+        bool has_i;            ///< 是否显式指定 +i
+        real_t dL;             ///< 走向剖分间隔，km
+        real_t dW;             ///< 倾向剖分间隔，km
+        size_t nfault;         ///< 接收断层数量
+        FINITE_FAULT *faults;  ///< 接收断层数组
     } U;
     /** 输出 nc 文件名 */
     struct {
@@ -241,6 +243,8 @@ printf("\n"
 "                  subfault size (km). If omitted, both default to\n"
 "                  the smallest positive interval among epicentral-distance,\n"
 "                  source-depth and receiver-depth sampling in the library.\n"
+"                  Sizes must both be positive or both be zero. +i0/0 uses\n"
+"                  one center point source weighted by the whole fault area.\n"
 "                  Each fault: dip in (0, 90], bot > top (km).\n"
 "                  Receiver locations default to the library grid;\n"
 "                  optional -X/-Y, -Q or -U to redefine.\n"
@@ -272,7 +276,8 @@ printf("\n"
 "                  Coulomb-format receiver faults. Without +i, use each\n"
 "                  fault center. Slip magnitude is ignored.\n"
 "                  Only Kode=100 is supported.\n"
-"                  With +i, each fault is subdivided along strike/dip and\n"
+"                  +i0/0 also uses one center point per fault. With positive\n"
+"                  +i sizes, each fault is subdivided along strike/dip and\n"
 "                  the receiver points are the subfault centers. The output\n"
 "                  uses one point dimension for all receivers and adds\n"
 "                  nfault-dimensional strike/dip/rake/offset/stksize/dipsize variables.\n"
@@ -463,7 +468,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 Ctrl->C.active = true;
                 grt_finite_fault_free(Ctrl->C.nfault, Ctrl->C.faults);
                 Ctrl->C.faults = grt_finite_fault_from_option(
-                    optarg, &Ctrl->C.nfault, &Ctrl->C.dL, &Ctrl->C.dW, true, 0, 1, NULL);
+                    optarg, &Ctrl->C.nfault, &Ctrl->C.has_i, &Ctrl->C.dL, &Ctrl->C.dW, true, 0, 1, NULL);
                 break;
 
             // X坐标数组，-Xx1/x2/dx
@@ -523,7 +528,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 Ctrl->U.active = true;
                 grt_finite_fault_free(Ctrl->U.nfault, Ctrl->U.faults);
                 Ctrl->U.faults = grt_finite_fault_from_option(
-                    optarg, &Ctrl->U.nfault, &Ctrl->U.dL, &Ctrl->U.dW, false, 0, 1, NULL);
+                    optarg, &Ctrl->U.nfault, &Ctrl->U.has_i, &Ctrl->U.dL, &Ctrl->U.dW, false, 0, 1, NULL);
                 break;
 
             // 多线程数
@@ -1145,14 +1150,15 @@ static void check_syn_library_options(const GRT_MODULE_CTRL *Ctrl, const STGRNLI
  * 确定有限震源断层的剖分尺寸
  *
  * @param[in]      lib    静态格林函数库
+ * @param[in]      has_i  是否显式指定 +i
  * @param[in,out]  dL     沿走向剖分尺寸 (km)
  * @param[in,out]  dW     沿倾向剖分尺寸 (km)
  * @param[in]      label  输出信息中的断层类型
  */
 static void resolve_finite_fault_subdiv(
-    const STGRNLIB *lib, real_t *dL, real_t *dW, const char *label)
+    const STGRNLIB *lib, bool has_i, real_t *dL, real_t *dW, const char *label)
 {
-    if(*dL <= 0.0){
+    if(!has_i){
         // 未指定 +i 时统一使用格林函数库三个采样方向的最小正间隔
         *dL = *dW = grt_stgrnlib_default_subfault_size(lib);
         GRTRaiseInfo("%s: use default dL = dW = %.6g km", label, *dL);
@@ -1256,7 +1262,7 @@ int static_syn_main(int argc, char **argv){
         }
         // Kode 400/500 保持单点，不需要填充剖分尺寸
         if(rectangles) {
-            resolve_finite_fault_subdiv(lib, &Ctrl->C.dL, &Ctrl->C.dW, "finite fault");
+            resolve_finite_fault_subdiv(lib, Ctrl->C.has_i, &Ctrl->C.dL, &Ctrl->C.dW, "finite fault");
         }
     }
 

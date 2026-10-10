@@ -35,10 +35,11 @@ typedef struct {
     /** Coulomb 格式有限断层 */
     struct {
         bool active;
-        real_t dL;
-        real_t dW;
-        FINITE_FAULT *faults;
-        size_t nfault;
+        bool has_i;            ///< 是否显式指定 +i
+        real_t dL;             ///< 走向剖分间隔，km
+        real_t dW;             ///< 倾向剖分间隔，km
+        FINITE_FAULT *faults;  ///< 震源断层数组
+        size_t nfault;         ///< 震源断层数量
     } C;
     /** North 方向接收点坐标 */
     struct {
@@ -60,10 +61,11 @@ typedef struct {
     /** Coulomb 格式有限接收断层 */
     struct {
         bool active;
-        real_t dL;
-        real_t dW;
-        size_t nfault;
-        FINITE_FAULT *faults;
+        bool has_i;            ///< 是否显式指定 +i
+        real_t dL;             ///< 走向剖分间隔，km
+        real_t dW;             ///< 倾向剖分间隔，km
+        size_t nfault;         ///< 接收断层数量
+        FINITE_FAULT *faults;  ///< 接收断层数组
     } U;
     /** 输出 nc 文件 */
     struct {
@@ -176,7 +178,8 @@ printf("\n"
 "                  Coulomb-format finite receiver faults. Without +i, each\n"
 "                  fault contributes one point at its rectangular center.\n"
 "                  Slip magnitude is ignored. Only Kode=100 is supported.\n"
-"                  With +i, each fault is subdivided along strike/dip and\n"
+"                  +i0/0 also uses one center point per fault. With positive\n"
+"                  +i sizes, each fault is subdivided along strike/dip and\n"
 "                  the receiver points are the subfault centers. The output\n"
 "                  uses one point dimension for all receivers and adds\n"
 "                  nfault-dimensional strike/dip/rake/offset/stksize/dipsize variables.\n"
@@ -297,8 +300,8 @@ static void parse_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 Ctrl->C.active = true;
                 grt_finite_fault_free(Ctrl->C.nfault, Ctrl->C.faults);
                 Ctrl->C.faults = grt_finite_fault_from_option(
-                    optarg, &Ctrl->C.nfault, &Ctrl->C.dL, &Ctrl->C.dW, true, 0, 1, NULL);
-                if(Ctrl->C.dL > 0.0){
+                    optarg, &Ctrl->C.nfault, &Ctrl->C.has_i, &Ctrl->C.dL, &Ctrl->C.dW, true, 0, 1, NULL);
+                if(Ctrl->C.has_i){
                     GRTBadOptionError(C, "subdivision suffix is not used by the direct rectangular Okada solution.");
                 }
                 break;
@@ -326,7 +329,7 @@ static void parse_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 Ctrl->U.active = true;
                 grt_finite_fault_free(Ctrl->U.nfault, Ctrl->U.faults);
                 Ctrl->U.faults = grt_finite_fault_from_option(
-                    optarg, &Ctrl->U.nfault, &Ctrl->U.dL, &Ctrl->U.dW, false, 0, 1, NULL);
+                    optarg, &Ctrl->U.nfault, &Ctrl->U.has_i, &Ctrl->U.dL, &Ctrl->U.dW, false, 0, 1, NULL);
                 break;
             }
 

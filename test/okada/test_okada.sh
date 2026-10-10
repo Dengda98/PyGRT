@@ -14,9 +14,14 @@ grt okada -H6/3.464/2.7 -Su1e16 -Ds10 -Dr0 -X-2/2/2 -Y-2/2/2 -M100/20/80 -N -e -
 grt okada -H6/3.464/2.7 -Su1e16 -Ds10 -Dr0 -X-2/2/2 -Y-2/2/2 -M100/20 -Ookada.nc
 grt okada -H6/3.464/2.7 -Su1e12 -Ds10 -Qrcv_geometry.txt -e -Ookada.nc
 grt okada -H6/3.464/2.7 -Su1e12 -Ds10 -Urcv_faults.inr -Ookada.nc
+grt okada -H6/3.464/2.7 -Su1e12 -Ds10 -Urcv_faults.inr+i0/0 -Ookada.nc
 grt okada -H6/3.464/2.7 -Su1e12 -Ds10 -Urcv_faults.inr+i1/1 -Ookada.nc
 grt okada -H6/3.464/2.7 -Cfaults.inp -Dr0 -X-2/2/2 -Y-2/2/2 -N -e -Ookada.nc
 grt okada -H6/3.464/2.7 -Cfaults.inr -Qrcv_points.txt -Ookada.nc
+
+# Okada 震源不可附加 +i，即使尺寸为零
+expect_fail grt okada -H6/3.464/2.7 -Cfaults.inp+i0/0 -Qrcv_points.txt -Ookada.nc
+expect_fail grt okada -H6/3.464/2.7 -Cfaults.inp+i1/1 -Qrcv_points.txt -Ookada.nc
 
 # 震源深度不可为负数
 expect_fail grt okada -H6/3.464/2.7 -Su1e12 -Ds-1 -Qrcv_points.txt -Ookada.nc

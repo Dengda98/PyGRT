@@ -123,22 +123,24 @@ FINITE_FAULT *grt_finite_fault_load_coulomb(const char *path, size_t *nfault, bo
 /**
  * 解析有限断层选项并读取 Coulomb 格式有限断层文件
  *
- * 选项格式为 <fault>[+i<dL>/<dW>]，不提供 +i 时将 dL/dW 置为非正值
+ * 选项格式为 <fault>[+i<dL>/<dW>]，dL/dW 必须同时为零或同时为正值
+ * 不提供 +i 时 has_i 为 false，dL/dW 均为零；+i0/0 表示不再剖分
  * 返回的断层数组已经建立衍生量，调用方负责 grt_finite_fault_free
  * 接收断层在此处完成几何剖分，未提供 +i 时每条断层只取中心点，与模块和格林函数库无关
  *
  * @param[in]   option      有限断层选项值，不含 -C 或 -U 选项字符
  * @param[out]  nfault      读入的断层段数
- * @param[out]  dL          沿走向剖分尺寸 (km)，未指定时为非正值
- * @param[out]  dW          沿倾向剖分尺寸 (km)，未指定时为非正值
+ * @param[out]  has_i       是否显式指定 +i
+ * @param[out]  dL          沿走向剖分尺寸 (km)，未指定时为零
+ * @param[out]  dW          沿倾向剖分尺寸 (km)，未指定时为零
  * @param[in]   is_source   是否为震源断层，接收断层只读取几何和接收机制
  * @param[in]   dt          动态震源采样间隔，s；静态解及接收断层传 0，不生成 STF
  * @param[in]   stf_decay   每个采样点的阻尼因子 exp(-wI*dt)，Lamb 解和静态解传 1
  * @param[in]   stf_option  完整的全局 -D 选项，NULL 时使用行末设置或默认脉冲
  * @return      新分配的 FINITE_FAULT 数组
  */
-FINITE_FAULT *grt_finite_fault_from_option(const char *option, size_t *nfault, real_t *dL, real_t *dW, bool is_source,
-                                           real_t dt, real_t stf_decay, const char *stf_option);
+FINITE_FAULT *grt_finite_fault_from_option(const char *option, size_t *nfault, bool *has_i, real_t *dL, real_t *dW,
+                                           bool is_source, real_t dt, real_t stf_decay, const char *stf_option);
 
 /**
  * 按断层数量释放各断层的剖分结果、时间函数及数组本身

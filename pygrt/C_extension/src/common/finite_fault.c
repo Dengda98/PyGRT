@@ -365,10 +365,10 @@ FINITE_FAULT *grt_finite_fault_load_coulomb(const char *path, size_t *nfault, bo
 }
 
 
-FINITE_FAULT *grt_finite_fault_from_option(const char *option, size_t *nfault, real_t *dL, real_t *dW, bool is_source,
-                                           real_t dt, real_t stf_decay, const char *stf_option)
+FINITE_FAULT *grt_finite_fault_from_option(const char *option, size_t *nfault, bool *has_i, real_t *dL, real_t *dW,
+                                           bool is_source, real_t dt, real_t stf_decay, const char *stf_option)
 {
-    if((option == NULL) || (nfault == NULL) || (dL == NULL) || (dW == NULL)){
+    if((option == NULL) || (nfault == NULL) || (has_i == NULL) || (dL == NULL) || (dW == NULL)){
         GRTRaiseError("finite fault option is incomplete.");
     }
 
@@ -383,13 +383,14 @@ FINITE_FAULT *grt_finite_fault_from_option(const char *option, size_t *nfault, r
 
     *dL = 0.0;
     *dW = 0.0;
-    if(token != NULL){
+    *has_i = token != NULL;
+    if(*has_i){
         char extra;
         if((token[0] != 'i') || (sscanf(token + 1, "%lf/%lf%c", dL, dW, &extra) != 2)){
             GRTRaiseError("Error in finite fault option. expected +i<dL>/<dW>. Use \"-h\" for help.");
         }
-        if((*dL <= 0.0) || (*dW <= 0.0)){
-            GRTRaiseError("Error in finite fault option. dL and dW must be positive. Use \"-h\" for help.");
+        if(!((*dL == 0.0 && *dW == 0.0) || (*dL > 0.0 && *dW > 0.0))){
+            GRTRaiseError("Error in finite fault option. dL and dW must both be zero or both be positive. Use \"-h\" for help.");
         }
     }
 

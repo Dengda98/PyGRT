@@ -1351,8 +1351,10 @@ class PyModel1D:
                                        slip/potency. Append a complete ``-D`` option to each row
                                        to specify its rupture process.
         :param    src_fault_size:      Along-strike/dip subdivision sizes (dL, dW) in km. Omit to
-                                       use the smallest positive library sampling interval. Point
-                                       Kode records remain single points.
+                                       use the smallest positive library sampling interval.
+                                       Both values must be positive or zero; ``(0, 0)`` uses one
+                                       center point source weighted by the whole fault area.
+                                       Point Kode records remain single points.
         :param    rcv_points:          ASCII receiver file: north east depth in km, optionally
                                        followed by strike dip rake in degrees.
         :param    rcv_fault:           Coulomb receiver file; only Kode=100 is supported and
@@ -1360,7 +1362,8 @@ class PyModel1D:
                                        An exact ``rake`` header preserves the angle even at zero slip;
                                        otherwise the slip columns define direction.
         :param    rcv_fault_size:      Along-strike/dip receiver subdivision sizes (dL, dW) in km.
-                                       Omit to use one center point per fault.
+                                       Both values must be positive or zero.
+                                       Omit or set ``(0, 0)`` to use one center point per fault.
         :param    interpolate:         Library-root query method: True (default, CLI -i1) linearly
                                        combines synthesized corner results; False (CLI -i0) uses
                                        nearest nodes, for both point sources and source faults.
@@ -1546,9 +1549,10 @@ class PyModel1D:
                                      centers. Mutually exclusive with
                                      ``rcv_points``, ``norths``/``easts`` and
                                      ``deprcv``.
-        :param    rcv_fault_size:    Optional positive ``(dL, dW)`` in km for
+        :param    rcv_fault_size:    Optional ``(dL, dW)`` in km for
                                      receiver-fault subdivision along strike / dip;
-                                     if omitted, use one center point per fault.
+                                     both values must be positive or zero.
+                                     Omit or set ``(0, 0)`` to use one center point per fault.
         :param    output_path:       Output NetCDF file path.
         :param    scale:             Point-source scaling factor. For explosion,
                                      double-couple, tensile-crack and moment-tensor
@@ -1594,6 +1598,8 @@ class PyModel1D:
                                      the C code uses the smallest positive interval
                                      among epicentral distance, source depth and
                                      receiver depth in the library.
+                                     Both values must be positive or zero; ``(0, 0)`` uses one
+                                     center point source weighted by the whole fault area.
         :param    nthreads:          Positive OpenMP source-subfault thread count.
         :param    zne:               If true, output ZNE instead of ZRT. Finite sources always use ZNE.
         :param    calc_upar:         If true, also synthesize spatial derivatives of
@@ -1641,15 +1647,13 @@ class PyModel1D:
         if src_fault_size is not None:
             if not use_ff:
                 raise ValueError("src_fault_size requires src_fault.")
-            if len(src_fault_size) != 2:
-                raise ValueError("src_fault_size must be (dL, dW).")
+            if len(src_fault_size) != 2 or not (all(value == 0 for value in src_fault_size) or all(value > 0 for value in src_fault_size)):
+                raise ValueError("src_fault_size must contain two zeros or two positive values.")
         if rcv_fault_size is not None:
             if (not use_u):
                 raise ValueError("rcv_fault_size requires rcv_fault.")
-            if ((len(rcv_fault_size) != 2)
-                    or (rcv_fault_size[0] <= 0.0)
-                    or (rcv_fault_size[1] <= 0.0)):
-                raise ValueError("rcv_fault_size must contain positive (dL, dW).")
+            if len(rcv_fault_size) != 2 or not (all(value == 0 for value in rcv_fault_size) or all(value > 0 for value in rcv_fault_size)):
+                raise ValueError("rcv_fault_size must contain two zeros or two positive values.")
 
         command = {
             "module": "static_syn",
