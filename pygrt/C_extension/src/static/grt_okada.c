@@ -9,8 +9,6 @@
 
 #include "grt.h"
 
-#undef I
-
 /** 该子模块的参数控制结构体 */
 typedef struct {
     /** 均匀半空间介质参数 */
@@ -19,7 +17,7 @@ typedef struct {
         real_t vp;
         real_t vs;
         real_t rho;
-    } I;
+    } H;
     /** 点源放大系数 */
     struct {
         bool active;
@@ -120,25 +118,25 @@ printf("\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
 "    # Point source on a regular grid\n"
-"    grt okada -I<vp>/<vs>/<rho> -S[u]<scale> -Ds<depsrc> -Dr<deprcv> -O<outgrid>\n"
+"    grt okada -H<vp>/<vs>/<rho> -S[u]<scale> -Ds<depsrc> -Dr<deprcv> -O<outgrid>\n"
 "              [-M<strike>/<dip>[/<rake>]]\n"
 "              -X<x1>/<x2>/<dx> -Y<y1>/<y2>/<dy> [-N] [-e] [-s]\n"
 "\n"
 "    # Point source at arbitrary receiver points\n"
-"    grt okada -I<vp>/<vs>/<rho> -S[u]<scale> -Ds<depsrc> -Q<file> -O<outgrid>\n"
+"    grt okada -H<vp>/<vs>/<rho> -S[u]<scale> -Ds<depsrc> -Q<file> -O<outgrid>\n"
 "              [-M<strike>/<dip>[/<rake>]] [-N] [-e] [-s]\n"
 "\n"
 "    # Finite faults in Coulomb format\n"
-"    grt okada -I<vp>/<vs>/<rho> -C<path> -O<outgrid>\n"
+"    grt okada -H<vp>/<vs>/<rho> -C<path> -O<outgrid>\n"
 "              [-X<x1>/<x2>/<dx> -Y<y1>/<y2>/<dy> | -Q<file> | -U<fault>[+i<dL>/<dW>]] [-N] [-e] [-s]\n"
 "\n"
-"    -I specifies <vp>/<vs>/<rho> for a homogeneous elastic half-space.\n"
+"    -H specifies <vp>/<vs>/<rho> for a homogeneous elastic half-space.\n"
 "    -C evaluates each Coulomb fault row as one exact rectangular Okada fault.\n"
 "    Point-source -Ds is required. Grid receivers require -Dr; -Q/-U provide receiver depths.\n"
 "\n"
 "Options:\n"
 "----------------------------------------------------------------\n"
-"    -I<vp>/<vs>/<rho>\n"
+"    -H<vp>/<vs>/<rho>\n"
 "                  Homogeneous half-space parameters. vp and vs are in km/s; rho is in g/cm^3.\n"
 "\n"
 "    -S[u]<scale> Point-source scale factor. Without u, <scale> is in dyne-cm.\n"
@@ -197,17 +195,17 @@ printf("\n"
 "Examples:\n"
 "----------------------------------------------------------------\n"
 "    Explosion point source on a north/east grid:\n"
-"        grt okada -I6/3.464/2.7 -Su1e12 -Ds50 -Dr0 -X-5/5/0.5 -Y-5/5/0.5 -Ookada_ex.nc\n"
+"        grt okada -H6/3.464/2.7 -Su1e12 -Ds50 -Dr0 -X-5/5/0.5 -Y-5/5/0.5 -Ookada_ex.nc\n"
 "\n"
 "    Double-couple and tensile point sources:\n"
-"        grt okada -I6/3.464/2.7 -Su1e16 -Ds10 -Dr0 -M100/20/80 -N -Ookada_dc.nc\n"
-"        grt okada -I6/3.464/2.7 -Su1e16 -Ds10 -Dr0 -M100/20 -N -Ookada_ts.nc\n"
+"        grt okada -H6/3.464/2.7 -Su1e16 -Ds10 -Dr0 -M100/20/80 -N -Ookada_dc.nc\n"
+"        grt okada -H6/3.464/2.7 -Su1e16 -Ds10 -Dr0 -M100/20 -N -Ookada_ts.nc\n"
 "\n"
 "    Arbitrary receiver points:\n"
-"        grt okada -I6/3.464/2.7 -Su1e16 -Ds10 -Qrcv.txt -N -Ookada_q.nc\n"
+"        grt okada -H6/3.464/2.7 -Su1e16 -Ds10 -Qrcv.txt -N -Ookada_q.nc\n"
 "\n"
 "    Coulomb finite faults and derivatives:\n"
-"        grt okada -I6/3.464/2.7 -Cfaults.inp -Dr0 -X-5/5/0.5 -Y-5/5/0.5 -e -Ookada_ff.nc\n"
+"        grt okada -H6/3.464/2.7 -Cfaults.inp -Dr0 -X-5/5/0.5 -Y-5/5/0.5 -e -Ookada_ff.nc\n"
 "\n\n\n"
 "\n"
 );
@@ -240,15 +238,19 @@ static void parse_axis(const char *text, char option, size_t *n, real_t **values
 static void parse_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
 {
     int opt;
-    while((opt = getopt(argc, argv, ":I:O:S:M:C:X:Y:D:Q:U:Nesh")) != -1){
+    while((opt = getopt(argc, argv, ":H:I:O:S:M:C:X:Y:D:Q:U:Nesh")) != -1){
         switch(opt){
             // 读取均匀半空间介质参数
-            case 'I': {
-                char extra;
-                if(sscanf(optarg, "%lf/%lf/%lf%c", &Ctrl->I.vp, &Ctrl->I.vs, &Ctrl->I.rho, &extra) != 3){
-                    GRTBadOptionError(I, "expected vp/vs/rho.");
+            case 'I':
+            case 'H': {
+                if(opt == 'I'){
+                    GRTRaiseWarning("Option -I is deprecated; use -H<vp>/<vs>/<rho> instead.");
                 }
-                Ctrl->I.active = true;
+                char extra;
+                if(sscanf(optarg, "%lf/%lf/%lf%c", &Ctrl->H.vp, &Ctrl->H.vs, &Ctrl->H.rho, &extra) != 3){
+                    GRTBadOptionError(H, "expected vp/vs/rho.");
+                }
+                Ctrl->H.active = true;
                 break;
             }
 
@@ -361,8 +363,8 @@ static void parse_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
     GRTCheckOptionSet(argc > 1);
 
     // 必须提供均匀半空间介质参数
-    if(!Ctrl->I.active) {
-        GRTRaiseError("Okada requires -I<vp>/<vs>/<rho>.\n");
+    if(!Ctrl->H.active) {
+        GRTRaiseError("Okada requires -H<vp>/<vs>/<rho>.\n");
     }
 
     // 必须提供结果输出文件
@@ -719,9 +721,9 @@ int okada_main(int argc, char **argv)
     GRT_MODULE_CTRL *Ctrl = GRT_SAFE_CALLOC(1, sizeof(*Ctrl));
     parse_command(Ctrl, argc, argv);
     OKADA_MEDIUM_PARAMS medium = {
-        .vp = Ctrl->I.vp,
-        .vs = Ctrl->I.vs,
-        .rho = Ctrl->I.rho,
+        .vp = Ctrl->H.vp,
+        .vs = Ctrl->H.vs,
+        .rho = Ctrl->H.rho,
     };
 
     // 速度单位为 km/s，密度单位为 g/cm^3，模量转换为 dyne/cm^2

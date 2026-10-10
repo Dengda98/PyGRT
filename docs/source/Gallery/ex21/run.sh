@@ -31,7 +31,7 @@ done
 # 均匀半空间的动态、静态解析解，震源和台站参数与数值解一致
 grt lamb -H6/3.464/2.7 -Ds$depsrc -Dr$deprcv -R$dist -A$azimuth -N$nt/$dt \
     -S$moment -M$strike/$dip/$rake -Dt/0.1/0.1/0.1 -I1 -n -Olamb
-grt okada -I6/3.464/2.7 -Ds$depsrc -Dr$deprcv -X$north/$north/1 -Y$east/$east/1 \
+grt okada -H6/3.464/2.7 -Ds$depsrc -Dr$deprcv -X$north/$north/1 -Y$east/$east/1 \
     -S$moment -M$strike/$dip/$rake -N -Ookada.nc
 
 python plot.py

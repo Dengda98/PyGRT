@@ -19,7 +19,7 @@ grt xy2geo -G$OUT -C$lat0/$lon0 -O${OUT}.geo
 
 # Okada 解
 OUT="okada_ff.nc"
-grt okada -I6/3.464/2.7 -Ccoulomb-fault.inp -Dr0 $XY -e -N -O$OUT
+grt okada -H6/3.464/2.7 -Ccoulomb-fault.inp -Dr0 $XY -e -N -O$OUT
 
 grt static stress $OUT
 grt static sproj -G$OUT -M90/32/90
