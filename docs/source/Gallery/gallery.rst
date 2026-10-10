@@ -57,6 +57,8 @@
 
         {{ card('20')  | indent(8, first=true) }}
 
+        {{ card('21')  | indent(8, first=true) }}
+
     .. raw:: html
 
         <strong style="font-size: 1.5em;">静态解</strong>

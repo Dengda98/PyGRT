@@ -1,0 +1,44 @@
+:author: 朱邓达
+:date: 2026-10-10
+
+(21) 动态全波解与静态解的自洽对比
+------------------------------------------------
+
+下载示例： :download:`ex21.tar.gz`
+
+震源激发完成后，动态位移应随振动衰减趋近相同震源的静态位移。
+本例使用一个剪切点源，震源深度为 3 km，台站位于地表，震中距为 10 km，方位角为 60°。
+震源机制为 strike/dip/rake = 33°/50°/120°，标量地震矩为 :math:`10^{24}` dyne·cm。
+
+分层半空间与数值解
+~~~~~~~~~~~~~~~~~~~~~~
+
+模型由厚度为 5 km 的表层和下伏半空间组成，参数如下：
+
+.. literalinclude:: layered
+    :language: text
+
+分别使用 :doc:`/Module/greenfn` + :doc:`/Module/syn` 计算动态位移，
+以及 :doc:`/Module/static_greenfn` + :doc:`/Module/static_syn` 计算静态位移。
+
+.. figure:: compare_layered.svg
+    :align: center
+
+    分层半空间中动态位移的末段趋近静态位移
+
+均匀半空间与解析解
+~~~~~~~~~~~~~~~~~~~~~~
+
+均匀半空间使用与上述表层相同的介质参数：
+
+.. literalinclude:: halfspace
+    :language: text
+
+保持震源和台站参数不变，重复动态、静态数值计算，
+并叠加 :doc:`/Module/lamb` 的动态闭合解与 :doc:`/Module/okada` 的静态解析解。
+两种动态解使用相同的震源时间函数和时间积分，静态解使用相同的最终地震矩。
+
+.. figure:: compare_halfspace.svg
+    :align: center
+
+    均匀半空间中动态、静态数值解与 Lamb、Okada 解析解的对比
