@@ -245,14 +245,17 @@ plot_syn(stsyn, "syn_sf_cosine.svg", cosine)
 
 # -----------------------------------------------------------------------------------
 # BEGIN INT DIF
-pymod.syn(dist=10.0, azimuth=30.0, scale=1e24, output_path="syn_mt_intdif", moment_tensor=(0.1, -0.2, 1.0, 0.3, -0.5, -2.0))
-stsyn = read("syn_mt_intdif/?.sac")
-
-# 使用 inplace=False，防止原地修改
-stsyn_int = pygrt.utils.stream_integral(stsyn, inplace=False)
-stsyn_dif = pygrt.utils.stream_diff(stsyn, inplace=False)
+# 在合成时指定积分或微分次数，分别对应 CLI 的 -I 和 -J
+pymod.syn(dist=10.0, azimuth=30.0, scale=1e24, output_path="syn_mt_int1", moment_tensor=(0.1, -0.2, 1.0, 0.3, -0.5, -2.0), integrate_order=1)
+pymod.syn(dist=10.0, azimuth=30.0, scale=1e24, output_path="syn_mt_dif1", moment_tensor=(0.1, -0.2, 1.0, 0.3, -0.5, -2.0), differentiate_order=1)
 # END INT DIF
 # -----------------------------------------------------------------------------------
+
+# 原始位移，用于对比
+pymod.syn(dist=10.0, azimuth=30.0, scale=1e24, output_path="syn_mt_intdif", moment_tensor=(0.1, -0.2, 1.0, 0.3, -0.5, -2.0))
+stsyn = read("syn_mt_intdif/?.sac")
+stsyn_int = read("syn_mt_int1/?.sac")
+stsyn_dif = read("syn_mt_dif1/?.sac")
 
 for ch in ['Z', 'R', 'T']:
     plot_int_dif(stsyn, stsyn_int, stsyn_dif, ch, f"syn_mt_intdif_{ch}.svg")
@@ -264,6 +267,7 @@ for name in [
     "GRN",
     "syn_ex", "syn_sf", "syn_dc", "syn_dc2", "syn_ts", "syn_mt",
     "syn_dc_zne", "syn_sf_trig", "syn_sf_cosine", "syn_mt_intdif",
+    "syn_mt_int1", "syn_mt_dif1",
 ]:
     p = Path(name)
     if p.is_dir():

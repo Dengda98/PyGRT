@@ -3,7 +3,7 @@
     :author:   Zhu Dengda (zhudengda@mail.iggcas.ac.cn)  
     :date:     2024-07-24  
 
-    该文件包含一些数据处理操作上的补充 
+    该文件包含一些数据处理操作上的补充以及其他辅助函数
 
 """
 
@@ -12,7 +12,6 @@ from __future__ import annotations
 import os
 import glob
 import warnings
-from copy import deepcopy
 from contextlib import contextmanager
 from enum import IntFlag
 from pathlib import Path
@@ -24,7 +23,6 @@ import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
-from obspy import Stream
 from scipy.interpolate import interpn
 from scipy.io import netcdf_file
 from scipy.special import jv
@@ -62,10 +60,6 @@ __all__ = [
     "compute_coulomb",
     "xy2geo",
     "geo2xy",
-    "stream_convolve",
-    "stream_integral",
-    "stream_diff",
-    "stream_write_sac",
     "read_kernels_freqs",
     "read_statsfile",
     "read_statsfile_ptam",
@@ -728,90 +722,6 @@ def compute_rotation(*args, **kwargs):
 def compute_stress(*args, **kwargs):
     """Legacy interface split into :func:`stress` and :func:`static_stress`; calling it raises an error."""
     raise RuntimeError("compute_stress() was replaced by stress() or static_stress(); use the matching interface instead.")
-
-
-def stream_convolve(st0: Stream, signal0: np.ndarray, inplace: bool = True) -> Stream:
-    """
-    Circularly convolve every trace with a discrete signal using FFT.
-    Shorter inputs are zero-padded to the larger input length. The output length
-    is shared by all traces, and imaginary-frequency compensation is preserved.
-
-    :param    st0:            Input ObsPy stream.
-    :param    signal0:        Discrete convolution signal.
-    :param    inplace:        Whether to modify ``st0`` in place.
-
-    :return: The convolved ObsPy stream.
-    """
-    st = st0 if inplace else deepcopy(st0)
-    signal = np.asarray(signal0, dtype=float)
-    if signal.ndim != 1 or signal.size == 0:
-        raise ValueError("signal0 must be a nonempty one-dimensional array.")
-    npts = max([len(signal), *(trace.stats.npts for trace in st)])
-    for trace in st:
-        dt = trace.stats.delta
-        # 波形和时间函数先阻尼，未设置虚频率时因子为 1
-        w_i = trace.stats.get("sac", {}).get("user0", 0.0)
-        factor = np.exp(np.arange(npts) * dt * w_i)
-        data = trace.data / factor[:trace.stats.npts]
-        adjusted_signal = signal / factor[:signal.size]
-
-        # npts 点 FFT 自动补零，频谱相乘得到循环卷积，最后反阻尼
-        spectrum = np.fft.rfft(data, n=npts) * np.fft.rfft(adjusted_signal, n=npts)
-        trace.data = np.fft.irfft(spectrum, n=npts) * factor * dt
-        if hasattr(trace.stats, "sac"):
-            trace.stats.sac.npts = npts
-            trace.stats.sac.e = trace.stats.sac.get("b", 0) + (npts - 1) * dt
-    return st
-
-
-def stream_integral(st0: Stream, inplace: bool = True) -> Stream:
-    """
-    Integrate every trace with the trapezoidal rule.
-
-    :param    st0:            Input ObsPy stream.
-    :param    inplace:        Whether to modify ``st0`` in place.
-
-    :return: The integrated ObsPy stream.
-    """
-    st = st0 if inplace else deepcopy(st0)
-    for trace in st:
-        dt = trace.stats.delta
-        data = trace.data
-        last = data[0]
-        data[0] = 0.0
-        for index in range(1, len(data)):
-            current = data[index]
-            data[index] = 0.5 * (current + last) * dt + data[index - 1]
-            last = current
-    return st
-
-
-def stream_diff(st0: Stream, inplace: bool = True) -> Stream:
-    """
-    Differentiate every trace with a centered finite difference.
-
-    :param    st0:            Input ObsPy stream.
-    :param    inplace:        Whether to modify ``st0`` in place.
-
-    :return: The differentiated ObsPy stream.
-    """
-    st = st0 if inplace else deepcopy(st0)
-    for trace in st:
-        trace.data[:] = np.gradient(trace.data, trace.stats.delta)
-    return st
-
-
-def stream_write_sac(st: Stream, directory: PathLike) -> None:
-    """
-    Write each trace to ``directory/{channel}.sac``.
-
-    :param    st:             ObsPy stream to write.
-    :param    directory:      Directory for the SAC files.
-    """
-    directory = Path(directory)
-    directory.mkdir(parents=True, exist_ok=True)
-    for trace in st:
-        trace.write(str(directory / f"{trace.stats.channel}.sac"), format="SAC")
 
 
 #=================================================================================================================

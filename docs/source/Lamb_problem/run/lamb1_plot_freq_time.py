@@ -47,7 +47,7 @@ pymod.greenfn(depsrc=depsrc, deprcv=deprcv, dists=rs, nt=nt, dt=dt)
 st = read("GRN/*/*.sac")
 
 # 卷积阶跃函数
-pygrt.utils.stream_integral(st)
+st.integrate()
 
 
 # 时域解

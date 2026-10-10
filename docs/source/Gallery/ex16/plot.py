@@ -38,7 +38,7 @@ np.savetxt(modfile1, modarr)
 pymod1 = pygrt.PyModel1D(grn="GRN1", stgrn="stgrn1.nc", modelpath=modfile1, topbound=bound1, botbound=bound2)
 pymod1.greenfn(depsrc=depsrc, deprcv=deprcv, dists=rs, nt=nt, dt=dt, keepAllFreq=True)
 st1 = read("GRN1/*/*.sac")
-pygrt.utils.stream_integral(st1)
+st1.integrate()
 pymod1.static_greenfn(depsrc=depsrc, deprcv=deprcv, norths=norths_rng, easts=easts_rng)
 static1 = pygrt.utils.read_nc_variables("stgrn1.nc")
 
@@ -67,7 +67,7 @@ pymod2.greenfn(depsrc=depsrc2, deprcv=deprcv2, dists=rs, nt=nt, dt=dt, keepAllFr
 st2 = read("GRN2/*/*.sac")
 pymod2.static_greenfn(depsrc=depsrc2, deprcv=deprcv2, norths=norths_rng, easts=easts_rng)
 static2 = pygrt.utils.read_nc_variables("stgrn2.nc")
-pygrt.utils.stream_integral(st2)
+st2.integrate()
 
 
 # =============================================================

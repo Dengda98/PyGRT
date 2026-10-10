@@ -28,6 +28,7 @@ pygrt.utils.lamb(
     dip=50.0,
     rake=120.0,
     time_function="t/0.1/0/0.1",
+    integrate_order=1,
     zne=True,
 )
 # END LAMB
@@ -48,6 +49,7 @@ pymod.syn(
     dip=50.0,
     rake=120.0,
     time_function="t/0.1/0/0.1",
+    integrate_order=1,
     zne=True,
 )
 
@@ -93,8 +95,6 @@ def plot_comparison(lamb_directory: Path, syn_directory: Path, output_path: Path
         syn = read(str(syn_directory / f"{component}.sac"))
         if arrivals is None:
             arrivals = get_sac_arrivals(lamb[0])
-        pygrt.utils.stream_integral(lamb)
-        pygrt.utils.stream_integral(syn)
         lamb = lamb[0]
         syn = syn[0]
         axis.plot(lamb.times(), lamb.data, color="0.6", label="lamb", lw=2.5)

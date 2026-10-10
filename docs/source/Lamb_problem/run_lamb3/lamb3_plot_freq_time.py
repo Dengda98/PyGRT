@@ -48,7 +48,7 @@ pymod.greenfn(depsrc=depsrc, deprcv=deprcv, dists=rs, nt=nt, dt=dt, calc_upar=Tr
 st = read("GRN/*/*.sac")
 
 # 卷积阶跃函数
-pygrt.utils.stream_integral(st)
+st.integrate()
 
 
 def plot(st, prefix, u, scale, sub, ylim):

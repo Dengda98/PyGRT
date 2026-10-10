@@ -182,7 +182,7 @@ def calculate_greenfn() -> tuple[Stream, float]:
 
     # 第一次积分得到阶跃响应，额外一次积分得到与 lamb2 一次积分结果对应的量
     for _ in range(INTEGRATION_COUNT + 1):
-        pygrt.utils.stream_integral(st)
+        st.integrate()
 
     frequency_tbar = np.arange(NT, dtype=float) * DT * VS / STRAIGHT_DISTANCE
     remove_frequency_baseline(st, frequency_tbar)
