@@ -18,9 +18,9 @@ pymod.static_greenfn(
 
 # ------------------------------------------------------------------
 # BEGIN SYN
-# 设置 rcv_fault 来传入 Coulomb 格式的有限断层文件来设置接收点
+# 设置 rcv_fault 传入 Coulomb 格式的有限断层文件，以 0.5 km 的走向和倾向间隔剖分接收点
 pymod.static_syn(
-    rcv_fault="rcv_fault.inp",
+    rcv_fault="rcv_fault.inp", rcv_fault_size=[0.5, 0.5],
     scale=1e24, strike=33, dip=90, rake=0, output_path="stsyn_rf.nc",
     zne=True, calc_upar=True
 )
