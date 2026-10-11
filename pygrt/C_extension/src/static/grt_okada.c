@@ -32,7 +32,7 @@ typedef struct {
         real_t rake;
         bool has_rake;
     } M;
-    /** Coulomb 格式有限断层 */
+    /** sCoulomb 格式有限断层 */
     struct {
         bool active;
         bool has_i;            ///< 是否显式指定 +i
@@ -58,7 +58,7 @@ typedef struct {
         bool active;
         char *path;
     } Q;
-    /** Coulomb 格式有限接收断层 */
+    /** sCoulomb 格式有限接收断层 */
     struct {
         bool active;
         bool has_i;            ///< 是否显式指定 +i
@@ -92,7 +92,7 @@ typedef struct {
     real_t mu;
 } OKADA_MEDIUM_PARAMS;
 
-// 与 Coulomb 中用于避开点源奇异点的偏移量保持一致，单位为 km
+// 与 Coulomb 程序中用于避开点源奇异点的偏移量保持一致，单位为 km
 static const real_t OKADA_SINGULAR_OFFSET = 1.0e-4;
 
 /** 释放命令行参数结构体及其动态分配的成员 */
@@ -128,12 +128,12 @@ printf("\n"
 "    grt okada -H<vp>/<vs>/<rho> -S[u]<scale> -Ds<depsrc> -Q<file> -O<outgrid>\n"
 "              [-M<strike>/<dip>[/<rake>]] [-N] [-e] [-s]\n"
 "\n"
-"    # Finite faults in Coulomb format\n"
+"    # Finite faults in sCoulomb format\n"
 "    grt okada -H<vp>/<vs>/<rho> -C<path> -O<outgrid>\n"
 "              [-X<x1>/<x2>/<dx> -Y<y1>/<y2>/<dy> | -Q<file> | -U<fault>[+i<dL>/<dW>]] [-N] [-e] [-s]\n"
 "\n"
 "    -H specifies <vp>/<vs>/<rho> for a homogeneous elastic half-space.\n"
-"    -C evaluates each Coulomb fault row as one exact rectangular Okada fault.\n"
+"    -C evaluates each sCoulomb fault row as one exact rectangular Okada fault.\n"
 "    Point-source -Ds is required. Grid receivers require -Dr; -Q/-U provide receiver depths.\n"
 "\n"
 "Options:\n"
@@ -153,13 +153,13 @@ printf("\n"
 "                  Point-source geometry in degrees. Without rake, use a tensile source; with rake,\n"
 "                  use a double-couple source. If -M is omitted, use an explosive source.\n"
 "\n"
-"    -C<path>      Coulomb finite-fault input file. Each row is evaluated as one rectangular fault.\n"
+"    -C<path>      sCoulomb finite-fault input file. Each row is evaluated as one rectangular fault.\n"
 "                  The table has 11 numeric columns; an exact \"rake\" token in the\n"
 "                  seventh header column selects Kode 100 rake/net-slip values.\n"
 "                  The filename suffix is not used to select the format.\n"
 "                  Kode 100/200/300 select rectangular shear/tensile components;\n"
 "                  Kode 400/500 select point sources at the fault-plane center.\n"
-"                  Positive Coulomb right-lateral slip is converted to negative Okada strike-slip\n"
+"                  Positive sCoulomb right-lateral slip is converted to negative Okada strike-slip\n"
 "\n"
 "    -X<x1>/<x2>/<dx>\n"
 "                  Set equidistant receiver points in the north direction, in km.\n"
@@ -175,7 +175,7 @@ printf("\n"
 "                  are not used in the current calculation. Mutually exclusive with -X/-Y/-Dr/-U.\n"
 "\n"
 "    -U<fault>[+i<dL>/<dW>]\n"
-"                  Coulomb-format finite receiver faults. Without +i, each\n"
+"                  sCoulomb-format finite receiver faults. Without +i, each\n"
 "                  fault contributes one point at its rectangular center.\n"
 "                  Slip magnitude is ignored. Only Kode=100 is supported.\n"
 "                  +i0/0 also uses one center point per fault. With positive\n"
@@ -207,7 +207,7 @@ printf("\n"
 "    Arbitrary receiver points:\n"
 "        grt okada -H6/3.464/2.7 -Su1e16 -Ds10 -Qrcv.txt -N -Ookada_q.nc\n"
 "\n"
-"    Coulomb finite faults and derivatives:\n"
+"    sCoulomb finite faults and derivatives:\n"
 "        grt okada -H6/3.464/2.7 -Cfaults.inp -Dr0 -X-5/5/0.5 -Y-5/5/0.5 -e -Ookada_ff.nc\n"
 "\n\n\n"
 "\n"
@@ -295,7 +295,7 @@ static void parse_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 break;
             }
 
-            // 读取 Coulomb 格式有限断层
+            // 读取 sCoulomb 格式有限断层
             case 'C':
                 Ctrl->C.active = true;
                 grt_finite_fault_free(Ctrl->C.nfault, Ctrl->C.faults);
@@ -324,7 +324,7 @@ static void parse_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 Ctrl->Q.path = strdup(optarg);
                 break;
 
-            // 读取 Coulomb 格式有限接收断层
+            // 读取 sCoulomb 格式有限接收断层
             case 'U': {
                 Ctrl->U.active = true;
                 grt_finite_fault_free(Ctrl->U.nfault, Ctrl->U.faults);
@@ -556,7 +556,7 @@ static void add_point_source(const GRT_MODULE_CTRL *Ctrl, const OKADA_MEDIUM_PAR
     }
 }
 
-/** 计算 Coulomb 有限断层在全部接收点上的位移和位移偏导
+/** 计算 sCoulomb 有限断层在全部接收点上的位移和位移偏导
  *
  * @param[in]      Ctrl    命令行参数结构体
  * @param[in]      medium  均匀半空间介质参数
@@ -581,7 +581,7 @@ static void add_finite_faults(const GRT_MODULE_CTRL *Ctrl, const OKADA_MEDIUM_PA
         real_t east_mid = 0.5 * (fault->east_begin + fault->east_end);
         real_t depsrc = fault->depth[0];
 
-        // Coulomb 的 Kode=400/500 点源位于矩形断层面中心，而不是水平投影中心
+        // sCoulomb 的 Kode=400/500 点源位于矩形断层面中心，而不是水平投影中心
         real_t point_north = fault->north[0];
         real_t point_east = fault->east[0];
 
@@ -608,7 +608,7 @@ static void add_finite_faults(const GRT_MODULE_CTRL *Ctrl, const OKADA_MEDIUM_PA
             pot3 = 1e6 * fault->tensile;
             pot4 = 1e6 * fault->inflate;
         } else {
-            GRTRaiseError("unsupported Coulomb Kode=%u.", fault->kode);
+            GRTRaiseError("unsupported sCoulomb Kode=%u.", fault->kode);
         }
 
         // 同一断层的各接收点只写入自身结果，断层之间保持串行累加
@@ -636,7 +636,7 @@ static void add_finite_faults(const GRT_MODULE_CTRL *Ctrl, const OKADA_MEDIUM_PA
                 const char *reason = (iret == 1) ? "singular point" :
                     ((iret == 2) ? "receiver is above the free surface" : "unknown error");
                 GRTRaiseError(
-                    "Okada finite-fault evaluation failed: %s (return code %d) at Coulomb fault row %zu/%zu "
+                    "Okada finite-fault evaluation failed: %s (return code %d) at sCoulomb fault row %zu/%zu "
                     "(Kode=%u) and receiver %zu/%zu (north=%.6g km, east=%.6g km, depth=%.6g km).",
                     reason, iret, nf + 1, Ctrl->C.nfault, fault->kode,
                     i + 1, npts, rcvs[i].north, rcvs[i].east, rcvs[i].depth);

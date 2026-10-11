@@ -13,9 +13,9 @@
 
 有限断层震源
 ========================
-在以上详情页中，在最下方的 “Downloads” 中下载得到 Coulomb 程序格式的输入文件
+在以上详情页中，在最下方的 “Downloads” 中下载得到 Coulomb 程序的完整输入文件
 （ `下载链接 <https://earthquake.usgs.gov/pdl/products/urn:usgs-product:us:finite-fault:us6000tkt2_1:1787347333870/contents/coulomb.inp>`_ ）,
-提取其中的断层表头和数据，保存为 |simplified-Coulomb| 格式的有限断层文件
+提取其中的断层表头和数据，保存为 |sCoulomb| 格式的有限断层文件
 *coulomb-fault.inp*，开头几行如下：
 
 .. literalinclude:: coulomb-fault.inp.head

@@ -3,7 +3,7 @@
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2026-08
  *
- * Coulomb 格式有限断层：读入、衍生量与几何剖分
+ * sCoulomb (simplified Coulomb) 格式有限断层：读入、衍生量与几何剖分
  *
  */
 
@@ -70,7 +70,7 @@ static void set_fault_strike(FINITE_FAULT *f)
 static void set_fault_components(FINITE_FAULT *f, bool rake_format, const char *where)
 {
     if(rake_format && f->kode != KODE_RTLAT_REVERSE){
-        GRTRaiseError("%s: Coulomb rake/net slip format only supports Kode=100.", where);
+        GRTRaiseError("%s: sCoulomb rake/net slip format only supports Kode=100.", where);
     }
 
     if(rake_format && fabs(f->value1) > 180.0) {
@@ -104,7 +104,7 @@ static void set_fault_components(FINITE_FAULT *f, bool rake_format, const char *
             f->inflate = f->value2;
             break;
         default:
-            GRTRaiseError("%s: unsupported Coulomb Kode=%u, expected %u, %u, %u, %u or %u.", where,
+            GRTRaiseError("%s: unsupported sCoulomb Kode=%u, expected %u, %u, %u, %u or %u.", where,
                 f->kode, KODE_RTLAT_REVERSE, KODE_RTLAT_TENSILE, KODE_TENSILE_REVERSE,
                 KODE_POINT_DC, KODE_POINT_TENSILE_INFLATE);
     }
@@ -137,7 +137,7 @@ static void normalize_shear_term(FINITE_SOURCE_TERM *term, const char *where)
 
 
 /**
- * 按 Coulomb Kode 建立断层共享的源项或接收机制，矩形源按单位面积保存强度
+ * 按 sCoulomb Kode 建立断层共享的源项或接收机制，矩形源按单位面积保存强度
  *
  * @param[in,out]  fault        已建立走向和原始滑动分量的断层
  * @param[in]      is_source    是否为震源断层
@@ -185,7 +185,7 @@ static void set_fault_terms(FINITE_FAULT *fault, bool is_source, bool rake_forma
             ncomponents = 2;
             break;
         default:
-            GRTRaiseError("Unsupported Coulomb Kode=%u.", fault->kode);
+            GRTRaiseError("Unsupported sCoulomb Kode=%u.", fault->kode);
     }
 
     // 接收断层只使用显式 rake 定义投影方向，不随 net slip 的符号或大小改变
@@ -242,17 +242,17 @@ FINITE_FAULT *grt_finite_fault_load_coulomb(const char *path, size_t *nfault, bo
     char *line = NULL;
     size_t nlen = 0;
     if(grt_getline(&line, &nlen, fp) <= 0){
-        GRTRaiseError("read Coulomb fault header of %s failed.", path);
+        GRTRaiseError("read sCoulomb fault header of %s failed.", path);
     }
 
-    // Coulomb 表格有 11 个数值列；第一列为占位符，首行对应 # 标记
+    // sCoulomb 表格有 11 个数值列；第一列为占位符，首行对应 # 标记
     char header[COULOMB_HEADER_MAX_TOKENS][COULOMB_HEADER_TOKEN_SIZE] = {{0}};
     int nheader = sscanf(line,
         "%31s %31s %31s %31s %31s %31s %31s %31s %31s %31s %31s %31s",
         header[0], header[1], header[2], header[3], header[4], header[5],
         header[6], header[7], header[8], header[9], header[10], header[11]);
     if(nheader < COULOMB_HEADER_MIN_TOKENS || strcmp(header[0], "#") != 0){
-        GRTRaiseError("invalid Coulomb fault header in %s: expected # plus 10 field labels for 11 data columns.", path);
+        GRTRaiseError("invalid sCoulomb fault header in %s: expected # plus 10 field labels for 11 data columns.", path);
     }
 
     // 仅第 7 个数据列的完整 token "rake" 表示 rake/net-slip 格式
@@ -261,18 +261,18 @@ FINITE_FAULT *grt_finite_fault_load_coulomb(const char *path, size_t *nfault, bo
     bool suffix_rake = path_length >= 4 && strcmp(path + path_length - 4, ".inr") == 0;
     if(suffix_rake && !rake_format){
         GRTRaiseWarning(
-            "Coulomb file \"%s\" has .inr suffix but the seventh header column is \"%s\", "
+            "sCoulomb file \"%s\" has .inr suffix but the seventh header column is \"%s\", "
             "not the exact token \"rake\"; using the header-defined component format.",
             path, header[6]);
     } else if(!suffix_rake && rake_format){
         GRTRaiseWarning(
-            "Coulomb file \"%s\" has the exact token \"rake\" in the seventh header column "
+            "sCoulomb file \"%s\" has the exact token \"rake\" in the seventh header column "
             "but no .inr suffix; using the header-defined rake/net-slip format.", path);
     }
 
     // 第二行是与 11 个数据列对应的占位行
     if(grt_getline(&line, &nlen, fp) <= 0){
-        GRTRaiseError("read Coulomb fault placeholder header of %s failed.", path);
+        GRTRaiseError("read sCoulomb fault placeholder header of %s failed.", path);
     }
 
     // 全局选项只解析一次，dt<0 仅保存原始延迟，dt>0 再生成 STF 并阻尼
@@ -305,12 +305,12 @@ FINITE_FAULT *grt_finite_fault_load_coulomb(const char *path, size_t *nfault, bo
             &ID, &east_begin, &north_begin, &east_end, &north_end,
             &kode_value, &value1, &value2, &dip, &top, &bot);
         if(nscan != 11){
-            GRTRaiseError("parse Coulomb fault data at line %zu of %s failed.", line_number, path);
+            GRTRaiseError("parse sCoulomb fault data at line %zu of %s failed.", line_number, path);
         }
 
         if(is_source && kode_value != KODE_RTLAT_REVERSE && kode_value != KODE_RTLAT_TENSILE && kode_value != KODE_TENSILE_REVERSE &&
            kode_value != KODE_POINT_DC && kode_value != KODE_POINT_TENSILE_INFLATE){
-            GRTRaiseError("invalid Coulomb Kode at line %zu of %s.", line_number, path);
+            GRTRaiseError("invalid sCoulomb Kode at line %zu of %s.", line_number, path);
         }
         // 接收断层仅支持 Kode=100，滑动角由表头选择的格式确定
         if(!is_source && kode_value != KODE_RTLAT_REVERSE) {
@@ -353,7 +353,7 @@ FINITE_FAULT *grt_finite_fault_load_coulomb(const char *path, size_t *nfault, bo
             bool row_time = tail && strncmp(tail, "-D", 2) == 0;
             // 只有动态合成要求所有记录统一提供或省略 STF，仅提取延迟时允许混用
             if(dt > 0 && !stf_option && n > 0 && faults[0].stf_explicit != row_time) {
-                GRTRaiseError("Coulomb time functions must be present on every row or none (%s:%zu).", path, line_number);
+                GRTRaiseError("sCoulomb time functions must be present on every row or none (%s:%zu).", path, line_number);
             }
 
             f->stf_explicit = stf_option != NULL || row_time;
@@ -490,7 +490,7 @@ static void set_subfault_moment(FINITE_FAULT *fault, size_t isub, size_t nlayer,
 
 void grt_finite_fault_subdiv(FINITE_FAULT *fault, real_t dL, real_t dW, size_t nlayer, const real_t (*modarr)[GRT_MODARR_NCOL])
 {
-    // 普通点源保持单点，其他 Coulomb 源按断层面尺寸确定剖分数量
+    // 普通点源保持单点，其他 sCoulomb 源按断层面尺寸确定剖分数量
     real_t W = 0, L = 0;
     fault->nW = fault->nL = 1;
     if(fault->kode != KODE_POINT_GENERIC) {

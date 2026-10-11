@@ -75,13 +75,13 @@ Python 接口主要负责组织模型与输出路径，并调用 :command:`grt` 
 
 当你已经初步了解了 **PyGRT** 计算点源的用法后，你可以开始了解如何向程序传入 **有限断层**。
 
-**PyGRT** 使用 |simplified-Coulomb| 格式描述有限断层：
+**PyGRT** 使用 |sCoulomb| (*simplified Coulomb*) 格式描述有限断层：
 只保留 `Coulomb 程序 <https://pubs.usgs.gov/of/2011/1060/>`_ 完整输入文件中的断层部分，
 不包含其他部分。
 如果已有完整的 Coulomb 输入文件，只需提取其中的断层表头和数据即可。
 同一格式既可描述震源断层，也可描述接收断层，CLI 和 Python 均通过文件路径传入。
 
-为方便浏览文档，以下快速介绍一下 |simplified-Coulomb| 格式。
+为方便浏览文档，以下快速介绍一下 |sCoulomb| 格式。
 
 表头与数据列
 ~~~~~~~~~~~~~~~~~~~~

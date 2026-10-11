@@ -39,7 +39,7 @@ typedef struct {
     struct {
         bool active;
     } T;
-    /** 对应 Coulomb 程序版本的有限断层 */
+    /** sCoulomb 格式有限断层 */
     struct {
         bool active;
         bool has_i;            ///< 是否显式指定 +i
@@ -65,7 +65,7 @@ typedef struct {
         bool active;
         char *s_path;
     } Q;
-    /** -U: Coulomb 格式有限接收断层 */
+    /** -U: sCoulomb 格式有限接收断层 */
     struct {
         bool active;
         bool has_i;            ///< 是否显式指定 +i
@@ -230,8 +230,8 @@ printf("\n"
 "                  Notice they will be scaled by <scale>.\n"
 "\n"
 "    -C<path>[+i<dL>/<dW>]\n"
-"                  Finite faults in Coulomb input format.\n"
-"                  <path>: Coulomb fault table with 11 numeric columns.\n"
+"                  Finite faults in sCoulomb input format.\n"
+"                  <path>: sCoulomb fault table with 11 numeric columns.\n"
 "                  The exact token \"rake\" in the seventh header column\n"
 "                  selects the rake/net-slip interpretation; the filename\n"
 "                  suffix is not used to select the format.\n"
@@ -273,7 +273,7 @@ printf("\n"
 "                  (depths come from the file).\n"
 "\n"
 "    -U<fault>[+i<dL>/<dW>]\n"
-"                  Coulomb-format receiver faults. Without +i, use each\n"
+"                  sCoulomb-format receiver faults. Without +i, use each\n"
 "                  fault center. Slip magnitude is ignored.\n"
 "                  Only Kode=100 is supported.\n"
 "                  +i0/0 also uses one center point per fault. With positive\n"
@@ -321,7 +321,7 @@ printf("\n"
 "        grt static greenfn -Mmilrow -Ds1,2,3 -Dr0 -R0/7/0.1 -Ostgrn.nc\n"
 "        grt static syn -Gstgrn.nc -Su1e16 -Ds1.5 -X-5/5/0.5 -Y-5/5/0.5 -Ostsyn.nc\n"
 "\n"
-"    Finite faults (Coulomb format):\n"
+"    Finite faults (sCoulomb format):\n"
 "        grt static syn -Gstgrn.nc -Cfaults.inp+i1/1 -X-5/5/0.5 -Y-5/5/0.5 -Ostsyn_ff.nc\n"
 "\n"
 "    Spatial derivatives for later strain/stress/rotation:\n"
@@ -463,7 +463,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 }
                 break;
 
-            // 从文件中读取有限断层（Coulomb 程序所用格式）-C<path>[+i<dL>/<dW>]
+            // 从文件中读取有限断层（sCoulomb 格式）-C<path>[+i<dL>/<dW>]
             case 'C':
                 Ctrl->C.active = true;
                 grt_finite_fault_free(Ctrl->C.nfault, Ctrl->C.faults);
@@ -1292,7 +1292,7 @@ int static_syn_main(int argc, char **argv){
 
     if(!Ctrl->s.active){
         if(Ctrl->C.active){
-            GRTRaiseInfo("Synthetic static displacements of Coulomb finite faults saved in \"%s\".", Ctrl->O.s_outgrid);
+            GRTRaiseInfo("Synthetic static displacements of sCoulomb finite faults saved in \"%s\".", Ctrl->O.s_outgrid);
         } else {
             GRTRaiseInfo(
                 "Synthetic static displacements of %s source saved in \"%s\".",

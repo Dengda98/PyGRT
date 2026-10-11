@@ -11,7 +11,7 @@ okada
 
 Okada 解是均匀弹性半空间中位错源产生静态变形的闭合解析解。
 本模块的实现参考 NIED 的 `DC3D0/DC3D 程序说明 <https://www.bosai.go.jp/e/dc3d.html>`__，
-支持埋藏点源，并可通过 |simplified-Coulomb| 格式的有限断层文件输入断层。
+支持埋藏点源，并可通过 |sCoulomb| 格式的有限断层文件输入断层。
 关于解的背景和 PyGRT 的计算流程，详见 :doc:`/Okada_solution/okada`。
 
 

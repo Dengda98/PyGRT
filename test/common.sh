@@ -17,7 +17,7 @@ EOF
 1.0
 EOF
 
-    # The first numeric column in every Coulomb fault row is a placeholder, always 1
+    # The first numeric column in every sCoulomb fault row is a placeholder, always 1
     cat > faults.inp <<'EOF'
   #     X-start     Y-start       X-fin       Y-fin  Kode      rt.lat     reverse   dip angle         top         bot
 xxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx   xxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx

@@ -7,7 +7,7 @@
 fault2nc
 ========================
 
-:简介: 将 |simplified-Coulomb| 格式的有限断层文件中规则排列的剪切子断层转换为断层面 NetCDF 网格
+:简介: 将 |sCoulomb| 格式的有限断层文件中规则排列的剪切子断层转换为断层面 NetCDF 网格
 
 
 语法
@@ -22,7 +22,7 @@ fault2nc
 描述
 --------
 
-:doc:`fault2nc` 只接受满足以下条件的 |simplified-Coulomb| 格式的有限断层文件：
+:doc:`fault2nc` 只接受满足以下条件的 |sCoulomb| 格式的有限断层文件：
 
 * 所有记录均为 **Kode=100**，支持右旋/逆冲分量格式和 rake/net slip 格式
 * 所有矩形块共面，具有相同的走向、倾角和尺寸，可拼成一个完整的大矩形
@@ -66,7 +66,7 @@ fault2nc
 .. _-F:
 
 **-F**\ *fault*
-    输入 |simplified-Coulomb| 格式的有限断层文件。
+    输入 |sCoulomb| 格式的有限断层文件。
     校验失败时直接报错，不生成输出。
 
 .. _-O:
