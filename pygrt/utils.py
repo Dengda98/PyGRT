@@ -74,6 +74,8 @@ __all__ = [
     "plot_eigenfunction",
     "plot_sensitivity",
     "plot_secfunc",
+    "read_sCoulomb_faults",
+    "plot_sCoulomb_faults_geometry",
     "lamb1",
     "solve_lamb1",
     "lamb2",
@@ -2345,3 +2347,209 @@ def plot_secfunc(
         plot_on_ax(panel_data, axi, panel_title)
     _maybe_savefig(fig, outpath)
     return fig, axs
+
+def read_sCoulomb_faults(input_path: PathLike) -> list[dict]:
+    """
+    Read an sCoulomb-format fault file into a list of dictionaries.
+
+    Each dictionary contains the original columns named after the C FINITE_FAULT fields:
+    ``east_begin``, ``north_begin``, ``east_end``, ``north_end``, ``kode``, ``value1``,
+    ``value2``, ``dip``, ``top`` and ``bot``. The first placeholder column is discarded.
+    ``kode`` is an integer; the other numeric fields are floats.
+    X/Y correspond to east/north, coordinates and depths are in km, and dip is in degrees.
+    ``value1`` and ``value2`` retain their input values, including in rake/net-slip files.
+
+    Text after ``bot`` is stored in ``other``, with surrounding whitespace stripped and
+    internal whitespace preserved; absent text gives an empty string.
+    Blank lines and full-line comments after the two headers are skipped.
+    No derived quantities are computed, and geometry and slip values are not validated.
+
+    :param    input_path:  sCoulomb-format fault file with two header lines
+    :return:              A list of fault dictionaries in file order
+    """
+    input_path = Path(input_path)
+    keys = ("east_begin", "north_begin", "east_end", "north_end", "kode", "value1", "value2", "dip", "top", "bot")
+    faults = []
+    with input_path.open(encoding="utf-8") as file:
+        header = file.readline().split()
+        if len(header) < 11 or header[0] != "#" or len(file.readline().split()) < 11:
+            raise ValueError(f"{input_path}: expected two sCoulomb header lines")
+
+        # 仅拆分前 11 个数值列，保留行末文本中的空白与未知选项
+        for line_number, line in enumerate(file, start=3):
+            fields = line.split(maxsplit=11)
+            if not fields or fields[0].startswith("#"):
+                continue
+            if len(fields) < 11:
+                raise ValueError(f"{input_path}:{line_number}: expected 11 numeric columns")
+            try:
+                values = [float(field) for field in fields[:11]]
+            except ValueError as exc:
+                raise ValueError(f"{input_path}:{line_number}: invalid numeric value") from exc
+            if not values[5].is_integer():
+                raise ValueError(f"{input_path}:{line_number}: kode must be an integer")
+
+            fault = dict(zip(keys, values[1:]))
+            fault["kode"] = int(values[5])
+            fault["other"] = fields[11].strip() if len(fields) > 11 else ""
+            faults.append(fault)
+
+    if not faults:
+        raise ValueError(f"{input_path}: no faults found")
+    return faults
+
+
+def plot_sCoulomb_faults_geometry(input_path: PathLike, *, outpath: Optional[PathLike] = None):
+    """
+    Plot horizontal projection and 3D geometry of sCoulomb-format faults.
+
+    Coordinates follow sCoulomb conventions: X east, Y north and depth downward, in km.
+    Fault records are read using :func:`read_sCoulomb_faults`;
+    row-end text is ignored when plotting.
+
+    :param    input_path:  sCoulomb-format fault file with two header lines
+    :param    outpath:     If given, save the figure to this path
+    :return:              Figure and a tuple of horizontal and 3D Axes
+    """
+    from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+
+    def fault_geometry(fault: dict) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """计算断层顶边、底边及其三维顶点"""
+
+        east_begin, north_begin = fault["east_begin"], fault["north_begin"]
+        east_end, north_end = fault["east_end"], fault["north_end"]
+        dip, top, bot = fault["dip"], fault["top"], fault["bot"]
+        if dip <= 0.0 or dip > 90.0:
+            raise ValueError("fault dip must be in (0, 90]")
+        if bot <= top:
+            raise ValueError("fault bot must be greater than top")
+        delta_east = east_end - east_begin
+        delta_north = north_end - north_begin
+        length = np.hypot(delta_east, delta_north)
+        if length <= 0.0:
+            raise ValueError("fault along-strike length must be positive")
+
+        dip_rad = np.deg2rad(dip)
+        horizontal_width = (bot - top) * np.cos(dip_rad) / np.sin(dip_rad)
+        down_dip_shift = np.array([
+            horizontal_width * delta_north / length,
+            -horizontal_width * delta_east / length,
+        ])
+
+        top_edge = np.array([
+            [east_begin, north_begin],
+            [east_end, north_end],
+        ])
+        bottom_edge = top_edge + down_dip_shift
+        projected = np.array([
+            top_edge[0], top_edge[1], bottom_edge[1], bottom_edge[0],
+        ])
+        depths = np.array([top, top, bot, bot])
+        vertices_3d = np.column_stack((projected, depths))
+        return top_edge, bottom_edge, vertices_3d
+
+    def set_horizontal_limits(ax, points: np.ndarray) -> None:
+        """设置水平投影坐标范围"""
+
+        minimum = points.min(axis=0)
+        maximum = points.max(axis=0)
+        span = np.maximum(maximum - minimum, 1.0)
+        padding = 0.12 * max(span)
+        ax.set_xlim(minimum[0] - padding, maximum[0] + padding)
+        ax.set_ylim(minimum[1] - padding, maximum[1] + padding)
+
+    faults = read_sCoulomb_faults(input_path)
+    geometries = [fault_geometry(fault) for fault in faults]
+    projected = np.vstack([
+        np.vstack((top_edge, bottom_edge))
+        for top_edge, bottom_edge, _ in geometries
+    ])
+
+    top_color = "#0072B2"
+    bottom_color = "#D55E00"
+    face_color = "#56B4E9"
+    fig = plt.figure(figsize=(12, 5.2), constrained_layout=True)
+    ax_map = fig.add_subplot(1, 2, 1)
+    ax_3d = fig.add_subplot(1, 2, 2, projection="3d")
+
+    top_handles = []
+    bottom_handles = []
+    for index, (fault, geometry) in enumerate(zip(faults, geometries), start=1):
+        top_edge, bottom_edge, vertices_3d = geometry
+        top, bot = fault["top"], fault["bot"]
+        polygon = vertices_3d[:, :2]
+
+        ax_map.fill(
+            polygon[:, 0], polygon[:, 1], color=face_color, alpha=0.18,
+            zorder=1,
+        )
+        for top_point, bottom_point in zip(top_edge, bottom_edge):
+            ax_map.plot(
+                [top_point[0], bottom_point[0]],
+                [top_point[1], bottom_point[1]],
+                color="0.45", linestyle="--", linewidth=0.9, zorder=2,
+            )
+        top_handle, = ax_map.plot(
+            top_edge[:, 0], top_edge[:, 1], "o-", color=top_color,
+            linewidth=2.0, markersize=5.5,
+            label=f"Fault {index} top ({top:g} km)", zorder=3,
+        )
+        bottom_handle, = ax_map.plot(
+            bottom_edge[:, 0], bottom_edge[:, 1], "s--", color=bottom_color,
+            linewidth=1.8, markersize=5.0,
+            label=f"Fault {index} bottom ({bot:g} km)", zorder=4,
+        )
+        top_handles.append(top_handle)
+        bottom_handles.append(bottom_handle)
+
+        ax_3d.add_collection3d(Poly3DCollection(
+            [vertices_3d], facecolors=face_color, edgecolors="0.25",
+            linewidths=1.0, alpha=0.55,
+        ))
+        top_vertices = vertices_3d[:2]
+        bottom_vertices = vertices_3d[2:][::-1]
+        ax_3d.plot(
+            top_vertices[:, 0], top_vertices[:, 1], top_vertices[:, 2],
+            "o-", color=top_color, linewidth=2.0, markersize=4.5,
+            label=f"Fault {index} top ({top:g} km)",
+        )
+        ax_3d.plot(
+            bottom_vertices[:, 0], bottom_vertices[:, 1], bottom_vertices[:, 2],
+            "s--", color=bottom_color, linewidth=1.8, markersize=4.0,
+            label=f"Fault {index} bottom ({bot:g} km)",
+        )
+        for top_point, bottom_point in zip(top_vertices, bottom_vertices):
+            ax_3d.plot(
+                [top_point[0], bottom_point[0]],
+                [top_point[1], bottom_point[1]],
+                [top_point[2], bottom_point[2]],
+                color="0.35", linestyle="--", linewidth=0.8,
+            )
+
+    ax_map.set_title("Horizontal projection")
+    ax_map.set_xlabel("East (km)")
+    ax_map.set_ylabel("North (km)")
+    ax_map.set_aspect("equal")
+    ax_map.grid(linewidth=0.4, alpha=0.6)
+    set_horizontal_limits(ax_map, projected)
+    ax_map.legend(handles=top_handles + bottom_handles, loc="best", fontsize=8)
+
+    depth_max = max(fault["bot"] for fault in faults)
+    minimum = projected.min(axis=0)
+    maximum = projected.max(axis=0)
+    span = np.maximum(maximum - minimum, 1.0)
+    padding = 0.12 * max(span)
+    ax_3d.set_title("3D finite-fault geometry")
+    ax_3d.set_xlabel("East (km)", labelpad=8)
+    ax_3d.set_ylabel("North (km)", labelpad=8)
+    ax_3d.set_zlabel("Depth (km)", labelpad=8)
+    ax_3d.set_xlim(minimum[0] - padding, maximum[0] + padding)
+    ax_3d.set_ylim(minimum[1] - padding, maximum[1] + padding)
+    ax_3d.set_zlim(0.0, max(depth_max * 1.12, 1.0))
+    ax_3d.invert_zaxis()
+    ax_3d.set_aspect("equal")
+    ax_3d.view_init(elev=24.0, azim=-58.0)
+    ax_3d.legend(loc="upper left", fontsize=8)
+
+    _maybe_savefig(fig, outpath)
+    return fig, (ax_map, ax_3d)
