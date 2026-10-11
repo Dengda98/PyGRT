@@ -71,7 +71,7 @@ printf("\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
 "    grt faultdiv -F<fault> -I<dL>/<dW> -O<outfile>\n"
-"                 [-R<vel>+o<along>/<down>|-R<vel>+d<degree>]\n"
+"                 [-R<vel>[+o<along>/<down>][+d<degree>]]\n"
 "                 [-D<tftype>[/<tfparams>][+d<delay>]] [-h]\n"
 "\n\n"
 "Options:\n"
@@ -87,7 +87,7 @@ printf("\n"
 "                 Adjust each size to span the full rectangle uniformly;\n"
 "                 no smaller remainder patches at the boundaries.\n"
 "\n"
-"    -R<vel>+o<along>/<down>|-R<vel>+d<degree>\n"
+"    -R<vel>[+o<along>/<down>][+d<degree>]\n"
 "                 Positive rupture velocity (km/s). Choose one mode:\n"
 "                 +o: radial rupture from local coordinates (km).\n"
 "                     Require exactly one input fault record.\n"
@@ -149,7 +149,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                 }
                 break;
 
-            // -R<vel>+o<along>/<down>|-R<vel>+d<degree>
+            // -R<vel>[+o<along>/<down>][+d<degree>]
             case 'R': {
                 Ctrl->R.active = true;
                 Ctrl->R.has_o = Ctrl->R.has_d = false;

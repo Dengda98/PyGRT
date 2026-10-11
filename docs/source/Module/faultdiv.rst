@@ -17,7 +17,7 @@ faultdiv
 |-F|\ *fault*
 |-I|\ *dL/dW*
 |-O|\ *outfile*
-[ |-R|\ *vel*\ **+o**\ *along/down* | |-R|\ *vel*\ **+d**\ *degree* ]
+[ |-R|\ *vel*\ [**+o**\ *along/down*][**+d**\ *degree*] ]
 [ |-D|\ *tftype*\ [/*tfparams*][**+d**\ *delay*] ]
 [ **-h** ]
 
@@ -69,7 +69,7 @@ faultdiv
 
 .. _-R:
 
-**-R**\ *vel*\ **+o**\ *along/down* | **-R**\ *vel*\ **+d**\ *degree*
+**-R**\ *vel*\ [**+o**\ *along/down*][**+d**\ *degree*]
     恒定破裂速度 *vel*，单位为 km/s，须为正数。
     **+o** 和 **+d** 必须且只能设置一个：
 
