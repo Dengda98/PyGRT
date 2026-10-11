@@ -1347,7 +1347,7 @@ class PyModel1D:
                                        ``(Mxx, Mxy, Mxz, Myy, Myz, Mzz)`` for the
                                        ``MT`` source. Subscripts x/y/z denote
                                        north/east/down.
-        :param    src_fault:           Coulomb source file supplying source positions, mechanisms and
+        :param    src_fault:           sCoulomb source file supplying source positions, mechanisms and
                                        slip/potency. Append a complete ``-D`` option to each row
                                        to specify its rupture process.
         :param    src_fault_size:      Along-strike/dip subdivision sizes (dL, dW) in km. Omit to
@@ -1357,7 +1357,7 @@ class PyModel1D:
                                        Point Kode records remain single points.
         :param    rcv_points:          ASCII receiver file: north east depth in km, optionally
                                        followed by strike dip rake in degrees.
-        :param    rcv_fault:           Coulomb receiver file; only Kode=100 is supported and
+        :param    rcv_fault:           sCoulomb receiver file; only Kode=100 is supported and
                                        slip magnitude is ignored.
                                        An exact ``rake`` header preserves the angle even at zero slip;
                                        otherwise the slip columns define direction.
@@ -1538,7 +1538,7 @@ class PyModel1D:
                                      ``#`` comments). All data rows must use the
                                      same 3- or 6-column format. Mutually exclusive
                                      with ``norths``/``easts`` and ``deprcv``.
-        :param    rcv_fault:         Coulomb-format finite receiver-fault file with 11 data
+        :param    rcv_fault:         sCoulomb-format finite receiver-fault file with 11 data
                                      columns and Kode=100; an exact ``rake`` token in the seventh header
                                      column supplies the rake even at zero slip;
                                      otherwise the slip columns define direction.
@@ -1587,7 +1587,7 @@ class PyModel1D:
                                      ``(Mxx, Mxy, Mxz, Myy, Myz, Mzz)`` for the
                                      ``MT`` source. Subscripts x/y/z denote
                                      north/east/down.
-        :param    src_fault:         Coulomb-format finite-fault file with 11 data columns
+        :param    src_fault:         sCoulomb-format finite-fault file with 11 data columns
                                      (Kode 100/200/300/400/500). An exact ``rake`` token in
                                      the seventh header column selects Kode 100 rake/net-slip
                                      interpretation; the filename suffix is not used. Mutually

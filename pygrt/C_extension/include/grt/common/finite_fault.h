@@ -3,7 +3,7 @@
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2026-08
  *
- * Coulomb 格式有限断层：读入、衍生量与几何剖分
+ * sCoulomb (simplified Coulomb) 格式有限断层：读入、衍生量与几何剖分
  *
  */
 
@@ -11,7 +11,7 @@
 
 #include "grt/common/const.h"
 
-#define KODE_POINT_GENERIC           0   ///< 通用单点源，仅用于内部构造，不属于 Coulomb 输入
+#define KODE_POINT_GENERIC           0   ///< 通用单点源，仅用于内部构造，不属于 sCoulomb 输入
 #define KODE_RTLAT_REVERSE          100  ///< 矩形右旋/逆冲断层
 #define KODE_RTLAT_TENSILE          200  ///< 矩形右旋/张裂断层
 #define KODE_TENSILE_REVERSE        300  ///< 矩形张裂/逆冲断层
@@ -31,16 +31,16 @@ typedef struct {
 } FINITE_SOURCE_TERM;
 
 /**
- * Coulomb 程序格式的有限断层（及衍生量）
+ * sCoulomb 格式的有限断层（及衍生量）
  *
- * Coulomb 表格的断层数据区严格包含 11 个数值列，依次为
+ * sCoulomb 表格的断层数据区严格包含 11 个数值列，依次为
  * 占位符、X-start、Y-start、X-fin、Y-fin、Kode、value1、value2、dip、top、bot
  * 第一列为占位符，约定全部填 1，不参与计算
  * 其中 X/Y 在 PyGRT 中分别对应 east/north
  *
- * 文件前两行是 Coulomb 表头：第一行首个 token 必须为 #，其后给出 X-start、Y-start、X-fin、Y-fin、
+ * 文件前两行是 sCoulomb 表头：第一行首个 token 必须为 #，其后给出 X-start、Y-start、X-fin、Y-fin、
  * Kode、value1、value2、dip、top、bot 共 10 个字段标签，第二行给出 11 个占位字段
- * Coulomb 常见表头中的 "dip angle" 可写成两个空白分隔的 token，但数据区仍为 11 列
+ * sCoulomb 常见表头中的 "dip angle" 可写成两个空白分隔的 token，但数据区仍为 11 列
  * 第一行第 7 个数据列的标签精确为 "rake" 时，value1/value2 按 rake (degree)/net slip (m) 解释
  * 文件名后缀不参与格式选择，仅用于发现与表头标识不一致的情况
  *
@@ -62,7 +62,7 @@ typedef struct {
     real_t east_end;                 ///< 上边界终点 east 坐标 (km)
     real_t north_end;                ///< 上边界终点 north 坐标 (km)
 
-    unsigned int kode;               ///< 震源为 Coulomb Kode 或通用单点源 0，接收断层仅支持 100
+    unsigned int kode;               ///< 震源为 sCoulomb Kode 或通用单点源 0，接收断层仅支持 100
     real_t value1;                   ///< 文件第 7 列，物理意义由表头标识与 kode 共同决定
     real_t value2;                   ///< 文件第 8 列，物理意义由表头标识与 kode 共同决定
 
@@ -98,10 +98,10 @@ typedef struct {
 } FINITE_FAULT;
 
 /**
- * 读取 Coulomb 格式有限断层文件
+ * 读取 sCoulomb 格式有限断层文件
  *
  * 第一行首个 token 为 #，其后给出 10 个字段标签；第二行为 11 个占位字段
- * 读取前两行 Coulomb 表头，逐行读取 11 列断层数据并建立衍生量
+ * 读取前两行 sCoulomb 表头，逐行读取 11 列断层数据并建立衍生量
  * 每行末尾支持给定完整 -D 参数以指定各断层的破裂过程
  * 动态震源在读入阶段生成无延迟、已阻尼的 STF 并保存采样对齐后的延迟，未指定时使用脉冲
  * dt<0 时只提取原始延迟，不采样时间函数，允许部分记录省略 -D，省略时延迟为零
@@ -125,7 +125,7 @@ typedef struct {
 FINITE_FAULT *grt_finite_fault_load_coulomb(const char *path, size_t *nfault, bool is_source, real_t dt, real_t stf_decay, const char *stf_option);
 
 /**
- * 解析有限断层选项并读取 Coulomb 格式有限断层文件
+ * 解析有限断层选项并读取 sCoulomb 格式有限断层文件
  *
  * 选项格式为 <fault>[+i<dL>/<dW>]，dL/dW 必须同时为零或同时为正值
  * 不提供 +i 时 has_i 为 false，dL/dW 均为零；+i0/0 表示不再剖分

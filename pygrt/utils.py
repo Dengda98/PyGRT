@@ -231,7 +231,7 @@ def okada(
     * ``strike`` and ``dip`` - tensile crack (``TS``), or double-couple (``DC``)
       when ``rake`` is also supplied
 
-    A Coulomb-format finite-fault file can be passed through ``src_fault``.
+    An sCoulomb-format finite-fault file can be passed through ``src_fault``.
     Its Kode column selects the rectangular or point-source interpretation of
     the two slip columns. If the seventh header column is exactly ``rake``,
     the two values are interpreted as rake/net slip; the filename suffix is
@@ -256,7 +256,7 @@ def okada(
     :param    rcv_points:       ASCII receiver file with either ``north east depth``
                                 or ``north east depth strike dip rake``; coordinates
                                 are in km and angles are in degrees
-    :param    rcv_fault:        Coulomb-format finite receiver-fault file with Kode=100. Each
+    :param    rcv_fault:        sCoulomb-format finite receiver-fault file with Kode=100. Each
                                 fault contributes its center, or subfault centers
                                 when ``rcv_fault_size`` is supplied. Slip magnitude is ignored;
                                 an exact ``rake`` header preserves the angle even at zero slip,
@@ -272,7 +272,7 @@ def okada(
     :param    strike:           Fault strike in degrees, in [0, 360]
     :param    dip:              Fault dip in degrees, in [0, 90]
     :param    rake:             Slip rake in degrees, in [-180, 180]
-    :param    src_fault:        Coulomb-format finite-fault file with 11 data columns;
+    :param    src_fault:        sCoulomb-format finite-fault file with 11 data columns;
                                 an exact ``rake`` token in the seventh header column
                                 selects Kode 100 rake/net-slip interpretation. Mutually
                                 exclusive with point-source options
@@ -1669,7 +1669,7 @@ def lamb(
     :param    force:            Single-force coefficients ``(fN, fE, fZ)``
     :param    moment_tensor:    Moment-tensor coefficients
                                 ``(Mxx, Mxy, Mxz, Myy, Myz, Mzz)``
-    :param    src_fault:        Coulomb source file supplying source positions, mechanisms and
+    :param    src_fault:        sCoulomb source file supplying source positions, mechanisms and
                                 slip/potency. Append a complete ``-D`` option to each row
                                 to specify its rupture process.
     :param    src_fault_size:   Along-strike/dip subdivision sizes (dL, dW) in km,
@@ -1678,7 +1678,7 @@ def lamb(
                                 Point Kode records remain single points.
     :param    rcv_points:       ASCII receiver file: north east depth in km, optionally followed
                                 by strike dip rake in degrees.
-    :param    rcv_fault:        Coulomb receiver file; only Kode=100 is supported and
+    :param    rcv_fault:        sCoulomb receiver file; only Kode=100 is supported and
                                 slip magnitude is ignored.
                                 An exact ``rake`` header preserves the angle even at zero slip;
                                 otherwise the slip columns define direction.

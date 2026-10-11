@@ -7,7 +7,7 @@
 faultdiv
 ========================
 
-:简介: 剖分 |simplified-Coulomb| 格式的有限断层文件中的有限断层，并按需设置时间函数和破裂延迟
+:简介: 剖分 |sCoulomb| 格式的有限断层，并按需设置时间函数和破裂延迟
 
 
 语法
@@ -25,7 +25,7 @@ faultdiv
 描述
 --------
 
-:doc:`faultdiv` 将 |simplified-Coulomb| 格式的有限断层文件中的矩形断层剖分为子断层，
+:doc:`faultdiv` 将 |sCoulomb| 格式的有限断层文件中的矩形断层剖分为子断层，
 输出仍采用同一格式，可直接用于合成。
 
 仅支持 **Kode=100/200/300** 的矩形记录，保持原有滑动分量和开度；
@@ -48,7 +48,7 @@ faultdiv
 .. _-F:
 
 **-F**\ *fault*
-    输入 |simplified-Coulomb| 格式的有限断层文件。
+    输入 |sCoulomb| 格式的有限断层文件。
 
 .. _-I:
 
@@ -61,7 +61,7 @@ faultdiv
 .. _-O:
 
 **-O**\ *outfile*
-    输出剖分后的 |simplified-Coulomb| 格式的有限断层文件路径。
+    输出剖分后的 |sCoulomb| 格式的有限断层文件路径。
 
 
 可选选项

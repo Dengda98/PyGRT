@@ -3,7 +3,7 @@
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2026-10-10
  *
- *    剖分 Coulomb 格式有限断层，可设置时间函数与破裂延迟
+ *    剖分 sCoulomb 格式有限断层，可设置时间函数与破裂延迟
  *
  */
 
@@ -16,7 +16,7 @@ typedef struct {
     /** 输入断层 */
     struct {
         bool active;
-        char *path;              ///< 输入 Coulomb 文件路径
+        char *path;              ///< 输入 sCoulomb 文件路径
         size_t nfault;           ///< 原始断层数量
         FINITE_FAULT *faults;    ///< 原始断层及其剖分结果
     } F;
@@ -45,7 +45,7 @@ typedef struct {
     /** 输出路径 */
     struct {
         bool active;
-        char *path;              ///< 输出 Coulomb 文件路径
+        char *path;              ///< 输出 sCoulomb 文件路径
     } O;
 } GRT_MODULE_CTRL;
 
@@ -66,7 +66,7 @@ static void print_help()
 {
 printf("\n"
 "[grt faultdiv] %s\n\n", GRT_VERSION);printf(
-"    Subdivide Coulomb Faults and Optionally Assign Rupture Delays\n"
+"    Subdivide sCoulomb Faults and Optionally Assign Rupture Delays\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
@@ -76,7 +76,7 @@ printf("\n"
 "\n\n"
 "Options:\n"
 "----------------------------------------------------------------\n"
-"    -F<fault>    Input Coulomb-format fault file.\n"
+"    -F<fault>    Input sCoulomb-format fault file.\n"
 "                 Only Kode=100/200/300 are supported. Preserve slips.\n"
 "                 Ignore all input fields after \"bot\" column.\n"
 "\n"

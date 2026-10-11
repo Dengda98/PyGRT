@@ -1,7 +1,7 @@
 .. _-C:
 
 **-C**\ *faultparam*
-    传入 |simplified-Coulomb| 格式的有限断层。
+    传入 |sCoulomb| 格式的有限断层。
     动态合成可以为每条断层设置破裂函数和延迟，全局 |-D| 会覆盖逐行设置。
 
     *faultparam* 可写成 *path*\ **+i**\ *dL/dW*，例如 *faults.inp+i1/1*。

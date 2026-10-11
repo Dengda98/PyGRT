@@ -4,7 +4,7 @@
 应用在有限断层震源
 ======================
 
-静态合成通过 |simplified-Coulomb| 格式的有限断层文件指定有限断层震源，
+静态合成通过 |sCoulomb| 格式的有限断层文件指定有限断层震源，
 剖分后叠加各子断层中心点源的结果。
 
 :download:`Shell Scripts <run_src_fault/run.sh>` | :download:`Python Scripts <run_src_fault/run.py>`

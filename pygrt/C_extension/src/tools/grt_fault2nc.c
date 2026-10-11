@@ -3,7 +3,7 @@
  * @author Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
  * @date   2026-10-10
  *
- *    将规则排布的 Coulomb 剪切子断层整理为断层面 NetCDF 网格
+ *    将规则排布的 sCoulomb 剪切子断层整理为断层面 NetCDF 网格
  *
  */
 
@@ -13,7 +13,7 @@
 typedef struct {
     struct {
         bool active;
-        char *path;              ///< 输入 Coulomb 文件路径
+        char *path;              ///< 输入 sCoulomb 文件路径
         size_t nfault;           ///< 子断层数量
         FINITE_FAULT *faults;    ///< 子断层几何及滑动信息
     } F;
@@ -39,7 +39,7 @@ static void print_help()
 {
 printf("\n"
 "[grt fault2nc] %s\n\n", GRT_VERSION);printf(
-"    Convert a Regular Coulomb Fault Plane to a NetCDF Grid\n"
+"    Convert a Regular sCoulomb Fault Plane to a NetCDF Grid\n"
 "\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
@@ -47,7 +47,7 @@ printf("\n"
 "\n"
 "Options:\n"
 "----------------------------------------------------------------\n"
-"    -F<fault>    Coulomb file with only Kode=100 rectangles.\n"
+"    -F<fault>    sCoulomb file with only Kode=100 rectangles.\n"
 "                 Patches must form one complete plane, with equal\n"
 "                 sizes and spacing along strike and down dip.\n"
 "                 Input rows may be in any order.\n"
