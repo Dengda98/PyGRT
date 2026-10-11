@@ -28,6 +28,28 @@ xxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx   xxx  xxxxxxxxxx  xxxxxxxxx
   1           0           0           1           0   500         1e6         2e6          54           1           2
 EOF
 
+    awk 'NR <= 2 || $6 == 100 || $6 == 200 || $6 == 300' faults.inp > faults_rectangles.inp
+    awk 'NR <= 3' faults.inp > fault_single.inp
+
+    # A surface-reaching thrust fault for subdivision and synthesis
+    cat > faults_surface.inr <<'EOF'
+  #     X-start     Y-start       X-fin       Y-fin  Kode        rake     netslip   dip angle         top                bot
+xxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx   xxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxxxxxxxxx
+  1         -10           0          10           0   100          90         0.1          45           0  7.071067811865475
+EOF
+
+    # A shuffled plane with three strike columns and two dip rows, rounded to six decimal places
+    cat > fault_plane.inr <<'EOF'
+  #     X-start     Y-start       X-fin       Y-fin  Kode        rake     netslip   dip angle         top         bot
+xxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx   xxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx
+  1          11          20          12          20   100          15         0.2          60           2    2.866025  -Dc/1/1+d0.2
+  1          10        19.5          11        19.5   100         -25         0.3          60    2.866025    3.732051  -Di+d0.3
+  1          10          20          11          20   100          45           0          60           2    2.866025
+  1          11        19.5          12        19.5   100          70         0.4          60    2.866025    3.732051  -D0/unused.txt+d0.4
+  1          12          20          13          20   100          30         0.5          60           2    2.866025  -Di+d0.5
+  1          12        19.5          13        19.5   100         -60         0.6          60    2.866025    3.732051  -Di+d0.6
+EOF
+
     cat > faults.inr <<'EOF'
   #     X-start     Y-start       X-fin       Y-fin  Kode        rake     netslip   dip angle         top         bot
 xxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx   xxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx
@@ -68,7 +90,8 @@ EOF
 # Remove the example inputs created above
 remove_test_files() {
     rm -f dists depsrc deprcv faults.inp faults.inr rcv_faults.inr rcv_points.txt rcv_geometry.txt
-    rm -f faults_rupture.inr faults_partial.inr faults_negative_delay.inr
+    rm -f faults_rupture.inr faults_partial.inr faults_negative_delay.inr faults_rectangles.inp
+    rm -f fault_single.inp fault_plane.inr faults_surface.inr
 }
 
 # Check the exit status only; do not match diagnostic messages
