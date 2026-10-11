@@ -330,9 +330,6 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
     if(Ctrl->P.active == Ctrl->I.active){
         GRTRaiseError("Set exactly one of -P<rayp> and -I<inca>[/<idx>].");
     }
-    if(optind != argc){
-        GRTRaiseError("Unexpected positional argument %s. Use '-h' for help.", argv[optind]);
-    }
 }
 
 

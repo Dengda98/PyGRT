@@ -153,14 +153,9 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
         }
     }
 
-    // 输入文件必须通过 -G 指定，模块不接受位置参数
+    // 输入文件必须通过 -G 指定
     GRTCheckOptionSet(argc > 1);
     GRTCheckOptionActive(Ctrl, G);
-
-    // 静态投影只通过 -G 接受输入文件，检查是否存在未解析的位置参数
-    if(optind < argc){
-        GRTRaiseError("Unexpected positional argument \"%s\". Use -G<ingrid>.\n", argv[optind]);
-    }
 }
 
 

@@ -208,42 +208,6 @@ static void getopt_from_command(
     if((!Ctrl->G.active) && (!Ctrl->Q.active)){
         GRTRaiseError("Exactly one of options \"-G\" and \"-Q\" must be set.\n");
     }
-    if(optind < argc){
-        GRTRaiseError(
-            "Unexpected positional argument \"%s\". Use -G or -Q, -O and -C.\n",
-            argv[optind]);
-    }
-}
-
-
-/**
- * 检查输出路径不是输入文件本身
- *
- * @param[in] input_path  输入文件路径
- * @param[in] output_path 输出文件路径
- */
-static void check_output_path(const char *input_path, const char *output_path)
-{
-    if(strcmp(input_path, output_path) == 0){
-        GRTRaiseError("Input and output files must be different.\n");
-    }
-
-#if _TEST_WHETHER_WIN32_
-    // Windows 下展开相对路径，并忽略路径大小写
-    char input_full[_MAX_PATH], output_full[_MAX_PATH];
-    if(_fullpath(input_full, input_path, _MAX_PATH) != NULL &&
-       _fullpath(output_full, output_path, _MAX_PATH) != NULL && _stricmp(input_full, output_full) == 0){
-        GRTRaiseError("Input and output files must be different.\n");
-    }
-#else
-    struct stat input_stat, output_stat;
-    if(((stat(input_path, &input_stat) == 0) &&
-        (stat(output_path, &output_stat) == 0)) &&
-        ((input_stat.st_dev == output_stat.st_dev) &&
-        (input_stat.st_ino == output_stat.st_ino))){
-        GRTRaiseError("Input and output files must be different.\n");
-    }
-#endif
 }
 
 
@@ -608,7 +572,9 @@ static int coordinate_transform_main(
 
     const char *input_path = Ctrl->G.active ? Ctrl->G.s_path : Ctrl->Q.s_path;
     GRTCheckFileExist(input_path);
-    check_output_path(input_path, Ctrl->O.s_path);
+    if(grt_is_same_file(input_path, Ctrl->O.s_path)) {
+        GRTRaiseError("Input and output files must be different.\n");
+    }
 
     if(Ctrl->Q.active){
         convert_text_file(input_path, Ctrl->O.s_path, Ctrl, direction);

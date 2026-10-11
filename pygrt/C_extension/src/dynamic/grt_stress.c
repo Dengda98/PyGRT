@@ -77,9 +77,6 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     }
 
     GRTCheckOptionActive(Ctrl, G);
-    if(optind != argc) {
-        GRTRaiseError("Unexpected positional argument %s. Use '-h' for help.", argv[optind]);
-    }
     if(legacy_path) {
         GRTRaiseWarning("Passing the input directory as a positional argument is deprecated. Use \"grt %s -G<syn_dir>\" instead.", GRT_MODULE_NAME);
     }

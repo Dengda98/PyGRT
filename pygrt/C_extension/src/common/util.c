@@ -11,7 +11,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <limits.h>
 #include <math.h>
 
 #include "grt/common/util.h"
@@ -346,26 +345,31 @@ bool grt_is_comment_or_empty_line(const char* line) {
 }
 
 
+bool grt_is_same_file(const char *path1, const char *path2)
+{
+    if(strcmp(path1, path2) == 0) {
+        return true;
+    }
+
+#if _TEST_WHETHER_WIN32_
+    // Windows 下展开相对路径，并忽略路径大小写
+    char full1[_MAX_PATH], full2[_MAX_PATH];
+    return _fullpath(full1, path1, _MAX_PATH) != NULL &&
+           _fullpath(full2, path2, _MAX_PATH) != NULL && _stricmp(full1, full2) == 0;
+#else
+    // 其他平台按文件身份比较，同时识别符号链接和硬链接
+    struct stat stat1, stat2;
+    return stat(path1, &stat1) == 0 && stat(path2, &stat2) == 0 &&
+           stat1.st_dev == stat2.st_dev && stat1.st_ino == stat2.st_ino;
+#endif
+}
+
+
 void grt_copy_file(const char *src, const char *dst)
 {
-    // 源与目标为同一路径时跳过，避免截断自身
-    {
-#if _TEST_WHETHER_WIN32_
-        char src_full[_MAX_PATH];
-        char dst_full[_MAX_PATH];
-        if(_fullpath(src_full, src, _MAX_PATH) != NULL
-           && _fullpath(dst_full, dst, _MAX_PATH) != NULL
-           && _stricmp(src_full, dst_full) == 0){
-            return;
-        }
-#else
-        char src_real[PATH_MAX];
-        char dst_real[PATH_MAX];
-        if(realpath(src, src_real) != NULL && realpath(dst, dst_real) != NULL
-           && strcmp(src_real, dst_real) == 0){
-            return;
-        }
-#endif
+    // 源与目标为同一文件时跳过，避免截断自身
+    if(grt_is_same_file(src, dst)) {
+        return;
     }
 
     FILE *fin = GRTCheckOpenFile(src, "rb");

@@ -121,6 +121,17 @@ bool grt_is_comment_or_empty_line(const char* line);
 
 
 /**
+ * 判断两个路径是否指向同一文件，路径字符串相同时也返回 true
+ * Windows 下展开相对路径并忽略大小写，其他平台按设备号和 inode 比较
+ *
+ * @param[in]    path1   第一个文件路径
+ * @param[in]    path2   第二个文件路径
+ * @return       是否为同一文件
+ */
+bool grt_is_same_file(const char *path1, const char *path2);
+
+
+/**
  * 将源文件复制到目标路径（覆盖已存在文件）
  *
  * @param[in]    src     源文件路径
