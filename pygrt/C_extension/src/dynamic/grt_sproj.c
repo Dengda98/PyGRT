@@ -136,9 +136,6 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
 
     // 必须提供应力结果目录
     GRTCheckOptionActive(Ctrl, G);
-    if(optind != argc) {
-        GRTRaiseError("Unexpected positional argument %s. Use '-h' for help.", argv[optind]);
-    }
 
     // 统一接收机制和逐点机制文件不能同时使用
     if(Ctrl->M.active && Ctrl->Q.active) {

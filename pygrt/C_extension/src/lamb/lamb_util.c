@@ -11,6 +11,7 @@
 #include <string.h>
 
 #include "grt/lamb/lamb_util.h"
+#include "grt/common/util.h"
 
 
 /** 震相名称与公共掩码的对应关系，仅在解析参数时使用 */
@@ -147,15 +148,15 @@ static void parse_derivative_paths(
     }
 
     if (source_path != NULL && receiver_path != NULL && *source_path != NULL && *receiver_path != NULL &&
-        strcmp(*source_path, *receiver_path) == 0) {
+        grt_is_same_file(*source_path, *receiver_path)) {
         GRTRaiseError("The source and receiver derivative paths must be different.\n");
     }
     if (allow_mixed && source_path != NULL && mixed_path != NULL && *source_path != NULL && *mixed_path != NULL &&
-        strcmp(*source_path, *mixed_path) == 0) {
+        grt_is_same_file(*source_path, *mixed_path)) {
         GRTRaiseError("The source and mixed derivative paths must be different.\n");
     }
     if (allow_mixed && receiver_path != NULL && mixed_path != NULL && *receiver_path != NULL && *mixed_path != NULL &&
-        strcmp(*receiver_path, *mixed_path) == 0) {
+        grt_is_same_file(*receiver_path, *mixed_path)) {
         GRTRaiseError("The receiver and mixed derivative paths must be different.\n");
     }
 }

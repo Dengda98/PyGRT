@@ -98,13 +98,10 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
         }
     }
 
-    // 输入文件和摩擦系数都是必选项，模块不接受位置参数
+    // 输入文件和摩擦系数都是必选项
     GRTCheckOptionSet(argc > 1);
     GRTCheckOptionActive(Ctrl, G);
     GRTCheckOptionActive(Ctrl, F);
-    if(optind < argc){
-        GRTRaiseError("Unexpected positional argument \"%s\". Use -G<ingrid>.\n", argv[optind]);
-    }
 }
 
 

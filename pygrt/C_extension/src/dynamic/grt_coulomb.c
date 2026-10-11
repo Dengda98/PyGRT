@@ -85,9 +85,6 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
 
     // 输入投影结果目录和有效摩擦系数均为必选项
     GRTCheckOptionActive(Ctrl, G);
-    if(optind != argc) {
-        GRTRaiseError("Unexpected positional argument %s. Use '-h' for help.", argv[optind]);
-    }
     GRTCheckOptionActive(Ctrl, F);
 }
 
