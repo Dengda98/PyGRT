@@ -170,6 +170,8 @@
     - :doc:`xy2geo`
     - :doc:`geo2xy`
     - :doc:`rcvfn`
+    - :doc:`faultdiv`
+    - :doc:`fault2nc`
 
 .. toctree::
     :maxdepth: 1
@@ -205,3 +207,5 @@
     xy2geo
     geo2xy
     rcvfn
+    faultdiv
+    fault2nc

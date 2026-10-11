@@ -37,6 +37,8 @@
     X(xy2geo)              \
     X(geo2xy)              \
     /* other */            \
+    X(faultdiv)            \
+    X(fault2nc)            \
     X(disp2asc)            \
     X(ker2asc)             \
     X(sac2asc)             \
