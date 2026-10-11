@@ -219,6 +219,15 @@ real_t * grt_get_time_function(int *TFnt, real_t dt, const char tftype, const ch
 
 real_t *grt_time_function_from_option(const char *option, real_t dt, int *nt, real_t *delay)
 {
+    // dt=0 完全忽略时间函数及延迟，不解析选项
+    if(dt == 0.0) {
+        *nt = 0;
+        if(delay) {
+            *delay = 0.0;
+        }
+        return NULL;
+    }
+
     // NULL 使用脉冲，否则解析完整 -D 选项
     if(!option) {
         option = "-Di";
@@ -236,6 +245,18 @@ real_t *grt_time_function_from_option(const char *option, real_t dt, int *nt, re
         }
     } else if(*params && strncmp(params, "+d", 2) != 0) {
         GRTRaiseError("Expected -Dtftype[/tfparams][+d<delay>].");
+    }
+
+    // dt<0 只提取原始延迟，不校验或采样时间函数，也不访问自定义波形文件
+    if(dt < 0.0) {
+        real_t raw_delay;
+        char *base = split_time_delay(params, &raw_delay);
+        GRT_SAFE_FREE_PTR(base);
+        *nt = 0;
+        if(delay) {
+            *delay = raw_delay;
+        }
+        return NULL;
     }
 
     return grt_get_time_function(nt, dt, type, params, delay);

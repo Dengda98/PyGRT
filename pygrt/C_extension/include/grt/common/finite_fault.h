@@ -22,12 +22,12 @@
 
 #define GRT_FINITE_FAULT_UNDEFINED_RAKE (-999.0)  ///< 滑动方向未定义的标记
 
-/** 断层的一个基本源型分量，矩形断层强度按单位面积保存 */
+/** 断层的一个基本源型分量，矩形断层强度按单位面积保存，剪切源强度非负，方向由 mechanism 中的 rake 表达 */
 typedef struct {
     GRT_SYN_TYPE type;                    ///< 基本源型
     real_t scale;                         ///< 点源为地震矩、力或矩势，矩形断层为单位面积矩势 (cm^3/km^2)
     bool with_mu;                         ///< 是否乘源点剪切模量
-    real_t mechanism[GRT_MECHANISM_NUM];  ///< 机制参数
+    real_t mechanism[GRT_MECHANISM_NUM];  ///< 机制参数，剪切源为 strike/dip/实际 rake，其他源型不使用 rake
 } FINITE_SOURCE_TERM;
 
 /**
@@ -51,8 +51,10 @@ typedef struct {
  * Kode=500：点张裂/膨胀源，value1=张裂 potency (m^3)，value2=膨胀 potency (m^3)
  *
  * value1/value2 保留文件第 7、8 列的值
- * right_lateral/reverse/tensile/inflate 是按 Kode 解释后的量
- * 接收断层仅支持 Kode=100，滑动角由 rake 格式或右旋、逆冲分量格式确定
+ * right_lateral/reverse/tensile/inflate 是按 Kode 翻译的原始带符号分量，未进行强度和方向归一化
+ * 实际源项由 terms 管理，剪切源的 scale 非负，滑动方向由 mechanism[2] 中的 rake 表达
+ * 接收断层仅支持 Kode=100，terms[0] 保存零强度的接收机制，nterms 为零
+ * Kode=100/400 的零滑动震源也保留 terms[0] 的机制，nterms 为零
  */
 typedef struct {
     real_t east_begin;               ///< 上边界起点 east 坐标 (km)
@@ -74,7 +76,6 @@ typedef struct {
 
     // 衍生量，由有限断层读取函数直接填充
     real_t strike;                   ///< 走向 (degree)
-    real_t rake;                     ///< 滑动角 (degree)，未定义时为 GRT_FINITE_FAULT_UNDEFINED_RAKE
 
     // 剖分结果，由模块确定尺寸后一次性填充，索引 iW*nL+iL 沿走向变化最快
     size_t nL;                       ///< 沿走向剖分数
@@ -88,10 +89,10 @@ typedef struct {
 
     // 断层共享的震源描述，STF 在动态震源读入时生成
     bool stf_explicit;                          ///< 是否显式指定行内或全局时间函数
-    real_t *stfd;                               ///< 无延迟、已阻尼的源时间函数，静态解及接收断层为 NULL
+    real_t *stfd;                               ///< 无延迟、已阻尼的源时间函数，dt<=0 及接收断层为 NULL
     int stf_npts;                               ///< 源时间函数样本数
-    real_t stf_delay;                           ///< 采样对齐后的显式破裂延迟，s
-    FINITE_SOURCE_TERM terms[2];                ///< 基本源型分量，同一断层的子源共用
+    real_t stf_delay;                           ///< 显式破裂延迟 (s)，dt>0 时采样对齐，dt<0 时保留原始值
+    FINITE_SOURCE_TERM terms[2];                ///< 翻译后的源项及机制，接收断层和零滑动纯剪切源在 terms[0] 保留机制
     int nterms;                                 ///< 非零基本源型分量数，0、1 或 2
     bool required_gf_sources[GRT_SRC_M_NUM];    ///< 震源所需基本源型，接收断层不计算
 } FINITE_FAULT;
@@ -103,9 +104,11 @@ typedef struct {
  * 读取前两行 Coulomb 表头，逐行读取 11 列断层数据并建立衍生量
  * 每行末尾支持给定完整 -D 参数以指定各断层的破裂过程
  * 动态震源在读入阶段生成无延迟、已阻尼的 STF 并保存采样对齐后的延迟，未指定时使用脉冲
- * 静态解和接收断层忽略行末的时间函数，接收断层不建立基本源型分量
- * 指定全局 STF 时忽略所有行末内容，各断层使用相同的时间函数和延迟
+ * dt<0 时只提取原始延迟，不采样时间函数，允许部分记录省略 -D，省略时延迟为零
+ * dt=0 和接收断层忽略行末的时间函数，接收断层仅在 terms[0] 保存零强度的接收机制
+ * 指定全局 STF 时不解释行末选项，各断层使用相同的时间函数和延迟
  * 第 7 个数据列的标签精确为 rake 时按 rake/net slip 格式解释
+ * rake 格式的零滑动震源保留显式角度，非零滑动角由实际滑动分量确定
  * 接收断层仅支持 Kode=100，忽略滑动量大小；rake 格式直接保留第 7 列滑动角，与第 8 列无关
  * 接收断层的非 rake 格式以第 7、8 列作为右旋、逆冲分量确定滑动方向
  * 要求 dip ∈ (0, 90]、bot > top >= 0 且沿走向长度 > 0
@@ -114,7 +117,7 @@ typedef struct {
  * @param[in]   path        文件路径
  * @param[out]  nfault      读入的断层段数
  * @param[in]   is_source   是否为震源断层，接收断层只读取几何和接收机制
- * @param[in]   dt          动态震源采样间隔，s；静态解及接收断层传 0，不生成 STF
+ * @param[in]   dt          动态震源采样间隔 (s)，静态解及接收断层传 0，负值表示仅提取原始延迟
  * @param[in]   stf_decay   每个采样点的阻尼因子 exp(-wI*dt)，Lamb 解和静态解传 1
  * @param[in]   stf_option  完整的全局 -D 选项，NULL 时使用行末设置或默认脉冲
  * @return      新分配的 FINITE_FAULT 数组，失败则报错退出
@@ -135,7 +138,7 @@ FINITE_FAULT *grt_finite_fault_load_coulomb(const char *path, size_t *nfault, bo
  * @param[out]  dL          沿走向剖分尺寸 (km)，未指定时为零
  * @param[out]  dW          沿倾向剖分尺寸 (km)，未指定时为零
  * @param[in]   is_source   是否为震源断层，接收断层只读取几何和接收机制
- * @param[in]   dt          动态震源采样间隔，s；静态解及接收断层传 0，不生成 STF
+ * @param[in]   dt          动态震源采样间隔 (s)，静态解及接收断层传 0，负值表示仅提取原始延迟
  * @param[in]   stf_decay   每个采样点的阻尼因子 exp(-wI*dt)，Lamb 解和静态解传 1
  * @param[in]   stf_option  完整的全局 -D 选项，NULL 时使用行末设置或默认脉冲
  * @return      新分配的 FINITE_FAULT 数组
@@ -178,7 +181,7 @@ void grt_finite_fault_subdiv(FINITE_FAULT *fault, real_t dL, real_t dW, size_t n
  * @param[in]  scale       地震矩、力或矩势
  * @param[in]  with_mu     是否乘源点剪切模量
  * @param[in]  mechanism   机制参数
- * @param[in]  dt          动态震源采样间隔，s；静态解传 0，不生成 STF
+ * @param[in]  dt          动态震源采样间隔 (s)，静态解传 0，负值表示仅提取原始延迟
  * @param[in]  stf_decay   每个采样点的阻尼因子 exp(-wI*dt)，Lamb 解和静态解传 1
  * @param[in]  stf_option  完整的 -D 选项，NULL 时使用默认脉冲
  * @return     新分配的单点断层，调用方负责 grt_finite_fault_free

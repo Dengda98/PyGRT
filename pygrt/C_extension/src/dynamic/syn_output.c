@@ -83,9 +83,10 @@ void grt_syn_output_set_receiver_header(const DY_SYN_OUTPUT *output, size_t ipt,
     const FINITE_FAULT *fault = rcvs[ipt].fault;
     if(fault) {
         size_t ifault = fault - output->rcv_faults;
-        GRT_SACHEAD_SET_RCV_STRIKE(hd,            fault->strike);
-        GRT_SACHEAD_SET_RCV_DIP(hd,               fault->dip);
-        GRT_SACHEAD_SET_RCV_RAKE(hd,              fault->rake == GRT_FINITE_FAULT_UNDEFINED_RAKE ? SAC_INT_UNDEF : fault->rake);
+        const real_t *mechanism = fault->terms[0].mechanism;
+        GRT_SACHEAD_SET_RCV_STRIKE(hd,            mechanism[0]);
+        GRT_SACHEAD_SET_RCV_DIP(hd,               mechanism[1]);
+        GRT_SACHEAD_SET_RCV_RAKE(hd,              mechanism[2] == GRT_FINITE_FAULT_UNDEFINED_RAKE ? SAC_INT_UNDEF : mechanism[2]);
         GRT_SACHEAD_SET_RCV_FAULT_INDEX(hd,       ifault);
     }
 }
