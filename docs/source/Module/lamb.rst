@@ -163,3 +163,4 @@ N、E 分别为北向、东向。
 -------
 
 + :doc:`/Lamb_problem/lamb`
++ :doc:`/Gallery/ex22/ex22`
