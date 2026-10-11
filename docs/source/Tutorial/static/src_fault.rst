@@ -4,11 +4,8 @@
 应用在有限断层震源
 ======================
 
-PyGRT 静态解的合成阶段目前已支持传入
-`Coulomb 程序 <https://pubs.usgs.gov/of/2011/1060/>`_ 格式的有限断层震源。
-此时震源不再是一个点源，PyGRT 会对断层面进行划分，
-得到多个子断层，并将每个子断层视为在中心点的点源，
-然后叠加各个子断层的合成结果，得到有限断层震源的合成结果。
+静态合成通过 |simplified-Coulomb| 格式的有限断层文件指定有限断层震源，
+剖分后叠加各子断层中心点源的结果。
 
 :download:`Shell Scripts <run_src_fault/run.sh>` | :download:`Python Scripts <run_src_fault/run.py>`
 
@@ -18,12 +15,6 @@ PyGRT 静态解的合成阶段目前已支持传入
 
 .. literalinclude:: run_src_fault/fault.inp
     :language: text
-
-前两行是 Coulomb 表头：第一行首个 token 必须为 ``#``，其后按顺序给出 10 个字段标签，
-第二行给出 11 个占位字段；常见表头中的 ``dip angle`` 可以是两个空白分隔的 token。
-第 7 列表头精确写为 ``rake`` 时，第 7、8 列才按 rake/net slip 解释；文件名后缀不参与判断。
-关于格式的细节，详见 :doc:`/Module/static_syn` 模块、
-:doc:`/Module/okada` 模块以及 `Coulomb 程序 <https://pubs.usgs.gov/of/2011/1060/>`_ 程序使用手册。
 
 有限断层的空间展布大致如下
 （:download:`plot_fault.py <run_src_fault/plot_fault.py>`）：
@@ -73,7 +64,7 @@ PyGRT 静态解的合成阶段目前已支持传入
             :end-before: END SYN
 
         **注意， -X 指定北向坐标， -Y 指定东向坐标。**
-        它们和 Coulomb 文件中 X/Y 的命名约定正好相反。
+        它们和断层文件中 X/Y 的命名约定正好相反，见 :ref:`finite-fault-file`。
 
     .. group-tab:: Python
 
