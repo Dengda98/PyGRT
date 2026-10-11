@@ -118,13 +118,33 @@ jobs:
       - name: Update yum in container (Ubuntu)
         if: contains(matrix.os, 'ubuntu')
         run: |
-          docker exec ${{ env.CONTAINER_ID }} bash -c "
-            mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup && \
-            curl -o /etc/yum.repos.d/CentOS-Base.repo https://mirrors.aliyun.com/repo/Centos-7.repo && \
-            sed -i 's/mirrors.cloud.aliyuncs.com/mirrors.aliyun.com/g' /etc/yum.repos.d/CentOS-Base.repo && \
-            sed -i 's/mirrors.aliyuncs.com/mirrors.aliyun.com/g' /etc/yum.repos.d/CentOS-Base.repo && \
-            yum clean all -y && yum makecache -y && yum install -y gcc gcc-c++ make wget m4
-          "
+          docker exec -i ${{ env.CONTAINER_ID }} bash -se <<'EOF'
+          mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup
+
+          # 固定 CentOS 7.9 归档源，保留 glibc 2.17 兼容性
+          cat > /etc/yum.repos.d/CentOS-Base.repo <<'REPO'
+          [base]
+          name=CentOS-7.9.2009 - Base
+          baseurl=https://vault.centos.org/7.9.2009/os/$basearch/
+          gpgcheck=1
+          gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+
+          [updates]
+          name=CentOS-7.9.2009 - Updates
+          baseurl=https://vault.centos.org/7.9.2009/updates/$basearch/
+          gpgcheck=1
+          gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+
+          [extras]
+          name=CentOS-7.9.2009 - Extras
+          baseurl=https://vault.centos.org/7.9.2009/extras/$basearch/
+          gpgcheck=1
+          gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+          REPO
+
+          yum clean all -y
+          yum install -y gcc gcc-c++ make wget m4
+          EOF
 
       - name: Install dependencies (macOS)
         # 匹配包含 "macos" 的操作系统
