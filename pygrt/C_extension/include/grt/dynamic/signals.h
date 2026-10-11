@@ -53,14 +53,18 @@ real_t * grt_get_time_function(int *TFnt, real_t dt, const char tftype, const ch
 
 
 /**
- * 解析完整时间函数选项，分别返回无延迟的时间函数及采样对齐后的破裂延迟
+ * 解析完整时间函数选项，分别返回无延迟的时间函数及破裂延迟
  *
  * 选项格式为 -Dtftype[/tfparams][+d<delay>]
+ * dt>0 生成时间函数，并将延迟对齐到采样网格
+ * dt=0 不解析选项，样本数和延迟均置零
+ * dt<0 仅解析选项结构和非负延迟，保留原始延迟，不校验时间函数参数或读取自定义波形文件
  *
  * @param[in]  option         完整 -D 时间函数选项，NULL 为脉冲
- * @param[in]  dt             采样间隔，s
- * @param[out] nt             无延迟的样本数
- * @param[out] delay          采样对齐后的破裂延迟，s，可为 NULL
+ * @param[in]  dt             采样间隔 (s)，零表示忽略 STF，负值表示仅提取原始延迟
+ * @param[out] nt             无延迟的样本数，dt<=0 时为零
+ * @param[out] delay          破裂延迟 (s)，dt>0 时采样对齐，dt=0 时为零，dt<0 时保留原始值，可为 NULL
+ * @return     时间函数指针，dt<=0 时为 NULL
  */
 real_t *grt_time_function_from_option(const char *option, real_t dt, int *nt, real_t *delay);
 

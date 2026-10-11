@@ -173,7 +173,7 @@ static void write_receiver_geometry(int ncid, const RCV_NC_INFO *receivers, cons
         for(size_t i = 0; i < count; ++i) {
             if(receivers->layout == GRT_RCV_NC_LAYOUT_FAULTS) {
                 const FINITE_FAULT *fault = &receivers->faults[i];
-                buffer[i] = c == 0 ? fault->strike : c == 1 ? fault->dip : fault->rake;
+                buffer[i] = fault->terms[0].mechanism[c];
             } else {
                 const RCV_POINT *point = &receivers->rcvs[i];
                 buffer[i] = c == 0 ? point->strike : c == 1 ? point->dip : point->rake;

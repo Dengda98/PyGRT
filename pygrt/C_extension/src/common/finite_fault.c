@@ -48,20 +48,15 @@ static void check_fault_geometry(const FINITE_FAULT *f, const char *where)
 
 
 /**
- * 由 Coulomb 分量建立有限断层的走向和滑动角
+ * 由顶边向量建立有限断层的走向
  *
  * @param[in,out]  f  有限断层结构体
  */
-static void set_fault_derived(FINITE_FAULT *f)
+static void set_fault_strike(FINITE_FAULT *f)
 {
     f->strike = 1.0 / DEG1 * atan2(f->east_end - f->east_begin, f->north_end - f->north_begin);
     if(f->strike < 0.0) {
         f->strike += 360.0;
-    }
-    if((f->right_lateral == 0.0) && (f->reverse == 0.0)){
-        f->rake = GRT_FINITE_FAULT_UNDEFINED_RAKE;
-    } else {
-        f->rake = 1.0 / DEG1 * atan2(f->reverse, -f->right_lateral);
     }
 }
 
@@ -117,54 +112,103 @@ static void set_fault_components(FINITE_FAULT *f, bool rake_format, const char *
 
 
 /**
- * 按 Coulomb Kode 建立断层共享的基本源型分量，矩形源按单位面积保存强度
- * @param[in,out]  fault  已建立几何衍生量的断层
+ * 将剪切源项统一为非负强度和实际滑动方向，并检查滑动角范围
+ *
+ * @param[in,out]  term   基本源型分量，非剪切源保持带符号强度
+ * @param[in]      where  错误位置描述
  */
-static void set_fault_source_terms(FINITE_FAULT *fault)
+static void normalize_shear_term(FINITE_SOURCE_TERM *term, const char *where)
+{
+    if(term->type != GRT_SYN_DC) {
+        return;
+    }
+
+    // 负剪切强度改为正值，同时将滑动方向反转 180 度，角度仍位于 [-180, 180]
+    real_t *rake = &term->mechanism[2];
+    if(term->scale < 0.0) {
+        term->scale = -term->scale;
+        *rake += *rake > 0.0 ? -180.0 : 180.0;
+    }
+    bool undefined = term->scale == 0.0 && *rake == GRT_FINITE_FAULT_UNDEFINED_RAKE;
+    if(!undefined && fabs(*rake) > 180.0) {
+        GRTRaiseError("%s: shear-source rake must be in [-180, 180].", where);
+    }
+}
+
+
+/**
+ * 按 Coulomb Kode 建立断层共享的源项或接收机制，矩形源按单位面积保存强度
+ *
+ * @param[in,out]  fault        已建立走向和原始滑动分量的断层
+ * @param[in]      is_source    是否为震源断层
+ * @param[in]      rake_format  是否使用 rake/net slip 格式
+ * @param[in]      where        错误位置描述
+ */
+static void set_fault_terms(FINITE_FAULT *fault, bool is_source, bool rake_format, const char *where)
 {
     real_t factor = KODE_IS_POINT(fault->kode) ? 1e6 : 1e12;
     GRT_SYN_TYPE types[2] = {GRT_SYN_DC, GRT_SYN_DC};
     real_t strengths[2] = {0}, rakes[2] = {0};
+    int ncomponents = 1;
 
     // 只在此处解释 Kode，动态解和静态解使用同一套源型及符号约定
     switch(fault->kode) {
         case KODE_RTLAT_REVERSE:
         case KODE_POINT_DC:
             strengths[0] = hypot(fault->right_lateral, fault->reverse);
-            rakes[0] = fault->rake;
+            if(strengths[0] == 0.0) {
+                // 无滑动分量时，rake 格式仍可提供显式方向，分量格式则标记为未定义
+                rakes[0] = rake_format ? fault->value1 : GRT_FINITE_FAULT_UNDEFINED_RAKE;
+            } else {
+                rakes[0] = atan2(fault->reverse, -fault->right_lateral) / DEG1;
+            }
             break;
         case KODE_RTLAT_TENSILE:
             strengths[0] = fault->right_lateral;
             rakes[0] = 180.0;
             types[1] = GRT_SYN_TS;
             strengths[1] = fault->tensile;
+            ncomponents = 2;
             break;
         case KODE_TENSILE_REVERSE:
             types[0] = GRT_SYN_TS;
             strengths[0] = fault->tensile;
             strengths[1] = fault->reverse;
             rakes[1] = 90.0;
+            ncomponents = 2;
             break;
         case KODE_POINT_TENSILE_INFLATE:
             types[0] = GRT_SYN_TS;
             strengths[0] = fault->tensile;
             types[1] = GRT_SYN_EX;
             strengths[1] = fault->inflate;
+            ncomponents = 2;
             break;
         default:
             GRTRaiseError("Unsupported Coulomb Kode=%u.", fault->kode);
     }
 
+    // 接收断层只使用显式 rake 定义投影方向，不随 net slip 的符号或大小改变
+    if(!is_source && rake_format) {
+        rakes[0] = fault->value1;
+    }
+
     fault->nterms = 0;
-    for(int i = 0; i < 2; ++i) {
-        if(strengths[i] == 0) {
+    for(int i = 0; i < ncomponents; ++i) {
+        FINITE_SOURCE_TERM term = {.type = types[i], .scale = is_source ? strengths[i] * factor : 0.0, .with_mu = is_source,
+                                   .mechanism = {fault->strike, fault->dip, rakes[i]}};
+        normalize_shear_term(&term, where);
+
+        // 接收断层和零滑动的纯剪切源保留 terms[0] 的机制，但不计入参与合成的非零源项
+        if(!is_source || strengths[i] == 0.0) {
+            if(ncomponents == 1 && term.type == GRT_SYN_DC) {
+                fault->terms[0] = term;
+            }
             continue;
         }
-        FINITE_SOURCE_TERM *term = &fault->terms[fault->nterms++];
-        *term = (FINITE_SOURCE_TERM){.type = types[i], .scale = strengths[i] * factor, .with_mu = true,
-                                     .mechanism = {fault->strike, fault->dip, rakes[i]}};
+        fault->terms[fault->nterms++] = term;
         for(int im = 0; im < GRT_SRC_M_NUM; ++im) {
-            fault->required_gf_sources[im] |= grt_source_has_component(term->type, im);
+            fault->required_gf_sources[im] |= grt_source_has_component(term.type, im);
         }
     }
 }
@@ -231,12 +275,14 @@ FINITE_FAULT *grt_finite_fault_load_coulomb(const char *path, size_t *nfault, bo
         GRTRaiseError("read Coulomb fault placeholder header of %s failed.", path);
     }
 
-    // 全局 STF 只生成一次，各断层保存独立副本，避免重复读取自定义波形
+    // 全局选项只解析一次，dt<0 仅保存原始延迟，dt>0 再生成 STF 并阻尼
     real_t *global_stf = NULL, global_delay = 0;
     int global_npts = 0;
-    if(is_source && dt > 0 && stf_option) {
+    if(is_source && dt != 0 && stf_option) {
         global_stf = grt_time_function_from_option(stf_option, dt, &global_npts, &global_delay);
-        damp_stf(global_stf, global_npts, stf_decay);
+        if(dt > 0) {
+            damp_stf(global_stf, global_npts, stf_decay);
+        }
     }
 
     // 每行对应一个共享破裂过程的断层，全局 STF 优先于行末设置
@@ -275,7 +321,7 @@ FINITE_FAULT *grt_finite_fault_load_coulomb(const char *path, size_t *nfault, bo
         FINITE_FAULT *f = faults + n;
         memset(f, 0, sizeof(*f));
 
-        // 接收断层统一作为矩形面，只解释几何和滑动方向
+        // 保留文件中的几何和原始滑动量，实际源项及接收机制统一由 terms 管理
         f->east_begin = east_begin;
         f->north_begin = north_begin;
         f->east_end = east_end;
@@ -289,29 +335,13 @@ FINITE_FAULT *grt_finite_fault_load_coulomb(const char *path, size_t *nfault, bo
 
         char where[256];
         snprintf(where, sizeof(where), "in %s line %zu", path, line_number);
-        if(is_source) {
-            set_fault_components(f, rake_format, where);
-        } else if(!rake_format) {
-            f->right_lateral = value1;
-            f->reverse = value2;
-        }
+        set_fault_components(f, rake_format, where);
         check_fault_geometry(f, where);
+        set_fault_strike(f);
+        set_fault_terms(f, is_source, rake_format, where);
 
-        set_fault_derived(f);
-        // 显式接收滑动角与 net slip 无关，零滑动量也保留原始方向
-        if(!is_source && rake_format) {
-            if(fabs(value1) > 180.0) {
-                GRTRaiseError("%s: rake must be in [-180, 180].", where);
-            }
-            f->rake = value1;
-        }
-        if(is_source) {
-            set_fault_source_terms(f);
-        }
-
-        // 静态解和接收断层不解释行末 STF
-        if(is_source && dt > 0) {
-            // 有全局 STF 时忽略所有行末内容，否则只识别最后一个 token
+        // dt=0 忽略 STF，其他模式统一解析延迟，全局选项优先于行末设置
+        if(is_source && dt != 0) {
             char *tail = NULL;
             if(!stf_option) {
                 grt_trim_whitespace(line);
@@ -321,27 +351,32 @@ FINITE_FAULT *grt_finite_fault_load_coulomb(const char *path, size_t *nfault, bo
                 }
             }
             bool row_time = tail && strncmp(tail, "-D", 2) == 0;
-            if(!stf_option && n > 0 && faults[0].stf_explicit != row_time) {
+            // 只有动态合成要求所有记录统一提供或省略 STF，仅提取延迟时允许混用
+            if(dt > 0 && !stf_option && n > 0 && faults[0].stf_explicit != row_time) {
                 GRTRaiseError("Coulomb time functions must be present on every row or none (%s:%zu).", path, line_number);
             }
 
             f->stf_explicit = stf_option != NULL || row_time;
-            if(global_stf) {
+            if(stf_option) {
                 f->stf_npts = global_npts;
                 f->stf_delay = global_delay;
-                f->stfd = GRT_SAFE_MALLOC(global_npts * sizeof(*f->stfd));
-                memcpy(f->stfd, global_stf, global_npts * sizeof(*f->stfd));
+                if(dt > 0) {
+                    f->stfd = GRT_SAFE_MALLOC(global_npts * sizeof(*f->stfd));
+                    memcpy(f->stfd, global_stf, global_npts * sizeof(*f->stfd));
+                }
             } else {
-                // 动态震源读入时完成 STF 处理，自定义波形路径相对于断层文件目录
+                // 仅动态震源解析自定义波形的相对路径，dt<0 不读取波形文件
                 char *option = NULL;
                 const char *slash = strrchr(path, '/');
-                if(row_time && strncmp(tail, "-D0/", 4) == 0 && tail[4] != '/' &&
+                if(dt > 0 && row_time && strncmp(tail, "-D0/", 4) == 0 && tail[4] != '/' &&
                    !(isalpha((unsigned char)tail[4]) && tail[5] == ':') && slash) {
                     GRT_SAFE_ASPRINTF(&option, "-D0/%.*s/%s", (int)(slash - path), path, tail + 4);
                 }
                 f->stfd = grt_time_function_from_option(option ? option : (row_time ? tail : NULL), dt, &f->stf_npts, &f->stf_delay);
                 GRT_SAFE_FREE_PTR(option);
-                damp_stf(f->stfd, f->stf_npts, stf_decay);
+                if(dt > 0) {
+                    damp_stf(f->stfd, f->stf_npts, stf_decay);
+                }
             }
         }
 
@@ -527,14 +562,17 @@ FINITE_FAULT *grt_finite_fault_from_point(real_t depth, GRT_SYN_TYPE type, real_
     fault->nterms = 1;
     fault->terms[0] = (FINITE_SOURCE_TERM){.type = type, .scale = scale, .with_mu = with_mu};
     memcpy(fault->terms[0].mechanism, mechanism, sizeof(fault->terms[0].mechanism));
+    normalize_shear_term(&fault->terms[0], "point source");
     for(int im = 0; im < GRT_SRC_M_NUM; ++im) {
         fault->required_gf_sources[im] = grt_source_has_component(type, im);
     }
-    // 动态合成直接生成最终时间函数，未指定时使用脉冲
-    if(dt > 0) {
+    // dt<0 仅提取延迟，dt>0 生成并阻尼时间函数，未指定时使用脉冲
+    if(dt != 0) {
         fault->stf_explicit = stf_option != NULL;
         fault->stfd = grt_time_function_from_option(stf_option, dt, &fault->stf_npts, &fault->stf_delay);
-        damp_stf(fault->stfd, fault->stf_npts, stf_decay);
+        if(dt > 0) {
+            damp_stf(fault->stfd, fault->stf_npts, stf_decay);
+        }
     }
     return fault;
 }
