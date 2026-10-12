@@ -635,7 +635,7 @@ def _run_static_tensor_module(path: PathLike, module: str) -> None:
     if not path.is_file():
         raise FileNotFoundError(f"Synthesis result does not exist: {path}")
 
-    run_grt([module, path])
+    run_grt([module, f"-G{path}"])
 
 
 def strain(path: PathLike) -> None:

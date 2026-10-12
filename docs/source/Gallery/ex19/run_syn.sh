@@ -12,7 +12,7 @@ lon0="121.3517000"
 OUT="stsyn_ff.nc"
 grt static syn -Gstgrn.nc -Ccoulomb-fault.inp -Dr0 $XY -e -N -O$OUT
 
-grt static stress $OUT
+grt static stress -G$OUT
 grt static sproj -G$OUT -M90/32/90
 grt static coulomb -G$OUT -F0.4
 grt xy2geo -G$OUT -C$lat0/$lon0 -O${OUT}.geo
@@ -21,7 +21,7 @@ grt xy2geo -G$OUT -C$lat0/$lon0 -O${OUT}.geo
 OUT="okada_ff.nc"
 grt okada -H6/3.464/2.7 -Ccoulomb-fault.inp -Dr0 $XY -e -N -O$OUT
 
-grt static stress $OUT
+grt static stress -G$OUT
 grt static sproj -G$OUT -M90/32/90
 grt static coulomb -G$OUT -F0.4
 grt xy2geo -G$OUT -C$lat0/$lon0 -O${OUT}.geo
