@@ -7,7 +7,7 @@
 .. admonition:: 本页文档示例下载
     :class: tip
 
-    :download:`syn.tar.gz <syn.tar.gz>`，
+    :download:`syn.tar.gz <syn.tar.gz>` |
     解压后进入示例目录，运行 ``bash run.sh`` 即可复现本页示例。
 
 .. _warning_src_zdir:
