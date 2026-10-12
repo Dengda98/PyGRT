@@ -153,6 +153,6 @@ grt static syn -Gstgrn.nc -S1e24 -M33/90/0 -Qrcv_pts.txt -Ostsyn_points.nc -N
 # END SYN POINTS
 # ---------------------------------------------------------------------------------
 
-python plot_points.py
+python run.py
 
 rm -rf stgrn* stsyn* rcv_pts.txt

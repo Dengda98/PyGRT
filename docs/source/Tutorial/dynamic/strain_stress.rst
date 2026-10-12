@@ -11,7 +11,7 @@
 计算格林函数阶段，求出 :math:`\partial z,\partial r`
 -----------------------------------------------------------------------------------------------
 
-假设在 :file:`milrow` 模型中，震源深度2km，接收点位于地表，震中距为10km，计算格林函数及其空间导数，要求采样点数500个点，采样间隔0.02s。
+假设在 :file:`milrow` 模型中，震源深度2km，接收点位于地表，震中距为30km，计算格林函数及其空间导数，要求采样点数1500个点，采样间隔0.02s。
 
 .. tabs:: 
 
@@ -22,7 +22,7 @@
             :start-after: BEGIN GRN
             :end-before: END GRN
 
-        在 :rst:dir:`GRN/milrow_2_0_10/` 路径下，文件名开头有"r"和"z"就代表 :math:`\partial r` 和 :math:`\partial z`。
+        在 :rst:dir:`GRN/milrow_2_0_30/` 路径下，文件名开头有"r"和"z"就代表 :math:`\partial r` 和 :math:`\partial z`。
 
     .. group-tab:: Python
 
@@ -48,7 +48,8 @@
 合成位移阶段，求出 :math:`\partial \theta / r` 并合成位移空间导数
 -----------------------------------------------------------------------------
 
-假设震源为剪切源，断层走向33°，倾角50°，滑动角120°，标量矩 1e24 dyne·cm，方位角30°。待求项中有 :math:`r` 是为了保证量纲统一。
+假设震源为剪切源，断层走向33°，倾角50°，滑动角120°，标量矩 1e24 dyne·cm，方位角30°。
+本节使用阶跃源，并卷积上升 0.5 s、下降 1.5 s 的非对称余弦波。
 
 .. tabs:: 
 
@@ -75,7 +76,6 @@
 如果需要直角坐标系中的空间导数，可选择 ZNE 输出
 （:math:`x` 表示北向，:math:`y` 表示东向），
 此时文件名和通道名的前缀从 **z/r/t** 变为 **z/n/e**。
-有限震源会自动使用 ZNE，并在各子源的导数转换到同一坐标系后叠加。
 
 .. tabs:: 
 
@@ -112,14 +112,6 @@
 应变和应力均为二阶对称张量，故将输出6个独立分量；而旋转张量为二阶反对称张量，将输出3个独立分量。
 
 程序选择张量输出结果的坐标系的依据是——根据文件名/通道名判断是否存在 :math:`\dfrac{\partial u_x}{\partial x}`，如果有则使用ZNE坐标系，否则使用ZRT坐标系。 **所以建议保存结果的文件夹中只使用同种坐标系**，就像上面分为 :rst:dir:`syn_dc/` 和 :rst:dir:`syn_dc_zne/` 两个文件夹保存。
-
-以下绘图使用Python绘制，绘图函数如下：
-
-.. literalinclude:: run_upar/run.py
-    :language: python
-    :start-after: BEGIN plot func
-    :end-before: END plot func
-
 
 应变张量
 ~~~~~~~~~~~~~~
@@ -232,8 +224,62 @@
     计算得到的应力的单位为 :math:`\frac{\text{dyne}}{\text{cm}^2} = 0.1 \text{Pa}`。
 
 
-由于场点位于地表（自由表面），过Z平面的应力均为0（由于浮点数计算误差，呈极小非零数），结果和理论保持一致。
+场点位于地表（自由表面），**ZZ、ZN、ZE** 应力分量理论上为零。
+图中这些分量使用整体应力的量级设置纵轴，避免自动缩放将微小数值残差放大。
 
+
+得到应力张量后，还可以进一步计算应力投影和库伦应力变化，
+分别使用 :doc:`/Module/sproj` 和 :doc:`/Module/coulomb`。
+投影由 **接收断层** 的走向、倾角和滑动角决定，与震源机制独立设置。
+这里取接收断层走向 90°、倾角 60°、滑动角 0°，
+将上面的应力张量投影为法向应力变化和沿滑动方向的剪应力变化。
+
+.. tabs::
+
+    .. group-tab:: CLI
+
+        .. literalinclude:: run_upar/run.sh
+            :language: bash
+            :start-after: BEGIN SPROJ
+            :end-before: END SPROJ
+
+    .. group-tab:: Python
+
+        .. literalinclude:: run_upar/run.py
+            :language: python
+            :start-after: BEGIN SPROJ
+            :end-before: END SPROJ
+
+结果保存为 ``sigma_n.sac`` 和 ``tau_s.sac``。
+法向应力以张开为正，剪应力以沿接收断层滑动方向为正。
+再取等效摩擦系数 0.4，计算库伦应力变化：
+
+.. math::
+
+    \Delta CFS = \Delta \tau_\mathrm{s} + \mu^{'} \Delta \sigma_\mathrm{n}
+
+.. tabs::
+
+    .. group-tab:: CLI
+
+        .. literalinclude:: run_upar/run.sh
+            :language: bash
+            :start-after: BEGIN COULOMB
+            :end-before: END COULOMB
+
+    .. group-tab:: Python
+
+        .. literalinclude:: run_upar/run.py
+            :language: python
+            :start-after: BEGIN COULOMB
+            :end-before: END COULOMB
+
+结果保存为 ``coulomb.sac``，单位与应力相同，为 dyne/cm²（0.1 Pa）。
+
+.. figure:: run_upar/coulomb.svg
+    :align: center
+
+    从上到下为剪应力、法向应力和库伦应力变化，绘图单位为 MPa
 
 
 .. [#covariant] 这只适用于ZNE坐标系，对于ZRT坐标系需考虑协变导数。程序中已考虑，这里不再做公式介绍。

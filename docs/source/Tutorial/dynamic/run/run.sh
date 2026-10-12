@@ -33,9 +33,9 @@ echo "..." >> HFZ_head
 
 # 爆炸源，标量矩 1e24 dyne·cm
 grt syn -GGRN/milrow_2_0_10 -S1e24 -A30 -Osyn_ex
-# 也可以将 -G 指向格林函数根目录，并用必要的选项精确指定格林函数子目录。
-# 本库的震源深度和台站深度各只有一个值，因此 -Ds/-Dr 可以省略，此处显式设置 -R：
-# grt syn -GGRN -R10 -S1e24 -A30 -Osyn_ex
+# 也可以将 -G 指向库根目录，按目标几何查询，默认线性插值，-i0 改为最近邻
+# 本库的源深和台深各只有一个值，-Ds/-Dr 可省略，-R7 在 5 km 和 8 km 节点之间插值
+# grt syn -GGRN -R7 -S1e24 -A30 -Osyn_ex
 
 # 单力源，(fN, fE, fZ)=(1, -0.5, 2)【北向，东向，垂直向下】，标度 1e16 dyne
 grt syn -GGRN/milrow_2_0_10 -S1e16 -A30 -F1/-0.5/2 -Osyn_sf

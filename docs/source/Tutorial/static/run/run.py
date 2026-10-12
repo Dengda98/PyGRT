@@ -84,33 +84,17 @@ pymod.static_syn(
 # END SYN POINTS
 # ---------------------------------------------------------------------------------
 
-# # ---------------------------------------------------------------------------------
-# # 只是备份，可供参考
-# import matplotlib.pyplot as plt
-# from typing import Union
+import matplotlib.pyplot as plt
 
-# def plot_static(static_syn:dict, out:Union[str,None]=None):
-#     vars_ = static_syn["variables"]
-#     north = vars_["north"]["data"]
-#     east = vars_["east"]["data"]
-#     Z = vars_["Z"]["data"]
-#     N = vars_["N"]["data"]
-#     E = vars_["E"]["data"]
-
-#     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
-#     # 设计对称色标
-#     m = np.max(np.abs(Z)) * 1.2
-#     pcm = ax.pcolormesh(east, north, Z, cmap='bwr', vmin=-m, vmax=m)
-#     ax.quiver(east, north, E, N, angles='uv', pivot='mid')
-#     ax.set_ylim([north[0], north[-1]])
-#     ax.set_xlim([east[0], east[-1]])
-#     ax.set_aspect('equal')
-#     cbar = fig.colorbar(pcm, ax=ax, label='Z(cm)')
-#     cbar.formatter.set_powerlimits((0, 0))
-
-#     if out is not None:
-#         fig.savefig(out, bbox_inches='tight')
-# # ---------------------------------------------------------------------------------
+static_syn = pygrt.utils.read_nc_variables("stsyn_points.nc")
+fig, ax = pygrt.utils.plot_static_displacement(static_syn, title="Static displacement for -M33/90/0")
+ax.plot(0.0, 0.0, marker="*", markersize=12, lw=0, color="black", label="Epicenter")
+limit = 1.15 * max(np.max(np.abs(static_syn["north"])), np.max(np.abs(static_syn["east"])))
+ax.set_xlim(-limit, limit)
+ax.set_ylim(-limit, limit)
+ax.legend(loc="upper right")
+fig.savefig("syn_points.svg", dpi=200, bbox_inches="tight")
+plt.close(fig)
 
 
 # 删除中间计算结果，仅保留成图

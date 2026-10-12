@@ -1,4 +1,5 @@
-.*
-
-stgrn.nc
-stsyn.nc
+__pycache__/
+*.svg
+*.pdf
+*.nc
+*.inp

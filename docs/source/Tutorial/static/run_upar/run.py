@@ -67,10 +67,24 @@ pygrt.utils.static_stress("stsyn_dc_zne.nc")
 # ---------------------------------------------------------------
 
 
+# BEGIN SPROJ
+# 接收断层形态与震源机制独立设置
+pygrt.utils.static_sproj("stsyn_dc_zne.nc", strike=90, dip=60, rake=0)
+# END SPROJ
+
+# BEGIN COULOMB
+pygrt.utils.static_coulomb("stsyn_dc_zne.nc", friction=0.4)
+# END COULOMB
+
 static_tensor = pygrt.utils.read_nc_variables("stsyn_dc_zne.nc")
 plot6(static_tensor, "Strain", 'static_strain.svg')
 plot6(static_tensor, "Rotation", 'static_rotation.svg')
 plot6(static_tensor, "Stress", 'static_stress.svg')
+
+# BEGIN COULOMB PLOT
+fig, axes = pygrt.utils.plot_static_coulomb(static_tensor, outpath="static_coulomb.svg")
+plt.close(fig)
+# END COULOMB PLOT
 
 # 删除中间计算结果，仅保留成图
 import shutil

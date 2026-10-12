@@ -9,6 +9,8 @@ C模块为 :doc:`/Module/static_syn`。
 
 使用上节计算的格林函数，我们可以指定 **点源的震源机制** 以及 **接收点位置** 来合成静态位移。
 为方便画图，以下结果都使用ZNE分量。
+目标震源深度、接收深度和源台震中距须在库的范围内，
+无需与采样节点重合，静态合成会自动进行线性插值。
 若仅使用已算好的静态格林函数，构造 :class:`~pygrt.pymod.PyModel1D` 时只需指定 ``stgrn``，无需再传 ``modelpath``：
 
 .. literalinclude:: run/run.py
@@ -35,8 +37,7 @@ C模块为 :doc:`/Module/static_syn`。
             :start-after: BEGIN SYN GRID
             :end-before: END SYN GRID
 
-        可以使用 **-X, -Y** 来指定二维接收网格。
-        各种点源的震源参数设置用法详见 :doc:`/Module/static_syn` 模块。
+        通过 :doc:`/Module/static_syn` 的 **-X/-Y** 指定二维接收网格。
 
     .. group-tab:: Python 
 
@@ -45,10 +46,8 @@ C模块为 :doc:`/Module/static_syn`。
             :start-after: BEGIN SYN GRID
             :end-before: END SYN GRID
 
-        可以设置 **norths, easts** 来指定二维接收网格。
-        各种点源的震源参数设置用法详见 
-        :meth:`static_syn() <pygrt.pymod.PyModel1D.static_syn>`
-        函数 API 说明。
+        通过 :meth:`static_syn() <pygrt.pymod.PyModel1D.static_syn>` 的
+        *norths/easts* 指定二维接收网格。
 
 
 .. figure:: run/syn_grid.svg
@@ -87,7 +86,6 @@ C模块为 :doc:`/Module/static_syn`。
             :start-after: BEGIN SYN POINTS
             :end-before: END SYN POINTS
 
-绘图脚本仅供参考（:download:`plot_points.py <run/plot_points.py>`），
 实际研究中，点的分布不同（例如通常会要计算沿着某条断层线上的位移以及衍生的物理量），
 合适的呈现形式也要进行修改。
 

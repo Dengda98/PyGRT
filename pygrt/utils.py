@@ -76,6 +76,9 @@ __all__ = [
     "plot_secfunc",
     "read_sCoulomb_faults",
     "plot_sCoulomb_faults_geometry",
+    "plot_static_displacement",
+    "plot_static_coulomb",
+    "get_anatolia_cmap",
     "lamb1",
     "solve_lamb1",
     "lamb2",
@@ -2348,6 +2351,7 @@ def plot_secfunc(
     _maybe_savefig(fig, outpath)
     return fig, axs
 
+
 def read_sCoulomb_faults(input_path: PathLike) -> list[dict]:
     """
     Read an sCoulomb-format fault file into a list of dictionaries.
@@ -2412,6 +2416,7 @@ def plot_sCoulomb_faults_geometry(input_path: PathLike, *, outpath: Optional[Pat
     :return:              Figure and a tuple of horizontal and 3D Axes
     """
     from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+    from matplotlib.ticker import MaxNLocator
 
     def fault_geometry(fault: dict) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """计算断层顶边、底边及其三维顶点"""
@@ -2547,9 +2552,160 @@ def plot_sCoulomb_faults_geometry(input_path: PathLike, *, outpath: Optional[Pat
     ax_3d.set_ylim(minimum[1] - padding, maximum[1] + padding)
     ax_3d.set_zlim(0.0, max(depth_max * 1.12, 1.0))
     ax_3d.invert_zaxis()
+    ax_3d.yaxis.set_major_locator(MaxNLocator(nbins=3))
     ax_3d.set_aspect("equal")
     ax_3d.view_init(elev=24.0, azim=-58.0)
     ax_3d.legend(loc="upper left", fontsize=8)
 
     _maybe_savefig(fig, outpath)
     return fig, (ax_map, ax_3d)
+
+
+def get_anatolia_cmap():
+    """
+    Return the Coulomb Anatolia colormap, from blue through white to red.
+
+    Colors follow the Coulomb_anatolia.cpt palette used in the gallery.
+    The midpoint is white, suitable for symmetric ranges around zero.
+
+    :return:  A Matplotlib LinearSegmentedColormap
+    """
+    from matplotlib.colors import LinearSegmentedColormap
+
+    # 内嵌 CPT 的 RGB 节点，使色标不依赖外部文件
+    colors = np.array([
+        (54, 39, 253), (55, 48, 253), (55, 57, 253),
+        (56, 66, 253), (56, 74, 253), (57, 83, 253),
+        (57, 92, 253), (58, 101, 253), (59, 110, 253),
+        (59, 119, 253), (60, 128, 253), (60, 137, 253),
+        (61, 145, 254), (61, 154, 254), (62, 163, 254),
+        (62, 172, 254), (63, 181, 254), (64, 190, 254),
+        (64, 199, 254), (65, 208, 254), (65, 216, 254),
+        (66, 225, 254), (66, 234, 254), (67, 243, 254),
+        (91, 245, 254), (114, 246, 254), (137, 247, 254),
+        (161, 249, 255), (184, 251, 255), (208, 252, 255),
+        (231, 253, 255), (255, 255, 255), (255, 253, 233),
+        (255, 251, 211), (254, 249, 189), (254, 247, 167),
+        (254, 245, 145), (253, 243, 123), (253, 241, 101),
+        (253, 239, 79), (252, 229, 76), (252, 218, 74),
+        (251, 208, 71), (250, 197, 69), (250, 187, 66),
+        (249, 177, 64), (248, 166, 61), (248, 156, 59),
+        (247, 145, 56), (246, 135, 54), (246, 125, 51),
+        (245, 114, 49), (245, 104, 46), (244, 94, 44),
+        (243, 83, 41), (243, 73, 39), (242, 62, 36),
+        (241, 52, 34), (241, 42, 31), (240, 31, 29),
+        (239, 21, 26), (239, 10, 24), (238, 0, 21),
+    ], dtype=float) / 255.0
+    return LinearSegmentedColormap.from_list("anatolia", colors, N=257)
+
+
+def plot_static_displacement(
+    data: dict, *, src_fault: Optional[PathLike] = None, title: Optional[str] = None,
+    clim_ratio: float = 0.5, outpath: Optional[PathLike] = None,
+):
+    """
+    Quickly inspect static ZNE displacement on a horizontal grid or at arbitrary points.
+
+    Color shows vertical displacement and arrows show horizontal displacement.
+    This is a quick auxiliary plot using the Anatolia colormap.
+    Color limits are ±clim_ratio times the maximum absolute vertical displacement.
+    Values outside this symmetric range saturate at the endpoint colors.
+    For nonzero horizontal displacement, a reference arrow above the axes uses
+    Matplotlib's automatic quiver scale, with a length of 1 cm or a multiple of 10 cm.
+
+    :param    data:       Variable dictionary from :func:`read_nc_variables`, with ZNE components
+    :param    src_fault:  Optional sCoulomb fault file whose top edges are drawn in black
+    :param    title:      Optional plot title
+    :param    clim_ratio: Color-range fraction of the maximum absolute vertical displacement, in (0, 1]
+    :param    outpath:    If given, save the figure to this path
+    :return:             Figure and Axes
+    """
+    north, east = data["north"], data["east"]
+    z, n, e = data["Z"], data["N"], data["E"]
+    if not np.isfinite(clim_ratio) or not 0 < clim_ratio <= 1:
+        raise ValueError("clim_ratio must be finite and in (0, 1].")
+    maximum = max(float(np.max(np.abs(z))) * clim_ratio, np.finfo(float).eps)
+    vmin, vmax = -maximum, maximum
+    cmap = get_anatolia_cmap()
+    below, above = np.min(z) < vmin, np.max(z) > vmax
+    extend = ("both" if below else "max") if above else ("min" if below else "neither")
+    fig, ax = plt.subplots(figsize=(7, 7), constrained_layout=True)
+
+    # 网格与任意点共用坐标约定，超出色标范围的值饱和显示
+    if np.ndim(z) == 2:
+        mesh = ax.pcolormesh(east, north, z, cmap=cmap, vmin=vmin, vmax=vmax, shading="auto")
+    elif np.ndim(z) == 1:
+        mesh = ax.scatter(east, north, c=z, s=180, cmap=cmap, vmin=vmin, vmax=vmax, linewidths=0.0)
+    else:
+        raise ValueError("Displacement must be a horizontal grid or a one-dimensional point array.")
+    quiver = None
+    if np.any(np.hypot(e, n) > 0):
+        quiver = ax.quiver(east, north, e, n, color="black", angles="xy", scale_units="xy", scale=None, width=0.003)
+    if src_fault is not None:
+        edges = np.loadtxt(src_fault, skiprows=2, usecols=(1, 2, 3, 4), ndmin=2)
+        for x0, y0, x1, y1 in edges:
+            ax.plot([x0, x1], [y0, y1], color="black", lw=3)
+    ax.set_xlabel("East (km)")
+    ax.set_ylabel("North (km)")
+    ax.set_aspect("equal")
+    ax.grid(lw=0.4)
+    if title:
+        ax.set_title(title, pad=38)
+    fig.colorbar(mesh, ax=ax, label="Vertical displacement Z (cm)", shrink=0.7, aspect=25, extend=extend)
+
+    if quiver is not None:
+        # 首次绘制后才能取得自动 scale，参考箭头以约 15% 的图幅宽度为目标
+        fig.canvas.draw()
+        target = 0.15 * abs(np.diff(ax.get_xlim())[0]) * quiver.scale
+        reference = max(1.0, 10.0 * np.floor(target / 10.0 + 0.5))
+        ax.quiverkey(quiver, 0.78, 1.04, reference, "", coordinates="axes", labelpos="E")
+        # 单独的文字参与布局与裁切，避免图外的参考标注被 tight 保存方式截掉
+        ax.text(0.80, 1.04, f"{reference:g} cm", transform=ax.transAxes, va="center")
+
+    _maybe_savefig(fig, outpath)
+    return fig, ax
+
+
+def plot_static_coulomb(
+    data: dict, *, src_fault: Optional[PathLike] = None, clim_ratio: float = 0.5, outpath: Optional[PathLike] = None,
+):
+    """
+    Quickly inspect shear, normal and Coulomb stress changes on a horizontal grid, in MPa.
+
+    This is a quick auxiliary plot using a shared Anatolia color scale.
+    Color limits are ±clim_ratio times the maximum absolute stress across all three components.
+    Values outside this symmetric range saturate at the endpoint colors.
+
+    :param    data:       Variable dictionary from :func:`read_nc_variables` after static Coulomb calculation
+    :param    src_fault:  Optional sCoulomb fault file whose top edges are drawn in black
+    :param    clim_ratio: Shared color-range fraction of the maximum absolute stress, in (0, 1]
+    :param    outpath:    If given, save the figure to this path
+    :return:             Figure and a tuple of three Axes
+    """
+    names = ("tau_s", "sigma_n", "coulomb")
+    titles = ("Shear Stress Change", "Normal Stress Change", "Coulomb Stress Change")
+    values = [np.asarray(data[name]) * 1e-7 for name in names]
+    if not np.isfinite(clim_ratio) or not 0 < clim_ratio <= 1:
+        raise ValueError("clim_ratio must be finite and in (0, 1].")
+    maximum = max(max(float(np.max(np.abs(value))) for value in values) * clim_ratio, np.finfo(float).eps)
+    vmin, vmax = -maximum, maximum
+    cmap = get_anatolia_cmap()
+    below = any(np.min(value) < vmin for value in values)
+    above = any(np.max(value) > vmax for value in values)
+    extend = ("both" if below else "max") if above else ("min" if below else "neither")
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5), layout='constrained')
+    edges = None if src_fault is None else np.loadtxt(src_fault, skiprows=2, usecols=(1, 2, 3, 4), ndmin=2)
+
+    # 将 dyn/cm² 转为 MPa，三个分量使用共同的色标范围
+    for ax, value, title in zip(axes, values, titles):
+        mesh = ax.pcolormesh(data["east"], data["north"], value, cmap=cmap, vmin=vmin, vmax=vmax, shading="auto")
+        if edges is not None:
+            for x0, y0, x1, y1 in edges:
+                ax.plot([x0, x1], [y0, y1], color="black", lw=3)
+        ax.set_title(title)
+        ax.set_xlabel("East (km)")
+        ax.set_ylabel("North (km)")
+        ax.set_aspect("equal")
+    fig.colorbar(mesh, ax=axes, orientation="horizontal", label="MPa", shrink=0.5, aspect=25, extend=extend)
+    _maybe_savefig(fig, outpath)
+    return fig, tuple(axes)

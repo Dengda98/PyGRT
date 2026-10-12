@@ -32,6 +32,15 @@ grt static rotation -Gstsyn_dc_zne.nc
 grt static stress -Gstsyn_dc_zne.nc
 # END
 
+# BEGIN SPROJ
+# 接收断层形态与震源机制独立设置
+grt static sproj -Gstsyn_dc_zne.nc -M90/60/0
+# END SPROJ
+
+# BEGIN COULOMB
+grt static coulomb -Gstsyn_dc_zne.nc -F0.4
+# END COULOMB
+
 # C 示例与 Python 示例共用文件名，跑 Python 前清掉残留
 rm -rf stgrn* stsyn*
 python run.py
