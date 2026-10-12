@@ -4,6 +4,12 @@
 构建静态格林函数库与应用有限断层
 ========================================
 
+.. admonition:: 本页文档示例下载
+    :class: tip
+
+    :download:`stlib.tar.gz <stlib.tar.gz>` |
+    解压后进入示例目录，运行 ``bash run.sh`` 即可复现本页示例。
+
 静态格林函数库同样可以反复用于不同震源机制和接收位置的合成，
 所有采样结果保存在一个 |NetCDF| 文件中。
 
@@ -58,8 +64,6 @@
 .. literalinclude:: fault.inp
     :language: text
 
-函数 :func:`plot_sCoulomb_faults_geometry() <pygrt.utils.plot_sCoulomb_faults_geometry>`
-可辅助快速可视化有限断层的展布。
 
 .. figure:: fault.svg
     :align: center
@@ -115,10 +119,6 @@
             :language: python
             :start-after: BEGIN COULOMB
             :end-before: END COULOMB
-
-函数 :func:`plot_static_displacement() <pygrt.utils.plot_static_displacement>` 和
-:func:`plot_static_coulomb() <pygrt.utils.plot_static_coulomb>`
-可辅助快速可视化位移和应力结果。
 
 .. figure:: disp.svg
     :align: center

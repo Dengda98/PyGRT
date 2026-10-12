@@ -4,6 +4,12 @@
 合成静态位移
 =====================
 
+.. admonition:: 本页文档示例下载
+    :class: tip
+
+    :download:`static_syn.tar.gz <static_syn.tar.gz>` |
+    解压后进入示例目录，运行 ``bash run.sh`` 即可复现本页示例。
+
 Python中合成静态位移的主函数为 :meth:`static_syn() <pygrt.pymod.PyModel1D.static_syn>` ，
 C模块为 :doc:`/Module/static_syn`。
 
@@ -17,11 +23,6 @@ C模块为 :doc:`/Module/static_syn`。
     :language: python
     :start-after: BEGIN REUSE STGRN
     :end-before: END REUSE STGRN
-
-二维网格示例使用 |GMT| 绘图，任意点示例使用 Python 绘图。
-
-这里提供计算和绘图的 Python 脚本和 Shell 脚本供下载参考。
-:download:`Shell Scripts <run.sh>` | :download:`Python Scripts <run.py>`
 
 
 指定二维接收网格

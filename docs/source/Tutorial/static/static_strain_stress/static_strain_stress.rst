@@ -4,6 +4,12 @@
 计算静态应变、旋转、应力张量
 =================================
 
+.. admonition:: 本页文档示例下载
+    :class: tip
+
+    :download:`static_strain_stress.tar.gz <static_strain_stress.tar.gz>` |
+    解压后进入示例目录，运行 ``bash run.sh`` 即可复现本页示例。
+
 除了使用不同的程序名和输出文件之外，流程基本和 :doc:`/Tutorial/dynamic/strain_stress/strain_stress` 类似。
 计算结果直接写回输入的静态合成 NetCDF 文件。
 
@@ -11,8 +17,6 @@
 
 以下示例中仅展示指定二维接收网格的用法，对任意接收点的用法也完全支持。
 
-这里提供计算和绘图的 Python 脚本和 Shell 脚本供下载参考。
-:download:`Shell Scripts <run.sh>` | :download:`Python Scripts <run.py>`
 
 .. tabs:: 
 
@@ -100,8 +104,6 @@
 
 结果以 **coulomb** 变量写回同一文件，单位与应力相同，为 dyne/cm²（0.1 Pa）。
 
-函数 :func:`plot_static_coulomb() <pygrt.utils.plot_static_coulomb>`
-可辅助快速可视化应力投影和库伦应力结果。
 
 .. figure:: static_coulomb.svg
     :align: center

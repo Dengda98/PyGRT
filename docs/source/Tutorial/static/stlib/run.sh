@@ -25,4 +25,14 @@ grt static coulomb -Gstsyn_ff.nc -F0.4
 # END COULOMB
 
 # 绘制结果图
+python run.py
 python plot.py
+
+# 打包本页文档、输入文件、脚本和运行结果
+rm -f *.tar.gz
+example=$(basename "$PWD")
+tar -czf "../${example}.tar.gz" -C .. "$example"
+mv "../${example}.tar.gz" "${example}.tar.gz"
+
+# 打包后删除计算结果，节省本地空间
+rm -f stgrn.nc stsyn_ff.nc

@@ -4,6 +4,12 @@
 计算本征函数、群速度、频散敏感核
 ============================================
 
+.. admonition:: 本页文档示例下载
+    :class: tip
+
+    :download:`eigenfunction.tar.gz <eigenfunction.tar.gz>` |
+    解压后进入示例目录，运行 ``bash run.sh`` 即可复现本页示例。
+
 本征值对应的位移应力解被称为本征函数，再基于变分理论计算出能量积分后可计算出群速度和频散敏感核 (|aki2009|; |yao2026|)。
 
 :command:`grt` 模块为 :doc:`/Module/eigenfn`，Python 中对应 :meth:`PyModel1D.eigenfn() <pygrt.pymod.PyModel1D.eigenfn>`，
@@ -32,12 +38,8 @@
             :start-after: BEGIN EIGENFN
             :end-before: END EIGENFN
 
-        Python 提供了 :func:`read_eigenfunction() <pygrt.utils.read_eigenfunction>`
-        将结果读入字典（``eigfn`` 等按阶号分组），以及 :func:`plot_eigenfunction() <pygrt.utils.plot_eigenfunction>`
-        进行简易绘图。
+        可使用 :func:`read_eigenfunction() <pygrt.utils.read_eigenfunction>` 读取本征函数结果。
 
-
-:download:`plot_eigenfunction.py <plot_eigenfunction.py>`
 
 .. figure:: eigenfunction.svg
 
@@ -64,14 +66,8 @@
             :start-after: BEGIN GROUP
             :end-before: END GROUP
 
-        与 :doc:`/Tutorial/modal/eigenvalue/eigenvalue` 中介绍的一致，可使用
-        :func:`read_dispersion() <pygrt.utils.read_dispersion>` 和
-        :func:`plot_dispersion() <pygrt.utils.plot_dispersion>` 读取群速度并绘制；
+        可使用 :func:`read_dispersion() <pygrt.utils.read_dispersion>` 读取群速度结果。
 
-以下同样提供两种方式的简易绘图脚本。
-
-:download:`plot_dispersion_group.py (基于 Matplotlib) <plot_dispersion_group.py>` | 
-:download:`plot_dispersion_group.sh (基于 GMT) <plot_dispersion_group.sh>`
 
 .. figure:: dispersion_py_group.svg
 
@@ -97,11 +93,8 @@
             :start-after: BEGIN SENS
             :end-before: END SENS
 
-        Python 提供了 :func:`read_sensitivity() <pygrt.utils.read_sensitivity>`
-        将结果读入字典（``csens`` / ``usens`` 等按阶号分组），以及 :func:`plot_sensitivity() <pygrt.utils.plot_sensitivity>`
-        进行简易绘图。
+        可使用 :func:`read_sensitivity() <pygrt.utils.read_sensitivity>` 读取敏感核结果。
 
-:download:`plot_sensitivity.py <plot_sensitivity.py>`
 
 + **相速度频散敏感核**
 

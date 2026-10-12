@@ -4,6 +4,12 @@
 构建面波格林函数库与应用有限断层
 ========================================
 
+.. admonition:: 本页文档示例下载
+    :class: tip
+
+    :download:`modlib.tar.gz <modlib.tar.gz>` |
+    解压后进入示例目录，运行 ``bash run.sh`` 即可复现本页示例。
+
 动态面波解也是动态格林函数的一种。它先由 :doc:`/Module/eigenv` 计算频散结果，
 再由 :doc:`/Module/modsum` 使用模态叠加法计算格林函数。由于 :doc:`/Module/modsum` 的输出目录格式与
 :doc:`/Module/greenfn` **完全相同**，因此建库和合成时的深度、震中距选择方式也相同，这里只进行简单介绍。

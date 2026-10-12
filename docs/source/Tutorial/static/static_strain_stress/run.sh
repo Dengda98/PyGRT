@@ -2,8 +2,6 @@
 
 set -euo pipefail
 
-rm -rf stgrn* stsyn* *.svg
-
 # BEGIN
 depsrc=2
 deprcv=0
@@ -41,8 +39,15 @@ grt static sproj -Gstsyn_dc_zne.nc -M90/60/0
 grt static coulomb -Gstsyn_dc_zne.nc -F0.4
 # END COULOMB
 
-# C 示例与 Python 示例共用文件名，跑 Python 前清掉残留
-rm -rf stgrn* stsyn*
 python run.py
 
-rm -rf stgrn* stsyn*
+python plot.py
+
+# 打包本页文档、输入文件、脚本和运行结果
+rm -f *.tar.gz
+example=$(basename "$PWD")
+tar -czf "../${example}.tar.gz" -C .. "$example"
+mv "../${example}.tar.gz" "${example}.tar.gz"
+
+# 打包后删除计算结果，节省本地空间
+rm -f stgrn.nc stsyn_*.nc

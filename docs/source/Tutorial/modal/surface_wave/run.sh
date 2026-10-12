@@ -2,8 +2,6 @@
 
 set -euo pipefail
 
-rm -rf GRN* *.nc
-
 # BEGIN
 
 M="milrow"
@@ -32,11 +30,17 @@ grt modsum -Cphase_R.nc -D$D -R$R -N -OGRN_NM_all -W$n -e
 grt modsum -Cphase_L.nc -D$D -R$R -N -OGRN_NM_all -W$n -e
 # END
 
-python compare_wave.py 0
-python compare_wave.py 1
-python compare_wave.py 2
-python compare_wave.py all
-
 python run.py
 
+for mode in 0 1 2 all; do
+    python compare_wave.py "$mode"
+done
+
+# 打包本页文档、输入文件、脚本和运行结果
+rm -f *.tar.gz
+example=$(basename "$PWD")
+tar -czf "../${example}.tar.gz" -C .. "$example"
+mv "../${example}.tar.gz" "${example}.tar.gz"
+
+# 打包后删除计算结果，节省本地空间
 rm -rf GRN* *.nc

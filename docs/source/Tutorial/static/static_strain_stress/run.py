@@ -1,45 +1,6 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import pygrt
 
-def plot6(data:dict, title:str, out:str|None=None):
-    norths = data["north"]
-    easts = data["east"]
-    chs = sorted([k for k in data if k.startswith(title.lower() + "_")], reverse=True)
-    fig, axs = plt.subplots(len(chs)//3, 3, figsize=(10, len(chs)))
-    axs = axs.ravel()
-
-    MAX = 0
-    for i in range(len(chs)):
-        ch = chs[i]
-        m = np.max(np.abs(data[ch]))
-        if m > MAX:
-            MAX = m
-
-    for i in range(len(chs)):
-        ax = axs[i]
-        ch = chs[i]
-        arr = data[ch]
-        vmin = vmax = None
-        if np.max(np.abs(arr))/MAX < 1e-5:
-            vmin = -1
-            vmax = 1
-
-        pcm = ax.pcolormesh(easts, norths, arr, shading='nearest', vmin=vmin, vmax=vmax, rasterized=True)
-        ax.set_aspect('equal')
-        ax.set_title(ch)
-        cbar = fig.colorbar(pcm, ax=ax)
-        cbar.formatter.set_powerlimits((0, 0))
-        cbar.update_normal(pcm)
-
-    fig.suptitle(title)
-
-    if out is not None:
-        fig.savefig(out, bbox_inches='tight')
-
-
-
-# ---------------------------------------------------------------
 # BEGIN
 # 重新计算格林函数，因为以下计算需要位移空间导数
 pymod = pygrt.PyModel1D(stgrn="stgrn.nc", modelpath="milrow")
@@ -64,8 +25,6 @@ pygrt.utils.static_strain("stsyn_dc_zne.nc")
 pygrt.utils.static_rotation("stsyn_dc_zne.nc")
 pygrt.utils.static_stress("stsyn_dc_zne.nc")
 # END
-# ---------------------------------------------------------------
-
 
 # BEGIN SPROJ
 # 接收断层形态与震源机制独立设置
@@ -75,21 +34,3 @@ pygrt.utils.static_sproj("stsyn_dc_zne.nc", strike=90, dip=60, rake=0)
 # BEGIN COULOMB
 pygrt.utils.static_coulomb("stsyn_dc_zne.nc", friction=0.4)
 # END COULOMB
-
-static_tensor = pygrt.utils.read_nc_variables("stsyn_dc_zne.nc")
-plot6(static_tensor, "Strain", 'static_strain.svg')
-plot6(static_tensor, "Rotation", 'static_rotation.svg')
-plot6(static_tensor, "Stress", 'static_stress.svg')
-
-# BEGIN COULOMB PLOT
-fig, axes = pygrt.utils.plot_static_coulomb(static_tensor, outpath="static_coulomb.svg")
-plt.close(fig)
-# END COULOMB PLOT
-
-# 删除中间计算结果，仅保留成图
-import shutil
-from pathlib import Path
-for name in ["stsyn_dc_zne.nc"]:
-    p = Path(name)
-    if p.is_file():
-        p.unlink(missing_ok=True)

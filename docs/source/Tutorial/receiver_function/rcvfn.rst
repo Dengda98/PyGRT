@@ -4,6 +4,12 @@
 计算接收函数
 ====================
 
+.. admonition:: 本页文档示例下载
+    :class: tip
+
+    :download:`receiver_function.tar.gz <receiver_function.tar.gz>` |
+    解压后进入示例目录，运行 ``bash run.sh`` 即可复现本页示例。
+
 基于相同的广义反射透射系数矩阵方法，
 **PyGRT** 可计算层状模型中单位平面入射 P 或 SV 波在自由表面的接收函数。
 C 模块见 :doc:`/Module/rcvfn`，Python 中对应 :meth:`PyModel1D.rcvfn() <pygrt.pymod.PyModel1D.rcvfn>`。
@@ -14,8 +20,6 @@ C 模块见 :doc:`/Module/rcvfn`，Python 中对应 :meth:`PyModel1D.rcvfn() <py
 .. literalinclude:: mod1
     :language: text
 
-这里提供计算和绘图的脚本供下载参考：
-:download:`Shell Scripts <run.sh>` | :download:`Python Scripts <run.py>`。
 
 这里为了演示两种指定入射波参数的用法，假设
 

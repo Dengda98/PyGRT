@@ -4,6 +4,12 @@
 计算频散曲线
 ====================
 
+.. admonition:: 本页文档示例下载
+    :class: tip
+
+    :download:`eigenvalue.tar.gz <eigenvalue.tar.gz>` |
+    解压后进入示例目录，运行 ``bash run.sh`` 即可复现本页示例。
+
 频散曲线上每个点对应的相速度被称为面波本征值。具体地，这里我们使用自适应搜根方法 (|ars2026|) 计算面波相速度频散曲线，
 :command:`grt` 模块为 :doc:`/Module/eigenv`，Python 中对应 :meth:`PyModel1D.eigenv() <pygrt.pymod.PyModel1D.eigenv>`。
 
@@ -37,16 +43,11 @@
             :start-after: BEGIN DISPERSION
             :end-before: END DISPERSION
 
-        Python 提供了 :func:`read_dispersion() <pygrt.utils.read_dispersion>`
-        将结果读入字典（``freq``、``c`` 等按阶号分组），以及 :func:`plot_dispersion() <pygrt.utils.plot_dispersion>` 进行简易绘图。
+        可使用 :func:`read_dispersion() <pygrt.utils.read_dispersion>` 读取频散结果。
 
 
 计算结果分别导出为 |NetCDF| 经典格式。
 
-以下提供这两种方式的简易绘图脚本。
-
-:download:`plot_dispersion.py (基于 Matplotlib) <plot_dispersion.py>` | 
-:download:`plot_dispersion.sh (基于 GMT) <plot_dispersion.sh>`
 
 .. figure:: dispersion_py.svg
 
@@ -73,10 +74,7 @@
             :start-after: BEGIN SECFUNC
             :end-before: END SECFUNC
 
-        Python 提供了 :func:`read_secfunc() <pygrt.utils.read_secfunc>`
-        将结果读入字典列表（每一条对应一层的久期函数），以及
-        :func:`plot_secfunc() <pygrt.utils.plot_secfunc>` 绘制其中一条（也可传入 ``{标题: 字典}`` 分栏绘制）。
+        可使用 :func:`read_secfunc() <pygrt.utils.read_secfunc>` 读取久期函数结果。
 
-:download:`plot_secfunc.py <plot_secfunc.py>`
 
 .. figure:: secfunc.svg

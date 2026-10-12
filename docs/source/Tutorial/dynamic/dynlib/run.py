@@ -1,11 +1,6 @@
 # 有限断层输入文件由 run.sh 构建
-import shutil
-
 import numpy as np
 import pygrt
-
-# 重新建库，避免保留旧的接收深度采样节点
-shutil.rmtree("GRN", ignore_errors=True)
 
 # BEGIN GRN
 pymod = pygrt.PyModel1D(grn="GRN", modelpath="mod3")

@@ -4,6 +4,12 @@
 构建动态格林函数库与应用有限断层
 ========================================
 
+.. admonition:: 本页文档示例下载
+    :class: tip
+
+    :download:`dynlib.tar.gz <dynlib.tar.gz>` |
+    解压后进入示例目录，运行 ``bash run.sh`` 即可复现本页示例。
+
 固定模型后，将不同震源深度、接收深度和震中距的格林函数保存成库，
 即可反复用于不同震源机制、有限断层和接收点的合成。
 
@@ -73,7 +79,6 @@
 
 有限断层的剖分、各子断层的时间函数和破裂延迟可以自行定义，也可以从其他来源获得后调整为 |sCoulomb| 格式。
 本例用 :doc:`/Module/faultdiv` 模块辅助快速生成 1×1 km 的子断层及简单的破裂延迟，
-得到 :download:`fault_rupture.inp <fault_rupture.inp>`。
 各子断层采用上升、下降各 1 s 的余弦时间函数，破裂从断层面中心以 2.5 km/s 向外传播。
 文件前几行如下：
 
@@ -81,8 +86,6 @@
     :language: text
     :lines: 1-5
 
-函数 :func:`plot_sCoulomb_faults_geometry() <pygrt.utils.plot_sCoulomb_faults_geometry>`
-可辅助快速可视化有限断层的展布。
 
 .. figure:: fault.svg
     :align: center

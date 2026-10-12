@@ -1,8 +1,6 @@
 #!/bin/bash
 set -euo pipefail
 
-rm -rf GRN* syn* *.svg
-
 # --------------------------------------------------------------------------------------
 # BEGIN GRN
 # -e 表示计算空间导数
@@ -24,7 +22,6 @@ grt syn -GGRN/milrow_2_0_30 -S1e24 -A30 -M33/50/120 -Osyn_dc_zne -e -N -I1 -Dc/0
 # END ZNE
 # --------------------------------------------------------------------------------------
 
-
 # --------------------------------------------------------------------------------------
 # BEGIN STRAIN 
 # 指定文件夹，会在原文件夹内输出SAC格式的应变张量
@@ -38,7 +35,6 @@ grt strain -Gsyn_dc_zne
 grt rotation -Gsyn_dc_zne
 # END ROTATION
 # --------------------------------------------------------------------------------------
-
 
 # --------------------------------------------------------------------------------------
 # BEGIN STRESS 
@@ -56,8 +52,15 @@ grt sproj -Gsyn_dc_zne -M90/60/0
 grt coulomb -Gsyn_dc_zne -F0.4
 # END COULOMB
 
-# C 示例与 Python 示例共用目录名，跑 Python 前清掉残留，避免读回混入旧 SAC
-rm -rf GRN* syn*
 python run.py
 
-find . \( -name "syn*" -o -name "GRN*" \) -type d -exec rm -rf {} \+
+python plot.py
+
+# 打包本页文档、输入文件、脚本和运行结果
+rm -f *.tar.gz
+example=$(basename "$PWD")
+tar -czf "../${example}.tar.gz" -C .. "$example"
+mv "../${example}.tar.gz" "${example}.tar.gz"
+
+# 打包后删除计算结果，节省本地空间
+rm -rf GRN syn_dc syn_dc_zne

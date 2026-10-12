@@ -4,6 +4,12 @@
 合成动态位移
 =================
 
+.. admonition:: 本页文档示例下载
+    :class: tip
+
+    :download:`syn.tar.gz <syn.tar.gz>`，
+    解压后进入示例目录，运行 ``bash run.sh`` 即可复现本页示例。
+
 .. _warning_src_zdir:
 .. warning:: 
 
@@ -52,7 +58,6 @@ CLI 和 Python 函数中根据设置的不同震源参数自动推断震源类�
 一次只能设置一组震源专用参数，不完整或混用参数会报错。
 本节示例均为点源。
 
-脚本下载： :download:`Shell Scripts <run.sh>` | :download:`Python Scripts <run.py>`
 
 .. tabs::
 
@@ -97,7 +102,6 @@ CLI 和 Python 函数中根据设置的不同震源参数自动推断震源类�
      
 
 
-
 分量旋转
 ---------------------
 **PyGRT** 计算默认输出为ZRT分量（柱坐标系），可以设置参数以输出ZNE分量，这里以剪切源为例，
@@ -121,7 +125,6 @@ CLI 和 Python 函数中根据设置的不同震源参数自动推断震源类�
 
 .. figure:: syn_dc_zne.svg
    :align: center
-
 
 
 卷积时间函数
@@ -164,7 +167,6 @@ CLI 和 Python 函数中根据设置的不同震源参数自动推断震源类�
    :align: center
 
    非对称余弦波及其卷积结果（上升 0.1 s，下降 0.5 s）
-
 
 
 位移对时间积分、微分

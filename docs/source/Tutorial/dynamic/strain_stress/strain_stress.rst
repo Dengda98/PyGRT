@@ -4,6 +4,12 @@
 计算动态应变、旋转、应力张量
 =======================================
 
+.. admonition:: 本页文档示例下载
+    :class: tip
+
+    :download:`strain_stress.tar.gz <strain_stress.tar.gz>` |
+    解压后进入示例目录，运行 ``bash run.sh`` 即可复现本页示例。
+
 计算这些张量需要计算位移的空间导数 :math:`\partial z,\partial r,\partial \theta` [#partial]_ 。 从前文关于格林函数的计算 （ :doc:`/Tutorial/dynamic/gfunc/gfunc` ） 和位移合成的公式 （ :doc:`/Tutorial/dynamic/syn/syn` ） 出发，位移空间导数分两个步骤计算，再根据几何方程和本构方程合成应变、旋转和应力张量。
 
 .. [#partial] :math:`\partial z,\partial r,\partial \theta` 为 :math:`\dfrac{\partial}{\partial z},\dfrac{\partial}{\partial r},\dfrac{\partial}{\partial \theta}` 的简写。
@@ -42,7 +48,6 @@
     + 单力源：  :math:`10^{-20} \, /\text{dyne}`
     + 剪切源：  :math:`10^{-25} \, /\text{dyne} \cdot \text{cm}`  
     + 矩张量源： :math:`10^{-25} \, /\text{dyne} \cdot \text{cm}`  
-
 
 
 合成位移阶段，求出 :math:`\partial \theta / r` 并合成位移空间导数
@@ -190,7 +195,6 @@
 .. math:: 
 
     \sigma_{ij} = \lambda \delta_{ij} e_{kk} + 2 \mu e_{ij} = \lambda \delta_{ij} u_{k,k} + \mu \left( u_{i,j} + u_{j,i} \right)
-
 
 
 .. tabs:: 

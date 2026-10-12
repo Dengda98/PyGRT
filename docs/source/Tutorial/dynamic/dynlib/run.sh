@@ -11,9 +11,6 @@ EOF
 # 生成子断层、时间函数和从断层面中心向外传播的破裂延迟
 grt faultdiv -Ffault.inp -I1/1 -R2.5+o4/2 -Dc/1/1 -Ofault_rupture.inp
 
-# 重新建库，避免保留旧的接收深度采样节点
-rm -rf GRN
-
 # BEGIN GRN
 # -N 的 +a 表示计算所有频点
 grt greenfn -Mmod3 -Ds2/6/1 -Dr0 -R2/36/2 -N512/0.1+a -L+a1e-3 -OGRN -e
@@ -28,4 +25,14 @@ grt sproj -Gsyn_ff -M90/60/0
 grt coulomb -Gsyn_ff -F0.4
 # END SRC SYN
 
+python run.py
 python plot.py
+
+# 打包本页文档、输入文件、脚本和运行结果
+rm -f *.tar.gz
+example=$(basename "$PWD")
+tar -czf "../${example}.tar.gz" -C .. "$example"
+mv "../${example}.tar.gz" "${example}.tar.gz"
+
+# 打包后删除计算结果，节省本地空间
+rm -rf GRN syn_ff

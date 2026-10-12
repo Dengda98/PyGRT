@@ -4,6 +4,12 @@
 计算静态格林函数
 =================
 
+.. admonition:: 本页文档示例下载
+    :class: tip
+
+    :download:`static_gfunc.tar.gz <static_gfunc.tar.gz>` |
+    解压后进入示例目录，运行 ``bash run.sh`` 即可复现本页示例。
+
 Python中计算静态格林函数的主函数为 :meth:`static_greenfn() <pygrt.pymod.PyModel1D.static_greenfn>` ，C模块为 :doc:`/Module/static_greenfn`。
 
 建议先阅读完 :doc:`/Tutorial/dynamic/gfunc/gfunc` 部分。静态情况与动态情况采取的计算方法一致，只是推导细节会有不同，详见 |yao2026p| 。

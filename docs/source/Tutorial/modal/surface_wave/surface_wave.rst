@@ -4,6 +4,12 @@
 计算面波格林函数
 ============================================
 
+.. admonition:: 本页文档示例下载
+    :class: tip
+
+    :download:`surface_wave.tar.gz <surface_wave.tar.gz>` |
+    解压后进入示例目录，运行 ``bash run.sh`` 即可复现本页示例。
+
 根据留数定理，本征值处对波数积分的贡献可以解析地表达。将多个本征值得到的贡献叠加起来就得到面波格林函数，
 这个方法也被称为 **模态叠加法（Modal Summation Method）** 。 |yao2026p| 给出了推导过程和具体公式，这里不再重复。
 
@@ -39,7 +45,8 @@
             :start-after: BEGIN
             :end-before: END
 
-:download:`compare_wave.py <compare_wave.py>` （虚线为全波解，实线为面波解）
+
+下图中虚线为全波解，实线为面波解。
 
 + **0 阶面波**
 
