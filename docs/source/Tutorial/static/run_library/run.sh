@@ -1,19 +1,28 @@
 #!/bin/bash
-
 set -euo pipefail
 
-rm -f stgrn.nc stsyn.nc
+# 构建有限震源输入
+cat > fault.inp << 'EOF'
+  #  X-start  Y-start    X-fin    Y-fin Kode   rt.lat  reverse      dip      top      bot
+--- -------- -------- -------- -------- ---- -------- -------- -------- -------- --------
+  1   -4.000    0.000    4.000    0.000  100    2.000    0.000   60.000    2.000    5.464
+EOF
 
 # BEGIN GRN
-# -R 生成一维震中距列表，并与多深度组合写入一个 NetCDF 文件
-# 建议使用 -e，这样计算的格林函数库包含位移空间偏导数，可以用于后续相关的计算
-grt static greenfn -Mmilrow -Ds2,4 -Dr0,2 -R0,5,10,15 -Ostgrn.nc -e
+# 接收点位于地表，-e 增加位移空间偏导数
+grt static greenfn -Mmod3 -Ds2/6/1 -Dr0 -R0/36/2 -Ostgrn.nc -e
 # END GRN
 
-# BEGIN SYN
-# 使用 -Ds, -Dr 明确给出点源的震源深度和台站深度
-# 使用 -e 表示增加位移偏导数的合成
-grt static syn -Gstgrn.nc -Ds3 -Dr1 -S1e24 -M33/50/120 -X-10/10/5 -Y-10/10/5 -Ostsyn.nc -e
-# END SYN
+# BEGIN SRC SYN
+# 使用有限震源，地表二维网格输出 ZNE 位移及偏导数
+grt static syn -Gstgrn.nc -Cfault.inp+i1/1 -Dr0 -N -X-20/20/1 -Y-20/20/1 -Ostsyn_ff.nc -e
+# END SRC SYN
 
-rm -f stgrn.nc stsyn.nc
+# BEGIN COULOMB
+grt static stress -Gstsyn_ff.nc
+grt static sproj -Gstsyn_ff.nc -M90/60/0
+grt static coulomb -Gstsyn_ff.nc -F0.4
+# END COULOMB
+
+# 绘制结果图
+python plot.py

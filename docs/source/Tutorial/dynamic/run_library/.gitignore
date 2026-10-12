@@ -1,4 +1,7 @@
 .*
-
-GRN*
-syn_*
+__pycache__/
+*.svg
+*.pdf
+GRN/
+syn_*/
+*.inp

@@ -41,7 +41,7 @@
         将结果读入字典（``freq``、``c`` 等按阶号分组），以及 :func:`plot_dispersion() <pygrt.utils.plot_dispersion>` 进行简易绘图。
 
 
-计算结果分别导出为 |NetCDF| 经典格式，其中具体变量详见 :doc:`/Module/eigenv` 模块文档。
+计算结果分别导出为 |NetCDF| 经典格式。
 
 以下提供这两种方式的简易绘图脚本。
 

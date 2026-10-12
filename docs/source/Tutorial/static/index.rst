@@ -84,5 +84,3 @@
    static_syn
    static_strain_stress
    stlib
-   src_fault
-   rcv_fault

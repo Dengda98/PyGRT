@@ -1,75 +1,150 @@
 :author: 朱邓达
 :date: 2026-08-17
 
-创建静态格林函数库
-===================
+构建静态格林函数库与应用有限断层
+========================================
 
-静态格林函数的建库思路与动态情况相同：固定模型后，把多个震源深度、台站深度和震中距交给
-:doc:`/Module/static_greenfn`，由模块内部遍历全部组合计算，不需要用户手动编写循环。
-区别在于，所有结果会被写入一个多维 |NetCDF| 文件，维度为
-``depsrc × deprcv × north × east``，而不是生成多个文件。
-保留 ``north`` 和 ``east`` 两个水平维度只是为了兼容，对应的就是震中距。
+静态格林函数库同样可以反复用于不同震源机制和接收位置的合成，
+所有采样结果保存在一个 |NetCDF| 文件中。
 
-
-快速上手
----------
-
-我们先简单计算这样的一个格林函数库作为示例，保存到文件 ``stgrn.nc``：
-
-+ 震源深度：2、4 km
-+ 台站深度：0、2 km
-+ 震中距：0、5、10、15 km 
-
-
-.. tabs::
-
-    .. group-tab:: CLI
-
-        .. literalinclude:: run_library/run.sh
-            :language: bash
-            :start-after: BEGIN GRN
-            :end-before: END GRN
-
-    .. group-tab:: Python
-
-        .. literalinclude:: run_library/run.py
-            :language: python
-            :start-after: BEGIN GRN
-            :end-before: END GRN
-
-建立格林函数的目的就是为了复用。只要模型不变，以及震源深度、台站深度、震中距的间距和范围适用你的研究，就可以多次反复使用。
-
-例如，以下我们使用刚刚计算的格林函数库，合成一个点源在二维接收平面上的结果。
-与前面不同的是， **对于点源，此时的合成阶段需要明确给出震源深度，对于台站也需要给出其接收深度**。
-这是因为之前章节中计算的都是单一震源深度和单一台站深度的格林函数，
-如果格林函数中某一维度仅有一个，则在合成阶段可以省略指定对应参数。
-
-.. tabs::
-
-    .. group-tab:: CLI
-
-        .. literalinclude:: run_library/run.sh
-            :language: bash
-            :start-after: BEGIN SYN
-            :end-before: END SYN
-
-    .. group-tab:: Python
-
-        .. literalinclude:: run_library/run.py
-            :language: python
-            :start-after: BEGIN SYN
-            :end-before: END SYN
-
-合成位移以及位移偏导数之后，此时输出的 nc 文件格式不变，可用之前介绍的方式衔接到计算应力等步骤，
-这里不再重复。
-
-静态合成会进行插值
+构建静态格林函数库
 ------------------------
-仔细观察会发现，以上合成过程中， **我们指定的震源/台站深度以及震中距并没有准确的包含在静态格林函数库中**，
-动态、静态库均支持对采样节点之间的位置进行插值。合成静态结果时，程序会进行：
 
-1. 对包围每个网格点目标震中距的采样点，分别结合震源机制完成静态位移合成，再按目标震中距加权线性组合
-2. 如果目标源深度或台站深度位于两个采样深度之间，则对各个深度组合分别合成，再按深度加权线性组合
+本节先考虑台站位于地表的情况，接收深度固定为 0 km，
+因此只在 **震源深度** 和 **震中距** 两个维度上采样。
 
-插值作用于已经完成震源合成的位移/位移偏导数结果，而不是直接对格林函数数组插值。
-目标深度以及二维网格各点的震中距必须落在库的范围内。
+使用同一模型，计算所选震源深度和震中距采样的全部组合。
+库的范围须覆盖所有子源的深度，以及各子源到地表接收点的实际震中距；
+采样间隔应足够小，以保证插值精度。
+
+本例计算震源深度 2～6 km、震中距 0～36 km 的所有组合，
+同时计算位移空间导数，供后续计算应力等物理量。
+
+.. tabs::
+
+    .. group-tab:: CLI
+
+        使用 :doc:`/Module/static_greenfn` 一次建库，**-Dr0** 固定地表接收点，
+        **-Ds/-R** 指定震源深度和震中距采样，
+        **-e** 同时计算空间导数。
+
+        .. literalinclude:: run_library/run.sh
+            :language: bash
+            :start-after: BEGIN GRN
+            :end-before: END GRN
+
+    .. group-tab:: Python
+
+        调用 :meth:`static_greenfn() <pygrt.pymod.PyModel1D.static_greenfn>`
+        一次计算全部深度和距离组合。
+
+        .. literalinclude:: run_library/run.py
+            :language: python
+            :start-after: BEGIN GRN
+            :end-before: END GRN
+
+结果保存为 ``stgrn.nc``，包含多震源深度和一维震中距采样，接收深度固定为 0 km。
+静态合成自动按震源深度和源台震中距进行线性插值。
+目标值不必与采样节点重合，但不能超出库的范围。
+
+应用有限断层震源
+------------------------------
+
+**使用有限断层震源时，输出只能采用 ZNE 坐标系。**
+
+有限震源由 |sCoulomb| 格式的断层文件描述，合成时叠加各子断层中心点源的结果。
+静态解只取决于最终滑动量，不需要破裂时间函数和延迟。本例使用以下断层：
+
+.. literalinclude:: run_library/fault.inp
+    :language: text
+
+函数 :func:`plot_sCoulomb_faults_geometry() <pygrt.utils.plot_sCoulomb_faults_geometry>`
+可辅助快速可视化有限断层的展布。
+
+.. figure:: run_library/fault.svg
+    :align: center
+
+    震源断层的水平投影和三维展布
+
+本例沿走向、倾向均按 1 km 剖分，在地表网格上计算 ZNE 位移及空间导数。
+
+.. tabs::
+
+    .. group-tab:: CLI
+
+        :doc:`/Module/static_syn` 的 **-C** 指定有限震源，**+i** 设置剖分尺寸。
+        **-X/-Y** 分别指定北向、东向接收网格。
+
+        .. literalinclude:: run_library/run.sh
+            :language: bash
+            :start-after: BEGIN SRC SYN
+            :end-before: END SRC SYN
+
+    .. group-tab:: Python
+
+        通过 :meth:`static_syn() <pygrt.pymod.PyModel1D.static_syn>` 的 *src_fault*
+        读取有限震源。
+
+        .. literalinclude:: run_library/run.py
+            :language: python
+            :start-after: BEGIN SRC SYN
+            :end-before: END SRC SYN
+
+结果保存到 ``stsyn_ff.nc``。应力、投影及库伦应力的计算与点源相同，
+这里同样取等效摩擦系数 0.4，流程见 :doc:`static_strain_stress`。
+
+.. tabs::
+
+    .. group-tab:: CLI
+
+        依次使用 :doc:`/Module/static_stress`、:doc:`/Module/static_sproj` 和
+        :doc:`/Module/static_coulomb`。
+
+        .. literalinclude:: run_library/run.sh
+            :language: bash
+            :start-after: BEGIN COULOMB
+            :end-before: END COULOMB
+
+    .. group-tab:: Python
+
+        依次调用 :func:`static_stress() <pygrt.utils.static_stress>`、
+        :func:`static_sproj() <pygrt.utils.static_sproj>` 和
+        :func:`static_coulomb() <pygrt.utils.static_coulomb>`。
+
+        .. literalinclude:: run_library/run.py
+            :language: python
+            :start-after: BEGIN COULOMB
+            :end-before: END COULOMB
+
+函数 :func:`plot_static_displacement() <pygrt.utils.plot_static_displacement>` 和
+:func:`plot_static_coulomb() <pygrt.utils.plot_static_coulomb>`
+可辅助快速可视化位移和应力结果。
+
+.. figure:: run_library/disp.svg
+    :align: center
+
+    颜色表示垂直位移 Z，箭头表示水平位移 E、N，黑线表示震源断层顶边
+
+.. figure:: run_library/coulomb.svg
+    :align: center
+
+    依次为剪应力、法向应力和库伦应力变化
+
+应用有限断层接收
+------------------------------
+
+:doc:`/Module/static_syn` 和 :meth:`static_syn() <pygrt.pymod.PyModel1D.static_syn>`
+也支持传入有限接收断层，本质上是批量定义多个接收点。
+可以在整条断层中心接收，也可剖分后在各子断层中心接收。
+
+**上述格林函数库的接收深度固定为 0 km。若接收断层包含地下接收点，
+就必须在“接收点深度”维度上扩增格林函数库，覆盖所有接收点的深度，
+形成震源深度、接收深度和震中距三个维度的采样组合。**
+同时仍需确保各子源到接收点的实际震中距位于库的范围内。
+
+接收断层与震源断层使用相同的 |sCoulomb| 文件格式，但仅支持 **Kode=100**。
+滑动量不参与位移计算，行末的震源时间函数和延迟会被忽略。
+几何和滑动角随结果保存，供后续应力投影使用；
+若滑动角未定义，须在投影阶段补充，也可用 **rake** 格式预先给定。
+
+同一次合成也可同时使用有限震源和有限接收断层，后处理方式与点源相同。

@@ -1,26 +1,23 @@
+# 有限断层输入文件由 run.sh 构建
+import numpy as np
 import pygrt
 
 # BEGIN GRN
-pymod = pygrt.PyModel1D(stgrn="stgrn.nc", modelpath="milrow")
-# 加上 calc_upar=True 表示计算位移格林函数的空间偏导
+pymod = pygrt.PyModel1D(stgrn="stgrn.nc", modelpath="mod3")
 pymod.static_greenfn(
-    depsrc=[2.0, 4.0], 
-    deprcv=[0.0, 2.0], 
-    dists=[0.0, 5.0, 10.0, 15.0], 
-    calc_upar=True
+    depsrc=np.arange(2, 6+1e-8, 1), deprcv=0.0, dists=np.arange(0, 36+1e-8, 2), calc_upar=True
 )
 # END GRN
 
-
-# BEGIN SYN
-# 指定静态格林函数路径
-pymod = pygrt.PyModel1D(stgrn="stgrn.nc")
-
-# 加上 calc_upar=True 表示合成位移的空间偏导
-# 需要设置 depsrc, deprcv 以明确指出震源深度和台站深度
+# BEGIN SRC SYN
 pymod.static_syn(
-    norths=(-10.0, 10.0, 5.0), easts=(-10.0, 10.0, 5.0),
-    depsrc=3.0, deprcv=1.0,
-    scale=1e24, strike=33.0, dip=50.0, rake=120.0, output_path="stsyn.nc", calc_upar=True
+    norths=(-20, 20, 1), easts=(-20, 20, 1), deprcv=0.0,
+    src_fault="fault.inp", src_fault_size=[1, 1], output_path="stsyn_ff.nc", zne=True, calc_upar=True
 )
-# END SYN
+# END SRC SYN
+
+# BEGIN COULOMB
+pygrt.utils.static_stress("stsyn_ff.nc")
+pygrt.utils.static_sproj("stsyn_ff.nc", strike=90, dip=60, rake=0)
+pygrt.utils.static_coulomb("stsyn_ff.nc", friction=0.4)
+# END COULOMB
