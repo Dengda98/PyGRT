@@ -39,6 +39,7 @@ real_t grt_linear_filon_integ(
 
     // 每个震中距的k循环是否结束
     bool *iendkrs = GRT_SAFE_CALLOC(nr, sizeof(bool)); // 自动初始化为 false
+    real_t *kendrs = GRT_SAFE_CALLOC(nr, sizeof(real_t)); // 每个距离实际参与积分的最后一个波数
     bool iendk0 = false;
 
     size_t nk = floor((kmax - k0) / dk) + 1L;
@@ -72,9 +73,10 @@ real_t grt_linear_filon_integ(
             // 防御：r=0 应在参数入口已拒绝（FIM 不适于零震中距）
             if(GRT_IS_ZERO(rs[ir]))  continue;
 
+            kendrs[ir] = k;
             memset(K2->SUM, 0, sizeof(cplxIntegGrid));
             
-            // F(k, w)*Jm(kr)k 的近似公式, sqrt(k) * F(k,w) * cos
+            // 普通项及近场项的慢变振幅乘 cos，均采用固定间隔线性插值
             grt_int_Pk_filon(k, rs[ir], true, K->QWV, false, K2->SUM);
 
             iendk0 = true;
@@ -86,7 +88,8 @@ real_t grt_linear_filon_integ(
                 // 是否提前判断达到收敛
                 if(keps <= 0.0 || (modr==0 && v!=0 && v!=2))  continue;
                 
-                iendk0 = iendk0 && (fabs(K2->SUM[im][v])/ fabs(K2->sumJ[ir][im][v]) <= keps);
+                // 零核函数不影响收敛，避免 0/0 阻止提前结束
+                iendk0 = iendk0 && (fabs(K2->SUM[im][v]) <= keps * fabs(K2->sumJ[ir][im][v]));
             }
             
             if(keps > 0.0){
@@ -180,11 +183,29 @@ real_t grt_linear_filon_integ(
             // 防御：r=0 应在参数入口已拒绝（FIM 不适于零震中距）
             if(GRT_IS_ZERO(rs[ir]))  continue;
 
+            // 提前收敛时，最后一个端点必须取该距离的实际终点
+            const cplxChnlGrid *QWV = &K->QWV;
+            const cplxChnlGrid *QWVz = &K->QWVz;
+            cplxChnlGrid QWV_end, QWVz_end;
+            real_t kend = kendrs[ir];
+            if(iik == 1 && kend != k){
+                kerfunc(mstat, kend, QWV_end, K->calc_upar, QWVz_end);
+                if(mstat->stats == GRT_INVERSE_FAILURE){
+                    goto BEFORE_RETURN;
+                }
+                if(K->applyDCM){
+                    grt_int_dcm_revision(kmax, kend, QWV_end, K->QWV_kmax, K->calc_upar, QWVz_end, K->QWVz_kmax);
+                }
+                QWV = &QWV_end;
+                QWVz = &QWVz_end;
+            }
+            real_t kedge = iik == 0 ? k0N : kend;
+
             // Gc
-            grt_int_Pk_filon(k0N, r, true, K->QWV, false, SUM_Gc[iik]);
+            grt_int_Pk_filon(kedge, r, true, *QWV, false, SUM_Gc[iik]);
             
             // Gs
-            grt_int_Pk_filon(k0N, r, false, K->QWV, false, SUM_Gs[iik]);
+            grt_int_Pk_filon(kedge, r, false, *QWV, false, SUM_Gs[iik]);
 
             
             real_t tmp = 1.0 / (r*r*dk);
@@ -200,10 +221,10 @@ real_t grt_linear_filon_integ(
                 // ------------------------------- ui_z -----------------------------------
                 // 计算被积函数一项 F(k,w)Jm(kr)k
                 // Gc
-                grt_int_Pk_filon(k0N, r, true, K->QWVz, false, SUM_Gc[iik]);
+                grt_int_Pk_filon(kedge, r, true, *QWVz, false, SUM_Gc[iik]);
                 
                 // Gs
-                grt_int_Pk_filon(k0N, r, false, K->QWVz, false, SUM_Gs[iik]);
+                grt_int_Pk_filon(kedge, r, false, *QWVz, false, SUM_Gs[iik]);
 
                 GRT_LOOP_IntegGrid(im, v){
                     K2->sumJz[ir][im][v] += (- tmpc*SUM_Gc[iik][im][v] + tmps*SUM_Gs[iik][im][v] - sgn*SUM_Gs[iik][im][v]/r);
@@ -212,10 +233,10 @@ real_t grt_linear_filon_integ(
                 // ------------------------------- ui_r -----------------------------------
                 // 计算被积函数一项 F(k,w)Jm(kr)k
                 // Gc
-                grt_int_Pk_filon(k0N, r, true, K->QWV, true, SUM_Gc[iik]);
+                grt_int_Pk_filon(kedge, r, true, *QWV, true, SUM_Gc[iik]);
                 
                 // Gs
-                grt_int_Pk_filon(k0N, r, false, K->QWV, true, SUM_Gs[iik]);
+                grt_int_Pk_filon(kedge, r, false, *QWV, true, SUM_Gs[iik]);
 
                 GRT_LOOP_IntegGrid(im, v){
                     K2->sumJr[ir][im][v] += (- tmpc*SUM_Gc[iik][im][v] + tmps*SUM_Gs[iik][im][v] - sgn*SUM_Gs[iik][im][v]/r);
@@ -248,6 +269,7 @@ real_t grt_linear_filon_integ(
     grt_free_K_INTEG(K2);
 
     GRT_SAFE_FREE_PTR(iendkrs);
+    GRT_SAFE_FREE_PTR(kendrs);
 
     return k;
 }

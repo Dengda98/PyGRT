@@ -73,4 +73,4 @@
 
 .. note::
 
-    在程序中，固定间隔的Filon积分不计算近场项，即 :doc:`/Tutorial/dynamic/gfunc` 中介绍的 :math:`p=1` 对应的积分项。
+    **自 v0.18.0 起，固定间隔Filon积分（FIM）已包含近场项**，即 :doc:`/Tutorial/dynamic/gfunc` 中的 :math:`p=1` 积分项。

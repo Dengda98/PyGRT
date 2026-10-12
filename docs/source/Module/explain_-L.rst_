@@ -25,5 +25,5 @@
     
     .. note::
 
-        固定间隔和自适应 Filon 积分不计算近场项，即 :doc:`/Tutorial/dynamic/gfunc` 中介绍的 :math:`p=1` 对应的积分项。
+        **自 v0.18.0 起，固定间隔Filon积分（FIM）和自适应Filon积分（SAFIM）均包含近场项**，即 :doc:`/Tutorial/dynamic/gfunc` 中的 :math:`p=1` 积分项。
 

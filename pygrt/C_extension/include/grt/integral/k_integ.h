@@ -102,7 +102,7 @@ void grt_merge_Pk(const cplxIntegGrid sumJ, cplxChnlGrid tol);
 
 
 /**
- *  和int_Pk函数类似，不过是计算核函数和渐近Bessel函数的乘积 sqrt(k) * F(k,w) * cos ，其中涉及两种数组形状：
+ * 固定间隔FIM的被积函数近似，普通项振幅为 sqrt(k)*F，近场项(p=1)振幅为 (qm+vm)/sqrt(k)，其中涉及两种数组形状：
  *    + QWV. 存储的是核函数，第一个维度不同震源，不同阶数，第二个维度3代表三类系数qm,wm,vm  
  *    + SUM. 存储的是该dk区间内的积分值，第一个维度不同震源，不同阶数，维度4代表4种类型的F(k,w)Jm(kr)k的类型
  * 
@@ -111,7 +111,7 @@ void grt_merge_Pk(const cplxIntegGrid sumJ, cplxChnlGrid tol);
  * @param[in]     r              震中距 
  * @param[in]     iscos          是否使用cos函数，否则使用sin函数
  * @param[in]     QWV            不同震源，不同阶数的核函数 \f$ q_m, w_m, v_m \f$
- * @param[in]     calc_uir       是否计算ui_r（位移u对坐标r的偏导）
+ * @param[in]     calc_uir       是否计算ui_r（位移u对坐标r的偏导），采用大 kr 下的简化
  * @param[out]    SUM            该dk区间内的积分值
  *  
  */
@@ -119,14 +119,15 @@ void grt_int_Pk_filon(real_t k, real_t r, bool iscos, const cplxChnlGrid QWV, bo
 
 
 /**
- * 对sqrt(k)*F(k,w)进行二次曲线拟合，再计算 (a*k^2 + b*k + c) * cos(kr - (2m+1)/4) 的积分，其中涉及两种数组形状：
- *    + QWV. 存储的是核函数，第一个维度不同震源，不同阶数，第二个维度3代表三类系数qm,wm,vm  
+ * SAFIM普通项对sqrt(k)*F(k,w)拟合，近场项(p=1)对(qm+vm)/sqrt(k)拟合，
+ * 再计算 (a*k^2 + b*k + c)*cos(kr - (2m+1)*PI/4) 的积分，其中涉及两种数组形状：
+ *    + QWV3. 三个采样点的核函数，每个采样点存储不同震源对应的qm,wm,vm
  *    + SUM. 存储的是该三点区间内的积分值，第一个维度不同震源，不同阶数，维度4代表4种类型的F(k,w)Jm(kr)k的类型
  * 
  * @param[in]     k3            三点等距波数
  * @param[in]     r             震中距 
  * @param[in]     QWV3          k3对应的不同震源，不同阶数的核函数 \f$ q_m, w_m, v_m \f$
- * @param[in]     calc_uir      是否计算ui_r（位移u对坐标r的偏导）
+ * @param[in]     calc_uir      是否计算ui_r（位移u对坐标r的偏导），采用大 kr 下的简化
  * @param[out]    SUM           该三点区间内的积分值
  * 
  */

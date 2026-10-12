@@ -153,7 +153,9 @@ void grt_int_Pk(real_t k, real_t r, const cplxChnlGrid QWV, bool calc_uir, cplxI
 void grt_int_Pk_filon(real_t k, real_t r, bool iscos, const cplxChnlGrid QWV, bool calc_uir, cplxIntegGrid SUM)
 {
     real_t phi0 = 0.0;
-    if(! iscos)  phi0 = - HALFPI;  // 在cos函数中添加的相位差，用于计算sin函数
+    if(! iscos){
+        phi0 = HALFPI;  // cos(theta-PI/2)=sin(theta)，用于计算端点余项
+    }
 
     real_t kr = k*r;
     real_t kcoef = sqrt(k);
@@ -174,7 +176,7 @@ void grt_int_Pk_filon(real_t k, real_t r, bool iscos, const cplxChnlGrid QWV, bo
 
     for(int i=0; i<=GRT_MORDER_MAX; ++i)  bjmk[i] *= kcoef;
     
-    // 公式(5.6.22), 将公式分解为F(k,w)Jm(kr)k的形式，忽略近场项
+    // 普通项振幅为 sqrt(k)*F，近场项为 (qm+vm)/sqrt(k)，径向偏导沿用大震中距简化
     for(int i=0; i<GRT_SRC_M_NUM; ++i){
         int modr = GRT_SRC_M_ORDERS[i];  // 对应m阶数
         if(modr == 0){
@@ -183,7 +185,7 @@ void grt_int_Pk_filon(real_t k, real_t r, bool iscos, const cplxChnlGrid QWV, bo
         }
         else{
             SUM[i][0]  =   QWV[i][0] * bjmk[modr-1];         // qm*Jm-1*k
-            SUM[i][1]  =   0.0;    // - m*(qm+vm)*Jm*k/kr
+            SUM[i][1]  = - modr * (QWV[i][0] + QWV[i][2]) * bjmk[modr] / kr;    // -m*H*Jm/r，径向偏导约为 m*H*k*Jm+1/r
             SUM[i][2]  =   QWV[i][1] * bjmk[modr];           // wm*Jm*k
             SUM[i][3]  = - QWV[i][2] * bjmk[modr-1];         // -vm*Jm-1*k
         }
@@ -192,8 +194,9 @@ void grt_int_Pk_filon(real_t k, real_t r, bool iscos, const cplxChnlGrid QWV, bo
 
 
 /**
- * 计算 (a*k^2 + b*k + c) * cos(kr - (2m+1)/4) 在[k1, k2]上的积分，
- * 如果kodr0==1，则说明对r取偏导，需计算(a*k^3 + b*k^2 + c*k) * cos(kr - (2m+1)/4) 在[k1, k2]上的积分，
+ * 计算 (a*k^2 + b*k + c)*cos(kr - (2m+1)*PI/4) 在[k1, k2]上的积分，
+ * kodr0==1 时在多项式振幅上额外乘 k，得到三次多项式积分，用于普通项和近场项的径向偏导，
+ * 相位阶数和导数系数由调用方确定
  */
 static cplx_t interg_quad_cos(
     cplx_t a, cplx_t b, cplx_t c, int modr, real_t r, real_t k1, real_t k2, int kodr0)
@@ -238,11 +241,12 @@ void grt_int_Pk_sa_filon(const real_t k3[3], real_t r, const cplxChnlGrid QWV3[3
 {
     // 使用bessel递推公式 Jm'(x) = m/x * Jm(x) - J_{m+1}(x)
     // 考虑大震中距，忽略第一项，再使用bessel渐近公式
+    // 近场径向导数简化为 m*H*k*J_{m+1}/r，省略 1/r^2 次阶项，其中 H=qm+vm
     int modr0 = (calc_uir)? 1 : 0;
     int kodr0 = (calc_uir)? 1 : 0;
     int sgn = (calc_uir)? -1 : 1;
 
-    // 对sqrt(k)*F(k,w)进行二次曲线拟合，再计算 (a*k^2 + b*k + c) * cos(kr - (2m+1)/4) 的积分
+    // 普通项对sqrt(k)*F(k,w)拟合，近场项在下方单独对(qm+vm)/sqrt(k)拟合
     // 拟合二次函数的参数
     cplxChnlGrid quad_a={0};
     cplxChnlGrid quad_b={0};
@@ -267,7 +271,13 @@ void grt_int_Pk_sa_filon(const real_t k3[3], real_t r, const cplxChnlGrid QWV3[3
         }
         else{
             SUM[im][0]  =   interg_quad_cos(quad_a[im][0],quad_b[im][0],quad_c[im][0],modr-1+modr0,r,kmin,kmax,kodr0);         // qm*Jm-1*k
-            SUM[im][1]  =   0.0;    // - m*(qm+vm)*Jm*k/kr
+            // 近场项直接拟合 (qm+vm)/sqrt(k)，径向导数沿用大震中距简化
+            cplx_t near3[3], near_a, near_b, near_c;
+            for(int d=0; d<3; ++d){
+                near3[d] = (QWV3[d][im][0] + QWV3[d][im][2]) / sqrt(k3[d]) * sgn;
+            }
+            grt_quad_term(k3, near3, &near_a, &near_b, &near_c);
+            SUM[im][1]  = - modr / r * interg_quad_cos(near_a,near_b,near_c,modr+modr0,r,kmin,kmax,kodr0);
             SUM[im][2]  =   interg_quad_cos(quad_a[im][1],quad_b[im][1],quad_c[im][1],modr+modr0,r,kmin,kmax,kodr0);           // wm*Jm*k
             SUM[im][3]  = - interg_quad_cos(quad_a[im][2],quad_b[im][2],quad_c[im][2],modr-1+modr0,r,kmin,kmax,kodr0);;         // -vm*Jm-1*k
         }

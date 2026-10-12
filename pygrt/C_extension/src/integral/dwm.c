@@ -59,7 +59,7 @@ real_t grt_discrete_integ(
         }
 
         if(K->applyDCM){
-            grt_int_dcm_revision(kmax, k, K->QWV, K->QWV_kmax, K->calc_upar, K->QWVz, K->QWVz_kmax);
+            grt_int_dcm_revision(K->kmax, k, K->QWV, K->QWV_kmax, K->calc_upar, K->QWVz, K->QWVz_kmax);
         }
 
         // 记录积分核函数
