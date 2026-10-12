@@ -11,7 +11,7 @@ Python中计算动态格林函数的主函数为 :meth:`greenfn() <pygrt.pymod.P
 
 核心计算逻辑来自  |yao2026p| ，具体代码可见与C API中对应同名 :file:`*.c` 文件，其中计算格林函数频谱的主函数为 :file:`grn.c` 里的 :c:func:`grt_integ_grn_spec`。输出结果的坐标系见下图。
 
-.. figure:: ../coord.svg
+.. figure:: coord.svg
    :align: center
 
 .. _warning_C_python_Z_direction:
@@ -32,7 +32,7 @@ Python中计算动态格林函数的主函数为 :meth:`greenfn() <pygrt.pymod.P
 
     .. group-tab:: CLI
 
-        .. literalinclude:: run/run.sh
+        .. literalinclude:: run.sh
             :language: bash
             :start-after: BEGIN GRN
             :end-before: END GRN
@@ -44,31 +44,31 @@ Python中计算动态格林函数的主函数为 :meth:`greenfn() <pygrt.pymod.P
 
         + :doc:`/Module/travt` 模块可以显式地再计算初至波走时，
 
-         .. literalinclude:: run/run.sh
+         .. literalinclude:: run.sh
             :language: bash
             :start-after: BEGIN grt.travt
             :end-before: END grt.travt
 
          走时结果会输出到终端，
 
-         .. literalinclude:: run/travt
+         .. literalinclude:: travt
             :language: text 
 
         + 如果你没有安装SAC软件，可以使用Python的ObsPy库读取生成的SAC数据，或者使用 :doc:`/Module/sac2asc` 模块临时将SAC格式文件转为如下的文本文件：
 
-         .. literalinclude:: run/run.sh
+         .. literalinclude:: run.sh
             :language: bash
             :start-after: BEGIN grt.sac2asc
             :end-before: END grt.sac2asc
 
          输出的文本文件如下，两列分别为时间点和幅值。这种输出仅保留波形信息，缺失SAC文件中的头段变量。
 
-         .. literalinclude:: run/HFZ_head
+         .. literalinclude:: HFZ_head
             :language: text
 
     .. group-tab:: Python
 
-        .. literalinclude:: run/run.py
+        .. literalinclude:: run.py
             :language: python
             :start-after: BEGIN GRN
             :end-before: END GRN
@@ -79,7 +79,7 @@ Python中计算动态格林函数的主函数为 :meth:`greenfn() <pygrt.pymod.P
         需要读回时使用 ObsPy 的 ``read`` ， :class:`Trace.stats.sac`
         中保存了 SAC 头段变量，与 :command:`grt` 命令输出保持一致。
 
-        .. literalinclude:: run/run.py
+        .. literalinclude:: run.py
             :language: python
             :start-after: BEGIN READ GRN
             :end-before: END READ GRN

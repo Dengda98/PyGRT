@@ -80,7 +80,7 @@
    :hidden:
    :maxdepth: 1
 
-   static_gfunc
-   static_syn
-   static_strain_stress
-   stlib
+   static_gfunc/static_gfunc
+   static_syn/static_syn
+   static_strain_stress/static_strain_stress
+   stlib/stlib

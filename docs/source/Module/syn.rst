@@ -67,7 +67,7 @@ Z 垂直向上，R 径向向外，T 沿 R 顺时针旋转 90°，N、E 分别为
 **-G**\ *grndir*
     :doc:`greenfn` 输出的库根目录或单个节点子目录。
     库根目录须包含一个模型的完整深度、距离组合及原始模型文件，
-    各节点的采样点数、采样间隔和虚频率须一致，详见 :doc:`/Tutorial/dynamic/dynlib`。
+    各节点的采样点数、采样间隔和虚频率须一致，详见 :doc:`/Tutorial/dynamic/dynlib/dynlib`。
     使用 |-C| 时，库根目录必须包含至少两个节点，单节点库不支持有限断层震源。
     计算位移空间导数时，所用基本源型的 **z/r** 导数文件也必须存在。
 
@@ -138,4 +138,4 @@ Z 垂直向上，R 径向向外，T 沿 R 顺时针旋转 90°，N、E 分别为
 
 详见教程：
 
-+ :doc:`/Tutorial/dynamic/syn`
++ :doc:`/Tutorial/dynamic/syn/syn`

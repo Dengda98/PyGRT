@@ -22,7 +22,7 @@ ker2asc
 
 **ker2asc** 模块输出结果打印到标准输出，第一列为波数值，
 后面每两列的命名方式为  ``{srcType}_{q/w/v}``，
-与 :doc:`/Tutorial/dynamic/gfunc` 部分介绍的积分公式中的核函数 :math:`q_m, w_m, v_m` 保持一致。
+与 :doc:`/Tutorial/dynamic/gfunc/gfunc` 部分介绍的积分公式中的核函数 :math:`q_m, w_m, v_m` 保持一致。
 两列分别表示复数的实部和虚部。
 
 示例

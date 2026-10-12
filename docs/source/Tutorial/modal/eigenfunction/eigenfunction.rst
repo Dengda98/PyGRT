@@ -9,7 +9,7 @@
 :command:`grt` 模块为 :doc:`/Module/eigenfn`，Python 中对应 :meth:`PyModel1D.eigenfn() <pygrt.pymod.PyModel1D.eigenfn>`，
 计算将基于 :doc:`/Module/eigenv` 模块的频散结果及其内嵌的模型。
 
-以下示例基于 :doc:`eigenvalue` 部分计算的相速度频散结果。
+以下示例基于 :doc:`/Tutorial/modal/eigenvalue/eigenvalue` 部分计算的相速度频散结果。
 
 本征函数
 ------------------
@@ -20,14 +20,14 @@
 
     .. group-tab:: CLI
 
-        .. literalinclude:: run/run.sh
+        .. literalinclude:: run.sh
             :language: bash
             :start-after: BEGIN EIGENFN
             :end-before: END EIGENFN
 
     .. group-tab:: Python
 
-        .. literalinclude:: run/run.py
+        .. literalinclude:: run.py
             :language: python
             :start-after: BEGIN EIGENFN
             :end-before: END EIGENFN
@@ -37,9 +37,9 @@
         进行简易绘图。
 
 
-:download:`plot_eigenfunction.py <run/plot_eigenfunction.py>`
+:download:`plot_eigenfunction.py <plot_eigenfunction.py>`
 
-.. figure:: run/eigenfunction.svg
+.. figure:: eigenfunction.svg
 
 群速度
 -----------------
@@ -50,7 +50,7 @@
 
     .. group-tab:: CLI
 
-        .. literalinclude:: run/run.sh
+        .. literalinclude:: run.sh
             :language: bash
             :start-after: BEGIN GROUP
             :end-before: END GROUP
@@ -59,21 +59,21 @@
 
     .. group-tab:: Python
 
-        .. literalinclude:: run/run.py
+        .. literalinclude:: run.py
             :language: python
             :start-after: BEGIN GROUP
             :end-before: END GROUP
 
-        与 :doc:`eigenvalue` 中介绍的一致，可使用
+        与 :doc:`/Tutorial/modal/eigenvalue/eigenvalue` 中介绍的一致，可使用
         :func:`read_dispersion() <pygrt.utils.read_dispersion>` 和
         :func:`plot_dispersion() <pygrt.utils.plot_dispersion>` 读取群速度并绘制；
 
 以下同样提供两种方式的简易绘图脚本。
 
-:download:`plot_dispersion_group.py (基于 Matplotlib) <run/plot_dispersion_group.py>` | 
-:download:`plot_dispersion_group.sh (基于 GMT) <run/plot_dispersion_group.sh>`
+:download:`plot_dispersion_group.py (基于 Matplotlib) <plot_dispersion_group.py>` | 
+:download:`plot_dispersion_group.sh (基于 GMT) <plot_dispersion_group.sh>`
 
-.. figure:: run/dispersion_py_group.svg
+.. figure:: dispersion_py_group.svg
 
 
 频散敏感核
@@ -85,14 +85,14 @@
 
     .. group-tab:: CLI
 
-        .. literalinclude:: run/run.sh
+        .. literalinclude:: run.sh
             :language: bash
             :start-after: BEGIN SENS
             :end-before: END SENS
 
     .. group-tab:: Python
 
-        .. literalinclude:: run/run.py
+        .. literalinclude:: run.py
             :language: python
             :start-after: BEGIN SENS
             :end-before: END SENS
@@ -101,7 +101,7 @@
         将结果读入字典（``csens`` / ``usens`` 等按阶号分组），以及 :func:`plot_sensitivity() <pygrt.utils.plot_sensitivity>`
         进行简易绘图。
 
-:download:`plot_sensitivity.py <run/plot_sensitivity.py>`
+:download:`plot_sensitivity.py <plot_sensitivity.py>`
 
 + **相速度频散敏感核**
 
@@ -109,11 +109,11 @@
 
     .. grid-item::
 
-        .. figure:: run/csens_R.svg
+        .. figure:: csens_R.svg
     
     .. grid-item::
 
-        .. figure:: run/csens_L.svg
+        .. figure:: csens_L.svg
 
 
 + **群速度频散敏感核**
@@ -122,11 +122,11 @@
 
     .. grid-item::
 
-        .. figure:: run/usens_R.svg
+        .. figure:: usens_R.svg
     
     .. grid-item::
 
-        .. figure:: run/usens_L.svg
+        .. figure:: usens_L.svg
 
 .. note:: 
 

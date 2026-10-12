@@ -35,7 +35,7 @@
         **-Ds/-R** 指定震源深度和震中距采样，
         **-e** 同时计算空间导数。
 
-        .. literalinclude:: run_library/run.sh
+        .. literalinclude:: run.sh
             :language: bash
             :start-after: BEGIN GRN
             :end-before: END GRN
@@ -45,7 +45,7 @@
         调用 :meth:`greenfn() <pygrt.pymod.PyModel1D.greenfn>`
         一次计算全部深度和距离组合。
 
-        .. literalinclude:: run_library/run.py
+        .. literalinclude:: run.py
             :language: python
             :start-after: BEGIN GRN
             :end-before: END GRN
@@ -73,18 +73,18 @@
 
 有限断层的剖分、各子断层的时间函数和破裂延迟可以自行定义，也可以从其他来源获得后调整为 |sCoulomb| 格式。
 本例用 :doc:`/Module/faultdiv` 模块辅助快速生成 1×1 km 的子断层及简单的破裂延迟，
-得到 :download:`fault_rupture.inp <run_library/fault_rupture.inp>`。
+得到 :download:`fault_rupture.inp <fault_rupture.inp>`。
 各子断层采用上升、下降各 1 s 的余弦时间函数，破裂从断层面中心以 2.5 km/s 向外传播。
 文件前几行如下：
 
-.. literalinclude:: run_library/fault_rupture.inp
+.. literalinclude:: fault_rupture.inp
     :language: text
     :lines: 1-5
 
 函数 :func:`plot_sCoulomb_faults_geometry() <pygrt.utils.plot_sCoulomb_faults_geometry>`
 可辅助快速可视化有限断层的展布。
 
-.. figure:: run_library/fault.svg
+.. figure:: fault.svg
     :align: center
 
     剖分后震源断层的水平投影和三维展布
@@ -101,7 +101,7 @@
         不设置全局 **-D**，以保留逐行时间函数和延迟。
         库查询默认线性插值，**-i0** 改为最近邻。
 
-        .. literalinclude:: run_library/run.sh
+        .. literalinclude:: run.sh
             :language: bash
             :start-after: BEGIN SRC SYN
             :end-before: END SRC SYN
@@ -113,17 +113,17 @@
         不设置全局 *time_function*，以保留逐行时间函数和延迟。
         库查询默认线性插值，*interpolate=False* 改为最近邻。
 
-        .. literalinclude:: run_library/run.py
+        .. literalinclude:: run.py
             :language: python
             :start-after: BEGIN SRC SYN
             :end-before: END SRC SYN
 
-.. figure:: run_library/syn_ff.svg
+.. figure:: syn_ff.svg
     :align: center
 
     三分量位移
 
-.. figure:: run_library/coulomb.svg
+.. figure:: coulomb.svg
     :align: center
 
     切向应力、法向应力和库伦应力变化

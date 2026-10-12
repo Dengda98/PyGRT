@@ -14,7 +14,7 @@ Python中合成动态位移的主函数为 :meth:`syn() <pygrt.pymod.PyModel1D.s
 使用上节计算的格林函数，合成动态位移（理论地震图）。方便起见，这里统一使用milrow模型，震源深度2km，场点位于地表，震中距10km的格林函数，方位角30°。
 若仅使用已算好的格林函数，构造 :class:`~pygrt.pymod.PyModel1D` 时只需指定 ``grn``，无需再传 ``modelpath``：
 
-.. literalinclude:: run/run.py
+.. literalinclude:: run.py
     :language: python
     :start-after: BEGIN REUSE GRN
     :end-before: END REUSE GRN
@@ -52,7 +52,7 @@ CLI 和 Python 函数中根据设置的不同震源参数自动推断震源类�
 一次只能设置一组震源专用参数，不完整或混用参数会报错。
 本节示例均为点源。
 
-脚本下载： :download:`Shell Scripts <run/run.sh>` | :download:`Python Scripts <run/run.py>`
+脚本下载： :download:`Shell Scripts <run.sh>` | :download:`Python Scripts <run.py>`
 
 .. tabs::
 
@@ -71,7 +71,7 @@ CLI 和 Python 函数中根据设置的不同震源参数自动推断震源类�
 
         本节的C示例使用第一种方式，脚本中也以注释形式给出了第二种方式。
 
-        .. literalinclude:: run/run.sh
+        .. literalinclude:: run.sh
             :language: bash
             :start-after: BEGIN SYN SOURCES
             :end-before: END SYN SOURCES
@@ -84,13 +84,13 @@ CLI 和 Python 函数中根据设置的不同震源参数自动推断震源类�
         例如 *dist=7.0* 不需要已有 7 km 节点，只需位于库的距离范围内。
         只有一个采样值的维度可以省略对应参数，该维度仍只适用于这个值。
 
-        .. literalinclude:: run/run.py
+        .. literalinclude:: run.py
             :language: python
             :start-after: BEGIN SYN SOURCES
             :end-before: END SYN SOURCES
 
 
-.. figure:: run/syn_sources.svg
+.. figure:: syn_sources.svg
     :align: center
      
     不同震源参数对应的 Z 分量位移
@@ -106,20 +106,20 @@ CLI 和 Python 函数中根据设置的不同震源参数自动推断震源类�
 
     .. group-tab:: CLI
 
-        .. literalinclude:: run/run.sh
+        .. literalinclude:: run.sh
             :language: bash
             :start-after: BEGIN ZNE
             :end-before: END ZNE
 
     .. group-tab:: Python 
 
-        .. literalinclude:: run/run.py
+        .. literalinclude:: run.py
             :language: python
             :start-after: BEGIN ZNE
             :end-before: END ZNE
 
 
-.. figure:: run/syn_dc_zne.svg
+.. figure:: syn_dc_zne.svg
    :align: center
 
 
@@ -139,7 +139,7 @@ CLI 和 Python 函数中根据设置的不同震源参数自动推断震源类�
 
     .. group-tab:: CLI
 
-        .. literalinclude:: run/run.sh
+        .. literalinclude:: run.sh
             :language: bash
             :start-after: BEGIN TIME FUNC
             :end-before: END TIME FUNC
@@ -148,19 +148,19 @@ CLI 和 Python 函数中根据设置的不同震源参数自动推断震源类�
 
     .. group-tab:: Python 
 
-        .. literalinclude:: run/run.py
+        .. literalinclude:: run.py
             :language: python
             :start-after: BEGIN TIME FUNC
             :end-before: END TIME FUNC
 
         生成的时间函数会以SAC格式保存在对应路径中，文件名为 :file:`sig.sac`。
 
-.. figure:: run/syn_sf_trig.svg
+.. figure:: syn_sf_trig.svg
    :align: center
 
    三角波及其卷积结果（上升 0.3 s，平台 0 s，下降 0.3 s）
 
-.. figure:: run/syn_sf_cosine.svg
+.. figure:: syn_sf_cosine.svg
    :align: center
 
    非对称余弦波及其卷积结果（上升 0.1 s，下降 0.5 s）
@@ -175,7 +175,7 @@ CLI 和 Python 函数中根据设置的不同震源参数自动推断震源类�
 
     .. group-tab:: CLI
 
-        .. literalinclude:: run/run.sh
+        .. literalinclude:: run.sh
             :language: bash
             :start-after: BEGIN INT DIF
             :end-before: END INT DIF
@@ -184,7 +184,7 @@ CLI 和 Python 函数中根据设置的不同震源参数自动推断震源类�
 
     .. group-tab:: Python 
 
-        .. literalinclude:: run/run.py
+        .. literalinclude:: run.py
             :language: python
             :start-after: BEGIN INT DIF
             :end-before: END INT DIF
@@ -192,11 +192,11 @@ CLI 和 Python 函数中根据设置的不同震源参数自动推断震源类�
         可通过设置 **integrate_order** / **differentiate_order** 来指定积分/微分次数。
         也可以不指定然后使用 Obspy 的函数来进行单独处理。
 
-.. figure:: run/syn_mt_intdif_Z.svg
+.. figure:: syn_mt_intdif_Z.svg
    :align: center
 
-.. figure:: run/syn_mt_intdif_R.svg
+.. figure:: syn_mt_intdif_R.svg
    :align: center
 
-.. figure:: run/syn_mt_intdif_T.svg
+.. figure:: syn_mt_intdif_T.svg
    :align: center

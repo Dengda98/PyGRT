@@ -63,4 +63,4 @@
 
 .. note::
 
-    **自 v0.18.0 起，程序中自适应Filon积分已包含近场项**，即 :doc:`/Tutorial/dynamic/gfunc` 中介绍的 :math:`p=1` 对应的积分项。
+    **自 v0.18.0 起，程序中自适应Filon积分已包含近场项**，即 :doc:`/Tutorial/dynamic/gfunc/gfunc` 中介绍的 :math:`p=1` 对应的积分项。

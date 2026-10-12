@@ -23,7 +23,7 @@
 
     .. group-tab:: CLI
 
-        .. literalinclude:: run_modsum/run.sh
+        .. literalinclude:: run.sh
             :language: bash
             :start-after: BEGIN
             :end-before: END
@@ -34,26 +34,26 @@
         :class:`~pygrt.pymod.PyModel1D` 时指定的 *grn* 根目录。
         下例与 CLI 一样为不同阶数指定了各自的输出目录。
 
-        .. literalinclude:: run_modsum/run.py
+        .. literalinclude:: run.py
             :language: python
             :start-after: BEGIN
             :end-before: END
 
-:download:`compare_wave.py <run_modsum/compare_wave.py>` （虚线为全波解，实线为面波解）
+:download:`compare_wave.py <compare_wave.py>` （虚线为全波解，实线为面波解）
 
 + **0 阶面波**
 
-.. figure:: run_modsum/compare_0.svg
+.. figure:: compare_0.svg
 
 + **1 阶面波**
 
-.. figure:: run_modsum/compare_1.svg
+.. figure:: compare_1.svg
 
 + **2 阶面波**
 
-.. figure:: run_modsum/compare_2.svg
+.. figure:: compare_2.svg
 
 
 + **所有阶面波**
 
-.. figure:: run_modsum/compare_all.svg
+.. figure:: compare_all.svg

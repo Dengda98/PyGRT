@@ -4,7 +4,7 @@
 计算静态应变、旋转、应力张量
 =================================
 
-除了使用不同的程序名和输出文件之外，流程基本和 :doc:`/Tutorial/dynamic/strain_stress` 类似。
+除了使用不同的程序名和输出文件之外，流程基本和 :doc:`/Tutorial/dynamic/strain_stress/strain_stress` 类似。
 计算结果直接写回输入的静态合成 NetCDF 文件。
 
 **注意要在计算格林函数以及合成阶段的命令中加上计算位移偏导数的参数。**
@@ -12,7 +12,7 @@
 以下示例中仅展示指定二维接收网格的用法，对任意接收点的用法也完全支持。
 
 这里提供计算和绘图的 Python 脚本和 Shell 脚本供下载参考。
-:download:`Shell Scripts <run_upar/run.sh>` | :download:`Python Scripts <run_upar/run.py>`
+:download:`Shell Scripts <run.sh>` | :download:`Python Scripts <run.py>`
 
 .. tabs:: 
 
@@ -20,7 +20,7 @@
 
         计算结果会以新增变量的形式直接写入 nc 网格，可使用 ``ncdump -h`` 查看。
         
-        .. literalinclude:: run_upar/run.sh
+        .. literalinclude:: run.sh
             :language: bash
             :start-after: BEGIN
             :end-before: END
@@ -28,24 +28,24 @@
 
     .. group-tab:: Python
 
-        .. literalinclude:: run_upar/run.py
+        .. literalinclude:: run.py
             :language: python
             :start-after: BEGIN
             :end-before: END
 
 -------------
 
-.. figure:: run_upar/static_strain.svg
+.. figure:: static_strain.svg
     :align: center 
 
 -------------
 
-.. figure:: run_upar/static_rotation.svg
+.. figure:: static_rotation.svg
     :align: center 
 
 -------------
 
-.. figure:: run_upar/static_stress.svg
+.. figure:: static_stress.svg
     :align: center 
 
 
@@ -62,14 +62,14 @@
 
     .. group-tab:: CLI
 
-        .. literalinclude:: run_upar/run.sh
+        .. literalinclude:: run.sh
             :language: bash
             :start-after: BEGIN SPROJ
             :end-before: END SPROJ
 
     .. group-tab:: Python
 
-        .. literalinclude:: run_upar/run.py
+        .. literalinclude:: run.py
             :language: python
             :start-after: BEGIN SPROJ
             :end-before: END SPROJ
@@ -86,14 +86,14 @@
 
     .. group-tab:: CLI
 
-        .. literalinclude:: run_upar/run.sh
+        .. literalinclude:: run.sh
             :language: bash
             :start-after: BEGIN COULOMB
             :end-before: END COULOMB
 
     .. group-tab:: Python
 
-        .. literalinclude:: run_upar/run.py
+        .. literalinclude:: run.py
             :language: python
             :start-after: BEGIN COULOMB
             :end-before: END COULOMB
@@ -103,7 +103,7 @@
 函数 :func:`plot_static_coulomb() <pygrt.utils.plot_static_coulomb>`
 可辅助快速可视化应力投影和库伦应力结果。
 
-.. figure:: run_upar/static_coulomb.svg
+.. figure:: static_coulomb.svg
     :align: center
 
     从左到右为剪应力、法向应力和库伦应力变化，绘图单位为 MPa

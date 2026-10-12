@@ -80,7 +80,7 @@
    :hidden:
    :maxdepth: 1
 
-   gfunc
-   syn
-   strain_stress
-   dynlib
+   gfunc/gfunc
+   syn/syn
+   strain_stress/strain_stress
+   dynlib/dynlib

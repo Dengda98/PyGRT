@@ -83,7 +83,7 @@
    :hidden:
    :maxdepth: 1
 
-   eigenvalue
-   eigenfunction
-   surface_wave
-   modlib
+   eigenvalue/eigenvalue
+   eigenfunction/eigenfunction
+   surface_wave/surface_wave
+   modlib/modlib

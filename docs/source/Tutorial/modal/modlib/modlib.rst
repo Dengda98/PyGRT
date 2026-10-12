@@ -18,7 +18,7 @@ Rayleigh 波提供 Z、R 分量，Love 波提供 T 分量，最后得到完整�
 
     .. group-tab:: CLI
 
-        .. literalinclude:: run_library/run.sh
+        .. literalinclude:: run.sh
             :language: bash
             :start-after: BEGIN LIBRARY
             :end-before: END LIBRARY
@@ -27,7 +27,7 @@ Rayleigh 波提供 Z、R 分量，Love 波提供 T 分量，最后得到完整�
 
     .. group-tab:: Python
 
-        .. literalinclude:: run_library/run.py
+        .. literalinclude:: run.py
             :language: python
             :start-after: BEGIN LIBRARY
             :end-before: END LIBRARY
@@ -43,5 +43,5 @@ Rayleigh 波提供 Z、R 分量，Love 波提供 T 分量，最后得到完整�
 应用有限断层
 ----------------------
 
-由于格林函数库的路径排布一致，因此合成的相关用法都和 :doc:`/Tutorial/dynamic/dynlib` 中完全一致，
+由于格林函数库的路径排布一致，因此合成的相关用法都和 :doc:`/Tutorial/dynamic/dynlib/dynlib` 中完全一致，
 这里不再重复。若要计算空间导数及应力，建库时两个波型的 :doc:`/Module/modsum` 都须使用 **-e** 或 *calc_upar=True*。

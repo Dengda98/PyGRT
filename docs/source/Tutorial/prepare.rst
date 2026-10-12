@@ -44,7 +44,7 @@ Python 接口主要负责组织模型与输出路径，并调用 :command:`grt` 
         
         例如 :file:`milrow` 模型（假设文本文件名为 `milrow` ）
 
-        .. literalinclude:: dynamic/run/milrow
+        .. literalinclude:: dynamic/gfunc/milrow
             :language: text
         
 
@@ -53,7 +53,7 @@ Python 接口主要负责组织模型与输出路径，并调用 :command:`grt` 
         模型格式与 C 一致。Python 端通过 ``modelpath=`` 传入模型文件路径
         （计算格林函数时还需同时指定 ``grn=`` 或 ``stgrn=``）。
 
-        .. literalinclude:: dynamic/run/run.py
+        .. literalinclude:: dynamic/gfunc/run.py
             :language: python
             :start-after: START BUILD MODEL
             :end-before: END BUILD MODEL

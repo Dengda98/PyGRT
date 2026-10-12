@@ -9,7 +9,7 @@
 
 以下示例使用如下层状模型，文件命名为 :file:`mod2` :
 
-.. literalinclude:: run/mod2
+.. literalinclude:: mod2
     :language: text
 
 
@@ -22,7 +22,7 @@
 
     .. group-tab:: CLI
 
-        .. literalinclude:: run/run.sh
+        .. literalinclude:: run.sh
             :language: bash
             :start-after: BEGIN DISPERSION
             :end-before: END DISPERSION
@@ -32,7 +32,7 @@
 
     .. group-tab:: Python
 
-        .. literalinclude:: run/run.py
+        .. literalinclude:: run.py
             :language: python
             :start-after: BEGIN DISPERSION
             :end-before: END DISPERSION
@@ -45,10 +45,10 @@
 
 以下提供这两种方式的简易绘图脚本。
 
-:download:`plot_dispersion.py (基于 Matplotlib) <run/plot_dispersion.py>` | 
-:download:`plot_dispersion.sh (基于 GMT) <run/plot_dispersion.sh>`
+:download:`plot_dispersion.py (基于 Matplotlib) <plot_dispersion.py>` | 
+:download:`plot_dispersion.sh (基于 GMT) <plot_dispersion.sh>`
 
-.. figure:: run/dispersion_py.svg
+.. figure:: dispersion_py.svg
 
 绘制久期函数
 ---------------------
@@ -61,14 +61,14 @@
 
     .. group-tab:: CLI
 
-        .. literalinclude:: run/run.sh
+        .. literalinclude:: run.sh
             :language: bash
             :start-after: BEGIN SECFUNC
             :end-before: END SECFUNC
 
     .. group-tab:: Python
 
-        .. literalinclude:: run/run.py
+        .. literalinclude:: run.py
             :language: python
             :start-after: BEGIN SECFUNC
             :end-before: END SECFUNC
@@ -77,6 +77,6 @@
         将结果读入字典列表（每一条对应一层的久期函数），以及
         :func:`plot_secfunc() <pygrt.utils.plot_secfunc>` 绘制其中一条（也可传入 ``{标题: 字典}`` 分栏绘制）。
 
-:download:`plot_secfunc.py <run/plot_secfunc.py>`
+:download:`plot_secfunc.py <plot_secfunc.py>`
 
-.. figure:: run/secfunc.svg
+.. figure:: secfunc.svg

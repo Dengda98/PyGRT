@@ -48,4 +48,4 @@ static_strain
 
 详见教程：
 
-+ :doc:`/Tutorial/static/static_strain_stress`
++ :doc:`/Tutorial/static/static_strain_stress/static_strain_stress`

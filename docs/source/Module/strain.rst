@@ -46,4 +46,4 @@ strain
 
 详见教程：
 
-+ :doc:`/Tutorial/dynamic/strain_stress`
++ :doc:`/Tutorial/dynamic/strain_stress/strain_stress`

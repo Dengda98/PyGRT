@@ -125,5 +125,5 @@ static_greenfn
 
 详见教程：
 
-+ :doc:`/Tutorial/static/static_gfunc`
++ :doc:`/Tutorial/static/static_gfunc/static_gfunc`
 + :doc:`/Advanced/integ_converg/integ_converg`

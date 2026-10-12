@@ -4,7 +4,7 @@
 计算动态应变、旋转、应力张量
 =======================================
 
-计算这些张量需要计算位移的空间导数 :math:`\partial z,\partial r,\partial \theta` [#partial]_ 。 从前文关于格林函数的计算 （ :doc:`/Tutorial/dynamic/gfunc` ） 和位移合成的公式 （ :doc:`/Tutorial/dynamic/syn` ） 出发，位移空间导数分两个步骤计算，再根据几何方程和本构方程合成应变、旋转和应力张量。
+计算这些张量需要计算位移的空间导数 :math:`\partial z,\partial r,\partial \theta` [#partial]_ 。 从前文关于格林函数的计算 （ :doc:`/Tutorial/dynamic/gfunc/gfunc` ） 和位移合成的公式 （ :doc:`/Tutorial/dynamic/syn/syn` ） 出发，位移空间导数分两个步骤计算，再根据几何方程和本构方程合成应变、旋转和应力张量。
 
 .. [#partial] :math:`\partial z,\partial r,\partial \theta` 为 :math:`\dfrac{\partial}{\partial z},\dfrac{\partial}{\partial r},\dfrac{\partial}{\partial \theta}` 的简写。
 
@@ -17,7 +17,7 @@
 
     .. group-tab:: CLI
 
-        .. literalinclude:: run_upar/run.sh
+        .. literalinclude:: run.sh
             :language: bash
             :start-after: BEGIN GRN
             :end-before: END GRN
@@ -26,7 +26,7 @@
 
     .. group-tab:: Python
 
-        .. literalinclude:: run_upar/run.py
+        .. literalinclude:: run.py
             :language: python
             :start-after: BEGIN GRN
             :end-before: END GRN
@@ -55,7 +55,7 @@
 
     .. group-tab:: CLI
 
-        .. literalinclude:: run_upar/run.sh
+        .. literalinclude:: run.sh
             :language: bash
             :start-after: BEGIN SYN DC
             :end-before: END SYN DC
@@ -64,7 +64,7 @@
 
     .. group-tab:: Python
 
-        .. literalinclude:: run_upar/run.py
+        .. literalinclude:: run.py
             :language: python
             :start-after: BEGIN SYN DC
             :end-before: END SYN DC
@@ -81,7 +81,7 @@
 
     .. group-tab:: CLI
 
-        .. literalinclude:: run_upar/run.sh
+        .. literalinclude:: run.sh
             :language: bash
             :start-after: BEGIN ZNE
             :end-before: END ZNE
@@ -90,7 +90,7 @@
 
     .. group-tab:: Python
 
-        .. literalinclude:: run_upar/run.py
+        .. literalinclude:: run.py
             :language: python
             :start-after: BEGIN ZNE
             :end-before: END ZNE
@@ -126,7 +126,7 @@
 
     .. group-tab:: CLI
 
-        .. literalinclude:: run_upar/run.sh
+        .. literalinclude:: run.sh
             :language: bash
             :start-after: BEGIN STRAIN
             :end-before: END STRAIN
@@ -135,7 +135,7 @@
 
     .. group-tab:: Python
 
-        .. literalinclude:: run_upar/run.py
+        .. literalinclude:: run.py
             :language: python
             :start-after: BEGIN STRAIN
             :end-before: END STRAIN
@@ -145,7 +145,7 @@
         动态结果只能靠文件名前缀区分应变/旋转/应力；
         示例脚本按 :file:`strain_*.sac` 读回，避免与位移等结果混在一起。
 
-.. figure:: run_upar/strain.svg
+.. figure:: strain.svg
     :align: center
 
 
@@ -161,7 +161,7 @@
 
     .. group-tab:: CLI
 
-        .. literalinclude:: run_upar/run.sh
+        .. literalinclude:: run.sh
             :language: bash
             :start-after: BEGIN ROTATION
             :end-before: END ROTATION
@@ -170,7 +170,7 @@
 
     .. group-tab:: Python
 
-        .. literalinclude:: run_upar/run.py
+        .. literalinclude:: run.py
             :language: python
             :start-after: BEGIN ROTATION
             :end-before: END ROTATION
@@ -179,7 +179,7 @@
         通道名即为分量名，如 ZN、ZE、NE。
         示例脚本按 :file:`rotation_*.sac` 读回。
 
-.. figure:: run_upar/rotation.svg
+.. figure:: rotation.svg
     :align: center
 
 
@@ -197,7 +197,7 @@
 
     .. group-tab:: CLI
 
-        .. literalinclude:: run_upar/run.sh
+        .. literalinclude:: run.sh
             :language: bash
             :start-after: BEGIN STRESS
             :end-before: END STRESS
@@ -206,7 +206,7 @@
 
     .. group-tab:: Python
 
-        .. literalinclude:: run_upar/run.py
+        .. literalinclude:: run.py
             :language: python
             :start-after: BEGIN STRESS
             :end-before: END STRESS
@@ -215,7 +215,7 @@
         通道名即为分量名，如 ZZ、ZN 等。
         示例脚本按 :file:`stress_*.sac` 读回。
 
-.. figure:: run_upar/stress.svg
+.. figure:: stress.svg
     :align: center
 
 
@@ -238,14 +238,14 @@
 
     .. group-tab:: CLI
 
-        .. literalinclude:: run_upar/run.sh
+        .. literalinclude:: run.sh
             :language: bash
             :start-after: BEGIN SPROJ
             :end-before: END SPROJ
 
     .. group-tab:: Python
 
-        .. literalinclude:: run_upar/run.py
+        .. literalinclude:: run.py
             :language: python
             :start-after: BEGIN SPROJ
             :end-before: END SPROJ
@@ -262,21 +262,21 @@
 
     .. group-tab:: CLI
 
-        .. literalinclude:: run_upar/run.sh
+        .. literalinclude:: run.sh
             :language: bash
             :start-after: BEGIN COULOMB
             :end-before: END COULOMB
 
     .. group-tab:: Python
 
-        .. literalinclude:: run_upar/run.py
+        .. literalinclude:: run.py
             :language: python
             :start-after: BEGIN COULOMB
             :end-before: END COULOMB
 
 结果保存为 ``coulomb.sac``，单位与应力相同，为 dyne/cm²（0.1 Pa）。
 
-.. figure:: run_upar/coulomb.svg
+.. figure:: coulomb.svg
     :align: center
 
     从上到下为剪应力、法向应力和库伦应力变化，绘图单位为 MPa

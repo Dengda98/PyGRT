@@ -13,7 +13,7 @@ C模块为 :doc:`/Module/static_syn`。
 无需与采样节点重合，静态合成会自动进行线性插值。
 若仅使用已算好的静态格林函数，构造 :class:`~pygrt.pymod.PyModel1D` 时只需指定 ``stgrn``，无需再传 ``modelpath``：
 
-.. literalinclude:: run/run.py
+.. literalinclude:: run.py
     :language: python
     :start-after: BEGIN REUSE STGRN
     :end-before: END REUSE STGRN
@@ -21,7 +21,7 @@ C模块为 :doc:`/Module/static_syn`。
 二维网格示例使用 |GMT| 绘图，任意点示例使用 Python 绘图。
 
 这里提供计算和绘图的 Python 脚本和 Shell 脚本供下载参考。
-:download:`Shell Scripts <run/run.sh>` | :download:`Python Scripts <run/run.py>`
+:download:`Shell Scripts <run.sh>` | :download:`Python Scripts <run.py>`
 
 
 指定二维接收网格
@@ -32,7 +32,7 @@ C模块为 :doc:`/Module/static_syn`。
 
     .. group-tab:: CLI
 
-        .. literalinclude:: run/run.sh
+        .. literalinclude:: run.sh
             :language: bash
             :start-after: BEGIN SYN GRID
             :end-before: END SYN GRID
@@ -41,7 +41,7 @@ C模块为 :doc:`/Module/static_syn`。
 
     .. group-tab:: Python 
 
-        .. literalinclude:: run/run.py
+        .. literalinclude:: run.py
             :language: python
             :start-after: BEGIN SYN GRID
             :end-before: END SYN GRID
@@ -50,7 +50,7 @@ C模块为 :doc:`/Module/static_syn`。
         *norths/easts* 指定二维接收网格。
 
 
-.. figure:: run/syn_grid.svg
+.. figure:: syn_grid.svg
     :align: center
 
     黑色箭头表示水平位移，颜色表示垂直位移
@@ -67,21 +67,21 @@ C模块为 :doc:`/Module/static_syn`。
 均匀生成 72 个接收点，然后计算各点的静态位移。
 此时该文件内部大概看起来像这样：
 
-.. literalinclude:: run/rcv_head
+.. literalinclude:: rcv_head
     :language: text
 
 .. tabs::
 
     .. group-tab:: CLI
 
-        .. literalinclude:: run/run.sh
+        .. literalinclude:: run.sh
             :language: bash
             :start-after: BEGIN SYN POINTS
             :end-before: END SYN POINTS
 
     .. group-tab:: Python
 
-        .. literalinclude:: run/run.py
+        .. literalinclude:: run.py
             :language: python
             :start-after: BEGIN SYN POINTS
             :end-before: END SYN POINTS
@@ -89,7 +89,7 @@ C模块为 :doc:`/Module/static_syn`。
 实际研究中，点的分布不同（例如通常会要计算沿着某条断层线上的位移以及衍生的物理量），
 合适的呈现形式也要进行修改。
 
-.. figure:: run/syn_points.svg
+.. figure:: syn_points.svg
     :align: center
 
     黑色箭头表示水平位移，颜色表示垂直位移

@@ -28,7 +28,7 @@
         **-Ds/-R** 指定震源深度和震中距采样，
         **-e** 同时计算空间导数。
 
-        .. literalinclude:: run_library/run.sh
+        .. literalinclude:: run.sh
             :language: bash
             :start-after: BEGIN GRN
             :end-before: END GRN
@@ -38,7 +38,7 @@
         调用 :meth:`static_greenfn() <pygrt.pymod.PyModel1D.static_greenfn>`
         一次计算全部深度和距离组合。
 
-        .. literalinclude:: run_library/run.py
+        .. literalinclude:: run.py
             :language: python
             :start-after: BEGIN GRN
             :end-before: END GRN
@@ -55,13 +55,13 @@
 有限震源由 |sCoulomb| 格式的断层文件描述，合成时叠加各子断层中心点源的结果。
 静态解只取决于最终滑动量，不需要破裂时间函数和延迟。本例使用以下断层：
 
-.. literalinclude:: run_library/fault.inp
+.. literalinclude:: fault.inp
     :language: text
 
 函数 :func:`plot_sCoulomb_faults_geometry() <pygrt.utils.plot_sCoulomb_faults_geometry>`
 可辅助快速可视化有限断层的展布。
 
-.. figure:: run_library/fault.svg
+.. figure:: fault.svg
     :align: center
 
     震源断层的水平投影和三维展布
@@ -75,7 +75,7 @@
         :doc:`/Module/static_syn` 的 **-C** 指定有限震源，**+i** 设置剖分尺寸。
         **-X/-Y** 分别指定北向、东向接收网格。
 
-        .. literalinclude:: run_library/run.sh
+        .. literalinclude:: run.sh
             :language: bash
             :start-after: BEGIN SRC SYN
             :end-before: END SRC SYN
@@ -85,13 +85,13 @@
         通过 :meth:`static_syn() <pygrt.pymod.PyModel1D.static_syn>` 的 *src_fault*
         读取有限震源。
 
-        .. literalinclude:: run_library/run.py
+        .. literalinclude:: run.py
             :language: python
             :start-after: BEGIN SRC SYN
             :end-before: END SRC SYN
 
 结果保存到 ``stsyn_ff.nc``。应力、投影及库伦应力的计算与点源相同，
-这里同样取等效摩擦系数 0.4，流程见 :doc:`static_strain_stress`。
+这里同样取等效摩擦系数 0.4，流程见 :doc:`/Tutorial/static/static_strain_stress/static_strain_stress`。
 
 .. tabs::
 
@@ -100,7 +100,7 @@
         依次使用 :doc:`/Module/static_stress`、:doc:`/Module/static_sproj` 和
         :doc:`/Module/static_coulomb`。
 
-        .. literalinclude:: run_library/run.sh
+        .. literalinclude:: run.sh
             :language: bash
             :start-after: BEGIN COULOMB
             :end-before: END COULOMB
@@ -111,7 +111,7 @@
         :func:`static_sproj() <pygrt.utils.static_sproj>` 和
         :func:`static_coulomb() <pygrt.utils.static_coulomb>`。
 
-        .. literalinclude:: run_library/run.py
+        .. literalinclude:: run.py
             :language: python
             :start-after: BEGIN COULOMB
             :end-before: END COULOMB
@@ -120,12 +120,12 @@
 :func:`plot_static_coulomb() <pygrt.utils.plot_static_coulomb>`
 可辅助快速可视化位移和应力结果。
 
-.. figure:: run_library/disp.svg
+.. figure:: disp.svg
     :align: center
 
     颜色表示垂直位移 Z，箭头表示水平位移 E、N，黑线表示震源断层顶边
 
-.. figure:: run_library/coulomb.svg
+.. figure:: coulomb.svg
     :align: center
 
     依次为剪应力、法向应力和库伦应力变化
