@@ -130,7 +130,8 @@ K_INTEG * grt_wavenumber_integral(
         if(mstat->stats==GRT_INVERSE_FAILURE)  goto BEFORE_RETURN;
     }
     else if(Kproc->cvgmet == K_INTEG_CONVERG_DCM){
-        grt_dcm_correction(nr, rs, Kproc->dk, kcut, Kint, !isFilon);
+        // DWM、FIM和SAFIM均包含近场补偿，扣除与补回使用同一全局参考波数
+        grt_dcm_correction(nr, rs, Kproc->dk, Kint->kmax, Kint, true);
     }
 
 

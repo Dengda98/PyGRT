@@ -31,7 +31,7 @@
  * @param[in,out]  mstat         `MODEL1D_STATE` 结构体指针
  * @param[in]      k0            前一部分的波数积分结束点k值
  * @param[in]      dk0           前一部分的波数积分间隔
- * @param[in]      filondk       filon积分间隔
+ * @param[in]      dk            Filon积分间隔
  * @param[in]      kmax          波数积分的上限
  * @param[in]      keps          波数积分的收敛条件，要求在某震中距下所有格林函数都收敛
  * @param[in]      nr            震中距数量

@@ -783,10 +783,12 @@ class PyModel1D:
                                      ``0.0`` means the value is selected automatically.
         :param    filonLength:       Integration step of fixed-interval Filon integration at
                                      large distances, but not at zero distance. ``0.0`` disables
-                                     this method. Do not set together with ``safilonTol``.
+                                     this method. Near-field terms are included.
+                                     Do not set together with ``safilonTol``.
         :param    safilonTol:        Precision of self-adaptive Filon integration at large
                                      distances, but not at zero distance. ``0.0`` disables this
-                                     method. Do not set together with ``filonLength``.
+                                     method. Near-field terms are included.
+                                     Do not set together with ``filonLength``.
         :param    filonCut:          Splitting point between DWM and Filon integration,
                                      :math:`k^*=\mathrm{filonCut}/r_{\max}`.
         :param    converg_method:    Explicit convergence method. One of ``AUTO``, ``NONE``,
@@ -1121,10 +1123,11 @@ class PyModel1D:
                                      The default is 15.
         :param    filonLength:       Step parameter for fixed-interval Filon
                                      integration at large distances. ``0.0`` disables
-                                     this method. Do not set together with
-                                     ``safilonTol``.
+                                     this method. Near-field terms are included.
+                                     Do not set together with ``safilonTol``.
         :param    safilonTol:        Tolerance for self-adaptive Filon integration
                                      at large distances. ``0.0`` disables this method.
+                                     Near-field terms are included.
                                      Do not set together with ``filonLength``.
         :param    filonCut:          Splitting point between DWM and Filon integration.
         :param    converg_method:    Explicit convergence method. One of
