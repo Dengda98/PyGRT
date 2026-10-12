@@ -164,5 +164,5 @@ eigenv
 示例
 -------
 
-+ :doc:`/Tutorial/modal/eigenvalue`
++ :doc:`/Tutorial/modal/eigenvalue/eigenvalue`
 

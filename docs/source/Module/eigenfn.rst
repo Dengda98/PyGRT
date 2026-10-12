@@ -327,4 +327,4 @@ eigenfn
 示例
 -------
 
-+ :doc:`/Tutorial/modal/eigenfunction`
++ :doc:`/Tutorial/modal/eigenfunction/eigenfunction`

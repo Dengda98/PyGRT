@@ -4,14 +4,14 @@
 控制波数积分上限
 ======================
 
-在 :doc:`/Tutorial/dynamic/gfunc` 部分介绍了程序将按以下形式从数值上计算波数积分，
+在 :doc:`/Tutorial/dynamic/gfunc/gfunc` 部分介绍了程序将按以下形式从数值上计算波数积分，
 
 .. math:: 
 
    P_m(\omega) = \Delta k \sum_{j=0}^{\infty} F_m(k_j,\omega)J_m(k_j r)k_j
 
 其中 :math:`\Delta k = 2\pi/L, k_j=j\Delta k`，:math:`L` 为特征长度，即 :math:`L` 控制波数积分的积分间隔，
-默认根据 :doc:`/Tutorial/dynamic/gfunc` 部分介绍的约束条件自动确定。
+默认根据 :doc:`/Tutorial/dynamic/gfunc/gfunc` 部分介绍的约束条件自动确定。
 
 程序首先根据经验公式确定波数积分搜索区间的上界 :math:`k_{\text{max,ref}}` 。对动态全波解，
 

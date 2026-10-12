@@ -4,6 +4,12 @@
 计算接收函数
 ====================
 
+.. admonition:: 本页文档示例下载
+    :class: tip
+
+    :download:`receiver_function.tar.gz <receiver_function.tar.gz>` |
+    解压后进入示例目录，运行 ``bash run.sh`` 即可复现本页示例。
+
 基于相同的广义反射透射系数矩阵方法，
 **PyGRT** 可计算层状模型中单位平面入射 P 或 SV 波在自由表面的接收函数。
 C 模块见 :doc:`/Module/rcvfn`，Python 中对应 :meth:`PyModel1D.rcvfn() <pygrt.pymod.PyModel1D.rcvfn>`。
@@ -11,11 +17,9 @@ C 模块见 :doc:`/Module/rcvfn`，Python 中对应 :meth:`PyModel1D.rcvfn() <py
 
 以下示例使用如下模型文件：
 
-.. literalinclude:: run/mod1
+.. literalinclude:: mod1
     :language: text
 
-这里提供计算和绘图的脚本供下载参考：
-:download:`Shell Scripts <run/run.sh>` | :download:`Python Scripts <run/run.py>`。
 
 这里为了演示两种指定入射波参数的用法，假设
 
@@ -26,7 +30,7 @@ C 模块见 :doc:`/Module/rcvfn`，Python 中对应 :meth:`PyModel1D.rcvfn() <py
 
     .. group-tab:: CLI
 
-        .. literalinclude:: run/run.sh
+        .. literalinclude:: run.sh
             :language: bash
             :start-after: BEGIN CLI RCVFN
             :end-before: END CLI RCVFN
@@ -35,7 +39,7 @@ C 模块见 :doc:`/Module/rcvfn`，Python 中对应 :meth:`PyModel1D.rcvfn() <py
 
     .. group-tab:: Python
 
-        .. literalinclude:: run/run.py
+        .. literalinclude:: run.py
             :language: python
             :start-after: BEGIN PYTHON RCVFN
             :end-before: END PYTHON RCVFN
@@ -65,12 +69,12 @@ C 模块见 :doc:`/Module/rcvfn`，Python 中对应 :meth:`PyModel1D.rcvfn() <py
 以下结果图每个子图单独按最大绝对振幅归一化，仅用于比较波形形状；
 每幅图包含三行，依次为接收函数以及 Z/R 响应。
 
-.. figure:: run/P_rcvfn.svg
+.. figure:: P_rcvfn.svg
     :align: center
 
     入射 P 波
 
-.. figure:: run/S_rcvfn.svg
+.. figure:: S_rcvfn.svg
     :align: center
 
     入射 SV 波

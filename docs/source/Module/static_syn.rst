@@ -129,4 +129,4 @@ static_syn
 
 详见教程：
 
-+ :doc:`/Tutorial/static/static_syn`
++ :doc:`/Tutorial/static/static_syn/static_syn`

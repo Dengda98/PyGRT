@@ -5,7 +5,7 @@
 ===============================
 
 通过输出核函数文件，观察源点和场点深度接近时，积分收敛性的变化。
-**具体积分表达式以及分类详见** :doc:`/Tutorial/dynamic/gfunc`。
+**具体积分表达式以及分类详见** :doc:`/Tutorial/dynamic/gfunc/gfunc`。
 
 核函数文件
 ---------------
@@ -59,7 +59,7 @@ C 和 Python 导出的核函数文件是一致的，底层调用的是相同的�
             :start-after: BEGIN read statsfile
             :end-before: END read statsfile
 
-其中除了波数 ``k`` 外，每条结果的命名格式均为 ``{srcType}_{q/w/v}``，与 :doc:`/Tutorial/dynamic/gfunc` 部分介绍的积分公式中的核函数 :math:`q_m, w_m, v_m` 保持一致。
+其中除了波数 ``k`` 外，每条结果的命名格式均为 ``{srcType}_{q/w/v}``，与 :doc:`/Tutorial/dynamic/gfunc/gfunc` 部分介绍的积分公式中的核函数 :math:`q_m, w_m, v_m` 保持一致。
 
 .. note:: 
 
@@ -67,7 +67,7 @@ C 和 Python 导出的核函数文件是一致的，底层调用的是相同的�
 
 可视化
 -------------
-以下将使用Python进行图件绘制。 **在Python函数中指定震源类型、阶数、积分类型，可自动绘制核函数、被积函数和积分值随波数的变化**，其中积分类型对应 :doc:`/Tutorial/dynamic/gfunc` 部分介绍的4种类型。
+以下将使用Python进行图件绘制。 **在Python函数中指定震源类型、阶数、积分类型，可自动绘制核函数、被积函数和积分值随波数的变化**，其中积分类型对应 :doc:`/Tutorial/dynamic/gfunc/gfunc` 部分介绍的4种类型。
 
 .. literalinclude:: run/run.py
     :language: python

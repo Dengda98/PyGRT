@@ -135,6 +135,6 @@ greenfn
 
 详见教程：
 
-+ :doc:`/Tutorial/dynamic/gfunc`
++ :doc:`/Tutorial/dynamic/gfunc/gfunc`
 + :doc:`/Advanced/integ_converg/integ_converg`
 + :doc:`/Advanced/kernel/kernel`
