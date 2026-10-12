@@ -30,10 +30,10 @@ grt static syn -Gstatic_greenfn.nc -Su1e12 -M$strike/$dip/$rake -N -e -Ostatic_s
 
 grt okada -H6/3.464/2.7 -Su1e12 -Ds$depsrc -Dr$deprcv -M$strike/$dip/$rake -N -e -X$x1/$x2/$dx -Y$y1/$y2/$dy -Ookada.nc -s
 
-grt static stress static_syn.nc
+grt static stress -Gstatic_syn.nc
 grt static sproj -Gstatic_syn.nc -M$strike/$dip/$rake
 grt static coulomb -Gstatic_syn.nc -F$friction
-grt static stress okada.nc
+grt static stress -Gokada.nc
 grt static sproj -Gokada.nc -M$strike/$dip/$rake
 grt static coulomb -Gokada.nc -F$friction
 
@@ -49,10 +49,10 @@ grt static syn -Gfinite_greenfn.nc -Cfinite_faults.inp+i0.5/0.5 -N -e -X$x1/$x2/
 
 grt okada -H6/3.464/2.7 -Cfinite_faults.inp -Dr0 -N -e -X$x1/$x2/$dx -Y$y1/$y2/$dy -Ofinite_okada.nc -s
 
-grt static stress finite_static_syn.nc
+grt static stress -Gfinite_static_syn.nc
 grt static sproj -Gfinite_static_syn.nc -M$finite_strike/$finite_dip/$finite_rake
 grt static coulomb -Gfinite_static_syn.nc -F$friction
-grt static stress finite_okada.nc
+grt static stress -Gfinite_okada.nc
 grt static sproj -Gfinite_okada.nc -M$finite_strike/$finite_dip/$finite_rake
 grt static coulomb -Gfinite_okada.nc -F$friction
 

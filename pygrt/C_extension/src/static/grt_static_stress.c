@@ -11,7 +11,10 @@
 
 /** 该子模块的参数控制结构体 */
 typedef struct {
-    int dummy;
+    struct {
+        bool active;
+        char *path;  ///< 静态合成 NetCDF 文件
+    } G;
 } GRT_MODULE_CTRL;
 
 /**
@@ -20,6 +23,7 @@ typedef struct {
  * @param[in,out]  Ctrl   模块控制结构体
  */
 static void free_Ctrl(GRT_MODULE_CTRL *Ctrl){
+    GRT_SAFE_FREE_PTR(Ctrl->G.path);
     GRT_SAFE_FREE_PTR(Ctrl);
 }
 
@@ -36,12 +40,19 @@ printf("\n"
 "\n\n"
 "Usage:\n"
 "----------------------------------------------------------------\n"
-"    grt static stress <ingrid> [-h]\n"
+"    grt static stress -G<ingrid> [-h]\n"
+"\n"
+"Options:\n"
+"----------------------------------------------------------------\n"
+"    -G<ingrid>    Input static synthesis NetCDF file computed with -e.\n"
+"                  Results are written back to the same file.\n"
+"\n"
+"    -h            Display this help message.\n"
 "\n"
 "Examples:\n"
 "----------------------------------------------------------------\n"
 "    grt static syn -Gstgrn.nc -Su1e16 -e -Ostsyn.nc\n"
-"    grt static stress stsyn.nc\n"
+"    grt static stress -Gstsyn.nc\n"
 "\n\n\n"
 );
 }
@@ -55,15 +66,34 @@ printf("\n"
  * @param[in]   argv   命令行参数数组
  */
 static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
-    (void)Ctrl;
+    // 仅为兼容旧命令保留模块名后的文件参数，帮助文档统一使用 -G
+    bool legacy_path = argc > 1 && argv[1][0] != '-';
+    if(legacy_path) {
+        Ctrl->G.active = true;
+        Ctrl->G.path = strdup(argv[1]);
+        optind = 2;
+    }
+
     int opt;
-    while ((opt = getopt(argc, argv, ":h")) != -1) {
-        switch (opt) {
-            GRT_Common_Options_in_Switch((char)(optopt));
+    while((opt = getopt(argc, argv, ":G:h")) != -1) {
+        switch(opt) {
+            case 'G':
+                if(legacy_path) {
+                    GRTRaiseError("Cannot combine -G with a positional file. Use '-h' for help.");
+                }
+                Ctrl->G.active = true;
+                GRT_SAFE_FREE_PTR(Ctrl->G.path);
+                Ctrl->G.path = strdup(optarg);
+                break;
+
+            GRT_Common_Options_in_Switch((char)optopt);
         }
     }
 
-    // 暂不支持设置其它参数
+    GRTCheckOptionActive(Ctrl, G);
+    if(legacy_path) {
+        GRTRaiseWarning("Passing the input file as a positional argument is deprecated. Use \"grt %s -G<ingrid>\" instead.", GRT_MODULE_NAME);
+    }
 }
 
 /**
@@ -146,9 +176,6 @@ int static_stress_main(int argc, char **argv){
 
     getopt_from_command(Ctrl, argc, argv);
 
-    // 第二个参数为 nc 文件路径
-    char *s_ingrid = strdup(argv[1]);
-
     // nc 文件相关变量
     int in_ncid;
     int in_syn_varids[GRT_CHANNEL_NUM];
@@ -156,8 +183,8 @@ int static_stress_main(int argc, char **argv){
     int out_varids[GRT_CHANNEL_NUM][GRT_CHANNEL_NUM];
 
     // 打开 nc 文件
-    GRTCheckFileExist(s_ingrid);
-    NC_CHECK(nc_open(s_ingrid, NC_WRITE, &in_ncid));
+    GRTCheckFileExist(Ctrl->G.path);
+    NC_CHECK(nc_open(Ctrl->G.path, NC_WRITE, &in_ncid));
 
     // 输出分量格式，即是否需要旋转到ZNE
     bool rot2ZNE = false;
@@ -278,7 +305,6 @@ int static_stress_main(int argc, char **argv){
     grt_rcv_nc_info_free(&rcv_info);
     GRT_SAFE_FREE_PTR(mu);
     GRT_SAFE_FREE_PTR(lam);
-    GRT_SAFE_FREE_PTR(s_ingrid);
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;
 }

@@ -54,7 +54,7 @@ rm -f disp.pdf
 # ------------------------------------------------
 # BEGIN COULOMB
 # 计算应力张量
-grt static stress stsyn_ff.nc
+grt static stress -Gstsyn_ff.nc
 # 将应力张量投影到指定形态的断层面上
 grt static sproj -Gstsyn_ff.nc -M59/90/180
 # 指定等效摩擦系数，计算库伦应力

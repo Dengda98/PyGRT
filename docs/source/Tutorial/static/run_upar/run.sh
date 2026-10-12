@@ -23,13 +23,13 @@ grt static greenfn -Mmilrow -D${depsrc}/${deprcv} -R0/10/0.15 -e -Ostgrn.nc
 grt static syn -S1e24 -M33/50/120 -e -N -Gstgrn.nc -X$x1/$x2/$dx -Y$y1/$y2/$dy -Ostsyn_dc_zne.nc
 
 # 计算应变
-grt static strain stsyn_dc_zne.nc
+grt static strain -Gstsyn_dc_zne.nc
 
 # 计算旋转
-grt static rotation stsyn_dc_zne.nc
+grt static rotation -Gstsyn_dc_zne.nc
 
 # 计算应力
-grt static stress stsyn_dc_zne.nc
+grt static stress -Gstsyn_dc_zne.nc
 # END
 
 # C 示例与 Python 示例共用文件名，跑 Python 前清掉残留
