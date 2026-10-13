@@ -28,7 +28,8 @@
  * J_m(x) \approx \sqrt{\frac{2}{\pi x}} \cos(x - \frac{m \pi}{2} - \frac{\pi}{4})
  * \f]
  * 其中\f$x=kr\f$
- * 普通项拟合 sqrt(k)*F(k,w)，近场项(p=1)拟合 (qm+vm)/sqrt(k)，两者均参与自适应检查
+ * 普通项拟合 sqrt(k)*F(k,w)，近场项(p=1)拟合 (qm+vm)/sqrt(k)
+ * 自适应采样依据普通项及其 z 偏导，近场项沿用相同分段进行积分
  * 位移空间偏导也包含近场项，径向偏导沿用大 kr 下的简化
  * 
  * 
@@ -37,7 +38,7 @@
  * @param[in]      dk0           前一部分的波数积分间隔
  * @param[in]      tol           自适应Filon积分的采样精度
  * @param[in]      kmax          波数积分的上限
- * @param[in]      kref          普通项在k超过kref后使用更宽松的拟合规则，近场项仍独立检查
+ * @param[in]      kref          k 超过 kref 后仅使用 v 分量检查拟合
  * @param[in]      nr            震中距数量
  * @param[in]      rs            震中距数组
  *
