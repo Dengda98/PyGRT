@@ -22,7 +22,7 @@ static_coulomb
 描述
 --------
 
-**static coulomb** 模块读取输入静态合成文件中的 **sigma_n** 和 **tau_s**，
+:doc:`static_coulomb` 模块读取输入静态合成文件中的 **sigma_n** 和 **tau_s**，
 按照下式计算每个接收点上的库伦应力变化：
 
 .. math::

@@ -5,8 +5,8 @@ lamb 模块
 ===================
 
 :doc:`/Module/lamb` 模块用于计算均匀各向同性弹性半空间中的动态全波解的解析解。
-其底层由 :doc:`/Module/lamb1`、:doc:`/Module/lamb2` 和
-:doc:`/Module/lamb3` 支持，通过分量整理得到各类震源激发的三分量位移及其空间偏导数的 SAC 记录，
+其底层由 :doc:`/Module/lamb1` 模块、:doc:`/Module/lamb2` 模块和
+:doc:`/Module/lamb3` 模块支持，通过分量整理得到各类震源激发的三分量位移及其空间偏导数的 SAC 记录，
 输出的文件形式对标 :doc:`/Module/syn` 模块。
 也支持有限断层震源、任意点和有限断层接收。
 
@@ -41,4 +41,5 @@ lamb 模块
    :align: center
    :width: 90%
 
-   均匀半空间中 Lamb 解析解与 greenfn + syn 结果的 ZNE 分量对比
+   均匀半空间中 Lamb 解析解与 :doc:`/Module/greenfn` 模块和 :doc:`/Module/syn` 模块
+   计算结果的 ZNE 分量对比

@@ -21,8 +21,9 @@ Lamb 问题
 
 .. note::
 
-    **lamb1/2/3 模块输入的时间为无量纲时间，输出的位移为和阶跃函数卷积后的无量纲位移。**
-    **lamb1 -C** 计算运动源 Lamb 解时输出的位移结果未与阶跃函数卷积。
+    :doc:`/Module/lamb1` 模块、:doc:`/Module/lamb2` 模块和 :doc:`/Module/lamb3` 模块
+    **输入的时间为无量纲时间，输出的位移为和阶跃函数卷积后的无量纲位移。**
+    :doc:`/Module/lamb1` 模块使用 **-C** 计算运动源 Lamb 解时，输出的位移结果未与阶跃函数卷积。
 
     + **无量纲时间** :math:`\bar{t} = \dfrac{t}{T_S} = \dfrac{t}{r/\beta} = \dfrac{\beta t}{r}`，
       其中 :math:`T_S = \dfrac{r}{\beta}` 是 S 波传播时间尺度，

@@ -30,7 +30,7 @@
 
     .. group-tab:: CLI
 
-        使用 :doc:`/Module/static_greenfn` 一次建库，**-Dr0** 固定地表接收点，
+        使用 :doc:`/Module/static_greenfn` 模块一次建库，**-Dr0** 固定地表接收点，
         **-Ds/-R** 指定震源深度和震中距采样，
         **-e** 同时计算空间导数。
 
@@ -76,7 +76,7 @@
 
     .. group-tab:: CLI
 
-        :doc:`/Module/static_syn` 的 **-C** 指定有限震源，**+i** 设置剖分尺寸。
+        :doc:`/Module/static_syn` 模块的 **-C** 指定有限震源，**+i** 设置剖分尺寸。
         **-X/-Y** 分别指定北向、东向接收网格。
 
         .. literalinclude:: run.sh
@@ -101,8 +101,8 @@
 
     .. group-tab:: CLI
 
-        依次使用 :doc:`/Module/static_stress`、:doc:`/Module/static_sproj` 和
-        :doc:`/Module/static_coulomb`。
+        依次使用 :doc:`/Module/static_stress` 模块、:doc:`/Module/static_sproj` 模块和
+        :doc:`/Module/static_coulomb` 模块。
 
         .. literalinclude:: run.sh
             :language: bash
@@ -133,7 +133,7 @@
 应用有限断层接收
 ------------------------------
 
-:doc:`/Module/static_syn` 和 :meth:`static_syn() <pygrt.pymod.PyModel1D.static_syn>`
+:doc:`/Module/static_syn` 模块和 :meth:`static_syn() <pygrt.pymod.PyModel1D.static_syn>`
 也支持传入有限接收断层，本质上是批量定义多个接收点。
 可以在整条断层中心接收，也可剖分后在各子断层中心接收。
 

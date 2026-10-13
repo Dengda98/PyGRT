@@ -10,7 +10,7 @@
 在本页文档的旧版本中（ :doc:`/Advanced/kernel_old/kernel` ），我们使用了格林函数计算过程中导出的核函数文件，
 其中每个采样点是在波数上等距采样，需要经过插值才能转到相速度，且定义不同频率、不同相速度的采样点不方便。
 
-为了更方便地导出核函数文件，在 0.14.0 版本起，我新增了模块 :doc:`/Module/kernel` 直接面向这一任务。
+为了更方便地导出核函数文件，自 0.14.0 版本起，程序新增了 :doc:`/Module/kernel` 模块。
 
 以薄层模型为例，
 
@@ -23,7 +23,7 @@
 核函数文件
 ----------------------
 
-使用 :command:`grt` 程序调用 :doc:`/Module/kernel` 计算核函数，
+使用 :command:`grt` 程序调用 :doc:`/Module/kernel` 模块计算核函数，
 
 .. literalinclude:: run/run.sh
     :language: bash 

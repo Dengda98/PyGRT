@@ -12,7 +12,7 @@
 
 基于相同的广义反射透射系数矩阵方法，
 **PyGRT** 可计算层状模型中单位平面入射 P 或 SV 波在自由表面的接收函数。
-C 模块见 :doc:`/Module/rcvfn`，Python 中对应 :meth:`PyModel1D.rcvfn() <pygrt.pymod.PyModel1D.rcvfn>`。
+命令行中使用 :doc:`/Module/rcvfn` 模块，Python 中对应 :meth:`PyModel1D.rcvfn() <pygrt.pymod.PyModel1D.rcvfn>`。
 具体公式详见 :doc:`/Formula/others/rcvfn`。
 
 以下示例使用如下模型文件：

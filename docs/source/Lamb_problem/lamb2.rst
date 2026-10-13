@@ -11,7 +11,7 @@
 
    .. group-tab:: CLI
 
-      :command:`grt` 命令提供了模块 :doc:`/Module/lamb2` 求解第二类 Lamb 问题。
+      :command:`grt` 命令提供了 :doc:`/Module/lamb2` 模块，用于求解第二类 Lamb 问题。
 
       .. literalinclude:: run_lamb2/run.sh
          :language: bash

@@ -10,7 +10,8 @@
     :download:`gfunc.tar.gz <gfunc.tar.gz>` |
     解压后进入示例目录，运行 ``bash run.sh`` 即可复现本页示例。
 
-Python中计算动态格林函数的主函数为 :meth:`greenfn() <pygrt.pymod.PyModel1D.greenfn>` ，C模块为 :doc:`/Module/greenfn`。
+Python 中计算动态格林函数的主函数为 :meth:`greenfn() <pygrt.pymod.PyModel1D.greenfn>`，
+命令行中使用 :doc:`/Module/greenfn` 模块。
 
 使用 **-R** 或 Python 接口的 ``dists`` 传入多个震中距时，数值必须严格递增，不能重复或倒序；
 单个震中距不受此限制。

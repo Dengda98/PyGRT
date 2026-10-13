@@ -56,7 +56,7 @@
             :language: bash
 
         关于局部笛卡尔系和地理坐标系之间的转换，
-        详见辅助模块 :doc:`/Module/xy2geo` 和 :doc:`/Module/geo2xy` 。
+        详见 :doc:`/Module/xy2geo` 模块和 :doc:`/Module/geo2xy` 模块。
 
     .. group-tab:: Python
 

@@ -35,7 +35,7 @@ greenfn
 描述
 --------
 
-**greenfn** 模块计算每个震中距 *r* 的格林函数波形保存路径为 
+:doc:`greenfn` 模块计算的格林函数波形按震中距 *r* 保存，路径为
 ``{outdir}/{model}_{depsrc}_{deprcv}_{r}/{stype}.sac`` ，
 其中支持的格林函数类型 ``stype`` 详见 :ref:`grn_types` 。
 同时会在 *outdir* 根目录保留一份模型文件副本（文件名为 ``-M`` 路径的 basename），

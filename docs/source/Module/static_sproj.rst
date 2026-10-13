@@ -22,7 +22,7 @@ static_sproj
 描述
 --------
 
-**static sproj** 模块读取 :doc:`static_stress` 生成的六个应力张量分量，
+:doc:`static_sproj` 模块读取 :doc:`static_stress` 模块生成的六个应力张量分量，
 根据接收断层的走向、倾角和滑动角，计算每个接收点的法向应力变化
 :math:`\Delta \sigma_\text{n}` (**sigma_n**) 和沿 rake 方向的剪应力变化 :math:`\Delta \tau_\text{s}` (**tau_s**)，
 并将这两个变量写回输入文件。如果变量已经存在，模块会覆盖其数据并给出警告；其他已有变量和属性保持不变。
@@ -60,7 +60,7 @@ static_sproj
 .. _-G:
 
 **-G**\ *ingrid*
-    输入静态合成文件。文件必须包含 :doc:`static_stress` 写入的六个
+    输入静态合成文件。文件必须包含 :doc:`static_stress` 模块写入的六个
     **stress_??** 变量，模块会将投影结果写回该文件。
 
 
