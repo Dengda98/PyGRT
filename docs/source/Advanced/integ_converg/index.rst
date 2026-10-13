@@ -22,7 +22,7 @@
 
    .. group-tab:: CLI
 
-      详见 :doc:`/Module/greenfn` 和 :doc:`/Module/static_greenfn` 模块的 **-C** 选项。
+      详见 :doc:`/Module/greenfn` 模块和 :doc:`/Module/static_greenfn` 模块的 **-C** 选项。
 
    .. group-tab:: Python
 

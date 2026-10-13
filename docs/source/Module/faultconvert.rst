@@ -24,12 +24,12 @@ faultconvert
 描述
 --------
 
-:doc:`faultconvert` 将 USGS/WISP 发布的 PARAM、FSP 动态有限断层转换为 |sCoulomb| 格式，
+:doc:`faultconvert` 模块将 USGS/WISP 发布的 PARAM、FSP 动态有限断层转换为 |sCoulomb| 格式，
 支持单段和多段断层。两种输入格式可从 USGS 上选择地震事件来下载示例，例如
 `PARAM 文件 <https://earthquake.usgs.gov/product/finite-fault/us6000tkt2_1/us/1787347333870/basic_inversion.param>`_
 和 `FSP 文件 <https://earthquake.usgs.gov/product/finite-fault/us6000tkt2_1/us/1787347333870/complete_inversion.fsp>`_。
 
-转换结果保留子断层的滑动量和破裂过程，可用于 :doc:`syn` 或 :doc:`lamb` 合成。
+转换结果保留子断层的滑动量和破裂过程，可用于 :doc:`syn` 模块或 :doc:`lamb` 模块合成。
 
 USGS/WISP 的 PARAM 数据行保存的是每块子断层的 **首个内部点坐标**，通常偏离中心；
 FSP 数据行保存的则是子断层中心坐标。PARAM 的第三个边界点和末条数据记录，

@@ -10,7 +10,7 @@
 
    .. group-tab:: CLI
 
-      :command:`grt` 命令提供了模块 :doc:`/Module/lamb3` 求解第三类 Lamb 问题。
+      :command:`grt` 命令提供了 :doc:`/Module/lamb3` 模块，用于求解第三类 Lamb 问题。
 
       .. literalinclude:: run_lamb3/run.sh
          :language: bash

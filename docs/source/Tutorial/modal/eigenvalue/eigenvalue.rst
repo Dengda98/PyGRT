@@ -11,7 +11,7 @@
     解压后进入示例目录，运行 ``bash run.sh`` 即可复现本页示例。
 
 频散曲线上每个点对应的相速度被称为面波本征值。具体地，这里我们使用自适应搜根方法 (|ars2026|) 计算面波相速度频散曲线，
-:command:`grt` 模块为 :doc:`/Module/eigenv`，Python 中对应 :meth:`PyModel1D.eigenv() <pygrt.pymod.PyModel1D.eigenv>`。
+命令行中使用 :doc:`/Module/eigenv` 模块，Python 中对应 :meth:`PyModel1D.eigenv() <pygrt.pymod.PyModel1D.eigenv>`。
 
 以下示例使用如下层状模型，文件命名为 :file:`mod2` :
 

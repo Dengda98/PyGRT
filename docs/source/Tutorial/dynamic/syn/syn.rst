@@ -15,7 +15,8 @@
 
     **震源机制参数中（如单力源、矩张量源）Z轴取向下为正。**
 
-Python中合成动态位移的主函数为 :meth:`syn() <pygrt.pymod.PyModel1D.syn>` ，C模块为 :doc:`/Module/syn`。
+Python 中合成动态位移的主函数为 :meth:`syn() <pygrt.pymod.PyModel1D.syn>`，
+命令行中使用 :doc:`/Module/syn` 模块。
 
 使用上节计算的格林函数，合成动态位移（理论地震图）。方便起见，这里统一使用milrow模型，震源深度2km，场点位于地表，震中距10km的格林函数，方位角30°。
 若仅使用已算好的格林函数，构造 :class:`~pygrt.pymod.PyModel1D` 时只需指定 ``grn``，无需再传 ``modelpath``：

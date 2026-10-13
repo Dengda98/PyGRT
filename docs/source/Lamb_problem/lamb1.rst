@@ -10,7 +10,7 @@
 
    .. group-tab:: CLI
       
-      :command:`grt` 命令提供了模块 :doc:`/Module/lamb1` 求解第一类 Lamb 问题。
+      :command:`grt` 命令提供了 :doc:`/Module/lamb1` 模块，用于求解第一类 Lamb 问题。
 
       .. literalinclude:: run/run.sh
          :language: bash
@@ -66,7 +66,7 @@
 
    .. group-tab:: CLI
 
-      :doc:`/Module/lamb1` 通过 **-C<cbar>** 来指定垂直力源的无量纲移动速度。
+      :doc:`/Module/lamb1` 模块通过 **-C<cbar>** 来指定垂直力源的无量纲移动速度。
 
       .. literalinclude:: run/run.sh
          :language: bash

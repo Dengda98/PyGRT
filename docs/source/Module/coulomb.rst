@@ -22,7 +22,7 @@ coulomb
 描述
 --------
 
-:doc:`coulomb` 模块读取 :doc:`sproj` 生成的 **sigma_n.sac** 和 **tau_s.sac**，
+:doc:`coulomb` 模块读取 :doc:`sproj` 模块生成的 **sigma_n.sac** 和 **tau_s.sac**，
 按下式计算动态库伦应力变化：
 
 .. math::

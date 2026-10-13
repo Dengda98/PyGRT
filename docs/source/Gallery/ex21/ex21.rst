@@ -18,8 +18,8 @@
 .. literalinclude:: layered
     :language: text
 
-分别使用 :doc:`/Module/greenfn` + :doc:`/Module/syn` 计算动态位移，
-以及 :doc:`/Module/static_greenfn` + :doc:`/Module/static_syn` 计算静态位移。
+使用 :doc:`/Module/greenfn` 模块和 :doc:`/Module/syn` 模块依次计算动态格林函数并合成动态位移，
+使用 :doc:`/Module/static_greenfn` 模块和 :doc:`/Module/static_syn` 模块依次计算静态格林函数并合成静态位移。
 
 .. figure:: compare_layered.svg
     :align: center
@@ -35,7 +35,7 @@
     :language: text
 
 保持震源和台站参数不变，重复动态、静态数值计算，
-并叠加 :doc:`/Module/lamb` 的动态闭合解与 :doc:`/Module/okada` 的静态解析解。
+并叠加 :doc:`/Module/lamb` 模块的动态闭合解与 :doc:`/Module/okada` 模块的静态解析解。
 两种动态解使用相同的震源时间函数和时间积分，静态解使用相同的最终地震矩。
 
 .. figure:: compare_halfspace.svg

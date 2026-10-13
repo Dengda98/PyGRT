@@ -39,9 +39,9 @@ static_syn
 描述
 --------
 
-调用 :doc:`static_syn` 时，需要确定以下五类信息：
+调用 :doc:`static_syn` 模块时，需要确定以下五类信息：
 
-#. **格林函数输入**：|-G| 指定 :doc:`static_greenfn` 生成的单个四维 |NetCDF| 格林函数库
+#. **格林函数输入**：|-G| 指定 :doc:`static_greenfn` 模块生成的单个四维 |NetCDF| 格林函数库
 #. **震源位置**：点源位于水平原点，用 **-Ds** 指定深度；有限震源用 |-C| 从断层文件读取各震源位置
 #. **台站位置**：默认沿用库中的水平网格，也可用 **-X/-Y** 重新定义网格；
    网格上的台站共用 **-Dr** 指定的深度。另可选择 |-Q| 读取逐点坐标，
@@ -75,7 +75,7 @@ static_syn
 .. _-G:
     
 **-G**\ *ingrid*
-    :doc:`static_greenfn` 生成的静态格林函数库文件。必须是单个四维 |NetCDF| 文件。
+    :doc:`static_greenfn` 模块生成的静态格林函数库文件。必须是单个四维 |NetCDF| 文件。
 
 .. include:: explain_-S.rst_
 

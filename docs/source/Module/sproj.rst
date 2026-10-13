@@ -22,7 +22,7 @@ sproj
 描述
 --------
 
-:doc:`sproj` 模块读取 :doc:`stress` 生成的六个应力张量分量。
+:doc:`sproj` 模块读取 :doc:`stress` 模块生成的六个应力张量分量。
 根据接收断层的走向、倾角和滑动角，计算每个接收点的法向应力变化
 :math:`\Delta \sigma_\text{n}` (**sigma_n**) 和沿 rake 方向的剪应力变化 :math:`\Delta \tau_\text{s}` (**tau_s**)，
 结果保存到输入目录中的 **sigma_n.sac** 和 **tau_s.sac**。

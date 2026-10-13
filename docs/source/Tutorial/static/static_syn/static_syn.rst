@@ -10,8 +10,8 @@
     :download:`static_syn.tar.gz <static_syn.tar.gz>` |
     解压后进入示例目录，运行 ``bash run.sh`` 即可复现本页示例。
 
-Python中合成静态位移的主函数为 :meth:`static_syn() <pygrt.pymod.PyModel1D.static_syn>` ，
-C模块为 :doc:`/Module/static_syn`。
+Python 中合成静态位移的主函数为 :meth:`static_syn() <pygrt.pymod.PyModel1D.static_syn>`，
+命令行中使用 :doc:`/Module/static_syn` 模块。
 
 使用上节计算的格林函数，我们可以指定 **点源的震源机制** 以及 **接收点位置** 来合成静态位移。
 为方便画图，以下结果都使用ZNE分量。
@@ -38,7 +38,7 @@ C模块为 :doc:`/Module/static_syn`。
             :start-after: BEGIN SYN GRID
             :end-before: END SYN GRID
 
-        通过 :doc:`/Module/static_syn` 的 **-X/-Y** 指定二维接收网格。
+        通过 :doc:`/Module/static_syn` 模块的 **-X/-Y** 指定二维接收网格。
 
     .. group-tab:: Python 
 

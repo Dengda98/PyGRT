@@ -57,7 +57,7 @@
 
 
 得到应力张量后，还可以进一步计算应力投影和库伦应力变化，
-分别使用 :doc:`/Module/static_sproj` 和 :doc:`/Module/static_coulomb`。
+分别使用 :doc:`/Module/static_sproj` 模块和 :doc:`/Module/static_coulomb` 模块。
 投影由 **接收断层** 的走向、倾角和滑动角决定，与震源机制独立设置。
 这里取接收断层走向 90°、倾角 60°、滑动角 0°，
 将上面的应力张量投影为法向应力变化和沿滑动方向的剪应力变化。
