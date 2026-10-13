@@ -170,6 +170,7 @@
     - :doc:`xy2geo`
     - :doc:`geo2xy`
     - :doc:`rcvfn`
+    - :doc:`faultconvert`
     - :doc:`faultdiv`
     - :doc:`fault2nc`
 
@@ -207,5 +208,6 @@
     xy2geo
     geo2xy
     rcvfn
+    faultconvert
     faultdiv
     fault2nc

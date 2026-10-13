@@ -37,6 +37,7 @@
     X(xy2geo)              \
     X(geo2xy)              \
     /* other */            \
+    X(faultconvert)        \
     X(faultdiv)            \
     X(fault2nc)            \
     X(disp2asc)            \
