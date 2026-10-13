@@ -54,7 +54,10 @@ printf("\n"
 "                 Delay is taken from the final -D...+d value (s),\n"
 "                 or zero if absent. Time functions are not sampled.\n"
 "\n"
-"    -O<outfile>  NetCDF output.\n"
+"    -O<outfile>  NetCDF output. Global attributes include strike/dip,\n"
+"                 plane top/bot depths and patch dL/dW sizes (km).\n"
+"                 Grid dimensions are width (down dip) and length\n"
+"                 (along strike), with center coordinates in km.\n"
 "\n"
 "    -h           Display this help message.\n"
 "\n"
@@ -115,6 +118,8 @@ int fault2nc_main(int argc, char **argv)
     real_t sind = sin(dip * DEG1);
     real_t cosd = cos(dip * DEG1);
     real_t dL = 0.0, dW = 0.0;
+    real_t top = first->top;
+    real_t bot = first->bot;
 
     // 每条记录仅取一个中心点，以平均长宽作为网格间距，减小文本舍入的影响
     for(size_t i = 0; i < n; ++i) {
@@ -125,6 +130,8 @@ int fault2nc_main(int argc, char **argv)
         grt_finite_fault_subdiv(f, 0.0, 0.0, 0, NULL);
         dL += f->length[0] / n;
         dW += f->width[0] / n;
+        top = GRT_MIN(top, f->top);
+        bot = GRT_MAX(bot, f->bot);
     }
     // 允许文本坐标的约米级舍入误差，尺寸额外允许 0.01% 的相对误差
     real_t tol = 1e-3 + 1e-4 * GRT_MAX(dL, dW);
@@ -205,9 +212,9 @@ int fault2nc_main(int argc, char **argv)
         order[cell] = i + 1;
     }
 
-    // 全部校验通过后创建文件，二维变量按 (dip, strike) 保存，沿走向变化最快
+    // 全部校验通过后创建文件，二维变量按 (width, length) 保存，沿走向变化最快
     int ncid, dims[2], coords[2], vars[6];
-    const char *dimnames[2] = {"dip", "strike"};
+    const char *dimnames[2] = {"width", "length"};
     const char *varnames[6] = {"north", "east", "depth", "rake", "slip", "delay"};
     const char *units[6] = {"km", "km", "km", "degree", "m", "s"};
     size_t sizes[2] = {nW, nL};
@@ -223,6 +230,11 @@ int fault2nc_main(int argc, char **argv)
     }
     NC_CHECK(NC_FUNC_REAL(nc_put_att)(ncid, NC_GLOBAL, "strike", NC_REAL, 1, &strike));
     NC_CHECK(NC_FUNC_REAL(nc_put_att)(ncid, NC_GLOBAL, "dip", NC_REAL, 1, &dip));
+    // 记录完整断层面的深度边界和平均子断层尺寸，便于直接设置绘图坐标轴
+    NC_CHECK(NC_FUNC_REAL(nc_put_att)(ncid, NC_GLOBAL, "top", NC_REAL, 1, &top));
+    NC_CHECK(NC_FUNC_REAL(nc_put_att)(ncid, NC_GLOBAL, "bot", NC_REAL, 1, &bot));
+    NC_CHECK(NC_FUNC_REAL(nc_put_att)(ncid, NC_GLOBAL, "dL", NC_REAL, 1, &dL));
+    NC_CHECK(NC_FUNC_REAL(nc_put_att)(ncid, NC_GLOBAL, "dW", NC_REAL, 1, &dW));
     NC_CHECK(nc_enddef(ncid));
 
     // 一维坐标从半个单元边长起算，表示相对于完整断层上角点的中心位置
