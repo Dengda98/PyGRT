@@ -1,0 +1,86 @@
+:author: 朱邓达
+:date: 2026-10-12
+
+(23) 有限断层震源形成的动态位移以及动态库伦应力变化
+-----------------------------------------------------------------
+
+下载示例： :download:`ex23.tar.gz`
+
+与 :doc:`../ex19/ex19` 使用相同的印尼 Mw 7.7 地震作为示例。
+从 `USGS 有限断层页面 <https://earthquake.usgs.gov/earthquakes/eventpage/us6000tkt2/finite-fault>`_
+下载 PARAM 文件，层状模型采用对应 FSP 文件中展示的六层模型，所需文件和脚本已包含在示例压缩包中。
+
+有限断层震源
+========================
+
+将 USGS 断层文件通过 :doc:`/Module/faultconvert` 模块转为 |sCoulomb| 格式，
+保留逐子断层的滑动量、非对称余弦时长和破裂延迟，
+再通过 :doc:`/Module/fault2nc` 模块转为 |NetCDF| 网格文件后，通过 |GMT| 绘制出下图，其中星号表示零延迟子断层中心。
+可以看到，滑动分布和破裂延迟与 USGS 发布的图片一致。
+左侧纵轴为相对起裂点的沿倾向距离，右侧纵轴为对应的实际深度。
+
+.. figure:: slip_delay.svg
+    :align: center
+
+计算格林函数库
+========================
+
+为了节省示例计算时间，这里取简单的参数，其中震源深度取 2–35 km（间隔 3 km），覆盖本例子断层中心的实际深度，接收深度为 0，
+震中距取 180–300 km（间隔 10 km）。
+使用自适应 Filon 积分加快计算，10 倍上采样后的输出间隔为 0.1 s，时窗为 500 s，
+同时计算位移空间导数。
+
+.. tabs::
+
+    .. group-tab:: CLI
+
+        .. literalinclude:: run_grn.sh
+            :language: bash
+
+    .. group-tab:: Python
+
+        .. literalinclude:: run_grn.py
+            :language: python
+
+合成结果
+========================
+
+假设接收点位于震中距 200 km，方位角为 10° 的位置，
+保留原始断层剖分和逐行破裂过程，合成位移后计算应力、投影应力及库伦应力。
+接收断层走向、倾角、滑动角为 90°/32°/90°，等效摩擦系数为 0.4。
+
+.. tabs::
+
+    .. group-tab:: CLI
+
+        .. literalinclude:: run_syn.sh
+            :language: bash
+
+    .. group-tab:: Python
+
+        .. literalinclude:: run_syn.py
+            :language: python
+
+.. figure:: displacement.svg
+    :align: center
+
+    地表接收点的三分量动态位移
+
+.. figure:: stress.svg
+    :align: center
+
+    法向、切向及库伦应力变化
+
+矩率函数
+========================
+
+``syn/sig.sac`` 文件保存的是各子断层源过程按地震矩加权、按破裂延迟叠加得到的总标量矩率。
+而 USGS 发布的矩率函数还将这一结果与归一化矩形窗卷积，以表示子断层内部的破裂传播，因此发布曲线更平滑。
+
+下图中同时给出 **PyGRT** 原始矩率及其矩形窗卷积结果。
+窗宽取 4 s，用于展示平滑效应，可以看到卷积之后结果吻合得很好。
+
+.. figure:: moment_rate.svg
+    :align: center
+
+    USGS 发布的矩率、PyGRT 总标量矩率及其矩形窗卷积结果

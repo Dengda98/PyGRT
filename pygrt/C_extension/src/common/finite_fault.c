@@ -38,9 +38,6 @@ static void check_fault_geometry(const FINITE_FAULT *f, const char *where)
     if(f->dip <= 0.0 || f->dip > 90.0){
         GRTRaiseError("%s: dip (%.6g deg) must be in (0, 90].", where, f->dip);
     }
-    if(f->top < 0.0) {
-        GRTRaiseError("%s: fault top depth must be nonnegative.", where);
-    }
     if(!(f->bot > f->top)){
         GRTRaiseError("%s: bot (%.6g km) must be greater than top (%.6g km).", where, f->bot, f->top);
     }
@@ -297,6 +294,9 @@ FINITE_FAULT *grt_finite_fault_load_coulomb(const char *path, size_t *nfault, bo
             ++nempty;
             continue;
         }
+        if(grt_is_comment_line(line)) {
+            continue;
+        }
 
         real_t ID, kode_value;  // 第一列为占位符，约定填 1，不参与计算
         real_t east_begin, north_begin, east_end, north_end;
@@ -520,6 +520,9 @@ void grt_finite_fault_subdiv(FINITE_FAULT *fault, real_t dL, real_t dW, size_t n
         fault->east[0]  = fault->east_begin;
         fault->north[0] = fault->north_begin;
         fault->depth[0] = fault->top;
+        if(fault->depth[0] < 0.0) {
+            GRTRaiseError("Source point depth must be nonnegative (%.6g km).", fault->depth[0]);
+        }
         return;
     }
 
@@ -541,6 +544,9 @@ void grt_finite_fault_subdiv(FINITE_FAULT *fault, real_t dL, real_t dW, size_t n
             fault->width[isub]  = width;
             fault->length[isub] = length;
             fault->depth[isub]  = fault->top + w * sind;
+            if(fault->depth[isub] < 0.0) {
+                GRTRaiseError("Negative subfault point depth %.6g km at (iW=%zu, iL=%zu).", fault->depth[isub], iW, iL);
+            }
             fault->east[isub]   = fault->east_begin + l * sins + w * cosd * coss;
             fault->north[isub]  = fault->north_begin + l * coss - w * cosd * sins;
 
