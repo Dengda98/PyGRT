@@ -94,7 +94,6 @@ static KInterval stack_pop(KIntervalStack *stack) {
 
 /** 
  * 三点辛普森积分计算，基于区间内三个点的函数值，定义二次曲线，再根据stats定义积分区间,
- * itype 的 0-2 对应 q/w/v 普通项，3-4 对应近场振幅及其径向权重
  * 假设区间内三点为[a, a+h, a+2h]，stats的取值对应的积分区间为
  *    + stats = -1,  [a-2h, a]
  *    + stats = 1,   [a, a+2h]
@@ -103,37 +102,31 @@ static KInterval stack_pop(KIntervalStack *stack) {
  *    + stats = 4,   [a+h, a+2h]
  * 
  */
-static cplx_t simpson(const KInterval *item_pt, int im, int itype, bool isuiz, SIMPSON_INTV stats) {
+static cplx_t simpson(const KInterval *item_pt, int im, int iqwv, bool isuiz, SIMPSON_INTV stats) {
     cplx_t Fint = 0.0;
     real_t klen = item_pt->k3[2] -  item_pt->k3[0];
     const cplxChnlGrid *F3 = (isuiz)? item_pt->Fz3 : item_pt->F3;
     
-    // 普通项使用 F*sqrt(k)，额外两个通道分别检查近场振幅 H/sqrt(k) 及其径向权重 H*sqrt(k)
-    cplx_t F[3];
+    // 使用F(k)*sqrt(k)来衡量积分值，这可以平衡后续计算F(k)*Jm(kr)k积分时的系数
+    real_t sk[3];
     for(int i=0; i<3; ++i){
-        real_t sk = sqrt(item_pt->k3[i]);
-        if(itype < GRT_CHANNEL_NUM){
-            F[i] = F3[i][im][itype] * sk;
-        } else {
-            cplx_t H = F3[i][im][0] + F3[i][im][2];
-            F[i] = (itype == GRT_CHANNEL_NUM)? H / sk : H * sk;
-        }
+        sk[i] = sqrt(item_pt->k3[i]);
     }
 
     if(stats == SIMPSON_A_Ap2H){
-        Fint = klen * (F[0] + 4.0*F[1] + F[2]) / 6.0;
+        Fint = klen * (F3[0][im][iqwv]*sk[0] + 4.0*F3[1][im][iqwv]*sk[1] + F3[2][im][iqwv]*sk[2]) / 6.0;
     }
     else if(stats == SIMPSON_As2H_A){
-        Fint = klen * (19.0*F[0] - 20.0*F[1] + 7.0*F[2]) / 6.0;
+        Fint = klen * (19.0*F3[0][im][iqwv]*sk[0] - 20.0*F3[1][im][iqwv]*sk[1] + 7.0*F3[2][im][iqwv]*sk[2]) / 6.0;
     }
     else if(stats == SIMPSON_Ap2H_Ap4H){
-        Fint = klen * (7.0*F[0] - 20.0*F[1] + 19.0*F[2]) / 6.0;
+        Fint = klen * (7.0*F3[0][im][iqwv]*sk[0] - 20.0*F3[1][im][iqwv]*sk[1] + 19.0*F3[2][im][iqwv]*sk[2]) / 6.0;
     }
     else if(stats == SIMPSON_A_ApH){
-        Fint = klen * (5.0*F[0] + 8.0*F[1] - F[2]) / 24.0;
+        Fint = klen * (5.0*F3[0][im][iqwv]*sk[0] + 8.0*F3[1][im][iqwv]*sk[1] - F3[2][im][iqwv]*sk[2]) / 24.0;
     }
     else if(stats == SIMPSON_ApH_Ap2H){
-        Fint = klen * ( - F[0] + 8.0*F[1] + 5.0*F[2]) / 24.0;
+        Fint = klen * ( - F3[0][im][iqwv]*sk[0] + 8.0*F3[1][im][iqwv]*sk[1] + 5.0*F3[2][im][iqwv]*sk[2]) / 24.0;
     }
     else{
         GRTRaiseError("wrong simpson stats (%d).\n", stats);
@@ -142,71 +135,102 @@ static cplx_t simpson(const KInterval *item_pt, int im, int itype, bool isuiz, S
     return Fint;
 }
 
-/** 更新普通核函数及近场组合 H=qm+vm 的幅值参考 */
-static void update_maxabs(const cplxChnlGrid F, real_t maxabsF[GRT_GTYPES_MAX], real_t maxabsNear[GRT_SRC_M_NUM]){
+/** 比较QWV的最大绝对值 */
+static void get_maxabsQWV(const cplxChnlGrid F, real_t maxabsF[GRT_GTYPES_MAX]){
+    real_t tmp;
     GRT_LOOP_ChnlGrid(im, c){
-        real_t amp = fabs(F[im][c]);
-        if(amp > maxabsF[GRT_SRC_M_GTYPES[im]])  maxabsF[GRT_SRC_M_GTYPES[im]] = amp;
-    }
-    for(int im=0; im<GRT_SRC_M_NUM; ++im){
-        if(GRT_SRC_M_ORDERS[im] == 0)  continue;
-        real_t amp = fabs(F[im][0] + F[im][2]);
-        if(amp > maxabsNear[im])  maxabsNear[im] = amp;
+        tmp = fabs(F[im][c]);
+        if(tmp > maxabsF[GRT_SRC_M_GTYPES[im]]){
+            maxabsF[GRT_SRC_M_GTYPES[im]] = tmp;
+        }
     }
 }
 
 
-/** 检查普通项和近场项的拟合情况，返回 true 表示通过 */
+/** 检查区间是否符合要求，返回True表示通过 */
 static bool check_fit(
     const KInterval *ptKitv, const KInterval *ptKitvL, const KInterval *ptKitvR, real_t kref,
-    bool isuiz, bool calc_uir, const real_t maxabsQWV[GRT_GTYPES_MAX], const real_t maxabsNear[GRT_SRC_M_NUM], real_t tol)
+    bool isuiz, real_t maxabsQWV[GRT_GTYPES_MAX], real_t tol)
 {
+    // 计算积分差异
+    cplx_t S11, S12, S21, S22;
+
+    // 核函数
     const cplxChnlGrid *F3L = (isuiz)? ptKitvL->Fz3 : ptKitvL->F3;
     const cplxChnlGrid *F3R = (isuiz)? ptKitvR->Fz3 : ptKitvR->F3;
-    const KInterval *intervals[3] = {ptKitv, ptKitvL, ptKitvR};
 
-    for(int im=0; im<GRT_SRC_M_NUM; ++im){
-        for(int itype=0; itype<GRT_CHANNEL_NUM+1+(int)calc_uir; ++itype){
-            bool isnear = itype >= GRT_CHANNEL_NUM;
-            if(GRT_SRC_M_ORDERS[im] == 0 && (isnear || GRT_QWV_CODES[itype] == 'v'))  continue;
-            if(isnear && maxabsNear[im] == 0.0)  continue;
+    // 取近似积分 \int_k1^k2 k^0.5 dk
+    real_t kcoef13 = RTWOTHIRD*( ptKitv->k3[2]*sqrt(ptKitv->k3[2]) - ptKitv->k3[0]*sqrt(ptKitv->k3[0]) );
+    real_t kcoef12 = RTWOTHIRD*( ptKitvL->k3[2]*sqrt(ptKitvL->k3[2]) - ptKitvL->k3[0]*sqrt(ptKitvL->k3[0]) );
+    real_t kcoef23 = RTWOTHIRD*( ptKitvR->k3[2]*sqrt(ptKitvR->k3[2]) - ptKitvR->k3[0]*sqrt(ptKitvR->k3[0]) );
 
-            // 高波数段普通项仅检查 v，近场组合仍需独立检查
-            if(!isnear && ptKitv->k3[0] > kref && GRT_QWV_CODES[itype] != 'v')  continue;
+    real_t S_dif, S_ref;
+    bool badtol = false;
 
-            real_t ref_amp = REF_AMP_SCALE * (isnear? maxabsNear[im] : maxabsQWV[GRT_SRC_M_GTYPES[im]]);
-            bool islowamp = true;
-            for(int d=0; d<3; ++d){
-                cplx_t FL = (isnear)? F3L[d][im][0] + F3L[d][im][2] : F3L[d][im][itype];
-                islowamp = islowamp && (fabs(FL) < ref_amp);
-                if(d>0){
-                    cplx_t FR = (isnear)? F3R[d][im][0] + F3R[d][im][2] : F3R[d][im][itype];
-                    islowamp = islowamp && (fabs(FR) < ref_amp);
-                }
-            }
+    GRT_LOOP_ChnlGrid(im, c){
+        int igtyp = GRT_SRC_M_GTYPES[im];
+        if(GRT_SRC_M_ORDERS[im]==0 && GRT_QWV_CODES[c]=='v'){
+            continue;
+        }
 
-            cplx_t S11 = simpson(ptKitv,  im, itype, isuiz, SIMPSON_A_ApH);
-            cplx_t S12 = simpson(ptKitv,  im, itype, isuiz, SIMPSON_ApH_Ap2H);
-            cplx_t S21 = simpson(ptKitvL, im, itype, isuiz, SIMPSON_A_Ap2H);
-            cplx_t S22 = simpson(ptKitvR, im, itype, isuiz, SIMPSON_A_Ap2H);
-            cplx_t coarse[3] = {S11 + S12, S11, S12};
-            cplx_t fine[3]   = {S21 + S22, S21, S22};
+        // k值在后段，只根据数值稳定的v分量判断是否拟合好
+        if(ptKitv->k3[0] > kref && GRT_QWV_CODES[c]!='v'){
+            continue;
+        }
 
-            // 分别比较整个区间、左半区间和右半区间的拟合积分
-            for(int i=0; i<3; ++i){
-                real_t S_ref = fabs(coarse[i] + fine[i]);
-                if(islowamp){
-                    real_t k1 = intervals[i]->k3[0], k2 = intervals[i]->k3[2];
-                    real_t kcoef = (itype == GRT_CHANNEL_NUM)? 2.0*(sqrt(k2) - sqrt(k1))
-                                                             : RTWOTHIRD*(k2*sqrt(k2) - k1*sqrt(k1));
-                    S_ref = ref_amp * kcoef;
-                }
-                // 乘法比较允许两个积分同时为零，避免相对误差中的 0/0
-                if(fabs(coarse[i] - fine[i]) > tol * S_ref)  return false;
+        S11 = simpson(ptKitv, im, c, isuiz, SIMPSON_A_ApH);
+        S12 = simpson(ptKitv, im, c, isuiz, SIMPSON_ApH_Ap2H);
+        S21 = simpson(ptKitvL, im, c, isuiz, SIMPSON_A_Ap2H);
+        S22 = simpson(ptKitvR, im, c, isuiz, SIMPSON_A_Ap2H);
+
+        bool islowamp = true;
+        real_t ref_amp = REF_AMP_SCALE*maxabsQWV[igtyp];
+        // 比较当前区间内5个核函数幅值，是否都低于参考值
+        for(int d=0; d<3; ++d){
+            islowamp = islowamp && (fabs(F3L[d][im][c]) < ref_amp);
+            if(d>0){
+                islowamp = islowamp && (fabs(F3R[d][im][c]) < ref_amp);
             }
         }
+        // 如果核函数幅值确实较低，则限制S_ref，此时正负号不重要
+        // 三个拟合规则(a,b,c)
+        // (a)
+        if(islowamp){
+            S_ref = ref_amp * kcoef13;
+        } else {
+            S_ref = fabs(S11 + S12 + S21 + S22);
+        }
+        S_dif = fabs(S11 + S12 - S21 - S22);
+        badtol = badtol || (S_dif/S_ref > tol);  // 有一个不合格就继续采样
+        if(badtol){
+            goto BEFORE_RETURN;
+        }
+        // (b)
+        if(islowamp){
+            S_ref = ref_amp * kcoef12;
+        } else {
+            S_ref = fabs(S11 + S21);
+        }
+        S_dif = fabs(S11 - S21);
+        badtol = badtol || (S_dif/S_ref > tol);  // 有一个不合格就继续采样
+        if(badtol){
+            goto BEFORE_RETURN;
+        }
+        // (c)
+        if(islowamp){
+            S_ref = ref_amp * kcoef23;
+        } else {
+            S_ref = fabs(S12 + S22);
+        }
+        S_dif = fabs(S12 - S22);
+        badtol = badtol || (S_dif/S_ref > tol);  // 有一个不合格就继续采样
+        if(badtol){
+            goto BEFORE_RETURN;
+        }
     }
-    return true;
+
+    BEFORE_RETURN:
+    return (! badtol);
 }
 
 /**
@@ -311,8 +335,6 @@ real_t grt_sa_filon_integ(
     // 仅用于对积分幅度进行参考
     real_t maxabsQWV[GRT_GTYPES_MAX]={0};
     real_t maxabsQWV_uiz[GRT_GTYPES_MAX]={0};
-    real_t maxabsNear[GRT_SRC_M_NUM]={0};
-    real_t maxabsNear_uiz[GRT_SRC_M_NUM]={0};
 
     // 记录第一个值
     if(fstats!=NULL)  grt_write_stats(fstats, Kitv.k3[0], (K->calc_upar)? Kitv.Fz3_raw[0] : Kitv.F3_raw[0]);
@@ -384,18 +406,18 @@ real_t grt_sa_filon_integ(
 
         // 增加新值，并比较QWV最大绝对值
         for(int i=0; i<3; ++i){
-            update_maxabs(Kitv_left.F3[i], maxabsQWV, maxabsNear);
-            if(K->calc_upar)  update_maxabs(Kitv_left.Fz3[i], maxabsQWV_uiz, maxabsNear_uiz);
+            get_maxabsQWV(Kitv_left.F3[i], maxabsQWV);
+            if(K->calc_upar)  get_maxabsQWV(Kitv_left.Fz3[i], maxabsQWV_uiz);
             if(i>0){
-                update_maxabs(Kitv_right.F3[i], maxabsQWV, maxabsNear);
-                if(K->calc_upar)  update_maxabs(Kitv_right.Fz3[i], maxabsQWV_uiz, maxabsNear_uiz);
+                get_maxabsQWV(Kitv_right.F3[i], maxabsQWV);
+                if(K->calc_upar)  get_maxabsQWV(Kitv_right.Fz3[i], maxabsQWV_uiz);
             }  
         }
 
-        // 检查区间是否符合要求
-        bool goodtol = check_fit(&Kitv, &Kitv_left, &Kitv_right, kref, false, K->calc_upar, maxabsQWV, maxabsNear, tol);
+        // 使用普通核函数判断是否继续细分，近场项沿用相同分段进行积分
+        bool goodtol = check_fit(&Kitv, &Kitv_left, &Kitv_right, kref, false, maxabsQWV, tol);
         if(K->calc_upar){
-            goodtol = goodtol && check_fit(&Kitv, &Kitv_left, &Kitv_right, kref, true, false, maxabsQWV_uiz, maxabsNear_uiz, tol);
+            goodtol = goodtol && check_fit(&Kitv, &Kitv_left, &Kitv_right, kref, true, maxabsQWV_uiz, tol);
         }
         
         // 区间不符合要求，且采样间隔还足够继续细分
