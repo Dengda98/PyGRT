@@ -28,35 +28,47 @@ fault2nc
 * 所有矩形块共面，具有相同的走向、倾角和尺寸，可拼成一个完整的大矩形
 * 中心点沿走向、沿倾向分别等距排列，无缺块或重复块，输入行可乱序
 
+输出网格的 **length**、**width** 维度分别对应沿走向、沿倾向方向，
+二维变量按 **(width, length)** 存储，沿走向变化最快。
+同名坐标变量和 **depth** 变量记录子断层中心位置，单位为 km。
+全局属性 **strike/dip** 记录断层面走向和倾角（degree），
+**top/bot** 记录整个断层面的顶深和底深（km），
+**dL/dW** 记录子断层沿走向、沿倾向的尺寸（km）。
+顶深取所有子断层顶深的最小值，底深取底深的最大值；
+
 可以用 ``ncdump -h`` 命令查看输出的 |NetCDF| 网格文件，结果类似如下：
 
 ::
 
     netcdf delay_plane {
     dimensions:
-            dip = 20 ;
-            strike = 40 ;
+            width = 20 ;
+            length = 40 ;
     variables:
-            double dip(dip) ;
-                    dip:units = "km" ;
-            double strike(strike) ;
-                    strike:units = "km" ;
-            double north(dip, strike) ;
+            double width(width) ;
+                    width:units = "km" ;
+            double length(length) ;
+                    length:units = "km" ;
+            double north(width, length) ;
                     north:units = "km" ;
-            double east(dip, strike) ;
+            double east(width, length) ;
                     east:units = "km" ;
-            double depth(dip, strike) ;
+            double depth(width, length) ;
                     depth:units = "km" ;
-            double rake(dip, strike) ;
+            double rake(width, length) ;
                     rake:units = "degree" ;
-            double slip(dip, strike) ;
+            double slip(width, length) ;
                     slip:units = "m" ;
-            double delay(dip, strike) ;
+            double delay(width, length) ;
                     delay:units = "s" ;
 
     // global attributes:
                     :strike = 90. ;
                     :dip = 90. ;
+                    :top = 1. ;
+                    :bot = 21. ;
+                    :dL = 5. ;
+                    :dW = 1. ;
     }
 
 
