@@ -220,6 +220,8 @@ printf("\n"
 "                  library dimension has one value. -C/-Q/-U supply their own\n"
 "                  coordinates. Root queries default to linear interpolation\n"
 "                  for all source/receiver types; -i0 selects nearest nodes.\n"
+"                  Interpolation aligns corner P arrivals to the actual P arrival\n"
+"                  using integer sample shifts before weighting the waveforms.\n"
 "\n"
 "    -Ds<depsrc>   Source depth (km) used with a Green's-function root.\n"
 "                  Required for multiple source depths and optional for one.\n"
@@ -371,7 +373,8 @@ printf("\n"
 "                  receiver angles and grouping are saved.\n"
 "\n"
 "    -i<0|1>       Library-root query method, independent of source/receiver count.\n"
-"                  Default 1: linearly combine synthesized corner results.\n"
+"                  Default 1: align corner P arrivals to the actual P arrival\n"
+"                  with integer sample shifts, then linearly combine results.\n"
 "                  0: use nearest nodes, including for one source/one receiver.\n"
 "                  Ignored when -G points directly to a node directory.\n"
 "                  All geometries must lie inside the library. Combined results\n"
@@ -616,7 +619,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                                                               false, 0, 1, NULL);
                 break;
 
-            // 是否对格林函数库进行三维线性插值
+            // 是否对格林函数库进行 P 波初至对齐后的三维线性插值
             case 'i':
                 Ctrl->i.active = true;
                 if(strcmp(optarg, "0") && strcmp(optarg, "1")) {
@@ -966,14 +969,20 @@ static void syn_one_pair(const GRT_MODULE_CTRL *Ctrl, const DYGRNLIB *lib, const
         travtPS[0] = lib->refhead.t0;
         travtPS[1] = lib->refhead.t1;
     }
+    real_t tp = travtPS[0];
     for(int phase = 0; phase < 2; ++phase) {
         travtPS[phase] = travtPS[phase] != INFINITY && travtPS[phase] != SAC_FLOAT_UNDEF ? travtPS[phase] + fault->stf_delay : INFINITY;
     }
 
     for(int k = 0; k < ncorners; ++k) {
         const DYGRNLIB_NODE *node = &lib->nodes[indices[k]];
+        // 非节点线性插值先对齐 P 波初至，时间起点和破裂延迟合并后按整数采样点平移
+        real_t p_delay = 0;
+        if(mode == GRT_SAMPLE_LINEAR && ncorners > 1) {
+            p_delay = tp - node->tp;
+        }
         DYGRNLIB_WAVEFORMS *waveforms = grt_dygrnlib_read_node(lib, indices[k], fault);
-        long long shift = llround((node->b - begin + fault->stf_delay) / dt);
+        long long shift = llround((node->b + p_delay + fault->stf_delay - begin) / dt);
         real_t src_mu = node->vs * node->vs * node->rho * 1e10;
         real_t vpvs = node->vs > 0 ? node->vp / node->vs : 0;
 
@@ -995,7 +1004,7 @@ static void syn_one_pair(const GRT_MODULE_CTRL *Ctrl, const DYGRNLIB *lib, const
                 damping *= lib->stf_decay;
             }
             grt_oaconvolve(traces[c], grn_nt, fault->stfd, fault->stf_npts, convolution, nt, true);
-            // 恢复虚频率补偿并乘连续卷积的 dt 因子，破裂延迟仍按输出窗口平移和裁剪
+            // 恢复虚频率补偿并乘连续卷积的 dt 因子，再按 P 波对齐和破裂延迟平移，窗外部分裁剪
             damping = 1;
             for(int n = 0; n < nt; ++n) {
                 long long out = n + shift;

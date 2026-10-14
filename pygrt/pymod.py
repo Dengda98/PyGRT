@@ -1368,8 +1368,10 @@ class PyModel1D:
                                        Both values must be positive or zero.
                                        Omit or set ``(0, 0)`` to use one center point per fault.
         :param    interpolate:         Library-root query method: True (default, CLI -i1) linearly
-                                       combines synthesized corner results; False (CLI -i0) uses
-                                       nearest nodes, for both point sources and source faults.
+                                       combines synthesized corner results after aligning their
+                                       P arrivals to the actual P arrival with integer sample shifts;
+                                       False (CLI -i0) uses nearest nodes,
+                                       for both point sources and source faults.
                                        Ignored when ``grn`` points directly to a node directory.
         :param    nthreads:            Positive OpenMP source-subfault thread count.
         :param    time_function:       Time-function parameters without the ``-D`` prefix.
