@@ -11,7 +11,7 @@ requires-python = ">=3.8"
 authors = [{name = "Zhu Dengda", email = "zhudengda@mail.iggcas.ac.cn"}]
 license = {text = "GPL-3.0"}
 dependencies = [
-    "numpy>=1.20, <2.0",
+    "numpy>=1.20",
     "scipy>=1.10",
     "matplotlib>=3.5",
     "obspy>=1.4",
