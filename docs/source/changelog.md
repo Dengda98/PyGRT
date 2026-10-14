@@ -1,6 +1,120 @@
 Changelog
 ====================
 
+## PyGRT v0.18.0
+
+This release expands PyGRT’s **dynamic finite-fault modeling and Coulomb stress workflows**, with new fault preparation tools, improved Green’s function interpolation, and more practical tutorials and examples.
+
+### Highlights
+
+- **Dynamic finite-fault synthesis:** Use finite-fault sources with individual source time functions and rupture delays in both `syn` and the analytical `lamb` module. Supports arbitrary receiver points and finite receiver faults.
+- **Dynamic Coulomb stress:** New `sproj` and `coulomb` modules turn dynamic stress tensors into normal, shear, and Coulomb stress histories on receiver fault planes.
+- **Finite-fault preparation tools:** Convert USGS/WISP PARAM and FSP models with `faultconvert`, generate subfaults and rupture delays with `faultdiv`, and export regular fault grids to NetCDF with `fault2nc` for visualization.
+- **Improved Green’s function libraries:** Dynamic synthesis now supports interpolation between library nodes, with P-arrival alignment to reduce waveform smearing. FIM and SAFIM integration also include near-field terms.
+- **Extended Lamb solutions and source time functions:** Isolate individual seismic phases, explore a moving vertical point force with `lamb1`, and use asymmetric cosine source time functions.
+
+### New Examples and Tutorials
+
+New [Gallery examples](https://pygrt.readthedocs.io/zh-cn/latest/Gallery/gallery.html) demonstrate:
+
+- Lamb phase ray paths and individual waveforms.
+- Dynamic displacement approaching the corresponding static solution.
+- How finite-fault subdivision affects synthetic waveforms.
+- Dynamic displacement and Coulomb stress from a USGS finite-fault model.
+- P-arrival-aligned interpolation compared with ordinary interpolation and direct calculations.
+
+A new tutorial uses **source animations to explain displacement versus velocity**, connecting source time histories with integration and differentiation settings. Dynamic waveform examples now emphasize step-source responses and show how different source time functions shape displacement waveforms.
+
+Tutorials have also been reorganized, with downloadable example archives for easier reproduction. The static finite-fault example now uses the same USGS layered model as the dynamic example.
+
+### Fixes and Compatibility
+
+- Corrected convolution sample alignment and Lamb response handling when the output window begins after the response onset.
+- Corrected the parabolic source time function to use a smooth, piecewise quadratic shape.
+- Custom source time functions now support explicit time–amplitude samples with a different sampling interval, with automatic resampling and area normalization.
+- Removed the NumPy `<2.0` dependency restriction.
+
+### Upgrading
+
+**Trapezoidal time-function parameters now specify rise, plateau, and fall durations**, rather than their ending times. The corrected parabolic function also changes results using `-Dp`.
+
+Several CLI options have been standardized: tensor post-processing input uses `-G`, receiver faults use `-U`, and Lamb phase selection uses `-L`. Legacy Python stream-processing helpers and optional result-return behavior in file post-processing utilities have been removed.
+
+Check the updated [documentation](https://pygrt.readthedocs.io/zh-cn/latest/) (Chinese) when adapting existing scripts.
+
+```bash
+pip install --upgrade pygrt-kit
+```
+
+### Pull requests
+* FIX: correct Lamb sliding-wave phase naming and reciprocity mapping by [@Dengda98](https://github.com/Dengda98) in [#363](https://github.com/Dengda98/PyGRT/pull/363)
+* FEAT: in lamb1, add moving vertical point-force solution by [@Dengda98](https://github.com/Dengda98) in [#364](https://github.com/Dengda98/PyGRT/pull/364)
+* FEAT: add phase-selective Lamb solutions and Gallery example by [@Dengda98](https://github.com/Dengda98) in [#365](https://github.com/Dengda98/PyGRT/pull/365)
+* FEAT: warn when unsupported modules read Q values by [@Dengda98](https://github.com/Dengda98) in [#366](https://github.com/Dengda98/PyGRT/pull/366)
+* FIX: reject reserved model name "command" by [@Dengda98](https://github.com/Dengda98) in [#367](https://github.com/Dengda98/PyGRT/pull/367)
+* REFAC: centralize model name in MODEL1D by [@Dengda98](https://github.com/Dengda98) in [#368](https://github.com/Dengda98/PyGRT/pull/368)
+* REFAC: remove unexpected macro from lamb1 and stream output by [@Dengda98](https://github.com/Dengda98) in [#369](https://github.com/Dengda98/PyGRT/pull/369)
+* REFAC: remove redundant "GRT" prefixes from struct names by [@Dengda98](https://github.com/Dengda98) in [#370](https://github.com/Dengda98/PyGRT/pull/370)
+* REFAC: rename receiver-fault option and lamb-phase option by [@Dengda98](https://github.com/Dengda98) in [#371](https://github.com/Dengda98/PyGRT/pull/371)
+* FIX: pass large distance lists through temporary files in Python by [@Dengda98](https://github.com/Dengda98) in [#372](https://github.com/Dengda98/PyGRT/pull/372)
+* REFAC: move `rcv_points.[hc]` to `common/`, rename `static_output.[hc]` to `static_nc.[hc]` by [@Dengda98](https://github.com/Dengda98) in [#373](https://github.com/Dengda98/PyGRT/pull/373)
+* REFAC: remove redundant cleanup before GRTRaiseError by [@Dengda98](https://github.com/Dengda98) in [#374](https://github.com/Dengda98/PyGRT/pull/374)
+* REFAC: centralize indirect SAC header access and move rcvfn parameters to `resp` fields by [@Dengda98](https://github.com/Dengda98) in [#375](https://github.com/Dengda98/PyGRT/pull/375)
+* REFAC: rewrite time function generation and unify discrete normalization by [@Dengda98](https://github.com/Dengda98) in [#376](https://github.com/Dengda98/PyGRT/pull/376)
+* REFAC: remove redundant `isfinite` checks by [@Dengda98](https://github.com/Dengda98) in [#377](https://github.com/Dengda98/PyGRT/pull/377)
+* REFAC: use `real_t` for waveform and signal processing by [@Dengda98](https://github.com/Dengda98) in [#378](https://github.com/Dengda98/PyGRT/pull/378)
+* REFAC: unify static NetCDF receiver layouts and I/O by [@Dengda98](https://github.com/Dengda98) in [#379](https://github.com/Dengda98/PyGRT/pull/379)
+* REFAC: rename file "rcv_points.[hc]" to "rcv_point.[hc]" by [@Dengda98](https://github.com/Dengda98) in [#380](https://github.com/Dengda98/PyGRT/pull/380)
+* REFAC: use -G for dynamic tensor input directories by [@Dengda98](https://github.com/Dengda98) in [#381](https://github.com/Dengda98/PyGRT/pull/381)
+* REFAC: simplify source naming, Python file APIs and validation by [@Dengda98](https://github.com/Dengda98) in [#382](https://github.com/Dengda98/PyGRT/pull/382)
+* REFAC: share fault-plane stress projection and tighten Coulomb validation by [@Dengda98](https://github.com/Dengda98) in [#383](https://github.com/Dengda98/PyGRT/pull/383)
+* FIX: unify zero-padded circular convolution and sample alignment by [@Dengda98](https://github.com/Dengda98) in [#384](https://github.com/Dengda98/PyGRT/pull/384)
+* REFAC: centralize Green-function waveform output and SAC timing by [@Dengda98](https://github.com/Dengda98) in [#385](https://github.com/Dengda98/PyGRT/pull/385)
+* FIX: prepare Lamb phase masks and preserve responses before output windows by [@Dengda98](https://github.com/Dengda98) in [#386](https://github.com/Dengda98/PyGRT/pull/386)
+* FIX: enforce finite-source ZNE output and expose static synthesis threads by [@Dengda98](https://github.com/Dengda98) in [#387](https://github.com/Dengda98/PyGRT/pull/387)
+* FEAT: add asymmetric cosine time function and redefine trapezoidal durations by [@Dengda98](https://github.com/Dengda98) in [#389](https://github.com/Dengda98/PyGRT/pull/389)
+* REFAC: move coordinate conversion modules to `tools` and share core functions by [@Dengda98](https://github.com/Dengda98) in [#390](https://github.com/Dengda98/PyGRT/pull/390)
+* REFAC: migrate package metadata to `pyproject.toml` by [@Dengda98](https://github.com/Dengda98) in [#391](https://github.com/Dengda98/PyGRT/pull/391)
+* REFAC: pass depth arrays through temporary files and tidy module documentation by [@Dengda98](https://github.com/Dengda98) in [#394](https://github.com/Dengda98/PyGRT/pull/394)
+* REFAC: unify fault source and receiver structures across static synthesis by [@Dengda98](https://github.com/Dengda98) in [#395](https://github.com/Dengda98/PyGRT/pull/395)
+* FEAT: support finite-fault dynamic synthesis and GFs library interpolation by [@Dengda98](https://github.com/Dengda98) in [#397](https://github.com/Dengda98/PyGRT/pull/397)
+* FEAT: support finite-fault sources and receiver geometries in Lamb synthesis by [@Dengda98](https://github.com/Dengda98) in [#398](https://github.com/Dengda98/PyGRT/pull/398)
+* FEAT: add dynamic stress projection and Coulomb stress postprocessing by [@Dengda98](https://github.com/Dengda98) in [#399](https://github.com/Dengda98/PyGRT/pull/399)
+* DOC: add gallery ex21, comparing dynamic and static displacements by [@Dengda98](https://github.com/Dengda98) in [#402](https://github.com/Dengda98/PyGRT/pull/402)
+* REFAC: simplify module invocation tests by [@Dengda98](https://github.com/Dengda98) in [#401](https://github.com/Dengda98/PyGRT/pull/401)
+* REFAC: remove legacy Python stream processing utilities by [@Dengda98](https://github.com/Dengda98) in [#403](https://github.com/Dengda98/PyGRT/pull/403)
+* FIX: unify half-space model option for `okada` and `lamb` by [@Dengda98](https://github.com/Dengda98) in [#404](https://github.com/Dengda98/PyGRT/pull/404)
+* FIX: support custom time functions with different sampling intervals by [@Dengda98](https://github.com/Dengda98) in [#405](https://github.com/Dengda98/PyGRT/pull/405)
+* DOC: fix explicit receiver fault subdivision in static tutorial by [@Dengda98](https://github.com/Dengda98) in [#406](https://github.com/Dengda98/PyGRT/pull/406)
+* FEAT: support disabling finite-fault subdivision by [@Dengda98](https://github.com/Dengda98) in [#408](https://github.com/Dengda98/PyGRT/pull/408)
+* FIX: treat the first Coulomb fault column as a placeholder by [@Dengda98](https://github.com/Dengda98) in [#409](https://github.com/Dengda98/PyGRT/pull/409)
+* REFAC: normalize finite-fault source terms and mechanisms by [@Dengda98](https://github.com/Dengda98) in [#410](https://github.com/Dengda98/PyGRT/pull/410)
+* DOC: centralize simplified-Coulomb finite-fault format documentation by [@Dengda98](https://github.com/Dengda98) in [#411](https://github.com/Dengda98/PyGRT/pull/411)
+* REFAC: share file identity checks and simplify option parsing by [@Dengda98](https://github.com/Dengda98) in [#412](https://github.com/Dengda98/PyGRT/pull/412)
+* FEAT: add `faultdiv` and `fault2nc` modules by [@Dengda98](https://github.com/Dengda98) in [#413](https://github.com/Dengda98/PyGRT/pull/413)
+* CI: use CentOS vault repositories and skip `yum makecache` by [@Dengda98](https://github.com/Dengda98) in [#414](https://github.com/Dengda98/PyGRT/pull/414)
+* DOC: standardize finite-fault format naming as sCoulomb by [@Dengda98](https://github.com/Dengda98) in [#415](https://github.com/Dengda98/PyGRT/pull/415)
+* DOC: add finite-fault subdivision gallery example by [@Dengda98](https://github.com/Dengda98) in [#416](https://github.com/Dengda98/PyGRT/pull/416)
+* FEAT: use -G for static tensor input files by [@Dengda98](https://github.com/Dengda98) in [#417](https://github.com/Dengda98/PyGRT/pull/417)
+* DOC: reorganize finite-fault tutorials and add Coulomb stress examples by [@Dengda98](https://github.com/Dengda98) in [#419](https://github.com/Dengda98/PyGRT/pull/419)
+* FEAT: include near-field terms in FIM and SAFIM by [@Dengda98](https://github.com/Dengda98) in [#420](https://github.com/Dengda98/PyGRT/pull/420)
+* DOC: reorganize tutorial examples and add downloadable archives by [@Dengda98](https://github.com/Dengda98) in [#421](https://github.com/Dengda98/PyGRT/pull/421)
+* FIX: restore SAFIM sampling criteria while retaining near-field integrals by [@Dengda98](https://github.com/Dengda98) in [#422](https://github.com/Dengda98/PyGRT/pull/422)
+* FEAT: add fault-plane metadata and rename `fault2nc` grid dimensions by [@Dengda98](https://github.com/Dengda98) in [#423](https://github.com/Dengda98/PyGRT/pull/423)
+* FEAT: add USGS finite-fault conversion and dynamic Coulomb stress example by [@Dengda98](https://github.com/Dengda98) in [#424](https://github.com/Dengda98/PyGRT/pull/424)
+* DOC: standardize module references and wording by [@Dengda98](https://github.com/Dengda98) in [#425](https://github.com/Dengda98/PyGRT/pull/425)
+* FEAT: align P arrivals before dynamic Green-function interpolation by [@Dengda98](https://github.com/Dengda98) in [#426](https://github.com/Dengda98/PyGRT/pull/426)
+* DOC: add gallery ex24, dynamic Green-function interpolation comparison example by [@Dengda98](https://github.com/Dengda98) in [#427](https://github.com/Dengda98/PyGRT/pull/427)
+* FIX: remove NumPy 2 version restriction by [@Dengda98](https://github.com/Dengda98) in [#428](https://github.com/Dengda98/PyGRT/pull/428)
+* DOC: use USGS layered model for static finite-fault example (gallery ex19) by [@Dengda98](https://github.com/Dengda98) in [#429](https://github.com/Dengda98/PyGRT/pull/429)
+* DOC: explain displacement and velocity with source animations by [@Dengda98](https://github.com/Dengda98) in [#430](https://github.com/Dengda98/PyGRT/pull/430)
+* FIX: use piecewise parabolic source time function by [@Dengda98](https://github.com/Dengda98) in [#431](https://github.com/Dengda98/PyGRT/pull/431)
+* DOC: use step responses in dynamic waveform examples by [@Dengda98](https://github.com/Dengda98) in [#432](https://github.com/Dengda98/PyGRT/pull/432)
+* DOC: add linked book covers to Lamb problem and introduction by [@Dengda98](https://github.com/Dengda98) in [#433](https://github.com/Dengda98/PyGRT/pull/433)
+
+
+**Full Changelog**: [v0.17.2...v0.18.0](https://github.com/Dengda98/PyGRT/compare/v0.17.2...v0.18.0)
+
 ## PyGRT v0.17.2
 
 This is primarily a **bug-fix release**. 
