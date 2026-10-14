@@ -23,6 +23,7 @@
 .. figure:: _static/yaobook_cover.jpg
   :width:  50%
   :align: center
+  :target: https://www.ecsponline.com/goods.php?id=235006
 
   **PyGRT** 可实现《理论地震图方法及其应用》中绝大部分的计算过程及算例。
   该书为姚振兴院士和谢小碧研究员撰写的地震学著作， **PyGRT** 已成为该书推荐的开源程序包。
