@@ -7,7 +7,7 @@ name = "pygrt-kit"
 dynamic = ["version"]
 description = "An Efficient and Integrated Python Package for Computing Synthetic Seismograms in a Layered Half-Space Model"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 authors = [{name = "Zhu Dengda", email = "zhudengda@mail.iggcas.ac.cn"}]
 license = {text = "GPL-3.0"}
 dependencies = [
