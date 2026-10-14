@@ -72,10 +72,10 @@ static bool read_header(const char *path, SACHEAD *hd)
 }
 
 /**
- * 扫描节点几何、起点和震源介质，并检查库内公共时间采样及虚频率
+ * 扫描节点几何、起点、P 波初至和震源介质，并检查库内公共时间采样及虚频率
  * @param[in,out]  lib   动态格林函数库
  * @param[in]      path  库节点目录
- * @param[out]     node  节点路径、几何、起点和震源介质
+ * @param[out]     node  节点路径、几何、起点、P 波初至和震源介质
  */
 static bool read_node_header(DYGRNLIB *lib, const char *path, DYGRNLIB_NODE *node)
 {
@@ -87,6 +87,16 @@ static bool read_node_header(DYGRNLIB *lib, const char *path, DYGRNLIB_NODE *nod
     // 参考分量必须有有效的时间采样和起点
     if(hd.npts <= 0 || hd.delta <= 0 || hd.b == SAC_FLOAT_UNDEF) {
         GRTRaiseError("Invalid GF time sampling at %s.", path);
+    }
+
+    // 波形起点和震相到时须以零时刻发震为参考，保证后续平移对齐使用同一时间基准
+    if(hd.o != 0) {
+        GRTRaiseError("GF origin time o must be zero at %s.", path);
+    }
+
+    // 读取阶段统一检查节点 P 波初至，SAC 未定义值也作为无效到时拒绝
+    if(hd.t0 < 0 || hd.t0 == INFINITY) {
+        GRTRaiseError("Invalid P travel time in GF header at %s.", path);
     }
 
     // 首个节点建立公共采样，后续节点必须使用相同的样本数和间隔
@@ -108,12 +118,13 @@ static bool read_node_header(DYGRNLIB *lib, const char *path, DYGRNLIB_NODE *nod
         GRTRaiseError("GF imaginary frequency mismatch at %s.", path);
     }
 
-    // 节点保留几何、起点和震源介质，公共时间采样及虚频率仅在库中保存
+    // 节点保留几何、起点、P 波初至和震源介质，公共时间采样及虚频率仅在库中保存
     node->path = strdup(path);
     node->zs = hd.evdp;
     node->zr = -hd.stel * 1e-3;
     node->r = hd.dist;
     node->b = hd.b;
+    node->tp = hd.t0;
     node->vp = GRT_SACHEAD_GET_SRC_VP(&hd);
     node->vs = GRT_SACHEAD_GET_SRC_VS(&hd);
     node->rho = GRT_SACHEAD_GET_SRC_RHO(&hd);
