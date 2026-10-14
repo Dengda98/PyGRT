@@ -63,6 +63,8 @@
 
         {{ card('23')  | indent(8, first=true) }}
 
+        {{ card('24')  | indent(8, first=true) }}
+
     .. raw:: html
 
         <strong style="font-size: 1.5em;">静态解</strong>

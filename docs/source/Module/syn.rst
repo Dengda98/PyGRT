@@ -143,3 +143,4 @@ Z 垂直向上，R 径向向外，T 沿 R 顺时针旋转 90°，N、E 分别为
 详见教程：
 
 + :doc:`/Tutorial/dynamic/syn/syn`
++ :doc:`/Gallery/ex24/ex24`
