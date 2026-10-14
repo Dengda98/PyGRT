@@ -30,7 +30,7 @@ region=$(gmt grdinfo -Ir "$syn?Z")
 gmt begin $figname png
     gmt set FONT_TITLE 15p
     gmt set MAP_TITLE_OFFSET 2p
-    gmt makecpt -CCoulomb_anatolia.cpt -T-0.3/0.3/0.01 -D -Z
+    gmt makecpt -CCoulomb_anatolia.cpt -T-0.1/0.1/0.01 -D -Z
 
     gmt basemap "$region" -JM7c -Baf -BWSen+t"Shear Stress Change"
     gmt grdmath "$syn?tau_s" 1e-7 MUL = tmp.nc

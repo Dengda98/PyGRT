@@ -6,7 +6,7 @@
 
 下载示例： :download:`ex23.tar.gz`
 
-与 :doc:`../ex19/ex19` 使用相同的印尼 Mw 7.7 地震作为示例。
+与 :doc:`../ex19/ex19` 使用相同的印尼 Mw 7.7 地震及 USGS 六层模型作为示例。
 从 `USGS 有限断层页面 <https://earthquake.usgs.gov/earthquakes/eventpage/us6000tkt2/finite-fault>`_
 下载 PARAM 文件，层状模型采用对应 FSP 文件中展示的六层模型，所需文件和脚本已包含在示例压缩包中。
 
