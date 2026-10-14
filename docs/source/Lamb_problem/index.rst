@@ -8,6 +8,28 @@ Lamb 问题
 并分别在上下两册中给出了频域解和时域解，过程之详细令人叹为观止。这里不再对 Lamb 问题及其解法做过多介绍，
 详见张海明老师的书 (|zhang2021|; |zhang2024|)（强烈推荐！！）
 
+.. grid:: 2
+
+    .. grid-item::
+
+        .. figure:: /_static/zhangbook_1_cover.jpg
+            :width: 90%
+            :align: center
+            :alt: 《地震学中的 Lamb 问题（上）》封面
+            :target: https://www.ecsponline.com/goods.php?id=212260
+
+            《地震学中的 Lamb 问题（上）》
+
+    .. grid-item::
+
+        .. figure:: /_static/zhangbook_2_cover.jpg
+            :width: 90%
+            :align: center
+            :alt: 《地震学中的 Lamb 问题（下）》封面
+            :target: https://www.ecsponline.com/goods.php?id=224665
+
+            《地震学中的 Lamb 问题（下）》
+
 得益于书中详细的推导过程，这里我对照下册书 **编程实现了第一、二、三类 Lamb 问题以及第一类运动源 Lamb 问题在时域的广义闭合解** 。
 以下简单示范用法以及绘图，其中复现了书中的一些结果，并和频域解进行了对比。
 
