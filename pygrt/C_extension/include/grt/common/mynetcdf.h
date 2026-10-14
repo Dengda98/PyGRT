@@ -14,9 +14,9 @@
 #include "grt/common/const.h"
 
 #define NC_CHECK(call) ({\
-    int status = (call); \
-    if (status != NC_NOERR) { \
-        GRTRaiseError("NetCDF error: %s\n", nc_strerror(status)); \
+    int __status = (call); \
+    if (__status != NC_NOERR) { \
+        GRTRaiseError("NetCDF error: %s\n", nc_strerror(__status)); \
     } \
 })
 
