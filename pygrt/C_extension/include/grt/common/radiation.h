@@ -35,7 +35,7 @@ void grt_set_source_radiation(
 /**
  * 按辐射系数的源强约定构造 NED 矩张量
  * @param[in]   type        源类型，不用于单力源
- * @param[in]   scale       源强，dyne-cm
+ * @param[in]   scale       源强，dyne·cm
  * @param[in]   VpVs_ratio  源点 Vp/Vs
  * @param[in]   mchn        震源机制
  * @param[out]  tensor      Mxx、Mxy、Mxz、Myy、Myz、Mzz

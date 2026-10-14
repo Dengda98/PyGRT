@@ -13,7 +13,7 @@ from obspy import read
 reference_time, reference_rate = np.loadtxt("moment_rate.mr", skiprows=2).T
 signal = read("syn/sig.sac")[0]
 syn_time = signal.times() + signal.stats.sac.b
-syn_rate = signal.data.astype(float) * 1e-7  # dyne cm/s 转为 N m/s
+syn_rate = signal.data.astype(float) * 1e-7  # dyne·cm/s 转为 N m/s
 
 # 采用 4 s 的等效矩形窗展示子断层内部传播平滑，该窗宽不是 PARAM 文件给出的参数
 # 离散卷积权重之和为 1，使用完整卷积保留尾部，保证总地震矩不变

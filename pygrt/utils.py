@@ -270,7 +270,7 @@ def okada(
                                 in km along strike / dip. Both values must be positive or zero.
                                 Omit or set ``(0, 0)`` to use each fault center
     :param    output_path:      Output NetCDF file path
-    :param    scale:            Point-source scale in dyne-cm unless
+    :param    scale:            Point-source scale in dyne·cm unless
                                 ``scale_with_mu`` is true. Not used for finite faults
     :param    scale_with_mu:    If true, pass ``-Su`` and treat ``scale`` as potency
                                 or area times slip in cm^3

@@ -85,7 +85,7 @@ typedef struct {
     real_t *depth;                   ///< 子断层中心深度 (km)，长度为 nW*nL
     real_t *width;                   ///< 子断层沿倾向边长 (km)，长度为 nW*nL
     real_t *length;                  ///< 子断层沿走向边长 (km)，长度为 nW*nL
-    real_t *scalar_moments;          ///< 子断层完整等效张量的标量矩 (dyne-cm)，长度为 nW*nL，仅动态有限源保存矩率时计算
+    real_t *scalar_moments;          ///< 子断层完整等效张量的标量矩 (dyne·cm)，长度为 nW*nL，仅动态有限源保存矩率时计算
 
     // 断层共享的震源描述，STF 在动态震源读入时生成
     bool stf_explicit;                          ///< 是否显式指定行内或全局时间函数
