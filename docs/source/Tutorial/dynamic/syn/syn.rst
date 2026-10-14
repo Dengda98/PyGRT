@@ -87,8 +87,8 @@ CLI 和 Python 函数中根据设置的不同震源参数自动推断震源类�
     .. group-tab:: Python
 
         Python 示例从库根目录按目标深度和震中距查询，默认线性插值，
-        设置 *interpolate=False* 可改为最近邻。
-        例如 *dist=7.0* 不需要已有 7 km 节点，只需位于库的距离范围内。
+        设置 ``interpolate=False`` 可改为最近邻。
+        例如 ``dist=7.0`` 不需要已有 7 km 节点，只需位于库的距离范围内。
         只有一个采样值的维度可以省略对应参数，该维度仍只适用于这个值。
 
         .. literalinclude:: run.py
@@ -193,7 +193,7 @@ CLI 和 Python 函数中根据设置的不同震源参数自动推断震源类�
             :start-after: BEGIN INT DIF
             :end-before: END INT DIF
 
-        可通过设置 **integrate_order** / **differentiate_order** 来指定积分/微分次数。
+        可通过设置 ``integrate_order`` / ``differentiate_order`` 来指定积分/微分次数。
         也可以不指定然后使用 Obspy 的函数来进行单独处理。
 
 .. figure:: syn_mt_intdif_Z.svg

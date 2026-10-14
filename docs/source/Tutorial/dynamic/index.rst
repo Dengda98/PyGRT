@@ -84,3 +84,4 @@
    syn/syn
    strain_stress/strain_stress
    dynlib/dynlib
+   disp_vel/disp_vel

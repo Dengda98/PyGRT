@@ -113,10 +113,10 @@
 
     .. group-tab:: Python
 
-        通过 :meth:`syn() <pygrt.pymod.PyModel1D.syn>` 的 *src_fault* 读取有限震源，
-        *src_fault_size=(0, 0)* 保留现有剖分。
-        不设置全局 *time_function*，以保留逐行时间函数和延迟。
-        库查询默认线性插值，*interpolate=False* 改为最近邻。
+        通过 :meth:`syn() <pygrt.pymod.PyModel1D.syn>` 的 ``src_fault`` 读取有限震源，
+        ``src_fault_size=(0, 0)`` 保留现有剖分。
+        不设置全局 ``time_function``，以保留逐行时间函数和延迟。
+        库查询默认线性插值，``interpolate=False`` 改为最近邻。
 
         .. literalinclude:: run.py
             :language: python
