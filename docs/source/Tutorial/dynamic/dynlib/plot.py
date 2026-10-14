@@ -14,7 +14,7 @@ plt.close(fig)
 fig, axes = plt.subplots(3, 1, figsize=(10, 4), gridspec_kw=dict(hspace=0.0), sharex=True)
 for ax, component in zip(axes, ("Z", "N", "E")):
     tr = read(f"syn_ff/{component}.sac")[0]
-    ax.plot(tr.times() + tr.stats.sac.b, tr.data, c="k", lw=0.5, label=f"{component} (cm)")
+    ax.plot(tr.times() + tr.stats.sac.b, tr.data, c="k", lw=0.8, label=f"{component} (cm)")
     ax.legend(loc="upper left")
     ylims = ax.get_ylim()
     ax.set_ylim([value * 1.2 for value in ylims])
@@ -28,7 +28,7 @@ plt.close(fig)
 fig, axes = plt.subplots(3, 1, figsize=(10, 4), gridspec_kw=dict(hspace=0.0), sharex=True)
 for ax, name, label in zip(axes, ("tau_s", "sigma_n", "coulomb"), (r"$\Delta\tau_s$", r"$\Delta\sigma_n$", r"$\Delta CFS$")):
     tr = read(f"syn_ff/{name}.sac")[0]
-    ax.plot(tr.times() + tr.stats.sac.b, tr.data * 1e-7, c="k", lw=0.5, label=f"{label} (MPa)")
+    ax.plot(tr.times() + tr.stats.sac.b, tr.data * 1e-7, c="k", lw=0.8, label=f"{label} (MPa)")
     ax.legend(loc="upper left")
     ylims = ax.get_ylim()
     ax.set_ylim([value * 1.2 for value in ylims])

@@ -24,7 +24,7 @@ grt greenfn -M${modname} -O${out} -N${nt}/${dt} -D${depsrc}/${deprcv} -R${dist}
 deprcv=0.999
 grt greenfn -M${modname} -O${out} -N${nt}/${dt} -D${depsrc}/${deprcv} -R${dist} -e
 # just give a test focal mechanism
-grt syn -G${out}/${modname}_${depsrc}_${deprcv}_${dist} -A40 -S1e20 -M100/55/120 -Osyn -e
+grt syn -G${out}/${modname}_${depsrc}_${deprcv}_${dist} -A40 -S1e20 -M100/55/120 -I1 -Osyn -e
 # compute stress
 grt stress -Gsyn
 
@@ -32,7 +32,7 @@ grt stress -Gsyn
 
 python plot.py
 
-cp stress.svg cover.svg
+cp disp.svg cover.svg
 
 ex=$(basename $(pwd))
 cd .. && tar -czvf ${ex}.tar.gz ${ex} && mv ${ex}.tar.gz ${ex} && cd -

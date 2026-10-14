@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from obspy import *
-from typing import Union
-import pygrt 
+from obspy import Stream, read
+import shutil
+import pygrt
 
 dist=10
 depsrc=2
@@ -18,7 +18,7 @@ pymod = pygrt.PyModel1D(grn="GRN", modelpath=modname)
 # compute green functions
 pymod.greenfn(depsrc=depsrc, deprcv=deprcv, dists=[dist], nt=nt, dt=dt)
 
-def plot_syn(stsyn:Stream, out:Union[str,None]=None, sigs:Union[np.ndarray,None]=None):
+def plot_syn(stsyn: Stream, out: str | None = None, sigs: np.ndarray | None = None):
     traces = list(stsyn)
     order = {ch: i for i, ch in enumerate("ZRTNE")}
     traces.sort(key=lambda tr: order.get(tr.stats.channel, 99))
@@ -38,7 +38,7 @@ def plot_syn(stsyn:Stream, out:Union[str,None]=None, sigs:Union[np.ndarray,None]
 
     if sigs is not None:
         ax = axs[0]
-        ax.plot(t[:len(sigs)], sigs, 'k-', lw=0.5)
+        ax.plot(t[:len(sigs)], sigs, 'k-', lw=0.8)
         axs = axs[1:]
 
     travtP = traces[0].stats.sac['t0']
@@ -46,14 +46,14 @@ def plot_syn(stsyn:Stream, out:Union[str,None]=None, sigs:Union[np.ndarray,None]
 
     for i, tr in enumerate(traces):
         ax = axs[i]
-        ax.plot(t, tr.data, c='k', lw=0.5, label=tr.stats.channel)
+        ax.plot(t, tr.data, c='k', lw=0.8, label=tr.stats.channel)
         ax.legend(loc='upper left')
 
         ylims = ax.get_ylim()
         # 绘制到时
-        ax.vlines(travtP, *ylims, colors='b')
+        ax.vlines(travtP, *ylims, colors='b', linewidths=0.5)
         ax.text(travtP, ylims[1], "P", ha='left', va='top', color='b')
-        ax.vlines(travtS, *ylims, colors='r')
+        ax.vlines(travtS, *ylims, colors='r', linewidths=0.5)
         ax.text(travtS, ylims[1], "S", ha='left', va='top', color='r')
 
         ax.set_xlim([t[0], t[-1]])
@@ -62,40 +62,27 @@ def plot_syn(stsyn:Stream, out:Union[str,None]=None, sigs:Union[np.ndarray,None]
     if out is not None:
         fig.tight_layout()
         fig.savefig(out, bbox_inches='tight')
+    plt.close(fig)
 
-# synthetic
-# ?.sac 匹配位移三分量文件名（Z/R/T）
-# time_function 对应 CLI -D
-# 本例中的震源时间函数均使用面积归一化
-# 卷积用的时间函数保存在输出目录的 sig.sac
-S=1e24
-az=39.2
-pymod.syn(dist=dist, azimuth=az, scale=S, output_path="syn_ex", time_function="t/0.2/0/0.2")
-st = read("syn_ex/?.sac")
-sigs = read("syn_ex/sig.sac")[0].data
-plot_syn(st, "trig.svg", sigs)
-
-pymod.syn(dist=dist, azimuth=az, scale=S, output_path="syn_sf", force=(2, -1, 4), time_function="t/0.1/0.2/0.3")
-st = read("syn_sf/?.sac")
-sigs = read("syn_sf/sig.sac")[0].data
-plot_syn(st, "trap.svg", sigs)
-
-pymod.syn(dist=dist, azimuth=az, scale=S, output_path="syn_dc", strike=77, dip=88, rake=99, time_function="p/0.6")
-st = read("syn_dc/?.sac")
-sigs = read("syn_dc/sig.sac")[0].data
-plot_syn(st, "para.svg", sigs)
-
-pymod.syn(dist=dist, azimuth=az, scale=S, output_path="syn_cosine", strike=77, dip=88, rake=99, time_function="c/0.1/0.5")
-st = read("syn_cosine/?.sac")
-sigs = read("syn_cosine/sig.sac")[0].data
-plot_syn(st, "cosine.svg", sigs)
+# 固定同一剪切源，仅改变面积归一化的矩率时间函数，持续时间均为 0.6 s
+# integrate_order=1 对应 CLI -I1，得到阶跃型断层错动的位移
+moment = 1e24
+azimuth = 39.2
+time_functions = [
+    ("trig",   "t/0.3/0/0.3"),
+    ("trap",   "t/0.1/0.2/0.3"),
+    ("para",   "p/0.6"),
+    ("cosine", "c/0.1/0.5"),
+]
+for name, time_function in time_functions:
+    output_path = f"syn_{name}"
+    pymod.syn(dist=dist, azimuth=azimuth, scale=moment, output_path=output_path,
+              strike=77, dip=88, rake=99, integrate_order=1, time_function=time_function)
+    st = read(f"{output_path}/?.sac")
+    sigs = read(f"{output_path}/sig.sac")[0].data
+    plot_syn(st, f"{name}.svg", sigs)
 
 # 删除中间计算结果，仅保留成图
-import shutil
-from pathlib import Path
-for name in ["GRN", "syn_ex", "syn_sf", "syn_dc", "syn_cosine"]:
-    p = Path(name)
-    if p.is_dir():
-        shutil.rmtree(p, ignore_errors=True)
-    elif p.is_file():
-        p.unlink(missing_ok=True)
+shutil.rmtree("GRN")
+for name, _ in time_functions:
+    shutil.rmtree(f"syn_{name}")

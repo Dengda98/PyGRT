@@ -50,25 +50,25 @@
         gmt subplot set 0
         title="-Dp/2"
         gmt basemap -B+t$title
-        grt syn -G$GDIR -S1e20 -A0 $title -OSYN
+        grt syn -G$GDIR -S1e20 -A0 $title -I1 -OSYN
         grt sac2asc SYN/sig.sac | gmt plot
 
         gmt subplot set 1
         title="-Dt/0.2/0.7/0.9"
         gmt basemap -B+t$title
-        grt syn -G$GDIR -S1e20 -A0 $title -OSYN
+        grt syn -G$GDIR -S1e20 -A0 $title -I1 -OSYN
         grt sac2asc SYN/sig.sac | gmt plot
 
         gmt subplot set 2
         title="-Dt/1.5/0/0.5"
         gmt basemap -B+t$title
-        grt syn -G$GDIR -S1e20 -A0 $title -OSYN
+        grt syn -G$GDIR -S1e20 -A0 $title -I1 -OSYN
         grt sac2asc SYN/sig.sac | gmt plot
 
         gmt subplot set 3
         title="-Dc/0.5/1.5"
         gmt basemap -B+t$title
-        grt syn -G$GDIR -S1e20 -A0 $title -OSYN
+        grt syn -G$GDIR -S1e20 -A0 $title -I1 -OSYN
         grt sac2asc SYN/sig.sac | gmt plot
 
         gmt subplot end
