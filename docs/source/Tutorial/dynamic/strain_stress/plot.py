@@ -23,7 +23,7 @@ def plot6(st6: Stream, title: str, out: str | None = None, *, zero_channels: tup
         tr = st6[i]
         ax = axs[i]
 
-        ax.plot(t, tr.data, c='k', lw=0.5, label=tr.stats.channel)
+        ax.plot(t, tr.data, c='k', lw=0.8, label=tr.stats.channel)
         ax.legend(loc='upper left')
 
         # 理论为零或幅值极小的分量采用整体量级设置纵轴，避免放大数值残差
@@ -34,9 +34,9 @@ def plot6(st6: Stream, title: str, out: str | None = None, *, zero_channels: tup
             ax.set_ylim(ylims)
 
         # 绘制到时
-        ax.vlines(travtP, *ylims, colors='b')
+        ax.vlines(travtP, *ylims, colors='b', linewidths=0.5)
         ax.text(travtP, ylims[1], "P", ha='left', va='top', color='b')
-        ax.vlines(travtS, *ylims, colors='r')
+        ax.vlines(travtS, *ylims, colors='r', linewidths=0.5)
         ax.text(travtS, ylims[1], "S", ha='left', va='top', color='r')
 
         ax.margins(x=0)

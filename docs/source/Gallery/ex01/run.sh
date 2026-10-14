@@ -30,7 +30,7 @@ cd .. && tar -czvf ${ex}.tar.gz ${ex} && mv ${ex}.tar.gz ${ex} && cd -
 # stk=77
 # dip=88
 # rak=99
-# grt syn -G$G -Osyn_dc -A$az -S$S -M$stk/$dip/$rak
+# grt syn -G$G -Osyn_dc -A$az -S$S -M$stk/$dip/$rak -I1
 
 # rm -rf GRN* syn*
 

@@ -22,7 +22,7 @@ stk=77
 dip=88
 rak=99
 az=30
-grt syn -G${out}/${modname}_${depsrc}_${deprcv}_${dist} -A$az -S$S -M$stk/$dip/$rak -Dp/0.6 -Osyn_dc -e
+grt syn -G${out}/${modname}_${depsrc}_${deprcv}_${dist} -A$az -S$S -M$stk/$dip/$rak -Dp/0.6 -I1 -Osyn_dc -e
 
 grt strain -Gsyn_dc
 grt stress -Gsyn_dc

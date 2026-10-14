@@ -38,7 +38,9 @@ Python 中合成动态位移的主函数为 :meth:`syn() <pygrt.pymod.PyModel1D.
     \end{aligned}
    \right.
 
-其中 :math:`D(t)` 为震源时间函数，:math:`*` 表示卷积，:math:`A_m` 为与方位角和震源机制相关的方向因子，其中 :math:`u_z, u_r` 的方向因子相同，而 :math:`u_\theta` 的方向因子满足 
+其中 :math:`D(t)` 为完整的震源时间函数，描述了力加载过程或断层破裂过程，:math:`*` 表示卷积，
+:math:`A_m` 为与方位角和震源机制相关的方向因子，其中 :math:`u_z, u_r` 的方向因子相同，
+而 :math:`u_\theta` 的方向因子满足
 
 .. math:: 
 
@@ -52,12 +54,14 @@ Python 中合成动态位移的主函数为 :meth:`syn() <pygrt.pymod.PyModel1D.
     合成位移的结果单位为 :math:`\text{cm}`。
 
 
+.. _dynamic-syn-sources:
+
 不同震源
 --------------
 
 CLI 和 Python 函数中根据设置的不同震源参数自动推断震源类型。
 一次只能设置一组震源专用参数，不完整或混用参数会报错。
-本节示例均为点源。
+本节示例均为点源。爆炸源、剪切源、张裂源和矩张量源采用阶跃响应，单力源采用脉冲响应。
 
 
 .. tabs::
@@ -131,12 +135,13 @@ CLI 和 Python 函数中根据设置的不同震源参数自动推断震源类�
 
 卷积时间函数
 ---------------------
-**PyGRT** 内置抛物波、梯形波、非对称余弦波等震源时间函数，也支持自定义时间函数，这里以单力源为例。
-本例中的震源时间函数均使用面积归一化。
+**PyGRT** 内置抛物波、梯形波、非对称余弦波等震源时间函数，也支持自定义时间函数。
+这里以剪切源为例，计算阶跃响应，卷积面积归一化的时间函数，
+其累积描述断层错动过程，合成结果为位移。
 自定义时间函数支持一列振幅，或两列时间（s）、振幅。
 两列输入会线性插值到采样间隔 *dt*。程序会对自定义时间函数自动进行面积归一化。
 
-下面对同一个单力源分别卷积三角波和非对称余弦波，两者的持续时间均为 0.6 s。
+下面对上述 **-M33/50/120** 剪切源分别卷积三角波和非对称余弦波，两者的持续时间均为 0.6 s。
 三角波的上升段和下降段各为 0.3 s，平台段为零；非对称余弦波的上升段为 0.1 s，
 下降段为 0.5 s，峰值出现在 0.1 s。
 
@@ -160,47 +165,31 @@ CLI 和 Python 函数中根据设置的不同震源参数自动推断震源类�
 
         生成的时间函数会以SAC格式保存在对应路径中，文件名为 :file:`sig.sac`。
 
-.. figure:: syn_sf_trig.svg
+.. figure:: syn_dc_trig.svg
    :align: center
 
-   三角波及其卷积结果（上升 0.3 s，平台 0 s，下降 0.3 s）
+   三角波矩率形状及其合成位移（上升 0.3 s，平台 0 s，下降 0.3 s）
 
-.. figure:: syn_sf_cosine.svg
+.. figure:: syn_dc_cosine.svg
    :align: center
 
-   非对称余弦波及其卷积结果（上升 0.1 s，下降 0.5 s）
+   非对称余弦波矩率形状及其合成位移（上升 0.1 s，下降 0.5 s）
 
 
 位移对时间积分、微分
 --------------------------------
-这里以矩张量源为例。
+合成时可以指定时间积分、微分次数，这些操作已经在 :ref:`不同震源 <dynamic-syn-sources>` 中使用。
+如果疑惑积分/微分操作对结果物理单位的改变，详见 :doc:`../disp_vel/disp_vel`。
+
 
 .. tabs::  
 
     .. group-tab:: CLI
 
-        .. literalinclude:: run.sh
-            :language: bash
-            :start-after: BEGIN INT DIF
-            :end-before: END INT DIF
-
-        可通过设置 **-I** / **-J** 来指定积分/微分次数。
+        :doc:`/Module/syn` 模块的 **-I** 和 **-J** 分别指定时间积分和微分次数，
+        例如 **-I1** 表示积分一次。
 
     .. group-tab:: Python 
 
-        .. literalinclude:: run.py
-            :language: python
-            :start-after: BEGIN INT DIF
-            :end-before: END INT DIF
-
-        可通过设置 ``integrate_order`` / ``differentiate_order`` 来指定积分/微分次数。
-        也可以不指定然后使用 Obspy 的函数来进行单独处理。
-
-.. figure:: syn_mt_intdif_Z.svg
-   :align: center
-
-.. figure:: syn_mt_intdif_R.svg
-   :align: center
-
-.. figure:: syn_mt_intdif_T.svg
-   :align: center
+        :meth:`syn() <pygrt.pymod.PyModel1D.syn>` 的 ``integrate_order`` 和 ``differentiate_order``
+        分别指定时间积分和微分次数。
