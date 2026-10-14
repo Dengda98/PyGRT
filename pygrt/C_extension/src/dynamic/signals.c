@@ -355,12 +355,20 @@ real_t * grt_get_parabola_wave(real_t dt, real_t *Tlen, int *Nt){
         GRTRaiseError("Window length of time function is too short.");
     }
 
-    // 归一化时间从 0 到 1，对应抛物线的两个零端点
+    // 分段二次函数，起止点的函数值和一阶导数均为零
     int nt = last + 1;
     real_t *arr = GRT_SAFE_CALLOC(nt, sizeof(*arr));
     for(int n=0; n<nt; ++n) {
         real_t phase = (real_t)n / last;
-        arr[n] = 4.0 * phase * (1.0 - phase);
+        if(phase < 0.25) {
+            arr[n] = 16.0 * phase * phase;
+        } else if(phase <= 0.75) {
+            real_t centered = phase - 0.5;
+            arr[n] = 2.0 - 16.0 * centered * centered;
+        } else {
+            real_t remaining = 1.0 - phase;
+            arr[n] = 16.0 * remaining * remaining;
+        }
     }
 
     grt_normalize_time_function(arr, nt, dt);

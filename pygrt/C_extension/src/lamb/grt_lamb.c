@@ -307,7 +307,7 @@ printf("\n"
 "                  There are several options:\n"
 "                  + Impulse\n"
 "                    set -D%c.\n", GRT_SIG_IMPULSE); printf(
-"                  + Parabolic wave (y = a*x^2 + b*x)\n"
+"                  + Parabolic wave\n"
 "                    set -D%c/<t0>, <t0> (secs) is the duration of wave.\n", GRT_SIG_PARABOLA); printf(
 "                    e.g.\n"
 "                         -D%c/1.3\n", GRT_SIG_PARABOLA); printf(
