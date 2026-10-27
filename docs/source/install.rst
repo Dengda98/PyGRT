@@ -4,134 +4,179 @@
 安装
 =============
 
-.. |gr| replace:: `Github Releases <https://github.com/Dengda98/PyGRT/releases>`__
+.. |gr| replace:: `GitHub Releases <https://github.com/Dengda98/PyGRT/releases>`__
 
-依赖
-------------
+1. 选择安装方式
+----------------------------
 
-如果想使用 :command:`grt` 命令，
+**PyGRT** 支持在 Python 脚本中调用，也可在终端通过 :command:`grt` 命令运行。
+两种方式使用相同的底层计算程序，**命令行方式不需要 Python 环境**。
 
-+ |FFTW| *（其静态库已链接到预构建版本）*
-+ |NetCDF|  *（其静态库已链接到预构建版本）*
-+ `Seismic Analysis Code (SAC) <http://www.iris.edu/ds/nodes/dmc/forms/sac/>`_ ，需在对应网址申请下载。
-  用于用户进一步处理 SAC 格式的输出波形（可选）。
++ 使用 Python，或同时使用 Python 和命令行：参见 :ref:`install-python`
++ 仅使用命令行：参见 :ref:`install-cli`
++ 修改 C 源码，或预构建版本不适用于当前系统：参见 :ref:`install-source`
 
-以 Python 脚本使用时，其余依赖已在 :file:`pyproject.toml` 中写好，直接 :command:`pip` 安装即可。
-Python 接口通过调用包内的 :command:`grt` 完成主计算；预构建安装包已按平台内置该可执行文件，
-安装后即可使用，**无需再配置** :envvar:`PATH` 。
+预构建版本支持 **Linux（x86_64）、macOS（Intel 和 Apple Silicon）及 Windows（x86_64）**。
 
+.. _install-python:
 
-安装预构建版本
---------------------
+2. 安装 Python 包
+----------------------------
 
-目前 **PyGRT** 已在 |gr| 中分发不同平台的预构建安装包（内置对应平台的 :command:`grt` 与库文件）。
-用户仅需运行以下命令即可（建议使用 `conda <https://anaconda.org>`_ 虚拟环境）
+1. 建议在独立环境（如 `conda <https://anaconda.org>`_ 虚拟环境）中安装：
 
-.. code-block:: bash
+   .. code-block:: bash
 
-    pip install pygrt-kit
+       pip install pygrt-kit
 
-或者从 |gr| 中下载符合自己操作系统的程序压缩包，解压后在根目录运行
+   依赖会自动安装。安装时的包名为 **pygrt-kit**，在 Python 中使用时为 **pygrt**。
 
-.. code-block:: bash
+2. 运行以下命令检查能否正常导入：
 
-    pip install .  
+   .. code-block:: bash
 
-安装完成后即可在 Python 中 ``import pygrt`` 使用。程序会自动定位安装目录内的
-:rst:dir:`pygrt/C_extension/bin/grt` ，不必额外配置环境变量。
+       python -c "import pygrt; print(pygrt.__version__)"
 
-仅使用 :command:`grt` 命令
---------------------------------
-如果你不想使用 Python，只想在终端以命令行形式运行 :command:`grt` 命令，也可从 |gr| 下载对应平台的
-``*.tar.gz`` 压缩包，按文件名后缀选择对应平台。
-解压后，:rst:dir:`pygrt/C_extension/bin` 与 :rst:dir:`pygrt/C_extension/lib` 分别为预构建的可执行文件目录和库目录。
-此时需将 :rst:dir:`bin/` 加入环境变量 :envvar:`PATH` ，以便在终端直接调用 :command:`grt` 。
+Python 接口无需配置 :envvar:`PATH`。
 
-使用 :command:`pip` 安装后若也希望在终端直接运行 :command:`grt` ，可先查看可执行文件路径：
+2.1 同时使用终端命令（可选）
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+无需重复下载，先查询已安装的程序目录：
 
 .. code-block:: bash
 
     python -m pygrt.print
 
-输出形如
+将输出中 **PyGRT executable file directory** 对应的目录按 :ref:`配置 PATH <install-path>` 加入
+:envvar:`PATH`，再运行 :command:`grt -h` 验证。
 
-.. code-block:: text
-  
-    PyGRT installation directory: </path/to/installation>
-    PyGRT executable file directory: </path/to/installation/bin>
-    PyGRT library directory: </path/to/installation/lib>
+2.2 从本地安装包安装（可选）
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-将其中的 “PyGRT executable file directory” 加入 :envvar:`PATH` 即可。
-各模块可用 ``-h`` 查看帮助，例如 :command:`grt greenfn -h` 。
+也可从 |gr| 下载对应系统和架构的预构建 **.tar.gz** 压缩包，解压后在其根目录运行：
+
+.. code-block:: bash
+
+    pip install .
 
 
-从源码构建安装
----------------------
+.. _install-cli:
 
-如有需要，可尝试从源码从头构建二进制库文件和可执行文件。
+3. 安装独立命令行程序
+----------------------------------------
 
-1. 安装程序开发所需的基本工具，如 :command:`gcc` 编译器， :command:`make` 工具等。
+1. **下载并解压**
 
-2. 安装 |NetCDF| 。
+   从 |gr| 下载对应系统和架构的预构建 **.tar.gz** 压缩包并解压，保留完整目录。
+   可执行文件位于其中的 :file:`pygrt/C_extension/bin/`。
 
-3. 安装 |FFTW| 。
+2. **配置 PATH**
 
-  要求安装双精度和单精度两个版本的 FFTW，且要求编译出静态库。通常在 FFTW 目录下运行以下命令即可：
+   .. _install-path:
 
-  .. code-block:: bash
-      
-    # 编译双精度版本
-    ./configure CFLAGS="-fPIC" 
-    make
-    sudo make install
+   **Linux / macOS**：将下面的路径替换为可执行文件所在目录的绝对路径，在终端运行：
 
-    # 编译单精度版本
-    ./configure CFLAGS="-fPIC" --enable-float
-    make
-    sudo make install
+   .. code-block:: bash
 
-  安装好后需确保安装的路径在 :envvar:`LIBRARY_PATH` 中能找到。由于以上运行 configure 时未指定 *--prefix* ，
-  默认安装路径一般是 :rst:dir:`/usr/local/` ，因此头文件会在 :rst:dir:`/usr/local/include` 路径下，
-  库文件会在 :rst:dir:`/usr/local/lib` 路径下。
+       export PATH="/path/to/pygrt/C_extension/bin:$PATH"
 
-4. 构建 **PyGRT** 。
+   若需长期生效，将这一行加入所用 Shell 的配置文件（例如 Bash 为 :file:`~/.bashrc`，
+   Zsh 为 :file:`~/.zshrc`），并重新打开终端。
 
-  切换到 **PyGRT** 程序目录（不论是使用 :command:`pip` 安装的还是从 |gr| 下载的），切换到 :rst:dir:`pygrt/C_extension` ，运行 
-   
-  .. code-block:: bash
+   **Windows**：在“环境变量”设置中，将可执行文件所在目录的绝对路径添加到用户变量
+   **Path**，然后重新打开终端。
 
-      make
+3. **验证安装**
 
-  进行构建。对于 Mac 用户，由于 :command:`gcc` 命令对应的不是 GNU 的编译器，因此需要安装 :command:`gcc` 编译器，
-  并在以上编译时显式地指定编译器（安装 |FFTW| 的过程也要改），例如
+   .. code-block:: bash
 
-  .. code-block:: bash
+       grt -h
+       grt greenfn -h
 
-      make CC=gcc-14
-  
-  成功后会在 :rst:dir:`bin/` 和 :rst:dir:`lib/` 路径下看到新构建出来的可执行文件和库文件。
-  Python 侧会自动使用包内刚构建的 :command:`grt` ；若要在终端直接调用，将 :rst:dir:`bin/` 加入 :envvar:`PATH` ，
-  并运行 :command:`grt -h` 检查。然后可执行
+   前者列出可用模块，后者查看 :doc:`Module/greenfn` 模块的帮助。
+   各模块均按以下格式运行，具体选项见 :doc:`Module/index`：
 
-  .. code-block:: bash
+   .. code-block:: text
 
-      make cleanbuild
+       grt <module-name> [<module-options>]
 
-  可清理构建过程产生的中间文件夹 :rst:dir:`build/` 。
 
-常见问题
-------------
-+ 运行报错，提示缺少依赖（常见于MacOS）
-  
-  通常是缺少 ``OpenMP`` 库。尝试安装 :command:`gcc` 编译器，其中会自带 ``OpenMP``。
+.. _install-source:
 
-+ “GLIBC” 版本缺失
-  
-  请尝试从源码构建。
+4. 从源码构建
+----------------------------
 
-+ 从源码构建时提示未找到头文件 ``fftw.h`` 
-  
-  在环境变量 :envvar:`C_INCLUDE_PATH` 中添加 FFTW 的头文件路径，
-  或者在运行 :command:`make` 命令时通过 ``CFLAGS2`` 临时增加 :command:`gcc` 的头文件搜索路径，例如::
+仅在需要修改 C 源码或无法使用预构建版本时，才需要自行编译。
 
-    make CFLAGS2="-I/usr/local/include -I<其它路径> -I<其它路径>"
+1. **获取源码**
+
+   从项目仓库下载源码：
+
+   .. code-block:: bash
+
+       git clone https://github.com/Dengda98/PyGRT.git
+       cd PyGRT
+
+2. **安装编译依赖**
+
+   安装支持 OpenMP 的 **GNU GCC**、**make**，以及 |NetCDF| 和 |FFTW| 的开发库
+   （包含头文件）。FFTW 需要同时提供双精度和单精度版本，即 **fftw3** 和 **fftw3f**。
+   若自行编译这些依赖，需启用 **-fPIC**，以便用于构建共享库。
+
+3. **编译程序**
+
+   在源码根目录下运行：
+
+   .. code-block:: bash
+
+       cd pygrt/C_extension
+       make CC=gcc -j
+
+   macOS 自带的 :command:`gcc` 不是 GNU GCC，需另行安装并显式指定名称，
+   例如 :command:`make CC=gcc-16 -j`；版本号应与实际安装的编译器一致。
+
+4. **安装与验证**
+
+   根据使用方式完成安装：
+
+   * **命令行**：将生成的 :file:`bin/` 目录按 :ref:`配置 PATH <install-path>` 加入 :envvar:`PATH`，
+     运行 :command:`grt -h` 验证
+   * **Python**：返回源码根目录，运行 :command:`pip install .`，
+     再按 :ref:`install-python` 验证
+
+
+5. 可选工具
+----------------------------------------
+
+部分文档示例使用 `ObsPy <https://docs.obspy.org/>`_ 读取和绘制 SAC 文件的波形，
+复现这些示例前请按照对应说明安装 ObsPy。
+若习惯使用 `Seismic Analysis Code (SAC) <http://www.iris.edu/ds/nodes/dmc/forms/sac/>`_
+处理输出波形，可自行申请下载。运行 **PyGRT** 本身不需要安装 SAC。
+
+
+6. 常见问题
+----------------------------
+
+**终端找不到 grt**
+    检查可执行文件所在目录是否已加入 :envvar:`PATH`，配置后重新打开终端。
+
+**Python 提示找不到 grt**
+    确认安装的是对应平台的预构建包；若使用仓库源码，需先完成 :ref:`install-source`。
+
+**缺少 OpenMP 运行库（常见于 macOS）**
+    安装 GNU GCC 及其 OpenMP 运行库；若仍提示缺少特定版本的库，可在本机从源码构建。
+
+**提示 GLIBC 版本不兼容**
+    在当前系统上 :ref:`从源码构建 <install-source>`。
+
+**编译时找不到头文件或库**
+    确认已安装 FFTW、NetCDF 的开发库，并将头文件目录加入 :envvar:`C_INCLUDE_PATH`，
+    库目录加入 :envvar:`LIBRARY_PATH`。例如，依赖安装在 :file:`/usr/local/` 时：
+
+    .. code-block:: bash
+
+        export C_INCLUDE_PATH="/usr/local/include${C_INCLUDE_PATH:+:$C_INCLUDE_PATH}"
+        export LIBRARY_PATH="/usr/local/lib${LIBRARY_PATH:+:$LIBRARY_PATH}"
+
+    然后重新运行编译命令。
