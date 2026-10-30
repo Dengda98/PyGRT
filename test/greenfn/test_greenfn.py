@@ -15,6 +15,12 @@ model.greenfn(depsrc=2, deprcv=0, dists=100, nt=32, dt=1, safilonTol=1e-3, ref_f
 model.greenfn(depsrc=2, deprcv=0, dists=5, nt=32, dt=0.1, converg_method="DCM")
 model.greenfn(depsrc=2, deprcv=0, dists=5, nt=32, dt=0.1, converg_method="PTAM")
 model.greenfn(depsrc=2, deprcv=0, dists=5, nt=32, dt=0.1, converg_method="none", gf_source=["EX", "VF"], statsidxs=[1, 2])
+pygrt.io.read_statsfile("GRN_grtstats/milrow_2_0/K_0001_*")
+
+# 通配符不可匹配多个统计文件
+with raises(OSError):
+    pygrt.io.read_statsfile("GRN_grtstats/milrow_2_0/K_*")
+
 model.greenfn(depsrc=[1, 2], deprcv=[0, 1], dists=[2, 5, 10], nt=16, dt=0.1, print_log=False)
 
 model = pygrt.PyModel1D(grn="GRN", modelpath="../milrow", topbound="rigid", botbound="free")

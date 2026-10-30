@@ -9,6 +9,16 @@ model = pygrt.PyModel1D(modelpath="../milrow")
 model.eigenv(wtype="R", freqs=(0, 0.5, 0.1), phase_path="phase.nc", all_modes=True)
 model.eigenfn(phase_path="phase.nc", freqs=0.5, modes=(0, 2), eigenfn_path="egn.nc", depths=(0, 10, 1),
               group_path="group.nc", csens_path="csens.nc", usens_path="usens.nc", egy_path="energy.nc", sensitivity_dz=1)
+pygrt.io.read_eigenfunction("egn.nc")
+pygrt.io.read_dispersion("group.nc")
+pygrt.io.read_sensitivity("csens.nc")
+pygrt.io.read_sensitivity("usens.nc")
+pygrt.io.read_energy_integral("energy.nc")
+
+# 本征函数文件不可作为频散文件读取
+with raises(ValueError):
+    pygrt.io.read_dispersion("egn.nc")
+
 model.eigenfn(phase_path="phase.nc", periods=2, modes=0, eigenfn_path="egn.nc", depths=1)
 model.eigenfn(phase_path="phase.nc", freqs=(0.2, 0.5), all_modes=True, group_path="group.nc")
 
