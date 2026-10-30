@@ -19,7 +19,7 @@ def solve_station(x1, x2):
     azimuth = np.degrees(np.arctan2(x2, x1)) % 360.0
     tbar = beta * times / distance
     # lamb1 返回 pi^2*mu*r*u，图 9.4.5 使用 pi^2*mu*u
-    return pygrt.utils.lamb1(nu=nu, tbar=tbar, azimuth=azimuth, cbar=cbar) / distance
+    return pygrt.analytic.lamb1(nu=nu, tbar=tbar, azimuth=azimuth, cbar=cbar) / distance
 
 
 def plot_line(ax, x1, x2s, line_index, component):

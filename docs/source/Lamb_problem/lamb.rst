@@ -28,7 +28,7 @@ lamb 模块
 
    .. group-tab:: Python
 
-      具体用法可见 :func:`lamb() <pygrt.utils.lamb>` 函数。
+      具体用法可见 :func:`lamb() <pygrt.analytic.lamb>` 函数。
 
       .. literalinclude:: run_lamb/plot_compare.py
          :language: python

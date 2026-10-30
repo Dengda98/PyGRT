@@ -38,7 +38,7 @@
             :start-after: BEGIN EIGENFN
             :end-before: END EIGENFN
 
-        可使用 :func:`read_eigenfunction() <pygrt.utils.read_eigenfunction>` 读取本征函数结果。
+        可使用 :func:`read_eigenfunction() <pygrt.io.read_eigenfunction>` 读取本征函数结果。
 
 
 .. figure:: eigenfunction.svg
@@ -66,7 +66,7 @@
             :start-after: BEGIN GROUP
             :end-before: END GROUP
 
-        可使用 :func:`read_dispersion() <pygrt.utils.read_dispersion>` 读取群速度结果。
+        可使用 :func:`read_dispersion() <pygrt.io.read_dispersion>` 读取群速度结果。
 
 
 .. figure:: dispersion_py_group.svg
@@ -93,7 +93,7 @@
             :start-after: BEGIN SENS
             :end-before: END SENS
 
-        可使用 :func:`read_sensitivity() <pygrt.utils.read_sensitivity>` 读取敏感核结果。
+        可使用 :func:`read_sensitivity() <pygrt.io.read_sensitivity>` 读取敏感核结果。
 
 
 + **相速度频散敏感核**

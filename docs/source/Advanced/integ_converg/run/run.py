@@ -21,7 +21,7 @@ pymod.greenfn(depsrc=depsrc, deprcv=deprcv, dists=dists, nt=500, dt=0.02, statsi
 # 可使用通配符简化输入，因为对应索引值下只会有一个文件
 # 返回的是自定义类型的numpy数组
 statsdir = f"GRN_grtstats/milrow_{format_float(depsrc)}_{format_float(deprcv)}"
-statsdata = pygrt.utils.read_statsfile(f"{statsdir}/K_0050_*")
+statsdata = pygrt.io.read_statsfile(f"{statsdir}/K_0050_*")
 print(statsdata.dtype)
 # [('k', '<f8'), ('EX_q', '<c16'), ('EX_w', '<c16'), ('VF_q', '<c16'), ('VF_w', '<c16'), ('HF_q', '<c16'), ('HF_w', '<c16'), ('HF_v', '<c16'), ('DD_q', '<c16'), ('DD_w', '<c16'), ('DS_q', '<c16'), ('DS_w', '<c16'), ('DS_v', '<c16'), ('SS_q', '<c16'), ('SS_w', '<c16'), ('SS_v', '<c16')]
 # END read statsfile
@@ -34,7 +34,7 @@ ir = 2
 dist=dists[ir]
 srctype="SS"
 ptype="0"
-fig, ax = pygrt.utils.plot_statsdata(statsdata, dist=dist, srctype=srctype, ptype=ptype)
+fig, ax = pygrt.plot.plot_statsdata(statsdata, dist=dist, srctype=srctype, ptype=ptype)
 fig.savefig(f"{srctype}_{ptype}.svg", bbox_inches='tight')
 # END plot stats
 # -------------------------------------------------------------------
@@ -45,7 +45,7 @@ ir = 2
 dist=dists[ir]
 srctype="SS"
 ptype="0"
-fig, ax = pygrt.utils.plot_statsdata(statsdata, dist=dist, srctype=srctype, ptype=ptype, RorI=2)
+fig, ax = pygrt.plot.plot_statsdata(statsdata, dist=dist, srctype=srctype, ptype=ptype, RorI=2)
 fig.savefig(f"{srctype}_{ptype}_RI.svg", bbox_inches='tight')
 # END plot stats RI
 # -------------------------------------------------------------------
@@ -61,12 +61,12 @@ pymod = pygrt.PyModel1D(grn="GRN", modelpath="milrow")
 pymod.greenfn(depsrc=depsrc, deprcv=deprcv, dists=dists, nt=500, dt=0.02, converg_method='none', statsidxs=[50,100])
 
 statsdir = f"GRN_grtstats/milrow_{format_float(depsrc)}_{format_float(deprcv)}"
-statsdata = pygrt.utils.read_statsfile(f"{statsdir}/K_0050_*")
+statsdata = pygrt.io.read_statsfile(f"{statsdir}/K_0050_*")
 
 dist=10
 srctype="SS"
 ptype="0"
-fig, ax = pygrt.utils.plot_statsdata(statsdata, dist=dist, srctype=srctype, ptype=ptype, RorI=2)
+fig, ax = pygrt.plot.plot_statsdata(statsdata, dist=dist, srctype=srctype, ptype=ptype, RorI=2)
 fig.savefig(f"{srctype}_{ptype}_{depsrc}_RI.svg", bbox_inches='tight')
 # END DEPSRC 0.0 DGRN
 # -------------------------------------------------------------------

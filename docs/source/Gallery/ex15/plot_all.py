@@ -26,7 +26,7 @@ stgrnLst = [dist2st[float(d)] for d in dists]
 
 # 静态解
 pymod.static_greenfn(depsrc=depsrc, deprcv=deprcv, dists=dists.tolist())
-static_grn = pygrt.utils.read_nc_variables("stgrn.nc")
+static_grn = pygrt.io.read_nc_variables("stgrn.nc")
 
 # 绘制零频结果
 fig, axs = plt.subplots(2, 3, figsize=(12, 8), gridspec_kw=dict(hspace=0.3, wspace=0.3)) # 

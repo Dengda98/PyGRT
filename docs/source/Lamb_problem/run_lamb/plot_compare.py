@@ -14,7 +14,7 @@ from obspy import read
 # BEGIN LAMB
 import pygrt
 
-pygrt.utils.lamb(
+pygrt.analytic.lamb(
     modelparams=(8.0, 4.62, 3.3),
     depsrc=5.0,
     deprcv=1.0,

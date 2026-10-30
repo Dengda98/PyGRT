@@ -51,7 +51,7 @@ st.integrate()
 
 
 # 时域解
-u = pygrt.utils.lamb1(nu=nu, tbar=tbar, azimuth=0).reshape(-1, 9)
+u = pygrt.analytic.lamb1(nu=nu, tbar=tbar, azimuth=0).reshape(-1, 9)
 u = u[:, [0,2,4,6,8]]
 u.shape
 

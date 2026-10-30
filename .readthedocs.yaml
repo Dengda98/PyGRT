@@ -33,8 +33,24 @@ build:
       - git fetch --unshallow || true
     
     pre_build:
-      # 由于此处多个命令之间隔离，只能写成一个脚本
-      - cd docs && ./compile.sh && cd -
+      # 后台持续运行 compile.sh，规避 RTD 长前台命令结束后不继续推进的问题
+      # 每次轮询最多等待 45 秒，14 次合计最多等待 630 秒，最后检查退出状态
+      - cd docs && python rtd_build.py start
+      - cd docs && python rtd_build.py poll
+      - cd docs && python rtd_build.py poll
+      - cd docs && python rtd_build.py poll
+      - cd docs && python rtd_build.py poll
+      - cd docs && python rtd_build.py poll
+      - cd docs && python rtd_build.py poll
+      - cd docs && python rtd_build.py poll
+      - cd docs && python rtd_build.py poll
+      - cd docs && python rtd_build.py poll
+      - cd docs && python rtd_build.py poll
+      - cd docs && python rtd_build.py poll
+      - cd docs && python rtd_build.py poll
+      - cd docs && python rtd_build.py poll
+      - cd docs && python rtd_build.py poll
+      - cd docs && python rtd_build.py finish
 
 conda:
   environment: environment.yml

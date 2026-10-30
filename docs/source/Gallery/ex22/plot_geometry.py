@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import pygrt
 
 for mechanism, title in (("strike_slip", "Left-lateral strike-slip fault"), ("thrust", "Reverse fault")):
-    fig, (ax_map, ax_3d) = pygrt.utils.plot_sCoulomb_faults_geometry(f"{mechanism}.inr")
+    fig, (ax_map, ax_3d) = pygrt.plot.plot_sCoulomb_faults_geometry(f"{mechanism}.inr")
     fig.set_size_inches(12, 6)
     figure_title = fig.suptitle(title, fontsize=14)
 

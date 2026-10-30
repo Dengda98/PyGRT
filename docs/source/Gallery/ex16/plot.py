@@ -40,7 +40,7 @@ pymod1.greenfn(depsrc=depsrc, deprcv=deprcv, dists=rs, nt=nt, dt=dt, keepAllFreq
 st1 = read("GRN1/*/*.sac")
 st1.integrate()
 pymod1.static_greenfn(depsrc=depsrc, deprcv=deprcv, norths=norths_rng, easts=easts_rng)
-static1 = pygrt.utils.read_nc_variables("stgrn1.nc")
+static1 = pygrt.io.read_nc_variables("stgrn1.nc")
 
 # =============================================================
 # 设置上下翻转模型
@@ -66,7 +66,7 @@ pymod2 = pygrt.PyModel1D(grn="GRN2", stgrn="stgrn2.nc", modelpath=modfile2, topb
 pymod2.greenfn(depsrc=depsrc2, deprcv=deprcv2, dists=rs, nt=nt, dt=dt, keepAllFreq=True)
 st2 = read("GRN2/*/*.sac")
 pymod2.static_greenfn(depsrc=depsrc2, deprcv=deprcv2, norths=norths_rng, easts=easts_rng)
-static2 = pygrt.utils.read_nc_variables("stgrn2.nc")
+static2 = pygrt.io.read_nc_variables("stgrn2.nc")
 st2.integrate()
 
 

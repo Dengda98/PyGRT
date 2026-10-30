@@ -114,10 +114,8 @@ Python API
 
 EOF
 
-for py in $(ls -1 $SDIR/*.py | xargs -n1 basename); do
-    if [[ "$py" == "__init__.py" || "$py" == "_version.py" || "$py" == "print.py" ]]; then
-        continue
-    fi
+# Python API 仅展示面向用户的功能模块，内部支撑模块不列入入口
+for py in pymod.py analytic.py io.py plot.py tensor.py coord.py signal.py; do
 
     content=(
         "pygrt.${py%%.*}"

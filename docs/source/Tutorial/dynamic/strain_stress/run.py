@@ -46,7 +46,7 @@ print(stsyn)
 # END ZNE
 
 # BEGIN STRAIN
-pygrt.utils.strain("syn_dc_zne")
+pygrt.tensor.strain("syn_dc_zne")
 st_strain = read("syn_dc_zne/strain_*.sac")
 print(st_strain)
 # 6 Trace(s) in Stream:
@@ -59,7 +59,7 @@ print(st_strain)
 # END STRAIN
 
 # BEGIN ROTATION
-pygrt.utils.rotation("syn_dc_zne")
+pygrt.tensor.rotation("syn_dc_zne")
 st_rotation = read("syn_dc_zne/rotation_*.sac")
 print(st_rotation)
 # 3 Trace(s) in Stream:
@@ -69,7 +69,7 @@ print(st_rotation)
 # END ROTATION
 
 # BEGIN STRESS
-pygrt.utils.stress("syn_dc_zne")
+pygrt.tensor.stress("syn_dc_zne")
 st_stress = read("syn_dc_zne/stress_*.sac")
 print(st_stress)
 # 6 Trace(s) in Stream:
@@ -83,9 +83,9 @@ print(st_stress)
 
 # BEGIN SPROJ
 # 接收断层形态与震源机制独立设置
-pygrt.utils.sproj("syn_dc_zne", strike=90, dip=60, rake=0)
+pygrt.tensor.sproj("syn_dc_zne", strike=90, dip=60, rake=0)
 # END SPROJ
 
 # BEGIN COULOMB
-pygrt.utils.coulomb("syn_dc_zne", friction=0.4)
+pygrt.tensor.coulomb("syn_dc_zne", friction=0.4)
 # END COULOMB

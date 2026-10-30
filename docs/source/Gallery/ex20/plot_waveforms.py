@@ -56,7 +56,7 @@ def phase_arrivals():
 tbar = np.arange(0.0, TMAX + 0.5 * DTBAR, DTBAR)
 phase_data = {}
 for phase in PHASES:
-    green, _, _, _ = pygrt.utils.lamb3(
+    green, _, _, _ = pygrt.analytic.lamb3(
         nu=NU,
         tbar=tbar,
         R=R,

@@ -14,7 +14,7 @@ pymod.greenfn(
 # 每行已是子断层，指定不再剖分以保留每行一个子源；不覆盖行末时间函数
 pymod.syn(src_fault="fault_rupture.inp", src_fault_size=(0, 0), dist=20.0, azimuth=30.0, deprcv=0.0,
           output_path="syn_ff", calc_upar=True, integrate_order=1)
-pygrt.utils.stress("syn_ff")
-pygrt.utils.sproj("syn_ff", strike=90, dip=60, rake=0)
-pygrt.utils.coulomb("syn_ff", friction=0.4)
+pygrt.tensor.stress("syn_ff")
+pygrt.tensor.sproj("syn_ff", strike=90, dip=60, rake=0)
+pygrt.tensor.coulomb("syn_ff", friction=0.4)
 # END SRC SYN

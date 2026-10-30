@@ -43,7 +43,7 @@
             :start-after: BEGIN DISPERSION
             :end-before: END DISPERSION
 
-        可使用 :func:`read_dispersion() <pygrt.utils.read_dispersion>` 读取频散结果。
+        可使用 :func:`read_dispersion() <pygrt.io.read_dispersion>` 读取频散结果。
 
 
 计算结果分别导出为 |NetCDF| 经典格式。
@@ -74,7 +74,7 @@
             :start-after: BEGIN SECFUNC
             :end-before: END SECFUNC
 
-        可使用 :func:`read_secfunc() <pygrt.utils.read_secfunc>` 读取久期函数结果。
+        可使用 :func:`read_secfunc() <pygrt.io.read_secfunc>` 读取久期函数结果。
 
 
 .. figure:: secfunc.svg

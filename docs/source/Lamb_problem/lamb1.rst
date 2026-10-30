@@ -26,7 +26,7 @@
 
    .. group-tab:: Python    
 
-      Python 提供了函数 :func:`lamb1() <pygrt.utils.lamb1>` 求解第一类 Lamb 问题。
+      Python 提供了函数 :func:`lamb1() <pygrt.analytic.lamb1>` 求解第一类 Lamb 问题。
       函数返回无量纲 Green 函数数组 ``G``
 
       .. literalinclude:: run/lamb1_plot_time.py
@@ -81,7 +81,7 @@
 
    .. group-tab:: Python
 
-      Python 中可在 :func:`lamb1() <pygrt.utils.lamb1>` 函数中指定 ``cbar``
+      Python 中可在 :func:`lamb1() <pygrt.analytic.lamb1>` 函数中指定 ``cbar``
       参数来指定垂直力源的无量纲移动速度。
 
       .. literalinclude:: run/lamb1_plot_time.py

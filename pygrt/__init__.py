@@ -1,12 +1,6 @@
+"""Model-based calculations and auxiliary tools for PyGRT."""
 
-# 版本号
 from ._version import __version__
+from .pymod import PyModel1D
 
-# 1D水平分层模型类
-from .pymod import *
-
-from . import signals as sigs
-
-from . import utils 
-
-
+from . import analytic, io, plot, tensor, coord, signal, utils
