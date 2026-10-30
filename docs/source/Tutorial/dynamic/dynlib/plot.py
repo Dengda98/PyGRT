@@ -3,7 +3,7 @@ from obspy import read
 import pygrt
 
 # BEGIN GEOMETRY
-fig, axes = pygrt.utils.plot_sCoulomb_faults_geometry("fault_rupture.inp")
+fig, axes = pygrt.plot.plot_sCoulomb_faults_geometry("fault_rupture.inp")
 for ax in axes:
     ax.get_legend().remove()
 fig.savefig("fault.svg")

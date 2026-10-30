@@ -69,8 +69,8 @@
             :language: python
 
         关于局部笛卡尔系和地理坐标系之间的转换，
-        详见辅助函数 :func:`pygrt.utils.xy2geo() <pygrt.utils.xy2geo>`
-        和 :func:`pygrt.utils.geo2xy() <pygrt.utils.geo2xy>` 。
+        详见辅助函数 :func:`pygrt.coord.xy2geo() <pygrt.coord.xy2geo>`
+        和 :func:`pygrt.coord.geo2xy() <pygrt.coord.geo2xy>` 。
 
 同震位移场
 =======================

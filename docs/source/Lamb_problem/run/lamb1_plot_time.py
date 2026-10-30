@@ -5,7 +5,7 @@ import pygrt
 import numpy as np
 
 tbar = np.arange(0, 2, 1e-4)
-u = pygrt.utils.lamb1(nu=0.25, tbar=tbar, azimuth=30)
+u = pygrt.analytic.lamb1(nu=0.25, tbar=tbar, azimuth=30)
 # END LAMB1
 
 fig, axs = plt.subplots(3, 3, figsize=(10, 5), sharex=True)
@@ -26,7 +26,7 @@ import pygrt
 import numpy as np
 
 tbar = np.arange(0, 2, 1e-4)
-u = pygrt.utils.lamb1(nu=0.25, tbar=tbar, azimuth=30, cbar=0.1)
+u = pygrt.analytic.lamb1(nu=0.25, tbar=tbar, azimuth=30, cbar=0.1)
 # END LAMB1 MOVING
 
 fig, axs = plt.subplots(1, 3, figsize=(10, 2))

@@ -19,7 +19,7 @@ def _plot_one(ax:Axes, pattern:str, ktype:str):
     maxnorm = 0
     kmax = 0.0
     for path in glob.glob(pattern):
-        data = pygrt.utils.read_statsfile(path)
+        data = pygrt.io.read_statsfile(path)
 
         stats_dir = Path(path).parent.name
         fields = stats_dir.rsplit("_", 2)

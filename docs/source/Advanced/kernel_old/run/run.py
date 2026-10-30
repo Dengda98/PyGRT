@@ -30,7 +30,7 @@ vels = np.arange(0.1, 0.6, 0.001)
 # 读取所有频率的核函数，并插值到vels
 # 不指定ktypes，默认返回全部核函数，均以2D数组的形式保存，shape=(nfreqs, nvels)
 statsdir = f"KERNEL_grtstats/mod1_{format_float(depsrc)}_{format_float(deprcv)}"
-kerDct = pygrt.utils.read_kernels_freqs(statsdir, vels)
+kerDct = pygrt.io.read_kernels_freqs(statsdir, vels)
 print(kerDct.keys())
 # dict_keys(['_vels', '_freqs', 'EX_q', 'EX_w', 'VF_q', 'VF_w', 'HF_q', 'HF_w', 'HF_v', 'DD_q', 'DD_w', 'DS_q', 'DS_w', 'DS_v', 'SS_q', 'SS_w', 'SS_v'])
 # END read

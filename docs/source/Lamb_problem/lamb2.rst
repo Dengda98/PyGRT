@@ -45,7 +45,7 @@
 
    .. group-tab:: Python
 
-      Python 提供了函数 :func:`lamb2() <pygrt.utils.lamb2>`，直接返回四个数组
+      Python 提供了函数 :func:`lamb2() <pygrt.analytic.lamb2>`，直接返回四个数组
       ``G, Gs, Gr, Grs``，分别表示 Green 函数、源点一阶空间偏导、接收点一阶空间偏导
       和混合二阶空间偏导
 

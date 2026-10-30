@@ -7,7 +7,7 @@ import pygrt
 
 # 读取所有频率的核函数
 # 不指定ktypes，默认返回全部核函数，均以2D数组的形式保存，shape=(nfreqs, nvels)
-kerDct = pygrt.utils.read_kernels_freqs("KERNEL/mod1_0.03_0")
+kerDct = pygrt.io.read_kernels_freqs("KERNEL/mod1_0.03_0")
 print(kerDct.keys())
 # dict_keys(['_vels', '_freqs', 'EX_q', 'EX_w', 'VF_q', 'VF_w', 'HF_q', 'HF_w', 'HF_v', 'DD_q', 'DD_w', 'DS_q', 'DS_w', 'DS_v', 'SS_q', 'SS_w', 'SS_v'])
 

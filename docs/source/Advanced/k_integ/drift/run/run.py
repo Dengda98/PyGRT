@@ -95,7 +95,7 @@ for i in range(len(paths)):
     ax = axs[i]
     path = paths[i]
     freq = float(path.split("_")[-1])
-    D = pygrt.utils.read_statsfile(path)
+    D = pygrt.io.read_statsfile(path)
     ax.plot(D['k'], np.real(D['SS_q']), 'k-', lw=1, label='Real')
     ax.plot(D['k'], np.imag(D['SS_q']), 'k--', lw=1, label='Imag')
     ax.text(0.98, 0.9, f"{freq:.1e} Hz", transform=ax.transAxes, fontsize=10, ha='right', va='top', bbox=dict(lw=1, fc='w'))

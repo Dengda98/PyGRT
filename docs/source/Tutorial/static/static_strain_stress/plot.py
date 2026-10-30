@@ -39,12 +39,12 @@ def plot6(data: dict, title: str, out: str | None = None):
     plt.close(fig)
 
 
-static_tensor = pygrt.utils.read_nc_variables("stsyn_dc_zne.nc")
+static_tensor = pygrt.io.read_nc_variables("stsyn_dc_zne.nc")
 plot6(static_tensor, "Strain", 'static_strain.svg')
 plot6(static_tensor, "Rotation", 'static_rotation.svg')
 plot6(static_tensor, "Stress", 'static_stress.svg')
 
 # BEGIN COULOMB PLOT
-fig, axes = pygrt.utils.plot_static_coulomb(static_tensor, outpath="static_coulomb.svg")
+fig, axes = pygrt.plot.plot_static_coulomb(static_tensor, outpath="static_coulomb.svg")
 plt.close(fig)
 # END COULOMB PLOT

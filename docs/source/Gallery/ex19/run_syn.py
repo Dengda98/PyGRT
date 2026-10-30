@@ -14,22 +14,22 @@ pymod.static_syn(
     src_fault="coulomb-fault.inp", deprcv=0.0,
     output_path=synout, calc_upar=True, zne=True
 )
-pygrt.utils.static_stress(synout)
-pygrt.utils.static_sproj(synout, strike=90, dip=32, rake=90)
-pygrt.utils.static_coulomb(synout, friction=0.4)
+pygrt.tensor.static_stress(synout)
+pygrt.tensor.static_sproj(synout, strike=90, dip=32, rake=90)
+pygrt.tensor.static_coulomb(synout, friction=0.4)
 # 坐标转换
-pygrt.utils.xy2geo(ingrid=synout, lat0=lat0, lon0=lon0, outgrid=f"{synout}.geo")
+pygrt.coord.xy2geo(ingrid=synout, lat0=lat0, lon0=lon0, outgrid=f"{synout}.geo")
 
 # okada 解作为对比
 synout = "okada_ff.nc"
-pygrt.utils.okada(
+pygrt.analytic.okada(
     modelparams=(6, 3.464, 2.7),
     norths=(-200, 200, 10), easts=(-210, 210, 10),
     src_fault="coulomb-fault.inp", deprcv=0.0,
     output_path=synout, calc_upar=True, zne=True
 )
-pygrt.utils.static_stress(synout)
-pygrt.utils.static_sproj(synout, strike=90, dip=32, rake=90)
-pygrt.utils.static_coulomb(synout, friction=0.4)
+pygrt.tensor.static_stress(synout)
+pygrt.tensor.static_sproj(synout, strike=90, dip=32, rake=90)
+pygrt.tensor.static_coulomb(synout, friction=0.4)
 # 坐标转换
-pygrt.utils.xy2geo(ingrid=synout, lat0=lat0, lon0=lon0, outgrid=f"{synout}.geo")
+pygrt.coord.xy2geo(ingrid=synout, lat0=lat0, lon0=lon0, outgrid=f"{synout}.geo")

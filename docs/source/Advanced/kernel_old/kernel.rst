@@ -45,7 +45,7 @@
 
 读取，插值，获得 :math:`f-v` 谱
 ----------------------------------
-Python端提供了 :py:func:`pygrt.utils.read_kernels_freqs` 函数来完成所有频率的核函数读取以及从波数 ``k`` 插值到特定速度点 ``v`` 的工作 ( :math:`v=\omega/k` )，最后获得保存有核函数的 :math:`f-v` 谱的字典。
+Python端提供了 :py:func:`pygrt.io.read_kernels_freqs` 函数来完成所有频率的核函数读取以及从波数 ``k`` 插值到特定速度点 ``v`` 的工作 ( :math:`v=\omega/k` )，最后获得保存有核函数的 :math:`f-v` 谱的字典。
 
 .. literalinclude:: run/run.py
     :language: python

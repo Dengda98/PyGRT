@@ -17,7 +17,7 @@ pymod.static_syn(
 # END SRC SYN
 
 # BEGIN COULOMB
-pygrt.utils.static_stress("stsyn_ff.nc")
-pygrt.utils.static_sproj("stsyn_ff.nc", strike=90, dip=60, rake=0)
-pygrt.utils.static_coulomb("stsyn_ff.nc", friction=0.4)
+pygrt.tensor.static_stress("stsyn_ff.nc")
+pygrt.tensor.static_sproj("stsyn_ff.nc", strike=90, dip=60, rake=0)
+pygrt.tensor.static_coulomb("stsyn_ff.nc", friction=0.4)
 # END COULOMB

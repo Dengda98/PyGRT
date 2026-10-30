@@ -14,11 +14,11 @@
 
         GG(["pygrt.PyModel1D.static_greenfn()"])
         SS(["pygrt.PyModel1D.static_syn()"])
-        EE(["pygrt.utils.static_strain()"])
-        RR(["pygrt.utils.static_rotation()"])
-        TT(["pygrt.utils.static_stress()"])
-        SP(["pygrt.utils.static_sproj()"])
-        CO(["pygrt.utils.static_coulomb()"])
+        EE(["pygrt.tensor.static_strain()"])
+        RR(["pygrt.tensor.static_rotation()"])
+        TT(["pygrt.tensor.static_stress()"])
+        SP(["pygrt.tensor.static_sproj()"])
+        CO(["pygrt.tensor.static_coulomb()"])
 
         G["Compute Green's Functions
         (and its Spatial Derivatives)"]

@@ -147,7 +147,7 @@ def remove_frequency_baseline(st: Stream, tbar: np.ndarray) -> None:
 def calculate_lamb2() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """计算 lamb2 混合导数，并返回 tbar 和 ZNE 分量"""
     tbar = np.arange(NT, dtype=float) * DT * VS / STRAIGHT_DISTANCE
-    _, _, _, dG_mixed = pygrt.utils.lamb2(
+    _, _, _, dG_mixed = pygrt.analytic.lamb2(
         nu=NU,
         tbar=tbar,
         R=EPICENTRAL_DISTANCE,

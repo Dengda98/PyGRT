@@ -10,6 +10,6 @@ pymod.syn(
 )
 
 # 计算应力、接收断层上的投影应力和库伦应力
-pygrt.utils.stress("syn")
-pygrt.utils.sproj("syn", strike=90, dip=32, rake=90)
-pygrt.utils.coulomb("syn", friction=0.4)
+pygrt.tensor.stress("syn")
+pygrt.tensor.sproj("syn", strike=90, dip=32, rake=90)
+pygrt.tensor.coulomb("syn", friction=0.4)

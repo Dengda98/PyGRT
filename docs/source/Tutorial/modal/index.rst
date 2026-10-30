@@ -20,9 +20,9 @@
         FN(["pygrt.PyModel1D.eigenfn()"])
         MS(["pygrt.PyModel1D.modsum()"])
         SS(["pygrt.PyModel1D.syn()"])
-        EE(["pygrt.utils.strain()"])
-        RR(["pygrt.utils.rotation()"])
-        TT(["pygrt.utils.stress()"])
+        EE(["pygrt.tensor.strain()"])
+        RR(["pygrt.tensor.rotation()"])
+        TT(["pygrt.tensor.stress()"])
 
         V["Compute Dispersion Curves"]
         F["Compute Eigenfunctions, Energy Integrals,
@@ -36,8 +36,8 @@
         SS --> EE
         SS --> RR
         SS --> TT
-        TT --> SP(["pygrt.utils.sproj()"])
-        SP --> CO(["pygrt.utils.coulomb()"])
+        TT --> SP(["pygrt.tensor.sproj()"])
+        SP --> CO(["pygrt.tensor.coulomb()"])
         
         classDef cmdcls1 fill:#A1E3F9,stroke:#006BFF,stroke-width:2px,color:#333;
         classDef cmdcls2 fill:#f9f2d9,stroke:#e8d174,stroke-width:2px,color:#333;

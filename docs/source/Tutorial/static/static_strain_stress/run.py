@@ -21,16 +21,16 @@ pymod.static_syn(
 )
 
 # 计算应变 / 旋转 / 应力，结果写回同一 nc 文件
-pygrt.utils.static_strain("stsyn_dc_zne.nc")
-pygrt.utils.static_rotation("stsyn_dc_zne.nc")
-pygrt.utils.static_stress("stsyn_dc_zne.nc")
+pygrt.tensor.static_strain("stsyn_dc_zne.nc")
+pygrt.tensor.static_rotation("stsyn_dc_zne.nc")
+pygrt.tensor.static_stress("stsyn_dc_zne.nc")
 # END
 
 # BEGIN SPROJ
 # 接收断层形态与震源机制独立设置
-pygrt.utils.static_sproj("stsyn_dc_zne.nc", strike=90, dip=60, rake=0)
+pygrt.tensor.static_sproj("stsyn_dc_zne.nc", strike=90, dip=60, rake=0)
 # END SPROJ
 
 # BEGIN COULOMB
-pygrt.utils.static_coulomb("stsyn_dc_zne.nc", friction=0.4)
+pygrt.tensor.static_coulomb("stsyn_dc_zne.nc", friction=0.4)
 # END COULOMB

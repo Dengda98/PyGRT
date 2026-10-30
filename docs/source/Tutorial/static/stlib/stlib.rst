@@ -111,9 +111,9 @@
 
     .. group-tab:: Python
 
-        依次调用 :func:`static_stress() <pygrt.utils.static_stress>`、
-        :func:`static_sproj() <pygrt.utils.static_sproj>` 和
-        :func:`static_coulomb() <pygrt.utils.static_coulomb>`。
+        依次调用 :func:`static_stress() <pygrt.tensor.static_stress>`、
+        :func:`static_sproj() <pygrt.tensor.static_sproj>` 和
+        :func:`static_coulomb() <pygrt.tensor.static_coulomb>`。
 
         .. literalinclude:: run.py
             :language: python

@@ -2,8 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pygrt 
 
-statsdata1 = pygrt.utils.read_statsfile("GRN1_grtstats/milrow_5_0/K_0500_2.50000e-01")
-statsdata2 = pygrt.utils.read_statsfile("GRN2_grtstats/milrow_5_0/K_0500_2.50000e-01")
+statsdata1 = pygrt.io.read_statsfile("GRN1_grtstats/milrow_5_0/K_0500_2.50000e-01")
+statsdata2 = pygrt.io.read_statsfile("GRN2_grtstats/milrow_5_0/K_0500_2.50000e-01")
 srctype = 'DD_q'
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 6), sharex=True)

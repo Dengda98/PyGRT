@@ -49,5 +49,5 @@ Python 中计算静态格林函数的主函数为 :meth:`static_greenfn() <pygrt
             :end-before: END GRN
 
         结果写入构造 :class:`~pygrt.pymod.PyModel1D` 时 ``stgrn=`` 指定的 NetCDF 文件。需要读回时调用
-        :func:`pygrt.utils.read_nc_variables`，返回 ``{变量名: 数组}`` 字典。
-        如需完整的维度与属性信息，可使用 :func:`pygrt.utils.read_nc`。
+        :func:`pygrt.io.read_nc_variables`，返回 ``{变量名: 数组}`` 字典。
+        如需完整的维度与属性信息，可使用 :func:`pygrt.io.read_nc`。

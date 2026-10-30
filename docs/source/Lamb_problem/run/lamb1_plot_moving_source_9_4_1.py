@@ -19,8 +19,8 @@ cbar = speed_physical / beta
 
 def solve(t):
     tbar = beta * t / distance
-    fixed = pygrt.utils.lamb1(nu=nu, tbar=tbar, azimuth=azimuth)[:, :, 2]
-    moving = pygrt.utils.lamb1(nu=nu, tbar=tbar, azimuth=azimuth, cbar=cbar)
+    fixed = pygrt.analytic.lamb1(nu=nu, tbar=tbar, azimuth=azimuth)[:, :, 2]
+    moving = pygrt.analytic.lamb1(nu=nu, tbar=tbar, azimuth=azimuth, cbar=cbar)
     return fixed, moving
 
 

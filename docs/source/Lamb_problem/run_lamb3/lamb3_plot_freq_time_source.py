@@ -116,7 +116,7 @@ def convert_source_derivatives(dG_source: np.ndarray) -> np.ndarray:
 def calculate_lamb3() -> tuple[np.ndarray, np.ndarray]:
     """计算 lamb3 源点导数，并返回 tbar 和 ZNE 分量"""
     tbar = np.arange(NT, dtype=float) * DT * VS / STRAIGHT_DISTANCE
-    _, dG_source, _, _ = pygrt.utils.lamb3(
+    _, dG_source, _, _ = pygrt.analytic.lamb3(
         nu=NU,
         tbar=tbar,
         R=EPICENTRAL_DISTANCE,
