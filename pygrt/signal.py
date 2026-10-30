@@ -1,5 +1,5 @@
 """
-    :file:     signals.py
+    :file:     signal.py
     :author:   Zhu Dengda (zhudengda@mail.iggcas.ac.cn)
     :date:     2024-07-24
 
@@ -7,20 +7,8 @@
 
 """
 
-import numpy as np
 import numpy.ctypeslib as npct
-from ctypes import byref, cast
-
-from .c_interfaces import *
-
-
-__all__ = [
-    "gen_triangle_wave",
-    "gen_parabola_wave",
-    "gen_trap_wave",
-    "gen_asymmetric_cosine_wave",
-    "gen_ricker_wave",
-]
+from ctypes import byref, c_int, c_void_p, cast
 
 
 def gen_triangle_wave(vlen, dt):
@@ -46,6 +34,8 @@ def gen_parabola_wave(vlen, dt):
         :return:
             - **wave** -    amplitude sequence (float64)
     '''
+    from .c_interfaces import C_grt_free, C_grt_get_parabola_wave, REAL
+
     ct1 = REAL(vlen)
     cnt = c_int(0)
 
@@ -72,6 +62,8 @@ def gen_trap_wave(t1, t2, t3, dt):
         :return:
             - **wave** -    amplitude sequence (float64)
     '''
+    from .c_interfaces import C_grt_free, C_grt_get_trap_wave, REAL
+
     ct1 = REAL(t1)
     ct2 = REAL(t2)
     ct3 = REAL(t3)
@@ -98,6 +90,8 @@ def gen_asymmetric_cosine_wave(t1, t2, dt):
         :return:
             - **wave** -    Amplitude sequence (float64), with ``sum(wave)*dt = 1``.
     '''
+    from .c_interfaces import C_grt_free, C_grt_get_asymmetric_cosine_wave, REAL
+
     ct1 = REAL(t1)
     ct2 = REAL(t2)
     cnt = c_int(0)
@@ -121,6 +115,8 @@ def gen_ricker_wave(f0:float, dt:float):
         :return:
             - **wave** -    amplitude sequence (float64)
     '''
+    from .c_interfaces import C_grt_free, C_grt_get_ricker_wave
+
     cnt = c_int(0)
 
     carr = C_grt_get_ricker_wave(dt, f0, byref(cnt))

@@ -19,17 +19,12 @@ import numpy as np
 import numpy.ctypeslib as npct
 from numpy.typing import NDArray
 
-from .cli import format_float, format_range, run_grt
-from .c_interfaces import C_grt_compute_travt1d_from_file, C_grt_free, PREAL
-from .utils import _dynamic_geometry_options, _resolve_rcv_points, _temporary_array_option
+from .cli import _dynamic_geometry_options, _resolve_rcv_points, _temporary_array_option, format_float, format_range, run_grt
 
 
 PathLike = Union[str, os.PathLike]
 FloatOrSequence = Union[float, Sequence[float], NDArray[np.floating[Any]]]
 IntOrSequence = Union[int, Sequence[int], NDArray[np.integer[Any]]]
-
-__all__ = ["PyModel1D"]
-
 
 def _normalize_float_array(
     values: FloatOrSequence,
@@ -270,6 +265,8 @@ class PyModel1D:
         :return: ``(travtP, travtS)`` in s. For a scalar distance both are floats;
                  for multiple distances both are NumPy arrays of shape ``(n,)``.
         """
+        from .c_interfaces import C_grt_compute_travt1d_from_file, C_grt_free, PREAL
+
         if depsrc < 0 or deprcv < 0:
             raise ValueError("Source and receiver depths must be nonnegative.")
 
