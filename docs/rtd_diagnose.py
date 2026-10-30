@@ -13,7 +13,9 @@ def main():
     command = sys.argv[1:]
     started = time.monotonic()
     print(f"START cwd={Path.cwd()} command={command!r} timeout={timeout}s", flush=True)
-    process = subprocess.Popen(command, start_new_session=True)
+    environment = os.environ.copy()
+    environment["PS4"] = "+ $SECONDS s $LINENO: "
+    process = subprocess.Popen(command, start_new_session=True, env=environment)
     try:
         result = process.wait(timeout=timeout)
     except subprocess.TimeoutExpired:
