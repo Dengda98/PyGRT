@@ -227,7 +227,7 @@ static void parse_axis(const char *text, char option, size_t *n, real_t **values
     if((sscanf(text, "%lf/%lf/%lf", &a1, &a2, &delta) != 3) || (delta <= 0.0) || (a1 > a2)){
         GRTRaiseError("Error in \"-%c\". expected x1/x2/dx with x1 <= x2 and dx > 0. Use \"-h\" for help.\n", option);
     }
-    *n = (size_t)floor((a2 - a1) / delta) + 1;
+    *n = (size_t)floor((a2 - a1) / delta + 1e-8) + 1;
     *values = GRT_SAFE_CALLOC(*n, sizeof(real_t));
     for(size_t i = 0; i < *n; ++i) (*values)[i] = a1 + i * delta;
 }

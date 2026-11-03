@@ -42,7 +42,7 @@ real_t grt_linear_filon_integ(
     real_t *kendrs = GRT_SAFE_CALLOC(nr, sizeof(real_t)); // 每个距离实际参与积分的最后一个波数
     bool iendk0 = false;
 
-    size_t nk = floor((kmax - k0) / dk) + 1L;
+    size_t nk = floor((kmax - k0) / dk + 1e-8) + 1L;
 
     // k循环 
     for(size_t ik = 0; ik < nk; ++ik){

@@ -500,8 +500,8 @@ void grt_finite_fault_subdiv(FINITE_FAULT *fault, real_t dL, real_t dW, size_t n
             dL = L;
             dW = W;
         } else {
-            fault->nW = GRT_MAX(1, (size_t)ceil(W / dW));
-            fault->nL = GRT_MAX(1, (size_t)ceil(L / dL));
+            fault->nW = GRT_MAX(1, (size_t)ceil(W / dW - 1e-8));
+            fault->nL = GRT_MAX(1, (size_t)ceil(L / dL - 1e-8));
         }
     }
 

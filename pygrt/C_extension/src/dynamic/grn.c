@@ -151,7 +151,7 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kproc, GRNSPEC *grn, co
         real_t kmax_ref = hypot(local_Kproc->k0, local_Kproc->ampk * w / local_Kproc->vmin);
         if(local_Kproc->use_kmax_ref){
             local_Kproc->kmax = kmax_ref;
-            size_t nk = floor(local_Kproc->kmax / local_Kproc->dk) + 1;
+            size_t nk = floor(local_Kproc->kmax / local_Kproc->dk + 1e-8) + 1;
             #pragma omp critical(grn_console)
             {
                 // 同步终端输出，避免日志覆盖进度条
@@ -167,7 +167,7 @@ void grt_integ_grn_spec(MODEL1D *mod1d, K_INTEG_PROCESS *Kproc, GRNSPEC *grn, co
             local_Kproc->kmax = grt_predict_kmax(local_mstat, grt_kernel, local_Kproc->dk,
                 w / local_Kproc->vmin, kmax_ref, &ncount);
                 
-            size_t nk = floor(local_Kproc->kmax / local_Kproc->dk) + 1;
+            size_t nk = floor(local_Kproc->kmax / local_Kproc->dk + 1e-8) + 1;
             bool kmax_reaches_ref = (local_Kproc->cvgmet == K_INTEG_CONVERG_AUTO &&
                 local_Kproc->kmax >= kmax_ref);
             if(kmax_reaches_ref){

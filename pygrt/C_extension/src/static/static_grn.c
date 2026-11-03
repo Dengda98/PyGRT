@@ -108,7 +108,7 @@ void grt_integ_static_grn(
     // 波数积分上限：在 [dk, kmax_ref] 内基于核函数振幅搜索
     if(Kproc->use_kmax_ref){
         Kproc->kmax = Kproc->k0;
-        size_t nk = floor(Kproc->kmax / Kproc->dk) + 1;
+        size_t nk = floor(Kproc->kmax / Kproc->dk + 1e-8) + 1;
         GRTRaiseInfo("kmax = %.3e, nk = %zu", Kproc->kmax, nk);
     } else {
         size_t ncount = 0, nk = 0;
@@ -118,7 +118,7 @@ void grt_integ_static_grn(
         static_kmax = grt_predict_kmax(kmax_mstat, grt_static_kernel, Kproc->dk,
             Kproc->dk, Kproc->k0, &ncount);
         grt_free_mod1d_state(kmax_mstat);
-        nk = floor(static_kmax / Kproc->dk) + 1;
+        nk = floor(static_kmax / Kproc->dk + 1e-8) + 1;
         GRTRaiseInfo("kmax = %.3e, (DWM)nk = %zu, kref = %.3e, ncount = %zu", static_kmax, nk, Kproc->k0, ncount);
         
         // 若 nk 不够，适当调整 dk

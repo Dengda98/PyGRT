@@ -910,10 +910,10 @@ static void prepare_grn_spec(
     size_t nf1 = 0;
     size_t nf2 = nf - 1;
     if(freq1 > 0.0){
-        nf1 = GRT_MIN(ceil(freq1 / df), nf - 1);
+        nf1 = GRT_MIN(ceil(freq1 / df - 1e-8), nf - 1);
     }
     if(freq2 > 0.0){
-        nf2 = GRT_MIN(floor(freq2 / df), nf - 1);
+        nf2 = GRT_MIN(floor(freq2 / df + 1e-8), nf - 1);
     }
     nf2 = GRT_MAX(nf1, nf2);
 

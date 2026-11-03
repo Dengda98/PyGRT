@@ -287,7 +287,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                         }
                     }
 
-                    Ctrl->F.nf = floor((a2-a1)/df) + 1;
+                    Ctrl->F.nf = floor((a2 - a1) / df + 1e-8) + 1;
                     Ctrl->F.freqs = GRT_SAFE_CALLOC(Ctrl->F.nf, sizeof(real_t));
                     for(size_t i = 0; i < Ctrl->F.nf; ++i){
                         if(isperiod){

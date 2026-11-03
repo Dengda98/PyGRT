@@ -79,7 +79,7 @@ real_t *grt_parse_real_array(const char *optarg, size_t *size, char ***s_values,
         if(a1 > a2){
             GRTRaiseError("-%c: start (%f) > end (%f).", optname, a1, a2);
         }
-        n = (size_t)floor((a2 - a1) / delta) + 1;
+        n = (size_t)floor((a2 - a1) / delta + 1e-8) + 1;
         s_vals = GRT_SAFE_CALLOC(n, sizeof(char *));
         for(size_t i = 0; i < n; ++i){
             GRT_SAFE_ASPRINTF(&s_vals[i], "%.15g", a1 + delta * i);

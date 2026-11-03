@@ -257,9 +257,8 @@ int faultdiv_main(int argc, char **argv)
         // 尺寸与目标间隔之比四舍五入，确定各方向的整数等分数，最少保留一块
         real_t nL = GRT_MAX(1.0, round(L / Ctrl->I.dL));
         real_t nW = GRT_MAX(1.0, round(W / Ctrl->I.dW));
-        // 间隔向上取相邻浮点值，避免通用剖分函数的 ceil 因舍入误差多生成一块
-        real_t dL = nextafter(L / nL, INFINITY);
-        real_t dW = nextafter(W / nW, INFINITY);
+        real_t dL = L / nL;
+        real_t dW = W / nW;
         grt_finite_fault_subdiv(f, dL, dW, 0, NULL);
     }
 

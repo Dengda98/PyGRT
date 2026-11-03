@@ -275,7 +275,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                             GRTBadOptionError(N, "n1(%zd) > n2(%zd).", a1, a2);
                         }
                     }
-                    Ctrl->N.nmode = floor((a2-a1)/dif) + 1;
+                    Ctrl->N.nmode = (a2 - a1) / dif + 1;
                     Ctrl->N.modes = GRT_SAFE_CALLOC(Ctrl->N.nmode, sizeof(size_t));
                     for(size_t i=0; i < Ctrl->N.nmode; ++i){
                         Ctrl->N.modes[i] = a1 + dif*i;

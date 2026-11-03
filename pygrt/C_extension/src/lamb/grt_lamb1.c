@@ -148,7 +148,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                         GRTBadOptionError(T, "t1(%f) > t2(%f).", a1, a2);
                     }
 
-                    Ctrl->T.nt = floor((a2-a1)/delta) + 1;
+                    Ctrl->T.nt = floor((a2 - a1) / delta + 1e-8) + 1;
                     Ctrl->T.ts = GRT_SAFE_CALLOC(Ctrl->T.nt, sizeof(real_t));
                     for(int i=0; i<Ctrl->T.nt; ++i){
                         Ctrl->T.ts[i] = a1 + delta*i;

@@ -264,7 +264,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                         }
                     }
 
-                    Ctrl->F.nf = floor((a2-a1)/df) + 1;
+                    Ctrl->F.nf = floor((a2 - a1) / df + 1e-8) + 1;
                     // 至少要有两个频率点，才能在程序中用差分计算 df
                     if(Ctrl->F.nf < 2){
                         GRTBadOptionError(F, "Too few frequency points, only %zu.", Ctrl->F.nf);
@@ -313,7 +313,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv)
                             GRTBadOptionError(C, "cmin(%lf) >= cmax(%lf).", Ctrl->C.cmin, Ctrl->C.cmax);
                         }
 
-                        Ctrl->C.nc = floor((a2-a1)/df) + 1;
+                        Ctrl->C.nc = floor((a2 - a1) / df + 1e-8) + 1;
                         Ctrl->C.c_phases = GRT_SAFE_CALLOC(Ctrl->C.nc, sizeof(real_t));
                         for(size_t i=0; i<Ctrl->C.nc; ++i){
                             Ctrl->C.c_phases[i] = a1 + df*i;
@@ -394,7 +394,7 @@ int kernel_main(int argc, char **argv)
     {
         Ctrl->C.cmin = 0.8 * vmin;
         Ctrl->C.cmax = vmax;
-        Ctrl->C.nc = floor((Ctrl->C.cmax - Ctrl->C.cmin)/Ctrl->C.dc) + 1;
+        Ctrl->C.nc = floor((Ctrl->C.cmax - Ctrl->C.cmin) / Ctrl->C.dc + 1e-8) + 1;
         Ctrl->C.c_phases = GRT_SAFE_CALLOC(Ctrl->C.nc, sizeof(real_t));
         for(size_t i=0; i<Ctrl->C.nc; ++i){
             Ctrl->C.c_phases[i] = Ctrl->C.cmin + Ctrl->C.dc*i;

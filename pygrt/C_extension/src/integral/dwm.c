@@ -42,7 +42,7 @@ real_t grt_discrete_integ(
     bool *iendkrs = GRT_SAFE_CALLOC(nr, sizeof(bool)); // 自动初始化为 false
     bool iendk0 = false;
 
-    size_t nk = floor(kmax / dk) + 1L;
+    size_t nk = floor(kmax / dk + 1e-8) + 1L;
 
     // 波数k循环 (5.9.2)
     for(size_t ik = 0; ik < nk; ++ik){

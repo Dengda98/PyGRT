@@ -198,7 +198,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                             GRTBadOptionError(N, "n1(%zd) > n2(%zd).", a1, a2);
                         }
                     }
-                    Ctrl->N.nmode = floor((a2-a1)/dif) + 1;
+                    Ctrl->N.nmode = (a2 - a1) / dif + 1;
                     Ctrl->N.modes = GRT_SAFE_CALLOC(Ctrl->N.nmode, sizeof(size_t));
                     for(size_t i=0; i < Ctrl->N.nmode; ++i){
                         Ctrl->N.modes[i] = a1 + dif*i;
@@ -259,7 +259,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                     }
 
                     if(nscan == 3 || nscan == 1){
-                        Ctrl->F.nf = floor((a2-a1)/df) + 1;
+                        Ctrl->F.nf = floor((a2 - a1) / df + 1e-8) + 1;
                         Ctrl->F.freqs = GRT_SAFE_CALLOC(Ctrl->F.nf, sizeof(real_t));
                         for(size_t i=0; i<Ctrl->F.nf; ++i){
                             if(isperiod){
@@ -374,7 +374,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                                     }
                                 }
 
-                                Ctrl->W.nz = floor((a2-a1)/dif) + 1;
+                                Ctrl->W.nz = floor((a2 - a1) / dif + 1e-8) + 1;
                                 Ctrl->W.zs = GRT_SAFE_CALLOC(Ctrl->W.nz, sizeof(real_t));
                                 for(size_t i=0; i<Ctrl->W.nz; ++i){
                                     Ctrl->W.zs[i] = a1 + dif*i;
