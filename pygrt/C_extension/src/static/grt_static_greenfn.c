@@ -465,7 +465,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                         GRTBadOptionError(X, "x1(%f) > x2(%f).", a1, a2);
                     }
 
-                    Ctrl->X.nnorth = floor((a2-a1)/delta) + 1;
+                    Ctrl->X.nnorth = floor((a2 - a1) / delta + 1e-8) + 1;
                     Ctrl->X.norths = GRT_SAFE_CALLOC(Ctrl->X.nnorth, sizeof(real_t));
                     for(size_t i=0; i<Ctrl->X.nnorth; ++i){
                         Ctrl->X.norths[i] = a1 + delta*i;
@@ -488,7 +488,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                         GRTBadOptionError(Y, "y1(%f) > y2(%f).", a1, a2);
                     }
 
-                    Ctrl->Y.neast = floor((a2-a1)/delta) + 1;
+                    Ctrl->Y.neast = floor((a2 - a1) / delta + 1e-8) + 1;
                     Ctrl->Y.easts = GRT_SAFE_CALLOC(Ctrl->Y.neast, sizeof(real_t));
                     for(size_t i=0; i<Ctrl->Y.neast; ++i){
                         Ctrl->Y.easts[i] = a1 + delta*i;

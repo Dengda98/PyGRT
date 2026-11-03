@@ -171,7 +171,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                             place++;
                         } while (place < 8);  // 最多小数点后 8 位
 
-                        Ctrl->R.nr = floor((a2-a1)/delta) + 1;
+                        Ctrl->R.nr = floor((a2 - a1) / delta + 1e-8) + 1;
                         Ctrl->R.s_rs = GRT_SAFE_CALLOC(Ctrl->R.nr, sizeof(char*) * Ctrl->R.nr);
                         for(size_t ir = 0; ir < Ctrl->R.nr; ++ir){
                             GRT_SAFE_ASPRINTF(&Ctrl->R.s_rs[ir], "%.*f", place, a1 + delta*ir);

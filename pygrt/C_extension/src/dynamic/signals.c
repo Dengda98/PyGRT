@@ -472,7 +472,7 @@ real_t * grt_get_ricker_wave(real_t dt, real_t f0, int *Nt){
 
     // 峰值时刻为 1/f0，采样窗口覆盖其前后各一个周期
     real_t peak_time = 1.0 / f0;
-    int nt = 2 * ((int)floor(peak_time / dt) + 1);
+    int nt = 2 * ((int)floor(peak_time / dt + 1e-8) + 1);
     real_t *arr = GRT_SAFE_CALLOC(nt, sizeof(*arr));
 
     // 按下标直接计算时间，避免累加 dt 的舍入误差，保留解析波形的单位峰值
@@ -554,7 +554,7 @@ real_t * grt_get_custom_wave(real_t dt, int *Nt, const char *tfparams){
         }
 
         // 两列数据直接线性插值到 dt 采样
-        int newnt = (int)ceil(times[nt - 1] / dt) + 1;
+        int newnt = (int)ceil(times[nt - 1] / dt - 1e-8) + 1;
         real_t *arr = GRT_SAFE_CALLOC(newnt, sizeof(*arr));
 
         int j = 0;
