@@ -13,6 +13,9 @@
 #include "grt/common/const.h"
 #include "grt/common/sacio.h_"
 
+#define GRT_SAC_HEADER_BYTES   (SAC_HEADER_NUMBERS_SIZE + SAC_HEADER_STRINGS_SIZE)  ///< SAC v6 磁盘头段字节数
+#define GRT_SAC_BLOCK_SAMPLES  65536  ///< 分块 SAC 读写的最大样本数
+
 /**
  * PyGRT 自定义 SAC 头段字段的语义访问宏
  *
@@ -115,6 +118,22 @@ void grt_sachead_set_begin(SACHEAD *hd, real_t begin);
 
 /** 将 SACTRACE 保存到本地，临时转换为 float，不修改工作波形，写出失败直接报错 */
 void grt_write_SACTRACE(const char *path, SACTRACE *sac);
+
+/**
+ * 使用固定缓冲区建立全零的等间隔 SAC v6 文件
+ * @param[in]  path  输出文件路径
+ * @param[in]  hd    已设置采样和接收信息的头段
+ */
+void grt_create_zero_SAC(const char *path, const SACHEAD *hd);
+
+/**
+ * 使用单精度缓冲区原位叠加 SAC 数据片段，不更新统计头段
+ * @param[in]  path   目标等间隔 SAC v6 文件路径
+ * @param[in]  first  目标起始样本索引，从零开始
+ * @param[in]  count  待叠加样本数
+ * @param[in]  data   单精度输入样本
+ */
+void grt_add_SAC_window(const char *path, long long first, size_t count, const float *data);
 
 /** 释放 SACTRACE 指针 */
 void grt_free_SACTRACE(SACTRACE *sac);

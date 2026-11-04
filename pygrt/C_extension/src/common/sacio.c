@@ -5,15 +5,97 @@
  * 
  */
 
+#define _FILE_OFFSET_BITS 64  ///< 统一使用 64 位文件偏移，需在系统头文件之前定义
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
 
 #include "grt/common/sacio.h"
 #include "grt/common/const.h"
 #include "grt/common/checkerror.h"
 
 #include "sacio.c_"
+
+/** 按磁盘格式和大文件偏移定位 SAC 样本 */
+static void seek_SAC_sample(FILE *fp, const char *path, long long first)
+{
+    off_t offset = GRT_SAC_HEADER_BYTES + (off_t)SAC_DATA_SIZEOF * first;
+    if(fseeko(fp, offset, SEEK_SET) != 0) {
+        GRTRaiseError("Cannot seek to sample %lld in %s.", first, path);
+    }
+}
+
+void grt_create_zero_SAC(const char *path, const SACHEAD *hd)
+{
+    FILE *fp = GRTCheckOpenFile(path, "wb");
+    if(write_head_out(path, *hd, fp) != 0) {
+        GRTRaiseError("Cannot write SAC header: %s.", path);
+    }
+
+    // 真实写入零数据，内存占用与记录长度无关
+    float *buffer = GRT_SAFE_CALLOC(GRT_SAC_BLOCK_SAMPLES, sizeof(*buffer));
+    size_t remaining = hd->npts;
+    while(remaining > 0) {
+        size_t count = GRT_MIN(remaining, GRT_SAC_BLOCK_SAMPLES);
+        if(fwrite(buffer, sizeof(*buffer), count, fp) != count) {
+            GRTRaiseError("Cannot initialize SAC data: %s.", path);
+        }
+        remaining -= count;
+    }
+    GRT_SAFE_FREE_PTR(buffer);
+    if(fflush(fp) != 0) {
+        GRTRaiseError("Cannot flush SAC data: %s.", path);
+    }
+    off_t actual = ftello(fp);
+    off_t expected = GRT_SAC_HEADER_BYTES + (off_t)SAC_DATA_SIZEOF * hd->npts;
+    if(actual != expected) {
+        GRTRaiseError("Unexpected SAC file size: %s.", path);
+    }
+    if(fclose(fp) != 0) {
+        GRTRaiseError("Cannot close SAC file: %s.", path);
+    }
+}
+
+void grt_add_SAC_window(const char *path, long long first, size_t count, const float *data)
+{
+    FILE *fp = GRTCheckOpenFile(path, "r+b");
+    SACHEAD hd;
+    int swap = read_head_in(path, &hd, fp);
+    if(swap < 0 || hd.iftype != ITIME || !hd.leven || first < 0 || first + (long long)count > hd.npts) {
+        GRTRaiseError("Invalid SAC update window: %s.", path);
+    }
+
+    float *buffer = GRT_SAFE_MALLOC(GRT_SAC_BLOCK_SAMPLES * sizeof(*buffer));
+    size_t done = 0;
+    while(done < count) {
+        size_t n = GRT_MIN(count - done, GRT_SAC_BLOCK_SAMPLES);
+        seek_SAC_sample(fp, path, first + (long long)done);
+        if(fread(buffer, sizeof(*buffer), n, fp) != n) {
+            GRTRaiseError("Cannot read SAC window: %s.", path);
+        }
+        if(swap) {
+            byte_swap((char *)buffer, n * sizeof(*buffer));
+        }
+        for(size_t i = 0; i < n; ++i) {
+            buffer[i] += data[done + i];
+        }
+        if(swap) {
+            byte_swap((char *)buffer, n * sizeof(*buffer));
+        }
+        // 更新模式的读写切换必须重新定位，写回原来的字节位置
+        seek_SAC_sample(fp, path, first + (long long)done);
+        if(fwrite(buffer, sizeof(*buffer), n, fp) != n) {
+            GRTRaiseError("Cannot write SAC window: %s.", path);
+        }
+        done += n;
+    }
+    GRT_SAFE_FREE_PTR(buffer);
+    if(fclose(fp) != 0) {
+        GRTRaiseError("Cannot close SAC file: %s.", path);
+    }
+}
 
 void grt_sachead_set_begin(SACHEAD *hd, real_t begin)
 {

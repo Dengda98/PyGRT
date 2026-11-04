@@ -13,6 +13,9 @@
 /** 当前模块名，根据所调用模块进行切换 */
 const char *GRT_MODULE_NAME = "grt";
 
+/** 当前 grt 可执行文件路径，由主函数记录 argv[0] */
+const char *GRT_EXECUTABLE = GRT_MAIN_COMMAND;
+
 
 
 /** 分别对应爆炸源(0阶)，垂直力源(0阶)，水平力源(1阶)，剪切源(0,1,2阶) */ 

@@ -11,6 +11,7 @@
 
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "grt/common/const.h"
 #include "grt/common/model.h"
@@ -138,6 +139,33 @@ bool grt_is_same_file(const char *path1, const char *path2);
  * @param[in]    dst     目标文件路径
  */
 void grt_copy_file(const char *src, const char *dst);
+
+/** 子进程标识，POSIX 下为进程号，Windows 下为进程句柄 */
+typedef intptr_t GRT_PROCESS;
+
+/**
+ * 通过系统 shell 启动完整命令并立即返回，输出直接显示在终端
+ * 命令遵循对应 shell 的语法，调用方负责检查拼入命令的路径等参数
+ *
+ * @param[in]    command    完整命令字符串，返回后即可释放
+ * @return       子进程标识，必须通过 grt_wait_processes 等待结束
+ */
+GRT_PROCESS grt_start_command(const char *command);
+
+/**
+ * 等待一批子进程，全部回收后检查是否有失败的命令并报错
+ *
+ * @param[in]    count      进程数
+ * @param[in]    processes  子进程标识数组，每个进程只能等待一次
+ */
+void grt_wait_processes(size_t count, const GRT_PROCESS *processes);
+
+/**
+ * 通过系统 shell 执行完整命令并等待结束，命令失败时直接报错
+ *
+ * @param[in]    command    完整命令字符串
+ */
+void grt_run_command(const char *command);
 
 /**
  * 由于 Windows MSYS2 环境没有 getline 函数（即使定义了 _GNU_SOURCE）

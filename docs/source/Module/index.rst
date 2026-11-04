@@ -173,6 +173,7 @@
     - :doc:`faultconvert`
     - :doc:`faultdiv`
     - :doc:`fault2nc`
+    - :doc:`synnoise`
 
 .. toctree::
     :maxdepth: 1
@@ -189,6 +190,7 @@
     eigenv
     eigenfn
     modsum
+    synnoise
     static_greenfn
     static_syn
     static_strain

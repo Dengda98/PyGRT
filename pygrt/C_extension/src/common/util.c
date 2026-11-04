@@ -12,10 +12,72 @@
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
+#include <errno.h>
 
 #include "grt/common/util.h"
 #include "grt/common/const.h"
 #include "grt/common/checkerror.h"
+
+#if _TEST_WHETHER_WIN32_
+    #include <process.h>
+#else
+    #include <spawn.h>
+    #include <sys/wait.h>
+    extern char **environ;
+#endif
+
+GRT_PROCESS grt_start_command(const char *command)
+{
+    fflush(NULL);
+    GRT_PROCESS process;
+    int error;
+    #if _TEST_WHETHER_WIN32_
+        const char *shell = getenv("COMSPEC");
+        process = _spawnlp(_P_NOWAIT, shell ? shell : "cmd.exe", "cmd.exe", "/c", command, NULL);
+        error = process == -1 ? errno : 0;
+    #else
+        char *args[] = {"sh", "-c", (char *)command, NULL};
+        pid_t pid = 0;
+        error = posix_spawn(&pid, "/bin/sh", NULL, NULL, args, environ);
+        process = pid;
+    #endif
+    if(error != 0) {
+        GRTRaiseError("Cannot start command %s: %s.", command, strerror(error));
+    }
+    return process;
+}
+
+void grt_wait_processes(size_t count, const GRT_PROCESS *processes)
+{
+    bool failed = false;
+    for(size_t i = 0; i < count; ++i) {
+        int status;
+        intptr_t result;
+        do {
+            #if _TEST_WHETHER_WIN32_
+                result = _cwait(&status, processes[i], 0);
+            #else
+                result = waitpid((pid_t)processes[i], &status, 0);
+            #endif
+        } while(result == -1 && errno == EINTR);
+        if(result == -1) {
+            GRTRaiseError("Cannot wait for command: %s.", strerror(errno));
+        }
+        // 先回收本批所有进程，再统一报错；两种等待接口均以零状态表示成功
+        if(status != 0) {
+            failed = true;
+        }
+    }
+    if(failed) {
+        GRTRaiseError("One or more child commands failed.");
+    }
+}
+
+void grt_run_command(const char *command)
+{
+    GRT_PROCESS process = grt_start_command(command);
+    grt_wait_processes(1, &process);
+}
 
 char ** grt_string_split(const char *string, const char *delim, size_t *size)
 {
