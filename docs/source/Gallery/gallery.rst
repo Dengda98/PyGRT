@@ -64,6 +64,8 @@
         {{ card('23')  | indent(8, first=true) }}
 
         {{ card('24')  | indent(8, first=true) }}
+        
+        {{ card('25')  | indent(8, first=true) }}
 
     .. raw:: html
 

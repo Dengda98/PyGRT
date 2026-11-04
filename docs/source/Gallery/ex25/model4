@@ -1,0 +1,6 @@
+# Four-layer model: three finite layers and a half-space
+# h(km)  Vp(km/s)  Vs(km/s)  rho(g/cm^3)
+  2.0      4.20      2.40       2.40
+  2.5      4.90      2.80       2.50
+  3.0      5.70      3.30       2.65
+  0.0      6.60      3.80       2.80
