@@ -40,6 +40,7 @@
                                   typedef structure to be SACHEAD
         12/06/96  Lupei Zhu       prototype sacio functions
         05/04/13  Dongdong Tian   modify headers according to SAC v101.5
+        11/04/26  Dengda Zhu      update internal and unused variable names
 *******************************************************************************/
 
 #ifndef SACIO_H
@@ -79,7 +80,7 @@ typedef struct sac_head {
     float e;                /* RD ending value of the independent variable    */
     float o;                /*    event origin time(seconds wrt referece time)*/
     float a;                /*    1st arrival time (seconds wrt referece time)*/
-    float internal1;        /*    internal use                                */
+    float internal0;        /*    internal use                                */
     float t0;               /*    user-defined time pick                      */
     float t1;               /*    user-defined time pick                      */
     float t2;               /*    user-defined time pick                      */
@@ -124,22 +125,22 @@ typedef struct sac_head {
     float az;               /*    event-station azimuth                       */
     float baz;              /*    station-event azimuth                       */
     float gcarc;            /*    station-event great arc length (degrees)    */
+    float internal1;        /*    internal use                                */
     float internal2;        /*    internal use                                */
-    float internal3;        /*    internal use                                */
     float depmen;           /*    mean value of dependent variable            */
     float cmpaz;            /*  T component azimuth (degree CW from north)    */
     float cmpinc;           /*  T component inclination (degree from vertical)*/
     float xminimum;         /*    minimum value of X (spectral files only)    */
     float xmaximum;         /*    maximum value of X (spectral files only)    */
     float yminimum;         /*    minimum value of Y (spectral files only)    */
-    float ymaximun;         /*    maximum value of Y (spectral files only)    */
-    float unused1;          /*    reserved for future use                     */
-    float unused2;          /*    reserved for future use                     */
-    float unused3;          /*    reserved for future use                     */
-    float unused4;          /*    reserved for future use                     */
-    float unused5;          /*    reserved for future use                     */
+    float ymaximum;         /*    maximum value of Y (spectral files only)    */
     float unused6;          /*    reserved for future use                     */
     float unused7;          /*    reserved for future use                     */
+    float unused8;          /*    reserved for future use                     */
+    float unused9;          /*    reserved for future use                     */
+    float unused10;         /*    reserved for future use                     */
+    float unused11;         /*    reserved for future use                     */
+    float unused12;         /*    reserved for future use                     */
     int   nzyear;           /*  F GMT year corresponding to zero time of file */
     int   nzjday;           /*  F GMT julia day                               */
     int   nzhour;           /*  F GMT hour                                    */
@@ -150,15 +151,15 @@ typedef struct sac_head {
     int   norid;            /*    origin ID (CSS 3.0)                         */
     int   nevid;            /*    event ID (CSS 3.0)                          */
     int   npts;             /* RF number of points per data component         */
-    int   internal4;        /*    internal use                                */
+    int   internal3;        /*    internal use                                */
     int   nwfid;            /*    waveform ID (CSS 3.0)                       */
     int   nxsize;           /*    spectral length (spectral files only)       */
     int   nysize;           /*    spectral width (spectral files only)        */
-    int   unused8;          /*    reserved for future use                     */
+    int   unused13;         /*    reserved for future use                     */
     int   iftype;           /* RA type of file                                */
     int   idep;             /*    type of dependent variable                  */
     int   iztype;           /*    reference time equivalence                  */
-    int   unused9;          /*    reserved for future use                     */
+    int   unused14;         /*    reserved for future use                     */
     int   iinst;            /*    type of recording instrument (not used)     */
     int   istreg;           /*    station geographic region (not used)        */
     int   ievreg;           /*    event geographic region (not used)          */
@@ -167,19 +168,19 @@ typedef struct sac_head {
     int   isynth;           /*    synthetic data flag (not used)              */
     int   imagtyp;          /*    magnitude type                              */
     int   imagsrc;          /*    source of magnitude information             */
-    int   unused10;         /*    reserved for future use                     */
-    int   unused11;         /*    reserved for future use                     */
-    int   unused12;         /*    reserved for future use                     */
-    int   unused13;         /*    reserved for future use                     */
-    int   unused14;         /*    reserved for future use                     */
     int   unused15;         /*    reserved for future use                     */
     int   unused16;         /*    reserved for future use                     */
     int   unused17;         /*    reserved for future use                     */
+    int   unused18;         /*    reserved for future use                     */
+    int   unused19;         /*    reserved for future use                     */
+    int   unused20;         /*    reserved for future use                     */
+    int   unused21;         /*    reserved for future use                     */
+    int   unused22;         /*    reserved for future use                     */
     int   leven;            /* RA TRUE if data is evenly spaced               */
     int   lpspol;           /*    station polarity flag (left hand rule)      */
     int   lovrok;           /*    overwrite permission                        */
     int   lcalda;           /*    true if to calculate distance, azimuth      */
-    int   unused18;         /*    reserved for future use                     */
+    int   unused23;         /*    reserved for future use                     */
     char  kstnm[9];         /*  F station name                                */
     char  kevnm[18];        /*    event name                                  */
     char  khole[9];         /*    nuclear: hole id; Other: location id;       */
