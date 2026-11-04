@@ -205,8 +205,8 @@ class PyModel1D:
         :param    grn:                Root directory for dynamic Green's functions.
         :param    stgrn:              NetCDF file path for static Green's functions.
         :param    modelpath:          Path to the layered model file. Required by
-                                      :meth:`eigenv`, :meth:`greenfn` and
-                                      :meth:`static_greenfn`. Travel-time
+                                      :meth:`eigenv`, :meth:`greenfn`, :meth:`synnoise`
+                                      and :meth:`static_greenfn`. Travel-time
                                       calculations also need it, unless a per-call
                                       ``modelpath`` is passed to :meth:`travt`.
         :param    topbound:           Top boundary condition. One of ``free``, ``rigid`` and ``halfspace``.
@@ -708,6 +708,43 @@ class PyModel1D:
                 command["Dr"] = rcv_option
             command["R"] = option
             run_grt(list(command.values()), print_log=print_log)
+
+    def synnoise(
+        self,
+        *,
+        source_file: PathLike,
+        receiver_file: PathLike,
+        output_path: PathLike,
+        modes: Optional[IntOrSequence] = 0,
+        nthreads: Optional[int] = None,
+        print_log: bool = True,
+    ) -> None:
+        """Simulate ZNE ambient-noise velocity records (cm/s) with ``grt synnoise``.
+
+        Requires ``modelpath`` with a free surface and half-space bottom.
+        See :doc:`/Module/synnoise` for the source and receiver file formats.
+
+        :param    source_file:   Source coordinates and random sampling parameters.
+        :param    receiver_file: Sampling interval, record length and receiver coordinates.
+        :param    output_path:   New or empty output directory.
+        :param    modes:         Mode index or ``(n1, n2[, dn])``; ``None`` selects all modes.
+        :param    nthreads:      Positive parallel worker count; ``None`` uses all available cores.
+        :param    print_log:     Whether to print regular progress messages.
+        """
+        if self.modelpath is None:
+            raise RuntimeError("Pass modelpath= to PyModel1D(...) before synnoise().")
+        if self.topbound != "free" or self.botbound != "halfspace":
+            raise ValueError("synnoise requires a free surface and half-space bottom.")
+
+        # 复用命令参数格式化，输入文件和采样约束由 C 模块检查
+        command = ["synnoise", f"-M{self.modelpath}", f"-C{Path(source_file)}", f"-U{Path(receiver_file)}", f"-O{Path(output_path)}",
+                   "-N" if modes is None else f"-N{_format_mode_option(modes)}"]
+        threads = _nthreads_option(nthreads)
+        if threads is not None:
+            command.append(threads)
+        if not print_log:
+            command.append("-s")
+        run_grt(command, print_log=print_log)
 
     def greenfn(
         self,

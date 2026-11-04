@@ -661,8 +661,8 @@ int modsum_main(int argc, char **argv){
             Ctrl->G.doDC = doDC;
             GRT_SAFE_FREE_PTR(Ctrl->D.s_depsrc);
             GRT_SAFE_FREE_PTR(Ctrl->D.s_deprcv);
-            GRT_SAFE_ASPRINTF(&Ctrl->D.s_depsrc, "%g", Ctrl->D.depsrc);
-            GRT_SAFE_ASPRINTF(&Ctrl->D.s_deprcv, "%g", Ctrl->D.deprcv);
+            GRT_SAFE_ASPRINTF(&Ctrl->D.s_depsrc, "%.17g", Ctrl->D.depsrc);
+            GRT_SAFE_ASPRINTF(&Ctrl->D.s_deprcv, "%.17g", Ctrl->D.deprcv);
             compute_modsum_one(Ctrl, mod1d, eigmet);
         }
     }

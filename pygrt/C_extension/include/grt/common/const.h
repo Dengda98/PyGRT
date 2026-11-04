@@ -211,6 +211,9 @@ enum {
 /** 当前模块名，根据所调用模块进行切换 */
 extern const char *GRT_MODULE_NAME;
 
+/** 当前 grt 可执行文件路径，由主函数记录 argv[0] */
+extern const char *GRT_EXECUTABLE;
+
 /** 共有的命令行处理语句 */ 
 #define GRT_Common_Options_in_Switch(X) \
     /** 帮助 */  \
@@ -281,7 +284,7 @@ void grt_set_num_threads(int num_threads);
 
 /**
  * 根据当前 OpenMP 配置和任务数量获取并行线程数，未启用 OpenMP 时返回 1
- * @param[in]  ntasks  并行任务数量，必须为正
+ * @param[in]  ntasks  并行任务数量，必须为正；传入 -1 时转换为 size_t 最大值，不限制线程数
  * @return     不超过任务数量的线程数
  */
 int grt_get_num_threads(size_t ntasks);
