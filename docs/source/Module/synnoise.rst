@@ -109,3 +109,9 @@ synnoise
 
 .. include:: explain_-silent.rst_
 .. include:: explain_-h.rst_
+
+
+示例
+------------
+
++ :doc:`/Gallery/ex25/ex25`
