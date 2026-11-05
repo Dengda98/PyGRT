@@ -9,8 +9,8 @@ from obspy import Stream, Trace, read
 # 输入、临时目录及预处理和分段参数
 INPUT          = Path("ambient_run")
 OUTPUT         = Path("ambient_segments")
-FREQMIN        = 0.1                        # 带通滤波频带下限，Hz
-FREQMAX        = 1.0                        # 带通滤波频带上限，Hz
+FREQMIN        = 0.05                       # 带通滤波频带下限，Hz
+FREQMAX        = 2.0                        # 带通滤波频带上限，Hz
 WINDOW_SECONDS = 300.0                      # 不重叠的分段长度，s
 
 

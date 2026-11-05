@@ -82,3 +82,25 @@
 .. figure:: ambient_figures/profiles/STA001.png
     :align: center
     :width: 70%
+
+示例中也提供了一个 **FTAN（Frequency-Time Analysis，频率–时间分析）的简易版脚本**，
+用于进行群速度和相速度拾取，下图展示了其中一条互相关的处理结果。
+
+.. figure:: ambient_figures/ftan.png
+    :align: center
+
+而在实际数据处理中，拾取频散还需要加入一些频散追踪的技巧，以及考虑远场条件（例如取台间距大于两倍波长）和各种质量控制。
+
+参考文献
+========================
+
++ Bensen, G. D., Ritzwoller, M. H., Barmin, M. P., Levshin, A. L., Lin, F.,
+  Moschetti, M. P., Shapiro, N. M., and Yang, Y. (2007).
+  Processing seismic ambient noise data to obtain reliable broad-band surface wave dispersion measurements.
+  Geophysical Journal International, 169(3), 1239–1260.
+  doi: `10.1111/j.1365-246X.2007.03374.x <https://doi.org/10.1111/j.1365-246X.2007.03374.x>`_
+
++ Levshin, A. L., and Ritzwoller, M. H. (2001).
+  Automated Detection, Extraction, and Measurement of Regional Surface Waves.
+  Pure and Applied Geophysics, 158(8), 1531–1545.
+  doi: `10.1007/PL00001233 <https://doi.org/10.1007/PL00001233>`_

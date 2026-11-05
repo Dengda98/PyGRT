@@ -12,6 +12,7 @@ INPUT          = Path("ambient_ccf")
 OUTPUT         = Path("ambient_figures/profiles")
 VIRTUAL_SOURCE = "STA001"                   # 虚拟源台站名；None 表示绘制全部台站
 COMPONENT      = "ZZ"                       # 互相关分量，可选 "ZZ"、"RR" 或 "TT"
+PLOT_LAG       = 30.0                       # 绘图显示的最大正负时延，s
 FIGSIZE        = (6, 6)                     # 图幅的宽和高，英寸
 TRACE_SCALE    = 1.5                        # 每条互相关归一化后的绘图半振幅，km
 
@@ -58,7 +59,7 @@ for name in sources:
         ax.plot(lags, wiggle, color="black", linewidth=0.6)
         ax.fill_between(lags, baseline, wiggle, where=values > 0, color="black", alpha=0.35, linewidth=0)
 
-    ax.set(title=COMPONENT, xlabel="Lag (s)", ylabel="Epicentral distance (km)", xlim=(lags[0], lags[-1]), ylim=(0, ymax))
+    ax.set(title=COMPONENT, xlabel="Lag (s)", ylabel="Epicentral distance (km)", xlim=(-PLOT_LAG, PLOT_LAG), ylim=(0, ymax))
 
     fig.suptitle(f"Virtual source: {name}")
     fig.tight_layout(rect=(0, 0, 1, 0.96))

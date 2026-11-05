@@ -723,6 +723,8 @@ class PyModel1D:
 
         Requires ``modelpath`` with a free surface and half-space bottom.
         See :doc:`/Module/synnoise` for the source and receiver file formats.
+        Saves Rayleigh and Love phase/group dispersion as ``phaseR.nc``,
+        ``phaseL.nc``, ``groupR.nc`` and ``groupL.nc`` in ``output_path``.
 
         :param    source_file:   Source coordinates and random sampling parameters.
         :param    receiver_file: Sampling interval, record length and receiver coordinates.

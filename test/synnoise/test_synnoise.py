@@ -10,6 +10,12 @@ model = pygrt.PyModel1D(modelpath="../milrow")
 model.synnoise(source_file="noise_sources.txt", receiver_file="noise_receivers.txt",
                output_path="noise_python", modes=None, nthreads=2, print_log=False)
 
+# CLI 和 Python 输出均包含 Rayleigh、Love 群速度频散
+pygrt.io.read_dispersion("noise_cli/groupR.nc")
+pygrt.io.read_dispersion("noise_cli/groupL.nc")
+pygrt.io.read_dispersion("noise_python/groupR.nc")
+pygrt.io.read_dispersion("noise_python/groupL.nc")
+
 points = noise.random_points(2, radius_range=(2, 3), depth=0.5, seed=0)
 noise.write_sources("helper_sources.txt", points, interval=0.5, force_z_range=(-0.5, 1),
                     force_azimuth_range=(30, 150), strength_range=(1e15, 3e15), seed=0)

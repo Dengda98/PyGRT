@@ -8,5 +8,6 @@ python 03_segment_ambient_noise.py
 python 04_compute_ccf.py
 python 05_plot_geom_disp.py
 python 06_plot_ccf.py
+python 07_ftan.py
 
 cp ambient_figures/profiles/STA001.png cover.png
