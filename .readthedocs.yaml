@@ -34,8 +34,14 @@ build:
     
     pre_build:
       # 后台持续运行 compile.sh，规避 RTD 长前台命令结束后不继续推进的问题
-      # 每次轮询最多等待 45 秒，14 次合计最多等待 630 秒，最后检查退出状态
+      # 每次轮询最多等待 45 秒，最后检查退出状态
       - cd docs && python rtd_build.py start
+      - cd docs && python rtd_build.py poll
+      - cd docs && python rtd_build.py poll
+      - cd docs && python rtd_build.py poll
+      - cd docs && python rtd_build.py poll
+      - cd docs && python rtd_build.py poll
+      - cd docs && python rtd_build.py poll
       - cd docs && python rtd_build.py poll
       - cd docs && python rtd_build.py poll
       - cd docs && python rtd_build.py poll
