@@ -29,7 +29,7 @@
 - **Surface-wave modal solutions** (dispersion curves, eigenfunctions, and surface-wave synthesis)
 - **Static solutions** (static Green's functions, synthetic displacements, and Coulomb stress)
 - **Multiple source types** (explosion, single-force, double-couple, tensile, moment-tensor, and finite-fault sources)
-- **Auxiliary modules** (kernels, Lamb problem, Okada solution, and format conversions)
+- **Auxiliary modules** (kernels, Lamb problem, Okada solution, format conversions, and ambient noise simulation)
 - **CLI and Python API** (modular `grt` command-line tool and Python interface)
 - **Actively maintained** — see the [documentation](https://pygrt.readthedocs.io/zh-cn/) for modules and tutorials
 
