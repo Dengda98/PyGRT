@@ -1,6 +1,50 @@
 Changelog
 ====================
 
+## PyGRT v0.19.0
+
+This release reorganizes the **Python API** and introduces **surface-wave ambient noise simulation**. Existing Python scripts may need updates before use.
+
+### Python API Changes
+
+Functions previously accessed through `pygrt.utils` **are now organized by purpose** (Thanks to @seisman for his suggestion):
+
+| Module | Purpose |
+|--------|---------|
+| `pygrt.io` | Read calculation results and fault files |
+| `pygrt.plot` | Plot results and fault geometry |
+| `pygrt.analytic` | Compute Lamb and Okada analytical solutions |
+| `pygrt.tensor` | Process strain, stress, rotation, and Coulomb stress |
+| `pygrt.coord` | Convert between local Cartesian and geographic coordinates |
+
+**The old `pygrt.utils` interfaces are no longer available.** Update calls to use the corresponding modules above.
+
+See the updated [Python API documentation](https://pygrt.readthedocs.io/zh-cn/latest/API/py_api.html) for function locations and usage.
+
+### New Features and Improvements
+
+- **Ambient noise simulation:** New `synnoise` CLI module and `PyModel1D.synnoise()` interface synthesize ZNE three-component ambient noise velocity records from Rayleigh and Love waves excited by random single-force sources, with parallel processing and reproducible random seeds.
+- **New example:** An [ambient noise workflow](https://pygrt.readthedocs.io/zh-cn/latest/Gallery/ex25/ex25.html) demonstrates synthesis, segmentation, cross-correlation, and basic FTAN group- and phase-velocity picking.
+- **SAC compatibility:** Aligned SAC header internal and unused variable names with ObsPy.
+- **Installation:** Updated the installation documentation and removed ObsPy from runtime dependencies. Install ObsPy separately for examples that require it.
+
+```bash
+pip install --upgrade pygrt-kit
+```
+
+### Pull requests
+* FIX: move obspy from runtime to documentation dependencies by [@Dengda98](https://github.com/Dengda98) in [#436](https://github.com/Dengda98/PyGRT/pull/436)
+* DOC: rewrite installation page by [@Dengda98](https://github.com/Dengda98) in [#437](https://github.com/Dengda98/PyGRT/pull/437)
+* REFAC: split Python `utils.py` into focused modules by [@Dengda98](https://github.com/Dengda98) in [#438](https://github.com/Dengda98/PyGRT/pull/438)
+* FIX: tolerate floating-point rounding in sampled grid endpoints by [@Dengda98](https://github.com/Dengda98) in [#440](https://github.com/Dengda98/PyGRT/pull/440)
+* FIX: align SAC header variable names with ObsPy by [@Dengda98](https://github.com/Dengda98) in [#441](https://github.com/Dengda98/PyGRT/pull/441)
+* FEAT: add ambient noise synthesis with random single-force sources by [@Dengda98](https://github.com/Dengda98) in [#442](https://github.com/Dengda98/PyGRT/pull/442)
+* DOC: add ambient noise simulation gallery example (ex25) by [@Dengda98](https://github.com/Dengda98) in [#443](https://github.com/Dengda98/PyGRT/pull/443)
+* DOC: add FTAN example for ambient noise dispersion picking by [@Dengda98](https://github.com/Dengda98) in [#444](https://github.com/Dengda98/PyGRT/pull/444)
+
+
+**Full Changelog**: [v0.18.0...v0.19.0](https://github.com/Dengda98/PyGRT/compare/v0.18.0...v0.19.0)
+
 ## PyGRT v0.18.0
 
 This release expands PyGRT’s **dynamic finite-fault modeling and Coulomb stress workflows**, with new fault preparation tools, improved Green’s function interpolation, and more practical tutorials and examples.
@@ -170,17 +214,17 @@ pip install --upgrade pygrt-kit
 
 #### Multi-depth Green's function libraries & synthesis
 - **Dynamic** and **static** Green's function libraries now support multiple source/receiver depths in one build.
-- Synthesis supports **finite source faults** and **arbitrary receiver geometry** (including Coulomb-format fault files).
+- Synthesis supports **finite source faults** and **arbitrary receiver geometry** (including sCoulomb-format fault files).
 - Static results can be output in **ZRT** or **ZNE** coordinates.
 - See the [dynamic](https://pygrt.readthedocs.io/zh-cn/Tutorial/dynamic/dynlib.html) and [static](https://pygrt.readthedocs.io/zh-cn/Tutorial/static/stlib.html) library tutorials, and the [finite-fault examples](https://pygrt.readthedocs.io/zh-cn/Tutorial/static/src_fault.html).
 
 #### Static stress, projection & Coulomb workflows
 - New post-processing chain: `static_stress` → `static_sproj` → `static_coulomb`.
-- Supports **finite receiver faults** and richer Coulomb input formats.
+- Supports **finite receiver faults** and richer sCoulomb input formats.
 - Walkthrough: [static solution tutorial](https://pygrt.readthedocs.io/zh-cn/Tutorial/static/index.html).
 
 #### Okada solution
-- New `okada` module (CLI: `grt okada`) for static displacement in a **uniform elastic half-space**, with point sources and Coulomb-format finite faults, plus optional parallel processing.
+- New `okada` module (CLI: `grt okada`) for static displacement in a **uniform elastic half-space**, with point sources and sCoulomb-format finite faults, plus optional parallel processing.
 - Background and examples: [Okada solution](https://pygrt.readthedocs.io/zh-cn/Okada_solution/okada.html).
 
 #### Surface-wave Python API
