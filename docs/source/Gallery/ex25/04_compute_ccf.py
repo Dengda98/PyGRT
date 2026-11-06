@@ -12,9 +12,9 @@ from scipy.signal.windows import tukey
 # 输入、输出及互相关参数
 INPUT          = Path("ambient_segments")
 OUTPUT         = Path("ambient_ccf")
-FREQMIN        = 0.1                        # 白化频带下限，Hz
-FREQMAX        = 1.0                        # 白化频带上限，Hz
-MAX_LAG        = 30.0                       # 保留的最大正负时延，s
+FREQMIN        = 0.05                       # 白化频带下限，Hz
+FREQMAX        = 2.0                        # 白化频带上限，Hz
+MAX_LAG        = 50.0                       # 保留的最大正负时延，s
 TAPER_FRACTION = 0.05                       # 白化频带两端余弦渐变各占的比例
 
 

@@ -92,7 +92,8 @@ synnoise
 **-O**\ *dir*
     不存在或为空的输出目录。每个台站的完整记录保存为
     **dir/noise/台站ID/Z.sac**、**N.sac** 和 **E.sac**，起始时刻为 **0 s**。
-    同时保存模型副本、频散文件 **phaseR.nc** 和 **phaseL.nc**、
+    同时保存模型副本、相速度频散 **phaseR.nc** 和 **phaseL.nc**、
+    对应的群速度频散 **groupR.nc** 和 **groupL.nc**、
     实际激发的震源信息 **sources.info**，以及台站文件副本 **receivers.info**。
 
 输入、输出路径仅允许英文字母、数字及 **_ . - / :**，Windows 下还允许反斜杠。

@@ -127,7 +127,7 @@ printf("\n"
 "\n"
 "    -O<dir>          New or empty output directory. SAC files are saved as\n"
 "                     <dir>/noise/<receiver_ID>/{Z,N,E}.sac, together with\n"
-"                     the model, dispersion files and source/receiver logs.\n"
+"                     the model, phase{R,L}.nc, group{R,L}.nc and source/receiver logs.\n"
 "                     SAC headers unused6 and unused7 store receiver North and East coordinates (km).\n"
 "                     The elevation header stel stores -1000 * depth (m), with depth in km.\n"
 "\n"
@@ -571,7 +571,8 @@ static void initialize_noise_output(const GRT_MODULE_CTRL *Ctrl)
     closedir(out);
 
     // 模型副本不能与固定输出文件重名
-    const char *reserved[] = {"noise", ".synnoise_tmp", "sources.info", "receivers.info", "phaseR.nc", "phaseL.nc"};
+    const char *reserved[] = {"noise", ".synnoise_tmp", "sources.info", "receivers.info",
+                              "phaseR.nc", "phaseL.nc", "groupR.nc", "groupL.nc"};
     for(size_t i = 0; i < sizeof(reserved) / sizeof(*reserved); ++i) {
         if(!strcmp(model->modelname, reserved[i])) {
             GRTRaiseError("Model filename conflicts with synnoise output: %s.", model->modelname);
@@ -654,6 +655,12 @@ static void compute_noise_dispersion(const GRT_MODULE_CTRL *Ctrl, real_t length)
         GRT_SAFE_ASPRINTF(&command, "%s eigenv -M%s -S%c -F0/%.17g/%.17g -C%s/phase%c.nc %s -P%d -s",
                           GRT_EXECUTABLE, Ctrl->M.path, "RL"[w], 0.5 / Ctrl->U.dt, 1 / length,
                           Ctrl->O.path, "RL"[w], modes, nthreads);
+        grt_run_command(command);
+        GRT_SAFE_FREE_PTR(command);
+
+        // 计算相速度文件中全部频率、模态对应的群速度频散
+        GRT_SAFE_ASPRINTF(&command, "%s eigenfn -C%s/phase%c.nc -N -U%s/group%c.nc",
+                          GRT_EXECUTABLE, Ctrl->O.path, "RL"[w], Ctrl->O.path, "RL"[w]);
         grt_run_command(command);
         GRT_SAFE_FREE_PTR(command);
     }
