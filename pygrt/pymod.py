@@ -489,6 +489,7 @@ class PyModel1D:
         usens_path: Optional[PathLike] = None,
         egy_path: Optional[PathLike] = None,
         sensitivity_dz: Optional[float] = None,
+        usens_shift: Optional[float] = None,
         print_log: bool = True,
     ):
         r"""
@@ -519,6 +520,10 @@ class PyModel1D:
         :param    egy_path:        Output energy-integral path.
         :param    sensitivity_dz:  Depth interval in km for sensitivity and
                                    energy-integral calculations.
+        :param    usens_shift:     Positive frequency shift in Hz for group kernels.
+                                   Recompute at shifted frequencies for finite differences.
+                                   If omitted, use existing frequencies for finite differences.
+                                   Requires ``usens_path``.
         :param    print_log:       If false, suppress command output and
                                    capture it on failure.
 
@@ -528,6 +533,12 @@ class PyModel1D:
             raise ValueError("modes and all_modes are mutually exclusive.")
         if depths is not None and eigenfn_path is None:
             raise ValueError("depths requires eigenfn_path.")
+        if usens_shift is not None:
+            usens_shift = float(usens_shift)
+            if not usens_shift > 0.0:
+                raise ValueError("usens_shift must be positive.")
+            if usens_path is None:
+                raise ValueError("usens_shift requires usens_path.")
 
         command = {
             "subcommand": "eigenfn",
@@ -566,6 +577,8 @@ class PyModel1D:
             if sensitivity_dz <= 0.0:
                 raise ValueError("sensitivity_dz must be positive.")
             sensitivity_options.append(f"+z{format_float(sensitivity_dz)}")
+        if usens_shift is not None:
+            sensitivity_options.append(f"+s{format_float(usens_shift)}")
         if sensitivity_options:
             command["K"] = "-K" + "".join(sensitivity_options)
         run_grt(list(command.values()), print_log=print_log)

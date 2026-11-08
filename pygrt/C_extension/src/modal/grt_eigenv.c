@@ -9,10 +9,6 @@
 
 #include "grt.h"
 
-#define GRT_EIGENV_SATOL  1e-3
-#define GRT_EIGENV_CGAP   1e-7
-#define GRT_EIGENV_RTOL   1e-4
-#define GRT_EIGENV_VGAP   1e-7
 
 
 /** 该子模块的参数控制结构体 */
@@ -323,12 +319,6 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                                 if(2 != sscanf(token+1, "%lf/%lf", &Ctrl->X.cmin, &Ctrl->X.cmax)){
                                     GRTBadOptionError(X, "");
                                 }
-                                if(Ctrl->X.cmin < 0.0 || Ctrl->X.cmax < 0.0){
-                                    GRTBadOptionError(X, "Can't set negative velocity.");
-                                }
-                                if(Ctrl->X.cmin >= Ctrl->X.cmax){
-                                    GRTBadOptionError(X, "requires cmax < cmax.");
-                                }
                                 break;
                             case 'i':
                                 Ctrl->X.manual_iref = true;
@@ -468,80 +458,20 @@ int eigenv_main(int argc, char **argv){
     Ctrl->M.mod1d = grt_read_mod1d_from_file(Ctrl->M.s_modelpath, -1.0, -1.0, true, !Ctrl->X.active);
     MODEL1D *mod1d = Ctrl->M.mod1d;
 
-    // 目前边界条件暂有限制
-    if( ! (mod1d->topbound==GRT_BOUND_FREE && mod1d->botbound==GRT_BOUND_HALFSPACE)){
-        GRTRaiseError("Currently only support top-free and bottom-halfspace in Surface wave problem.");
-    }
-
-    // 将信息转入结构体
-    EIGENV_INFO *eigmet = GRT_SAFE_CALLOC(1, sizeof(EIGENV_INFO));
-    eigmet->nf = Ctrl->F.nf;
-    eigmet->freqs = GRT_SAFE_CALLOC(eigmet->nf, sizeof(real_t));
-    memcpy(eigmet->freqs, Ctrl->F.freqs, sizeof(real_t)*eigmet->nf);
-    eigmet->nmode = Ctrl->N.nmode;
-    eigmet->wtype = Ctrl->S.wtype;
+    // 命令行和 C 接口共用参数初始化、搜索范围及搜根流程
+    EIGENV_INFO *eigmet = grt_init_eigenv_info(Ctrl->F.nf, Ctrl->F.freqs, Ctrl->S.wtype, Ctrl->N.nmode);
     eigmet->print_sec = Ctrl->X.active;
     eigmet->satol = Ctrl->T.satol;
     eigmet->uniform_dc = Ctrl->T.uniform_dc;
     eigmet->cgap = Ctrl->T.cgap;
     eigmet->rtol = Ctrl->T.rtol;
     eigmet->vgap = Ctrl->T.vgap;
-    // 存储频散值的结构体
-    eigmet->eigv = GRT_SAFE_CALLOC(eigmet->nf, sizeof(EIGENV));
-
-    // 相速度搜索范围
-    if(Ctrl->X.manual_crange)
-    {
-        eigmet->manual_crange = true;
-        eigmet->cmin = Ctrl->X.cmin;
-        eigmet->cmax = Ctrl->X.cmax;
-    }
-    else
-    {
-        // 取 S 波速度范围为搜索范围
-        real_t vbmin = 9.9e30;  // 最小 S 波速度
-        for(size_t i = 0; i < mod1d->n; ++i){
-            real_t va = mod1d->Va[i];
-            real_t vb = mod1d->Vb[i];
-            vbmin = GRT_MIN(vbmin, (vb > 0.0)? vb : va);
-        }
-        real_t vbn = mod1d->Vb[mod1d->n-1];  // 半空间速度
-        if(vbn == 0.0) vbn = mod1d->Va[mod1d->n-1];
-
-        // 如果存在上层固体、下层液体的情况，设置 vbmin 为极小非零值
-        for(size_t i = 0; i < mod1d->n-1; ++i){
-            if( ! mod1d->isLiquid[i] && mod1d->isLiquid[i+1]){
-                vbmin *= 1e-3;
-                break;
-            }
-        }
-
-        if(vbmin >= vbn){
-            GRTRaiseError("minimum velocity (vbmin=%f) >= halfspace velocity (vbn=%f).", vbmin, vbn);
-        }
-
-        eigmet->cmin = vbmin;
-        eigmet->cmax = vbn;
-    }
-
-    // 检查手动给定的 iref 是否合法
-    if(Ctrl->X.manual_iref){
-        eigmet->manual_iref = true;
-        eigmet->iref = Ctrl->X.iref;
-        // 根据之前的设置，模型层中未插入虚拟层，即 mod1d->n 为真实层数
-        // iref 是否越界
-        if(Ctrl->X.iref >= mod1d->n){
-            GRTRaiseError("iref(%zu) set by -X is out of bound, requires iref < layers (%zu).", 
-                Ctrl->X.iref, mod1d->n);
-        }
-        // iref 是否对于 Love 波在液体层中
-        if(eigmet->wtype == GRT_DISPERSION_LOVE && mod1d->isLiquid[Ctrl->X.iref]){
-            GRTRaiseError("iref(%zu) set by -X is in liquid, which is illegal for Love waves.", Ctrl->X.iref);
-        }
-    }
-    
-    // 寻找久期函数零点
-    grt_get_secular_roots(mod1d, eigmet, !Ctrl->s.active);
+    eigmet->manual_crange = Ctrl->X.manual_crange;
+    eigmet->cmin = Ctrl->X.cmin;
+    eigmet->cmax = Ctrl->X.cmax;
+    eigmet->manual_iref = Ctrl->X.manual_iref;
+    eigmet->iref = Ctrl->X.iref;
+    grt_compute_eigenv(mod1d, eigmet, !Ctrl->s.active);
 
     if(Ctrl->X.active){
         goto FINISH;
@@ -564,9 +494,9 @@ int eigenv_main(int argc, char **argv){
     grt_output_cdisp(Ctrl->C.s_phasepath, full_command, mod1d, eigmet);
     GRT_SAFE_FREE_PTR(full_command);
     
+FINISH:
     grt_free_eigenv_info(eigmet);
 
-FINISH:
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;
 }

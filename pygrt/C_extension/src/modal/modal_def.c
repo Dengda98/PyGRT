@@ -6,8 +6,44 @@
  *                   
  */
 
+#include <string.h>
+
 #include "grt/modal/modal_def.h"
 #include "grt/common/search.h"
+
+EIGENV_INFO *grt_init_eigenv_info(size_t nf, const real_t *freqs, DISPER_TYPE wtype, size_t nmode)
+{
+    if(nf == 0 || !freqs || (wtype != GRT_DISPERSION_RAYL && wtype != GRT_DISPERSION_LOVE)){
+        GRTRaiseError("Invalid eigenvalue input.");
+    }
+    bool ascending = nf < 2 || freqs[1] > freqs[0];
+    for(size_t iw = 0; iw < nf; ++iw){
+        if(!(freqs[iw] > 0.0) || (iw > 0 && (ascending ? freqs[iw] <= freqs[iw - 1] : freqs[iw] >= freqs[iw - 1]))){
+            GRTRaiseError("Frequencies must be positive and strictly monotonic.");
+        }
+    }
+    EIGENV_INFO *result = GRT_SAFE_CALLOC(1, sizeof(*result));
+    result->nf = nf;
+    result->freqs = GRT_SAFE_CALLOC(nf, sizeof(real_t));
+    memcpy(result->freqs, freqs, sizeof(real_t) * nf);
+    result->nmode = nmode;
+    result->wtype = wtype;
+    result->satol = GRT_EIGENV_SATOL;
+    result->cgap = GRT_EIGENV_CGAP;
+    result->rtol = GRT_EIGENV_RTOL;
+    result->vgap = GRT_EIGENV_VGAP;
+    result->eigv = GRT_SAFE_CALLOC(nf, sizeof(EIGENV));
+    return result;
+}
+
+
+EIGENFN_INFO *grt_init_eigenfn_info(const EIGENV_INFO *eigmet)
+{
+    EIGENFN_INFO *result = GRT_SAFE_CALLOC(1, sizeof(*result));
+    grt_filter_eigenfn_info(0, NULL, false, 0, NULL, eigmet, result);
+    return result;
+}
+
 
 void grt_free_eigenv(EIGENV *eigv)
 {
@@ -19,6 +55,7 @@ void grt_free_eigenv(EIGENV *eigv)
 void grt_free_eigenv_info(EIGENV_INFO *eigmet)
 {
     GRT_SAFE_FREE_PTR(eigmet->freqs);
+    GRT_SAFE_FREE_PTR(eigmet->modes);
     for(size_t i = 0; i < eigmet->nf; ++i){
         grt_free_eigenv(eigmet->eigv + i);
     }
@@ -62,7 +99,7 @@ void grt_free_eigenfn_info(EIGENFN_INFO *eigfnmet)
 void grt_filter_eigenfn_info(
     const size_t nf, const real_t *freqs, const bool def_freq_range, 
     const size_t nmode, const size_t *modes, 
-    EIGENV_INFO *eigmet, EIGENFN_INFO *eigfnmet)
+    const EIGENV_INFO *eigmet, EIGENFN_INFO *eigfnmet)
 {
     // 先申请全部内存，然后再缩
     eigfnmet->nf = 0;
@@ -122,7 +159,7 @@ void grt_filter_eigenfn_info(
         eigvtmp->c_roots_iref = GRT_SAFE_CALLOC(eigmet->nmode, sizeof(size_t));
         eigvtmp->n = 0;
 
-        EIGENV *in_eigv = &eigmet->eigv[iw];
+        const EIGENV *in_eigv = &eigmet->eigv[iw];
         // 第 iw 频只有前 in_eigv->n 个根，对应原 mode 数组下标 0 .. n-1
         // idxs_modes 随原数组递增，一旦越界则后续阶在该频均不存在
         for(size_t i = 0; i < eigfnmet->nmode; ++i){
@@ -130,7 +167,7 @@ void grt_filter_eigenfn_info(
             if(idx >= in_eigv->n) break;
 
             eigvtmp->c_roots[eigvtmp->n] = in_eigv->c_roots[idx];
-            eigvtmp->u_roots[eigvtmp->n] = in_eigv->u_roots[idx];
+            eigvtmp->u_roots[eigvtmp->n] = in_eigv->u_roots ? in_eigv->u_roots[idx] : 0.0;
             eigvtmp->c_roots_iref[eigvtmp->n] = in_eigv->c_roots_iref[idx];
 
             eigvtmp->n++;

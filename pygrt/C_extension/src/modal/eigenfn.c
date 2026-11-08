@@ -20,6 +20,9 @@
 
 #include "grt/modal/secular.h"
 #include "grt/modal/eigenfn.h"
+#include "grt/modal/energy.h"
+#include "grt/modal/modal_util.h"
+#include "grt/modal/root.h"
 
 /**
  * 已知 z_{iy-1}+ 的垂直波函数，计算 z_{iy}+ 和 z_{iy}- 的垂直波函数 P-SV
@@ -451,5 +454,194 @@ void grt_get_eigenfn_depths(
     }
     else {
         GRTRaiseError("Wrong execution.");
+    }
+}
+
+
+/**
+ * 计算一个频率下的本征函数、能量积分和群速度，工作缓冲区由当前线程复用
+ *
+ * @param[in,out]  state                当前线程的模型状态
+ * @param[in,out]  result               本征函数结果
+ * @param[in]      iw                   频率索引
+ * @param[in]      ncols                垂直波函数维数
+ * @param[in]      energy               是否计算能量积分和群速度
+ * @param[in,out]  potential_down       各物理层下行波工作缓冲区
+ * @param[in,out]  potential_up         各物理层上行波工作缓冲区
+ */
+static void compute_eigenfn_frequency(MODEL1D_STATE *state, EIGENFN_INFO *result, size_t iw, int ncols, bool energy,
+    cplx_t (*potential_down)[ncols], cplx_t (*potential_up)[ncols])
+{
+    real_t omega = PI2 * result->freqs[iw];
+    EIGENV *roots = &result->eigv[iw];
+    grt_update_mod1d_state_omega(state, omega, true);
+    for(size_t ic = 0; ic < roots->n; ++ic){
+        real_t phase = roots->c_roots[ic];
+        real_t k = omega / phase;
+        state->c_phase = phase;
+        EIGENFN *mode = &result->eigfn[iw][ic];
+        cplx_t potential[ncols], potential_top[ncols];
+        cplx_t secular = 0.0;
+        memset(potential, 0, sizeof(potential));
+        memset(potential_top, 0, sizeof(potential_top));
+
+        // 从搜根时的参考层传播到全部物理界面
+        grt_secular_function_potential(state, phase, roots->c_roots_iref[ic], result->wtype, &secular, potential, potential_top);
+        grt_get_mod_potential_Up_Down(state, result->wtype, ncols, roots->c_roots_iref[ic],
+            potential, potential_top, potential_down, potential_up);
+        if(mode->fn != NULL){
+            grt_get_eigenfn_depths(state, result->wtype, ncols, potential_down, potential_up, result, mode);
+        }
+        if(energy){
+            grt_energy_integrals(state, result->wtype, ncols, potential_down, potential_up, result, mode);
+            cplx_t numerator = mode->egyint[1];
+            if(result->wtype == GRT_DISPERSION_RAYL){
+                numerator -= mode->egyint[2] / (2.0 * k);
+            }
+            roots->u_roots[ic] = creal(numerator / (phase * mode->egyint[0]));
+        }
+    }
+}
+
+
+/**
+ * 偏移频率后重新计算相速度核，通过差分计算群速度核
+ *
+ * @param[in]      mod1d                原分层模型，副本用于微移频率计算
+ * @param[in,out]  result               原频率的相速度核和群速度，写入群速度核
+ * @param[in]      kernel_dz            与原结果一致的敏感核分段间距
+ * @param[in]      shift                正频率偏移量，Hz
+ */
+static void compute_shifted_group_sensitivity(const MODEL1D *mod1d, EIGENFN_INFO *result, real_t kernel_dz, real_t shift)
+{
+    real_t *freqs = GRT_SAFE_CALLOC(result->nf, sizeof(real_t));
+    for(size_t iw = 0; iw < result->nf; ++iw){
+        freqs[iw] = result->freqs[iw] + shift;
+    }
+    size_t nmode = result->nmode > 0 ? result->modes[result->nmode - 1] + 1 : 0;
+    EIGENV_INFO *roots = grt_init_eigenv_info(result->nf, freqs, result->wtype, nmode);
+    GRT_SAFE_FREE_PTR(freqs);
+
+    // 搜根会更新模型的参考频率，使用副本避免影响调用方或外层并行任务
+    MODEL1D *shifted_model = grt_copy_mod1d(mod1d);
+    grt_compute_eigenv(shifted_model, roots, false);
+    EIGENFN_INFO *shifted = GRT_SAFE_CALLOC(1, sizeof(*shifted));
+    grt_filter_eigenfn_info(0, NULL, false, result->nmode, result->modes, roots, shifted);
+    EIGENFN_OPTIONS options = {.phase_kernel = true, .kernel_dz = kernel_dz};
+    grt_compute_eigenfn(shifted_model, shifted, &options);
+    grt_group_sensitivity_difference(result, shifted);
+
+    grt_free_eigenfn_info(shifted);
+    grt_free_eigenv_info(roots);
+    grt_free_mod1d(shifted_model);
+}
+
+
+void grt_compute_eigenfn(MODEL1D *mod1d, EIGENFN_INFO *result, const EIGENFN_OPTIONS *options)
+{
+    if(options->kernel_dz < 0.0 || (options->nz > 0 && !options->zs)){
+        GRTRaiseError("Invalid eigenfunction depth sampling.");
+    }
+    if(options->group_kernel_shift < 0.0){
+        GRTRaiseError("Group-kernel frequency shift must be nonnegative.");
+    }
+    bool phase_kernel = options->phase_kernel || options->group_kernel;
+    bool energy = options->energy || phase_kernel;
+    if(!options->eigenfunctions && !energy){
+        return;
+    }
+    const size_t NLAY = mod1d->n;
+
+    // 本征函数默认在物理层界面采样，也可直接传入任意升序深度
+    if(options->eigenfunctions){
+        result->nz = options->nz > 0 ? options->nz : NLAY;
+        result->zs = GRT_SAFE_CALLOC(result->nz, sizeof(real_t));
+        result->z_irefs = GRT_SAFE_CALLOC(result->nz, sizeof(size_t));
+        memcpy(result->zs, options->nz > 0 ? options->zs : mod1d->Dep, sizeof(real_t) * result->nz);
+        size_t iref = 0;
+        for(size_t iz = 0; iz < result->nz; ++iz){
+            if(result->zs[iz] < 0.0 || (iz > 0 && result->zs[iz] <= result->zs[iz - 1])){
+                GRTRaiseError("Eigenfunction depths must be nonnegative and strictly ascending.");
+            }
+            while(iref + 1 < NLAY && mod1d->Dep[iref + 1] <= result->zs[iz]){
+                ++iref;
+            }
+            result->z_irefs[iz] = iref;
+        }
+    }
+
+    // 能量积分的默认分段为原物理层，指定 dz 时仅细分有限层
+    if(energy){
+        if(options->kernel_dz == 0.0){
+            result->cpar_nz = NLAY;
+            result->cpar_zs = GRT_SAFE_CALLOC(NLAY, sizeof(real_t));
+            result->cpar_z_irefs = GRT_SAFE_CALLOC(NLAY, sizeof(size_t));
+            memcpy(result->cpar_zs, mod1d->Dep, sizeof(real_t) * NLAY);
+            for(size_t iz = 0; iz < NLAY; ++iz){
+                result->cpar_z_irefs[iz] = iz;
+            }
+        }
+        else {
+            for(size_t iy = 0; iy < NLAY; ++iy){
+                real_t thk = mod1d->Thk[iy];
+                real_t dz = options->kernel_dz;
+                for(real_t h = 0.0; h < thk; h += dz){
+                    if(fabs(thk - h) < dz * 1e-5){
+                        break;
+                    }
+                    size_t iz = result->cpar_nz++;
+                    result->cpar_zs = GRT_SAFE_REALLOC(result->cpar_zs, sizeof(real_t) * result->cpar_nz);
+                    result->cpar_z_irefs = GRT_SAFE_REALLOC(result->cpar_z_irefs, sizeof(size_t) * result->cpar_nz);
+                    result->cpar_zs[iz] = mod1d->Dep[iy] + h;
+                    result->cpar_z_irefs[iz] = iy;
+                    if(iy == NLAY - 1){
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    result->eigfn = GRT_SAFE_CALLOC(result->nf, sizeof(EIGENFN *));
+    for(size_t iw = 0; iw < result->nf; ++iw){
+        EIGENV *roots = &result->eigv[iw];
+        result->eigfn[iw] = GRT_SAFE_CALLOC(roots->n, sizeof(EIGENFN));
+        for(size_t ic = 0; ic < roots->n; ++ic){
+            EIGENFN *mode = &result->eigfn[iw][ic];
+            mode->eigenC = roots->c_roots[ic];
+            if(options->eigenfunctions){
+                mode->fn = GRT_SAFE_CALLOC(result->nz, sizeof(*mode->fn));
+            }
+            if(phase_kernel){
+                mode->csens = GRT_SAFE_CALLOC(result->cpar_nz, sizeof(*mode->csens));
+            }
+            if(options->group_kernel){
+                mode->usens = GRT_SAFE_CALLOC(result->cpar_nz, sizeof(*mode->usens));
+            }
+        }
+    }
+
+    // 外层已并行时，本次调用仅使用当前线程；否则按频率并行并复用每线程缓冲区
+    int ncols = result->wtype == GRT_DISPERSION_RAYL ? GRT_RAYL_DIM : GRT_LOVE_DIM;
+    #pragma omp parallel if(!omp_in_parallel())
+    {
+        MODEL1D_STATE *state = grt_init_mod1d_state(mod1d);
+        cplx_t (*potential_down)[ncols] = GRT_SAFE_CALLOC(NLAY, sizeof(*potential_down));
+        cplx_t (*potential_up)[ncols] = GRT_SAFE_CALLOC(NLAY + 1, sizeof(*potential_up));
+        #pragma omp for schedule(guided)
+        for(size_t iw = 0; iw < result->nf; ++iw){
+            compute_eigenfn_frequency(state, result, iw, ncols, energy, potential_down, potential_up);
+        }
+        GRT_SAFE_FREE_PTR(potential_down);
+        GRT_SAFE_FREE_PTR(potential_up);
+        grt_free_mod1d_state(state);
+    }
+    if(options->group_kernel){
+        if(options->group_kernel_shift > 0.0){
+            compute_shifted_group_sensitivity(mod1d, result, options->kernel_dz, options->group_kernel_shift);
+        }
+        else {
+            grt_group_sensitivity(result);
+        }
     }
 }

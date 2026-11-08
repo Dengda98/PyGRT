@@ -74,6 +74,14 @@ void grt_output_sensitivity(const char *filepath, const char *char_uc, EIGENFN_I
  */
 void grt_group_sensitivity(EIGENFN_INFO *eigfnmet);
 
+/**
+ * 使用已有频率或偏移频率后重新计算的相速度核做差分，计算群速度核
+ *
+ * @param[in,out]  result               基准频率的 C、U 和相速度核，写入群速度核
+ * @param[in]      shifted              同一模型偏移频率后重新计算的结果，NULL 表示使用已有频率差分
+ */
+void grt_group_sensitivity_difference(EIGENFN_INFO *result, const EIGENFN_INFO *shifted);
+
 
 
 /** 

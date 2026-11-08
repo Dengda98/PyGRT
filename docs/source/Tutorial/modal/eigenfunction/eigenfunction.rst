@@ -123,18 +123,19 @@
 
 .. note:: 
 
-    这里值得一提的是，根据群速度和相速度的关系，
+    根据群速度和相速度的关系，
 
     .. math::
 
         U = \dfrac{c^2}{c - \omega \dfrac{\text{d} c}{\text{d} \omega}}
 
-    群速度敏感核表达式为（其中 :math:`X` 表示 :math:`\alpha/\beta/\rho` ）,
+    群速度敏感核表达式为（其中 :math:`X` 表示 :math:`\alpha/\beta/\rho` ），
 
     .. math::
 
         \dfrac{\text{d} U}{\text{d} X} = \dfrac{U}{c} \left(2 - \dfrac{U}{c} \right) \dfrac{\text{d} c}{\text{d} X}
         + \omega \left( \dfrac{U}{c} \right)^2 \dfrac{\text{d}}{\text{d} \omega} \left(\dfrac{\text{d} c}{\text{d} X} \right)
 
-    其中可以看到计算群速度敏感核需要相速度敏感核在频率上的差分，因此无法完全解析地得到群速度敏感核。
-    若频率间隔不够小，群速度敏感核计算精度就会下降。
+    计算群速度敏感核时，需要通过频率差分估计相速度敏感核的频率偏导。
+    :doc:`/Module/eigenfn` 模块默认使用已有频率做差分，也可通过 **-K** 的 **+s**\ *shift* 子选项指定频率偏移，
+    重新计算后做差分（Python 中对应 *usens_shift* 参数，单位 Hz）。

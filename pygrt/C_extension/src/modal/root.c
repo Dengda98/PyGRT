@@ -825,38 +825,97 @@ void grt_get_secular_roots(MODEL1D *mod1d, EIGENV_INFO *eigmet, const bool print
 
     size_t neval = 0;
 
-    // 如果外部已在并行区域中，此处串行
-    if (omp_in_parallel()) {
-        for(size_t iw = 0; iw < nf; ++iw){
-            MODEL1D_STATE *mstat = grt_init_mod1d_state(mod1d);
-            __CALL_SECULAR_ROOT(mstat, iw);
-            neval += mstat->neval;
-            // 记录进度条变量 
-            progress++;
-            grt_free_mod1d_state(mstat);
-            if(print_progressbar) grt_printprogressBar("Computing Dispersion Curves: ", progress*100/nf);
-        }
-    }
-    // 否则正常使用并行
-    else{
-        #pragma omp parallel for schedule(guided) default(shared) 
-        for(size_t iw = 0; iw < nf; ++iw){
-            MODEL1D_STATE *locaL_mstat = grt_init_mod1d_state(mod1d);
-            __CALL_SECULAR_ROOT(locaL_mstat, iw);
+    // 外层已并行时内部串行，否则按频率并行
+    #pragma omp parallel for if(!omp_in_parallel()) schedule(guided) default(shared)
+    for(size_t iw = 0; iw < nf; ++iw){
+        MODEL1D_STATE *mstat = grt_init_mod1d_state(mod1d);
+        __CALL_SECULAR_ROOT(mstat, iw);
 
-            // 记录进度条变量 
-            #pragma omp critical
-            {   
-                neval += locaL_mstat->neval;
-                progress++;
-                if(print_progressbar) grt_printprogressBar("Computing Dispersion: ", progress*100/nf);
+        // 累计计算次数并更新进度条
+        #pragma omp critical
+        {
+            neval += mstat->neval;
+            progress++;
+            if(print_progressbar){
+                grt_printprogressBar("Computing Dispersion: ", progress*100/nf);
             }
-            grt_free_mod1d_state(locaL_mstat);
         }
+        grt_free_mod1d_state(mstat);
     }
 
     eigmet->neval = neval;
 
     FINISH:
     return;
+}
+
+
+void grt_compute_eigenv(MODEL1D *mod1d, EIGENV_INFO *eigmet, bool print_progressbar)
+{
+    if(mod1d->topbound != GRT_BOUND_FREE || mod1d->botbound != GRT_BOUND_HALFSPACE){
+        GRTRaiseError("Surface waves require a free surface and a halfspace bottom.");
+    }
+    if(eigmet->manual_crange){
+        if(eigmet->cmin < 0.0 || eigmet->cmin >= eigmet->cmax){
+            GRTRaiseError("Invalid phase-velocity search range.");
+        }
+    }
+    else {
+        // 取 S 波速度范围为搜索范围
+        real_t vbmin = 9.9e30;  // 最小 S 波速度
+        for(size_t i = 0; i < mod1d->n; ++i){
+            real_t va = mod1d->Va[i];
+            real_t vb = mod1d->Vb[i];
+            vbmin = GRT_MIN(vbmin, (vb > 0.0)? vb : va);
+        }
+        real_t vbn = mod1d->Vb[mod1d->n-1];  // 半空间速度
+        if(vbn == 0.0){
+            vbn = mod1d->Va[mod1d->n-1];
+        }
+
+        // 如果存在上层固体、下层液体的情况，设置 vbmin 为极小非零值
+        for(size_t i = 0; i < mod1d->n-1; ++i){
+            if( ! mod1d->isLiquid[i] && mod1d->isLiquid[i+1]){
+                vbmin *= 1e-3;
+                break;
+            }
+        }
+
+        if(vbmin >= vbn){
+            GRTRaiseError("minimum velocity (vbmin=%f) >= halfspace velocity (vbn=%f).", vbmin, vbn);
+        }
+
+        eigmet->cmin = vbmin;
+        eigmet->cmax = vbn;
+    }
+
+    // 检查手动给定的 iref 是否合法
+    if(eigmet->manual_iref){
+        // 根据之前的设置，模型层中未插入虚拟层，即 mod1d->n 为真实层数
+        // iref 是否越界
+        if(eigmet->iref >= mod1d->n){
+            GRTRaiseError("iref(%zu) is out of bound, requires iref < layers (%zu).",
+                eigmet->iref, mod1d->n);
+        }
+        // iref 是否对于 Love 波在液体层中
+        if(eigmet->wtype == GRT_DISPERSION_LOVE && mod1d->isLiquid[eigmet->iref]){
+            GRTRaiseError("iref(%zu) is in liquid, which is illegal for Love waves.", eigmet->iref);
+        }
+    }
+
+    grt_get_secular_roots(mod1d, eigmet, print_progressbar);
+    if(eigmet->print_sec){
+        return;
+    }
+
+    // 搜根结束后记录实际阶数，供内存接口和文件接口共同使用
+    size_t nmode = 0;
+    for(size_t iw = 0; iw < eigmet->nf; ++iw){
+        nmode = GRT_MAX(nmode, eigmet->eigv[iw].n);
+    }
+    eigmet->nmode = nmode;
+    eigmet->modes = GRT_SAFE_CALLOC(nmode, sizeof(size_t));
+    for(size_t ic = 0; ic < nmode; ++ic){
+        eigmet->modes[ic] = ic;
+    }
 }
