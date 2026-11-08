@@ -39,10 +39,11 @@ typedef struct {
     /* 敏感核 */
     struct {
         bool active;
-        char *s_cpar_filepath;   ///< 相速度对模型参数的偏导数（敏感核）
-        char *s_upar_filepath;   ///< 群速度对模型参数的偏导数（敏感核）
+        char *s_cpar_filepath;    ///< 相速度对模型参数的偏导数（敏感核）
+        char *s_upar_filepath;    ///< 群速度对模型参数的偏导数（敏感核）
         char *s_egyint_filepath;  ///< 输出能量积分
-        real_t cpar_dz;   ///< 计算敏感核时对模型深度进行采样
+        real_t cpar_dz;           ///< 计算敏感核时对模型深度进行采样
+        real_t freq_shift;        ///< 群速度核的正频率偏移量，Hz，0 表示使用相邻频点差分
     } K;
     /* 本征函数 */
     struct {
@@ -97,7 +98,7 @@ printf("\n"
 "---------------------------------------------------------------------\n"
 "    grt eigenfn -C<path> [-F<f1>[/<f2>][/<df>][+p]]\n"
 "         [-N[<n1>][/<n2>][/<dn>]] [-W<path>[+z<z1>[/<z2>/<dz>]]]\n"
-"         [-U<path>] [-K[+c<path>][+u<path>][+x<path>][+z<dz>]] [-h]\n"
+"         [-U<path>] [-K[+c<path>][+u<path>][+x<path>][+z<dz>][+s<shift>]] [-h]\n"
 "\n\n"
 "Options:\n"
 "----------------------------------------------------------------\n"
@@ -135,7 +136,7 @@ printf("\n"
 "\n"
 "    -U<path>    Output group velocity (.nc format)\n"
 "\n"
-"    -K[+c<path>][+u<path>][+x<path>][+z<dz>]\n"
+"    -K[+c<path>][+u<path>][+x<path>][+z<dz>][+s<shift>]\n"
 "                Output some quantities related to sensitivity,\n"
 "                e.g. -K+ccsens.nc+uusens.nc\n"
 "                + c<path>: phase-velocity dispersion sensitivity (.nc format).\n"
@@ -145,6 +146,10 @@ printf("\n"
 "                           sampling on the model before computing \n"
 "                           the sensitivity.\n"
 "                + x<path>: energy integrals (.nc format)\n"
+"                + s<shift>: positive frequency shift (Hz) for group kernels,\n"
+"                            requires +u. Recompute at shifted frequencies\n"
+"                            for finite differences. If omitted, use existing\n"
+"                            frequencies for finite differences.\n"
 "\n"
 "    -h           Display this help message.\n"
 "\n\n"
@@ -290,7 +295,7 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                 Ctrl->U.s_udisp_filepath = strdup(optarg);
                 break;
 
-            // 输出能量积分和敏感核 -K+c<path>+u<path>+z<dz>+x<path>
+            // 输出能量积分和敏感核 -K+c<path>+u<path>+z<dz>+x<path>+s<shift>
             case 'K':
                 Ctrl->K.active = true;
                 {
@@ -324,6 +329,13 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
                                     GRTBadOptionError(K, "+%s wrong usage.", token);
                                 }
                                 break;
+                            case 's': {
+                                char extra;
+                                if(sscanf(token+1, "%lf%c", &Ctrl->K.freq_shift, &extra) != 1 || !(Ctrl->K.freq_shift > 0.0)){
+                                    GRTBadOptionError(K, "+s requires a positive frequency shift (Hz).");
+                                }
+                                break;
+                            }
                             default:
                                 GRTBadOptionError(K, "+%s is not supported.", token);
                                 break;
@@ -399,6 +411,9 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
     // 检查必须设置的参数是否有设置
     GRTCheckOptionSet(argc > 1);
     GRTCheckOptionActive(Ctrl, C);
+    if(Ctrl->K.freq_shift > 0.0 && Ctrl->K.s_upar_filepath == NULL){
+        GRTBadOptionError(K, "+s requires +u<path>.");
+    }
 
     // 是否需要计算能量积分
     Ctrl->calc_egyint = Ctrl->U.active || Ctrl->K.active;
@@ -412,104 +427,6 @@ static void getopt_from_command(GRT_MODULE_CTRL *Ctrl, int argc, char **argv){
 
 }
 
-
-
-/** 
- * 根据能量积分计算 Rayleight 波和 Love 波的群速度 
- * 
- * @param[in]       omega       圆频率
- * @param[in]       eigenK      本征波数
- * @param[in]       EgyInt      能量积分
- * @param[in]       isRayl      Rayleigh or Love
- * 
- * @return     群速度
- * 
- */
-static real_t grt_get_group_velocity(const real_t omega, const real_t eigenK, const cplx_t EgyInt[GRT_EGYINTS_MAX], const DISPER_TYPE wtype)
-{
-    cplx_t root_c = omega/eigenK;
-    cplx_t res;
-    if(wtype == GRT_DISPERSION_RAYL){
-        res = (EgyInt[1] - EgyInt[2]/(2*eigenK)) / (root_c * EgyInt[0]);
-    }
-    else if(wtype == GRT_DISPERSION_LOVE){
-        res = EgyInt[1] / (root_c * EgyInt[0]);
-    }
-    else {
-        GRTRaiseError("Wrong execution.");
-    }
-    return creal(res);
-}
-
-
-/** 根据 grt_eigenfn 的一些参数，计算本征函数、能量积分、群速度、相速度敏感核 */
-static void grt_eigenfn_egy_udisp_phaseK_util(
-    MODEL1D *mod1d, EIGENFN_INFO *eigfnmet, const int ncols, 
-    const bool calc_egfn, const bool calc_egyint)
-{
-    size_t nlay = mod1d->n;
-
-    // 循环每个频率
-    #pragma omp parallel for schedule(guided) default(shared)
-    for(size_t iw = 0; iw < eigfnmet->nf; ++iw){
-        MODEL1D_STATE *local_mstat = grt_init_mod1d_state(mod1d);
-
-        real_t omega = PI2*eigfnmet->freqs[iw];
-        EIGENV *eigv = eigfnmet->eigv + iw;
-
-        grt_update_mod1d_state_omega(local_mstat, omega, true);
-        
-        // 假设这些本征值都是从 iref 层的久期函数算出来的，
-        // 1. 先根据 iref（z_i+）的垂直波函数，计算出每个物理分界面上侧（z_j-）和下侧（z_j+）的垂直波函数
-        // 2. 循环每个深度采样点，使用上侧（z_{j+1}-）和下侧（z_j+）的垂直波函数推导采样点上的垂直波函数以及本征函数
-        for(size_t ic = 0; ic < eigv->n; ++ic){
-            real_t cphase = eigv->c_roots[ic];
-            
-            local_mstat->c_phase = cphase;
-            real_t k = creal(omega)/cphase;
-            local_mstat->k = k;
-            grt_update_mod1d_state_k(local_mstat, k);
-
-            size_t iref = eigv->c_roots_iref[ic];
-
-            // 模型每个物理层介质下方 z_j+ 的垂直波函数
-            cplx_t (*mod_potRaylLove_Down)[ncols] = GRT_SAFE_CALLOC(nlay, sizeof(cplx_t)*ncols);
-            // 模型每个物理层介质上方 z_j- 的垂直波函数，申请 n+1 的内存，方便后续不必讨论“半空间中的上行波场”
-            cplx_t (*mod_potRaylLove_Up)[ncols] = GRT_SAFE_CALLOC(nlay + 1, sizeof(cplx_t)*ncols);
-
-            cplx_t potRaylLove[ncols];  memset(potRaylLove, 0, sizeof(cplx_t)*ncols);
-            cplx_t potRaylLoveUp[ncols];  memset(potRaylLoveUp, 0, sizeof(cplx_t)*ncols);
-            cplx_t secRaylLove = 0.0;
-            grt_secular_function_potential(local_mstat, cphase, iref, eigfnmet->wtype, &secRaylLove, potRaylLove, potRaylLoveUp);
- 
-            // 计算出每个物理分界面上侧（z_{j+1}-）和 下侧（z_j+）的垂直波函数
-            grt_get_mod_potential_Up_Down(local_mstat, eigfnmet->wtype, ncols, iref, potRaylLove, potRaylLoveUp, mod_potRaylLove_Down, mod_potRaylLove_Up);
-
-            // 计算不同深度的本征函数
-            if(calc_egfn){
-                grt_get_eigenfn_depths(
-                    local_mstat, eigfnmet->wtype, ncols, 
-                    mod_potRaylLove_Down, mod_potRaylLove_Up, eigfnmet, &eigfnmet->eigfn[iw][ic]);
-            }
-
-            // 计算能量积分
-            if(calc_egyint){
-                grt_energy_integrals(
-                    local_mstat, eigfnmet->wtype, ncols, 
-                    mod_potRaylLove_Down, mod_potRaylLove_Up, eigfnmet, &eigfnmet->eigfn[iw][ic]);
-                // 计算群速度
-                eigfnmet->eigv[iw].u_roots[ic] = grt_get_group_velocity(omega, creal(local_mstat->k), eigfnmet->eigfn[iw][ic].egyint, eigfnmet->wtype);
-            }
-
-            GRT_SAFE_FREE_PTR(mod_potRaylLove_Down);
-            GRT_SAFE_FREE_PTR(mod_potRaylLove_Up);
-        }
-        
-        grt_free_mod1d_state(local_mstat);
-    }
-
-    
-}
 
 
 /* 子模块主函数 */
@@ -530,101 +447,22 @@ int eigenfn_main(int argc, char **argv){
         Ctrl->F.nf, Ctrl->F.freqs, Ctrl->F.def_range,
         Ctrl->N.nmode, Ctrl->N.modes, eigmet, eigfnmet);
     
-    // 初始化 eigfn
-    eigfnmet->eigfn = GRT_SAFE_CALLOC(eigfnmet->nf, sizeof(EIGENFN *));
-    for(size_t iw = 0; iw < eigfnmet->nf; ++iw){
-        size_t cnum = eigfnmet->eigv[iw].n;
-        eigfnmet->eigfn[iw] = GRT_SAFE_CALLOC(cnum, sizeof(EIGENFN));
-    }
-
-    // 判断每个深度值对应的层位
-    if(Ctrl->W.active){
-        // 若不指定等距深度，则使用模型界面深度
-        if(Ctrl->W.nz == 0){
-            Ctrl->W.nz = mod1d->n;
-            Ctrl->W.zs = GRT_SAFE_CALLOC(Ctrl->W.nz, sizeof(real_t));
-            memcpy(Ctrl->W.zs, mod1d->Dep, sizeof(real_t)*mod1d->n);
-        }
-        eigfnmet->nz = Ctrl->W.nz;
-        eigfnmet->zs = GRT_SAFE_CALLOC(eigfnmet->nz, sizeof(real_t));
-        memcpy(eigfnmet->zs, Ctrl->W.zs, sizeof(real_t)*eigfnmet->nz);
-        eigfnmet->z_irefs = GRT_SAFE_CALLOC(eigfnmet->nz, sizeof(size_t));
-        for(size_t iz = 0; iz < Ctrl->W.nz; ++iz){
-            size_t ziref = 0;
-            for(ziref=0; ziref < mod1d->n-1; ++ziref){
-                if(mod1d->Dep[ziref+1] > Ctrl->W.zs[iz])  break; 
-            }
-            eigfnmet->z_irefs[iz] = ziref;
-        }
-    }
-
-    // Rayleigh or Love
-    const int ncols = (eigmet->wtype == GRT_DISPERSION_RAYL)? GRT_RAYL_DIM : GRT_LOVE_DIM;
-
-    if(Ctrl->calc_egyint){
-        // 申请 cpar_nz, cpar_zs, cpar_z_irefs
-        eigfnmet->cpar_nz = 0;
-        real_t thk, h, dz;
-        for(size_t iy = 0; iy < mod1d->n; ++iy){
-            thk = mod1d->Thk[iy];
-            h=0.0;
-            dz = (Ctrl->K.cpar_dz==0.0)? thk : Ctrl->K.cpar_dz;
-            // 最后一层会略薄于 dz
-            while(h < thk){
-                // 避免一些因浮点误差而产生的极细层
-                if(fabs(thk - h) < dz*1e-5)  break;
-
-                eigfnmet->cpar_z_irefs = GRT_SAFE_REALLOC(eigfnmet->cpar_z_irefs, sizeof(size_t)*(eigfnmet->cpar_nz+1));
-                eigfnmet->cpar_z_irefs[eigfnmet->cpar_nz] = iy;
-                eigfnmet->cpar_zs = GRT_SAFE_REALLOC(eigfnmet->cpar_zs, sizeof(real_t)*(eigfnmet->cpar_nz+1));
-                eigfnmet->cpar_zs[eigfnmet->cpar_nz] = mod1d->Dep[iy] + h;
-
-                h += dz;
-                eigfnmet->cpar_nz++;
-
-                // 半空间只算一次
-                if(iy == mod1d->n-1)  break;
-            }
-        }
-    }
-
-    // 申请敏感核相关内存，赋值 eigfn 其中变量
-    for(size_t iw = 0; iw < eigfnmet->nf; ++iw){
-        size_t cnum = eigfnmet->eigv[iw].n;
-        for(size_t ic = 0; ic < cnum; ++ic){
-            EIGENFN *eigfntmp = &eigfnmet->eigfn[iw][ic];
-
-            eigfntmp->eigenC = eigfnmet->eigv[iw].c_roots[ic];
-            if(Ctrl->W.active){
-                eigfntmp->fn = GRT_SAFE_CALLOC(eigfnmet->nz, sizeof(*eigfntmp->fn));
-            }
-            
-            if(Ctrl->calc_egyint){
-                eigfntmp->csens = GRT_SAFE_CALLOC(eigfnmet->cpar_nz, sizeof(*eigfntmp->csens));
-                eigfntmp->usens = GRT_SAFE_CALLOC(eigfnmet->cpar_nz, sizeof(*eigfntmp->usens));
-            }
-        }
-    }
-
-    // // 临时打印 eigfnmet 一些元素测试，看是否能正确读取
-    // for(size_t iw = 0; iw < eigfnmet->nf; ++iw){
-    //     size_t cnum = eigfnmet->eigv[iw].n;
-    //     real_t freq = eigfnmet->freqs[iw];
-    //     for(size_t ic = 0; ic < cnum; ++ic){
-    //         size_t mode = eigfnmet->modes[ic];
-
-    //         real_t croot = eigfnmet->eigv[iw].c_roots[ic];
-    //         size_t ciref = eigfnmet->eigv[iw].c_roots_iref[ic];
-
-    //         printf("# freq=%f(%zu) mode=%zu %e %zu\n", freq, iw, mode, croot, ciref);
-    //     }
-    // }
-    
-    // 计算本征函数、能量积分、群速度、相速度敏感核
-    grt_eigenfn_egy_udisp_phaseK_util(mod1d, eigfnmet, ncols, Ctrl->W.active, Ctrl->calc_egyint);
+    // 命令行只映射输出和采样选项，计算与内存管理统一交给公共接口
+    EIGENFN_OPTIONS options = {
+        .eigenfunctions     = Ctrl->W.active,
+        .energy             = Ctrl->calc_egyint,
+        .phase_kernel       = Ctrl->K.s_cpar_filepath != NULL,
+        .group_kernel       = Ctrl->K.s_upar_filepath != NULL,
+        .group_kernel_shift = Ctrl->K.freq_shift,
+        .kernel_dz          = Ctrl->K.cpar_dz,
+        .nz                 = Ctrl->W.nz,
+        .zs                 = Ctrl->W.zs,
+    };
+    grt_compute_eigenfn(mod1d, eigfnmet, &options);
 
     // 打印本征函数结果
     if(Ctrl->W.active){
+        int ncols = eigfnmet->wtype == GRT_DISPERSION_RAYL ? GRT_RAYL_DIM : GRT_LOVE_DIM;
         grt_output_eigenfns(Ctrl->W.s_egn_filepath, ncols, eigfnmet);
     }
 
@@ -646,11 +484,12 @@ int eigenfn_main(int argc, char **argv){
 
     // 计算并输出群速度敏感核
     if(Ctrl->K.s_upar_filepath!=NULL){
-        grt_group_sensitivity(eigfnmet);
         grt_output_sensitivity(Ctrl->K.s_upar_filepath, "u", eigfnmet);
     }
 
 
+    grt_free_eigenfn_info(eigfnmet);
+    grt_free_eigenv_info(eigmet);
     grt_free_mod1d(mod1d);
     free_Ctrl(Ctrl);
     return EXIT_SUCCESS;

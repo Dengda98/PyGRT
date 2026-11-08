@@ -170,7 +170,7 @@ void grt_output_cdisp(
 }
 
 
-void grt_group_sensitivity(EIGENFN_INFO *eigfnmet)
+void grt_group_sensitivity_difference(EIGENFN_INFO *eigfnmet, const EIGENFN_INFO *shifted)
 {
     // 循环每个频率
     for(size_t iw = 0; iw < eigfnmet->nf; ++iw){
@@ -181,17 +181,19 @@ void grt_group_sensitivity(EIGENFN_INFO *eigfnmet)
 
             EIGENFN *eigfn = &eigfnmet->eigfn[iw][ic];
 
-            // 循环每一层
+            // 循环每一层和物理量
             for(size_t iz = 0; iz < eigfnmet->cpar_nz; ++iz){
-                // 层内的物理量
                 for(int ia = 0; ia < GRT_SNSTVTY_MAX; ++ia){
-                    // 计算相速度敏感核在频率上的差分
-                    real_t ddCdwdX = 0.0;
-                    if(iw < eigfnmet->nf-1){
-                        EIGENFN *eigfn_w1 = &eigfnmet->eigfn[iw+1][ic];
-
-                        ddCdwdX = eigfn_w1->csens[iz][ia] - eigfn->csens[iz][ia];
-                        ddCdwdX /= eigfnmet->freqs[iw+1] - eigfnmet->freqs[iw];
+                    // 没有相邻频点或该阶尚不存在时，频率偏导近似为零
+                    cplx_t ddCdwdX = 0.0;
+                    if(shifted != NULL){
+                        ddCdwdX = shifted->eigfn[iw][ic].csens[iz][ia] - eigfn->csens[iz][ia];
+                        ddCdwdX /= shifted->freqs[iw] - eigfnmet->freqs[iw];
+                    }
+                    else if(iw > 0 && ic < eigfnmet->eigv[iw-1].n){
+                        EIGENFN *eigfn_w0 = &eigfnmet->eigfn[iw-1][ic];
+                        ddCdwdX = eigfn->csens[iz][ia] - eigfn_w0->csens[iz][ia];
+                        ddCdwdX /= eigfnmet->freqs[iw] - eigfnmet->freqs[iw-1];
                     }
 
                     // 合并公式，计算群速度敏感核
@@ -200,6 +202,12 @@ void grt_group_sensitivity(EIGENFN_INFO *eigfnmet)
             }
         }
     }
+}
+
+
+void grt_group_sensitivity(EIGENFN_INFO *eigfnmet)
+{
+    grt_group_sensitivity_difference(eigfnmet, NULL);
 }
 
 

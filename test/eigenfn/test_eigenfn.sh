@@ -9,6 +9,7 @@ grt eigenfn -Cphase.nc -F0.5 -N0/2 -Wegn.nc+z0/10/1 -Ugroup.nc -K+ccsens.nc+uuse
 grt eigenfn -Cphase.nc -F2+p -N0 -Wegn.nc+z1
 grt eigenfn -Cphase.nc -F0.2/0.5 -N -Ugroup.nc
 grt disp2asc -Ugroup.nc -N > group.txt
+grt eigenfn -Cphase.nc -F0.2/0.5 -N0/2 -K+uusens.nc+s0.001+z1
 
 # 深度采样间隔不可为零或负数
 expect_fail grt eigenfn -Cphase.nc -Wegn.nc+z0/10/0

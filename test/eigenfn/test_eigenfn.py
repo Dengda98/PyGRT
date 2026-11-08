@@ -21,6 +21,7 @@ with raises(ValueError):
 
 model.eigenfn(phase_path="phase.nc", periods=2, modes=0, eigenfn_path="egn.nc", depths=1)
 model.eigenfn(phase_path="phase.nc", freqs=(0.2, 0.5), all_modes=True, group_path="group.nc")
+model.eigenfn(phase_path="phase.nc", freqs=(0.2, 0.5), modes=(0, 2), usens_path="usens.nc", usens_shift=0.001, sensitivity_dz=1)
 
 # 模态阶数不可为负数
 with raises(ValueError):
